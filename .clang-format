@@ -1,0 +1,24 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: false
+  AfterEnum: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: false
+  BeforeElse: false
+  AfterExternBlock: false
+  AfterNamespace: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+AlwaysBreakTemplateDeclarations: true
+AllowShortFunctionsOnASingleLine: Empty
+AlignAfterOpenBracket: AlwaysBreak
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 100

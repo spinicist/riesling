@@ -1,0 +1,19 @@
+{
+    "name": "riesling",
+    "version-string": "1.0",
+    "dependencies": [
+        "args",
+        "catch2",
+        "eigen3",
+        "fmt",
+        {
+            "name": "fftw3",
+            "features": [ "threads", "avx2" ]
+        },
+        {
+            "name": "hdf5",
+            "features": [ "zlib" ]
+        },
+        "itk"
+    ]
+}
