@@ -1,0 +1,152 @@
+name: Build
+# This workflow is triggered on pushes to the repository.
+on: push
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_PATH: ${{github.workspace}}/vcpkg
+
+jobs:
+  build:
+    name: ${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+          name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
+          os: ubuntu-16.04,
+          cc: "gcc-9", cxx: "g++-9"
+        }
+        - {
+          name: "macOS", artifact: "riesling-macos.tar.gz",
+          os: macos-10.15,
+          cc: "clang", cxx: "clang++"
+        }
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+
+      - name: Install GNU tar
+        shell: bash
+        run: |
+          if [ "${{runner.os}}" == "macOS" ]; then
+            brew install gnu-tar
+          fi
+
+      - name: vcpkg
+        env:
+          CC: ${{matrix.config.cc}}
+          CXX: ${{matrix.config.cxx}}
+        uses: lukka/run-vcpkg@v6
+        with:
+          setupOnly: true
+
+      - name: CMake
+        uses: lukka/run-cmake@v2
+        id: runcmake
+        env:
+          CC: ${{matrix.config.cc}}
+          CXX: ${{matrix.config.cxx}}
+        with:
+          cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
+          useVcpkgToolchainFile: true
+          buildDirectory: build
+          cmakeBuildType: Release
+
+      - name: Save release
+        run: |
+          mv ./build/riesling ./
+          ALL="riesling"
+          if [ "${{runner.os}}" == "macOS" ]; then
+            echo "Using GNU tar"
+            gtar -cvzf ${{matrix.config.artifact}} $ALL
+          else
+            echo "Using system tar"
+            tar -cvzf ${{matrix.config.artifact}} $ALL
+          fi
+        shell: bash
+
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          path: ./${{matrix.config.artifact}}
+          name: ${{matrix.config.artifact}}
+
+  release:
+    if: contains(github.ref, 'tags/v')
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        tag_name: ${{github.ref}}
+        release_name: Release ${{github.ref}}
+        draft: true
+        prerelease: false
+    
+    - name: Store Release URL
+      run: |
+        echo "${{steps.create_release.outputs.upload_url}}" > ./upload_url
+    
+    - uses: actions/upload-artifact@v1
+      with:
+        path: ./upload_url
+        name: upload_url
+  
+  publish:
+    if: contains(github.ref, 'tags/v')
+    name: ${{matrix.config.name}}
+    runs-on: ${{matrix.config.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+          name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
+          os: ubuntu-16.04
+        }
+        - {
+          name: "macOS", artifact: "riesling-macos.tar.gz",
+          os: macos-10.15
+        }
+    needs: release
+
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: ${{matrix.config.artifact}}
+        path: ./
+
+    - name: Download URL
+      uses: actions/download-artifact@v1
+      with:
+        name: upload_url
+        path: ./
+    
+    - name: Set Upload URL
+      id: set_upload_url
+      run: |
+        URL=`cat ./upload_url`
+        echo ${URL}
+        echo "::set-output name=upload_url::${URL}"
+
+    - name: Upload to Release
+      id: upload_to_release
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
+        asset_path: ./${{ matrix.config.artifact }}
+        asset_name: ${{ matrix.config.artifact }}
+        asset_content_type: application/gzip
