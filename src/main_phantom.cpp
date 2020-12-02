@@ -67,11 +67,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> spoke_samp(
       parser, "SPOKE SAMPLING", "Sample factor for spokes (default 1)", {'s', "spokes"}, 1);
   args::ValueFlag<long> lores(
-      parser,
-      "LO-RES",
-      "Include lo-res segments with scale factor (recommended 8)",
-      {'l', "lores"},
-      0);
+      parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
   args::ValueFlag<long> gap(parser, "DEAD-TIME", "Samples in dead-time (def 0)", {'g', "gap"}, 0);
   args::ValueFlag<long> nchan(
       parser, "CHANNELS", "Number of channels (default 12)", {'c', "channels"}, 12);
