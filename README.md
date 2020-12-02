@@ -45,6 +45,98 @@ RIESLING uses HDF5 (.h5) files as an input/intermediate format and NIFTI (.nii) 
 
 There are three reconstruction algorithms currently provided in RIESLING - plain root-sum-squares (`riesling rss`), iterative cgSENSE with Töplitz embedding (`riesling toe`), and iterative recon with TGV regularization (`riesling tgv`).
 
+## Input Format
+
+The RIESLING input .h5 is similar but simpler than ISMRMRD (ISMRM raw data) format. The .h5 file should have three entries: `info` - the header information, `traj` - the trajectory, and a group called `data`, within which each k-space volume is written with a four-digit zero-padded identifier. In other words, it should look like this, where `Nr` is the number of read-out points along a spoke, `Ns` is the number of spokes, and `Nc` is the number of channels:
+
+```
+/info - Header struct (see below)
+/traj - Trajectory dataset specified as a (3, Nr, Ns) float matrix
+/data - Group
+-/0000 - k-Space dataset for volume 0 as an (Nc, Nr, Ns) complex float matrix
+```
+
+Note that the k-space data ordering is channel-first rather than channel-last. A possible definition of the header structure in plain C++ is as follows. The real definition can be found in `radial.h` and uses Eigen types:
+
+```
+struct RadialInfo
+{
+  long matrix[3];
+  float voxel_size[3];
+  long read_points;
+  long read_gap;
+  long spokes_hi;
+  long spokes_lo;
+  float lo_scale;
+  long channels;
+  long volumes = 1;
+  float tr = 1.f;
+  float origin[3];
+  float direction[9];
+}
+```
+
+The output of `h5dump` on an example phantom dataset is as follows:
+
+```
+HDF5 "tom.h5" {
+GROUP "/" {
+   GROUP "data" {
+      DATASET "0000" {
+         DATATYPE  H5T_COMPOUND {
+            H5T_IEEE_F32LE "r";
+            H5T_IEEE_F32LE "i";
+         }
+         DATASPACE  SIMPLE { ( 12, 64, 4096 ) / ( 12, 64, 4096 ) }
+         DATA {h5dump error: unable to print data
+
+         }
+      }
+   }
+   DATASET "info" {
+      DATATYPE  H5T_COMPOUND {
+         H5T_ARRAY { [3] H5T_STD_I64LE } "matrix";
+         H5T_ARRAY { [3] H5T_IEEE_F32LE } "voxel_size";
+         H5T_STD_I64LE "read_points";
+         H5T_STD_I64LE "read_gap";
+         H5T_STD_I64LE "spokes_hi";
+         H5T_STD_I64LE "spokes_lo";
+         H5T_IEEE_F32LE "lo_scale";
+         H5T_STD_I64LE "channels";
+         H5T_STD_I64LE "volumes";
+         H5T_IEEE_F32LE "tr";
+         H5T_ARRAY { [3] H5T_IEEE_F32LE } "origin";
+         H5T_ARRAY { [9] H5T_IEEE_F32LE } "direction";
+      }
+      DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+      DATA {
+      (0): {
+            [ 64, 64, 64 ],
+            [ 3.75, 3.75, 3.75 ],
+            64,
+            0,
+            4096,
+            0,
+            1,
+            12,
+            1,
+            1,
+            [ 0, 0, 0 ],
+            [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ]
+         }
+      }
+   }
+   DATASET "traj" {
+      DATATYPE  H5T_IEEE_F32LE
+      DATASPACE  SIMPLE { ( 3, 64, 4096 ) / ( 3, 64, 4096 ) }
+      DATA {h5dump error: unable to print data
+
+      }
+   }
+}
+}
+```
+
 ## Getting Help
 
 If you can't find an answer to a problem in the documentation or help strings, 
