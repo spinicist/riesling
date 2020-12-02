@@ -95,6 +95,7 @@ install(TARGETS riesling RUNTIME DESTINATION bin)
 # Tests
 add_executable(prufung
     test/main.cpp
+    test/fft.cpp
     test/zinfandel.cpp
 )
 target_link_libraries(prufung PUBLIC

@@ -8,7 +8,7 @@
 void FFTStart(Log &log);
 void FFTEnd(Log &log);
 
-/* 3D Fourier transform executed simultaneously
+/* 3D Fourier transform
  *
  */
 struct FFT3
