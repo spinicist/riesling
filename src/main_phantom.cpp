@@ -123,7 +123,7 @@ int main_phantom(args::Subparser &parser)
       for (long ix = cn - pr; ix <= cn + pr; ix++) {
         auto const px = (ix - cn) * vox_sz;
         float const rad = sqrt(px * px + py * py + pz * pz);
-        if (rad < phan_r.Get()) {
+        if (rad < pr) {
           phan(ix, iy, iz) = intensity.Get();
         }
       }

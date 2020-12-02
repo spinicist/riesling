@@ -8,6 +8,7 @@ int main(int const argc, char const *const argv[])
   args::Group commands(parser, "COMMANDS");
   args::Command hdr(commands, "hdr", "Print the header from an HD5 file", &main_hdr);
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
+  args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::Command kspace(commands, "kspace", "Output radial k-space for viewing", &main_kspace);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);

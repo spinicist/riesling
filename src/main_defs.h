@@ -2,8 +2,9 @@
 
 #include "parse_args.h"
 
-int main_phantom(args::Subparser &parser);
 int main_hdr(args::Subparser &parser);
+int main_phantom(args::Subparser &parser);
+int main_compress(args::Subparser &parser);
 int main_zinfandel(args::Subparser &parser);
 int main_kspace(args::Subparser &parser);
 int main_traj(args::Subparser &parser);
