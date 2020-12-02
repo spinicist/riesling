@@ -74,6 +74,9 @@ void RangeFor(RangeFunc f, long const lo, long const hi)
 {
   long const nt = GlobalPool()->NumThreads();
   long const ni = hi - lo;
+  if (ni == 0) {
+    return;
+  }
   long const num = std::min(nt, ni);
   Eigen::Barrier barrier(static_cast<unsigned int>(num));
   long const range_sz = static_cast<long>(std::ceil(static_cast<float>(ni) / num));

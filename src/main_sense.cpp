@@ -12,29 +12,14 @@
 
 int main_sense(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");
+  COMMON_RECON_ARGS;
 
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
-  args::ValueFlag<float> crop(
-      parser, "CROP SIZE", "Crop extent in mm (default header FoV)", {"crop"}, -1);
   args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
-  args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"});
-  args::ValueFlag<float> dc_exp(
-      parser, "DC Exponent", "Density-Compensation Exponent (default 1.0)", {'d', "dce"}, 1.0f);
+  args::ValueFlag<long> sense_vol(
+      parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"sense_vol"}, -1);
   args::Flag save_maps(parser, "SAVE MAPS", "Write out sensitivity maps", {"maps", 'm'});
   args::Flag save_channels(
       parser, "SAVE CHANNELS", "Write out individual channel images", {"channels", 'c'});
-  args::ValueFlag<float> osamp(
-      parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
-  args::ValueFlag<long> sense_vol(
-      parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"sense_vol"}, -1);
-  args::ValueFlag<float> tukey_s(
-      parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);
-  args::ValueFlag<float> tukey_e(
-      parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);
-  args::ValueFlag<float> tukey_h(
-      parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);
 
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
@@ -43,7 +28,7 @@ int main_sense(args::Subparser &parser)
   auto const &info = reader.info();
   auto const trajectory = reader.readTrajectory();
 
-  Gridder gridder(info, trajectory, osamp.Get(), log);
+  Gridder gridder(info, trajectory, osamp.Get(), stack, log);
   gridder.setDCExponent(dc_exp.Get());
   if (est_dc) {
     gridder.estimateDC();
@@ -52,10 +37,10 @@ int main_sense(args::Subparser &parser)
   grid.setZero();
   FFT3N fft(grid, log);
 
-  Cropper cropper(info, gridder.gridDims(), crop.Get(), log);
+  Cropper cropper(info, gridder.gridDims(), crop.Get(), stack, log);
   Cx3 rad_ks = info.radialVolume();
   reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
-  Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), rad_ks, log));
+  Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
   if (save_maps) {
     WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps"), log);
   }

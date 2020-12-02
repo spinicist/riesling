@@ -23,6 +23,7 @@ int main_kspace(args::Subparser &parser)
       "Number of radial/gridded samples to write out, default all",
       {"samples"},
       -1);
+  args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag do_grid(parser, "GRID", "Grid k-space and write out central portion", {"grid"});
   args::Flag do_regrid(parser, "REGRID", "Grid back to radial and write out", {"regrid"});
   args::ValueFlag<float> scale(
@@ -50,7 +51,7 @@ int main_kspace(args::Subparser &parser)
     auto const res = info.voxel_size.minCoeff() * info.read_points / n_samp;
     log.info(FMT_STRING("Gridding with {} samples, nominal resolution {} mm"), n_samp, res);
     R3 const traj = reader.readTrajectory();
-    Gridder gridder(info, traj, 2.f, res, true, log);
+    Gridder gridder(info, traj, 2.f, stack, res, true, log);
     Cx4 grid = gridder.newGrid();
     FFT3N fft(grid, log);
     grid.setZero();
@@ -62,7 +63,7 @@ int main_kspace(args::Subparser &parser)
     if (do_regrid) {
       R3 traj2 = traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi});
       info.spokes_lo = 0;
-      Gridder regridder(info, traj2, 2.f, res, true, log);
+      Gridder regridder(info, traj2, 2.f, stack, res, true, log);
       info.read_gap = 0;
       info.spokes_lo = 0;
       fft.shift();

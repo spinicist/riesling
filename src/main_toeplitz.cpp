@@ -15,17 +15,9 @@
 
 int main_toeplitz(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  COMMON_RECON_ARGS;
 
-  args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
-  args::ValueFlag<float> crop(
-      parser, "CROP SIZE", "Crop extent in mm (default 220)", {"crop"}, 240.f);
-  args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"});
-  args::ValueFlag<float> dc_exp(
-      parser, "DC Exponent", "Density-Compensation Exponent (default 1.0)", {'d', "dce"}, 1.0f);
-  args::ValueFlag<float> osamp(
-      parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
+  args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
   args::ValueFlag<long> sense_vol(
       parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"sense_vol"}, 0);
   args::ValueFlag<float> thr(
@@ -33,13 +25,6 @@ int main_toeplitz(args::Subparser &parser)
   args::ValueFlag<long> its(
       parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
 
-  args::ValueFlag<float> tukey_s(
-      parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);
-  args::ValueFlag<float> tukey_e(
-      parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);
-  args::ValueFlag<float> tukey_h(
-      parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);
-  args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
   RadialReader reader(fname.Get(), log);
@@ -47,18 +32,18 @@ int main_toeplitz(args::Subparser &parser)
   Cx3 rad_ks = info.radialVolume();
 
   R3 const trajectory = reader.readTrajectory();
-  Gridder gridder(info, trajectory, osamp.Get(), log);
+  Gridder gridder(info, trajectory, osamp.Get(), stack, log);
   gridder.setDCExponent(dc_exp.Get());
   if (est_dc) {
     gridder.estimateDC();
   }
 
   Cx4 grid = gridder.newGrid();
-  Cropper iter_cropper(info, gridder.gridDims(), crop.Get(), log);
+  Cropper iter_cropper(info, gridder.gridDims(), crop.Get(), stack, log);
   FFT3N fft(grid, log);
 
   reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
-  Cx4 const sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), rad_ks, log));
+  Cx4 const sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
   ones.setConstant({1.0f});
@@ -88,7 +73,7 @@ int main_toeplitz(args::Subparser &parser)
     log.stop_time(start, "Total decode time");
   };
 
-  Cropper out_cropper(info, iter_cropper.size(), -1, log);
+  Cropper out_cropper(info, iter_cropper.size(), -1, stack, log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   Cx3 vol = iter_cropper.newImage();
   auto const &all_start = log.start_time();

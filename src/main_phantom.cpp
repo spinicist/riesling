@@ -102,9 +102,9 @@ int main_phantom(args::Subparser &parser)
   log.info(FMT_STRING("Hi-res spokes: {} Lo-res spokes: {}"), info.spokes_hi, info.spokes_lo);
 
   auto traj = ArchimedeanSpiral(info);
-  Gridder gridder(info, traj, osamp.Get(), log);
+  Gridder gridder(info, traj, osamp.Get(), false, log);
   Cx4 grid = gridder.newGrid();
-  Cropper cropper(info, gridder.gridDims(), -1, log);
+  Cropper cropper(info, gridder.gridDims(), -1, false, log);
   Cx3 phan = cropper.newImage();
 
   // Draw a spherical phantom

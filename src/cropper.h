@@ -5,7 +5,8 @@
 
 struct Cropper
 {
-  Cropper(RadialInfo const &info, Dims3 const &fullSz, float const extent, Log &log);
+  Cropper(
+      RadialInfo const &info, Dims3 const &fullSz, float const extent, bool const crop, Log &log);
   Dims3 size() const;
   Dims3 start() const;
   Cx3 newImage() const;

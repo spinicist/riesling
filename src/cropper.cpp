@@ -1,6 +1,7 @@
 #include "cropper.h"
 
-Cropper::Cropper(RadialInfo const &info, Dims3 const &fullSz, float const extent, Log &log)
+Cropper::Cropper(
+    RadialInfo const &info, Dims3 const &fullSz, float const extent, bool const stack, Log &log)
 {
   if (extent < 0.f) {
     std::copy_n(info.matrix.begin(), 3, sz_.begin());
@@ -13,6 +14,10 @@ Cropper::Cropper(RadialInfo const &info, Dims3 const &fullSz, float const extent
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
   st_ = Dims3{(fullSz[0] - sz_[0]) / 2, (fullSz[1] - sz_[1]) / 2, (fullSz[2] - sz_[2]) / 2};
+  if (stack) {
+    st_[2] = 0;
+    sz_[2] = info.matrix[2];
+  }
   log.info(FMT_STRING("Cropper size {} start {}"), sz_, st_);
 }
 

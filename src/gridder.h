@@ -17,15 +17,17 @@ struct Gridder
    * @param info   The Radial info struct
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
+   * @param stack  Trajectory is stack-of-stars or similar
    * @param log    Logging object
    */
-  Gridder(RadialInfo const &info, R3 const &traj, float const os, Log &log);
+  Gridder(RadialInfo const &info, R3 const &traj, float const os, bool const stack, Log &log);
 
   /** Constructs the Gridder with the specified resoluion
    *
    * @param info   The Radial info struct
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
+   * @param stack  Trajectory is stack-of-stars or similar
    * @param res    Desired effective resolution
    * @param shrink Shrink the grid to fit only the desired resolution portion
    * @param log    Logging object
@@ -34,15 +36,15 @@ struct Gridder
       RadialInfo const &info,
       R3 const &traj,
       float const os,
+      bool const stack,
       float const res,
       bool const shrink,
       Log &log);
 
   virtual ~Gridder() = default;
 
-  long gridRadius() const;      //!< Returns the current maximum gridding radius as a k-space index
-  long gridSize() const;        //!< Returns the size of the grid in one dimension
-  Dims3 const gridDims() const; //!< Returns the dimensions of the oversampled grid
+  long gridSize() const;  //!< Returns the size of the grid in one dimension
+  Dims3 gridDims() const; //!< Returns the dimensions of the oversampled grid
   Cx4 newGrid() const;
   Cx3 newGrid1() const;
 
@@ -60,14 +62,16 @@ private:
     Point3 cart;
     Size3 wrapped;
     Size2 radial;
+    float merge;
+    float DC;
   };
-  void setup(R3 const &traj, float const res, bool const shrink);
-  void analyticDC();
+  void setup(R3 const &traj, bool const stack, float const res, bool const shrink);
+  void analyticDC(bool const stack);
 
   RadialInfo const info_;
   std::vector<CoordSet> coords_;
-  R2 DC_, merge_;
+  Dims3 dims_;
   float oversample_, dc_exp_;
   Log &log_;
-  long highestReadIndex_, fullSize_, nominalSize_;
+  long fullSize_, nominalSize_;
 };

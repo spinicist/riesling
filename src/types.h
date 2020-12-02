@@ -80,6 +80,14 @@ inline decltype(auto) wrap(T const &index, long const &sz)
   return w;
 }
 
+template <typename T1, typename T2>
+inline decltype(auto) wrap(T1 const &index, T2 const &sz)
+{
+  auto const t = index + sz;
+  auto const w = t - sz * (t / sz);
+  return w;
+}
+
 template <typename T>
 inline decltype(auto) tile(T &&x, long const N)
 {
