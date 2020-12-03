@@ -9,37 +9,27 @@
 
 int main_zinfandel(args::Subparser &parser)
 {
-  std::unordered_map<std::string, ZMode> z_map{{"1", ZMode::Z1_iter}, {"1s", ZMode::Z1_simul}};
   args::Positional<std::string> fname(parser, "INPUT FILE", "Input radial k-space to fill");
   args::ValueFlag<std::string> oname(
       parser, "OUTPUT NAME", "Name of output .h5 file", {"out", 'o'});
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
   args::ValueFlag<long> gap(
       parser, "DEAD-TIME GAP", "Set gap value (default use header value)", {'g', "gap"}, -1);
-  args::MapFlag<std::string, ZMode> z(
-      parser,
-      "Z TYPE",
-      "Choose method (1 - iter, 1s - simul, 2 - non-lin iter, default iter)",
-      {'z'},
-      z_map,
-      ZMode::Z1_iter);
-  args::ValueFlag<long> z_src(
-      parser, "Z SRC", "Number of ZINFANDEL sources (default 4)", {"zsrc"}, 4);
-  args::ValueFlag<long> z_cal(
-      parser, "Z CAL", "Size of calibration region (default all)", {"zcal"}, 0);
-  args::ValueFlag<long> z_its(
-      parser, "Z ITERS", "Maximum number of iterations (Z3 only)", {"zits"}, 10);
-  args::ValueFlag<float> z_reg(parser, "Z REG", "Regularization lambda (default 0)", {"zreg"}, 0.f);
-  args::ValueFlag<float> z_thresh(
-      parser, "Z THRESH", "Threshold for SVD retention (Z3 only)", {"zthr"}, 0.1);
+  args::Flag simul(parser, "SIMULTANEOUS", "Fill gap simultaneously, not iteratively", {"simul"});
+  args::ValueFlag<long> src(
+      parser, "SOURCES", "Number of ZINFANDEL sources (default 4)", {"src"}, 4);
+  args::ValueFlag<long> spokes(
+      parser, "CAL SPOKES", "Number of spokes to use for calibration (default 5)", {"spokes"}, 5);
+  args::ValueFlag<long> read(
+      parser, "CAL READ", "Read calibration size (default all)", {"read"}, 0);
+  args::ValueFlag<float> l1(
+      parser, "LAMBDA", "Tikhonov regularization (default 0)", {"lambda"}, 0.f);
   Log log = ParseCommand(parser, fname);
 
   RadialReader reader(fname.Get(), log);
   auto info = reader.info();
-  if (gap) {
-    log.info(FMT_STRING("Setting dead-time gap to {} samples"), gap.Get());
-    info.read_gap = gap.Get();
-  }
+  long const gap_sz = gap ? gap.Get() : info.read_gap;
+  long const n_tgt = simul ? gap_sz : 1L;
 
   auto out_info = info;
   out_info.read_gap = 0;
@@ -55,7 +45,7 @@ int main_zinfandel(args::Subparser &parser)
   Cx3 rad_ks = info.radialVolume();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     reader.readData(iv, rad_ks);
-    zinfandel(z.Get(), info.read_gap, z_src.Get(), z_cal.Get(), z_reg.Get(), rad_ks, log);
+    zinfandel(gap_sz, n_tgt, src.Get(), spokes.Get(), read.Get(), l1.Get(), rad_ks, log);
     writer.writeData(volume ? 0 : iv, rad_ks);
   }
   log.info("Finished");

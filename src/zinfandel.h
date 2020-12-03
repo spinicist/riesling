@@ -4,20 +4,15 @@
 #include "radial.h"
 #include "sense.h"
 
-enum struct ZMode
-{
-  Z1_iter,
-  Z1_simul
-};
-
 /*!
  * ZTE Infilling From Autocallibration NeighbourhooD ELements
  */
 void zinfandel(
-    ZMode const mode,
     long const gap_sz,
+    long const n_tgt,
     long const n_src,
-    long const n_cal_in,
+    long const n_spoke,
+    long const n_read,
     float const lambda,
     Cx3 &ks,
     Log &log);
@@ -28,26 +23,20 @@ void zinfandel(
 Eigen::MatrixXcd GrabSources(
     Cx3 const &ks,
     float const scale,
-    long const spoke,
-    long const st_spoke,
     long const n_src,
-    long const n_cal);
-
-Eigen::MatrixXcd GrabSourcesOne(
-    Cx3 const &ks,
-    float const scale,
-    long const spoke,
-    long const st_spoke,
-    long const n_src,
-    long const n_cal);
+    long const s_spoke,
+    long const n_spoke,
+    long const s_read,
+    long const n_read);
 
 Eigen::MatrixXcd GrabTargets(
     Cx3 const &ks,
     float const scale,
-    long const spoke,
-    long const st_spoke,
     long const n_tgt,
-    long const n_cal);
+    long const s_spoke,
+    long const n_spoke,
+    long const s_read,
+    long const n_read);
 
 void FillIterative(
     Eigen::VectorXcd const &S,
@@ -63,8 +52,3 @@ void FillSimultaneous(
     float const scale,
     long const spoke,
     Cx3 &ks);
-
-Eigen::MatrixXcd
-CalcWeights1(Eigen::MatrixXcd const &src, Eigen::MatrixXcd const tgt, float const lambda);
-Eigen::MatrixXcd
-CalcWeights2(Eigen::MatrixXcd const &src, Eigen::MatrixXcd const tgt, float const lambda);

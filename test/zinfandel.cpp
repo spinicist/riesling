@@ -5,15 +5,15 @@
 
 TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
 {
-  long const n_read = 16;
+  long const n_readpoints = 16;
   long const n_spoke = 1;
   long const n_coil = 4;
   float const scale = 2.f;
-  Cx3 kspace(n_coil, n_read, n_spoke);
+  Cx3 kspace(n_coil, n_readpoints, n_spoke);
   kspace.setZero();
 
   for (auto is = 0; is < n_spoke; is++) {
-    for (auto ir = 0; ir < n_read; ir++) {
+    for (auto ir = 0; ir < n_readpoints; ir++) {
       for (auto ic = 0; ic < n_coil; ic++) {
         kspace(ic, ir, is) = std::complex<float>(ir + ic + 1, 0);
       }
@@ -23,38 +23,39 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
   SECTION("Grab Sources")
   {
     long const n_src = 4;
-    long const n_cal = n_read - (n_src - 1);
-    auto const S = GrabSources(kspace, scale, 0, 0, n_src, n_cal);
+    long const n_read = n_readpoints - (n_src - 1);
+    auto const S = GrabSources(kspace, scale, n_src, 0, 1, 0, n_read);
     CHECK(S.rows() == (n_coil * n_src));
-    CHECK(S.cols() == n_cal);
+    CHECK(S.cols() == n_read);
     CHECK((S.array().real() > 0.).all());
     CHECK(S(0, 0).real() == Approx(1. / scale));
-    CHECK(S((n_coil * n_src) - 1, n_cal - 1).real() == Approx((n_read + n_coil - 1) / scale));
+    CHECK(
+        S((n_coil * n_src) - 1, n_read - 1).real() == Approx((n_readpoints + n_coil - 1) / scale));
   }
 
   SECTION("Grab Targets Single")
   {
-    long const n_cal = 2;
-    auto const T = GrabTargets(kspace, 2.f, 0, 0, 1, n_cal);
+    long const n_read = 2;
+    auto const T = GrabTargets(kspace, 2.f, 1, 0, 1, 0, n_read);
     CHECK(T.rows() == n_coil);
-    CHECK(T.cols() == n_cal);
+    CHECK(T.cols() == n_read);
     CHECK((T.array().real() > 0.).all());
     CHECK(T(0, 0).real() == Approx(1. / scale));
-    CHECK(T(n_coil - 1, 0).real() == Approx((n_cal - 1 + n_coil - 1) / scale));
+    CHECK(T(n_coil - 1, 0).real() == Approx((n_read - 1 + n_coil - 1) / scale));
   }
 
   SECTION("Grab Targets Multiple")
   {
-    long const n_cal = 2;
+    long const n_read = 2;
     long const n_tgt = 2;
-    auto const T = GrabTargets(kspace, 2.f, 0, 0, n_tgt, n_cal);
+    auto const T = GrabTargets(kspace, 2.f, n_tgt, 0, 1, 0, n_read);
     CHECK(T.rows() == n_coil * n_tgt);
-    CHECK(T.cols() == n_cal);
+    CHECK(T.cols() == n_read);
     CHECK((T.array().real() > 0.).all());
     CHECK(T(0, 0).real() == Approx(1. / scale));
     CHECK(
-        T((n_coil * n_tgt) - 1, n_cal - 1).real() ==
-        Approx((n_cal - 1 + n_coil - 1 + n_tgt) / scale));
+        T((n_coil * n_tgt) - 1, n_read - 1).real() ==
+        Approx((n_read - 1 + n_coil - 1 + n_tgt) / scale));
   }
 
   SECTION("Fill Targets Iterative")
@@ -110,7 +111,7 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
     long const n_src = 4;
     Cx3 test_kspace = kspace;
     test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}).setZero();
-    zinfandel(ZMode::Z1_iter, n_gap, n_src, 0, 0.0, test_kspace, log);
+    zinfandel(n_gap, 1, n_src, 2, 4, 0.0, test_kspace, log);
     Cx3 diff = test_kspace - kspace;
     float const sum_diff = norm(diff) / diff.size();
     CHECK(sum_diff == Approx(0.f).margin(1.e-6f));
@@ -122,7 +123,7 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
     long const n_src = 4;
     Cx3 test_kspace = kspace;
     test_kspace.slice(Sz3{0, 0, 0}, Sz4{n_coil, n_gap, n_spoke}).setZero();
-    zinfandel(ZMode::Z1_simul, n_gap, n_src, 0, 0.0, test_kspace, log);
+    zinfandel(n_gap, n_gap, n_src, 2, 4, 0.0, test_kspace, log);
     Cx3 diff = test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}) -
                kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke});
     float const sum_diff = norm(diff) / diff.size();

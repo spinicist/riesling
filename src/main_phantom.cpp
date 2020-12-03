@@ -136,12 +136,13 @@ int main_phantom(args::Subparser &parser)
   Cx3 radial = info.radialVolume();
   gridder.toRadial(grid, radial);
   if (snr) {
-    Cx3 noise(info.read_points - info.read_gap, info.spokes_total(), nchan.Get());
+    Cx3 noise(info.read_points, info.spokes_total(), nchan.Get());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
-    radial.slice(
-        Dims3{0, info.read_gap, 0},
-        Dims3{info.channels, info.read_points - info.read_gap, info.spokes_total()}) +=
+    radial.slice(Dims3{0, 0, 0}, Dims3{info.channels, info.read_points, info.spokes_total()}) +=
         noise * noise.constant(intensity.Get() / snr.Get());
+  }
+  if (gap) {
+    radial.slice(Dims3{0, 0, 0}, Dims3{info.channels, gap.Get(), info.spokes_total()}).setZero();
   }
 
   RadialWriter writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
