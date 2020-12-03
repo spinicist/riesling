@@ -22,6 +22,8 @@ int main_tgv(args::Subparser &parser)
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<long> its(
       parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
+  args::ValueFlag<float> iter_fov(
+      parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
   args::ValueFlag<float> l1_weight(
       parser, "L1", "L1-Regularisation weighting (1e-5)", {"l1"}, 1.e-5f);
   args::ValueFlag<float> l1_reduction(
@@ -45,7 +47,7 @@ int main_tgv(args::Subparser &parser)
   grid.setZero();
   FFT3N fft(grid, log);
 
-  Cropper iter_cropper(info, gridder.gridDims(), crop.Get(), stack, log);
+  Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);
   Cx3 rad_ks = info.radialVolume();
   reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
   Cx4 sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
@@ -69,7 +71,7 @@ int main_tgv(args::Subparser &parser)
     log.stop_time(start, "Total decode time");
   };
 
-  Cropper out_cropper(info, iter_cropper.size(), -1, stack, log);
+  Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const start = log.start_time();

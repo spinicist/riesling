@@ -24,6 +24,8 @@ int main_toeplitz(args::Subparser &parser)
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<long> its(
       parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
+  args::ValueFlag<float> iter_fov(
+      parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
 
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
@@ -39,7 +41,7 @@ int main_toeplitz(args::Subparser &parser)
   }
 
   Cx4 grid = gridder.newGrid();
-  Cropper iter_cropper(info, gridder.gridDims(), crop.Get(), stack, log);
+  Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);
   FFT3N fft(grid, log);
 
   reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
@@ -73,7 +75,7 @@ int main_toeplitz(args::Subparser &parser)
     log.stop_time(start, "Total decode time");
   };
 
-  Cropper out_cropper(info, iter_cropper.size(), -1, stack, log);
+  Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   Cx3 vol = iter_cropper.newImage();
   auto const &all_start = log.start_time();

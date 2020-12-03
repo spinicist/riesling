@@ -28,8 +28,8 @@ extern void WriteVolumes(
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
                                                                                                    \
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);           \
-  args::ValueFlag<float> crop(                                                                     \
-      parser, "CROP SIZE", "Crop extent in mm (default header FoV)", {"crop"}, -1);                \
+  args::ValueFlag<float> out_fov(                                                                  \
+      parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                   \
   args::ValueFlag<float> osamp(                                                                    \
       parser,                                                                                      \
       "GRID OVERSAMPLE",                                                                           \

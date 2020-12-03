@@ -24,7 +24,7 @@ int main_rss(args::Subparser &parser)
     gridder.estimateDC();
   }
 
-  Cropper cropper(info, gridder.gridDims(), crop.Get(), stack, log);
+  Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
 
   Cx3 rad_ks = info.radialVolume();
   Cx4 grid = gridder.newGrid();

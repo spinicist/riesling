@@ -37,7 +37,7 @@ int main_sense(args::Subparser &parser)
   grid.setZero();
   FFT3N fft(grid, log);
 
-  Cropper cropper(info, gridder.gridDims(), crop.Get(), stack, log);
+  Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
   Cx3 rad_ks = info.radialVolume();
   reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
   Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
