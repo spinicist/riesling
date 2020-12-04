@@ -183,7 +183,7 @@ void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
 
 void Gridder::toRadial(Cx3 const &cart, Cx2 &radial) const
 {
-  assert(radial.dimension(0) >= highestReadIndex_);
+  assert(radial.dimension(0) == info_.read_points);
   assert(radial.dimension(1) == info_.spokes_total());
   assert(cart.dimension(0) == dims_[0]);
   assert(cart.dimension(1) == dims_[1]);
@@ -207,7 +207,7 @@ void Gridder::toRadial(Cx3 const &cart, Cx2 &radial) const
 void Gridder::toRadial(Cx4 const &cart, Cx3 &radial) const
 {
   assert(radial.dimension(0) == cart.dimension(0));
-  assert(radial.dimension(1) >= highestReadIndex_);
+  assert(radial.dimension(1) == info_.read_points);
   assert(radial.dimension(2) == info_.spokes_total());
   assert(cart.dimension(1) == dims_[0]);
   assert(cart.dimension(2) == dims_[1]);
