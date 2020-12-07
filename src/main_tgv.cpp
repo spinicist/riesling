@@ -49,7 +49,8 @@ int main_tgv(args::Subparser &parser)
 
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);
   Cx3 rad_ks = info.radialVolume();
-  reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
+  long currentVolume = SenseVolume(sense_vol, info.volumes);
+  reader.readData(currentVolume, rad_ks);
   Cx4 sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
 
   EncodeFunction enc = [&](Cx3 const &x, Cx3 &radial) {
@@ -76,8 +77,9 @@ int main_tgv(args::Subparser &parser)
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const start = log.start_time();
     log.info(FMT_STRING("Processing Echo: {}"), iv);
-    if (info.volumes > 1) { // Might be different to SENSE volume
+    if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);
+      currentVolume = iv;
     }
     Cx3 image = out_cropper.crop3(
         tgv(rad_ks,

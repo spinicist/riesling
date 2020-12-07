@@ -44,7 +44,8 @@ int main_toeplitz(args::Subparser &parser)
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);
   FFT3N fft(grid, log);
 
-  reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
+  long currentVolume = SenseVolume(sense_vol, info.volumes);
+  reader.readData(currentVolume, rad_ks);
   Cx4 const sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
@@ -81,7 +82,10 @@ int main_toeplitz(args::Subparser &parser)
   auto const &all_start = log.start_time();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.start_time();
-    reader.readData(iv, rad_ks);
+    if (iv != currentVolume) { // For single volume images, we already read it for SENSE
+      reader.readData(iv, rad_ks);
+      currentVolume = iv;
+    }
     dec(rad_ks, vol); // Initialize
     cg(toe, its.Get(), thr.Get(), vol, log);
 

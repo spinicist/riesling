@@ -39,7 +39,8 @@ int main_sense(args::Subparser &parser)
 
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
   Cx3 rad_ks = info.radialVolume();
-  reader.readData(SenseVolume(sense_vol, info.volumes), rad_ks);
+  long currentVolume = SenseVolume(sense_vol, info.volumes);
+  reader.readData(currentVolume, rad_ks);
   Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
   if (save_maps) {
     WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps"), log);
@@ -53,8 +54,9 @@ int main_sense(args::Subparser &parser)
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     log.info(FMT_STRING("Processing Echo: {}"), iv);
     auto const &vol_start = log.start_time();
-    if (info.volumes > 1) { // Might be different to SENSE volume
+    if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);
+      currentVolume = iv;
     }
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
