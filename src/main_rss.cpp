@@ -18,7 +18,7 @@ int main_rss(args::Subparser &parser)
   RadialReader reader(fname.Get(), log);
   auto const &info = reader.info();
 
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), stack, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), stack, kb, log);
   gridder.setDCExponent(dc_exp.Get());
   if (est_dc) {
     gridder.estimateDC();
@@ -44,6 +44,7 @@ int main_rss(args::Subparser &parser)
     fft.reverse();
     image.device(Threads::GlobalDevice()) =
         (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
+    gridder.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }

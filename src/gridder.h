@@ -18,9 +18,16 @@ struct Gridder
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
    * @param stack  Trajectory is stack-of-stars or similar
+   * @param kb     Use Kaiser-Bessel interpolation
    * @param log    Logging object
    */
-  Gridder(RadialInfo const &info, R3 const &traj, float const os, bool const stack, Log &log);
+  Gridder(
+      RadialInfo const &info,
+      R3 const &traj,
+      float const os,
+      bool const stack,
+      bool const kb,
+      Log &log);
 
   /** Constructs the Gridder with the specified resoluion
    *
@@ -28,6 +35,7 @@ struct Gridder
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
    * @param stack  Trajectory is stack-of-stars or similar
+   * @param kb   Use Kaiser-Bessel interpolation
    * @param res    Desired effective resolution
    * @param shrink Shrink the grid to fit only the desired resolution portion
    * @param log    Logging object
@@ -37,6 +45,7 @@ struct Gridder
       R3 const &traj,
       float const os,
       bool const stack,
+      bool const kb,
       float const res,
       bool const shrink,
       Log &log);
@@ -55,21 +64,27 @@ struct Gridder
   void toRadial(Cx3 const &cart, Cx2 &radial) const;    //!< Single-channel cart -> non-cart
   void toRadial(Cx4 const &cart, Cx3 &radial) const;    //!< Multi-channel cart -> non-cart
 
+  void apodize(Cx3 &img) const;   //!< Apodize interpolation kernel
+  void deapodize(Cx3 &img) const; //!< De-apodize interpolation kernel
+
 private:
   struct CoordSet
   {
     Point3 cart;
     Size3 wrapped;
     Size2 radial;
+    float weight;
     float merge;
     float DC;
   };
-  void setup(R3 const &traj, bool const stack, float const res, bool const shrink);
+  void setup(R3 const &traj, bool const stack, bool const kb, float const res, bool const shrink);
   void analyticDC(bool const stack, long const nominalRad);
 
   RadialInfo const info_;
   std::vector<CoordSet> coords_;
+  std::vector<CoordSet *> sortedCoords_;
   Dims3 dims_;
   float oversample_, dc_exp_;
   Log &log_;
+  Interpolator const *interp_;
 };

@@ -34,7 +34,7 @@ int main_toeplitz(args::Subparser &parser)
   Cx3 rad_ks = info.radialVolume();
 
   R3 const trajectory = reader.readTrajectory();
-  Gridder gridder(info, trajectory, osamp.Get(), stack, log);
+  Gridder gridder(info, trajectory, osamp.Get(), stack, kb, log);
   gridder.setDCExponent(dc_exp.Get());
   if (est_dc) {
     gridder.estimateDC();
@@ -46,7 +46,8 @@ int main_toeplitz(args::Subparser &parser)
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
-  Cx4 const sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
+  Cx4 const sense =
+      iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, kb, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
   ones.setConstant({1.0f});
@@ -57,11 +58,14 @@ int main_toeplitz(args::Subparser &parser)
   SystemFunction toe = [&](Cx3 const &x, Cx3 &y) {
     auto const start = log.start_time();
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
-    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * tile(x, info.channels);
+    y = x;
+    gridder.apodize(y);
+    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * tile(y, info.channels);
     fft.forward();
     grid.device(Threads::GlobalDevice()) = grid * tile(transfer, info.channels);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    gridder.deapodize(y);
     log.stop_time(start, "Total system time");
   };
 
@@ -73,6 +77,7 @@ int main_toeplitz(args::Subparser &parser)
     fft.reverse();
     out.device(Threads::GlobalDevice()) =
         (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    gridder.deapodize(out);
     log.stop_time(start, "Total decode time");
   };
 

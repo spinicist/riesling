@@ -38,7 +38,7 @@ int main_tgv(args::Subparser &parser)
   auto const info = reader.info();
   auto const trajectory = reader.readTrajectory();
 
-  Gridder gridder(info, trajectory, osamp.Get(), stack, log);
+  Gridder gridder(info, trajectory, osamp.Get(), stack, kb, log);
   gridder.setDCExponent(dc_exp.Get());
   if (est_dc) {
     gridder.estimateDC();
@@ -51,12 +51,13 @@ int main_tgv(args::Subparser &parser)
   Cx3 rad_ks = info.radialVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
-  Cx4 sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
+  Cx4 sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, kb, rad_ks, log));
 
-  EncodeFunction enc = [&](Cx3 const &x, Cx3 &radial) {
+  EncodeFunction enc = [&](Cx3 &x, Cx3 &radial) {
     auto const &start = log.start_time();
     radial.setZero();
     grid.setZero();
+    gridder.apodize(x);
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = tile(x, info.channels) * sense;
     fft.forward();
     gridder.toRadial(grid, radial);
@@ -69,6 +70,7 @@ int main_tgv(args::Subparser &parser)
     gridder.toCartesian(radial, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    gridder.deapodize(y);
     log.stop_time(start, "Total decode time");
   };
 

@@ -17,13 +17,13 @@ int main_traj(args::Subparser &parser)
       parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
   args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"});
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
-
+  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
   RadialReader reader(fname.Get(), log);
   auto const &info = reader.info();
 
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), stack, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), stack, kb, log);
   if (est_dc) {
     gridder.estimateDC();
   }

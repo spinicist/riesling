@@ -1,6 +1,7 @@
 #include "gridder.h"
 
 #include "filter.h"
+#include "interpolator.h"
 #include "io_nifti.h"
 #include "threads.h"
 
@@ -14,7 +15,13 @@ inline decltype(auto) nearest(T &&x)
   return x.unaryExpr([](float const &e) { return std::lrintf(e); });
 }
 
-Gridder::Gridder(RadialInfo const &info, R3 const &traj, float const os, bool const stack, Log &log)
+Gridder::Gridder(
+    RadialInfo const &info,
+    R3 const &traj,
+    float const os,
+    bool const stack,
+    bool const kb,
+    Log &log)
     : info_{info}
     , oversample_{os}
     , dc_exp_{1.f}
@@ -23,7 +30,7 @@ Gridder::Gridder(RadialInfo const &info, R3 const &traj, float const os, bool co
   assert(traj.dimension(0) == 3);
   assert(traj.dimension(1) == info_.read_points);
   assert(traj.dimension(2) == info_.spokes_total());
-  setup(traj, stack, info_.voxel_size.minCoeff(), false);
+  setup(traj, stack, kb, info_.voxel_size.minCoeff(), false);
 }
 
 Gridder::Gridder(
@@ -31,6 +38,7 @@ Gridder::Gridder(
     R3 const &traj,
     float const os,
     bool const stack,
+    bool const kb,
     float const res,
     bool const shrink,
     Log &log)
@@ -42,7 +50,7 @@ Gridder::Gridder(
   assert(traj.dimension(0) == 3);
   assert(traj.dimension(1) == info_.read_points);
   assert(traj.dimension(2) == info_.spokes_total());
-  setup(traj, stack, res, shrink);
+  setup(traj, stack, kb, res, shrink);
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
@@ -51,7 +59,8 @@ long fft_size(float const x)
   return (std::lrint(x) + 7L) & ~7L;
 }
 
-void Gridder::setup(R3 const &traj, bool const stack, float const res, bool const shrink_grid)
+void Gridder::setup(
+    R3 const &traj, bool const stack, bool const kb, float const res, bool const shrink_grid)
 {
   float const ratio = info_.voxel_size.minCoeff() / res;
   long const nominalDiameter = fft_size(oversample_ * info_.matrix.maxCoeff());
@@ -70,35 +79,56 @@ void Gridder::setup(R3 const &traj, bool const stack, float const res, bool cons
       dims_,
       nominalRadius);
 
+  interp_ = GetInterpolator(kb, oversample_, stack, dims_);
+
   std::fesetround(FE_TONEAREST);
-  coords_.reserve(info_.read_points * info_.spokes_total());
+  long const totalCoords = info_.spokes_total() * info_.read_points * interp_->kernelSize();
+
+  coords_.reserve(totalCoords);
+  fmt::print("coords size {} cap {}\n", coords_.size(), coords_.capacity());
+  sortedCoords_.reserve(totalCoords);
   auto const mergeLo = MergeLo(info_);
   auto const mergeHi = MergeHi(info_);
   float const xyScale = (float)nominalRadius;
   float const zScale = stack ? 1.f : (float)nominalRadius;
   float const maxRad = nominalRadius * ratio;
   Size3 wrapSz{dims_[0], dims_[1], dims_[2]}; // Annoying type issue
+
   auto start = log_.start_time();
+  // auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
+  //   long const cOffset = lo_spoke * info_.read_points * interp_->kernelSize();
+  // auto coord = coords_.begin();        // + cOffset;
+  // auto sCoord = sortedCoords_.begin(); // + cOffset;
+  // fmt::print(FMT_STRING("offset {} sC {}\n"), cOffset, (void *)*sCoord);
   for (long is = 0; is < info_.spokes_total(); is++) {
     for (Eigen::Index ir = 0; ir < info_.read_points; ir++) {
       R1 const tp = traj.chip(is, 2).chip(ir, 1);
       Point3 const cart = Point3{tp(0) * xyScale, tp(1) * xyScale, tp(2) * zScale};
       float const rad = stack ? cart.head(2).matrix().norm() : cart.matrix().norm();
       if (rad < maxRad) {
-        Size3 const wrapped = wrap(nearest(cart), wrapSz);
-        coords_.push_back(CoordSet{.cart = cart,
-                                   .wrapped = wrapped,
-                                   .radial = {ir, is},
-                                   .merge = (is < info_.spokes_lo) ? mergeLo(ir) : mergeHi(ir)});
+        auto kernel = interp_->kernel(cart);
+        for (auto const &k : kernel) {
+          Point3 const kc = cart + k.offset;
+          Size3 const wrapped = wrap(nearest(kc), wrapSz);
+          coords_.push_back(CoordSet{.cart = kc,
+                                     .wrapped = wrapped,
+                                     .radial = {ir, is},
+                                     .weight = k.weight,
+                                     .merge = (is < info_.spokes_lo) ? mergeLo(ir) : mergeHi(ir)});
+          sortedCoords_.push_back(&coords_.back());
+        }
       }
     }
-  };
+  }
+  // };
+  // Threads::RangeFor(coordTask, info_.spokes_total());
   log_.stop_time(start, "Calculated grid co-ordinates");
-  log_.info("Total co-ordinates {}", coords_.size());
+  log_.info("Total co-ordinates {}/{}", coords_.size(), totalCoords);
   start = log_.start_time();
-  std::sort(coords_.begin(), coords_.end(), [=](CoordSet const &a, CoordSet const &b) {
-    auto const &aw = a.wrapped;
-    auto const &bw = b.wrapped;
+  std::sort(sortedCoords_.begin(), sortedCoords_.end(), [=](CoordSet const *a, CoordSet const *b) {
+    // fmt::print(FMT_STRING("a {} b {}\n"), (void *)a, (void *)b);
+    auto const &aw = a->wrapped;
+    auto const &bw = b->wrapped;
     return (aw[2] < bw[2]) ||
            ((aw[2] == bw[2]) && ((aw[1] < bw[1]) || ((aw[1] == bw[1]) && (aw[0] < bw[0]))));
   });
@@ -126,6 +156,16 @@ Cx3 Gridder::newGrid1() const
   return Cx3{dims_};
 }
 
+void Gridder::apodize(Cx3 &img) const
+{
+  interp_->apodize(img);
+}
+
+void Gridder::deapodize(Cx3 &img) const
+{
+  interp_->deapodize(img);
+}
+
 void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const
 {
   assert(radial.dimension(0) == info_.read_points);
@@ -136,12 +176,12 @@ void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const
 
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
-      auto const &cp = coords_[ic];
+      auto const &cp = *sortedCoords_[ic];
       auto const &iradial = cp.radial;
       if (cp.merge > 0.f) {
         auto const &icart = cp.wrapped;
         auto const &dc = pow(cp.DC, dc_exp_);
-        std::complex<float> const scale(dc * cp.merge, 0.f);
+        std::complex<float> const scale(dc * cp.merge * cp.weight, 0.f);
         cart(icart(0), icart(1), icart(2)) += scale * radial(iradial(0), iradial(1));
       }
     }
@@ -164,12 +204,12 @@ void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
 
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
-      auto const &cp = coords_[ic];
+      auto const &cp = *sortedCoords_[ic];
       auto const &iradial = cp.radial;
       if (cp.merge > 0.f) {
         auto const &icart = cp.wrapped;
         auto const &dc = pow(cp.DC, dc_exp_);
-        std::complex<float> const scale(dc * cp.merge, 0.f);
+        std::complex<float> const scale(dc * cp.merge * cp.weight, 0.f);
         cart.chip(icart[2], 3).chip(icart[1], 2).chip(icart[0], 1) +=
             radial.chip(iradial[1], 2).chip(iradial[0], 1) * scale;
       }
@@ -189,13 +229,14 @@ void Gridder::toRadial(Cx3 const &cart, Cx2 &radial) const
   assert(cart.dimension(1) == dims_[1]);
   assert(cart.dimension(2) == dims_[2]);
 
+  radial.setZero();
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
       auto const &cp = coords_[ic];
       auto const &iradial = cp.radial;
       if (cp.merge > 0.f) {
         auto const &iw = cp.wrapped;
-        radial(iradial(0), iradial(1)) = cart(iw[0], iw[1], iw[2]);
+        radial(iradial(0), iradial(1)) += cart(iw[0], iw[1], iw[2]) * cp.weight;
       }
     }
   };
@@ -213,14 +254,16 @@ void Gridder::toRadial(Cx4 const &cart, Cx3 &radial) const
   assert(cart.dimension(2) == dims_[1]);
   assert(cart.dimension(3) == dims_[2]);
 
+  radial.setZero();
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
       auto const &cp = coords_[ic];
       auto const &iradial = cp.radial;
       if (cp.merge > 0.f) {
         auto const &iw = cp.wrapped;
-        radial.chip(iradial(1), 2).chip(iradial(0), 1) =
-            cart.chip(iw[2], 3).chip(iw[1], 2).chip(iw[0], 1);
+        auto const &weight = radial.chip(iradial(1), 2).chip(iradial(0), 1).constant(cp.weight);
+        radial.chip(iradial(1), 2).chip(iradial(0), 1) +=
+            cart.chip(iw[2], 3).chip(iw[1], 2).chip(iw[0], 1) * weight;
       }
     }
   };

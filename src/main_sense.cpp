@@ -28,7 +28,7 @@ int main_sense(args::Subparser &parser)
   auto const &info = reader.info();
   auto const trajectory = reader.readTrajectory();
 
-  Gridder gridder(info, trajectory, osamp.Get(), stack, log);
+  Gridder gridder(info, trajectory, osamp.Get(), stack, kb, log);
   gridder.setDCExponent(dc_exp.Get());
   if (est_dc) {
     gridder.estimateDC();
@@ -41,7 +41,7 @@ int main_sense(args::Subparser &parser)
   Cx3 rad_ks = info.radialVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
-  Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, rad_ks, log));
+  Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, kb, rad_ks, log));
   if (save_maps) {
     WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps"), log);
   }
@@ -63,6 +63,7 @@ int main_sense(args::Subparser &parser)
     fft.reverse();
     channel_images.device(Threads::GlobalDevice()) = cropper.crop4(grid) * sense.conjugate();
     image.device(Threads::GlobalDevice()) = channel_images.sum(Sz1{0});
+    gridder.deapodize(image);
     fmt::print("chans {} image {}\n", channel_images.dimensions(), image.dimensions());
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);

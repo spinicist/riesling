@@ -1,29 +1,56 @@
 #pragma once
 #include "types.h"
 
+struct KernelPoint
+{
+  Point3 offset;
+  float weight;
+};
+
+/** Interpolator interface. Declaring this using inheritance is slight overkill as there are only
+ * two interpolators (nearest-neighbor and Kaiser-Bessel) but leaves space for more in future
+ */
 struct Interpolator
 {
-  virtual void interpolate(Point3 const &gp, std::complex<float> value, Cx3 &cart) const = 0;
-  virtual void interpolate(Point3 const &gp, Cx1 const vals, Cx4 &cart) const = 0;
-  virtual void deapodize(Dims3 const fullSize, Cx3 &image) const = 0;
+  virtual long kernelSize() const = 0;
+  virtual std::vector<KernelPoint> kernel(Point3 const &p) const = 0;
+  virtual void apodize(Cx3 &image) const = 0;
+  virtual void deapodize(Cx3 &image) const = 0;
 };
 
 struct NearestNeighbor final : Interpolator
 {
-  virtual void interpolate(Point3 const &gp, std::complex<float> value, Cx3 &cart) const;
-  virtual void interpolate(Point3 const &gp, Cx1 const vals, Cx4 &cart) const;
-  virtual void deapodize(Dims3 const fullSize, Cx3 &image) const;
+  virtual long kernelSize() const;
+  virtual std::vector<KernelPoint> kernel(Point3 const &p) const;
+  virtual void apodize(Cx3 &image) const;
+  virtual void deapodize(Cx3 &image) const;
 };
 
 struct KaiserBessel final : Interpolator
 {
-  KaiserBessel(float const os);
+  KaiserBessel(float const os, bool const stack, Dims3 const &full);
   ~KaiserBessel() = default;
-  virtual void interpolate(Point3 const &gp, std::complex<float> value, Cx3 &cart) const;
-  virtual void interpolate(Point3 const &gp, Cx1 const vals, Cx4 &cart) const;
-  virtual void deapodize(Dims3 const fullSize, Cx3 &image) const;
+
+  virtual long kernelSize() const;
+  virtual std::vector<KernelPoint> kernel(Point3 const &p) const;
+  virtual void apodize(Cx3 &image) const;
+  virtual void deapodize(Cx3 &image) const;
 
 private:
-  float beta_, scale_;
-  long w_;
+  bool is3D_;
+  float beta_;
+  long w_, sz_;
+  Eigen::ArrayXf apodX_, apodY_, apodZ_;
 };
+
+/**
+ * @brief Factory function to return a useful Interpolator
+ *
+ * @param kb    Use Kaiser-Bessel interpolation
+ * @param os    Oversampling
+ * @param stack Is a stack-of-stars type recon
+ * @param grid  Grid size
+ * @return Interpolator const*
+ */
+Interpolator const *
+GetInterpolator(bool const kb, float const os, bool const stack, Dims3 const &grid);

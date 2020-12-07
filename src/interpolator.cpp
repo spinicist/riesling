@@ -1,132 +1,141 @@
+#include "fmt/ostream.h"
 #include "interpolator.h"
 #include "kaiser-bessel.h"
-
 #include <cfenv>
 #include <cmath>
 
-void NearestNeighbor::interpolate(
-    Point3 const &gp, std::complex<float> const value, Cx3 &cart) const
+Interpolator const *
+GetInterpolator(bool const kb, float const os, bool const stack, Dims3 const &grid)
 {
-  assert(cart.dimension(0) == cart.dimension(1));
-  assert(cart.dimension(1) == cart.dimension(2));
-  long const gridSz = cart.dimension(0);
-  std::fesetround(FE_TONEAREST);
-  auto const gi = wrap(
-      Size3{gp.unaryExpr([](float const &x) { return std::nearbyint(x); }).cast<Eigen::Index>()},
-      gridSz);
-  cart(gi[0], gi[1], gi[2]) += value;
+  if (kb) {
+    return new KaiserBessel(os, stack, grid);
+  } else {
+    return new NearestNeighbor();
+  }
 }
 
-void NearestNeighbor::interpolate(Point3 const &gp, Cx1 const value, Cx4 &cart) const
+long NearestNeighbor::kernelSize() const
 {
-  assert(cart.dimension(0) == cart.dimension(1));
-  assert(cart.dimension(1) == cart.dimension(2));
-  long const gridSz = cart.dimension(0);
-  std::fesetround(FE_TONEAREST);
-  auto const gi = wrap(
-      Size3{gp.unaryExpr([](float const &x) { return std::nearbyint(x); }).cast<Eigen::Index>()},
-      gridSz);
-  cart.chip(gi[2], 2).chip(gi[1], 1).chip(gi[0], 0) += value;
+  return 1;
 }
 
-void NearestNeighbor::deapodize(Dims3 const /* */, Cx3 & /* */) const
+std::vector<KernelPoint> NearestNeighbor::kernel(Point3 const & /* */) const
+{
+  return {KernelPoint{Point3{0.f, 0.f, 0.f}, 1.f}};
+}
+
+void NearestNeighbor::apodize(Cx3 & /* */) const
 {
   // Null-op
 }
 
-KaiserBessel::KaiserBessel(float const os)
+void NearestNeighbor::deapodize(Cx3 & /* */) const
 {
-  w_ = os * 2.5;   // Full width
-  beta_ = os * w_; // 3 is a magic number from GE code
-
-  // This is only approximate as real kernels are calculated on the fly
-  scale_ = 0.f;
-  long const hsz = w_ / 2;
-  for (long iz = -hsz; iz < hsz; iz++) {
-    float const z = KB(beta_, iz, w_);
-    for (long iy = -hsz; iy < hsz; iy++) {
-      float const y = KB(beta_, iy, w_);
-      for (long ix = -hsz; ix < hsz; ix++) {
-        float const x = KB(beta_, iz, w_);
-        scale_ += x * y * z;
-      }
-    }
-  }
+  // Null-op
 }
 
-void KaiserBessel::interpolate(Point3 const &gp, std::complex<float> const value, Cx3 &cart) const
+KaiserBessel::KaiserBessel(float const os, bool const stack, Dims3 const &full)
 {
-  assert(cart.dimension(0) == cart.dimension(1) == cart.dimension(2));
-  long const gridSz = cart.dimension(0);
-  std::fesetround(FE_TONEAREST);
-  Size3 index = {static_cast<long>(std::nearbyint(gp[0])),
-                 static_cast<long>(std::nearbyint(gp[1])),
-                 static_cast<long>(std::nearbyint(gp[2]))};
-  Point3 const offset = gp - index.cast<float>();
-  long const hsz = w_ / 2;
-  for (long iz = -hsz; iz < hsz; iz++) {
-    float const z = KB(beta_, iz - offset(2), w_);
-    for (long iy = -hsz; iy < hsz; iy++) {
-      float const y = KB(beta_, iy - offset(1), w_);
-      for (long ix = -hsz; ix < hsz; ix++) {
-        float const x = KB(beta_, ix - offset(0), w_);
-        Size3 pi = wrap(Size3(index + Size3{ix, iy, iz}), gridSz);
-        if ((pi >= 0).all() && (pi < cart.dimension(0)).all()) {
-          cart(pi[0], pi[1], pi[2]) += value * x * y * z / scale_;
-        }
-      }
-    }
-  }
-}
+  w_ = 3; // Full width
+  beta_ = os * 2 * w_;
 
-void KaiserBessel::interpolate(Point3 const &gp, Cx1 const vals, Cx4 &cart) const
-{
-  assert(cart.dimension(0) == cart.dimension(1) == cart.dimension(2));
-  long const gridSz = cart.dimension(0);
-  long const nc = cart.dimension(3);
-  std::fesetround(FE_TONEAREST);
-  Size3 index = {static_cast<long>(std::nearbyint(gp[0])),
-                 static_cast<long>(std::nearbyint(gp[1])),
-                 static_cast<long>(std::nearbyint(gp[2]))};
-  Point3 const offset = gp - index.cast<float>();
-  long const hsz = w_ / 2;
-  for (long iz = -hsz; iz < hsz; iz++) {
-    float const z = KB(beta_, iz - offset(2), w_);
-    for (long iy = -hsz; iy < hsz; iy++) {
-      float const y = KB(beta_, iy - offset(1), w_);
-      for (long ix = -hsz; ix < hsz; ix++) {
-        float const x = KB(beta_, ix - offset(0), w_);
-        Size3 pi = wrap(Size3(index + Size3{ix, iy, iz}), gridSz);
-        if ((pi >= 0).all() && (pi < cart.dimension(0)).all()) {
-          cart.slice(Sz4{pi[0], pi[1], pi[2], 0}, Sz4{1, 1, 1, nc}) +=
-              vals * vals.constant(x * y * z / scale_);
-        }
-      }
-    }
+  if (stack) {
+    is3D_ = false;
+    sz_ = w_ * w_;
+  } else {
+    is3D_ = true;
+    sz_ = w_ * w_ * w_;
   }
-}
 
-void KaiserBessel::deapodize(Dims3 const fullSize, Cx3 &image) const
-{
-  float const scale = KB_FT(beta_, 0., w_);
-  auto roc = [&](int const sz, int const ref_sz) {
+  float const scale = KB_FT(0., beta_);
+  auto apod = [&](int const sz) {
     Eigen::ArrayXf r(sz);
     for (long ii = 0; ii < sz; ii++) {
-      float const pos = (ii - sz / 2.f) / static_cast<float>(ref_sz);
-      r(ii) = KB_FT(beta_, pos, w_) / scale;
+      float const pos = (ii - sz / 2.f) / static_cast<float>(sz);
+      r(ii) = KB_FT(pos * w_, beta_) / scale;
     }
     return r;
   };
-  auto const rocX = roc(image.dimension(0), fullSize[0]);
-  auto const rocY = roc(image.dimension(1), fullSize[1]);
-  auto const rocZ = roc(image.dimension(2), fullSize[2]);
+  apodX_ = apod(full[0]);
+  apodY_ = apod(full[1]);
+  if (is3D_) {
+    apodZ_ = apod(full[2]);
+  } else {
+    apodZ_ = Eigen::ArrayXf::Ones(1);
+  }
+}
 
+long KaiserBessel::kernelSize() const
+{
+  return sz_;
+}
+
+std::vector<KernelPoint> KaiserBessel::kernel(Point3 const &gp) const
+{
+  std::fesetround(FE_TONEAREST);
+  Point3 index = {std::nearbyint(gp[0]), std::nearbyint(gp[1]), std::nearbyint(gp[2])};
+  Point3 const center = gp - index;
+
+  long const hsz = w_ / 2;
+  Eigen::ArrayXf const indices = Eigen::ArrayXf::LinSpaced(w_, -hsz, hsz);
+  Eigen::ArrayXf const x = indices + center(0);
+  Eigen::ArrayXf const y = indices + center(1);
+  Eigen::ArrayXf const z = is3D_ ? Eigen::ArrayXf(indices + center(2)) : Eigen::ArrayXf::Zero(1);
+
+  Eigen::ArrayXf const b_x = KB(x / w_, beta_);
+  Eigen::ArrayXf const b_y = KB(y / w_, beta_);
+  Eigen::ArrayXf const b_z = is3D_ ? KB(z / w_, beta_) : Eigen::ArrayXf::Ones(1);
+
+  // fmt::print("bx {} by {} bz {}\n", b_x.transpose(), b_y.transpose(), b_z.transpose());
+
+  float total = 0.f;
+  std::vector<KernelPoint> k(sz_);
+  long ik = 0;
+  for (long iz = 0; iz < (is3D_ ? w_ : 1); iz++) {
+    for (long iy = 0; iy < w_; iy++) {
+      for (long ix = 0; ix < w_; ix++) {
+        Point3 const offset = Point3(x[ix], y[iy], z[iz]);
+        float val = b_x[ix] * b_y[iy] * b_z[iz];
+        total += val;
+        k[ik++] = KernelPoint{.offset = offset, .weight = val};
+      }
+    }
+  }
+  std::transform(k.begin(), k.end(), k.begin(), [total](KernelPoint const &kp) {
+    return KernelPoint{kp.offset, kp.weight / total};
+  });
+
+  return k;
+}
+
+void KaiserBessel::apodize(Cx3 &image) const
+{
+  long const stz = (apodZ_.rows() - image.dimension(2)) / 2;
+  long const sty = (apodY_.rows() - image.dimension(1)) / 2;
+  long const stx = (apodX_.rows() - image.dimension(0)) / 2;
   for (Eigen::Index iz = 0; iz < image.dimension(2); iz++) {
-    float const rz = rocZ(iz);
+    float const rz = apodZ_(stz + iz);
     for (Eigen::Index iy = 0; iy < image.dimension(1); iy++) {
-      float const ry = rocY(iy) * rz;
+      float const ry = apodY_(sty + iy) * rz;
       for (Eigen::Index ix = 0; ix < image.dimension(0); ix++) {
-        float const rx = rocX(ix) * ry;
+        float const rx = apodX_(stx + ix) * ry;
+        image(ix, iy, iz) /= rx;
+      }
+    }
+  }
+}
+
+void KaiserBessel::deapodize(Cx3 &image) const
+{
+  long const stz = (apodZ_.rows() - image.dimension(2)) / 2;
+  long const sty = (apodY_.rows() - image.dimension(1)) / 2;
+  long const stx = (apodX_.rows() - image.dimension(0)) / 2;
+  for (Eigen::Index iz = 0; iz < image.dimension(2); iz++) {
+    float const rz = apodZ_(stz + iz);
+    for (Eigen::Index iy = 0; iy < image.dimension(1); iy++) {
+      float const ry = apodY_(sty + iy) * rz;
+      for (Eigen::Index ix = 0; ix < image.dimension(0); ix++) {
+        float const rx = apodX_(stx + ix) * ry;
         image(ix, iy, iz) *= rx;
       }
     }

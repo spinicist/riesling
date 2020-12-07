@@ -11,5 +11,6 @@ Cx4 SENSE(
     R3 const &traj,
     float const os,
     bool const stack,
+    bool const kb,
     Cx3 const &radial,
     Log &log);

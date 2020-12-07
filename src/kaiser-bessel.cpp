@@ -1,76 +1,106 @@
-#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "kaiser-bessel.h"
 
 #include <cmath>
 #include <vector>
 
-static std::vector<float> const coeff_0to8{
-    0.143432f,
-    0.144372f,
-    0.147260f,
-    0.152300f,
-    0.159883f,
-    0.170661f,
-    0.185731f,
-    0.207002f,
-    0.238081f,
-    0.286336f,
-    0.366540f,
-    0.501252f,
-    0.699580f,
-    0.906853f,
-    1.000000f,
-};
+/* This code is modified from Boost bessel_i0.hpp, Copyright (c) 2006 Xiaogang Zhang
+ * Use, modification and distribution are subject to the
+ *  Boost Software License, Version 1.0. (See accompanying file
+ *  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ */
 
-static std::vector<float> const coeff_8toinf{
-    0.405687f, 0.405664f, 0.405601f, 0.405494f, 0.405349f, 0.405164f, 0.404945f, 0.404692f,
-    0.404413f, 0.404107f, 0.403782f, 0.403439f, 0.403086f, 0.402724f, 0.402359f, 0.401995f,
-    0.401637f, 0.401287f, 0.400951f, 0.400631f, 0.400332f, 0.400055f, 0.399805f, 0.399582f,
-    0.399391f, 0.399231f, 0.399106f, 0.399012f, 0.398998f, 0.399001f};
-
-float chebeval(float x, std::vector<float> const &pval)
+template <class T, size_t N>
+inline T evaluate_polynomial(std::array<T, N> const &poly, T const &z)
 {
-  float norm = 0.;
-  float val = 0.;
+  T sum = poly[N - 1];
+  for (int i = N - 2; i >= 0; --i) {
+    sum *= z;
+    sum += poly[i];
+  }
+  return sum;
+}
 
-  for (size_t i = 0; i < pval.size(); i++) {
+template <typename T>
+T bessel_i0(T x)
+{
+  static const std::array<T, 15> P1 = {
+      static_cast<T>(-2.2335582639474375249e+15L),
+      static_cast<T>(-5.5050369673018427753e+14L),
+      static_cast<T>(-3.2940087627407749166e+13L),
+      static_cast<T>(-8.4925101247114157499e+11L),
+      static_cast<T>(-1.1912746104985237192e+10L),
+      static_cast<T>(-1.0313066708737980747e+08L),
+      static_cast<T>(-5.9545626019847898221e+05L),
+      static_cast<T>(-2.4125195876041896775e+03L),
+      static_cast<T>(-7.0935347449210549190e+00L),
+      static_cast<T>(-1.5453977791786851041e-02L),
+      static_cast<T>(-2.5172644670688975051e-05L),
+      static_cast<T>(-3.0517226450451067446e-08L),
+      static_cast<T>(-2.6843448573468483278e-11L),
+      static_cast<T>(-1.5982226675653184646e-14L),
+      static_cast<T>(-5.2487866627945699800e-18L),
+  };
+  static const std::array<T, 6> Q1 = {
+      static_cast<T>(-2.2335582639474375245e+15L),
+      static_cast<T>(7.8858692566751002988e+12L),
+      static_cast<T>(-1.2207067397808979846e+10L),
+      static_cast<T>(1.0377081058062166144e+07L),
+      static_cast<T>(-4.8527560179962773045e+03L),
+      static_cast<T>(1.0L),
+  };
+  static const std::array<T, 7> P2 = {
+      static_cast<T>(-2.2210262233306573296e-04L),
+      static_cast<T>(1.3067392038106924055e-02L),
+      static_cast<T>(-4.4700805721174453923e-01L),
+      static_cast<T>(5.5674518371240761397e+00L),
+      static_cast<T>(-2.3517945679239481621e+01L),
+      static_cast<T>(3.1611322818701131207e+01L),
+      static_cast<T>(-9.6090021968656180000e+00L),
+  };
+  static const std::array<T, 8> Q2 = {
+      static_cast<T>(-5.5194330231005480228e-04L),
+      static_cast<T>(3.2547697594819615062e-02L),
+      static_cast<T>(-1.1151759188741312645e+00L),
+      static_cast<T>(1.3982595353892851542e+01L),
+      static_cast<T>(-6.0228002066743340583e+01L),
+      static_cast<T>(8.5539563258012929600e+01L),
+      static_cast<T>(-3.1446690275135491500e+01L),
+      static_cast<T>(1.0L),
+  };
+  T value, factor, r;
 
-    float dist = x - cosf(M_PI * (float)i / (float)(pval.size() - 1));
-
-    if (0. == dist)
-      return pval[i];
-
-    float weight = ((0 == i % 2) ? 1. : -1.) / dist;
-
-    if ((0 == i) || (pval.size() - 1 == i))
-      weight /= 2.;
-
-    norm += weight;
-    val += weight * pval[i];
+  if (x < 0) {
+    x = -x; // even function
+  }
+  if (x == 0) {
+    return static_cast<T>(1);
+  }
+  if (x <= 15) // x in (0, 15]
+  {
+    T y = x * x;
+    value = evaluate_polynomial(P1, y) / evaluate_polynomial(Q1, y);
+  } else // x in (15, \infty)
+  {
+    T y = 1 / x - T(1) / 15;
+    r = evaluate_polynomial(P2, y) / evaluate_polynomial(Q2, y);
+    factor = exp(x) / sqrt(x);
+    value = factor * r;
   }
 
-  return val / norm;
+  return value;
 }
 
-/*
- * modified bessel function
- */
-float bessel_i0(float const &x)
+Eigen::ArrayXf KB(Eigen::ArrayXf const &x, float const &beta)
 {
-  auto const abs_x = fabs(x);
-  if (x < 8.)
-    return exp(abs_x) * chebeval(x / 4. - 1., coeff_0to8);
-
-  return exp(abs_x) * chebeval(16. / x - 1., coeff_8toinf) / sqrt(abs_x);
+  Eigen::ArrayXf u = (1. - (x.abs() * 2.f).pow(2.f)).sqrt() * beta;
+  Eigen::ArrayXf val = u.unaryExpr([](float const ui) { return bessel_i0(ui); });
+  // fmt::print(FMT_STRING("KB x {} u {} val {}\n"), x.transpose(), u.transpose(), val.transpose());
+  return val;
 }
 
-float KB(float const &beta, float const &x, float const &w)
+float KB_FT(float const &x, float const &beta)
 {
-  return bessel_i0(beta * sqrt(1. - pow(2. * x / w, 2.))) / bessel_i0(beta);
-}
-
-float KB_FT(float const &beta, float const &x, float const &w)
-{
-  double const a = sqrt(pow(beta, 2.) - pow(M_PI * x * w, 2.));
+  double const a = sqrt(pow(beta, 2.) - pow(M_PI * x, 2.));
   return a / sinh(a); // * bessel_i0(beta);
 }

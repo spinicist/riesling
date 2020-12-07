@@ -23,6 +23,7 @@ int main_kspace(args::Subparser &parser)
       "Number of radial/gridded samples to write out, default all",
       {"samples"},
       -1);
+  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag do_grid(parser, "GRID", "Grid k-space and write out central portion", {"grid"});
   args::Flag do_regrid(parser, "REGRID", "Grid back to radial and write out", {"regrid"});
@@ -34,42 +35,40 @@ int main_kspace(args::Subparser &parser)
   RadialReader reader(fname.Get(), log);
   auto info = reader.info();
 
-  auto const basename = oname ? fmt::format("{}.nii", oname.Get())
-                              : std::filesystem::path(fname.Get()).replace_extension("").string();
-
   Cx3 rad_ks = info.radialVolume();
   reader.readData(volume.Get(), rad_ks);
 
   long const n_samp = samples ? samples.Get() : info.read_points;
   Dims3 const st{0, 0, start.Get() + (lores ? 0 : info.spokes_lo)};
   Dims3 sz{info.channels, n_samp, spokes.Get()};
-  if (!do_regrid) {
-    WriteNifti(info, Cx3(rad_ks.slice(st, sz)), fmt::format("{}-kspace.nii", basename), log);
+  if (!do_grid || !do_regrid) {
+    WriteNifti(info, Cx3(rad_ks.slice(st, sz)), OutName(fname, oname, "kspace-radial"), log);
   }
 
   if (do_grid || do_regrid) {
     auto const res = info.voxel_size.minCoeff() * info.read_points / n_samp;
     log.info(FMT_STRING("Gridding with {} samples, nominal resolution {} mm"), n_samp, res);
     R3 const traj = reader.readTrajectory();
-    Gridder gridder(info, traj, 2.f, stack, res, true, log);
+    Gridder gridder(info, traj, 2.f, stack, kb, res, true, log);
     Cx4 grid = gridder.newGrid();
     FFT3N fft(grid, log);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
     fft.shift();
     if (do_grid) {
-      WriteNifti(info, grid, fmt::format("{}-cartesian-kspace.nii", basename), log);
+      WriteNifti(
+          info, Cx4(grid.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "kspace-cartesian"), log);
     }
     if (do_regrid) {
       R3 traj2 = traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi});
       info.spokes_lo = 0;
-      Gridder regridder(info, traj2, 2.f, stack, res, true, log);
+      Gridder regridder(info, traj2, 2.f, stack, kb, res, true, log);
       info.read_gap = 0;
       info.spokes_lo = 0;
       fft.shift();
       rad_ks.setZero();
       regridder.toRadial(grid, rad_ks);
-      WriteNifti(info, Cx3(rad_ks.slice(st, sz)), fmt::format("{}-kspace.nii", basename), log);
+      WriteNifti(info, Cx3(rad_ks.slice(st, sz)), OutName(fname, oname, "kspace-radial"), log);
     }
   }
   FFTEnd(log);

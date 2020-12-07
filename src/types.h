@@ -48,7 +48,7 @@ using Pads3 = Eigen::array<std::pair<long, long>, 3>;
 using Size4 = Eigen::Array<Eigen::Index, 4, 1>;
 
 // This is the type of the lambda functions to represent the encode/decode operators
-using EncodeFunction = std::function<void(Cx3 const &cartesian, Cx3 &radial)>;
+using EncodeFunction = std::function<void(Cx3 &cartesian, Cx3 &radial)>;
 using DecodeFunction = std::function<void(Cx3 const &radial, Cx3 &cartesian)>;
 using SystemFunction = std::function<void(Cx3 const &A, Cx3 &B)>;
 

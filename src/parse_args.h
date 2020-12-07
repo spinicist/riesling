@@ -37,6 +37,7 @@ extern void WriteVolumes(
       {'g', "grid"},                                                                               \
       2.f);                                                                                        \
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});         \
+  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
   args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"}); \
   args::ValueFlag<float> dc_exp(                                                                   \
       parser, "DC Exponent", "Density-Compensation Exponent (default 1.0)", {'d', "dce"}, 1.0f);   \
