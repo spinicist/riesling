@@ -45,21 +45,22 @@ Gridder::Gridder(
   setup(traj, stack, res, shrink);
 }
 
+// Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
+long fft_size(float const x)
+{
+  return (std::lrint(x) + 7L) & ~7L;
+}
+
 void Gridder::setup(R3 const &traj, bool const stack, float const res, bool const shrink_grid)
 {
   float const ratio = info_.voxel_size.minCoeff() / res;
-  if (shrink_grid) {
-    fullSize_ = std::ceil(ratio * oversample_ * info_.matrix.maxCoeff());
-    nominalSize_ = std::ceil(oversample_ * info_.matrix.maxCoeff()) / 2;
-  } else {
-    fullSize_ = std::ceil(oversample_ * info_.matrix.maxCoeff());
-    nominalSize_ = fullSize_ / 2;
-  }
-  float const maxRad = nominalSize_ * ratio;
+  long const nominalDiameter = fft_size(oversample_ * info_.matrix.maxCoeff());
+  long const nominalRadius = nominalDiameter / 2;
+  long const gridSz = shrink_grid ? fft_size(nominalDiameter * ratio) : nominalDiameter;
   if (stack) {
-    dims_ = {fullSize_, fullSize_, info_.matrix[2]};
+    dims_ = {gridSz, gridSz, info_.matrix[2]};
   } else {
-    dims_ = {fullSize_, fullSize_, fullSize_};
+    dims_ = {gridSz, gridSz, gridSz};
   }
 
   log_.info(
@@ -67,16 +68,15 @@ void Gridder::setup(R3 const &traj, bool const stack, float const res, bool cons
       res,
       oversample_,
       dims_,
-      nominalSize_);
-
-  coords_.reserve(info_.read_points * info_.spokes_total());
-
-  auto mergeLo = MergeLo(info_);
-  auto mergeHi = MergeHi(info_);
+      nominalRadius);
 
   std::fesetround(FE_TONEAREST);
-  float const xyScale = (float)nominalSize_;
-  float const zScale = stack ? 1.f : (float)nominalSize_;
+  coords_.reserve(info_.read_points * info_.spokes_total());
+  auto const mergeLo = MergeLo(info_);
+  auto const mergeHi = MergeHi(info_);
+  float const xyScale = (float)nominalRadius;
+  float const zScale = stack ? 1.f : (float)nominalRadius;
+  float const maxRad = nominalRadius * ratio;
   Size3 wrapSz{dims_[0], dims_[1], dims_[2]}; // Annoying type issue
   auto start = log_.start_time();
   for (long is = 0; is < info_.spokes_total(); is++) {
@@ -103,12 +103,7 @@ void Gridder::setup(R3 const &traj, bool const stack, float const res, bool cons
            ((aw[2] == bw[2]) && ((aw[1] < bw[1]) || ((aw[1] == bw[1]) && (aw[0] < bw[0]))));
   });
   log_.stop_time(start, "Sorting co-ordinates");
-  analyticDC(stack);
-}
-
-long Gridder::gridSize() const
-{
-  return fullSize_;
+  analyticDC(stack, nominalRadius);
 }
 
 Dims3 Gridder::gridDims() const
@@ -234,7 +229,7 @@ void Gridder::toRadial(Cx4 const &cart, Cx3 &radial) const
   log_.stop_time(start, "Cartesian -> Radial");
 }
 
-void Gridder::analyticDC(bool const stack)
+void Gridder::analyticDC(bool const stack, long const nominalRad)
 {
   if (stack) {
     log_.info("Stack-type analytic DC...");
@@ -245,7 +240,7 @@ void Gridder::analyticDC(bool const stack)
 
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const approx_undersamp = M_PI * info_.matrix.maxCoeff() / info_.spokes_hi;
-    float const flat_start = nominalSize_ / sqrt(approx_undersamp);
+    float const flat_start = nominalRad / sqrt(approx_undersamp);
     float const flat_val = d_hi * flat_start;
 
     for (auto &c : coords_) {
@@ -270,12 +265,12 @@ void Gridder::analyticDC(bool const stack)
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const approx_undersamp =
         (M_PI * info_.matrix.maxCoeff() * info_.matrix.maxCoeff()) / info_.spokes_hi;
-    float const flat_start = nominalSize_ / sqrt(approx_undersamp);
+    float const flat_start = nominalRad / sqrt(approx_undersamp);
     float const flat_val = d_hi * (3. * (flat_start * flat_start) + 1. / 4.);
 
     for (auto &c : coords_) {
       auto const &irad = c.radial;
-      float const k_r = c.cart.matrix().norm(); // This has already been multipled by nominalSize_
+      float const k_r = c.cart.matrix().norm(); // This has already been multipled by nominalRadius_
       auto const &d_k = irad(1) < info_.spokes_lo ? d_lo : d_hi;
       if (k_r == 0.f) {
         c.DC = d_k * 1.f / 8.f;

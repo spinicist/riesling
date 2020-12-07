@@ -43,10 +43,9 @@ struct Gridder
 
   virtual ~Gridder() = default;
 
-  long gridSize() const;  //!< Returns the size of the grid in one dimension
-  Dims3 gridDims() const; //!< Returns the dimensions of the oversampled grid
-  Cx4 newGrid() const;
-  Cx3 newGrid1() const;
+  Dims3 gridDims() const; //!< Returns the dimensions of the grid
+  Cx4 newGrid() const;    //!< Returns a correctly sized multi-channel grid
+  Cx3 newGrid1() const;   //!< Returns a correctly sized single channel grid
 
   void setDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
   void estimateDC();                   //!< Iteratively estimate the density-compensation weights
@@ -66,12 +65,11 @@ private:
     float DC;
   };
   void setup(R3 const &traj, bool const stack, float const res, bool const shrink);
-  void analyticDC(bool const stack);
+  void analyticDC(bool const stack, long const nominalRad);
 
   RadialInfo const info_;
   std::vector<CoordSet> coords_;
   Dims3 dims_;
   float oversample_, dc_exp_;
   Log &log_;
-  long fullSize_, nominalSize_;
 };
