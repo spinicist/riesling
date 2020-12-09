@@ -29,15 +29,11 @@ struct start_end_t
 
 Eigen::ArrayXf MergeHi(RadialInfo const &info)
 {
-  if (info.spokes_lo) {
-    auto const ind = Eigen::ArrayXf::LinSpaced(info.read_points, 0, info.read_points - 1);
-    Eigen::ArrayXf fHi = ind - (info.read_gap - 1);
-    fHi = (fHi > 0).select(fHi, 0);
-    fHi = (fHi < 1).select(fHi, 1);
-    return fHi;
-  } else {
-    return Eigen::ArrayXf::Ones(info.read_points);
-  }
+  auto const ind = Eigen::ArrayXf::LinSpaced(info.read_points, 0, info.read_points - 1);
+  Eigen::ArrayXf fHi = ind - (info.read_gap - 1);
+  fHi = (fHi > 0).select(fHi, 0);
+  fHi = (fHi < 1).select(fHi, 1);
+  return fHi;
 }
 
 Eigen::ArrayXf MergeLo(RadialInfo const &info)

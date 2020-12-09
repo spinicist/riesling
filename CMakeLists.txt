@@ -54,6 +54,7 @@ add_library(vineyard
     src/log.cpp
     src/parse_args.cpp
     src/sense.cpp
+    src/slab_correct.cpp
     src/tgv.cpp
     src/threads.cpp
     src/traj_archimedean.cpp
