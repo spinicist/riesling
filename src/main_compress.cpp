@@ -9,6 +9,10 @@ int main_compress(args::Subparser &parser)
   args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<long> cc(parser, "CHANNEL COUNT", "Retain N channels (default 8)", {"cc"}, 8);
+  args::ValueFlag<long> ref_vol(
+      parser, "REF VOLUME", "Calculate PCA from this volume (default last)", {"vol"});
+  args::ValueFlag<long> ref_size(
+      parser, "REF SIZE", "Number of read-out points to use in PCA (default 16)", {"sz"}, 16);
 
   parser.Parse();
   Log log(verbose);
@@ -16,14 +20,20 @@ int main_compress(args::Subparser &parser)
 
   RadialReader reader(fname.Get(), log);
   RadialInfo const in_info = reader.info();
-  Cx4 in_ks = in_info.radialSeries();
-  reader.readData(in_ks);
-
-  Compressor compressor(in_ks.chip(in_info.volumes - 1, 3), cc.Get(), log);
+  Cx3 ks = in_info.radialVolume();
+  reader.readData(SenseVolume(ref_vol, in_info.volumes), ks);
+  long const max_ref = in_info.read_points - in_info.read_gap;
+  long const npts = (ref_size.Get() > max_ref) ? max_ref : ref_size.Get();
+  Cx3 ref = ks.slice(
+      Sz3{0, in_info.read_gap, in_info.spokes_lo}, Sz3{in_info.channels, npts, in_info.spokes_hi});
+  Compressor compressor(ref, cc.Get(), log);
   RadialInfo out_info = in_info;
   out_info.channels = compressor.out_channels();
+
+  Cx4 all_ks = in_info.radialSeries();
+  reader.readData(all_ks);
   Cx4 out_ks = out_info.radialSeries();
-  compressor.compress(in_ks, out_ks);
+  compressor.compress(all_ks, out_ks);
 
   auto const ofile = OutName(fname, oname, "compressed", "h5");
   RadialWriter writer(ofile, log);
