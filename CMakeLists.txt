@@ -2,23 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(riesling)
 
-# Uncomment for optional debugging
-#set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CMake)
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_SOURCE_DIR}/CMake)
-include(CheckCXXCompilerFlag)
-include(CMakeToolsHelpers OPTIONAL)
-include(CMakePrintHelpers)
-include( ${PROJECT_SOURCE_DIR}/CMake/BuildType.cmake )
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED on)
-include(vcpkg/scripts/cmake/my_flags_sanitizers.cmake)
-
-string(APPEND CMAKE_C_FLAGS ${MY_FLAGS})
-string(APPEND CMAKE_CXX_FLAGS ${MY_FLAGS})
-string(APPEND CMAKE_C_FLAGS_DEBUG ${MY_FLAGS_DEBUG})
-string(APPEND CMAKE_CXX_FLAGS_DEBUG ${MY_FLAGS_DEBUG})
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
