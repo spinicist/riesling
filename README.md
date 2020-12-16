@@ -45,6 +45,8 @@ RIESLING uses HDF5 (.h5) files as an input/intermediate format and NIFTI (.nii) 
 
 There are three reconstruction algorithms currently provided in RIESLING - plain root-sum-squares (`riesling rss`), iterative cgSENSE with Töplitz embedding (`riesling toe`), and iterative recon with TGV regularization (`riesling tgv`).
 
+A demo using the dataset from the [ISMRM CG-SENSE Reproducibility challenge](https://ismrm.github.io/rrsg/challenge_one/) can be found in `examples/rrsg_cgsense`, which includes both conversion to the RIESLING .h5 format and examples of how to run RIESLING.
+
 ## Input Format
 
 The RIESLING input .h5 is similar but simpler than ISMRMRD (ISMRM raw data) format. The .h5 file should have three entries: `info` - the header information, `traj` - the trajectory, and a group called `data`, within which each k-space volume is written with a four-digit zero-padded identifier. In other words, it should look like this, where `Nr` is the number of read-out points along a spoke, `Ns` is the number of spokes, and `Nc` is the number of channels:
