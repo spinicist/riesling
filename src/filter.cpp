@@ -27,30 +27,6 @@ struct start_end_t
   float end;
 };
 
-Eigen::ArrayXf MergeHi(RadialInfo const &info)
-{
-  auto const ind = Eigen::ArrayXf::LinSpaced(info.read_points, 0, info.read_points - 1);
-  Eigen::ArrayXf fHi = ind - (info.read_gap - 1);
-  fHi = (fHi > 0).select(fHi, 0);
-  fHi = (fHi < 1).select(fHi, 1);
-  return fHi;
-}
-
-Eigen::ArrayXf MergeLo(RadialInfo const &info)
-{
-  if (info.spokes_lo) {
-    auto const ind = Eigen::ArrayXf::LinSpaced(info.read_points, 0, info.read_points - 1);
-    Eigen::ArrayXf fLo = ind / info.lo_scale - (info.read_gap - 1);
-    fLo = (fLo > 0).select(fLo, 0);
-    fLo = (fLo < 1).select(fLo, 1);
-    fLo = (1 - fLo) / info.lo_scale; // Scaling factor to get intensities of k-spaces to match
-    fLo.head(info.read_gap) = 0.;    // Don't touch these points
-    return fLo;
-  } else {
-    return Eigen::ArrayXf();
-  }
-}
-
 inline float Tukey(float const &r, float const &sw, float const &ew, float const &eh)
 {
   if (r > ew) {

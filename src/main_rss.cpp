@@ -17,15 +17,9 @@ int main_rss(args::Subparser &parser)
   FFTStart(log);
   RadialReader reader(fname.Get(), log);
   auto const &info = reader.info();
-
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), stack, kb, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kb, stack, log);
   gridder.setDCExponent(dc_exp.Get());
-  if (est_dc) {
-    gridder.estimateDC();
-  }
-
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
-
   Cx3 rad_ks = info.radialVolume();
   Cx4 grid = gridder.newGrid();
   Cx3 image = cropper.newImage();

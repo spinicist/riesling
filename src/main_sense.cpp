@@ -28,11 +28,8 @@ int main_sense(args::Subparser &parser)
   auto const &info = reader.info();
   auto const trajectory = reader.readTrajectory();
 
-  Gridder gridder(info, trajectory, osamp.Get(), stack, kb, log);
+  Gridder gridder(info, trajectory, osamp.Get(), est_dc, kb, stack, log);
   gridder.setDCExponent(dc_exp.Get());
-  if (est_dc) {
-    gridder.estimateDC();
-  }
   Cx4 grid = gridder.newGrid();
   grid.setZero();
   FFT3N fft(grid, log);

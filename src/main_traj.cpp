@@ -23,10 +23,7 @@ int main_traj(args::Subparser &parser)
   RadialReader reader(fname.Get(), log);
   auto const &info = reader.info();
 
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), stack, kb, log);
-  if (est_dc) {
-    gridder.estimateDC();
-  }
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kb, stack, log);
   Cx3 grid = gridder.newGrid1();
   FFT3 fft(grid, log);
 

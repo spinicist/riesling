@@ -33,7 +33,6 @@ add_library(vineyard
     src/filter.cpp
     src/gridder.cpp
     src/hd5.cpp
-    src/interpolator.cpp
     src/io_hd5.cpp
     src/io_nifti.cpp
     src/kaiser-bessel.cpp
@@ -84,6 +83,7 @@ add_executable(prufung
     test/main.cpp
     test/fft.cpp
     test/zinfandel.cpp
+    test/gridder.cpp
 )
 target_link_libraries(prufung PUBLIC
     vineyard

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "filter.h"
-#include "interpolator.h"
 #include "log.h"
 #include "radial.h"
 #include "threads.h"
@@ -17,38 +15,23 @@ struct Gridder
    * @param info   The Radial info struct
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
-   * @param stack  Trajectory is stack-of-stars or similar
+   * @param est_dc Estimate DC using Menon & Pipe iterative method
    * @param kb     Use Kaiser-Bessel interpolation
-   * @param log    Logging object
-   */
-  Gridder(
-      RadialInfo const &info,
-      R3 const &traj,
-      float const os,
-      bool const stack,
-      bool const kb,
-      Log &log);
-
-  /** Constructs the Gridder with the specified resoluion
-   *
-   * @param info   The Radial info struct
-   * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
-   * @param os     Oversampling factor
    * @param stack  Trajectory is stack-of-stars or similar
-   * @param kb   Use Kaiser-Bessel interpolation
-   * @param res    Desired effective resolution
-   * @param shrink Shrink the grid to fit only the desired resolution portion
    * @param log    Logging object
+   * @param res    OPTIONAL - Desired effective resolution
+   * @param shrink OPTIONAL - Shrink the grid to fit only the desired resolution portion
    */
   Gridder(
       RadialInfo const &info,
       R3 const &traj,
       float const os,
-      bool const stack,
+      bool const est_dc,
       bool const kb,
-      float const res,
-      bool const shrink,
-      Log &log);
+      bool const stack,
+      Log &log,
+      float const res = 0.f,
+      bool const shrink = false);
 
   virtual ~Gridder() = default;
 
@@ -57,8 +40,7 @@ struct Gridder
   Cx3 newGrid1() const;   //!< Returns a correctly sized single channel grid
 
   void setDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
-  void estimateDC();                   //!< Iteratively estimate the density-compensation weights
-
+  void setDC(float const dc);
   void toCartesian(Cx2 const &radial, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
   void toCartesian(Cx3 const &radial, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
   void toRadial(Cx3 const &cart, Cx2 &radial) const;    //!< Single-channel cart -> non-cart
@@ -68,23 +50,36 @@ struct Gridder
   void deapodize(Cx3 &img) const; //!< De-apodize interpolation kernel
 
 private:
-  struct CoordSet
+  struct Coords
   {
-    Point3 cart;
-    Size3 wrapped;
+    Size3 cart;
     Size2 radial;
-    float weight;
-    float merge;
     float DC;
+    float weight;
   };
-  void setup(R3 const &traj, bool const stack, bool const kb, float const res, bool const shrink);
-  void analyticDC(bool const stack, long const nominalRad);
 
+  std::vector<Coords> stackCoords(
+      Eigen::TensorMap<R3 const> const &traj,
+      long const spokeOffset,
+      long const nomRad,
+      float const maxRad,
+      float const scale);
+  std::vector<Coords> fullCoords(
+      Eigen::TensorMap<R3 const> const &traj,
+      long const spokeOffset,
+      long const nomRad,
+      float const maxRad,
+      float const scale);
+  void sortCoords();
+  void iterativeDC(); //!< Iteratively estimate the density-compensation weights
+  void stackKernel(R3 const &traj, long const nomRad);
+  void kbApodization(bool const stack);
   RadialInfo const info_;
-  std::vector<CoordSet> coords_;
-  std::vector<CoordSet *> sortedCoords_;
+  std::vector<Coords> coords_;
+  std::vector<long> sortedIndices_;
   Dims3 dims_;
-  float oversample_, dc_exp_;
+  float oversample_, DCexp_, kbBeta_;
+  long kbW_;
+  Eigen::ArrayXf apodX_, apodY_, apodZ_;
   Log &log_;
-  Interpolator const *interp_;
 };

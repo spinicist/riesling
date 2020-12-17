@@ -34,11 +34,8 @@ int main_toeplitz(args::Subparser &parser)
   Cx3 rad_ks = info.radialVolume();
 
   R3 const trajectory = reader.readTrajectory();
-  Gridder gridder(info, trajectory, osamp.Get(), stack, kb, log);
+  Gridder gridder(info, trajectory, osamp.Get(), est_dc, kb, stack, log);
   gridder.setDCExponent(dc_exp.Get());
-  if (est_dc) {
-    gridder.estimateDC();
-  }
 
   Cx4 grid = gridder.newGrid();
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);

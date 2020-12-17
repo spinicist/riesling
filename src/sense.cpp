@@ -18,8 +18,7 @@ Cx4 SENSE(
   // Grid and heavily smooth each coil image, accumulate combined image
   float const sense_res = 4.f;
   log.info("Creating SENSE maps.");
-  Gridder gridder(info, traj, os, stack, kb, sense_res, false, log);
-  gridder.estimateDC();
+  Gridder gridder(info, traj, os, true, kb, stack, log, sense_res, false);
   gridder.setDCExponent(0.5);
   auto grid_sz = gridder.gridDims();
   Cx4 grid = gridder.newGrid();

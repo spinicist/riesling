@@ -23,6 +23,8 @@ int main_kspace(args::Subparser &parser)
       "Number of radial/gridded samples to write out, default all",
       {"samples"},
       -1);
+  args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
+  args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"});
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag do_grid(parser, "GRID", "Grid k-space and write out central portion", {"grid"});
@@ -49,7 +51,7 @@ int main_kspace(args::Subparser &parser)
     auto const res = info.voxel_size.minCoeff() * info.read_points / n_samp;
     log.info(FMT_STRING("Gridding with {} samples, nominal resolution {} mm"), n_samp, res);
     R3 const traj = reader.readTrajectory();
-    Gridder gridder(info, traj, 2.f, stack, kb, res, true, log);
+    Gridder gridder(info, traj, osamp.Get(), est_dc, kb, stack, log, res, true);
     Cx4 grid = gridder.newGrid();
     FFT3N fft(grid, log);
     grid.setZero();
@@ -62,7 +64,7 @@ int main_kspace(args::Subparser &parser)
     if (do_regrid) {
       R3 traj2 = traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi});
       info.spokes_lo = 0;
-      Gridder regridder(info, traj2, 2.f, stack, kb, res, true, log);
+      Gridder regridder(info, traj2, osamp.Get(), est_dc, kb, stack, log, res, true);
       info.read_gap = 0;
       info.spokes_lo = 0;
       fft.shift();

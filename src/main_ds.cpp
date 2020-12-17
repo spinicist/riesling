@@ -35,8 +35,6 @@ int main_ds(args::Subparser &parser)
   auto const maxK = maxX / 2;
 
   float const scale = std::sqrt(info.matrix.prod());
-  auto const mergeLo = MergeLo(info);
-  auto const mergeHi = MergeHi(info);
 
   // Work out volume element
   auto const delta = 1.;
@@ -63,30 +61,25 @@ int main_ds(args::Subparser &parser)
             Point3 const c = Point3{
                 (ix - hx) / (float)(maxX), (iy - hy) / (float)(maxX), (iz - hz) / (float)(maxX)};
             for (long is = 0; is < info.spokes_total(); is++) {
-              auto const &mergeFilter = is < info.spokes_lo ? mergeLo : mergeHi;
-              for (long ir = 0; ir < info.read_points; ir++) {
-                auto const &mergeVal = mergeFilter[ir];
+              for (long ir = info.read_gap; ir < info.read_points; ir++) {
+                R1 const tp = traj.chip(is, 2).chip(ir, 1);
+                Point3 const r = Point3{tp(0), tp(1), tp(2)} * maxK;
+                float const r_mag = r.matrix().norm();
+                auto const &d_k = is < info.spokes_lo ? d_lo : d_hi;
+                float dc;
+                if (r_mag == 0.f) {
+                  dc = d_k * 1.f / 8.f;
+                } else if (r_mag < flat_start) {
+                  dc = d_k * (3. * (r_mag * r_mag) + 1. / 4.);
+                } else {
+                  dc = flat_val;
+                }
+                std::complex<float> const f_term =
+                    std::exp(2.if * pi * r.matrix().dot(c.matrix())) * dc / scale;
 
-                if (mergeVal > 0.f) {
-                  R1 const tp = traj.chip(is, 2).chip(ir, 1);
-                  Point3 const r = Point3{tp(0), tp(1), tp(2)} * maxK;
-                  float const r_mag = r.matrix().norm();
-                  auto const &d_k = is < info.spokes_lo ? d_lo : d_hi;
-                  float dc;
-                  if (r_mag == 0.f) {
-                    dc = d_k * 1.f / 8.f;
-                  } else if (r_mag < flat_start) {
-                    dc = d_k * (3. * (r_mag * r_mag) + 1. / 4.);
-                  } else {
-                    dc = flat_val;
-                  }
-                  std::complex<float> const f_term =
-                      std::exp(2.if * pi * r.matrix().dot(c.matrix())) * dc * mergeVal / scale;
-
-                  for (long ic = 0; ic < info.channels; ic++) {
-                    auto const val = rad_ks(ic, ir, is) * f_term;
-                    channels(ic, ix, iy, iz) += val;
-                  }
+                for (long ic = 0; ic < info.channels; ic++) {
+                  auto const val = rad_ks(ic, ir, is) * f_term;
+                  channels(ic, ix, iy, iz) += val;
                 }
               }
             }

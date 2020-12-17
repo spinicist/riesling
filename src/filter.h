@@ -7,8 +7,6 @@
 
 Eigen::ArrayXf
 RadialTukey(Eigen::Index const n, long const start_n, long const end_n, float const ea);
-Eigen::ArrayXf MergeHi(RadialInfo const &info);
-Eigen::ArrayXf MergeLo(RadialInfo const &info);
 
 float Tukey(float const &r, float const &flat_width, float const &end, float const &end_height);
 void ImageFilter(std::function<float(float const &)> const &f, Cx3 &x, Log &log);

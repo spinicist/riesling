@@ -30,15 +30,11 @@ std::string OutName(
     std::string const &suffix,
     std::string const &extension)
 {
-  if (name) {
-    return fmt::format(FMT_STRING("{}.{}"), name.Get(), extension);
-  } else {
-    return fmt::format(
-        FMT_STRING("{}-{}.{}"),
-        std::filesystem::path(inName.Get()).replace_extension().string(),
-        suffix,
-        extension);
-  }
+  return fmt::format(
+      FMT_STRING("{}-{}.{}"),
+      name ? name.Get() : std::filesystem::path(inName.Get()).replace_extension().string(),
+      suffix,
+      extension);
 }
 
 long SenseVolume(args::ValueFlag<long> &sFlag, long const vols)

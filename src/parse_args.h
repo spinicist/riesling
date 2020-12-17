@@ -30,12 +30,7 @@ extern void WriteVolumes(
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);           \
   args::ValueFlag<float> out_fov(                                                                  \
       parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                   \
-  args::ValueFlag<float> osamp(                                                                    \
-      parser,                                                                                      \
-      "GRID OVERSAMPLE",                                                                           \
-      "Oversampling factor for gridding, default 2",                                               \
-      {'g', "grid"},                                                                               \
-      2.f);                                                                                        \
+  args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});         \
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
   args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"}); \
