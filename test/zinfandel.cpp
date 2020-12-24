@@ -24,23 +24,25 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
   {
     long const n_src = 4;
     long const n_read = 4;
-    auto const S = GrabSources(kspace, scale, n_src, 0, n_read, {1});
+    auto const S = GrabSources(kspace, scale, n_src, 0, n_read, {0});
     CHECK(S.rows() == (n_coil * n_src));
     CHECK(S.cols() == n_read);
     CHECK((S.array().real() > 0.).all());
     CHECK(S(0, 0).real() == Approx(1. / scale));
-    CHECK(S((n_coil * n_src) - 1, n_read - 1).real() == Approx((n_read + n_src + n_coil) / scale));
+    CHECK(
+        S((n_coil * n_src) - 1, n_read - 1).real() ==
+        Approx((n_read - 1 + n_src - 1 + n_coil - 1 + 1) / scale));
   }
 
   SECTION("Grab Targets")
   {
     long const n_read = 4;
-    auto const T = GrabTargets(kspace, scale, 0, 4, {1});
+    auto const T = GrabTargets(kspace, scale, 0, n_read, {0});
     CHECK(T.rows() == n_coil);
     CHECK(T.cols() == n_read);
     CHECK((T.array().real() > 0.).all());
     CHECK(T(0, 0).real() == Approx(1. / scale));
-    CHECK(T((n_coil)-1, n_read - 1).real() == Approx((n_read + n_coil) / scale));
+    CHECK(T(n_coil - 1, n_read - 1).real() == Approx((n_read + n_coil - 1) / scale));
   }
 }
 
@@ -48,7 +50,7 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
 {
   Log log(false);
   long const n_read = 12;
-  long const n_spoke = 8;
+  long const n_spoke = 4;
   long const n_coil = 4;
   Cx3 kspace(n_coil, n_read, n_spoke);
   kspace.setZero();
@@ -74,12 +76,12 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
   SECTION("Run")
   {
     long const n_gap = 2;
-    long const n_src = 4;
     Cx3 test_kspace = kspace;
     test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}).setZero();
-    zinfandel(n_gap, n_src, 2, 4, 0.0, traj, kspace, log);
-    Cx3 diff = test_kspace - kspace;
+    zinfandel(n_gap, 2, 1, 4, 0.0, traj, test_kspace, log);
+    Cx3 diff = test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}) -
+               kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke});
     float const sum_diff = norm(diff) / diff.size();
-    CHECK(sum_diff == Approx(0.f).margin(1.e-6f));
+    CHECK(sum_diff == Approx(0.f).margin(1.e-4f));
   }
 }

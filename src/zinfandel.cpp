@@ -13,6 +13,7 @@ Eigen::MatrixXcf GrabSources(
     long const n_read,
     std::vector<long> const &spokes)
 {
+  assert((s_read + n_read + n_src) < ks.dimension(1));
   long const n_chan = ks.dimension(0);
   long const n_spoke = spokes.size();
   Eigen::MatrixXcf S(n_chan * n_src, n_read * n_spoke);
@@ -20,6 +21,7 @@ Eigen::MatrixXcf GrabSources(
   for (long i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
     long const col_spoke = i_spoke * n_read;
     long const ind_spoke = spokes[i_spoke];
+    assert(ind_spoke < ks.dimension(2));
     for (long i_read = 0; i_read < n_read; i_read++) {
       long const col = col_spoke + i_read;
       for (long i_coil = 0; i_coil < n_chan; i_coil++) {
@@ -120,7 +122,7 @@ void zinfandel(
         auto const calS = GrabSources(ks, scale, n_src, ig + 1, n_read, spokes);
         auto const calT = GrabTargets(ks, scale, ig, n_read, spokes);
         auto const W = CalcWeights(calS, calT, lambda);
-        auto const S = GrabSources(ks, scale, n_src, gap_sz, 1, {is});
+        auto const S = GrabSources(ks, scale, n_src, ig, 1, {is});
         auto const T = W * S;
         for (long icoil = 0; icoil < ks.dimension(0); icoil++) {
           ks(icoil, ig - 1, is) = T(icoil) * scale;
