@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: 'true'
+          submodules: 'recursive'
 
       - name: Install GNU tar
         shell: bash
@@ -38,12 +38,14 @@ jobs:
           fi
 
       - name: vcpkg
+        uses: lukka/run-vcpkg@v6
         env:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
-        uses: lukka/run-vcpkg@v6
         with:
           setupOnly: true
+          vcpkgDirectory: '${{ github.workspace }}/cmake/vcpkg'
+          appendedCacheKey: ${{ hashFiles( '${{ github.workspace }}/vcpkg.json' ) }}
 
       - name: CMake
         uses: lukka/run-cmake@v2
