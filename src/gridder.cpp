@@ -21,7 +21,7 @@ long fft_size(float const x)
   if (x > 8.f) {
     return (std::lrint(x) + 7L) & ~7L;
   } else {
-    return (long)std::ceilf(x);
+    return (long)std::ceil(x);
   }
 }
 
