@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interpolator.h"
 #include "log.h"
 #include "radial.h"
 #include "threads.h"
@@ -58,28 +59,29 @@ private:
     float weight;
   };
 
-  std::vector<Coords> stackCoords(
-      Eigen::TensorMap<R3 const> const &traj,
-      long const spokeOffset,
-      long const nomRad,
-      float const maxRad,
-      float const scale);
-  std::vector<Coords> fullCoords(
-      Eigen::TensorMap<R3 const> const &traj,
-      long const spokeOffset,
-      long const nomRad,
-      float const maxRad,
-      float const scale);
+  struct Profile
+  {
+    long lo = std::numeric_limits<long>::max();
+    long hi = std::numeric_limits<long>::min();
+    float xy;
+    float z;
+    std::vector<float> DC;
+  };
+
+  Profile profile2D(
+      R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale);
+  Profile profile3D(
+      R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale);
+
+  std::vector<Coords>
+  genCoords(R3 const &traj, long const spoke0, long const spokes, Profile const &profile);
   void sortCoords();
   void iterativeDC(); //!< Iteratively estimate the density-compensation weights
-  void stackKernel(R3 const &traj, long const nomRad);
-  void kbApodization(bool const stack);
   RadialInfo const info_;
   std::vector<Coords> coords_;
   std::vector<long> sortedIndices_;
   Dims3 dims_;
-  float oversample_, DCexp_, kbBeta_;
-  long kbW_;
-  Eigen::ArrayXf apodX_, apodY_, apodZ_;
+  float oversample_, DCexp_;
+  Interpolator *interp_;
   Log &log_;
 };

@@ -56,24 +56,25 @@ Gridder::Gridder(
   }
   log_.info(FMT_STRING("Gridder: Dimensions {}"), dims_);
 
-  if (kb) {
-    kbW_ = 3;
-    kbBeta_ = M_PI * sqrtf(pow(kbW_ * (oversample_ - 0.5f) / oversample_, 2.f) - 0.8f);
-    kbApodization(stack);
-    log_.info(FMT_STRING("Kaiser-Bessel width {} beta {}"), kbW_, kbBeta_);
-  } else {
-    kbW_ = 0;
-    kbBeta_ = 0.f;
-  }
+  interp_ = kb ? (Interpolator *)new KaiserBessel(3, oversample_, dims_, !stack)
+               : (Interpolator *)new NearestNeighbour();
 
-  Eigen::TensorMap<R3 const> trajHi(
-      &traj(0, 0, info_.spokes_lo), 3, info_.read_points, info_.spokes_hi);
-  coords_ = stack ? stackCoords(trajHi, info_.spokes_lo, nomRad, maxRad, est_dc)
-                  : fullCoords(trajHi, info_.spokes_lo, nomRad, maxRad, 1.f);
+  Profile const hires =
+      stack ? profile2D(
+                  traj.chip(info_.spokes_lo, 2), info_.spokes_hi / dims_[2], nomRad, maxRad, 1.f)
+            : profile3D(traj.chip(info_.spokes_lo, 2), info_.spokes_hi, nomRad, maxRad, 1.f);
+  coords_ = genCoords(traj, info_.spokes_lo, info_.spokes_hi, hires);
+
   if (info_.spokes_lo) {
-    Eigen::TensorMap<R3 const> trajLo(&traj(0, 0, 0), 3, info_.read_points, info_.spokes_lo);
-    auto const temp = stack ? stackCoords(trajLo, 0, nomRad, maxRad, est_dc)
-                            : fullCoords(trajLo, 0, nomRad, maxRad, info_.lo_scale);
+    // Only grid the low-res k-space out to the point the hi-res k-space begins (i.e. fill the
+    // dead-time gap)
+    float const radialOverSamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
+    float const max_r = info_.read_gap * oversample_ / radialOverSamp;
+    Profile const lores =
+        stack
+            ? profile2D(traj.chip(0, 2), info_.spokes_lo / dims_[2], nomRad, max_r, info_.lo_scale)
+            : profile3D(traj.chip(0, 2), info_.spokes_lo, nomRad, max_r, info_.lo_scale);
+    auto const temp = genCoords(traj, 0, info_.spokes_lo, lores);
     coords_.insert(coords_.end(), temp.begin(), temp.end());
   }
   sortCoords();
@@ -87,182 +88,122 @@ inline Point3 toCart(R1 const &p, float const xyScale, float const zScale)
   return Point3{p(0) * xyScale, p(1) * xyScale, p(2) * zScale};
 }
 
-std::vector<Gridder::Coords> Gridder::stackCoords(
-    Eigen::TensorMap<R3 const> const &traj,
-    long const spokeOffset,
-    long const nomRad,
-    float const maxRad,
-    float const scale)
+Gridder::Profile Gridder::profile2D(
+    R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale)
 {
-  log_.info("Stack-of-stars type trajectory");
-  float const xyRadius = nomRad / scale;
-  float const zScale = 1.f;
-  // Count the number of points per spoke we will retain. Assume spokes have a simple radial
-  // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
-  long read_lo = info_.read_points, read_hi = 0, readSz = 0;
-  long hi_r = (scale == 1.f) ? info_.read_points : info_.read_gap * scale;
-  for (long ir = info_.read_gap; ir < hi_r; ir++) {
-    float const rad = toCart(traj.chip(0, 2).chip(ir, 1), xyRadius, zScale).norm();
-    if (rad <= maxRad) { // Discard points above the desired resolution
-      read_lo = std::min(ir, read_lo);
-      read_hi = std::max(ir, read_hi);
-      readSz++;
-    }
-  }
-  long const spokeSz = traj.dimension(2);
-  long const kSz = (kbW_ == 0) ? 1 : kbW_ * kbW_;
-  std::vector<Coords> coords(readSz * spokeSz * kSz);
-
+  Profile profile;
+  profile.xy = nomRad / scale;
+  profile.z = 1.f;
   // Calculate the point spacing
   float const radialOverSamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
   float const k_delta = oversample_ / (radialOverSamp * scale);
-  float const V = 2.f * k_delta * M_PI / spokeSz; // Volume element
+  float const V = 2.f * k_delta * M_PI / spokes; // Area element
   // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
-  float const R = (M_PI * info_.matrix.maxCoeff()) / (spokeSz * scale);
+  float const R = (M_PI * info_.matrix.maxCoeff()) / (spokes * scale);
   float const flat_start = nomRad / sqrt(R);
   float const flat_val = V * flat_start;
 
-  auto analyticDC = [&](float const r) {
-    if (r == 0.f) {
-      return V * 1.f / 8.f;
-    } else if (r < flat_start) {
-      return V * r;
-    } else {
-      return flat_val;
+  // Count the number of points per spoke we will retain. Assume spokes have a simple radial
+  // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
+  long hi_r = (scale == 1.f) ? info_.read_points : info_.read_gap * scale;
+  for (long ir = info_.read_gap; ir < hi_r; ir++) {
+    float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
+    if (rad <= maxRad) { // Discard points above the desired resolution
+      profile.lo = std::min(ir, profile.lo);
+      profile.hi = std::max(ir, profile.hi);
+      if (rad == 0.f) {
+        profile.DC.push_back(V / 8.f);
+      } else if (rad < flat_start) {
+        profile.DC.push_back(V * rad);
+      } else {
+        profile.DC.push_back(flat_val);
+      }
     }
-  };
+  }
 
   log_.info(
-      FMT_STRING("Using points {}-{} on {} spokes, total {} (R={}, flat_start {} flat_val {})"),
-      read_lo,
-      read_hi,
-      spokeSz,
-      coords.size(),
+      FMT_STRING("2D profile using points {}-{} (R={}, flat_start {} flat_val {})"),
+      profile.lo,
+      profile.hi,
       R,
       flat_start,
       flat_val);
-
-  std::fesetround(FE_TONEAREST);
-  Size3 wrapSz{dims_[0], dims_[1], dims_[2]}; // Annoying type issue
-  auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
-    long index = lo_spoke * readSz;
-    for (long is = lo_spoke; is < hi_spoke; is++) {
-      for (Eigen::Index ir = read_lo; ir <= read_hi; ir++) {
-        Point3 const xyz = toCart(traj.chip(is, 2).chip(ir, 1), xyRadius, zScale);
-        Size3 const cart = nearest(xyz);
-        float const DC = analyticDC(xyz.head(2).norm());
-        Size2 const rad = {ir, is + spokeOffset};
-        if (kbW_ == 0) { // Nearest-neighbour
-          Size3 const wrapped = wrap(cart, wrapSz);
-          coords[index++] = Coords{.cart = wrapped, .radial = rad, .DC = DC, .weight = 1.f};
-        } else { // Kaiser-Bessel
-          Point2 const offset = xyz.head(2) - cart.cast<float>().matrix().head(2);
-          R2 const K = KBKernel(offset, kbW_, kbBeta_);
-          for (long iy = 0; iy < kbW_; iy++) {
-            for (long ix = 0; ix < kbW_; ix++) {
-              Size3 const k = cart + Size3{ix - kbW_ / 2, iy - kbW_ / 2, 0};
-              Size3 const w = wrap(k, wrapSz);
-              coords[index++] = Coords{.cart = w, .radial = rad, .DC = DC, .weight = K(ix, iy)};
-            }
-          }
-        }
-      }
-    }
-  };
-  auto start = log_.start_time();
-  Threads::RangeFor(coordTask, traj.dimension(2));
-  log_.stop_time(start, "Calculated grid co-ordinates");
-  return coords;
+  return profile;
 }
 
-std::vector<Gridder::Coords> Gridder::fullCoords(
-    Eigen::TensorMap<R3 const> const &traj,
-    long const spokeOffset,
-    long const nomRad,
-    float const maxRad,
-    float const scale)
+Gridder::Profile Gridder::profile3D(
+    R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale)
 {
-  log_.info("Full radial type trajectory");
-  float const radius = nomRad / scale;
-  // Count the number of points per spoke we will retain. Assume spokes have a simple radial
-  // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
-  long read_lo = info_.read_points, read_hi = 0, readSz = 0;
-  long hi_r = (scale == 1.f) ? info_.read_points : info_.read_gap * scale;
-  for (long ir = info_.read_gap; ir < hi_r; ir++) {
-    float const rad = toCart(traj.chip(0, 2).chip(ir, 1), radius, radius).norm();
-    if (rad <= maxRad) { // Discard points above the desired resolution
-      read_lo = std::min(ir, read_lo);
-      read_hi = std::max(ir, read_hi);
-      readSz++;
-    }
-  }
-  long const spokeSz = traj.dimension(2);
-  long const kSz = (kbW_ == 0) ? 1 : kbW_ * kbW_ * kbW_;
-  std::vector<Coords> coords(readSz * spokeSz * kSz);
-
+  Profile profile;
+  profile.xy = profile.z = nomRad / scale;
   // Calculate the point spacing
   float const radialOverSamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
   float const k_delta = oversample_ / (radialOverSamp * scale);
-  float const V = (4.f / 3.f) * k_delta * M_PI / spokeSz; // Volume element
+  float const V = (4.f / 3.f) * k_delta * M_PI / spokes; // Volume element
   // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
   float const R =
-      (M_PI * info_.matrix.maxCoeff() * info_.matrix.maxCoeff()) / (spokeSz * scale * scale);
-  float const flat_start = radius / (oversample_ * sqrt(R));
+      (M_PI * info_.matrix.maxCoeff() * info_.matrix.maxCoeff()) / (spokes * scale * scale);
+  float const flat_start = profile.xy / (oversample_ * sqrt(R));
   float const flat_val = V * (3. * (flat_start * flat_start) + 1. / 4.);
 
-  auto analyticDC = [&](float const r) -> float {
-    if (r == 0.f) {
-      return V * 1.f / 8.f;
-    } else if (r < flat_start) {
-      return V * (3.f * (r * r) + 1.f / 4.f);
-    } else {
-      return flat_val;
+  // Count the number of points per spoke we will retain. Assume spokes have a simple radial
+  // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
+  for (long ir = info_.read_gap; ir < info_.read_points; ir++) {
+    float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
+    if (rad <= maxRad) { // Discard points above the desired resolution
+      profile.lo = std::min(ir, profile.lo);
+      profile.hi = std::max(ir, profile.hi);
+      if (rad == 0.f) {
+        profile.DC.push_back(V * 1.f / 8.f);
+      } else if (rad < flat_start) {
+        profile.DC.push_back(V * (3.f * (rad * rad) + 1.f / 4.f));
+      } else {
+        profile.DC.push_back(flat_val);
+      }
     }
-  };
+  }
 
   log_.info(
-      FMT_STRING("Using points {}-{} on {} spokes, total {} (R={}, flat_start {} flat_val {})"),
-      read_lo,
-      read_hi,
-      spokeSz,
-      coords.size(),
+      FMT_STRING("3D profile using points {}-{} (R={}, flat_start {} flat_val {})"),
+      profile.lo,
+      profile.hi,
       R,
       flat_start,
       flat_val);
+  return profile;
+}
+
+std::vector<Gridder::Coords>
+Gridder::genCoords(R3 const &traj, long const spoke0, long const spokeSz, Profile const &profile)
+{
+  long const readSz = profile.hi - profile.lo + 1;
+  long const kSz = interp_->size();
+  std::vector<Coords> coords(readSz * spokeSz * kSz);
 
   std::fesetround(FE_TONEAREST);
   Size3 wrapSz{dims_[0], dims_[1], dims_[2]}; // Annoying type issue
   auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
     long index = lo_spoke * readSz * kSz;
     for (long is = lo_spoke; is < hi_spoke; is++) {
-      for (Eigen::Index ir = read_lo; ir <= read_hi; ir++) {
-        R1 const tp = traj.chip(is, 2).chip(ir, 1);
-        Point3 const xyz = toCart(traj.chip(is, 2).chip(ir, 1), radius, radius);
+      for (Eigen::Index ir = profile.lo; ir <= profile.hi; ir++) {
+        R1 const tp = traj.chip(is + spoke0, 2).chip(ir, 1);
+        Point3 const xyz = toCart(tp, profile.xy, profile.z);
         Size3 const cart = nearest(xyz);
-        float const DC = analyticDC(xyz.norm());
-        Size2 const rad = {ir, is + spokeOffset};
-        if (kbW_ == 0) { // Nearest-neighbour
-          Size3 const wrapped = wrap(cart, wrapSz);
-          coords[index++] = Coords{.cart = wrapped, .radial = rad, .DC = DC, .weight = 1.f};
-        } else { // Kaiser-Bessel
-          Point3 const offset = xyz - cart.cast<float>().matrix();
-          R3 const K = KBKernel(offset, kbW_, kbBeta_);
-          for (long iz = 0; iz < kbW_; iz++) {
-            for (long iy = 0; iy < kbW_; iy++) {
-              for (long ix = 0; ix < kbW_; ix++) {
-                Size3 const k = cart + Size3{ix - kbW_ / 2, iy - kbW_ / 2, iz - kbW_ / 2};
-                Size3 const w = wrap(k, wrapSz);
-                coords[index++] =
-                    Coords{.cart = w, .radial = rad, .DC = DC, .weight = K(ix, iy, iz)};
-              }
-            }
-          }
+        Size2 const rad = {ir, is + spoke0};
+        Point3 const offset = xyz - cart.cast<float>().matrix();
+        auto const kernel = interp_->weights(offset);
+        for (auto &k : kernel) {
+          // log_.info(FMT_STRING("k point {} weight {}"), k.point.transpose(), k.weight);
+          coords[index++] = Coords{.cart = wrap(cart + k.point, wrapSz),
+                                   .radial = rad,
+                                   .DC = profile.DC[ir - profile.lo],
+                                   .weight = k.weight};
         }
       }
     }
   };
   auto start = log_.start_time();
-  Threads::RangeFor(coordTask, traj.dimension(2));
+  Threads::RangeFor(coordTask, spokeSz);
   log_.stop_time(start, "Calculated grid co-ordinates");
   return coords;
 }
@@ -316,26 +257,6 @@ void Gridder::iterativeDC()
   log_.info("Density compensation estimated.");
 }
 
-void Gridder::kbApodization(bool const stack)
-{
-  float const scale = KB_FT(0., kbBeta_);
-  auto apod = [&](int const sz) {
-    Eigen::ArrayXf r(sz);
-    for (long ii = 0; ii < sz; ii++) {
-      float const pos = (ii - sz / 2.f) / static_cast<float>(sz);
-      r(ii) = KB_FT(pos * kbW_, kbBeta_) / scale;
-    }
-    return r;
-  };
-  apodX_ = apod(dims_[0]);
-  apodY_ = apod(dims_[1]);
-  if (stack) {
-    apodZ_ = Eigen::ArrayXf::Ones(dims_[2]);
-  } else {
-    apodZ_ = apod(dims_[2]);
-  }
-}
-
 Dims3 Gridder::gridDims() const
 {
   return dims_;
@@ -365,40 +286,12 @@ Cx3 Gridder::newGrid1() const
 
 void Gridder::apodize(Cx3 &image) const
 {
-  if (kbW_ > 0) {
-    long const stz = (apodZ_.rows() - image.dimension(2)) / 2;
-    long const sty = (apodY_.rows() - image.dimension(1)) / 2;
-    long const stx = (apodX_.rows() - image.dimension(0)) / 2;
-    for (Eigen::Index iz = 0; iz < image.dimension(2); iz++) {
-      float const rz = apodZ_(stz + iz);
-      for (Eigen::Index iy = 0; iy < image.dimension(1); iy++) {
-        float const ry = apodY_(sty + iy) * rz;
-        for (Eigen::Index ix = 0; ix < image.dimension(0); ix++) {
-          float const rx = apodX_(stx + ix) * ry;
-          image(ix, iy, iz) /= rx;
-        }
-      }
-    }
-  }
+  interp_->apodize(image);
 }
 
 void Gridder::deapodize(Cx3 &image) const
 {
-  if (kbW_ > 0) {
-    long const stz = (apodZ_.rows() - image.dimension(2)) / 2;
-    long const sty = (apodY_.rows() - image.dimension(1)) / 2;
-    long const stx = (apodX_.rows() - image.dimension(0)) / 2;
-    for (Eigen::Index iz = 0; iz < image.dimension(2); iz++) {
-      float const rz = apodZ_(stz + iz);
-      for (Eigen::Index iy = 0; iy < image.dimension(1); iy++) {
-        float const ry = apodY_(sty + iy) * rz;
-        for (Eigen::Index ix = 0; ix < image.dimension(0); ix++) {
-          float const rx = apodX_(stx + ix) * ry;
-          image(ix, iy, iz) *= rx;
-        }
-      }
-    }
-  }
+  interp_->deapodize(image);
 }
 
 void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const

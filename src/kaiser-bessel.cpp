@@ -99,9 +99,9 @@ Eigen::ArrayXf KB(Eigen::ArrayXf const &x, float const &beta)
   return val;
 }
 
-inline float KB(float const x, float const beta)
+float KB(float const x, float const beta)
 {
-  if (std::fabsf(x) > 0.5f) {
+  if (std::fabs(x) > 0.5f) {
     return 0.f;
   }
   float const u = sqrtf(1. - 4.f * x * x) * beta;
@@ -112,37 +112,4 @@ float KB_FT(float const &x, float const &beta)
 {
   double const a = sqrt(pow(beta, 2.) - pow(M_PI * x, 2.));
   return a / sinh(a); // * bessel_i0(beta);
-}
-
-R2 KBKernel(Point2 const &offset, long const w, float const beta)
-{
-  long const hw = w / 2;
-
-  R1 kX(w), kY(w);
-  for (long ii = 0; ii < w; ii++) {
-    kX(ii) = KB(ii - hw - offset(0), beta);
-    kY(ii) = KB(ii - hw - offset(1), beta);
-  }
-
-  R2 k = kX.reshape(Sz2{w, 1}).broadcast(Sz2{1, w}) * kY.reshape(Sz2{1, w}).broadcast(Sz2{w, 1});
-  k /= k.sum();
-  return k;
-}
-
-R3 KBKernel(Point3 const &offset, long const w, float const beta)
-{
-  long const hw = w / 2;
-
-  R1 kX(w), kY(w), kZ(w);
-  for (long ii = 0; ii < w; ii++) {
-    kX(ii) = KB((ii - hw - offset(0)) / w, beta);
-    kY(ii) = KB((ii - hw - offset(1)) / w, beta);
-    kZ(ii) = KB((ii - hw - offset(2)) / w, beta);
-  }
-
-  R3 k = kX.reshape(Sz3{w, 1, 1}).broadcast(Sz3{1, w, w}) *
-         kY.reshape(Sz3{1, w, 1}).broadcast(Sz3{w, 1, w}) *
-         kZ.reshape(Sz3{1, 1, w}).broadcast(Sz3{w, w, 1});
-  k = k / sum(k);
-  return k;
 }
