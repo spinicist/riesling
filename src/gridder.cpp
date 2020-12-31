@@ -12,7 +12,7 @@
 template <typename T>
 inline decltype(auto) nearest(T &&x)
 {
-  return x.array().unaryExpr([](float const &e) { return std::lrintf(e); });
+  return x.array().unaryExpr([](float const &e) { return static_cast<int16_t>(std::rint(e)); });
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
@@ -64,7 +64,6 @@ Gridder::Gridder(
                   traj.chip(info_.spokes_lo, 2), info_.spokes_hi / dims_[2], nomRad, maxRad, 1.f)
             : profile3D(traj.chip(info_.spokes_lo, 2), info_.spokes_hi, nomRad, maxRad, 1.f);
   coords_ = genCoords(traj, info_.spokes_lo, info_.spokes_hi, hires);
-
   if (info_.spokes_lo) {
     // Only grid the low-res k-space out to the point the hi-res k-space begins (i.e. fill the
     // dead-time gap)
@@ -77,6 +76,10 @@ Gridder::Gridder(
     auto const temp = genCoords(traj, 0, info_.spokes_lo, lores);
     coords_.insert(coords_.end(), temp.begin(), temp.end());
   }
+  log_.info(
+      FMT_STRING("Size of struct {} total size {}"),
+      sizeof(Coords),
+      sizeof(Coords) * coords_.size());
   sortCoords();
   if (est_dc) {
     iterativeDC();
@@ -105,8 +108,7 @@ Gridder::Profile Gridder::profile2D(
 
   // Count the number of points per spoke we will retain. Assume spokes have a simple radial
   // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
-  long hi_r = (scale == 1.f) ? info_.read_points : info_.read_gap * scale;
-  for (long ir = info_.read_gap; ir < hi_r; ir++) {
+  for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
     float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
     if (rad <= maxRad) { // Discard points above the desired resolution
       profile.lo = std::min(ir, profile.lo);
@@ -148,7 +150,7 @@ Gridder::Profile Gridder::profile3D(
 
   // Count the number of points per spoke we will retain. Assume spokes have a simple radial
   // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
-  for (long ir = info_.read_gap; ir < info_.read_points; ir++) {
+  for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
     float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
     if (rad <= maxRad) { // Discard points above the desired resolution
       profile.lo = std::min(ir, profile.lo);
@@ -174,7 +176,7 @@ Gridder::Profile Gridder::profile3D(
 }
 
 std::vector<Gridder::Coords>
-Gridder::genCoords(R3 const &traj, long const spoke0, long const spokeSz, Profile const &profile)
+Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Profile const &profile)
 {
   long const readSz = profile.hi - profile.lo + 1;
   long const kSz = interp_->size();
@@ -184,18 +186,19 @@ Gridder::genCoords(R3 const &traj, long const spoke0, long const spokeSz, Profil
   Size3 wrapSz{dims_[0], dims_[1], dims_[2]}; // Annoying type issue
   auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
     long index = lo_spoke * readSz * kSz;
-    for (long is = lo_spoke; is < hi_spoke; is++) {
-      for (Eigen::Index ir = profile.lo; ir <= profile.hi; ir++) {
-        R1 const tp = traj.chip(is + spoke0, 2).chip(ir, 1);
+    for (int32_t is = lo_spoke; is < hi_spoke; is++) {
+      for (int16_t ir = profile.lo; ir <= profile.hi; ir++) {
+        NoncartesianIndex const nc{.read = ir, .spoke = is + spoke0};
+        R1 const tp = traj.chip(nc.spoke, 2).chip(nc.read, 1);
         Point3 const xyz = toCart(tp, profile.xy, profile.z);
         Size3 const cart = nearest(xyz);
-        Size2 const rad = {ir, is + spoke0};
         Point3 const offset = xyz - cart.cast<float>().matrix();
         auto const kernel = interp_->weights(offset);
         for (auto &k : kernel) {
           // log_.info(FMT_STRING("k point {} weight {}"), k.point.transpose(), k.weight);
-          coords[index++] = Coords{.cart = wrap(cart + k.point, wrapSz),
-                                   .radial = rad,
+          Size3 const w = wrap(cart + k.point, wrapSz);
+          coords[index++] = Coords{.cart = CartesianIndex{w(0), w(1), w(2)},
+                                   .noncart = nc,
                                    .DC = profile.DC[ir - profile.lo],
                                    .weight = k.weight};
         }
@@ -216,8 +219,8 @@ void Gridder::sortCoords()
   std::sort(sortedIndices_.begin(), sortedIndices_.end(), [=](long const a, long const b) {
     auto const &ac = coords_[a].cart;
     auto const &bc = coords_[b].cart;
-    return (ac[2] < bc[2]) ||
-           ((ac[2] == bc[2]) && ((ac[1] < bc[1]) || ((ac[1] == bc[1]) && (ac[0] < bc[0]))));
+    return (ac.z < bc.z) ||
+           ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
   });
   log_.stop_time(start, "Sorting co-ordinates");
 }
@@ -251,8 +254,8 @@ void Gridder::iterativeDC()
 
   // Copy to co-ord structure
   for (auto &c : coords_) {
-    auto const &ind = c.radial;
-    c.DC = W(ind[0], ind[1]).real();
+    auto const &nc = c.noncart;
+    c.DC = W(nc.read, nc.spoke).real();
   }
   log_.info("Density compensation estimated.");
 }
@@ -305,12 +308,11 @@ void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
       auto const &cp = coords_[sortedIndices_[ic]];
-      auto const &iradial = cp.radial;
-
-      auto const &icart = cp.cart;
+      auto const &c = cp.cart;
+      auto const &nc = cp.noncart;
       auto const &dc = pow(cp.DC, DCexp_);
       std::complex<float> const scale(dc * cp.weight, 0.f);
-      cart(icart(0), icart(1), icart(2)) += scale * radial(iradial(0), iradial(1));
+      cart(c.x, c.y, c.z) += scale * radial(nc.spoke, nc.read);
     }
   };
 
@@ -332,12 +334,12 @@ void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
       auto const &cp = coords_[sortedIndices_[ic]];
-      auto const &iradial = cp.radial;
-      auto const &icart = cp.cart;
+      auto const &c = cp.cart;
+      auto const &nc = cp.noncart;
       auto const &dc = pow(cp.DC, DCexp_);
       std::complex<float> const scale(dc * cp.weight, 0.f);
-      cart.chip(icart[2], 3).chip(icart[1], 2).chip(icart[0], 1) +=
-          radial.chip(iradial[1], 2).chip(iradial[0], 1) * scale;
+      cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) +=
+          radial.chip(nc.spoke, 2).chip(nc.read, 1) * scale;
     }
   };
 
@@ -358,9 +360,9 @@ void Gridder::toRadial(Cx3 const &cart, Cx2 &radial) const
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
       auto const &cp = coords_[ic];
-      auto const &iradial = cp.radial;
-      auto const &iw = cp.cart;
-      radial(iradial(0), iradial(1)) += cart(iw[0], iw[1], iw[2]) * cp.weight;
+      auto const &c = cp.cart;
+      auto const &nc = cp.noncart;
+      radial(nc.read, nc.spoke) += cart(c.x, c.y, c.z) * cp.weight;
     }
   };
   auto const &start = log_.start_time();
@@ -381,11 +383,11 @@ void Gridder::toRadial(Cx4 const &cart, Cx3 &radial) const
   auto grid_task = [&](long const lo_c, long const hi_c) {
     for (auto ic = lo_c; ic < hi_c; ic++) {
       auto const &cp = coords_[ic];
-      auto const &iradial = cp.radial;
-      auto const &iw = cp.cart;
-      auto const &weight = radial.chip(iradial(1), 2).chip(iradial(0), 1).constant(cp.weight);
-      radial.chip(iradial(1), 2).chip(iradial(0), 1) +=
-          cart.chip(iw[2], 3).chip(iw[1], 2).chip(iw[0], 1) * weight;
+      auto const &c = cp.cart;
+      auto const &nc = cp.noncart;
+      auto const &weight = radial.chip(nc.read, 2).chip(nc.spoke, 1).constant(cp.weight);
+      radial.chip(nc.read, 2).chip(nc.spoke, 1) +=
+          cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) * weight;
     }
   };
   auto const &start = log_.start_time();

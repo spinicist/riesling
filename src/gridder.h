@@ -51,18 +51,29 @@ struct Gridder
   void deapodize(Cx3 &img) const; //!< De-apodize interpolation kernel
 
 private:
+  struct CartesianIndex
+  {
+    int16_t x, y, z;
+  };
+
+  struct NoncartesianIndex
+  {
+    int32_t spoke;
+    int16_t read;
+  };
+
   struct Coords
   {
-    Size3 cart;
-    Size2 radial;
+    CartesianIndex cart;
+    NoncartesianIndex noncart;
     float DC;
     float weight;
   };
 
   struct Profile
   {
-    long lo = std::numeric_limits<long>::max();
-    long hi = std::numeric_limits<long>::min();
+    int16_t lo = std::numeric_limits<int16_t>::max();
+    int16_t hi = std::numeric_limits<int16_t>::min();
     float xy;
     float z;
     std::vector<float> DC;
@@ -74,12 +85,12 @@ private:
       R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale);
 
   std::vector<Coords>
-  genCoords(R3 const &traj, long const spoke0, long const spokes, Profile const &profile);
+  genCoords(R3 const &traj, int32_t const spoke0, long const spokes, Profile const &profile);
   void sortCoords();
   void iterativeDC(); //!< Iteratively estimate the density-compensation weights
   RadialInfo const info_;
   std::vector<Coords> coords_;
-  std::vector<long> sortedIndices_;
+  std::vector<int32_t> sortedIndices_;
   Dims3 dims_;
   float oversample_, DCexp_;
   Interpolator *interp_;

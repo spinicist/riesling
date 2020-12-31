@@ -38,15 +38,15 @@ using Sz4 = Eigen::array<long, 4>;
 using Dims2 = Cx2::Dimensions;
 using Dims3 = Cx3::Dimensions;
 using Dims4 = Cx4::Dimensions;
-using Size2 = Eigen::Array<Eigen::Index, 2, 1>;
-using Size3 = Eigen::Array<Eigen::Index, 3, 1>;
+using Size2 = Eigen::Array<int16_t, 2, 1>;
+using Size3 = Eigen::Array<int16_t, 3, 1>;
+using Size4 = Eigen::Array<int16_t, 4, 1>;
 using Point2 = Eigen::Matrix<float, 2, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
 using Point4 = Eigen::Matrix<float, 4, 1>;
 using Points3 = Eigen::Matrix<float, 3, -1>;
 using Points4 = Eigen::Matrix<float, 4, -1>;
 using Pads3 = Eigen::array<std::pair<long, long>, 3>;
-using Size4 = Eigen::Array<Eigen::Index, 4, 1>;
 
 // This is the type of the lambda functions to represent the encode/decode operators
 using EncodeFunction = std::function<void(Cx3 &cartesian, Cx3 &radial)>;
