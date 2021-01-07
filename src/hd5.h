@@ -1,6 +1,6 @@
 #pragma once
 
-#include "radial.h"
+#include "info.h"
 #include <map>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -42,8 +42,8 @@ template <typename T, int R, int C>
 extern void
 store_array(Handle const &parent, std::string const &name, Eigen::Array<T, R, C> const &array);
 
-void store_info(Handle const &parent, RadialInfo const &info);
-void load_info(Handle const &dset, RadialInfo &info);
+void store_info(Handle const &parent, Info const &info);
+void load_info(Handle const &dset, Info &info);
 void store_map(Handle const &parent, std::map<std::string, float> const &meta);
 void load_map(Handle const &parent, std::map<std::string, float> &meta);
 

@@ -44,7 +44,7 @@ R3 ASpiral(long const nRead, long const nSpoke)
   return traj;
 }
 
-R3 ArchimedeanSpiral(RadialInfo const &info)
+R3 ArchimedeanSpiral(Info const &info)
 {
   R3 hi = ASpiral(info.read_points, info.spokes_hi);
   if (info.spokes_lo) {

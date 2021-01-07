@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fmt/format.h>
 
-RadialWriter::RadialWriter(std::string const &fname, Log &log)
+HD5Writer::HD5Writer(std::string const &fname, Log &log)
     : log_(log)
 {
   HD5::init();
@@ -12,38 +12,38 @@ RadialWriter::RadialWriter(std::string const &fname, Log &log)
   log_.info(FMT_STRING("Opened file {} for writing data"), fname);
 }
 
-RadialWriter::~RadialWriter()
+HD5Writer::~HD5Writer()
 {
   HD5::close_file(handle_);
 }
 
-void RadialWriter::writeData(long const index, Cx3 const &radial)
+void HD5Writer::writeData(long const index, Cx3 const &data)
 {
   auto const label = fmt::format("{:04d}", index);
   log_.info(FMT_STRING("Writing volume {}"), label);
-  HD5::store_tensor(data_, label, radial);
+  HD5::store_tensor(data_, label, data);
 }
 
-void RadialWriter::writeTrajectory(R3 const &traj)
+void HD5Writer::writeTrajectory(R3 const &traj)
 {
   log_.info("Writing trajectory");
   HD5::store_tensor(handle_, "traj", traj);
 }
 
-void RadialWriter::writeInfo(RadialInfo const &info)
+void HD5Writer::writeInfo(Info const &info)
 {
-  log_.info("Writing radial header");
+  log_.info("Writing info struct");
   HD5::store_info(handle_, info);
 }
 
-void RadialWriter::writeMeta(std::map<std::string, float> const &meta)
+void HD5Writer::writeMeta(std::map<std::string, float> const &meta)
 {
   log_.info("Writing meta data");
   auto m_group = HD5::create_group(handle_, "meta");
   HD5::store_map(m_group, meta);
 }
 
-RadialReader::RadialReader(std::string const &fname, Log &log)
+HD5Reader::HD5Reader(std::string const &fname, Log &log)
     : log_{log}
 {
   if (!std::filesystem::exists(fname)) {
@@ -56,18 +56,18 @@ RadialReader::RadialReader(std::string const &fname, Log &log)
   log_.info(FMT_STRING("Opened file {} for reading"), fname);
 }
 
-RadialReader::~RadialReader()
+HD5Reader::~HD5Reader()
 {
   HD5::close_group(data_);
   HD5::close_file(handle_);
 }
 
-RadialInfo const &RadialReader::info() const
+Info const &HD5Reader::info() const
 {
   return info_;
 }
 
-void RadialReader::readData(long const index, Cx3 &ks)
+void HD5Reader::readData(long const index, Cx3 &ks)
 {
   assert(ks.dimension(0) == info_.channels);
   assert(ks.dimension(1) == info_.read_points);
@@ -79,7 +79,7 @@ void RadialReader::readData(long const index, Cx3 &ks)
   HD5::load_tensor(data_, label, ks);
 }
 
-void RadialReader::readData(Cx4 &ks)
+void HD5Reader::readData(Cx4 &ks)
 {
   assert(ks.dimension(0) == info_.channels);
   assert(ks.dimension(1) == info_.read_points);
@@ -95,7 +95,7 @@ void RadialReader::readData(Cx4 &ks)
   }
 }
 
-R3 RadialReader::readTrajectory()
+R3 HD5Reader::readTrajectory()
 {
   log_.info("Reading trajectory");
   R3 trajectory(3, info_.read_points, info_.spokes_total());
@@ -103,7 +103,7 @@ R3 RadialReader::readTrajectory()
   return trajectory;
 }
 
-std::map<std::string, float> RadialReader::readMeta() const
+std::map<std::string, float> HD5Reader::readMeta() const
 {
   auto m_group = HD5::open_group(handle_, "meta");
   std::map<std::string, float> meta;

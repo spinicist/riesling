@@ -77,32 +77,32 @@ Handle open_data(Handle const &parent, std::string const &name)
 
 hid_t info_type()
 {
-  hid_t info_id = H5Tcreate(H5T_COMPOUND, sizeof(RadialInfo));
+  hid_t info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
   hsize_t sz3[1] = {3};
   hid_t long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
   hid_t float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
   hsize_t sz9[1] = {9};
   hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
   herr_t status;
-  status = H5Tinsert(info_id, "matrix", HOFFSET(RadialInfo, matrix), long3_id);
-  status = H5Tinsert(info_id, "voxel_size", HOFFSET(RadialInfo, voxel_size), float3_id);
-  status = H5Tinsert(info_id, "read_points", HOFFSET(RadialInfo, read_points), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "read_gap", HOFFSET(RadialInfo, read_gap), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "spokes_hi", HOFFSET(RadialInfo, spokes_hi), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "spokes_lo", HOFFSET(RadialInfo, spokes_lo), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "lo_scale", HOFFSET(RadialInfo, lo_scale), H5T_NATIVE_FLOAT);
-  status = H5Tinsert(info_id, "channels", HOFFSET(RadialInfo, channels), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "volumes", HOFFSET(RadialInfo, volumes), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "tr", HOFFSET(RadialInfo, tr), H5T_NATIVE_FLOAT);
-  status = H5Tinsert(info_id, "origin", HOFFSET(RadialInfo, origin), float3_id);
-  status = H5Tinsert(info_id, "direction", HOFFSET(RadialInfo, direction), float9_id);
+  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
+  status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
+  status = H5Tinsert(info_id, "read_points", HOFFSET(Info, read_points), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "read_gap", HOFFSET(Info, read_gap), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "spokes_hi", HOFFSET(Info, spokes_hi), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "spokes_lo", HOFFSET(Info, spokes_lo), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "lo_scale", HOFFSET(Info, lo_scale), H5T_NATIVE_FLOAT);
+  status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
+  status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
+  status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
   if (status) {
-    throw std::runtime_error("Exception occurred creating radial info type");
+    throw std::runtime_error("Exception occurred creating info type");
   }
   return info_id;
 }
 
-void store_info(Handle const &parent, RadialInfo const &info)
+void store_info(Handle const &parent, Info const &info)
 {
   hid_t info_id = info_type();
   hsize_t dims[1] = {1};
@@ -114,7 +114,7 @@ void store_info(Handle const &parent, RadialInfo const &info)
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status != 0) {
-    throw std::runtime_error("Exception occurred storing radial info struct");
+    throw std::runtime_error("Exception occurred storing info struct");
   }
 }
 
@@ -135,7 +135,7 @@ void store_map(Handle const &parent, std::map<std::string, float> const &meta)
   }
 }
 
-void load_info(Handle const &parent, RadialInfo &info)
+void load_info(Handle const &parent, Info &info)
 {
   hid_t const info_id = info_type();
   hid_t const dset = H5Dopen(parent, "info", H5P_DEFAULT);
@@ -143,7 +143,7 @@ void load_info(Handle const &parent, RadialInfo &info)
   herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
   status = H5Dclose(dset);
   if (status != 0) {
-    throw std::runtime_error("Could not load radial info struct");
+    throw std::runtime_error("Could not load info struct");
   }
 }
 

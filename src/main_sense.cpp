@@ -24,7 +24,7 @@ int main_sense(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
 
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   auto const trajectory = reader.readTrajectory();
 
@@ -35,7 +35,7 @@ int main_sense(args::Subparser &parser)
   FFT3N fft(grid, log);
 
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
   Cx4 sense = cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, kb, rad_ks, log));
@@ -49,7 +49,7 @@ int main_sense(args::Subparser &parser)
   auto const &all_start = log.start_time();
   bool channels_saved = false;
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
-    log.info(FMT_STRING("Processing Echo: {}"), iv);
+    log.info(FMT_STRING("Processing volume: {}"), iv);
     auto const &vol_start = log.start_time();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);

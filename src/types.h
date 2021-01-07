@@ -49,9 +49,9 @@ using Points4 = Eigen::Matrix<float, 4, -1>;
 using Pads3 = Eigen::array<std::pair<long, long>, 3>;
 
 // This is the type of the lambda functions to represent the encode/decode operators
-using EncodeFunction = std::function<void(Cx3 &cartesian, Cx3 &radial)>;
-using DecodeFunction = std::function<void(Cx3 const &radial, Cx3 &cartesian)>;
-using SystemFunction = std::function<void(Cx3 const &A, Cx3 &B)>;
+using EncodeFunction = std::function<void(Cx3 &x, Cx3 &y)>;
+using DecodeFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
+using SystemFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 
 // Tensor operations
 template <typename T>

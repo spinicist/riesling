@@ -18,7 +18,7 @@ Cx4 birdcage(
     long const nchan,
     float const coil_rad_mm,  // Radius of the actual coil, i.e. where the channels should go
     float const sense_rad_mm, // Sensitivity radius
-    RadialInfo const &info)
+    Info const &info)
 {
   Cx4 all(nchan, sz[0], sz[1], sz[2]);
   auto const avoid_div_zero = info.voxel_size.matrix().norm() / 2.f;
@@ -85,14 +85,14 @@ int main_phantom(args::Subparser &parser)
   auto const m = matrix.Get();
   auto const vox_sz = fov.Get() / m;
   auto const spokes_hi = std::lrint(spoke_samp.Get() * m * m);
-  RadialInfo info{Array3l{m, m, m},
-                  Eigen::Array3f{vox_sz, vox_sz, vox_sz},
-                  static_cast<long>(m * oversamp.Get() / 2),
-                  gap.Get(),
-                  spokes_hi,
-                  lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
-                  lores ? lores.Get() : 1.f,
-                  nchan.Get()};
+  Info info{Array3l{m, m, m},
+            Eigen::Array3f{vox_sz, vox_sz, vox_sz},
+            static_cast<long>(m * oversamp.Get() / 2),
+            gap.Get(),
+            spokes_hi,
+            lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
+            lores ? lores.Get() : 1.f,
+            nchan.Get()};
   log.info(
       FMT_STRING("Matrix Size: {} Voxel Size: {} Oversampling: {} Dead-time Gap: {}"),
       matrix.Get(),
@@ -133,8 +133,8 @@ int main_phantom(args::Subparser &parser)
   cropper.crop4(grid) = sense * tile(phan, info.channels);
   FFT3N fft(grid, log);
   fft.forward();
-  Cx3 radial = info.radialVolume();
-  gridder.toRadial(grid, radial);
+  Cx3 radial = info.noncartesianVolume();
+  gridder.toNoncartesian(grid, radial);
   if (snr) {
     Cx3 noise(info.read_points, info.spokes_total(), nchan.Get());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
@@ -145,7 +145,7 @@ int main_phantom(args::Subparser &parser)
     radial.slice(Dims3{0, 0, 0}, Dims3{info.channels, gap.Get(), info.spokes_total()}).setZero();
   }
 
-  RadialWriter writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
+  HD5Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
   writer.writeInfo(info);
   writer.writeTrajectory(traj);
   writer.writeData(0, radial);

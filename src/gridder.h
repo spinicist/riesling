@@ -1,8 +1,8 @@
 #pragma once
 
+#include "info.h"
 #include "interpolator.h"
 #include "log.h"
-#include "radial.h"
 #include "threads.h"
 
 #include <vector>
@@ -24,7 +24,7 @@ struct Gridder
    * @param shrink OPTIONAL - Shrink the grid to fit only the desired resolution portion
    */
   Gridder(
-      RadialInfo const &info,
+      Info const &info,
       R3 const &traj,
       float const os,
       bool const est_dc,
@@ -42,10 +42,10 @@ struct Gridder
 
   void setDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
   void setDC(float const dc);
-  void toCartesian(Cx2 const &radial, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
-  void toCartesian(Cx3 const &radial, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
-  void toRadial(Cx3 const &cart, Cx2 &radial) const;    //!< Single-channel cart -> non-cart
-  void toRadial(Cx4 const &cart, Cx3 &radial) const;    //!< Multi-channel cart -> non-cart
+  void toCartesian(Cx2 const &noncart, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
+  void toCartesian(Cx3 const &noncart, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
+  void toNoncartesian(Cx3 const &cart, Cx2 &noncart) const; //!< Single-channel cart -> non-cart
+  void toNoncartesian(Cx4 const &cart, Cx3 &noncart) const; //!< Multi-channel cart -> non-cart
 
   void apodize(Cx3 &img) const;   //!< Apodize interpolation kernel
   void deapodize(Cx3 &img) const; //!< De-apodize interpolation kernel
@@ -88,7 +88,7 @@ private:
   genCoords(R3 const &traj, int32_t const spoke0, long const spokes, Profile const &profile);
   void sortCoords();
   void iterativeDC(); //!< Iteratively estimate the density-compensation weights
-  RadialInfo const info_;
+  Info const info_;
   std::vector<Coords> coords_;
   std::vector<int32_t> sortedIndices_;
   Dims3 dims_;

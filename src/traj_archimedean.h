@@ -1,5 +1,5 @@
 #pragma once
 
-#include "radial.h"
+#include "info.h"
 
-R3 ArchimedeanSpiral(RadialInfo const &info);
+R3 ArchimedeanSpiral(Info const &info);

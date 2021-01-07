@@ -5,9 +5,9 @@
 // Non-linear Conjugate Gradients with l1-regularisation
 // See http://doi.wiley.com/10.1002/mrm.21391
 Cx3 nlcg(
-    Cx3 &radial,                     // Raw radial data
+    Cx3 &data,                       // Raw data
     Cx3::Dimensions const &dims,     // Output dimensions (not oversampled)
-    EncodeFunction const &encode_ks, // FT + Radial sampling
+    EncodeFunction const &encode_ks, // FT + sampling
     DecodeFunction const &decode_ks, // Gridding + FT
     long const &max_its,             // Maximum iterations
     float const &thresh,             // Stop if fractional change in cost-function is below thresh
@@ -20,20 +20,20 @@ Cx3 nlcg(
 
   // Create our reference image and scale it so the regularisation and residual balance
   Cx3 x0(dims);
-  decode_ks(radial, x0);
+  decode_ks(data, x0);
   R0 scale = x0.abs().maximum();
   x0.device(Threads::GlobalDevice()) = (1.f / scale()) * x0;
-  radial.device(Threads::GlobalDevice()) = (1.f / scale()) * radial;
+  data.device(Threads::GlobalDevice()) = (1.f / scale()) * data;
 
   // Calculate cost function f and gradient g at the same time
   auto f_g = [&](Cx3 const &x, Cx3 &grad) -> float {
     // Working space
-    static Cx3 tr(radial.dimensions());
+    static Cx3 tr(data.dimensions());
     static Cx3 resid(dims);
 
     // Calculate residual term
     encode_ks(x, tr);
-    tr.device(Threads::GlobalDevice()) -= radial;
+    tr.device(Threads::GlobalDevice()) -= data;
     decode_ks(tr, resid);
 
     // The l1-term is |x| which is not differentiable at x=0, so add a very small value to smooth

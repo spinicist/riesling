@@ -7,12 +7,12 @@
 #include "threads.h"
 
 Cx4 SENSE(
-    RadialInfo const &info,
+    Info const &info,
     R3 const &traj,
     float const os,
     bool const stack,
     bool const kb,
-    Cx3 const &radial,
+    Cx3 const &data,
     Log &log)
 {
   // Grid and heavily smooth each coil image, accumulate combined image
@@ -26,7 +26,7 @@ Cx4 SENSE(
   FFT3N fftN(grid, log);
   grid.setZero();
   rss.setZero();
-  gridder.toCartesian(radial, grid);
+  gridder.toCartesian(data, grid);
   fftN.reverse();
   rss.device(Threads::GlobalDevice()) = (grid * grid.conjugate()).sum(Sz1{0}).sqrt();
   log.info("Normalizing channel images");

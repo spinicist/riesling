@@ -1,16 +1,16 @@
 #pragma once
 
+#include "info.h"
 #include "log.h"
-#include "radial.h"
 
 /*!
- * Calculates a set of SENSE maps from radial data, assuming an oversampled central region
+ * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
  */
 Cx4 SENSE(
-    RadialInfo const &info,
+    Info const &info,
     R3 const &traj,
     float const os,
     bool const stack,
     bool const kb,
-    Cx3 const &radial,
+    Cx3 const &data,
     Log &log);

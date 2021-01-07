@@ -1,7 +1,7 @@
 #pragma once
 
+#include "info.h"
 #include "log.h"
-#include "radial.h"
 #include <args.hxx>
 #include <vector>
 
@@ -20,8 +20,8 @@ std::string OutName(
 long SenseVolume(args::ValueFlag<long> &sFlag, long const vols);
 std::vector<long> WhichVolumes(long const which, long const max_volume);
 template <typename T>
-extern void WriteVolumes(
-    RadialInfo const &info, T const &vols, long const which, std::string const &fname, Log &log);
+extern void
+WriteVolumes(Info const &info, T const &vols, long const which, std::string const &fname, Log &log);
 
 #define COMMON_RECON_ARGS                                                                          \
   args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");                        \

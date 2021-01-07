@@ -34,7 +34,7 @@ int main_tgv(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
 
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto const info = reader.info();
   auto const trajectory = reader.readTrajectory();
 
@@ -45,26 +45,26 @@ int main_tgv(args::Subparser &parser)
   FFT3N fft(grid, log);
 
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
   Cx4 sense = iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, kb, rad_ks, log));
 
-  EncodeFunction enc = [&](Cx3 &x, Cx3 &radial) {
+  EncodeFunction enc = [&](Cx3 &x, Cx3 &y) {
     auto const &start = log.start_time();
-    radial.setZero();
+    y.setZero();
     grid.setZero();
     gridder.apodize(x);
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = tile(x, info.channels) * sense;
     fft.forward();
-    gridder.toRadial(grid, radial);
+    gridder.toNoncartesian(grid, y);
     log.stop_time(start, "Total encode time");
   };
 
-  DecodeFunction dec = [&](Cx3 const &radial, Cx3 &y) {
+  DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.start_time();
     grid.setZero();
-    gridder.toCartesian(radial, grid);
+    gridder.toCartesian(x, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     gridder.deapodize(y);
@@ -75,7 +75,7 @@ int main_tgv(args::Subparser &parser)
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const start = log.start_time();
-    log.info(FMT_STRING("Processing Echo: {}"), iv);
+    log.info(FMT_STRING("Processing volume: {}"), iv);
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);
       currentVolume = iv;

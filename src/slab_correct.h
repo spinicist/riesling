@@ -1,6 +1,6 @@
 #pragma once
 
+#include "info.h"
 #include "log.h"
-#include "radial.h"
 
-void slab_correct(RadialInfo const &info, float const pw_us, float const rbw, Cx3 &ks, Log &log);
+void slab_correct(Info const &info, float const pw_us, float const rbw, Cx3 &ks, Log &log);

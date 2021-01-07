@@ -1,19 +1,19 @@
 #pragma once
 
 #include "hd5.h"
+#include "info.h"
 #include "log.h"
-#include "radial.h"
 
 #include <map>
 #include <string>
 
-struct RadialWriter
+struct HD5Writer
 {
-  RadialWriter(std::string const &fname, Log &log_);
-  ~RadialWriter();
-  void writeData(long const index, Cx3 const &radial);
+  HD5Writer(std::string const &fname, Log &log_);
+  ~HD5Writer();
+  void writeData(long const index, Cx3 const &data);
   void writeTrajectory(R3 const &traj);
-  void writeInfo(RadialInfo const &info);
+  void writeInfo(Info const &info);
   void writeMeta(std::map<std::string, float> const &meta);
 
 private:
@@ -21,13 +21,13 @@ private:
   HD5::Handle handle_, data_;
 };
 
-struct RadialReader
+struct HD5Reader
 {
-  RadialReader(RadialReader const &) = delete;
-  RadialReader(std::string const &fname, Log &log);
-  ~RadialReader();
-  RadialInfo const &info() const;
-  void readData(long const index, Cx3 &radial);
+  HD5Reader(HD5Reader const &) = delete;
+  HD5Reader(std::string const &fname, Log &log);
+  ~HD5Reader();
+  Info const &info() const;
+  void readData(long const index, Cx3 &data);
   void readData(Cx4 &ks);
   R3 readTrajectory();
   std::map<std::string, float> readMeta() const;
@@ -35,5 +35,5 @@ struct RadialReader
 private:
   Log &log_;
   HD5::Handle handle_, data_;
-  RadialInfo info_;
+  Info info_;
 };

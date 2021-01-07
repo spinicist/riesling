@@ -34,10 +34,10 @@ int main_kspace(args::Subparser &parser)
   args::Flag lores(parser, "LO-RES", "Write out lo-res spokes, not hi-res", {'l', "lores"});
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto info = reader.info();
 
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
   reader.readData(volume.Get(), rad_ks);
 
   long const n_samp = samples ? samples.Get() : info.read_points;
@@ -69,7 +69,7 @@ int main_kspace(args::Subparser &parser)
       info.spokes_lo = 0;
       fft.shift();
       rad_ks.setZero();
-      regridder.toRadial(grid, rad_ks);
+      regridder.toNoncartesian(grid, rad_ks);
       WriteNifti(info, Cx3(rad_ks.slice(st, sz)), OutName(fname, oname, "kspace-radial"), log);
     }
   }

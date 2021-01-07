@@ -15,12 +15,12 @@ int main_rss(args::Subparser &parser)
 
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kb, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
   Cx4 grid = gridder.newGrid();
   Cx3 image = cropper.newImage();
   R4 out = cropper.newRealSeries(info.volumes);

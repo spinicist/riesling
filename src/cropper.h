@@ -1,12 +1,11 @@
 #pragma once
 
+#include "info.h"
 #include "log.h"
-#include "radial.h"
 
 struct Cropper
 {
-  Cropper(
-      RadialInfo const &info, Dims3 const &fullSz, float const extent, bool const crop, Log &log);
+  Cropper(Info const &info, Dims3 const &fullSz, float const extent, bool const crop, Log &log);
   Dims3 size() const;
   Dims3 start() const;
   Cx3 newImage() const;

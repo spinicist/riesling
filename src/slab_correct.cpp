@@ -29,7 +29,7 @@ double sinc(const double x)
   }
 }
 
-void slab_correct(RadialInfo const &info, float const pw_us, float const rbw_kHz, Cx3 &ks, Log &log)
+void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 &ks, Log &log)
 {
   log.info(
       FMT_STRING("Applying slab profile correction for pulse-width {} us, bandwidth {} kHz"),

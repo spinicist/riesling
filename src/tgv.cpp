@@ -86,7 +86,7 @@ inline void calc_tensor_div(Cx4 const &x, Cx4 &div)
 }
 
 Cx3 tgv(
-    Cx3 &radial,
+    Cx3 &data,
     Cx3::Dimensions const &dims,
     EncodeFunction const &encode,
     DecodeFunction const &decode,
@@ -99,12 +99,12 @@ Cx3 tgv(
 {
   // Allocate all memory
   Cx3 u(dims);
-  decode(radial, u);
-  Cx3 check(radial.dimensions());
+  decode(data, u);
+  Cx3 check(data.dimensions());
   encode(u, check);
 
   float const scale = norm(u);
-  radial = radial / radial.constant(scale);
+  data = data / data.constant(scale);
   u = u / u.constant(scale);
   Cx3 u_(dims);
   u_ = u;
@@ -130,11 +130,11 @@ Cx3 tgv(
   Cx4 divq(dims[0], dims[1], dims[2], 3);
   divq.setZero();
 
-  Cx3 r(radial.dimensions());
+  Cx3 r(data.dimensions());
   r.setZero();
-  Cx3 v(radial.dimensions());
+  Cx3 v(data.dimensions());
   v.setZero();
-  Cx3 RtC_ubar(radial.dimensions());
+  Cx3 RtC_ubar(data.dimensions());
   RtC_ubar.setZero();
   Cx3 RtC_v(dims);
   RtC_v.setZero();
@@ -162,9 +162,9 @@ Cx3 tgv(
     u_old.device(Threads::GlobalDevice()) = u;
     xi_old.device(Threads::GlobalDevice()) = xi;
 
-    // Sample image in radial space
+    // Sample image in non-cartesian k-space
     encode(u_, RtC_ubar);
-    r.device(Threads::GlobalDevice()) = RtC_ubar - radial;
+    r.device(Threads::GlobalDevice()) = RtC_ubar - data;
     v.device(Threads::GlobalDevice()) = (1.f / (1.f + tau_d)) * (v + tau_d * r);
 
     // Div P calculation and u update

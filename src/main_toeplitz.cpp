@@ -29,9 +29,9 @@ int main_toeplitz(args::Subparser &parser)
 
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
 
   R3 const trajectory = reader.readTrajectory();
   Gridder gridder(info, trajectory, osamp.Get(), est_dc, kb, stack, log);
@@ -66,15 +66,14 @@ int main_toeplitz(args::Subparser &parser)
     log.stop_time(start, "Total system time");
   };
 
-  DecodeFunction dec = [&](Cx3 const &radial, Cx3 &out) {
+  DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.start_time();
-    out.setZero();
+    y.setZero();
     grid.setZero();
-    gridder.toCartesian(radial, grid);
+    gridder.toCartesian(x, grid);
     fft.reverse();
-    out.device(Threads::GlobalDevice()) =
-        (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    gridder.deapodize(out);
+    y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    gridder.deapodize(y);
     log.stop_time(start, "Total decode time");
   };
 

@@ -58,10 +58,10 @@ The RIESLING input .h5 is similar but simpler than ISMRMRD (ISMRM raw data) form
 -/0000 - k-Space dataset for volume 0 as an (Nc, Nr, Ns) complex float matrix
 ```
 
-Note that the k-space data ordering is channel-first rather than channel-last. A possible definition of the header structure in plain C++ is as follows. The real definition can be found in `radial.h` and uses Eigen types:
+Note that the k-space data ordering is channel-first rather than channel-last. A possible definition of the header structure in plain C++ is as follows. The real definition can be found in `info.h` and uses Eigen types:
 
 ```
-struct RadialInfo
+struct Info
 {
   long matrix[3];
   float voxel_size[3];

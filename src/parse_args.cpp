@@ -60,7 +60,7 @@ std::vector<long> WhichVolumes(long const which, long const max_volume)
 
 template <typename T>
 void WriteVolumes(
-    RadialInfo const &info, T const &vols, long const which, std::string const &fname, Log &log)
+    Info const &info, T const &vols, long const which, std::string const &fname, Log &log)
 {
   long const v_st = (which > -1) ? which : 0;
   long const v_sz = (which > -1) ? 1 : vols.dimension(3);
@@ -71,6 +71,6 @@ void WriteVolumes(
 }
 
 template void WriteVolumes(
-    RadialInfo const &info, R4 const &vols, long const which, std::string const &fname, Log &log);
+    Info const &info, R4 const &vols, long const which, std::string const &fname, Log &log);
 template void WriteVolumes(
-    RadialInfo const &info, Cx4 const &vols, long const which, std::string const &fname, Log &log);
+    Info const &info, Cx4 const &vols, long const which, std::string const &fname, Log &log);

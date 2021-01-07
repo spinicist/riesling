@@ -1,7 +1,7 @@
 #include "cropper.h"
 
 Cropper::Cropper(
-    RadialInfo const &info, Dims3 const &fullSz, float const extent, bool const stack, Log &log)
+    Info const &info, Dims3 const &fullSz, float const extent, bool const stack, Log &log)
 {
   if (extent < 0.f) {
     std::copy_n(info.matrix.begin(), 3, sz_.begin());

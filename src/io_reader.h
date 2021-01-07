@@ -1,7 +1,7 @@
 #pragma once
 
+#include "info.h"
 #include "log.h"
-#include "radial.h"
 #include <map>
 
 /** Defines the interface for reading vendor data files, e.g. P-Files or ScanArchives
@@ -11,8 +11,8 @@ struct Reader
 {
   virtual ~Reader(){};
 
-  virtual std::string ID() const = 0;     //< Returns the ID/suggested filename
-  virtual RadialInfo getInfo() const = 0; //< Returns the radial header/information struct
+  virtual std::string ID() const = 0; //< Returns the ID/suggested filename
+  virtual Info getInfo() const = 0;   //< Returns the radial header/information struct
   virtual std::map<std::string, float> getMeta() const = 0; //< Returns the meta-data from this file
   /** Returns the trajectory for this scan
    *

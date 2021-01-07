@@ -2,7 +2,7 @@
 
 #include "types.h"
 
-struct RadialInfo
+struct Info
 {
   Array3l matrix;
   Eigen::Array3f voxel_size;
@@ -13,6 +13,7 @@ struct RadialInfo
   float lo_scale;
   long channels;
   long volumes = 1;
+  long echoes = 1;
   float tr = 1.f;
   Eigen::Vector3f origin = Eigen::Vector3f::Zero();
   Eigen::Matrix3f direction = Eigen::Matrix3f::Identity();
@@ -22,21 +23,14 @@ struct RadialInfo
     return spokes_hi + spokes_lo;
   }
 
-  inline Cx2 radialChannel() const
-  {
-    Cx2 temp(read_points, spokes_total());
-    temp.setZero();
-    return temp;
-  }
-
-  inline Cx3 radialVolume() const
+  inline Cx3 noncartesianVolume() const
   {
     Cx3 temp(channels, read_points, spokes_total());
     temp.setZero();
     return temp;
   }
 
-  inline Cx4 radialSeries() const
+  inline Cx4 noncartesianSeries() const
   {
     Cx4 temp(channels, read_points, spokes_total(), volumes);
     temp.setZero();

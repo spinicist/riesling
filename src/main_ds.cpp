@@ -18,11 +18,11 @@ int main_ds(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
   Log log = ParseCommand(parser, fname);
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   auto const traj = reader.readTrajectory();
 
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
   Cx4 channels(info.channels, info.matrix[0], info.matrix[1], info.matrix[2]);
   R4 out(info.matrix[0], info.matrix[1], info.matrix[2], info.volumes);
   auto const sx = info.matrix[0];

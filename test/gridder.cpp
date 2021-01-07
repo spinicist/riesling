@@ -5,7 +5,7 @@
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
 {
   Log log(false);
-  RadialInfo info{
+  Info info{
       .matrix = {2, 2, 2},
       .voxel_size = {1, 1, 1},
       .read_points = 1,
@@ -34,7 +34,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     cart.setZero();
     gridder.toCartesian(rad, cart);
     CHECK(cart(0, 0, 0).real() == Approx(1.f));
-    gridder.toRadial(cart, rad);
+    gridder.toNoncartesian(cart, rad);
     CHECK(rad(0, 0).real() == Approx(1.f));
   }
 
@@ -51,7 +51,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     rad.setConstant(1.f);
     cart.setZero();
     gridder.toCartesian(rad, cart);
-    gridder.toRadial(cart, rad);
+    gridder.toNoncartesian(cart, rad);
     CHECK(rad(0, 0).real() == Approx(1.f));
   }
 }
@@ -59,7 +59,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 {
   Log log(false);
-  RadialInfo info{
+  Info info{
       .matrix = {4, 4, 4},
       .voxel_size = {1, 1, 1},
       .read_points = 4,
@@ -95,7 +95,7 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
     CHECK(cart(4, 0, 0).real() == Approx(0.f));
     CHECK(cart(0, 1, 0).real() == Approx(0.f));
     CHECK(cart(0, 0, 1).real() == Approx(0.f));
-    gridder.toRadial(cart, rad);
+    gridder.toNoncartesian(cart, rad);
     CHECK(rad(0, 0).real() == Approx(1.f));
   }
 
@@ -109,7 +109,7 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
     rad.setConstant(1.f);
     cart.setZero();
     gridder.toCartesian(rad, cart);
-    gridder.toRadial(cart, rad);
+    gridder.toNoncartesian(cart, rad);
     CHECK(rad(0, 0).real() == Approx(1.f).margin(1.e-2f));
   }
 }

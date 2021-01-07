@@ -1,4 +1,3 @@
-#include "fftw3.h"
 #include "main_defs.h"
 #include <iostream>
 
@@ -10,7 +9,7 @@ int main(int const argc, char const *const argv[])
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
-  args::Command kspace(commands, "kspace", "Output radial k-space for viewing", &main_kspace);
+  args::Command kspace(commands, "kspace", "Output k-space for viewing", &main_kspace);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
   args::Command rss(commands, "rss", "Basic root-sum-squares recon", &main_rss);
   args::Command sense(commands, "sense", "Calculate sensitivity maps", &main_sense);

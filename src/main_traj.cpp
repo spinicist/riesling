@@ -20,7 +20,7 @@ int main_traj(args::Subparser &parser)
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   Log log = ParseCommand(parser, fname);
   FFTStart(log);
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
 
   Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kb, stack, log);

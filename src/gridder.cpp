@@ -26,7 +26,7 @@ long fft_size(float const x)
 }
 
 Gridder::Gridder(
-    RadialInfo const &info,
+    Info const &info,
     R3 const &traj,
     float const os,
     bool const est_dc,
@@ -59,6 +59,7 @@ Gridder::Gridder(
   interp_ = kb ? (Interpolator *)new KaiserBessel(3, oversample_, dims_, !stack)
                : (Interpolator *)new NearestNeighbour();
 
+  // Count the number of points per spoke we will retain. Assumes profile is constant across spokes
   Profile const hires =
       stack ? profile2D(
                   traj.chip(info_.spokes_lo, 2), info_.spokes_hi / dims_[2], nomRad, maxRad, 1.f)
@@ -67,8 +68,8 @@ Gridder::Gridder(
   if (info_.spokes_lo) {
     // Only grid the low-res k-space out to the point the hi-res k-space begins (i.e. fill the
     // dead-time gap)
-    float const radialOverSamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
-    float const max_r = info_.read_gap * oversample_ / radialOverSamp;
+    float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
+    float const max_r = info_.read_gap * oversample_ / spokeOversamp;
     Profile const lores =
         stack
             ? profile2D(traj.chip(0, 2), info_.spokes_lo / dims_[2], nomRad, max_r, info_.lo_scale)
@@ -94,16 +95,14 @@ Gridder::Profile Gridder::profile2D(
   profile.xy = nomRad / scale;
   profile.z = 1.f;
   // Calculate the point spacing
-  float const radialOverSamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
-  float const k_delta = oversample_ / (radialOverSamp * scale);
+  float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
+  float const k_delta = oversample_ / (spokeOversamp * scale);
   float const V = 2.f * k_delta * M_PI / spokes; // Area element
   // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
   float const R = (M_PI * info_.matrix.maxCoeff()) / (spokes * scale);
   float const flat_start = nomRad / sqrt(R);
   float const flat_val = V * flat_start;
 
-  // Count the number of points per spoke we will retain. Assume spokes have a simple radial
-  // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
   for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
     float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
     if (rad <= maxRad) { // Discard points above the desired resolution
@@ -135,8 +134,8 @@ Gridder::Profile Gridder::profile3D(
   Profile profile;
   profile.xy = profile.z = nomRad / scale;
   // Calculate the point spacing
-  float const radialOverSamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
-  float const k_delta = oversample_ / (radialOverSamp * scale);
+  float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
+  float const k_delta = oversample_ / (spokeOversamp * scale);
   float const V = (4.f / 3.f) * k_delta * M_PI / spokes; // Volume element
   // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
   float const R =
@@ -144,8 +143,6 @@ Gridder::Profile Gridder::profile3D(
   float const flat_start = profile.xy / (oversample_ * sqrt(R));
   float const flat_val = V * (3. * (flat_start * flat_start) + 1. / 4.);
 
-  // Count the number of points per spoke we will retain. Assume spokes have a simple radial
-  // profile. Probably excludes stack-of-cones / crazy etch-a-sketch trajectories
   for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
     float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
     if (rad <= maxRad) { // Discard points above the desired resolution
@@ -230,7 +227,6 @@ void Gridder::iterativeDC()
 
   W.setConstant(1.f);
   for (auto &c : coords_) {
-    // W(c.radial[0], c.radial[1]) = std::complex(c.DC, 0.f);
     c.DC = 1.f;
   }
 
@@ -238,7 +234,7 @@ void Gridder::iterativeDC()
     cart.setZero();
     Wp.setZero();
     toCartesian(W, cart);
-    toRadial(cart, Wp);
+    toNoncartesian(cart, Wp);
     Wp = (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
     float const delta = norm(W - Wp);
     W = Wp;
@@ -293,10 +289,10 @@ void Gridder::deapodize(Cx3 &image) const
   interp_->deapodize(image);
 }
 
-void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const
+void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
 {
-  assert(radial.dimension(0) == info_.read_points);
-  assert(radial.dimension(1) == info_.spokes_total());
+  assert(noncart.dimension(0) == info_.read_points);
+  assert(noncart.dimension(1) == info_.spokes_total());
   assert(cart.dimension(0) == dims_[0]);
   assert(cart.dimension(1) == dims_[1]);
   assert(cart.dimension(2) == dims_[2]);
@@ -309,20 +305,20 @@ void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const
       auto const &nc = cp.noncart;
       auto const &dc = pow(cp.DC, DCexp_);
       std::complex<float> const scale(dc * cp.weight, 0.f);
-      cart(c.x, c.y, c.z) += scale * radial(nc.read, nc.spoke);
+      cart(c.x, c.y, c.z) += scale * noncart(nc.read, nc.spoke);
     }
   };
 
   auto const &start = log_.start_time();
   Threads::RangeFor(grid_task, sortedIndices_.size());
-  log_.stop_time(start, "Radial -> Cartesian");
+  log_.stop_time(start, "Noncartesian -> Cartesian");
 }
 
-void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
+void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
 {
-  assert(radial.dimension(0) == info_.channels);
-  assert(radial.dimension(1) == info_.read_points);
-  assert(radial.dimension(2) == info_.spokes_total());
+  assert(noncart.dimension(0) == info_.channels);
+  assert(noncart.dimension(1) == info_.read_points);
+  assert(noncart.dimension(2) == info_.spokes_total());
   assert(cart.dimension(0) == info_.channels);
   assert(cart.dimension(1) == dims_[0]);
   assert(cart.dimension(2) == dims_[1]);
@@ -337,58 +333,58 @@ void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
       auto const &dc = pow(cp.DC, DCexp_);
       std::complex<float> const scale(dc * cp.weight, 0.f);
       cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) +=
-          radial.chip(nc.spoke, 2).chip(nc.read, 1) * scale;
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1) * scale;
     }
   };
 
   auto const &start = log_.start_time();
   Threads::RangeFor(grid_task, sortedIndices_.size());
-  log_.stop_time(start, "Radial -> Cartesian");
+  log_.stop_time(start, "Noncartesian -> Cartesian");
 }
 
-void Gridder::toRadial(Cx3 const &cart, Cx2 &radial) const
+void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
 {
-  assert(radial.dimension(0) == info_.read_points);
-  assert(radial.dimension(1) == info_.spokes_total());
+  assert(noncart.dimension(0) == info_.read_points);
+  assert(noncart.dimension(1) == info_.spokes_total());
   assert(cart.dimension(0) == dims_[0]);
   assert(cart.dimension(1) == dims_[1]);
   assert(cart.dimension(2) == dims_[2]);
 
-  radial.setZero();
+  noncart.setZero();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
       auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      radial(nc.read, nc.spoke) += cart(c.x, c.y, c.z) * cp.weight;
+      noncart(nc.read, nc.spoke) += cart(c.x, c.y, c.z) * cp.weight;
     }
   };
   auto const &start = log_.start_time();
   Threads::RangeFor(grid_task, coords_.size());
-  log_.stop_time(start, "Cartesian -> Radial");
+  log_.stop_time(start, "Cartesian -> Noncartesian");
 }
 
-void Gridder::toRadial(Cx4 const &cart, Cx3 &radial) const
+void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
 {
-  assert(radial.dimension(0) == cart.dimension(0));
-  assert(radial.dimension(1) == info_.read_points);
-  assert(radial.dimension(2) == info_.spokes_total());
+  assert(noncart.dimension(0) == cart.dimension(0));
+  assert(noncart.dimension(1) == info_.read_points);
+  assert(noncart.dimension(2) == info_.spokes_total());
   assert(cart.dimension(1) == dims_[0]);
   assert(cart.dimension(2) == dims_[1]);
   assert(cart.dimension(3) == dims_[2]);
 
-  radial.setZero();
+  noncart.setZero();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
       auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &weight = radial.chip(nc.read, 2).chip(nc.spoke, 1).constant(cp.weight);
-      radial.chip(nc.read, 2).chip(nc.spoke, 1) +=
+      auto const &weight = noncart.chip(nc.read, 2).chip(nc.spoke, 1).constant(cp.weight);
+      noncart.chip(nc.read, 2).chip(nc.spoke, 1) +=
           cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) * weight;
     }
   };
   auto const &start = log_.start_time();
   Threads::RangeFor(grid_task, coords_.size());
-  log_.stop_time(start, "Cartesian -> Radial");
+  log_.stop_time(start, "Cartesian -> Noncartesian");
 }

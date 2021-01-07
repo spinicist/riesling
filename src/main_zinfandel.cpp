@@ -30,7 +30,7 @@ int main_zinfandel(args::Subparser &parser)
       parser, "BANDWIDTH", "Read-out bandwidth for slab profile correction (kHz)", {"rbw"}, 0.f);
   Log log = ParseCommand(parser, fname);
 
-  RadialReader reader(fname.Get(), log);
+  HD5Reader reader(fname.Get(), log);
   auto info = reader.info();
   long const gap_sz = gap ? gap.Get() : info.read_gap;
   auto const traj = reader.readTrajectory();
@@ -41,12 +41,12 @@ int main_zinfandel(args::Subparser &parser)
     out_info.volumes = 1;
   }
 
-  RadialWriter writer(OutName(fname, oname, "zinfandel", "h5"), log);
+  HD5Writer writer(OutName(fname, oname, "zinfandel", "h5"), log);
   writer.writeInfo(out_info);
   writer.writeTrajectory(traj);
   writer.writeMeta(reader.readMeta());
 
-  Cx3 rad_ks = info.radialVolume();
+  Cx3 rad_ks = info.noncartesianVolume();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     reader.readData(iv, rad_ks);
     zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj, rad_ks, log);
