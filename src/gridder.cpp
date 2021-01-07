@@ -76,10 +76,6 @@ Gridder::Gridder(
     auto const temp = genCoords(traj, 0, info_.spokes_lo, lores);
     coords_.insert(coords_.end(), temp.begin(), temp.end());
   }
-  log_.info(
-      FMT_STRING("Size of struct {} total size {}"),
-      sizeof(Coords),
-      sizeof(Coords) * coords_.size());
   sortCoords();
   if (est_dc) {
     iterativeDC();
@@ -304,20 +300,21 @@ void Gridder::toCartesian(Cx2 const &radial, Cx3 &cart) const
   assert(cart.dimension(0) == dims_[0]);
   assert(cart.dimension(1) == dims_[1]);
   assert(cart.dimension(2) == dims_[2]);
+  assert(sortedIndices_.size() == coords_.size());
 
-  auto grid_task = [&](long const lo_c, long const hi_c) {
-    for (auto ic = lo_c; ic < hi_c; ic++) {
-      auto const &cp = coords_[sortedIndices_[ic]];
+  auto grid_task = [&](long const lo, long const hi) {
+    for (auto ii = lo; ii < hi; ii++) {
+      auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       auto const &dc = pow(cp.DC, DCexp_);
       std::complex<float> const scale(dc * cp.weight, 0.f);
-      cart(c.x, c.y, c.z) += scale * radial(nc.spoke, nc.read);
+      cart(c.x, c.y, c.z) += scale * radial(nc.read, nc.spoke);
     }
   };
 
   auto const &start = log_.start_time();
-  Threads::RangeFor(grid_task, coords_.size());
+  Threads::RangeFor(grid_task, sortedIndices_.size());
   log_.stop_time(start, "Radial -> Cartesian");
 }
 
@@ -330,10 +327,11 @@ void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
   assert(cart.dimension(1) == dims_[0]);
   assert(cart.dimension(2) == dims_[1]);
   assert(cart.dimension(3) == dims_[2]);
+  assert(sortedIndices_.size() == coords_.size());
 
-  auto grid_task = [&](long const lo_c, long const hi_c) {
-    for (auto ic = lo_c; ic < hi_c; ic++) {
-      auto const &cp = coords_[sortedIndices_[ic]];
+  auto grid_task = [&](long const lo, long const hi) {
+    for (auto ii = lo; ii < hi; ii++) {
+      auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       auto const &dc = pow(cp.DC, DCexp_);
@@ -344,7 +342,7 @@ void Gridder::toCartesian(Cx3 const &radial, Cx4 &cart) const
   };
 
   auto const &start = log_.start_time();
-  Threads::RangeFor(grid_task, coords_.size());
+  Threads::RangeFor(grid_task, sortedIndices_.size());
   log_.stop_time(start, "Radial -> Cartesian");
 }
 
@@ -357,9 +355,9 @@ void Gridder::toRadial(Cx3 const &cart, Cx2 &radial) const
   assert(cart.dimension(2) == dims_[2]);
 
   radial.setZero();
-  auto grid_task = [&](long const lo_c, long const hi_c) {
-    for (auto ic = lo_c; ic < hi_c; ic++) {
-      auto const &cp = coords_[ic];
+  auto grid_task = [&](long const lo, long const hi) {
+    for (auto ii = lo; ii < hi; ii++) {
+      auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       radial(nc.read, nc.spoke) += cart(c.x, c.y, c.z) * cp.weight;
@@ -380,9 +378,9 @@ void Gridder::toRadial(Cx4 const &cart, Cx3 &radial) const
   assert(cart.dimension(3) == dims_[2]);
 
   radial.setZero();
-  auto grid_task = [&](long const lo_c, long const hi_c) {
-    for (auto ic = lo_c; ic < hi_c; ic++) {
-      auto const &cp = coords_[ic];
+  auto grid_task = [&](long const lo, long const hi) {
+    for (auto ii = lo; ii < hi; ii++) {
+      auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       auto const &weight = radial.chip(nc.read, 2).chip(nc.spoke, 1).constant(cp.weight);
