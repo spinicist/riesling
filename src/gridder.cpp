@@ -179,12 +179,12 @@ Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Pro
   std::vector<Coords> coords(readSz * spokeSz * kSz);
 
   std::fesetround(FE_TONEAREST);
-  Size3 wrapSz{dims_[0], dims_[1], dims_[2]}; // Annoying type issue
+  Size3 wrapSz{(int16_t)dims_[0], (int16_t)dims_[1], (int16_t)dims_[2]}; // Annoying type issue
   auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
     long index = lo_spoke * readSz * kSz;
     for (int32_t is = lo_spoke; is < hi_spoke; is++) {
       for (int16_t ir = profile.lo; ir <= profile.hi; ir++) {
-        NoncartesianIndex const nc{.read = ir, .spoke = is + spoke0};
+        NoncartesianIndex const nc{.spoke = is + spoke0, .read = ir};
         R1 const tp = traj.chip(nc.spoke, 2).chip(nc.read, 1);
         Point3 const xyz = toCart(tp, profile.xy, profile.z);
         Size3 const cart = nearest(xyz);
@@ -212,7 +212,7 @@ void Gridder::sortCoords()
   auto const start = log_.start_time();
   sortedIndices_.resize(coords_.size());
   std::iota(sortedIndices_.begin(), sortedIndices_.end(), 0);
-  std::sort(sortedIndices_.begin(), sortedIndices_.end(), [=](long const a, long const b) {
+  std::sort(sortedIndices_.begin(), sortedIndices_.end(), [&](long const a, long const b) {
     auto const &ac = coords_[a].cart;
     auto const &bc = coords_[b].cart;
     return (ac.z < bc.z) ||

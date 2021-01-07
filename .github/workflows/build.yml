@@ -4,7 +4,6 @@ on: push
 
 env:
   BUILD_TYPE: Release
-  VCPKG_PATH: ${{github.workspace}}/vcpkg
 
 jobs:
   build:
@@ -37,27 +36,22 @@ jobs:
             brew install gnu-tar
           fi
 
-      - name: vcpkg
-        uses: lukka/run-vcpkg@v6
+      - name: Build
+        shell: bash
         env:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
-        with:
-          setupOnly: true
-          vcpkgDirectory: '${{ github.workspace }}/cmake/vcpkg'
-          appendedCacheKey: ${{ hashFiles( '${{ github.workspace }}/vcpkg.json' ) }}
+        run: |
+          cmake/vcpkg/bootstrap-vcpkg.sh
+          cmake -B ${{github.workspace}}/build -S ${{github.workspace}} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/Plain.cmake
+          cmake --build ${{github.workspace}}/build
 
-      - name: CMake
-        uses: lukka/run-cmake@v2
-        id: runcmake
-        env:
-          CC: ${{matrix.config.cc}}
-          CXX: ${{matrix.config.cxx}}
-        with:
-          cmakeListsTxtPath: '${{github.workspace}}/CMakeLists.txt'
-          useVcpkgToolchainFile: true
-          buildDirectory: build
-          cmakeBuildType: Release
+      # - name: Tests
+      #   shell: bash
+      #   run: |
+      #     ${{github.workspace}}/build/prufung
 
       - name: Save release
         run: |
