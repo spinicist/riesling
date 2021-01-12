@@ -85,7 +85,7 @@ FFT3::FFT3(Cx3 &grid, Log &log)
   auto const start = log.start_time();
   auto ptr = reinterpret_cast<fftwf_complex *>(grid.data());
   fftwf_plan_with_nthreads(Threads::GlobalThreadCount());
-  log_.info("Planning FFTs...");
+  log_.info(FMT_STRING("Planning {} FFT..."), dims);
   forward_plan_ = fftwf_plan_many_dft(
       3, sizes, 1, ptr, nullptr, 1, 1, ptr, nullptr, 1, 1, FFTW_FORWARD, FFTW_MEASURE);
   reverse_plan_ = fftwf_plan_many_dft(
@@ -189,7 +189,7 @@ FFT3N::FFT3N(Cx4 &grid, Log &log)
   scale_ = 1. / sqrt(Nvox);
   auto ptr = reinterpret_cast<fftwf_complex *>(grid.data());
   fftwf_plan_with_nthreads(Threads::GlobalThreadCount());
-  log_.info("Planning FFTs...");
+  log_.info(FMT_STRING("Planning {} FFT"), dims);
   auto const start = log_.start_time();
   forward_plan_ = fftwf_plan_many_dft(
       3, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_FORWARD, FFTW_MEASURE);

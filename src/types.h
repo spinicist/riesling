@@ -102,3 +102,39 @@ inline decltype(auto) tile(T &&x, long const N)
   return x.reshape(Sz4{1, x.dimension(0), x.dimension(1), x.dimension(2)})
       .broadcast(Sz4{N, 1, 1, 1});
 }
+
+template <typename T>
+inline decltype(auto) CollapseToVector(T &t)
+{
+  using Scalar = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<Scalar, 1, Eigen::Dynamic>> mapped(
+      t.data(),
+      1,
+      std::accumulate(
+          t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+  return mapped;
+}
+
+template <typename T>
+inline decltype(auto) CollapseToMatrix(T &t)
+{
+  using Scalar = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
+      t.data(),
+      t.dimension(0),
+      std::accumulate(
+          t.dimensions().begin() + 1, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+  return mapped;
+}
+
+template <typename T>
+inline decltype(auto) CollapseToMatrix(T const &t)
+{
+  using Scalar = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
+      t.data(),
+      t.dimension(0),
+      std::accumulate(
+          t.dimensions().begin() + 1, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+  return mapped;
+}

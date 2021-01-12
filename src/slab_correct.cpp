@@ -52,7 +52,6 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
     }
   });
 
-  //   fmt::print(FMT_STRING("os {}\nr {}\nprofile {}\n"), os, r.transpose(), profile.transpose());
   FFT1DReal2Complex fft(N, log);
   float const beta = 1.e-1; // Regularize sinc nulls
   auto spoke_task = [&](long const spoke_lo, long const spoke_hi) {
