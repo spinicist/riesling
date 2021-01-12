@@ -46,15 +46,20 @@ Gridder::Gridder(
 
   float const ratio = (res > 0.f) ? info_.voxel_size.minCoeff() / res : 1.f;
   long const nomSz = fft_size(oversample_ * info_.matrix.maxCoeff());
-  long const gridSz = shrink ? fft_size(nomSz * ratio) : nomSz;
   long const nomRad = nomSz / 2 - 1;
-  long const maxRad = gridSz / 2 - 1;
+  long const gridSz = shrink ? fft_size(nomSz * ratio) : nomSz;
+  long const maxRad = shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio);
   if (stack) {
     dims_ = {gridSz, gridSz, info_.matrix[2]};
   } else {
     dims_ = {gridSz, gridSz, gridSz};
   }
-  log_.info(FMT_STRING("Gridder: Dimensions {}"), dims_);
+  log_.info(
+      FMT_STRING("Gridder: Dimensions {} Resolution {} Ratio {} maxRad {}"),
+      dims_,
+      res,
+      ratio,
+      maxRad);
 
   interp_ = kb ? (Interpolator *)new KaiserBessel(3, oversample_, dims_, !stack)
                : (Interpolator *)new NearestNeighbour();
