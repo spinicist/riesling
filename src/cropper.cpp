@@ -8,9 +8,8 @@ Cropper::Cropper(
   } else {
     Array3l full;
     std::copy_n(&fullSz[0], 3, full.begin());
-    // Ensure even, no smaller than the prescribed FoV, no bigger than the grid
-    Array3l crop =
-        (((extent / info.voxel_size) / 2).floor() * 2).cast<long>().min(full).max(info.matrix);
+    // Ensure even, no bigger than the grid
+    Array3l crop = (((extent / info.voxel_size) / 2).floor() * 2).cast<long>().min(full);
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
   st_ = Dims3{(fullSz[0] - sz_[0]) / 2, (fullSz[1] - sz_[1]) / 2, (fullSz[2] - sz_[2]) / 2};
