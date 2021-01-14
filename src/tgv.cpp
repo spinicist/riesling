@@ -1,7 +1,8 @@
 #include "tgv.h"
+
+#include "tensorOps.h"
 #include "threads.h"
 
-#include "io_nifti.h"
 auto fdiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
@@ -103,7 +104,7 @@ Cx3 tgv(
   Cx3 check(data.dimensions());
   encode(u, check);
 
-  float const scale = norm(u);
+  float const scale = Norm(u);
   data = data / data.constant(scale);
   u = u / u.constant(scale);
   Cx3 u_(dims);
@@ -148,7 +149,7 @@ Cx3 tgv(
   float const tau_p = 1.f / step_size;
   float const tau_d = 1.f / (step_size / 2.f);
 
-  float const norm_u0 = norm(u);
+  float const norm_u0 = Norm(u);
 
   log.info(FMT_STRING("Starting TGV Scale {} Initial Norm {}"), scale, norm_u0);
 
@@ -196,7 +197,7 @@ Cx3 tgv(
     u_.device(Threads::GlobalDevice()) = 2.0 * u - u_old;
     xi_.device(Threads::GlobalDevice()) = 2.0 * xi - xi_old;
 
-    float const delta = norm(u - u_old) / norm_u0;
+    float const delta = Norm(u - u_old) / norm_u0;
 
     log.info(FMT_STRING("Iteration {}/{} alpha0 {} delta {}"), ii + 1, max_its, alpha0, delta);
     if (delta < thresh) {

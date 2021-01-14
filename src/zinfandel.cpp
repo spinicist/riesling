@@ -1,6 +1,9 @@
-#include "parse_args.h"
-#include "threads.h"
 #include "zinfandel.h"
+
+#include "parse_args.h"
+#include "tensorOps.h"
+#include "threads.h"
+
 #include <Eigen/SVD>
 #include <complex>
 
@@ -86,7 +89,7 @@ FindClosest(R3 const &traj, long const &tgt, long const &n_spoke, std::vector<lo
       [&traj, end_is](long const a, long const b) {
         auto const &end_a = traj.chip(a, 2).chip(traj.dimension(1) - 1, 1);
         auto const &end_b = traj.chip(b, 2).chip(traj.dimension(1) - 1, 1);
-        return norm(end_a - end_is) < norm(end_b - end_is);
+        return Norm(end_a - end_is) < Norm(end_b - end_is);
       });
   std::copy_n(all_spokes.begin(), n_spoke, spokes.begin());
   return spokes;

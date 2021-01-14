@@ -2,7 +2,7 @@
 
 #include "filter.h"
 #include "io_nifti.h"
-#include "kaiser-bessel.h"
+#include "tensorOps.h"
 #include "threads.h"
 
 #include <algorithm>
@@ -16,7 +16,7 @@ inline decltype(auto) nearest(T &&x)
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
-long fft_size(float const x)
+inline long fft_size(float const x)
 {
   if (x > 8.f) {
     return (std::lrint(x) + 7L) & ~7L;
@@ -30,7 +30,7 @@ Gridder::Gridder(
     R3 const &traj,
     float const os,
     bool const est_dc,
-    bool const kb,
+    Kernel *const kernel,
     bool const stack,
     Log &log,
     float const res,
@@ -38,6 +38,7 @@ Gridder::Gridder(
     : info_{info}
     , oversample_{os}
     , DCexp_{1.f}
+    , kernel_{kernel}
     , log_{log}
 {
   assert(traj.dimension(0) == 3);
@@ -48,21 +49,22 @@ Gridder::Gridder(
   long const nomSz = fft_size(oversample_ * info_.matrix.maxCoeff());
   long const nomRad = nomSz / 2 - 1;
   long const gridSz = shrink ? fft_size(nomSz * ratio) : nomSz;
-  long const maxRad = shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio);
+
   if (stack) {
     dims_ = {gridSz, gridSz, info_.matrix[2]};
   } else {
     dims_ = {gridSz, gridSz, gridSz};
   }
+
+  apodize_ = kernel_->apodization(dims_);
+  long const maxRad = (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - kernel_->radius();
+
   log_.info(
       FMT_STRING("Gridder: Dimensions {} Resolution {} Ratio {} maxRad {}"),
       dims_,
       res,
       ratio,
       maxRad);
-
-  interp_ = kb ? (Interpolator *)new KaiserBessel(3, oversample_, dims_, !stack)
-               : (Interpolator *)new NearestNeighbour();
 
   // Count the number of points per spoke we will retain. Assumes profile is constant across spokes
   Profile const hires =
@@ -177,29 +179,25 @@ std::vector<Gridder::Coords>
 Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Profile const &profile)
 {
   long const readSz = profile.hi - profile.lo + 1;
-  long const kSz = interp_->size();
-  std::vector<Coords> coords(readSz * spokeSz * kSz);
+  long const totalSz = readSz * spokeSz;
+  std::vector<Coords> coords(totalSz);
 
   std::fesetround(FE_TONEAREST);
-  Size3 wrapSz{(int16_t)dims_[0], (int16_t)dims_[1], (int16_t)dims_[2]}; // Annoying type issue
+  Size3 const center{dims_[0] / 2, dims_[1] / 2, dims_[2] / 2};
   auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
-    long index = lo_spoke * readSz * kSz;
+    long index = lo_spoke * readSz;
     for (int32_t is = lo_spoke; is < hi_spoke; is++) {
       for (int16_t ir = profile.lo; ir <= profile.hi; ir++) {
         NoncartesianIndex const nc{.spoke = is + spoke0, .read = ir};
         R1 const tp = traj.chip(nc.spoke, 2).chip(nc.read, 1);
         Point3 const xyz = toCart(tp, profile.xy, profile.z);
-        Size3 const cart = nearest(xyz);
-        Point3 const offset = xyz - cart.cast<float>().matrix();
-        auto const kernel = interp_->weights(offset);
-        for (auto &k : kernel) {
-          // log_.info(FMT_STRING("k point {} weight {}"), k.point.transpose(), k.weight);
-          Size3 const w = wrap(cart + k.point, wrapSz);
-          coords[index++] = Coords{.cart = CartesianIndex{w(0), w(1), w(2)},
-                                   .noncart = nc,
-                                   .DC = profile.DC[ir - profile.lo],
-                                   .weight = k.weight};
-        }
+        Size3 const gp = nearest(xyz);
+        Point3 const offset = xyz - gp.cast<float>().matrix();
+        Size3 const cart = gp + center;
+        coords[index++] = Coords{.cart = CartesianIndex{cart(0), cart(1), cart(2)},
+                                 .noncart = nc,
+                                 .DC = profile.DC[ir - profile.lo],
+                                 .offset = offset};
       }
     }
   };
@@ -241,7 +239,7 @@ void Gridder::iterativeDC()
     toCartesian(W, cart);
     toNoncartesian(cart, Wp);
     Wp = (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
-    float const delta = norm(W - Wp);
+    float const delta = Norm(W - Wp);
     W = Wp;
     if (delta < 1.e-5f) {
       log_.info("DC converged, delta was {}", delta);
@@ -286,12 +284,12 @@ Cx3 Gridder::newGrid1() const
 
 void Gridder::apodize(Cx3 &image) const
 {
-  interp_->apodize(image);
+  apodize_(image, false);
 }
 
 void Gridder::deapodize(Cx3 &image) const
 {
-  interp_->deapodize(image);
+  apodize_(image, true);
 }
 
 void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
@@ -303,14 +301,20 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
   assert(cart.dimension(2) == dims_[2]);
   assert(sortedIndices_.size() == coords_.size());
 
+  auto const st = kernel_->start();
+  auto const sz = kernel_->size();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
+      if (lo == 0) {
+        log_.progress(ii, hi);
+      }
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &dc = pow(cp.DC, DCexp_);
-      std::complex<float> const scale(dc * cp.weight, 0.f);
-      cart(c.x, c.y, c.z) += scale * noncart(nc.read, nc.spoke);
+      auto const &dc = std::complex<float>(pow(cp.DC, DCexp_), 0.f);
+      auto const w = kernel_->kspace(cp.offset);
+      cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz) +=
+          noncart(nc.read, nc.spoke) * w * dc;
     }
   };
 
@@ -330,15 +334,25 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
   assert(cart.dimension(3) == dims_[2]);
   assert(sortedIndices_.size() == coords_.size());
 
+  auto const st = kernel_->start();
+  auto const sz = kernel_->size();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
+      if (lo == 0) {
+        log_.progress(ii, hi);
+      }
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &dc = pow(cp.DC, DCexp_);
-      std::complex<float> const scale(dc * cp.weight, 0.f);
-      cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) +=
-          noncart.chip(nc.spoke, 2).chip(nc.read, 1) * scale;
+      auto const &dc = std::complex<float>(pow(cp.DC, DCexp_), 0.f);
+      Cx4 const nck = noncart.chip(nc.spoke, 2)
+                          .chip(nc.read, 1)
+                          .reshape(Sz4{info_.channels, 1, 1, 1})
+                          .broadcast(Sz4{1, sz[0], sz[1], sz[2]});
+      Cx4 const weights = Tile(kernel_->kspace(cp.offset), info_.channels) * dc;
+      cart.slice(
+          Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]},
+          Sz4{info_.channels, sz[0], sz[1], sz[2]}) += nck * weights;
     }
   };
 
@@ -355,13 +369,23 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
   assert(cart.dimension(1) == dims_[1]);
   assert(cart.dimension(2) == dims_[2]);
 
-  noncart.setZero();
+  auto const st = kernel_->start();
+  auto const sz = kernel_->size();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
+      if (lo == 0) {
+        log_.progress(ii, hi);
+      }
+      // for (auto ii = 0; ii < coords_.size(); ii++) {
       auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      noncart(nc.read, nc.spoke) += cart(c.x, c.y, c.z) * cp.weight;
+      auto const &ksl = cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz);
+      Cx3 const w = kernel_->kspace(cp.offset);
+      Eigen::array<Eigen::IndexPair<int>, 3> const contract_dims{
+          Eigen::IndexPair<int>{0, 0}, Eigen::IndexPair<int>{1, 1}, Eigen::IndexPair<int>{2, 2}};
+      Cx0 const val = ksl.contract(w, contract_dims);
+      noncart.chip(nc.spoke, 1).chip(nc.read, 0) = val;
     }
   };
   auto const &start = log_.start_time();
@@ -371,22 +395,30 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
 
 void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
 {
-  assert(noncart.dimension(0) == cart.dimension(0));
+  assert(noncart.dimension(0) == info_.channels);
   assert(noncart.dimension(1) == info_.read_points);
   assert(noncart.dimension(2) == info_.spokes_total());
+  assert(cart.dimension(0) == info_.channels);
   assert(cart.dimension(1) == dims_[0]);
   assert(cart.dimension(2) == dims_[1]);
   assert(cart.dimension(3) == dims_[2]);
 
-  noncart.setZero();
+  auto const st = kernel_->start();
+  auto const sz = kernel_->size();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
+      if (lo == 0) {
+        log_.progress(ii, hi);
+      }
       auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &weight = noncart.chip(nc.read, 2).chip(nc.spoke, 1).constant(cp.weight);
-      noncart.chip(nc.read, 2).chip(nc.spoke, 1) +=
-          cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) * weight;
+      auto const &ksl = cart.slice(
+          Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]}, Sz4{info_.channels, sz[0], sz[1], sz[2]});
+      Cx3 const w = kernel_->kspace(cp.offset);
+      Eigen::array<Eigen::IndexPair<int>, 3> const contract_dims{
+          Eigen::IndexPair<int>{1, 0}, Eigen::IndexPair<int>{2, 1}, Eigen::IndexPair<int>{3, 2}};
+      noncart.chip(nc.spoke, 2).chip(nc.read, 1) = ksl.contract(w, contract_dims);
     }
   };
   auto const &start = log_.start_time();

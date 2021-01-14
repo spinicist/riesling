@@ -27,11 +27,20 @@ struct Log
     vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
+  void progress(long const ii, long const n) const;
+
   std::chrono::high_resolution_clock::time_point start_time() const;
-  void stop_time(std::chrono::high_resolution_clock::time_point const &t, std::string const &label) const;
+  void stop_time(
+      std::chrono::high_resolution_clock::time_point const &t, std::string const &label) const;
 
 private:
   void vinfo(fmt::string_view format, fmt::format_args args) const;
   void vfail(fmt::string_view format, fmt::format_args args) const;
   Level out_level_;
 };
+
+template <typename T>
+inline decltype(auto) Dims(T const &x)
+{
+  return fmt::join(x.dimensions(), ",");
+}

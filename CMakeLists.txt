@@ -29,15 +29,21 @@ add_library(vineyard
     src/cg.cpp
     src/compressor.cpp
     src/cropper.cpp
-    src/fft.cpp
+    src/espirit.cpp
+    src/fft1.cpp
+    src/fft3.cpp
+    src/fft3n.cpp
+    src/fft_util.cpp
     src/filter.cpp
     src/gridder.cpp
     src/hd5.cpp
-    src/interpolator.cpp
     src/io_hd5.cpp
     src/io_nifti.cpp
-    src/kaiser-bessel.cpp
+    src/kernel.cpp
+    src/kernel_kb.cpp
+    src/kernel_nn.cpp
     src/log.cpp
+    src/padder.cpp
     src/parse_args.cpp
     src/sense.cpp
     src/slab_correct.cpp
@@ -82,9 +88,11 @@ install(TARGETS riesling RUNTIME DESTINATION bin)
 # Tests
 add_executable(prufung
     test/main.cpp
-    test/fft.cpp
-    test/zinfandel.cpp
+    test/fft3.cpp
+    test/fft3n.cpp
+    test/kernel_kb.cpp
     test/gridder.cpp
+    test/zinfandel.cpp
 )
 target_link_libraries(prufung PUBLIC
     vineyard

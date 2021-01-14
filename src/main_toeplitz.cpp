@@ -2,7 +2,7 @@
 
 #include "cg.h"
 #include "cropper.h"
-#include "fft.h"
+#include "fft3n.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -10,6 +10,7 @@
 #include "log.h"
 #include "parse_args.h"
 #include "sense.h"
+#include "tensorOps.h"
 #include "threads.h"
 #include <filesystem>
 
@@ -28,13 +29,15 @@ int main_toeplitz(args::Subparser &parser)
       parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
 
   Log log = ParseCommand(parser, fname);
-  FFTStart(log);
+  FFT::Start(log);
   HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   Cx3 rad_ks = info.noncartesianVolume();
 
   R3 const trajectory = reader.readTrajectory();
-  Gridder gridder(info, trajectory, osamp.Get(), est_dc, kb, stack, log);
+  Kernel *kernel =
+      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+  Gridder gridder(info, trajectory, osamp.Get(), est_dc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
 
   Cx4 grid = gridder.newGrid();
@@ -43,8 +46,8 @@ int main_toeplitz(args::Subparser &parser)
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
-  Cx4 const sense =
-      iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), stack, kb, rad_ks, log));
+  Cx4 const sense = iter_cropper.crop4(
+      SENSE(info, trajectory, osamp.Get(), stack, kernel, false, 0.f, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
   ones.setConstant({1.0f});
@@ -57,9 +60,9 @@ int main_toeplitz(args::Subparser &parser)
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
     gridder.apodize(y);
-    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * tile(y, info.channels);
+    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
     fft.forward();
-    grid.device(Threads::GlobalDevice()) = grid * tile(transfer, info.channels);
+    grid.device(Threads::GlobalDevice()) = grid * Tile(transfer, info.channels);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     gridder.deapodize(y);
@@ -104,6 +107,6 @@ int main_toeplitz(args::Subparser &parser)
   } else {
     WriteVolumes(info, out, volume.Get(), ofile, log);
   }
-  FFTEnd(log);
+  FFT::End(log);
   return EXIT_SUCCESS;
 }

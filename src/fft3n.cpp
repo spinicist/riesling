@@ -1,0 +1,114 @@
+#include "fft3n.h"
+
+#include "tensorOps.h"
+
+FFT3N::FFT3N(Cx4 &grid, Log &log, long const nThreads)
+    : grid_{grid}
+    , log_{log}
+    , threaded_{nThreads > 1}
+{
+  auto const &dims = grid.dimensions();
+  int const N = dims[0];
+  int sizes[3];
+  // FFTW is row-major. Reverse dims as per
+  // http://www.fftw.org/fftw3_doc/Column_002dmajor-Format.html#Column_002dmajor-Format
+  sizes[0] = static_cast<int>(dims[3]);
+  sizes[1] = static_cast<int>(dims[2]);
+  sizes[2] = static_cast<int>(dims[1]);
+
+  auto const Nvox = (sizes[0] * sizes[1] * sizes[2]);
+  scale_ = 1. / sqrt(Nvox);
+  auto ptr = reinterpret_cast<fftwf_complex *>(grid.data());
+  log_.info(FMT_STRING("Planning {} FFT with {} threads"), dims, nThreads);
+  fftwf_plan_with_nthreads(nThreads);
+  auto const start = log_.start_time();
+  forward_plan_ = fftwf_plan_many_dft(
+      3, sizes, N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_FORWARD, FFTW_MEASURE);
+  reverse_plan_ = fftwf_plan_many_dft(
+      3, sizes, N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_BACKWARD, FFTW_MEASURE);
+
+  if (forward_plan_ == NULL) {
+    log.fail("Could not create forward FFT3N plan");
+  }
+  if (reverse_plan_ == NULL) {
+    log.fail("Could not create reverse FFT3N plan");
+  }
+
+  phX_ = FFT::Phase(dims[1]);
+  phY_ = FFT::Phase(dims[2]);
+  phZ_ = FFT::Phase(dims[3]);
+
+  log_.stop_time(start, "Finished planning FFTs");
+}
+
+FFT3N::~FFT3N()
+{
+  fftwf_destroy_plan(forward_plan_);
+  fftwf_destroy_plan(reverse_plan_);
+}
+
+void FFT3N::forwardPhase(Cx4 &x, float const scale) const
+{
+
+  auto start = log_.start_time();
+  if (threaded_) {
+    x.device(Threads::GlobalDevice()) =
+        x * x.constant(scale) *
+        TileToMatch(Outer(Outer(phX_, phY_), phZ_).cast<Cx>(), x.dimensions());
+  } else {
+    x = x * x.constant(scale) *
+        TileToMatch(Outer(Outer(phX_, phY_), phZ_).cast<Cx>(), x.dimensions());
+  }
+  log_.stop_time(start, "Forward PhaseN");
+}
+
+void FFT3N::reversePhase(Cx4 &x, float const scale) const
+{
+
+  auto start = log_.start_time();
+  if (threaded_) {
+    auto dev = Threads::GlobalDevice();
+    x.device(dev) = x * x.constant(scale) /
+                    TileToMatch(Outer(Outer(phX_, phY_), phZ_).cast<Cx>(), x.dimensions());
+  } else {
+    x = x * x.constant(scale) /
+        TileToMatch(Outer(Outer(phX_, phY_), phZ_).cast<Cx>(), x.dimensions());
+  }
+  log_.stop_time(start, "Reverse PhaseN");
+}
+
+void FFT3N::forward() const
+{
+  forward(grid_);
+}
+
+void FFT3N::forward(Cx4 &x) const
+{
+  assert(x.dimension(1) == phX_.size());
+  assert(x.dimension(2) == phY_.size());
+  assert(x.dimension(3) == phZ_.size());
+  forwardPhase(x, 1.f);
+  auto const start = log_.start_time();
+  auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
+  fftwf_execute_dft(forward_plan_, ptr, ptr);
+  log_.stop_time(start, "Forward FFTN");
+  forwardPhase(x, scale_);
+}
+
+void FFT3N::reverse() const
+{
+  reverse(grid_);
+}
+
+void FFT3N::reverse(Cx4 &x) const
+{
+  assert(x.dimension(1) == phX_.size());
+  assert(x.dimension(2) == phY_.size());
+  assert(x.dimension(3) == phZ_.size());
+  reversePhase(x, scale_);
+  auto start = log_.start_time();
+  auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
+  fftwf_execute_dft(reverse_plan_, ptr, ptr);
+  log_.stop_time(start, "Reverse FFTN");
+  reversePhase(x, 1.f);
+}

@@ -1,6 +1,7 @@
 #include "filter.h"
 
-#include "fft.h"
+#include "fft3.h"
+#include "tensorOps.h"
 #include "threads.h"
 
 // fw is Flat Width, ea is End Amplitude
@@ -89,8 +90,8 @@ void KSFilter(std::function<float(float const &)> const &f, Cx4 &ks, Log &log)
           float const ry = static_cast<float>(iy) / hy;
           float const rx = static_cast<float>(ix) / hx;
           float const r = sqrt(rx * rx + ry * ry + rz * rz);
-          ks.chip(wrap(iz, sz), 3).chip(wrap(iy, sy), 2).chip(wrap(ix, sx), 1) *=
-              ks.chip(wrap(iz, sz), 3).chip(wrap(iy, sy), 2).chip(wrap(ix, sx), 1).constant(f(r));
+          ks.chip(Wrap(iz, sz), 3).chip(Wrap(iy, sy), 2).chip(Wrap(ix, sx), 1) *=
+              ks.chip(Wrap(iz, sz), 3).chip(Wrap(iy, sy), 2).chip(Wrap(ix, sx), 1).constant(f(r));
         }
       }
     }

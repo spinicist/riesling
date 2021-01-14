@@ -1,0 +1,100 @@
+#include "fft3.h"
+
+#include "tensorOps.h"
+
+FFT3::FFT3(Cx3 &grid, Log &log, long const nThreads)
+    : grid_{grid}
+    , log_{log}
+    , threaded_{nThreads > 1}
+{
+  auto const &dims = grid.dimensions();
+  int sizes[3];
+  // FFTW is row-major. Reverse dims as per
+  // http://www.fftw.org/fftw3_doc/Column_002dmajor-Format.html#Column_002dmajor-Format
+  sizes[0] = static_cast<int>(dims[2]);
+  sizes[1] = static_cast<int>(dims[1]);
+  sizes[2] = static_cast<int>(dims[0]);
+  auto const Nvox = (sizes[0] * sizes[1] * sizes[2]);
+  scale_ = 1. / sqrt(Nvox);
+  auto const start = log.start_time();
+  auto ptr = reinterpret_cast<fftwf_complex *>(grid.data());
+  log_.info(FMT_STRING("Planning {} FFT with {} threads"), dims, nThreads);
+  fftwf_plan_with_nthreads(nThreads);
+  forward_plan_ = fftwf_plan_many_dft(
+      3, sizes, 1, ptr, nullptr, 1, 1, ptr, nullptr, 1, 1, FFTW_FORWARD, FFTW_MEASURE);
+  reverse_plan_ = fftwf_plan_many_dft(
+      3, sizes, 1, ptr, nullptr, 1, 1, ptr, nullptr, 1, 1, FFTW_BACKWARD, FFTW_MEASURE);
+
+  phX_ = FFT::Phase(dims[0]);
+  phY_ = FFT::Phase(dims[1]);
+  phZ_ = FFT::Phase(dims[2]);
+
+  log_.stop_time(start, "Took");
+}
+
+FFT3::~FFT3()
+{
+  fftwf_destroy_plan(forward_plan_);
+  fftwf_destroy_plan(reverse_plan_);
+}
+
+void FFT3::forwardPhase(Cx3 &x, float const scale) const
+{
+  auto start = log_.start_time();
+  if (threaded_) {
+    auto dev = Threads::GlobalDevice();
+    x.device(dev) = x * x.constant(scale) * Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
+  } else {
+    x = x * x.constant(scale) * Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
+  }
+  log_.stop_time(start, "Forward Phase");
+}
+
+void FFT3::reversePhase(Cx3 &x, float const scale) const
+{
+  auto start = log_.start_time();
+  if (threaded_) {
+    auto dev = Threads::GlobalDevice();
+    x.device(dev) = x * x.constant(scale) / Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
+  } else {
+    x = x * x.constant(scale) / Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
+  }
+  log_.stop_time(start, "Reverse Phase");
+}
+
+void FFT3::forward() const
+{
+  forward(grid_);
+}
+
+void FFT3::forward(Cx3 &x) const
+{
+  assert(x.dimension(0) == phX_.size());
+  assert(x.dimension(1) == phY_.size());
+  assert(x.dimension(2) == phZ_.size());
+
+  forwardPhase(x, 1.f);
+  auto start = log_.start_time();
+  auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
+  fftwf_execute_dft(forward_plan_, ptr, ptr);
+  log_.stop_time(start, "Forward FFT");
+  forwardPhase(x, scale_);
+}
+
+void FFT3::reverse() const
+{
+  reverse(grid_);
+}
+
+void FFT3::reverse(Cx3 &x) const
+{
+  assert(x.dimension(0) == phX_.size());
+  assert(x.dimension(1) == phY_.size());
+  assert(x.dimension(2) == phZ_.size());
+  reversePhase(x, scale_);
+  auto start = log_.start_time();
+  auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
+  fftwf_execute_dft(reverse_plan_, ptr, ptr);
+  log_.stop_time(start, "Reverse FFT");
+  reversePhase(x, 1.f);
+}

@@ -1,6 +1,6 @@
 #include "compressor.h"
 
-#include <Eigen/Dense>
+#include "tensorOps.h"
 
 Compressor::Compressor(Cx3 const &ks, long const nc, Log &log)
     : log_{log}

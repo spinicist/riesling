@@ -22,6 +22,18 @@ void Log::vfail(fmt::string_view fstr, fmt::format_args args) const
   exit(EXIT_FAILURE);
 }
 
+void Log::progress(long const ii, long const n) const
+{
+  if ((out_level_ >= Level::Info)) {
+    constexpr long steps = 10;
+    long const step = n / steps;
+    if (ii % step == 0) {
+      float progress = (100.f * ii) / n;
+      fmt::print(stderr, FMT_STRING("{:.0f}%\n"), progress);
+    }
+  }
+}
+
 std::chrono::high_resolution_clock::time_point Log::start_time() const
 {
   return std::chrono::high_resolution_clock::now();

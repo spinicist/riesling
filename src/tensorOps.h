@@ -1,0 +1,164 @@
+#pragma once
+
+#ifdef DEBUG
+#define EIGEN_INITIALIZE_MATRICES_BY_NAN
+#endif
+// Need to define EIGEN_USE_THREADS before including these. This is done in CMakeLists.txt
+#include <Eigen/Dense>
+#include <unsupported/Eigen/CXX11/Tensor>
+
+// Tensor operations
+template <typename T>
+typename T::Scalar Sum(T const &a)
+{
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s = a.sum();
+  return s();
+}
+
+template <typename T>
+float Dot(T const &a, T const &b)
+{
+  Eigen::TensorFixedSize<typename T::RealScalar, Eigen::Sizes<>> d =
+      (a * b.conjugate()).real().sum();
+  return d();
+}
+
+template <typename T>
+float Norm2(T const &a)
+{
+  return Dot(a, a);
+}
+
+template <typename T>
+float Norm(T const &a)
+{
+  return sqrt(Dot(a, a));
+}
+
+template <typename T>
+inline decltype(auto) Wrap(T const &index, long const &sz)
+{
+  auto const t = index + sz;
+  auto const w = t - sz * (t / sz);
+  return w;
+}
+
+template <typename T1, typename T2>
+inline decltype(auto) Wrap(T1 const &index, T2 const &sz)
+{
+  auto const t = index + sz;
+  auto const w = t - sz * (t / sz);
+  return w;
+}
+
+template <typename T>
+inline decltype(auto) Tile(T &&x, long const N)
+{
+  Eigen::IndexList<Eigen::type2index<1>, int, int, int> res;
+  res.set(1, x.dimension(0));
+  res.set(2, x.dimension(1));
+  res.set(3, x.dimension(2));
+  Eigen::IndexList<int, Eigen::type2index<1>, Eigen::type2index<1>, Eigen::type2index<1>> brd;
+  brd.set(0, N);
+  return x.reshape(res).broadcast(brd);
+}
+
+template <typename T, typename U>
+inline decltype(auto) TileToMatch(T &&x, U const &dims)
+{
+  using FixedOne = Eigen::type2index<1>;
+  Eigen::IndexList<FixedOne, int, int, int> res;
+  res.set(1, dims[1]);
+  res.set(2, dims[2]);
+  res.set(3, dims[3]);
+  Eigen::IndexList<int, FixedOne, FixedOne, FixedOne> brd;
+  brd.set(0, dims[0]);
+  return x.reshape(res).broadcast(brd);
+}
+
+template <typename T1, typename T2, int D = 0>
+inline decltype(auto) Contract(T1 const &a, T2 const &b)
+{
+  Eigen::array<Eigen::IndexPair<int>, 1> const contract_dims{Eigen::IndexPair<int>{D, D}};
+  return a.contract(b, contract_dims);
+}
+
+template <typename T1, typename T2>
+inline decltype(auto) Outer(T1 const &a, T2 const &b)
+{
+  constexpr Eigen::array<Eigen::IndexPair<long>, 0> empty = {};
+  return a.contract(b, empty);
+}
+
+template <typename T>
+inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
+{
+  using FixedOne = Eigen::type2index<1>;
+  Eigen::IndexList<int, FixedOne, FixedOne> rsh_a;
+  Eigen::IndexList<FixedOne, int, int> brd_a;
+  rsh_a.set(0, a.size());
+  brd_a.set(1, b.size());
+  brd_a.set(2, c.size());
+  Eigen::IndexList<FixedOne, int, FixedOne> rsh_b;
+  Eigen::IndexList<int, FixedOne, int> brd_b;
+  brd_b.set(0, a.size());
+  rsh_b.set(1, b.size());
+  brd_b.set(2, c.size());
+  Eigen::IndexList<FixedOne, FixedOne, int> rsh_c;
+  Eigen::IndexList<int, int, FixedOne> brd_c;
+  brd_c.set(0, a.size());
+  brd_c.set(1, b.size());
+  rsh_c.set(2, c.size());
+  return a.reshape(rsh_a).broadcast(brd_a) + b.reshape(rsh_b).broadcast(brd_b) +
+         c.reshape(rsh_c).broadcast(brd_c);
+}
+
+template <typename T>
+inline decltype(auto) CollapseToVector(T &t)
+{
+  using Scalar = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<Scalar, 1, Eigen::Dynamic>> mapped(
+      t.data(),
+      1,
+      std::accumulate(
+          t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+  return mapped;
+}
+
+template <typename T, int toCollapse = 1>
+inline decltype(auto) CollapseToMatrix(T &t)
+{
+  using Scalar = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
+      t.data(),
+      std::accumulate(
+          t.dimensions().begin(),
+          t.dimensions().begin() + toCollapse,
+          1,
+          std::multiplies<Eigen::Index>()),
+      std::accumulate(
+          t.dimensions().begin() + toCollapse,
+          t.dimensions().end(),
+          1,
+          std::multiplies<Eigen::Index>()));
+  return mapped;
+}
+
+template <typename T, int toCollapse = 1>
+inline decltype(auto) CollapseToMatrix(T const &t)
+{
+  using Scalar = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
+      t.data(),
+      std::accumulate(
+          t.dimensions().begin(),
+          t.dimensions().begin() + toCollapse,
+          1,
+          std::multiplies<Eigen::Index>()),
+      std::accumulate(
+          t.dimensions().begin() + toCollapse,
+          t.dimensions().end(),
+          1,
+          std::multiplies<Eigen::Index>()));
+  return mapped;
+}

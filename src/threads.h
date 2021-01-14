@@ -5,7 +5,7 @@
 // Forward declare
 namespace Eigen {
 class ThreadPoolDevice;
-}
+} // namespace Eigen
 
 namespace Threads {
 typedef std::function<void(long const index)> TFunc;

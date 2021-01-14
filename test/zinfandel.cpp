@@ -1,4 +1,5 @@
 #include "../src/log.h"
+#include "../src/tensorOps.h"
 #include "../src/zinfandel.h"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
@@ -81,7 +82,7 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
     zinfandel(n_gap, 2, 1, 4, 0.0, traj, test_kspace, log);
     Cx3 diff = test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}) -
                kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke});
-    float const sum_diff = norm(diff) / diff.size();
+    float const sum_diff = Norm(diff) / diff.size();
     CHECK(sum_diff == Approx(0.f).margin(1.e-4f));
   }
 }

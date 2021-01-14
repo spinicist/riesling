@@ -1,10 +1,11 @@
 #include "cropper.h"
-#include "fft.h"
+#include "fft3n.h"
 #include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
 #include "parse_args.h"
+#include "tensorOps.h"
 #include "threads.h"
 #include "traj_archimedean.h"
 #include "types.h"
@@ -74,10 +75,11 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> intensity(
       parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
+  args::Flag kb(parser, "KAISER-BESSEL", "Use Kaiser-Bessel kernel", {'k', "kb"});
   args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
   parser.Parse();
   Log log(verbose);
-  FFTStart(log);
+  FFT::Start(log);
   if (!fname) {
     log.fail("No output name specified");
   }
@@ -102,7 +104,9 @@ int main_phantom(args::Subparser &parser)
   log.info(FMT_STRING("Hi-res spokes: {} Lo-res spokes: {}"), info.spokes_hi, info.spokes_lo);
 
   auto traj = ArchimedeanSpiral(info);
-  Gridder gridder(info, traj, osamp.Get(), false, false, false, log);
+  Kernel *kernel =
+      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), false) : (Kernel *)new NearestNeighbour();
+  Gridder gridder(info, traj, osamp.Get(), false, kernel, false, log);
   Cx4 grid = gridder.newGrid();
   Cropper cropper(info, gridder.gridDims(), -1, false, log);
   Cx3 phan = cropper.newImage();
@@ -130,7 +134,7 @@ int main_phantom(args::Subparser &parser)
   log.info("Generating coil sensitivities...");
   Cx4 sense = birdcage(phan.dimensions(), info.channels, coil_r.Get(), coil_r.Get() / 2.f, info);
   log.info("Generating coil images...");
-  cropper.crop4(grid) = sense * tile(phan, info.channels);
+  cropper.crop4(grid) = sense * Tile(phan, info.channels);
   FFT3N fft(grid, log);
   fft.forward();
   Cx3 radial = info.noncartesianVolume();
@@ -149,6 +153,6 @@ int main_phantom(args::Subparser &parser)
   writer.writeInfo(info);
   writer.writeTrajectory(traj);
   writer.writeData(0, radial);
-  FFTEnd(log);
+  FFT::End(log);
   return EXIT_SUCCESS;
 }

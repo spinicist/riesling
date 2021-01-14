@@ -3,9 +3,22 @@
 #include "info.h"
 #include "log.h"
 
+template <typename T>
+decltype(auto) Crop4(T &&x, Dims3 const &cropSz)
+{
+  Dims4 const &fullSz = x.dimensions();
+  Dims4 const start{0,
+                    (fullSz[1] - cropSz[0]) / 2 + 1,
+                    (fullSz[2] - cropSz[1]) / 2 + 1,
+                    (fullSz[3] - cropSz[2]) / 2 + 1};
+  Dims4 const size{fullSz[0], cropSz[0], cropSz[1], cropSz[2]};
+  return x.slice(start, size);
+}
+
 struct Cropper
 {
   Cropper(Info const &info, Dims3 const &fullSz, float const extent, bool const crop, Log &log);
+  Cropper(Info const &info, Dims3 const &fullSz, Dims3 const &cropSz, Log &log);
   Dims3 size() const;
   Dims3 start() const;
   Cx3 newImage() const;

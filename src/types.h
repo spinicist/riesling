@@ -13,6 +13,7 @@ using Array3l = Eigen::Array<long, 3, 1>;
 using ArrayXl = Eigen::Array<long, -1, 1>;
 
 using B0 = Eigen::TensorFixedSize<bool, Eigen::Sizes<>>;
+using B3 = Eigen::Tensor<bool, 3>;
 
 using L0 = Eigen::TensorFixedSize<long, Eigen::Sizes<>>;
 using L1 = Eigen::Tensor<long, 1>;
@@ -24,11 +25,20 @@ using R2 = Eigen::Tensor<float, 2>;                       // 2D Real data
 using R3 = Eigen::Tensor<float, 3>;                       // 3D Real data
 using R4 = Eigen::Tensor<float, 4>;                       // 4D Real data
 
-using Cx0 = Eigen::TensorFixedSize<std::complex<float>, Eigen::Sizes<>>;
-using Cx1 = Eigen::Tensor<std::complex<float>, 1>; // 1D Complex data
-using Cx2 = Eigen::Tensor<std::complex<float>, 2>; // 2D Complex data
-using Cx3 = Eigen::Tensor<std::complex<float>, 3>; // 3D Complex data
-using Cx4 = Eigen::Tensor<std::complex<float>, 4>; // 4D Complex data...spotted a pattern yet?
+using Rd1 = Eigen::Tensor<double, 1>;
+
+using Cx = std::complex<float>;
+using Cxd = std::complex<double>;
+
+using Cx0 = Eigen::TensorFixedSize<Cx, Eigen::Sizes<>>;
+using Cx1 = Eigen::Tensor<Cx, 1>; // 1D Complex data
+using Cx2 = Eigen::Tensor<Cx, 2>; // 2D Complex data
+using Cx3 = Eigen::Tensor<Cx, 3>; // 3D Complex data
+using Cx4 = Eigen::Tensor<Cx, 4>; // 4D Complex data...spotted a pattern yet?
+using Cx5 = Eigen::Tensor<Cx, 5>;
+using Cx7 = Eigen::Tensor<Cx, 7>;
+
+using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
 // Useful shorthands
 using Sz1 = Eigen::array<long, 1>;
@@ -53,88 +63,7 @@ using EncodeFunction = std::function<void(Cx3 &x, Cx3 &y)>;
 using DecodeFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 using SystemFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 
-// Tensor operations
-template <typename T>
-float sum(T const &a)
+inline Cx4 SwapToCoilLast(Cx4 const &x)
 {
-  R0 s = a.sum();
-  return s();
-}
-
-template <typename T>
-float dot(T const &a, T const &b)
-{
-  R0 d = (a * b.conjugate()).real().sum();
-  return d();
-}
-
-template <typename T>
-float norm2(T const &a)
-{
-  return dot(a, a);
-}
-
-template <typename T>
-float norm(T const &a)
-{
-  return sqrt(dot(a, a));
-}
-
-template <typename T>
-inline decltype(auto) wrap(T const &index, long const &sz)
-{
-  auto const t = index + sz;
-  auto const w = t - sz * (t / sz);
-  return w;
-}
-
-template <typename T1, typename T2>
-inline decltype(auto) wrap(T1 const &index, T2 const &sz)
-{
-  auto const t = index + sz;
-  auto const w = t - sz * (t / sz);
-  return w;
-}
-
-template <typename T>
-inline decltype(auto) tile(T &&x, long const N)
-{
-  return x.reshape(Sz4{1, x.dimension(0), x.dimension(1), x.dimension(2)})
-      .broadcast(Sz4{N, 1, 1, 1});
-}
-
-template <typename T>
-inline decltype(auto) CollapseToVector(T &t)
-{
-  using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, 1, Eigen::Dynamic>> mapped(
-      t.data(),
-      1,
-      std::accumulate(
-          t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
-  return mapped;
-}
-
-template <typename T>
-inline decltype(auto) CollapseToMatrix(T &t)
-{
-  using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
-      t.data(),
-      t.dimension(0),
-      std::accumulate(
-          t.dimensions().begin() + 1, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
-  return mapped;
-}
-
-template <typename T>
-inline decltype(auto) CollapseToMatrix(T const &t)
-{
-  using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
-      t.data(),
-      t.dimension(0),
-      std::accumulate(
-          t.dimensions().begin() + 1, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
-  return mapped;
+  return Cx4(x.shuffle(Sz4{1, 2, 3, 0}));
 }

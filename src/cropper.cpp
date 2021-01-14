@@ -12,11 +12,20 @@ Cropper::Cropper(
     Array3l crop = (((extent / info.voxel_size) / 2).floor() * 2).cast<long>().min(full);
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
-  st_ = Dims3{(fullSz[0] - sz_[0]) / 2, (fullSz[1] - sz_[1]) / 2, (fullSz[2] - sz_[2]) / 2};
+  st_ = Dims3{
+      (fullSz[0] - sz_[0]) / 2 + 1, (fullSz[1] - sz_[1]) / 2 + 1, (fullSz[2] - sz_[2]) / 2 + 1};
   if (stack) {
     st_[2] = 0;
     sz_[2] = info.matrix[2];
   }
+  log.info(FMT_STRING("Cropper size {} start {}"), sz_, st_);
+}
+
+Cropper::Cropper(Info const &info, Dims3 const &fullSz, Dims3 const &cropSz, Log &log)
+{
+  sz_ = cropSz;
+  st_ = Dims3{
+      (fullSz[0] - sz_[0]) / 2 + 1, (fullSz[1] - sz_[1]) / 2 + 1, (fullSz[2] - sz_[2]) / 2 + 1};
   log.info(FMT_STRING("Cropper size {} start {}"), sz_, st_);
 }
 

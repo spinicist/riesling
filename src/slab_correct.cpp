@@ -1,6 +1,6 @@
 #include "slab_correct.h"
 
-#include "fft.h"
+#include "fft1.h"
 #include "threads.h"
 
 double sinc(const double x)
@@ -35,7 +35,7 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
       FMT_STRING("Applying slab profile correction for pulse-width {} us, bandwidth {} kHz"),
       pw_us,
       rbw_kHz);
-  FFTStart(log);
+  FFT::Start(log);
   long const N = 2 * info.read_points;
   float const os = (2.f * info.read_points) / info.matrix.maxCoeff();
   float const fov = (info.matrix.cast<float>() * info.voxel_size * 1e-3).maxCoeff();
@@ -73,5 +73,5 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
   };
   //   spoke_task(0, ks.dimension(2));
   Threads::RangeFor(spoke_task, 0, ks.dimension(2));
-  FFTEnd(log);
+  FFT::End(log);
 }

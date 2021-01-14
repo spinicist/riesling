@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "fft.h"
+#include "fft3.h"
 #include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
@@ -19,11 +19,12 @@ int main_traj(args::Subparser &parser)
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   Log log = ParseCommand(parser, fname);
-  FFTStart(log);
+  FFT::Start(log);
   HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
-
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kb, stack, log);
+  Kernel *kernel =
+      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kernel, stack, log);
   Cx3 grid = gridder.newGrid1();
   FFT3 fft(grid, log);
 
@@ -31,11 +32,9 @@ int main_traj(args::Subparser &parser)
   Cx2 rad_ks(info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
-  fft.shift();
   WriteNifti(info, R3(grid.abs()), OutName(fname, oname, "traj"), log);
-  fft.shift();
   fft.reverse();
   WriteNifti(info, grid, OutName(fname, oname, "psf"), log);
-  FFTEnd(log);
+  FFT::End(log);
   return EXIT_SUCCESS;
 }

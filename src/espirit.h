@@ -4,16 +4,14 @@
 #include "kernel.h"
 #include "log.h"
 
-/*!
- * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
- */
-Cx4 SENSE(
+Cx4 ESPIRIT(
     Info const &info,
     R3 const &traj,
     float const os,
     bool const stack,
     Kernel *const kb,
-    bool const shrink,
-    float const threshold,
+    long const calSz,
+    long const kernelSz,
+    float const retain,
     Cx3 const &data,
     Log &log);

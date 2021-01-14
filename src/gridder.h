@@ -1,7 +1,7 @@
 #pragma once
 
 #include "info.h"
-#include "interpolator.h"
+#include "kernels.h"
 #include "log.h"
 #include "threads.h"
 
@@ -28,7 +28,7 @@ struct Gridder
       R3 const &traj,
       float const os,
       bool const est_dc,
-      bool const kb,
+      Kernel *const kernel,
       bool const stack,
       Log &log,
       float const res = 0.f,
@@ -50,7 +50,7 @@ struct Gridder
   void apodize(Cx3 &img) const;   //!< Apodize interpolation kernel
   void deapodize(Cx3 &img) const; //!< De-apodize interpolation kernel
 
-private:
+protected:
   struct CartesianIndex
   {
     int16_t x, y, z;
@@ -67,7 +67,7 @@ private:
     CartesianIndex cart;
     NoncartesianIndex noncart;
     float DC;
-    float weight;
+    Point3 offset;
   };
 
   struct Profile
@@ -93,6 +93,7 @@ private:
   std::vector<int32_t> sortedIndices_;
   Dims3 dims_;
   float oversample_, DCexp_;
-  Interpolator *interp_;
+  Kernel *kernel_;
+  ApodizeFunction apodize_;
   Log &log_;
 };

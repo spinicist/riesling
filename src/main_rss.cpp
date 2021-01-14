@@ -1,7 +1,7 @@
 #include "types.h"
 
 #include "cropper.h"
-#include "fft.h"
+#include "fft3n.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -14,10 +14,12 @@ int main_rss(args::Subparser &parser)
   COMMON_RECON_ARGS;
 
   Log log = ParseCommand(parser, fname);
-  FFTStart(log);
+  FFT::Start(log);
   HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kb, stack, log);
+  Kernel *kernel =
+      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
   Cx3 rad_ks = info.noncartesianVolume();
@@ -48,6 +50,6 @@ int main_rss(args::Subparser &parser)
   log.stop_time(all_start, "All volumes took");
 
   WriteVolumes(info, out, volume.Get(), OutName(fname, oname, "rss"), log);
-  FFTEnd(log);
+  FFT::End(log);
   return EXIT_SUCCESS;
 }
