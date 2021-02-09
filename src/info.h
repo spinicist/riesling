@@ -5,7 +5,6 @@
 struct Info
 {
   Array3l matrix;
-  Eigen::Array3f voxel_size;
   long read_points;
   long read_gap;
   long spokes_hi;
@@ -15,6 +14,7 @@ struct Info
   long volumes = 1;
   long echoes = 1;
   float tr = 1.f;
+  Eigen::Array3f voxel_size = Eigen::Vector3f::Ones();
   Eigen::Vector3f origin = Eigen::Vector3f::Zero();
   Eigen::Matrix3f direction = Eigen::Matrix3f::Identity();
 

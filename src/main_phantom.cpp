@@ -87,14 +87,14 @@ int main_phantom(args::Subparser &parser)
   auto const m = matrix.Get();
   auto const vox_sz = fov.Get() / m;
   auto const spokes_hi = std::lrint(spoke_samp.Get() * m * m);
-  Info info{Array3l{m, m, m},
-            Eigen::Array3f{vox_sz, vox_sz, vox_sz},
-            static_cast<long>(m * oversamp.Get() / 2),
-            gap.Get(),
-            spokes_hi,
-            lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
-            lores ? lores.Get() : 1.f,
-            nchan.Get()};
+  Info info{.matrix = Array3l{m, m, m},
+            .read_points = static_cast<long>(m * oversamp.Get() / 2),
+            .read_gap = gap.Get(),
+            .spokes_hi = spokes_hi,
+            .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
+            .lo_scale = lores ? lores.Get() : 1.f,
+            .channels = nchan.Get(),
+            .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz}};
   log.info(
       FMT_STRING("Matrix Size: {} Voxel Size: {} Oversampling: {} Dead-time Gap: {}"),
       matrix.Get(),
