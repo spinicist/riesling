@@ -1,5 +1,6 @@
 #include "kernel_kb.h"
 
+#include "fft1.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <fmt/ostream.h>
@@ -21,6 +22,7 @@ KaiserBessel::KaiserBessel(long const w, float const os, bool const threeD)
   }
   std::transform(sz_.begin(), sz_.end(), st_.begin(), [](long const d) { return -d / 2; });
 
+  // Array of indices used when building the kernel
   p_.resize(w_);
   std::iota(p_.data(), p_.data() + p_.size(), -w / 2);
 
@@ -28,8 +30,13 @@ KaiserBessel::KaiserBessel(long const w, float const os, bool const threeD)
   R1 lx(512);
   std::iota(lx.data(), lx.data() + lx.size(), 0);
   lx = lx * lx.constant(w_ / (2.f * (lx.size() - 1)));
-  lookup_ = (lx.constant(beta_) * (lx.constant(1.f) - (lx * lx.constant(2.f / w)).square()).sqrt())
+  lookup_ = (lx.constant(beta_) * (lx.constant(1.f) - (lx * lx.constant(2.f / w_)).square()).sqrt())
                 .bessel_i0();
+
+  // Scale the kernel to not change k-space energy - gives images with same intensity as
+  // nearest-neighbour. Cube/square-root is because this is a seperable kernel
+  float const scale = Sum(kspace(Point3::Zero()));
+  lookup_ = lookup_ / (threeD_ ? std::cbrt(scale) : std::sqrt(scale));
 }
 
 ApodizeFunction KaiserBessel::apodization(Dims3 const &dims) const
@@ -76,9 +83,9 @@ ApodizeFunction KaiserBessel::apodization(Dims3 const &dims) const
   return a;
 }
 
-long KaiserBessel::radius() const
+float KaiserBessel::radius() const
 {
-  return w_ / 2;
+  return w_ / 2.f;
 }
 
 Sz3 KaiserBessel::start() const
@@ -91,7 +98,26 @@ Sz3 KaiserBessel::size() const
   return sz_;
 }
 
-Cx3 KaiserBessel::kspace(Point3 const &r) const
+float KaiserBessel::value(Point3 const &r) const
+{
+  auto kbLookup = [this](float const x) {
+    float const xa = std::abs(x);
+    long const sz = lookup_.size();
+    if (xa > (w_ / 2)) {
+      return 0.f;
+    } else {
+      float const l = xa * 2.f * (sz - 1.f) / w_;
+      long const lo = std::floor(l);
+      long const hi = std::ceil(l);
+      long const t = l - lo;
+      return lookup_(lo) + t * (lookup_(hi) - lookup_(lo));
+    }
+  };
+
+  return kbLookup(r(0)) * kbLookup(r(1)) * kbLookup(r(2));
+}
+
+R3 KaiserBessel::kspace(Point3 const &r) const
 {
   auto kbLookup = [this](float const x) {
     float const xa = std::abs(x);
@@ -117,10 +143,8 @@ Cx3 KaiserBessel::kspace(Point3 const &r) const
     kz.setConstant(1.f);
   }
 
-  R3 k = Outer(Outer(kx, ky), kz);
-  k = k / Sum(k);
-
-  return k.cast<Cx>();
+  R3 const k = Outer(Outer(kx, ky), kz);
+  return k;
 }
 
 inline decltype(auto) Sinc(Cx1 const &x)

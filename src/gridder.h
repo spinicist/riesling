@@ -16,7 +16,7 @@ struct Gridder
    * @param info   The Radial info struct
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
-   * @param est_dc Estimate DC using Menon & Pipe iterative method
+   * @param sdc    Sample Density Compensation via Pipe/Zwart/Menon DOI 0.66497f
    * @param kb     Use Kaiser-Bessel interpolation
    * @param stack  Trajectory is stack-of-stars or similar
    * @param log    Logging object
@@ -27,7 +27,7 @@ struct Gridder
       Info const &info,
       R3 const &traj,
       float const os,
-      bool const est_dc,
+      bool const sdc,
       Kernel *const kernel,
       bool const stack,
       Log &log,
@@ -87,7 +87,7 @@ protected:
   std::vector<Coords>
   genCoords(R3 const &traj, int32_t const spoke0, long const spokes, Profile const &profile);
   void sortCoords();
-  void iterativeDC(); //!< Iteratively estimate the density-compensation weights
+  void sampleDensityCompensation();
   Info const info_;
   std::vector<Coords> coords_;
   std::vector<int32_t> sortedIndices_;
@@ -96,4 +96,5 @@ protected:
   Kernel *kernel_;
   ApodizeFunction apodize_;
   Log &log_;
+  bool sqrt_; // Used for SDC
 };

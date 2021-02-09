@@ -9,6 +9,13 @@
 
 // Tensor operations
 template <typename T>
+decltype(auto) Tr(T const &a)
+{
+  assert(a.NumDimensions == 1);
+  return a.reshape(Eigen::array<long, 2>{1, a.size()});
+}
+
+template <typename T>
 typename T::Scalar Sum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s = a.sum();

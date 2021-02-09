@@ -40,7 +40,7 @@ int main_tgv(args::Subparser &parser)
   auto const trajectory = reader.readTrajectory();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, trajectory, osamp.Get(), est_dc, kernel, stack, log);
+  Gridder gridder(info, trajectory, osamp.Get(), sdc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cx4 grid = gridder.newGrid();
   grid.setZero();

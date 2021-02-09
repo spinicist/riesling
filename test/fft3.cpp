@@ -4,7 +4,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
-TEST_CASE("FFT Basic Sanity", "[FFT3]")
+TEST_CASE("3D-FFT", "[FFT3]")
 {
   Log log(false);
   FFT::Start(log);

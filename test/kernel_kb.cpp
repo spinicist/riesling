@@ -25,7 +25,7 @@ TEST_CASE("3x3", "[KB3]")
   SECTION("Centered")
   {
     // This test is incomplete
-    Cx3 const k = kernel.kspace(Point3::Zero());
+    R3 const k = kernel.kspace(Point3::Zero());
     CHECK(Sum(k.real()) == Approx(1.f));
     Cx3 img = kernel.image(Point3::Zero(), temp.dimensions());
     // CHECK(Norm(img) == Approx(1.f));

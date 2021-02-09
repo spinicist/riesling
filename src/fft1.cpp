@@ -1,14 +1,7 @@
 #include "fft1.h"
+#include "tensorOps.h"
 
 namespace {
-
-void FFTShift1(Eigen::ArrayXf &real)
-{
-  Eigen::Index hsz = real.size() / 2;
-  Eigen::ArrayXf temp = real.head(hsz);
-  real.head(hsz) = real.tail(hsz);
-  real.tail(hsz) = temp;
-}
 
 } // namespace
 
@@ -16,8 +9,11 @@ FFT1DReal2Complex::FFT1DReal2Complex(long const N, Log &log)
     : N_{N}
     , log_{log}
 {
-  Eigen::ArrayXf real(N_);
-  Eigen::ArrayXcf complex(N_ / 2 + 1);
+  assert(N % 2 == 0);
+  R1 real(N_);
+  Cx1 complex(N_ / 2 + 1);
+  real.setZero();
+  complex.setZero();
   scale_ = 1. / sqrt(N_);
   auto const start = log.start_time();
   fftwf_plan_with_nthreads(Threads::GlobalThreadCount());
@@ -34,26 +30,43 @@ FFT1DReal2Complex::~FFT1DReal2Complex()
   fftwf_destroy_plan(reverse_plan_);
 }
 
-Eigen::ArrayXcf FFT1DReal2Complex::forward(Eigen::ArrayXf const &in) const
+void FFT1DReal2Complex::shift(R1 &x) const
 {
-  assert(in.rows() == N_);
-  Eigen::ArrayXf real = in * scale_; // This FFT is destructive
-  Eigen::ArrayXcf complex(N_ / 2 + 1);
-  FFTShift1(real);
-  auto cptr = reinterpret_cast<fftwf_complex *>(complex.data());
-  fftwf_execute_dft_r2c(forward_plan_, real.data(), cptr);
-  return complex.head(N_ / 2);
+  assert(x.size() == N_);
+  long const hsz = N_ / 2;
+  R1 temp = x.slice(Sz1{0}, Sz1{hsz});
+  x.slice(Sz1{0}, Sz1{hsz}) = x.slice(Sz1{hsz}, Sz1{hsz});
+  x.slice(Sz1{hsz}, Sz1{hsz}) = temp;
 }
 
-Eigen::ArrayXf FFT1DReal2Complex::reverse(Eigen::ArrayXcf const &in) const
+void FFT1DReal2Complex::shift(Cx1 &x) const
 {
-  assert(in.rows() == N_ / 2);
-  Eigen::ArrayXf real(N_);
-  Eigen::ArrayXcf complex(N_ / 2 + 1);
+  assert(x.size() == N_);
+  long const hsz = N_ / 2;
+  Cx1 temp = x.slice(Sz1{0}, Sz1{hsz});
+  x.slice(Sz1{0}, Sz1{hsz}) = x.slice(Sz1{hsz}, Sz1{hsz});
+  x.slice(Sz1{hsz}, Sz1{hsz}) = temp;
+}
+
+Cx1 FFT1DReal2Complex::forward(R1 const &in) const
+{
+  assert(in.size() == N_);
+  R1 real = in * scale_; // This FFT is destructive
+  shift(real);
+  Cx1 complex(N_ / 2 + 1);
   auto cptr = reinterpret_cast<fftwf_complex *>(complex.data());
-  complex.head(N_ / 2) = in * scale_;
-  complex.tail(1) = 0.f;
+  fftwf_execute_dft_r2c(forward_plan_, real.data(), cptr);
+  return complex;
+}
+
+R1 FFT1DReal2Complex::reverse(Cx1 const &in) const
+{
+  assert(in.size() == (N_ / 2 + 1));
+  R1 real(N_);
+  Cx1 temp = in; // This FFT is destructive
+  auto cptr = reinterpret_cast<fftwf_complex *>(temp.data());
   fftwf_execute_dft_c2r(reverse_plan_, cptr, real.data());
-  FFTShift1(real);
+  shift(real);
+  real = real * real.constant(scale_);
   return real;
 }

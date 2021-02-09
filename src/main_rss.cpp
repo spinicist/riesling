@@ -19,7 +19,7 @@ int main_rss(args::Subparser &parser)
   auto const &info = reader.info();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kernel, stack, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
   Cx3 rad_ks = info.noncartesianVolume();

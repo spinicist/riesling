@@ -15,7 +15,7 @@ int main_traj(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
   args::ValueFlag<float> osamp(
       parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
-  args::Flag est_dc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"est_dc"});
+  args::Flag sdc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"sdc"});
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   Log log = ParseCommand(parser, fname);
@@ -24,7 +24,7 @@ int main_traj(args::Subparser &parser)
   auto const &info = reader.info();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), est_dc, kernel, stack, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc, kernel, stack, log);
   Cx3 grid = gridder.newGrid1();
   FFT3 fft(grid, log);
 

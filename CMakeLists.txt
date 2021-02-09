@@ -88,6 +88,7 @@ install(TARGETS riesling RUNTIME DESTINATION bin)
 # Tests
 add_executable(prufung
     test/main.cpp
+    test/fft1.cpp
     test/fft3.cpp
     test/fft3n.cpp
     test/kernel_kb.cpp

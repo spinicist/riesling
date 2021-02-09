@@ -55,7 +55,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     cart.setZero();
     gridder.toCartesian(rad, cart);
     gridder.toNoncartesian(cart, rad);
-    CHECK(rad(0, 0).real() == Approx(1.f));
+    CHECK(rad(0, 0).real() == Approx(0.43774f));
   }
 
   SECTION("NN Multicoil")
@@ -171,6 +171,6 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
     cart.setZero();
     gridder.toCartesian(rad, cart);
     gridder.toNoncartesian(cart, rad);
-    CHECK(rad(0, 0).real() == Approx(1.f).margin(1.e-1f));
+    CHECK(rad(0, 0).real() == Approx(0.66497f).margin(1.e-1f));
   }
 }

@@ -43,7 +43,7 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
   float const pw = pw_us * 1e-6;
   float const rbw = rbw_kHz * 1e3;
   auto const r = Eigen::ArrayXf::LinSpaced(N, -os_fov / 2.f, os_fov / 2.f);
-  auto const profile = r.unaryExpr([fov, rbw, pw](float const rv) {
+  Eigen::ArrayXf const p = r.unaryExpr([fov, rbw, pw](float const rv) {
     if (rv == 0.f) {
       return 1.f;
     } else {
@@ -51,6 +51,7 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
       return fabs(sin(x) / x);
     }
   });
+  Eigen::TensorMap<R1 const> const profile(p.data(), N);
 
   FFT1DReal2Complex fft(N, log);
   float const beta = 1.e-1; // Regularize sinc nulls
@@ -58,16 +59,10 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
     for (long is = spoke_lo; is < spoke_hi; is++) {
       for (long ic = 0; ic < info.channels; ic++) {
         auto phase = std::polar(1.f, std::arg(ks(ic, 0, is)));
-        Eigen::ArrayXcf spoke(N / 2);
-        for (long ir = 0; ir < info.read_points; ir++) {
-          spoke(ir) = ks(ic, ir, is) / phase;
-        }
-        Eigen::ArrayXf projection = fft.reverse(spoke);
+        Cx1 spoke = ks.chip(is, 2).chip(ic, 0) / phase;
+        R1 projection = fft.reverse(spoke);
         projection = (projection + beta) / (profile + beta);
-        Eigen::ArrayXcf corrected = fft.forward(projection);
-        for (long ir = 0; ir < info.read_points; ir++) {
-          ks(ic, ir, is) = corrected(ir) * phase;
-        }
+        ks.chip(is, 2).chip(ic, 0) = fft.forward(projection) * phase;
       }
     }
   };

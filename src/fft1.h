@@ -10,8 +10,10 @@ struct FFT1DReal2Complex
   FFT1DReal2Complex(long const N, Log &log);
   ~FFT1DReal2Complex();
 
-  Eigen::ArrayXcf forward(Eigen::ArrayXf const &in) const; //!< Real to complex
-  Eigen::ArrayXf reverse(Eigen::ArrayXcf const &in) const; //!< Complex to real
+  Cx1 forward(R1 const &in) const; //!< Real to complex
+  R1 reverse(Cx1 const &in) const; //!< Complex to real
+  void shift(R1 &in) const;
+  void shift(Cx1 &in) const;
 
 private:
   long const N_;

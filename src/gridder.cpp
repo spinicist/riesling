@@ -1,5 +1,6 @@
 #include "gridder.h"
 
+#include "fft3.h"
 #include "filter.h"
 #include "io_nifti.h"
 #include "tensorOps.h"
@@ -29,7 +30,7 @@ Gridder::Gridder(
     Info const &info,
     R3 const &traj,
     float const os,
-    bool const est_dc,
+    bool const sdc,
     Kernel *const kernel,
     bool const stack,
     Log &log,
@@ -40,6 +41,7 @@ Gridder::Gridder(
     , DCexp_{1.f}
     , kernel_{kernel}
     , log_{log}
+    , sqrt_{false}
 {
   assert(traj.dimension(0) == 3);
   assert(traj.dimension(1) == info_.read_points);
@@ -57,7 +59,8 @@ Gridder::Gridder(
   }
 
   apodize_ = kernel_->apodization(dims_);
-  long const maxRad = (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - kernel_->radius();
+  long const maxRad =
+      (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - std::floor(kernel_->radius());
 
   log_.info(
       FMT_STRING("Gridder: Dimensions {} Resolution {} Ratio {} maxRad {}"),
@@ -85,8 +88,8 @@ Gridder::Gridder(
     coords_.insert(coords_.end(), temp.begin(), temp.end());
   }
   sortCoords();
-  if (est_dc) {
-    iterativeDC();
+  if (sdc) {
+    sampleDensityCompensation();
   }
 }
 
@@ -221,10 +224,9 @@ void Gridder::sortCoords()
   log_.stop_time(start, "Sorting co-ordinates");
 }
 
-void Gridder::iterativeDC()
+void Gridder::sampleDensityCompensation()
 {
-  log_.info("Estimating density compensation...");
-  Cx3 cart = newGrid1();
+  log_.info("Using Zwart/Pipe/Menon sample density compensation...");
   Cx2 W(info_.read_points, info_.spokes_total());
   Cx2 Wp(info_.read_points, info_.spokes_total());
 
@@ -233,26 +235,36 @@ void Gridder::iterativeDC()
     c.DC = 1.f;
   }
 
+  // In an ideal world we could do the image-space sqrt() on the kernel look-up table or similar,
+  // however I could not make this work for Kaiser-Bessel. I think the issue is
+  // spherically-symmetric versus separable kernels. So instead, we do the FFT and sqrt during the
+  // gridding process, which is much slower, but generalizes to all possible kernels (I think)
+  sqrt_ = true;
+  Cx3 temp = newGrid1();
   for (long ii = 0; ii < 8; ii++) {
-    cart.setZero();
     Wp.setZero();
-    toCartesian(W, cart);
-    toNoncartesian(cart, Wp);
-    Wp = (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
-    float const delta = Norm(W - Wp);
-    W = Wp;
-    if (delta < 1.e-5f) {
+    temp.setZero();
+    toCartesian(W, temp);
+    toNoncartesian(temp, Wp);
+    Wp.device(Threads::GlobalDevice()) =
+        (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
+    float const delta = Norm(Wp - W) / W.size();
+    W.device(Threads::GlobalDevice()) = Wp;
+    if (delta < 1.e-3) {
       log_.info("DC converged, delta was {}", delta);
       break;
+    } else {
+      log_.info("Delta {}", delta);
     }
   }
+  sqrt_ = false;
 
   // Copy to co-ord structure
   for (auto &c : coords_) {
     auto const &nc = c.noncart;
     c.DC = W(nc.read, nc.spoke).real();
   }
-  log_.info("Density compensation estimated.");
+  log_.info("SDC finished.");
 }
 
 Dims3 Gridder::gridDims() const
@@ -303,7 +315,10 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
 
   auto const st = kernel_->start();
   auto const sz = kernel_->size();
+  Log nullLog(false);
   auto grid_task = [&](long const lo, long const hi) {
+    Cx3 w(sz);
+    FFT3 sfft(w, nullLog, 1);
     for (auto ii = lo; ii < hi; ii++) {
       if (lo == 0) {
         log_.progress(ii, hi);
@@ -312,7 +327,13 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       auto const &dc = std::complex<float>(pow(cp.DC, DCexp_), 0.f);
-      auto const w = kernel_->kspace(cp.offset);
+      w = kernel_->kspace(cp.offset).cast<Cx>();
+      if (sqrt_) {
+        sfft.reverse();
+        w = w.sqrt();
+        sfft.forward();
+        w = w / Sum(w);
+      }
       cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz) +=
           noncart(nc.read, nc.spoke) * w * dc;
     }
@@ -344,15 +365,15 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &dc = std::complex<float>(pow(cp.DC, DCexp_), 0.f);
+      auto const &dc = pow(cp.DC, DCexp_);
       Cx4 const nck = noncart.chip(nc.spoke, 2)
                           .chip(nc.read, 1)
                           .reshape(Sz4{info_.channels, 1, 1, 1})
                           .broadcast(Sz4{1, sz[0], sz[1], sz[2]});
-      Cx4 const weights = Tile(kernel_->kspace(cp.offset), info_.channels) * dc;
+      R4 const weights = Tile(kernel_->kspace(cp.offset), info_.channels) * dc;
       cart.slice(
           Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]},
-          Sz4{info_.channels, sz[0], sz[1], sz[2]}) += nck * weights;
+          Sz4{info_.channels, sz[0], sz[1], sz[2]}) += nck * weights.cast<Cx>();
     }
   };
 
@@ -371,7 +392,10 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
 
   auto const st = kernel_->start();
   auto const sz = kernel_->size();
+  Log nullLog(false);
   auto grid_task = [&](long const lo, long const hi) {
+    Cx3 w(sz);
+    FFT3 sfft(w, nullLog, 1);
     for (auto ii = lo; ii < hi; ii++) {
       if (lo == 0) {
         log_.progress(ii, hi);
@@ -381,9 +405,15 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       auto const &ksl = cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz);
-      Cx3 const w = kernel_->kspace(cp.offset);
+      w = kernel_->kspace(cp.offset).cast<Cx>();
+      if (sqrt_) {
+        sfft.reverse();
+        w = w.sqrt();
+        sfft.forward();
+        w = w / Sum(w);
+      }
       Cx0 const val = ksl.contract(
-          w,
+          w.cast<Cx>(),
           Eigen::IndexPairList<
               Eigen::type2indexpair<0, 0>,
               Eigen::type2indexpair<1, 1>,
@@ -418,9 +448,9 @@ void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
       auto const &nc = cp.noncart;
       auto const &ksl = cart.slice(
           Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]}, Sz4{info_.channels, sz[0], sz[1], sz[2]});
-      Cx3 const w = kernel_->kspace(cp.offset);
+      R3 const w = kernel_->kspace(cp.offset);
       noncart.chip(nc.spoke, 2).chip(nc.read, 1) = ksl.contract(
-          w,
+          w.cast<Cx>(),
           Eigen::IndexPairList<
               Eigen::type2indexpair<1, 0>,
               Eigen::type2indexpair<2, 1>,
