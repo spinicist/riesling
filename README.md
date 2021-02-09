@@ -1,6 +1,6 @@
 ![Logo](riesling-logo.png)
 
-[![Build](https://github.com/spinicist/riesling/workflows/Build/badge.svg)](https://github.com/spinicist/QUIT/actions)
+[![Build](https://github.com/spinicist/riesling/workflows/Build/badge.svg)](https://github.com/spinicist/riesling/actions)
 
 ## Radial Interstices Enable Speedy Low-Volume imagING
 
