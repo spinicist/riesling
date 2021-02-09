@@ -382,9 +382,12 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
       auto const &nc = cp.noncart;
       auto const &ksl = cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz);
       Cx3 const w = kernel_->kspace(cp.offset);
-      Eigen::array<Eigen::IndexPair<int>, 3> const contract_dims{
-          Eigen::IndexPair<int>{0, 0}, Eigen::IndexPair<int>{1, 1}, Eigen::IndexPair<int>{2, 2}};
-      Cx0 const val = ksl.contract(w, contract_dims);
+      Cx0 const val = ksl.contract(
+          w,
+          Eigen::IndexPairList<
+              Eigen::type2indexpair<0, 0>,
+              Eigen::type2indexpair<1, 1>,
+              Eigen::type2indexpair<2, 2>>());
       noncart.chip(nc.spoke, 1).chip(nc.read, 0) = val;
     }
   };
@@ -416,9 +419,12 @@ void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
       auto const &ksl = cart.slice(
           Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]}, Sz4{info_.channels, sz[0], sz[1], sz[2]});
       Cx3 const w = kernel_->kspace(cp.offset);
-      Eigen::array<Eigen::IndexPair<int>, 3> const contract_dims{
-          Eigen::IndexPair<int>{1, 0}, Eigen::IndexPair<int>{2, 1}, Eigen::IndexPair<int>{3, 2}};
-      noncart.chip(nc.spoke, 2).chip(nc.read, 1) = ksl.contract(w, contract_dims);
+      noncart.chip(nc.spoke, 2).chip(nc.read, 1) = ksl.contract(
+          w,
+          Eigen::IndexPairList<
+              Eigen::type2indexpair<1, 0>,
+              Eigen::type2indexpair<2, 1>,
+              Eigen::type2indexpair<3, 2>>());
     }
   };
   auto const &start = log_.start_time();

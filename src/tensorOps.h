@@ -79,8 +79,7 @@ inline decltype(auto) TileToMatch(T &&x, U const &dims)
 template <typename T1, typename T2, int D = 0>
 inline decltype(auto) Contract(T1 const &a, T2 const &b)
 {
-  Eigen::array<Eigen::IndexPair<int>, 1> const contract_dims{Eigen::IndexPair<int>{D, D}};
-  return a.contract(b, contract_dims);
+  return a.contract(b, Eigen::IndexPairList<Eigen::type2indexpair<D, D>>());
 }
 
 template <typename T1, typename T2>

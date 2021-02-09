@@ -23,7 +23,7 @@ void cg(SystemFunction const &sys, long const &max_its, float const &thresh, Cx3
   Eigen::Map<Eigen::VectorXcf> r(rv.data(), rv.size());
   float r_old = r.dot(r).real();
   float const a2 = Norm2(img);
-  // auto const c = 6;
+
   for (long icg = 0; icg < max_its; icg++) {
     sys(pv, qv);
     float const alpha = r_old / p.dot(q).real();
