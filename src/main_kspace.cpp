@@ -25,6 +25,8 @@ int main_kspace(args::Subparser &parser)
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
   args::Flag sdc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"sdc"});
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
+  args::ValueFlag<long> kw(
+      parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag do_grid(parser, "GRID", "Grid k-space and write out central portion", {"grid"});
   args::Flag do_regrid(parser, "REGRID", "Grid back to radial and write out", {"regrid"});
@@ -49,8 +51,8 @@ int main_kspace(args::Subparser &parser)
     auto const res = info.voxel_size.minCoeff() * info.read_points / n_samp;
     log.info(FMT_STRING("Gridding with {} samples, nominal resolution {} mm"), n_samp, res);
     R3 const traj = reader.readTrajectory();
-    Kernel *kernel =
-        kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+    Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
+                        : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
     Gridder gridder(info, traj, osamp.Get(), sdc, kernel, stack, log, res, true);
     Cx4 grid = gridder.newGrid();
     grid.setZero();

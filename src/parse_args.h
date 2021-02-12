@@ -33,6 +33,8 @@ WriteVolumes(Info const &info, T const &vols, long const which, std::string cons
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});         \
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
+  args::ValueFlag<long> kw(                                                                        \
+      parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);  \
   args::Flag sdc(parser, "SDC", "Use Sample Density Compensation (Zwart/Pipe/Menon)", {"sdc"});    \
   args::ValueFlag<float> dc_exp(                                                                   \
       parser, "DC Exponent", "Density-Compensation Exponent (default 1.0)", {'d', "dce"}, 1.0f);   \

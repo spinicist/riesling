@@ -35,8 +35,8 @@ int main_toeplitz(args::Subparser &parser)
   Cx3 rad_ks = info.noncartesianVolume();
 
   R3 const trajectory = reader.readTrajectory();
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+  Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
+                      : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
   Gridder gridder(info, trajectory, osamp.Get(), sdc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
 

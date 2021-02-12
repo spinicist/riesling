@@ -38,8 +38,8 @@ int main_tgv(args::Subparser &parser)
   HD5Reader reader(fname.Get(), log);
   auto const info = reader.info();
   auto const trajectory = reader.readTrajectory();
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+  Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
+                      : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
   Gridder gridder(info, trajectory, osamp.Get(), sdc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cx4 grid = gridder.newGrid();

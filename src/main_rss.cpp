@@ -17,8 +17,8 @@ int main_rss(args::Subparser &parser)
   FFT::Start(log);
   HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
+  Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
+                      : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
   Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
