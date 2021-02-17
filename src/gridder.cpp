@@ -2,7 +2,6 @@
 
 #include "fft3.h"
 #include "filter.h"
-#include "io_nifti.h"
 #include "tensorOps.h"
 #include "threads.h"
 

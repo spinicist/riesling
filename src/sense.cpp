@@ -1,9 +1,7 @@
 #include "sense.h"
 
-#include "cropper.h"
 #include "fft3n.h"
 #include "gridder.h"
-#include "io_nifti.h"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -40,10 +38,10 @@ Cx4 SENSE(
     B3 const thresholded = (rss > threshVal);
     grid.device(Threads::GlobalDevice()) =
         Tile(thresholded, info.channels)
-            .select(grid / Tile(rss, info.channels), grid.constant(0.f));
+            .select(grid / Tile(rss, info.channels).cast<Cx>(), grid.constant(0.f));
     log.stop_time(start, "Thresholding");
   } else {
-    grid = grid / Tile(rss, info.channels).cast<std::complex<float>>();
+    grid = grid / Tile(rss, info.channels).cast<Cx>();
   }
   log.info("Finished SENSE maps");
   return grid;
