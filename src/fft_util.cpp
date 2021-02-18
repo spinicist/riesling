@@ -51,9 +51,9 @@ Cxd1 Phase(long const sz)
   double const shift = (double)c / sz;
   Rd1 ii(sz);
   std::iota(ii.data(), ii.data() + ii.size(), 0.);
-  auto const ph = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
-  auto const factors =
-      ph.unaryExpr([](double const x) { return std::polar(1., (x - std::floor(x)) * 2. * M_PI); });
+  auto const s = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
+  Cxd1 const ph = ((s - s.floor()) * s.constant(2. * M_PI)).cast<Cxd>();
+  Cxd1 const factors = (ph * ph.constant(Cxd{0., 1.})).exp();
   return factors;
 }
 
