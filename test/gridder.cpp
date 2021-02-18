@@ -5,17 +5,13 @@
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
 {
   Log log(false);
-  Info info{
-      .matrix = {2, 2, 2},
-      .voxel_size = {1, 1, 1},
-      .read_points = 1,
-      .read_gap = 0,
-      .spokes_hi = 1,
-      .spokes_lo = 0,
-      .lo_scale = 1,
-      .channels = 4,
-      .volumes = 1,
-  };
+  Info info{.matrix = {2, 2, 2},
+            .read_points = 1,
+            .read_gap = 0,
+            .spokes_hi = 1,
+            .spokes_lo = 0,
+            .lo_scale = 1,
+            .channels = 4};
   float const osamp = 2.f;
   R3 traj(3, 1, 1);
   traj.setZero();
@@ -116,17 +112,13 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 {
   Log log(false);
-  Info info{
-      .matrix = {4, 4, 4},
-      .voxel_size = {1, 1, 1},
-      .read_points = 4,
-      .read_gap = 0,
-      .spokes_hi = 1,
-      .spokes_lo = 0,
-      .lo_scale = 1,
-      .channels = 1,
-      .volumes = 1,
-  };
+  Info info{.matrix = {4, 4, 4},
+            .read_points = 4,
+            .read_gap = 0,
+            .spokes_hi = 1,
+            .spokes_lo = 0,
+            .lo_scale = 1,
+            .channels = 1};
   float const osamp = 2.f;
   R3 traj(3, info.read_points, info.spokes_total());
   traj.setZero();
