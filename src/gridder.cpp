@@ -10,9 +10,9 @@
 #include <cmath>
 
 template <typename T>
-inline decltype(auto) nearest(T &&x)
+inline decltype(auto) nearby(T &&x)
 {
-  return x.array().unaryExpr([](float const &e) { return static_cast<int16_t>(std::rint(e)); });
+  return x.array().unaryExpr([](float const &e) { return std::nearbyint(e); });
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
@@ -193,7 +193,7 @@ Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Pro
         NoncartesianIndex const nc{.spoke = is + spoke0, .read = ir};
         R1 const tp = traj.chip(nc.spoke, 2).chip(nc.read, 1);
         Point3 const xyz = toCart(tp, profile.xy, profile.z);
-        Size3 const gp = nearest(xyz);
+        Size3 const gp = nearby(xyz).cast<int16_t>();
         Point3 const offset = xyz - gp.cast<float>().matrix();
         Size3 const cart = gp + center;
         coords[index++] = Coords{.cart = CartesianIndex{cart(0), cart(1), cart(2)},
