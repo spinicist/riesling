@@ -41,7 +41,7 @@ Cx4 SENSE(
             .select(grid / Tile(rss, info.channels).cast<Cx>(), grid.constant(0.f));
     log.stop_time(start, "Thresholding");
   } else {
-    grid = grid / Tile(rss, info.channels).cast<Cx>();
+    grid.device(Threads::GlobalDevice()) = grid / Tile(rss, info.channels).cast<Cx>();
   }
   log.info("Finished SENSE maps");
   return grid;
