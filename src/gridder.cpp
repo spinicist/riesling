@@ -185,7 +185,7 @@ Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Pro
   std::vector<Coords> coords(totalSz);
 
   std::fesetround(FE_TONEAREST);
-  Size3 const center{dims_[0] / 2, dims_[1] / 2, dims_[2] / 2};
+  Size3 const center(dims_[0] / 2, dims_[1] / 2, dims_[2] / 2);
   auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
     long index = lo_spoke * readSz;
     for (int32_t is = lo_spoke; is < hi_spoke; is++) {

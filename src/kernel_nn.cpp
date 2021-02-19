@@ -13,12 +13,12 @@ float NearestNeighbour::radius() const
 Sz3 NearestNeighbour::start() const
 {
   return Sz3{-w_ / 2, -w_ / 2, -w_ / 2};
-};
+}
 
 Sz3 NearestNeighbour::size() const
 {
   return Sz3{w_, w_, w_};
-};
+}
 
 float NearestNeighbour::value(Point3 const &x) const
 {

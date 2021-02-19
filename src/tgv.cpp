@@ -11,7 +11,7 @@ auto fdiff(Cx3 const &a, Eigen::Index const d)
   fwd[d] = 2;
 
   return (a.slice(fwd, sz) - a.slice(st1, sz));
-};
+}
 
 auto bdiff(Cx3 const &a, Eigen::Index const d)
 {
@@ -21,7 +21,7 @@ auto bdiff(Cx3 const &a, Eigen::Index const d)
   bck[d] = 0;
 
   return (a.slice(st1, sz) - a.slice(bck, sz));
-};
+}
 
 auto cdiff(Cx3 const &a, Eigen::Index const d)
 {
@@ -33,7 +33,7 @@ auto cdiff(Cx3 const &a, Eigen::Index const d)
   bck[d] = 0;
 
   return (a.slice(fwd, sz) - a.slice(bck, sz)) / a.slice(st1, sz).constant(2.f);
-};
+}
 
 void calc_scalar_grad(Cx3 const &a, Cx4 &g)
 {
@@ -42,7 +42,7 @@ void calc_scalar_grad(Cx3 const &a, Cx4 &g)
   g.chip<3>(0).slice(st1, sz).device(Threads::GlobalDevice()) = fdiff(a, 0);
   g.chip<3>(1).slice(st1, sz).device(Threads::GlobalDevice()) = fdiff(a, 1);
   g.chip<3>(2).slice(st1, sz).device(Threads::GlobalDevice()) = fdiff(a, 2);
-};
+}
 
 void calc_vector_grad(Cx4 const &x, Cx4 &gx)
 {
