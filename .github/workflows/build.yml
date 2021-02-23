@@ -42,16 +42,17 @@ jobs:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
         run: |
-          cmake/vcpkg/bootstrap-vcpkg.sh
           cmake -B ${{github.workspace}}/build -S ${{github.workspace}} \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/Plain.cmake
+            -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/vcpkg/scripts/buildsystems/vcpkg.cmake
           cmake --build ${{github.workspace}}/build
 
-      # - name: Tests
-      #   shell: bash
-      #   run: |
-      #     ${{github.workspace}}/build/prufung
+      - name: Tests
+        shell: bash
+        run: |
+          if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2
+            ${{github.workspace}}/build/prufung
+          fi
 
       - name: Save release
         run: |
