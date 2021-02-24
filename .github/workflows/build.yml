@@ -36,6 +36,13 @@ jobs:
             brew install gnu-tar
           fi
 
+      - name: Restore vcpkg binary cache
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/vcpkg/
+          key: ${{runner.os}}-${{hashFiles( 'vcpkg.json' ) }}-${{hashFiles( '.git/modules/cmake/HEAD' )}}-vcpkg-cache
+
       - name: Build
         shell: bash
         env:
