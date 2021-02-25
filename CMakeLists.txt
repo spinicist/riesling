@@ -88,11 +88,12 @@ install(TARGETS riesling RUNTIME DESTINATION bin)
 # Tests
 add_executable(prufung
     test/main.cpp
+    test/cropper.cpp
     test/fft1.cpp
     test/fft3.cpp
     test/fft3n.cpp
-    test/kernel_kb.cpp
     test/gridder.cpp
+    test/kernel_kb.cpp
     test/zinfandel.cpp
 )
 target_link_libraries(prufung PUBLIC
