@@ -6,7 +6,7 @@
 
 TEST_CASE("1D-FFT", "[FFT1]")
 {
-  Log log(false);
+  Log log;
   FFT::Start(log);
 
   auto N = GENERATE(4, 8, 32);

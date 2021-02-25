@@ -24,12 +24,13 @@ int main_toeplitz(args::Subparser &parser)
   args::ValueFlag<float> thr(
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<long> its(
-      parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
+      parser, "MAX ITS", "Maximum number of iterations (8)", {'i', "max_its"}, 8);
   args::ValueFlag<float> iter_fov(
       parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
 
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
+
   HD5Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   Cx3 rad_ks = info.noncartesianVolume();
@@ -56,7 +57,7 @@ int main_toeplitz(args::Subparser &parser)
   gridder.toCartesian(ones, transfer);
 
   SystemFunction toe = [&](Cx3 const &x, Cx3 &y) {
-    auto const start = log.start_time();
+    auto const start = log.now();
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
     gridder.apodize(y);
@@ -66,26 +67,26 @@ int main_toeplitz(args::Subparser &parser)
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     gridder.deapodize(y);
-    log.stop_time(start, "Total system time");
+    log.debug("System: {}", log.toNow(start));
   };
 
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
-    auto const &start = log.start_time();
+    auto const &start = log.now();
     y.setZero();
     grid.setZero();
     gridder.toCartesian(x, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     gridder.deapodize(y);
-    log.stop_time(start, "Total decode time");
+    log.debug("Decode: {}", log.toNow(start));
   };
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   Cx3 vol = iter_cropper.newImage();
-  auto const &all_start = log.start_time();
+  auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
-    auto const &vol_start = log.start_time();
+    auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);
       currentVolume = iv;
@@ -98,9 +99,9 @@ int main_toeplitz(args::Subparser &parser)
     }
 
     out.chip(iv, 3) = out_cropper.crop3(vol);
-    log.stop_time(vol_start, "Volume took");
+    log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
-  log.stop_time(all_start, "All volumes took");
+  log.info("All Volumes: {}", log.toNow(all_start));
   auto const ofile = OutName(fname, oname, "toe");
   if (magnitude) {
     WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);

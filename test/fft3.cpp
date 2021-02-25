@@ -6,7 +6,7 @@
 
 TEST_CASE("3D-FFT", "[FFT3]")
 {
-  Log log(false);
+  Log log;
   FFT::Start(log);
 
   auto sx = GENERATE(3, 5, 7, 32);

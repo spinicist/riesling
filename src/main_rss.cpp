@@ -31,9 +31,9 @@ int main_rss(args::Subparser &parser)
 
   FFT3N fft(grid, log);
 
-  auto const &all_start = log.start_time();
+  auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
-    auto const &vol_start = log.start_time();
+    auto const &vol_start = log.now();
     reader.readData(iv, rad_ks);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
@@ -45,9 +45,9 @@ int main_rss(args::Subparser &parser)
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }
     out.chip(iv, 3) = image.real();
-    log.stop_time(vol_start, "Volume took");
+    log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
-  log.stop_time(all_start, "All volumes took");
+  log.info("All volumes: {}", log.toNow(all_start));
 
   WriteVolumes(info, out, volume.Get(), OutName(fname, oname, "rss"), log);
   FFT::End(log);

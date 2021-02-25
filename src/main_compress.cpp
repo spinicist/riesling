@@ -15,9 +15,7 @@ int main_compress(args::Subparser &parser)
       parser, "READ SIZE", "Number of read-out points to use in PCA (default 16)", {"read"}, 16);
   args::ValueFlag<long> spokeStride(
       parser, "SPOKE STRIDE", "Stride/subsample across spokes (default 4)", {"spokes"}, 4);
-  parser.Parse();
-  Log log(verbose);
-  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
+  Log log = ParseCommand(parser, fname);
 
   HD5Reader reader(fname.Get(), log);
   Info const in_info = reader.info();

@@ -4,21 +4,32 @@
 #include <fmt/color.h>
 #include <fmt/ostream.h>
 
+#include "types.h"
+
 struct Log
 {
   enum struct Level
   {
     Fail = 0,
-    Error = 1,
-    Info = 2
+    Info = 1,
+    Images = 2,
+    Debug = 3
   };
 
-  Log(bool const db);
+  using Time = std::chrono::high_resolution_clock::time_point;
+
+  Log(Level const l = Level::Fail);
 
   template <typename S, typename... Args>
   inline void info(const S &fmt_str, const Args &... args) const
   {
     vinfo(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
+  }
+
+  template <typename S, typename... Args>
+  inline void debug(const S &fmt_str, const Args &... args) const
+  {
+    vdebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
@@ -28,13 +39,15 @@ struct Log
   }
 
   void progress(long const ii, long const n) const;
+  Time now() const;
+  std::string toNow(Time const t) const;
 
-  std::chrono::high_resolution_clock::time_point start_time() const;
-  void stop_time(
-      std::chrono::high_resolution_clock::time_point const &t, std::string const &label) const;
+  void image(Cx3 const &img, std::string const &name) const;
+  void image(R3 const &img, std::string const &name) const;
 
 private:
   void vinfo(fmt::string_view format, fmt::format_args args) const;
+  void vdebug(fmt::string_view format, fmt::format_args args) const;
   void vfail(fmt::string_view format, fmt::format_args args) const;
   Level out_level_;
 };

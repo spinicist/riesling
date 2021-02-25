@@ -49,7 +49,7 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
 
 TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
 {
-  Log log(false);
+  Log log;
   long const n_read = 12;
   long const n_spoke = 4;
   long const n_coil = 4;

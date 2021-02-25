@@ -83,11 +83,11 @@ int main_sense(args::Subparser &parser)
   Cx3 image = cropper.newImage();
   Cx4 out = cropper.newSeries(info.volumes);
   Cx4 channel_images = cropper.newMultichannel(info.channels);
-  auto const &all_start = log.start_time();
+  auto const &all_start = log.now();
   bool channels_saved = false;
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     log.info(FMT_STRING("Processing volume: {}"), iv);
-    auto const &vol_start = log.start_time();
+    auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);
       currentVolume = iv;
@@ -103,7 +103,7 @@ int main_sense(args::Subparser &parser)
     }
 
     out.chip(iv, 3) = image;
-    log.stop_time(vol_start, "Volume took");
+    log.info("Volume {}: {}", iv, log.toNow(vol_start));
     if (save_channels && !channels_saved) {
       WriteNifti(
           info,
@@ -113,7 +113,7 @@ int main_sense(args::Subparser &parser)
       channels_saved = true;
     }
   }
-  log.stop_time(all_start, "All volumes took");
+  log.info("All Volumes: {}", log.toNow(all_start));
 
   auto const ofile = OutName(fname, oname, "sense");
   if (magnitude) {

@@ -54,30 +54,30 @@ int main_tgv(args::Subparser &parser)
       SENSE(info, trajectory, osamp.Get(), stack, kernel, false, 0.f, rad_ks, log));
 
   EncodeFunction enc = [&](Cx3 &x, Cx3 &y) {
-    auto const &start = log.start_time();
+    auto const &start = log.now();
     y.setZero();
     grid.setZero();
     gridder.apodize(x);
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = Tile(x, info.channels) * sense;
     fft.forward();
     gridder.toNoncartesian(grid, y);
-    log.stop_time(start, "Total encode time");
+    log.debug("Encode: {}", log.toNow(start));
   };
 
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
-    auto const &start = log.start_time();
+    auto const &start = log.now();
     grid.setZero();
     gridder.toCartesian(x, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     gridder.deapodize(y);
-    log.stop_time(start, "Total decode time");
+    log.debug("Decode: {}", log.toNow(start));
   };
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
-    auto const start = log.start_time();
+    auto const start = log.now();
     log.info(FMT_STRING("Processing volume: {}"), iv);
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readData(iv, rad_ks);
@@ -100,7 +100,7 @@ int main_tgv(args::Subparser &parser)
     }
 
     out.chip(iv, 3) = image;
-    log.stop_time(start, "Total volume time");
+    log.info("Volume {}: {}", iv, log.toNow(start));
   }
   auto const ofile = OutName(fname, oname, "tgv");
   if (magnitude) {

@@ -47,9 +47,9 @@ int main_ds(args::Subparser &parser)
   float const flat_start = maxK / sqrt(approx_undersamp);
   float const flat_val = d_hi * (3. * (flat_start * flat_start) + 1. / 4.);
 
-  auto const &all_start = log.start_time();
+  auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
-    auto const &vol_start = log.start_time();
+    auto const &vol_start = log.now();
     reader.readData(iv, rad_ks);
     channels.setZero();
     log.info("Beginning Direct Summation");
@@ -93,9 +93,9 @@ int main_ds(args::Subparser &parser)
     WriteNifti(info, Cx4(channels.shuffle(Sz4{1, 2, 3, 0})), "chan.nii", log);
     out.chip(iv, 3).device(Threads::GlobalDevice()) =
         (channels * channels.conjugate()).sum(Sz1{0}).real().sqrt();
-    log.stop_time(vol_start, "Volume took");
+    log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
-  log.stop_time(all_start, "All volumes took");
+  log.info("All volumes: {}", log.toNow(all_start));
 
   WriteVolumes(info, R4(out.abs()), volume.Get(), OutName(fname, oname, "ds"), log);
   return EXIT_SUCCESS;

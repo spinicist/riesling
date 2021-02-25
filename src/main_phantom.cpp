@@ -77,13 +77,10 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag kb(parser, "KAISER-BESSEL", "Use Kaiser-Bessel kernel", {'k', "kb"});
   args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
-  parser.Parse();
-  Log log(verbose);
+
+  Log log = ParseCommand(parser, fname);
   FFT::Start(log);
-  if (!fname) {
-    log.fail("No output name specified");
-  }
-  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
+
   auto const m = matrix.Get();
   auto const vox_sz = fov.Get() / m;
   auto const spokes_hi = std::lrint(spoke_samp.Get() * m * m);

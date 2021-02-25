@@ -203,15 +203,15 @@ Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Pro
       }
     }
   };
-  auto start = log_.start_time();
+  auto start = log_.now();
   Threads::RangeFor(coordTask, spokeSz);
-  log_.stop_time(start, "Calculated grid co-ordinates");
+  log_.debug("Grid co-ord calcs: {}", log_.toNow(start));
   return coords;
 }
 
 void Gridder::sortCoords()
 {
-  auto const start = log_.start_time();
+  auto const start = log_.now();
   sortedIndices_.resize(coords_.size());
   std::iota(sortedIndices_.begin(), sortedIndices_.end(), 0);
   std::sort(sortedIndices_.begin(), sortedIndices_.end(), [&](long const a, long const b) {
@@ -220,7 +220,7 @@ void Gridder::sortCoords()
     return (ac.z < bc.z) ||
            ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
   });
-  log_.stop_time(start, "Sorting co-ordinates");
+  log_.debug("Grid co-ord sorting: {}", log_.toNow(start));
 }
 
 void Gridder::sampleDensityCompensation()
@@ -314,7 +314,7 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
 
   auto const st = kernel_->start();
   auto const sz = kernel_->size();
-  Log nullLog(false);
+  Log nullLog;
   auto grid_task = [&](long const lo, long const hi) {
     Cx3 w(sz);
     FFT3 sfft(w, nullLog, 1);
@@ -338,9 +338,9 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
     }
   };
 
-  auto const &start = log_.start_time();
+  auto const &start = log_.now();
   Threads::RangeFor(grid_task, sortedIndices_.size());
-  log_.stop_time(start, "Noncartesian -> Cartesian");
+  log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
 }
 
 void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
@@ -376,9 +376,9 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
     }
   };
 
-  auto const &start = log_.start_time();
+  auto const &start = log_.now();
   Threads::RangeFor(grid_task, sortedIndices_.size());
-  log_.stop_time(start, "Noncartesian -> Cartesian");
+  log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
 }
 
 void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
@@ -391,7 +391,7 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
 
   auto const st = kernel_->start();
   auto const sz = kernel_->size();
-  Log nullLog(false);
+  Log nullLog;
   auto grid_task = [&](long const lo, long const hi) {
     Cx3 w(sz);
     FFT3 sfft(w, nullLog, 1);
@@ -420,9 +420,9 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
       noncart.chip(nc.spoke, 1).chip(nc.read, 0) = val;
     }
   };
-  auto const &start = log_.start_time();
+  auto const &start = log_.now();
   Threads::RangeFor(grid_task, coords_.size());
-  log_.stop_time(start, "Cartesian -> Noncartesian");
+  log_.debug("Cart -> Non-cart: {}", log_.toNow(start));
 }
 
 void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
@@ -456,7 +456,7 @@ void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
               Eigen::type2indexpair<3, 2>>());
     }
   };
-  auto const &start = log_.start_time();
+  auto const &start = log_.now();
   Threads::RangeFor(grid_task, coords_.size());
-  log_.stop_time(start, "Cartesian -> Noncartesian");
+  log_.debug("Cart -> Non-cart: {}", log_.toNow(start));
 }

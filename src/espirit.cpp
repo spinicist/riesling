@@ -55,9 +55,7 @@ Cx4 ESPIRIT(
   }
   Eigen::MatrixXcf kMat = CollapseToMatrix<Cx7, 4>(kernels);
 
-  auto bdc = log.start_time();
   auto const bdcsvd = kMat.transpose().bdcSvd(Eigen::ComputeThinV);
-  log.stop_time(bdc, "k-Space SVD");
   long const nRetain = std::lrintf(retain * calTotal);
   Cx5 kRetain(nChan, kSz, kSz, kSz, nRetain);
   auto retainMap = CollapseToMatrix<Cx5, 4>(kRetain);
@@ -66,9 +64,7 @@ Cx4 ESPIRIT(
 
   // As the Matlab reference version says, "rotate kernel to order by maximum variance"
   auto retainReshaped = retainMap.reshaped(nChan, kSz * kSz * kSz * nRetain);
-  bdc = log.start_time();
   Eigen::MatrixXcf rotation = retainReshaped.transpose().bdcSvd(Eigen::ComputeFullV).matrixV();
-  log.stop_time(bdc, "Rotation SVD");
 
   fmt::print(
       FMT_STRING("rR {} {} rotation {} {}\n"),
@@ -81,16 +77,14 @@ Cx4 ESPIRIT(
                   .reshaped(nChan * kSz * kSz * kSz, nRetain);
 
   Cx4 tempKernel(nChan, calSz, calSz, calSz);
-  Log nullLog(false);
+  Log nullLog;
   FFT3N fftKernel(tempKernel, nullLog);
   Cx5 imgKernels(nChan, calSz, calSz, calSz, nRetain);
-  bdc = log.start_time();
   for (long ii = 0; ii < nRetain; ii++) {
     ZeroPad(kRetain.chip(ii, 4), tempKernel);
     fftKernel.reverse();
     imgKernels.chip(ii, 4) = tempKernel;
   }
-  log.stop_time(bdc, "Kernel FFTs");
 
   Cx2 temp(nChan, nRetain);
   auto const tempMap = CollapseToMatrix(temp);

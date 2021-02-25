@@ -5,15 +5,29 @@
 #include <filesystem>
 #include <fmt/format.h>
 
+namespace {
+std::unordered_map<int, Log::Level> levelMap{
+    {0, Log::Level::Fail}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
+}
+
 args::Group global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "HELP", "Show this help message", {'h', "help"});
 args::Flag verbose(global_group, "VERBOSE", "Talk more", {'v', "verbose"});
+args::MapFlag<int, Log::Level> verbosity(
+    global_group,
+    "VERBOSITY",
+    "Talk even more (values 0-3, see documentation)",
+    {"verbosity"},
+    levelMap);
 args::ValueFlag<long> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
 Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname)
 {
   parser.Parse();
-  Log log(verbose);
+  Log::Level const level =
+      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::Fail);
+
+  Log log(level);
   if (!fname) {
     log.fail("No input specified");
   }

@@ -1,15 +1,23 @@
 #include "log.h"
 
-using ms = std::chrono::milliseconds;
+#include "io_nifti.h"
 
-Log::Log(bool const db)
-    : out_level_{db ? Level::Info : Level::Fail}
+Log::Log(Level const l)
+    : out_level_{l}
 {
 }
 
 void Log::vinfo(fmt::string_view fstr, fmt::format_args args) const
 {
   if (out_level_ >= Level::Info) {
+    fmt::vprint(stderr, fstr, args);
+    fmt::print(stderr, "\n");
+  }
+}
+
+void Log::vdebug(fmt::string_view fstr, fmt::format_args args) const
+{
+  if (out_level_ >= Level::Debug) {
     fmt::vprint(stderr, fstr, args);
     fmt::print(stderr, "\n");
   }
@@ -34,15 +42,29 @@ void Log::progress(long const ii, long const n) const
   }
 }
 
-std::chrono::high_resolution_clock::time_point Log::start_time() const
+Log::Time Log::now() const
 {
   return std::chrono::high_resolution_clock::now();
 }
 
-void Log::stop_time(
-    std::chrono::high_resolution_clock::time_point const &start, std::string const &label) const
+std::string Log::toNow(Log::Time const t1) const
 {
-  auto const stop = std::chrono::high_resolution_clock::now();
-  auto const time = std::chrono::duration_cast<ms>(stop - start).count();
-  info(FMT_STRING("{} {} ms"), label, time);
+  using ms = std::chrono::milliseconds;
+  auto const t2 = std::chrono::high_resolution_clock::now();
+  auto const diff = std::chrono::duration_cast<ms>(t2 - t1).count();
+  return fmt::format(FMT_STRING("{} ms"), diff);
+}
+
+void Log::image(Cx3 const &img, std::string const &name) const
+{
+  if ((out_level_ >= Level::Images)) {
+    WriteNifti(Info(), img, name, *this);
+  }
+}
+
+void Log::image(R3 const &img, std::string const &name) const
+{
+  if ((out_level_ >= Level::Images)) {
+    WriteNifti(Info(), img, name, *this);
+  }
 }

@@ -23,23 +23,22 @@ typename T::Scalar Sum(T const &a)
 }
 
 template <typename T>
-float Dot(T const &a, T const &b)
+typename T::Scalar Dot(T const &a, T const &b)
 {
-  Eigen::TensorFixedSize<typename T::RealScalar, Eigen::Sizes<>> d =
-      (a * b.conjugate()).real().sum();
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> d = (a.conjugate() * b).sum();
   return d();
 }
 
 template <typename T>
 float Norm2(T const &a)
 {
-  return Dot(a, a);
+  return std::real(Dot(a, a));
 }
 
 template <typename T>
 float Norm(T const &a)
 {
-  return sqrt(Dot(a, a));
+  return sqrt(std::real(Dot(a, a)));
 }
 
 template <typename T>

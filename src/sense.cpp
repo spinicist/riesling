@@ -34,12 +34,12 @@ Cx4 SENSE(
     R0 max = rss.maximum();
     float const threshVal = threshold * max();
     log.info(FMT_STRING("Thresholding RSS below {} intensity"), threshVal);
-    auto const start = log.start_time();
+    auto const start = log.now();
     B3 const thresholded = (rss > threshVal);
     grid.device(Threads::GlobalDevice()) =
         Tile(thresholded, info.channels)
             .select(grid / Tile(rss, info.channels).cast<Cx>(), grid.constant(0.f));
-    log.stop_time(start, "Thresholding");
+    log.debug("SENSE Thresholding: {}", log.toNow(start));
   } else {
     grid.device(Threads::GlobalDevice()) = grid / Tile(rss, info.channels).cast<Cx>();
   }

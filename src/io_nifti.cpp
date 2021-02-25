@@ -6,7 +6,7 @@
 
 template <typename T, int ND>
 void WriteNifti(
-    Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname, Log &log)
+    Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname, Log const &log)
 {
   using Image = itk::Image<T, ND>;
   using Importer = itk::ImportImageFilter<T, ND>;
@@ -57,13 +57,13 @@ void WriteNifti(
   write->Update();
 }
 
-template void WriteNifti(Info const &, Cx3 const &, std::string const &, Log &);
-template void WriteNifti(Info const &, Cx4 const &, std::string const &, Log &);
-template void WriteNifti(Info const &, R3 const &, std::string const &, Log &);
-template void WriteNifti(Info const &, R4 const &, std::string const &, Log &);
+template void WriteNifti(Info const &, Cx3 const &, std::string const &, Log const &);
+template void WriteNifti(Info const &, Cx4 const &, std::string const &, Log const &);
+template void WriteNifti(Info const &, R3 const &, std::string const &, Log const &);
+template void WriteNifti(Info const &, R4 const &, std::string const &, Log const &);
 
 template <typename T>
-void WriteNifti(Eigen::Matrix<T, -1, -1> const &m, std::string const &fname, Log &log)
+void WriteNifti(Eigen::Matrix<T, -1, -1> const &m, std::string const &fname, Log const &log)
 {
   using Image = itk::Image<T, 2>;
   using Importer = itk::ImportImageFilter<T, 2>;
@@ -87,4 +87,4 @@ void WriteNifti(Eigen::Matrix<T, -1, -1> const &m, std::string const &fname, Log
   write->Update();
 }
 
-template void WriteNifti(Eigen::MatrixXcf const &m, std::string const &fname, Log &log);
+template void WriteNifti(Eigen::MatrixXcf const &m, std::string const &fname, Log const &log);

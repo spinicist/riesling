@@ -16,9 +16,9 @@ FFT3::FFT3(Cx3 &grid, Log &log, long const nThreads)
   sizes[2] = static_cast<int>(dims[0]);
   auto const Nvox = (sizes[0] * sizes[1] * sizes[2]);
   scale_ = 1. / sqrt(Nvox);
-  auto const start = log.start_time();
   auto ptr = reinterpret_cast<fftwf_complex *>(grid.data());
   log_.info(FMT_STRING("Planning {} FFT with {} threads"), dims, nThreads);
+  auto const start = log.now();
   fftwf_plan_with_nthreads(nThreads);
   forward_plan_ = fftwf_plan_many_dft(
       3, sizes, 1, ptr, nullptr, 1, 1, ptr, nullptr, 1, 1, FFTW_FORWARD, FFTW_MEASURE);
@@ -29,7 +29,7 @@ FFT3::FFT3(Cx3 &grid, Log &log, long const nThreads)
   phY_ = FFT::Phase(dims[1]);
   phZ_ = FFT::Phase(dims[2]);
 
-  log_.stop_time(start, "Took");
+  log_.debug("Planning took {}", log_.toNow(start));
 }
 
 FFT3::~FFT3()
@@ -40,26 +40,26 @@ FFT3::~FFT3()
 
 void FFT3::forwardPhase(Cx3 &x, float const scale) const
 {
-  auto start = log_.start_time();
+  auto start = log_.now();
   if (threaded_) {
     auto dev = Threads::GlobalDevice();
     x.device(dev) = x * x.constant(scale) * Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
   } else {
     x = x * x.constant(scale) * Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
   }
-  log_.stop_time(start, "Forward Phase");
+  log_.debug("Forward Phase: {}", log_.toNow(start));
 }
 
 void FFT3::reversePhase(Cx3 &x, float const scale) const
 {
-  auto start = log_.start_time();
+  auto start = log_.now();
   if (threaded_) {
     auto dev = Threads::GlobalDevice();
     x.device(dev) = x * x.constant(scale) / Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
   } else {
     x = x * x.constant(scale) / Outer(Outer(phX_, phY_), phZ_).cast<Cx>();
   }
-  log_.stop_time(start, "Reverse Phase");
+  log_.debug("Reverse Phase: {}", log_.toNow(start));
 }
 
 void FFT3::forward() const
@@ -74,10 +74,10 @@ void FFT3::forward(Cx3 &x) const
   assert(x.dimension(2) == phZ_.size());
 
   forwardPhase(x, 1.f);
-  auto start = log_.start_time();
+  auto start = log_.now();
   auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
   fftwf_execute_dft(forward_plan_, ptr, ptr);
-  log_.stop_time(start, "Forward FFT");
+  log_.debug("Forward FFT: {}", log_.toNow(start));
   forwardPhase(x, scale_);
 }
 
@@ -92,9 +92,9 @@ void FFT3::reverse(Cx3 &x) const
   assert(x.dimension(1) == phY_.size());
   assert(x.dimension(2) == phZ_.size());
   reversePhase(x, scale_);
-  auto start = log_.start_time();
+  auto start = log_.now();
   auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
   fftwf_execute_dft(reverse_plan_, ptr, ptr);
-  log_.stop_time(start, "Reverse FFT");
+  log_.debug("Reverse FFT: {}", log_.toNow(start));
   reversePhase(x, 1.f);
 }

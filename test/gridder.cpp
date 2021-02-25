@@ -4,7 +4,7 @@
 
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
 {
-  Log log(false);
+  Log log;
   Info info{.matrix = {2, 2, 2},
             .read_points = 1,
             .read_gap = 0,
@@ -111,7 +111,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 
 TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 {
-  Log log(false);
+  Log log;
   Info info{.matrix = {4, 4, 4},
             .read_points = 4,
             .read_gap = 0,
