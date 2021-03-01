@@ -69,6 +69,7 @@ target_link_libraries(vineyard PUBLIC
 add_executable(riesling
     src/main_hdr.cpp    
     src/main_phantom.cpp
+    src/main_cg.cpp
     src/main_compress.cpp
     src/main_zinfandel.cpp
     src/main_kspace.cpp
@@ -76,7 +77,6 @@ add_executable(riesling
     src/main_rss.cpp
     src/main_sense.cpp
     src/main_tgv.cpp
-    src/main_toeplitz.cpp
     src/main_ds.cpp
     src/main.cpp
 )

@@ -14,7 +14,7 @@
 #include "threads.h"
 #include <filesystem>
 
-int main_toeplitz(args::Subparser &parser)
+int main_cg(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
 

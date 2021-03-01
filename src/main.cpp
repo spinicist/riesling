@@ -11,10 +11,10 @@ int main(int const argc, char const *const argv[])
   args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::Command kspace(commands, "kspace", "Output k-space for viewing", &main_kspace);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
-  args::Command rss(commands, "rss", "Basic root-sum-squares recon", &main_rss);
-  args::Command sense(commands, "sense", "Calculate sensitivity maps", &main_sense);
-  args::Command tgv(commands, "tgv", "Iterative TGV recon", &main_tgv);
-  args::Command tp(commands, "toe", "Iterative Toeplitz recon", &main_toeplitz);
+  args::Command rss(commands, "rss", "Recon w/ root-sum-squares channel combo", &main_rss);
+  args::Command sense(commands, "sense", "Recon w/ self-calibrating sense combo", &main_sense);
+  args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
+  args::Command tgv(commands, "tgv", "Iterative TGV regularised recon", &main_tgv);
   args::Command ds(commands, "ds", "Direct Summation (NUFT)", &main_ds);
   args::GlobalOptions globals(parser, global_group);
 
