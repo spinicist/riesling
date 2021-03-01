@@ -32,10 +32,9 @@ extract it with `tar -xzf riesling-platform.tar.gz`. Then, move the resulting `r
 
 If you wish to compile RIESLING yourself, compilation should hopefully be straightforward. RIESLING relies on `vcpkg` for dependency management. To download and compile RIESLING, follow these steps:
 
+0. Install the dependencies: `cmake` \& `curl` (`vcpkg` requires `curl`).
 1. Clone the repository. `git clone https://github.com/spinicist/riesling`
-2. Run `git submodule init` to clone a copy of the `vcpkg` repo.
-3. Edit `bootstrap.sh` to choose your target triplet.
-4. Run `bootstraph.sh`.
+2. Run `bootstraph.sh`.
 
 ## Usage
 
@@ -43,7 +42,7 @@ RIESLING comes as a single executable file with multiple commands, similar to `g
 
 RIESLING uses HDF5 (.h5) files as an input/intermediate format and NIFTI (.nii) as a final output. To create an example digital phantom, use `riesling phantom`. RIESLING will append suffixes to input filenames when writing outputs to indicate which command was executed.
 
-There are three reconstruction algorithms currently provided in RIESLING - plain root-sum-squares (`riesling rss`), iterative cgSENSE with Töplitz embedding (`riesling toe`), and iterative recon with TGV regularization (`riesling tgv`).
+There are several reconstruction algorithms currently provided in RIESLING - simple non-iterative recon with root-sum-squares channel combination (`riesling rss`), non-iterative recon with self-calibrating sensitivy map extraction (`riesling sense`), iterative cgSENSE with Töplitz embedding (`riesling cg`), and iterative recon with TGV regularization (`riesling tgv`). An experimental version of the Non-Uniform Fourier Transform/Direct Summation method (`riesling ds`) is also provided, but not recommended except for curiosity's sake. Coil compression via PCA/SVD is also provided (`riesling compress`).
 
 A demo using the dataset from the [ISMRM CG-SENSE Reproducibility challenge](https://ismrm.github.io/rrsg/challenge_one/) can be found in `examples/rrsg_cgsense`, which includes both conversion to the RIESLING .h5 format and examples of how to run RIESLING.
 
