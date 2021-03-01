@@ -27,6 +27,7 @@ add_compile_definitions(EIGEN_USE_THREADS)
 # Common library between tests and main executable
 add_library(vineyard
     src/cg.cpp
+    src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp
     src/espirit.cpp
@@ -44,6 +45,7 @@ add_library(vineyard
     src/kernel_nn.cpp
     src/log.cpp
     src/padder.cpp
+    src/phantom_sphere.cpp
     src/parse_args.cpp
     src/sense.cpp
     src/slab_correct.cpp
@@ -67,7 +69,7 @@ target_link_libraries(vineyard PUBLIC
 
 # Main executable
 add_executable(riesling
-    src/main_hdr.cpp    
+    src/main_hdr.cpp
     src/main_phantom.cpp
     src/main_cg.cpp
     src/main_compress.cpp

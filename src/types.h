@@ -63,7 +63,7 @@ using EncodeFunction = std::function<void(Cx3 &x, Cx3 &y)>;
 using DecodeFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 using SystemFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 
-inline Cx4 SwapToCoilLast(Cx4 const &x)
+inline Cx4 SwapToChannelLast(Cx4 const &x)
 {
   return Cx4(x.shuffle(Sz4{1, 2, 3, 0}));
 }

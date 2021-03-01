@@ -20,6 +20,8 @@ struct Log
 
   Log(Level const l = Level::Fail);
 
+  Level level() const;
+
   template <typename S, typename... Args>
   inline void info(const S &fmt_str, const Args &... args) const
   {
@@ -43,6 +45,7 @@ struct Log
   std::string toNow(Time const t) const;
 
   void image(Cx3 const &img, std::string const &name) const;
+  void image(Cx4 const &img, std::string const &name) const;
   void image(R3 const &img, std::string const &name) const;
 
 private:

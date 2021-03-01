@@ -7,6 +7,11 @@ Log::Log(Level const l)
 {
 }
 
+Log::Level Log::level() const
+{
+  return out_level_;
+}
+
 void Log::vinfo(fmt::string_view fstr, fmt::format_args args) const
 {
   if (out_level_ >= Level::Info) {
@@ -56,6 +61,13 @@ std::string Log::toNow(Log::Time const t1) const
 }
 
 void Log::image(Cx3 const &img, std::string const &name) const
+{
+  if ((out_level_ >= Level::Images)) {
+    WriteNifti(Info(), img, name, *this);
+  }
+}
+
+void Log::image(Cx4 const &img, std::string const &name) const
 {
   if ((out_level_ >= Level::Images)) {
     WriteNifti(Info(), img, name, *this);
