@@ -11,6 +11,11 @@ extern args::Flag verbose;
 
 Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname);
 
+struct Vector3fReader
+{
+  void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);
+};
+
 std::string OutName(
     args::Positional<std::string> &inName,
     args::ValueFlag<std::string> &name,

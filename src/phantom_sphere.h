@@ -4,4 +4,9 @@
 #include "log.h"
 #include "types.h"
 
-Cx3 SphericalPhantom(Info const &info, float const radius, float const intensity, Log const &log);
+Cx3 SphericalPhantom(
+    Info const &info,
+    Eigen::Vector3f const &center,
+    float const radius,
+    float const intensity,
+    Log const &log);

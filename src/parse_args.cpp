@@ -4,10 +4,31 @@
 #include <algorithm>
 #include <filesystem>
 #include <fmt/format.h>
+#include <scn/scn.h>
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
     {0, Log::Level::Fail}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
+} // namespace
+
+void Vector3fReader::operator()(
+    std::string const &name, std::string const &value, Eigen::Vector3f &v)
+{
+  float x, y, z;
+  auto result = scn::scan(scn::make_view(value), "{},{},{}", x, y, z);
+  if (!result) {
+    fmt::print(
+        stderr,
+        fmt::fg(fmt::terminal_color::bright_red),
+        "Could not read vector for {} from value {} because {}\n",
+        name,
+        value,
+        result.error());
+    exit(EXIT_FAILURE);
+  }
+  v.x() = x;
+  v.y() = y;
+  v.z() = z;
 }
 
 args::Group global_group("GLOBAL OPTIONS");

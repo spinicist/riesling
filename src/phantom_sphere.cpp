@@ -1,10 +1,11 @@
 #include "phantom_sphere.h"
 
-Cx3 SphericalPhantom(Info const &info, float const radius, float const intensity, Log const &log)
+Cx3 SphericalPhantom(
+    Info const &info, Eigen::Vector3f const &c, float const r, float const i, Log const &log)
 {
 
   // Draw a spherical phantom
-  log.info(FMT_STRING("Drawing spherical phantom radius {} mm intensity {}"), radius, intensity);
+  log.info(FMT_STRING("Drawing sphere center {} radius {} mm intensity {}"), c.transpose(), r, i);
   Cx3 phan(info.matrix[0], info.matrix[1], info.matrix[2]);
   phan.setZero();
   long const cx = phan.dimension(0) / 2;
@@ -17,9 +18,9 @@ Cx3 SphericalPhantom(Info const &info, float const radius, float const intensity
       auto const py = (iy - cy) * info.voxel_size[1];
       for (long ix = 0; ix < phan.dimension(0); ix++) {
         auto const px = (ix - cx) * info.voxel_size[0];
-        float const rad = sqrt(px * px + py * py + pz * pz);
-        if (rad < radius) {
-          phan(ix, iy, iz) = intensity;
+        Eigen::Vector3f const p{px, py, pz};
+        if ((p - c).norm() < r) {
+          phan(ix, iy, iz) = i;
         }
       }
     }

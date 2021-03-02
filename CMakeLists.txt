@@ -7,11 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Threads REQUIRED)
-find_package(args CONFIG REQUIRED)
-find_package(Catch2 CONFIG REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(fmt CONFIG REQUIRED)
-find_package(FFTW3f CONFIG REQUIRED)
+find_package(args REQUIRED)
+find_package(Catch2 REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(fmt REQUIRED)
+find_package(FFTW3f REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(ITK 5.0.0 REQUIRED
               COMPONENTS
@@ -20,6 +20,7 @@ find_package(ITK 5.0.0 REQUIRED
                 ITKIONIFTI
             )
 include( ${ITK_USE_FILE} )
+find_package(scn REQUIRED)
 
 # Ensure this is always defined across all .cpp files
 add_compile_definitions(EIGEN_USE_THREADS)
@@ -65,6 +66,7 @@ target_link_libraries(vineyard PUBLIC
     FFTW3::fftw3f
     hdf5::hdf5-static
     ${ITK_LIBRARIES}
+    scn::scn
 )
 
 # Main executable

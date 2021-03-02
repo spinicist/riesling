@@ -19,22 +19,20 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<std::string> suffix(
       parser, "SUFFIX", "Add suffix (well, infix) to output dirs", {"suffix"});
   args::ValueFlag<float> grid_samp(
-      parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
+      parser, "SRATE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
   args::ValueFlag<float> fov(
       parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::ValueFlag<float> phan_r(
-      parser,
-      "PHANTOM RADIUS",
-      "Radius of the spherical phantom in mm (default 60)",
-      {"phan_rad"},
-      60.f);
+      parser, "RADIUS", "Radius of the spherical phantom in mm (default 60)", {"phan_rad"}, 60.f);
+  args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
+      parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
   args::ValueFlag<float> coil_r(
       parser, "COIL RADIUS", "Radius of the coil in mm (default 100)", {"coil_rad"}, 100.f);
   args::ValueFlag<float> read_samp(
-      parser, "READ OVERSAMPLE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
+      parser, "SRATE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
   args::ValueFlag<float> spoke_samp(
-      parser, "SPOKE SAMPLING", "Sample factor for spokes (default 1)", {'s', "spokes"}, 1);
+      parser, "SRATE", "Sample factor for spokes (default 1)", {'s', "spokes"}, 1);
   args::ValueFlag<long> lores(
       parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
   args::ValueFlag<long> gap(parser, "DEAD-TIME", "Samples in dead-time (def 0)", {'g', "gap"}, 0);
@@ -59,7 +57,7 @@ int main_phantom(args::Subparser &parser)
   auto const m = matrix.Get();
   auto const vox_sz = fov.Get() / m;
   auto const spokes_hi = std::lrint(spoke_samp.Get() * m * m);
-
+  auto const o = -(m * vox_sz) / 2;
   // Strategy - sample the grid at the *grid* sampling rate, and then decimate to read sampling rate
   Info grid_info{.matrix = Array3l{m, m, m},
                  .read_points = static_cast<long>(grid_samp.Get() * m / 2),
@@ -68,7 +66,8 @@ int main_phantom(args::Subparser &parser)
                  .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
                  .lo_scale = lores ? lores.Get() : 1.f,
                  .channels = nchan.Get(),
-                 .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz}};
+                 .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
+                 .origin = Eigen::Vector3f{o, o, o}};
   log.info(
       FMT_STRING("Matrix Size: {} Voxel Size: {} Oversampling: {} Dead-time Gap: {}"),
       matrix.Get(),
@@ -87,7 +86,7 @@ int main_phantom(args::Subparser &parser)
   FFT3N fft(grid, log); // FFTW needs temp space for planning
 
   Cropper cropper(gridder.gridDims(), grid_info.matrix, log);
-  Cx3 phan = SphericalPhantom(grid_info, phan_r.Get(), intensity.Get(), log);
+  Cx3 phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
 
   // Generate SENSE maps and multiply
   log.info("Generating coil sensitivities...");
@@ -98,6 +97,7 @@ int main_phantom(args::Subparser &parser)
   if (log.level() >= Log::Level::Images) { // Extra check to avoid the shuffle when we can
     log.image(SwapToChannelLast(grid), "phantom-prefft.nii");
   }
+  log.info("FFT to k-space");
   fft.forward();
   if (log.level() >= Log::Level::Images) { // Extra check to avoid the shuffle when we can
     log.image(SwapToChannelLast(grid), "phantom-postfft.nii");
