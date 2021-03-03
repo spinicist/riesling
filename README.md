@@ -36,7 +36,6 @@ If you wish to compile RIESLING yourself, compilation should hopefully be straig
 1. Clone the repository. `git clone https://github.com/spinicist/riesling`
 2. Run `bootstraph.sh`.
 
-
 ## Usage
 
 RIESLING comes as a single executable file with multiple commands, similar to `git` or `bart`. Type `riesling` to see a list of all the available commands.
