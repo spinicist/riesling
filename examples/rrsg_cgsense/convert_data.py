@@ -7,8 +7,8 @@
 # - Download brain challenge and reference dataset from
 #        https://zenodo.org/record/3975887#.X9EE6l7gokg
 # - Put data into folder named rrsg_data
-# - Create folder for riesling data named riesling_data_
 #
+# - Create folder for riesling data named riesling_data
 # Run script
 #   python3 convert_data.py
 #
@@ -25,13 +25,34 @@ import sys
 def create_info(matrix, voxel_size, read_points, read_gap, spokes_hi, spokes_lo, lo_scale,
                 channels, volumes, tr, origin, direction):
     D = np.dtype({'names': [
-        'matrix', 'voxel_size', 'read_points', 'read_gap', 'spokes_hi', 'spokes_lo', 'lo_scale',
-        'channels', 'volumes', 'tr', 'origin', 'direction'],
+        'matrix', 
+        'voxel_size', 
+        'read_points', 
+        'read_gap', 
+        'spokes_hi', 
+        'spokes_lo', 
+        'lo_scale',
+        'channels', 
+        'volumes', 
+        'tr', 
+        'origin', 
+        'direction'],
         'formats': [
-        ('<i8', (3,)), ('<f4', (3,)), '<i8', '<i8', '<i8', '<i8', '<f4',
-        '<i8', '<i8', '<f4', ('<f4', (3,)), ('<f4', (9,))],
-        'offsets': [0, 24, 40, 48, 56, 64, 72, 80, 88, 96, 100, 112],
-        'itemsize': 170})
+        ('<i8', (3,)), 
+        ('<f4', (3,)), 
+        '<i8', 
+        '<i8', 
+        '<i8', 
+        '<i8', 
+        '<f4',
+        '<i8', 
+        '<i8', 
+        '<f4', 
+        ('<f4', (3,)), 
+        ('<f4', (9,))]
+        # 'offsets': [0, 24, 40, 48, 56, 64, 72, 80, 88, 96, 100, 112],
+        # 'itemsize': 170
+        })
 
     info = np.array([(matrix, voxel_size, read_points, read_gap, spokes_hi, spokes_lo, lo_scale,
                       channels, volumes, tr, origin, direction)], dtype=D)

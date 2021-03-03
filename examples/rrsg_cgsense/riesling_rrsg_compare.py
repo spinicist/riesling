@@ -58,15 +58,15 @@ def make_comparison(riesling_img, rrsg_img, fname=None, vmax=1.2, dmax=100):
 def main():
     # riesling recon
     riesling_challenge = load_riesling(
-        'riesling_recon/rrsg_challenge_brain_toe10.nii')
+        'riesling_recon/rrsg_challenge_brain_cgsense-cg.nii')
     riesling_reference = load_riesling(
-        'riesling_recon/rrsg_reference_brain_toe10.nii')
+        'riesling_recon/rrsg_reference_brain_cgsense-cg.nii')
 
     # Challenge recon
     rrsg_challenge = load_rrsg(
-        'rrsg_recon/challenge/output/python/brain/CG_reco_inscale_True_denscor_True_reduction_1.h5')
+        'rrsg_recon/challenge_brain/output/python/brain/CG_reco_inscale_True_denscor_True_reduction_1.h5')
     rrsg_reference = load_rrsg(
-        'rrsg_recon/challenge/output/python/heart/CG_reco_inscale_True_denscor_True_reduction_1.h5')
+        'rrsg_recon/reference_brain/output/python/CG_reco_inscale_True_denscor_True_reduction_1.h5')
 
     make_comparison(riesling_challenge, rrsg_challenge,
                     'challenge_brain_comparison.png')
