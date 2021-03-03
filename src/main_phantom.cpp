@@ -7,6 +7,7 @@
 #include "log.h"
 #include "parse_args.h"
 #include "phantom_sphere.h"
+#include "phantom_shepplogan.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "traj_archimedean.h"
@@ -23,6 +24,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> fov(
       parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
+  args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
   args::ValueFlag<float> phan_r(
       parser, "RADIUS", "Radius of the spherical phantom in mm (default 60)", {"phan_rad"}, 60.f);
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
@@ -86,7 +88,13 @@ int main_phantom(args::Subparser &parser)
   FFT3N fft(grid, log); // FFTW needs temp space for planning
 
   Cropper cropper(gridder.gridDims(), grid_info.matrix, log);
-  Cx3 phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
+  Cx3 phan;
+  if (shepplogan) {
+    phan = SheppLoganPhantom(grid_info, intensity.Get(), log);
+  }
+  else {
+    phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);   
+  }
 
   // Generate SENSE maps and multiply
   log.info("Generating coil sensitivities...");
