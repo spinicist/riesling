@@ -36,14 +36,6 @@ If you wish to compile RIESLING yourself, compilation should hopefully be straig
 1. Clone the repository. `git clone https://github.com/spinicist/riesling`
 2. Run `bootstraph.sh`.
 
-### Ubuntu
-
-- Requires `curl` which isn't default on Ubuntu
-- Tested with `gcc10` and `cmake` version 3.19, 
-- Set the toolchain to
-```sh
--DCMAKE_TOOLCHAIN_FILE=cmake/x64-linux-abi.toolchain.cmake
-```
 
 ## Usage
 
