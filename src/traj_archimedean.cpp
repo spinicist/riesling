@@ -1,5 +1,4 @@
 #include "traj_archimedean.h"
-#include <iostream>
 
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
