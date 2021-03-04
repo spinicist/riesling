@@ -37,7 +37,7 @@ int main_phantom(args::Subparser &parser)
       parser, "SRATE", "Sample factor for spokes (default 1)", {'s', "spokes"}, 1);
   args::ValueFlag<long> lores(
       parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
-  args::ValueFlag<long> gap(parser, "DEAD-TIME", "Samples in dead-time (def 0)", {'g', "gap"}, 0);
+  args::ValueFlag<long> gap(parser, "DEAD-TIME", "Samples in dead-time (def 0)", {"gap"}, 0);
   args::ValueFlag<long> nchan(
       parser, "CHANNELS", "Number of channels (default 12)", {'c', "channels"}, 12);
   args::ValueFlag<float> intensity(
@@ -120,10 +120,6 @@ int main_phantom(args::Subparser &parser)
         Dims3{grid_info.channels, grid_info.read_points, grid_info.spokes_total()}) +=
         noise * noise.constant(intensity.Get() / snr.Get());
   }
-  if (gap) {
-    radial.slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
-        .setZero();
-  }
 
   Info out_info{.matrix = Array3l{m, m, m},
                 .read_points = static_cast<long>(read_samp.Get() * m / 2),
@@ -133,7 +129,8 @@ int main_phantom(args::Subparser &parser)
                 .lo_scale = lores ? lores.Get() : 1.f,
                 .channels = nchan.Get(),
                 .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz}};
-  R3 const out_traj = ArchimedeanSpiral(out_info, 0);
+
+  R3 const out_traj = ArchimedeanSpiral(out_info, read_samp.Get() / 2);
   long const decimation_factor = grid_samp.Get() / read_samp.Get();
   Cx3 decimated = out_info.noncartesianVolume();
   decimated.setZero();
@@ -143,6 +140,12 @@ int main_phantom(args::Subparser &parser)
                                  grid_info.read_points / decimation_factor,
                                  out_info.spokes_total()})
                   .sum(Sz1{1});
+  
+  if (gap) {
+    decimated.slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
+        .setZero();
+  }
+
   HD5Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
   writer.writeInfo(out_info);
   writer.writeTrajectory(out_traj);
