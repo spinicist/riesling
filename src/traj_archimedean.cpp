@@ -1,4 +1,5 @@
 #include "traj_archimedean.h"
+#include <iostream>
 
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
@@ -46,10 +47,12 @@ R3 ASpiral(long const nRead, long const nSpoke, long const offset)
 
 R3 ArchimedeanSpiral(Info const &info, long const offset)
 {
+  R3 traj(3,info.read_points, info.spokes_total());
   R3 hi = ASpiral(info.read_points, info.spokes_hi, offset);
+  traj.slice(Sz3{0,0,info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi}) = hi;
   if (info.spokes_lo) {
-    R3 lo = ASpiral(info.read_points, info.spokes_lo, offset) / info.lo_scale;
-    hi = lo.concatenate(hi, 2);
+    R3 lo = ASpiral(info.read_points, info.spokes_lo, offset);
+    traj.slice(Sz3{0,0,0}, Sz3{3,info.read_points, info.spokes_lo}) = lo / info.lo_scale;
   }
-  return hi;
+  return traj;
 }
