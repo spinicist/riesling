@@ -6,8 +6,8 @@
 #include "io_nifti.h"
 #include "log.h"
 #include "parse_args.h"
-#include "phantom_sphere.h"
 #include "phantom_shepplogan.h"
+#include "phantom_sphere.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "traj_archimedean.h"
@@ -26,11 +26,11 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
   args::ValueFlag<float> phan_r(
-      parser, "RADIUS", "Radius of the spherical phantom in mm (default 60)", {"phan_rad"}, 60.f);
+      parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
       parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
   args::ValueFlag<float> coil_r(
-      parser, "COIL RADIUS", "Radius of the coil in mm (default 100)", {"coil_rad"}, 100.f);
+      parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
   args::ValueFlag<float> read_samp(
       parser, "SRATE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
   args::ValueFlag<float> spoke_samp(
@@ -44,14 +44,15 @@ int main_phantom(args::Subparser &parser)
       parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag kb(parser, "KAISER-BESSEL", "Use Kaiser-Bessel kernel", {'k', "kb"});
-  args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
+  args::Flag decimate(parser, "DECIMATION", "Simulate decimation", {"decimate"});
 
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
 
-  if (std::fmod(grid_samp.Get(), read_samp.Get()) != 0.f) {
+  if (decimate && std::fmod(grid_samp.Get(), read_samp.Get()) != 0.f) {
     log.fail(
-        FMT_STRING("Grid sample rate ({}) must be integer multiple of read sample rate ({})"),
+        FMT_STRING("When decimating grid sample rate ({}) must be integer multiple of read sample "
+                   "rate ({})"),
         grid_samp.Get(),
         read_samp.Get());
   }
@@ -62,7 +63,8 @@ int main_phantom(args::Subparser &parser)
   auto const o = -(m * vox_sz) / 2;
   // Strategy - sample the grid at the *grid* sampling rate, and then decimate to read sampling rate
   Info grid_info{.matrix = Array3l{m, m, m},
-                 .read_points = static_cast<long>(grid_samp.Get() * m / 2),
+                 .read_points =
+                     (long)(decimate ? grid_samp.Get() * m / 2 : read_samp.Get() * m / 2),
                  .read_gap = gap.Get(),
                  .spokes_hi = spokes_hi,
                  .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
@@ -80,7 +82,7 @@ int main_phantom(args::Subparser &parser)
       FMT_STRING("Hi-res spokes: {} Lo-res spokes: {}"), grid_info.spokes_hi, grid_info.spokes_lo);
 
   // We want effective sample positions at the middle of the bin
-  R3 const grid_traj = ArchimedeanSpiral(grid_info, grid_samp.Get() / 2);
+  R3 const grid_traj = ArchimedeanSpiral(grid_info, decimate ? grid_samp.Get() / 2 : 0);
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), false) : (Kernel *)new NearestNeighbour();
   Gridder gridder(grid_info, grid_traj, grid_samp.Get(), false, kernel, false, log);
@@ -90,10 +92,9 @@ int main_phantom(args::Subparser &parser)
   Cropper cropper(gridder.gridDims(), grid_info.matrix, log);
   Cx3 phan;
   if (shepplogan) {
-    phan = SheppLoganPhantom(grid_info, intensity.Get(), log);
-  }
-  else {
-    phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);   
+    phan = SheppLoganPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
+  } else {
+    phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
   }
 
   // Generate SENSE maps and multiply
@@ -121,35 +122,45 @@ int main_phantom(args::Subparser &parser)
         noise * noise.constant(intensity.Get() / snr.Get());
   }
 
-  Info out_info{.matrix = Array3l{m, m, m},
-                .read_points = static_cast<long>(read_samp.Get() * m / 2),
-                .read_gap = gap.Get(),
-                .spokes_hi = spokes_hi,
-                .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
-                .lo_scale = lores ? lores.Get() : 1.f,
-                .channels = nchan.Get(),
-                .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz}};
-
-  R3 const out_traj = ArchimedeanSpiral(out_info, read_samp.Get() / 2);
-  long const decimation_factor = grid_samp.Get() / read_samp.Get();
-  Cx3 decimated = out_info.noncartesianVolume();
-  decimated.setZero();
-  decimated = radial
-                  .reshape(Dims4{out_info.channels,
-                                 decimation_factor,
-                                 grid_info.read_points / decimation_factor,
-                                 out_info.spokes_total()})
-                  .sum(Sz1{1});
-  
-  if (gap) {
-    decimated.slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
-        .setZero();
-  }
-
   HD5Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
-  writer.writeInfo(out_info);
-  writer.writeTrajectory(out_traj);
-  writer.writeData(0, decimated);
+  if (decimate) {
+    Info out_info{.matrix = Array3l{m, m, m},
+                  .read_points = static_cast<long>(read_samp.Get() * m / 2),
+                  .read_gap = gap.Get(),
+                  .spokes_hi = spokes_hi,
+                  .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
+                  .lo_scale = lores ? lores.Get() : 1.f,
+                  .channels = nchan.Get(),
+                  .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz}};
+
+    R3 const out_traj = ArchimedeanSpiral(out_info, read_samp.Get() / 2);
+    long const decimation_factor = grid_samp.Get() / read_samp.Get();
+    Cx3 decimated = out_info.noncartesianVolume();
+    decimated.setZero();
+    decimated = radial
+                    .reshape(Dims4{out_info.channels,
+                                   decimation_factor,
+                                   grid_info.read_points / decimation_factor,
+                                   out_info.spokes_total()})
+                    .sum(Sz1{1});
+
+    if (gap) {
+      decimated
+          .slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
+          .setZero();
+    }
+    writer.writeInfo(out_info);
+    writer.writeTrajectory(out_traj);
+    writer.writeData(0, decimated);
+  } else {
+    if (gap) {
+      radial.slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
+          .setZero();
+    }
+    writer.writeInfo(grid_info);
+    writer.writeTrajectory(grid_traj);
+    writer.writeData(0, radial);
+  }
   FFT::End(log);
   return EXIT_SUCCESS;
 }
