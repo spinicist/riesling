@@ -49,9 +49,14 @@ jobs:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
         run: |
+          if [ "${{runner.os}}" == "macOS" ]; then
+            TC="${{github.workspace}}/cmake/x64-osx-avx2.toolchain.cmake"
+          else
+            TC="${{github.workspace}}/cmake/x64-linux-avx2.toolchain.cmake"
+          fi
           cmake -B ${{github.workspace}}/build -S ${{github.workspace}} \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/vcpkg/scripts/buildsystems/vcpkg.cmake
+            -DCMAKE_TOOLCHAIN_FILE="$TC"
           cmake --build ${{github.workspace}}/build
 
       - name: Tests
