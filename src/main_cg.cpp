@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include "apodizer.h"
 #include "cg.h"
 #include "cropper.h"
 #include "fft3n.h"
@@ -12,7 +13,6 @@
 #include "sense.h"
 #include "tensorOps.h"
 #include "threads.h"
-#include <filesystem>
 
 int main_cg(args::Subparser &parser)
 {
@@ -60,13 +60,11 @@ int main_cg(args::Subparser &parser)
     auto const start = log.now();
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
-    gridder.apodize(y);
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
     fft.forward();
     grid.device(Threads::GlobalDevice()) = grid * Tile(transfer, info.channels);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    gridder.deapodize(y);
     log.debug("System: {}", log.toNow(start));
   };
 
@@ -77,11 +75,11 @@ int main_cg(args::Subparser &parser)
     gridder.toCartesian(x, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    gridder.deapodize(y);
     log.debug("Decode: {}", log.toNow(start));
   };
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
+  Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   Cx3 vol = iter_cropper.newImage();
   auto const &all_start = log.now();
@@ -93,7 +91,7 @@ int main_cg(args::Subparser &parser)
     }
     dec(rad_ks, vol); // Initialize
     cg(toe, its.Get(), thr.Get(), vol, log);
-
+    apodizer.deapodize(vol);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), vol, log);
     }

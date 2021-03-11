@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include "apodizer.h"
 #include "cropper.h"
 #include "fft3n.h"
 #include "filter.h"
@@ -22,6 +23,7 @@ int main_rss(args::Subparser &parser)
   Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc, kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
+  Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   Cx4 grid = gridder.newGrid();
   Cx3 image = cropper.newImage();
@@ -40,7 +42,7 @@ int main_rss(args::Subparser &parser)
     fft.reverse();
     image.device(Threads::GlobalDevice()) =
         (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
-    gridder.deapodize(image);
+    apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }

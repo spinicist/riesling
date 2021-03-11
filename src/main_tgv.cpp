@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include "apodizer.h"
 #include "cropper.h"
 #include "fft3n.h"
 #include "filter.h"
@@ -57,7 +58,6 @@ int main_tgv(args::Subparser &parser)
     auto const &start = log.now();
     y.setZero();
     grid.setZero();
-    gridder.apodize(x);
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = Tile(x, info.channels) * sense;
     fft.forward();
     gridder.toNoncartesian(grid, y);
@@ -70,11 +70,11 @@ int main_tgv(args::Subparser &parser)
     gridder.toCartesian(x, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    gridder.deapodize(y);
     log.debug("Decode: {}", log.toNow(start));
   };
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
+  Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const start = log.now();
@@ -94,7 +94,7 @@ int main_tgv(args::Subparser &parser)
             l1_reduction.Get(),
             step_size.Get(),
             log));
-
+    apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }

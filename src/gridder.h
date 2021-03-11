@@ -47,9 +47,6 @@ struct Gridder
   void toNoncartesian(Cx3 const &cart, Cx2 &noncart) const; //!< Single-channel cart -> non-cart
   void toNoncartesian(Cx4 const &cart, Cx3 &noncart) const; //!< Multi-channel cart -> non-cart
 
-  void apodize(Cx3 &img) const;   //!< Apodize interpolation kernel
-  void deapodize(Cx3 &img) const; //!< De-apodize interpolation kernel
-
 protected:
   struct CartesianIndex
   {
@@ -94,7 +91,6 @@ protected:
   Dims3 dims_;
   float oversample_, DCexp_;
   Kernel *kernel_;
-  ApodizeFunction apodize_;
   Log &log_;
   bool sqrt_; // Used for SDC
 };

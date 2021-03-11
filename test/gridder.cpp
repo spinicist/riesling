@@ -51,7 +51,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     cart.setZero();
     gridder.toCartesian(rad, cart);
     gridder.toNoncartesian(cart, rad);
-    CHECK(rad(0, 0).real() == Approx(0.43774f));
+    CHECK(rad(0, 0).real() == Approx(0.43886f));
   }
 
   SECTION("NN Multicoil")
@@ -97,15 +97,15 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     rad.setConstant(1.f);
     cart.setZero();
     gridder.toCartesian(rad, cart);
-    CHECK(cart(0, 2, 2, 2).real() == Approx(0.32738f));
-    CHECK(cart(1, 2, 2, 2).real() == Approx(0.32738f));
-    CHECK(cart(2, 2, 2, 2).real() == Approx(0.32738f));
-    CHECK(cart(3, 2, 2, 2).real() == Approx(0.32738f));
+    CHECK(cart(0, 2, 2, 2).real() == Approx(0.32944f));
+    CHECK(cart(1, 2, 2, 2).real() == Approx(0.32944f));
+    CHECK(cart(2, 2, 2, 2).real() == Approx(0.32944f));
+    CHECK(cart(3, 2, 2, 2).real() == Approx(0.32944f));
     gridder.toNoncartesian(cart, rad);
-    CHECK(rad(0, 0, 0).real() == Approx(0.14331f).margin(1.e-5f));
-    CHECK(rad(1, 0, 0).real() == Approx(0.14331f).margin(1.e-5f));
-    CHECK(rad(2, 0, 0).real() == Approx(0.14331f).margin(1.e-5f));
-    CHECK(rad(3, 0, 0).real() == Approx(0.14331f).margin(1.e-5f));
+    CHECK(rad(0, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
+    CHECK(rad(1, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
+    CHECK(rad(2, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
+    CHECK(rad(3, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
   }
 }
 

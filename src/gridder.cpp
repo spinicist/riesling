@@ -57,7 +57,6 @@ Gridder::Gridder(
     dims_ = {gridSz, gridSz, gridSz};
   }
 
-  apodize_ = kernel_->apodization(dims_);
   long const maxRad =
       (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - std::floor(kernel_->radius());
 
@@ -249,7 +248,7 @@ void Gridder::sampleDensityCompensation()
         (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / W.size();
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 1.e-3) {
+    if (delta < 1.e-4) {
       log_.info("DC converged, delta was {}", delta);
       break;
     } else {
@@ -291,16 +290,6 @@ Cx4 Gridder::newGrid() const
 Cx3 Gridder::newGrid1() const
 {
   return Cx3{dims_};
-}
-
-void Gridder::apodize(Cx3 &image) const
-{
-  apodize_(image, false);
-}
-
-void Gridder::deapodize(Cx3 &image) const
-{
-  apodize_(image, true);
 }
 
 void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const

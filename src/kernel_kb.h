@@ -8,11 +8,8 @@ struct KaiserBessel final : Kernel
   float radius() const;
   Sz3 start() const;
   Sz3 size() const;
-  float value(Point3 const &x) const;
   R3 kspace(Point3 const &x) const;
   Cx3 image(Point3 const &x, Dims3 const &G) const;
-  Cx4 sensitivity(Point3 const &x, Cx4 const &s) const;
-  ApodizeFunction apodization(Dims3 const &dims) const;
 
 private:
   long w_;
@@ -20,5 +17,4 @@ private:
   bool threeD_;
   Sz3 st_, sz_;
   R1 p_;
-  R1 lookup_;
 };

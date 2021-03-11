@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include "apodizer.h"
 #include "cropper.h"
 #include "espirit.h"
 #include "fft3n.h"
@@ -48,6 +49,7 @@ int main_sense(args::Subparser &parser)
   gridder.setDCExponent(dc_exp.Get());
 
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
+  Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
@@ -97,7 +99,7 @@ int main_sense(args::Subparser &parser)
     fft.reverse();
     channel_images.device(Threads::GlobalDevice()) = cropper.crop4(grid) * sense.conjugate();
     image.device(Threads::GlobalDevice()) = channel_images.sum(Sz1{0});
-    gridder.deapodize(image);
+    apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }

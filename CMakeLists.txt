@@ -27,6 +27,7 @@ add_compile_definitions(EIGEN_USE_THREADS)
 
 # Common library between tests and main executable
 add_library(vineyard
+    src/apodizer.cpp
     src/cg.cpp
     src/coils.cpp
     src/compressor.cpp
