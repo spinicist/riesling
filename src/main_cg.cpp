@@ -80,8 +80,9 @@ int main_cg(args::Subparser &parser)
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
   Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
-  Cx4 out = out_cropper.newSeries(info.volumes);
   Cx3 vol = iter_cropper.newImage();
+  Cx3 cropped = out_cropper.newImage();
+  Cx4 out = out_cropper.newSeries(info.volumes);
   auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.now();
@@ -91,12 +92,12 @@ int main_cg(args::Subparser &parser)
     }
     dec(rad_ks, vol); // Initialize
     cg(toe, its.Get(), thr.Get(), vol, log);
-    apodizer.deapodize(vol);
+    cropped = out_cropper.crop3(vol);
+    apodizer.deapodize(cropped);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), vol, log);
     }
-
-    out.chip(iv, 3) = out_cropper.crop3(vol);
+    out.chip(iv, 3) = cropped;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));

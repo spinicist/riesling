@@ -75,6 +75,7 @@ int main_tgv(args::Subparser &parser)
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
   Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
+  Cx3 image = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const start = log.now();
@@ -83,7 +84,7 @@ int main_tgv(args::Subparser &parser)
       reader.readData(iv, rad_ks);
       currentVolume = iv;
     }
-    Cx3 image = out_cropper.crop3(
+    image = out_cropper.crop3(
         tgv(rad_ks,
             iter_cropper.size(),
             enc,
