@@ -49,4 +49,6 @@ WriteVolumes(Info const &info, T const &vols, long const which, std::string cons
   args::ValueFlag<float> tukey_e(                                                                  \
       parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);                      \
   args::ValueFlag<float> tukey_h(                                                                  \
-      parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);
+      parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);               \
+  args::ValueFlag<std::string> outftype(                                                           \
+      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "nii");
