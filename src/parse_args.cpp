@@ -1,5 +1,6 @@
-#include "io_nifti.h"
 #include "parse_args.h"
+#include "io_hd5.h"
+#include "io_nifti.h"
 #include "threads.h"
 #include <algorithm>
 #include <filesystem>
@@ -11,8 +12,8 @@ std::unordered_map<int, Log::Level> levelMap{
     {0, Log::Level::Fail}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
 } // namespace
 
-void Vector3fReader::operator()(
-    std::string const &name, std::string const &value, Eigen::Vector3f &v)
+void Vector3fReader::
+operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
   float x, y, z;
   auto result = scn::scan(scn::make_view(value), "{},{},{}", x, y, z);
@@ -116,7 +117,18 @@ void WriteVolumes(
   Sz4 st{0, 0, 0, v_st};
   Sz4 sz{vols.dimension(0), vols.dimension(1), vols.dimension(2), v_sz};
   T const out = vols.slice(st, sz);
-  WriteNifti(info, out, fname, log);
+
+  std::string ext = std::filesystem::path(fname).extension();
+  if (ext.compare(".h5") == 0) {
+    HD5Writer writer(fname, log);
+    writer.writeInfo(info);
+    for (long iv = 0; iv < out.dimension(3); iv++) {
+      Cx3 h5out = out.chip(iv, 3).template cast<Cx>();
+      writer.writeData(iv, h5out);
+    }
+  } else {
+    WriteNifti(info, out, fname, log);
+  }
 }
 
 template void WriteVolumes(

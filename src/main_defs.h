@@ -15,3 +15,4 @@ int main_sense(args::Subparser &parser);
 int main_tgv(args::Subparser &parser);
 int main_ds(args::Subparser &parser);
 int main_version(args::Subparser &parser);
+int main_split(args::Subparser &parser);

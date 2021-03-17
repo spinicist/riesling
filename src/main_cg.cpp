@@ -101,7 +101,7 @@ int main_cg(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  auto const ofile = OutName(fname, oname, "cg");
+  auto const ofile = OutName(fname, oname, "cg", outftype.Get());
   if (magnitude) {
     WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);
   } else {

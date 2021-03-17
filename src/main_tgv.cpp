@@ -103,7 +103,7 @@ int main_tgv(args::Subparser &parser)
     out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(start));
   }
-  auto const ofile = OutName(fname, oname, "tgv");
+  auto const ofile = OutName(fname, oname, "tgv", outftype.Get());
   if (magnitude) {
     WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);
   } else {

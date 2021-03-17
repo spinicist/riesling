@@ -51,7 +51,7 @@ int main_rss(args::Subparser &parser)
   }
   log.info("All volumes: {}", log.toNow(all_start));
 
-  WriteVolumes(info, out, volume.Get(), OutName(fname, oname, "rss"), log);
+  WriteVolumes(info, out, volume.Get(), OutName(fname, oname, "rss", outftype.Get()), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

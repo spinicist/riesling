@@ -84,6 +84,7 @@ add_executable(riesling
     src/main_sense.cpp
     src/main_tgv.cpp
     src/main_ds.cpp
+    src/main_split.cpp
     src/main.cpp
 )
 target_link_libraries(riesling

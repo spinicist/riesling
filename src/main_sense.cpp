@@ -69,13 +69,13 @@ int main_sense(args::Subparser &parser)
           : cropper.crop4(SENSE(
                 info, trajectory, osamp.Get(), stack, kernel, false, thresh.Get(), rad_ks, log));
   if (save_maps) {
-    WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps"), log);
+    WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps", outftype.Get()), log);
   }
   if (save_kernels) {
     FFT3N kernelFFT(sense, log);
     kernelFFT.forward();
     WriteNifti(
-        info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-kernels"), log);
+        info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-kernels", outftype.Get()), log);
     kernelFFT.reverse();
   }
 
@@ -117,7 +117,7 @@ int main_sense(args::Subparser &parser)
   }
   log.info("All Volumes: {}", log.toNow(all_start));
 
-  auto const ofile = OutName(fname, oname, "sense");
+  auto const ofile = OutName(fname, oname, "sense", outftype.Get());
   if (magnitude) {
     WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);
   } else {
