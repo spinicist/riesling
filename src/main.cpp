@@ -16,6 +16,7 @@ int main(int const argc, char const *const argv[])
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
   args::Command tgv(commands, "tgv", "Iterative TGV regularised recon", &main_tgv);
   args::Command ds(commands, "ds", "Direct Summation (NUFT)", &main_ds);
+  args::Command split(commands, "split", "Split data", &main_split);
   args::GlobalOptions globals(parser, global_group);
 
   try {
