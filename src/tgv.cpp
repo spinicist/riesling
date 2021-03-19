@@ -3,7 +3,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-auto fdiff(Cx3 const &a, Eigen::Index const d)
+auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
@@ -13,7 +13,7 @@ auto fdiff(Cx3 const &a, Eigen::Index const d)
   return (a.slice(fwd, sz) - a.slice(st1, sz));
 }
 
-auto bdiff(Cx3 const &a, Eigen::Index const d)
+auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
@@ -23,7 +23,7 @@ auto bdiff(Cx3 const &a, Eigen::Index const d)
   return (a.slice(st1, sz) - a.slice(bck, sz));
 }
 
-auto cdiff(Cx3 const &a, Eigen::Index const d)
+auto CentralDiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
@@ -35,59 +35,100 @@ auto cdiff(Cx3 const &a, Eigen::Index const d)
   return (a.slice(fwd, sz) - a.slice(bck, sz)) / a.slice(st1, sz).constant(2.f);
 }
 
-void calc_scalar_grad(Cx3 const &a, Cx4 &g)
+inline void Grad(Cx3 const &a, Cx4 &g, Eigen::ThreadPoolDevice &dev)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
-  g.chip<3>(0).slice(st1, sz).device(Threads::GlobalDevice()) = fdiff(a, 0);
-  g.chip<3>(1).slice(st1, sz).device(Threads::GlobalDevice()) = fdiff(a, 1);
-  g.chip<3>(2).slice(st1, sz).device(Threads::GlobalDevice()) = fdiff(a, 2);
+  g.chip<3>(0).slice(st1, sz).device(dev) = ForwardDiff(a, 0);
+  g.chip<3>(1).slice(st1, sz).device(dev) = ForwardDiff(a, 1);
+  g.chip<3>(2).slice(st1, sz).device(dev) = ForwardDiff(a, 2);
 }
 
-void calc_vector_grad(Cx4 const &x, Cx4 &gx)
+inline void Grad(Cx4 const &x, Cx4 &gx, Eigen::ThreadPoolDevice &dev)
 {
   Dims3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
 
-  gx.chip<3>(0).slice(st1, sz).device(Threads::GlobalDevice()) = bdiff(x.chip<3>(0), 0);
-  gx.chip<3>(1).slice(st1, sz).device(Threads::GlobalDevice()) = bdiff(x.chip<3>(1), 1);
-  gx.chip<3>(2).slice(st1, sz).device(Threads::GlobalDevice()) = bdiff(x.chip<3>(2), 2);
+  gx.chip<3>(0).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(0), 0);
+  gx.chip<3>(1).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(1), 1);
+  gx.chip<3>(2).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(2), 2);
 
-  gx.chip<3>(3).slice(st1, sz).device(Threads::GlobalDevice()) =
-      (bdiff(x.chip<3>(0), 1) + bdiff(x.chip<3>(1), 0)) /
+  gx.chip<3>(3).slice(st1, sz).device(dev) =
+      (BackwardDiff(x.chip<3>(0), 1) + BackwardDiff(x.chip<3>(1), 0)) /
       gx.chip<3>(3).slice(st1, sz).constant(2.f);
 
-  gx.chip<3>(4).slice(st1, sz).device(Threads::GlobalDevice()) =
-      (bdiff(x.chip<3>(0), 2) + bdiff(x.chip<3>(2), 0)) /
+  gx.chip<3>(4).slice(st1, sz).device(dev) =
+      (BackwardDiff(x.chip<3>(0), 2) + BackwardDiff(x.chip<3>(2), 0)) /
       gx.chip<3>(4).slice(st1, sz).constant(2.f);
 
-  gx.chip<3>(5).slice(st1, sz).device(Threads::GlobalDevice()) =
-      (bdiff(x.chip<3>(1), 2) + bdiff(x.chip<3>(2), 1)) /
+  gx.chip<3>(5).slice(st1, sz).device(dev) =
+      (BackwardDiff(x.chip<3>(1), 2) + BackwardDiff(x.chip<3>(2), 1)) /
       gx.chip<3>(5).slice(st1, sz).constant(2.f);
 }
 
-inline void calc_vector_div(Cx4 const &x, Cx3 &div)
+inline void Div(Cx4 const &x, Cx3 &div, Eigen::ThreadPoolDevice &dev)
 {
   Dims3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
-  div.slice(st1, sz).device(Threads::GlobalDevice()) =
-      bdiff(x.chip<3>(0), 0) + bdiff(x.chip<3>(1), 1) + bdiff(x.chip<3>(2), 2);
+  div.slice(st1, sz).device(dev) =
+      BackwardDiff(x.chip<3>(0), 0) + BackwardDiff(x.chip<3>(1), 1) + BackwardDiff(x.chip<3>(2), 2);
 }
 
-inline void calc_tensor_div(Cx4 const &x, Cx4 &div)
+inline void Div(Cx4 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
 {
   Dims3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
-  div.chip<3>(0).slice(st1, sz).device(Threads::GlobalDevice()) =
-      fdiff(x.chip<3>(0), 0) + fdiff(x.chip<3>(3), 1) + fdiff(x.chip<3>(4), 2);
-  div.chip<3>(1).slice(st1, sz).device(Threads::GlobalDevice()) =
-      fdiff(x.chip<3>(3), 0) + fdiff(x.chip<3>(1), 1) + fdiff(x.chip<3>(5), 2);
-  div.chip<3>(2).slice(st1, sz).device(Threads::GlobalDevice()) =
-      fdiff(x.chip<3>(4), 0) + fdiff(x.chip<3>(5), 1) + fdiff(x.chip<3>(2), 2);
+  div.chip<3>(0).slice(st1, sz).device(dev) =
+      ForwardDiff(x.chip<3>(0), 0) + ForwardDiff(x.chip<3>(3), 1) + ForwardDiff(x.chip<3>(4), 2);
+  div.chip<3>(1).slice(st1, sz).device(dev) =
+      ForwardDiff(x.chip<3>(3), 0) + ForwardDiff(x.chip<3>(1), 1) + ForwardDiff(x.chip<3>(5), 2);
+  div.chip<3>(2).slice(st1, sz).device(dev) =
+      ForwardDiff(x.chip<3>(4), 0) + ForwardDiff(x.chip<3>(5), 1) + ForwardDiff(x.chip<3>(2), 2);
+}
+
+auto ProjectP(Cx4 const &p, float const a)
+{
+  Eigen::IndexList<int, int, int, Eigen::type2index<1>> res;
+  res.set(0, p.dimension(0));
+  res.set(1, p.dimension(1));
+  res.set(2, p.dimension(2));
+  Eigen::IndexList<
+      Eigen::type2index<1>,
+      Eigen::type2index<1>,
+      Eigen::type2index<1>,
+      Eigen::type2index<3>>
+      brd;
+
+  R3 const normp = (p * p.conjugate()).sum(Sz1{3}).real().sqrt() / a;
+  auto const clamped = (normp > 1.f).select(normp, normp.constant(1.f));
+  return p / clamped.reshape(res).broadcast(brd).cast<Cx>();
+}
+
+auto ProjectQ(Cx4 const &q, float const a)
+{
+  Eigen::IndexList<int, int, int, Eigen::type2index<1>> res;
+  res.set(0, q.dimension(0));
+  res.set(1, q.dimension(1));
+  res.set(2, q.dimension(2));
+  Eigen::IndexList<
+      Eigen::type2index<1>,
+      Eigen::type2index<1>,
+      Eigen::type2index<1>,
+      Eigen::type2index<6>>
+      brd;
+
+  auto const qsqr = q * q.conjugate();
+  auto const q1 =
+      qsqr.slice(Dims4{0, 0, 0, 0}, Dims4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
+  auto const q2 =
+      qsqr.slice(Dims4{0, 0, 0, 3}, Dims4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
+  R3 const normq = (q1.sum(Sz1{3}).real() + q2.sum(Sz1{3}).real() * 2.f).sqrt() / a;
+  auto const clamped = (normq > 1.f).select(normq, normq.constant(1.f));
+  return q / clamped.reshape(res).broadcast(brd).cast<Cx>();
 }
 
 Cx3 tgv(
-    Cx3 &data,
+    Cx3 &ks_data,
     Cx3::Dimensions const &dims,
     EncodeFunction const &encode,
     DecodeFunction const &decode,
@@ -98,47 +139,47 @@ Cx3 tgv(
     float const step_size,
     Log &log)
 {
-  // Allocate all memory
-  Cx3 u(dims);
-  decode(data, u);
-  Cx3 check(data.dimensions());
-  encode(u, check);
+  auto dev = Threads::GlobalDevice();
 
-  float const scale = Norm(u);
-  data = data / data.constant(scale);
+  Sz4 dims3{dims[0], dims[1], dims[2], 3};
+  Sz4 dims6{dims[0], dims[1], dims[2], 6};
+
+  // Primal variables
+  Cx3 u(dims);                 // Main variable
+  decode(ks_data, u);          // Get starting point
+  float const scale = Norm(u); // Normalise so scaling factors stay sane
+  ks_data = ks_data / ks_data.constant(scale);
   u = u / u.constant(scale);
-  Cx3 u_(dims);
-  u_ = u;
-  Cx3 u_old(dims);
-  u_old.setZero();
-  Cx4 grad_u(dims[0], dims[1], dims[2], 3);
+  Cx3 u_ = u;    // Bar variable (is this the "dual"?)
+  Cx3 u_old = u; // From previous iteration
+  Cx4 grad_u(dims3);
   grad_u.setZero();
-  Cx4 p(dims[0], dims[1], dims[2], 3);
+  Cx4 v(dims3);
+  v.setZero();
+  Cx4 v_(dims3);
+  v_.setZero();
+  Cx4 v_old(dims3);
+  v_old.setZero();
+  Cx4 grad_v(dims6); // Symmetric rank-2 tensor stored as xx yy zz (xy + yx) (xz + zx) (yz + zy)
+  grad_v.setZero();
+
+  // Dual variables
+  Cx4 p(dims3);
   p.setZero();
   Cx3 divp(dims);
   divp.setZero();
-  Cx4 xi(dims[0], dims[1], dims[2], 3);
-  xi.setZero();
-  Cx4 xi_(dims[0], dims[1], dims[2], 3);
-  xi_.setZero();
-  Cx4 xi_old(dims[0], dims[1], dims[2], 3);
-  xi_old.setZero();
-  // Symmetric rank-2 tensor stored as xx yy zz (xy + yx) (xz + zx) (yz + zy)
-  Cx4 grad_xi(dims[0], dims[1], dims[2], 6);
-  grad_xi.setZero();
-  Cx4 q(dims[0], dims[1], dims[2], 6);
+  Cx4 q(dims6);
   q.setZero();
-  Cx4 divq(dims[0], dims[1], dims[2], 3);
+  Cx4 divq(dims3);
   divq.setZero();
+  Cx3 v_decode(dims);
+  v_decode.setZero();
 
-  Cx3 r(data.dimensions());
+  // k-Space variables
+  Cx3 ks_res(ks_data.dimensions()); // Residual term in k-space
+  ks_res.setZero();
+  Cx3 r(ks_data.dimensions());
   r.setZero();
-  Cx3 v(data.dimensions());
-  v.setZero();
-  Cx3 RtC_ubar(data.dimensions());
-  RtC_ubar.setZero();
-  Cx3 RtC_v(dims);
-  RtC_v.setZero();
 
   float const alpha00 = alpha;
   float const alpha10 = alpha / 2.f;
@@ -158,46 +199,36 @@ Cx3 tgv(
     float const alpha0 = std::exp(std::log(alpha01) * prog + std::log(alpha00) * (1.f - prog));
     float const alpha1 = std::exp(std::log(alpha11) * prog + std::log(alpha10) * (1.f - prog));
 
-    // Save previous
-    u_old.device(Threads::GlobalDevice()) = u;
-    xi_old.device(Threads::GlobalDevice()) = xi;
+    // Update p
+    Grad(u_, grad_u, dev);
+    p.device(dev) = p - tau_d * (grad_u + v_);
+    p.device(dev) = ProjectP(p, alpha1);
 
-    // Sample image in non-cartesian k-space
-    encode(u_, RtC_ubar);
-    r.device(Threads::GlobalDevice()) = RtC_ubar - data;
-    v.device(Threads::GlobalDevice()) = (1.f / (1.f + tau_d)) * (v + tau_d * r);
+    // Update q
+    Grad(v_, grad_v, dev);
+    q.device(dev) = q - tau_d * grad_v;
+    q.device(dev) = ProjectQ(q, alpha0);
 
-    // Div P calculation and u update
-    calc_scalar_grad(u_, grad_u);
-    p.device(Threads::GlobalDevice()) = p - tau_d * (grad_u + xi_);
-    auto absp = (p * p.conjugate()).real().sum(Sz1{3}).sqrt();
-    auto projp = absp.unaryExpr([alpha1](float const &x) { return std::max(1.f, x / alpha1); });
-    auto bp = projp.broadcast(Dims3{1, 1, 3}).reshape(Dims4{dims[0], dims[1], dims[2], 3});
-    p.device(Threads::GlobalDevice()) = p / bp;
-    calc_vector_div(p, divp);
-    decode(v, RtC_v);
-    u.device(Threads::GlobalDevice()) = u - tau_p * (divp + RtC_v);
+    // Update r (in k-space)
+    encode(u_, ks_res);
+    ks_res.device(dev) = ks_res - ks_data;
+    r.device(dev) = (r + tau_d * ks_res) / r.constant(1.f + tau_d); // Prox op
 
-    // Div q calculation and xi update
-    calc_vector_grad(xi_, grad_xi);
-    q.device(Threads::GlobalDevice()) = q - tau_d * grad_xi;
-    auto q1 = q.slice(Dims4{0, 0, 0, 0}, Dims4{dims[0], dims[1], dims[2], 3});
-    auto q2 = q.slice(Dims4{0, 0, 0, 3}, Dims4{dims[0], dims[1], dims[2], 3});
-    auto q1sum = (q1 * q1.conjugate()).real().sum(Sz1{3});
-    auto q2sum = (q2 * q2.conjugate()).real().sum(Sz1{3});
-    auto absq = (q1sum + q2sum * 2.f).sqrt();
-    auto projq = absq.unaryExpr([alpha0](float const &x) { return std::max(1.f, x / alpha0); });
-    auto bq = projq.broadcast(Dims3{1, 1, 6}).reshape(Dims4{dims[0], dims[1], dims[2], 6});
-    q.device(Threads::GlobalDevice()) = q / bq;
-    calc_tensor_div(q, divq);
-    xi.device(Threads::GlobalDevice()) = xi - tau_p * (divq - p);
+    // Update u
+    u_old.device(dev) = u;
+    Div(p, divp, dev);
+    decode(r, v_decode);
+    u.device(dev) = u - tau_p * (divp + v_decode); // Paper says +tau, but code says -tau
+    u_.device(dev) = 2.0 * u - u_old;
 
-    // Update bar variables
-    u_.device(Threads::GlobalDevice()) = 2.0 * u - u_old;
-    xi_.device(Threads::GlobalDevice()) = 2.0 * xi - xi_old;
+    // Update v
+    v_old.device(dev) = v;
+    Div(q, divq, dev);
+    v.device(dev) = v - tau_p * (divq - p);
+    v_.device(dev) = 2.0 * v - v_old;
 
+    // Check for convergence
     float const delta = Norm(u - u_old);
-
     log.info(FMT_STRING("TGV {}: ɑ0 {} δ {}"), ii + 1, alpha0, delta);
     if (delta < thresh) {
       log.info("Reached threshold on delta, stopping");

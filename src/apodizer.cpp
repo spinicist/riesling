@@ -12,7 +12,7 @@ Apodizer::Apodizer(Kernel *const k, Dims3 const &grid, Dims3 const &img, Log &lo
   Crop3(temp, k->size()) = k->kspace(Point3::Zero()).cast<Cx>();
   fft.reverse();
   y_ = Crop3(R3(temp.real()), img);
-  long const scale = sqrt(std::accumulate(grid.cbegin(), grid.cend(), 1, std::multiplies<long>()));
+  float const scale = sqrt(std::accumulate(grid.cbegin(), grid.cend(), 1, std::multiplies<long>()));
   log.info(FMT_STRING("Apodization scale factor: {}"), scale);
   y_.device(Threads::GlobalDevice()) = y_ * y_.constant(scale);
   log.image(y_, "apodization.nii");

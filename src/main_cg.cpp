@@ -95,7 +95,7 @@ int main_cg(args::Subparser &parser)
     cropped = out_cropper.crop3(vol);
     apodizer.deapodize(cropped);
     if (tukey_s || tukey_e || tukey_h) {
-      ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), vol, log);
+      ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped, log);
     }
     out.chip(iv, 3) = cropped;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));

@@ -1,5 +1,6 @@
 #include "io_nifti.h"
 #include "itkImage.h"
+#include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkImportImageFilter.h"
 #include <fmt/ostream.h>
@@ -88,3 +89,24 @@ void WriteNifti(Eigen::Matrix<T, -1, -1> const &m, std::string const &fname, Log
 }
 
 template void WriteNifti(Eigen::MatrixXcf const &m, std::string const &fname, Log const &log);
+
+template <typename T, int ND>
+Eigen::Tensor<T, ND> ReadNifti(std::string const &fname, Log const &log)
+{
+  using Image = itk::Image<T, ND>;
+  using Reader = itk::ImageFileReader<Image>;
+
+  typename Reader::Pointer read = Reader::New();
+  read->SetFileName(fname);
+  log.info(FMT_STRING("Reading file: {}"), fname);
+  read->Update();
+
+  auto const sz = read->GetOutput()->GetLargestPossibleRegion().GetSize();
+  typename Eigen::Tensor<T, ND>::Dimensions dims;
+  std::copy_n(sz.begin(), ND, dims.begin());
+  Eigen::Tensor<T, ND> data(dims);
+  std::memcpy(data.data(), read->GetOutput()->GetBufferPointer(), data.size() * sizeof(T));
+  return data;
+}
+
+template Eigen::Tensor<float, 3> ReadNifti(std::string const &, Log const &);
