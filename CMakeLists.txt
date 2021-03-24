@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
-
-project(riesling VERSION "0.1")
+project(riesling LANGUAGES CXX)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+include(BuildType)
+include(GitVersion)
 
 find_package(Threads REQUIRED)
 find_package(args REQUIRED)
@@ -108,7 +110,6 @@ set_target_properties(vineyard riesling prufung PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
-
 
 # Documentation, which is admittedly sparse
 option(BUILD_DOC "Build documentation" OFF)
