@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(riesling)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 find_package(Threads REQUIRED)
 find_package(args REQUIRED)
 find_package(Catch2 REQUIRED)
@@ -59,7 +55,6 @@ add_library(vineyard
     src/zinfandel.cpp
 )
 
-
 # hdf5::hdf5-static hdf5::hdf5_hl-static hdf5::hdf5_cpp-static hdf5::hdf5_hl_cpp-static
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
@@ -106,6 +101,13 @@ target_link_libraries(prufung PUBLIC
     vineyard
     Catch2::Catch2
 )
+
+set_target_properties(vineyard riesling prufung PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
+
 
 # Documentation, which is admittedly sparse
 option(BUILD_DOC "Build documentation" OFF)
