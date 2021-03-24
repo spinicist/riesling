@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(riesling)
+project(riesling VERSION "0.1")
 
 find_package(Threads REQUIRED)
 find_package(args REQUIRED)
@@ -68,6 +68,7 @@ target_link_libraries(vineyard PUBLIC
 
 # Main executable
 add_executable(riesling
+    src/main_version.cpp
     src/main_hdr.cpp
     src/main_phantom.cpp
     src/main_cg.cpp
@@ -119,6 +120,7 @@ if (DOXYGEN_FOUND)
     set( DOXYGEN_CLASS_DIAGRAMS YES )
     set( DOXYGEN_HIDE_UNDOC_RELATIONS NO )
     set( DOXYGEN_HAVE_DOT YES )
+
     set( DOXYGEN_CLASS_GRAPH YES )
     set( DOXYGEN_CALL_GRAPH YES )
     set( DOXYGEN_CALLER_GRAPH YES )
@@ -138,3 +140,7 @@ if (DOXYGEN_FOUND)
 else (DOXYGEN_FOUND)
     message("Doxygen required to build the documentation")
 endif (DOXYGEN_FOUND)
+
+# Parse version number
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h)
+include_directories(${PROJECT_BINARY_BIN}) 

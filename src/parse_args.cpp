@@ -59,6 +59,20 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname)
   return log;
 }
 
+Log ParseCommand(args::Subparser &parser)
+{
+  parser.Parse();
+  Log::Level const level =
+      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::Fail);
+
+  Log log(level);
+  if (nthreads) {
+    Threads::SetGlobalThreadCount(nthreads);
+  }
+  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
+  return log;
+}
+
 std::string OutName(
     args::Positional<std::string> &inName,
     args::ValueFlag<std::string> &name,
