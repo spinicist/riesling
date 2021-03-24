@@ -26,10 +26,10 @@ int main_tgv(args::Subparser &parser)
       parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
   args::ValueFlag<float> iter_fov(
       parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
-  args::ValueFlag<float> l1_weight(
-      parser, "L1", "L1-Regularisation weighting (1e-5)", {"l1"}, 1.e-5f);
-  args::ValueFlag<float> l1_reduction(
-      parser, "L1 REDUCTION", "Reduce L1 by factor over iters (suggest 0.1)", {"l1reduce"}, 1.f);
+  args::ValueFlag<float> alpha(
+      parser, "ALPHA", "Regularisation weighting (1e-5)", {"alpha"}, 1.e-5f);
+  args::ValueFlag<float> reduce(
+      parser, "REDUCE", "Reduce regularisation over iters (suggest 0.1)", {"reduce"}, 1.f);
   args::ValueFlag<float> step_size(
       parser, "STEP SIZE", "Inverse of step size (default 8)", {"step"}, 8.f);
 
@@ -91,8 +91,8 @@ int main_tgv(args::Subparser &parser)
             dec,
             its.Get(),
             thr.Get(),
-            l1_weight.Get(),
-            l1_reduction.Get(),
+            alpha.Get(),
+            reduce.Get(),
             step_size.Get(),
             log));
     apodizer.deapodize(image);
