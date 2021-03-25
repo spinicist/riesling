@@ -90,6 +90,9 @@ target_link_libraries(riesling
     vineyard
 )
 install(TARGETS riesling RUNTIME DESTINATION bin)
+# Parse version number
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h)
+target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Tests
 add_executable(prufung
@@ -143,7 +146,3 @@ if (DOXYGEN_FOUND)
 else (DOXYGEN_FOUND)
     message("Doxygen required to build the documentation")
 endif (DOXYGEN_FOUND)
-
-# Parse version number
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h)
-include_directories(${PROJECT_BINARY_BIN}) 
