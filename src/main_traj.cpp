@@ -15,7 +15,8 @@ int main_traj(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
   args::ValueFlag<float> osamp(
       parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
-  args::Flag sdc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"sdc"});
+  args::MapFlag<std::string, SDC> sdc(
+      parser, "SDC", "SDC Method. 0 - None, 1 - Analytic, 2 - Pipe", {"sdc"}, SDCMap);
   args::Flag stack(parser, "STACK", "Trajectory is stack-of-stars or similar", {"stack"});
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   args::ValueFlag<long> kw(
@@ -26,7 +27,7 @@ int main_traj(args::Subparser &parser)
   auto const &info = reader.info();
   Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
                       : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc, kernel, stack, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc.Get(), kernel, stack, log);
   Cx3 grid = gridder.newGrid1();
   FFT3 fft(grid, log);
 
@@ -35,7 +36,7 @@ int main_traj(args::Subparser &parser)
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
   WriteNifti(info, R3(grid.abs()), OutName(fname, oname, "traj"), log);
-  fft.reverse();
+  fft.reverse(grid);
   WriteNifti(info, grid, OutName(fname, oname, "psf"), log);
   FFT::End(log);
   return EXIT_SUCCESS;

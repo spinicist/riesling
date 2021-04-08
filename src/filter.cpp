@@ -50,7 +50,7 @@ void ImageFilter(std::function<float(float const &)> const &f, Cx3 &image, Log &
   auto const hx = sx / 2;
 
   FFT3 fft(image, log);
-  fft.forward();
+  fft.forward(image);
   for (long iz = 0; iz < sz; iz++) {
     for (long iy = 0; iy < sy; iy++) {
       for (long ix = 0; ix < sx; ix++) {
@@ -62,7 +62,7 @@ void ImageFilter(std::function<float(float const &)> const &f, Cx3 &image, Log &
       }
     }
   }
-  fft.reverse();
+  fft.reverse(image);
 }
 
 void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x, Log &log)

@@ -3,6 +3,7 @@
 #include "info.h"
 #include "kernels.h"
 #include "log.h"
+#include "sdc.h"
 #include "threads.h"
 
 #include <vector>
@@ -16,8 +17,8 @@ struct Gridder
    * @param info   The Radial info struct
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
-   * @param sdc    Sample Density Compensation via Pipe/Zwart/Menon DOI 0.66497f
-   * @param kb     Use Kaiser-Bessel interpolation
+   * @param sdc    Sample Density Compensation method
+   * @param kernel Interpolation kernel
    * @param stack  Trajectory is stack-of-stars or similar
    * @param log    Logging object
    * @param res    OPTIONAL - Desired effective resolution
@@ -27,7 +28,7 @@ struct Gridder
       Info const &info,
       R3 const &traj,
       float const os,
-      bool const sdc,
+      SDC const sdc,
       Kernel *const kernel,
       bool const stack,
       Log &log,
@@ -84,7 +85,6 @@ protected:
   std::vector<Coords>
   genCoords(R3 const &traj, int32_t const spoke0, long const spokes, Profile const &profile);
   void sortCoords();
-  void sampleDensityCompensation();
   Info const info_;
   std::vector<Coords> coords_;
   std::vector<int32_t> sortedIndices_;
@@ -92,5 +92,4 @@ protected:
   float oversample_, DCexp_;
   Kernel *kernel_;
   Log &log_;
-  bool sqrt_; // Used for SDC
 };

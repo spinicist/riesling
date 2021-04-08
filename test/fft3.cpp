@@ -22,9 +22,9 @@ TEST_CASE("3D-FFT", "[FFT3]")
     ref.setConstant(1.f);
     data.setZero();
     data(sx / 2, sy / 2, sz / 2) = sqrt(N); // Parseval's theorem
-    fft.forward();
+    fft.forward(data);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
-    fft.reverse();
+    fft.reverse(data);
     ref.setZero();
     ref(sx / 2, sy / 2, sz / 2) = sqrt(N);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));

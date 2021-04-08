@@ -2,6 +2,7 @@
 
 #include "info.h"
 #include "log.h"
+#include "sdc.h"
 #include <args.hxx>
 #include <vector>
 
@@ -41,10 +42,10 @@ WriteVolumes(Info const &info, T const &vols, long const which, std::string cons
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
   args::ValueFlag<long> kw(                                                                        \
       parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);  \
-  args::Flag sdc(parser, "SDC", "Use Sample Density Compensation (Zwart/Pipe/Menon)", {"sdc"});    \
+  args::MapFlag<std::string, SDC> sdc(                                                             \
+      parser, "SDC", "SDC 0 - None, 1 - Analytic, 2 - Pipe", {"sdc"}, SDCMap, SDC::Analytic);      \
   args::ValueFlag<float> dc_exp(                                                                   \
       parser, "DC Exponent", "Density-Compensation Exponent (default 1.0)", {'d', "dce"}, 1.0f);   \
-                                                                                                   \
   args::ValueFlag<float> tukey_s(                                                                  \
       parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);                \
   args::ValueFlag<float> tukey_e(                                                                  \

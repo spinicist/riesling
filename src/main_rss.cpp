@@ -20,7 +20,7 @@ int main_rss(args::Subparser &parser)
   auto const &info = reader.info();
   Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
                       : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc, kernel, stack, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc.Get(), kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);

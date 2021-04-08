@@ -48,6 +48,7 @@ add_library(vineyard
     src/phantom_sphere.cpp
     src/phantom_shepplogan.cpp
     src/parse_args.cpp
+    src/sdc.cpp
     src/sense.cpp
     src/slab_correct.cpp
     src/tgv.cpp

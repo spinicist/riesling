@@ -1,6 +1,7 @@
 #include "kernel_kb.h"
 
 #include "fft1.h"
+#include "fft3.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <fmt/ostream.h>
@@ -9,6 +10,7 @@ KaiserBessel::KaiserBessel(long const w, float const os, bool const threeD)
     : w_{w}
     , beta_{(float)M_PI * sqrtf(pow(w_ * (os - 0.5f) / os, 2.f) - 0.8f)}
     , threeD_{threeD}
+    , fft_{nullptr}
 {
   std::fill(sz_.begin(), sz_.end(), w_);
   if (!threeD) {
@@ -36,6 +38,22 @@ Sz3 KaiserBessel::size() const
   return sz_;
 }
 
+void KaiserBessel::sqrtOn()
+{
+  /* In an ideal world we could do the image-space sqrt() on the kernel look-up table or
+   * similar, however I could not make this work for Kaiser-Bessel. I think the issue is
+   * spherically-symmetric versus separable kernels. So instead, we do the FFT and sqrt
+   * which is much slower, but works
+   */
+  Log nullLog;
+  fft_ = std::make_unique<FFT3>(sz_, nullLog, 1);
+}
+
+void KaiserBessel::sqrtOff()
+{
+  fft_.reset();
+}
+
 template <typename T>
 inline decltype(auto) kb(T const &x, float const w, float const beta)
 {
@@ -58,7 +76,15 @@ R3 KaiserBessel::kspace(Point3 const &r) const
     kz.setConstant(1.f);
   }
 
-  R3 const k = Outer(Outer(kx, ky), kz);
+  R3 k = Outer(Outer(kx, ky), kz);
+  if (fft_) {
+    Cx3 temp(sz_);
+    temp = k.cast<Cx>();
+    fft_->reverse(temp);
+    temp.sqrt();
+    fft_->forward(temp);
+    k = temp.real();
+  }
   return k / Sum(k);
 }
 

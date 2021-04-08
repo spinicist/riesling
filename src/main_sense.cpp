@@ -45,7 +45,7 @@ int main_sense(args::Subparser &parser)
   auto const trajectory = reader.readTrajectory();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, trajectory, osamp.Get(), sdc, kernel, stack, log);
+  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, stack, log);
   gridder.setDCExponent(dc_exp.Get());
 
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);

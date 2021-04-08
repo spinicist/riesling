@@ -23,7 +23,8 @@ int main_kspace(args::Subparser &parser)
       {"samples"},
       -1);
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  args::Flag sdc(parser, "ESTIMATE DC", "Estimate DC weights instead of analytic", {"sdc"});
+  args::MapFlag<std::string, SDC> sdc(
+      parser, "SDC", "SDC Method. 0 - None, 1 - Analytic, 2 - Pipe", {"sdc"}, SDCMap);
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
   args::ValueFlag<long> kw(
       parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);
@@ -53,7 +54,7 @@ int main_kspace(args::Subparser &parser)
     R3 const traj = reader.readTrajectory();
     Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
                         : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-    Gridder gridder(info, traj, osamp.Get(), sdc, kernel, stack, log, res, true);
+    Gridder gridder(info, traj, osamp.Get(), sdc.Get(), kernel, stack, log, res, true);
     Cx4 grid = gridder.newGrid();
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
@@ -64,7 +65,7 @@ int main_kspace(args::Subparser &parser)
     if (do_regrid) {
       R3 traj2 = traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi});
       info.spokes_lo = 0;
-      Gridder regridder(info, traj2, osamp.Get(), sdc, kernel, stack, log, res, true);
+      Gridder regridder(info, traj2, osamp.Get(), sdc.Get(), kernel, stack, log, res, true);
       info.read_gap = 0;
       info.spokes_lo = 0;
       rad_ks.setZero();

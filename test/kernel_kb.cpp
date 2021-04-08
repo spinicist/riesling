@@ -30,7 +30,7 @@ TEST_CASE("3x3", "[KB3]")
     Cx3 img = kernel.image(Point3::Zero(), temp.dimensions());
     // CHECK(Norm(img) == Approx(1.f));
     temp = k.cast<std::complex<float>>();
-    fft.reverse();
+    fft.reverse(temp);
     // CHECK(Norm(k - img.abs()) == Approx(0.f));
   }
 }
