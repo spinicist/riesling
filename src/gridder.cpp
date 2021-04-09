@@ -254,12 +254,16 @@ void Gridder::setDCExponent(float const dce)
 
 Cx4 Gridder::newGrid() const
 {
-  return Cx4{info_.channels, dims_[0], dims_[1], dims_[2]};
+  Cx4 g(info_.channels, dims_[0], dims_[1], dims_[2]);
+  g.setZero();
+  return g;
 }
 
 Cx3 Gridder::newGrid1() const
 {
-  return Cx3{dims_};
+  Cx3 g(dims_);
+  g.setZero();
+  return g;
 }
 
 void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const

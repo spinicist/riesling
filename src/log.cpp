@@ -70,7 +70,7 @@ void Log::image(Cx3 const &img, std::string const &name) const
 void Log::image(Cx4 const &img, std::string const &name) const
 {
   if ((out_level_ >= Level::Images)) {
-    WriteNifti(Info(), img, name, *this);
+    WriteNifti(Info(), SwapToChannelLast(img), name, *this);
   }
 }
 

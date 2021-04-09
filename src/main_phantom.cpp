@@ -29,6 +29,8 @@ int main_phantom(args::Subparser &parser)
       parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
       parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
+  args::ValueFlag<long> coil_rings(
+      parser, "COIL RINGS", "Number of rings in coil (default 1)", {"coil_rings"}, 1);
   args::ValueFlag<float> coil_r(
       parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
   args::ValueFlag<float> read_samp(
@@ -99,10 +101,9 @@ int main_phantom(args::Subparser &parser)
 
   // Generate SENSE maps and multiply
   log.info("Generating coil sensitivities...");
-  Cx4 sense = birdcage(
-      phan.dimensions(), grid_info.channels, coil_r.Get(), coil_r.Get() / 2.f, grid_info, log);
+  Cx4 sense = birdcage(grid_info, coil_rings.Get(), coil_r.Get(), coil_r.Get() / 2.f, log);
   log.info("Generating coil images...");
-  cropper.crop4(grid) = sense * Tile(phan, grid_info.channels);
+  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, grid_info.channels);
   if (log.level() >= Log::Level::Images) { // Extra check to avoid the shuffle when we can
     log.image(SwapToChannelLast(grid), "phantom-prefft.nii");
   }

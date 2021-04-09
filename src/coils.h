@@ -8,9 +8,8 @@
  * http://web.eecs.umich.edu/~fessler/code/
  */
 Cx4 birdcage(
-    Dims3 const sz,
-    long const nchan,
+    Info const &info,
+    long const nrings,
     float const coil_rad_mm,  // Radius of the actual coil, i.e. where the channels should go
     float const sense_rad_mm, // Sensitivity radius
-    Info const &info,
     Log const &log);
