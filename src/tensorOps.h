@@ -22,10 +22,10 @@ typename T::Scalar Sum(T const &a)
   return s();
 }
 
-template <typename T>
-typename T::Scalar Dot(T const &a, T const &b)
+template <typename T1, typename T2>
+typename T1::Scalar Dot(T1 const &a, T2 const &b)
 {
-  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> d = (a.conjugate() * b).sum();
+  Eigen::TensorFixedSize<typename T1::Scalar, Eigen::Sizes<>> d = (a.conjugate() * b).sum();
   return d();
 }
 

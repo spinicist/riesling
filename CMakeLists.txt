@@ -75,6 +75,7 @@ add_executable(riesling
     src/main_hdr.cpp
     src/main_phantom.cpp
     src/main_cg.cpp
+    src/main_cgvar.cpp
     src/main_compress.cpp
     src/main_zinfandel.cpp
     src/main_kspace.cpp

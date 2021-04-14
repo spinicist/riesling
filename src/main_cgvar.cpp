@@ -14,7 +14,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-int main_cg(args::Subparser &parser)
+int main_cgvar(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
 
@@ -27,6 +27,9 @@ int main_cg(args::Subparser &parser)
       parser, "MAX ITS", "Maximum number of iterations (8)", {'i', "max_its"}, 8);
   args::ValueFlag<float> iter_fov(
       parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
+  args::ValueFlag<float> pre0(
+      parser, "PRE0", "Preconditioning start value (default 1)", {"pre0"}, 1);
+  args::ValueFlag<float> pre1(parser, "PRE1", "Preconditioning end value (default 0)", {"pre1"}, 0);
 
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
@@ -50,19 +53,16 @@ int main_cg(args::Subparser &parser)
   Cx4 const sense = iter_cropper.crop4(
       SENSE(info, trajectory, osamp.Get(), stack, kernel, false, 0.f, rad_ks, log));
 
-  Cx2 ones(info.read_points, info.spokes_total());
-  ones.setConstant({1.0f});
-  Cx3 transfer(gridder.gridDims());
-  transfer.setZero();
-  gridder.toCartesian(ones, transfer);
-
-  CgSystem toe = [&](Cx3 const &x, Cx3 &y) {
+  CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
+    gridder.setDCExponent(pre);
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
     fft.forward();
-    grid.device(Threads::GlobalDevice()) = grid * Tile(transfer, info.channels);
+    gridder.toNoncartesian(grid, rad_ks);
+    grid.setZero();
+    gridder.toCartesian(rad_ks, grid);
     fft.reverse();
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("System: {}", log.toNow(start));
@@ -71,6 +71,7 @@ int main_cg(args::Subparser &parser)
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.now();
     y.setZero();
+    gridder.setDCExponent(1.f);
     grid.setZero();
     gridder.toCartesian(x, grid);
     fft.reverse();
@@ -91,7 +92,7 @@ int main_cg(args::Subparser &parser)
       currentVolume = iv;
     }
     dec(rad_ks, vol); // Initialize
-    cg(toe, thr.Get(), its.Get(), vol, log);
+    cgvar(sys, thr.Get(), its.Get(), pre0.Get(), pre1.Get(), vol, log);
     cropped = out_cropper.crop3(vol);
     apodizer.deapodize(cropped);
     if (tukey_s || tukey_e || tukey_h) {
@@ -101,7 +102,7 @@ int main_cg(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  auto const ofile = OutName(fname, oname, "cg");
+  auto const ofile = OutName(fname, oname, "cgvar");
   if (magnitude) {
     WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);
   } else {

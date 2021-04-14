@@ -61,7 +61,6 @@ using Pads3 = Eigen::array<std::pair<long, long>, 3>;
 // This is the type of the lambda functions to represent the encode/decode operators
 using EncodeFunction = std::function<void(Cx3 &x, Cx3 &y)>;
 using DecodeFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
-using SystemFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 
 inline Cx4 SwapToChannelLast(Cx4 const &x)
 {

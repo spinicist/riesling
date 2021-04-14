@@ -14,6 +14,7 @@ int main(int const argc, char const *const argv[])
   args::Command rss(commands, "rss", "Recon w/ root-sum-squares channel combo", &main_rss);
   args::Command sense(commands, "sense", "Recon w/ self-calibrating sense combo", &main_sense);
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
+  args::Command cgvar(commands, "cgvar", "cgSENSE with variable preconditioning", &main_cgvar);
   args::Command tgv(commands, "tgv", "Iterative TGV regularised recon", &main_tgv);
   args::Command ds(commands, "ds", "Direct Summation (NUFT)", &main_ds);
   args::Command version(commands, "version", "Print version number", &main_version);
