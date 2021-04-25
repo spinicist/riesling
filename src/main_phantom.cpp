@@ -1,3 +1,4 @@
+#include "apodizer.h"
 #include "coils.h"
 #include "cropper.h"
 #include "fft3n.h"
@@ -99,6 +100,8 @@ int main_phantom(args::Subparser &parser)
   } else {
     phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
   }
+  Apodizer apodizer(kernel, gridder.gridDims(), gridder.gridDims(), log);
+  apodizer.apodize(phan);
 
   // Generate SENSE maps and multiply
   log.info("Generating coil sensitivities...");
