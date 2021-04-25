@@ -111,7 +111,7 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   typename T::Dimensions dimensions;
   for (int ii = 0; ii < ND; ii++) {
     // HD5=row-major, Eigen=col-major, so dimensions are reversed
-    assert(dims[ii] == tensor.dimension(ND - ii));
+    assert(dims[ii] == tensor.dimension(ND - ii - 1));
   }
   herr_t ret_value =
       H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());

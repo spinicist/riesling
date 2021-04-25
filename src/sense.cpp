@@ -9,7 +9,6 @@ Cx4 SENSE(
     Info const &info,
     R3 const &traj,
     float const os,
-    bool const stack,
     Kernel *const kernel,
     bool const shrink,
     float const threshold,
@@ -19,7 +18,7 @@ Cx4 SENSE(
   // Grid and heavily smooth each coil image, accumulate combined image
   float const sense_res = 12.f;
   log.info("Creating SENSE maps.");
-  Gridder gridder(info, traj, os, SDC::Pipe, kernel, stack, log, sense_res, shrink);
+  Gridder gridder(info, traj, os, SDC::Pipe, kernel, log, sense_res, shrink);
   gridder.setDCExponent(0.8);
   Cx4 grid = gridder.newGrid();
   R3 rss(gridder.gridDims());

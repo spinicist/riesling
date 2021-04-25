@@ -4,6 +4,12 @@
 
 struct Info
 {
+  enum struct Type : long
+  {
+    ThreeD = 1,
+    ThreeDStack = 2
+  };
+
   Array3l matrix;
   long read_points;
   long read_gap;
@@ -11,6 +17,7 @@ struct Info
   long spokes_lo;
   float lo_scale;
   long channels;
+  Type type = Type::ThreeD;
   long volumes = 1;
   long echoes = 1;
   float tr = 1.f;

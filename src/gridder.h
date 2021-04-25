@@ -19,7 +19,6 @@ struct Gridder
    * @param os     Oversampling factor
    * @param sdc    Sample Density Compensation method
    * @param kernel Interpolation kernel
-   * @param stack  Trajectory is stack-of-stars or similar
    * @param log    Logging object
    * @param res    OPTIONAL - Desired effective resolution
    * @param shrink OPTIONAL - Shrink the grid to fit only the desired resolution portion
@@ -30,7 +29,6 @@ struct Gridder
       float const os,
       SDC const sdc,
       Kernel *const kernel,
-      bool const stack,
       Log &log,
       float const res = 0.f,
       bool const shrink = false);

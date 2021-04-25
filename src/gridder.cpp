@@ -31,7 +31,6 @@ Gridder::Gridder(
     float const os,
     SDC const sdc,
     Kernel *const kernel,
-    bool const stack,
     Log &log,
     float const res,
     bool const shrink)
@@ -50,7 +49,7 @@ Gridder::Gridder(
   long const nomSz = fft_size(oversample_ * info_.matrix.maxCoeff());
   long const nomRad = nomSz / 2 - 1;
   long const gridSz = shrink ? fft_size(nomSz * ratio) : nomSz;
-  if (stack) {
+  if (info.type == Info::Type::ThreeDStack) {
     dims_ = {gridSz, gridSz, info_.matrix[2]};
   } else {
     dims_ = {gridSz, gridSz, gridSz};
@@ -66,9 +65,10 @@ Gridder::Gridder(
 
   // Count the number of points per spoke we will retain. Assumes profile is constant across spokes
   Profile const hires =
-      stack ? profile2D(
-                  traj.chip(info_.spokes_lo, 2), info_.spokes_hi / dims_[2], nomRad, maxRad, 1.f)
-            : profile3D(traj.chip(info_.spokes_lo, 2), info_.spokes_hi, nomRad, maxRad, 1.f);
+      (info.type == Info::Type::ThreeDStack)
+          ? profile2D(
+                traj.chip(info_.spokes_lo, 2), info_.spokes_hi / dims_[2], nomRad, maxRad, 1.f)
+          : profile3D(traj.chip(info_.spokes_lo, 2), info_.spokes_hi, nomRad, maxRad, 1.f);
   coords_ = genCoords(traj, info_.spokes_lo, info_.spokes_hi, hires);
 
   if (info_.spokes_lo) {
@@ -76,7 +76,7 @@ Gridder::Gridder(
     float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
     float const max_r = info_.read_gap * oversample_ / spokeOversamp;
     Profile const lores =
-        stack
+        (info.type == Info::Type::ThreeDStack)
             ? profile2D(traj.chip(0, 2), info_.spokes_lo / dims_[2], nomRad, max_r, info_.lo_scale)
             : profile3D(traj.chip(0, 2), info_.spokes_lo, nomRad, max_r, info_.lo_scale);
     auto const temp = genCoords(traj, 0, info_.spokes_lo, lores);

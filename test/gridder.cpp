@@ -19,7 +19,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("NN")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, SDC::Analytic, kernel, false, log);
+    Gridder gridder(info, traj, osamp, SDC::Analytic, kernel, log);
     gridder.setDC(1.f);
     Cx2 rad(info.read_points, info.spokes_total());
     CHECK(rad.dimension(0) == 1);
@@ -39,7 +39,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("KB Estimate")
   {
     Kernel *kernel = new KaiserBessel(3, osamp, true);
-    Gridder gridder(info, traj, osamp, SDC::Pipe, kernel, false, log);
+    Gridder gridder(info, traj, osamp, SDC::Pipe, kernel, log);
     Cx2 rad(info.read_points, info.spokes_total());
     CHECK(rad.dimension(0) == 1);
     CHECK(rad.dimension(1) == 1);
@@ -57,7 +57,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("NN Multicoil")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, SDC::Analytic, kernel, false, log);
+    Gridder gridder(info, traj, osamp, SDC::Analytic, kernel, log);
     gridder.setDC(1.f);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
@@ -84,7 +84,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("KB Multicoil")
   {
     Kernel *kernel = new KaiserBessel(3, osamp, true);
-    Gridder gridder(info, traj, osamp, SDC::Pipe, kernel, false, log);
+    Gridder gridder(info, traj, osamp, SDC::Pipe, kernel, log);
     gridder.setDC(1.f);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
@@ -129,7 +129,7 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
   SECTION("NN")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, SDC::Analytic, kernel, false, log);
+    Gridder gridder(info, traj, osamp, SDC::Analytic, kernel, log);
     gridder.setDC(1.f);
     Cx3 cart = gridder.newGrid1();
     CHECK(cart.dimension(0) == 8);
@@ -153,7 +153,7 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
   SECTION("KB Estimate")
   {
     Kernel *kernel = new KaiserBessel(3, osamp, false);
-    Gridder gridder(info, traj, osamp, SDC::Pipe, kernel, false, log);
+    Gridder gridder(info, traj, osamp, SDC::Pipe, kernel, log);
     Cx3 cart = gridder.newGrid1();
     CHECK(cart.dimension(0) == 8);
     CHECK(cart.dimension(1) == 8);

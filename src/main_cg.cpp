@@ -36,19 +36,20 @@ int main_cg(args::Subparser &parser)
   Cx3 rad_ks = info.noncartesianVolume();
 
   R3 const trajectory = reader.readTrajectory();
-  Kernel *kernel = kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), !stack)
-                      : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, stack, log);
+  Kernel *kernel =
+      kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
+         : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
+  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, log);
   gridder.setDCExponent(dc_exp.Get());
 
   Cx4 grid = gridder.newGrid();
-  Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), stack, log);
+  Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   FFT3N fft(grid, log);
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
-  Cx4 const sense = iter_cropper.crop4(
-      SENSE(info, trajectory, osamp.Get(), stack, kernel, false, 0.f, rad_ks, log));
+  Cx4 const sense =
+      iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
   ones.setConstant({1.0f});
@@ -78,7 +79,7 @@ int main_cg(args::Subparser &parser)
     log.debug("Decode: {}", log.toNow(start));
   };
 
-  Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), stack, log);
+  Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
   Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
   Cx3 vol = iter_cropper.newImage();
   Cx3 cropped = out_cropper.newImage();

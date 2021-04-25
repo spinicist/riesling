@@ -92,6 +92,7 @@ hid_t info_type()
   status = H5Tinsert(info_id, "spokes_lo", HOFFSET(Info, spokes_lo), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "lo_scale", HOFFSET(Info, lo_scale), H5T_NATIVE_FLOAT);
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
   status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);

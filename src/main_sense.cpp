@@ -44,30 +44,29 @@ int main_sense(args::Subparser &parser)
   auto const &info = reader.info();
   auto const trajectory = reader.readTrajectory();
   Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), !stack) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, stack, log);
+      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
+         : (Kernel *)new NearestNeighbour();
+  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, log);
   gridder.setDCExponent(dc_exp.Get());
 
-  Cropper cropper(info, gridder.gridDims(), out_fov.Get(), stack, log);
+  Cropper cropper(info, gridder.gridDims(), out_fov.Get(), log);
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readData(currentVolume, rad_ks);
   Cx4 sense =
-      espirit
-          ? cropper.crop4(ESPIRIT(
-                info,
-                trajectory,
-                osamp.Get(),
-                stack,
-                kernel,
-                calSz.Get(),
-                kernelSz.Get(),
-                retain.Get(),
-                rad_ks,
-                log))
-          : cropper.crop4(SENSE(
-                info, trajectory, osamp.Get(), stack, kernel, false, thresh.Get(), rad_ks, log));
+      espirit ? cropper.crop4(ESPIRIT(
+                    info,
+                    trajectory,
+                    osamp.Get(),
+                    kernel,
+                    calSz.Get(),
+                    kernelSz.Get(),
+                    retain.Get(),
+                    rad_ks,
+                    log))
+              : cropper.crop4(
+                    SENSE(info, trajectory, osamp.Get(), kernel, false, thresh.Get(), rad_ks, log));
   if (save_maps) {
     WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps", outftype.Get()), log);
   }

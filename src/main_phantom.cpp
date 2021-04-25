@@ -72,6 +72,7 @@ int main_phantom(args::Subparser &parser)
                  .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
                  .lo_scale = lores ? lores.Get() : 1.f,
                  .channels = nchan.Get(),
+                 .type = Info::Type::ThreeD,
                  .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
                  .origin = Eigen::Vector3f{o, o, o}};
   log.info(
@@ -86,8 +87,8 @@ int main_phantom(args::Subparser &parser)
   // We want effective sample positions at the middle of the bin
   R3 const grid_traj = ArchimedeanSpiral(grid_info, decimate ? grid_samp.Get() / 2 : 0);
   Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), false) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(grid_info, grid_traj, grid_samp.Get(), SDC::None, kernel, false, log);
+      kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
+  Gridder gridder(grid_info, grid_traj, grid_samp.Get(), SDC::None, kernel, log);
   Cx4 grid = gridder.newGrid();
   FFT3N fft(grid, log); // FFTW needs temp space for planning
 

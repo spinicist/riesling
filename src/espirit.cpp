@@ -14,7 +14,6 @@ Cx4 ESPIRIT(
     Info const &info,
     R3 const &traj,
     float const os,
-    bool const stack,
     Kernel *const kernel,
     long const calSz,
     long const kSz,
@@ -25,7 +24,7 @@ Cx4 ESPIRIT(
   // Grid and heavily smooth each coil image, accumulate combined image
   float const sense_res = 6.f;
   log.info(FMT_STRING("ESPIRIT Calibration Size {} Kernel Size {}"), calSz, kSz);
-  Gridder gridder(info, traj, os, SDC::Analytic, kernel, stack, log, sense_res, false);
+  Gridder gridder(info, traj, os, SDC::Analytic, kernel, log, sense_res, false);
   Cx4 grid = gridder.newGrid();
   FFT3N fftGrid(grid, log);
   grid.setZero();
@@ -118,7 +117,7 @@ Cx4 ESPIRIT(
   WriteNifti(info, Cx4(eValues.shuffle(Sz4{1, 2, 3, 0})), "smallvalues.nii", log);
   WriteNifti(info, Cx4(smallMaps.shuffle(Sz4{1, 2, 3, 0})), "smallvectors.nii", log);
   // FFT, embed to full size, FFT again
-  Cropper cropper(info, gridder.gridDims(), -1.f, stack, log);
+  Cropper cropper(info, gridder.gridDims(), -1.f, log);
   FFT3N fftSmall(smallMaps, log);
   fftSmall.forward();
   ZeroPad(smallMaps, grid);

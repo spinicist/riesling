@@ -1,7 +1,6 @@
 #include "cropper.h"
 
-Cropper::Cropper(
-    Info const &info, Dims3 const &fullSz, float const extent, bool const stack, Log &log)
+Cropper::Cropper(Info const &info, Dims3 const &fullSz, float const extent, Log &log)
 {
   if (extent < 0.f) {
     std::copy_n(info.matrix.begin(), 3, sz_.begin());
@@ -13,7 +12,7 @@ Cropper::Cropper(
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
   calcStart(fullSz);
-  if (stack) {
+  if (info.type == Info::Type::ThreeDStack) {
     st_[2] = 0;
     sz_[2] = info.matrix[2];
   }

@@ -31,7 +31,7 @@ struct Cropper
   Cropper(Dims3 const &fullSz, Dims3 const &cropSz, Log &log);
   Cropper(Dims3 const &fullSz, Array3l const &cropSz, Log &log);
   Cropper(Dims3 const &fullSz, Sz3 const &cropSz, Log &log);
-  Cropper(Info const &info, Dims3 const &fullSz, float const extent, bool const crop, Log &log);
+  Cropper(Info const &info, Dims3 const &fullSz, float const extent, Log &log);
   Dims3 size() const;
   Dims3 start() const;
   Cx3 newImage() const;

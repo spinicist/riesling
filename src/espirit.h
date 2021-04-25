@@ -8,7 +8,6 @@ Cx4 ESPIRIT(
     Info const &info,
     R3 const &traj,
     float const os,
-    bool const stack,
     Kernel *const kb,
     long const calSz,
     long const kernelSz,
