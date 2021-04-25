@@ -53,7 +53,8 @@ void store_tensor(
 {
   herr_t status;
   hsize_t ds_dims[ND], chunk_dims[ND];
-  std::copy_n(data.dimensions().begin(), ND, ds_dims); // copy_n has implicit casting
+  // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
+  std::copy_n(data.dimensions().rbegin(), ND, ds_dims);
   std::copy_n(ds_dims, ND, chunk_dims);
 
   auto const space = H5Screate_simple(ND, ds_dims, NULL);
@@ -109,7 +110,8 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   H5Sget_simple_extent_dims(ds, dims, NULL);
   typename T::Dimensions dimensions;
   for (int ii = 0; ii < ND; ii++) {
-    assert(dims[ii] == tensor.dimension(ii));
+    // HD5=row-major, Eigen=col-major, so dimensions are reversed
+    assert(dims[ii] == tensor.dimension(ND - ii));
   }
   herr_t ret_value =
       H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
