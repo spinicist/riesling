@@ -101,7 +101,7 @@ int main_phantom(args::Subparser &parser)
     phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
   }
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
-  apodizer.apodize(phan);
+  apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
 
   // Generate SENSE maps and multiply
   log.info("Generating coil sensitivities...");
