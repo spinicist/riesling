@@ -47,7 +47,7 @@ int main_cg(args::Subparser &parser)
   FFT3N fft(grid, log);
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readData(currentVolume, rad_ks);
+  reader.readVolume(currentVolume, rad_ks);
   Cx4 const sense =
       iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
 
@@ -88,7 +88,7 @@ int main_cg(args::Subparser &parser)
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
-      reader.readData(iv, rad_ks);
+      reader.readVolume(iv, rad_ks);
       currentVolume = iv;
     }
     dec(rad_ks, vol); // Initialize

@@ -8,7 +8,7 @@ int main_cg(args::Subparser &parser);
 int main_cgvar(args::Subparser &parser);
 int main_compress(args::Subparser &parser);
 int main_zinfandel(args::Subparser &parser);
-int main_kspace(args::Subparser &parser);
+int main_grid(args::Subparser &parser);
 int main_traj(args::Subparser &parser);
 int main_rss(args::Subparser &parser);
 int main_sense(args::Subparser &parser);

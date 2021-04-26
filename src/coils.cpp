@@ -20,7 +20,7 @@ Cx4 birdcage(
     log.info("ir {} cz {}", ir, cz);
     for (long ic = 0; ic < chan_per_ring; ic++) {
       float const theta = (2.f * M_PI * ic) / chan_per_ring;
-      float const coil_phs = (ic * 2.f * M_PI / chan_per_ring) + (2.f * M_PI * ir);
+      float const coil_phs = -(2.f * M_PI * (ic + (ir * chan_per_ring))) / info.channels;
       Eigen::Vector3f const chan_pos =
           Eigen::Vector3f(coil_rad_mm * std::cos(theta), coil_rad_mm * std::sin(theta), cz);
       for (long iz = 0; iz < info.matrix[2]; iz++) {

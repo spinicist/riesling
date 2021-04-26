@@ -50,7 +50,7 @@ int main_ds(args::Subparser &parser)
   auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.now();
-    reader.readData(iv, rad_ks);
+    reader.readVolume(iv, rad_ks);
     channels.setZero();
     log.info("Beginning Direct Summation");
     auto fourier = [&](long const lo, long const hi) {

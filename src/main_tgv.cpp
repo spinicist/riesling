@@ -51,7 +51,7 @@ int main_tgv(args::Subparser &parser)
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readData(currentVolume, rad_ks);
+  reader.readVolume(currentVolume, rad_ks);
   Cx4 sense =
       iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
 
@@ -82,7 +82,7 @@ int main_tgv(args::Subparser &parser)
     auto const start = log.now();
     log.info(FMT_STRING("Processing volume: {}"), iv);
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
-      reader.readData(iv, rad_ks);
+      reader.readVolume(iv, rad_ks);
       currentVolume = iv;
     }
     image = out_cropper.crop3(

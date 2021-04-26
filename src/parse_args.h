@@ -31,7 +31,7 @@ extern void
 WriteVolumes(Info const &info, T const &vols, long const which, std::string const &fname, Log &log);
 
 #define COMMON_RECON_ARGS                                                                          \
-  args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");                        \
+  args::Positional<std::string> fname(parser, "FILE", "Input HD5 file");                           \
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
                                                                                                    \
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);           \

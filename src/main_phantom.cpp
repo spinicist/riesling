@@ -100,12 +100,12 @@ int main_phantom(args::Subparser &parser)
   } else {
     phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
   }
-  Apodizer apodizer(kernel, gridder.gridDims(), gridder.gridDims(), log);
+  Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   apodizer.apodize(phan);
 
   // Generate SENSE maps and multiply
   log.info("Generating coil sensitivities...");
-  Cx4 sense = birdcage(grid_info, coil_rings.Get(), coil_r.Get(), coil_r.Get() / 2.f, log);
+  Cx4 sense = birdcage(grid_info, coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
   log.info("Generating coil images...");
   cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, grid_info.channels);
   if (log.level() >= Log::Level::Images) { // Extra check to avoid the shuffle when we can
@@ -119,12 +119,9 @@ int main_phantom(args::Subparser &parser)
   Cx3 radial = grid_info.noncartesianVolume();
   gridder.toNoncartesian(grid, radial);
   if (snr) {
-    Cx3 noise(grid_info.read_points, grid_info.spokes_total(), nchan.Get());
+    Cx3 noise(radial.dimensions());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
-    radial.slice(
-        Dims3{0, 0, 0},
-        Dims3{grid_info.channels, grid_info.read_points, grid_info.spokes_total()}) +=
-        noise * noise.constant(intensity.Get() / snr.Get());
+    radial += noise * noise.constant(intensity.Get() / snr.Get());
   }
 
   HD5Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
@@ -156,7 +153,7 @@ int main_phantom(args::Subparser &parser)
     }
     writer.writeInfo(out_info);
     writer.writeTrajectory(out_traj);
-    writer.writeData(0, decimated);
+    writer.writeVolume(0, decimated);
   } else {
     if (gap) {
       radial.slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
@@ -164,7 +161,7 @@ int main_phantom(args::Subparser &parser)
     }
     writer.writeInfo(grid_info);
     writer.writeTrajectory(grid_traj);
-    writer.writeData(0, radial);
+    writer.writeVolume(0, radial);
   }
   FFT::End(log);
   return EXIT_SUCCESS;

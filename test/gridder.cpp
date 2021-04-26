@@ -4,6 +4,8 @@
 
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
 {
+  // Run tests single-thread due to low point count
+  Threads::SetGlobalThreadCount(1);
   Log log;
   Info info{.matrix = {2, 2, 2},
             .read_points = 1,
@@ -111,6 +113,8 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 
 TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 {
+  // Run tests single-thread due to low point count
+  Threads::SetGlobalThreadCount(1);
   Log log;
   Info info{.matrix = {4, 4, 4},
             .read_points = 4,

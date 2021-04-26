@@ -167,8 +167,10 @@ void load_map(Handle const &parent, std::map<std::string, float> &meta)
 
 template void store_tensor(Handle const &parent, std::string const &name, R3 const &data);
 template void store_tensor(Handle const &parent, std::string const &name, Cx3 const &data);
+template void store_tensor(Handle const &parent, std::string const &name, Cx4 const &data);
 template void load_tensor(Handle const &parent, std::string const &name, R3 &tensor);
 template void load_tensor(Handle const &parent, std::string const &name, Cx3 &tensor);
+template void load_tensor(Handle const &parent, std::string const &name, Cx4 &tensor);
 template void store_array(Handle const &parent, std::string const &name, Eigen::ArrayXf const &t);
 template void load_array(Handle const &parent, std::string const &name, Eigen::ArrayXf &t);
 template void

@@ -20,7 +20,7 @@ int main_compress(args::Subparser &parser)
   HD5Reader reader(fname.Get(), log);
   Info const in_info = reader.info();
   Cx3 ks = in_info.noncartesianVolume();
-  reader.readData(SenseVolume(ref_vol, in_info.volumes), ks);
+  reader.readVolume(SenseVolume(ref_vol, in_info.volumes), ks);
   long const max_ref = in_info.read_points - in_info.read_gap;
   long const nread = (readSize.Get() > max_ref) ? max_ref : readSize.Get();
   log.info(
@@ -36,7 +36,7 @@ int main_compress(args::Subparser &parser)
   out_info.channels = compressor.out_channels();
 
   Cx4 all_ks = in_info.noncartesianSeries();
-  reader.readData(all_ks);
+  reader.readVolumes(all_ks);
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
 
@@ -44,8 +44,6 @@ int main_compress(args::Subparser &parser)
   HD5Writer writer(ofile, log);
   writer.writeInfo(out_info);
   writer.writeTrajectory(reader.readTrajectory());
-  for (long iv = 0; iv < out_info.volumes; iv++) {
-    writer.writeData(iv, out_ks.chip(iv, 3));
-  }
+  writer.writeVolumes(out_ks);
   return EXIT_SUCCESS;
 }

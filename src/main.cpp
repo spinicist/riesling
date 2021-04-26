@@ -9,7 +9,7 @@ int main(int const argc, char const *const argv[])
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
-  args::Command kspace(commands, "kspace", "Output k-space for viewing", &main_kspace);
+  args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
   args::Command rss(commands, "rss", "Recon w/ root-sum-squares channel combo", &main_rss);
   args::Command sense(commands, "sense", "Recon w/ self-calibrating sense combo", &main_sense);

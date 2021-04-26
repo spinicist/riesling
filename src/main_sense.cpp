@@ -53,7 +53,7 @@ int main_sense(args::Subparser &parser)
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readData(currentVolume, rad_ks);
+  reader.readVolume(currentVolume, rad_ks);
   Cx4 sense =
       espirit ? cropper.crop4(ESPIRIT(
                     info,
@@ -90,7 +90,7 @@ int main_sense(args::Subparser &parser)
     log.info(FMT_STRING("Processing volume: {}"), iv);
     auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
-      reader.readData(iv, rad_ks);
+      reader.readVolume(iv, rad_ks);
       currentVolume = iv;
     }
     grid.setZero();

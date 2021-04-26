@@ -48,12 +48,12 @@ int main_zinfandel(args::Subparser &parser)
 
   Cx3 rad_ks = info.noncartesianVolume();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
-    reader.readData(iv, rad_ks);
+    reader.readVolume(iv, rad_ks);
     zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj, rad_ks, log);
     if (pw && rbw) {
       slab_correct(out_info, pw.Get(), rbw.Get(), rad_ks, log);
     }
-    writer.writeData(volume ? 0 : iv, rad_ks);
+    writer.writeVolume(volume ? 0 : iv, rad_ks);
   }
   log.info("Finished");
   return EXIT_SUCCESS;
