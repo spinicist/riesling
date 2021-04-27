@@ -20,7 +20,7 @@ int main_split(args::Subparser &parser)
   R3 traj = reader.readTrajectory();
 
   Cx3 rad_ks = in_info.noncartesianVolume();
-  reader.readData(vol.Get(), rad_ks);
+  reader.readVolume(vol.Get(), rad_ks);
 
   Info out_info = in_info;
 
@@ -57,18 +57,16 @@ int main_split(args::Subparser &parser)
   if (rem_spokes > 0) {
     log.info(FMT_STRING("Warning! Last interleave will have {} extra spokes."), rem_spokes);
   }
-  int idx0;
-  int idx1;
   int dspokes = nspokes.Get();
   for (int int_idx = 0; int_idx < num_int; int_idx++) {
-    idx0 = nspokes.Get() * int_idx;
+    int const idx0 = nspokes.Get() * int_idx;
 
     if (int_idx == (num_int - 1)) {
       dspokes += rem_spokes;
     }
     HD5Writer writer(OutName(fname, oname, fmt::format("int{}", int_idx), "h5"), log);
 
-    writer.writeData(
+    writer.writeVolume(
         0, rad_ks.slice(Sz3{0, 0, idx0}, Sz3{out_info.channels, out_info.read_points, dspokes}));
     writer.writeTrajectory(traj.slice(Sz3{0, 0, idx0}, Sz3{3, out_info.read_points, dspokes}));
     out_info.spokes_hi = dspokes;
