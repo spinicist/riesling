@@ -21,7 +21,7 @@ void HD5Writer::writeVolumes(Cx4 const &data)
   auto const hVols = HD5::create_group(handle_, "volumes");
   for (long ii = 0; ii < data.dimension(3); ii++) {
     Cx3 vol = data.chip(ii, 3);
-    auto const label = fmt::format("{:04d}", index);
+    auto const label = fmt::format("{:04d}", ii);
     log_.info(FMT_STRING("Writing volume {}"), label);
     HD5::store_tensor(hVols, label, vol);
   }
@@ -33,7 +33,7 @@ void HD5Writer::writeVolume(long const ivol, Cx3 const &data)
   auto const hVols =
       (ivol == 0) ? HD5::create_group(handle_, "volumes") : HD5::open_group(handle_, "volumes");
 
-  auto const label = fmt::format("{:04d}", 0);
+  auto const label = fmt::format("{:04d}", ivol);
   log_.info(FMT_STRING("Writing volume {}"), label);
   HD5::store_tensor(hVols, label, data);
   HD5::close_group(hVols);
