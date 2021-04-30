@@ -54,7 +54,7 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname)
     log.fail("No input specified");
   }
   if (nthreads) {
-    Threads::SetGlobalThreadCount(nthreads);
+    Threads::SetGlobalThreadCount(nthreads.Get());
   }
   log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
   return log;
@@ -68,7 +68,7 @@ Log ParseCommand(args::Subparser &parser)
 
   Log log(level);
   if (nthreads) {
-    Threads::SetGlobalThreadCount(nthreads);
+    Threads::SetGlobalThreadCount(nthreads.Get());
   }
   log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
   return log;
