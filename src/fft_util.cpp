@@ -20,6 +20,7 @@ void Start(Log &log)
 {
   fftwf_init_threads();
   fftwf_make_planner_thread_safe();
+  fftwf_set_timelimit(60.0);
   if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
     log.info("Read wisdom successfully");
   } else {
