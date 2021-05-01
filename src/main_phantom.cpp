@@ -48,6 +48,9 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> intensity(
       parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
+  args::ValueFlag<std::string> trajfile(
+      parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
+  args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
   args::Flag kb(parser, "KAISER-BESSEL", "Use Kaiser-Bessel kernel", {'k', "kb"});
   args::Flag decimate(parser, "DECIMATION", "Simulate decimation", {"decimate"});
 
@@ -78,6 +81,22 @@ int main_phantom(args::Subparser &parser)
                  .type = Info::Type::ThreeD,
                  .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
                  .origin = Eigen::Vector3f{o, o, o}};
+
+  // If we have a trajectory file as input we overwrite some inputs
+  R3 ext_traj;
+  if (trajfile) {
+    HD5Reader reader(trajfile.Get(), log);
+    ext_traj = reader.readTrajectory();
+
+    grid_info.spokes_hi = ext_traj.dimension(2);
+    grid_info.read_points = ext_traj.dimension(1);
+  }
+
+  if (infofile) {
+    HD5Reader info_reader(infofile.Get(), log);
+    grid_info = info_reader.info();
+  }
+
   log.info(
       FMT_STRING("Matrix Size: {} Voxel Size: {} Oversampling: {} Dead-time Gap: {}"),
       matrix.Get(),
@@ -88,7 +107,8 @@ int main_phantom(args::Subparser &parser)
       FMT_STRING("Hi-res spokes: {} Lo-res spokes: {}"), grid_info.spokes_hi, grid_info.spokes_lo);
 
   // We want effective sample positions at the middle of the bin
-  R3 const grid_traj = ArchimedeanSpiral(grid_info, decimate ? grid_samp.Get() / 2 : 0);
+  R3 const grid_traj =
+      trajfile ? ext_traj : ArchimedeanSpiral(grid_info, decimate ? grid_samp.Get() / 2 : 0);
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
   Gridder gridder(grid_info, grid_traj, grid_samp.Get(), SDC::None, kernel, log);
