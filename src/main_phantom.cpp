@@ -48,6 +48,9 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> intensity(
       parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
+  args::ValueFlag<std::string> trajfile(
+      parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
+  args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
   args::Flag kb(parser, "KAISER-BESSEL", "Use Kaiser-Bessel kernel", {'k', "kb"});
 
   Log log = ParseCommand(parser, iname);
@@ -56,38 +59,57 @@ int main_phantom(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
 
-  auto const mtx = Array3l::Constant(matrix.Get());
-  auto const vox_sz = Eigen::Array3f::Constant(fov.Get() / matrix.Get());
-  auto const origin = -(mtx.cast<float>() * vox_sz) / 2.f;
-
-  log.info(FMT_STRING("Matrix Size: {} Voxel Size: {}"), mtx.transpose(), vox_sz.transpose());
-
-  Cx3 phan = shepplogan
-                 ? SheppLoganPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log)
-                 : SphericalPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
-  Cx4 sense = birdcage(mtx, vox_sz, nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
-
-  auto const spokes_hi = std::lrint(matrix.Get() * matrix.Get() / spoke_samp.Get());
-  Info info{.matrix = mtx,
-            .read_points = (long)read_samp.Get() * matrix.Get() / 2,
-            .read_gap = 0,
-            .spokes_hi = spokes_hi,
-            .spokes_lo = 0,
-            .lo_scale = lores ? lores.Get() : 1.f,
-            .channels = nchan.Get(),
-            .type = Info::Type::ThreeD,
-            .voxel_size = vox_sz,
-            .origin = origin};
+  R3 points;
+  Info info;
+  if (trajfile) {
+    log.info("Reading external trajectory from {}", trajfile.Get());
+    HD5::Reader reader(trajfile.Get(), log);
+    Trajectory const ext_traj = reader.readTrajectory();
+    info = ext_traj.info();
+    points = ext_traj.points();
+  } else {
+    auto const spokes_hi = std::lrint(matrix.Get() * matrix.Get() / spoke_samp.Get());
+    info = Info{.matrix = Eigen::Array3l::Constant(matrix.Get()),
+                .read_points = (long)read_samp.Get() * matrix.Get() / 2,
+                .read_gap = 0,
+                .spokes_hi = spokes_hi,
+                .spokes_lo = 0,
+                .lo_scale = lores ? lores.Get() : 1.f,
+                .channels = nchan.Get(),
+                .type = Info::Type::ThreeD,
+                .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
+                .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f)};
+    points = ArchimedeanSpiral(info);
+  }
+  log.info(
+      FMT_STRING("Matrix Size: {} Voxel Size: {}"),
+      info.matrix.transpose(),
+      info.voxel_size.transpose());
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
 
-  R3 points = ArchimedeanSpiral(info);
   Trajectory traj(info, points, log);
   Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
   Cx4 grid = hi_gridder.newGrid();
   FFT::ThreeDMulti fft(grid, log); // FFTW needs temp space for planning
 
-  Cropper cropper(hi_gridder.gridDims(), mtx, log);
+  Cropper cropper(hi_gridder.gridDims(), info.matrix, log);
   Apodizer apodizer(kernel, hi_gridder.gridDims(), cropper.size(), log);
+
+  Cx3 phan =
+      shepplogan
+          ? SheppLoganPhantom(
+                info.matrix,
+                info.voxel_size,
+                phan_c.Get(),
+                phan_rot.Get(),
+                phan_r.Get(),
+                intensity.Get(),
+                log)
+          : SphericalPhantom(
+                info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
+  Cx4 sense = birdcage(
+      info.matrix, info.voxel_size, nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
+
   apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
 
   log.info("Generating Cartesian k-space...");
@@ -101,8 +123,8 @@ int main_phantom(args::Subparser &parser)
 
   if (lores) {
     // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
-    auto const spokes_lo = spokes_hi / lores.Get();
-    Info lo_info{.matrix = mtx,
+    auto const spokes_lo = info.spokes_hi / lores.Get();
+    Info lo_info{.matrix = info.matrix,
                  .read_points = info.read_points,
                  .read_gap = 0,
                  .spokes_hi = spokes_lo,
@@ -110,8 +132,8 @@ int main_phantom(args::Subparser &parser)
                  .lo_scale = 1.f,
                  .channels = nchan.Get(),
                  .type = Info::Type::ThreeD,
-                 .voxel_size = vox_sz,
-                 .origin = origin};
+                 .voxel_size = info.voxel_size,
+                 .origin = info.origin};
     R3 lo_points = ArchimedeanSpiral(lo_info);
     Trajectory lo_traj(
         lo_info,

@@ -59,8 +59,9 @@ int main_cg(args::Subparser &parser)
       currentVolume,
       log);
 
-  Cx3 transfer;
+  Cx3 transfer(gridder.gridDims());
   {
+    log.info("Calculating transfer function");
     Cx3 ones(1, info.read_points, info.spokes_total());
     ones.setConstant({1.0f});
     Cx4 transferTemp = gridder.newGridSingle();

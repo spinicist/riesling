@@ -8,7 +8,7 @@
 Eigen::ArrayXf
 RadialTukey(Eigen::Index const n, long const start_n, long const end_n, float const ea)
 {
-  auto const r = ArrayXl::LinSpaced(n, 0, n);
+  auto const r = Eigen::ArrayXl::LinSpaced(n, 0, n);
   Eigen::ArrayXf tukey = Eigen::ArrayXf::Zero(n);
   for (Eigen::Index i = 0; i < n; i++) {
     if (r[i] < start_n) {

@@ -9,8 +9,10 @@
 
 #include <complex>
 
-using Array3l = Eigen::Array<long, 3, 1>;
-using ArrayXl = Eigen::Array<long, -1, 1>;
+namespace Eigen {
+using Array3l = Array<long, 3, 1>;
+using ArrayXl = Array<long, -1, 1>;
+} // namespace Eigen
 
 using B0 = Eigen::TensorFixedSize<bool, Eigen::Sizes<>>;
 using B3 = Eigen::Tensor<bool, 3>;

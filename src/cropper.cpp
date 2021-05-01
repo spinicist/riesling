@@ -5,10 +5,10 @@ Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &l
   if (extent < 0.f) {
     std::copy_n(info.matrix.begin(), 3, sz_.begin());
   } else {
-    Array3l full;
+    Eigen::Array3l full;
     std::copy_n(&fullSz[0], 3, full.begin());
     // Ensure even, no bigger than the grid
-    Array3l crop = (((extent / info.voxel_size) / 2).floor() * 2).cast<long>().min(full);
+    Eigen::Array3l crop = (((extent / info.voxel_size) / 2).floor() * 2).cast<long>().min(full);
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
   calcStart(fullSz);
@@ -19,7 +19,7 @@ Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &l
   log.debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
 }
 
-Cropper::Cropper(Sz3 const &fullSz, Array3l const &cropSz, Log &log)
+Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz, Log &log)
 {
   sz_[0] = cropSz[0];
   sz_[1] = cropSz[1];

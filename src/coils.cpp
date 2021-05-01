@@ -1,7 +1,7 @@
 #include "coils.h"
 
 Cx4 birdcage(
-    Array3l const &matrix,
+    Eigen::Array3l const &matrix,
     Eigen::Array3f const &voxel_size,
     long const channels,
     long const nrings,

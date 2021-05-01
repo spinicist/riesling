@@ -1,7 +1,7 @@
 #include "phantom_sphere.h"
 
 Cx3 SphericalPhantom(
-    Array3l const &matrix,
+    Eigen::Array3l const &matrix,
     Eigen::Array3f const &voxel_size,
     Eigen::Vector3f const &c,
     float const r,

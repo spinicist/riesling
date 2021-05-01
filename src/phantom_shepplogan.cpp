@@ -39,7 +39,7 @@ std::vector<float> const pd{2, -0.8, -0.2, -0.2, 0.2, 0.2, 0.1, 0.1, 0.2, -0.2};
 } // namespace
 
 Cx3 SheppLoganPhantom(
-    Array3l const &matrix,
+    Eigen::Array3l const &matrix,
     Eigen::Array3f const &voxel_size,
     Eigen::Vector3f const &c,
     Eigen::Vector3f const &imr,
