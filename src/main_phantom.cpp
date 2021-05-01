@@ -30,6 +30,8 @@ int main_phantom(args::Subparser &parser)
       parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
       parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
+  args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_rot(
+      parser, "ax,ay,az", "Rotation of phantom (in deg)", {"rotation"}, Eigen::Vector3f::Zero());
   args::ValueFlag<long> coil_rings(
       parser, "COIL RINGS", "Number of rings in coil (default 1)", {"rings"}, 1);
   args::ValueFlag<float> coil_r(
