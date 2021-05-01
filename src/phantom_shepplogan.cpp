@@ -41,6 +41,7 @@ std::vector<float> const pd{2, -0.8, -0.2, -0.2, 0.2, 0.2, 0.1, 0.1, 0.2, -0.2};
 Cx3 SheppLoganPhantom(
     Info const &info,
     Eigen::Vector3f const &c,
+    Eigen::Vector3f const &imr,
     float const rad,
     float const intensity,
     Log const &log)
@@ -53,13 +54,32 @@ Cx3 SheppLoganPhantom(
   long const cy = phan.dimension(1) / 2;
   long const cz = phan.dimension(2) / 2;
 
+  // Global rotation
+  Eigen::Matrix3f yaw;
+  Eigen::Matrix3f pitch;
+  Eigen::Matrix3f roll;
+  float d2r = M_PI / 180.0;
+  roll << 1.f, 0.f, 0.f,                          //
+      0.f, cos(imr[0] * d2r), -sin(imr[0] * d2r), //
+      0.f, sin(imr[0] * d2r), cos(imr[0] * d2r);
+
+  pitch << cos(imr[1] * d2r), 0.f, sin(imr[1] * d2r), //
+      0.f, 1.f, 0.f,                                  //
+      -sin(imr[1] * d2r), 0.f, cos(imr[1] * d2r);
+
+  yaw << cos(imr[2] * d2r), -sin(imr[2] * d2r), 0.f, //
+      sin(imr[2] * d2r), cos(imr[2] * d2r), 0.f,     //
+      0.f, 0.f, 1.f;
+
   for (long iz = 0; iz < phan.dimension(2); iz++) {
     auto const pz = (iz - cz) * info.voxel_size[2];
     for (long iy = 0; iy < phan.dimension(1); iy++) {
       auto const py = (iy - cy) * info.voxel_size[1];
       for (long ix = 0; ix < phan.dimension(0); ix++) {
         auto const px = (ix - cx) * info.voxel_size[0];
-        Eigen::Vector3f const p{px, py, pz};
+        Eigen::Vector3f p0{px, py, pz};
+        Eigen::Vector3f const p = yaw * pitch * roll * p0;
+
         // Normalize coordinates between -1 and 1
         Eigen::Vector3f const r = (p - c) / rad;
 
@@ -69,7 +89,8 @@ Cx3 SheppLoganPhantom(
           rot << cos(angles[ie]), sin(angles[ie]), 0.f, //
               -sin(angles[ie]), cos(angles[ie]), 0.f,   //
               0.f, 0.f, 1.f;
-          Eigen::Vector3f const pe = (rot * (r - centres[ie])).array() / ha[ie];
+
+          Eigen::Vector3f const pe = ((rot * (r - centres[ie])).array() / ha[ie]);
           if (pe.norm() < 1.f) {
             phan(ix, iy, iz) += pd[ie] * intensity;
           }
