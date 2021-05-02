@@ -3,7 +3,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
+inline auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
@@ -13,7 +13,7 @@ auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
   return (a.slice(fwd, sz) - a.slice(st1, sz));
 }
 
-auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
+inline auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
@@ -23,7 +23,7 @@ auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
   return (a.slice(st1, sz) - a.slice(bck, sz));
 }
 
-auto CentralDiff(Cx3 const &a, Eigen::Index const d)
+inline auto CentralDiff(Cx3 const &a, Eigen::Index const d)
 {
   Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
   Dims3 const st1{1, 1, 1};
@@ -86,7 +86,7 @@ inline void Div(Cx4 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
       ForwardDiff(x.chip<3>(4), 0) + ForwardDiff(x.chip<3>(5), 1) + ForwardDiff(x.chip<3>(2), 2);
 }
 
-auto ProjectP(Cx4 const &p, float const a)
+inline void ProjectP(Cx4 &p, float const a, Eigen::ThreadPoolDevice &dev)
 {
   Eigen::IndexList<int, int, int, Eigen::type2index<1>> res;
   res.set(0, p.dimension(0));
@@ -99,12 +99,13 @@ auto ProjectP(Cx4 const &p, float const a)
       Eigen::type2index<3>>
       brd;
 
-  R3 const normp = (p * p.conjugate()).sum(Sz1{3}).real().sqrt() / a;
-  auto const clamped = (normp > 1.f).select(normp, normp.constant(1.f));
-  return p / clamped.reshape(res).broadcast(brd).cast<Cx>();
+  R3 normp(p.dimension(0), p.dimension(1), p.dimension(2));
+  normp.device(dev) = (p * p.conjugate()).sum(Sz1{3}).real().sqrt() / a;
+  normp.device(dev) = (normp > 1.f).select(normp, normp.constant(1.f));
+  p.device(dev) = p / normp.reshape(res).broadcast(brd).cast<Cx>();
 }
 
-auto ProjectQ(Cx4 const &q, float const a)
+inline void ProjectQ(Cx4 &q, float const a, Eigen::ThreadPoolDevice &dev)
 {
   Eigen::IndexList<int, int, int, Eigen::type2index<1>> res;
   res.set(0, q.dimension(0));
@@ -122,9 +123,10 @@ auto ProjectQ(Cx4 const &q, float const a)
       qsqr.slice(Dims4{0, 0, 0, 0}, Dims4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
   auto const q2 =
       qsqr.slice(Dims4{0, 0, 0, 3}, Dims4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
-  R3 const normq = (q1.sum(Sz1{3}).real() + q2.sum(Sz1{3}).real() * 2.f).sqrt() / a;
-  auto const clamped = (normq > 1.f).select(normq, normq.constant(1.f));
-  return q / clamped.reshape(res).broadcast(brd).cast<Cx>();
+  R3 normq(q.dimension(0), q.dimension(1), q.dimension(2));
+  normq.device(dev) = (q1.sum(Sz1{3}).real() + q2.sum(Sz1{3}).real() * 2.f).sqrt() / a;
+  normq.device(dev) = (normq > 1.f).select(normq, normq.constant(1.f));
+  q.device(dev) = q / normq.reshape(res).broadcast(brd).cast<Cx>();
 }
 
 Cx3 tgv(
@@ -202,12 +204,12 @@ Cx3 tgv(
     // Update p
     Grad(u_, grad_u, dev);
     p.device(dev) = p - tau_d * (grad_u + v_);
-    p.device(dev) = ProjectP(p, alpha1);
+    ProjectP(p, alpha1, dev);
 
     // Update q
     Grad(v_, grad_v, dev);
     q.device(dev) = q - tau_d * grad_v;
-    q.device(dev) = ProjectQ(q, alpha0);
+    ProjectQ(q, alpha0, dev);
 
     // Update r (in k-space)
     encode(u_, ks_res);
