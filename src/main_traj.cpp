@@ -22,7 +22,7 @@ int main_traj(args::Subparser &parser)
       parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))

@@ -6,7 +6,7 @@ int main_hdr(args::Subparser &parser)
 {
   args::Positional<std::string> fname(parser, "FILE", "Input HD5 file to print header from");
   Log log = ParseCommand(parser, fname);
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
 
   fmt::print(

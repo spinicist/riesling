@@ -18,9 +18,9 @@ int main_ds(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
   Log log = ParseCommand(parser, fname);
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
-  auto const traj = reader.readTrajectory();
+  R3 traj = reader.readTrajectory();
 
   Cx3 rad_ks = info.noncartesianVolume();
   Cx4 channels(info.channels, info.matrix[0], info.matrix[1], info.matrix[2]);
@@ -50,7 +50,7 @@ int main_ds(args::Subparser &parser)
   auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.now();
-    reader.readVolume(iv, rad_ks);
+    reader.readNoncartesian(iv, rad_ks);
     channels.setZero();
     log.info("Beginning Direct Summation");
     auto fourier = [&](long const lo, long const hi) {

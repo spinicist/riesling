@@ -120,12 +120,9 @@ void WriteVolumes(
 
   std::string ext = std::filesystem::path(fname).extension();
   if (ext.compare(".h5") == 0) {
-    HD5Writer writer(fname, log);
+    HD5::Writer writer(fname, log);
     writer.writeInfo(info);
-    for (long iv = 0; iv < out.dimension(3); iv++) {
-      Cx3 h5out = out.chip(iv, 3).template cast<Cx>();
-      writer.writeVolume(iv, h5out);
-    }
+    writer.writeImage(out);
   } else {
     WriteNifti(info, out, fname, log);
   }

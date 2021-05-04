@@ -40,7 +40,7 @@ int main_sense(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
 
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   auto const trajectory = reader.readTrajectory();
   Kernel *kernel =
@@ -53,7 +53,7 @@ int main_sense(args::Subparser &parser)
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readVolume(currentVolume, rad_ks);
+  reader.readNoncartesian(currentVolume, rad_ks);
   Cx4 sense =
       espirit ? cropper.crop4(ESPIRIT(
                     info,
@@ -68,13 +68,20 @@ int main_sense(args::Subparser &parser)
               : cropper.crop4(
                     SENSE(info, trajectory, osamp.Get(), kernel, false, thresh.Get(), rad_ks, log));
   if (save_maps) {
-    WriteNifti(info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-maps", outftype.Get()), log);
+    WriteNifti(
+        info,
+        Cx4(sense.shuffle(Sz4{1, 2, 3, 0})),
+        OutName(fname, oname, "sense-maps", outftype.Get()),
+        log);
   }
   if (save_kernels) {
     FFT3N kernelFFT(sense, log);
     kernelFFT.forward();
     WriteNifti(
-        info, Cx4(sense.shuffle(Sz4{1, 2, 3, 0})), OutName(fname, oname, "sense-kernels", outftype.Get()), log);
+        info,
+        Cx4(sense.shuffle(Sz4{1, 2, 3, 0})),
+        OutName(fname, oname, "sense-kernels", outftype.Get()),
+        log);
     kernelFFT.reverse();
   }
 
@@ -90,7 +97,7 @@ int main_sense(args::Subparser &parser)
     log.info(FMT_STRING("Processing volume: {}"), iv);
     auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
-      reader.readVolume(iv, rad_ks);
+      reader.readNoncartesian(iv, rad_ks);
       currentVolume = iv;
     }
     grid.setZero();

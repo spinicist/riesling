@@ -16,7 +16,7 @@ int main_rss(args::Subparser &parser)
 
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
@@ -37,7 +37,7 @@ int main_rss(args::Subparser &parser)
   auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.now();
-    reader.readVolume(iv, rad_ks);
+    reader.readNoncartesian(iv, rad_ks);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
     fft.reverse();

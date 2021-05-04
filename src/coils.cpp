@@ -17,7 +17,6 @@ Cx4 birdcage(
   float const fovz = (info.voxel_size[2] * info.matrix[2]);
   for (long ir = 0; ir < nrings; ir++) {
     float const cz = fovz * 2.f * (-0.5f + (ir + 1.f) / (nrings + 1.f));
-    log.info("ir {} cz {}", ir, cz);
     for (long ic = 0; ic < chan_per_ring; ic++) {
       float const theta = (2.f * M_PI * ic) / chan_per_ring;
       float const coil_phs = -(2.f * M_PI * (ic + (ir * chan_per_ring))) / info.channels;

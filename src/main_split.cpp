@@ -15,12 +15,12 @@ int main_split(args::Subparser &parser)
 
   Log log = ParseCommand(parser, fname);
 
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &in_info = reader.info();
   R3 traj = reader.readTrajectory();
 
   Cx3 rad_ks = in_info.noncartesianVolume();
-  reader.readVolume(vol.Get(), rad_ks);
+  reader.readNoncartesian(vol.Get(), rad_ks);
 
   Info out_info = in_info;
 
@@ -64,11 +64,13 @@ int main_split(args::Subparser &parser)
     if (int_idx == (num_int - 1)) {
       dspokes += rem_spokes;
     }
-    HD5Writer writer(OutName(fname, oname, fmt::format("int{}", int_idx), "h5"), log);
+    HD5::Writer writer(OutName(fname, oname, fmt::format("int{}", int_idx), "h5"), log);
 
-    writer.writeVolume(
-        0, rad_ks.slice(Sz3{0, 0, idx0}, Sz3{out_info.channels, out_info.read_points, dspokes}));
-    writer.writeTrajectory(traj.slice(Sz3{0, 0, idx0}, Sz3{3, out_info.read_points, dspokes}));
+    Cx4 const out_ks =
+        rad_ks.slice(Sz3{0, 0, idx0}, Sz3{out_info.channels, out_info.read_points, dspokes})
+            .reshape(Sz4{out_info.channels, out_info.read_points, dspokes, 1});
+    writer.writeNoncartesian(out_ks);
+    writer.writeTrajectory(R3(traj.slice(Sz3{0, 0, idx0}, Sz3{3, out_info.read_points, dspokes})));
     out_info.spokes_hi = dspokes;
     writer.writeInfo(out_info);
   }

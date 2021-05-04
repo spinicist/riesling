@@ -13,7 +13,7 @@ int main_grid(args::Subparser &parser)
   COMMON_RECON_ARGS;
   args::Flag forward(parser, "REV", "Apply forward gridding (to non-cartesian)", {'f', "fwd"});
   Log log = ParseCommand(parser, fname);
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   auto const &traj = reader.readTrajectory();
   Kernel *kernel =
@@ -27,18 +27,19 @@ int main_grid(args::Subparser &parser)
   long const vol = volume ? volume.Get() : 0;
   auto const &vol_start = log.now();
 
-  HD5Writer writer(OutName(fname, oname, "grid", "h5"), log);
+  HD5::Writer writer(OutName(fname, oname, "grid", "h5"), log);
   writer.writeInfo(info);
   writer.writeTrajectory(traj);
   if (forward) {
-    reader.readData(grid, "grid");
+    reader.readCartesian(grid);
     gridder.toNoncartesian(grid, rad_ks);
-    writer.writeVolume(0, rad_ks);
+    writer.writeNoncartesian(
+        rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1}));
     log.info("Wrote non-cartesian k-space. Took {}", log.toNow(vol_start));
   } else {
-    reader.readVolume(vol, rad_ks);
+    reader.readNoncartesian(vol, rad_ks);
     gridder.toCartesian(rad_ks, grid);
-    writer.writeData(grid, "grid");
+    writer.writeCartesian(grid);
     log.info("Wrote cartesian k-space. Took {}", log.toNow(vol_start));
   }
 

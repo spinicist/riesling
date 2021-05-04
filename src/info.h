@@ -43,4 +43,9 @@ struct Info
     temp.setZero();
     return temp;
   }
+
+  inline R3 trajectory() const
+  {
+    return R3(3, read_points, spokes_total());
+  }
 };

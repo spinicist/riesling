@@ -34,11 +34,10 @@ int main_cgvar(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
 
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   auto const &info = reader.info();
   Cx3 rad_ks = info.noncartesianVolume();
-
-  R3 const trajectory = reader.readTrajectory();
+  R3 trajectory = reader.readTrajectory();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
@@ -50,7 +49,7 @@ int main_cgvar(args::Subparser &parser)
   FFT3N fft(grid, log);
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readVolume(currentVolume, rad_ks);
+  reader.readNoncartesian(currentVolume, rad_ks);
   Cx4 const sense =
       iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
 
@@ -89,7 +88,7 @@ int main_cgvar(args::Subparser &parser)
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
-      reader.readVolume(iv, rad_ks);
+      reader.readNoncartesian(iv, rad_ks);
       currentVolume = iv;
     }
     dec(rad_ks, vol); // Initialize

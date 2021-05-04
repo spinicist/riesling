@@ -17,10 +17,10 @@ int main_compress(args::Subparser &parser)
       parser, "SPOKE STRIDE", "Stride/subsample across spokes (default 4)", {"spokes"}, 4);
   Log log = ParseCommand(parser, fname);
 
-  HD5Reader reader(fname.Get(), log);
+  HD5::Reader reader(fname.Get(), log);
   Info const in_info = reader.info();
   Cx3 ks = in_info.noncartesianVolume();
-  reader.readVolume(SenseVolume(ref_vol, in_info.volumes), ks);
+  reader.readNoncartesian(SenseVolume(ref_vol, in_info.volumes), ks);
   long const max_ref = in_info.read_points - in_info.read_gap;
   long const nread = (readSize.Get() > max_ref) ? max_ref : readSize.Get();
   log.info(
@@ -36,14 +36,14 @@ int main_compress(args::Subparser &parser)
   out_info.channels = compressor.out_channels();
 
   Cx4 all_ks = in_info.noncartesianSeries();
-  reader.readVolumes(all_ks);
+  reader.readNoncartesian(all_ks);
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
 
   auto const ofile = OutName(fname, oname, "compressed", "h5");
-  HD5Writer writer(ofile, log);
+  HD5::Writer writer(ofile, log);
   writer.writeInfo(out_info);
   writer.writeTrajectory(reader.readTrajectory());
-  writer.writeVolumes(out_ks);
+  writer.writeNoncartesian(out_ks);
   return EXIT_SUCCESS;
 }

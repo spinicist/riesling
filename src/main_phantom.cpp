@@ -124,7 +124,7 @@ int main_phantom(args::Subparser &parser)
     radial += noise * noise.constant(intensity.Get() / snr.Get());
   }
 
-  HD5Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
+  HD5::Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
   if (decimate) {
     Info out_info{.matrix = Array3l{m, m, m},
                   .read_points = static_cast<long>(read_samp.Get() * m / 2),
@@ -153,7 +153,8 @@ int main_phantom(args::Subparser &parser)
     }
     writer.writeInfo(out_info);
     writer.writeTrajectory(out_traj);
-    writer.writeVolume(0, decimated);
+    writer.writeNoncartesian(Cx4(decimated.reshape(
+        Sz4{decimated.dimension(0), decimated.dimension(1), decimated.dimension(2), 1})));
   } else {
     if (gap) {
       radial.slice(Dims3{0, 0, 0}, Dims3{grid_info.channels, gap.Get(), grid_info.spokes_total()})
@@ -161,7 +162,8 @@ int main_phantom(args::Subparser &parser)
     }
     writer.writeInfo(grid_info);
     writer.writeTrajectory(grid_traj);
-    writer.writeVolume(0, radial);
+    writer.writeNoncartesian(radial.reshape(
+        Sz4{grid_info.channels, grid_info.read_points, grid_info.spokes_total(), 1}));
   }
   FFT::End(log);
   return EXIT_SUCCESS;

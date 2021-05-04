@@ -1,42 +1,47 @@
 #pragma once
 
-#include "hd5.h"
 #include "info.h"
 #include "log.h"
 
 #include <map>
 #include <string>
 
-struct HD5Writer
+namespace HD5 {
+
+void Init();
+
+struct Writer
 {
-  HD5Writer(std::string const &fname, Log &log_);
-  ~HD5Writer();
-  void writeVolumes(Cx4 const &data);
-  void writeVolume(long const index, Cx3 const &data);
-  void writeData(Cx4 const &data, std::string const &label);
-  void writeTrajectory(R3 const &traj);
+  Writer(std::string const &fname, Log &log_);
+  ~Writer();
   void writeInfo(Info const &info);
   void writeMeta(std::map<std::string, float> const &meta);
+  void writeTrajectory(R3 const &traj);
+  void writeNoncartesian(Cx4 const &allVolumes);
+  void writeCartesian(Cx4 const &volume);
+  void writeImage(R4 const &volumes);
+  void writeImage(Cx4 const &volumes);
 
 private:
   Log &log_;
-  HD5::Handle handle_;
+  int64_t handle_;
 };
 
-struct HD5Reader
+struct Reader
 {
-  HD5Reader(HD5Reader const &) = delete;
-  HD5Reader(std::string const &fname, Log &log);
-  ~HD5Reader();
+  Reader(Reader const &) = delete;
+  Reader(std::string const &fname, Log &log);
+  ~Reader();
   Info const &info() const;
-  void readVolume(long const index, Cx3 &data);
-  void readVolumes(Cx4 &data);
-  void readData(Cx4 &data, std::string const &label);
-  R3 readTrajectory();
   std::map<std::string, float> readMeta() const;
+  R3 readTrajectory();
+  void readNoncartesian(Cx4 &allVolumes);
+  void readNoncartesian(long const index, Cx3 &volume);
+  void readCartesian(Cx4 &volume);
 
 private:
   Log &log_;
-  HD5::Handle handle_;
+  int64_t handle_;
   Info info_;
 };
+} // namespace HD5

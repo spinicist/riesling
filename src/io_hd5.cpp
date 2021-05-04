@@ -1,141 +1,230 @@
 #include "io_hd5.h"
+#include "io_hd5.hpp"
 #include <Eigen/Eigenvalues>
 #include <filesystem>
 #include <fmt/format.h>
 
-HD5Writer::HD5Writer(std::string const &fname, Log &log)
+namespace HD5 {
+
+std::string const KeyInfo = "info";
+std::string const KeyMeta = "meta";
+std::string const KeyNoncartesian = "noncartesian";
+std::string const KeyCartesian = "cartesian";
+std::string const KeyImage = "image";
+std::string const KeyTrajectory = "trajectory";
+
+void Init(Log &log)
+{
+  static bool NeedsInit = true;
+
+  if (NeedsInit) {
+
+    auto err = H5open();
+    // herr_t (*old_func)(long long, void *);
+    // void *old_client_data;
+    // hid_t errorStack;
+    // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
+    // err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
+    if (err < 0) {
+      log.fail("Could not initialise HDF5, code: {}", err);
+    }
+    NeedsInit = false;
+  }
+}
+
+Writer::Writer(std::string const &fname, Log &log)
     : log_(log)
 {
-  HD5::init();
-  handle_ = HD5::open_file(fname, HD5::Mode::WriteOnly);
-  log_.info(FMT_STRING("Opened file {} for writing data"), fname);
-}
-
-HD5Writer::~HD5Writer()
-{
-  HD5::close_file(handle_);
-}
-
-void HD5Writer::writeVolumes(Cx4 const &data)
-{
-  auto const hVols = HD5::create_group(handle_, "volumes");
-  for (long ii = 0; ii < data.dimension(3); ii++) {
-    Cx3 vol = data.chip(ii, 3);
-    auto const label = fmt::format("{:04d}", ii);
-    log_.info(FMT_STRING("Writing volume {}"), label);
-    HD5::store_tensor(hVols, label, vol);
+  Init(log_);
+  handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  if (handle_ < 0) {
+    log_.fail(FMT_STRING("Could not open file {} for writing"), fname);
+  } else {
+    log_.info(FMT_STRING("Opened file {} for writing data"), fname);
   }
-  HD5::close_group(hVols);
 }
 
-void HD5Writer::writeVolume(long const ivol, Cx3 const &data)
+Writer::~Writer()
 {
-  auto const hVols =
-      (ivol == 0) ? HD5::create_group(handle_, "volumes") : HD5::open_group(handle_, "volumes");
-
-  auto const label = fmt::format("{:04d}", ivol);
-  log_.info(FMT_STRING("Writing volume {}"), label);
-  HD5::store_tensor(hVols, label, data);
-  HD5::close_group(hVols);
+  H5Fclose(handle_);
 }
 
-void HD5Writer::writeData(Cx4 const &data, std::string const &label)
+hid_t InfoType(Log &log)
 {
-  log_.info(FMT_STRING("Writing data '{}'"), label);
-  HD5::store_tensor(handle_, label, data);
+  hid_t info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
+  hsize_t sz3[1] = {3};
+  hid_t long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
+  hid_t float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
+  hsize_t sz9[1] = {9};
+  hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
+  herr_t status;
+  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
+  status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
+  status = H5Tinsert(info_id, "read_points", HOFFSET(Info, read_points), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "read_gap", HOFFSET(Info, read_gap), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "spokes_hi", HOFFSET(Info, spokes_hi), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "spokes_lo", HOFFSET(Info, spokes_lo), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "lo_scale", HOFFSET(Info, lo_scale), H5T_NATIVE_FLOAT);
+  status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
+  status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
+  status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
+  if (status) {
+    log.fail("Could not create Info struct type in HDF5, code: {}", status);
+  }
+  return info_id;
 }
 
-void HD5Writer::writeTrajectory(R3 const &traj)
-{
-  log_.info("Writing trajectory");
-  HD5::store_tensor(handle_, "traj", traj);
-}
-
-void HD5Writer::writeInfo(Info const &info)
+void Writer::writeInfo(Info const &info)
 {
   log_.info("Writing info struct");
-  HD5::store_info(handle_, info);
+  hid_t info_id = InfoType(log_);
+  hsize_t dims[1] = {1};
+  auto const space = H5Screate_simple(1, dims, NULL);
+  hid_t const dset =
+      H5Dcreate(handle_, KeyInfo.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  if (dset < 0) {
+    log_.fail("Could not create info struct, code: {}", dset);
+  }
+  herr_t status;
+  status = H5Dwrite(dset, info_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &info);
+  status = H5Sclose(space);
+  status = H5Dclose(dset);
+  if (status != 0) {
+    log_.fail("Could not write Info struct, code: {}", status);
+  }
 }
 
-void HD5Writer::writeMeta(std::map<std::string, float> const &meta)
+void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
   log_.info("Writing meta data");
-  auto m_group = HD5::create_group(handle_, "meta");
-  HD5::store_map(m_group, meta);
+  auto m_group = H5Gcreate(handle_, KeyMeta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+  hsize_t dims[1] = {1};
+  auto const space = H5Screate_simple(1, dims, NULL);
+  herr_t status;
+  for (auto const &kvp : meta) {
+    hid_t const dset = H5Dcreate(
+        m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(kvp.second));
+    status = H5Dclose(dset);
+  }
+  status = H5Sclose(space);
+  if (status != 0) {
+    throw std::runtime_error("Exception occured storing meta-data");
+  }
 }
 
-HD5Reader::HD5Reader(std::string const &fname, Log &log)
+void Writer::writeTrajectory(R3 const &t)
+{
+  HD5::store_tensor(handle_, KeyTrajectory, t, log_);
+}
+
+void Writer::writeNoncartesian(Cx4 const &t)
+{
+  HD5::store_tensor(handle_, KeyNoncartesian, t, log_);
+}
+
+void Writer::writeCartesian(Cx4 const &t)
+{
+  HD5::store_tensor(handle_, KeyCartesian, t, log_);
+}
+
+void Writer::writeImage(R4 const &t)
+{
+  HD5::store_tensor(handle_, KeyImage, t, log_);
+}
+
+void Writer::writeImage(Cx4 const &t)
+{
+  HD5::store_tensor(handle_, KeyImage, t, log_);
+}
+
+Reader::Reader(std::string const &fname, Log &log)
     : log_{log}
 {
   if (!std::filesystem::exists(fname)) {
     log_.fail(fmt::format("File does not exist: {}", fname));
   }
-  HD5::init();
-  handle_ = HD5::open_file(fname, HD5::Mode::ReadOnly);
-  HD5::load_info(handle_, info_);
+  Init(log_);
+  handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   log_.info(FMT_STRING("Opened file {} for reading"), fname);
+
+  hid_t const info_id = InfoType(log_);
+  hid_t const dset = H5Dopen(handle_, KeyInfo.c_str(), H5P_DEFAULT);
+  hid_t const space = H5Dget_space(dset);
+  herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info_);
+  status = H5Dclose(dset);
+  if (status != 0) {
+    log_.fail("Could not load info struct, code: {}", status);
+  }
 }
 
-HD5Reader::~HD5Reader()
+Reader::~Reader()
 {
-  HD5::close_file(handle_);
+  H5Fclose(handle_);
 }
 
-Info const &HD5Reader::info() const
+herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
+{
+  auto names = reinterpret_cast<std::vector<std::string> *>(opdata);
+  names->push_back(name);
+  return 0;
+}
+
+std::map<std::string, float> Reader::readMeta() const
+{
+  auto meta_group = H5Gopen(handle_, KeyMeta.c_str(), H5P_DEFAULT);
+  std::vector<std::string> names;
+  H5Literate(meta_group, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
+
+  std::map<std::string, float> meta;
+  herr_t status = 0;
+  for (auto const &name : names) {
+    hid_t const dset = H5Dopen(meta_group, name.c_str(), H5P_DEFAULT);
+    float value;
+    status = H5Dread(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+    status = H5Dclose(dset);
+    meta[name] = value;
+  }
+  status = H5Gclose(meta_group);
+  if (status != 0) {
+    log_.fail("Could not load meta-data, code: {}", status);
+  }
+  return meta;
+}
+
+Info const &Reader::info() const
 {
   return info_;
 }
 
-void HD5Reader::readVolume(long const index, Cx3 &ks)
-{
-  auto const hVol = HD5::open_group(handle_, "volumes");
-  assert(ks.dimension(0) == info_.channels);
-  assert(ks.dimension(1) == info_.read_points);
-  assert(ks.dimension(2) == info_.spokes_total());
-  assert(index < info_.volumes);
-
-  auto const label = fmt::format("{:04d}", index);
-  log_.info(FMT_STRING("Reading volume {}"), index);
-  HD5::load_tensor(hVol, label, ks);
-  HD5::close_group(hVol);
-}
-
-void HD5Reader::readVolumes(Cx4 &ks)
-{
-  assert(ks.dimension(0) == info_.channels);
-  assert(ks.dimension(1) == info_.read_points);
-  assert(ks.dimension(2) == info_.spokes_total());
-  assert(ks.dimension(3) == info_.volumes);
-
-  auto const hVol = HD5::open_group(handle_, "volumes");
-  Cx3 volume(ks.dimension(0), ks.dimension(1), ks.dimension(2));
-  for (long ivol = 0; ivol < info_.volumes; ivol++) {
-    auto const label = fmt::format("{:04d}", ivol);
-    log_.info(FMT_STRING("Reading volume {}"), ivol);
-    HD5::load_tensor(hVol, label, volume);
-    ks.chip(ivol, 3) = volume;
-  }
-  HD5::close_group(hVol);
-}
-
-void HD5Reader::readData(Cx4 &ks, std::string const &handle)
-{
-  log_.info(FMT_STRING("Reading data '{}'"), handle);
-  HD5::load_tensor(handle_, "data", ks);
-}
-
-R3 HD5Reader::readTrajectory()
+R3 Reader::readTrajectory()
 {
   log_.info("Reading trajectory");
   R3 trajectory(3, info_.read_points, info_.spokes_total());
-  HD5::load_tensor(handle_, "traj", trajectory);
+  HD5::load_tensor(handle_, KeyTrajectory, trajectory, log_);
   return trajectory;
 }
 
-std::map<std::string, float> HD5Reader::readMeta() const
+void Reader::readNoncartesian(Cx4 &all)
 {
-  auto m_group = HD5::open_group(handle_, "meta");
-  std::map<std::string, float> meta;
-  HD5::load_map(m_group, meta);
-  return meta;
+  log_.info("Reading all non-cartesian data");
+  HD5::load_tensor(handle_, KeyNoncartesian, all, log_);
 }
+
+void Reader::readNoncartesian(long const index, Cx3 &vol)
+{
+  log_.info("Reading non-cartesian volume {}", index);
+  HD5::load_tensor_slab(handle_, KeyNoncartesian, index, vol, log_);
+}
+
+void Reader::readCartesian(Cx4 &grid)
+{
+  log_.info("Reading cartesian data");
+  HD5::load_tensor(handle_, KeyCartesian, grid, log_);
+}
+
+} // namespace HD5
