@@ -41,6 +41,11 @@ void End(Log &log)
   // fftwf_cleanup_threads();
 }
 
+void SetTimelimit(double time)
+{
+  fftwf_set_timelimit(time);
+}
+
 /*
  * Phase factors for FFT shifting
  *
