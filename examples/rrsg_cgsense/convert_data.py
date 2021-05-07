@@ -25,34 +25,34 @@ import sys
 def create_info(matrix, voxel_size, read_points, read_gap, spokes_hi, spokes_lo, lo_scale,
                 channels, volumes, tr, origin, direction):
     D = np.dtype({'names': [
-        'matrix', 
-        'voxel_size', 
-        'read_points', 
-        'read_gap', 
-        'spokes_hi', 
-        'spokes_lo', 
+        'matrix',
+        'voxel_size',
+        'read_points',
+        'read_gap',
+        'spokes_hi',
+        'spokes_lo',
         'lo_scale',
-        'channels', 
-        'volumes', 
-        'tr', 
-        'origin', 
+        'channels',
+        'volumes',
+        'tr',
+        'origin',
         'direction'],
         'formats': [
-        ('<i8', (3,)), 
-        ('<f4', (3,)), 
-        '<i8', 
-        '<i8', 
-        '<i8', 
-        '<i8', 
+        ('<i8', (3,)),
+        ('<f4', (3,)),
+        '<i8',
+        '<i8',
+        '<i8',
+        '<i8',
         '<f4',
-        '<i8', 
-        '<i8', 
-        '<f4', 
-        ('<f4', (3,)), 
+        '<i8',
+        '<i8',
+        '<f4',
+        ('<f4', (3,)),
         ('<f4', (9,))]
         # 'offsets': [0, 24, 40, 48, 56, 64, 72, 80, 88, 96, 100, 112],
         # 'itemsize': 170
-        })
+    })
 
     info = np.array([(matrix, voxel_size, read_points, read_gap, spokes_hi, spokes_lo, lo_scale,
                       channels, volumes, tr, origin, direction)], dtype=D)
@@ -100,15 +100,14 @@ def convert_data(input_fname, output_fname, matrix, voxel_size):
     h5_traj = np.reshape(np.reshape(traj_rs, (1, np.prod(traj_rs.shape))), [
         traj_rs.shape[2], traj_rs.shape[1], traj_rs.shape[0]])
 
-    out_f.create_dataset('traj', data=h5_traj,
+    out_f.create_dataset('trajectory', data=h5_traj,
                          chunks=np.shape(h5_traj), compression="gzip")
 
-    grp = out_f.create_group("data")
     h5_data = np.reshape(np.reshape(rawdata_rs, (1, np.prod(rawdata_rs.shape))), [
-        rawdata_rs.shape[2], rawdata_rs.shape[1], rawdata_rs.shape[0]])
+        1, rawdata_rs.shape[2], rawdata_rs.shape[1], rawdata_rs.shape[0]])
 
-    grp.create_dataset("0000", dtype='c8', data=h5_data,
-                       chunks=np.shape(h5_data), compression="gzip")
+    out_f.create_dataset("noncartesian", dtype='c8', data=h5_data,
+                         chunks=np.shape(h5_data), compression="gzip")
     out_f.close()
 
     print("H5 file saved to {}".format(output_fname))
@@ -126,6 +125,7 @@ def main():
     convert_data(input_fname='rrsg_data/%s' % f,
                  output_fname='riesling_data/riesling_%s' % f,
                  matrix=[220, 220, 1], voxel_size=[1, 1, 2])
+
 
 if __name__ == "__main__":
     main()

@@ -23,41 +23,38 @@ wdata = struct;
 wdata.r = real(data);
 wdata.i = imag(data);
 
-doubleType = H5T.copy('H5T_NATIVE_DOUBLE');
-sz = [H5T.get_size(doubleType), H5T.get_size(doubleType)];
+floatType = H5T.copy('H5T_NATIVE_FLOAT');
+sz = [H5T.get_size(floatType), H5T.get_size(floatType)];
 
 % Computer the offsets to each field. The first offset is always zero.
 offset = [0, sz(1)];
 
 % Create the compound datatype for the file and for the memory (same).
 filetype = H5T.create ('H5T_COMPOUND', sum(sz));
-H5T.insert(filetype, 'r', offset(1), doubleType);
-H5T.insert(filetype, 'i', offset(2), doubleType);
+H5T.insert(filetype, 'r', offset(1), floatType);
+H5T.insert(filetype, 'i', offset(2), floatType);
 
-space = H5S.create_simple(ndims(data), fliplr(size(data)), []);
-grp = H5G.create(file, 'volumes','H5P_DEFAULT','H5P_DEFAULT','H5P_DEFAULT');
-
-for i=1:size(data,4)
-    volstr = sprintf("%04d",i-1);
-    fprintf("Writing volume %s\n", volstr);
-    dset = H5D.create (grp, volstr, filetype, space, 'H5P_DEFAULT');
-    H5D.write (dset, filetype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', wdata);
-    H5D.close(dset);
-end
+% Ensure the data-space is 4D
+dims = ones(1, 4);
+dims(1:ndims(data)) = size(data);
+dims = fliplr(dims);
+space = H5S.create_simple(4, dims, []);
+ncart = H5D.create(file, 'noncartesian', filetype, space, 'H5P_DEFAULT');
+H5D.write(ncart, filetype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', wdata);
+H5D.close(ncart);
 
 % Close it all up
-H5G.close(grp);
 H5S.close(space);
 H5T.close(filetype);
 H5F.close(file);
 
 % To make life a bit easier we use the high-level functions to save the rest
-h5create(fname, '/traj', size(traj));
-h5write(fname, '/traj', traj);
+h5create(fname, '/trajectory', size(traj));
+h5write(fname, '/trajectory', traj);
 
 % Using old hdf5write function to write compound data not supported by the
 % newer h5write
-hdf5write(fname, '/info', info, 'WriteMode', 'append');         %#ok<HDFW>
+hdf5write(fname, '/info', info, 'WriteMode', 'append');
 
 disp("Closing file");
 
