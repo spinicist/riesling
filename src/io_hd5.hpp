@@ -126,7 +126,6 @@ void load_tensor_slab(
   hsize_t dims[ND];
   hid_t ds = H5Dget_space(dset);
   H5Sget_simple_extent_dims(ds, dims, NULL);
-  fmt::print("dims {} tensor {}\n", fmt::join(dims, ","), fmt::join(tensor.dimensions(), ","));
   for (int ii = 1; ii < ND; ii++) {
     // HD5=row-major, Eigen=col-major, so dimensions are reversed
     assert(dims[ii] == tensor.dimension(CD - ii));
@@ -139,13 +138,6 @@ void load_tensor_slab(
   std::fill_n(&count[0], ND, 1);
   std::copy_n(&dims[1], CD, &block[1]);
   block[0] = 1;
-
-  fmt::print(
-      "start {} stride {} count {} block {}\n",
-      fmt::join(start, ","),
-      fmt::join(stride, ","),
-      fmt::join(count, ","),
-      fmt::join(block, ","));
 
   herr_t status = H5Sselect_hyperslab(ds, H5S_SELECT_SET, start, stride, count, block);
   status = H5Dread(dset, type<Scalar>(), H5S_ALL, ds, H5P_DATASET_XFER_DEFAULT, tensor.data());
