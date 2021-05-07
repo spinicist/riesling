@@ -81,6 +81,7 @@ add_executable(riesling
     src/main_rss.cpp
     src/main_tgv.cpp
     src/main_traj.cpp
+    src/main_sdc.cpp
     src/main_sense.cpp
     src/main_split.cpp
     src/main_version.cpp

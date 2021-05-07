@@ -21,6 +21,7 @@ struct Writer
   void writeCartesian(Cx4 const &volume);
   void writeImage(R4 const &volumes);
   void writeImage(Cx4 const &volumes);
+  void writeSDC(R2 const &sdc);
 
 private:
   Log &log_;
@@ -35,6 +36,7 @@ struct Reader
   Info const &info() const;
   std::map<std::string, float> readMeta() const;
   R3 readTrajectory();
+  R2 readSDC();
   void readNoncartesian(Cx4 &allVolumes);
   void readNoncartesian(long const index, Cx3 &volume);
   void readCartesian(Cx4 &volume);

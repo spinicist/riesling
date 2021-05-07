@@ -17,7 +17,6 @@ struct Gridder
    * @param info   The Radial info struct
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
-   * @param sdc    Sample Density Compensation method
    * @param kernel Interpolation kernel
    * @param log    Logging object
    * @param res    OPTIONAL - Desired effective resolution
@@ -27,7 +26,6 @@ struct Gridder
       Info const &info,
       R3 const &traj,
       float const os,
-      SDC const sdc,
       Kernel *const kernel,
       Log &log,
       float const res = 0.f,
@@ -39,8 +37,9 @@ struct Gridder
   Cx4 newGrid() const;    //!< Returns a correctly sized multi-channel grid
   Cx3 newGrid1() const;   //!< Returns a correctly sized single channel grid
 
-  void setDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
-  void setDC(float const dc);
+  void setSDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
+  void setSDC(float const dc);
+  void setSDC(R2 const &sdc);
   void toCartesian(Cx2 const &noncart, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
   void toCartesian(Cx3 const &noncart, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
   void toNoncartesian(Cx3 const &cart, Cx2 &noncart) const; //!< Single-channel cart -> non-cart
@@ -62,26 +61,21 @@ protected:
   {
     CartesianIndex cart;
     NoncartesianIndex noncart;
-    float DC;
+    float sdc;
     Point3 offset;
   };
 
-  struct Profile
+  struct SpokeInfo_t
   {
     int16_t lo = std::numeric_limits<int16_t>::max();
     int16_t hi = std::numeric_limits<int16_t>::min();
-    float xy;
-    float z;
-    std::vector<float> DC;
+    float xy = 0.f;
+    float z = 0.f;
   };
 
-  Profile profile2D(
-      R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale);
-  Profile profile3D(
-      R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale);
-
+  SpokeInfo_t spokeInfo(R2 const &traj, long const nomRad, float const maxRad, float const scale);
   std::vector<Coords>
-  genCoords(R3 const &traj, int32_t const spoke0, long const spokes, Profile const &profile);
+  genCoords(R3 const &traj, int32_t const spoke0, long const spokes, SpokeInfo_t const &s);
   void sortCoords();
   Info const info_;
   std::vector<Coords> coords_;

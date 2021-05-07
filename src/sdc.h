@@ -5,17 +5,19 @@
 #include "types.h"
 #include <unordered_map>
 
-enum class SDC
-{
-  None = 0,
-  Analytic = 1,
-  Pipe = 2
-};
-
-extern std::unordered_map<std::string, SDC> SDCMap;
-
 // Forward declare
 struct Gridder;
 struct Kernel;
 
-Cx2 SDCPipe(Info const &info, Gridder *gridder, Kernel *kernel, Log &log);
+namespace SDC {
+
+void Load(
+    std::string const &fname,
+    Info const &info,
+    R3 const &traj,
+    Kernel *kernel,
+    Gridder &gridder,
+    Log &log);
+R2 Pipe(Info const &info, Gridder &gridder, Kernel *kernel, Log &log);
+R2 Radial(Info const &info, R3 const &traj, Log &log);
+} // namespace SDC

@@ -14,13 +14,14 @@ int main_grid(args::Subparser &parser)
   args::Flag forward(parser, "REV", "Apply forward gridding (to non-cartesian)", {'f', "fwd"});
   Log log = ParseCommand(parser, fname);
   HD5::Reader reader(fname.Get(), log);
-  auto const &info = reader.info();
-  auto const &traj = reader.readTrajectory();
+  auto const info = reader.info();
+  auto const trajectory = reader.readTrajectory();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, traj, osamp.Get(), sdc.Get(), kernel, log);
-  gridder.setDCExponent(dc_exp.Get());
+  Gridder gridder(info, trajectory, osamp.Get(), kernel, log);
+  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  gridder.setSDCExponent(sdc_exp.Get());
   Cx3 rad_ks = info.noncartesianVolume();
   Cx4 grid = gridder.newGrid();
 
@@ -29,7 +30,7 @@ int main_grid(args::Subparser &parser)
 
   HD5::Writer writer(OutName(fname, oname, "grid", "h5"), log);
   writer.writeInfo(info);
-  writer.writeTrajectory(traj);
+  writer.writeTrajectory(trajectory);
   if (forward) {
     reader.readCartesian(grid);
     gridder.toNoncartesian(grid, rad_ks);

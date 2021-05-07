@@ -14,6 +14,7 @@ int main(int const argc, char const *const argv[])
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
   args::Command rss(commands, "rss", "Recon w/ root-sum-squares channel combo", &main_rss);
+  args::Command sdc(commands, "sdc", "Calculate Sample Density Compensation", &main_sdc);
   args::Command sense(commands, "sense", "Recon w/ self-calibrating sense combo", &main_sense);
   args::Command split(commands, "split", "Split data", &main_split);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);

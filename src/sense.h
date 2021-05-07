@@ -13,6 +13,7 @@ Cx4 SENSE(
     float const os,
     Kernel *const kb,
     bool const shrink,
+    std::string const &sdc,
     float const threshold,
     Cx3 const &data,
     Log &log);

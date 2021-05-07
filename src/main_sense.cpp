@@ -46,27 +46,35 @@ int main_sense(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, log);
-  gridder.setDCExponent(dc_exp.Get());
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, log);
+  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  gridder.setSDCExponent(sdc_exp.Get());
 
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), log);
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 sense =
-      espirit ? cropper.crop4(ESPIRIT(
-                    info,
-                    trajectory,
-                    osamp.Get(),
-                    kernel,
-                    calSz.Get(),
-                    kernelSz.Get(),
-                    retain.Get(),
-                    rad_ks,
-                    log))
-              : cropper.crop4(
-                    SENSE(info, trajectory, osamp.Get(), kernel, false, thresh.Get(), rad_ks, log));
+  Cx4 sense = espirit ? cropper.crop4(ESPIRIT(
+                            info,
+                            trajectory,
+                            osamp.Get(),
+                            kernel,
+                            calSz.Get(),
+                            kernelSz.Get(),
+                            retain.Get(),
+                            rad_ks,
+                            log))
+                      : cropper.crop4(SENSE(
+                            info,
+                            trajectory,
+                            osamp.Get(),
+                            kernel,
+                            false,
+                            sdc.Get(),
+                            thresh.Get(),
+                            rad_ks,
+                            log));
   if (save_maps) {
     WriteNifti(
         info,

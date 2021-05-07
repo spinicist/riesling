@@ -2,6 +2,7 @@
 
 #include "fft3n.h"
 #include "gridder.h"
+#include "sdc.h"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -11,6 +12,7 @@ Cx4 SENSE(
     float const os,
     Kernel *const kernel,
     bool const shrink,
+    std::string const &sdc,
     float const threshold,
     Cx3 const &data,
     Log &log)
@@ -18,8 +20,9 @@ Cx4 SENSE(
   // Grid and heavily smooth each coil image, accumulate combined image
   float const sense_res = 12.f;
   log.info("Creating SENSE maps.");
-  Gridder gridder(info, traj, os, SDC::Pipe, kernel, log, sense_res, shrink);
-  gridder.setDCExponent(0.8);
+  Gridder gridder(info, traj, os, kernel, log, sense_res, shrink);
+  SDC::Load(sdc, info, traj, kernel, gridder, log);
+  gridder.setSDCExponent(0.8);
   Cx4 grid = gridder.newGrid();
   R3 rss(gridder.gridDims());
   FFT3N fftN(grid, log);

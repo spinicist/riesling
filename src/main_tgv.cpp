@@ -42,8 +42,10 @@ int main_tgv(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, log);
-  gridder.setDCExponent(dc_exp.Get());
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, log);
+  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  gridder.setSDCExponent(sdc_exp.Get());
+
   Cx4 grid = gridder.newGrid();
   grid.setZero();
   FFT3N fft(grid, log);
@@ -52,8 +54,8 @@ int main_tgv(args::Subparser &parser)
   Cx3 rad_ks = info.noncartesianVolume();
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 sense =
-      iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
+  Cx4 sense = iter_cropper.crop4(
+      SENSE(info, trajectory, osamp.Get(), kernel, false, sdc.Get(), 0.f, rad_ks, log));
 
   EncodeFunction enc = [&](Cx3 &x, Cx3 &y) {
     auto const &start = log.now();

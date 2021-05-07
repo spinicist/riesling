@@ -41,8 +41,9 @@ int main_cgvar(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, log);
-  gridder.setDCExponent(dc_exp.Get());
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, log);
+  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  gridder.setSDCExponent(sdc_exp.Get());
 
   Cx4 grid = gridder.newGrid();
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
@@ -50,12 +51,12 @@ int main_cgvar(args::Subparser &parser)
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 const sense =
-      iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
+  Cx4 const sense = iter_cropper.crop4(
+      SENSE(info, trajectory, osamp.Get(), kernel, false, sdc.Get(), 0.f, rad_ks, log));
 
   CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
-    gridder.setDCExponent(pre);
+    gridder.setSDCExponent(pre);
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
@@ -71,7 +72,7 @@ int main_cgvar(args::Subparser &parser)
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.now();
     y.setZero();
-    gridder.setDCExponent(1.f);
+    gridder.setSDCExponent(1.f);
     grid.setZero();
     gridder.toCartesian(x, grid);
     fft.reverse();

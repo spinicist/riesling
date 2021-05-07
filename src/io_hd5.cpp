@@ -12,6 +12,7 @@ std::string const KeyNoncartesian = "noncartesian";
 std::string const KeyCartesian = "cartesian";
 std::string const KeyImage = "image";
 std::string const KeyTrajectory = "trajectory";
+std::string const KeySDC = "sdc";
 
 void Init(Log &log)
 {
@@ -122,6 +123,11 @@ void Writer::writeTrajectory(R3 const &t)
   HD5::store_tensor(handle_, KeyTrajectory, t, log_);
 }
 
+void Writer::writeSDC(R2 const &sdc)
+{
+  HD5::store_tensor(handle_, KeySDC, sdc, log_);
+}
+
 void Writer::writeNoncartesian(Cx4 const &t)
 {
   HD5::store_tensor(handle_, KeyNoncartesian, t, log_);
@@ -207,6 +213,14 @@ R3 Reader::readTrajectory()
   R3 trajectory(3, info_.read_points, info_.spokes_total());
   HD5::load_tensor(handle_, KeyTrajectory, trajectory, log_);
   return trajectory;
+}
+
+R2 Reader::readSDC()
+{
+  log_.info("Reading SDC");
+  R2 sdc(info_.read_points, info_.spokes_total());
+  HD5::load_tensor(handle_, KeySDC, sdc, log_);
+  return sdc;
 }
 
 void Reader::readNoncartesian(Cx4 &all)

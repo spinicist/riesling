@@ -25,11 +25,16 @@ inline long fft_size(float const x)
   }
 }
 
+// Helper function to convert Tensor to Point
+inline Point3 toCart(R1 const &p, float const xyScale, float const zScale)
+{
+  return Point3{p(0) * xyScale, p(1) * xyScale, p(2) * zScale};
+}
+
 Gridder::Gridder(
     Info const &info,
     R3 const &traj,
     float const os,
-    SDC const sdc,
     Kernel *const kernel,
     Log &log,
     float const res,
@@ -63,136 +68,42 @@ Gridder::Gridder(
       ratio,
       maxRad);
 
-  // Count the number of points per spoke we will retain. Assumes profile is constant across spokes
-  Profile const hires =
-      (info.type == Info::Type::ThreeDStack)
-          ? profile2D(
-                traj.chip(info_.spokes_lo, 2), info_.spokes_hi / dims_[2], nomRad, maxRad, 1.f)
-          : profile3D(traj.chip(info_.spokes_lo, 2), info_.spokes_hi, nomRad, maxRad, 1.f);
+  auto const hires = spokeInfo(traj.chip(info_.spokes_lo, 2), nomRad, maxRad, 1.f);
+  log_.info(FMT_STRING("Hi-res spokes using points {}-{}"), hires.lo, hires.hi);
   coords_ = genCoords(traj, info_.spokes_lo, info_.spokes_hi, hires);
-
   if (info_.spokes_lo) {
     // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
     float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
     float const max_r = info_.read_gap * oversample_ / spokeOversamp;
-    Profile const lores =
-        (info.type == Info::Type::ThreeDStack)
-            ? profile2D(traj.chip(0, 2), info_.spokes_lo / dims_[2], nomRad, max_r, info_.lo_scale)
-            : profile3D(traj.chip(0, 2), info_.spokes_lo, nomRad, max_r, info_.lo_scale);
+    auto const lores = spokeInfo(traj.chip(0, 2), nomRad, max_r, info_.lo_scale);
+    log_.info(FMT_STRING("Lo-res spokes using points {}-{}"), lores.lo, lores.hi);
     auto const temp = genCoords(traj, 0, info_.spokes_lo, lores);
     coords_.insert(coords_.end(), temp.begin(), temp.end());
   }
   sortCoords();
-
-  if (sdc == SDC::None) {
-    // Reset the density compensation
-    for (auto &c : coords_) {
-      c.DC = 1.f;
-    }
-  } else if (sdc == SDC::Pipe) {
-    // First reset
-    for (auto &c : coords_) {
-      c.DC = 1.f;
-    }
-    // Run Pipe's method
-    auto const W = SDCPipe(info_, this, kernel_, log_);
-    // Copy to co-ords list
-    for (auto &c : coords_) {
-      auto const &nc = c.noncart;
-      c.DC = W(nc.read, nc.spoke).real();
-    }
-  }
 }
 
-inline Point3 toCart(R1 const &p, float const xyScale, float const zScale)
+// Helper function to find the points along a spoke we will actually use
+Gridder::SpokeInfo_t
+Gridder::spokeInfo(R2 const &traj, long const nomRad, float const maxRad, float const scale)
 {
-  return Point3{p(0) * xyScale, p(1) * xyScale, p(2) * zScale};
-}
-
-Gridder::Profile Gridder::profile2D(
-    R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale)
-{
-  Profile profile;
-  profile.xy = nomRad / scale;
-  profile.z = 1.f;
-  // Calculate the point spacing
-  float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
-  float const k_delta = oversample_ / (spokeOversamp * scale);
-  float const V = 2.f * k_delta * M_PI / spokes; // Area element
-  // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
-  float const R = (M_PI * info_.matrix.maxCoeff()) / (spokes * scale);
-  float const flat_start = nomRad / sqrt(R);
-  float const flat_val = V * flat_start;
-
+  SpokeInfo_t s;
+  s.xy = nomRad / scale;
+  s.z = (info_.type == Info::Type::ThreeD) ? s.xy : 1.f;
   for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
-    float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
+    float const rad = toCart(traj.chip(ir, 1), s.xy, s.z).norm();
     if (rad <= maxRad) { // Discard points above the desired resolution
-      profile.lo = std::min(ir, profile.lo);
-      profile.hi = std::max(ir, profile.hi);
-      if (rad == 0.f) {
-        profile.DC.push_back(V / 8.f);
-      } else if (rad < flat_start) {
-        profile.DC.push_back(V * rad);
-      } else {
-        profile.DC.push_back(flat_val);
-      }
+      s.lo = std::min(ir, s.lo);
+      s.hi = std::max(ir, s.hi);
     }
   }
-
-  log_.info(
-      FMT_STRING("2D profile using points {}-{} (R={}, flat_start {} flat_val {})"),
-      profile.lo,
-      profile.hi,
-      R,
-      flat_start,
-      flat_val);
-  return profile;
-}
-
-Gridder::Profile Gridder::profile3D(
-    R2 const &traj, long const spokes, long const nomRad, float const maxRad, float const scale)
-{
-  Profile profile;
-  profile.xy = profile.z = nomRad / scale;
-  // Calculate the point spacing
-  float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
-  float const k_delta = oversample_ / (spokeOversamp * scale);
-  float const V = (4.f / 3.f) * k_delta * M_PI / spokes; // Volume element
-  // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
-  float const R =
-      (M_PI * info_.matrix.maxCoeff() * info_.matrix.maxCoeff()) / (spokes * scale * scale);
-  float const flat_start = profile.xy / (oversample_ * sqrt(R));
-  float const flat_val = V * (3. * (flat_start * flat_start) + 1. / 4.);
-
-  for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
-    float const rad = toCart(traj.chip(ir, 1), profile.xy, profile.z).norm();
-    if (rad <= maxRad) { // Discard points above the desired resolution
-      profile.lo = std::min(ir, profile.lo);
-      profile.hi = std::max(ir, profile.hi);
-      if (rad == 0.f) {
-        profile.DC.push_back(V * 1.f / 8.f);
-      } else if (rad < flat_start) {
-        profile.DC.push_back(V * (3.f * (rad * rad) + 1.f / 4.f));
-      } else {
-        profile.DC.push_back(flat_val);
-      }
-    }
-  }
-
-  log_.info(
-      FMT_STRING("3D profile using points {}-{} (R={}, flat_start {} flat_val {})"),
-      profile.lo,
-      profile.hi,
-      R,
-      flat_start,
-      flat_val);
-  return profile;
+  return s;
 }
 
 std::vector<Gridder::Coords>
-Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Profile const &profile)
+Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, SpokeInfo_t const &s)
 {
-  long const readSz = profile.hi - profile.lo + 1;
+  long const readSz = s.hi - s.lo + 1;
   long const totalSz = readSz * spokeSz;
   std::vector<Coords> coords(totalSz);
 
@@ -201,16 +112,16 @@ Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, Pro
   auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
     long index = lo_spoke * readSz;
     for (int32_t is = lo_spoke; is < hi_spoke; is++) {
-      for (int16_t ir = profile.lo; ir <= profile.hi; ir++) {
+      for (int16_t ir = s.lo; ir <= s.hi; ir++) {
         NoncartesianIndex const nc{.spoke = is + spoke0, .read = ir};
         R1 const tp = traj.chip(nc.spoke, 2).chip(nc.read, 1);
-        Point3 const xyz = toCart(tp, profile.xy, profile.z);
+        Point3 const xyz = toCart(tp, s.xy, s.z);
         Size3 const gp = nearby(xyz).cast<int16_t>();
         Point3 const offset = xyz - gp.cast<float>().matrix();
         Size3 const cart = gp + center;
         coords[index++] = Coords{.cart = CartesianIndex{cart(0), cart(1), cart(2)},
                                  .noncart = nc,
-                                 .DC = profile.DC[ir - profile.lo],
+                                 .sdc = 1.f,
                                  .offset = offset};
       }
     }
@@ -240,14 +151,24 @@ Dims3 Gridder::gridDims() const
   return dims_;
 }
 
-void Gridder::setDC(float const d)
+void Gridder::setSDC(float const d)
 {
   for (auto &c : coords_) {
-    c.DC = d;
+    c.sdc = d;
   }
 }
 
-void Gridder::setDCExponent(float const dce)
+void Gridder ::setSDC(R2 const &sdc)
+{
+  for (auto &c : coords_) {
+    if (c.noncart.read >= sdc.dimension(0) || c.noncart.spoke >= sdc.dimension(1)) {
+      log_.fail("SDC dimensions {} do not match trajectory", fmt::join(sdc.dimensions(), ","));
+    }
+    c.sdc = sdc(c.noncart.read, c.noncart.spoke);
+  }
+}
+
+void Gridder::setSDCExponent(float const dce)
 {
   DCexp_ = dce;
 }
@@ -286,7 +207,7 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &dc = std::complex<float>(pow(cp.DC, DCexp_), 0.f);
+      auto const &dc = std::complex<float>(pow(cp.sdc, DCexp_), 0.f);
       cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz) +=
           noncart(nc.read, nc.spoke) * kernel_->kspace(cp.offset).cast<Cx>() * dc;
     }
@@ -318,7 +239,7 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
-      auto const &dc = pow(cp.DC, DCexp_);
+      auto const &dc = pow(cp.sdc, DCexp_);
       Cx4 const nck = noncart.chip(nc.spoke, 2)
                           .chip(nc.read, 1)
                           .reshape(Sz4{info_.channels, 1, 1, 1})

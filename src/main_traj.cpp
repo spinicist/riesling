@@ -11,23 +11,19 @@
 
 int main_traj(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "HD5 file to calculate trajectory from");
+  CORE_RECON_ARGS;
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
-  args::ValueFlag<float> osamp(
-      parser, "GRID OVERSAMPLE", "Oversampling factor for gridding, default 2", {'g', "grid"}, 2.f);
-  args::MapFlag<std::string, SDC> sdc(
-      parser, "SDC", "SDC Method. 0 - None, 1 - Analytic, 2 - Pipe", {"sdc"}, SDCMap);
-  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
-  args::ValueFlag<long> kw(
-      parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);
+  args::ValueFlag<std::string> sdc(parser, "SDC FILE", "Load SDC from this h5 file", {"sdc"});
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
   HD5::Reader reader(fname.Get(), log);
-  auto const &info = reader.info();
+  auto const info = reader.info();
+  auto const trajectory = reader.readTrajectory();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), sdc.Get(), kernel, log);
+  Gridder gridder(info, trajectory, osamp.Get(), kernel, log);
+  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
   Cx3 grid = gridder.newGrid1();
   FFT3 fft(grid, log);
 

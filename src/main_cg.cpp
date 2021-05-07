@@ -38,8 +38,9 @@ int main_cg(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, trajectory, osamp.Get(), sdc.Get(), kernel, log);
-  gridder.setDCExponent(dc_exp.Get());
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, log);
+  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  gridder.setSDCExponent(sdc_exp.Get());
 
   Cx4 grid = gridder.newGrid();
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
@@ -47,8 +48,8 @@ int main_cg(args::Subparser &parser)
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 const sense =
-      iter_cropper.crop4(SENSE(info, trajectory, osamp.Get(), kernel, false, 0.f, rad_ks, log));
+  Cx4 const sense = iter_cropper.crop4(
+      SENSE(info, trajectory, osamp.Get(), kernel, false, sdc.Get(), 0.f, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
   ones.setConstant({1.0f});

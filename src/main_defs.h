@@ -11,6 +11,7 @@ int main_hdr(args::Subparser &parser);
 int main_phantom(args::Subparser &parser);
 int main_plan(args::Subparser &parser);
 int main_rss(args::Subparser &parser);
+int main_sdc(args::Subparser &parser);
 int main_sense(args::Subparser &parser);
 int main_split(args::Subparser &parser);
 int main_tgv(args::Subparser &parser);
