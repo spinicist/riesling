@@ -10,14 +10,14 @@ struct Info
     ThreeDStack = 2
   };
 
+  Type type = Type::ThreeD;
+  long channels;
   Eigen::Array3l matrix;
   long read_points;
   long read_gap;
   long spokes_hi;
   long spokes_lo;
   float lo_scale;
-  long channels;
-  Type type = Type::ThreeD;
   long volumes = 1;
   long echoes = 1;
   float tr = 1.f;
