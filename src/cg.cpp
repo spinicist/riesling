@@ -65,7 +65,8 @@ void cgvar(
   float const a2 = Norm2(img);
 
   for (long icg = 0; icg < max_its; icg++) {
-    float const pre = pre0 + (pre1 - pre0) * (1.f * icg) / (max_its - 1.f);
+    float const prog = static_cast<float>(icg) / ((max_its == 1) ? 1. : (max_its - 1.f));
+    float const pre = std::exp(std::log(pre1) * prog + std::log(pre0) * (1.f - prog));
     sys(p, q, pre);
     r1 = r;
     float const r_old = Norm2(r1);

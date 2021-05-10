@@ -26,7 +26,8 @@ int main_cgvar(args::Subparser &parser)
       parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
   args::ValueFlag<float> pre0(
       parser, "PRE0", "Preconditioning start value (default 1)", {"pre0"}, 1);
-  args::ValueFlag<float> pre1(parser, "PRE1", "Preconditioning end value (default 0)", {"pre1"}, 0);
+  args::ValueFlag<float> pre1(
+      parser, "PRE1", "Preconditioning end value (default 1e-6)", {"pre1"}, 1.e-6f);
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
@@ -56,28 +57,34 @@ int main_cgvar(args::Subparser &parser)
     sense = DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
 
+  Cx3 ones(1, info.read_points, info.spokes_total());
+  ones.setConstant(1.0f);
+  Cx4 transfer = gridder.newMultichannel(1);
+
+  auto dev = Threads::GlobalDevice();
   CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
     gridder.setSDCExponent(pre);
-    grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
-    y = x;
-    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
+    transfer.device(dev) = transfer.constant(0.f);
+    gridder.toCartesian(ones, transfer);
+
+    grid.device(dev) = grid.constant(0.f);
+    iter_cropper.crop4(grid).device(dev) = sense * Tile(x, info.channels);
     fft.forward(grid);
-    gridder.toNoncartesian(grid, rad_ks);
-    grid.setZero();
-    gridder.toCartesian(rad_ks, grid);
+    grid.device(dev) = grid * transfer.broadcast(Sz4{info.channels, 1, 1, 1});
     fft.reverse(grid);
-    y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+
+    y.device(dev) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("System: {}", log.toNow(start));
   };
 
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.now();
-    y.setZero();
+    y.device(dev) = y.constant(0.f);
     gridder.setSDCExponent(1.f);
     gridder.toCartesian(x, grid);
     fft.reverse(grid);
-    y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    y.device(dev) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("Decode: {}", log.toNow(start));
   };
 

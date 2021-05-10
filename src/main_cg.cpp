@@ -54,24 +54,20 @@ int main_cg(args::Subparser &parser)
     sense = DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
 
-  Cx3 transfer(gridder.gridDims());
+  Cx4 transfer = gridder.newMultichannel(1);
   {
     log.info("Calculating transfer function");
     Cx3 ones(1, info.read_points, info.spokes_total());
     ones.setConstant({1.0f});
-    Cx4 transferTemp = gridder.newMultichannel(1);
-    transfer.setZero();
-    gridder.toCartesian(ones, transferTemp);
-    transfer = transferTemp.reshape(gridder.gridDims());
+    gridder.toCartesian(ones, transfer);
   }
 
   CgSystem toe = [&](Cx3 const &x, Cx3 &y) {
     auto const start = log.now();
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
-    y = x;
-    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
+    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(x, info.channels);
     fft.forward(grid);
-    grid.device(Threads::GlobalDevice()) = grid * Tile(transfer, info.channels);
+    grid.device(Threads::GlobalDevice()) = grid * transfer.broadcast(Sz4{info.channels, 1, 1, 1});
     fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("System: {}", log.toNow(start));
