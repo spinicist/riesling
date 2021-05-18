@@ -5,9 +5,9 @@ NearestNeighbour::NearestNeighbour(long const w)
 {
 }
 
-float NearestNeighbour::radius() const
+long NearestNeighbour::radius() const
 {
-  return w_ / 2.f;
+  return std::floor(w_ / 2.f);
 }
 
 Sz3 NearestNeighbour::start() const

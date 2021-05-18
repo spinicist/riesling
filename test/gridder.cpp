@@ -4,8 +4,6 @@
 
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
 {
-  // Run tests single-thread due to low point count
-  Threads::SetGlobalThreadCount(1);
   Log log;
   Info info{.matrix = {2, 2, 2},
             .read_points = 1,
@@ -21,7 +19,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("NN")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, kernel, log);
+    Gridder gridder(info, traj, osamp, kernel, false, log);
     Cx2 rad(info.read_points, info.spokes_total());
     CHECK(rad.dimension(0) == 1);
     CHECK(rad.dimension(1) == 1);
@@ -40,7 +38,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("NN Multicoil")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, kernel, log);
+    Gridder gridder(info, traj, osamp, kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
@@ -66,7 +64,8 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("KB Multicoil")
   {
     Kernel *kernel = new KaiserBessel(3, osamp, true);
-    Gridder gridder(info, traj, osamp, kernel, log);
+    R3 const vals = kernel->kspace(Point3::Zero());
+    Gridder gridder(info, traj, osamp, kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
@@ -78,10 +77,10 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     rad.setConstant(1.f);
     cart.setZero();
     gridder.toCartesian(rad, cart);
-    CHECK(cart(0, 2, 2, 2).real() == Approx(0.32944f));
-    CHECK(cart(1, 2, 2, 2).real() == Approx(0.32944f));
-    CHECK(cart(2, 2, 2, 2).real() == Approx(0.32944f));
-    CHECK(cart(3, 2, 2, 2).real() == Approx(0.32944f));
+    CHECK(cart(0, 2, 2, 2).real() == Approx(vals(1, 1, 1)));
+    CHECK(cart(1, 2, 2, 2).real() == Approx(vals(1, 1, 1)));
+    CHECK(cart(2, 2, 2, 2).real() == Approx(vals(1, 1, 1)));
+    CHECK(cart(3, 2, 2, 2).real() == Approx(vals(1, 1, 1)));
     gridder.toNoncartesian(cart, rad);
     CHECK(rad(0, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
     CHECK(rad(1, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
@@ -92,8 +91,6 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 
 TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 {
-  // Run tests single-thread due to low point count
-  Threads::SetGlobalThreadCount(1);
   Log log;
   Info info{.matrix = {4, 4, 4},
             .read_points = 4,
@@ -112,7 +109,7 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
   SECTION("NN")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, kernel, log);
+    Gridder gridder(info, traj, osamp, kernel, false, log);
     Cx3 cart = gridder.newGrid1();
     CHECK(cart.dimension(0) == 8);
     CHECK(cart.dimension(1) == 8);

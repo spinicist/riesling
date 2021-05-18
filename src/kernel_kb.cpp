@@ -23,9 +23,9 @@ KaiserBessel::KaiserBessel(long const w, float const os, bool const threeD)
   std::iota(p_.data(), p_.data() + p_.size(), -w / 2);
 }
 
-float KaiserBessel::radius() const
+long KaiserBessel::radius() const
 {
-  return w_ / 2.f;
+  return (w_ - 1) / 2;
 }
 
 Sz3 KaiserBessel::start() const

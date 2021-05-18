@@ -18,6 +18,7 @@ struct Gridder
    * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
    * @param os     Oversampling factor
    * @param kernel Interpolation kernel
+   * @param fastgrid Ignore thread safety
    * @param log    Logging object
    * @param res    OPTIONAL - Desired effective resolution
    * @param shrink OPTIONAL - Shrink the grid to fit only the desired resolution portion
@@ -27,6 +28,7 @@ struct Gridder
       R3 const &traj,
       float const os,
       Kernel *const kernel,
+      bool const fastgrid,
       Log &log,
       float const res = 0.f,
       bool const shrink = false);
@@ -40,6 +42,8 @@ struct Gridder
   void setSDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
   void setSDC(float const dc);
   void setSDC(R2 const &sdc);
+  void setUnsafe();
+  void setSafe();
   void toCartesian(Cx2 const &noncart, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
   void toCartesian(Cx3 const &noncart, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
   void toNoncartesian(Cx3 const &cart, Cx2 &noncart) const; //!< Single-channel cart -> non-cart
@@ -83,5 +87,6 @@ protected:
   Dims3 dims_;
   float oversample_, DCexp_;
   Kernel *kernel_;
+  bool safe_;
   Log &log_;
 };

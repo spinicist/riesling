@@ -46,7 +46,7 @@ int main_sense(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, log);
+  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, fastgrid, log);
   SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
 

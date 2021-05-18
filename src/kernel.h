@@ -10,7 +10,7 @@ struct InterpPair
 
 struct Kernel
 {
-  virtual float radius() const = 0;
+  virtual long radius() const = 0; //!< Returns floor(width/2)
   virtual Sz3 start() const = 0;
   virtual Sz3 size() const = 0;
   virtual R3 kspace(Point3 const &x) const = 0;                 //!< Returns the k-space kernel

@@ -8,7 +8,7 @@ struct FFT3; // Forward declare
 struct KaiserBessel final : Kernel
 {
   KaiserBessel(long const w, float const os, bool const threeD = true);
-  float radius() const;
+  long radius() const;
   Sz3 start() const;
   Sz3 size() const;
   R3 kspace(Point3 const &x) const;

@@ -24,7 +24,7 @@ Cx4 ESPIRIT(
   // Grid and heavily smooth each coil image, accumulate combined image
   float const sense_res = 6.f;
   log.info(FMT_STRING("ESPIRIT Calibration Size {} Kernel Size {}"), calSz, kSz);
-  Gridder gridder(info, traj, os, kernel, log, sense_res, false);
+  Gridder gridder(info, traj, os, kernel, false, log, sense_res, false);
   Cx4 grid = gridder.newGrid();
   FFT3N fftGrid(grid, log);
   grid.setZero();

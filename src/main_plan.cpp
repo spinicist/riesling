@@ -23,7 +23,7 @@ int main_plan(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour();
-  Gridder gridder(info, trajectory, osamp.Get(), kernel, log);
+  Gridder gridder(info, trajectory, osamp.Get(), kernel, fastgrid, log);
   Cx4 grid4 = gridder.newGrid();
   Cx3 grid3 = gridder.newGrid1();
   FFT3 fft3(grid3, log);

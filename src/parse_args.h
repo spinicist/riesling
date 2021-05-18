@@ -35,7 +35,8 @@ WriteVolumes(Info const &info, T const &vols, long const which, std::string cons
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
   args::ValueFlag<long> kw(                                                                        \
-      parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);
+      parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);  \
+  args::Flag fastgrid(parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});
 
 #define COMMON_RECON_ARGS                                                                          \
   CORE_RECON_ARGS                                                                                  \

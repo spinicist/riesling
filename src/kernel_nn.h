@@ -5,7 +5,7 @@
 struct NearestNeighbour final : Kernel
 {
   NearestNeighbour(long const w = 1);
-  float radius() const;
+  long radius() const;
   Sz3 start() const;
   Sz3 size() const;
   R3 kspace(Point3 const &x) const;

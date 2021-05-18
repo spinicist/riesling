@@ -36,6 +36,7 @@ Gridder::Gridder(
     R3 const &traj,
     float const os,
     Kernel *const kernel,
+    bool const fastgrid,
     Log &log,
     float const res,
     bool const shrink)
@@ -43,6 +44,7 @@ Gridder::Gridder(
     , oversample_{os}
     , DCexp_{1.f}
     , kernel_{kernel}
+    , safe_{!fastgrid}
     , log_{log}
 {
   assert(traj.dimension(0) == 3);
@@ -59,8 +61,7 @@ Gridder::Gridder(
   } else {
     dims_ = {gridSz, gridSz, gridSz};
   }
-  long const maxRad =
-      (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - std::floor(kernel_->radius());
+  long const maxRad = (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - kernel_->radius();
   log_.info(
       FMT_STRING("Gridder: Dimensions {} Resolution {} Ratio {} maxRad {}"),
       dims_,
@@ -173,6 +174,16 @@ void Gridder::setSDCExponent(float const dce)
   DCexp_ = dce;
 }
 
+void Gridder::setUnsafe()
+{
+  safe_ = true;
+}
+
+void Gridder::setSafe()
+{
+  safe_ = false;
+}
+
 Cx4 Gridder::newGrid() const
 {
   Cx4 g(info_.channels, dims_[0], dims_[1], dims_[2]);
@@ -195,11 +206,24 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
   assert(cart.dimension(1) == dims_[1]);
   assert(cart.dimension(2) == dims_[2]);
   assert(sortedIndices_.size() == coords_.size());
-
   auto const st = kernel_->start();
   auto const sz = kernel_->size();
-  Log nullLog;
-  auto grid_task = [&](long const lo, long const hi) {
+
+  auto dev = Threads::GlobalDevice();
+  long const nThreads = dev.numThreads();
+  std::vector<Cx3> workspace(nThreads);
+  std::vector<long> minZ(nThreads, 0L), szZ(nThreads, 0L);
+  auto grid_task = [&](long const lo, long const hi, long const ti) {
+    // Allocate working space for this thread
+
+    minZ[ti] = coords_[sortedIndices_[lo]].cart.z - kernel_->radius();
+    if (safe_) {
+      long const maxZ = coords_[sortedIndices_[hi - 1]].cart.z + kernel_->radius() + 1;
+      szZ[ti] = maxZ - minZ[ti];
+      workspace[ti].resize(cart.dimension(0), cart.dimension(1), szZ[ti]);
+      workspace[ti].setZero();
+    }
+
     for (auto ii = lo; ii < hi; ii++) {
       if (lo == 0) {
         log_.progress(ii, hi);
@@ -208,13 +232,27 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
       auto const &dc = std::complex<float>(pow(cp.sdc, DCexp_), 0.f);
-      cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz) +=
-          noncart(nc.read, nc.spoke) * kernel_->kspace(cp.offset).cast<Cx>() * dc;
+      Cx3 const vals = noncart(nc.read, nc.spoke) * kernel_->kspace(cp.offset).cast<Cx>() * dc;
+      if (safe_) {
+        workspace[ti].slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2] - minZ[ti]}, sz) += vals;
+      } else {
+        cart.slice(Sz3{c.x + st[0], c.y + st[1], c.z + st[2]}, sz) += vals;
+      }
     }
   };
 
   auto const &start = log_.now();
+  cart.setZero();
   Threads::RangeFor(grid_task, sortedIndices_.size());
+  if (safe_) {
+    log_.info("Combining thread workspaces");
+    for (long ti = 0; ti < nThreads; ti++) {
+      if (szZ[ti]) {
+        cart.slice(Sz3{0, 0, minZ[ti]}, Sz3{cart.dimension(0), cart.dimension(1), szZ[ti]})
+            .device(dev) += workspace[ti];
+      }
+    }
+  }
   log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
 }
 
@@ -231,7 +269,21 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
 
   auto const st = kernel_->start();
   auto const sz = kernel_->size();
-  auto grid_task = [&](long const lo, long const hi) {
+  auto dev = Threads::GlobalDevice();
+  long const nThreads = dev.numThreads();
+  std::vector<Cx4> workspace(nThreads);
+  std::vector<long> minZ(nThreads, 0L), szZ(nThreads, 0L);
+  auto grid_task = [&](long const lo, long const hi, long const ti) {
+    // Allocate working space for this thread
+    minZ[ti] = coords_[sortedIndices_[lo]].cart.z - kernel_->radius();
+
+    if (safe_) {
+      long const maxZ = coords_[sortedIndices_[hi - 1]].cart.z + kernel_->radius() + 1;
+      szZ[ti] = maxZ - minZ[ti];
+      workspace[ti].resize(cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]);
+      workspace[ti].setZero();
+    }
+
     for (auto ii = lo; ii < hi; ii++) {
       if (lo == 0) {
         log_.progress(ii, hi);
@@ -245,14 +297,34 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
                           .reshape(Sz4{info_.channels, 1, 1, 1})
                           .broadcast(Sz4{1, sz[0], sz[1], sz[2]});
       R4 const weights = Tile(kernel_->kspace(cp.offset), info_.channels) * dc;
-      cart.slice(
-          Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]},
-          Sz4{info_.channels, sz[0], sz[1], sz[2]}) += nck * weights.cast<Cx>();
+      auto const vals = nck * weights.cast<Cx>();
+
+      if (safe_) {
+        workspace[ti].slice(
+            Sz4{0, c.x + st[0], c.y + st[1], c.z - minZ[ti] + st[2]},
+            Sz4{info_.channels, sz[0], sz[1], sz[2]}) += vals;
+      } else {
+        cart.slice(
+            Sz4{0, c.x + st[0], c.y + st[1], c.z + st[2]},
+            Sz4{info_.channels, sz[0], sz[1], sz[2]}) += vals;
+      }
     }
   };
 
   auto const &start = log_.now();
+  cart.setZero();
   Threads::RangeFor(grid_task, sortedIndices_.size());
+  if (safe_) {
+    log_.info("Combining thread workspaces");
+    for (long ti = 0; ti < nThreads; ti++) {
+      if (szZ[ti]) {
+        cart.slice(
+                Sz4{0, 0, 0, minZ[ti]},
+                Sz4{cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]})
+            .device(dev) += workspace[ti];
+      }
+    }
+  }
   log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
 }
 
