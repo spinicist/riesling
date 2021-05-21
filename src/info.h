@@ -30,6 +30,11 @@ struct Info
     return spokes_hi + spokes_lo;
   }
 
+  inline float spoke_oversamp() const
+  {
+    return read_points / (matrix.maxCoeff() / 2);
+  }
+
   inline Cx3 noncartesianVolume() const
   {
     Cx3 temp(channels, read_points, spokes_total());

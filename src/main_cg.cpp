@@ -32,14 +32,15 @@ int main_cg(args::Subparser &parser)
   FFT::Start(log);
 
   HD5::Reader reader(fname.Get(), log);
-  auto const &info = reader.info();
+  Trajectory const traj = reader.readTrajectory();
+  Info const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
-  R3 trajectory = reader.readTrajectory();
+
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, reader.readTrajectory(), osamp.Get(), kernel, fastgrid, log);
-  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
+  SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
 
   Cx4 grid = gridder.newGrid();
@@ -48,8 +49,7 @@ int main_cg(args::Subparser &parser)
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 const sense = iter_cropper.crop4(
-      SENSE(info, trajectory, osamp.Get(), kernel, false, sdc.Get(), 0.f, rad_ks, log));
+  Cx4 const sense = iter_cropper.crop4(SENSE(senseMethod.Get(), traj, gridder, rad_ks, log));
 
   Cx2 ones(info.read_points, info.spokes_total());
   ones.setConstant({1.0f});

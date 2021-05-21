@@ -15,8 +15,9 @@ int main_split(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
 
   HD5::Reader reader(fname.Get(), log);
+  auto const traj = reader.readTrajectory();
   auto const &info = reader.info();
-  R3 all_traj = reader.readTrajectory();
+  R3 all_points = traj.points();
   Cx3 all_ks = info.noncartesianVolume();
   reader.readNoncartesian(vol.Get(), all_ks);
 
@@ -25,14 +26,13 @@ int main_split(args::Subparser &parser)
     lo_info.spokes_lo = 0;
     lo_info.spokes_hi = info.spokes_lo;
     lo_info.lo_scale = 0.f;
-    R3 lo_traj =
-        all_traj.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) / info.lo_scale;
+    R3 lo_points =
+        all_points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) / info.lo_scale;
     Cx4 lo_ks = all_ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes_lo})
                     .reshape(Sz4{info.channels, info.read_points, info.spokes_lo, 1});
     HD5::Writer writer(OutName(fname, oname, "lores", "h5"), log);
-    writer.writeInfo(lo_info);
+    writer.writeTrajectory(Trajectory(lo_info, lo_points, log));
     writer.writeNoncartesian(lo_ks);
-    writer.writeTrajectory(lo_traj);
   }
 
   Info hi_info = info;
@@ -58,8 +58,8 @@ int main_split(args::Subparser &parser)
     hi_info.spokes_hi = n;
     std::string const suffix = nspokes.Get() ? fmt::format("int{}", int_idx) : "hires";
     HD5::Writer writer(OutName(fname, oname, suffix, "h5"), log);
-    writer.writeInfo(hi_info);
-    writer.writeTrajectory(all_traj.slice(Sz3{0, 0, idx0}, Sz3{3, hi_info.read_points, n}));
+    writer.writeTrajectory(Trajectory(
+        hi_info, all_points.slice(Sz3{0, 0, idx0}, Sz3{3, hi_info.read_points, n}), log));
     writer.writeNoncartesian(
         all_ks.slice(Sz3{0, 0, idx0}, Sz3{hi_info.channels, hi_info.read_points, n})
             .reshape(Sz4{hi_info.channels, hi_info.read_points, n, 1}));

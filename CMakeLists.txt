@@ -30,7 +30,6 @@ add_library(vineyard
     src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp
-    src/espirit.cpp
     src/fft1.cpp
     src/fft3.cpp
     src/fft3n.cpp
@@ -52,6 +51,7 @@ add_library(vineyard
     src/slab_correct.cpp
     src/tgv.cpp
     src/threads.cpp
+    src/trajectory.cpp
     src/traj_archimedean.cpp
     src/wavelets.cpp
     src/zinfandel.cpp

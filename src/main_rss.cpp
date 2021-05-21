@@ -17,13 +17,13 @@ int main_rss(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
   HD5::Reader reader(fname.Get(), log);
-  auto const &info = reader.info();
+  auto const traj = reader.readTrajectory();
+  auto const &info = traj.info();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  R3 const trajectory = reader.readTrajectory();
-  Gridder gridder(info, trajectory, osamp.Get(), kernel, fastgrid, log);
-  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
+  SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), log);
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);

@@ -25,112 +25,58 @@ inline long fft_size(float const x)
   }
 }
 
-// Helper function to convert Tensor to Point
-inline Point3 toCart(R1 const &p, float const xyScale, float const zScale)
-{
-  return Point3{p(0) * xyScale, p(1) * xyScale, p(2) * zScale};
-}
-
 Gridder::Gridder(
-    Info const &info,
-    R3 const &traj,
-    float const os,
-    Kernel *const kernel,
-    bool const fastgrid,
-    Log &log,
-    float const res,
-    bool const shrink)
-    : info_{info}
+    Trajectory const &traj, float const os, Kernel *const kernel, bool const unsafe, Log &log)
+    : info_{traj.info()}
     , oversample_{os}
     , DCexp_{1.f}
     , kernel_{kernel}
-    , safe_{!fastgrid}
+    , safe_{!unsafe}
     , log_{log}
 {
-  assert(traj.dimension(0) == 3);
-  assert(traj.dimension(1) == info_.read_points);
-  assert(traj.dimension(2) == info_.spokes_total());
 
-  // Work out grid dimensions for the given resolution and oversampling
-  float const ratio = (res > 0.f) ? info_.voxel_size.minCoeff() / res : 1.f;
-  long const nomSz = fft_size(oversample_ * info_.matrix.maxCoeff());
-  long const nomRad = nomSz / 2 - 1;
-  long const gridSz = shrink ? fft_size(nomSz * ratio) : nomSz;
-  if (info.type == Info::Type::ThreeDStack) {
+  // Work out grid dimensions for the given oversampling
+  long const gridSz = fft_size(oversample_ * info_.matrix.maxCoeff());
+  if (info_.type == Info::Type::ThreeDStack) {
     dims_ = {gridSz, gridSz, info_.matrix[2]};
   } else {
     dims_ = {gridSz, gridSz, gridSz};
   }
-  long const maxRad = (shrink ? (gridSz / 2 - 1) : std::lrint(nomRad * ratio)) - kernel_->radius();
-  log_.info(
-      FMT_STRING("Gridder: Dimensions {} Resolution {} Ratio {} maxRad {}"),
-      dims_,
-      res,
-      ratio,
-      maxRad);
-
-  auto const hires = spokeInfo(traj.chip(info_.spokes_lo, 2), nomRad, maxRad, 1.f);
-  log_.info(FMT_STRING("Hi-res spokes using points {}-{}"), hires.lo, hires.hi);
-  coords_ = genCoords(traj, info_.spokes_lo, info_.spokes_hi, hires);
-  if (info_.spokes_lo) {
-    // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
-    float const spokeOversamp = info_.read_points / (info_.matrix.maxCoeff() / 2);
-    float const max_r = info_.read_gap * oversample_ / spokeOversamp;
-    auto const lores = spokeInfo(traj.chip(0, 2), nomRad, max_r, info_.lo_scale);
-    log_.info(FMT_STRING("Lo-res spokes using points {}-{}"), lores.lo, lores.hi);
-    auto const temp = genCoords(traj, 0, info_.spokes_lo, lores);
-    coords_.insert(coords_.end(), temp.begin(), temp.end());
-  }
+  genCoords(traj, (gridSz / 2) - 1);
   sortCoords();
 }
 
-// Helper function to find the points along a spoke we will actually use
-Gridder::SpokeInfo_t
-Gridder::spokeInfo(R2 const &traj, long const nomRad, float const maxRad, float const scale)
+void Gridder::genCoords(Trajectory const &traj, long const nomRad)
 {
-  SpokeInfo_t s;
-  s.xy = nomRad / scale;
-  s.z = (info_.type == Info::Type::ThreeD) ? s.xy : 1.f;
-  for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
-    float const rad = toCart(traj.chip(ir, 1), s.xy, s.z).norm();
-    if (rad <= maxRad) { // Discard points above the desired resolution
-      s.lo = std::min(ir, s.lo);
-      s.hi = std::max(ir, s.hi);
-    }
-  }
-  return s;
-}
-
-std::vector<Gridder::Coords>
-Gridder::genCoords(R3 const &traj, int32_t const spoke0, long const spokeSz, SpokeInfo_t const &s)
-{
-  long const readSz = s.hi - s.lo + 1;
-  long const totalSz = readSz * spokeSz;
-  std::vector<Coords> coords(totalSz);
+  long const totalSz = info_.read_points * info_.spokes_total();
+  coords_.clear();
+  coords_.reserve(totalSz);
 
   std::fesetround(FE_TONEAREST);
   Size3 const center(dims_[0] / 2, dims_[1] / 2, dims_[2] / 2);
-  auto coordTask = [&](long const lo_spoke, long const hi_spoke) {
-    long index = lo_spoke * readSz;
-    for (int32_t is = lo_spoke; is < hi_spoke; is++) {
-      for (int16_t ir = s.lo; ir <= s.hi; ir++) {
-        NoncartesianIndex const nc{.spoke = is + spoke0, .read = ir};
-        R1 const tp = traj.chip(nc.spoke, 2).chip(nc.read, 1);
-        Point3 const xyz = toCart(tp, s.xy, s.z);
+  auto start = log_.now();
+  for (int32_t is = 0; is < info_.spokes_total(); is++) {
+    for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
+      NoncartesianIndex const nc{.spoke = is, .read = ir};
+      Point3 const xyz = traj.point(ir, is, nomRad);
+
+      // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
+      // Otherwise leave space for kernel
+      float const maxRad = (is < info_.spokes_lo)
+                               ? oversample_ * info_.read_gap / info_.spoke_oversamp()
+                               : nomRad - kernel_->radius();
+      if (xyz.norm() <= maxRad) {
         Size3 const gp = nearby(xyz).cast<int16_t>();
         Point3 const offset = xyz - gp.cast<float>().matrix();
         Size3 const cart = gp + center;
-        coords[index++] = Coords{.cart = CartesianIndex{cart(0), cart(1), cart(2)},
+        coords_.push_back(Coords{.cart = CartesianIndex{cart(0), cart(1), cart(2)},
                                  .noncart = nc,
                                  .sdc = 1.f,
-                                 .offset = offset};
+                                 .offset = offset});
       }
     }
-  };
-  auto start = log_.now();
-  Threads::RangeFor(coordTask, spokeSz);
-  log_.debug("Grid co-ord calcs: {}", log_.toNow(start));
-  return coords;
+  }
+  log_.info("Generated {} co-ordinates in {}", coords_.size(), log_.toNow(start));
 }
 
 void Gridder::sortCoords()
@@ -152,6 +98,20 @@ Dims3 Gridder::gridDims() const
   return dims_;
 }
 
+Cx4 Gridder::newGrid() const
+{
+  Cx4 g(info_.channels, dims_[0], dims_[1], dims_[2]);
+  g.setZero();
+  return g;
+}
+
+Cx3 Gridder::newGrid1() const
+{
+  Cx3 g(dims_);
+  g.setZero();
+  return g;
+}
+
 void Gridder::setSDC(float const d)
 {
   for (auto &c : coords_) {
@@ -161,10 +121,10 @@ void Gridder::setSDC(float const d)
 
 void Gridder ::setSDC(R2 const &sdc)
 {
+  if (info_.read_points != sdc.dimension(0) || info_.spokes_total() != sdc.dimension(1)) {
+    log_.fail("SDC dimensions {} do not match trajectory", fmt::join(sdc.dimensions(), ","));
+  }
   for (auto &c : coords_) {
-    if (c.noncart.read >= sdc.dimension(0) || c.noncart.spoke >= sdc.dimension(1)) {
-      log_.fail("SDC dimensions {} do not match trajectory", fmt::join(sdc.dimensions(), ","));
-    }
     c.sdc = sdc(c.noncart.read, c.noncart.spoke);
   }
 }
@@ -184,18 +144,19 @@ void Gridder::setSafe()
   safe_ = false;
 }
 
-Cx4 Gridder::newGrid() const
+Info const &Gridder::info() const
 {
-  Cx4 g(info_.channels, dims_[0], dims_[1], dims_[2]);
-  g.setZero();
-  return g;
+  return info_;
 }
 
-Cx3 Gridder::newGrid1() const
+float Gridder::oversample() const
 {
-  Cx3 g(dims_);
-  g.setZero();
-  return g;
+  return oversample_;
+}
+
+Kernel *Gridder::kernel() const
+{
+  return kernel_;
 }
 
 void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const

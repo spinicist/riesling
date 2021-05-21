@@ -1,7 +1,7 @@
 #pragma once
 
-#include "info.h"
 #include "log.h"
+#include "trajectory.h"
 
 #include <map>
 #include <string>
@@ -16,7 +16,7 @@ struct Writer
   ~Writer();
   void writeInfo(Info const &info);
   void writeMeta(std::map<std::string, float> const &meta);
-  void writeTrajectory(R3 const &traj);
+  void writeTrajectory(Trajectory const &traj);
   void writeNoncartesian(Cx4 const &allVolumes);
   void writeCartesian(Cx4 const &volume);
   void writeImage(R4 const &volumes);
@@ -35,7 +35,7 @@ struct Reader
   ~Reader();
   Info const &info() const;
   std::map<std::string, float> readMeta() const;
-  R3 readTrajectory();
+  Trajectory readTrajectory();
   R2 readSDC();
   void readNoncartesian(Cx4 &allVolumes);
   void readNoncartesian(long const index, Cx3 &volume);

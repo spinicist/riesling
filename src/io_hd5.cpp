@@ -118,9 +118,10 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   }
 }
 
-void Writer::writeTrajectory(R3 const &t)
+void Writer::writeTrajectory(Trajectory const &t)
 {
-  HD5::store_tensor(handle_, KeyTrajectory, t, log_);
+  writeInfo(t.info());
+  HD5::store_tensor(handle_, KeyTrajectory, t.points(), log_);
 }
 
 void Writer::writeSDC(R2 const &sdc)
@@ -183,6 +184,9 @@ herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata
 std::map<std::string, float> Reader::readMeta() const
 {
   auto meta_group = H5Gopen(handle_, KeyMeta.c_str(), H5P_DEFAULT);
+  if (meta_group < 0) {
+    return {};
+  }
   std::vector<std::string> names;
   H5Literate(meta_group, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
 
@@ -207,12 +211,12 @@ Info const &Reader::info() const
   return info_;
 }
 
-R3 Reader::readTrajectory()
+Trajectory Reader::readTrajectory()
 {
   log_.info("Reading trajectory");
-  R3 trajectory(3, info_.read_points, info_.spokes_total());
-  HD5::load_tensor(handle_, KeyTrajectory, trajectory, log_);
-  return trajectory;
+  R3 points(3, info_.read_points, info_.spokes_total());
+  HD5::load_tensor(handle_, KeyTrajectory, points, log_);
+  return Trajectory(info_, points, log_);
 }
 
 R2 Reader::readSDC()

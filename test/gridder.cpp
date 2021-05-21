@@ -1,5 +1,6 @@
 #include "../src/gridder.h"
 #include "../src/log.h"
+#include "../src/trajectory.h"
 #include <catch2/catch.hpp>
 
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
@@ -13,13 +14,14 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
             .lo_scale = 1,
             .channels = 4};
   float const osamp = 2.f;
-  R3 traj(3, 1, 1);
-  traj.setZero();
+  R3 points(3, 1, 1);
+  points.setZero();
+  Trajectory traj(info, points, log);
 
   SECTION("NN")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, kernel, false, log);
+    Gridder gridder(traj, osamp, kernel, false, log);
     Cx2 rad(info.read_points, info.spokes_total());
     CHECK(rad.dimension(0) == 1);
     CHECK(rad.dimension(1) == 1);
@@ -38,7 +40,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   SECTION("NN Multicoil")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, kernel, false, log);
+    Gridder gridder(traj, osamp, kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
@@ -65,7 +67,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   {
     Kernel *kernel = new KaiserBessel(3, osamp, true);
     R3 const vals = kernel->kspace(Point3::Zero());
-    Gridder gridder(info, traj, osamp, kernel, false, log);
+    Gridder gridder(traj, osamp, kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
@@ -100,16 +102,17 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
             .lo_scale = 1,
             .channels = 1};
   float const osamp = 2.f;
-  R3 traj(3, info.read_points, info.spokes_total());
-  traj.setZero();
-  traj(0, 1, 0) = 1.f / 3.f;
-  traj(0, 2, 0) = 2.f / 3.f;
-  traj(0, 3, 0) = 1.f;
+  R3 points(3, info.read_points, info.spokes_total());
+  points.setZero();
+  points(0, 1, 0) = 1.f / 3.f;
+  points(0, 2, 0) = 2.f / 3.f;
+  points(0, 3, 0) = 1.f;
+  Trajectory traj(info, points, log);
 
   SECTION("NN")
   {
     Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(info, traj, osamp, kernel, false, log);
+    Gridder gridder(traj, osamp, kernel, false, log);
     Cx3 cart = gridder.newGrid1();
     CHECK(cart.dimension(0) == 8);
     CHECK(cart.dimension(1) == 8);

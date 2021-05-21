@@ -13,17 +13,19 @@ int main_traj(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
-  args::ValueFlag<std::string> sdc(parser, "SDC FILE", "Load SDC from this h5 file", {"sdc"});
+  args::ValueFlag<std::string> sdc(
+      parser, "SDC FILE", "Load SDC from this h5 file", {"sdc"}, "pipe");
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
   HD5::Reader reader(fname.Get(), log);
-  auto const info = reader.info();
-  auto const trajectory = reader.readTrajectory();
+  auto const traj = reader.readTrajectory();
+  auto const info = traj.info();
+
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(info, trajectory, osamp.Get(), kernel, fastgrid, log);
-  SDC::Load(sdc.Get(), info, trajectory, kernel, gridder, log);
+  Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
+  SDC::Load(sdc.Get(), traj, gridder, log);
   Cx3 grid = gridder.newGrid1();
   FFT3 fft(grid, log);
 

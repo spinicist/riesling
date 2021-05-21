@@ -33,8 +33,7 @@ int main_zinfandel(args::Subparser &parser)
   HD5::Reader reader(fname.Get(), log);
   auto info = reader.info();
   long const gap_sz = gap ? gap.Get() : info.read_gap;
-  R3 traj = reader.readTrajectory();
-
+  auto const traj = reader.readTrajectory();
   auto out_info = info;
   out_info.read_gap = 0;
   if (volume) {
@@ -42,15 +41,14 @@ int main_zinfandel(args::Subparser &parser)
   }
 
   HD5::Writer writer(OutName(fname, oname, "zinfandel", "h5"), log);
-  writer.writeInfo(out_info);
-  writer.writeTrajectory(traj);
+  writer.writeTrajectory(Trajectory(out_info, traj.points(), log));
   writer.writeMeta(reader.readMeta());
 
   Cx4 rad_ks = info.noncartesianSeries();
   reader.readNoncartesian(rad_ks);
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
     Cx3 vol = rad_ks.chip(iv, 3);
-    zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj, vol, log);
+    zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj.points(), vol, log);
     if (pw && rbw) {
       slab_correct(out_info, pw.Get(), rbw.Get(), vol, log);
     }

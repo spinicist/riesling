@@ -86,10 +86,11 @@ int main_phantom(args::Subparser &parser)
       FMT_STRING("Hi-res spokes: {} Lo-res spokes: {}"), grid_info.spokes_hi, grid_info.spokes_lo);
 
   // We want effective sample positions at the middle of the bin
-  R3 const grid_traj = ArchimedeanSpiral(grid_info, decimate ? grid_samp.Get() / 2 : 0);
+  Trajectory const grid_traj(
+      grid_info, ArchimedeanSpiral(grid_info, decimate ? grid_samp.Get() / 2 : 0), log);
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(grid_info, grid_traj, grid_samp.Get(), kernel, false, log);
+  Gridder gridder(grid_traj, grid_samp.Get(), kernel, false, log);
   Cx4 grid = gridder.newGrid();
   FFT3N fft(grid, log); // FFTW needs temp space for planning
 
@@ -135,7 +136,7 @@ int main_phantom(args::Subparser &parser)
                   .channels = nchan.Get(),
                   .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz}};
 
-    R3 const out_traj = ArchimedeanSpiral(out_info, read_samp.Get() / 2);
+    R3 const out_points = ArchimedeanSpiral(out_info, read_samp.Get() / 2);
     long const decimation_factor = grid_samp.Get() / read_samp.Get();
     Cx3 decimated = out_info.noncartesianVolume();
     decimated.setZero();
@@ -152,7 +153,7 @@ int main_phantom(args::Subparser &parser)
           .setZero();
     }
     writer.writeInfo(out_info);
-    writer.writeTrajectory(out_traj);
+    writer.writeTrajectory(Trajectory(out_info, out_points, log));
     writer.writeNoncartesian(Cx4(decimated.reshape(
         Sz4{decimated.dimension(0), decimated.dimension(1), decimated.dimension(2), 1})));
   } else {

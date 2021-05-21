@@ -45,6 +45,8 @@ WriteVolumes(Info const &info, T const &vols, long const which, std::string cons
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);           \
   args::ValueFlag<float> out_fov(                                                                  \
       parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                   \
+  args::ValueFlag<std::string> senseMethod(                                                        \
+      parser, "SENSE", "SENSE method: 'direct' or filename", {"sense", 's'}, "direct");            \
   args::ValueFlag<std::string> sdc(                                                                \
       parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");          \
   args::ValueFlag<float> sdc_exp(                                                                  \

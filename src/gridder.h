@@ -1,10 +1,10 @@
 #pragma once
 
-#include "info.h"
 #include "kernels.h"
 #include "log.h"
 #include "sdc.h"
 #include "threads.h"
+#include "trajectory.h"
 
 #include <vector>
 
@@ -14,24 +14,14 @@ struct Gridder
 {
   /** Constructs the Gridder with a default Cartesian grid
    *
-   * @param info   The Radial info struct
-   * @param traj   The trajectory stored as X,Y,Z positions in k-space relative to k-max
+   * @param traj  Trajectory object
    * @param os     Oversampling factor
    * @param kernel Interpolation kernel
-   * @param fastgrid Ignore thread safety
+   * @param unsafe Ignore thread safety
    * @param log    Logging object
-   * @param res    OPTIONAL - Desired effective resolution
-   * @param shrink OPTIONAL - Shrink the grid to fit only the desired resolution portion
    */
   Gridder(
-      Info const &info,
-      R3 const &traj,
-      float const os,
-      Kernel *const kernel,
-      bool const fastgrid,
-      Log &log,
-      float const res = 0.f,
-      bool const shrink = false);
+      Trajectory const &traj, float const os, Kernel *const kernel, bool const unsafe, Log &log);
 
   virtual ~Gridder() = default;
 
@@ -44,6 +34,9 @@ struct Gridder
   void setSDC(R2 const &sdc);
   void setUnsafe();
   void setSafe();
+  Info const &info() const;
+  float oversample() const;
+  Kernel *kernel() const;
   void toCartesian(Cx2 const &noncart, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
   void toCartesian(Cx3 const &noncart, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
   void toNoncartesian(Cx3 const &cart, Cx2 &noncart) const; //!< Single-channel cart -> non-cart
@@ -69,23 +62,13 @@ protected:
     Point3 offset;
   };
 
-  struct SpokeInfo_t
-  {
-    int16_t lo = std::numeric_limits<int16_t>::max();
-    int16_t hi = std::numeric_limits<int16_t>::min();
-    float xy = 0.f;
-    float z = 0.f;
-  };
-
-  SpokeInfo_t spokeInfo(R2 const &traj, long const nomRad, float const maxRad, float const scale);
-  std::vector<Coords>
-  genCoords(R3 const &traj, int32_t const spoke0, long const spokes, SpokeInfo_t const &s);
+  void genCoords(Trajectory const &traj, long const nomRad);
   void sortCoords();
   Info const info_;
   std::vector<Coords> coords_;
   std::vector<int32_t> sortedIndices_;
   Dims3 dims_;
-  float oversample_, DCexp_;
+  float oversample_, DCexp_, maxRad_;
   Kernel *kernel_;
   bool safe_;
   Log &log_;

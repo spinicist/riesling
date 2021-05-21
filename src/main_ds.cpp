@@ -19,8 +19,8 @@ int main_ds(args::Subparser &parser)
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
   Log log = ParseCommand(parser, fname);
   HD5::Reader reader(fname.Get(), log);
-  auto const &info = reader.info();
-  R3 traj = reader.readTrajectory();
+  Trajectory traj = reader.readTrajectory();
+  auto const &info = traj.info();
 
   Cx3 rad_ks = info.noncartesianVolume();
   Cx4 channels(info.channels, info.matrix[0], info.matrix[1], info.matrix[2]);
@@ -62,8 +62,7 @@ int main_ds(args::Subparser &parser)
                 (ix - hx) / (float)(maxX), (iy - hy) / (float)(maxX), (iz - hz) / (float)(maxX)};
             for (long is = 0; is < info.spokes_total(); is++) {
               for (long ir = info.read_gap; ir < info.read_points; ir++) {
-                R1 const tp = traj.chip(is, 2).chip(ir, 1);
-                Point3 const r = Point3{tp(0), tp(1), tp(2)} * maxK;
+                Point3 const r = traj.point(ir, is, maxK);
                 float const r_mag = r.matrix().norm();
                 auto const &d_k = is < info.spokes_lo ? d_lo : d_hi;
                 float dc;

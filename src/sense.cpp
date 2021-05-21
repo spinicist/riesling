@@ -2,26 +2,16 @@
 
 #include "fft3n.h"
 #include "gridder.h"
+#include "io_hd5.h"
 #include "sdc.h"
 #include "tensorOps.h"
 #include "threads.h"
 
-Cx4 SENSE(
-    Info const &info,
-    R3 const &traj,
-    float const os,
-    Kernel *const kernel,
-    bool const shrink,
-    std::string const &sdc,
-    float const threshold,
-    Cx3 const &data,
-    Log &log)
+float const sense_res = 12.f;
+
+Cx4 Direct(Gridder const &gridder, Cx3 const &data, Log &log)
 {
-  // Grid and heavily smooth each coil image, accumulate combined image
-  float const sense_res = 12.f;
-  log.info("Creating SENSE maps.");
-  Gridder gridder(info, traj, os, kernel, false, log, sense_res, shrink);
-  SDC::Load(sdc, info, traj, kernel, gridder, log);
+  // Grid at low res & accumulate combined image
   Cx4 grid = gridder.newGrid();
   R3 rss(gridder.gridDims());
   FFT3N fftN(grid, log);
@@ -31,19 +21,33 @@ Cx4 SENSE(
   fftN.reverse();
   rss.device(Threads::GlobalDevice()) = (grid * grid.conjugate()).real().sum(Sz1{0}).sqrt();
   log.info("Normalizing channel images");
-  if (threshold > 0) {
-    R0 max = rss.maximum();
-    float const threshVal = threshold * max();
-    log.info(FMT_STRING("Thresholding RSS below {} intensity"), threshVal);
-    auto const start = log.now();
-    B3 const thresholded = (rss > threshVal);
-    grid.device(Threads::GlobalDevice()) =
-        Tile(thresholded, info.channels)
-            .select(grid / Tile(rss, info.channels).cast<Cx>(), grid.constant(0.f));
-    log.debug("SENSE Thresholding: {}", log.toNow(start));
-  } else {
-    grid.device(Threads::GlobalDevice()) = grid / Tile(rss, info.channels).cast<Cx>();
-  }
+  grid.device(Threads::GlobalDevice()) = grid / TileToMatch(rss, grid.dimensions()).cast<Cx>();
   log.info("Finished SENSE maps");
   return grid;
+}
+
+Cx4 SENSE(
+    std::string const &method,
+    Trajectory const &traj,
+    Gridder const &gridder,
+    Cx3 const &data,
+    Log &log)
+{
+  if (method == "direct") {
+    log.info("Creating SENSE maps from main image data");
+    Cx3 lo_data = data;
+    auto const lo_traj = traj.trim(sense_res, lo_data);
+    Gridder lo_gridder(lo_traj, gridder.oversample(), gridder.kernel(), false, log);
+    SDC::Load("pipe", lo_traj, lo_gridder, log);
+    return Direct(lo_gridder, lo_data, log);
+  } else {
+    log.info("Loading SENSE data from {}", method);
+    HD5::Reader reader(method, log);
+    Trajectory const cal_traj = reader.readTrajectory();
+    Gridder cal_gridder(cal_traj, gridder.oversample(), gridder.kernel(), false, log);
+    SDC::Load("pipe", cal_traj, cal_gridder, log);
+    Cx3 cal_data = cal_traj.info().noncartesianVolume();
+    reader.readNoncartesian(0, cal_data);
+    return Direct(cal_gridder, cal_data, log);
+  }
 }

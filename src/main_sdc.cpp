@@ -22,8 +22,8 @@ int main_sdc(args::Subparser &parser)
       parser, "Type", "1 - Pipe, 2 - Radial Analytic", {"type"}, TypeMap, Type::Pipe);
   Log log = ParseCommand(parser, fname);
   HD5::Reader reader(fname.Get(), log);
-  auto const &info = reader.info();
-  auto const trajectory = reader.readTrajectory();
+  auto const traj = reader.readTrajectory();
+  auto const &info = traj.info();
 
   R2 sdc;
   switch (type.Get()) {
@@ -31,11 +31,11 @@ int main_sdc(args::Subparser &parser)
     Kernel *kernel =
         kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
            : (Kernel *)new NearestNeighbour();
-    Gridder gridder(info, trajectory, osamp.Get(), kernel, fastgrid, log);
-    sdc = SDC::Pipe(info, gridder, kernel, log);
+    Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
+    sdc = SDC::Pipe(gridder, log);
   } break;
   case Type::RadialAnalytic: {
-    sdc = SDC::Radial(info, trajectory, log);
+    sdc = SDC::Radial(traj, log);
   } break;
   }
   HD5::Writer writer(OutName(fname, oname, "sdc", "h5"), log);
