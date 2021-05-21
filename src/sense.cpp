@@ -22,7 +22,6 @@ Cx4 SENSE(
   log.info("Creating SENSE maps.");
   Gridder gridder(info, traj, os, kernel, false, log, sense_res, shrink);
   SDC::Load(sdc, info, traj, kernel, gridder, log);
-  gridder.setSDCExponent(0.8);
   Cx4 grid = gridder.newGrid();
   R3 rss(gridder.gridDims());
   FFT3N fftN(grid, log);
