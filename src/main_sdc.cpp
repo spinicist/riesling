@@ -32,7 +32,7 @@ int main_sdc(args::Subparser &parser)
         kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
            : (Kernel *)new NearestNeighbour();
     Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
-    sdc = SDC::Pipe(gridder, log);
+    sdc = SDC::Pipe(traj, gridder, log);
   } break;
   case Type::RadialAnalytic: {
     sdc = SDC::Radial(traj, log);

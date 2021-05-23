@@ -19,6 +19,20 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
         info_.spokes_total(),
         points_.dimension(2));
   }
+
+  Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(info_.read_points, 0, info_.read_points - 1);
+  mergeHi_ = ind - (info_.read_gap - 1);
+  mergeHi_ = (mergeHi_ > 0).select(mergeHi_, 0);
+  mergeHi_ = (mergeHi_ < 1).select(mergeHi_, 1);
+
+  if (info_.spokes_lo) {
+    ind = Eigen::ArrayXf::LinSpaced(info_.read_points, 0, info_.read_points - 1);
+    mergeLo_ = ind / info_.lo_scale - (info_.read_gap - 1);
+    mergeLo_ = (mergeLo_ > 0).select(mergeLo_, 0);
+    mergeLo_ = (mergeLo_ < 1).select(mergeLo_, 1);
+    mergeLo_ = (1 - mergeLo_) / info_.lo_scale; // Match intensities of k-space
+    mergeLo_.head(info_.read_gap) = 0.;         // Don't touch these points
+  }
   log_.info("Created trajectory object with {} spokes", info_.spokes_total());
 }
 
@@ -44,6 +58,15 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
     return Point3{p(0) * rad, p(1) * rad, p(2) * rad};
   case Info::Type::ThreeDStack:
     return Point3{p(0) * rad, p(1) * rad, p(2)};
+  }
+}
+
+float Trajectory::merge(int16_t const read, int32_t const spoke) const
+{
+  if (spoke < info_.spokes_lo) {
+    return mergeLo_(read);
+  } else {
+    return mergeHi_(read);
   }
 }
 

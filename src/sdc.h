@@ -13,6 +13,6 @@ struct Kernel;
 namespace SDC {
 
 void Load(std::string const &fname, Trajectory const &traj, Gridder &gridder, Log &log);
-R2 Pipe(Gridder &gridder, Log &log);
+R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log);
 R2 Radial(Trajectory const &traj, Log &log);
 } // namespace SDC

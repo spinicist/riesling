@@ -14,25 +14,30 @@ void Load(std::string const &fname, Trajectory const &traj, Gridder &gridder, Lo
   } else if (fname == "none") {
     return;
   } else if (fname == "pipe") {
-    R2 const sdc = Pipe(gridder, log);
-    gridder.setSDC(sdc);
+    gridder.setSDC(Pipe(traj, gridder, log));
   } else if (fname == "radial") {
-    R2 const sdc = Radial(traj, log);
-    gridder.setSDC(sdc);
+    gridder.setSDC(Radial(traj, log));
   } else {
     HD5::Reader reader(fname, log);
     gridder.setSDC(reader.readSDC());
   }
 }
 
-R2 Pipe(Gridder &gridder, Log &log)
+R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
 {
   log.info("Using Pipe/Zwart/Menon SDC...");
   Cx2 W(gridder.info().read_points, gridder.info().spokes_total());
   Cx2 Wp(W.dimensions());
 
   W.setConstant(1.f);
+  for (long is = 0; is < traj.info().spokes_total(); is++) {
+    for (long ir = 0; ir < traj.info().read_points; ir++) {
+      W(ir, is) = traj.merge(ir, is);
+    }
+  }
+
   gridder.kernel()->sqrtOn();
+  gridder.setSDC(1.f);
   Cx3 temp = gridder.newGrid1();
   for (long ii = 0; ii < 8; ii++) {
     Wp.setZero();
@@ -107,12 +112,13 @@ R2 Radial3D(Trajectory const &traj, Log &log)
     R1 sdc(info.read_points);
     for (long ir = 0; ir < info.read_points; ir++) {
       float const rad = traj.point(ir, spoke, info.read_points).norm();
+      float const merge = traj.merge(ir, spoke);
       if (rad == 0.f) {
-        sdc(ir) = V * 1.f / 8.f;
+        sdc(ir) = merge * V * 1.f / 8.f;
       } else if (rad < flat_start) {
-        sdc(ir) = V * (3.f * (rad * rad) + 1.f / 4.f);
+        sdc(ir) = merge * V * (3.f * (rad * rad) + 1.f / 4.f);
       } else {
-        sdc(ir) = flat_val;
+        sdc(ir) = merge * flat_val;
       }
     }
     return sdc;

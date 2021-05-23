@@ -47,11 +47,11 @@ R3 ASpiral(long const nRead, long const nSpoke, long const offset)
 R3 ArchimedeanSpiral(Info const &info, long const offset)
 {
   R3 traj(3, info.read_points, info.spokes_total());
-  R3 hi = ASpiral(info.read_points, info.spokes_hi, offset);
-  traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi}) = hi;
   if (info.spokes_lo) {
     R3 lo = ASpiral(info.read_points, info.spokes_lo, offset);
     traj.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) = lo;
   }
+  R3 hi = ASpiral(info.read_points, info.spokes_hi, offset);
+  traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi}) = hi;
   return traj;
 }

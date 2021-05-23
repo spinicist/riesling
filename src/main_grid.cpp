@@ -30,7 +30,6 @@ int main_grid(args::Subparser &parser)
   auto const &vol_start = log.now();
 
   HD5::Writer writer(OutName(fname, oname, "grid", "h5"), log);
-  writer.writeInfo(info);
   writer.writeTrajectory(traj);
   if (forward) {
     reader.readCartesian(grid);
@@ -41,6 +40,7 @@ int main_grid(args::Subparser &parser)
   } else {
     reader.readNoncartesian(vol, rad_ks);
     gridder.toCartesian(rad_ks, grid);
+    log.image(grid, "grid.nii");
     writer.writeCartesian(grid);
     log.info("Wrote cartesian k-space. Took {}", log.toNow(vol_start));
   }

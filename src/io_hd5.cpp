@@ -25,7 +25,7 @@ void Init(Log &log)
     // void *old_client_data;
     // hid_t errorStack;
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
-    // err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
+    err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) {
       log.fail("Could not initialise HDF5, code: {}", err);
     }
