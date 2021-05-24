@@ -1,6 +1,5 @@
 #pragma once
 
-#include "info.h"
 #include "log.h"
 #include "types.h"
 
@@ -8,7 +7,9 @@
  * http://web.eecs.umich.edu/~fessler/code/
  */
 Cx4 birdcage(
-    Info const &info,
+    Eigen::Array3i const &matrix,
+    Eigen::Array3f cconst &voxel_size,
+    long const channels,
     long const nrings,
     float const coil_rad_mm,  // Radius of the actual coil, i.e. where the channels should go
     float const sense_rad_mm, // Sensitivity radius

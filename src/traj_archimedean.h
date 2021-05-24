@@ -2,4 +2,4 @@
 
 #include "info.h"
 
-R3 ArchimedeanSpiral(Info const &info, long const offset);
+R3 ArchimedeanSpiral(Info const &info);

@@ -39,14 +39,15 @@ std::vector<float> const pd{2, -0.8, -0.2, -0.2, 0.2, 0.2, 0.1, 0.1, 0.2, -0.2};
 } // namespace
 
 Cx3 SheppLoganPhantom(
-    Info const &info,
+    Array3l const &matrix,
+    Eigen::Array3f const &voxel_size,
     Eigen::Vector3f const &c,
     float const rad,
     float const intensity,
     Log const &log)
 {
   log.info(FMT_STRING("Drawing 3D Shepp Logan Phantom. Intensity {}"), intensity);
-  Cx3 phan(info.matrix[0], info.matrix[1], info.matrix[2]);
+  Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();
 
   long const cx = phan.dimension(0) / 2;
@@ -54,11 +55,11 @@ Cx3 SheppLoganPhantom(
   long const cz = phan.dimension(2) / 2;
 
   for (long iz = 0; iz < phan.dimension(2); iz++) {
-    auto const pz = (iz - cz) * info.voxel_size[2];
+    auto const pz = (iz - cz) * voxel_size[2];
     for (long iy = 0; iy < phan.dimension(1); iy++) {
-      auto const py = (iy - cy) * info.voxel_size[1];
+      auto const py = (iy - cy) * voxel_size[1];
       for (long ix = 0; ix < phan.dimension(0); ix++) {
-        auto const px = (ix - cx) * info.voxel_size[0];
+        auto const px = (ix - cx) * voxel_size[0];
         Eigen::Vector3f const p{px, py, pz};
         // Normalize coordinates between -1 and 1
         Eigen::Vector3f const r = (p - c) / rad;

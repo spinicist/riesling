@@ -5,12 +5,12 @@
  * vol. 32, no. 6, pp. 778–784, Dec. 1994, doi: 10.1002/mrm.1910320614.
  */
 
-R3 ASpiral(long const nRead, long const nSpoke, long const offset)
+R3 ASpiral(long const nRead, long const nSpoke)
 {
   R3 traj(3, nRead, nSpoke);
   R1 read(nRead);
   for (long ir = 0; ir < nRead; ir++) {
-    read(ir) = (float)(ir - offset) / nRead;
+    read(ir) = (float)(ir) / nRead;
   }
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<long>, 0> empty = {};
@@ -44,14 +44,14 @@ R3 ASpiral(long const nRead, long const nSpoke, long const offset)
   return traj;
 }
 
-R3 ArchimedeanSpiral(Info const &info, long const offset)
+R3 ArchimedeanSpiral(Info const &info)
 {
   R3 traj(3, info.read_points, info.spokes_total());
   if (info.spokes_lo) {
-    R3 lo = ASpiral(info.read_points, info.spokes_lo, offset);
+    R3 lo = ASpiral(info.read_points, info.spokes_lo);
     traj.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) = lo;
   }
-  R3 hi = ASpiral(info.read_points, info.spokes_hi, offset);
+  R3 hi = ASpiral(info.read_points, info.spokes_hi);
   traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi}) = hi;
   return traj;
 }

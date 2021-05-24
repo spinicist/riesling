@@ -5,7 +5,8 @@
 #include "types.h"
 
 Cx3 SphericalPhantom(
-    Info const &info,
+    Array3l const &matrix,
+    Eigen::Array3f const &voxel_size,
     Eigen::Vector3f const &center,
     float const radius,
     float const intensity,

@@ -37,7 +37,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> read_samp(
       parser, "SRATE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
   args::ValueFlag<float> spoke_samp(
-      parser, "SRATE", "Sample factor for spokes (default 1)", {'s', "spokes"}, 1);
+      parser, "SRATE", "Spoke undersampling (default 1)", {'s', "spokes"}, 1);
   args::ValueFlag<long> lores(
       parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
   args::ValueFlag<long> gap(parser, "DEAD-TIME", "Dead-time gap in read samples", {"gap"}, 0);
@@ -51,85 +51,96 @@ int main_phantom(args::Subparser &parser)
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
 
-  auto const m = matrix.Get();
-  auto const vox_sz = fov.Get() / m;
-  auto const spokes_hi = std::lrint(spoke_samp.Get() * m * m);
-  auto const o = -(m * vox_sz) / 2;
-  // Strategy - sample the grid at the *grid* sampling rate, and then decimate to read sampling rate
-  Info grid_info{.matrix = Array3l{m, m, m},
-                 .read_points = (long)read_samp.Get() * m / 2,
+  Kernel *kernel =
+      kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
+
+  auto const mtx = matrix.Get();
+  auto const vox_sz = fov.Get() / mtx;
+  auto const origin = -(mtx * vox_sz) / 2;
+
+  log.info(FMT_STRING("Matrix Size: {} Voxel Size: {}"), mtx, vox_sz);
+
+  Cx3 const phan =
+      shepplogan ? SheppLoganPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log)
+                 : SphericalPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
+  Cx4 sense = birdcage(mtx, vox_sz, nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
+
+  auto const spokes_hi = std::lrint(mtx * mtx / spoke_samp.Get());
+  Info info{.matrix = Array3l{mtx, mtx, mtx},
+            .read_points = (long)read_samp.Get() * mtx / 2,
+            .read_gap = 0,
+            .spokes_hi = spokes_hi,
+            .spokes_lo = 0,
+            .lo_scale = lores ? lores.Get() : 1.f,
+            .channels = nchan.Get(),
+            .type = Info::Type::ThreeD,
+            .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
+            .origin = Eigen::Vector3f{origin, origin, origin}};
+  log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
+
+  R3 points = ArchimedeanSpiral(info);
+  Trajectory traj(info, points, log);
+  Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
+  Cx4 grid = hi_gridder.newGrid();
+  FFT3N fft(grid, log); // FFTW needs temp space for planning
+
+  Cropper cropper(hi_gridder.gridDims(), mtx, log);
+  Apodizer apodizer(kernel, hi_gridder.gridDims(), mtx, log);
+  apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
+
+  log.info("Generating Cartesian k-space...");
+  grid.setZero();
+  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, info.channels);
+  fft.forward();
+
+  log.info("Sampling hi-res non-cartesian");
+  Cx3 radial = info.noncartesianVolume();
+  hi_gridder.toNoncartesian(grid, radial);
+
+  if (lores) {
+    // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
+    auto const spokes_lo = spokes_hi / lores.Get();
+    Info lo_info{.matrix = Array3l{mtx, mtx, mtx},
+                 .read_points = info.read_points,
                  .read_gap = 0,
-                 .spokes_hi = spokes_hi,
-                 .spokes_lo = lores ? static_cast<long>(spokes_hi / lores.Get()) : 0,
-                 .lo_scale = lores ? lores.Get() : 1.f,
+                 .spokes_hi = spokes_lo,
+                 .spokes_lo = 0,
+                 .lo_scale = 1.f,
                  .channels = nchan.Get(),
                  .type = Info::Type::ThreeD,
                  .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
-                 .origin = Eigen::Vector3f{o, o, o}};
-  log.info(
-      FMT_STRING("Matrix Size: {} Voxel Size: {} Oversampling: {} Dead-time Gap: {}"),
-      matrix.Get(),
-      vox_sz,
-      read_samp.Get(),
-      gap.Get());
-  log.info(
-      FMT_STRING("Hi-res spokes: {} Lo-res spokes: {} Lo-res scale: {}"),
-      grid_info.spokes_hi,
-      grid_info.spokes_lo,
-      grid_info.lo_scale);
-
-  // We want effective sample positions at the middle of the bin
-  Trajectory grid_traj(grid_info, ArchimedeanSpiral(grid_info, 0), log);
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
-  Gridder gridder(grid_traj, grid_samp.Get(), kernel, false, log);
-  Cx4 grid = gridder.newGrid();
-  FFT3N fft(grid, log); // FFTW needs temp space for planning
-
-  Cropper cropper(gridder.gridDims(), grid_info.matrix, log);
-  Cx3 phan;
-  if (shepplogan) {
-    phan = SheppLoganPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
-  } else {
-    phan = SphericalPhantom(grid_info, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
+                 .origin = Eigen::Vector3f{origin, origin, origin}};
+    R3 lo_points = ArchimedeanSpiral(lo_info);
+    Trajectory lo_traj(lo_info, lo_points / lores.Get(), log); // Points need to be scaled down here
+    Gridder lo_gridder(lo_traj, grid_samp.Get(), kernel, false, log);
+    Cx3 lo_radial = lo_info.noncartesianVolume();
+    lo_gridder.toNoncartesian(grid, lo_radial);
+    // Combine
+    Cx3 const all_radial = lo_radial.concatenate(radial, 2);
+    radial = all_radial;
+    R3 const all_points = lo_res.concatenate(points, 2);
+    points = all_points;
+    info.spokes_lo = lo_info.spokes_hi;
+    info.lo_scale = lores.Get();
+    traj = Trajectory(info, points, log);
   }
-  Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
-  apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
 
-  // Generate SENSE maps and multiply
-  log.info("Generating coil sensitivities...");
-  Cx4 sense = birdcage(grid_info, coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
-  log.info("Generating coil images...");
-  grid.setZero();
-  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, grid_info.channels);
-  if (log.level() >= Log::Level::Images) { // Extra check to avoid the shuffle when we can
-    log.image(SwapToChannelLast(grid), "phantom-prefft.nii");
-  }
-  log.info("FFT to k-space");
-  fft.forward();
-  if (log.level() >= Log::Level::Images) { // Extra check to avoid the shuffle when we can
-    log.image(SwapToChannelLast(grid), "phantom-postfft.nii");
-  }
-  Cx3 radial = grid_info.noncartesianVolume();
-  gridder.toNoncartesian(grid, radial);
   if (snr) {
     Cx3 noise(radial.dimensions());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
     radial += noise * noise.constant(intensity.Get() / snr.Get());
   }
 
-  HD5::Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
   if (gap) {
-    grid_info.read_gap = gap.Get();
-    Sz3 sz{grid_info.channels, grid_info.read_gap, grid_info.spokes_total()};
-    fmt::print("radial {} slice {}\n", fmt::join(radial.dimensions(), ","), fmt::join(sz, ","));
-    radial.slice(Sz3{0, 0, 0}, sz).setZero();
-    grid_traj = Trajectory(grid_info, grid_traj.points(), log);
+    info.read_gap = gap.Get();
+    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_gap, info.spokes_total()}).setZero();
+    traj = Trajectory(info, traj.points(), log);
   }
-  writer.writeTrajectory(grid_traj);
-  writer.writeNoncartesian(
-      radial.reshape(Sz4{grid_info.channels, grid_info.read_points, grid_info.spokes_total(), 1}));
 
+  HD5::Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
+  writer.writeTrajectory(traj);
+  writer.writeNoncartesian(
+      radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1}));
   FFT::End(log);
   return EXIT_SUCCESS;
 }
