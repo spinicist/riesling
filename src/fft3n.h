@@ -15,6 +15,8 @@ struct FFT3N
   void reverse() const;       //!< Multiple k-spaces to multiple images
   void reverse(Cx4 &x) const; //!< Multiple k-space to multiple images
 
+  float scale() const; //!< Return the scaling for the unitary transform
+
 private:
   void forwardPhase(Cx4 &x, float const scale) const;
   void reversePhase(Cx4 &x, float const scale) const;

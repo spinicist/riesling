@@ -1,128 +1,92 @@
 #include "espirit.h"
 
 #include "cropper.h"
+#include "decomp.h"
 #include "fft3n.h"
 #include "gridder.h"
+#include "hankel.h"
 #include "io_nifti.h"
 #include "padder.h"
 #include "tensorOps.h"
 #include "threads.h"
 
-#include <Eigen/SVD>
-
-Cx4 ESPIRIT(
-    Info const &info,
-    R3 const &traj,
-    float const os,
-    Kernel *const kernel,
-    long const calSz,
-    long const kSz,
-    float const retain,
-    Cx3 const &data,
-    Log &log)
+Cx4 ESPIRIT(Gridder const &gridder, Cx3 const &data, long const kRad, long const calRad, Log &log)
 {
-  // Grid and heavily smooth each coil image, accumulate combined image
-  float const sense_res = 6.f;
-  log.info(FMT_STRING("ESPIRIT Calibration Size {} Kernel Size {}"), calSz, kSz);
-  Gridder gridder(info, traj, os, kernel, false, log, sense_res, false);
-  Cx4 grid = gridder.newGrid();
-  FFT3N fftGrid(grid, log);
-  grid.setZero();
-  gridder.toCartesian(data, grid);
-  // Now reshape
-  long const gridHalf = grid.dimension(1) / 2;
-  long const calHalf = calSz / 2;
-  long const kernelHalf = kSz / 2;
-  long const nChan = grid.dimension(0);
-  long const calTotal = calSz * calSz * calSz;
-  Cx7 kernels(nChan, kSz, kSz, kSz, calSz, calSz, calSz);
-  fmt::print(
-      FMT_STRING("kernels {} grid {}\n"),
-      fmt::join(kernels.dimensions(), ","),
-      fmt::join(grid.dimensions(), ","));
-  long const startPoint = gridHalf - calHalf - kernelHalf;
-  for (long iz = 0; iz < calSz; iz++) {
-    for (long iy = 0; iy < calSz; iy++) {
-      for (long ix = 0; ix < calSz; ix++) {
-        long const st_z = startPoint + iz;
-        long const st_y = startPoint + iy;
-        long const st_x = startPoint + ix;
-        kernels.chip(iz, 6).chip(iy, 5).chip(ix, 4) =
-            grid.slice(Sz4{0, st_x, st_y, st_z}, Sz4{nChan, kSz, kSz, kSz});
-      }
+  log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
+  Cx4 lo_grid = gridder.newGrid();
+  FFT3N lo_fft(lo_grid, log);
+  lo_grid.setZero();
+  gridder.toCartesian(data, lo_grid);
+  log.image(lo_grid, "espirit-lo-grid.nii");
+  lo_fft.reverse();
+  log.image(lo_grid, "espirit-lo-img.nii");
+  lo_fft.forward();
+  log.info(FMT_STRING("Calculating k-space kernels"));
+  Cx5 const all_mini_kernels = ToKernels(lo_grid, kRad, calRad, gridder.info().read_gap, log);
+  log.image(Cx4(all_mini_kernels.chip(0, 4)), "espirit-mini-kernel0-ks.nii");
+  log.image(
+      Cx4(all_mini_kernels.chip(all_mini_kernels.dimension(4) / 2, 4)),
+      "espirit-mini-kernel1-ks.nii");
+  log.image(
+      Cx4(all_mini_kernels.chip(all_mini_kernels.dimension(4) - 1, 4)),
+      "espirit-mini-kernel2-ks.nii");
+  Cx5 const mini_kernels = LowRankKernels(all_mini_kernels, 0.05, log);
+  long const retain = mini_kernels.dimension(4);
+
+  log.info(FMT_STRING("Transform to image kernels"));
+  Cx5 lo_kernels(
+      lo_grid.dimension(0),
+      lo_grid.dimension(1),
+      lo_grid.dimension(2),
+      lo_grid.dimension(3),
+      retain);
+  lo_kernels.setZero();
+  Cropper const lo_mini(
+      Dims3{lo_grid.dimension(1), lo_grid.dimension(2), lo_grid.dimension(3)},
+      Dims3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)},
+      log);
+  float const scale =
+      (1.f /
+       sqrt(mini_kernels.dimension(1) * mini_kernels.dimension(2) * mini_kernels.dimension(3))) /
+      lo_fft.scale();
+  for (long kk = 0; kk < retain; kk++) {
+    lo_grid.setZero();
+    lo_mini.crop4(lo_grid) = mini_kernels.chip(kk, 4) * mini_kernels.chip(kk, 4).constant(scale);
+    if (kk == 0) {
+      log.image(lo_grid, "espirit-lo-kernel0-ks.nii");
     }
+    lo_fft.reverse(lo_grid);
+    lo_kernels.chip(kk, 4) = lo_grid;
+    log.progress(kk, 0, retain);
   }
-  Eigen::MatrixXcf kMat = CollapseToMatrix<Cx7, 4>(kernels);
-
-  auto const bdcsvd = kMat.transpose().bdcSvd(Eigen::ComputeThinV);
-  long const nRetain = std::lrintf(retain * calTotal);
-  Cx5 kRetain(nChan, kSz, kSz, kSz, nRetain);
-  auto retainMap = CollapseToMatrix<Cx5, 4>(kRetain);
-  log.info(FMT_STRING("Retaining {} singular vectors"), nRetain);
-  retainMap = bdcsvd.matrixV().leftCols(nRetain);
-
-  // As the Matlab reference version says, "rotate kernel to order by maximum variance"
-  auto retainReshaped = retainMap.reshaped(nChan, kSz * kSz * kSz * nRetain);
-  Eigen::MatrixXcf rotation = retainReshaped.transpose().bdcSvd(Eigen::ComputeFullV).matrixV();
-
-  fmt::print(
-      FMT_STRING("rR {} {} rotation {} {}\n"),
-      retainReshaped.rows(),
-      retainReshaped.cols(),
-      rotation.rows(),
-      rotation.cols());
-  retainMap = (retainReshaped.transpose() * rotation)
-                  .transpose()
-                  .reshaped(nChan * kSz * kSz * kSz, nRetain);
-
-  Cx4 tempKernel(nChan, calSz, calSz, calSz);
-  Log nullLog;
-  FFT3N fftKernel(tempKernel, nullLog);
-  Cx5 imgKernels(nChan, calSz, calSz, calSz, nRetain);
-  for (long ii = 0; ii < nRetain; ii++) {
-    ZeroPad(kRetain.chip(ii, 4), tempKernel);
-    fftKernel.reverse();
-    imgKernels.chip(ii, 4) = tempKernel;
-  }
-
-  Cx2 temp(nChan, nRetain);
-  auto const tempMap = CollapseToMatrix(temp);
-  Cx4 smallMaps(nChan, calSz, calSz, calSz);
-  Cx1 oneVox(nChan);
-  auto oneMap = CollapseToVector(oneVox);
-  Cx4 eValues(nChan, calSz, calSz, calSz);
-  eValues.setZero();
-  Cx1 eVox(nChan);
-  eVox.setZero();
-  auto eMap = CollapseToVector(eVox);
-  for (long iz = 0; iz < calSz; iz++) {
-    for (long iy = 0; iy < calSz; iy++) {
-      for (long ix = 0; ix < calSz; ix++) {
-        temp = imgKernels.chip(iz, 3).chip(iy, 2).chip(ix, 1);
-        auto const SVD = tempMap.bdcSvd(Eigen::ComputeFullU);
-        eMap.real() = SVD.singularValues();
-        eValues.chip(iz, 3).chip(iy, 2).chip(ix, 1) = eVox;
-
-        Eigen::MatrixXcf U = SVD.matrixU();
-        Eigen::ArrayXXcf const ph1 =
-            (U.row(0).array().arg() * std::complex<float>(0.f, -1.f)).exp();
-        Eigen::ArrayXXcf const ph = ph1.replicate(U.rows(), 1);
-        Eigen::MatrixXcf const R = rotation * (U.array() * ph).matrix();
-        oneMap = R.leftCols(1);
-        smallMaps.chip(iz, 3).chip(iy, 2).chip(ix, 1) = oneVox;
+  log.image(Cx4(lo_kernels.chip(0, 4)), "espirit-lo-kernel0-img.nii");
+  log.image(Cx4(lo_kernels.chip(retain / 2, 4)), "espirit-lo-kernel1-img.nii");
+  log.image(Cx4(lo_kernels.chip(retain - 1, 4)), "espirit-lo-kernel2-img.nii");
+  log.info(FMT_STRING("Image space Eigenanalysis"));
+  Cx4 vec = gridder.newGrid();
+  Cx4 val = gridder.newGrid();
+  auto cov_task = [&lo_kernels, &vec, &val, &log](long const lo_z, long const hi_z) {
+    for (long zz = lo_z; zz < hi_z; zz++) {
+      for (long yy = 0; yy < lo_kernels.dimension(2); yy++) {
+        for (long xx = 0; xx < lo_kernels.dimension(1); xx++) {
+          Cx2 const samples = lo_kernels.chip(zz, 3).chip(yy, 2).chip(xx, 1);
+          Cx2 const vox_cov = Covariance(samples);
+          Cx2 vecs(vox_cov.dimensions());
+          R1 vals(vox_cov.dimension(0));
+          PCA(vox_cov, vecs, vals, log);
+          Cx1 const vec0 = vecs.chip(vecs.dimension(1) - 1, 1);
+          float const phase = std::arg(vec0(0));
+          vec.chip(zz, 3).chip(yy, 2).chip(xx, 1) = (vec0 * std::polar(1.f, -phase)).conjugate();
+          val.chip(zz, 3).chip(yy, 2).chip(xx, 1) = vals.cast<Cx>();
+        }
       }
+      log.progress(zz, lo_z, hi_z);
     }
-  }
-
-  WriteNifti(info, Cx4(eValues.shuffle(Sz4{1, 2, 3, 0})), "smallvalues.nii", log);
-  WriteNifti(info, Cx4(smallMaps.shuffle(Sz4{1, 2, 3, 0})), "smallvectors.nii", log);
-  // FFT, embed to full size, FFT again
-  Cropper cropper(info, gridder.gridDims(), -1.f, log);
-  FFT3N fftSmall(smallMaps, log);
-  fftSmall.forward();
-  ZeroPad(smallMaps, grid);
-  fftGrid.reverse();
-
+  };
+  Threads::RangeFor(cov_task, lo_kernels.dimension(3));
   log.info("Finished ESPIRIT");
-  return grid;
+  // log.image(cov, "espirit-cov.nii");
+  log.image(val, "espirit-val.nii");
+  log.image(vec, "espirit-vec.nii");
+  return vec;
 }

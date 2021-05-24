@@ -42,7 +42,6 @@ int main_compress(args::Subparser &parser)
 
   auto const ofile = OutName(fname, oname, "compressed", "h5");
   HD5::Writer writer(ofile, log);
-  writer.writeInfo(out_info);
   writer.writeTrajectory(reader.readTrajectory());
   writer.writeNoncartesian(out_ks);
   return EXIT_SUCCESS;

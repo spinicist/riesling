@@ -40,7 +40,7 @@ struct Log
     vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
-  void progress(long const ii, long const n) const;
+  void progress(long const ii, long const lo, long const hi) const;
   Time now() const;
   std::string toNow(Time const t) const;
 

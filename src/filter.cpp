@@ -83,15 +83,16 @@ void KSFilter(std::function<float(float const &)> const &f, Cx4 &ks, Log &log)
   auto const hx = sx / 2;
 
   auto task = [&](long const lo, long const hi) {
-    for (long iz = lo - hz; iz < hi - hz; iz++) {
-      for (long iy = -hy; iy < hy; iy++) {
-        for (long ix = -hx; ix < hx; ix++) {
-          float const rz = static_cast<float>(iz) / hz;
-          float const ry = static_cast<float>(iy) / hy;
-          float const rx = static_cast<float>(ix) / hx;
+    for (long iz = lo; iz < hi; iz++) {
+      for (long iy = 0; iy < sy; iy++) {
+        for (long ix = 0; ix < sx; ix++) {
+          float const rz = static_cast<float>(iz - hz) / hz;
+          float const ry = static_cast<float>(iy - hy) / hy;
+          float const rx = static_cast<float>(ix - hx) / hx;
           float const r = sqrt(rx * rx + ry * ry + rz * rz);
-          ks.chip(Wrap(iz, sz), 3).chip(Wrap(iy, sy), 2).chip(Wrap(ix, sx), 1) *=
-              ks.chip(Wrap(iz, sz), 3).chip(Wrap(iy, sy), 2).chip(Wrap(ix, sx), 1).constant(f(r));
+          float const val = f(r);
+          ks.chip(iz, 3).chip(iy, 2).chip(ix, 1) *=
+              ks.chip(iz, 3).chip(iy, 2).chip(ix, 1).constant(val);
         }
       }
     }

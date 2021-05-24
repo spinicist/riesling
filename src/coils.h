@@ -7,8 +7,8 @@
  * http://web.eecs.umich.edu/~fessler/code/
  */
 Cx4 birdcage(
-    Eigen::Array3i const &matrix,
-    Eigen::Array3f cconst &voxel_size,
+    Array3l const &matrix,
+    Eigen::Array3f const &voxel_size,
     long const channels,
     long const nrings,
     float const coil_rad_mm,  // Radius of the actual coil, i.e. where the channels should go

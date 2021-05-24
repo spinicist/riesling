@@ -13,7 +13,7 @@ struct Trajectory
   Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
   float merge(int16_t const read, int32_t const spoke) const;
 
-  Trajectory trim(float const res, Cx3 &data) const;
+  Trajectory trim(float const res, Cx3 &data, bool const shrink = false) const;
 
 private:
   Info info_;

@@ -30,12 +30,15 @@ add_library(vineyard
     src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp
+    src/decomp.cpp
+    src/espirit.cpp
     src/fft1.cpp
     src/fft3.cpp
     src/fft3n.cpp
     src/fft_util.cpp
     src/filter.cpp
     src/gridder.cpp
+    src/hankel.cpp
     src/io_hd5.cpp
     src/io_nifti.cpp
     src/kernel.cpp
@@ -53,11 +56,11 @@ add_library(vineyard
     src/threads.cpp
     src/trajectory.cpp
     src/traj_archimedean.cpp
+    src/vc.cpp
     src/wavelets.cpp
     src/zinfandel.cpp
 )
 
-# hdf5::hdf5-static hdf5::hdf5_hl-static hdf5::hdf5_cpp-static hdf5::hdf5_hl_cpp-static
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     Eigen3::Eigen
@@ -100,10 +103,12 @@ target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(prufung
     test/main.cpp
     test/cropper.cpp
+    test/decomp.cpp
     test/fft1.cpp
     test/fft3.cpp
     test/fft3n.cpp
     test/gridder.cpp
+    test/hankel.cpp
     test/kernel_kb.cpp
     test/zinfandel.cpp
 )

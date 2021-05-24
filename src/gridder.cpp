@@ -42,6 +42,7 @@ Gridder::Gridder(
   } else {
     dims_ = {gridSz, gridSz, gridSz};
   }
+  log_.info(FMT_STRING("Grid size {}, oversample {}"), fmt::join(dims_, ","), oversample_);
   genCoords(traj, (gridSz / 2) - 1);
   sortCoords();
 }
@@ -63,7 +64,7 @@ void Gridder::genCoords(Trajectory const &traj, long const nomRad)
       // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
       // Otherwise leave space for kernel
       float const maxRad = (is < info_.spokes_lo)
-                               ? oversample_ * info_.read_gap / info_.spoke_oversamp()
+                               ? oversample_ * info_.read_gap / info_.read_oversamp()
                                : nomRad - kernel_->radius();
       if (xyz.norm() <= maxRad) {
         Size3 const gp = nearby(xyz).cast<int16_t>();
@@ -186,9 +187,7 @@ void Gridder::toCartesian(Cx2 const &noncart, Cx3 &cart) const
     }
 
     for (auto ii = lo; ii < hi; ii++) {
-      if (lo == 0) {
-        log_.progress(ii, hi);
-      }
+      log_.progress(ii, lo, hi);
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
@@ -246,9 +245,7 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
     }
 
     for (auto ii = lo; ii < hi; ii++) {
-      if (lo == 0) {
-        log_.progress(ii, hi);
-      }
+      log_.progress(ii, lo, hi);
       auto const &cp = coords_[sortedIndices_[ii]];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;
@@ -302,9 +299,7 @@ void Gridder::toNoncartesian(Cx3 const &cart, Cx2 &noncart) const
   Log nullLog;
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
-      if (lo == 0) {
-        log_.progress(ii, hi);
-      }
+      log_.progress(ii, lo, hi);
       // for (auto ii = 0; ii < coords_.size(); ii++) {
       auto const &cp = coords_[ii];
       auto const &c = cp.cart;
@@ -338,9 +333,7 @@ void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
   auto const sz = kernel_->size();
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
-      if (lo == 0) {
-        log_.progress(ii, hi);
-      }
+      log_.progress(ii, lo, hi);
       auto const &cp = coords_[ii];
       auto const &c = cp.cart;
       auto const &nc = cp.noncart;

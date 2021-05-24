@@ -9,7 +9,7 @@
 
 // Tensor operations
 template <typename T>
-decltype(auto) Tr(T const &a)
+decltype(auto) Transpose(T const &a)
 {
   assert(a.NumDimensions == 1);
   return a.reshape(Eigen::array<long, 2>{1, a.size()});

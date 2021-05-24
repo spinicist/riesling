@@ -29,7 +29,7 @@ R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
   Cx2 W(gridder.info().read_points, gridder.info().spokes_total());
   Cx2 Wp(W.dimensions());
 
-  W.setConstant(1.f);
+  W.setZero();
   for (long is = 0; is < traj.info().spokes_total(); is++) {
     for (long ir = 0; ir < traj.info().read_points; ir++) {
       W(ir, is) = traj.merge(ir, is);
@@ -37,18 +37,17 @@ R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
   }
 
   gridder.kernel()->sqrtOn();
-  gridder.setSDC(1.f);
   Cx3 temp = gridder.newGrid1();
-  for (long ii = 0; ii < 8; ii++) {
+  for (long ii = 0; ii < 10; ii++) {
     Wp.setZero();
     temp.setZero();
     gridder.toCartesian(W, temp);
     gridder.toNoncartesian(temp, Wp);
     Wp.device(Threads::GlobalDevice()) =
         (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
-    float const delta = Norm(Wp - W) / W.size();
+    float const delta = R0((Wp - W).real().square().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 1.e-5) {
+    if (delta < 5.e-2) {
       log.info("SDC converged, delta was {}", delta);
       break;
     } else {
@@ -64,7 +63,7 @@ R2 Radial2D(Trajectory const &traj, Log &log)
 {
   Info const &info = traj.info();
   auto spoke_sdc = [&](long const spoke, long const N, float const scale) -> R1 {
-    float const k_delta = 1. / (info.spoke_oversamp() * scale);
+    float const k_delta = 1. / (info.read_oversamp() * scale);
     float const V = 2.f * k_delta * M_PI / N; // Area element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * info.matrix.maxCoeff()) / (N * scale);
@@ -103,7 +102,7 @@ R2 Radial3D(Trajectory const &traj, Log &log)
   auto const &info = traj.info();
   auto spoke_sdc = [&](long const &spoke, long const N, float const scale) -> R1 {
     // Calculate the point spacing
-    float const k_delta = 1.f / (info.spoke_oversamp() * scale);
+    float const k_delta = 1.f / (info.read_oversamp() * scale);
     float const V = (4.f / 3.f) * k_delta * M_PI / N; // Volume element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * info.matrix.maxCoeff() * info.matrix.maxCoeff()) / (N * scale * scale);

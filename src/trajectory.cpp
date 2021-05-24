@@ -70,7 +70,7 @@ float Trajectory::merge(int16_t const read, int32_t const spoke) const
   }
 }
 
-Trajectory Trajectory::trim(float const res, Cx3 &data) const
+Trajectory Trajectory::trim(float const res, Cx3 &data, bool const shrink) const
 {
   if (res <= 0.f) {
     log_.fail("Asked for trajectory with resolution {} which is less than or equal to zero", res);
@@ -81,21 +81,29 @@ Trajectory Trajectory::trim(float const res, Cx3 &data) const
   // Assume radial spokes for now
   Info new_info = info_;
 
-  int16_t lo = std::numeric_limits<int16_t>::max();
   int16_t hi = std::numeric_limits<int16_t>::min();
-
   for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
     float const rad = point(ir, info_.spokes_lo, 1.f).norm();
     if (rad <= ratio) { // Discard points above the desired resolution
-      lo = std::min(ir, lo);
       hi = std::max(ir, hi);
     }
   }
-  new_info.read_points = hi - lo;
-  log_.info("Trimming data to read points {}-{}", lo, hi);
-  R3 new_points = points_.slice(Sz3{0, lo, 0}, Sz3{3, new_info.read_points, info_.spokes_total()});
+  new_info.read_points = hi;
+  log_.info("Trimming data to read points {}-{}", 0, hi);
+  R3 new_points = points_.slice(Sz3{0, 0, 0}, Sz3{3, new_info.read_points, info_.spokes_total()});
+  if (shrink) {
+    new_info.matrix = (info_.matrix.cast<float>() * ratio).cast<long>();
+    // Assume this is the maximum radius
+    new_points =
+        new_points / ratio; // Norm(new_points.chip(0, 2).chip(new_info.read_points - 1, 1));
+    log_.info(
+        FMT_STRING("Reducing matrix from {} to {}"),
+        info_.matrix.transpose(),
+        new_info.matrix.transpose());
+  }
+
   Cx3 const temp =
-      data.slice(Sz3{0, lo, 0}, Sz3{data.dimension(0), new_info.read_points, data.dimension(2)});
+      data.slice(Sz3{0, 0, 0}, Sz3{data.dimension(0), new_info.read_points, data.dimension(2)});
   data = temp;
   return Trajectory(new_info, new_points, log_);
 }

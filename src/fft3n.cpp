@@ -47,6 +47,11 @@ FFT3N::~FFT3N()
   fftwf_destroy_plan(reverse_plan_);
 }
 
+float FFT3N::scale() const
+{
+  return scale_;
+}
+
 void FFT3N::forwardPhase(Cx4 &x, float const scale) const
 {
 

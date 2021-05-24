@@ -54,28 +54,28 @@ int main_phantom(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, grid_samp.Get(), true) : (Kernel *)new NearestNeighbour();
 
-  auto const mtx = matrix.Get();
-  auto const vox_sz = fov.Get() / mtx;
-  auto const origin = -(mtx * vox_sz) / 2;
+  auto const mtx = Array3l::Constant(matrix.Get());
+  auto const vox_sz = Eigen::Array3f::Constant(fov.Get() / matrix.Get());
+  auto const origin = -(mtx.cast<float>() * vox_sz) / 2.f;
 
-  log.info(FMT_STRING("Matrix Size: {} Voxel Size: {}"), mtx, vox_sz);
+  log.info(FMT_STRING("Matrix Size: {} Voxel Size: {}"), mtx.transpose(), vox_sz.transpose());
 
-  Cx3 const phan =
-      shepplogan ? SheppLoganPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log)
+  Cx3 phan = shepplogan
+                 ? SheppLoganPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log)
                  : SphericalPhantom(mtx, vox_sz, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
   Cx4 sense = birdcage(mtx, vox_sz, nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
 
-  auto const spokes_hi = std::lrint(mtx * mtx / spoke_samp.Get());
-  Info info{.matrix = Array3l{mtx, mtx, mtx},
-            .read_points = (long)read_samp.Get() * mtx / 2,
+  auto const spokes_hi = std::lrint(matrix.Get() * matrix.Get() / spoke_samp.Get());
+  Info info{.matrix = mtx,
+            .read_points = (long)read_samp.Get() * matrix.Get() / 2,
             .read_gap = 0,
             .spokes_hi = spokes_hi,
             .spokes_lo = 0,
             .lo_scale = lores ? lores.Get() : 1.f,
             .channels = nchan.Get(),
             .type = Info::Type::ThreeD,
-            .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
-            .origin = Eigen::Vector3f{origin, origin, origin}};
+            .voxel_size = vox_sz,
+            .origin = origin};
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
 
   R3 points = ArchimedeanSpiral(info);
@@ -85,7 +85,7 @@ int main_phantom(args::Subparser &parser)
   FFT3N fft(grid, log); // FFTW needs temp space for planning
 
   Cropper cropper(hi_gridder.gridDims(), mtx, log);
-  Apodizer apodizer(kernel, hi_gridder.gridDims(), mtx, log);
+  Apodizer apodizer(kernel, hi_gridder.gridDims(), cropper.size(), log);
   apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
 
   log.info("Generating Cartesian k-space...");
@@ -100,7 +100,7 @@ int main_phantom(args::Subparser &parser)
   if (lores) {
     // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
     auto const spokes_lo = spokes_hi / lores.Get();
-    Info lo_info{.matrix = Array3l{mtx, mtx, mtx},
+    Info lo_info{.matrix = mtx,
                  .read_points = info.read_points,
                  .read_gap = 0,
                  .spokes_hi = spokes_lo,
@@ -108,17 +108,20 @@ int main_phantom(args::Subparser &parser)
                  .lo_scale = 1.f,
                  .channels = nchan.Get(),
                  .type = Info::Type::ThreeD,
-                 .voxel_size = Eigen::Array3f{vox_sz, vox_sz, vox_sz},
-                 .origin = Eigen::Vector3f{origin, origin, origin}};
+                 .voxel_size = vox_sz,
+                 .origin = origin};
     R3 lo_points = ArchimedeanSpiral(lo_info);
-    Trajectory lo_traj(lo_info, lo_points / lores.Get(), log); // Points need to be scaled down here
+    Trajectory lo_traj(
+        lo_info,
+        R3(lo_points / lo_points.constant(lores.Get())), // Points need to be scaled down here
+        log);
     Gridder lo_gridder(lo_traj, grid_samp.Get(), kernel, false, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_gridder.toNoncartesian(grid, lo_radial);
     // Combine
     Cx3 const all_radial = lo_radial.concatenate(radial, 2);
     radial = all_radial;
-    R3 const all_points = lo_res.concatenate(points, 2);
+    R3 const all_points = lo_points.concatenate(points, 2);
     points = all_points;
     info.spokes_lo = lo_info.spokes_hi;
     info.lo_scale = lores.Get();

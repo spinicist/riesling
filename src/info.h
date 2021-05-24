@@ -30,7 +30,7 @@ struct Info
     return spokes_hi + spokes_lo;
   }
 
-  inline float spoke_oversamp() const
+  inline float read_oversamp() const
   {
     return read_points / (matrix.maxCoeff() / 2);
   }

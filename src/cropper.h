@@ -41,13 +41,13 @@ struct Cropper
   R4 newRealSeries(long const nVols) const;
 
   template <typename T>
-  decltype(auto) crop3(T &&x)
+  decltype(auto) crop3(T &&x) const
   {
     return x.slice(Dims3{st_[0], st_[1], st_[2]}, Dims3{sz_[0], sz_[1], sz_[2]});
   }
 
   template <typename T>
-  decltype(auto) crop4(T &&x)
+  decltype(auto) crop4(T &&x) const
   {
     return x.slice(Dims4{0, st_[0], st_[1], st_[2]}, Dims4{x.dimension(0), sz_[0], sz_[1], sz_[2]});
   }
