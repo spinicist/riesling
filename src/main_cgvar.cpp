@@ -92,7 +92,7 @@ int main_cgvar(args::Subparser &parser)
       currentVolume = iv;
     }
     dec(rad_ks, vol); // Initialize
-    cgvar(sys, thr.Get(), its.Get(), pre0.Get(), pre1.Get(), vol, log);
+    cgvar(sys, its.Get(), thr.Get(), pre0.Get(), pre1.Get(), vol, log);
     cropped = out_cropper.crop3(vol);
     apodizer.deapodize(cropped);
     if (tukey_s || tukey_e || tukey_h) {

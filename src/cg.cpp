@@ -3,7 +3,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-void cg(CgSystem const &sys, float const &thresh, long const &max_its, Cx3 &img, Log &log)
+void cg(CgSystem const &sys, long const &max_its, float const &thresh, Cx3 &img, Log &log)
 {
   log.info(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
 
@@ -42,8 +42,8 @@ void cg(CgSystem const &sys, float const &thresh, long const &max_its, Cx3 &img,
 
 void cgvar(
     CgVarSystem const &sys,
-    float const &thresh,
     long const &max_its,
+    float const &thresh,
     float const &pre0,
     float const &pre1,
     Cx3 &img,
