@@ -54,7 +54,6 @@ Cx4 SENSE(
     Gridder lo_gridder(lo_traj, gridder.oversample(), gridder.kernel(), false, log);
     SDC::Load("pipe", lo_traj, lo_gridder, log);
     Cx4 sense = Direct(lo_gridder, lo_data, log);
-    VBC(sense, log);
     return sense;
   } else if (method == "espirit") {
     Cx3 lo_data = data;
@@ -64,7 +63,6 @@ Cx4 SENSE(
         "sense-lo-data.nii");
     Gridder lo_gridder(lo_traj, gridder.oversample(), gridder.kernel(), false, log);
     SDC::Load("pipe", lo_traj, lo_gridder, log);
-
     // Set this up for upsampling
     Cx4 lores = lo_gridder.newGrid();
     FFT3N lo_fft(lores, log);
