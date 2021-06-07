@@ -62,6 +62,10 @@ void store_tensor(
   if constexpr (ND > 3) {
     chunk_dims[0] = 1;
   }
+  // Try to stop chunk dimension going over 4 gig
+  if (chunk_dims[1] > 1024) {
+    chunk_dims[1] = 1024;
+  }
 
   auto const space = H5Screate_simple(ND, ds_dims, NULL);
   auto const plist = H5Pcreate(H5P_DATASET_CREATE);
@@ -123,24 +127,38 @@ void load_tensor_slab(
   if (dset < 0) {
     log.fail("Could not open tensor {}", name);
   }
+
+  auto const ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank != ND) {
+    log.fail("Mismatch between tensor rank {} and HD5 rank {}", ND, rank);
+  }
   hsize_t dims[ND];
-  hid_t ds = H5Dget_space(dset);
   H5Sget_simple_extent_dims(ds, dims, NULL);
   for (int ii = 1; ii < ND; ii++) {
     // HD5=row-major, Eigen=col-major, so dimensions are reversed
     assert(dims[ii] == tensor.dimension(CD - ii));
   }
 
-  hsize_t start[ND], stride[ND], count[ND], block[ND];
-  std::fill_n(&start[1], CD, 0);
-  start[0] = index;
-  std::fill_n(&stride[0], ND, 1);
-  std::fill_n(&count[0], ND, 1);
-  std::copy_n(&dims[1], CD, &block[1]);
-  block[0] = 1;
+  hsize_t h5_start[ND], h5_stride[ND], h5_count[ND], h5_block[ND];
+  h5_start[0] = index;
+  std::fill_n(&h5_start[1], CD, 0);
+  std::fill_n(&h5_stride[0], ND, 1);
+  std::fill_n(&h5_count[0], ND, 1);
+  h5_block[0] = 1;
+  std::copy_n(&dims[1], CD, &h5_block[1]);
+  auto status = H5Sselect_hyperslab(ds, H5S_SELECT_SET, h5_start, h5_stride, h5_count, h5_block);
 
-  herr_t status = H5Sselect_hyperslab(ds, H5S_SELECT_SET, start, stride, count, block);
-  status = H5Dread(dset, type<Scalar>(), H5S_ALL, ds, H5P_DATASET_XFER_DEFAULT, tensor.data());
+  hsize_t mem_dims[CD], mem_start[CD], mem_stride[CD], mem_count[CD], mem_block[CD];
+  std::copy_n(&dims[1], CD, &mem_dims[0]);
+  std::fill_n(&mem_start[0], CD, 0);
+  std::fill_n(&mem_stride[0], CD, 1);
+  std::fill_n(&mem_count[0], CD, 1);
+  std::copy_n(&dims[1], CD, &mem_block[0]);
+  auto const mem_ds = H5Screate_simple(CD, mem_dims, NULL);
+  status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, mem_start, mem_stride, mem_count, mem_block);
+
+  status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
     log.fail("Error reading slab {} from tensor {}, code:", index, name, status);
   } else {
