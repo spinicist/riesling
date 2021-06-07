@@ -59,6 +59,7 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   case Info::Type::ThreeDStack:
     return Point3{p(0) * rad, p(1) * rad, p(2)};
   }
+  __builtin_unreachable(); // Because the GCC devs are very obtuse
 }
 
 float Trajectory::merge(int16_t const read, int32_t const spoke) const
