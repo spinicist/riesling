@@ -1,6 +1,6 @@
 #include "decomp.h"
 
-#include <Eigen/Eigenvalues>
+// #include <Eigen/Eigenvalues>
 #include <Eigen/SVD>
 
 Cx5 LowRankKernels(Cx5 const &mIn, float const thresh, Log const &log)
@@ -26,19 +26,15 @@ Cx2 Covariance(Cx2 const &data)
          scale;
 }
 
-void PCA(Cx2 const &gramIn, Cx2 &vecIn, R1 &valIn, Log const &log)
+void PCA(Cx2 const &dataIn, Cx2 &vecIn, R1 &valIn, Log const &log)
 {
-  Eigen::Map<Eigen::MatrixXcf const> gram(gramIn.data(), gramIn.dimension(0), gramIn.dimension(1));
-  if (gram.adjoint() != gram) {
-    log.fail("Gram Matrix was not self-adjoint");
-  }
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcf> es;
-  es.compute(gram);
+  Eigen::Map<Eigen::MatrixXcf const> data(dataIn.data(), dataIn.dimension(0), dataIn.dimension(1));
+  auto const svd = data.transpose().bdcSvd(Eigen::ComputeThinV);
   Eigen::Map<Eigen::MatrixXcf> vec(vecIn.data(), vecIn.dimension(0), vecIn.dimension(1));
   Eigen::Map<Eigen::VectorXf> val(valIn.data(), valIn.dimension(0));
-  assert(vec.rows() == gram.rows());
-  assert(vec.cols() == gram.cols());
-  assert(val.rows() == gram.rows());
-  vec = es.eigenvectors();
-  val = es.eigenvalues();
+  assert(vec.rows() == data.rows());
+  assert(vec.cols() == data.rows());
+  assert(val.rows() == data.rows());
+  vec = svd.matrixV();
+  val = svd.singularValues().diagonal().array().sqrt();
 }

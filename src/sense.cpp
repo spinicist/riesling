@@ -73,9 +73,8 @@ Cx4 SENSE(
         Dims3{lores.dimension(1), lores.dimension(2), lores.dimension(3)},
         log);
     long const kRad = 4;
-    long const calRad = kRad + 2 + (lo_gridder.info().spokes_lo ? 0 : lo_gridder.info().read_gap);
+    long const calRad = kRad + 1 + (lo_gridder.info().spokes_lo ? 0 : lo_gridder.info().read_gap);
     lores = ESPIRIT(lo_gridder, lo_data, kRad, calRad, log);
-    VBC(lores, log);
     log.info(FMT_STRING("Upsample maps"));
     lo_fft.forward(lores);
     log.image(lores, "espirit-lores-ks.nii");
