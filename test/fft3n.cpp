@@ -1,24 +1,24 @@
-#include "../src/fft3n.h"
+#include "../src/fft_many.h"
 #include "../src/log.h"
 #include "../src/tensorOps.h"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
-TEST_CASE("3DN-FFT", "[FFT3N]")
+TEST_CASE("FFT-Many", "[FFT::Many]")
 {
   Log log;
   FFT::Start(log);
 
   auto sx = GENERATE(3, 5, 7, 16);
   auto sy = sx;
-  SECTION("FFT3N")
+  SECTION("FFT::Many<4>")
   {
     auto sz = GENERATE(1, 3, 7, 8, 16);
     long const N = sx * sy * sz;
     long const nc = 32;
     Cx4 data(nc, sx, sy, sz);
     Cx4 ref(nc, sx, sy, sz);
-    FFT3N fft(data, log);
+    FFT::Many<4> fft(data, log);
 
     ref.setConstant(1.f);
     data.setZero();

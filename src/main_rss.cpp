@@ -2,7 +2,7 @@
 
 #include "apodizer.h"
 #include "cropper.h"
-#include "fft3n.h"
+#include "fft_many.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -34,7 +34,7 @@ int main_rss(args::Subparser &parser)
   out.setZero();
   image.setZero();
 
-  FFT3N fft(grid, log);
+  FFT::Many<4> fft(grid, log);
 
   auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {

@@ -11,6 +11,6 @@ namespace FFT {
 void Start(Log &log);
 void End(Log &log);
 void SetTimelimit(double time);
-Cxd1 Phase(long const sz);
+Cx1 Phase(long const sz);
 
 } // namespace FFT

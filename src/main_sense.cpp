@@ -3,7 +3,7 @@
 #include "apodizer.h"
 #include "cropper.h"
 #include "espirit.h"
-#include "fft3n.h"
+#include "fft_many.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -64,7 +64,7 @@ int main_sense(args::Subparser &parser)
         log);
   }
   if (save_kernels) {
-    FFT3N kernelFFT(sense, log);
+    FFT::Many<4> kernelFFT(sense, log);
     kernelFFT.forward();
     WriteNifti(
         info,
@@ -76,7 +76,7 @@ int main_sense(args::Subparser &parser)
 
   Cx4 grid = gridder.newGrid();
   grid.setZero();
-  FFT3N fft(grid, log);
+  FFT::Many<4> fft(grid, log);
   Cx3 image = cropper.newImage();
   Cx4 out = cropper.newSeries(info.volumes);
   Cx4 channel_images = cropper.newMultichannel(info.channels);

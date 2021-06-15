@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "espirit.h"
-#include "fft3n.h"
+#include "fft_many.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -17,7 +17,7 @@ Cx4 Direct(Gridder const &gridder, Cx3 const &data, Log &log)
   // Grid at low res & accumulate combined image
   Cx4 grid = gridder.newGrid();
   R3 rss(gridder.gridDims());
-  FFT3N fftN(grid, log);
+  FFT::Many<4> fftN(grid, log);
   grid.setZero();
   rss.setZero();
   gridder.toCartesian(data, grid);
@@ -65,9 +65,9 @@ Cx4 SENSE(
     SDC::Load("pipe", lo_traj, lo_gridder, log);
     // Set this up for upsampling
     Cx4 lores = lo_gridder.newGrid();
-    FFT3N lo_fft(lores, log);
+    FFT::Many<4> lo_fft(lores, log);
     Cx4 hires = gridder.newGrid();
-    FFT3N hi_fft(hires, log);
+    FFT::Many<4> hi_fft(hires, log);
     Cropper const cropper(
         Dims3{hires.dimension(1), hires.dimension(2), hires.dimension(3)},
         Dims3{lores.dimension(1), lores.dimension(2), lores.dimension(3)},

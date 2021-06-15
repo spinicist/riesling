@@ -1,7 +1,7 @@
 #include "vc.h"
 
 #include "cropper.h"
-#include "fft3n.h"
+#include "fft_many.h"
 #include "tensorOps.h"
 
 #include <Eigen/SVD>
@@ -34,7 +34,7 @@ void VCC(Cx4 &data, Log &log)
 
   // Assemble our virtual conjugate channels
   Cx4 cdata(nc, nx, ny, nz);
-  FFT3N fft(cdata, log);
+  FFT::Many<4> fft(cdata, log);
   cdata = data;
   log.image(cdata, "vcc-cdata.nii");
   fft.forward(cdata);

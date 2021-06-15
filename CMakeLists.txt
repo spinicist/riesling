@@ -34,7 +34,7 @@ add_library(vineyard
     src/espirit.cpp
     src/fft1.cpp
     src/fft3.cpp
-    src/fft3n.cpp
+    src/fft_many.cpp
     src/fft_util.cpp
     src/filter.cpp
     src/gridder.cpp
@@ -106,7 +106,7 @@ add_executable(prufung
     test/decomp.cpp
     test/fft1.cpp
     test/fft3.cpp
-    test/fft3n.cpp
+    test/fft3N.cpp
     test/gridder.cpp
     test/hankel.cpp
     test/kernel_kb.cpp

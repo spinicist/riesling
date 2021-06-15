@@ -37,9 +37,9 @@ void FFT3::init(Cx3 &workspace, long const nThreads)
   reverse_plan_ = fftwf_plan_many_dft(
       3, sizes, 1, ptr, nullptr, 1, 1, ptr, nullptr, 1, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
-  phX_ = FFT::Phase(dims[0]);
-  phY_ = FFT::Phase(dims[1]);
-  phZ_ = FFT::Phase(dims[2]);
+  phX_ = FFT::Phase(dims[0]).cast<Cxd>();
+  phY_ = FFT::Phase(dims[1]).cast<Cxd>();
+  phZ_ = FFT::Phase(dims[2]).cast<Cxd>();
 
   log_.debug("Planning took {}", log_.toNow(start));
 }

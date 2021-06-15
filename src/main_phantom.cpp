@@ -1,7 +1,7 @@
 #include "apodizer.h"
 #include "coils.h"
 #include "cropper.h"
-#include "fft3n.h"
+#include "fft_many.h"
 #include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
@@ -82,7 +82,7 @@ int main_phantom(args::Subparser &parser)
   Trajectory traj(info, points, log);
   Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
   Cx4 grid = hi_gridder.newGrid();
-  FFT3N fft(grid, log); // FFTW needs temp space for planning
+  FFT::Many<4> fft(grid, log); // FFTW needs temp space for planning
 
   Cropper cropper(hi_gridder.gridDims(), mtx, log);
   Apodizer apodizer(kernel, hi_gridder.gridDims(), cropper.size(), log);

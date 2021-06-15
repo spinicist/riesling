@@ -3,7 +3,7 @@
 #include "apodizer.h"
 #include "cg.h"
 #include "cropper.h"
-#include "fft3n.h"
+#include "fft_many.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -45,7 +45,7 @@ int main_cg(args::Subparser &parser)
 
   Cx4 grid = gridder.newGrid();
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
-  FFT3N fft(grid, log);
+  FFT::Many<4> fft(grid, log);
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
