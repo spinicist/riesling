@@ -2,7 +2,7 @@
 
 #include "apodizer.h"
 #include "cropper.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -49,7 +49,7 @@ int main_tgv(args::Subparser &parser)
 
   Cx4 grid = gridder.newGrid();
   grid.setZero();
-  FFT::Many<4> fft(grid, log);
+  FFT::ThreeDMulti fft(grid, log);
 
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   Cx3 rad_ks = info.noncartesianVolume();
@@ -62,16 +62,15 @@ int main_tgv(args::Subparser &parser)
     y.setZero();
     grid.setZero();
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = Tile(x, info.channels) * sense;
-    fft.forward();
+    fft.forward(grid);
     gridder.toNoncartesian(grid, y);
     log.debug("Encode: {}", log.toNow(start));
   };
 
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.now();
-    grid.setZero();
     gridder.toCartesian(x, grid);
-    fft.reverse();
+    fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("Decode: {}", log.toNow(start));
   };

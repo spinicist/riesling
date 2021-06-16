@@ -11,7 +11,7 @@
  */
 struct Apodizer
 {
-  Apodizer(Kernel *const k, Dims3 const &grid, Dims3 const &img, Log &log);
+  Apodizer(Kernel *const k, Sz3 const &grid, Sz3 const &img, Log &log);
 
   void apodize(Cx3 &x);
   void deapodize(Cx3 &x);

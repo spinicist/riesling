@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "fft3.h"
+#include "fft_plan.h"
 #include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
@@ -27,7 +27,7 @@ int main_traj(args::Subparser &parser)
   Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
   Cx3 grid = gridder.newGrid1();
-  FFT3 fft(grid, log);
+  FFT::ThreeD fft(grid, log);
 
   grid.setZero();
   Cx2 rad_ks(info.read_points, info.spokes_total());

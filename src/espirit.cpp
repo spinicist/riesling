@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "decomp.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "gridder.h"
 #include "hankel.h"
 #include "io_nifti.h"
@@ -15,7 +15,7 @@ Cx4 ESPIRIT(Gridder const &gridder, Cx3 const &data, long const kRad, long const
 {
   log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
   Cx4 lo_grid = gridder.newGrid();
-  FFT::Many<4> lo_fft(lo_grid, log);
+  FFT::ThreeDMulti lo_fft(lo_grid, log);
   gridder.toCartesian(data, lo_grid);
   log.info(FMT_STRING("Calculating k-space kernels"));
   Cx5 const all_kernels = ToKernels(lo_grid, kRad, calRad, gridder.info().read_gap, log);
@@ -30,8 +30,8 @@ Cx4 ESPIRIT(Gridder const &gridder, Cx3 const &data, long const kRad, long const
       retain);
   lo_kernels.setZero();
   Cropper const lo_mini(
-      Dims3{lo_grid.dimension(1), lo_grid.dimension(2), lo_grid.dimension(3)},
-      Dims3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)},
+      Sz3{lo_grid.dimension(1), lo_grid.dimension(2), lo_grid.dimension(3)},
+      Sz3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)},
       log);
   float const scale =
       (1.f /

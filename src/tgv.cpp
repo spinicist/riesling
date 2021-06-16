@@ -5,9 +5,9 @@
 
 inline auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
 {
-  Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
-  Dims3 fwd{1, 1, 1};
+  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
+  Sz3 fwd{1, 1, 1};
   fwd[d] = 2;
 
   return (a.slice(fwd, sz) - a.slice(st1, sz));
@@ -15,9 +15,9 @@ inline auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
 
 inline auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
 {
-  Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
-  Dims3 bck{1, 1, 1};
+  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
+  Sz3 bck{1, 1, 1};
   bck[d] = 0;
 
   return (a.slice(st1, sz) - a.slice(bck, sz));
@@ -25,10 +25,10 @@ inline auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
 
 inline auto CentralDiff(Cx3 const &a, Eigen::Index const d)
 {
-  Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
-  Dims3 fwd{1, 1, 1};
-  Dims3 bck{1, 1, 1};
+  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
+  Sz3 fwd{1, 1, 1};
+  Sz3 bck{1, 1, 1};
   fwd[d] = 2;
   bck[d] = 0;
 
@@ -37,8 +37,8 @@ inline auto CentralDiff(Cx3 const &a, Eigen::Index const d)
 
 inline void Grad(Cx3 const &a, Cx4 &g, Eigen::ThreadPoolDevice &dev)
 {
-  Dims3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
+  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
   g.chip<3>(0).slice(st1, sz).device(dev) = ForwardDiff(a, 0);
   g.chip<3>(1).slice(st1, sz).device(dev) = ForwardDiff(a, 1);
   g.chip<3>(2).slice(st1, sz).device(dev) = ForwardDiff(a, 2);
@@ -46,8 +46,8 @@ inline void Grad(Cx3 const &a, Cx4 &g, Eigen::ThreadPoolDevice &dev)
 
 inline void Grad(Cx4 const &x, Cx4 &gx, Eigen::ThreadPoolDevice &dev)
 {
-  Dims3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
+  Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
 
   gx.chip<3>(0).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(0), 0);
   gx.chip<3>(1).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(1), 1);
@@ -68,16 +68,16 @@ inline void Grad(Cx4 const &x, Cx4 &gx, Eigen::ThreadPoolDevice &dev)
 
 inline void Div(Cx4 const &x, Cx3 &div, Eigen::ThreadPoolDevice &dev)
 {
-  Dims3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
+  Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
   div.slice(st1, sz).device(dev) =
       BackwardDiff(x.chip<3>(0), 0) + BackwardDiff(x.chip<3>(1), 1) + BackwardDiff(x.chip<3>(2), 2);
 }
 
 inline void Div(Cx4 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
 {
-  Dims3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
-  Dims3 const st1{1, 1, 1};
+  Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
+  Sz3 const st1{1, 1, 1};
   div.chip<3>(0).slice(st1, sz).device(dev) =
       ForwardDiff(x.chip<3>(0), 0) + ForwardDiff(x.chip<3>(3), 1) + ForwardDiff(x.chip<3>(4), 2);
   div.chip<3>(1).slice(st1, sz).device(dev) =
@@ -120,9 +120,9 @@ inline void ProjectQ(Cx4 &q, float const a, Eigen::ThreadPoolDevice &dev)
 
   auto const qsqr = q * q.conjugate();
   auto const q1 =
-      qsqr.slice(Dims4{0, 0, 0, 0}, Dims4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
+      qsqr.slice(Sz4{0, 0, 0, 0}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
   auto const q2 =
-      qsqr.slice(Dims4{0, 0, 0, 3}, Dims4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
+      qsqr.slice(Sz4{0, 0, 0, 3}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
   R3 normq(q.dimension(0), q.dimension(1), q.dimension(2));
   normq.device(dev) = (q1.sum(Sz1{3}).real() + q2.sum(Sz1{3}).real() * 2.f).sqrt() / a;
   normq.device(dev) = (normq > 1.f).select(normq, normq.constant(1.f));

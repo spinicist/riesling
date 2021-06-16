@@ -3,7 +3,7 @@
 #include "apodizer.h"
 #include "cropper.h"
 #include "espirit.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -64,19 +64,19 @@ int main_sense(args::Subparser &parser)
         log);
   }
   if (save_kernels) {
-    FFT::Many<4> kernelFFT(sense, log);
-    kernelFFT.forward();
+    FFT::ThreeDMulti kernelFFT(sense, log);
+    kernelFFT.forward(sense);
     WriteNifti(
         info,
         Cx4(sense.shuffle(Sz4{1, 2, 3, 0})),
         OutName(fname, oname, "sense-kernels", outftype.Get()),
         log);
-    kernelFFT.reverse();
+    kernelFFT.reverse(sense);
   }
 
   Cx4 grid = gridder.newGrid();
   grid.setZero();
-  FFT::Many<4> fft(grid, log);
+  FFT::ThreeDMulti fft(grid, log);
   Cx3 image = cropper.newImage();
   Cx4 out = cropper.newSeries(info.volumes);
   Cx4 channel_images = cropper.newMultichannel(info.channels);
@@ -91,7 +91,7 @@ int main_sense(args::Subparser &parser)
     }
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
-    fft.reverse();
+    fft.reverse(grid);
     channel_images.device(Threads::GlobalDevice()) = cropper.crop4(grid) * sense.conjugate();
     image.device(Threads::GlobalDevice()) = channel_images.sum(Sz1{0});
     apodizer.deapodize(image);

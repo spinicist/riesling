@@ -1,7 +1,7 @@
 #include "apodizer.h"
 #include "coils.h"
 #include "cropper.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
@@ -82,7 +82,7 @@ int main_phantom(args::Subparser &parser)
   Trajectory traj(info, points, log);
   Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
   Cx4 grid = hi_gridder.newGrid();
-  FFT::Many<4> fft(grid, log); // FFTW needs temp space for planning
+  FFT::ThreeDMulti fft(grid, log); // FFTW needs temp space for planning
 
   Cropper cropper(hi_gridder.gridDims(), mtx, log);
   Apodizer apodizer(kernel, hi_gridder.gridDims(), cropper.size(), log);
@@ -91,7 +91,7 @@ int main_phantom(args::Subparser &parser)
   log.info("Generating Cartesian k-space...");
   grid.setZero();
   cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, info.channels);
-  fft.forward();
+  fft.forward(grid);
 
   log.info("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();

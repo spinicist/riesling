@@ -25,9 +25,9 @@ struct Gridder
 
   virtual ~Gridder() = default;
 
-  Dims3 gridDims() const; //!< Returns the dimensions of the grid
-  Cx4 newGrid() const;    //!< Returns a correctly sized multi-channel grid
-  Cx3 newGrid1() const;   //!< Returns a correctly sized single channel grid
+  Sz3 gridDims() const; //!< Returns the dimensions of the grid
+  Cx4 newGrid() const;  //!< Returns a correctly sized multi-channel grid
+  Cx3 newGrid1() const; //!< Returns a correctly sized single channel grid
 
   void setSDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
   void setSDC(float const dc);
@@ -67,7 +67,7 @@ protected:
   Info const info_;
   std::vector<Coords> coords_;
   std::vector<int32_t> sortedIndices_;
-  Dims3 dims_;
+  Sz3 dims_;
   float oversample_, DCexp_, maxRad_;
   Kernel *kernel_;
   bool safe_;

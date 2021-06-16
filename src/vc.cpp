@@ -1,7 +1,7 @@
 #include "vc.h"
 
 #include "cropper.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "tensorOps.h"
 
 #include <Eigen/SVD>
@@ -34,7 +34,7 @@ void VCC(Cx4 &data, Log &log)
 
   // Assemble our virtual conjugate channels
   Cx4 cdata(nc, nx, ny, nz);
-  FFT::Many<4> fft(cdata, log);
+  FFT::ThreeDMulti fft(cdata, log);
   cdata = data;
   log.image(cdata, "vcc-cdata.nii");
   fft.forward(cdata);
@@ -75,7 +75,7 @@ Cx3 Hammond(Cx4 const &maps, Log &log)
   log.info("Combining images via the Hammond method");
 
   long const refSz = 9;
-  Cropper refCrop(Dims3{nx, ny, nz}, Dims3{refSz, refSz, refSz}, log);
+  Cropper refCrop(Sz3{nx, ny, nz}, Sz3{refSz, refSz, refSz}, log);
   Cx1 const ref = refCrop.crop4(maps).sum(Sz3{1, 2, 3}).conjugate() /
                   refCrop.crop4(maps).sum(Sz3{1, 2, 3}).abs();
 

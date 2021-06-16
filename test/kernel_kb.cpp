@@ -1,4 +1,4 @@
-#include "../src/fft3.h"
+#include "../src/fft_plan.h"
 #include "../src/kernel_kb.h"
 #include "../src/tensorOps.h"
 #include <catch2/catch.hpp>
@@ -10,7 +10,7 @@ TEST_CASE("3x3", "[KB3]")
   KaiserBessel kernel(sz, 1);
   Log nullLog;
   Cx3 temp(sz, sz, sz);
-  FFT3 fft(temp, nullLog);
+  FFT::ThreeD fft(temp, nullLog);
   temp.setZero();
   SECTION("Start/Size")
   {

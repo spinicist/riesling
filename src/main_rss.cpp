@@ -2,7 +2,7 @@
 
 #include "apodizer.h"
 #include "cropper.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -34,7 +34,7 @@ int main_rss(args::Subparser &parser)
   out.setZero();
   image.setZero();
 
-  FFT::Many<4> fft(grid, log);
+  FFT::ThreeDMulti fft(grid, log);
 
   auto const &all_start = log.now();
   for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
@@ -42,7 +42,7 @@ int main_rss(args::Subparser &parser)
     reader.readNoncartesian(iv, rad_ks);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
-    fft.reverse();
+    fft.reverse(grid);
     image.device(Threads::GlobalDevice()) =
         (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
     apodizer.deapodize(image);

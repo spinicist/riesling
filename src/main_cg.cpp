@@ -3,7 +3,7 @@
 #include "apodizer.h"
 #include "cg.h"
 #include "cropper.h"
-#include "fft_many.h"
+#include "fft_plan.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -45,7 +45,7 @@ int main_cg(args::Subparser &parser)
 
   Cx4 grid = gridder.newGrid();
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
-  FFT::Many<4> fft(grid, log);
+  FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = SenseVolume(sense_vol, info.volumes);
   reader.readNoncartesian(currentVolume, rad_ks);
@@ -62,9 +62,9 @@ int main_cg(args::Subparser &parser)
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
-    fft.forward();
+    fft.forward(grid);
     grid.device(Threads::GlobalDevice()) = grid * Tile(transfer, info.channels);
-    fft.reverse();
+    fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("System: {}", log.toNow(start));
   };
@@ -74,7 +74,7 @@ int main_cg(args::Subparser &parser)
     y.setZero();
     grid.setZero();
     gridder.toCartesian(x, grid);
-    fft.reverse();
+    fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("Decode: {}", log.toNow(start));
   };

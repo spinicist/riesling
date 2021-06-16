@@ -42,10 +42,10 @@ Wavelets::Wavelets(long const N, long const L, Log &log)
   log_.info(FMT_STRING("Wavelets: N={} L={}"), N_, L_);
 }
 
-std::tuple<Dims3, Dims3> Wavelets::pad_setup(Dims3 const &dims) const
+std::tuple<Sz3, Sz3> Wavelets::pad_setup(Sz3 const &dims) const
 {
-  Dims3 pad_dims;
-  Dims3 pads;
+  Sz3 pad_dims;
+  Sz3 pads;
   for (long ii = 0; ii < 3; ii++) {
     if (L_ > 0) {
       pad_dims[ii] = ((dims[ii] / (2 << L_)) + 1) * (2 << L_);
@@ -62,7 +62,7 @@ std::tuple<Dims3, Dims3> Wavelets::pad_setup(Dims3 const &dims) const
 
 void Wavelets::pad(Cx3 const &src, Cx3 &dest)
 {
-  Dims3 pad_start;
+  Sz3 pad_start;
   for (long ii = 0; ii < 3; ii++) {
     pad_start[ii] = (dest.dimension(ii) - src.dimension(ii)) / 2;
   }
@@ -70,7 +70,7 @@ void Wavelets::pad(Cx3 const &src, Cx3 &dest)
 }
 void Wavelets::unpad(Cx3 const &src, Cx3 &dest)
 {
-  Dims3 pad_start;
+  Sz3 pad_start;
   for (long ii = 0; ii < 3; ii++) {
     pad_start[ii] = (src.dimension(ii) - dest.dimension(ii)) / 2;
   }

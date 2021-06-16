@@ -1,6 +1,6 @@
 #include "filter.h"
 
-#include "fft3.h"
+#include "fft_plan.h"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -49,7 +49,7 @@ void ImageFilter(std::function<float(float const &)> const &f, Cx3 &image, Log &
   auto const hy = sy / 2;
   auto const hx = sx / 2;
 
-  FFT3 fft(image, log);
+  FFT::ThreeD fft(image, log);
   fft.forward(image);
   for (long iz = 0; iz < sz; iz++) {
     for (long iy = 0; iy < sy; iy++) {

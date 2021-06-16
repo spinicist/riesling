@@ -41,13 +41,10 @@ using Cx7 = Eigen::Tensor<Cx, 7>;
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
 // Useful shorthands
-using Sz1 = Eigen::array<long, 1>;
-using Sz2 = Eigen::array<long, 2>;
-using Sz3 = Eigen::array<long, 3>;
-using Sz4 = Eigen::array<long, 4>;
-using Dims2 = Cx2::Dimensions;
-using Dims3 = Cx3::Dimensions;
-using Dims4 = Cx4::Dimensions;
+using Sz1 = Cx1::Dimensions;
+using Sz2 = Cx2::Dimensions;
+using Sz3 = Cx3::Dimensions;
+using Sz4 = Cx4::Dimensions;
 using Size2 = Eigen::Array<int16_t, 2, 1>;
 using Size3 = Eigen::Array<int16_t, 3, 1>;
 using Size4 = Eigen::Array<int16_t, 4, 1>;

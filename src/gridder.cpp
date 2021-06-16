@@ -1,6 +1,6 @@
 #include "gridder.h"
 
-#include "fft3.h"
+#include "fft_plan.h"
 #include "filter.h"
 #include "tensorOps.h"
 #include "threads.h"
@@ -94,7 +94,7 @@ void Gridder::sortCoords()
   log_.debug("Grid co-ord sorting: {}", log_.toNow(start));
 }
 
-Dims3 Gridder::gridDims() const
+Sz3 Gridder::gridDims() const
 {
   return dims_;
 }

@@ -7,7 +7,7 @@ struct Wavelets
 {
   Wavelets(long const N, long const levels, Log &io);
 
-  std::tuple<Dims3, Dims3> pad_setup(Dims3 const &dims) const;
+  std::tuple<Sz3, Sz3> pad_setup(Sz3 const &dims) const;
   void pad(Cx3 const &src, Cx3 &dest);
   void unpad(Cx3 const &src, Cx3 &dest);
 
