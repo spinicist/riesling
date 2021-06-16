@@ -39,7 +39,7 @@ private:
   std::array<Cx1, FFTRank> phase_;
   fftwf_plan forward_plan_, reverse_plan_;
   float scale_;
-  Log &log_;
+  Log log_;
   bool threaded_;
 };
 

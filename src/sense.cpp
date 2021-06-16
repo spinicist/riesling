@@ -58,34 +58,11 @@ Cx4 SENSE(
   } else if (method == "espirit") {
     Cx3 lo_data = data;
     auto const lo_traj = traj.trim(sense_res, lo_data, true);
-    log.image(
-        Cx3(lo_data.slice(Sz3{0, 0, 0}, Sz3{lo_data.dimension(0), lo_data.dimension(1), 256})),
-        "sense-lo-data.nii");
     Gridder lo_gridder(lo_traj, gridder.oversample(), gridder.kernel(), false, log);
     SDC::Load("pipe", lo_traj, lo_gridder, log);
-    // Set this up for upsampling
-    Cx4 lores = lo_gridder.newGrid();
-    FFT::ThreeDMulti lo_fft(lores, log);
-    Cx4 hires = gridder.newGrid();
-    FFT::ThreeDMulti hi_fft(hires, log);
-    Cropper const cropper(
-        Sz3{hires.dimension(1), hires.dimension(2), hires.dimension(3)},
-        Sz3{lores.dimension(1), lores.dimension(2), lores.dimension(3)},
-        log);
     long const kRad = 4;
     long const calRad = kRad + 1 + (lo_gridder.info().spokes_lo ? 0 : lo_gridder.info().read_gap);
-    lores = ESPIRIT(lo_gridder, lo_data, kRad, calRad, log);
-    log.info(FMT_STRING("Upsample maps"));
-    lo_fft.forward(lores);
-    log.image(lores, "espirit-lores-ks.nii");
-    KSTukey(0.5f, 1.f, 0.f, lores, log);
-    log.image(lores, "espirit-lores-filtered.nii");
-    hires.setZero();
-    cropper.crop4(hires) = lores * lores.constant(lo_fft.scale() / hi_fft.scale());
-    log.image(hires, "espirit-hires-ks.nii");
-    hi_fft.reverse(hires);
-    log.image(hires, "espirit-hires.nii");
-    return hires;
+    return ESPIRIT(gridder, lo_gridder, lo_data, kRad, calRad, log);
   } else {
     log.info("Loading SENSE data from {}", method);
     HD5::Reader reader(method, log);

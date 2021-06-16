@@ -4,4 +4,9 @@
 #include "log.h"
 
 Cx4 ESPIRIT(
-    Gridder const &gridder, Cx3 const &data, long const kernelRad, long const calRad, Log &log);
+    Gridder const &hires,
+    Gridder const &lores,
+    Cx3 const &data,
+    long const kernelRad,
+    long const calRad,
+    Log &log);

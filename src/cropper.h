@@ -6,12 +6,20 @@
 /** Crop functions
  */
 template <typename T>
+decltype(auto) CropLast2(T &&x, Sz3 const &sz)
+{
+  Sz3 const fullSz = x.dimensions();
+  Sz3 const st = Sz3{0, (fullSz[1] - (sz[1] - 1)) / 2, (fullSz[2] - (sz[2] - 1)) / 2};
+  return x.slice(st, sz);
+}
+
+template <typename T>
 decltype(auto) Crop3(T &&x, Sz3 const &sz)
 {
   Sz3 const fullSz = x.dimensions();
   Sz3 const st = Sz3{
       (fullSz[0] - (sz[0] - 1)) / 2, (fullSz[1] - (sz[1] - 1)) / 2, (fullSz[2] - (sz[2] - 1)) / 2};
-  return x.slice(Sz3{st[0], st[1], st[2]}, Sz3{sz[0], sz[1], sz[2]});
+  return x.slice(st, Sz3{sz[0], sz[1], sz[2]});
 }
 
 template <typename T>
