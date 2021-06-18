@@ -48,6 +48,11 @@ Sz3 Cropper::size() const
   return sz_;
 }
 
+Sz4 Cropper::dims(long const nChan) const
+{
+  return Sz4{nChan, sz_[0], sz_[1], sz_[2]};
+}
+
 Sz3 Cropper::start() const
 {
   return st_;

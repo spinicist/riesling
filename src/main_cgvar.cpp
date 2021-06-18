@@ -18,9 +18,6 @@ int main_cgvar(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
 
-  args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
-  args::ValueFlag<long> sense_vol(
-      parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"sense_vol"}, 0);
   args::ValueFlag<float> thr(
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<long> its(
@@ -49,9 +46,20 @@ int main_cgvar(args::Subparser &parser)
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   FFT::ThreeDMulti fft(grid, log);
 
-  long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 const sense = iter_cropper.crop4(SENSE(senseMethod.Get(), traj, gridder, rad_ks, log));
+  long currentVolume;
+  Cx4 const sense = LoadSENSE(
+      info.channels,
+      iter_cropper,
+      senseFile.Get(),
+      LastOrVal(senseVolume, info.volumes),
+      reader,
+      traj,
+      osamp.Get(),
+      kernel,
+      senseLambda.Get(),
+      rad_ks,
+      currentVolume,
+      log);
 
   CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
@@ -84,7 +92,7 @@ int main_cgvar(args::Subparser &parser)
   Cx3 cropped = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   auto const &all_start = log.now();
-  for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
+  for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readNoncartesian(iv, rad_ks);
@@ -101,12 +109,7 @@ int main_cgvar(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  auto const ofile = OutName(fname, oname, "cgvar");
-  if (magnitude) {
-    WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);
-  } else {
-    WriteVolumes(info, out, volume.Get(), ofile, log);
-  }
+  WriteOutput(out, mag, info, fname.Get(), oname.Get(), "cgvar", outftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

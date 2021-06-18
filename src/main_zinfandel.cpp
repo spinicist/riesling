@@ -40,13 +40,13 @@ int main_zinfandel(args::Subparser &parser)
     out_info.volumes = 1;
   }
 
-  HD5::Writer writer(OutName(fname, oname, "zinfandel", "h5"), log);
+  HD5::Writer writer(OutName(fname.Get(), oname.Get(), "zinfandel", "h5"), log);
   writer.writeTrajectory(Trajectory(out_info, traj.points(), log));
   writer.writeMeta(reader.readMeta());
 
   Cx4 rad_ks = info.noncartesianSeries();
   reader.readNoncartesian(rad_ks);
-  for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
+  for (long iv = 0; iv < info.volumes; iv++) {
     Cx3 vol = rad_ks.chip(iv, 3);
     zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj.points(), vol, log);
     if (pw && rbw) {

@@ -6,40 +6,29 @@
 #include "log.h"
 #include "parse_args.h"
 
-enum class Type
-{
-  Pipe = 1,
-  RadialAnalytic = 2
-};
-std::unordered_map<std::string, Type> TypeMap{{"pipe", Type::Pipe},
-                                              {"radial", Type::RadialAnalytic}};
-
 int main_sdc(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::MapFlag<std::string, Type> type(
-      parser, "Type", "1 - Pipe, 2 - Radial Analytic", {"type"}, TypeMap, Type::Pipe);
+
   Log log = ParseCommand(parser, fname);
   HD5::Reader reader(fname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
 
-  R2 sdc;
-  switch (type.Get()) {
-  case Type::Pipe: {
+  R2 dc;
+  if (sdc.Get() == "pipe") {
     Kernel *kernel =
-        kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
-           : (Kernel *)new NearestNeighbour();
+        kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
+           : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
     Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
-    sdc = SDC::Pipe(traj, gridder, log);
-  } break;
-  case Type::RadialAnalytic: {
-    sdc = SDC::Radial(traj, log);
-  } break;
+    dc = SDC::Pipe(traj, gridder, log);
+  } else if (sdc.Get() == "radial") {
+    dc = SDC::Radial(traj, log);
+  } else {
+    log.fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
   }
-  HD5::Writer writer(OutName(fname, oname, "sdc", "h5"), log);
+  HD5::Writer writer(OutName(fname.Get(), oname.Get(), "sdc", "h5"), log);
   writer.writeInfo(info);
-  writer.writeSDC(sdc);
+  writer.writeSDC(dc);
   return EXIT_SUCCESS;
 }

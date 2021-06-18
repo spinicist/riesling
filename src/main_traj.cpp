@@ -12,9 +12,6 @@
 int main_traj(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
-  args::ValueFlag<std::string> sdc(
-      parser, "SDC FILE", "Load SDC from this h5 file", {"sdc"}, "pipe");
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
   HD5::Reader reader(fname.Get(), log);
@@ -33,9 +30,9 @@ int main_traj(args::Subparser &parser)
   Cx2 rad_ks(info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
-  WriteNifti(info, R3(grid.abs()), OutName(fname, oname, "traj"), log);
+  WriteNifti(info, R3(grid.abs()), OutName(fname.Get(), oname.Get(), "traj"), log);
   fft.reverse(grid);
-  WriteNifti(info, grid, OutName(fname, oname, "psf"), log);
+  WriteNifti(info, grid, OutName(fname.Get(), oname.Get(), "psf"), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

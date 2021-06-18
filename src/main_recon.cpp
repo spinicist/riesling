@@ -9,10 +9,15 @@
 #include "io_nifti.h"
 #include "log.h"
 #include "parse_args.h"
+#include "sense.h"
 
-int main_rss(args::Subparser &parser)
+int main_recon(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
+
+  args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
+  args::Flag save_channels(
+      parser, "CHANNELS", "Write out individual channel images", {"channels", 'c'});
 
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
@@ -30,31 +35,50 @@ int main_rss(args::Subparser &parser)
   Cx3 rad_ks = info.noncartesianVolume();
   Cx4 grid = gridder.newGrid();
   Cx3 image = cropper.newImage();
-  R4 out = cropper.newRealSeries(info.volumes);
+  Cx4 out = cropper.newSeries(info.volumes);
   out.setZero();
   image.setZero();
-
   FFT::ThreeDMulti fft(grid, log);
 
+  long currentVolume;
+  Cx4 const sense = rss ? Cx4()
+                        : LoadSENSE(
+                              info.channels,
+                              cropper,
+                              senseFile.Get(),
+                              LastOrVal(senseVolume, info.volumes),
+                              reader,
+                              traj,
+                              osamp.Get(),
+                              kernel,
+                              senseLambda.Get(),
+                              rad_ks,
+                              currentVolume,
+                              log);
+
   auto const &all_start = log.now();
-  for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
+  for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     reader.readNoncartesian(iv, rad_ks);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
     fft.reverse(grid);
-    image.device(Threads::GlobalDevice()) =
-        (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
+    if (rss) {
+      image.device(Threads::GlobalDevice()) =
+          (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
+    } else {
+      image.device(Threads::GlobalDevice()) =
+          (cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0}).sqrt();
+    }
     apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }
-    out.chip(iv, 3) = image.real();
+    out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All volumes: {}", log.toNow(all_start));
-
-  WriteVolumes(info, out, volume.Get(), OutName(fname, oname, "rss", outftype.Get()), log);
+  WriteOutput(out, mag, info, fname.Get(), oname.Get(), "recon", outftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

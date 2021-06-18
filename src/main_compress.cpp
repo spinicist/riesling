@@ -20,7 +20,7 @@ int main_compress(args::Subparser &parser)
   HD5::Reader reader(fname.Get(), log);
   Info const in_info = reader.info();
   Cx3 ks = in_info.noncartesianVolume();
-  reader.readNoncartesian(SenseVolume(ref_vol, in_info.volumes), ks);
+  reader.readNoncartesian(LastOrVal(ref_vol, in_info.volumes), ks);
   long const max_ref = in_info.read_points - in_info.read_gap;
   long const nread = (readSize.Get() > max_ref) ? max_ref : readSize.Get();
   log.info(
@@ -40,7 +40,7 @@ int main_compress(args::Subparser &parser)
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
 
-  auto const ofile = OutName(fname, oname, "compressed", "h5");
+  auto const ofile = OutName(fname.Get(), oname.Get(), "compressed", "h5");
   HD5::Writer writer(ofile, log);
   writer.writeTrajectory(reader.readTrajectory());
   writer.writeNoncartesian(out_ks);

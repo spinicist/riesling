@@ -41,6 +41,7 @@ struct Cropper
   Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &log);
   Sz3 size() const;
   Sz3 start() const;
+  Sz4 dims(long const nChan) const;
   Cx3 newImage() const;
   Cx4 newMultichannel(long const nChan) const;
   Cx4 newSeries(long const nVols) const;

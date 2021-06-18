@@ -22,6 +22,7 @@ struct Writer
   void writeImage(R4 const &volumes);
   void writeImage(Cx4 const &volumes);
   void writeSDC(R2 const &sdc);
+  void writeSENSE(Cx4 const &sense);
 
 private:
   Log &log_;
@@ -40,6 +41,7 @@ struct Reader
   void readNoncartesian(Cx4 &allVolumes);
   void readNoncartesian(long const index, Cx3 &volume);
   void readCartesian(Cx4 &volume);
+  void readSENSE(Cx4 &sense);
 
 private:
   Log &log_;

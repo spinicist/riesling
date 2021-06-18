@@ -75,12 +75,12 @@ add_executable(riesling
     src/main_cg.cpp
     src/main_cgvar.cpp
     src/main_compress.cpp
-    src/main_ds.cpp
+    src/main_espirit.cpp
     src/main_grid.cpp
     src/main_hdr.cpp
     src/main_phantom.cpp
     src/main_plan.cpp
-    src/main_rss.cpp
+    src/main_recon.cpp
     src/main_tgv.cpp
     src/main_traj.cpp
     src/main_sdc.cpp
