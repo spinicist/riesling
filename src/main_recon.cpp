@@ -17,7 +17,7 @@ int main_recon(args::Subparser &parser)
 
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
   args::Flag save_channels(
-      parser, "CHANNELS", "Write out individual channel images", {"channels", 'c'});
+      parser, "CHANNELS", "Write out individual channels from first volume", {"channels", 'c'});
 
   Log log = ParseCommand(parser, fname);
   FFT::Start(log);
@@ -76,6 +76,12 @@ int main_recon(args::Subparser &parser)
     }
     out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
+    if (save_channels && (iv == 0)) {
+      Cx4 const cropped = cropper.crop4(grid);
+      Cx4 const channel_images = SwapToChannelLast(cropped);
+      WriteOutput(
+          channel_images, false, info, fname.Get(), oname.Get(), "channels", outftype.Get(), log);
+    }
   }
   log.info("All volumes: {}", log.toNow(all_start));
   WriteOutput(out, mag, info, fname.Get(), oname.Get(), "recon", outftype.Get(), log);

@@ -63,6 +63,7 @@ int main_sense(args::Subparser &parser)
         log);
   } else {
     HD5::Writer writer(OutName(fname.Get(), oname.Get(), "sense", "h5"), log);
+    writer.writeInfo(info);
     writer.writeSENSE(sense);
   }
 

@@ -33,11 +33,12 @@ Cx4 DirectSENSE(Gridder const &gridder, Cx3 const &data, float const lambda, Log
       end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid, log);
   fftN.reverse(grid);
-  rss.device(Threads::GlobalDevice()) = (grid * grid.conjugate()).real().sum(Sz1{0}).sqrt();
   if (lambda > 0.f) {
-    float const reg = Norm(rss) * lambda / rss.size();
-    log.info(FMT_STRING("Regularization, lambda {} scaled {}\n"), lambda, reg);
-    rss.device(Threads::GlobalDevice()) = rss + rss.constant(reg);
+    log.info(FMT_STRING("Regularization lambda {}"), lambda);
+    rss.device(Threads::GlobalDevice()) =
+        (grid * grid.conjugate()).real().sum(Sz1{0}).sqrt() + rss.constant(lambda);
+  } else {
+    rss.device(Threads::GlobalDevice()) = (grid * grid.conjugate()).real().sum(Sz1{0}).sqrt();
   }
   log.info("Normalizing channel images");
   grid.device(Threads::GlobalDevice()) = grid / TileToMatch(rss, grid.dimensions()).cast<Cx>();

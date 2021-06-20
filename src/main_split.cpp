@@ -16,7 +16,8 @@ int main_split(args::Subparser &parser)
 
   HD5::Reader reader(fname.Get(), log);
   auto const traj = reader.readTrajectory();
-  auto const &info = reader.info();
+  auto info = reader.info();
+  info.volumes = 1; // Only output one volume
   R3 all_points = traj.points();
   Cx3 all_ks = info.noncartesianVolume();
   reader.readNoncartesian(vol.Get(), all_ks);
