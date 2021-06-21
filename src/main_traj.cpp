@@ -30,9 +30,11 @@ int main_traj(args::Subparser &parser)
   Cx3 rad_ks(1, info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
-  WriteOutput(grid, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
+  Cx4 output = SwapToChannelLast(grid);
+  WriteOutput(output, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
   fft.reverse(grid);
-  WriteOutput(grid, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
+  output = SwapToChannelLast(grid);
+  WriteOutput(output, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }
