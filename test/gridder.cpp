@@ -22,19 +22,19 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
   {
     Kernel *kernel = new NearestNeighbour();
     Gridder gridder(traj, osamp, kernel, false, log);
-    Cx2 rad(info.read_points, info.spokes_total());
+    Cx3 rad(1, info.read_points, info.spokes_total());
     CHECK(rad.dimension(0) == 1);
     CHECK(rad.dimension(1) == 1);
-    Cx3 cart = gridder.newGrid1();
-    CHECK(cart.dimension(0) == 4);
+    Cx4 cart = gridder.newGridSingle();
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
+    CHECK(cart.dimension(3) == 4);
     rad.setConstant(1.f);
     cart.setZero();
     gridder.toCartesian(rad, cart);
-    CHECK(cart(2, 2, 2).real() == Approx(1.f));
+    CHECK(cart(0, 2, 2, 2).real() == Approx(1.f));
     gridder.toNoncartesian(cart, rad);
-    CHECK(rad(0, 0).real() == Approx(1.f));
+    CHECK(rad(0, 0, 0).real() == Approx(1.f));
   }
 
   SECTION("NN Multicoil")
@@ -113,22 +113,23 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
   {
     Kernel *kernel = new NearestNeighbour();
     Gridder gridder(traj, osamp, kernel, false, log);
-    Cx3 cart = gridder.newGrid1();
-    CHECK(cart.dimension(0) == 8);
+    Cx4 cart = gridder.newGridSingle();
+    CHECK(cart.dimension(0) == 1);
     CHECK(cart.dimension(1) == 8);
     CHECK(cart.dimension(2) == 8);
-    Cx2 rad(info.read_points, info.spokes_total());
+    CHECK(cart.dimension(3) == 8);
+    Cx3 rad(1, info.read_points, info.spokes_total());
     rad.setConstant(1.f);
     cart.setZero();
     gridder.toCartesian(rad, cart);
-    CHECK(cart(4, 4, 4).real() == Approx(1.f));
-    CHECK(cart(5, 4, 4).real() == Approx(1.f));
-    CHECK(cart(6, 4, 4).real() == Approx(1.f));
-    CHECK(cart(7, 4, 4).real() == Approx(1.f));
-    CHECK(cart(4, 5, 5).real() == Approx(0.f));
-    CHECK(cart(4, 5, 4).real() == Approx(0.f));
-    CHECK(cart(4, 4, 5).real() == Approx(0.f));
+    CHECK(cart(0, 4, 4, 4).real() == Approx(1.f));
+    CHECK(cart(0, 5, 4, 4).real() == Approx(1.f));
+    CHECK(cart(0, 6, 4, 4).real() == Approx(1.f));
+    CHECK(cart(0, 7, 4, 4).real() == Approx(1.f));
+    CHECK(cart(0, 4, 5, 5).real() == Approx(0.f));
+    CHECK(cart(0, 4, 5, 4).real() == Approx(0.f));
+    CHECK(cart(0, 4, 4, 5).real() == Approx(0.f));
     gridder.toNoncartesian(cart, rad);
-    CHECK(rad(0, 0).real() == Approx(1.f));
+    CHECK(rad(0, 0, 0).real() == Approx(1.f));
   }
 }

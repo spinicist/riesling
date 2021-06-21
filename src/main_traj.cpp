@@ -23,18 +23,16 @@ int main_traj(args::Subparser &parser)
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
   Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
-  Cx3 grid = gridder.newGrid1();
-  FFT::ThreeD fft(grid, log);
+  Cx4 grid = gridder.newGridSingle();
+  FFT::ThreeDMulti fft(grid, log);
 
   grid.setZero();
-  Cx2 rad_ks(info.read_points, info.spokes_total());
+  Cx3 rad_ks(1, info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
-  Cx4 const reshaped =
-      grid.reshape(Sz4{1, grid.dimension(0), grid.dimension(1), grid.dimension(2)});
-  WriteOutput(reshaped, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
+  WriteOutput(grid, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
   fft.reverse(grid);
-  WriteOutput(reshaped, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
+  WriteOutput(grid, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

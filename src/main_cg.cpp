@@ -59,11 +59,15 @@ int main_cg(args::Subparser &parser)
       currentVolume,
       log);
 
-  Cx2 ones(info.read_points, info.spokes_total());
-  ones.setConstant({1.0f});
-  Cx3 transfer(gridder.gridDims());
-  transfer.setZero();
-  gridder.toCartesian(ones, transfer);
+  Cx3 transfer;
+  {
+    Cx3 ones(1, info.read_points, info.spokes_total());
+    ones.setConstant({1.0f});
+    Cx4 transferTemp = gridder.newGridSingle();
+    transfer.setZero();
+    gridder.toCartesian(ones, transferTemp);
+    transfer = transferTemp.reshape(gridder.gridDims());
+  }
 
   CgSystem toe = [&](Cx3 const &x, Cx3 &y) {
     auto const start = log.now();
