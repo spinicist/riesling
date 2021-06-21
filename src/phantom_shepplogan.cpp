@@ -35,7 +35,7 @@ std::vector<Eigen::Array3f> const ha{{0.69, 0.92, 0.9},
                                      {0.056, 0.056, 0.1}};
 
 std::vector<float> const angles{0, 0, 3 * M_PI / 5, 2 * M_PI / 5, 0, 0, 0, M_PI / 2, M_PI / 2, 0};
-std::vector<float> const pd{2, -0.8, -0.2, -0.2, 0.2, 0.2, 0.1, 0.1, 0.2, -0.2};
+std::vector<float> const pd{1, -0.4, -0.1, -0.1, 0.1, 0.1, 0.05, 0.05, 0.1, -0.1};
 } // namespace
 
 Cx3 SheppLoganPhantom(

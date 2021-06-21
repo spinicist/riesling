@@ -56,7 +56,7 @@ int main_espirit(args::Subparser &parser)
   Cropper cropper(info, gridder.gridDims(), fov.Get(), log);
   Cx4 sense = cropper.crop4(ESPIRIT(gridder, lo_ks, kRad.Get(), totalCalRad, log));
 
-  auto const fname = OutName(iname.Get(), oname.Get(), "sense", oftype.Get());
+  auto const fname = OutName(iname.Get(), oname.Get(), "espirit", oftype.Get());
   if (oftype.Get().compare("h5") == 0) {
     HD5::Writer writer(fname, log);
     writer.writeInfo(info);

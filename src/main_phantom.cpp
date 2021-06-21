@@ -153,9 +153,11 @@ int main_phantom(args::Subparser &parser)
   }
 
   if (snr) {
+    float const level = intensity.Get() / (info.channels * sqrt(snr.Get()));
+    log.info(FMT_STRING("Adding noise effective level {}"), level);
     Cx3 noise(radial.dimensions());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
-    radial += noise * noise.constant(intensity.Get() / snr.Get());
+    radial += noise * noise.constant(level);
   }
 
   if (gap) {
