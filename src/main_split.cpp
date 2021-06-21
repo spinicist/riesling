@@ -6,15 +6,15 @@
 
 int main_split(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");
+  args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<long> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
   args::ValueFlag<long> vol(parser, "VOLUME", "Only take this volume", {"v", "vol"}, 0);
   args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto info = reader.info();
   info.volumes = 1; // Only output one volume
@@ -31,7 +31,7 @@ int main_split(args::Subparser &parser)
         all_points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) / info.lo_scale;
     Cx4 lo_ks = all_ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes_lo})
                     .reshape(Sz4{info.channels, info.read_points, info.spokes_lo, 1});
-    HD5::Writer writer(OutName(fname.Get(), oname.Get(), "lores", "h5"), log);
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores", "h5"), log);
     writer.writeTrajectory(Trajectory(lo_info, lo_points, log));
     writer.writeNoncartesian(lo_ks);
   }
@@ -58,7 +58,7 @@ int main_split(args::Subparser &parser)
     int const n = ns + (int_idx == (num_int - 1) ? rem_spokes : 0);
     hi_info.spokes_hi = n;
     std::string const suffix = nspokes.Get() ? fmt::format("int{}", int_idx) : "hires";
-    HD5::Writer writer(OutName(fname.Get(), oname.Get(), suffix, "h5"), log);
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), suffix, "h5"), log);
     writer.writeTrajectory(Trajectory(
         hi_info, all_points.slice(Sz3{0, 0, idx0}, Sz3{3, hi_info.read_points, n}), log));
     writer.writeNoncartesian(

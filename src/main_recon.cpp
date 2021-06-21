@@ -19,9 +19,9 @@ int main_recon(args::Subparser &parser)
   args::Flag save_channels(
       parser, "CHANNELS", "Write out individual channels from first volume", {"channels", 'c'});
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   Kernel *kernel =
@@ -78,13 +78,12 @@ int main_recon(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
     if (save_channels && (iv == 0)) {
       Cx4 const cropped = cropper.crop4(grid);
-      Cx4 const channel_images = SwapToChannelLast(cropped);
       WriteOutput(
-          channel_images, false, info, fname.Get(), oname.Get(), "channels", outftype.Get(), log);
+          cropped, false, true, info, iname.Get(), oname.Get(), "channels", oftype.Get(), log);
     }
   }
   log.info("All volumes: {}", log.toNow(all_start));
-  WriteOutput(out, mag, info, fname.Get(), oname.Get(), "recon", outftype.Get(), log);
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "recon", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

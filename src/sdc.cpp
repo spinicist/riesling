@@ -7,18 +7,18 @@
 #include "trajectory.h"
 
 namespace SDC {
-void Load(std::string const &fname, Trajectory const &traj, Gridder &gridder, Log &log)
+void Load(std::string const &iname, Trajectory const &traj, Gridder &gridder, Log &log)
 {
-  if (fname == "") {
+  if (iname == "") {
     return;
-  } else if (fname == "none") {
+  } else if (iname == "none") {
     return;
-  } else if (fname == "pipe") {
+  } else if (iname == "pipe") {
     gridder.setSDC(Pipe(traj, gridder, log));
-  } else if (fname == "radial") {
+  } else if (iname == "radial") {
     gridder.setSDC(Radial(traj, log));
   } else {
-    HD5::Reader reader(fname, log);
+    HD5::Reader reader(iname, log);
     gridder.setSDC(reader.readSDC());
   }
 }

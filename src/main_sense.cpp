@@ -35,10 +35,10 @@ int main_sense(args::Subparser &parser)
       parser, "RESOLUTION", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
   args::Flag nifti(parser, "NIFTI", "Write output to nifti instead of .h5", {"nii"});
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   Kernel *kernel =
@@ -55,16 +55,15 @@ int main_sense(args::Subparser &parser)
   SDC::Load("pipe", lo_traj, lo_gridder, log);
   Cropper cropper(info, lo_gridder.gridDims(), fov.Get(), log);
   Cx4 sense = cropper.crop4(DirectSENSE(lo_gridder, lo_ks, lambda.Get(), log));
-  if (nifti) {
-    WriteNifti(
-        info,
-        Cx4(sense.shuffle(Sz4{1, 2, 3, 0})),
-        OutName(fname.Get(), oname.Get(), "sense", "nii"),
-        log);
-  } else {
-    HD5::Writer writer(OutName(fname.Get(), oname.Get(), "sense", "h5"), log);
+
+  auto const fname = OutName(iname.Get(), oname.Get(), "sense", oftype.Get());
+  if (oftype.Get().compare("h5") == 0) {
+    HD5::Writer writer(fname, log);
     writer.writeInfo(info);
     writer.writeSENSE(sense);
+  } else {
+    Cx4 const output = SwapToChannelLast(sense);
+    WriteNifti(info, output, fname, log);
   }
 
   FFT::End(log);

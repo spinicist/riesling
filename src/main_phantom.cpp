@@ -17,7 +17,7 @@
 
 int main_phantom(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "Filename to write phantom data to");
+  args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
   args::ValueFlag<std::string> suffix(
       parser, "SUFFIX", "Add suffix (well, infix) to output dirs", {"suffix"});
   args::ValueFlag<float> grid_samp(
@@ -48,7 +48,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag kb(parser, "KAISER-BESSEL", "Use Kaiser-Bessel kernel", {'k', "kb"});
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
 
   Kernel *kernel =
@@ -140,7 +140,7 @@ int main_phantom(args::Subparser &parser)
     traj = Trajectory(info, traj.points(), log);
   }
 
-  HD5::Writer writer(std::filesystem::path(fname.Get()).replace_extension(".h5").string(), log);
+  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);
   writer.writeTrajectory(traj);
   writer.writeNoncartesian(
       radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1}));

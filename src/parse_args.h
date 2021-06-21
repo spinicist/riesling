@@ -10,7 +10,7 @@ extern args::Group global_group;
 extern args::HelpFlag help;
 extern args::Flag verbose;
 
-Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname);
+Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
 Log ParseCommand(args::Subparser &parser);
 
 struct Vector3fReader
@@ -26,18 +26,19 @@ std::string OutName(
 
 extern void WriteOutput(
     Cx4 const &vols,
-    bool mag,
+    bool const mag,
+    bool const needsSwap,
     Info const &info,
     std::string const &iname,
     std::string const &oname,
     std::string const &suffix,
-    std::string const &ftype,
+    std::string const &ext,
     Log &log);
 
 long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
 
 #define CORE_RECON_ARGS                                                                            \
-  args::Positional<std::string> fname(parser, "FILE", "Input HD5 file");                           \
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");                           \
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
@@ -48,7 +49,9 @@ long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
   args::ValueFlag<std::string> sdc(                                                                \
       parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");          \
   args::ValueFlag<float> sdc_exp(                                                                  \
-      parser, "SDC Exponent", "SDC Exponent (default 1.0)", {'e', "sdc_exp"}, 1.0f);
+      parser, "SDC Exponent", "SDC Exponent (default 1.0)", {'e', "sdc_exp"}, 1.0f);               \
+  args::ValueFlag<std::string> oftype(                                                             \
+      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
 
 #define COMMON_RECON_ARGS                                                                          \
   CORE_RECON_ARGS                                                                                  \
@@ -66,6 +69,4 @@ long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
       parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);                      \
   args::ValueFlag<float> tukey_h(                                                                  \
       parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);               \
-  args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});               \
-  args::ValueFlag<std::string> outftype(                                                           \
-      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "nii");
+  args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});

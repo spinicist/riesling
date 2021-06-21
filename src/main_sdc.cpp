@@ -10,8 +10,8 @@ int main_sdc(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
 
-  Log log = ParseCommand(parser, fname);
-  HD5::Reader reader(fname.Get(), log);
+  Log log = ParseCommand(parser, iname);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
 
@@ -27,7 +27,7 @@ int main_sdc(args::Subparser &parser)
   } else {
     log.fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
   }
-  HD5::Writer writer(OutName(fname.Get(), oname.Get(), "sdc", "h5"), log);
+  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sdc", "h5"), log);
   writer.writeInfo(info);
   writer.writeSDC(dc);
   return EXIT_SUCCESS;

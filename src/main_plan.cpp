@@ -13,10 +13,10 @@ int main_plan(args::Subparser &parser)
   args::ValueFlag<double> timelimit(
       parser, "LIMIT", "Time limit for FFT planning (default 60 s)", {"time", 't'}, 60.0);
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
   FFT::SetTimelimit(timelimit.Get());
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (traj.info().type == Info::Type::ThreeD))

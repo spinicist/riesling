@@ -30,10 +30,10 @@ int main_tgv(args::Subparser &parser)
   args::ValueFlag<float> step_size(
       parser, "STEP SIZE", "Inverse of step size (default 8)", {"step"}, 8.f);
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   auto const &info = traj.info();
 
@@ -113,7 +113,7 @@ int main_tgv(args::Subparser &parser)
     out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(start));
   }
-  WriteOutput(out, mag, info, fname.Get(), oname.Get(), "tgv", outftype.Get(), log);
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "tgv", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

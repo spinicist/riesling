@@ -13,13 +13,13 @@ constexpr float pi = M_PI;
 
 int main_ds(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "Input radial k-space file");
+  args::Positional<std::string> iname(parser, "FILE", "Input radial k-space file");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
-  args::ValueFlag<std::string> outftype(
+  args::ValueFlag<std::string> oftype(
       parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "nii");
 
-  Log log = ParseCommand(parser, fname);
-  HD5::Reader reader(fname.Get(), log);
+  Log log = ParseCommand(parser, iname);
+  HD5::Reader reader(iname.Get(), log);
   Trajectory traj = reader.readTrajectory();
   auto const &info = traj.info();
 
@@ -96,6 +96,6 @@ int main_ds(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All volumes: {}", log.toNow(all_start));
-  WriteOutput(out, false, info, fname.Get(), oname.Get(), "ds", outftype.Get(), log);
+  WriteOutput(out, false, info, iname.Get(), oname.Get(), "ds", oftype.Get(), log);
   return EXIT_SUCCESS;
 }

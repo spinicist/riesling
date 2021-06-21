@@ -12,8 +12,8 @@ int main_grid(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   args::Flag forward(parser, "REV", "Apply forward gridding (to non-cartesian)", {'f', "fwd"});
-  Log log = ParseCommand(parser, fname);
-  HD5::Reader reader(fname.Get(), log);
+  Log log = ParseCommand(parser, iname);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const info = reader.info();
 
@@ -28,7 +28,7 @@ int main_grid(args::Subparser &parser)
 
   auto const &vol_start = log.now();
 
-  HD5::Writer writer(OutName(fname.Get(), oname.Get(), "grid", "h5"), log);
+  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "grid", "h5"), log);
   writer.writeTrajectory(traj);
   if (forward) {
     reader.readCartesian(grid);

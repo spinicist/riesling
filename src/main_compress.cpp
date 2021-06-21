@@ -6,7 +6,7 @@
 
 int main_compress(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "HD5 file to recon");
+  args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<long> cc(parser, "CHANNEL COUNT", "Retain N channels (default 8)", {"cc"}, 8);
   args::ValueFlag<long> ref_vol(
@@ -15,9 +15,9 @@ int main_compress(args::Subparser &parser)
       parser, "READ SIZE", "Number of read-out points to use in PCA (default 16)", {"read"}, 16);
   args::ValueFlag<long> spokeStride(
       parser, "SPOKE STRIDE", "Stride/subsample across spokes (default 4)", {"spokes"}, 4);
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   Info const in_info = reader.info();
   Cx3 ks = in_info.noncartesianVolume();
   reader.readNoncartesian(LastOrVal(ref_vol, in_info.volumes), ks);
@@ -40,7 +40,7 @@ int main_compress(args::Subparser &parser)
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
 
-  auto const ofile = OutName(fname.Get(), oname.Get(), "compressed", "h5");
+  auto const ofile = OutName(iname.Get(), oname.Get(), "compressed", "h5");
   HD5::Writer writer(ofile, log);
   writer.writeTrajectory(reader.readTrajectory());
   writer.writeNoncartesian(out_ks);

@@ -25,10 +25,10 @@ int main_cg(args::Subparser &parser)
   args::ValueFlag<float> iter_fov(
       parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
@@ -110,7 +110,7 @@ int main_cg(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  WriteOutput(out, mag, info, fname.Get(), oname.Get(), "cg", outftype.Get(), log);
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cg", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

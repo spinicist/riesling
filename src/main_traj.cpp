@@ -12,9 +12,9 @@
 int main_traj(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
 
@@ -30,9 +30,11 @@ int main_traj(args::Subparser &parser)
   Cx2 rad_ks(info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
-  WriteNifti(info, R3(grid.abs()), OutName(fname.Get(), oname.Get(), "traj"), log);
+  Cx4 const reshaped =
+      grid.reshape(Sz4{1, grid.dimension(0), grid.dimension(1), grid.dimension(2)});
+  WriteOutput(reshaped, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
   fft.reverse(grid);
-  WriteNifti(info, grid, OutName(fname.Get(), oname.Get(), "psf"), log);
+  WriteOutput(reshaped, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

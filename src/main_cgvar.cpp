@@ -28,10 +28,10 @@ int main_cgvar(args::Subparser &parser)
       parser, "PRE0", "Preconditioning start value (default 1)", {"pre0"}, 1);
   args::ValueFlag<float> pre1(parser, "PRE1", "Preconditioning end value (default 0)", {"pre1"}, 0);
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   auto const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
@@ -109,7 +109,7 @@ int main_cgvar(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  WriteOutput(out, mag, info, fname.Get(), oname.Get(), "cgvar", outftype.Get(), log);
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

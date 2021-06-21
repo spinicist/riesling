@@ -43,14 +43,14 @@ args::MapFlag<int, Log::Level> verbosity(
     levelMap);
 args::ValueFlag<long> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
-Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname)
+Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
   Log::Level const level =
       verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::Fail);
 
   Log log(level);
-  if (!fname) {
+  if (!iname) {
     log.fail("No input specified");
   }
   if (nthreads) {
@@ -98,7 +98,8 @@ long LastOrVal(args::ValueFlag<long> &sFlag, long const vols)
 
 void WriteOutput(
     Cx4 const &vols,
-    bool mag,
+    bool const mag,
+    bool const needsSwap,
     Info const &info,
     std::string const &iname,
     std::string const &oname,
@@ -107,16 +108,17 @@ void WriteOutput(
     Log &log)
 {
   auto const fname = OutName(iname, oname, suffix, ext);
-  if (ext.compare(".h5") == 0) {
+  if (ext.compare("h5") == 0) {
     HD5::Writer writer(fname, log);
     writer.writeInfo(info);
     writer.writeImage(vols);
   } else {
+    auto &output = needsSwap ? SwapToChannelLast(vols) : vols;
     if (mag) {
-      R4 const mVols = vols.abs();
+      R4 const mVols = output.abs();
       WriteNifti(info, mVols, fname, log);
     } else {
-      WriteNifti(info, vols, fname, log);
+      WriteNifti(info, output, fname, log);
     }
   }
 }
