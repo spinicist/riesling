@@ -25,9 +25,9 @@ struct Gridder
 
   virtual ~Gridder() = default;
 
-  Dims3 gridDims() const; //!< Returns the dimensions of the grid
-  Cx4 newGrid() const;    //!< Returns a correctly sized multi-channel grid
-  Cx3 newGrid1() const;   //!< Returns a correctly sized single channel grid
+  Sz3 gridDims() const;      //!< Returns the dimensions of the grid
+  Cx4 newGrid() const;       //!< Returns a correctly sized multi-channel grid
+  Cx4 newGridSingle() const; //!< Returns a correctly sized single channel grid
 
   void setSDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
   void setSDC(float const dc);
@@ -37,9 +37,7 @@ struct Gridder
   Info const &info() const;
   float oversample() const;
   Kernel *kernel() const;
-  void toCartesian(Cx2 const &noncart, Cx3 &cart) const; //!< Single-channel non-cartesian -> cart
-  void toCartesian(Cx3 const &noncart, Cx4 &cart) const; //!< Multi-channel non-cartesian -> cart
-  void toNoncartesian(Cx3 const &cart, Cx2 &noncart) const; //!< Single-channel cart -> non-cart
+  void toCartesian(Cx3 const &noncart, Cx4 &cart) const;    //!< Multi-channel non-cartesian -> cart
   void toNoncartesian(Cx4 const &cart, Cx3 &noncart) const; //!< Multi-channel cart -> non-cart
 
 protected:
@@ -67,7 +65,7 @@ protected:
   Info const info_;
   std::vector<Coords> coords_;
   std::vector<int32_t> sortedIndices_;
-  Dims3 dims_;
+  Sz3 dims_;
   float oversample_, DCexp_, maxRad_;
   Kernel *kernel_;
   bool safe_;

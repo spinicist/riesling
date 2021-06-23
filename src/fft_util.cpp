@@ -51,7 +51,7 @@ void SetTimelimit(double time)
  *
  * I am indebted to Martin Uecker for putting this code in BART
  */
-Cxd1 Phase(long const sz)
+Cx1 Phase(long const sz)
 {
   long const c = sz / 2;
   double const shift = (double)c / sz;
@@ -59,7 +59,7 @@ Cxd1 Phase(long const sz)
   std::iota(ii.data(), ii.data() + ii.size(), 0.);
   auto const s = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
   Cxd1 const ph = ((s - s.floor()) * s.constant(2. * M_PI)).cast<Cxd>();
-  Cxd1 const factors = (ph * ph.constant(Cxd{0., 1.})).exp();
+  Cx1 const factors = (ph * ph.constant(Cxd{0., 1.})).exp().cast<Cx>();
   return factors;
 }
 

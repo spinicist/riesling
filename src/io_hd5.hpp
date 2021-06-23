@@ -92,18 +92,21 @@ void load_tensor(
     Eigen::Tensor<Scalar, ND> &tensor,
     Log const &log)
 {
-  using T = Eigen::Tensor<Scalar, ND>;
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
     log.fail("Could not open tensor {}", name);
   }
-  hsize_t dims[ND];
+  std::array<hsize_t, ND> dims;
   hid_t ds = H5Dget_space(dset);
-  H5Sget_simple_extent_dims(ds, dims, NULL);
-  typename T::Dimensions dimensions;
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND; ii++) {
-    // HD5=row-major, Eigen=col-major, so dimensions are reversed
-    assert(dims[ii] == tensor.dimension(ND - 1 - ii));
+    if (dims[ii] != tensor.dimension(ii)) {
+      log.fail(
+          FMT_STRING("Expected dimensions were {}, but were {} on disk"),
+          fmt::join(tensor.dimensions(), ","),
+          fmt::join(dims, ","));
+    }
   }
   herr_t ret_value =
       H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
@@ -133,30 +136,43 @@ void load_tensor_slab(
   if (rank != ND) {
     log.fail("Mismatch between tensor rank {} and HD5 rank {}", ND, rank);
   }
-  hsize_t dims[ND];
-  H5Sget_simple_extent_dims(ds, dims, NULL);
-  for (int ii = 1; ii < ND; ii++) {
-    // HD5=row-major, Eigen=col-major, so dimensions are reversed
-    assert(dims[ii] == tensor.dimension(CD - ii));
+  std::array<hsize_t, ND> dims;
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
+  for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
+    if (dims[ii] != tensor.dimension(ii)) {
+      log.fail(
+          FMT_STRING("Expected dimensions were {}, but were {} on disk"),
+          fmt::join(tensor.dimensions(), ","),
+          fmt::join(dims, ","));
+    }
   }
+  std::reverse(dims.begin(), dims.end()); // Reverse back
 
-  hsize_t h5_start[ND], h5_stride[ND], h5_count[ND], h5_block[ND];
+  std::array<hsize_t, ND> h5_start, h5_stride, h5_count, h5_block;
   h5_start[0] = index;
-  std::fill_n(&h5_start[1], CD, 0);
-  std::fill_n(&h5_stride[0], ND, 1);
-  std::fill_n(&h5_count[0], ND, 1);
+  std::fill_n(h5_start.begin() + 1, CD, 0);
+  std::fill_n(h5_stride.begin(), ND, 1);
+  std::fill_n(h5_count.begin(), ND, 1);
   h5_block[0] = 1;
-  std::copy_n(&dims[1], CD, &h5_block[1]);
-  auto status = H5Sselect_hyperslab(ds, H5S_SELECT_SET, h5_start, h5_stride, h5_count, h5_block);
+  std::copy_n(dims.begin() + 1, CD, h5_block.begin() + 1);
+  auto status = H5Sselect_hyperslab(
+      ds, H5S_SELECT_SET, h5_start.data(), h5_stride.data(), h5_count.data(), h5_block.data());
 
-  hsize_t mem_dims[CD], mem_start[CD], mem_stride[CD], mem_count[CD], mem_block[CD];
-  std::copy_n(&dims[1], CD, &mem_dims[0]);
-  std::fill_n(&mem_start[0], CD, 0);
-  std::fill_n(&mem_stride[0], CD, 1);
-  std::fill_n(&mem_count[0], CD, 1);
-  std::copy_n(&dims[1], CD, &mem_block[0]);
-  auto const mem_ds = H5Screate_simple(CD, mem_dims, NULL);
-  status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, mem_start, mem_stride, mem_count, mem_block);
+  std::array<hsize_t, ND> mem_dims, mem_start, mem_stride, mem_count, mem_block;
+  std::copy_n(dims.begin() + 1, CD, mem_dims.begin());
+  std::fill_n(mem_start.begin(), CD, 0);
+  std::fill_n(mem_stride.begin(), CD, 1);
+  std::fill_n(mem_count.begin(), CD, 1);
+  std::copy_n(dims.begin() + 1, CD, mem_block.begin());
+  auto const mem_ds = H5Screate_simple(CD, mem_dims.data(), NULL);
+  status = H5Sselect_hyperslab(
+      mem_ds,
+      H5S_SELECT_SET,
+      mem_start.data(),
+      mem_stride.data(),
+      mem_count.data(),
+      mem_block.data());
 
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {

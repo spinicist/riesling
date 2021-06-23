@@ -33,8 +33,7 @@ add_library(vineyard
     src/decomp.cpp
     src/espirit.cpp
     src/fft1.cpp
-    src/fft3.cpp
-    src/fft3n.cpp
+    src/fft_plan.cpp
     src/fft_util.cpp
     src/filter.cpp
     src/gridder.cpp
@@ -76,12 +75,12 @@ add_executable(riesling
     src/main_cg.cpp
     src/main_cgvar.cpp
     src/main_compress.cpp
-    src/main_ds.cpp
+    src/main_espirit.cpp
     src/main_grid.cpp
     src/main_hdr.cpp
     src/main_phantom.cpp
     src/main_plan.cpp
-    src/main_rss.cpp
+    src/main_recon.cpp
     src/main_tgv.cpp
     src/main_traj.cpp
     src/main_sdc.cpp
@@ -106,7 +105,6 @@ add_executable(prufung
     test/decomp.cpp
     test/fft1.cpp
     test/fft3.cpp
-    test/fft3n.cpp
     test/gridder.cpp
     test/hankel.cpp
     test/kernel_kb.cpp

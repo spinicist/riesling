@@ -10,7 +10,7 @@ struct Info
     ThreeDStack = 2
   };
 
-  Array3l matrix;
+  Eigen::Array3l matrix;
   long read_points;
   long read_gap;
   long spokes_hi;

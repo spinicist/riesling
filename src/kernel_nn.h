@@ -9,7 +9,7 @@ struct NearestNeighbour final : Kernel
   Sz3 start() const;
   Sz3 size() const;
   R3 kspace(Point3 const &x) const;
-  Cx3 image(Point3 const &x, Dims3 const &G) const;
+  Cx3 image(Point3 const &x, Sz3 const &G) const;
 
 private:
   long w_;

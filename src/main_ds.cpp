@@ -13,12 +13,13 @@ constexpr float pi = M_PI;
 
 int main_ds(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "FILE", "Input radial k-space file");
-
+  args::Positional<std::string> iname(parser, "FILE", "Input radial k-space file");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
-  args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
-  Log log = ParseCommand(parser, fname);
-  HD5::Reader reader(fname.Get(), log);
+  args::ValueFlag<std::string> oftype(
+      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "nii");
+
+  Log log = ParseCommand(parser, iname);
+  HD5::Reader reader(iname.Get(), log);
   Trajectory traj = reader.readTrajectory();
   auto const &info = traj.info();
 
@@ -48,7 +49,7 @@ int main_ds(args::Subparser &parser)
   float const flat_val = d_hi * (3. * (flat_start * flat_start) + 1. / 4.);
 
   auto const &all_start = log.now();
-  for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
+  for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     reader.readNoncartesian(iv, rad_ks);
     channels.setZero();
@@ -91,11 +92,10 @@ int main_ds(args::Subparser &parser)
     log.info("Calculating RSS");
     WriteNifti(info, Cx4(channels.shuffle(Sz4{1, 2, 3, 0})), "chan.nii", log);
     out.chip(iv, 3).device(Threads::GlobalDevice()) =
-        (channels * channels.conjugate()).sum(Sz1{0}).real().sqrt();
+        (channels * channels.conjugate()).sum(Sz1{0}).sqrt();
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All volumes: {}", log.toNow(all_start));
-
-  WriteVolumes(info, R4(out.abs()), volume.Get(), OutName(fname, oname, "ds"), log);
+  WriteOutput(out, false, info, iname.Get(), oname.Get(), "ds", oftype.Get(), log);
   return EXIT_SUCCESS;
 }

@@ -3,7 +3,7 @@
 #include "apodizer.h"
 #include "cg.h"
 #include "cropper.h"
-#include "fft3n.h"
+#include "fft_plan.h"
 #include "filter.h"
 #include "gridder.h"
 #include "io_hd5.h"
@@ -18,9 +18,6 @@ int main_cgvar(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
 
-  args::Flag magnitude(parser, "MAGNITUDE", "Output magnitude images only", {"magnitude"});
-  args::ValueFlag<long> sense_vol(
-      parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"sense_vol"}, 0);
   args::ValueFlag<float> thr(
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<long> its(
@@ -31,10 +28,10 @@ int main_cgvar(args::Subparser &parser)
       parser, "PRE0", "Preconditioning start value (default 1)", {"pre0"}, 1);
   args::ValueFlag<float> pre1(parser, "PRE1", "Preconditioning end value (default 0)", {"pre1"}, 0);
 
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   auto const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
@@ -47,11 +44,22 @@ int main_cgvar(args::Subparser &parser)
 
   Cx4 grid = gridder.newGrid();
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
-  FFT3N fft(grid, log);
+  FFT::ThreeDMulti fft(grid, log);
 
-  long currentVolume = SenseVolume(sense_vol, info.volumes);
-  reader.readNoncartesian(currentVolume, rad_ks);
-  Cx4 const sense = iter_cropper.crop4(SENSE(senseMethod.Get(), traj, gridder, rad_ks, log));
+  long currentVolume;
+  Cx4 const sense = LoadSENSE(
+      info.channels,
+      iter_cropper,
+      senseFile.Get(),
+      LastOrVal(senseVolume, info.volumes),
+      reader,
+      traj,
+      osamp.Get(),
+      kernel,
+      senseLambda.Get(),
+      rad_ks,
+      currentVolume,
+      log);
 
   CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
@@ -59,11 +67,11 @@ int main_cgvar(args::Subparser &parser)
     grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
     y = x;
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(y, info.channels);
-    fft.forward();
+    fft.forward(grid);
     gridder.toNoncartesian(grid, rad_ks);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
-    fft.reverse();
+    fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("System: {}", log.toNow(start));
   };
@@ -72,9 +80,8 @@ int main_cgvar(args::Subparser &parser)
     auto const &start = log.now();
     y.setZero();
     gridder.setSDCExponent(1.f);
-    grid.setZero();
     gridder.toCartesian(x, grid);
-    fft.reverse();
+    fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     log.debug("Decode: {}", log.toNow(start));
   };
@@ -85,7 +92,7 @@ int main_cgvar(args::Subparser &parser)
   Cx3 cropped = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   auto const &all_start = log.now();
-  for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
+  for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     if (iv != currentVolume) { // For single volume images, we already read it for SENSE
       reader.readNoncartesian(iv, rad_ks);
@@ -102,12 +109,7 @@ int main_cgvar(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  auto const ofile = OutName(fname, oname, "cgvar");
-  if (magnitude) {
-    WriteVolumes(info, R4(out.abs()), volume.Get(), ofile, log);
-  } else {
-    WriteVolumes(info, out, volume.Get(), ofile, log);
-  }
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

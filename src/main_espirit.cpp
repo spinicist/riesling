@@ -12,19 +12,17 @@
 #include "parse_args.h"
 #include "sense.h"
 
-int main_sense(args::Subparser &parser)
+int main_espirit(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
 
   args::ValueFlag<long> volume(
       parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
-  args::ValueFlag<float> lambda(
-      parser, "LAMBDA", "Tikhonov regularisation parameter", {"lambda"}, 0.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
-  args::ValueFlag<long> kernelSz(
-      parser, "KERNEL SIZE", "ESPIRIT Kernel size (default 6)", {"kernel"}, 6);
-  args::ValueFlag<long> calSz(
-      parser, "CAL SIZE", "ESPIRIT Calibration region size (default 32)", {"cal"}, 32);
+  args::ValueFlag<long> kRad(
+      parser, "KERNEL RADIUS", "Kernel radius (default 6)", {"kernel", 'k'}, 4);
+  args::ValueFlag<long> calRad(
+      parser, "CAL RADIUS", "Additional calibration radius (default 1)", {"cal", 'c'}, 1);
   args::ValueFlag<float> retain(
       parser,
       "RETAIN",
@@ -51,12 +49,14 @@ int main_sense(args::Subparser &parser)
   log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   Cx3 lo_ks = rad_ks;
   auto const lo_traj = traj.trim(res.Get(), lo_ks);
-  Gridder lo_gridder(lo_traj, osamp.Get(), kernel, false, log);
-  SDC::Load("pipe", lo_traj, lo_gridder, log);
-  Cropper cropper(info, lo_gridder.gridDims(), fov.Get(), log);
-  Cx4 sense = cropper.crop4(DirectSENSE(lo_gridder, lo_ks, lambda.Get(), log));
+  Gridder gridder(lo_traj, osamp.Get(), kernel, false, log);
+  SDC::Load("pipe", lo_traj, gridder, log);
+  long const totalCalRad =
+      kRad.Get() + calRad.Get() + (gridder.info().spokes_lo ? 0 : gridder.info().read_gap);
+  Cropper cropper(info, gridder.gridDims(), fov.Get(), log);
+  Cx4 sense = cropper.crop4(ESPIRIT(gridder, lo_ks, kRad.Get(), totalCalRad, log));
 
-  auto const fname = OutName(iname.Get(), oname.Get(), "sense", oftype.Get());
+  auto const fname = OutName(iname.Get(), oname.Get(), "espirit", oftype.Get());
   if (oftype.Get().compare("h5") == 0) {
     HD5::Writer writer(fname, log);
     writer.writeInfo(info);

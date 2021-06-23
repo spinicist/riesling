@@ -43,14 +43,14 @@ args::MapFlag<int, Log::Level> verbosity(
     levelMap);
 args::ValueFlag<long> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
-Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &fname)
+Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
   Log::Level const level =
       verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::Fail);
 
   Log log(level);
-  if (!fname) {
+  if (!iname) {
     log.fail("No input specified");
   }
   if (nthreads) {
@@ -75,19 +75,19 @@ Log ParseCommand(args::Subparser &parser)
 }
 
 std::string OutName(
-    args::Positional<std::string> &inName,
-    args::ValueFlag<std::string> &name,
+    std::string const &iName,
+    std::string const &oName,
     std::string const &suffix,
     std::string const &extension)
 {
   return fmt::format(
       FMT_STRING("{}-{}.{}"),
-      name ? name.Get() : std::filesystem::path(inName.Get()).replace_extension().string(),
+      oName.empty() ? std::filesystem::path(iName).replace_extension().string() : oName,
       suffix,
       extension);
 }
 
-long SenseVolume(args::ValueFlag<long> &sFlag, long const vols)
+long LastOrVal(args::ValueFlag<long> &sFlag, long const vols)
 {
   if (sFlag) {
     return std::clamp(sFlag.Get(), 0L, vols - 1);
@@ -96,39 +96,29 @@ long SenseVolume(args::ValueFlag<long> &sFlag, long const vols)
   }
 }
 
-std::vector<long> WhichVolumes(long const which, long const max_volume)
+void WriteOutput(
+    Cx4 const &vols,
+    bool const mag,
+    bool const needsSwap,
+    Info const &info,
+    std::string const &iname,
+    std::string const &oname,
+    std::string const &suffix,
+    std::string const &ext,
+    Log &log)
 {
-  if (which < 0) {
-    std::vector<long> volumes(max_volume);
-    std::iota(volumes.begin(), volumes.end(), 0);
-    return volumes;
-  } else {
-    std::vector<long> volume = {which};
-    return volume;
-  }
-}
-
-template <typename T>
-void WriteVolumes(
-    Info const &info, T const &vols, long const which, std::string const &fname, Log &log)
-{
-  long const v_st = (which > -1) ? which : 0;
-  long const v_sz = (which > -1) ? 1 : vols.dimension(3);
-  Sz4 st{0, 0, 0, v_st};
-  Sz4 sz{vols.dimension(0), vols.dimension(1), vols.dimension(2), v_sz};
-  T const out = vols.slice(st, sz);
-
-  std::string ext = std::filesystem::path(fname).extension();
-  if (ext.compare(".h5") == 0) {
+  auto const fname = OutName(iname, oname, suffix, ext);
+  if (ext.compare("h5") == 0) {
     HD5::Writer writer(fname, log);
     writer.writeInfo(info);
-    writer.writeImage(out);
+    writer.writeImage(vols);
   } else {
-    WriteNifti(info, out, fname, log);
+    auto &output = needsSwap ? SwapToChannelLast(vols) : vols;
+    if (mag) {
+      R4 const mVols = output.abs();
+      WriteNifti(info, mVols, fname, log);
+    } else {
+      WriteNifti(info, output, fname, log);
+    }
   }
 }
-
-template void WriteVolumes(
-    Info const &info, R4 const &vols, long const which, std::string const &fname, Log &log);
-template void WriteVolumes(
-    Info const &info, Cx4 const &vols, long const which, std::string const &fname, Log &log);

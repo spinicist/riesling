@@ -28,7 +28,7 @@ R3 NearestNeighbour::kspace(Point3 const &offset) const
   return w;
 }
 
-Cx3 NearestNeighbour::image(Point3 const &offset, Dims3 const &) const
+Cx3 NearestNeighbour::image(Point3 const &offset, Sz3 const &) const
 {
   Cx3 w(w_, w_, w_);
   w.setConstant(1.f / sqrt(w_ * w_ * w_)); // Parseval's theorem

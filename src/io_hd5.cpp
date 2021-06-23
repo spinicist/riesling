@@ -13,6 +13,7 @@ std::string const KeyCartesian = "cartesian";
 std::string const KeyImage = "image";
 std::string const KeyTrajectory = "trajectory";
 std::string const KeySDC = "sdc";
+std::string const KeySENSE = "sense";
 
 void Init(Log &log)
 {
@@ -129,6 +130,11 @@ void Writer::writeSDC(R2 const &sdc)
   HD5::store_tensor(handle_, KeySDC, sdc, log_);
 }
 
+void Writer::writeSENSE(Cx4 const &s)
+{
+  HD5::store_tensor(handle_, KeySENSE, s, log_);
+}
+
 void Writer::writeNoncartesian(Cx4 const &t)
 {
   HD5::store_tensor(handle_, KeyNoncartesian, t, log_);
@@ -243,6 +249,12 @@ void Reader::readCartesian(Cx4 &grid)
 {
   log_.info("Reading cartesian data");
   HD5::load_tensor(handle_, KeyCartesian, grid, log_);
+}
+
+void Reader::readSENSE(Cx4 &s)
+{
+  log_.info("Reading SENSE maps");
+  HD5::load_tensor(handle_, KeySENSE, s, log_);
 }
 
 } // namespace HD5

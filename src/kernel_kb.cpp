@@ -1,7 +1,7 @@
 #include "kernel_kb.h"
 
 #include "fft1.h"
-#include "fft3.h"
+#include "fft_plan.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <fmt/ostream.h>
@@ -46,7 +46,7 @@ void KaiserBessel::sqrtOn()
    * which is much slower, but works
    */
   Log nullLog;
-  fft_ = std::make_unique<FFT3>(sz_, nullLog, 1);
+  fft_ = std::make_unique<FFT::ThreeD>(sz_, nullLog, 1);
 }
 
 void KaiserBessel::sqrtOff()
@@ -94,7 +94,7 @@ inline decltype(auto) Sinc(T const &x)
   return x.unaryExpr([](Cx const xx) { return std::sin(xx) / xx; });
 }
 
-Cx3 KaiserBessel::image(Point3 const &r, Dims3 const &G) const
+Cx3 KaiserBessel::image(Point3 const &r, Sz3 const &G) const
 {
   Cx1 const ix = Sinc((((p_.constant(r[0]) - p_) * p_.constant(M_PI * w_ / G[0])).square() -
                        p_.constant(beta_ * beta_))

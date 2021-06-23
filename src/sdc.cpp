@@ -7,18 +7,18 @@
 #include "trajectory.h"
 
 namespace SDC {
-void Load(std::string const &fname, Trajectory const &traj, Gridder &gridder, Log &log)
+void Load(std::string const &iname, Trajectory const &traj, Gridder &gridder, Log &log)
 {
-  if (fname == "") {
+  if (iname == "") {
     return;
-  } else if (fname == "none") {
+  } else if (iname == "none") {
     return;
-  } else if (fname == "pipe") {
+  } else if (iname == "pipe") {
     gridder.setSDC(Pipe(traj, gridder, log));
-  } else if (fname == "radial") {
+  } else if (iname == "radial") {
     gridder.setSDC(Radial(traj, log));
   } else {
-    HD5::Reader reader(fname, log);
+    HD5::Reader reader(iname, log);
     gridder.setSDC(reader.readSDC());
   }
 }
@@ -26,18 +26,18 @@ void Load(std::string const &fname, Trajectory const &traj, Gridder &gridder, Lo
 R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
 {
   log.info("Using Pipe/Zwart/Menon SDC...");
-  Cx2 W(gridder.info().read_points, gridder.info().spokes_total());
-  Cx2 Wp(W.dimensions());
+  Cx3 W(1, gridder.info().read_points, gridder.info().spokes_total());
+  Cx3 Wp(W.dimensions());
 
   W.setZero();
   for (long is = 0; is < traj.info().spokes_total(); is++) {
     for (long ir = 0; ir < traj.info().read_points; ir++) {
-      W(ir, is) = traj.merge(ir, is);
+      W(0, ir, is) = traj.merge(ir, is);
     }
   }
 
   gridder.kernel()->sqrtOn();
-  Cx3 temp = gridder.newGrid1();
+  Cx4 temp = gridder.newGridSingle();
   for (long ii = 0; ii < 10; ii++) {
     Wp.setZero();
     temp.setZero();
@@ -56,7 +56,7 @@ R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
   }
   gridder.kernel()->sqrtOff();
   log.info("SDC finished.");
-  return W.real();
+  return W.real().chip(0, 0);
 }
 
 R2 Radial2D(Trajectory const &traj, Log &log)

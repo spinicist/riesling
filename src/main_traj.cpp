@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "fft3.h"
+#include "fft_plan.h"
 #include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
@@ -12,12 +12,9 @@
 int main_traj(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {"out", 'o'});
-  args::ValueFlag<std::string> sdc(
-      parser, "SDC FILE", "Load SDC from this h5 file", {"sdc"}, "pipe");
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
   FFT::Start(log);
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
 
@@ -26,16 +23,18 @@ int main_traj(args::Subparser &parser)
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
   Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
-  Cx3 grid = gridder.newGrid1();
-  FFT3 fft(grid, log);
+  Cx4 grid = gridder.newGridSingle();
+  FFT::ThreeDMulti fft(grid, log);
 
   grid.setZero();
-  Cx2 rad_ks(info.read_points, info.spokes_total());
+  Cx3 rad_ks(1, info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder.toCartesian(rad_ks, grid);
-  WriteNifti(info, R3(grid.abs()), OutName(fname, oname, "traj"), log);
+  Cx4 output = SwapToChannelLast(grid);
+  WriteOutput(output, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
   fft.reverse(grid);
-  WriteNifti(info, grid, OutName(fname, oname, "psf"), log);
+  output = SwapToChannelLast(grid);
+  WriteOutput(output, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

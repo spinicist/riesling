@@ -1,13 +1,13 @@
 #include "apodizer.h"
 
 #include "cropper.h"
-#include "fft3.h"
+#include "fft_plan.h"
 
-Apodizer::Apodizer(Kernel *const k, Dims3 const &grid, Dims3 const &img, Log &log)
+Apodizer::Apodizer(Kernel *const k, Sz3 const &grid, Sz3 const &img, Log &log)
     : log_(log)
 {
   Cx3 temp(grid);
-  FFT3 fft(temp, log_);
+  FFT::ThreeD fft(temp, log_);
   temp.setZero();
   Crop3(temp, k->size()) = k->kspace(Point3::Zero()).cast<Cx>();
   fft.reverse(temp);

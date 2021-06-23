@@ -10,7 +10,7 @@
 
 int main_zinfandel(args::Subparser &parser)
 {
-  args::Positional<std::string> fname(parser, "INPUT FILE", "Input radial k-space to fill");
+  args::Positional<std::string> iname(parser, "INPUT FILE", "Input radial k-space to fill");
   args::ValueFlag<std::string> oname(
       parser, "OUTPUT NAME", "Name of output .h5 file", {"out", 'o'});
   args::ValueFlag<long> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
@@ -28,9 +28,9 @@ int main_zinfandel(args::Subparser &parser)
       parser, "PULSE WIDTH", "Pulse-width for slab profile correction", {"pw"}, 0.f);
   args::ValueFlag<float> rbw(
       parser, "BANDWIDTH", "Read-out bandwidth for slab profile correction (kHz)", {"rbw"}, 0.f);
-  Log log = ParseCommand(parser, fname);
+  Log log = ParseCommand(parser, iname);
 
-  HD5::Reader reader(fname.Get(), log);
+  HD5::Reader reader(iname.Get(), log);
   auto info = reader.info();
   long const gap_sz = gap ? gap.Get() : info.read_gap;
   auto const traj = reader.readTrajectory();
@@ -40,13 +40,13 @@ int main_zinfandel(args::Subparser &parser)
     out_info.volumes = 1;
   }
 
-  HD5::Writer writer(OutName(fname, oname, "zinfandel", "h5"), log);
+  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "zinfandel", "h5"), log);
   writer.writeTrajectory(Trajectory(out_info, traj.points(), log));
   writer.writeMeta(reader.readMeta());
 
   Cx4 rad_ks = info.noncartesianSeries();
   reader.readNoncartesian(rad_ks);
-  for (auto const &iv : WhichVolumes(volume.Get(), info.volumes)) {
+  for (long iv = 0; iv < info.volumes; iv++) {
     Cx3 vol = rad_ks.chip(iv, 3);
     zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj.points(), vol, log);
     if (pw && rbw) {
