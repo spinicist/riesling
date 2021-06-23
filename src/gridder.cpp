@@ -259,6 +259,7 @@ void Gridder::toNoncartesian(Cx4 const &cart, Cx3 &noncart) const
     }
   };
   auto const &start = log_.now();
+  noncart.setZero();
   Threads::RangeFor(grid_task, coords_.size());
   log_.debug("Cart -> Non-cart: {}", log_.toNow(start));
 }

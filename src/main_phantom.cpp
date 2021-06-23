@@ -61,12 +61,16 @@ int main_phantom(args::Subparser &parser)
 
   R3 points;
   Info info;
+  bool use_lores;
   if (trajfile) {
     log.info("Reading external trajectory from {}", trajfile.Get());
     HD5::Reader reader(trajfile.Get(), log);
     Trajectory const ext_traj = reader.readTrajectory();
     info = ext_traj.info();
-    points = ext_traj.points();
+    points = ext_traj.points().slice(
+        Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi});
+    use_lores = info.spokes_lo > 0;
+    info.spokes_lo = 0;
   } else {
     auto const spokes_hi = std::lrint(matrix.Get() * matrix.Get() / spoke_samp.Get());
     info = Info{.matrix = Eigen::Array3l::Constant(matrix.Get()),
@@ -80,13 +84,13 @@ int main_phantom(args::Subparser &parser)
                 .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
                 .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f)};
     points = ArchimedeanSpiral(info);
+    use_lores = lores;
   }
   log.info(
       FMT_STRING("Matrix Size: {} Voxel Size: {}"),
       info.matrix.transpose(),
       info.voxel_size.transpose());
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
-
   Trajectory traj(info, points, log);
   Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
   Cx4 grid = hi_gridder.newGrid();
@@ -108,36 +112,60 @@ int main_phantom(args::Subparser &parser)
           : SphericalPhantom(
                 info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
   Cx4 sense = birdcage(
-      info.matrix, info.voxel_size, nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get(), log);
+      info.matrix,
+      info.voxel_size,
+      info.channels,
+      coil_rings.Get(),
+      coil_r.Get(),
+      coil_r.Get(),
+      log);
 
   apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
 
   log.info("Generating Cartesian k-space...");
   grid.setZero();
   cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, info.channels);
+
   fft.forward(grid);
 
   log.info("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
   hi_gridder.toNoncartesian(grid, radial);
 
-  if (lores) {
-    // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
-    auto const spokes_lo = info.spokes_hi / lores.Get();
-    Info lo_info{.matrix = info.matrix,
-                 .read_points = info.read_points,
-                 .read_gap = 0,
-                 .spokes_hi = spokes_lo,
-                 .spokes_lo = 0,
-                 .lo_scale = 1.f,
-                 .channels = nchan.Get(),
-                 .type = Info::Type::ThreeD,
-                 .voxel_size = info.voxel_size,
-                 .origin = info.origin};
-    R3 lo_points = ArchimedeanSpiral(lo_info);
+  if (use_lores) {
+    Info lo_info;
+    R3 lo_points;
+    long lowres_scale;
+    if (trajfile) {
+      log.info("Reading external trajectory from {}", trajfile.Get());
+      HD5::Reader reader(trajfile.Get(), log);
+      Trajectory const ext_traj = reader.readTrajectory();
+      lo_info = ext_traj.info();
+      lo_points =
+          ext_traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes_lo});
+      lo_info.spokes_hi = lo_info.spokes_lo;
+      lo_info.spokes_lo = 0;
+      lowres_scale = lo_info.lo_scale;
+      lo_info.lo_scale = 1.f;
+    } else {
+      // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
+      lowres_scale = lores.Get();
+      auto const spokes_lo = info.spokes_hi / lowres_scale;
+      Info lo_info{.matrix = info.matrix,
+                   .read_points = info.read_points,
+                   .read_gap = 0,
+                   .spokes_hi = spokes_lo,
+                   .spokes_lo = 0,
+                   .lo_scale = 1.f,
+                   .channels = nchan.Get(),
+                   .type = Info::Type::ThreeD,
+                   .voxel_size = info.voxel_size,
+                   .origin = info.origin};
+      lo_points = ArchimedeanSpiral(lo_info);
+    }
     Trajectory lo_traj(
         lo_info,
-        R3(lo_points / lo_points.constant(lores.Get())), // Points need to be scaled down here
+        R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
         log);
     Gridder lo_gridder(lo_traj, grid_samp.Get(), kernel, false, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
@@ -148,7 +176,7 @@ int main_phantom(args::Subparser &parser)
     R3 const all_points = lo_points.concatenate(points, 2);
     points = all_points;
     info.spokes_lo = lo_info.spokes_hi;
-    info.lo_scale = lores.Get();
+    info.lo_scale = lowres_scale;
     traj = Trajectory(info, points, log);
   }
 
