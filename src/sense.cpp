@@ -76,5 +76,6 @@ Cx4 LoadSENSE(
     senseReader.readSENSE(sense);
     currentVolume = -1;
   }
+  currentVol = currentVolume;
   return sense;
 }
