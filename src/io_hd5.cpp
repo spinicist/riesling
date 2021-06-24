@@ -164,15 +164,6 @@ Reader::Reader(std::string const &fname, Log &log)
   Init(log_);
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   log_.info(FMT_STRING("Opened file {} for reading"), fname);
-
-  hid_t const info_id = InfoType(log_);
-  hid_t const dset = H5Dopen(handle_, KeyInfo.c_str(), H5P_DEFAULT);
-  hid_t const space = H5Dget_space(dset);
-  herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info_);
-  status = H5Dclose(dset);
-  if (status != 0) {
-    log_.fail("Could not load info struct, code: {}", status);
-  }
 }
 
 Reader::~Reader()
@@ -212,23 +203,34 @@ std::map<std::string, float> Reader::readMeta() const
   return meta;
 }
 
-Info const &Reader::info() const
+Info Reader::readInfo()
 {
-  return info_;
+  log_.info("Reading info");
+  hid_t const info_id = InfoType(log_);
+  hid_t const dset = H5Dopen(handle_, KeyInfo.c_str(), H5P_DEFAULT);
+  hid_t const space = H5Dget_space(dset);
+  Info info;
+  herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
+  status = H5Dclose(dset);
+  if (status != 0) {
+    log_.fail("Could not load info struct, code: {}", status);
+  }
+  return info;
 }
 
 Trajectory Reader::readTrajectory()
 {
+  Info info = readInfo();
   log_.info("Reading trajectory");
-  R3 points(3, info_.read_points, info_.spokes_total());
+  R3 points(3, info.read_points, info.spokes_total());
   HD5::load_tensor(handle_, KeyTrajectory, points, log_);
-  return Trajectory(info_, points, log_);
+  return Trajectory(info, points, log_);
 }
 
-R2 Reader::readSDC()
+R2 Reader::readSDC(Info const &info)
 {
   log_.info("Reading SDC");
-  R2 sdc(info_.read_points, info_.spokes_total());
+  R2 sdc(info.read_points, info.spokes_total());
   HD5::load_tensor(handle_, KeySDC, sdc, log_);
   return sdc;
 }

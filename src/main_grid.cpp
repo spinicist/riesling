@@ -15,7 +15,7 @@ int main_grid(args::Subparser &parser)
   Log log = ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
-  auto const info = reader.info();
+  auto const info = traj.info();
 
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))

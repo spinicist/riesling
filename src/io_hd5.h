@@ -34,10 +34,10 @@ struct Reader
   Reader(Reader const &) = delete;
   Reader(std::string const &fname, Log &log);
   ~Reader();
-  Info const &info() const;
   std::map<std::string, float> readMeta() const;
+  Info readInfo();
   Trajectory readTrajectory();
-  R2 readSDC();
+  R2 readSDC(Info const &info);
   void readNoncartesian(Cx4 &allVolumes);
   void readNoncartesian(long const index, Cx3 &volume);
   void readCartesian(Cx4 &volume);
@@ -46,6 +46,5 @@ struct Reader
 private:
   Log &log_;
   int64_t handle_;
-  Info info_;
 };
 } // namespace HD5

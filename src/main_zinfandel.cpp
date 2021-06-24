@@ -31,7 +31,7 @@ int main_zinfandel(args::Subparser &parser)
   Log log = ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get(), log);
-  auto info = reader.info();
+  auto info = reader.readInfo();
   long const gap_sz = gap ? gap.Get() : info.read_gap;
   auto const traj = reader.readTrajectory();
   auto out_info = info;

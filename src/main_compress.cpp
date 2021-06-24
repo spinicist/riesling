@@ -18,7 +18,7 @@ int main_compress(args::Subparser &parser)
   Log log = ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get(), log);
-  Info const in_info = reader.info();
+  Info const in_info = reader.readInfo();
   Cx3 ks = in_info.noncartesianVolume();
   reader.readNoncartesian(LastOrVal(ref_vol, in_info.volumes), ks);
   long const max_ref = in_info.read_points - in_info.read_gap;

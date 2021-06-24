@@ -19,7 +19,7 @@ void Load(std::string const &iname, Trajectory const &traj, Gridder &gridder, Lo
     gridder.setSDC(Radial(traj, log));
   } else {
     HD5::Reader reader(iname, log);
-    gridder.setSDC(reader.readSDC());
+    gridder.setSDC(reader.readSDC(reader.readInfo()));
   }
 }
 
