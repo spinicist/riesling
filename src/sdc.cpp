@@ -37,7 +37,7 @@ R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
   }
 
   gridder.kernel()->sqrtOn();
-  Cx4 temp = gridder.newGridSingle();
+  Cx4 temp = gridder.newMultichannel(traj.info().channels);
   for (long ii = 0; ii < 10; ii++) {
     Wp.setZero();
     temp.setZero();

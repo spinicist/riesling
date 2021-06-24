@@ -99,16 +99,9 @@ Sz3 Gridder::gridDims() const
   return dims_;
 }
 
-Cx4 Gridder::newGrid() const
+Cx4 Gridder::newMultichannel(long const nc) const
 {
-  Cx4 g(info_.channels, dims_[0], dims_[1], dims_[2]);
-  g.setZero();
-  return g;
-}
-
-Cx4 Gridder::newGridSingle() const
-{
-  Cx4 g(1, dims_[0], dims_[1], dims_[2]);
+  Cx4 g(nc, dims_[0], dims_[1], dims_[2]);
   g.setZero();
   return g;
 }

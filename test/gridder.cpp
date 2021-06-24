@@ -25,7 +25,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     Cx3 rad(1, info.read_points, info.spokes_total());
     CHECK(rad.dimension(0) == 1);
     CHECK(rad.dimension(1) == 1);
-    Cx4 cart = gridder.newGridSingle();
+    Cx4 cart = gridder.newMultichannel(4);
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
     CHECK(cart.dimension(3) == 4);
@@ -44,7 +44,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
-    Cx4 cart = gridder.newGrid();
+    Cx4 cart = gridder.newMultichannel(info.channels);
     CHECK(cart.dimension(0) == info.channels);
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
@@ -71,7 +71,7 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
-    Cx4 cart = gridder.newGrid();
+    Cx4 cart = gridder.newMultichannel(info.channels);
     CHECK(cart.dimension(0) == info.channels);
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
@@ -113,7 +113,7 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
   {
     Kernel *kernel = new NearestNeighbour();
     Gridder gridder(traj, osamp, kernel, false, log);
-    Cx4 cart = gridder.newGridSingle();
+    Cx4 cart = gridder.newMultichannel(1);
     CHECK(cart.dimension(0) == 1);
     CHECK(cart.dimension(1) == 8);
     CHECK(cart.dimension(2) == 8);

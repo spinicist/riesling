@@ -22,8 +22,8 @@ int main_plan(args::Subparser &parser)
       kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (traj.info().type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour();
   Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
-  Cx4 grid4 = gridder.newGrid();
-  Cx4 grid3 = gridder.newGridSingle();
+  Cx4 grid4 = gridder.newMultichannel(traj.info().channels);
+  Cx4 grid3 = gridder.newMultichannel(1);
   FFT::ThreeDMulti fft3(grid3, log);
   FFT::ThreeDMulti fft4(grid4, log);
   FFT::End(log);

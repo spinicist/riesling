@@ -25,9 +25,8 @@ struct Gridder
 
   virtual ~Gridder() = default;
 
-  Sz3 gridDims() const;      //!< Returns the dimensions of the grid
-  Cx4 newGrid() const;       //!< Returns a correctly sized multi-channel grid
-  Cx4 newGridSingle() const; //!< Returns a correctly sized single channel grid
+  Sz3 gridDims() const;                        //!< Returns the dimensions of the grid
+  Cx4 newMultichannel(long const nChan) const; //!< Returns a correctly sized multi-channel grid
 
   void setSDCExponent(float const dce); //!< Sets the exponent of the density compensation weights
   void setSDC(float const dc);

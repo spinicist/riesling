@@ -16,7 +16,7 @@ Cx4 ESPIRIT(Gridder const &gridder, Cx3 const &data, long const kRad, long const
   log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   log.info(FMT_STRING("Calculating k-space kernels"));
-  Cx4 grid = gridder.newGrid(); // Maps will end up here
+  Cx4 grid = gridder.newMultichannel(data.dimension(0)); // Maps will end up here
   R3 valsImage(gridder.gridDims());
   gridder.toCartesian(data, grid);
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gridder.info().read_gap, log);

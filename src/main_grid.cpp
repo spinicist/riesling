@@ -24,7 +24,7 @@ int main_grid(args::Subparser &parser)
   SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
   Cx3 rad_ks = info.noncartesianVolume();
-  Cx4 grid = gridder.newGrid();
+  Cx4 grid = gridder.newMultichannel(info.channels);
 
   auto const &vol_start = log.now();
 

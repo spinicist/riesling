@@ -93,7 +93,7 @@ int main_phantom(args::Subparser &parser)
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
   Trajectory traj(info, points, log);
   Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
-  Cx4 grid = hi_gridder.newGrid();
+  Cx4 grid = hi_gridder.newMultichannel(info.channels);
   FFT::ThreeDMulti fft(grid, log); // FFTW needs temp space for planning
 
   Cropper cropper(hi_gridder.gridDims(), info.matrix, log);

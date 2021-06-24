@@ -33,7 +33,7 @@ int main_recon(args::Subparser &parser)
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), log);
   Apodizer apodizer(kernel, gridder.gridDims(), cropper.size(), log);
   Cx3 rad_ks = info.noncartesianVolume();
-  Cx4 grid = gridder.newGrid();
+  Cx4 grid = gridder.newMultichannel(info.channels);
   Cx3 image = cropper.newImage();
   Cx4 out = cropper.newSeries(info.volumes);
   out.setZero();

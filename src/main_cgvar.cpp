@@ -42,7 +42,7 @@ int main_cgvar(args::Subparser &parser)
   SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
 
-  Cx4 grid = gridder.newGrid();
+  Cx4 grid = gridder.newMultichannel(info.channels);
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   FFT::ThreeDMulti fft(grid, log);
 

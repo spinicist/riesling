@@ -23,7 +23,7 @@ int main_traj(args::Subparser &parser)
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
   Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
-  Cx4 grid = gridder.newGridSingle();
+  Cx4 grid = gridder.newMultichannel(1);
   FFT::ThreeDMulti fft(grid, log);
 
   grid.setZero();

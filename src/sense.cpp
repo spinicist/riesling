@@ -15,7 +15,7 @@ float const sense_res = 8.f;
 Cx4 DirectSENSE(Gridder const &gridder, Cx3 const &data, float const lambda, Log &log)
 {
   // Grid at low res & accumulate combined image
-  Cx4 grid = gridder.newGrid();
+  Cx4 grid = gridder.newMultichannel(data.dimension(0));
   R3 rss(gridder.gridDims());
   FFT::ThreeDMulti fftN(grid, log);
   grid.setZero();

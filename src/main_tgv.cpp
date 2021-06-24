@@ -44,7 +44,7 @@ int main_tgv(args::Subparser &parser)
   SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
 
-  Cx4 grid = gridder.newGrid();
+  Cx4 grid = gridder.newMultichannel(info.channels);
   grid.setZero();
   FFT::ThreeDMulti fft(grid, log);
 

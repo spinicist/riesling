@@ -40,7 +40,7 @@ int main_cg(args::Subparser &parser)
   SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
 
-  Cx4 grid = gridder.newGrid();
+  Cx4 grid = gridder.newMultichannel(info.channels);
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   FFT::ThreeDMulti fft(grid, log);
 
@@ -64,7 +64,7 @@ int main_cg(args::Subparser &parser)
     log.info("Calculating transfer function");
     Cx3 ones(1, info.read_points, info.spokes_total());
     ones.setConstant({1.0f});
-    Cx4 transferTemp = gridder.newGridSingle();
+    Cx4 transferTemp = gridder.newMultichannel(1);
     transfer.setZero();
     gridder.toCartesian(ones, transferTemp);
     transfer = transferTemp.reshape(gridder.gridDims());
