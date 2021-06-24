@@ -47,14 +47,7 @@ int main_sense(args::Subparser &parser)
 
   Cx3 rad_ks = info.noncartesianVolume();
   reader.readNoncartesian(LastOrVal(volume, info.volumes), rad_ks);
-
-  log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
-  Cx3 lo_ks = rad_ks;
-  auto const lo_traj = traj.trim(res.Get(), lo_ks);
-  Gridder lo_gridder(lo_traj, osamp.Get(), kernel, false, log);
-  SDC::Load("pipe", lo_traj, lo_gridder, log);
-  Cropper cropper(info, lo_gridder.gridDims(), fov.Get(), log);
-  Cx4 sense = cropper.crop4(DirectSENSE(lo_gridder, lo_ks, lambda.Get(), log));
+  Cx4 sense = DirectSENSE(traj, osamp.Get(), kernel, fov.Get(), rad_ks, lambda.Get(), log);
 
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", oftype.Get());
   if (oftype.Get().compare("h5") == 0) {

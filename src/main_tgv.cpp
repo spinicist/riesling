@@ -36,6 +36,7 @@ int main_tgv(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   auto const &info = traj.info();
+  Cx3 rad_ks = info.noncartesianVolume();
 
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
@@ -49,21 +50,15 @@ int main_tgv(args::Subparser &parser)
   FFT::ThreeDMulti fft(grid, log);
 
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
-  Cx3 rad_ks = info.noncartesianVolume();
-  long currentVolume;
-  Cx4 const sense = LoadSENSE(
-      info.channels,
-      iter_cropper,
-      senseFile.Get(),
-      LastOrVal(senseVolume, info.volumes),
-      reader,
-      traj,
-      osamp.Get(),
-      kernel,
-      senseLambda.Get(),
-      rad_ks,
-      currentVolume,
-      log);
+  long currentVolume = -1;
+  Cx4 sense = iter_cropper.newMultichannel(info.channels);
+  if (senseFile) {
+    sense = LoadSENSE(senseFile.Get(), iter_cropper.dims(info.channels), log);
+  } else {
+    currentVolume = LastOrVal(senseVolume, info.volumes);
+    reader.readNoncartesian(currentVolume, rad_ks);
+    sense = DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
+  }
 
   EncodeFunction enc = [&](Cx3 &x, Cx3 &y) {
     auto const &start = log.now();

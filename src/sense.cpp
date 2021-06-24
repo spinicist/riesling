@@ -12,9 +12,20 @@
 
 float const sense_res = 8.f;
 
-Cx4 DirectSENSE(Gridder const &gridder, Cx3 const &data, float const lambda, Log &log)
+Cx4 DirectSENSE(
+    Trajectory const &traj,
+    float const os,
+    Kernel *kernel,
+    float const fov,
+    Cx3 const &data,
+    float const lambda,
+    Log &log)
 {
-  // Grid at low res & accumulate combined image
+  Cx3 lo_ks = data;
+  auto const lo_traj = traj.trim(8.f, lo_ks);
+  Gridder gridder(lo_traj, os, kernel, false, log);
+  SDC::Load("pipe", lo_traj, gridder, log);
+
   Cx4 grid = gridder.newMultichannel(data.dimension(0));
   R3 rss(gridder.gridDims());
   FFT::ThreeDMulti fftN(grid, log);
@@ -43,39 +54,15 @@ Cx4 DirectSENSE(Gridder const &gridder, Cx3 const &data, float const lambda, Log
   log.info("Normalizing channel images");
   grid.device(Threads::GlobalDevice()) = grid / TileToMatch(rss, grid.dimensions()).cast<Cx>();
   log.info("Finished SENSE maps");
-  return grid;
+
+  Cropper crop(traj.info(), gridder.gridDims(), fov, log);
+  return crop.crop4(grid);
 }
 
-Cx4 LoadSENSE(
-    long const nChan,
-    Cropper const &cropper,
-    std::string const &calFile,
-    long const calVolume,
-    HD5::Reader &reader,
-    Trajectory const &traj,
-    float const os,
-    Kernel *kernel,
-    float const lambda,
-    Cx3 &rad_ks,
-    long &currentVol,
-    Log &log)
+Cx4 LoadSENSE(std::string const &calFile, Sz4 const dims, Log &log)
 {
-  Cx4 sense(cropper.dims(nChan));
-  long currentVolume;
-
-  if (calFile.empty()) {
-    currentVolume = calVolume;
-    reader.readNoncartesian(calVolume, rad_ks);
-    Cx3 lo_ks = rad_ks;
-    auto const lo_traj = traj.trim(8.f, lo_ks);
-    Gridder lo_gridder(lo_traj, os, kernel, false, log);
-    SDC::Load("pipe", lo_traj, lo_gridder, log);
-    sense = cropper.crop4(DirectSENSE(lo_gridder, rad_ks, lambda, log));
-  } else {
-    HD5::Reader senseReader(calFile, log);
-    senseReader.readSENSE(sense);
-    currentVolume = -1;
-  }
-  currentVol = currentVolume;
+  Cx4 sense(dims);
+  HD5::Reader senseReader(calFile, log);
+  senseReader.readSENSE(sense);
   return sense;
 }

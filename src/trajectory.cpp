@@ -78,7 +78,7 @@ Trajectory Trajectory::trim(float const res, Cx3 &data, bool const shrink) const
   }
 
   float const ratio = info_.voxel_size.minCoeff() / res;
-  log_.info("Image res {} SENSE res {} ratio {}", info_.voxel_size.minCoeff(), res, ratio);
+  log_.info(FMT_STRING("Cropping data to {} mm effective resolution, ratio {}"), res, ratio);
   // Assume radial spokes for now
   Info new_info = info_;
 

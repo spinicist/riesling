@@ -46,20 +46,15 @@ int main_cgvar(args::Subparser &parser)
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
   FFT::ThreeDMulti fft(grid, log);
 
-  long currentVolume;
-  Cx4 const sense = LoadSENSE(
-      info.channels,
-      iter_cropper,
-      senseFile.Get(),
-      LastOrVal(senseVolume, info.volumes),
-      reader,
-      traj,
-      osamp.Get(),
-      kernel,
-      senseLambda.Get(),
-      rad_ks,
-      currentVolume,
-      log);
+  long currentVolume = -1;
+  Cx4 sense = iter_cropper.newMultichannel(info.channels);
+  if (senseFile) {
+    sense = LoadSENSE(senseFile.Get(), iter_cropper.dims(info.channels), log);
+  } else {
+    currentVolume = LastOrVal(senseVolume, info.volumes);
+    reader.readNoncartesian(currentVolume, rad_ks);
+    sense = DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
+  }
 
   CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
