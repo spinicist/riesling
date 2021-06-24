@@ -151,16 +151,16 @@ int main_phantom(args::Subparser &parser)
       // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
       lowres_scale = lores.Get();
       auto const spokes_lo = info.spokes_hi / lowres_scale;
-      Info lo_info{.matrix = info.matrix,
-                   .read_points = info.read_points,
-                   .read_gap = 0,
-                   .spokes_hi = spokes_lo,
-                   .spokes_lo = 0,
-                   .lo_scale = 1.f,
-                   .channels = nchan.Get(),
-                   .type = Info::Type::ThreeD,
-                   .voxel_size = info.voxel_size,
-                   .origin = info.origin};
+      lo_info = Info{.matrix = info.matrix,
+                     .read_points = info.read_points,
+                     .read_gap = 0,
+                     .spokes_hi = spokes_lo,
+                     .spokes_lo = 0,
+                     .lo_scale = 1.f,
+                     .channels = nchan.Get(),
+                     .type = Info::Type::ThreeD,
+                     .voxel_size = info.voxel_size,
+                     .origin = info.origin};
       lo_points = ArchimedeanSpiral(lo_info);
     }
     Trajectory lo_traj(
