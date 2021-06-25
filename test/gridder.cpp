@@ -6,13 +6,14 @@
 TEST_CASE("Gridder with single point", "GRID-SINGLE")
 {
   Log log;
-  Info info{.matrix = {2, 2, 2},
+  Info info{.type = Info::Type::ThreeD,
+            .channels = 4,
+            .matrix = {2, 2, 2},
             .read_points = 1,
             .read_gap = 0,
             .spokes_hi = 1,
             .spokes_lo = 0,
-            .lo_scale = 1,
-            .channels = 4};
+            .lo_scale = 1};
   float const osamp = 2.f;
   R3 points(3, 1, 1);
   points.setZero();
@@ -94,13 +95,14 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 {
   Log log;
-  Info info{.matrix = {4, 4, 4},
+  Info info{.type = Info::Type::ThreeD,
+            .channels = 1,
+            .matrix = {4, 4, 4},
             .read_points = 4,
             .read_gap = 0,
             .spokes_hi = 1,
             .spokes_lo = 0,
-            .lo_scale = 1,
-            .channels = 1};
+            .lo_scale = 1};
   float const osamp = 2.f;
   R3 points(3, info.read_points, info.spokes_total());
   points.setZero();

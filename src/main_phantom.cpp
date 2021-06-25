@@ -73,16 +73,20 @@ int main_phantom(args::Subparser &parser)
     info.spokes_lo = 0;
   } else {
     auto const spokes_hi = std::lrint(matrix.Get() * matrix.Get() / spoke_samp.Get());
-    info = Info{.matrix = Eigen::Array3l::Constant(matrix.Get()),
+    info = Info{.type = Info::Type::ThreeD,
+                .channels = nchan.Get(),
+                .matrix = Eigen::Array3l::Constant(matrix.Get()),
                 .read_points = (long)read_samp.Get() * matrix.Get() / 2,
                 .read_gap = 0,
                 .spokes_hi = spokes_hi,
                 .spokes_lo = 0,
                 .lo_scale = lores ? lores.Get() : 1.f,
-                .channels = nchan.Get(),
-                .type = Info::Type::ThreeD,
+                .volumes = 1,
+                .echoes = 1,
+                .tr = 1.f,
                 .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
-                .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f)};
+                .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
+                .direction = Eigen::Matrix3f::Identity()};
     points = ArchimedeanSpiral(info);
     use_lores = lores;
   }
@@ -151,16 +155,20 @@ int main_phantom(args::Subparser &parser)
       // Gridder does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
       lowres_scale = lores.Get();
       auto const spokes_lo = info.spokes_hi / lowres_scale;
-      lo_info = Info{.matrix = info.matrix,
+      lo_info = Info{.type = Info::Type::ThreeD,
+                     .channels = info.channels,
+                     .matrix = info.matrix,
                      .read_points = info.read_points,
                      .read_gap = 0,
                      .spokes_hi = spokes_lo,
                      .spokes_lo = 0,
                      .lo_scale = 1.f,
-                     .channels = nchan.Get(),
-                     .type = Info::Type::ThreeD,
+                     .volumes = 1,
+                     .echoes = 1,
+                     .tr = 1.f,
                      .voxel_size = info.voxel_size,
-                     .origin = info.origin};
+                     .origin = info.origin,
+                     .direction = Eigen::Matrix3f::Identity()};
       lo_points = ArchimedeanSpiral(lo_info);
     }
     Trajectory lo_traj(
