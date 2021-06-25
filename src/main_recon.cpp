@@ -61,8 +61,7 @@ int main_recon(args::Subparser &parser)
       image.device(Threads::GlobalDevice()) =
           (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
     } else {
-      image.device(Threads::GlobalDevice()) =
-          (cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0}).sqrt();
+      image.device(Threads::GlobalDevice()) = (cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
     }
     apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
