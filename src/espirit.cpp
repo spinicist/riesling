@@ -11,7 +11,13 @@
 #include "threads.h"
 #include "vc.h"
 
-Cx4 ESPIRIT(Gridder const &gridder, Cx3 const &data, long const kRad, long const calRad, Log &log)
+Cx4 ESPIRIT(
+    Gridder const &gridder,
+    Cx3 const &data,
+    long const kRad,
+    long const calRad,
+    float const thresh,
+    Log &log)
 {
   log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
@@ -20,7 +26,7 @@ Cx4 ESPIRIT(Gridder const &gridder, Cx3 const &data, long const kRad, long const
   R3 valsImage(gridder.gridDims());
   gridder.toCartesian(data, grid);
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gridder.info().read_gap, log);
-  Cx5 const mini_kernels = LowRankKernels(all_kernels, 0.015, log);
+  Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh, log);
   long const retain = mini_kernels.dimension(4);
 
   log.info(FMT_STRING("Upsample last dimension"));

@@ -21,16 +21,6 @@ int main_sense(args::Subparser &parser)
   args::ValueFlag<float> lambda(
       parser, "LAMBDA", "Tikhonov regularisation parameter", {"lambda"}, 0.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
-  args::ValueFlag<long> kernelSz(
-      parser, "KERNEL SIZE", "ESPIRIT Kernel size (default 6)", {"kernel"}, 6);
-  args::ValueFlag<long> calSz(
-      parser, "CAL SIZE", "ESPIRIT Calibration region size (default 32)", {"cal"}, 32);
-  args::ValueFlag<float> retain(
-      parser,
-      "RETAIN",
-      "ESPIRIT Fraction of singular vectors to retain (default 0.25)",
-      {"retain"},
-      0.25);
   args::ValueFlag<float> res(
       parser, "RESOLUTION", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
   args::Flag nifti(parser, "NIFTI", "Write output to nifti instead of .h5", {"nii"});

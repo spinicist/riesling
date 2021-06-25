@@ -17,20 +17,15 @@ int main_espirit(args::Subparser &parser)
   CORE_RECON_ARGS;
 
   args::ValueFlag<long> volume(
-      parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
+      parser, "VOL", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
-  args::ValueFlag<long> kRad(
-      parser, "KERNEL RADIUS", "Kernel radius (default 6)", {"kernel", 'k'}, 4);
+  args::ValueFlag<long> kRad(parser, "RAD", "Kernel radius (default 4)", {"kRad", 'k'}, 4);
   args::ValueFlag<long> calRad(
-      parser, "CAL RADIUS", "Additional calibration radius (default 1)", {"cal", 'c'}, 1);
-  args::ValueFlag<float> retain(
-      parser,
-      "RETAIN",
-      "ESPIRIT Fraction of singular vectors to retain (default 0.25)",
-      {"retain"},
-      0.25);
+      parser, "RAD", "Additional calibration radius (default 1)", {"calRad", 'c'}, 1);
+  args::ValueFlag<float> thresh(
+      parser, "T", "Variance threshold to retain kernels (0.015)", {"thresh"}, 0.015);
   args::ValueFlag<float> res(
-      parser, "RESOLUTION", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
+      parser, "R", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
   args::Flag nifti(parser, "NIFTI", "Write output to nifti instead of .h5", {"nii"});
 
   Log log = ParseCommand(parser, iname);
@@ -54,7 +49,7 @@ int main_espirit(args::Subparser &parser)
   long const totalCalRad =
       kRad.Get() + calRad.Get() + (gridder.info().spokes_lo ? 0 : gridder.info().read_gap);
   Cropper cropper(info, gridder.gridDims(), fov.Get(), log);
-  Cx4 sense = cropper.crop4(ESPIRIT(gridder, lo_ks, kRad.Get(), totalCalRad, log));
+  Cx4 sense = cropper.crop4(ESPIRIT(gridder, lo_ks, kRad.Get(), totalCalRad, thresh.Get(), log));
 
   auto const fname = OutName(iname.Get(), oname.Get(), "espirit", oftype.Get());
   if (oftype.Get().compare("h5") == 0) {
