@@ -108,6 +108,7 @@ add_executable(prufung
     test/gridder.cpp
     test/hankel.cpp
     test/kernel_kb.cpp
+    test/sdc.cpp
     test/zinfandel.cpp
 )
 target_link_libraries(prufung PUBLIC

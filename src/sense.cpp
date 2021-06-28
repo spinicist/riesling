@@ -31,7 +31,7 @@ Cx4 DirectSENSE(
   FFT::ThreeDMulti fftN(grid, log);
   grid.setZero();
   rss.setZero();
-  gridder.toCartesian(data, grid);
+  gridder.toCartesian(lo_ks, grid);
 
   float const end_rad = gridder.info().voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
