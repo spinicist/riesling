@@ -1,14 +1,14 @@
 Data Format
 ===========
 
-RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input and intermediate data. Output data is by default written to `NiFTI <https://nifti.nimh.nih.gov>`_, but optionally can also be output to HDF5.
+RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input and intermediate data. Output data is by default written to HDF5 (``.h5``), but optionally can also be output to NiFTI (``.nii``).
 
-RIESLING mandates that the non-cartesian data is stored in "spokes", which could equally be called frames or traces. Here we will treat the data as being stored in S spokes, with N data-points per spoke, and C k-space channels.
+RIESLING mandates that the non-cartesian data is stored in "spokes", which could equally be called frames or traces. Here we will treat the data as being stored in `S` spokes, with `N` data-points per spoke, and `C` k-space channels.
 
 Header
 ------
 
-To be considered valid RIESLING input, the HDF5 file must contain the header information datastructure, stored as a compound data-type in a dataset with the name `info`. We reserve the right to change these fields of the header structure between versions of RIESLING. For the canonical definition of the header, see `src/info.h`. A pseudo-code version of the header is given here for clarity:
+To be considered valid RIESLING input, the HDF5 file must contain the header information datastructure, stored as a compound data-type in a dataset with the name ``info``. We reserve the right to change these fields of the header structure between versions of RIESLING. For the canonical definition of the header, see ``src/info.h``. A pseudo-code version of the header is given here for clarity:
 
 .. code-block:: c
 
