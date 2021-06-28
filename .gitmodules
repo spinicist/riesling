@@ -1,6 +1,3 @@
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/spinicist/cmake
-[submodule "examples/rrsg_cgsense/rrsg_challenge_01"]
-	path = examples/rrsg_cgsense/rrsg_challenge_01
-	url = https://github.com/ISMRM/rrsg_challenge_01.git
