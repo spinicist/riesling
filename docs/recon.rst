@@ -1,7 +1,7 @@
 Reconstruction
 ==============
 
-There are currently three different reconstruction commands provided in RIESLING - `recon`, `cg` and `tgv`. More may be added in future.
+There are currently three different reconstruction commands provided in RIESLING - ``recon``, ``cg`` and ``tgv``. More may be added in future.
 
 Non-iterative
 -------------
