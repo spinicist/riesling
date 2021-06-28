@@ -21,7 +21,7 @@ resulting `riesling` executable to somewhere on your `$PATH`, for instance
 `/usr/local/bin`. That's it.
 
 - MacOS Catalina or higher users should use `curl` to download the binary, i.e. 
-  `curl -L https://github.com/spinicist/QUIT/releases/download/v1.0/riesling-macos.tar.gz`. 
+  `curl -L https://github.com/spinicist/riesling/releases/download/v1.0/riesling-macos.tar.gz`. 
   This is because Safari now sets the quarantine attribute of all downloads, 
   which prevents them being run as the binary is unsigned. It is possible to 
   remove the quarantine flag with `xattr`, but downloading with `curl` is more 

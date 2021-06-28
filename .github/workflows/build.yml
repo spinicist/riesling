@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           submodules: 'recursive'
 
       - name: Install GNU tar
@@ -54,20 +55,23 @@ jobs:
           else
             TC="${{github.workspace}}/cmake/x64-linux-avx2.toolchain.cmake"
           fi
-          cmake -B ${{github.workspace}}/build -S ${{github.workspace}} \
+          cd ${{github.workspace}}
+          cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$TC"
-          cmake --build ${{github.workspace}}/build
+          cmake --build build
 
       - name: Tests
         shell: bash
         run: |
           if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2
-            ${{github.workspace}}/build/prufung
+            cd ${{github.workspace}}/build
+            ./prufung
           fi
 
       - name: Save release
         run: |
+          cd ${{github.workspace}}
           mv ./build/riesling ./
           ALL="riesling"
           if [ "${{runner.os}}" == "macOS" ]; then
@@ -82,7 +86,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
-          path: ./${{matrix.config.artifact}}
+          path: ${{github.workspace}}/${{matrix.config.artifact}}
           name: ${{matrix.config.artifact}}
 
   release:
