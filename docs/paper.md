@@ -14,7 +14,7 @@ authors:
     affiliation: 1
   - name: Florian Wiesinger
     orcid: 0000-0002-5597-6057
-    affiliation: 1,2
+    affiliation: "1,2"
 affiliations:
   - name: Department of Neuroimaging, King's College London
     index: 1
