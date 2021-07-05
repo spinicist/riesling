@@ -50,6 +50,7 @@ int main_tgv(args::Subparser &parser)
   FFT::ThreeDMulti fft(grid, log);
 
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
+  Apodizer apodizer(kernel, gridder.gridDims(), iter_cropper.size(), log);
   long currentVolume = -1;
   Cx4 sense = iter_cropper.newMultichannel(info.channels);
   if (senseFile) {
@@ -62,7 +63,7 @@ int main_tgv(args::Subparser &parser)
 
   EncodeFunction enc = [&](Cx3 &x, Cx3 &y) {
     auto const &start = log.now();
-    y.setZero();
+    apodizer.deapodize(x);
     grid.setZero();
     iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = Tile(x, info.channels) * sense;
     fft.forward(grid);
@@ -70,16 +71,16 @@ int main_tgv(args::Subparser &parser)
     log.debug("Encode: {}", log.toNow(start));
   };
 
-  DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
+  DecodeFunction dec = [&](Cx3 const &y, Cx3 &x) {
     auto const &start = log.now();
-    gridder.toCartesian(x, grid);
+    gridder.toCartesian(y, grid);
     fft.reverse(grid);
-    y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    x.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    apodizer.deapodize(x);
     log.debug("Decode: {}", log.toNow(start));
   };
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
-  Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
   Cx3 image = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (long iv = 0; iv < info.volumes; iv++) {
@@ -100,11 +101,9 @@ int main_tgv(args::Subparser &parser)
             reduce.Get(),
             step_size.Get(),
             log));
-    apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }
-
     out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(start));
   }

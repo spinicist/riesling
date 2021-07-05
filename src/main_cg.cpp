@@ -42,6 +42,7 @@ int main_cg(args::Subparser &parser)
 
   Cx4 grid = gridder.newMultichannel(info.channels);
   Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
+  Apodizer apodizer(kernel, gridder.gridDims(), iter_cropper.size(), log);
   FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = -1;
@@ -80,11 +81,11 @@ int main_cg(args::Subparser &parser)
     gridder.toCartesian(x, grid);
     fft.reverse(grid);
     y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    apodizer.deapodize(y);
     log.debug("Decode: {}", log.toNow(start));
   };
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
-  Apodizer apodizer(kernel, gridder.gridDims(), out_cropper.size(), log);
   Cx3 vol = iter_cropper.newImage();
   Cx3 cropped = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
@@ -98,7 +99,6 @@ int main_cg(args::Subparser &parser)
     dec(rad_ks, vol); // Initialize
     cg(toe, its.Get(), thr.Get(), vol, log);
     cropped = out_cropper.crop3(vol);
-    apodizer.deapodize(cropped);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped, log);
     }
