@@ -55,6 +55,8 @@ void Gridder::genCoords(Trajectory const &traj, long const nomRad)
 
   std::fesetround(FE_TONEAREST);
   Size3 const center(dims_[0] / 2, dims_[1] / 2, dims_[2] / 2);
+  float const maxLoRad = nomRad * (float)(info_.read_gap) / (float)info_.read_points;
+  float const maxHiRad = nomRad - kernel_->radius();
   auto start = log_.now();
   for (int32_t is = 0; is < info_.spokes_total(); is++) {
     for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
@@ -63,9 +65,7 @@ void Gridder::genCoords(Trajectory const &traj, long const nomRad)
 
       // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
       // Otherwise leave space for kernel
-      float const maxRad = (is < info_.spokes_lo)
-                               ? oversample_ * info_.read_gap / info_.read_oversamp()
-                               : nomRad - kernel_->radius();
+      float const maxRad = (is < info_.spokes_lo) ? maxLoRad : maxHiRad;
       if (xyz.norm() <= maxRad) {
         Size3 const gp = nearby(xyz).cast<int16_t>();
         Point3 const offset = xyz - gp.cast<float>().matrix();
