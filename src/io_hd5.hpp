@@ -101,7 +101,7 @@ void load_tensor(
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND; ii++) {
-    if (dims[ii] != tensor.dimension(ii)) {
+    if ((long)dims[ii] != tensor.dimension(ii)) {
       log.fail(
           FMT_STRING("Expected dimensions were {}, but were {} on disk"),
           fmt::join(tensor.dimensions(), ","),
@@ -140,7 +140,7 @@ void load_tensor_slab(
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
-    if (dims[ii] != tensor.dimension(ii)) {
+    if ((long)dims[ii] != tensor.dimension(ii)) {
       log.fail(
           FMT_STRING("Expected dimensions were {}, but were {} on disk"),
           fmt::join(tensor.dimensions(), ","),
