@@ -82,7 +82,7 @@ std::string OutName(
 {
   return fmt::format(
       FMT_STRING("{}-{}.{}"),
-      oName.empty() ? std::filesystem::path(iName).replace_extension().string() : oName,
+      oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
       suffix,
       extension);
 }
