@@ -85,6 +85,26 @@ void store_tensor(
   }
 }
 
+template <int ND>
+Eigen::DSizes<long, ND> get_dims(Handle const &parent, std::string const &name, Log const &log)
+{
+  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) {
+    log.fail("Could not open tensor {}", name);
+  }
+
+  hid_t ds = H5Dget_space(dset);
+  int const ndims = H5Sget_simple_extent_ndims(ds);
+  if (ndims != ND) {
+    log.fail("Number of dimensions {} does match on-disk number {}", ndims, ND);
+  }
+  std::array<hsize_t, ND> hdims;
+  H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
+  Eigen::DSizes<long, ND> dims;
+  std::reverse_copy(hdims.begin(), hdims.end(), dims.begin());
+  return dims;
+}
+
 template <typename Scalar, int ND>
 void load_tensor(
     Handle const &parent,

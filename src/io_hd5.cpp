@@ -4,16 +4,18 @@
 #include <filesystem>
 #include <fmt/format.h>
 
-namespace HD5 {
+namespace Keys {
+std::string const Info = "info";
+std::string const Meta = "meta";
+std::string const Noncartesian = "noncartesian";
+std::string const Cartesian = "cartesian";
+std::string const Image = "image";
+std::string const Trajectory = "trajectory";
+std::string const SDC = "sdc";
+std::string const SENSE = "sense";
+} // namespace Keys
 
-std::string const KeyInfo = "info";
-std::string const KeyMeta = "meta";
-std::string const KeyNoncartesian = "noncartesian";
-std::string const KeyCartesian = "cartesian";
-std::string const KeyImage = "image";
-std::string const KeyTrajectory = "trajectory";
-std::string const KeySDC = "sdc";
-std::string const KeySENSE = "sense";
+namespace HD5 {
 
 void Init(Log &log)
 {
@@ -86,7 +88,7 @@ void Writer::writeInfo(Info const &info)
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
   hid_t const dset =
-      H5Dcreate(handle_, KeyInfo.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (dset < 0) {
     log_.fail("Could not create info struct, code: {}", dset);
   }
@@ -102,7 +104,7 @@ void Writer::writeInfo(Info const &info)
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
   log_.info("Writing meta data");
-  auto m_group = H5Gcreate(handle_, KeyMeta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  auto m_group = H5Gcreate(handle_, Keys::Meta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
@@ -122,37 +124,37 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
 void Writer::writeTrajectory(Trajectory const &t)
 {
   writeInfo(t.info());
-  HD5::store_tensor(handle_, KeyTrajectory, t.points(), log_);
+  HD5::store_tensor(handle_, Keys::Trajectory, t.points(), log_);
 }
 
 void Writer::writeSDC(R2 const &sdc)
 {
-  HD5::store_tensor(handle_, KeySDC, sdc, log_);
+  HD5::store_tensor(handle_, Keys::SDC, sdc, log_);
 }
 
 void Writer::writeSENSE(Cx4 const &s)
 {
-  HD5::store_tensor(handle_, KeySENSE, s, log_);
+  HD5::store_tensor(handle_, Keys::SENSE, s, log_);
 }
 
 void Writer::writeNoncartesian(Cx4 const &t)
 {
-  HD5::store_tensor(handle_, KeyNoncartesian, t, log_);
+  HD5::store_tensor(handle_, Keys::Noncartesian, t, log_);
 }
 
 void Writer::writeCartesian(Cx4 const &t)
 {
-  HD5::store_tensor(handle_, KeyCartesian, t, log_);
+  HD5::store_tensor(handle_, Keys::Cartesian, t, log_);
 }
 
 void Writer::writeImage(R4 const &t)
 {
-  HD5::store_tensor(handle_, KeyImage, t, log_);
+  HD5::store_tensor(handle_, Keys::Image, t, log_);
 }
 
 void Writer::writeImage(Cx4 const &t)
 {
-  HD5::store_tensor(handle_, KeyImage, t, log_);
+  HD5::store_tensor(handle_, Keys::Image, t, log_);
 }
 
 Reader::Reader(std::string const &fname, Log &log)
@@ -180,7 +182,7 @@ herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata
 
 std::map<std::string, float> Reader::readMeta() const
 {
-  auto meta_group = H5Gopen(handle_, KeyMeta.c_str(), H5P_DEFAULT);
+  auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
     return {};
   }
@@ -207,7 +209,7 @@ Info Reader::readInfo()
 {
   log_.info("Reading info");
   hid_t const info_id = InfoType(log_);
-  hid_t const dset = H5Dopen(handle_, KeyInfo.c_str(), H5P_DEFAULT);
+  hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
   hid_t const space = H5Dget_space(dset);
   Info info;
   herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
@@ -223,7 +225,7 @@ Trajectory Reader::readTrajectory()
   Info info = readInfo();
   log_.info("Reading trajectory");
   R3 points(3, info.read_points, info.spokes_total());
-  HD5::load_tensor(handle_, KeyTrajectory, points, log_);
+  HD5::load_tensor(handle_, Keys::Trajectory, points, log_);
   return Trajectory(info, points, log_);
 }
 
@@ -231,32 +233,41 @@ R2 Reader::readSDC(Info const &info)
 {
   log_.info("Reading SDC");
   R2 sdc(info.read_points, info.spokes_total());
-  HD5::load_tensor(handle_, KeySDC, sdc, log_);
+  HD5::load_tensor(handle_, Keys::SDC, sdc, log_);
   return sdc;
 }
 
 void Reader::readNoncartesian(Cx4 &all)
 {
   log_.info("Reading all non-cartesian data");
-  HD5::load_tensor(handle_, KeyNoncartesian, all, log_);
+  HD5::load_tensor(handle_, Keys::Noncartesian, all, log_);
 }
 
 void Reader::readNoncartesian(long const index, Cx3 &vol)
 {
   log_.info("Reading non-cartesian volume {}", index);
-  HD5::load_tensor_slab(handle_, KeyNoncartesian, index, vol, log_);
+  HD5::load_tensor_slab(handle_, Keys::Noncartesian, index, vol, log_);
 }
 
 void Reader::readCartesian(Cx4 &grid)
 {
   log_.info("Reading cartesian data");
-  HD5::load_tensor(handle_, KeyCartesian, grid, log_);
+  HD5::load_tensor(handle_, Keys::Cartesian, grid, log_);
 }
 
 void Reader::readSENSE(Cx4 &s)
 {
   log_.info("Reading SENSE maps");
-  HD5::load_tensor(handle_, KeySENSE, s, log_);
+  HD5::load_tensor(handle_, Keys::SENSE, s, log_);
+}
+
+Cx4 Reader::readSENSE()
+{
+  log_.info("Reading SENSE maps");
+  auto const dims = HD5::get_dims<4>(handle_, Keys::SENSE, log_);
+  Cx4 sense(dims);
+  HD5::load_tensor(handle_, Keys::SENSE, sense, log_);
+  return sense;
 }
 
 } // namespace HD5

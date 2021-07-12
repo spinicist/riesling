@@ -42,6 +42,7 @@ struct Reader
   void readNoncartesian(long const index, Cx3 &volume);
   void readCartesian(Cx4 &volume);
   void readSENSE(Cx4 &sense);
+  Cx4 readSENSE();
 
 private:
   Log &log_;

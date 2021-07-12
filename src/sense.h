@@ -18,4 +18,12 @@ Cx4 DirectSENSE(
     float const lambda,
     Log &log);
 
+/*!
+ * Loads a set of SENSE maps from a file, they must match dims
+ */
 Cx4 LoadSENSE(std::string const &calFile, Sz4 const dims, Log &log);
+
+/*!
+ * Loads a set of SENSE maps from a file and interpolate them to correct dims
+ */
+Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims, Log &log);

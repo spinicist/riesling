@@ -9,6 +9,7 @@
 #include "parse_args.h"
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
+#include "sense.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "traj_archimedean.h"
@@ -45,6 +46,8 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<long> gap(parser, "DEAD-TIME", "Dead-time gap in read samples", {"gap"}, 0);
   args::ValueFlag<long> nchan(
       parser, "CHANNELS", "Number of channels (default 12)", {'c', "channels"}, 12);
+  args::ValueFlag<std::string> sense(
+      parser, "PATH", "File to read sensitivity maps from", {"sense"});
   args::ValueFlag<float> intensity(
       parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
@@ -95,6 +98,18 @@ int main_phantom(args::Subparser &parser)
       info.matrix.transpose(),
       info.voxel_size.transpose());
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
+
+  Cx4 sense_maps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
+                         : birdcage(
+                               info.matrix,
+                               info.voxel_size,
+                               info.channels,
+                               coil_rings.Get(),
+                               coil_r.Get(),
+                               coil_r.Get(),
+                               log);
+  info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
+
   Trajectory traj(info, points, log);
   Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
   Cx4 grid = hi_gridder.newMultichannel(info.channels);
@@ -115,20 +130,12 @@ int main_phantom(args::Subparser &parser)
                 log)
           : SphericalPhantom(
                 info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
-  Cx4 sense = birdcage(
-      info.matrix,
-      info.voxel_size,
-      info.channels,
-      coil_rings.Get(),
-      coil_r.Get(),
-      coil_r.Get(),
-      log);
 
   apodizer.deapodize(phan); // Don't ask me why this isn't apodize, but it works
 
   log.info("Generating Cartesian k-space...");
   grid.setZero();
-  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(phan, info.channels);
+  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense_maps * Tile(phan, info.channels);
 
   fft.forward(grid);
 

@@ -66,3 +66,24 @@ Cx4 LoadSENSE(std::string const &calFile, Sz4 const dims, Log &log)
   senseReader.readSENSE(sense);
   return sense;
 }
+
+Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims, Log &log)
+{
+  HD5::Reader senseReader(file, log);
+  Cx4 disk_sense = senseReader.readSENSE();
+  log.info("Interpolating SENSE maps to dimensions {}", dims.transpose());
+  FFT::ThreeDMulti fft1(disk_sense.dimensions(), log);
+  fft1.forward(disk_sense);
+  Sz3 size1{disk_sense.dimension(1), disk_sense.dimension(2), disk_sense.dimension(3)};
+  Sz3 size2{dims[0], dims[1], dims[2]};
+  Cx4 sense(disk_sense.dimension(0), dims[0], dims[1], dims[2]);
+  FFT::ThreeDMulti fft2(sense, log);
+  sense.setZero();
+  if (size1[0] < size2[0]) {
+    Crop4(sense, size1) = disk_sense;
+  } else {
+    sense = Crop4(disk_sense, size2);
+  }
+  fft2.reverse(sense);
+  return sense;
+}
