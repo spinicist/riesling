@@ -1,4 +1,4 @@
-#!/bin/bash -eux
+#!/bin/bash -eu
 
 # This script will configure and build the project using vcpkg for
 # dependency management. If you want to build with sanitizer support
@@ -7,7 +7,13 @@
 
 git submodule update --init --recursive
 mkdir -p build
+
+# Use Ninja if available, otherwise CMake default
+if [ -x "$( command -v ninja )" ]; then
+    GEN="-GNinja"
+fi
+
 cmake -B build -S . \
-    -GNinja -DCMAKE_BUILD_TYPE=Release \
+    $GEN -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=cmake/vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build build
