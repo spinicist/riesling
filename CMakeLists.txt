@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.10)
 project(riesling LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 include(BuildType)
@@ -21,7 +21,7 @@ include( ${ITK_USE_FILE} )
 find_package(scn REQUIRED)
 
 # Ensure this is always defined across all .cpp files
-add_compile_definitions(EIGEN_USE_THREADS)
+add_definitions(-DEIGEN_USE_THREADS)
 
 # Common library between tests and main executable
 add_library(vineyard
@@ -117,7 +117,7 @@ target_link_libraries(prufung PUBLIC
 )
 
 set_target_properties(vineyard riesling prufung PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
