@@ -6,6 +6,7 @@
 # .toolchain.cmake file in the cmake/ submodule (or provide your own)
 
 git submodule update --init --recursive
+mkdir -p build
 cmake -B build -S . \
     -GNinja -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=cmake/vcpkg/scripts/buildsystems/vcpkg.cmake

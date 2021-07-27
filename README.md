@@ -33,7 +33,8 @@ resulting `riesling` executable to somewhere on your `$PATH`, for instance
 ## Compilation
 
 If you wish to compile RIESLING yourself, compilation should hopefully be 
-straightforward. RIESLING relies on `vcpkg` for dependency management. To 
+straightforward as long as you have access to a C++17 compiler (GCC 8 or higher,
+Clang 7 or higher). RIESLING relies on `vcpkg` for dependency management. To 
 download and compile RIESLING, follow these steps:
 
 0. Install the dependencies: `cmake` \& `curl` (`vcpkg` requires `curl`).
