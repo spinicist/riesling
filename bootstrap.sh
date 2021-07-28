@@ -1,19 +1,26 @@
 #!/bin/bash -eu
 
-# This script will configure and build the project using vcpkg for
-# dependency management. If you want to build with sanitizer support
-# then change the CMAKE_TOOLCHAIN_FILE below to point to the relevant
-# .toolchain.cmake file in the cmake/ submodule (or provide your own)
+# This script will bootstrap an initial configure & build.
+# On Linux and Mac a toolchain will be used which includes -march=native and
+# ASan/UBSan support. Other platforms will use the default toolchain.
 
 git submodule update --init --recursive
-mkdir -p build
+
+PLATFORM="$( uname -s )"
+case "$PLATFORM" in
+  Linux*)  TOOLCHAIN="../cmake/x64-linux-native.toolchain.cmake";;
+  Darwin*) TOOLCHAIN="../cmake/x64-osx-native.toolchain.cmake";;
+  *)       TOOLCHAIN="../cmake/vcpkg/scripts/buildsystems/vcpkg.cmake";;
+esac
 
 # Use Ninja if available, otherwise CMake default
 if [ -x "$( command -v ninja )" ]; then
     GEN="-GNinja"
 fi
 
-cmake -B build -S . \
+mkdir -p build
+cd build
+cmake -S ../ \
     $GEN -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE=cmake/vcpkg/scripts/buildsystems/vcpkg.cmake
-cmake --build build
+    -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
+cmake --build .

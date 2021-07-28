@@ -38,9 +38,9 @@ Gridder::Gridder(
   // Work out grid dimensions for the given oversampling
   long const gridSz = fft_size(oversample_ * info_.matrix.maxCoeff());
   if (info_.type == Info::Type::ThreeDStack) {
-    dims_ = {gridSz, gridSz, info_.matrix[2]};
+    dims_ = Sz3{gridSz, gridSz, info_.matrix[2]};
   } else {
-    dims_ = {gridSz, gridSz, gridSz};
+    dims_ = Sz3{gridSz, gridSz, gridSz};
   }
   log_.info(FMT_STRING("Grid size {}, oversample {}"), fmt::join(dims_, ","), oversample_);
   genCoords(traj, (gridSz / 2) - 1);
