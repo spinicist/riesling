@@ -83,6 +83,8 @@ hid_t InfoType(Log &log)
 
 void CheckInfoType(hid_t handle, Log &log)
 {
+  // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
+  constexpr int N = 13;
   std::array<std::string, N> const names{"matrix",
                                          "voxel_size",
                                          "read_points",
@@ -99,8 +101,6 @@ void CheckInfoType(hid_t handle, Log &log)
 
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
-  // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
-  constexpr int N = 13;
   if (n_members != N) {
     log.fail("Header info had {} members, should be {}", n_members, N);
   }
