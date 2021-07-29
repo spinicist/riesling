@@ -12,7 +12,7 @@
 % 
 % This will greate a phantom dataset which we can run our tests with
 
-[kspace, traj, info] = read_riesling('sl_phantom.h5');
+[kspace, info, traj] = read_riesling('sl_phantom.h5');
 
 % Size of datastructures
 % kspace: [nrcv, npoints, nspokes, nvol]
