@@ -53,7 +53,7 @@ jobs:
           if [ "${{runner.os}}" == "macOS" ]; then
             TC="${{github.workspace}}/cmake/x64-osx-avx2.toolchain.cmake"
           else
-            TC="${{github.workspace}}/cmake/x64-linux-avx2.toolchain.cmake"
+            TC="${{github.workspace}}/cmake/x64-linux.toolchain.cmake"
           fi
           cd ${{github.workspace}}
           cmake -B build -S . \
