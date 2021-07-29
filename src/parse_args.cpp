@@ -16,7 +16,7 @@ void Vector3fReader::operator()(
     std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
   float x, y, z;
-  auto result = scn::scan(scn::make_view(value), "{},{},{}", x, y, z);
+  auto result = scn::scan(value, "{},{},{}", x, y, z);
   if (!result) {
     fmt::print(
         stderr,
