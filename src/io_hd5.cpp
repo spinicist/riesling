@@ -81,6 +81,45 @@ hid_t InfoType(Log &log)
   return info_id;
 }
 
+void CheckInfoType(hid_t handle, Log &log)
+{
+  std::array<std::string, N> const names{"matrix",
+                                         "voxel_size",
+                                         "read_points",
+                                         "read_gap",
+                                         "spokes_hi",
+                                         "spokes_lo",
+                                         "lo_scale",
+                                         "channels",
+                                         "type",
+                                         "volumes",
+                                         "tr",
+                                         "origin",
+                                         "direction"};
+
+  auto const dtype = H5Dget_type(handle);
+  int n_members = H5Tget_nmembers(dtype);
+  // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
+  constexpr int N = 13;
+  if (n_members != N) {
+    log.fail("Header info had {} members, should be {}", n_members, N);
+  }
+  // Re-orderd fields are okay. Missing is not
+  for (auto const &check_name : names) {
+    bool found = false;
+    for (int ii = 0; ii < N; ii++) {
+      std::string const member_name(H5Tget_member_name(dtype, ii));
+      if (member_name == check_name) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      log.fail("Field {} not found in header info", check_name);
+    }
+  }
+}
+
 void Writer::writeInfo(Info const &info)
 {
   log_.info("Writing info struct");
@@ -210,6 +249,7 @@ Info Reader::readInfo()
   log_.info("Reading info");
   hid_t const info_id = InfoType(log_);
   hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
+  CheckInfoType(dset, log_);
   hid_t const space = H5Dget_space(dset);
   Info info;
   herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
