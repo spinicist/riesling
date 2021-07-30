@@ -1,4 +1,4 @@
-function [] = write_riesling(fname, data, traj, info)
+function [] = riesling_write(fname, data, traj, info)
 % WRITE_RIESLING writes radial k-space data to riesling .h5 format
 %
 % Input:
@@ -13,6 +13,12 @@ function [] = write_riesling(fname, data, traj, info)
 
 if isfile(fname)
     error("%s already exists. Please delete or choose a different output name\n",fname);
+end
+
+check_fields = fieldnames(riesling_info());
+info_fields = fieldnames(info);
+if ~isequal(intersect(check_fields, info_fields, 'stable'), check_fields)
+    error("Header fields are incorrect. Use riesling_info to generate template header");
 end
 
 fprintf('Opening %s\n',fname);

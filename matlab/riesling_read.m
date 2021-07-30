@@ -1,4 +1,4 @@
-function varargout = read_riesling(fname)
+function varargout = riesling_read(fname)
 % READ_RIESLING reads radial k-space or image data from riesling .h5 file
 %
 % Inputs:

@@ -2,12 +2,18 @@
 Includes two main functions for reading and writing riesling k-space data
 
 ```
-[data, traj, info, meta] = read_riesling(fname);
+varargout = riesling_read(fname);
 ```
 
 ```
-write_riesling(fname, data, traj, info, meta);
+riesling_write(fname, data, traj, info, meta);
 ```
+
+## Info struct
+
+You can create an empty header info struct with
+
+info = riesling_info();
 
 ## Examples
 One examples is included:
