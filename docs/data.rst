@@ -32,15 +32,23 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
     float direction[3][3];
   };
 
-``type`` defines the kind of acquisition. Currently two values are supported - 1 means the acquisition is fully 3D, while 2 means the acquisition is a 3D stack-of-stars or stack-of-spirals type acquisition, with cartesian phase-encoding blips for the third axis. ``channels`` defines the number of k-space channels / coil-elements. ``matrix`` defines the nominal matrix size for the scan - i.e. it determines the matrix size of the final reconstructed image.
-
-``read_points`` sets the number of data-points in the readout direction, i.e. how many readout points per spoke, while ``spokes_hi`` sets the number of spokes in the main, high-resolution k-space acquisition.
-
-``spokes_lo`` sets the number of spokes for any extra low-resolution k-space data (i.e. for WASPI acquisitions). Importantly, ``lo_scale`` determines the scaling of this low-resolution k-space relative to the high-resolution k-space. It should be set to the ratio of the high-res k-space to the low-res k-space, i.e. for a WASPI acquisition that only reaches 1/4 of the radius in k-space of the main acquisition, ``lo_scale`` should be set to 4. The trajectory points for the lo-res k-space should NOT include this scaling factor, i.e. the maximum value of lo-res trajectory points should be 1 (see below).
-
-``volumes`` indicates how many volumes or time-points were acquired in the acquisition, while ``echoes`` specifies how many separate echoes were acquired per time-point.
+* ``type`` defines the kind of acquisition. Currently two values are supported - 1 means the acquisition is fully 3D, while 2 means the acquisition is a 3D stack-of-stars or stack-of-spirals type acquisition, with cartesian phase-encoding blips for the third axis.
+* ``channels`` defines the number of k-space channels / coil-elements.
+* ``matrix`` defines the nominal matrix size for the scan - i.e. it determines the matrix size of the final reconstructed image (unless the `--fov` option is used).
+* ``read_points`` sets the number of data-points in the readout direction, i.e. how many readout points per spoke.
+* ``read_gap`` sets the number of data-points in the dead-time gap for a ZTE acquisition. These points will not be used in the reconstruction.
+* ``spokes_hi`` sets the number of spokes in the main, high-resolution k-space acquisition. For non-ZTE acquisitions, this should be the total number of spokes / read-outs.
+* ``spokes_lo`` sets the number of spokes for an extra low-resolution k-space data (i.e. for WASPI acquisitions). Probably only useful for ZTE.
+* ``lo_scale`` determines the scaling of the low-resolution k-space relative to the high-resolution k-space. It should be set to the ratio of the high-res k-space to the low-res k-space, i.e. for a WASPI acquisition that only reaches 1/4 of the radius in k-space of the main acquisition, ``lo_scale`` should be set to 4. The trajectory points for the lo-res k-space should NOT include this scaling factor, i.e. the maximum value of lo-res trajectory points should be 1 (this scaling will then be applied to the data to give the correct k-space locations).
+* ``volumes`` indicates how many volumes or time-points were acquired in the acquisition.
+* ``echoes`` specifies how many separate echoes were acquired per time-point.
 
 The final four fields specify the TR and image orientation as required to build a valid NIfTI ouput file.
+
+* ``tr`` The repetition time. Should be specified in milliseconds as per NIfTI convention.
+* ``voxel_size`` The nominal voxel-size. Should be specified in millimeters as per NIfTI/ITK convention.
+* ``origin`` The physical-space location of the center of the voxel at index 0,0,0, as per ITK convention.
+* ``direction`` The physical-space axes directions, as per ITK convention.
 
 Trajectory
 ----------
