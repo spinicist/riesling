@@ -43,7 +43,7 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
 * ``volumes`` indicates how many volumes or time-points were acquired in the acquisition.
 * ``echoes`` specifies how many separate echoes were acquired per time-point.
 
-The final four fields specify the TR and image orientation as required to build a valid NIfTI ouput file.
+The final four fields specify the TR and image orientation as required to build a valid NIfTI output file.
 
 * ``tr`` The repetition time. Should be specified in milliseconds as per NIfTI convention.
 * ``voxel_size`` The nominal voxel-size. Should be specified in millimeters as per NIfTI/ITK convention.

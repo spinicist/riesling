@@ -13,8 +13,6 @@ RIESLING is provided as a single executable file, similar to ``bart``. The ``rie
 - ``riesling cg`` Iterative conjugate-gradients SENSE reconstruction
 - ``riesling tgv`` TGV-regularized iterative reconstruction
 
-To view a list of parameters for each individual reconstruction pass the ``-h`` argument, e.g. ``riesling recon -h``
-
 A `tutorial notebook <https://github.com/spinicist/riesling-examples/tutorial.ipynb>`_ can be run interactively at on `MyBinder <https://mybinder.org/v2/gh/spinicist/riesling-examples/HEAD?filepath=tutorial.ipynb>`_. This explains the various steps required to generate a simulated phantom dataset and then reconstruct it. You will need to reduce the matrix size to 64 to run with MyBinder's RAM limit.
 
 An important step with using RIESLING is providing data in the correct ``.h5`` format. Details of this format can be found in :doc:`data`. Users of the ZTE sequence on GE platforms should contact the authors to discuss conversion strategies.
