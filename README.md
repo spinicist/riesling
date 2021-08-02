@@ -44,7 +44,7 @@ download and compile RIESLING, follow these steps:
 ## Usage
 
 RIESLING comes as a single executable file with multiple commands, similar to 
-`git` or `bart`. Type `riesling` to see a list of all the available commands.
+`git` or `bart`. Type `riesling` to see a list of all the available commands. If you run a RIESLING command without any additional parameter RIESLING will output all available options for the given command.
 
 RIESLING uses HDF5 (.h5) files but can also output NIFTI (.nii). To create an 
 example digital phantom, use `riesling phantom`. RIESLING will append suffixes 
