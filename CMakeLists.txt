@@ -99,7 +99,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINA
 target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Tests
-add_executable(prufung
+add_executable(riesling-tests
     test/main.cpp
     test/cropper.cpp
     test/decomp.cpp
@@ -111,12 +111,12 @@ add_executable(prufung
     test/sdc.cpp
     test/zinfandel.cpp
 )
-target_link_libraries(prufung PUBLIC
+target_link_libraries(riesling-tests PUBLIC
     vineyard
     Catch2::Catch2
 )
 
-set_target_properties(vineyard riesling prufung PROPERTIES
+set_target_properties(vineyard riesling riesling-tests PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF

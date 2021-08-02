@@ -66,7 +66,7 @@ jobs:
         run: |
           if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2
             cd ${{github.workspace}}/build
-            ./prufung
+            ./riesling-tests
           fi
 
       - name: Save release
