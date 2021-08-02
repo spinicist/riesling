@@ -37,7 +37,7 @@ straightforward as long as you have access to a C++17 compiler (GCC 8 or higher,
 Clang 7 or higher). RIESLING relies on `vcpkg` for dependency management. To 
 download and compile RIESLING, follow these steps:
 
-0. Install the dependencies: `cmake` \& `curl` (`vcpkg` requires `curl`).
+0. Install the dependencies: `cmake`, `ninja` \& `curl` (`vcpkg` requires `curl`).
 1. Clone the repository. `git clone https://github.com/spinicist/riesling`
 2. Run `bootstraph.sh`.
 
@@ -52,6 +52,8 @@ to input filenames when writing outputs to indicate which command was executed.
 
 There are several reconstruction algorithms currently provided in RIESLING. 
 Simple non-iterative recon is available with (`riesling recon`).
+
+You can output the list of parameters available for each RIESLING command by passing the `-h` option, e.g. `riesling recon -h`
 
 A separate examples repository https://github.com/spinicist/riesling-examples
 contains Jupyter notebooks demonstrating most functionality. These can also be
