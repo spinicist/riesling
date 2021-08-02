@@ -15,12 +15,14 @@ esac
 
 # Use Ninja if available, otherwise CMake default
 if [ -x "$( command -v ninja )" ]; then
-    GEN="-GNinja"
+  GEN="-GNinja"
+else
+  GEN=""
 fi
 
 mkdir -p build
 cd build
-cmake -S ../ \
-    $GEN -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
+cmake -S ../ $GEN \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
 cmake --build .
