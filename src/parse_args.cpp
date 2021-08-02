@@ -51,22 +51,8 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 
   Log log(level);
   if (!iname) {
-    log.fail("No input specified");
+    throw args::Error("No input file specified");
   }
-  if (nthreads) {
-    Threads::SetGlobalThreadCount(nthreads.Get());
-  }
-  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
-  return log;
-}
-
-Log ParseCommand(args::Subparser &parser)
-{
-  parser.Parse();
-  Log::Level const level =
-      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::Fail);
-
-  Log log(level);
   if (nthreads) {
     Threads::SetGlobalThreadCount(nthreads.Get());
   }

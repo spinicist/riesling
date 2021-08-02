@@ -11,7 +11,6 @@ extern args::HelpFlag help;
 extern args::Flag verbose;
 
 Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
-Log ParseCommand(args::Subparser &parser);
 
 struct Vector3fReader
 {

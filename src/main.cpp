@@ -26,10 +26,11 @@ int main(int const argc, char const *const argv[])
   try {
     parser.ParseCLI(argc, argv);
   } catch (args::Help &) {
-    std::cerr << parser << '\n';
+    fmt::print("{}\n", parser);
     exit(EXIT_SUCCESS);
   } catch (args::Error &e) {
-    std::cerr << parser << '\n' << e.what() << '\n';
+    fmt::print("{}\n", parser);
+    fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
     exit(EXIT_FAILURE);
   }
 
