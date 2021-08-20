@@ -36,7 +36,7 @@ Wavelets::Wavelets(long const N, long const L, Log &log)
                   -0.01498699f});
     break;
   default:
-    log_.fail("Asked for co-efficients that have not been implemented");
+    Log::Fail("Asked for co-efficients that have not been implemented");
   }
   D_ = D_ / static_cast<float>(M_SQRT2); // Get scaling correct
   log_.info(FMT_STRING("Wavelets: N={} L={}"), N_, L_);

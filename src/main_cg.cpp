@@ -9,6 +9,7 @@
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
+#include "op/sense.h"
 #include "parse_args.h"
 #include "sense.h"
 #include "tensorOps.h"
@@ -46,14 +47,16 @@ int main_cg(args::Subparser &parser)
   FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = -1;
-  Cx4 sense = iter_cropper.newMultichannel(info.channels);
+  Cx4 senseMaps = iter_cropper.newMultichannel(info.channels);
   if (senseFile) {
-    sense = LoadSENSE(senseFile.Get(), iter_cropper.dims(info.channels), log);
+    senseMaps = LoadSENSE(senseFile.Get(), iter_cropper.dims(info.channels), log);
   } else {
     currentVolume = LastOrVal(senseVolume, info.volumes);
     reader.readNoncartesian(currentVolume, rad_ks);
-    sense = DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
+    senseMaps =
+        DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
+  SenseOp sense(senseMaps, grid.dimensions());
 
   Cx4 transfer = gridder.newMultichannel(1);
   {
@@ -63,14 +66,14 @@ int main_cg(args::Subparser &parser)
     gridder.toCartesian(ones, transfer);
   }
 
+  auto dev = Threads::GlobalDevice();
   CgSystem toe = [&](Cx3 const &x, Cx3 &y) {
     auto const start = log.now();
-    grid.device(Threads::GlobalDevice()) = grid.constant(0.f);
-    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = sense * Tile(x, info.channels);
+    sense.A(x, grid);
     fft.forward(grid);
-    grid.device(Threads::GlobalDevice()) = grid * transfer.broadcast(Sz4{info.channels, 1, 1, 1});
+    grid.device(dev) = grid * transfer.broadcast(Sz4{info.channels, 1, 1, 1});
     fft.reverse(grid);
-    y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    sense.Adj(grid, y);
     log.debug("System: {}", log.toNow(start));
   };
 
@@ -80,7 +83,7 @@ int main_cg(args::Subparser &parser)
     grid.setZero();
     gridder.toCartesian(x, grid);
     fft.reverse(grid);
-    y.device(Threads::GlobalDevice()) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+    sense.Adj(grid, y);
     apodizer.deapodize(y);
     log.debug("Decode: {}", log.toNow(start));
   };
@@ -92,7 +95,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = log.now();
   for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
-    if (iv != currentVolume) { // For single volume images, we already read it for SENSE
+    if (iv != currentVolume) { // For single volume images, we already read it for senseMaps
       reader.readNoncartesian(iv, rad_ks);
       currentVolume = iv;
     }

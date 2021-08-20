@@ -9,7 +9,7 @@
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-    {0, Log::Level::Fail}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
+    {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
 } // namespace
 
 void Vector3fReader::operator()(
@@ -47,7 +47,7 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
   Log::Level const level =
-      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::Fail);
+      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
 
   Log log(level);
   if (!iname) {

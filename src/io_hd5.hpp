@@ -79,7 +79,7 @@ void store_tensor(
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    log.fail("Could not write tensor {}, code: {}", name, status);
+    Log::Fail("Could not write tensor {}, code: {}", name, status);
   } else {
     log.info("Wrote dataset: {}", name);
   }
@@ -90,13 +90,13 @@ Eigen::DSizes<long, ND> get_dims(Handle const &parent, std::string const &name, 
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    log.fail("Could not open tensor {}", name);
+    Log::Fail("Could not open tensor {}", name);
   }
 
   hid_t ds = H5Dget_space(dset);
   int const ndims = H5Sget_simple_extent_ndims(ds);
   if (ndims != ND) {
-    log.fail("Number of dimensions {} does match on-disk number {}", ndims, ND);
+    Log::Fail("Number of dimensions {} does match on-disk number {}", ndims, ND);
   }
   std::array<hsize_t, ND> hdims;
   H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
@@ -114,7 +114,7 @@ void load_tensor(
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    log.fail("Could not open tensor {}", name);
+    Log::Fail("Could not open tensor {}", name);
   }
   std::array<hsize_t, ND> dims;
   hid_t ds = H5Dget_space(dset);
@@ -122,7 +122,7 @@ void load_tensor(
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND; ii++) {
     if ((long)dims[ii] != tensor.dimension(ii)) {
-      log.fail(
+      Log::Fail(
           FMT_STRING("Expected dimensions were {}, but were {} on disk"),
           fmt::join(tensor.dimensions(), ","),
           fmt::join(dims, ","));
@@ -131,7 +131,7 @@ void load_tensor(
   herr_t ret_value =
       H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
-    log.fail("Error reading tensor tensor {}, code: {}", name, ret_value);
+    Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {
     log.info("Read dataset: {}", name);
   }
@@ -148,20 +148,20 @@ void load_tensor_slab(
   int const ND = CD + 1;
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    log.fail("Could not open tensor {}", name);
+    Log::Fail("Could not open tensor {}", name);
   }
 
   auto const ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    log.fail("Mismatch between tensor rank {} and HD5 rank {}", ND, rank);
+    Log::Fail("Mismatch between tensor rank {} and HD5 rank {}", ND, rank);
   }
   std::array<hsize_t, ND> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
     if ((long)dims[ii] != tensor.dimension(ii)) {
-      log.fail(
+      Log::Fail(
           FMT_STRING("Expected dimensions were {}, but were {} on disk"),
           fmt::join(tensor.dimensions(), ","),
           fmt::join(dims, ","));
@@ -196,7 +196,7 @@ void load_tensor_slab(
 
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
-    log.fail("Error reading slab {} from tensor {}, code:", index, name, status);
+    Log::Fail("Error reading slab {} from tensor {}, code:", index, name, status);
   } else {
     log.info("Read dataset: {} chunk: {}", name, index);
   }

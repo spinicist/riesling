@@ -30,7 +30,7 @@ void Init(Log &log)
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) {
-      log.fail("Could not initialise HDF5, code: {}", err);
+      Log::Fail("Could not initialise HDF5, code: {}", err);
     }
     NeedsInit = false;
   }
@@ -42,7 +42,7 @@ Writer::Writer(std::string const &fname, Log &log)
   Init(log_);
   handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (handle_ < 0) {
-    log_.fail(FMT_STRING("Could not open file {} for writing"), fname);
+    Log::Fail(FMT_STRING("Could not open file {} for writing"), fname);
   } else {
     log_.info(FMT_STRING("Opened file {} for writing data"), fname);
   }
@@ -76,7 +76,7 @@ hid_t InfoType(Log &log)
   status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
   status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
   if (status) {
-    log.fail("Could not create Info struct type in HDF5, code: {}", status);
+    Log::Fail("Could not create Info struct type in HDF5, code: {}", status);
   }
   return info_id;
 }
@@ -102,7 +102,7 @@ void CheckInfoType(hid_t handle, Log &log)
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
   if (n_members != N) {
-    log.fail("Header info had {} members, should be {}", n_members, N);
+    Log::Fail("Header info had {} members, should be {}", n_members, N);
   }
   // Re-orderd fields are okay. Missing is not
   for (auto const &check_name : names) {
@@ -115,7 +115,7 @@ void CheckInfoType(hid_t handle, Log &log)
       }
     }
     if (!found) {
-      log.fail("Field {} not found in header info", check_name);
+      Log::Fail("Field {} not found in header info", check_name);
     }
   }
 }
@@ -129,14 +129,14 @@ void Writer::writeInfo(Info const &info)
   hid_t const dset =
       H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (dset < 0) {
-    log_.fail("Could not create info struct, code: {}", dset);
+    Log::Fail("Could not create info struct, code: {}", dset);
   }
   herr_t status;
   status = H5Dwrite(dset, info_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &info);
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status != 0) {
-    log_.fail("Could not write Info struct, code: {}", status);
+    Log::Fail("Could not write Info struct, code: {}", status);
   }
 }
 
@@ -200,7 +200,7 @@ Reader::Reader(std::string const &fname, Log &log)
     : log_{log}
 {
   if (!std::filesystem::exists(fname)) {
-    log_.fail(fmt::format("File does not exist: {}", fname));
+    Log::Fail(fmt::format("File does not exist: {}", fname));
   }
   Init(log_);
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -239,7 +239,7 @@ std::map<std::string, float> Reader::readMeta() const
   }
   status = H5Gclose(meta_group);
   if (status != 0) {
-    log_.fail("Could not load meta-data, code: {}", status);
+    Log::Fail("Could not load meta-data, code: {}", status);
   }
   return meta;
 }
@@ -255,7 +255,7 @@ Info Reader::readInfo()
   herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
   status = H5Dclose(dset);
   if (status != 0) {
-    log_.fail("Could not load info struct, code: {}", status);
+    Log::Fail("Could not load info struct, code: {}", status);
   }
   return info;
 }

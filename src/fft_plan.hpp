@@ -59,10 +59,10 @@ void Plan<TRank, FRank>::plan(Tensor &ws, long const nThreads)
       FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
   if (forward_plan_ == NULL) {
-    log_.fail("Could not create forward FFT plan");
+    Log::Fail("Could not create forward FFT plan");
   }
   if (reverse_plan_ == NULL) {
-    log_.fail("Could not create reverse FFT plan");
+    Log::Fail("Could not create reverse FFT plan");
   }
 
   log_.debug("FFT planning took {}", log_.toNow(start));

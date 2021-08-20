@@ -25,7 +25,7 @@ int main_sdc(args::Subparser &parser)
   } else if (sdc.Get() == "radial") {
     dc = SDC::Radial(traj, log);
   } else {
-    log.fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
+    Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
   }
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sdc", "h5"), log);
   writer.writeInfo(info);

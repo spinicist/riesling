@@ -116,7 +116,7 @@ void Gridder::setSDC(float const d)
 void Gridder ::setSDC(R2 const &sdc)
 {
   if (info_.read_points != sdc.dimension(0) || info_.spokes_total() != sdc.dimension(1)) {
-    log_.fail("SDC dimensions {} do not match trajectory", fmt::join(sdc.dimensions(), ","));
+    Log::Fail("SDC dimensions {} do not match trajectory", fmt::join(sdc.dimensions(), ","));
   }
   for (auto &c : coords_) {
     c.sdc = sdc(c.noncart.read, c.noncart.spoke);

@@ -10,7 +10,7 @@ struct Log
 {
   enum struct Level
   {
-    Fail = 0,
+    None = 0,
     Info = 1,
     Images = 2,
     Debug = 3
@@ -18,7 +18,7 @@ struct Log
 
   using Time = std::chrono::high_resolution_clock::time_point;
 
-  Log(Level const l = Level::Fail);
+  Log(Level const l = Level::None);
 
   Level level() const;
 
@@ -35,7 +35,7 @@ struct Log
   }
 
   template <typename S, typename... Args>
-  inline void fail(const S &fmt_str, const Args &... args) const
+  static void Fail(const S &fmt_str, const Args &... args)
   {
     vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
@@ -51,7 +51,7 @@ struct Log
 private:
   void vinfo(fmt::string_view format, fmt::format_args args) const;
   void vdebug(fmt::string_view format, fmt::format_args args) const;
-  void vfail(fmt::string_view format, fmt::format_args args) const;
+  static void vfail(fmt::string_view format, fmt::format_args args);
   Level out_level_;
 };
 

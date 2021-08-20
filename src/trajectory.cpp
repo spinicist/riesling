@@ -8,13 +8,13 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
     , log_{log}
 {
   if (info_.read_points != points_.dimension(1)) {
-    log_.fail(
+    Log::Fail(
         "Mismatch between info read points {} and trajectory points {}",
         info_.read_points,
         points_.dimension(1));
   }
   if (info_.spokes_total() != points_.dimension(2)) {
-    log_.fail(
+    Log::Fail(
         "Mismatch between info spokes {} and trajectory spokes {}",
         info_.spokes_total(),
         points_.dimension(2));
@@ -88,7 +88,7 @@ float Trajectory::merge(int16_t const read, int32_t const spoke) const
 Trajectory Trajectory::trim(float const res, Cx3 &data, bool const shrink) const
 {
   if (res <= 0.f) {
-    log_.fail("Asked for trajectory with resolution {} which is less than or equal to zero", res);
+    Log::Fail("Asked for trajectory with resolution {} which is less than or equal to zero", res);
   }
 
   float const ratio = info_.voxel_size.minCoeff() / res;

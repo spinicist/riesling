@@ -28,7 +28,7 @@ void Log::vdebug(fmt::string_view fstr, fmt::format_args args) const
   }
 }
 
-void Log::vfail(fmt::string_view fstr, fmt::format_args args) const
+void Log::vfail(fmt::string_view fstr, fmt::format_args args)
 {
   fmt::vprint(stderr, fmt::fg(fmt::terminal_color::bright_red), fstr, args);
   fmt::print(stderr, "\n");

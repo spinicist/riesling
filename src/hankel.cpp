@@ -12,7 +12,7 @@ Cx5 ToKernels(Cx4 const &grid, long const kRad, long const calRad, long const ga
   long const nSkip = gapRad ? gapPlusKW * gapPlusKW * gapPlusKW : 0;
   long const nk = calW * calW * calW - nSkip;
   if (nk < 1) {
-    log.fail(FMT_STRING("No kernels to Hankelfy"));
+    Log::Fail(FMT_STRING("No kernels to Hankelfy"));
   }
   Cx5 kernels(nchan, kW, kW, kW, nk);
 
@@ -23,7 +23,7 @@ Cx5 ToKernels(Cx4 const &grid, long const kRad, long const calRad, long const ga
 
   long const st = gridHalf - (calRad - 1) - (kRad - 1);
   if (st < 0) {
-    log.fail(
+    Log::Fail(
         FMT_STRING("Grid size {} not large enough for calibration radius {} + kernel radius {}"),
         grid.dimension(1),
         calRad,
@@ -79,7 +79,7 @@ void FromKernels(long const calSz, long const kSz, Cx2 const &kernels, Cx4 &grid
   long const calHalf = calSz / 2;
   long const kHalf = kSz / 2;
   if (grid.dimension(1) < (calSz + kSz - 1)) {
-    log.fail(
+    Log::Fail(
         FMT_STRING("Grid size {} not large enough for block size {} + kernel size {}"),
         grid.dimension(1),
         calSz,
