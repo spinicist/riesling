@@ -103,43 +103,47 @@ install(TARGETS riesling RUNTIME DESTINATION bin)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-# Tests
-add_executable(riesling-tests
-    test/main.cpp
-    test/cropper.cpp
-    test/decomp.cpp
-    test/fft1.cpp
-    test/fft3.cpp
-    test/gridder.cpp
-    test/hankel.cpp
-    test/kernel_kb.cpp
-    test/sdc.cpp
-    test/zinfandel.cpp
-)
-target_link_libraries(riesling-tests PUBLIC
-    vineyard
-    Catch2::Catch2
-)
-set_target_properties(vineyard riesling-tests PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-)
+option(BUILD_TESTS "Build the tests" ON)
+if( ${BUILD_TEST} )
+    add_executable(riesling-tests
+        test/main.cpp
+        test/cropper.cpp
+        test/decomp.cpp
+        test/fft1.cpp
+        test/fft3.cpp
+        test/gridder.cpp
+        test/hankel.cpp
+        test/kernel_kb.cpp
+        test/sdc.cpp
+        test/zinfandel.cpp
+    )
+    target_link_libraries(riesling-tests PUBLIC
+        vineyard
+        Catch2::Catch2
+    )
+    set_target_properties(vineyard riesling-tests PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+    )
+endif()
 
-# Benchmarks
-add_executable(riesling-bench
-    bench/main.cpp
-    bench/rss.cpp
-)
-target_link_libraries(riesling-bench PUBLIC
-    vineyard
-    Catch2::Catch2
-)
-set_target_properties(vineyard riesling-bench PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-)
+option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
+if ( ${BUILD_BENCHMARKS} )
+    add_executable(riesling-bench
+        bench/main.cpp
+        bench/rss.cpp
+    )
+    target_link_libraries(riesling-bench PUBLIC
+        vineyard
+        Catch2::Catch2
+    )
+    set_target_properties(vineyard riesling-bench PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+    )
+endif()
 
 # Documentation, which is admittedly sparse
 option(BUILD_DOC "Build documentation" OFF)
