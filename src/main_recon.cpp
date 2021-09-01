@@ -41,13 +41,15 @@ int main_recon(args::Subparser &parser)
   FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = -1;
-  Cx4 sense = cropper.newMultichannel(info.channels);
-  if (senseFile) {
-    sense = LoadSENSE(senseFile.Get(), cropper.dims(info.channels), log);
-  } else {
-    currentVolume = LastOrVal(senseVolume, info.volumes);
-    reader.readNoncartesian(currentVolume, rad_ks);
-    sense = DirectSENSE(traj, osamp.Get(), kernel, out_fov.Get(), rad_ks, senseLambda.Get(), log);
+  Cx4 sense = rss ? Cx4() : cropper.newMultichannel(info.channels);
+  if (!rss) {
+    if (senseFile) {
+      sense = LoadSENSE(senseFile.Get(), cropper.dims(info.channels), log);
+    } else {
+      currentVolume = LastOrVal(senseVolume, info.volumes);
+      reader.readNoncartesian(currentVolume, rad_ks);
+      sense = DirectSENSE(traj, osamp.Get(), kernel, out_fov.Get(), rad_ks, senseLambda.Get(), log);
+    }
   }
 
   auto const &all_start = log.now();

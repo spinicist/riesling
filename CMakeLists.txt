@@ -93,6 +93,11 @@ add_executable(riesling
 target_link_libraries(riesling
     vineyard
 )
+set_target_properties(vineyard riesling PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
 install(TARGETS riesling RUNTIME DESTINATION bin)
 # Parse version number
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h)
@@ -115,8 +120,22 @@ target_link_libraries(riesling-tests PUBLIC
     vineyard
     Catch2::Catch2
 )
+set_target_properties(vineyard riesling-tests PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
 
-set_target_properties(vineyard riesling riesling-tests PROPERTIES
+# Benchmarks
+add_executable(riesling-bench
+    bench/main.cpp
+    bench/rss.cpp
+)
+target_link_libraries(riesling-bench PUBLIC
+    vineyard
+    Catch2::Catch2
+)
+set_target_properties(vineyard riesling-bench PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
