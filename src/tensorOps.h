@@ -57,6 +57,13 @@ inline decltype(auto) Wrap(T1 const &index, T2 const &sz)
   return w;
 }
 
+template <typename T, typename U>
+inline decltype(auto) ConjugateSum(T &&x, U &&y)
+{
+  Eigen::IndexList<Eigen::type2index<0>> zero;
+  return (x * y.conjugate()).sum(zero);
+}
+
 template <typename T>
 inline decltype(auto) Tile(T &&x, long const N)
 {

@@ -27,10 +27,7 @@ Cx4 DirectSENSE(
   SDC::Load("pipe", lo_traj, gridder, log);
 
   Cx4 grid = gridder.newMultichannel(data.dimension(0));
-  R3 rss(gridder.gridDims());
   FFT::ThreeDMulti fftN(grid, log);
-  grid.setZero();
-  rss.setZero();
   gridder.toCartesian(lo_ks, grid);
 
   float const end_rad = gridder.info().voxel_size.minCoeff() / sense_res;
@@ -44,19 +41,19 @@ Cx4 DirectSENSE(
       end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid, log);
   fftN.reverse(grid);
-  if (lambda > 0.f) {
-    log.info(FMT_STRING("Regularization lambda {}"), lambda);
-    rss.device(Threads::GlobalDevice()) =
-        (grid * grid.conjugate()).real().sum(Sz1{0}).sqrt() + rss.constant(lambda);
-  } else {
-    rss.device(Threads::GlobalDevice()) = (grid * grid.conjugate()).real().sum(Sz1{0}).sqrt();
-  }
-  log.info("Normalizing channel images");
-  grid.device(Threads::GlobalDevice()) = grid / TileToMatch(rss, grid.dimensions()).cast<Cx>();
-  log.info("Finished SENSE maps");
 
   Cropper crop(traj.info(), gridder.gridDims(), fov, log);
-  return crop.crop4(grid);
+  Cx4 channels = crop.crop4(grid);
+  Cx3 rss = crop.newImage();
+  rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
+  if (lambda) {
+    log.info(FMT_STRING("Regularization lambda {}"), lambda);
+    rss.device(Threads::GlobalDevice()) = rss + rss.constant(lambda);
+  }
+  log.info("Normalizing channel images");
+  channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
+  log.info("Finished SENSE maps");
+  return channels;
 }
 
 Cx4 LoadSENSE(std::string const &calFile, Sz4 const dims, Log &log)

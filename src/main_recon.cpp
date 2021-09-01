@@ -10,6 +10,7 @@
 #include "log.h"
 #include "parse_args.h"
 #include "sense.h"
+#include "tensorOps.h"
 
 int main_recon(args::Subparser &parser)
 {
@@ -58,12 +59,14 @@ int main_recon(args::Subparser &parser)
     reader.readNoncartesian(iv, rad_ks);
     grid.setZero();
     gridder.toCartesian(rad_ks, grid);
+    log.info("FFT...");
     fft.reverse(grid);
+    log.info("Channel combination...");
     if (rss) {
       image.device(Threads::GlobalDevice()) =
-          (cropper.crop4(grid) * cropper.crop4(grid).conjugate()).sum(Sz1{0}).sqrt();
+          ConjugateSum(cropper.crop4(grid), cropper.crop4(grid)).sqrt();
     } else {
-      image.device(Threads::GlobalDevice()) = (cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
+      image.device(Threads::GlobalDevice()) = ConjugateSum(cropper.crop4(grid), sense);
     }
     apodizer.deapodize(image);
     if (tukey_s || tukey_e || tukey_h) {

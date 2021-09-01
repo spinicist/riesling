@@ -26,9 +26,11 @@ template <typename T>
 decltype(auto) Crop4(T &&x, Sz3 const &sz)
 {
   Sz4 const fullSz = x.dimensions();
-  Sz3 const st = Sz3{
-      (fullSz[1] - (sz[0] - 1)) / 2, (fullSz[2] - (sz[1] - 1)) / 2, (fullSz[3] - (sz[2] - 1)) / 2};
-  return x.slice(Sz4{0, st[0], st[1], st[2]}, Sz4{x.dimension(0), sz[0], sz[1], sz[2]});
+  Eigen::IndexList<Eigen::type2index<0>, int, int, int> st;
+  st.set(1, (fullSz[1] - (sz[0] - 1)) / 2);
+  st.set(2, (fullSz[2] - (sz[1] - 1)) / 2);
+  st.set(3, (fullSz[3] - (sz[2] - 1)) / 2);
+  return x.slice(st, Sz4{x.dimension(0), sz[0], sz[1], sz[2]});
 }
 
 /** Cropper object - useful for when the same cropping operation will be carried out multiple times
@@ -57,7 +59,12 @@ struct Cropper
   template <typename T>
   decltype(auto) crop4(T &&x) const
   {
-    return x.slice(Sz4{0, st_[0], st_[1], st_[2]}, Sz4{x.dimension(0), sz_[0], sz_[1], sz_[2]});
+    Eigen::IndexList<Eigen::type2index<0>, int, int, int> st;
+    st.set(1, st_[0]);
+    st.set(2, st_[1]);
+    st.set(3, st_[2]);
+
+    return x.slice(st, Sz4{x.dimension(0), sz_[0], sz_[1], sz_[2]});
   }
 
 private:

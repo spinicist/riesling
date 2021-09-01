@@ -209,7 +209,7 @@ void Gridder::toCartesian(Cx3 const &noncart, Cx4 &cart) const
   cart.setZero();
   Threads::RangeFor(grid_task, sortedIndices_.size());
   if (safe_) {
-    log_.info("Combining thread workspaces");
+    log_.info("Combining thread workspaces...");
     for (long ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
         cart.slice(
