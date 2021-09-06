@@ -98,7 +98,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINA
 target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 option(BUILD_TESTS "Build the tests" ON)
-if( ${BUILD_TEST} )
+if( ${BUILD_TESTS} )
     add_executable(riesling-tests
         test/main.cpp
         test/cropper.cpp
