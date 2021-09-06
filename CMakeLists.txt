@@ -4,6 +4,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 include(BuildType)
 include(GitVersion)
 
+# Deal with GCC 8 and std::filesystem
+# Thanks to Deniz Bahadir on the CMake Discourse
+add_link_options( "$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>" )
+link_libraries( "$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>" )
+
 find_package(Threads REQUIRED)
 find_package(args REQUIRED)
 find_package(Catch2 REQUIRED)
@@ -53,7 +58,6 @@ add_library(vineyard
     src/wavelets.cpp
     src/zinfandel.cpp
 )
-
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     Eigen3::Eigen
