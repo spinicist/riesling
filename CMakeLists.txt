@@ -11,7 +11,7 @@ find_package(Eigen3 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(FFTW3f REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
-find_package(nifti REQUIRED)
+find_package(NIFTI REQUIRED)
 find_package(scn REQUIRED)
 
 # Ensure this is always defined across all .cpp files
