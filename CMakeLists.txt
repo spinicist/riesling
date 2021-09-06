@@ -11,13 +11,7 @@ find_package(Eigen3 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(FFTW3f REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
-find_package(ITK 5.0.0 REQUIRED
-              COMPONENTS
-                ITKCommon
-                ITKIOImageBase
-                ITKIONIFTI
-            )
-include( ${ITK_USE_FILE} )
+find_package(nifti REQUIRED)
 find_package(scn REQUIRED)
 
 # Ensure this is always defined across all .cpp files
@@ -66,7 +60,7 @@ target_link_libraries(vineyard PUBLIC
     fmt::fmt
     FFTW3::fftw3f
     hdf5::hdf5-static
-    ${ITK_LIBRARIES}
+    NIFTI::niftiio
     scn::scn
 )
 

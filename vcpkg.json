@@ -14,7 +14,7 @@
             "name": "hdf5",
             "features": [ "zlib" ]
         },
-        "itk",
+        "nifticlib",
         "scnlib"
     ]
 }

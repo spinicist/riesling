@@ -1,112 +1,112 @@
 #include "io_nifti.h"
-#include "itkImage.h"
-#include "itkImageFileReader.h"
-#include "itkImageFileWriter.h"
-#include "itkImportImageFilter.h"
+#include "nifti1_io.h"
 #include <fmt/ostream.h>
+
+template <typename T>
+struct nifti_traits;
+
+template <>
+struct nifti_traits<float>
+{
+  constexpr static int dtype()
+  {
+    return NIFTI_TYPE_FLOAT32;
+  }
+  constexpr static int bytesper()
+  {
+    return 4;
+  }
+};
+
+template <>
+struct nifti_traits<std::complex<float>>
+{
+  constexpr static int dtype()
+  {
+    return NIFTI_TYPE_COMPLEX64;
+  }
+  constexpr static int bytesper()
+  {
+    return 8;
+  }
+};
 
 template <typename T, int ND>
 void WriteNifti(
     Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname, Log const &log)
 {
-  using Image = itk::Image<T, ND>;
-  using Importer = itk::ImportImageFilter<T, ND>;
-  using Writer = itk::ImageFileWriter<Image>;
-
-  typename Importer::Pointer import = Importer::New();
-  typename Importer::SizeType sz;
-  typename Importer::IndexType st;
-  auto const dims = img.dimensions();
-  std::copy_n(dims.begin(), ND, &sz[0]);
-  std::fill_n(&st[0], ND, 0.);
-  typename Importer::RegionType const region{st, sz};
-  import->SetRegion(region);
-
-  double spacing[ND];
-  std::copy_n(info.voxel_size.begin(), 3, spacing);
+  nifti_image *ptr = nifti_simple_init_nim();
+  ptr->fname = nifti_makehdrname(fname.c_str(), NIFTI_FTYPE_NIFTI1_1, false, false);
+  ptr->iname = nifti_makeimgname(fname.c_str(), NIFTI_FTYPE_NIFTI1_1, false, false);
+  ptr->nvox = img.size();
+  ptr->xyz_units = NIFTI_UNITS_MM | NIFTI_UNITS_SEC;
+  ptr->dim[0] = ptr->ndim = 4;
+  ptr->dim[1] = ptr->nx = img.dimension(0);
+  ptr->dim[2] = ptr->ny = img.dimension(1);
+  ptr->dim[3] = ptr->nz = img.dimension(2);
   if constexpr (ND == 4) {
-    spacing[3] = info.tr;
+    ptr->dim[4] = ptr->nt = img.dimension(3);
+  } else {
+    ptr->dim[4] = ptr->nt = 1;
   }
-  import->SetSpacing(spacing);
+  ptr->dim[5] = ptr->nu = 1;
+  ptr->dim[6] = ptr->nv = 1;
+  ptr->dim[7] = ptr->nw = 1;
 
-  double origin[ND];
-  std::copy_n(info.origin.begin(), 3, origin);
-  if constexpr (ND == 4) {
-    origin[3] = 0;
-  }
-  import->SetOrigin(origin);
+  ptr->datatype = nifti_traits<T>::dtype();
+  ptr->nbyper = nifti_traits<T>::bytesper();
+  ptr->qform_code = NIFTI_XFORM_SCANNER_ANAT;
+  ptr->sform_code = NIFTI_XFORM_SCANNER_ANAT;
 
-  itk::Matrix<double, ND, ND> direction;
-  direction.Fill(0.);
-  // This appears to need a transpose. I don't know why
-  for (auto ir = 0; ir < 3; ir++) {
-    for (auto ic = 0; ic < 3; ic++) {
-      direction(ic, ir) = info.direction(ir, ic);
+  ptr->pixdim[1] = info.voxel_size[0];
+  ptr->pixdim[2] = info.voxel_size[1];
+  ptr->pixdim[3] = info.voxel_size[2];
+  ptr->pixdim[4] = info.tr;
+
+  mat44 matrix = nifti_make_orthog_mat44(
+      info.direction(0, 0),
+      info.direction(0, 1),
+      info.direction(0, 2),
+      info.direction(1, 0),
+      info.direction(1, 1),
+      info.direction(1, 2),
+      info.direction(2, 0),
+      info.direction(2, 1),
+      info.direction(2, 2));
+  matrix.m[0][3] = -info.origin(0);
+  matrix.m[1][3] = -info.origin(1);
+  matrix.m[2][3] = -info.origin(2);
+
+  nifti_mat44_to_quatern(
+      matrix,
+      &(ptr->quatern_b),
+      &(ptr->quatern_c),
+      &(ptr->quatern_d),
+      &(ptr->qoffset_x),
+      &(ptr->qoffset_y),
+      &(ptr->qoffset_z),
+      nullptr,
+      nullptr,
+      nullptr,
+      &(ptr->qfac));
+
+  ptr->qto_xyz = matrix;
+  ptr->sto_xyz = matrix;
+  for (auto ii = 0; ii < 3; ii++) {
+    for (auto jj = 0; jj < 3; jj++) {
+      ptr->sto_xyz.m[ii][jj] = info.voxel_size(0) * ptr->sto_xyz.m[ii][jj];
     }
   }
-  if constexpr (ND == 4) {
-    direction(3, 3) = 1.;
-  }
-  import->SetDirection(direction);
+  ptr->qto_ijk = nifti_mat44_inverse(ptr->qto_xyz);
+  ptr->sto_ijk = nifti_mat44_inverse(ptr->sto_xyz);
+  ptr->pixdim[0] = ptr->qfac;
 
-  auto const n_vox = img.size();
-  import->SetImportPointer(const_cast<T *>(img.data()), n_vox, false);
-  typename Writer::Pointer write = Writer::New();
-  write->SetFileName(fname);
-  write->SetInput(import->GetOutput());
+  ptr->data = const_cast<T *>(img.data()); // To avoid copying the buffer
   log.info(FMT_STRING("Writing file: {}"), fname);
-  write->Update();
+  nifti_image_write(ptr);
 }
 
 template void WriteNifti(Info const &, Cx3 const &, std::string const &, Log const &);
 template void WriteNifti(Info const &, Cx4 const &, std::string const &, Log const &);
 template void WriteNifti(Info const &, R3 const &, std::string const &, Log const &);
 template void WriteNifti(Info const &, R4 const &, std::string const &, Log const &);
-
-template <typename T>
-void WriteNifti(Eigen::Matrix<T, -1, -1> const &m, std::string const &fname, Log const &log)
-{
-  using Image = itk::Image<T, 2>;
-  using Importer = itk::ImportImageFilter<T, 2>;
-  using Writer = itk::ImageFileWriter<Image>;
-
-  typename Importer::Pointer import = Importer::New();
-  typename Importer::SizeType sz{static_cast<size_t>(m.rows()), static_cast<size_t>(m.cols())};
-  typename Importer::IndexType st{0, 0};
-  typename Importer::RegionType const region{st, sz};
-  import->SetRegion(region);
-  double origin[2] = {0., 0.};
-  import->SetOrigin(origin);
-  double spacing[2] = {1., 1.};
-  import->SetSpacing(spacing);
-  auto const n_vox = m.size();
-  import->SetImportPointer(const_cast<T *>(m.data()), n_vox, false);
-  typename Writer::Pointer write = Writer::New();
-  write->SetFileName(fname);
-  write->SetInput(import->GetOutput());
-  log.info(FMT_STRING("Writing file: {}"), fname);
-  write->Update();
-}
-
-template void WriteNifti(Eigen::MatrixXcf const &m, std::string const &fname, Log const &log);
-
-template <typename T, int ND>
-Eigen::Tensor<T, ND> ReadNifti(std::string const &fname, Log const &log)
-{
-  using Image = itk::Image<T, ND>;
-  using Reader = itk::ImageFileReader<Image>;
-
-  typename Reader::Pointer read = Reader::New();
-  read->SetFileName(fname);
-  log.info(FMT_STRING("Reading file: {}"), fname);
-  read->Update();
-
-  auto const sz = read->GetOutput()->GetLargestPossibleRegion().GetSize();
-  typename Eigen::Tensor<T, ND>::Dimensions dims;
-  std::copy_n(sz.begin(), ND, dims.begin());
-  Eigen::Tensor<T, ND> data(dims);
-  std::memcpy(data.data(), read->GetOutput()->GetBufferPointer(), data.size() * sizeof(T));
-  return data;
-}
-
-template Eigen::Tensor<float, 3> ReadNifti(std::string const &, Log const &);

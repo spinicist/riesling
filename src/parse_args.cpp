@@ -98,7 +98,7 @@ void WriteOutput(
     HD5::Writer writer(fname, log);
     writer.writeInfo(info);
     writer.writeImage(vols);
-  } else {
+  } else if (ext.compare("nii") == 0) {
     auto &output = needsSwap ? SwapToChannelLast(vols) : vols;
     if (mag) {
       R4 const mVols = output.abs();
@@ -106,5 +106,7 @@ void WriteOutput(
     } else {
       WriteNifti(info, output, fname, log);
     }
+  } else {
+    log.fail("Unsupported output format: {}", ext);
   }
 }
