@@ -4,7 +4,7 @@
 
 ## Radial Interstices Enable Speedy Low-Volume imagING
 
-This is a reconstruction toolbox optimised for 3D ZTE MR images. While there are many high quality MR recon toolboxes available, e.g. [BART](http://mrirecon.github.io/bart/), but these are mostly optimised for 2D sequences. 3D non-cartesian sequences present unique challenges for efficient reconstruction, so we wrote our own.
+This is a reconstruction toolbox optimised for 3D ZTE MR images. There are many high quality MR recon toolboxes available, e.g. [BART](http://mrirecon.github.io/bart/), but these are mostly optimised for 2D sequences. 3D non-cartesian sequences present unique challenges for efficient reconstruction, so we wrote our own.
 
 This toolbox was presented at ISMRM 2020.
 

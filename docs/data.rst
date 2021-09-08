@@ -53,9 +53,7 @@ The final four fields specify the TR and image orientation as required to build 
 Trajectory
 ----------
 
-The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``SxNx3``. HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then this will be ``3xNxS``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 1. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
-
-This is in contrast to toolboxes such as BART where inverse wave-number is often used. The decision to drop this convention was taken because RIESLING allows the user to change the reconstruction oversampling factor, and hence the k-space locations must undergo a rescaling internally anyway.
+The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``SxNx3``. HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then this will be ``3xNxS``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial spokes the k-space locations go between 0 and 0.5, and for diameter spokes between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
 
 Non-cartesian Data
 ------------------

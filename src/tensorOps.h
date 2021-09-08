@@ -22,6 +22,13 @@ typename T::Scalar Sum(T const &a)
   return s();
 }
 
+template <typename T>
+typename T::Scalar Maximum(T const &a)
+{
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m = a.maximum();
+  return m();
+}
+
 template <typename T1, typename T2>
 typename T1::Scalar Dot(T1 const &a, T2 const &b)
 {

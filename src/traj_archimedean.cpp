@@ -40,8 +40,8 @@ R3 ASpiral(long const nRead, long const nSpoke)
     point = {cos(phi) * sin_t, -sin(phi) * sin_t, -t};
     traj.chip(half + is, 2) = endPoint.contract(read, empty);
   }
-
-  return traj;
+  // Trajectory is stored between -0.5 and 0.5, so scale
+  return 0.5 * traj;
 }
 
 R3 ArchimedeanSpiral(Info const &info)

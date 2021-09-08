@@ -18,10 +18,10 @@ TEST_CASE("SDC-Pipe", "[SDC]")
   float const osamp = 2.f;
   R3 points(3, 4, 1);
   points.setZero();
-  points(0, 0, 0) = 0.f;
-  points(0, 1, 0) = 1.f / 3.f;
-  points(0, 2, 0) = 2.f / 3.f;
-  points(0, 3, 0) = 3.f / 3.f;
+  points(0, 0, 0) = 0.5f * 0.f;
+  points(0, 1, 0) = 0.5f * 1.f / 3.f;
+  points(0, 2, 0) = 0.5f * 2.f / 3.f;
+  points(0, 3, 0) = 0.5f * 3.f / 3.f;
   Trajectory traj(info, points, log);
 
   SECTION("NN")

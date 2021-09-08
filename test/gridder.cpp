@@ -106,9 +106,10 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
   float const osamp = 2.f;
   R3 points(3, info.read_points, info.spokes_total());
   points.setZero();
-  points(0, 1, 0) = 1.f / 3.f;
-  points(0, 2, 0) = 2.f / 3.f;
-  points(0, 3, 0) = 1.f;
+  // Trajectory points are scaled between -0.5 and 0.5
+  points(0, 1, 0) = 0.5f * 1.f / 3.f;
+  points(0, 2, 0) = 0.5f * 2.f / 3.f;
+  points(0, 3, 0) = 0.5f * 1.f;
   Trajectory traj(info, points, log);
 
   SECTION("NN")

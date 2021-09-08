@@ -20,6 +20,19 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
         points_.dimension(2));
   }
 
+  if (info_.type == Info::Type::ThreeD) {
+    float const maxCoord = Maximum(points_.abs());
+    if (maxCoord > 0.5f) {
+      log_.fail("Maximum trajectory co-ordinate {} exceeded 0.5", maxCoord);
+    }
+  } else {
+    float const maxCoord = Maximum(
+        points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
+    if (maxCoord > 0.5f) {
+      log_.fail("Maximum in-plane trajectory {} co-ordinate exceeded 0.5", maxCoord);
+    }
+  }
+
   Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(info_.read_points, 0, info_.read_points - 1);
   mergeHi_ = ind - (info_.read_gap - 1);
   mergeHi_ = (mergeHi_ > 0).select(mergeHi_, 0);
@@ -51,13 +64,14 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   assert(read < info_.read_points);
   assert(spoke < info_.spokes_total());
 
-  float const rad = (spoke < info_.spokes_lo) ? rad_hi / info_.lo_scale : rad_hi;
+  // Convention is to store the points between -0.5 and 0.5, so we need a factor of 2 here
+  float const diameter = 2.f * (spoke < info_.spokes_lo ? rad_hi / info_.lo_scale : rad_hi);
   R1 const p = points_.chip(spoke, 2).chip(read, 1);
   switch (info_.type) {
   case Info::Type::ThreeD:
-    return Point3{p(0) * rad, p(1) * rad, p(2) * rad};
+    return Point3{p(0) * diameter, p(1) * diameter, p(2) * diameter};
   case Info::Type::ThreeDStack:
-    return Point3{p(0) * rad, p(1) * rad, p(2)};
+    return Point3{p(0) * diameter, p(1) * diameter, p(2)};
   }
   __builtin_unreachable(); // Because the GCC devs are very obtuse
 }
@@ -95,8 +109,7 @@ Trajectory Trajectory::trim(float const res, Cx3 &data, bool const shrink) const
   if (shrink) {
     new_info.matrix = (info_.matrix.cast<float>() * ratio).cast<long>();
     // Assume this is the maximum radius
-    new_points =
-        new_points / ratio; // Norm(new_points.chip(0, 2).chip(new_info.read_points - 1, 1));
+    new_points = new_points / ratio;
     log_.info(
         FMT_STRING("Reducing matrix from {} to {}"),
         info_.matrix.transpose(),
