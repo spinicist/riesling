@@ -39,9 +39,9 @@ References
 ----------
 
 1. Pruessmann, K. P., Weiger, M., Börnert, P. & Boesiger, P. Advances in sensitivity encoding with arbitrary k-space trajectories. Magn. Reson. Med. 46, 638–651 (2001).
-2. J. I. Jackson, C. H. Meyer, D. G. Nishimura, and A. Macovski, ‘Selection of a convolution function for Fourier inversion using gridding (computerised tomography application)’, IEEE Transactions on Medical Imaging, vol. 10, no. 3, pp. 473–478, Sep. 1991, doi: 10.1109/42.97598.
+2. JI Jackson, C. H. Meyer, D. G. Nishimura, and A. Macovski, ‘Selection of a convolution function for Fourier inversion using gridding (computerised tomography application)’, IEEE Transactions on Medical Imaging, vol. 10, no. 3, pp. 473–478, Sep. 1991, doi: 10.1109/42.97598.
 3. Beatty, P. J., Nishimura, D. G. & Pauly, J. M. Rapid gridding reconstruction with a minimal oversampling ratio. IEEE Transactions on Medical Imaging 24, 799–808 (2005).
 4. Oesterle, C., Markl, M., Strecker, R., Kraemer, F. M. & Hennig, J. Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems. Journal of Magnetic Resonance Imaging 10, 84–92 (1999).
 5. Zwart, N. R., Johnson, K. O. & Pipe, J. G. Efficient sample density estimation by combining gridding and an optimized kernel: Efficient Sample Density Estimation. Magn. Reson. Med. 67, 701–710 (2012).
-6. C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, doi: 10.1002/mrm.26928.
+6. CA Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, doi: 10.1002/mrm.26928.
 7. Knoll, F., Bredies, K., Pock, T. & Stollberger, R. Second order total generalized variation (TGV) for MRI. Magnetic Resonance in Medicine 65, 480–491 (2011).
