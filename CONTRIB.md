@@ -6,7 +6,7 @@ These guidelines exist to make it easy to get involved and ensure that RIESLING 
 
 ## Asking Questions / Reporting Bugs
 
-If you have general questions about how to use QUIT programs, you can either open an [issue](https://github.com/spinicist/riesling/issues).
+If you have general questions about how to use RIESLING programs, you can either open an [issue](https://github.com/spinicist/riesling/issues).
 
 If you think you have found a bug, then opening a Github issue is the preferred avenue. Please check whether an identical or similar issue already exists first. When opening a new issue, please give as much information as you can, including
 - The version of riesling you are using. Either give the version number if you downloaded the binaries, or a branch/git commit id if you compiled from source.
@@ -15,7 +15,7 @@ If you think you have found a bug, then opening a Github issue is the preferred 
 
 ## Contributing Changes
 
-If you want to edit the QUIT code yourself to fix a problem or implement a new feature, you are very welcome to! Please follow this model for submitting a Pull Request:
+If you want to edit the RIESLING code yourself to fix a problem or implement a new feature, you are very welcome to! Please follow this model for submitting a Pull Request:
 - (Fork)[https://help.github.com/articles/fork-a-repo/] the riesling repo to your Github profile.
 - Clone this repo, then create a new branch.
 - Make your changes on this branch.
