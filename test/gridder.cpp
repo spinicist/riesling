@@ -21,8 +21,8 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 
   SECTION("NN")
   {
-    Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(traj, osamp, kernel, false, log);
+    NearestNeighbour kernel;
+    Gridder gridder(traj.mapping(osamp, kernel.radius()), &kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == 4);
     CHECK(rad.dimension(1) == 1);
@@ -40,8 +40,8 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 
   SECTION("NN Multicoil")
   {
-    Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(traj, osamp, kernel, false, log);
+    NearestNeighbour kernel;
+    Gridder gridder(traj.mapping(osamp, kernel.radius()), &kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
@@ -66,9 +66,9 @@ TEST_CASE("Gridder with single point", "GRID-SINGLE")
 
   SECTION("KB Multicoil")
   {
-    Kernel *kernel = new KaiserBessel(3, osamp, true);
-    R3 const vals = kernel->kspace(Point3::Zero());
-    Gridder gridder(traj, osamp, kernel, false, log);
+    KaiserBessel kernel(3, osamp, true);
+    R3 const vals = kernel.kspace(Point3::Zero());
+    Gridder gridder(traj.mapping(osamp, kernel.radius()), &kernel, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
@@ -114,8 +114,8 @@ TEST_CASE("Gridder with single spoke", "GRID-SPOKE")
 
   SECTION("NN")
   {
-    Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(traj, osamp, kernel, false, log);
+    NearestNeighbour kernel;
+    Gridder gridder(traj.mapping(osamp, kernel.radius()), &kernel, false, log);
     Cx4 cart = gridder.newMultichannel(1);
     CHECK(cart.dimension(0) == 1);
     CHECK(cart.dimension(1) == 8);

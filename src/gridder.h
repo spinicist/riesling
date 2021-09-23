@@ -14,14 +14,12 @@ struct Gridder
 {
   /** Constructs the Gridder with a default Cartesian grid
    *
-   * @param traj  Trajectory object
-   * @param os     Oversampling factor
+   * @param map    Mapping between non-Cartesian and Cartesian
    * @param kernel Interpolation kernel
    * @param unsafe Ignore thread safety
    * @param log    Logging object
    */
-  Gridder(
-      Trajectory const &traj, float const os, Kernel *const kernel, bool const unsafe, Log &log);
+  Gridder(Mapping map, Kernel *const kernel, bool const unsafe, Log &log);
 
   virtual ~Gridder() = default;
 
@@ -33,40 +31,14 @@ struct Gridder
   void setSDC(R2 const &sdc);
   void setUnsafe();
   void setSafe();
-  Info const &info() const;
-  float oversample() const;
   Kernel *kernel() const;
   void toCartesian(Cx3 const &noncart, Cx4 &cart) const;    //!< Multi-channel non-cartesian -> cart
   void toNoncartesian(Cx4 const &cart, Cx3 &noncart) const; //!< Multi-channel cart -> non-cart
 
 protected:
-  struct CartesianIndex
-  {
-    int16_t x, y, z;
-  };
-
-  struct NoncartesianIndex
-  {
-    int32_t spoke;
-    int16_t read;
-  };
-
-  struct Coords
-  {
-    CartesianIndex cart;
-    NoncartesianIndex noncart;
-    float sdc;
-    Point3 offset;
-  };
-
-  void genCoords(Trajectory const &traj, long const nomRad);
-  void sortCoords();
-  Info const info_;
-  std::vector<Coords> coords_;
-  std::vector<int32_t> sortedIndices_;
-  Sz3 dims_;
-  float oversample_, DCexp_, maxRad_;
+  Mapping mapping_;
   Kernel *kernel_;
   bool safe_;
   Log &log_;
+  float DCexp_;
 };

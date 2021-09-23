@@ -59,6 +59,7 @@ add_library(vineyard
     src/zinfandel.cpp
     src/op/operator.cpp
     src/op/crop.cpp
+    src/op/grid.cpp
     src/op/sense.cpp
 )
 target_link_libraries(vineyard PUBLIC
@@ -118,6 +119,7 @@ if( ${BUILD_TESTS} )
         test/sdc.cpp
         test/zinfandel.cpp
         test/op/crop.cpp
+        test/op/grid.cpp
         test/op/sense.cpp
     )
     target_link_libraries(riesling-tests PUBLIC
@@ -136,6 +138,7 @@ if ( ${BUILD_BENCHMARKS} )
     add_executable(riesling-bench
         bench/main.cpp
         bench/rss.cpp
+        bench/grid.cpp
     )
     target_link_libraries(riesling-bench PUBLIC
         vineyard

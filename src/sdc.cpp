@@ -19,14 +19,25 @@ void Load(std::string const &iname, Trajectory const &traj, Gridder &gridder, Lo
     gridder.setSDC(Radial(traj, log));
   } else {
     HD5::Reader reader(iname, log);
-    gridder.setSDC(reader.readSDC(reader.readInfo()));
+    auto const sdcInfo = reader.readInfo();
+    auto const trajInfo = traj.info();
+    if (sdcInfo.read_points != trajInfo.read_points ||
+        sdcInfo.spokes_total() != trajInfo.spokes_total()) {
+      Log::Fail(
+          "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
+          sdcInfo.read_points,
+          sdcInfo.spokes_total(),
+          trajInfo.read_points,
+          trajInfo.spokes_total());
+    }
+    gridder.setSDC(reader.readSDC(sdcInfo));
   }
 }
 
 R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
 {
   log.info("Using Pipe/Zwart/Menon SDC...");
-  Cx3 W(1, gridder.info().read_points, gridder.info().spokes_total());
+  Cx3 W(1, traj.info().read_points, traj.info().spokes_total());
   Cx3 Wp(W.dimensions());
 
   W.setZero();

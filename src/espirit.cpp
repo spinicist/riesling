@@ -16,6 +16,7 @@ Cx4 ESPIRIT(
     Cx3 const &data,
     long const kRad,
     long const calRad,
+    long const gap,
     float const thresh,
     Log &log)
 {
@@ -25,7 +26,7 @@ Cx4 ESPIRIT(
   Cx4 grid = gridder.newMultichannel(data.dimension(0)); // Maps will end up here
   R3 valsImage(gridder.gridDims());
   gridder.toCartesian(data, grid);
-  Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gridder.info().read_gap, log);
+  Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap, log);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh, log);
   long const retain = mini_kernels.dimension(4);
 

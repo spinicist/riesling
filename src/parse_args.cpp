@@ -107,6 +107,6 @@ void WriteOutput(
       WriteNifti(info, output, fname, log);
     }
   } else {
-    log.fail("Unsupported output format: {}", ext);
+    Log::Fail("Unsupported output format: {}", ext);
   }
 }

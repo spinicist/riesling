@@ -28,7 +28,7 @@ int main_recon(args::Subparser &parser)
   Kernel *kernel =
       kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
          : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(traj, osamp.Get(), kernel, fastgrid, log);
+  Gridder gridder(traj.mapping(osamp.Get(), kernel->radius()), kernel, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
   gridder.setSDCExponent(sdc_exp.Get());
   Cropper cropper(info, gridder.gridDims(), out_fov.Get(), log);

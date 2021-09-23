@@ -1,6 +1,25 @@
 #include "trajectory.h"
 
 #include "tensorOps.h"
+#include <cfenv>
+#include <cmath>
+
+// Helper function to convert a floating-point vector-like expression to integer values
+template <typename T>
+inline decltype(auto) nearby(T &&x)
+{
+  return x.array().unaryExpr([](float const &e) { return std::nearbyint(e); });
+}
+
+// Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
+inline long fft_size(float const x)
+{
+  if (x > 8.f) {
+    return (std::lrint(x) + 7L) & ~7L;
+  } else {
+    return (long)std::ceil(x);
+  }
+}
 
 Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
     : info_{info}
@@ -23,13 +42,13 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
   if (info_.type == Info::Type::ThreeD) {
     float const maxCoord = Maximum(points_.abs());
     if (maxCoord > 0.5f) {
-      log_.fail("Maximum trajectory co-ordinate {} exceeded 0.5", maxCoord);
+      Log::Fail("Maximum trajectory co-ordinate {} exceeded 0.5", maxCoord);
     }
   } else {
     float const maxCoord = Maximum(
         points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
     if (maxCoord > 0.5f) {
-      log_.fail("Maximum in-plane trajectory {} co-ordinate exceeded 0.5", maxCoord);
+      Log::Fail("Maximum in-plane trajectory {} co-ordinate exceeded 0.5", maxCoord);
     }
   }
 
@@ -85,39 +104,67 @@ float Trajectory::merge(int16_t const read, int32_t const spoke) const
   }
 }
 
-Trajectory Trajectory::trim(float const res, Cx3 &data, bool const shrink) const
+Mapping
+Trajectory::mapping(float const os, long const kRad, float const inRes, bool const shrink) const
 {
-  if (res <= 0.f) {
-    Log::Fail("Asked for trajectory with resolution {} which is less than or equal to zero", res);
-  }
-
+  float const res = inRes < 0.f ? info_.voxel_size.minCoeff() : inRes;
   float const ratio = info_.voxel_size.minCoeff() / res;
-  log_.info(FMT_STRING("Cropping data to {} mm effective resolution, ratio {}"), res, ratio);
-  // Assume radial spokes for now
-  Info new_info = info_;
+  long const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
+  log_.info(
+      FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
 
-  int16_t hi = std::numeric_limits<int16_t>::min();
-  for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
-    float const rad = point(ir, info_.spokes_lo, 1.f).norm();
-    if (rad <= ratio) { // Discard points above the desired resolution
-      hi = std::max(ir, hi);
+  Mapping mapping;
+  switch (info_.type) {
+  case Info::Type::ThreeD:
+    mapping.cartDims = Sz3{gridSz, gridSz, gridSz};
+    break;
+  case Info::Type::ThreeDStack:
+    mapping.cartDims = Sz3{gridSz, gridSz, info_.matrix[2]};
+    break;
+  }
+  long const totalSz = info_.read_points * info_.spokes_total();
+  mapping.cart.reserve(totalSz);
+  mapping.noncart.reserve(totalSz);
+  mapping.sdc.reserve(totalSz);
+  mapping.offset.reserve(totalSz);
+
+  std::fesetround(FE_TONEAREST);
+  float const maxRad = ratio * ((gridSz / 2) - 1.f);
+  Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
+  float const maxLoRad = maxRad * (float)(info_.read_gap) / (float)info_.read_points;
+  float const maxHiRad = maxRad - kRad;
+  auto start = log_.now();
+  for (int32_t is = 0; is < info_.spokes_total(); is++) {
+    for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
+      NoncartesianIndex const nc{.spoke = is, .read = ir};
+      Point3 const xyz = point(ir, is, maxRad);
+
+      // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
+      // Otherwise leave space for kernel
+      float const maxRad = (is < info_.spokes_lo) ? maxLoRad : maxHiRad;
+      if (xyz.norm() <= maxRad) {
+        Size3 const gp = nearby(xyz).cast<int16_t>();
+        Size3 const cart = gp + center;
+        mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
+        mapping.noncart.push_back(nc);
+        mapping.sdc.push_back(1.f);
+        mapping.offset.push_back(xyz - gp.cast<float>().matrix());
+      }
     }
   }
-  new_info.read_points = hi;
-  log_.info("Trimming data to read points {}-{}", 0, hi);
-  R3 new_points = points_.slice(Sz3{0, 0, 0}, Sz3{3, new_info.read_points, info_.spokes_total()});
-  if (shrink) {
-    new_info.matrix = (info_.matrix.cast<float>() * ratio).cast<long>();
-    // Assume this is the maximum radius
-    new_points = new_points / ratio;
-    log_.info(
-        FMT_STRING("Reducing matrix from {} to {}"),
-        info_.matrix.transpose(),
-        new_info.matrix.transpose());
-  }
+  log_.info("Generated {} co-ordinates in {}", mapping.cart.size(), log_.toNow(start));
 
-  Cx3 const temp =
-      data.slice(Sz3{0, 0, 0}, Sz3{data.dimension(0), new_info.read_points, data.dimension(2)});
-  data = temp;
-  return Trajectory(new_info, new_points, log_);
+  start = log_.now();
+  mapping.sortedIndices.resize(mapping.cart.size());
+  std::iota(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), 0);
+  std::sort(
+      mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](long const a, long const b) {
+        auto const &ac = mapping.cart[a];
+        auto const &bc = mapping.cart[b];
+        return (ac.z < bc.z) ||
+               ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
+      });
+  log_.debug("Grid co-ord sorting: {}", log_.toNow(start));
+
+  return mapping;
 }

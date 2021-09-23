@@ -8,5 +8,6 @@ Cx4 ESPIRIT(
     Cx3 const &data,
     long const kernelRad,
     long const calRad,
+    long const gap,
     float const thresh,
     Log &log);

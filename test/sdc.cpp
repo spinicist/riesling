@@ -26,8 +26,8 @@ TEST_CASE("SDC-Pipe", "[SDC]")
 
   SECTION("NN")
   {
-    Kernel *kernel = new NearestNeighbour();
-    Gridder gridder(traj, osamp, kernel, false, log);
+    NearestNeighbour kernel;
+    Gridder gridder(traj.mapping(osamp, kernel.radius()), &kernel, false, log);
     R2 sdc = SDC::Pipe(traj, gridder, log);
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes_total());

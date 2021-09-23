@@ -111,7 +111,7 @@ int main_phantom(args::Subparser &parser)
   info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
 
   Trajectory traj(info, points, log);
-  Gridder hi_gridder(traj, grid_samp.Get(), kernel, false, log);
+  Gridder hi_gridder(traj.mapping(grid_samp.Get(), kernel->radius()), kernel, false, log);
   Cx4 grid = hi_gridder.newMultichannel(info.channels);
   FFT::ThreeDMulti fft(grid, log); // FFTW needs temp space for planning
 
@@ -182,7 +182,7 @@ int main_phantom(args::Subparser &parser)
         lo_info,
         R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
         log);
-    Gridder lo_gridder(lo_traj, grid_samp.Get(), kernel, false, log);
+    Gridder lo_gridder(lo_traj.mapping(grid_samp.Get(), kernel->radius()), kernel, false, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_gridder.toNoncartesian(grid, lo_radial);
     // Combine

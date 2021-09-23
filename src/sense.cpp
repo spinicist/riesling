@@ -21,24 +21,16 @@ Cx4 DirectSENSE(
     float const lambda,
     Log &log)
 {
-  Cx3 lo_ks = data;
-  auto const lo_traj = traj.trim(8.f, lo_ks);
-  Gridder gridder(lo_traj, os, kernel, false, log);
-  SDC::Load("pipe", lo_traj, gridder, log);
+  Gridder gridder(traj.mapping(os, kernel->radius(), 8.f), kernel, false, log);
+  SDC::Load("pipe", traj, gridder, log);
 
   Cx4 grid = gridder.newMultichannel(data.dimension(0));
   FFT::ThreeDMulti fftN(grid, log);
-  gridder.toCartesian(lo_ks, grid);
+  gridder.toCartesian(data, grid);
 
-  float const end_rad = gridder.info().voxel_size.minCoeff() / sense_res;
+  float const end_rad = traj.info().voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
-  log.info(
-      FMT_STRING("SENSE res {} image res {} oversample {} filter {}-{}"),
-      sense_res,
-      gridder.info().voxel_size.minCoeff(),
-      gridder.oversample(),
-      start_rad,
-      end_rad);
+  log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid, log);
   fftN.reverse(grid);
 
