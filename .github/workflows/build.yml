@@ -15,7 +15,7 @@ jobs:
         config:
         - {
           name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
-          os: ubuntu-16.04,
+          os: ubuntu-18.04,
           cc: "gcc-9", cxx: "g++-9"
         }
         - {
