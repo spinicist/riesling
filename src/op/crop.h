@@ -17,9 +17,6 @@ struct CropOp final : Operator<Rank, Rank>
   void Adj(Output const &x, Input &y) const;
   void AdjA(Input const &x, Input &y) const;
 
-  InputDims inSize() const;
-  OutputDims outSize() const;
-
 private:
   InputDims full_, left_, size_, right_;
 };

@@ -1,14 +1,13 @@
 #include "types.h"
 
-#include "apodizer.h"
 #include "cg.h"
 #include "cropper.h"
 #include "fft_plan.h"
 #include "filter.h"
-#include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
+#include "op/grid.h"
 #include "parse_args.h"
 #include "sense.h"
 #include "tensorOps.h"
@@ -36,16 +35,13 @@ int main_cgvar(args::Subparser &parser)
   Trajectory const traj = reader.readTrajectory();
   auto const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
-         : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(traj.mapping(osamp.Get(), kernel->radius()), kernel, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
-  gridder.setSDCExponent(sdc_exp.Get());
+  gridder->setSDCExponent(sdc_exp.Get());
 
-  Cx4 grid = gridder.newMultichannel(info.channels);
-  Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
-  Apodizer apodizer(kernel, gridder.gridDims(), iter_cropper.size(), log);
+  Cx4 grid = gridder->newMultichannel(info.channels);
+  Cropper iter_cropper(info, gridder->gridDims(), iter_fov.Get(), log);
+  R3 const apo = gridder->apodization(iter_cropper.size());
   FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = -1;
@@ -55,19 +51,19 @@ int main_cgvar(args::Subparser &parser)
   } else {
     currentVolume = LastOrVal(senseVolume, info.volumes);
     reader.readNoncartesian(currentVolume, rad_ks);
-    sense = DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
+    sense = DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
 
   Cx3 ones(1, info.read_points, info.spokes_total());
   ones.setConstant(1.0f);
-  Cx4 transfer = gridder.newMultichannel(1);
+  Cx4 transfer = gridder->newMultichannel(1);
 
   auto dev = Threads::GlobalDevice();
   CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
     auto const start = log.now();
-    gridder.setSDCExponent(pre);
+    gridder->setSDCExponent(pre);
     transfer.device(dev) = transfer.constant(0.f);
-    gridder.toCartesian(ones, transfer);
+    gridder->Adj(ones, transfer);
 
     grid.device(dev) = grid.constant(0.f);
     iter_cropper.crop4(grid).device(dev) = sense * Tile(x, info.channels);
@@ -82,11 +78,11 @@ int main_cgvar(args::Subparser &parser)
   DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
     auto const &start = log.now();
     y.device(dev) = y.constant(0.f);
-    gridder.setSDCExponent(1.f);
-    gridder.toCartesian(x, grid);
+    gridder->setSDCExponent(1.f);
+    gridder->Adj(x, grid);
     fft.reverse(grid);
     y.device(dev) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    apodizer.deapodize(y);
+    y.device(dev) = y / apo.cast<Cx>();
     log.debug("Decode: {}", log.toNow(start));
   };
 

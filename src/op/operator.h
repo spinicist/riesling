@@ -24,34 +24,13 @@ struct Operator
 
   virtual void A(Input const &x, Output &y) const = 0;
   virtual void Adj(Output const &x, Input &y) const = 0;
-  virtual void AdjA(Input const &x, Input &y) const = 0;
-
-  virtual InputDims inSize() const = 0;
-  virtual OutputDims outSize() const = 0;
-
-  void checkInputSize(Input const &x) const
+  virtual void AdjA(Input const &x, Input &y) const
   {
-    auto const &sz = inSize();
-    auto mm = std::mismatch(sz.begin(), sz.end(), x.dimensions().begin());
-    if (mm.first != sz.end()) {
-      Log::Fail(
-          "Mismatched input dimension {}: {} vs {}",
-          std::distance(sz.begin(), mm.first),
-          *mm.first,
-          *mm.second);
+    for (auto ii = 0; ii < InRank; ii++) {
+      assert(y.dimension(ii) == x.dimension(ii));
     }
-  }
-
-  void checkOutputSize(Output const &x) const
-  {
-    auto const &sz = outSize();
-    auto mm = std::mismatch(sz.begin(), sz.end(), x.dimensions().begin());
-    if (mm.first != sz.end()) {
-      Log::Fail(
-          "Mismatched output dimension {}: {} vs {}",
-          std::distance(sz.begin(), mm.first),
-          *mm.first,
-          *mm.second);
-    }
+    Output z;
+    A(x, z);
+    Adj(z, y);
   }
 };

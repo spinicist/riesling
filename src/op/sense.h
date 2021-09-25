@@ -10,9 +10,6 @@ struct SenseOp final : Operator<3, 4>
   void Adj(Output const &x, Input &y) const;
   void AdjA(Input const &x, Input &y) const;
 
-  Input::Dimensions inSize() const;
-  Output::Dimensions outSize() const;
-
 private:
   Output maps_;
   Output::Dimensions full_, left_, size_, right_;

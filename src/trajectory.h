@@ -23,6 +23,7 @@ struct Mapping
   std::vector<Point3> offset;
   std::vector<int32_t> sortedIndices;
   Sz3 cartDims;
+  float osamp;
 };
 
 struct Trajectory

@@ -22,16 +22,20 @@ CropOp<Rank>::CropOp(InputDims const &bigSize, OutputDims const &smallSize)
 template <int Rank>
 void CropOp<Rank>::A(Input const &x, Output &y) const
 {
-  Parent::checkInputSize(x);
-  Parent::checkOutputSize(y);
+  for (auto ii = 0; ii < Rank; ii++) {
+    assert(x.dimension(ii) == full_[ii]);
+    assert(y.dimension(ii) == size_[ii]);
+  }
   y.device(Threads::GlobalDevice()) = x.slice(left_, size_);
 }
 
 template <int Rank>
 void CropOp<Rank>::Adj(Output const &x, Input &y) const
 {
-  Parent::checkInputSize(y);
-  Parent::checkOutputSize(x);
+  for (auto ii = 0; ii < Rank; ii++) {
+    assert(x.dimension(ii) == size_[ii]);
+    assert(y.dimension(ii) == full_[ii]);
+  }
   Eigen::array<std::pair<int, int>, Rank> paddings;
   std::transform(
       left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
@@ -43,26 +47,16 @@ void CropOp<Rank>::Adj(Output const &x, Input &y) const
 template <int Rank>
 void CropOp<Rank>::AdjA(Input const &x, Input &y) const
 {
-  Parent::checkInputSize(x);
-  Parent::checkInputSize(y);
+  for (auto ii = 0; ii < Rank; ii++) {
+    assert(x.dimension(ii) == full_[ii]);
+    assert(y.dimension(ii) == full_[ii]);
+  }
   Eigen::array<std::pair<int, int>, Rank> paddings;
   std::transform(
       left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
         return std::make_pair(left, right);
       });
   y.device(Threads::GlobalDevice()) = x.slice(left_, size_).pad(paddings);
-}
-
-template <int Rank>
-typename CropOp<Rank>::InputDims CropOp<Rank>::inSize() const
-{
-  return full_;
-}
-
-template <int Rank>
-typename CropOp<Rank>::OutputDims CropOp<Rank>::outSize() const
-{
-  return size_;
 }
 
 template struct CropOp<3>;

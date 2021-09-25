@@ -122,6 +122,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
     mapping.cartDims = Sz3{gridSz, gridSz, info_.matrix[2]};
     break;
   }
+  mapping.osamp = os;
   long const totalSz = info_.read_points * info_.spokes_total();
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);
@@ -141,8 +142,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
 
       // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
       // Otherwise leave space for kernel
-      float const maxRad = (is < info_.spokes_lo) ? maxLoRad : maxHiRad;
-      if (xyz.norm() <= maxRad) {
+      if (xyz.norm() <= (is < info_.spokes_lo ? maxLoRad : maxHiRad)) {
         Size3 const gp = nearby(xyz).cast<int16_t>();
         Size3 const cart = gp + center;
         mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});

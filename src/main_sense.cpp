@@ -1,14 +1,13 @@
 #include "types.h"
 
-#include "apodizer.h"
 #include "cropper.h"
 #include "espirit.h"
 #include "fft_plan.h"
 #include "filter.h"
-#include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
+#include "op/grid.h"
 #include "parse_args.h"
 #include "sense.h"
 
@@ -31,13 +30,9 @@ int main_sense(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(3, osamp.Get(), (info.type == Info::Type::ThreeD))
-         : (Kernel *)new NearestNeighbour();
-
   Cx3 rad_ks = info.noncartesianVolume();
   reader.readNoncartesian(LastOrVal(volume, info.volumes), rad_ks);
-  Cx4 sense = DirectSENSE(traj, osamp.Get(), kernel, fov.Get(), rad_ks, lambda.Get(), log);
+  Cx4 sense = DirectSENSE(traj, osamp.Get(), kb, fov.Get(), rad_ks, lambda.Get(), log);
 
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", oftype.Get());
   if (oftype.Get().compare("h5") == 0) {

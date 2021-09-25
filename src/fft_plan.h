@@ -18,11 +18,11 @@ struct Plan
 
   /*! Uses the specified Tensor as a workspace during planning
    */
-  Plan(Tensor &workspace, Log &log, long const nThreads = Threads::GlobalThreadCount());
+  Plan(Tensor &workspace, Log log, long const nThreads = Threads::GlobalThreadCount());
 
   /*! Will allocate a workspace during planning
    */
-  Plan(TensorDims const &dims, Log &log, long const nThreads = Threads::GlobalThreadCount());
+  Plan(TensorDims const &dims, Log log, long const nThreads = Threads::GlobalThreadCount());
 
   ~Plan();
 

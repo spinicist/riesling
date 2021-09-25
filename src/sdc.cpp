@@ -1,22 +1,23 @@
 #include "sdc.h"
 
-#include "gridder.h"
 #include "io_hd5.h"
-#include "kernel.h"
+#include "op/grid.h"
 #include "tensorOps.h"
+#include "threads.h"
 #include "trajectory.h"
 
 namespace SDC {
-void Load(std::string const &iname, Trajectory const &traj, Gridder &gridder, Log &log)
+void Load(
+    std::string const &iname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
 {
   if (iname == "") {
     return;
   } else if (iname == "none") {
     return;
   } else if (iname == "pipe") {
-    gridder.setSDC(Pipe(traj, gridder, log));
+    gridder->setSDC(Pipe(traj, gridder, log));
   } else if (iname == "radial") {
-    gridder.setSDC(Radial(traj, log));
+    gridder->setSDC(Radial(traj, log));
   } else {
     HD5::Reader reader(iname, log);
     auto const sdcInfo = reader.readInfo();
@@ -30,11 +31,11 @@ void Load(std::string const &iname, Trajectory const &traj, Gridder &gridder, Lo
           trajInfo.read_points,
           trajInfo.spokes_total());
     }
-    gridder.setSDC(reader.readSDC(sdcInfo));
+    gridder->setSDC(reader.readSDC(sdcInfo));
   }
 }
 
-R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
+R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
 {
   log.info("Using Pipe/Zwart/Menon SDC...");
   Cx3 W(1, traj.info().read_points, traj.info().spokes_total());
@@ -47,13 +48,13 @@ R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
     }
   }
 
-  gridder.kernel()->sqrtOn();
-  Cx4 temp = gridder.newMultichannel(1);
+  gridder->sqrtOn();
+  Cx4 temp = gridder->newMultichannel(1);
   for (long ii = 0; ii < 10; ii++) {
     Wp.setZero();
     temp.setZero();
-    gridder.toCartesian(W, temp);
-    gridder.toNoncartesian(temp, Wp);
+    gridder->Adj(W, temp);
+    gridder->A(temp, Wp);
     Wp.device(Threads::GlobalDevice()) =
         (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().square().maximum())();
@@ -65,7 +66,7 @@ R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log)
       log.info("SDC Delta {}", delta);
     }
   }
-  gridder.kernel()->sqrtOff();
+  gridder->sqrtOff();
   log.info("SDC finished.");
   return W.real().chip(0, 0);
 }

@@ -1,20 +1,21 @@
-#include "../src/gridder.h"
-#include "../src/log.h"
 #include "../src/sdc.h"
+#include "../src/log.h"
+#include "../src/op/grid-nn.h"
 #include "../src/trajectory.h"
 #include <catch2/catch.hpp>
 
 TEST_CASE("SDC-Pipe", "[SDC]")
 {
   Log log;
-  Info info{.type = Info::Type::ThreeD,
-            .channels = 1,
-            .matrix = {4, 4, 4},
-            .read_points = 4,
-            .read_gap = 0,
-            .spokes_hi = 1,
-            .spokes_lo = 0,
-            .lo_scale = 1};
+  Info info{
+      .type = Info::Type::ThreeD,
+      .channels = 1,
+      .matrix = {4, 4, 4},
+      .read_points = 4,
+      .read_gap = 0,
+      .spokes_hi = 1,
+      .spokes_lo = 0,
+      .lo_scale = 1};
   float const osamp = 2.f;
   R3 points(3, 4, 1);
   points.setZero();
@@ -26,12 +27,11 @@ TEST_CASE("SDC-Pipe", "[SDC]")
 
   SECTION("NN")
   {
-    NearestNeighbour kernel;
-    Gridder gridder(traj.mapping(osamp, kernel.radius()), &kernel, false, log);
+    std::unique_ptr<GridOp> gridder = std::make_unique<GridNN>(traj, osamp, false, log);
     R2 sdc = SDC::Pipe(traj, gridder, log);
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes_total());
-    Cx4 cart = gridder.newMultichannel(info.channels);
+    Cx4 cart = gridder->newMultichannel(info.channels);
     CHECK(sdc(0, 0) == Approx(1.f));
     CHECK(sdc(1, 0) == Approx(1.f));
     CHECK(sdc(2, 0) == Approx(1.f));

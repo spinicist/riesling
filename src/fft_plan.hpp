@@ -6,7 +6,7 @@
 namespace FFT {
 
 template <int TRank, int FRank>
-Plan<TRank, FRank>::Plan(Tensor &workspace, Log &log, long const nThreads)
+Plan<TRank, FRank>::Plan(Tensor &workspace, Log log, long const nThreads)
     : dims_{workspace.dimensions()}
     , log_{log}
     , threaded_{nThreads > 1}
@@ -15,7 +15,7 @@ Plan<TRank, FRank>::Plan(Tensor &workspace, Log &log, long const nThreads)
 }
 
 template <int TRank, int FRank>
-Plan<TRank, FRank>::Plan(TensorDims const &dims, Log &log, long const nThreads)
+Plan<TRank, FRank>::Plan(TensorDims const &dims, Log log, long const nThreads)
     : dims_{dims}
     , log_{log}
     , threaded_{nThreads > 1}

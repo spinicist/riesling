@@ -1,14 +1,14 @@
 #include "types.h"
 
-#include "apodizer.h"
 #include "cg.h"
 #include "cropper.h"
 #include "fft_plan.h"
 #include "filter.h"
-#include "gridder.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
+#include "op/grid-kb.h"
+#include "op/grid-nn.h"
 #include "op/sense.h"
 #include "parse_args.h"
 #include "sense.h"
@@ -33,17 +33,13 @@ int main_cg(args::Subparser &parser)
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
-
-  Kernel *kernel =
-      kb ? (Kernel *)new KaiserBessel(kw.Get(), osamp.Get(), (info.type == Info::Type::ThreeD))
-         : (Kernel *)new NearestNeighbour(kw ? kw.Get() : 1);
-  Gridder gridder(traj.mapping(osamp.Get(), kernel->radius()), kernel, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
   SDC::Load(sdc.Get(), traj, gridder, log);
-  gridder.setSDCExponent(sdc_exp.Get());
+  gridder->setSDCExponent(sdc_exp.Get());
 
-  Cx4 grid = gridder.newMultichannel(info.channels);
-  Cropper iter_cropper(info, gridder.gridDims(), iter_fov.Get(), log);
-  Apodizer apodizer(kernel, gridder.gridDims(), iter_cropper.size(), log);
+  Cx4 grid = gridder->newMultichannel(info.channels);
+  Cropper iter_cropper(info, gridder->gridDims(), iter_fov.Get(), log);
+  R3 const apo = gridder->apodization(iter_cropper.size());
   FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = -1;
@@ -53,17 +49,16 @@ int main_cg(args::Subparser &parser)
   } else {
     currentVolume = LastOrVal(senseVolume, info.volumes);
     reader.readNoncartesian(currentVolume, rad_ks);
-    senseMaps =
-        DirectSENSE(traj, osamp.Get(), kernel, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
+    senseMaps = DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
   SenseOp sense(senseMaps, grid.dimensions());
 
-  Cx4 transfer = gridder.newMultichannel(1);
+  Cx4 transfer = gridder->newMultichannel(1);
   {
     log.info("Calculating transfer function");
     Cx3 ones(1, info.read_points, info.spokes_total());
     ones.setConstant({1.0f});
-    gridder.toCartesian(ones, transfer);
+    gridder->Adj(ones, transfer);
   }
 
   auto dev = Threads::GlobalDevice();
@@ -81,10 +76,10 @@ int main_cg(args::Subparser &parser)
     auto const &start = log.now();
     y.setZero();
     grid.setZero();
-    gridder.toCartesian(x, grid);
+    gridder->Adj(x, grid);
     fft.reverse(grid);
     sense.Adj(grid, y);
-    apodizer.deapodize(y);
+    y.device(dev) = y / apo.cast<Cx>();
     log.debug("Decode: {}", log.toNow(start));
   };
 

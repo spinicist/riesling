@@ -4,8 +4,9 @@
 #include "espirit.h"
 #include "fft_plan.h"
 #include "filter.h"
-#include "gridder.h"
 #include "io_hd5.h"
+#include "op/grid.h"
+#include "sdc.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "vc.h"
@@ -15,18 +16,18 @@ float const sense_res = 8.f;
 Cx4 DirectSENSE(
     Trajectory const &traj,
     float const os,
-    Kernel *kernel,
+    bool const kb,
     float const fov,
     Cx3 const &data,
     float const lambda,
     Log &log)
 {
-  Gridder gridder(traj.mapping(os, kernel->radius(), 8.f), kernel, false, log);
+  auto gridder = make_grid(traj, os, kb, false, log, 8.f, false);
   SDC::Load("pipe", traj, gridder, log);
 
-  Cx4 grid = gridder.newMultichannel(data.dimension(0));
+  Cx4 grid = gridder->newMultichannel(data.dimension(0));
   FFT::ThreeDMulti fftN(grid, log);
-  gridder.toCartesian(data, grid);
+  gridder->Adj(data, grid);
 
   float const end_rad = traj.info().voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
@@ -34,7 +35,7 @@ Cx4 DirectSENSE(
   KSTukey(start_rad, end_rad, 0.f, grid, log);
   fftN.reverse(grid);
 
-  Cropper crop(traj.info(), gridder.gridDims(), fov, log);
+  Cropper crop(traj.info(), gridder->gridDims(), fov, log);
   Cx4 channels = crop.crop4(grid);
   Cx3 rss = crop.newImage();
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();

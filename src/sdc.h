@@ -7,12 +7,12 @@
 
 // Forward declare
 struct Trajectory;
-struct Gridder;
-struct Kernel;
+struct GridOp;
 
 namespace SDC {
 
-void Load(std::string const &fname, Trajectory const &traj, Gridder &gridder, Log &log);
-R2 Pipe(Trajectory const &traj, Gridder &gridder, Log &log);
+void Load(
+    std::string const &fname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log);
+R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log);
 R2 Radial(Trajectory const &traj, Log &log);
 } // namespace SDC

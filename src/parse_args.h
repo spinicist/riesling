@@ -41,8 +41,6 @@ long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
-  args::ValueFlag<long> kw(                                                                        \
-      parser, "KERNEL WIDTH", "Width of gridding kernel. Default 1 for NN, 3 for KB", {"kw"}, 3);  \
   args::Flag fastgrid(                                                                             \
       parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});               \
   args::ValueFlag<std::string> sdc(                                                                \
