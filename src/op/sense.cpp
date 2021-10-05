@@ -1,6 +1,6 @@
-#include "sense.h"
 #include "../tensorOps.h"
 #include "../threads.h"
+#include "sense.h"
 
 SenseOp::SenseOp(Output &maps, Output::Dimensions const &bigSize)
     : maps_{std::move(maps)}
@@ -24,9 +24,9 @@ void SenseOp::A(Input const &x, Output &y) const
   assert(x.dimension(1) == maps_.dimension(2));
   assert(x.dimension(2) == maps_.dimension(3));
   assert(y.dimension(0) == maps_.dimension(0));
-  assert(y.dimension(1) == maps_.dimension(1));
-  assert(y.dimension(2) == maps_.dimension(2));
-  assert(y.dimension(3) == maps_.dimension(3));
+  assert(y.dimension(1) == (maps_.dimension(1) + left_[1] + right_[1]));
+  assert(y.dimension(2) == (maps_.dimension(2) + left_[2] + right_[2]));
+  assert(y.dimension(3) == (maps_.dimension(3) + left_[3] + right_[3]));
 
   Eigen::IndexList<Eigen::type2index<1>, int, int, int> res;
   res.set(1, x.dimension(0));
@@ -47,9 +47,9 @@ void SenseOp::A(Input const &x, Output &y) const
 void SenseOp::Adj(Output const &x, Input &y) const
 {
   assert(x.dimension(0) == maps_.dimension(0));
-  assert(x.dimension(1) == maps_.dimension(1));
-  assert(x.dimension(2) == maps_.dimension(2));
-  assert(x.dimension(3) == maps_.dimension(3));
+  assert(x.dimension(1) == (maps_.dimension(1) + left_[1] + right_[1]));
+  assert(x.dimension(2) == (maps_.dimension(2) + left_[2] + right_[2]));
+  assert(x.dimension(3) == (maps_.dimension(3) + left_[3] + right_[3]));
   assert(y.dimension(0) == maps_.dimension(1));
   assert(y.dimension(1) == maps_.dimension(2));
   assert(y.dimension(2) == maps_.dimension(3));

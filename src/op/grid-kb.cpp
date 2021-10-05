@@ -18,8 +18,10 @@ GridKB<InPlane, ThroughPlane>::GridKB(
     float const inRes,
     bool const shrink)
     : GridOp(traj.mapping(os, (InPlane / 2), inRes, shrink), unsafe, log)
-    , betaIn_{(float)M_PI * sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
-    , betaThrough_{(float)M_PI * sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
+    , betaIn_{(float)M_PI *
+              sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
+    , betaThrough_{(float)M_PI *
+                   sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
     , fft_{Sz3{InPlane, InPlane, ThroughPlane}, Log(), 1}
 {
 
@@ -42,11 +44,11 @@ template <int InPlane, int ThroughPlane>
 void GridKB<InPlane, ThroughPlane>::kernel(Point3 const r, float const dc, Kernel &k) const
 {
   InPlaneArray const kx = KB<InPlane>(indIn_.constant(r[0]) - indIn_, betaIn_);
-  InPlaneArray const ky = KB<InPlane>(indIn_.constant(r[2]) - indIn_, betaIn_);
+  InPlaneArray const ky = KB<InPlane>(indIn_.constant(r[1]) - indIn_, betaIn_);
 
   if constexpr (ThroughPlane > 1) {
     ThroughPlaneArray const kz =
-        KB<ThroughPlane>(indThrough_.constant(r[3]) - indThrough_, betaThrough_);
+        KB<ThroughPlane>(indThrough_.constant(r[2]) - indThrough_, betaThrough_);
     k = Outer(Outer(kx, ky), kz);
   } else {
     k = Outer(kx, ky);

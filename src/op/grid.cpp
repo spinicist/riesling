@@ -1,6 +1,6 @@
-#include "grid.h"
 #include "grid-kb.h"
 #include "grid-nn.h"
+#include "grid.h"
 
 #include "../tensorOps.h"
 #include "../threads.h"
@@ -12,6 +12,7 @@
 GridOp::GridOp(Mapping map, bool const unsafe, Log &log)
     : mapping_{std::move(map)}
     , safe_{!unsafe}
+    , sqrt_{false}
     , log_{log}
     , DCexp_{1.f}
 {
