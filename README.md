@@ -1,6 +1,7 @@
 ![Logo](riesling-logo.png)
 
 [![Build](https://github.com/spinicist/riesling/workflows/Build/badge.svg)](https://github.com/spinicist/riesling/actions)
+[![DOI](https://zenodo.org/badge/317237623.svg)](https://zenodo.org/badge/latestdoi/317237623)
 
 ## Radial Interstices Enable Speedy Low-Volume imagING
 
