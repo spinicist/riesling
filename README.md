@@ -2,6 +2,7 @@
 
 [![Build](https://github.com/spinicist/riesling/workflows/Build/badge.svg)](https://github.com/spinicist/riesling/actions)
 [![DOI](https://zenodo.org/badge/317237623.svg)](https://zenodo.org/badge/latestdoi/317237623)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.03500/status.svg)](https://doi.org/10.21105/joss.03500)
 
 ## Radial Interstices Enable Speedy Low-Volume imagING
 
