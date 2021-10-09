@@ -20,6 +20,18 @@ CropOp<Rank>::CropOp(InputDims const &bigSize, OutputDims const &smallSize)
 }
 
 template <int Rank>
+typename CropOp<Rank>::InputDims CropOp<Rank>::bigDimensions() const
+{
+  return full_;
+}
+
+template <int Rank>
+typename CropOp<Rank>::OutputDims CropOp<Rank>::outputDimensions() const
+{
+  return size_;
+}
+
+template <int Rank>
 void CropOp<Rank>::A(Input const &x, Output &y) const
 {
   for (auto ii = 0; ii < Rank; ii++) {

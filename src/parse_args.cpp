@@ -60,6 +60,20 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
   return log;
 }
 
+Log ParseCommand(args::Subparser &parser)
+{
+  parser.Parse();
+  Log::Level const level =
+      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
+
+  Log log(level);
+  if (nthreads) {
+    Threads::SetGlobalThreadCount(nthreads.Get());
+  }
+  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
+  return log;
+}
+
 std::string OutName(
     std::string const &iName,
     std::string const &oName,
@@ -108,5 +122,38 @@ void WriteOutput(
     }
   } else {
     Log::Fail("Unsupported output format: {}", ext);
+  }
+}
+
+void WriteBasisVolumes(
+    Cx5 const &vols,
+    R2 const &basis,
+    bool const mag,
+    bool const needsSwap,
+    Info const &info,
+    std::string const &iname,
+    std::string const &oname,
+    std::string const &suffix,
+    std::string const &ext,
+    Log &log)
+{
+  if (ext.compare("h5") == 0) {
+    auto const fname = OutName(iname, oname, suffix, ext);
+    HD5::Writer writer(fname, log);
+    writer.writeInfo(info);
+    writer.writeBasis(basis);
+    writer.writeBasisImages(vols);
+  } else {
+    for (long ib = 0; ib < vols.dimension(0); ib++) {
+      auto const fname = OutName(iname, oname, fmt::format("{}-{:02d}", suffix, ib), ext);
+      Cx4 const b = vols.chip(ib, 0);
+      auto &output = needsSwap ? SwapToChannelLast(b) : b;
+      if (mag) {
+        R4 const mVols = output.abs();
+        WriteNifti(info, mVols, fname, log);
+      } else {
+        WriteNifti(info, output, fname, log);
+      }
+    }
   }
 }

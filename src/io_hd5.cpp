@@ -11,6 +11,9 @@ std::string const Noncartesian = "noncartesian";
 std::string const Cartesian = "cartesian";
 std::string const Image = "image";
 std::string const Trajectory = "trajectory";
+std::string const Basis = "basis";
+std::string const BasisImages = "basis-images";
+std::string const Dynamics = "dynamics";
 std::string const SDC = "sdc";
 std::string const SENSE = "sense";
 } // namespace Keys
@@ -198,6 +201,36 @@ void Writer::writeImage(Cx4 const &t)
   HD5::store_tensor(handle_, Keys::Image, t, log_);
 }
 
+void Writer::writeBasis(R2 const &b)
+{
+  HD5::store_tensor(handle_, Keys::Basis, b, log_);
+}
+
+void Writer::writeDynamics(R2 const &d)
+{
+  HD5::store_tensor(handle_, Keys::Dynamics, d, log_);
+}
+
+void Writer::writeRealMatrix(R2 const &m, std::string const &k)
+{
+  HD5::store_tensor(handle_, k, m, log_);
+}
+
+void Writer::writeReal4(R4 const &d, std::string const &k)
+{
+  HD5::store_tensor(handle_, k, d, log_);
+}
+
+void Writer::writeReal5(R5 const &d, std::string const &k)
+{
+  HD5::store_tensor(handle_, k, d, log_);
+}
+
+void Writer::writeBasisImages(Cx5 const &bi)
+{
+  HD5::store_tensor(handle_, Keys::BasisImages, bi, log_);
+}
+
 Reader::Reader(std::string const &fname, Log &log)
     : log_{log}
 {
@@ -310,6 +343,24 @@ Cx4 Reader::readSENSE()
   Cx4 sense(dims);
   HD5::load_tensor(handle_, Keys::SENSE, sense, log_);
   return sense;
+}
+
+R2 Reader::readBasis()
+{
+  log_.info("Reading basis");
+  return HD5::load_tensor<float, 2>(handle_, Keys::Basis, log_);
+}
+
+R2 Reader::readRealMatrix(std::string const &k)
+{
+  log_.info("Reading {}", k);
+  return HD5::load_tensor<float, 2>(handle_, k, log_);
+}
+
+Cx5 Reader::readBasisImages()
+{
+  log_.info("Reading basis");
+  return HD5::load_tensor<Cx, 5>(handle_, Keys::BasisImages, log_);
 }
 
 } // namespace HD5

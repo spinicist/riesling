@@ -2,12 +2,13 @@
 
 #include "io_hd5.h"
 #include "op/grid.h"
+#include "op/grid-basis.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "trajectory.h"
 
 namespace SDC {
-void Load(
+void Choose(
     std::string const &iname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
 {
   if (iname == "") {
@@ -32,6 +33,38 @@ void Load(
           trajInfo.spokes_total());
     }
     gridder->setSDC(reader.readSDC(sdcInfo));
+  }
+}
+
+void Choose(
+    std::string const &iname,
+    Trajectory const &traj,
+    std::unique_ptr<GridOp> &gridder,
+    std::unique_ptr<GridBasisOp> &gridder2,
+    Log &log)
+{
+  if (iname == "") {
+    return;
+  } else if (iname == "none") {
+    return;
+  } else if (iname == "pipe") {
+    gridder2->setSDC(Pipe(traj, gridder, log));
+  } else if (iname == "radial") {
+    gridder2->setSDC(Radial(traj, log));
+  } else {
+    HD5::Reader reader(iname, log);
+    auto const sdcInfo = reader.readInfo();
+    auto const trajInfo = traj.info();
+    if (sdcInfo.read_points != trajInfo.read_points ||
+        sdcInfo.spokes_total() != trajInfo.spokes_total()) {
+      Log::Fail(
+          "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
+          sdcInfo.read_points,
+          sdcInfo.spokes_total(),
+          trajInfo.read_points,
+          trajInfo.spokes_total());
+    }
+    gridder2->setSDC(reader.readSDC(sdcInfo));
   }
 }
 

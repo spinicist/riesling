@@ -1,4 +1,4 @@
-#include "grid-kb.h"
+#include "grid-basis-kb.h"
 
 #include "../cropper.h"
 #include "../fft_plan.h"
@@ -10,14 +10,15 @@
 #include <cmath>
 
 template <int InPlane, int ThroughPlane>
-GridKB<InPlane, ThroughPlane>::GridKB(
+GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
     Trajectory const &traj,
     float const os,
     bool const unsafe,
+    R2 &basis,
     Log &log,
     float const inRes,
     bool const shrink)
-    : GridOp(traj.mapping(os, (InPlane / 2), inRes, shrink), unsafe, log)
+    : GridBasisOp(traj.mapping(os, (InPlane / 2), inRes, shrink), unsafe, basis, log)
     , betaIn_{(float)M_PI *
               sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
     , betaThrough_{(float)M_PI *
@@ -29,25 +30,6 @@ GridKB<InPlane, ThroughPlane>::GridKB(
   std::iota(indIn_.data(), indIn_.data() + InPlane, -InPlane / 2);
   std::iota(indThrough_.data(), indThrough_.data() + ThroughPlane, -ThroughPlane / 2);
 }
-
-template <int InPlane, int ThroughPlane>
-GridKB<InPlane, ThroughPlane>::GridKB(
-    Mapping const &mapping,
-    bool const unsafe,
-    Log &log)
-    : GridOp(mapping, unsafe, log)
-    , betaIn_{(float)M_PI *
-              sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
-    , betaThrough_{(float)M_PI *
-                   sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
-    , fft_{Sz3{InPlane, InPlane, ThroughPlane}, Log(), 1}
-{
-
-  // Array of indices used when building the kernel
-  std::iota(indIn_.data(), indIn_.data() + InPlane, -InPlane / 2);
-  std::iota(indThrough_.data(), indThrough_.data() + ThroughPlane, -ThroughPlane / 2);
-}
-
 
 template <int W, typename T>
 inline decltype(auto) KB(T const &x, float const beta)
@@ -60,7 +42,7 @@ inline decltype(auto) KB(T const &x, float const beta)
 }
 
 template <int InPlane, int ThroughPlane>
-void GridKB<InPlane, ThroughPlane>::kernel(Point3 const r, float const dc, Kernel &k) const
+void GridBasisKB<InPlane, ThroughPlane>::kernel(Point3 const r, float const dc, Kernel &k) const
 {
   InPlaneArray const kx = KB<InPlane>(indIn_.constant(r[0]) - indIn_, betaIn_);
   InPlaneArray const ky = KB<InPlane>(indIn_.constant(r[1]) - indIn_, betaIn_);
@@ -86,44 +68,56 @@ void GridKB<InPlane, ThroughPlane>::kernel(Point3 const r, float const dc, Kerne
 }
 
 template <int InPlane, int ThroughPlane>
-void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
+void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart) const
 {
-  assert(noncart.dimension(0) == cart.dimension(0));
-  assert(cart.dimension(1) == mapping_.cartDims[0]);
-  assert(cart.dimension(2) == mapping_.cartDims[1]);
-  assert(cart.dimension(3) == mapping_.cartDims[2]);
+  assert(cart.dimension(0) == noncart.dimension(0));
+  assert(cart.dimension(1) == basis_.dimension(1));
+  assert(cart.dimension(2) == mapping_.cartDims[0]);
+  assert(cart.dimension(3) == mapping_.cartDims[1]);
+  assert(cart.dimension(4) == mapping_.cartDims[2]);
   assert(mapping_.sortedIndices.size() == mapping_.cart.size());
 
-  long const nchan = cart.dimension(0);
   using FixZero = Eigen::type2index<0>;
   using FixOne = Eigen::type2index<1>;
   using FixIn = Eigen::type2index<InPlane>;
   using FixThrough = Eigen::type2index<ThroughPlane>;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne> rshNC;
-  Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> brdNC;
+  long const nchan = cart.dimension(0);
+  long const nB = cart.dimension(1);
+
+  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> rshNC;
+  Eigen::IndexList<FixOne, int, FixIn, FixIn, FixThrough> brdNC;
   rshNC.set(0, nchan);
+  brdNC.set(1, nB);
 
-  Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> rshC;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne> brdC;
-  brdC.set(0, nchan);
+  Eigen::IndexList<FixOne, FixOne, FixIn, FixIn, FixThrough> rshK;
+  Eigen::IndexList<int, int, FixOne, FixOne, FixOne> brdK;
+  brdK.set(0, nchan);
+  brdK.set(1, nB);
 
-  Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
+  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> rshB;
+  Eigen::IndexList<int, FixOne, FixIn, FixIn, FixThrough> brdB;
+  rshB.set(1, nB);
+  brdB.set(0, nchan);
+
+  Eigen::IndexList<int, int, FixIn, FixIn, FixThrough> szC;
   szC.set(0, nchan);
+  szC.set(1, nB);
 
   auto dev = Threads::GlobalDevice();
   long const nThreads = dev.numThreads();
-  std::vector<Cx4> workspace(nThreads);
+  std::vector<Cx5> workspace(nThreads);
   std::vector<long> minZ(nThreads, 0L), szZ(nThreads, 0L);
   auto grid_task = [&](long const lo, long const hi, long const ti) {
     // Allocate working space for this thread
     Kernel k;
-    Eigen::IndexList<FixZero, int, int, int> stC;
+    Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
     minZ[ti] = mapping_.cart[mapping_.sortedIndices[lo]].z - ((ThroughPlane - 1) / 2);
 
     if (safe_) {
       long const maxZ = mapping_.cart[mapping_.sortedIndices[hi - 1]].z + (ThroughPlane / 2);
       szZ[ti] = maxZ - minZ[ti] + 1;
-      workspace[ti].resize(cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]);
+      workspace[ti].resize(
+          cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
       workspace[ti].setZero();
     }
 
@@ -134,16 +128,24 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
       auto const nc = mapping_.noncart[si];
       auto const nck = noncart.chip(nc.spoke, 2).chip(nc.read, 1);
       kernel(mapping_.offset[si], pow(mapping_.sdc[si], DCexp_), k);
-      stC.set(1, c.x - (InPlane / 2));
-      stC.set(2, c.y - (InPlane / 2));
+      stC.set(2, c.x - (InPlane / 2));
+      stC.set(3, c.y - (InPlane / 2));
       if (safe_) {
-        stC.set(3, c.z - (ThroughPlane / 2) - minZ[ti]);
+        stC.set(4, c.z - (ThroughPlane / 2) - minZ[ti]);
         workspace[ti].slice(stC, szC) += nck.reshape(rshNC).broadcast(brdNC) *
-                                         k.template cast<Cx>().reshape(rshC).broadcast(brdC);
+                                         k.template cast<Cx>().reshape(rshK).broadcast(brdK) *
+                                         basis_.chip(nc.spoke % basis_.dimension(0), 0)
+                                             .template cast<Cx>()
+                                             .reshape(rshB)
+                                             .broadcast(brdB);
       } else {
-        stC.set(3, c.z - (ThroughPlane / 2));
+        stC.set(4, c.z - (ThroughPlane / 2));
         cart.slice(stC, szC) += nck.reshape(rshNC).broadcast(brdNC) *
-                                k.template cast<Cx>().reshape(rshC).broadcast(brdC);
+                                k.template cast<Cx>().reshape(rshK).broadcast(brdK) *
+                                basis_.chip(nc.spoke % basis_.dimension(0), 0)
+                                    .template cast<Cx>()
+                                    .reshape(rshB)
+                                    .broadcast(brdB);
       }
     }
   };
@@ -156,8 +158,8 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
     for (long ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
         cart.slice(
-                Sz4{0, 0, 0, minZ[ti]},
-                Sz4{cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]})
+                Sz5{0, 0, 0, 0, minZ[ti]},
+                Sz5{cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]})
             .device(dev) += workspace[ti];
       }
     }
@@ -166,38 +168,46 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
 }
 
 template <int InPlane, int ThroughPlane>
-void GridKB<InPlane, ThroughPlane>::A(Cx4 const &cart, Cx3 &noncart) const
+void GridBasisKB<InPlane, ThroughPlane>::A(Input const &cart, Output &noncart) const
 {
-  assert(noncart.dimension(0) == cart.dimension(0));
-  assert(cart.dimension(1) == mapping_.cartDims[0]);
-  assert(cart.dimension(2) == mapping_.cartDims[1]);
-  assert(cart.dimension(3) == mapping_.cartDims[2]);
+  assert(cart.dimension(0) == noncart.dimension(0));
+  assert(cart.dimension(1) == basis_.dimension(1));
+  assert(cart.dimension(2) == mapping_.cartDims[0]);
+  assert(cart.dimension(3) == mapping_.cartDims[1]);
+  assert(cart.dimension(4) == mapping_.cartDims[2]);
 
   long const nchan = cart.dimension(0);
+  long const nB = basis_.dimension(1);
   using FixZero = Eigen::type2index<0>;
   using FixIn = Eigen::type2index<InPlane>;
   using FixThrough = Eigen::type2index<ThroughPlane>;
-  Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
+  Eigen::IndexList<int, int, FixIn, FixIn, FixThrough> szC;
   szC.set(0, nchan);
+  szC.set(1, nB);
 
   auto grid_task = [&](long const lo, long const hi) {
     Kernel k;
-    Eigen::IndexList<FixZero, int, int, int> stC;
+    Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
     for (auto ii = lo; ii < hi; ii++) {
       log_.progress(ii, lo, hi);
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       kernel(mapping_.offset[si], 1.f, k);
-      stC.set(1, c.x - (InPlane / 2));
-      stC.set(2, c.y - (InPlane / 2));
-      stC.set(3, c.z - (ThroughPlane / 2));
-      noncart.chip(nc.spoke, 2).chip(nc.read, 1) = cart.slice(stC, szC).contract(
-          k.template cast<Cx>(),
-          Eigen::IndexPairList<
-              Eigen::type2indexpair<1, 0>,
-              Eigen::type2indexpair<2, 1>,
-              Eigen::type2indexpair<3, 2>>());
+      stC.set(2, c.x - (InPlane / 2));
+      stC.set(3, c.y - (InPlane / 2));
+      stC.set(4, c.z - (ThroughPlane / 2));
+      noncart.chip(nc.spoke, 2).chip(nc.read, 1) =
+          cart.slice(stC, szC)
+              .contract(
+                  basis_.chip(nc.spoke % basis_.dimension(0), 0).template cast<Cx>(),
+                  Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
+              .contract(
+                  k.template cast<Cx>(),
+                  Eigen::IndexPairList<
+                      Eigen::type2indexpair<1, 0>,
+                      Eigen::type2indexpair<2, 1>,
+                      Eigen::type2indexpair<3, 2>>());
     }
   };
   auto const &start = log_.now();
@@ -207,7 +217,7 @@ void GridKB<InPlane, ThroughPlane>::A(Cx4 const &cart, Cx3 &noncart) const
 }
 
 template <int InPlane, int ThroughPlane>
-R3 GridKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
+R3 GridBasisKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
 {
   // There is an analytic expression for this but I haven't got it right to date
   auto gridSz = this->gridDims();
@@ -227,5 +237,5 @@ R3 GridKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
   return a;
 }
 
-template struct GridKB<3, 3>;
-template struct GridKB<3, 1>;
+template struct GridBasisKB<3, 3>;
+template struct GridBasisKB<3, 1>;

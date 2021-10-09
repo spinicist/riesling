@@ -16,7 +16,7 @@ TEST_CASE("ops-crop", "[ops]")
     x.setRandom();
     y.setRandom();
 
-    Crop3 crop(x.dimensions(), y.dimensions());
+    CropOp3 crop(x.dimensions(), y.dimensions());
     crop.A(x, xy);
     crop.Adj(y, yx);
 

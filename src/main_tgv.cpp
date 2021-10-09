@@ -1,12 +1,9 @@
 #include "types.h"
 
 #include "cropper.h"
-#include "fft_plan.h"
 #include "filter.h"
-#include "io_hd5.h"
-#include "io_nifti.h"
 #include "log.h"
-#include "op/grid.h"
+#include "op/recon.h"
 #include "parse_args.h"
 #include "sense.h"
 #include "tensorOps.h"
@@ -15,6 +12,7 @@
 int main_tgv(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
+  COMMON_SENSE_ARGS;
 
   args::ValueFlag<float> thr(
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
@@ -38,7 +36,7 @@ int main_tgv(args::Subparser &parser)
   Cx3 rad_ks = info.noncartesianVolume();
 
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Load(sdc.Get(), traj, gridder, log);
+  SDC::Choose(sdc.Get(), traj, gridder, log);
   gridder->setSDCExponent(sdc_exp.Get());
 
   Cx4 grid = gridder->newMultichannel(info.channels);
@@ -50,32 +48,15 @@ int main_tgv(args::Subparser &parser)
   long currentVolume = -1;
   Cx4 sense = iter_cropper.newMultichannel(info.channels);
   if (senseFile) {
-    sense = LoadSENSE(senseFile.Get(), iter_cropper.dims(info.channels), log);
+    sense = LoadSENSE(senseFile.Get(), log);
   } else {
     currentVolume = LastOrVal(senseVolume, info.volumes);
     reader.readNoncartesian(currentVolume, rad_ks);
     sense = DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
 
-  auto dev = Threads::GlobalDevice();
-  EncodeFunction enc = [&](Cx3 &x, Cx3 &y) {
-    auto const &start = log.now();
-    x.device(dev) = x / apo.cast<Cx>();
-    grid.setZero();
-    iter_cropper.crop4(grid).device(Threads::GlobalDevice()) = Tile(x, info.channels) * sense;
-    fft.forward(grid);
-    gridder->A(grid, y);
-    log.debug("Encode: {}", log.toNow(start));
-  };
-
-  DecodeFunction dec = [&](Cx3 const &y, Cx3 &x) {
-    auto const &start = log.now();
-    gridder->Adj(y, grid);
-    fft.reverse(grid);
-    x.device(dev) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    x.device(dev) = x / apo.cast<Cx>();
-    log.debug("Decode: {}", log.toNow(start));
-  };
+  ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), sense, log);
+  recon.setPreconditioning(sdc_exp.Get());
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
   Cx3 image = out_cropper.newImage();
@@ -88,16 +69,7 @@ int main_tgv(args::Subparser &parser)
       currentVolume = iv;
     }
     image = out_cropper.crop3(
-        tgv(rad_ks,
-            iter_cropper.size(),
-            enc,
-            dec,
-            its.Get(),
-            thr.Get(),
-            alpha.Get(),
-            reduce.Get(),
-            step_size.Get(),
-            log));
+        tgv(its.Get(), thr.Get(), alpha.Get(), reduce.Get(), step_size.Get(), recon, rad_ks, log));
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
     }

@@ -11,6 +11,7 @@ extern args::HelpFlag help;
 extern args::Flag verbose;
 
 Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
+Log ParseCommand(args::Subparser &parser);
 
 struct Vector3fReader
 {
@@ -25,6 +26,18 @@ std::string OutName(
 
 extern void WriteOutput(
     Cx4 const &vols,
+    bool const mag,
+    bool const needsSwap,
+    Info const &info,
+    std::string const &iname,
+    std::string const &oname,
+    std::string const &suffix,
+    std::string const &ext,
+    Log &log);
+
+void WriteBasisVolumes(
+    Cx5 const &basisVols,
+    R2 const &basis,
     bool const mag,
     bool const needsSwap,
     Info const &info,
@@ -54,12 +67,6 @@ long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
   CORE_RECON_ARGS                                                                                  \
   args::ValueFlag<float> out_fov(                                                                  \
       parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                   \
-  args::ValueFlag<std::string> senseFile(                                                          \
-      parser, "SENSE", "Read SENSE maps from specified .h5 file", {"sense", 's'});                 \
-  args::ValueFlag<long> senseVolume(                                                               \
-      parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"senseVolume"}, 0);             \
-  args::ValueFlag<float> senseLambda(                                                              \
-      parser, "LAMBDA", "SENSE regularization", {"lambda", 'l'}, 0.f);                             \
   args::ValueFlag<float> tukey_s(                                                                  \
       parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);                \
   args::ValueFlag<float> tukey_e(                                                                  \

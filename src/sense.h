@@ -5,6 +5,15 @@
 #include "io_hd5.h"
 #include "log.h"
 #include "op/grid.h"
+#include "parse_args.h"
+
+#define COMMON_SENSE_ARGS                                                                          \
+  args::ValueFlag<std::string> senseFile(                                                          \
+      parser, "SENSE", "Read SENSE maps from specified .h5 file", {"sense", 's'});                 \
+  args::ValueFlag<long> senseVolume(                                                               \
+      parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"senseVolume"}, 0);             \
+  args::ValueFlag<float> senseLambda(                                                              \
+      parser, "LAMBDA", "SENSE regularization", {"lambda", 'l'}, 0.f);
 
 /*!
  * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
@@ -19,9 +28,9 @@ Cx4 DirectSENSE(
     Log &log);
 
 /*!
- * Loads a set of SENSE maps from a file, they must match dims
+ * Loads a set of SENSE maps from a file
  */
-Cx4 LoadSENSE(std::string const &calFile, Sz4 const dims, Log &log);
+Cx4 LoadSENSE(std::string const &calFile, Log &log);
 
 /*!
  * Loads a set of SENSE maps from a file and interpolate them to correct dims

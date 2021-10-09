@@ -130,25 +130,24 @@ inline void ProjectQ(Cx4 &q, float const a, Eigen::ThreadPoolDevice &dev)
 }
 
 Cx3 tgv(
-    Cx3 &ks_data,
-    Cx3::Dimensions const &dims,
-    EncodeFunction const &encode,
-    DecodeFunction const &decode,
     long const max_its,
     float const thresh,
     float const alpha,
     float const reduction,
     float const step_size,
+    ReconOp &op,
+    Cx3 &ks_data,
     Log &log)
 {
   auto dev = Threads::GlobalDevice();
 
+  auto const dims = op.dimensions();
   Sz4 dims3{dims[0], dims[1], dims[2], 3};
   Sz4 dims6{dims[0], dims[1], dims[2], 6};
 
   // Primal variables
   Cx3 u(dims);                 // Main variable
-  decode(ks_data, u);          // Get starting point
+  op.Adj(ks_data, u);          // Get starting point
   float const scale = Norm(u); // Normalise so scaling factors stay sane
   ks_data = ks_data / ks_data.constant(scale);
   u = u / u.constant(scale);
@@ -212,14 +211,14 @@ Cx3 tgv(
     ProjectQ(q, alpha0, dev);
 
     // Update r (in k-space)
-    encode(u_, ks_res);
+    op.A(u_, ks_res);
     ks_res.device(dev) = ks_res - ks_data;
     r.device(dev) = (r + tau_d * ks_res) / r.constant(1.f + tau_d); // Prox op
 
     // Update u
     u_old.device(dev) = u;
     Div(p, divp, dev);
-    decode(r, v_decode);
+    op.Adj(r, v_decode);
     u.device(dev) = u - tau_p * (divp + v_decode); // Paper says +tau, but code says -tau
     u_.device(dev) = 2.0 * u - u_old;
 

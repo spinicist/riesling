@@ -114,7 +114,8 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
       FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
 
   Mapping mapping;
-  switch (info_.type) {
+  mapping.type = info_.type;
+  switch (mapping.type) {
   case Info::Type::ThreeD:
     mapping.cartDims = Sz3{gridSz, gridSz, gridSz};
     break;
@@ -122,6 +123,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
     mapping.cartDims = Sz3{gridSz, gridSz, info_.matrix[2]};
     break;
   }
+  mapping.noncartDims = Sz3{info_.channels, info_.read_points, info_.spokes_total()};
   mapping.osamp = os;
   long const totalSz = info_.read_points * info_.spokes_total();
   mapping.cart.reserve(totalSz);

@@ -45,6 +45,7 @@ private:
 
 using ThreeD = Plan<3, 3>;
 using ThreeDMulti = Plan<4, 3>;
+using ThreeDBasis = Plan<5, 3>;
 using TwoDMulti = Plan<3, 2>;
 
 } // namespace FFT

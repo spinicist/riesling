@@ -22,6 +22,8 @@ struct Operator
   using Output = Eigen::Tensor<Cx, OutRank>;
   using OutputDims = typename Output::Dimensions;
 
+  virtual OutputDims outputDimensions() const = 0;
+
   virtual void A(Input const &x, Output &y) const = 0;
   virtual void Adj(Output const &x, Input &y) const = 0;
   virtual void AdjA(Input const &x, Input &y) const
@@ -29,7 +31,7 @@ struct Operator
     for (auto ii = 0; ii < InRank; ii++) {
       assert(y.dimension(ii) == x.dimension(ii));
     }
-    Output z;
+    Output z(outputDimensions());
     A(x, z);
     Adj(z, y);
   }

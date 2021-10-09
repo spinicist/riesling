@@ -1,13 +1,10 @@
 #include "types.h"
 
-#include "cg.h"
+#include "cg.hpp"
 #include "cropper.h"
-#include "fft_plan.h"
 #include "filter.h"
-#include "io_hd5.h"
-#include "io_nifti.h"
 #include "log.h"
-#include "op/grid.h"
+#include "op/recon.h"
 #include "parse_args.h"
 #include "sense.h"
 #include "tensorOps.h"
@@ -16,6 +13,7 @@
 int main_cgvar(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
+  COMMON_SENSE_ARGS;
 
   args::ValueFlag<float> thr(
       parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
@@ -33,61 +31,24 @@ int main_cgvar(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
-  auto const &info = traj.info();
+  Info const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Load(sdc.Get(), traj, gridder, log);
-  gridder->setSDCExponent(sdc_exp.Get());
-
-  Cx4 grid = gridder->newMultichannel(info.channels);
-  Cropper iter_cropper(info, gridder->gridDims(), iter_fov.Get(), log);
-  R3 const apo = gridder->apodization(iter_cropper.size());
-  FFT::ThreeDMulti fft(grid, log);
 
   long currentVolume = -1;
-  Cx4 sense = iter_cropper.newMultichannel(info.channels);
+  Cx4 senseMaps;
   if (senseFile) {
-    sense = LoadSENSE(senseFile.Get(), iter_cropper.dims(info.channels), log);
+    senseMaps = LoadSENSE(senseFile.Get(), log);
   } else {
     currentVolume = LastOrVal(senseVolume, info.volumes);
     reader.readNoncartesian(currentVolume, rad_ks);
-    sense = DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
+    senseMaps = DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), rad_ks, senseLambda.Get(), log);
   }
 
-  Cx3 ones(1, info.read_points, info.spokes_total());
-  ones.setConstant(1.0f);
-  Cx4 transfer = gridder->newMultichannel(1);
-
-  auto dev = Threads::GlobalDevice();
-  CgVarSystem sys = [&](Cx3 const &x, Cx3 &y, float const pre) {
-    auto const start = log.now();
-    gridder->setSDCExponent(pre);
-    transfer.device(dev) = transfer.constant(0.f);
-    gridder->Adj(ones, transfer);
-
-    grid.device(dev) = grid.constant(0.f);
-    iter_cropper.crop4(grid).device(dev) = sense * Tile(x, info.channels);
-    fft.forward(grid);
-    grid.device(dev) = grid * transfer.broadcast(Sz4{info.channels, 1, 1, 1});
-    fft.reverse(grid);
-
-    y.device(dev) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    log.debug("System: {}", log.toNow(start));
-  };
-
-  DecodeFunction dec = [&](Cx3 const &x, Cx3 &y) {
-    auto const &start = log.now();
-    y.device(dev) = y.constant(0.f);
-    gridder->setSDCExponent(1.f);
-    gridder->Adj(x, grid);
-    fft.reverse(grid);
-    y.device(dev) = (iter_cropper.crop4(grid) * sense.conjugate()).sum(Sz1{0});
-    y.device(dev) = y / apo.cast<Cx>();
-    log.debug("Decode: {}", log.toNow(start));
-  };
-
-  Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
-  Cx3 vol = iter_cropper.newImage();
+  ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, log);
+  recon.setPreconditioning(sdc_exp.Get());
+  recon.calcToeplitz(traj.info());
+  Cx3 vol(recon.dimensions());
+  Cropper out_cropper(info, vol.dimensions(), out_fov.Get(), log);
   Cx3 cropped = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   auto const &all_start = log.now();
@@ -97,8 +58,8 @@ int main_cgvar(args::Subparser &parser)
       reader.readNoncartesian(iv, rad_ks);
       currentVolume = iv;
     }
-    dec(rad_ks, vol); // Initialize
-    cgvar(sys, its.Get(), thr.Get(), pre0.Get(), pre1.Get(), vol, log);
+    recon.Adj(rad_ks, vol); // Initialize
+    cgvar(its.Get(), thr.Get(), pre0.Get(), pre1.Get(), recon, vol, log);
     cropped = out_cropper.crop3(vol);
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped, log);

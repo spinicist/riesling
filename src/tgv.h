@@ -1,6 +1,7 @@
 #pragma once
 
 #include "log.h"
+#include "op/recon.h"
 #include "types.h"
 
 /* F. Knoll, K. Bredies, T. Pock, and R. Stollberger, ‘Second order total generalized variation
@@ -8,13 +9,11 @@
  * doi: 10.1002/mrm.22595.
  */
 Cx3 tgv(
-    Cx3 &radial,
-    Cx3::Dimensions const &dims,
-    EncodeFunction const &encode,
-    DecodeFunction const &decode,
     long const max_its,
     float const thresh,
     float const alpha0,
     float const reduction,
     float const step_size,
+    ReconOp &op,
+    Cx3 &radial,
     Log &log);

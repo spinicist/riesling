@@ -1,24 +1,22 @@
 #pragma once
 
 #include "../trajectory.h"
-#include "grid.h"
+#include "grid-basis.h"
 
-struct GridNN final : GridOp
+struct GridBasisNN final : GridBasisOp
 {
-  GridNN(
+  GridBasisNN(
       Trajectory const &traj,
       float const os,
       bool const unsafe,
+      R2 &basis,
       Log &log,
       float const inRes = -1.f,
       bool const shrink = false);
-  GridNN(
-      Mapping const &map,
-      bool const unsafe,
-      Log &log);
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;
 
   R3 apodization(Sz3 const sz) const;
+
 };

@@ -26,6 +26,7 @@ using R1 = Eigen::Tensor<float, 1>;                       // 1D Real data
 using R2 = Eigen::Tensor<float, 2>;                       // 2D Real data
 using R3 = Eigen::Tensor<float, 3>;                       // 3D Real data
 using R4 = Eigen::Tensor<float, 4>;                       // 4D Real data
+using R5 = Eigen::Tensor<float, 5>;                       // 4D Real data
 
 using Rd1 = Eigen::Tensor<double, 1>;
 
@@ -47,6 +48,7 @@ using Sz1 = Cx1::Dimensions;
 using Sz2 = Cx2::Dimensions;
 using Sz3 = Cx3::Dimensions;
 using Sz4 = Cx4::Dimensions;
+using Sz5 = Cx5::Dimensions;
 using Size2 = Eigen::Array<int16_t, 2, 1>;
 using Size3 = Eigen::Array<int16_t, 3, 1>;
 using Size4 = Eigen::Array<int16_t, 4, 1>;

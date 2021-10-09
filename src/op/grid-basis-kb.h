@@ -2,22 +2,20 @@
 
 #include "../fft_plan.h"
 #include "../trajectory.h"
-#include "grid.h"
+#include "grid-basis.h"
 
 template <int InPlane, int ThroughPlane>
-struct GridKB final : GridOp
+struct GridBasisKB final : GridBasisOp
 {
-  GridKB(
+  GridBasisKB(
       Trajectory const &traj,
       float const os,
       bool const unsafe,
+      R2 &basis,
       Log &log,
       float const inRes = -1.f,
       bool const shrink = false);
-  GridKB(
-      Mapping const &mapping,
-      bool const unsafe,
-      Log &log);
+
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;
 
@@ -35,5 +33,5 @@ private:
   FFT::ThreeD fft_; // For sqrt kernel
 };
 
-using GridKB3D = GridKB<3, 3>;
-using GridKB2D = GridKB<3, 1>;
+using GridBasisKB3D = GridBasisKB<3, 3>;
+using GridBasisKB2D = GridBasisKB<3, 1>;

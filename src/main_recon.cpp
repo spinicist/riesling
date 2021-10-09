@@ -14,7 +14,7 @@
 int main_recon(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
-
+  COMMON_SENSE_ARGS;
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
   args::Flag save_channels(
       parser, "CHANNELS", "Write out individual channels from first volume", {"channels", 'c'});
@@ -25,7 +25,7 @@ int main_recon(args::Subparser &parser)
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Load(sdc.Get(), traj, gridder, log);
+  SDC::Choose(sdc.Get(), traj, gridder, log);
   gridder->setSDCExponent(sdc_exp.Get());
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
   R3 const apo = gridder->apodization(cropper.size());
@@ -41,7 +41,7 @@ int main_recon(args::Subparser &parser)
   Cx4 sense = rss ? Cx4() : cropper.newMultichannel(info.channels);
   if (!rss) {
     if (senseFile) {
-      sense = LoadSENSE(senseFile.Get(), cropper.dims(info.channels), log);
+      sense = LoadSENSE(senseFile.Get(), log);
     } else {
       currentVolume = LastOrVal(senseVolume, info.volumes);
       reader.readNoncartesian(currentVolume, rad_ks);

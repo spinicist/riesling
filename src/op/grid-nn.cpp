@@ -18,6 +18,14 @@ GridNN::GridNN(
 {
 }
 
+GridNN::GridNN(
+    Mapping const &mapping,
+    bool const unsafe,
+    Log &log)
+    : GridOp(mapping, unsafe, log)
+{
+}
+
 void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
 {
   assert(noncart.dimension(0) == cart.dimension(0));

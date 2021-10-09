@@ -202,4 +202,28 @@ void load_tensor_slab(
   }
 }
 
+template <typename Scalar, int ND>
+Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &name, Log const &log)
+{
+  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) {
+    Log::Fail("Could not open tensor {}", name);
+  }
+  std::array<hsize_t, ND> dims;
+  hid_t ds = H5Dget_space(dset);
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  typename Eigen::Tensor<Scalar, ND>::Dimensions tDims;
+  std::copy_n(dims.begin(), ND, tDims.begin());
+  std::reverse(tDims.begin(), tDims.end()); // HD5=row-major, Eigen=col-major
+  Eigen::Tensor<Scalar, ND> tensor(tDims);
+  herr_t ret_value =
+      H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
+  if (ret_value < 0) {
+    Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
+  } else {
+    log.info("Read dataset: {}", name);
+  }
+  return tensor;
+}
+
 } // namespace HD5

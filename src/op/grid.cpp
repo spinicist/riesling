@@ -23,6 +23,11 @@ Sz3 GridOp::gridDims() const
   return mapping_.cartDims;
 }
 
+Sz3 GridOp::outputDimensions() const
+{
+  return mapping_.noncartDims;
+}
+
 Cx4 GridOp::newMultichannel(long const nc) const
 {
   Cx4 g(nc, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]);
@@ -69,6 +74,11 @@ void GridOp::sqrtOff()
   sqrt_ = false;
 }
 
+Mapping const &GridOp::mapping() const
+{
+  return mapping_;
+}
+
 std::unique_ptr<GridOp> make_grid(
     Trajectory const &traj,
     float const os,
@@ -86,5 +96,22 @@ std::unique_ptr<GridOp> make_grid(
     }
   } else {
     return std::make_unique<GridNN>(traj, os, fastgrid, log, res, shrink);
+  }
+}
+
+std::unique_ptr<GridOp> make_grid(
+    Mapping const &mapping,
+    bool const kb,
+    bool const fastgrid,
+    Log &log)
+{
+  if (kb) {
+    if (mapping.type == Info::Type::ThreeD) {
+      return std::make_unique<GridKB3D>(mapping, fastgrid, log);
+    } else {
+      return std::make_unique<GridKB2D>(mapping, fastgrid, log);
+    }
+  } else {
+    return std::make_unique<GridNN>(mapping, fastgrid, log);
   }
 }

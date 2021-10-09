@@ -19,7 +19,7 @@ int main_traj(args::Subparser &parser)
   auto const info = traj.info();
 
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Load(sdc.Get(), traj, gridder, log);
+  SDC::Choose(sdc.Get(), traj, gridder, log);
   Cx4 grid = gridder->newMultichannel(1);
   FFT::ThreeDMulti fft(grid, log);
 

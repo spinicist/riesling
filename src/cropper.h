@@ -67,6 +67,14 @@ struct Cropper
     return x.slice(st, Sz4{x.dimension(0), sz_[0], sz_[1], sz_[2]});
   }
 
+  template <typename T>
+  decltype(auto) crop5(T &&x) const
+  {
+    return x.slice(
+        Sz5{0, 0, st_[0], st_[1], st_[2]},
+        Sz5{x.dimension(0), x.dimension(1), sz_[0], sz_[1], sz_[2]});
+  }
+
 private:
   Sz3 sz_, st_;
   void calcStart(Sz3 const &fullSz);

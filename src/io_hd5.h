@@ -23,6 +23,12 @@ struct Writer
   void writeImage(Cx4 const &volumes);
   void writeSDC(R2 const &sdc);
   void writeSENSE(Cx4 const &sense);
+  void writeBasis(R2 const &basis);
+  void writeDynamics(R2 const &dynamics);
+  void writeRealMatrix(R2 const &mat, std::string const &label);
+  void writeReal4(R4 const &d, std::string const &label);
+  void writeReal5(R5 const &d, std::string const &label);
+  void writeBasisImages(Cx5 const &basis);
 
 private:
   Log &log_;
@@ -43,6 +49,9 @@ struct Reader
   void readCartesian(Cx4 &volume);
   void readSENSE(Cx4 &sense);
   Cx4 readSENSE();
+  R2 readBasis();
+  R2 readRealMatrix(std::string const &label);
+  Cx5 readBasisImages();
 
 private:
   Log &log_;

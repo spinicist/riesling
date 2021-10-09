@@ -5,8 +5,8 @@ include(BuildType)
 include(GitVersion)
 
 # Deal with GCC 8 and std::filesystem
-# Thanks to Deniz Bahadir on the CMake Discourse
 add_link_options( "$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>" )
+# Thanks to Deniz Bahadir on the CMake Discourse
 link_libraries( "$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>" )
 
 find_package(Threads REQUIRED)
@@ -24,7 +24,6 @@ add_definitions(-DEIGEN_USE_THREADS)
 
 # Common library between tests and main executable
 add_library(vineyard
-    src/cg.cpp
     src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp
@@ -37,6 +36,7 @@ add_library(vineyard
     src/hankel.cpp
     src/io_hd5.cpp
     src/io_nifti.cpp
+    src/llr.cpp
     src/log.cpp
     src/padder.cpp
     src/phantom_sphere.cpp
@@ -44,6 +44,8 @@ add_library(vineyard
     src/parse_args.cpp
     src/sdc.cpp
     src/sense.cpp
+    src/sim-prep.cpp
+    src/sim-eddy.cpp
     src/slab_correct.cpp
     src/tgv.cpp
     src/threads.cpp
@@ -57,6 +59,11 @@ add_library(vineyard
     src/op/grid.cpp
     src/op/grid-nn.cpp
     src/op/grid-kb.cpp
+    src/op/grid-basis.cpp
+    src/op/grid-basis-nn.cpp
+    src/op/grid-basis-kb.cpp
+    src/op/recon.cpp
+    src/op/recon-basis.cpp
     src/op/sense.cpp
 )
 target_link_libraries(vineyard PUBLIC
@@ -71,6 +78,11 @@ target_link_libraries(vineyard PUBLIC
 
 # Main executable
 add_executable(riesling
+    src/main_basis_admm.cpp
+    src/main_basis_blend.cpp
+    src/main_basis_dict.cpp
+    src/main_basis_recon.cpp
+    src/main_basis_sim.cpp
     src/main_cg.cpp
     src/main_cgvar.cpp
     src/main_compress.cpp
