@@ -6,13 +6,15 @@
 %
 %% --- Generate phantom data --- %%
 %
-% First generate a phantom dataset in your terminal:
-%
-% $ rielsing phantom --shepp_logan sl_phantom
-% 
-% This will greate a phantom dataset which we can run our tests with
+% First generate a phantom dataset:
+% You may have to uncomment and edit the following line to access your
+% riesling binary:
+setenv('PATH', '/users/tobias/Code/install/bin');
+system('riesling phantom --shepp_logan sl-phantom -v');
 
-[kspace, info, traj] = read_riesling('sl_phantom.h5');
+% Read this into Matlab
+
+[kspace, traj, info] = riesling_read('sl-phantom.h5');
 
 % Size of datastructures
 % kspace: [nrcv, npoints, nspokes, nvol]
@@ -53,14 +55,22 @@ info_us = info;
 info_us.spokes_hi = size(kspace_us,3);
 
 % Now we write the data back to a new file
-write_riesling('sl_phantom_us.h5', kspace_us, traj_us, info_us);
+riesling_write('sl-phantom-us.h5', kspace_us, traj_us, info_us);
 
 %% Compare images
 % Run a riesling recon of both phantom datasets to see effect of
 % undersampling
-%
-% $ riesling rss sl_phantom.h5
-% $ riesling rss sl_phantom_us.h5
-%
-% View it using your favourite nifti viewer
-% $ fsleyes sl_phantom-rss.nii sl_phantom_us-rss.nii
+
+system('riesling recon sl-phantom.h5 -v')
+system('riesling recon sl-phantom-us.h5 -v')
+
+image_full = riesling_read('sl-phantom-recon.h5');
+image_us   = riesling_read('sl-phantom-us-recon.h5');
+
+figure;
+subplot(2,1,1);
+imagesc(squeeze(abs(image_full(:,:,end/2))));
+axis('image');
+subplot(2,1,2);
+imagesc(squeeze(abs(image_us(:,:,end/2))));
+axis('image');

@@ -72,6 +72,7 @@ hid_t InfoType(Log &log)
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "echoes", HOFFSET(Info, echoes), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
   status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
   status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
@@ -84,7 +85,7 @@ hid_t InfoType(Log &log)
 void CheckInfoType(hid_t handle, Log &log)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
-  constexpr int N = 13;
+  constexpr int N = 14;
   std::array<std::string, N> const names{"matrix",
                                          "voxel_size",
                                          "read_points",
@@ -95,6 +96,7 @@ void CheckInfoType(hid_t handle, Log &log)
                                          "channels",
                                          "type",
                                          "volumes",
+                                         "echoes",
                                          "tr",
                                          "origin",
                                          "direction"};
