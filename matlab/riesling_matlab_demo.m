@@ -2,8 +2,6 @@
 % Quick demo of the basic reading and writing capabilities in the riesling
 % matlab library.
 %
-% Emil Ljungberg, King's College London
-%
 %% --- Generate phantom data --- %%
 %
 % First generate a phantom dataset:
@@ -52,7 +50,7 @@ traj_us = traj(:,:,1:2:end);
 
 % We also need to modify the infor structure
 info_us = info;
-info_us.spokes_hi = size(kspace_us,3);
+info_us.spokes_hi = size(kspace_us, 3);
 
 % Now we write the data back to a new file
 riesling_write('sl-phantom-us.h5', kspace_us, traj_us, info_us);
@@ -68,9 +66,11 @@ image_full = riesling_read('sl-phantom-recon.h5');
 image_us   = riesling_read('sl-phantom-us-recon.h5');
 
 figure;
-subplot(2,1,1);
-imagesc(squeeze(abs(image_full(:,:,end/2))));
-axis('image');
-subplot(2,1,2);
-imagesc(squeeze(abs(image_us(:,:,end/2))));
-axis('image');
+subplot(1,2,1);
+imagesc(squeeze(abs(image_full(:,:,floor(end*0.4)))));
+axis('image'); axis off; title("Fully sampled", 'fontsize', 20);
+
+subplot(1,2,2);
+imagesc(squeeze(abs(image_us(:,:,floor(end*0.4)))));
+axis('image'); axis off; title("Undersampled", 'fontsize', 20)
+colormap gray

@@ -15,10 +15,21 @@ if isfile(fname)
     error("%s already exists. Please delete or choose a different output name\n",fname);
 end
 
-check_fields = fieldnames(riesling_info());
+ref_info = riesling_info();
+check_fields = fieldnames(ref_info);
 info_fields = fieldnames(info);
 if ~isequal(intersect(check_fields, info_fields, 'stable'), check_fields)
     error("Header fields are incorrect. Use riesling_info to generate template header");
+end
+
+% Check info data sizes
+for i=1:length(check_fields)
+    size_in = size(info.(check_fields{i}));
+    size_ref = size(ref_info.(check_fields{i}));
+    if ~isequal(size_in, size_ref)
+        error("info.%s is the wrong size. Currently (%d,%d), should be (%d,%d)",... 
+            check_fields{i}, size_in(1), size_in(2), size_ref(1), size_ref(2));
+    end
 end
 
 fprintf('Opening %s\n',fname);
