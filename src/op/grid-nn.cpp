@@ -47,7 +47,6 @@ void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const dc = pow(mapping_.sdc[si], DCexp_);
-      auto const offset = mapping_.offset[si];
       if (safe_) {
         workspace[ti].chip(c.z - minZ[ti], 3).chip(c.y, 2).chip(c.x, 1) +=
             noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
@@ -90,7 +89,6 @@ void GridNN::A(Cx4 const &cart, Cx3 &noncart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const offset = mapping_.offset[si];
       noncart.chip(nc.spoke, 2).chip(nc.read, 1) = cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1);
     }
   };
