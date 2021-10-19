@@ -19,16 +19,18 @@ int main_basis_sim(args::Subparser &parser)
   args::ValueFlag<float> Trec(
       parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> T1Lo(
-      parser, "T1", "Low value of T1 for basis (default 0.25s)", {"T1lo"}, 0.25f);
+      parser, "T1", "Low value of T1 for basis (default 0.4s)", {"T1lo"}, 0.4f);
   args::ValueFlag<float> T1Hi(
       parser, "T1", "High value of T1 for basis (default 5s)", {"T1hi"}, 5.f);
   args::ValueFlag<long> nT1(
       parser, "N", "Number of T1 values for basis (default 128)", {"nT1"}, 32);
-  args::ValueFlag<float> betaLo(parser, "β", "Low value for β (default -1)", {"betalo"}, -1.f);
-  args::ValueFlag<float> betaHi(parser, "β", "High value for β (default 1)", {"betahi"}, 1.f);
-  args::ValueFlag<long> nbeta(
+  args::ValueFlag<float> bLo(parser, "β", "Low value for β (default -1)", {"betalo"}, -1.f);
+  args::ValueFlag<float> bHi(parser, "β", "High value for β (default 1)", {"betahi"}, 1.f);
+  args::ValueFlag<long> nb(
       parser, "N", "Number of beta values for basis (default 128)", {"nbeta"}, 32);
-  args::ValueFlag<long> ngamma(parser, "N", "Number of eddy-current angles", {"eddy"}, 32);
+  args::Flag bLog(parser, "", "Use logarithmic spacing for β", {"betalog"});
+  args::ValueFlag<long> ng(parser, "N", "Number of eddy-current angles", {"eddy"}, 32);
+  args::Flag pc(parser, "PC", "Uses 0/180 phase-cycling", {"pc"});
   args::ValueFlag<float> thresh(
       parser, "T", "Threshold for SVD retention (default 0.05)", {"thresh"}, 0.05);
   args::ValueFlag<long> nBasis(
@@ -36,37 +38,21 @@ int main_basis_sim(args::Subparser &parser)
 
   Log log = ParseCommand(parser);
 
-  const auto [sims, params] = ngamma ? Sim::Diffusion(
-                                           nT1.Get(),
-                                           T1Lo.Get(),
-                                           T1Hi.Get(),
-                                           nbeta.Get(),
-                                           ngamma.Get(),
-                                           betaLo.Get(),
-                                           betaHi.Get(),
-                                           sps.Get(),
-                                           alpha.Get(),
-                                           TR.Get(),
-                                           TI.Get(),
-                                           Trec.Get(),
-                                           log)
-                                     : Sim::Simple(
-                                           nT1.Get(),
-                                           T1Lo.Get(),
-                                           T1Hi.Get(),
-                                           nbeta.Get(),
-                                           betaLo.Get(),
-                                           betaHi.Get(),
-                                           sps.Get(),
-                                           alpha.Get(),
-                                           TR.Get(),
-                                           TI.Get(),
-                                           Trec.Get(),
-                                           log);
-
+  Sequence const seq{sps.Get(), alpha.Get(), TR.Get(), TI.Get(), Trec.Get()};
+  SimResult results;
+  if (ng) {
+    results = Sim::Diffusion(
+        nT1.Get(), T1Lo.Get(), T1Hi.Get(), nb.Get(), bLo.Get(), bHi.Get(), ng.Get(), seq, log);
+  } else if (pc) {
+    results = Sim::PhaseCycled(
+        nT1.Get(), T1Lo.Get(), T1Hi.Get(), nb.Get(), bLo.Get(), bHi.Get(), seq, log);
+  } else {
+    results = Sim::Simple(
+        nT1.Get(), T1Lo.Get(), T1Hi.Get(), nb.Get(), bLo.Get(), bHi.Get(), bLog, seq, log);
+  }
   // Calculate SVD
-  log.info("Calculating SVD {}x{}", sims.rows(), sims.cols());
-  auto const svd = sims.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+  log.info("Calculating SVD {}x{}", results.dynamics.rows(), results.dynamics.cols());
+  auto const svd = results.dynamics.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
   float const flip = (svd.matrixV().leftCols(1)(0) < 0) ? -1.f : 1.f;
 
   long nRetain = 0;
@@ -93,10 +79,12 @@ int main_basis_sim(args::Subparser &parser)
   Eigen::ArrayXXf Dk = D * basisMat;
   Dk = Dk.colwise() / Dk.rowwise().norm();
 
-  Eigen::TensorMap<R2 const> dynamics(sims.data(), sims.rows(), sims.cols());
+  Eigen::TensorMap<R2 const> dynamics(
+      results.dynamics.data(), results.dynamics.rows(), results.dynamics.cols());
   Eigen::TensorMap<R2 const> basis(basisMat.data(), basisMat.rows(), basisMat.cols());
   Eigen::TensorMap<R2 const> dictionary(Dk.data(), Dk.rows(), Dk.cols());
-  Eigen::TensorMap<R2 const> parameters(params.data(), params.rows(), params.cols());
+  Eigen::TensorMap<R2 const> parameters(
+      results.parameters.data(), results.parameters.rows(), results.parameters.cols());
 
   HD5::Writer writer(oname.Get(), log);
   writer.writeBasis(R2(basis));

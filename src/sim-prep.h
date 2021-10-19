@@ -13,11 +13,18 @@ SimResult Simple(
     long const nbeta,
     float const betaLo,
     float const betaHi,
-    long const sps,
-    float const alpha,
-    float const TR,
-    float const TI,
-    float const Trec,
+    bool const betaLog,
+    Sequence const seq,
     Log &log);
 
-}
+SimResult PhaseCycled(
+    long const nT1,
+    float const T1Lo,
+    float const T1Hi,
+    long const nbeta,
+    float const betaLo,
+    float const betaHi,
+    Sequence const seq,
+    Log &log);
+
+} // namespace Sim
