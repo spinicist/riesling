@@ -128,12 +128,11 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   mapping.noncart.reserve(totalSz);
   mapping.sdc.reserve(totalSz);
   mapping.offset.reserve(totalSz);
-
   std::fesetround(FE_TONEAREST);
-  float const maxRad = ratio * ((gridSz / 2) - 1.f);
+  float const maxRad = ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
   float const maxLoRad = maxRad * (float)(info_.read_gap) / (float)info_.read_points;
-  float const maxHiRad = maxRad - kRad;
+  float const maxHiRad = std::min(maxRad - kRad, ratio * maxRad);
   auto start = log_.now();
   for (int32_t is = 0; is < info_.spokes_total(); is++) {
     for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
