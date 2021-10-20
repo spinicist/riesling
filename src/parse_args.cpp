@@ -1,6 +1,7 @@
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "parse_args.h"
+#include "tensorOps.h"
 #include "threads.h"
 #include <algorithm>
 #include <filesystem>
@@ -50,6 +51,7 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
       verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
 
   Log log(level);
+  log.info(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
   if (!iname) {
     throw args::Error("No input file specified");
   }
@@ -57,7 +59,6 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
     log.info("Using {} threads", nthreads.Get());
     Threads::SetGlobalThreadCount(nthreads.Get());
   }
-  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
   return log;
 }
 
@@ -114,7 +115,7 @@ void WriteOutput(
     writer.writeInfo(info);
     writer.writeImage(vols);
   } else if (ext.compare("nii") == 0) {
-    auto &output = needsSwap ? SwapToChannelLast(vols) : vols;
+    auto &output = needsSwap ? FirstToLast4(vols) : vols;
     if (mag) {
       R4 const mVols = output.abs();
       WriteNifti(info, mVols, fname, log);
@@ -130,7 +131,6 @@ void WriteBasisVolumes(
     Cx5 const &vols,
     R2 const &basis,
     bool const mag,
-    bool const needsSwap,
     Info const &info,
     std::string const &iname,
     std::string const &oname,
@@ -145,10 +145,9 @@ void WriteBasisVolumes(
     writer.writeBasis(basis);
     writer.writeBasisImages(vols);
   } else {
-    for (long ib = 0; ib < vols.dimension(0); ib++) {
-      auto const fname = OutName(iname, oname, fmt::format("{}-{:02d}", suffix, ib), ext);
-      Cx4 const b = vols.chip(ib, 0);
-      auto &output = needsSwap ? SwapToChannelLast(b) : b;
+    for (long iv = 0; iv < vols.dimension(4); iv++) {
+      auto const fname = OutName(iname, oname, fmt::format("{}-{:02d}", suffix, iv), ext);
+      Cx4 const output = FirstToLast4(vols.chip(iv, 4));
       if (mag) {
         R4 const mVols = output.abs();
         WriteNifti(info, mVols, fname, log);

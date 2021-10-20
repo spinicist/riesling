@@ -1,6 +1,7 @@
 #include "log.h"
 
 #include "io_nifti.h"
+#include "tensorOps.h"
 
 Log::Log(Level const l)
     : out_level_{l}
@@ -75,7 +76,7 @@ void Log::image(Cx3 const &img, std::string const &name) const
 void Log::image(Cx4 const &img, std::string const &name) const
 {
   if ((out_level_ >= Level::Images)) {
-    WriteNifti(Info(), SwapToChannelLast(img), name, *this);
+    WriteNifti(Info(), Cx4(FirstToLast4(img)), name, *this);
   }
 }
 

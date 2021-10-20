@@ -30,7 +30,7 @@ int main_basis_dict(args::Subparser &parser)
   R2 const parameters = dict.readRealMatrix("parameters");
 
   WriteBasisVolumes(
-      images, basis, false, false, info, iname.Get(), oname.Get(), "basis", "nii", log);
+      images, basis, false, info, iname.Get(), oname.Get(), "basis", "nii", log);
 
   R5 out_pars(
       parameters.dimension(1),
@@ -66,17 +66,6 @@ int main_basis_dict(args::Subparser &parser)
                 dist = test_dist;
                 index = in;
               }
-              // fmt::print(
-              //     "{} {} {} {}: proj {} dict {} test_dist {} dist {} index {}\n",
-              //     iz,
-              //     iy,
-              //     ix,
-              //     in,
-              //     Transpose(proj),
-              //     Transpose(dict_proj),
-              //     test_dist,
-              //     dist,
-              //     index);
             }
             out_mag(ix, iy, iz, iv) = norm;
             out_pars.chip(iv, 4).chip(iz, 3).chip(iy, 2).chip(ix, 1) = parameters.chip(index, 0);
@@ -95,10 +84,10 @@ int main_basis_dict(args::Subparser &parser)
     writer.writeReal5(out_pars, "parameters");
     writer.writeReal4(out_mag, "magnitude");
   } else {
-    for (long ib = 0; ib < out_pars.dimension(0); ib++) {
+    for (long iv = 0; iv < out_pars.dimension(4); iv++) {
       auto const fname =
-          OutName(iname.Get(), oname.Get(), fmt::format("parameter-{:02d}", ib), ext);
-      R4 const p = out_pars.chip(ib, 0);
+          OutName(iname.Get(), oname.Get(), fmt::format("parameter-{:02d}", iv), ext);
+      R4 const p = FirstToLast4(out_pars.chip(iv, 4));
       WriteNifti(info, p, fname, log);
     }
     auto const fname = OutName(iname.Get(), oname.Get(), "magnitude", ext);

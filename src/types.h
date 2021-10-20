@@ -58,12 +58,3 @@ using Point4 = Eigen::Matrix<float, 4, 1>;
 using Points3 = Eigen::Matrix<float, 3, -1>;
 using Points4 = Eigen::Matrix<float, 4, -1>;
 using Pads3 = Eigen::array<std::pair<long, long>, 3>;
-
-// This is the type of the lambda functions to represent the encode/decode operators
-using EncodeFunction = std::function<void(Cx3 &x, Cx3 &y)>;
-using DecodeFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
-
-inline Cx4 SwapToChannelLast(Cx4 const &x)
-{
-  return Cx4(x.shuffle(Sz4{1, 2, 3, 0}));
-}

@@ -71,7 +71,7 @@ int main_recon(args::Subparser &parser)
     out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
     if (save_channels && (iv == 0)) {
-      Cx4 const cropped = SwapToChannelLast(cropper.crop4(grid));
+      Cx4 const cropped = FirstToLast4(cropper.crop4(grid));
       WriteOutput(
           cropped, false, false, info, iname.Get(), oname.Get(), "channels", oftype.Get(), log);
     }

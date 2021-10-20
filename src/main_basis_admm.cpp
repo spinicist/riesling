@@ -88,7 +88,7 @@ int main_basis_admm(args::Subparser &parser)
   }
   log.info("All Volumes: {}", log.toNow(all_start));
   WriteBasisVolumes(
-      out, basis, mag, false, info, iname.Get(), oname.Get(), "basis-admm", oftype.Get(), log);
+      out, basis, mag, info, iname.Get(), oname.Get(), "basis-admm", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

@@ -6,6 +6,7 @@
 #include "log.h"
 #include "op/grid.h"
 #include "parse_args.h"
+#include "tensorOps.h"
 #include "threads.h"
 #include <complex>
 
@@ -27,10 +28,10 @@ int main_traj(args::Subparser &parser)
   Cx3 rad_ks(1, info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
   gridder->Adj(rad_ks, grid);
-  Cx4 output = SwapToChannelLast(grid);
+  Cx4 output = FirstToLast4(grid);
   WriteOutput(output, true, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
   fft.reverse(grid);
-  output = SwapToChannelLast(grid);
+  output = FirstToLast4(grid);
   WriteOutput(output, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;

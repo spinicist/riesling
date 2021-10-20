@@ -39,7 +39,6 @@ void WriteBasisVolumes(
     Cx5 const &basisVols,
     R2 const &basis,
     bool const mag,
-    bool const needsSwap,
     Info const &info,
     std::string const &iname,
     std::string const &oname,

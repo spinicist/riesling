@@ -106,7 +106,7 @@ int main_basis_recon(args::Subparser &parser)
   }
   log.info("All volumes: {}", log.toNow(all_start));
   WriteBasisVolumes(
-      out, basis, mag, false, info, iname.Get(), oname.Get(), "basis-recon", oftype.Get(), log);
+      out, basis, mag, info, iname.Get(), oname.Get(), "basis-recon", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

@@ -10,6 +10,7 @@
 #include "op/grid.h"
 #include "parse_args.h"
 #include "sense.h"
+#include "tensorOps.h"
 
 int main_sense(args::Subparser &parser)
 {
@@ -40,7 +41,7 @@ int main_sense(args::Subparser &parser)
     writer.writeInfo(info);
     writer.writeSENSE(sense);
   } else {
-    Cx4 const output = SwapToChannelLast(sense);
+    Cx4 const output = FirstToLast4(sense);
     WriteNifti(info, output, fname, log);
   }
 

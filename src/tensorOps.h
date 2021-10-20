@@ -72,6 +72,16 @@ inline decltype(auto) ConjugateSum(T &&x, U &&y)
 }
 
 template <typename T>
+inline decltype(auto) FirstToLast4(T const &x)
+{
+  Eigen::IndexList<Eigen::type2index<1>,
+                   Eigen::type2index<2>,
+                   Eigen::type2index<3>,
+                   Eigen::type2index<0>> indices;
+  return x.shuffle(indices);
+}
+
+template <typename T>
 inline decltype(auto) Tile(T &&x, long const N)
 {
   Eigen::IndexList<Eigen::type2index<1>, int, int, int> res;
