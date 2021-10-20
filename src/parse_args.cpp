@@ -54,6 +54,7 @@ Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
     throw args::Error("No input file specified");
   }
   if (nthreads) {
+    log.info("Using {} threads", nthreads.Get());
     Threads::SetGlobalThreadCount(nthreads.Get());
   }
   log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
