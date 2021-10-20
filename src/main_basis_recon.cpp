@@ -60,7 +60,7 @@ int main_basis_recon(args::Subparser &parser)
   Sz3 const cropSz = cropper.size();
   R3 const apo = gridder->apodization(cropper.size());
   Cx3 rad_ks = info.noncartesianVolume();
-  auto gridSz = gridder->gridDims();
+  auto const gridSz = gridder->gridDims();
   Cx5 grid(info.channels, nB, gridSz[0], gridSz[1], gridSz[2]);
   Cx4 images(nB, cropSz[0], cropSz[1], cropSz[2]);
   Cx5 out(nB, cropSz[0], cropSz[1], cropSz[2], info.volumes);
