@@ -44,6 +44,7 @@ add_library(vineyard
     src/parse_args.cpp
     src/sdc.cpp
     src/sense.cpp
+    src/sim.cpp
     src/sim-prep.cpp
     src/sim-eddy.cpp
     src/slab_correct.cpp

@@ -2,8 +2,10 @@
 
 #include "types.h"
 
+namespace Sim {
+
 // A simple struct for returning multiple things from a simulation without tuple
-struct SimResult
+struct Result
 {
   Eigen::MatrixXf dynamics;
   Eigen::MatrixXf parameters;
@@ -15,3 +17,19 @@ struct Sequence
   long sps;
   float alpha, TR, TI, Trec;
 };
+
+// Arg lists are getting annoyingly long
+struct Parameter
+{
+  long N;
+  float lo, hi;
+  bool logspaced;
+
+  float value(long ii) const;
+
+  private:
+    float linspace(long i) const;
+    float logspace(long i) const;
+};
+
+}
