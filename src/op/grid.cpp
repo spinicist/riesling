@@ -10,17 +10,8 @@
 #include <cmath>
 
 GridOp::GridOp(Mapping map, bool const unsafe, Log &log)
-    : mapping_{std::move(map)}
-    , safe_{!unsafe}
-    , sqrt_{false}
-    , log_{log}
-    , DCexp_{1.f}
+    : GridBase(map, unsafe, log)
 {
-}
-
-Sz3 GridOp::gridDims() const
-{
-  return mapping_.cartDims;
 }
 
 Sz3 GridOp::outputDimensions() const
@@ -33,50 +24,6 @@ Cx4 GridOp::newMultichannel(long const nc) const
   Cx4 g(nc, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]);
   g.setZero();
   return g;
-}
-
-void GridOp::setSDC(float const d)
-{
-  std::fill(mapping_.sdc.begin(), mapping_.sdc.end(), d);
-}
-
-void GridOp ::setSDC(R2 const &sdc)
-{
-  std::transform(
-      mapping_.noncart.begin(),
-      mapping_.noncart.end(),
-      mapping_.sdc.begin(),
-      [&sdc](NoncartesianIndex const &nc) { return sdc(nc.read, nc.spoke); });
-}
-
-void GridOp::setSDCExponent(float const dce)
-{
-  DCexp_ = dce;
-}
-
-void GridOp::setUnsafe()
-{
-  safe_ = true;
-}
-
-void GridOp::setSafe()
-{
-  safe_ = false;
-}
-
-void GridOp::sqrtOn()
-{
-  sqrt_ = true;
-}
-
-void GridOp::sqrtOff()
-{
-  sqrt_ = false;
-}
-
-Mapping const &GridOp::mapping() const
-{
-  return mapping_;
 }
 
 std::unique_ptr<GridOp> make_grid(

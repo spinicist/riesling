@@ -19,6 +19,15 @@ GridBasisNN::GridBasisNN(
 {
 }
 
+GridBasisNN::GridBasisNN(
+  Mapping const &map,
+  bool const unsafe,
+  R2 &basis,
+  Log &log)
+  : GridBasisOp(map, unsafe, basis, log)
+{}
+
+
 void GridBasisNN::Adj(Output const &noncart, Input &cart) const
 {
   assert(cart.dimension(0) == noncart.dimension(0));

@@ -15,6 +15,11 @@ struct GridBasisKB final : GridBasisOp
       Log &log,
       float const inRes = -1.f,
       bool const shrink = false);
+  GridBasisKB(
+      Mapping const &mapping,
+      bool const unsafe,
+      R2 &basis,
+      Log &log);
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;

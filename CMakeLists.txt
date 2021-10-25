@@ -58,6 +58,7 @@ add_library(vineyard
     src/op/operator.cpp
     src/op/crop.cpp
     src/op/grid.cpp
+    src/op/gridBase.cpp
     src/op/grid-nn.cpp
     src/op/grid-kb.cpp
     src/op/grid-basis.cpp
