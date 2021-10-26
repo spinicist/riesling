@@ -47,6 +47,7 @@ add_library(vineyard
     src/sim.cpp
     src/sim-prep.cpp
     src/sim-eddy.cpp
+    src/sim-mupa.cpp
     src/slab_correct.cpp
     src/tgv.cpp
     src/threads.cpp

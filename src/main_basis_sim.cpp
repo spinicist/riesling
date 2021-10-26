@@ -5,6 +5,7 @@
 #include "parse_args.h"
 #include "sim-eddy.h"
 #include "sim-prep.h"
+#include "sim-mupa.h"
 
 int main_basis_sim(args::Subparser &parser)
 {
@@ -38,6 +39,8 @@ int main_basis_sim(args::Subparser &parser)
   args::ValueFlag<float> gLo(parser, "ɣ", "Low value for eddy-current angles (default -π)", {"eddylo"}, -M_PI);
   args::ValueFlag<float> gHi(parser, "ɣ", "High value for eddy-current angles (default π)", {"eddyhi"}, M_PI);
 
+  args::Flag mupa(parser, "M", "Run a MUPA simulation", {"mupa"});
+
   args::ValueFlag<float> thresh(
       parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 95.f);
   args::ValueFlag<long> nBasis(
@@ -53,6 +56,9 @@ int main_basis_sim(args::Subparser &parser)
   if (ng) {
     Sim::Parameter const gamma{ng.Get(), gLo.Get(), gHi.Get(), false};
     results = Sim::Eddy(T1, beta, gamma, B1,  seq, log);
+  } else if (mupa) {
+    Sim::Parameter const T2{65, 0.02, 0.2, true};
+    results = Sim::MUPA(T1, T2, B1, seq, log);
   } else {
     results = Sim::Simple(T1, beta, B1, seq, log);
   }
