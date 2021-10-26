@@ -49,6 +49,7 @@ Result Eddy(
       for (long iB1 = 0; iB1 < B1p.N; iB1++) {
         float const B1 = B1p.value(iB1);
         float const cosa = cos(B1 * seq.alpha * M_PI / 180.f);
+        float const sina = sin(B1 * seq.alpha * M_PI / 180.f);
         Eigen::Matrix2f A;
         A << cosa, 0.f, 0.f, 1.f;
 
@@ -75,26 +76,26 @@ Result Eddy(
             long col = 0;
             Eigen::Vector2f Mz{Mz_ss, 1.f};
             for (long ii = 0; ii < seq.sps; ii++) {
+                sims(row, col++) = Mz(0) * sina;
                 Mz = A * Mz;
-                sims(row, col++) = Mz(0);
                 Mz = E1 * Mz;
             }
             Mz = Ei * PC1 * B * Er * Mz;
             for (long ii = 0; ii < seq.sps; ii++) {
+                sims(row, col++) = Mz(0) * sina;
                 Mz = A * Mz;
-                sims(row, col++) = Mz(0);
                 Mz = E1 * Mz;
             }
             Mz = Ei * PC2 * B * Er * Mz;
             for (long ii = 0; ii < seq.sps; ii++) {
+                sims(row, col++) = Mz(0) * sina;
                 Mz = A * Mz;
-                sims(row, col++) = Mz(0);
                 Mz = E1 * Mz;
             }
             Mz = Ei * PC3 * B * Er * Mz;
             for (long ii = 0; ii < seq.sps; ii++) {
+                sims(row, col++) = Mz(0) * sina;
                 Mz = A * Mz;
-                sims(row, col++) = Mz(0);
                 Mz = E1 * Mz;
             }
             if (col != (4 * seq.sps)) {

@@ -30,6 +30,7 @@ Result Simple(
   for (long iB1 = 0; iB1 < B1p.N; iB1++) {
     float const B1 = B1p.value(iB1);
     float const cosa = cos(B1 * seq.alpha * M_PI / 180.f);
+    float const sina = sin(B1 * seq.alpha * M_PI / 180.f);
     Eigen::Matrix2f A;
     A << cosa, 0.f, 0.f, 1.f;
     for (long it = 0; it < T1p.N; it++) {
@@ -58,8 +59,8 @@ Result Simple(
         // Now fill in dynamic
         Eigen::Vector2f Mz{Mz_ss, 1.f};
         for (long ii = 0; ii < seq.sps; ii++) {
+          sims(row, ii) = Mz(0) * sina;
           Mz = A * Mz;
-          sims(row, ii) = Mz(0);
           Mz = E1 * Mz;
         }
         parameters(row, 0) = T1;
