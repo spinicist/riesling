@@ -55,7 +55,7 @@ void admm(
     cg(lsq_its, lsq_thresh, augmented, x, log);
     xpu.device(dev) = x + u;
     z = reg(xpu);
-    u = xpu - z;
+    u.device(dev) = xpu - z;
     log.info("Finished ADMM iteration {}", ii);
     log.image(x, fmt::format("admm-x-{:02d}.nii", ii));
     log.image(xpu, fmt::format("admm-xpu-{:02d}.nii", ii));

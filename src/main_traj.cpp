@@ -34,12 +34,12 @@ int main_traj(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
-    if ((traj.info().spokes_total() % basis.dimension(0)) != 0) {
-      Log::Fail(
-          FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
-          basis.dimension(0),
-          traj.info().spokes_total());
-    }
+    // if ((traj.info().spokes_total() % basis.dimension(0)) != 0) {
+    //   Log::Fail(
+    //       FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
+    //       basis.dimension(0),
+    //       traj.info().spokes_total());
+    // }
     auto gridderBasis = make_grid_basis(gridder->mapping(), kb, fastgrid, basis, log);
     gridderBasis->setSDC(gridder->SDC());
     auto const gridSz = gridderBasis->gridDims();

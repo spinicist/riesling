@@ -11,7 +11,6 @@ Result Eddy(
   Parameter const beta,
   Parameter const gamma,
   Parameter const B1,
-  bool const negPC,
   Sequence const seq,
   Log &log);
 

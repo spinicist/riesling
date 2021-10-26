@@ -28,14 +28,11 @@ Cx4 DirectSENSE(
   Cx4 grid = gridder->newMultichannel(data.dimension(0));
   FFT::ThreeDMulti fftN(grid, log);
   gridder->Adj(data, grid);
-  log.image(grid, "sense-grid.nii");
   float const end_rad = traj.info().voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid, log);
-  log.image(grid, "sense-filtered.nii");
   fftN.reverse(grid);
-  log.image(grid, "sense-fft.nii");
 
   Cropper crop(traj.info(), gridder->gridDims(), fov, log);
   Cx4 channels = crop.crop4(grid);
@@ -49,6 +46,7 @@ Cx4 DirectSENSE(
   log.image(channels, "sense-channels.nii");
   log.info("Normalizing channel images");
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
+  log.image(channels, "sense-maps.nii");
   log.info("Finished SENSE maps");
   return channels;
 }

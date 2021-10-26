@@ -20,7 +20,7 @@ Cx4 llr(Cx4 const &x, float const l, long const p, Log &log)
           auto const svd = patch.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
           // Soft-threhold svals
           Eigen::ArrayXf s = svd.singularValues();
-          float const sl = s(0) * l;
+          float const sl = s.sum() * l;
           s = s * (s.abs() - sl) / s.abs();
           s = (s > sl).select(s, 0.f);
           patch.transpose() = svd.matrixU() * s.matrix().asDiagonal() * svd.matrixV().adjoint();

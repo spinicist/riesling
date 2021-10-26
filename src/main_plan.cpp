@@ -30,12 +30,12 @@ int main_plan(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
-    if ((traj.info().spokes_total() % basis.dimension(0)) != 0) {
-      Log::Fail(
-          FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
-          basis.dimension(0),
-          traj.info().spokes_total());
-    }
+    // if ((traj.info().spokes_total() % basis.dimension(0)) != 0) {
+    //   Log::Fail(
+    //       FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
+    //       basis.dimension(0),
+    //       traj.info().spokes_total());
+    // }
     auto gridderBasis = make_grid_basis(traj, osamp.Get(), kb, fastgrid, basis, log);
     auto const gridSz = gridderBasis->gridDims();
     Cx5 grid5(traj.info().channels, nB, gridSz[0], gridSz[1], gridSz[2]);

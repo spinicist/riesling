@@ -7,6 +7,7 @@ int main(int const argc, char const *const argv[])
   args::Group commands(parser, "COMMANDS");
   args::Command basis_admm(commands, "basis-admm", "ADMM recon with a basis", &main_basis_admm);
   args::Command basis_blend(commands, "basis-blend", "Blend basis images", &main_basis_blend);
+  args::Command basis_cg(commands, "basis-cg", "cgSENSE with basis", &main_basis_cg);
   args::Command basis_dict(commands, "basis-dict", "Dictionary lookup", &main_basis_dict);
   args::Command basis_recon(commands, "basis-recon", "Basis recon with a basis", &main_basis_recon);
   args::Command basis_sim(commands, "basis-sim", "Simulate a basis set", &main_basis_sim);

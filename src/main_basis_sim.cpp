@@ -37,7 +37,7 @@ int main_basis_sim(args::Subparser &parser)
   args::ValueFlag<long> ng(parser, "N", "Number of eddy-current angles", {"eddy"}, 32);
   args::ValueFlag<float> gLo(parser, "ɣ", "Low value for eddy-current angles (default -π)", {"eddylo"}, -M_PI);
   args::ValueFlag<float> gHi(parser, "ɣ", "High value for eddy-current angles (default π)", {"eddyhi"}, M_PI);
-  args::Flag negPC(parser, "-PC", "Phase-cycling increment is negative", {"negpc"});
+
   args::ValueFlag<float> thresh(
       parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 95.f);
   args::ValueFlag<long> nBasis(
@@ -52,7 +52,7 @@ int main_basis_sim(args::Subparser &parser)
   Sim::Result results;
   if (ng) {
     Sim::Parameter const gamma{ng.Get(), gLo.Get(), gHi.Get(), false};
-    results = Sim::Eddy(T1, beta, gamma, B1, negPC,  seq, log);
+    results = Sim::Eddy(T1, beta, gamma, B1,  seq, log);
   } else {
     results = Sim::Simple(T1, beta, B1, seq, log);
   }
@@ -61,7 +61,6 @@ int main_basis_sim(args::Subparser &parser)
   // Calculate SVD
   log.info("Calculating SVD {}x{}", results.dynamics.rows(), results.dynamics.cols());
   auto const svd = results.dynamics.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-  float const flip = (svd.matrixV().leftCols(1)(0) < 0) ? -1.f : 1.f;
   Eigen::ArrayXf const vals = svd.singularValues().array().square();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
@@ -75,6 +74,7 @@ int main_basis_sim(args::Subparser &parser)
   log.info("Retaining {} basis vectors, cumulative energy: {}\n",
            nRetain,
            cumsum.head(nRetain).transpose());
+  float const flip = (svd.matrixV().leftCols(1)(0) < 0) ? -1.f : 1.f;
   Eigen::MatrixXf const basisMat = flip * svd.matrixV().leftCols(nRetain) * std::sqrt(nT);
   log.info("Computing dictionary");
   Eigen::MatrixXf const D = svd.matrixU().leftCols(nRetain) *

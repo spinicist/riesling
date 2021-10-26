@@ -10,7 +10,6 @@ Result Eddy(
   Parameter const betap,
   Parameter const gammap,
   Parameter const B1p,
-  bool const negPC,
   Sequence const seq,
   Log &log)
 {
@@ -60,7 +59,7 @@ Result Eddy(
           for (long ig = 0; ig < gammap.N; ig++) {
             float const gamma = gammap.value(ig);
             Eigen::Matrix2f PC0, PC1, PC2, PC3;
-            float pinc = (M_PI / 2.f) * (negPC ? -1.f : 1.f);
+            float pinc = M_PI / 2.f;
             PC0 << cos(gamma), 0.f, 0.f, 1.f;
             PC1 << cos(gamma + pinc), 0.f, 0.f, 1.f;
             PC2 << cos(gamma + pinc * 2.f), 0.f, 0.f, 1.f;

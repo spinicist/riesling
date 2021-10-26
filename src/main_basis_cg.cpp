@@ -4,7 +4,6 @@
 #include "cropper.h"
 #include "fft_plan.h"
 #include "filter.h"
-#include "llr.h"
 #include "log.h"
 #include "op/grid.h"
 #include "op/recon-basis.h"
@@ -12,18 +11,17 @@
 #include "parse_args.h"
 #include "sense.h"
 
-int main_basis_admm(args::Subparser &parser)
+int main_basis_cg(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
-  args::ValueFlag<float> thr(parser, "T", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
-  args::ValueFlag<long> lsq_its(parser, "ITS", "Inner iterations (8)", {"lsq_its"}, 8);
-  args::ValueFlag<long> admm_its(parser, "ITS", "Outer iterations (8)", {"admm_its"}, 8);
+
+  args::ValueFlag<float> thr(
+      parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
+  args::ValueFlag<long> its(
+      parser, "MAX ITS", "Maximum number of iterations (8)", {'i', "max_its"}, 8);
   args::ValueFlag<float> iter_fov(
       parser, "FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
-  args::ValueFlag<float> reg_lambda(parser, "L", "ADMM lambda (default 0.1)", {"reg"}, 0.1f);
-  args::ValueFlag<float> reg_rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
-  args::ValueFlag<long> patch(parser, "P", "Patch size for LLR (default 8)", {"patch"}, 8);
   args::ValueFlag<std::string> basisFile(
       parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
@@ -65,8 +63,6 @@ int main_basis_admm(args::Subparser &parser)
   ReconBasisOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, basis, log);
   recon.setPreconditioning(sdc_exp.Get());
 
-  auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get(), log); };
-
   auto sz = recon.dimensions();
   Cropper out_cropper(info, sz, out_fov.Get(), log);
   Cx4 vol(nB, sz[0], sz[1], sz[2]);
@@ -81,14 +77,14 @@ int main_basis_admm(args::Subparser &parser)
       currentVolume = iv;
     }
     recon.Adj(rad_ks, vol); // Initialize
-    admm(admm_its.Get(), lsq_its.Get(), thr.Get(), recon, reg_rho.Get(), reg, vol, log);
+    cg(its.Get(), thr.Get(), recon, vol, log);
     cropped = out_cropper.crop4(vol);
     out.chip(iv, 4) = cropped;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
   WriteBasisVolumes(
-      out, basis, mag, info, iname.Get(), oname.Get(), "basis-admm", oftype.Get(), log);
+      out, basis, mag, info, iname.Get(), oname.Get(), "basis-cg", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }
