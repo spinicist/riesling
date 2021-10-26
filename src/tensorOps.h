@@ -7,6 +7,8 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include "threads.h"
+
 // Tensor operations
 template <typename T>
 decltype(auto) Transpose(T const &a)
@@ -18,21 +20,24 @@ decltype(auto) Transpose(T const &a)
 template <typename T>
 typename T::Scalar Sum(T const &a)
 {
-  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s = a.sum();
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s;
+  s.device(Threads::GlobalDevice()) = a.sum();
   return s();
 }
 
 template <typename T>
 typename T::Scalar Maximum(T const &a)
 {
-  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m = a.maximum();
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;
+  m.device(Threads::GlobalDevice()) = a.maximum();
   return m();
 }
 
 template <typename T1, typename T2>
 typename T1::Scalar Dot(T1 const &a, T2 const &b)
 {
-  Eigen::TensorFixedSize<typename T1::Scalar, Eigen::Sizes<>> d = (a.conjugate() * b).sum();
+  Eigen::TensorFixedSize<typename T1::Scalar, Eigen::Sizes<>> d;
+  d.device(Threads::GlobalDevice()) = (a.conjugate() * b).sum();
   return d();
 }
 
@@ -74,10 +79,12 @@ inline decltype(auto) ConjugateSum(T &&x, U &&y)
 template <typename T>
 inline decltype(auto) FirstToLast4(T const &x)
 {
-  Eigen::IndexList<Eigen::type2index<1>,
-                   Eigen::type2index<2>,
-                   Eigen::type2index<3>,
-                   Eigen::type2index<0>> indices;
+  Eigen::IndexList<
+      Eigen::type2index<1>,
+      Eigen::type2index<2>,
+      Eigen::type2index<3>,
+      Eigen::type2index<0>>
+      indices;
   return x.shuffle(indices);
 }
 
