@@ -1,5 +1,5 @@
 #include "../../src/op/grid.h"
-#include "../../src/traj_archimedean.h"
+#include "../../src/traj_spirals.h"
 #include "../../src/trajectory.h"
 
 #include <catch2/catch.hpp>

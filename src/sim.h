@@ -15,7 +15,7 @@ struct Result
 struct Sequence
 {
   long sps;
-  float alpha, TR, TI, Trec;
+  float alpha, TR, Tramp, Tssi, TI, Trec;
 };
 
 // Arg lists are getting annoyingly long

@@ -9,6 +9,8 @@ int main(int const argc, char const *const argv[])
   args::Command basis_blend(commands, "basis-blend", "Blend basis images", &main_basis_blend);
   args::Command basis_cg(commands, "basis-cg", "cgSENSE with basis", &main_basis_cg);
   args::Command basis_dict(commands, "basis-dict", "Dictionary lookup", &main_basis_dict);
+  args::Command basis_phantom(
+      commands, "basis-phantom", "Phantom with a basis", &main_basis_phantom);
   args::Command basis_recon(commands, "basis-recon", "Basis recon with a basis", &main_basis_recon);
   args::Command basis_sim(commands, "basis-sim", "Simulate a basis set", &main_basis_sim);
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);

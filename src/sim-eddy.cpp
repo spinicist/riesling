@@ -27,7 +27,7 @@ Result Eddy(
   log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   long totalN = T1p.N * betap.N * gammap.N * B1p.N;
   Eigen::MatrixXf sims(totalN, 4 * seq.sps); // SVD expects observations in rows
-  Eigen::MatrixXf parameters(totalN, 4);
+  Eigen::MatrixXf parameters(totalN, 5);
 
   auto task = [&](long const lo, long const hi, long const ti) {
     long row = lo * gammap.N * betap.N * B1p.N;
@@ -101,10 +101,11 @@ Result Eddy(
             if (col != (4 * seq.sps)) {
                 Log::Fail("Programmer error");
             }
-            parameters(row, 0) = T1;
-            parameters(row, 1) = beta;
-            parameters(row, 2) = gamma;
-            parameters(row, 3) = B1;
+            parameters(row, 0) = Mz_ss;
+            parameters(row, 1) = T1;
+            parameters(row, 2) = beta;
+            parameters(row, 3) = gamma;
+            parameters(row, 4) = B1;
             row++;
           }
         }

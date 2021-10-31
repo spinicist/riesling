@@ -52,7 +52,7 @@ add_library(vineyard
     src/tgv.cpp
     src/threads.cpp
     src/trajectory.cpp
-    src/traj_archimedean.cpp
+    src/traj_spirals.cpp
     src/vc.cpp
     src/wavelets.cpp
     src/zinfandel.cpp
@@ -85,6 +85,7 @@ add_executable(riesling
     src/main_basis_blend.cpp
     src/main_basis_cg.cpp
     src/main_basis_dict.cpp
+    src/main_basis_phantom.cpp
     src/main_basis_recon.cpp
     src/main_basis_sim.cpp
     src/main_cg.cpp

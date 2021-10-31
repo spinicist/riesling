@@ -24,7 +24,7 @@ Result Simple(
   log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   long totalN = T1p.N * betap.N * B1p.N;
   Eigen::MatrixXf sims(totalN, seq.sps); // SVD expects observations in rows
-  Eigen::MatrixXf parameters(totalN, 3);
+  Eigen::MatrixXf parameters(totalN, 4);
 
   long row = 0;
   for (long iB1 = 0; iB1 < B1p.N; iB1++) {
@@ -63,9 +63,10 @@ Result Simple(
           Mz = A * Mz;
           Mz = E1 * Mz;
         }
-        parameters(row, 0) = T1;
-        parameters(row, 1) = beta;
-        parameters(row, 2) = B1;
+        parameters(row, 0) = Mz_ss;
+        parameters(row, 1) = T1;
+        parameters(row, 2) = beta;
+        parameters(row, 3) = B1;
         row++;
       }
     }

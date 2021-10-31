@@ -19,18 +19,26 @@ void Vector3fReader::operator()(
   float x, y, z;
   auto result = scn::scan(value, "{},{},{}", x, y, z);
   if (!result) {
-    fmt::print(
-        stderr,
-        fmt::fg(fmt::terminal_color::bright_red),
-        "Could not read vector for {} from value {} because {}\n",
-        name,
-        value,
-        result.error());
-    exit(EXIT_FAILURE);
+    Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error());
   }
   v.x() = x;
   v.y() = y;
   v.z() = z;
+}
+
+void VectorReader::operator()(
+    std::string const &name, std::string const &input, std::vector<float> &values)
+{
+  float val;
+  auto result = scn::scan(input, "{}", val);
+  if (result) {
+    values.push_back(val);
+  } else {
+    Log::Fail("Could not read argument for {}", name);
+  }
+  while ((result = scn::scan(result.range(), ",{}", val))) {
+    values.push_back(val);
+  }
 }
 
 args::Group global_group("GLOBAL OPTIONS");

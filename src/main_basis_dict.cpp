@@ -39,18 +39,17 @@ int main_basis_dict(args::Subparser &parser)
       images.dimension(3),
       images.dimension(4));
   out_pars.setZero();
-  R4 out_mag(images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
-  out_mag.setZero();
 
   long const N = dictionary.dimension(0);
   if (parameters.dimension(0) != N) {
-    Log::Fail("dictionary and parameter dimension mismatch");
+    Log::Fail("Dictionary has {} entries but parameters has {}", N, parameters.dimension(0));
   }
 
   for (long iv = 0; iv < images.dimension(4); iv++) {
     log.info("Processing volume {}", iv);
     auto ztask = [&](long const lo, long const hi, long const ti) {
       for (long iz = lo; iz < hi; iz++) {
+        log.progress(iz, lo, hi);
         for (long iy = 0; iy < images.dimension(2); iy++) {
           for (long ix = 0; ix < images.dimension(1); ix++) {
             Cx1 proj = images.chip(iv, 4).chip(iz, 3).chip(iy, 2).chip(ix, 1);
@@ -67,11 +66,10 @@ int main_basis_dict(args::Subparser &parser)
                 index = in;
               }
             }
-            out_mag(ix, iy, iz, iv) = norm;
             out_pars.chip(iv, 4).chip(iz, 3).chip(iy, 2).chip(ix, 1) = parameters.chip(index, 0);
+            out_pars(0, ix, iy, iz, iv) = norm / out_pars(0, ix, iy, iz, iv); // Scale Mz_ss to M0
           }
         }
-        log.progress(iz, lo, hi);
       }
     };
     Threads::RangeFor(ztask, images.dimension(3));
@@ -82,7 +80,6 @@ int main_basis_dict(args::Subparser &parser)
     auto const fname = OutName(iname.Get(), oname.Get(), "dict", ext);
     HD5::Writer writer(fname, log);
     writer.writeReal5(out_pars, "parameters");
-    writer.writeReal4(out_mag, "magnitude");
   } else {
     for (long iv = 0; iv < out_pars.dimension(4); iv++) {
       auto const fname =
@@ -90,8 +87,6 @@ int main_basis_dict(args::Subparser &parser)
       R4 const p = FirstToLast4(out_pars.chip(iv, 4));
       WriteNifti(info, p, fname, log);
     }
-    auto const fname = OutName(iname.Get(), oname.Get(), "magnitude", ext);
-    WriteNifti(info, out_mag, fname, log);
   }
 
   return EXIT_SUCCESS;

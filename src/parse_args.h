@@ -18,6 +18,11 @@ struct Vector3fReader
   void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);
 };
 
+struct VectorReader
+{
+  void operator()(std::string const &name, std::string const &value, std::vector<float> &x);
+};
+
 std::string OutName(
     std::string const &iName,
     std::string const &oName,

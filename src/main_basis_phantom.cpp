@@ -5,7 +5,7 @@
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
-#include "op/grid.h"
+#include "op/recon-basis.h"
 #include "parse_args.h"
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
@@ -16,14 +16,18 @@
 #include "types.h"
 #include <filesystem>
 
-int main_phantom(args::Subparser &parser)
+int main_basis_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
+  args::Positional<std::string> bname(parser, "BASIS", "Filename with basis");
+
   args::ValueFlag<std::string> suffix(
       parser, "SUFFIX", "Add suffix (well, infix) to output dirs", {"suffix"});
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
-args::ValueFlag<float> fov(
+  args::Flag fastgrid(
+      parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});
+  args::ValueFlag<float> fov(
       parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
@@ -48,8 +52,8 @@ args::ValueFlag<float> fov(
       parser, "CHANNELS", "Number of channels (default 12)", {'c', "channels"}, 12);
   args::ValueFlag<std::string> sense(
       parser, "PATH", "File to read sensitivity maps from", {"sense"});
-  args::ValueFlag<float> intensity(
-      parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
+  args::ValueFlag<std::vector<float>, VectorReader> intFlag(
+      parser, "I", "Phantom intensities (default all 100)", {'i', "intensities"});
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});
   args::ValueFlag<long> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
@@ -61,6 +65,19 @@ args::ValueFlag<float> fov(
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
+
+  HD5::Reader basisReader(bname.Get(), log);
+  R2 basis = basisReader.readBasis();
+  long const nB = basis.dimension(1);
+
+  std::vector<float> intensities = intFlag.Get();
+  if ((long)intensities.size() == 0) {
+    intensities.resize(nB);
+    std::fill(intensities.begin(), intensities.end(), 100.f);
+  }
+  if ((long)intensities.size() != nB) {
+    Log::Fail("Number of intensities {} does not match basis size {}", intensities.size(), nB);
+  }
 
   R3 points;
   Info info;
@@ -103,7 +120,8 @@ args::ValueFlag<float> fov(
       info.voxel_size.transpose());
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
 
-  Cx4 sense_maps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
+  Trajectory traj(info, points, log);
+  Cx4 senseMaps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
                          : birdcage(
                                info.matrix,
                                info.voxel_size,
@@ -112,38 +130,29 @@ args::ValueFlag<float> fov(
                                coil_r.Get(),
                                coil_r.Get(),
                                log);
-  info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
+  info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
+  ReconBasisOp recon(traj, osamp.Get(), kb, fastgrid, "none", senseMaps, basis, log);
+  auto const sz = recon.dimensions();
+  Cx4 phan(nB, sz[0], sz[1], sz[2]);
 
-  Trajectory traj(info, points, log);
-  auto hi_gridder = make_grid(traj, osamp.Get(), kb, false, log);
-  Cx4 grid = hi_gridder->newMultichannel(info.channels);
-  FFT::ThreeDMulti fft(grid, log); // FFTW needs temp space for planning
-
-  Cropper cropper(hi_gridder->gridDims(), info.matrix, log);
-  Cx3 phan =
-      shepplogan
-          ? SheppLoganPhantom(
-                info.matrix,
-                info.voxel_size,
-                phan_c.Get(),
-                phan_rot.Get(),
-                phan_r.Get(),
-                intensity.Get(),
-                log)
-          : SphericalPhantom(
-                info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
-  R3 const apo = hi_gridder->apodization(phan.dimensions());
-  phan = phan / apo.cast<Cx>();
-
-  log.info("Generating Cartesian k-space...");
-  grid.setZero();
-  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense_maps * Tile(phan, info.channels);
-
-  fft.forward(grid);
+  for (long ii = 0; ii < nB; ii++) {
+    phan.chip(ii, 0) =
+        shepplogan
+            ? SheppLoganPhantom(
+                  info.matrix,
+                  info.voxel_size,
+                  phan_c.Get(),
+                  phan_rot.Get(),
+                  phan_r.Get(),
+                  intensities[ii],
+                  log)
+            : SphericalPhantom(
+                  info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii], log);
+  }
 
   log.info("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
-  hi_gridder->A(grid, radial);
+  recon.A(phan, radial);
 
   if (use_lores) {
     Info lo_info;
@@ -184,9 +193,9 @@ args::ValueFlag<float> fov(
         lo_info,
         R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
         log);
-    auto lo_gridder = make_grid(lo_traj, osamp.Get(), kb, false, log);
+    ReconBasisOp lo_recon(lo_traj, osamp.Get(), kb, fastgrid, "none", senseMaps, basis, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
-    lo_gridder->A(grid, lo_radial);
+    lo_recon.A(phan, lo_radial);
     // Combine
     Cx3 const all_radial = lo_radial.concatenate(radial, 2);
     radial = all_radial;
@@ -198,7 +207,8 @@ args::ValueFlag<float> fov(
   }
 
   if (snr) {
-    float const level = intensity.Get() / (info.channels * sqrt(snr.Get()));
+    float avg = std::reduce(intensities.begin(), intensities.end()) / intensities.size();
+    float const level = avg / (info.channels * sqrt(snr.Get()));
     log.info(FMT_STRING("Adding noise effective level {}"), level);
     Cx3 noise(radial.dimensions());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();

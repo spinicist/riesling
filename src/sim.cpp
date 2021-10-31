@@ -13,7 +13,7 @@ float Parameter::value(long ii) const {
 float Parameter::linspace(long ii) const {
   assert(ii < N);
   if (N == 1) {
-    return lo;
+    return (lo + hi) / 2.f;
   } else {
     float const frac = ii / (N - 1.f);
     return lo + frac * (hi - lo);
@@ -23,7 +23,7 @@ float Parameter::linspace(long ii) const {
 float Parameter::logspace(long ii) const {
   assert(ii < N);
   if (N == 1) {
-    return lo;
+    return (lo + hi) / 2.f;
   } else {
     float const ref = 0.1;
     float const frac = ii / (N - 1.f);

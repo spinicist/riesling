@@ -42,19 +42,8 @@ int main_basis_recon(args::Subparser &parser)
   }
 
   auto gridder = make_grid_basis(traj, osamp.Get(), kb, fastgrid, basis, log);
-  {
-    HD5::Reader sdcReader(sdc.Get(), log);
-    auto const sdcInfo = sdcReader.readInfo();
-    if (sdcInfo.read_points != info.read_points || sdcInfo.spokes_total() != info.spokes_total()) {
-      Log::Fail(
-          "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
-          sdcInfo.read_points,
-          sdcInfo.spokes_total(),
-          info.read_points,
-          info.spokes_total());
-    }
-    gridder->setSDC(sdcReader.readSDC(sdcInfo));
-  }
+  auto grid1 = make_grid(gridder->mapping(), kb, fastgrid, log);
+  SDC::Choose(sdc.Get(), traj, grid1, gridder, log);
   gridder->setSDCExponent(sdc_exp.Get());
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
   Sz3 const cropSz = cropper.size();

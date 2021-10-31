@@ -39,12 +39,12 @@ void Log::vfail(fmt::string_view fstr, fmt::format_args args)
 void Log::progress(long const ii, long const lo, long const hi) const
 {
   if ((out_level_ >= Level::Info) && lo == 0) {
-    constexpr long steps = 10;
     long const N = hi - lo;
-    long const step = N / steps;
-    if (step && ii % step == 0) { // Check for div by zero
-      float progress = (100.f * ii) / N;
-      if (progress < 91.f) {
+    long const steps = std::min(N, 10L);
+    long const N_per_step = N / steps;
+    if (ii % N_per_step == 0) { // Check for div by zero
+      float progress = std::min((100.f * ii) / N, 100.f);
+      if (progress < ((N - 1) * N_per_step * 100.f)) {
         fmt::print(stderr, FMT_STRING("{:.0f}%..."), progress);
       } else {
         fmt::print(stderr, FMT_STRING("{:.0f}%\n"), progress);
