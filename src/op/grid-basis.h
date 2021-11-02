@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../trajectory.h"
-#include "operator.h"
 #include "gridBase.h"
+#include "operator.h"
 #include <memory>
 
 struct GridBasisOp : Operator<5, 3>, GridBase
@@ -16,12 +16,13 @@ struct GridBasisOp : Operator<5, 3>, GridBase
   Input::Dimensions inSize() const;
   Output::Dimensions outputDimensions() const;
 
-  long dimension(long const D) const;          // Returns a specific grid dimension
+  long dimension(long const D) const; // Returns a specific grid dimension
   // Cx4 newMultichannel(long const nChan) const; // Returns a correctly sized multi-channel grid
   R2 const &basis() const;
 
 protected:
   R2 basis_;
+  float scale_;
 };
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
@@ -35,8 +36,4 @@ std::unique_ptr<GridBasisOp> make_grid_basis(
     bool const shrink = false);
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-    Mapping const &mapping,
-    bool const kb,
-    bool const fastgrid,
-    R2 const &basis,
-    Log &log);
+    Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log);

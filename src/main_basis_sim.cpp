@@ -45,6 +45,8 @@ int main_basis_sim(args::Subparser &parser)
 
   args::Flag mupa(parser, "M", "Run a MUPA simulation", {"mupa"});
 
+  args::ValueFlag<long> randomSamp(
+      parser, "N", "Use N random parameter samples for dictionary", {"random"}, 0);
   args::ValueFlag<long> subsamp(
       parser, "S", "Subsample dictionary for SVD step (saves time)", {"subsamp"}, 1);
   args::ValueFlag<float> thresh(
@@ -54,34 +56,37 @@ int main_basis_sim(args::Subparser &parser)
 
   Log log = ParseCommand(parser);
 
-  Sim::Sequence const seq{.sps = sps.Get(),
-                          .alpha = alpha.Get(),
-                          .TR = TR.Get(),
-                          .Tramp = Tramp.Get(),
-                          .Tssi = Tssi.Get(),
-                          .TI = TI.Get(), 
-                          .Trec = Trec.Get()};
+  Sim::Sequence const seq{
+      .sps = sps.Get(),
+      .alpha = alpha.Get(),
+      .TR = TR.Get(),
+      .Tramp = Tramp.Get(),
+      .Tssi = Tssi.Get(),
+      .TI = TI.Get(),
+      .Trec = Trec.Get()};
   Sim::Parameter const T1{nT1.Get(), T1Lo.Get(), T1Hi.Get(), true};
   Sim::Parameter const beta{nb.Get(), bLo.Get(), bHi.Get(), bLog};
   Sim::Parameter const B1{nB1.Get(), B1Lo.Get(), B1Hi.Get(), false};
-  Sim::Result results;
+  Sim::Result result;
   if (ng) {
     Sim::Parameter const gamma{ng.Get(), gLo.Get(), gHi.Get(), false};
-    results = Sim::Eddy(T1, beta, gamma, B1, seq, log);
+    result = Sim::Eddy(T1, beta, gamma, B1, seq, log);
   } else if (mupa) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
-    results = Sim::MUPA(T1, T2, B1, seq, log);
+    result = Sim::MUPA(T1, T2, B1, seq, randomSamp.Get(), log);
   } else {
-    results = Sim::Simple(T1, beta, B1, seq, log);
+    result = Sim::Simple(T1, beta, B1, seq, log);
   }
-  long const nT = results.dynamics.cols(); // Number of timepoints in sim
 
-  // Calculate SVD
-  log.info("Calculating SVD {}x{}", results.dynamics.rows() / subsamp.Get(), results.dynamics.cols());
-  auto const svd = subsamp ?
-    results.dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all)
-      .bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV)
-    : results.dynamics.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+  // Normalize dictionary
+  result.dynamics.rowwise().normalize();
+  // Calculate SVD - observations are in rows
+  log.info("Calculating SVD {}x{}", result.dynamics.cols() / subsamp.Get(), result.dynamics.rows());
+  auto const svd = subsamp
+                       ? result.dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all)
+                             .matrix()
+                             .bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV)
+                       : result.dynamics.matrix().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
   Eigen::ArrayXf const vals = svd.singularValues().array().square();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
@@ -96,23 +101,27 @@ int main_basis_sim(args::Subparser &parser)
       "Retaining {} basis vectors, cumulative energy: {}",
       nRetain,
       cumsum.head(nRetain).transpose());
-  float const flip = (svd.matrixV().leftCols(1)(0) < 0) ? -1.f : 1.f;
-  Eigen::MatrixXf const basisMat = flip * svd.matrixV().leftCols(nRetain) * std::sqrt(nT);
+  // Scale and flip the basis vectors to always have a positive first element for stability
+  Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
+  flip = (svd.matrixV().leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
+  Eigen::MatrixXf const basisMat =
+      svd.matrixV().leftCols(nRetain).array().rowwise() * flip.transpose();
   log.info("Computing dictionary");
-  Eigen::ArrayXXf Dk = results.dynamics * basisMat.adjoint();
-  Dk = Dk.colwise() / Dk.rowwise().norm();
+  Eigen::ArrayXXf Dk = result.dynamics.matrix() * basisMat;
 
   Eigen::TensorMap<R2 const> dynamics(
-      results.dynamics.data(), results.dynamics.rows(), results.dynamics.cols());
+      result.dynamics.data(), result.dynamics.rows(), result.dynamics.cols());
   Eigen::TensorMap<R2 const> basis(basisMat.data(), basisMat.rows(), basisMat.cols());
   Eigen::TensorMap<R2 const> dictionary(Dk.data(), Dk.rows(), Dk.cols());
   Eigen::TensorMap<R2 const> parameters(
-      results.parameters.data(), results.parameters.rows(), results.parameters.cols());
+      result.parameters.data(), result.parameters.rows(), result.parameters.cols());
+  Eigen::TensorMap<R2 const> Mz_ss(result.Mz_ss.data(), result.Mz_ss.rows(), result.Mz_ss.cols());
 
   HD5::Writer writer(oname.Get(), log);
   writer.writeBasis(R2(basis));
   writer.writeDynamics(R2(dynamics));
   writer.writeRealMatrix(R2(dictionary), "dictionary");
   writer.writeRealMatrix(R2(parameters), "parameters");
+  writer.writeRealMatrix(R2(Mz_ss), "Mz_ss");
   return EXIT_SUCCESS;
 }

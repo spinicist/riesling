@@ -1,6 +1,6 @@
+#include "grid-basis.h"
 #include "grid-basis-kb.h"
 #include "grid-basis-nn.h"
-#include "grid-basis.h"
 
 #include "../tensorOps.h"
 #include "../threads.h"
@@ -10,8 +10,9 @@
 #include <cmath>
 
 GridBasisOp::GridBasisOp(Mapping map, bool const unsafe, R2 basis, Log &log)
-    : GridBase(map, unsafe, log),
-    basis_{basis}
+    : GridBase(map, unsafe, log)
+    , basis_{basis}
+    , scale_{std::sqrt(basis_.dimension(0))}
 {
   log_.info("Basis size {}x{}", basis_.dimension(0), basis_.dimension(1));
 }
@@ -54,11 +55,7 @@ std::unique_ptr<GridBasisOp> make_grid_basis(
 }
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-    Mapping const &mapping,
-    bool const kb,
-    bool const fastgrid,
-    R2 const &basis,
-    Log &log)
+    Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log)
 {
   if (kb) {
     if (mapping.type == Info::Type::ThreeD) {

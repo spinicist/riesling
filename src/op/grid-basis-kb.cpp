@@ -19,10 +19,8 @@ GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
     float const inRes,
     bool const shrink)
     : GridBasisOp(traj.mapping(os, (InPlane / 2), inRes, shrink), unsafe, basis, log)
-    , betaIn_{(float)M_PI *
-              sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
-    , betaThrough_{(float)M_PI *
-                   sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
+    , betaIn_{(float)M_PI * sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
+    , betaThrough_{(float)M_PI * sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
     , fft_{Sz3{InPlane, InPlane, ThroughPlane}, Log(), 1}
 {
 
@@ -33,15 +31,10 @@ GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
 
 template <int InPlane, int ThroughPlane>
 GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
-    Mapping const &map,
-    bool const unsafe,
-    R2 const &basis,
-    Log &log)
+    Mapping const &map, bool const unsafe, R2 const &basis, Log &log)
     : GridBasisOp(map, unsafe, basis, log)
-    , betaIn_{(float)M_PI *
-              sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
-    , betaThrough_{(float)M_PI *
-                   sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
+    , betaIn_{(float)M_PI * sqrtf(pow(InPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
+    , betaThrough_{(float)M_PI * sqrtf(pow(ThroughPlane * (mapping_.osamp - 0.5f) / mapping_.osamp, 2.f) - 0.8f)}
     , fft_{Sz3{InPlane, InPlane, ThroughPlane}, Log(), 1}
 {
   // Array of indices used when building the kernel
@@ -145,7 +138,7 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const nck = noncart.chip(nc.spoke, 2).chip(nc.read, 1);
-      kernel(mapping_.offset[si], pow(mapping_.sdc[si], DCexp_), k);
+      kernel(mapping_.offset[si], pow(mapping_.sdc[si], DCexp_) * scale_, k);
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       if (safe_) {
@@ -177,7 +170,11 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
       if (szZ[ti]) {
         cart.slice(
                 Sz5{0, 0, 0, 0, minZ[ti]},
-                Sz5{cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]})
+                Sz5{cart.dimension(0),
+                    cart.dimension(1),
+                    cart.dimension(2),
+                    cart.dimension(3),
+                    szZ[ti]})
             .device(dev) += workspace[ti];
       }
     }
@@ -211,7 +208,7 @@ void GridBasisKB<InPlane, ThroughPlane>::A(Input const &cart, Output &noncart) c
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      kernel(mapping_.offset[si], 1.f, k);
+      kernel(mapping_.offset[si], scale_, k);
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       stC.set(4, c.z - (ThroughPlane / 2));
