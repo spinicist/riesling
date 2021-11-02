@@ -12,7 +12,7 @@ ReconBasisOp::ReconBasisOp(
     bool const fast,
     std::string const sdc,
     Cx4 &maps,
-    R2 &basis,
+    R2 const &basis,
     Log &log)
     : gridder_{make_grid_basis(traj, os, kb, fast, basis, log)}
     , grid_{traj.info().channels,

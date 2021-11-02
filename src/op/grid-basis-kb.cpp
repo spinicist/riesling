@@ -14,7 +14,7 @@ GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
     Trajectory const &traj,
     float const os,
     bool const unsafe,
-    R2 &basis,
+    R2 const &basis,
     Log &log,
     float const inRes,
     bool const shrink)
@@ -35,7 +35,7 @@ template <int InPlane, int ThroughPlane>
 GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
     Mapping const &map,
     bool const unsafe,
-    R2 &basis,
+    R2 const &basis,
     Log &log)
     : GridBasisOp(map, unsafe, basis, log)
     , betaIn_{(float)M_PI *

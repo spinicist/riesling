@@ -26,20 +26,9 @@ int main_basis_recon(args::Subparser &parser)
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
 
-  long nB = 1;
-  R2 basis(1, 1);
-  basis.setConstant(1.f);
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get(), log);
-    basis = basisReader.readBasis();
-    nB = basis.dimension(1);
-    if ((info.spokes_total() % basis.dimension(0)) != 0) {
-      Log::Fail(
-          FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
-          basis.dimension(0),
-          info.spokes_total());
-    }
-  }
+  HD5::Reader basisReader(basisFile.Get(), log);
+  R2 const basis = basisReader.readBasis();
+  long const nB = basis.dimension(1);
 
   auto gridder = make_grid_basis(traj, osamp.Get(), kb, fastgrid, basis, log);
   auto grid1 = make_grid(gridder->mapping(), kb, fastgrid, log);

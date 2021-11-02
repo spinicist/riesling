@@ -35,22 +35,9 @@ int main_basis_admm(args::Subparser &parser)
   Info const &info = traj.info();
   Cx3 rad_ks = info.noncartesianVolume();
 
-  long nB = 1;
-  R2 basis(1, 1);
-  basis.setConstant(1.f);
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get(), log);
-    basis = basisReader.readBasis();
-    nB = basis.dimension(1);
-
-    // if ((info.spokes_total() % basis.dimension(0)) != 0) {
-    //   Log::Fail(
-    //       FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
-    //       basis.dimension(0),
-    //       info.spokes_total());
-    // }
-    log.info("Basis has {} vectors with {} entries", nB, basis.dimension(0));
-  }
+  HD5::Reader basisReader(basisFile.Get(), log);
+  R2 const basis = basisReader.readBasis();
+  long const nB = basis.dimension(1);
 
   long currentVolume = -1;
   Cx4 senseMaps;

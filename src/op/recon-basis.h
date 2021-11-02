@@ -15,7 +15,7 @@ struct ReconBasisOp final : Operator<4, 3>
       bool const fast,
       std::string const sdc,
       Cx4 &maps,
-      R2 &basis,
+      R2 const &basis,
       Log &log);
 
   void A(Input const &x, Output &y) const;

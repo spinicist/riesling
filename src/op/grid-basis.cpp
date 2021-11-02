@@ -37,7 +37,7 @@ std::unique_ptr<GridBasisOp> make_grid_basis(
     float const os,
     bool const kb,
     bool const fastgrid,
-    R2 &basis,
+    R2 const &basis,
     Log &log,
     float const res,
     bool const shrink)
@@ -57,7 +57,7 @@ std::unique_ptr<GridBasisOp> make_grid_basis(
     Mapping const &mapping,
     bool const kb,
     bool const fastgrid,
-    R2 &basis,
+    R2 const &basis,
     Log &log)
 {
   if (kb) {

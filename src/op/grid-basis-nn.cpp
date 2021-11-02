@@ -11,7 +11,7 @@ GridBasisNN::GridBasisNN(
     Trajectory const &traj,
     float const os,
     bool const unsafe,
-    R2 &basis,
+    R2 const &basis,
     Log &log,
     float const inRes,
     bool const shrink)
@@ -22,7 +22,7 @@ GridBasisNN::GridBasisNN(
 GridBasisNN::GridBasisNN(
   Mapping const &map,
   bool const unsafe,
-  R2 &basis,
+  R2 const &basis,
   Log &log)
   : GridBasisOp(map, unsafe, basis, log)
 {}
