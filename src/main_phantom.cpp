@@ -1,11 +1,9 @@
 
 #include "coils.h"
-#include "cropper.h"
-#include "fft_plan.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
-#include "op/grid.h"
+#include "op/recon.h"
 #include "parse_args.h"
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
@@ -19,11 +17,11 @@
 int main_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
-  args::ValueFlag<std::string> suffix(
-      parser, "SUFFIX", "Add suffix (well, infix) to output dirs", {"suffix"});
+  args::ValueFlag<std::string> oftype(
+      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
-args::ValueFlag<float> fov(
+  args::ValueFlag<float> fov(
       parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
@@ -103,6 +101,7 @@ args::ValueFlag<float> fov(
       info.voxel_size.transpose());
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
 
+  Trajectory traj(info, points, log);
   Cx4 sense_maps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
                          : birdcage(
                                info.matrix,
@@ -113,13 +112,8 @@ args::ValueFlag<float> fov(
                                coil_r.Get(),
                                log);
   info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
+  ReconOp recon(traj, osamp.Get(), kb, false, "none", sense_maps, log);
 
-  Trajectory traj(info, points, log);
-  auto hi_gridder = make_grid(traj, osamp.Get(), kb, false, log);
-  Cx4 grid = hi_gridder->newMultichannel(info.channels);
-  FFT::ThreeDMulti fft(grid, log); // FFTW needs temp space for planning
-
-  Cropper cropper(hi_gridder->gridDims(), info.matrix, log);
   Cx3 phan =
       shepplogan
           ? SheppLoganPhantom(
@@ -132,18 +126,11 @@ args::ValueFlag<float> fov(
                 log)
           : SphericalPhantom(
                 info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
-  R3 const apo = hi_gridder->apodization(phan.dimensions());
-  phan = phan / apo.cast<Cx>();
+  WriteOutput(phan, false, false, info, iname.Get(), "", "image", oftype.Get(), log);
 
-  log.info("Generating Cartesian k-space...");
-  grid.setZero();
-  cropper.crop4(grid).device(Threads::GlobalDevice()) = sense_maps * Tile(phan, info.channels);
-
-  fft.forward(grid);
-
-  log.info("Sampling hi-res non-cartesian");
+  log.info("Generating k-space...");
   Cx3 radial = info.noncartesianVolume();
-  hi_gridder->A(grid, radial);
+  recon.A(phan, radial);
 
   if (use_lores) {
     Info lo_info;
@@ -184,9 +171,9 @@ args::ValueFlag<float> fov(
         lo_info,
         R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
         log);
-    auto lo_gridder = make_grid(lo_traj, osamp.Get(), kb, false, log);
+    ReconOp lo_recon(lo_traj, osamp.Get(), kb, false, "none", sense_maps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
-    lo_gridder->A(grid, lo_radial);
+    lo_recon.A(phan, lo_radial);
     // Combine
     Cx3 const all_radial = lo_radial.concatenate(radial, 2);
     radial = all_radial;

@@ -1,7 +1,5 @@
 
 #include "coils.h"
-#include "cropper.h"
-#include "fft_plan.h"
 #include "io_hd5.h"
 #include "io_nifti.h"
 #include "log.h"
@@ -20,13 +18,10 @@ int main_basis_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
   args::Positional<std::string> bname(parser, "BASIS", "Filename with basis");
-
-  args::ValueFlag<std::string> suffix(
-      parser, "SUFFIX", "Add suffix (well, infix) to output dirs", {"suffix"});
+  args::ValueFlag<std::string> oftype(
+      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
-  args::Flag fastgrid(
-      parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});
   args::ValueFlag<float> fov(
       parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
@@ -131,10 +126,10 @@ int main_basis_phantom(args::Subparser &parser)
                                coil_r.Get(),
                                log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
-  ReconBasisOp recon(traj, osamp.Get(), kb, fastgrid, "none", senseMaps, basis, log);
+  ReconBasisOp recon(traj, osamp.Get(), kb, false, "none", senseMaps, basis, log);
   auto const sz = recon.dimensions();
-  Cx4 phan(nB, sz[0], sz[1], sz[2]);
 
+  Cx4 phan(nB, sz[0], sz[1], sz[2]);
   for (long ii = 0; ii < nB; ii++) {
     phan.chip(ii, 0) =
         shepplogan
@@ -149,6 +144,8 @@ int main_basis_phantom(args::Subparser &parser)
             : SphericalPhantom(
                   info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii], log);
   }
+  WriteBasisVolumes(
+      phan.reshape(Sz5{nB, sz[0], sz[1], sz[2], 1}), basis, false, info, iname.Get(), "", "basis-images", oftype.Get(), log);
 
   log.info("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
@@ -193,7 +190,7 @@ int main_basis_phantom(args::Subparser &parser)
         lo_info,
         R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
         log);
-    ReconBasisOp lo_recon(lo_traj, osamp.Get(), kb, fastgrid, "none", senseMaps, basis, log);
+    ReconBasisOp lo_recon(lo_traj, osamp.Get(), kb, false, "none", senseMaps, basis, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
     // Combine
