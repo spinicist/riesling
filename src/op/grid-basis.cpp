@@ -12,7 +12,7 @@
 GridBasisOp::GridBasisOp(Mapping map, bool const unsafe, R2 basis, Log &log)
     : GridBase(map, unsafe, log)
     , basis_{basis}
-    , scale_{std::sqrt(basis_.dimension(0))}
+    , scale_{std::sqrt((float)basis_.dimension(0))}
 {
   log_.info("Basis size {}x{}", basis_.dimension(0), basis_.dimension(1));
 }
