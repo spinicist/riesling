@@ -6,7 +6,12 @@
 namespace Sim {
 
 Result Simple(
-    Parameter const T1p, Parameter const betap, Parameter const B1p, Sequence const seq, Log &log)
+    Parameter const T1p,
+    Parameter const betap,
+    Parameter const B1p,
+    Sequence const seq,
+    long const nRand,
+    Log &log)
 {
   log.info("Basic MP-ZTE simulation");
   log.info(
@@ -20,7 +25,7 @@ Result Simple(
   log.info(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
   log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   ParameterGenerator<3> gen({T1p, betap, B1p});
-  long const totalN = gen.totalN();
+  long totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
   result.dynamics.resize(totalN, seq.sps);
   result.parameters.resize(totalN, 3);
@@ -28,7 +33,7 @@ Result Simple(
 
   auto task = [&](long const lo, long const hi, long const ti) {
     for (long ip = lo; ip < hi; ip++) {
-      auto const P = gen.values(ip);
+      auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const B1 = P(2);
       float const cosa = cos(B1 * seq.alpha * M_PI / 180.f);
       float const sina = sin(B1 * seq.alpha * M_PI / 180.f);

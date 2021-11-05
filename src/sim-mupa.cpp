@@ -72,15 +72,13 @@ Result MUPA(
       Eigen::Vector2f Mz{m_ss, 1.f};
       for (long ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, tp++) = Mz(0) * sina;
-        Mz = A * Mz;
-        Mz = E1 * Mz;
+        Mz = E1 * A * Mz;
       }
       Mz = Eramp * Ei * inv * Essi * Eramp * Mz;
       for (long is = 0; is < 3; is++) {
         for (long ii = 0; ii < seq.sps; ii++) {
           result.dynamics(ip, tp++) = Mz(0) * sina;
-          Mz = A * Mz;
-          Mz = E1 * Mz;
+          Mz = E1 * A * Mz;
         }
         Mz = Eramp * Essi * Eramp * Mz;
       }
