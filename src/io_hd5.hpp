@@ -36,7 +36,7 @@ hid_t type_impl(type_tag<std::complex<T>>)
   status = H5Tinsert(complex_id, "i", HOFFSET(complex_t, i), scalar_id);
   if (status) {
     throw std::runtime_error(
-        "Exception occurred creating complex datatype " + std::to_string(status));
+      "Exception occurred creating complex datatype " + std::to_string(status));
   }
   return complex_id;
 }
@@ -49,10 +49,10 @@ hid_t type()
 
 template <typename Scalar, int ND>
 void store_tensor(
-    Handle const &parent,
-    std::string const &name,
-    Eigen::Tensor<Scalar, ND> const &data,
-    Log const &log)
+  Handle const &parent,
+  std::string const &name,
+  Eigen::Tensor<Scalar, ND> const &data,
+  Log const &log)
 {
   herr_t status;
   hsize_t ds_dims[ND], chunk_dims[ND];
@@ -73,6 +73,36 @@ void store_tensor(
   status = H5Pset_chunk(plist, ND, chunk_dims);
 
   hid_t const tid = type<Scalar>();
+  hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
+  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
+  status = H5Pclose(plist);
+  status = H5Sclose(space);
+  status = H5Dclose(dset);
+  if (status) {
+    Log::Fail("Could not write tensor {}, code: {}", name, status);
+  } else {
+    log.info("Wrote dataset: {}", name);
+  }
+}
+
+void store_matrix(
+  Handle const &parent,
+  std::string const &name,
+  Eigen::Ref<Eigen::MatrixXf const> const &data,
+  Log const &log)
+{
+  herr_t status;
+  hsize_t ds_dims[2], chunk_dims[2];
+  // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
+  ds_dims[0] = data.cols();
+  ds_dims[1] = data.rows();
+  std::copy_n(ds_dims, 2, chunk_dims);
+  auto const space = H5Screate_simple(2, ds_dims, NULL);
+  auto const plist = H5Pcreate(H5P_DATASET_CREATE);
+  status = H5Pset_deflate(plist, 2);
+  status = H5Pset_chunk(plist, 2, chunk_dims);
+
+  hid_t const tid = type<float>();
   hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
   status = H5Pclose(plist);
@@ -107,10 +137,7 @@ Eigen::DSizes<long, ND> get_dims(Handle const &parent, std::string const &name, 
 
 template <typename Scalar, int ND>
 void load_tensor(
-    Handle const &parent,
-    std::string const &name,
-    Eigen::Tensor<Scalar, ND> &tensor,
-    Log const &log)
+  Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> &tensor, Log const &log)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
@@ -123,13 +150,13 @@ void load_tensor(
   for (int ii = 0; ii < ND; ii++) {
     if ((long)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
-          FMT_STRING("Expected dimensions were {}, but were {} on disk"),
-          fmt::join(tensor.dimensions(), ","),
-          fmt::join(dims, ","));
+        FMT_STRING("Expected dimensions were {}, but were {} on disk"),
+        fmt::join(tensor.dimensions(), ","),
+        fmt::join(dims, ","));
     }
   }
   herr_t ret_value =
-      H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
+    H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
     Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {
@@ -139,11 +166,11 @@ void load_tensor(
 
 template <typename Scalar, int CD>
 void load_tensor_slab(
-    Handle const &parent,
-    std::string const &name,
-    long const index,
-    Eigen::Tensor<Scalar, CD> &tensor,
-    Log const &log)
+  Handle const &parent,
+  std::string const &name,
+  long const index,
+  Eigen::Tensor<Scalar, CD> &tensor,
+  Log const &log)
 {
   int const ND = CD + 1;
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
@@ -162,9 +189,9 @@ void load_tensor_slab(
   for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
     if ((long)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
-          FMT_STRING("Expected dimensions were {}, but were {} on disk"),
-          fmt::join(tensor.dimensions(), ","),
-          fmt::join(dims, ","));
+        FMT_STRING("Expected dimensions were {}, but were {} on disk"),
+        fmt::join(tensor.dimensions(), ","),
+        fmt::join(dims, ","));
     }
   }
   std::reverse(dims.begin(), dims.end()); // Reverse back
@@ -177,7 +204,7 @@ void load_tensor_slab(
   h5_block[0] = 1;
   std::copy_n(dims.begin() + 1, CD, h5_block.begin() + 1);
   auto status = H5Sselect_hyperslab(
-      ds, H5S_SELECT_SET, h5_start.data(), h5_stride.data(), h5_count.data(), h5_block.data());
+    ds, H5S_SELECT_SET, h5_start.data(), h5_stride.data(), h5_count.data(), h5_block.data());
 
   std::array<hsize_t, ND> mem_dims, mem_start, mem_stride, mem_count, mem_block;
   std::copy_n(dims.begin() + 1, CD, mem_dims.begin());
@@ -187,12 +214,12 @@ void load_tensor_slab(
   std::copy_n(dims.begin() + 1, CD, mem_block.begin());
   auto const mem_ds = H5Screate_simple(CD, mem_dims.data(), NULL);
   status = H5Sselect_hyperslab(
-      mem_ds,
-      H5S_SELECT_SET,
-      mem_start.data(),
-      mem_stride.data(),
-      mem_count.data(),
-      mem_block.data());
+    mem_ds,
+    H5S_SELECT_SET,
+    mem_start.data(),
+    mem_stride.data(),
+    mem_count.data(),
+    mem_block.data());
 
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
@@ -217,7 +244,7 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   std::reverse(tDims.begin(), tDims.end()); // HD5=row-major, Eigen=col-major
   Eigen::Tensor<Scalar, ND> tensor(tDims);
   herr_t ret_value =
-      H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
+    H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
     Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {

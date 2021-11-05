@@ -25,10 +25,11 @@ struct Writer
   void writeSENSE(Cx4 const &sense);
   void writeBasis(R2 const &basis);
   void writeDynamics(R2 const &dynamics);
-  void writeRealMatrix(R2 const &mat, std::string const &label);
-  void writeReal4(R4 const &d, std::string const &label);
-  void writeReal5(R5 const &d, std::string const &label);
   void writeBasisImages(Cx5 const &basis);
+
+  template <typename Scalar, int ND>
+  void writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label);
+  void writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label);
 
 private:
   Log &log_;

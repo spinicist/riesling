@@ -13,7 +13,7 @@ int main_basis_dict(args::Subparser &parser)
   args::Positional<std::string> dname(parser, "DICT", "h5 file containing lookup dictionary");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> oftype(
-      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   Log log = ParseCommand(parser);
 
   HD5::Reader input(iname.Get(), log);
@@ -31,11 +31,11 @@ int main_basis_dict(args::Subparser &parser)
   R2 const Mz_ss = dict.readRealMatrix("Mz_ss");
 
   R5 out_pars(
-      parameters.dimension(1),
-      images.dimension(1),
-      images.dimension(2),
-      images.dimension(3),
-      images.dimension(4));
+    parameters.dimension(1),
+    images.dimension(1),
+    images.dimension(2),
+    images.dimension(3),
+    images.dimension(4));
   out_pars.setZero();
   Cx4 pd(images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   pd.setZero();
@@ -75,15 +75,16 @@ int main_basis_dict(args::Subparser &parser)
   }
 
   auto const ext = oftype.Get();
-  WriteOutput(pd, false, false, info, iname.Get(), oname.Get(), "pd", ext, log);
   if (ext.compare("h5") == 0) {
     auto const fname = OutName(iname.Get(), oname.Get(), "dict", ext);
     HD5::Writer writer(fname, log);
-    writer.writeReal5(out_pars, "parameters");
+    writer.writeTensor(out_pars, "parameters");
+    writer.writeTensor(pd, "pd");
   } else {
+    WriteOutput(pd, false, false, info, iname.Get(), oname.Get(), "pd", ext, log);
     for (long iv = 0; iv < out_pars.dimension(4); iv++) {
       auto const fname =
-          OutName(iname.Get(), oname.Get(), fmt::format("parameter-{:02d}", iv), ext);
+        OutName(iname.Get(), oname.Get(), fmt::format("parameter-{:02d}", iv), ext);
       R4 const p = FirstToLast4(out_pars.chip(iv, 4));
       WriteNifti(info, p, fname, log);
     }
