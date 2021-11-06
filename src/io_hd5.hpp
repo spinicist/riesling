@@ -3,43 +3,15 @@
 #include <hdf5.h>
 
 namespace HD5 {
-using Handle = uint64_t;
+using Handle = int64_t;
 
 template <typename T>
 struct type_tag
 {
 };
 
-hid_t type_impl(type_tag<float>)
-{
-  return H5T_NATIVE_FLOAT;
-}
-
-hid_t type_impl(type_tag<double>)
-{
-  return H5T_NATIVE_DOUBLE;
-}
-
 template <typename T>
-hid_t type_impl(type_tag<std::complex<T>>)
-{
-  struct complex_t
-  {
-    T r; /*real part*/
-    T i; /*imaginary part*/
-  };
-
-  hid_t scalar_id = type_impl(type_tag<T>{});
-  hid_t complex_id = H5Tcreate(H5T_COMPOUND, sizeof(complex_t));
-  herr_t status;
-  status = H5Tinsert(complex_id, "r", HOFFSET(complex_t, r), scalar_id);
-  status = H5Tinsert(complex_id, "i", HOFFSET(complex_t, i), scalar_id);
-  if (status) {
-    throw std::runtime_error(
-      "Exception occurred creating complex datatype " + std::to_string(status));
-  }
-  return complex_id;
-}
+hid_t type_impl(type_tag<T>);
 
 template <typename T>
 hid_t type()
@@ -73,36 +45,6 @@ void store_tensor(
   status = H5Pset_chunk(plist, ND, chunk_dims);
 
   hid_t const tid = type<Scalar>();
-  hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
-  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
-  status = H5Pclose(plist);
-  status = H5Sclose(space);
-  status = H5Dclose(dset);
-  if (status) {
-    Log::Fail("Could not write tensor {}, code: {}", name, status);
-  } else {
-    log.info("Wrote dataset: {}", name);
-  }
-}
-
-void store_matrix(
-  Handle const &parent,
-  std::string const &name,
-  Eigen::Ref<Eigen::MatrixXf const> const &data,
-  Log const &log)
-{
-  herr_t status;
-  hsize_t ds_dims[2], chunk_dims[2];
-  // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
-  ds_dims[0] = data.cols();
-  ds_dims[1] = data.rows();
-  std::copy_n(ds_dims, 2, chunk_dims);
-  auto const space = H5Screate_simple(2, ds_dims, NULL);
-  auto const plist = H5Pcreate(H5P_DATASET_CREATE);
-  status = H5Pset_deflate(plist, 2);
-  status = H5Pset_chunk(plist, 2, chunk_dims);
-
-  hid_t const tid = type<float>();
   hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
   status = H5Pclose(plist);

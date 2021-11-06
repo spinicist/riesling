@@ -4,7 +4,7 @@
 #include "espirit.h"
 #include "fft_plan.h"
 #include "filter.h"
-#include "io_hd5.h"
+#include "io.h"
 #include "op/grid.h"
 #include "sdc.h"
 #include "tensorOps.h"
@@ -13,21 +13,31 @@
 
 float const sense_res = 8.f;
 
+long ValOrLast(long const val, long const vols)
+{
+  if (val < 0) {
+    return vols - 1;
+  } else {
+    return std::min(val, vols - 1);
+  }
+}
+
 Cx4 DirectSENSE(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    float const fov,
-    Cx3 const &data,
-    float const lambda,
-    Log &log)
+  Trajectory const &traj,
+  float const os,
+  bool const kb,
+  float const fov,
+  float const lambda,
+  long const volume,
+  HD5::Reader &reader,
+  Log &log)
 {
   auto gridder = make_grid(traj, os, kb, false, log, 8.f, false);
   SDC::Choose("pipe", traj, gridder, log);
 
-  Cx4 grid = gridder->newMultichannel(data.dimension(0));
+  Cx4 grid = gridder->newMultichannel(traj.info().channels);
   FFT::ThreeDMulti fftN(grid, log);
-  gridder->Adj(data, grid);
+  gridder->Adj(reader.noncartesian(ValOrLast(volume, traj.info().volumes)), grid);
   float const end_rad = traj.info().voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);

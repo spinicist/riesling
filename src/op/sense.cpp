@@ -1,21 +1,21 @@
+#include "sense.h"
 #include "../tensorOps.h"
 #include "../threads.h"
-#include "sense.h"
 
-SenseOp::SenseOp(Output &maps, Output::Dimensions const &bigSize)
-    : maps_{std::move(maps)}
+SenseOp::SenseOp(Output const &maps, Output::Dimensions const &bigSize)
+  : maps_{maps}
 {
   auto const smallSize = maps_.dimensions();
   std::copy_n(bigSize.begin(), 4, full_.begin());
   std::copy_n(smallSize.begin(), 4, size_.begin());
   std::transform(
-      bigSize.begin(), bigSize.end(), smallSize.begin(), left_.begin(), [](long big, long small) {
-        return (big - small + 1) / 2;
-      });
+    bigSize.begin(), bigSize.end(), smallSize.begin(), left_.begin(), [](long big, long small) {
+      return (big - small + 1) / 2;
+    });
   std::transform(
-      bigSize.begin(), bigSize.end(), smallSize.begin(), right_.begin(), [](long big, long small) {
-        return (big - small) / 2;
-      });
+    bigSize.begin(), bigSize.end(), smallSize.begin(), right_.begin(), [](long big, long small) {
+      return (big - small) / 2;
+    });
 }
 
 long SenseOp::channels() const
@@ -52,9 +52,9 @@ void SenseOp::A(Input const &x, Output &y) const
 
   Eigen::array<std::pair<int, int>, 4> paddings;
   std::transform(
-      left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
-        return std::make_pair(left, right);
-      });
+    left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
+      return std::make_pair(left, right);
+    });
 
   y.device(Threads::GlobalDevice()) = (x.reshape(res).broadcast(brd) * maps_).pad(paddings);
 }
@@ -76,8 +76,8 @@ void SenseOp::AdjA(Input const &x, Input &y) const
   y.device(Threads::GlobalDevice()) = x;
 }
 
-SenseBasisOp::SenseBasisOp(Cx4 &maps, Output::Dimensions const &bigSize)
-    : maps_{std::move(maps)}
+SenseBasisOp::SenseBasisOp(Cx4 const &maps, Output::Dimensions const &bigSize)
+  : maps_{maps}
 {
   size_[0] = maps_.dimension(0);
   size_[1] = bigSize[1];
@@ -114,7 +114,6 @@ Sz5 SenseBasisOp::outputDimensions() const
   return full_;
 }
 
-
 void SenseBasisOp::A(Input const &x, Output &y) const
 {
   assert(x.dimension(1) == maps_.dimension(1));
@@ -145,11 +144,12 @@ void SenseBasisOp::A(Input const &x, Output &y) const
 
   Eigen::array<std::pair<int, int>, 5> paddings;
   std::transform(
-      left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
-        return std::make_pair(left, right);
-      });
+    left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
+      return std::make_pair(left, right);
+    });
 
-  y.device(Threads::GlobalDevice()) = (x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps)).pad(paddings);
+  y.device(Threads::GlobalDevice()) =
+    (x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps)).pad(paddings);
 }
 
 void SenseBasisOp::Adj(Output const &x, Input &y) const
@@ -172,7 +172,8 @@ void SenseBasisOp::Adj(Output const &x, Input &y) const
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
   brdMaps.set(1, x.dimension(1));
 
-  y.device(Threads::GlobalDevice()) = ConjugateSum(x.slice(left_, size_), maps_.reshape(resMaps).broadcast(brdMaps));
+  y.device(Threads::GlobalDevice()) =
+    ConjugateSum(x.slice(left_, size_), maps_.reshape(resMaps).broadcast(brdMaps));
 }
 
 void SenseBasisOp::AdjA(Input const &x, Input &y) const

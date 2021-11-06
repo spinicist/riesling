@@ -9,14 +9,14 @@
 struct ReconBasisOp final : Operator<4, 3>
 {
   ReconBasisOp(
-      Trajectory const &traj,
-      float const os,
-      bool const kb,
-      bool const fast,
-      std::string const sdc,
-      Cx4 &maps,
-      R2 const &basis,
-      Log &log);
+    Trajectory const &traj,
+    float const os,
+    bool const kb,
+    bool const fast,
+    std::string const sdc,
+    Cx4 const &maps,
+    R2 const &basis,
+    Log &log);
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;

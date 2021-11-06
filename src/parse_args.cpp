@@ -1,6 +1,5 @@
-#include "io_hd5.h"
-#include "io_nifti.h"
 #include "parse_args.h"
+#include "io.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <algorithm>
@@ -10,11 +9,11 @@
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-    {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
+  {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
 } // namespace
 
 void Vector3fReader::operator()(
-    std::string const &name, std::string const &value, Eigen::Vector3f &v)
+  std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
   float x, y, z;
   auto result = scn::scan(value, "{},{},{}", x, y, z);
@@ -27,7 +26,7 @@ void Vector3fReader::operator()(
 }
 
 void VectorReader::operator()(
-    std::string const &name, std::string const &input, std::vector<float> &values)
+  std::string const &name, std::string const &input, std::vector<float> &values)
 {
   float val;
   auto result = scn::scan(input, "{}", val);
@@ -45,18 +44,18 @@ args::Group global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "HELP", "Show this help message", {'h', "help"});
 args::Flag verbose(global_group, "VERBOSE", "Talk more", {'v', "verbose"});
 args::MapFlag<int, Log::Level> verbosity(
-    global_group,
-    "VERBOSITY",
-    "Talk even more (values 0-3, see documentation)",
-    {"verbosity"},
-    levelMap);
+  global_group,
+  "VERBOSITY",
+  "Talk even more (values 0-3, see documentation)",
+  {"verbosity"},
+  levelMap);
 args::ValueFlag<long> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
 Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
   Log::Level const level =
-      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
+    verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
 
   Log log(level);
   log.info(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
@@ -74,7 +73,7 @@ Log ParseCommand(args::Subparser &parser)
 {
   parser.Parse();
   Log::Level const level =
-      verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
+    verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
 
   Log log(level);
   if (nthreads) {
@@ -85,37 +84,28 @@ Log ParseCommand(args::Subparser &parser)
 }
 
 std::string OutName(
-    std::string const &iName,
-    std::string const &oName,
-    std::string const &suffix,
-    std::string const &extension)
+  std::string const &iName,
+  std::string const &oName,
+  std::string const &suffix,
+  std::string const &extension)
 {
   return fmt::format(
-      FMT_STRING("{}-{}.{}"),
-      oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
-      suffix,
-      extension);
-}
-
-long LastOrVal(args::ValueFlag<long> &sFlag, long const vols)
-{
-  if (sFlag) {
-    return std::clamp(sFlag.Get(), 0L, vols - 1);
-  } else {
-    return vols - 1;
-  }
+    FMT_STRING("{}-{}.{}"),
+    oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
+    suffix,
+    extension);
 }
 
 void WriteOutput(
-    Cx4 const &vols,
-    bool const mag,
-    bool const needsSwap,
-    Info const &info,
-    std::string const &iname,
-    std::string const &oname,
-    std::string const &suffix,
-    std::string const &ext,
-    Log &log)
+  Cx4 const &vols,
+  bool const mag,
+  bool const needsSwap,
+  Info const &info,
+  std::string const &iname,
+  std::string const &oname,
+  std::string const &suffix,
+  std::string const &ext,
+  Log &log)
 {
   auto const fname = OutName(iname, oname, suffix, ext);
   if (ext.compare("h5") == 0) {
@@ -136,15 +126,15 @@ void WriteOutput(
 }
 
 void WriteBasisVolumes(
-    Cx5 const &vols,
-    R2 const &basis,
-    bool const mag,
-    Info const &info,
-    std::string const &iname,
-    std::string const &oname,
-    std::string const &suffix,
-    std::string const &ext,
-    Log &log)
+  Cx5 const &vols,
+  R2 const &basis,
+  bool const mag,
+  Info const &info,
+  std::string const &iname,
+  std::string const &oname,
+  std::string const &suffix,
+  std::string const &ext,
+  Log &log)
 {
   if (ext.compare("h5") == 0) {
     auto const fname = OutName(iname, oname, suffix, ext);

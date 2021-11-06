@@ -1,7 +1,6 @@
 #include "types.h"
 
-#include "io_hd5.h"
-#include "io_nifti.h"
+#include "io.h"
 #include "log.h"
 #include "parse_args.h"
 #include "tensorOps.h"

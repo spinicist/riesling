@@ -16,9 +16,9 @@ int main_basis_recon(args::Subparser &parser)
 
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
   args::Flag save_channels(
-      parser, "CHANNELS", "Write out individual channels from first volume", {"channels", 'c'});
+    parser, "CHANNELS", "Write out individual channels from first volume", {"channels", 'c'});
   args::ValueFlag<std::string> basisFile(
-      parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
+    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
@@ -37,7 +37,6 @@ int main_basis_recon(args::Subparser &parser)
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
   Sz3 const cropSz = cropper.size();
   R3 const apo = gridder->apodization(cropper.size());
-  Cx3 rad_ks = info.noncartesianVolume();
   auto const gridSz = gridder->gridDims();
   Cx5 grid(info.channels, nB, gridSz[0], gridSz[1], gridSz[2]);
   Cx4 images(nB, cropSz[0], cropSz[1], cropSz[2]);
@@ -46,15 +45,13 @@ int main_basis_recon(args::Subparser &parser)
   images.setZero();
   FFT::ThreeDBasis fft(grid, log);
 
-  long currentVolume = -1;
   Cx4 sense = rss ? Cx4() : cropper.newMultichannel(info.channels);
   if (!rss) {
     if (senseFile) {
       sense = LoadSENSE(senseFile.Get(), log);
     } else {
-      currentVolume = LastOrVal(senseVolume, info.volumes);
-      reader.readNoncartesian(currentVolume, rad_ks);
-      sense = DirectSENSE(traj, osamp.Get(), kb, out_fov.Get(), rad_ks, senseLambda.Get(), log);
+      sense = DirectSENSE(
+        traj, osamp.Get(), kb, out_fov.Get(), senseLambda.Get(), senseVol.Get(), reader, log);
     }
   }
 
@@ -62,9 +59,8 @@ int main_basis_recon(args::Subparser &parser)
   auto const &all_start = log.now();
   for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
-    reader.readNoncartesian(iv, rad_ks);
     grid.setZero();
-    gridder->Adj(rad_ks, grid);
+    gridder->Adj(reader.noncartesian(iv), grid);
     log.info("FFT...");
     fft.reverse(grid);
     log.info("Channel combination...");
@@ -72,19 +68,19 @@ int main_basis_recon(args::Subparser &parser)
       images.device(dev) = ConjugateSum(cropper.crop5(grid), cropper.crop5(grid)).sqrt();
     } else {
       images.device(dev) = ConjugateSum(
-          cropper.crop5(grid),
-          sense.reshape(Sz5{info.channels, 1, cropSz[0], cropSz[1], cropSz[2]})
-              .broadcast(Sz5{1, nB, 1, 1, 1}));
+        cropper.crop5(grid),
+        sense.reshape(Sz5{info.channels, 1, cropSz[0], cropSz[1], cropSz[2]})
+          .broadcast(Sz5{1, nB, 1, 1, 1}));
     }
     images.device(dev) =
-        images /
-        apo.cast<Cx>().reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]}).broadcast(Sz4{nB, 1, 1, 1});
+      images /
+      apo.cast<Cx>().reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]}).broadcast(Sz4{nB, 1, 1, 1});
     out.chip(iv, 4) = images;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All volumes: {}", log.toNow(all_start));
   WriteBasisVolumes(
-      out, basis, mag, info, iname.Get(), oname.Get(), "basis-recon", oftype.Get(), log);
+    out, basis, mag, info, iname.Get(), oname.Get(), "basis-recon", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

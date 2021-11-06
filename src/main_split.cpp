@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "io_hd5.h"
+#include "io.h"
 #include "log.h"
 #include "parse_args.h"
 
@@ -20,8 +20,7 @@ int main_split(args::Subparser &parser)
   auto info = traj.info();
   info.volumes = 1; // Only output one volume
   R3 all_points = traj.points();
-  Cx3 all_ks = info.noncartesianVolume();
-  reader.readNoncartesian(vol.Get(), all_ks);
+  Cx3 all_ks = reader.noncartesian(vol.Get());
 
   if (info.spokes_lo) {
     Info lo_info = info;
@@ -29,9 +28,9 @@ int main_split(args::Subparser &parser)
     lo_info.spokes_hi = info.spokes_lo;
     lo_info.lo_scale = 0.f;
     R3 lo_points =
-        all_points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) / info.lo_scale;
+      all_points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) / info.lo_scale;
     Cx4 lo_ks = all_ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes_lo})
-                    .reshape(Sz4{info.channels, info.read_points, info.spokes_lo, 1});
+                  .reshape(Sz4{info.channels, info.read_points, info.spokes_lo, 1});
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores", "h5"), log);
     writer.writeTrajectory(Trajectory(lo_info, lo_points, log));
     writer.writeNoncartesian(lo_ks);
@@ -52,7 +51,7 @@ int main_split(args::Subparser &parser)
   int const num_full_int = static_cast<int>(hi_info.spokes_total() * 1.f / ns);
   int const num_int = static_cast<int>((num_full_int - 1) * ns * 1.f / spoke_step + 1);
   log.info(
-      FMT_STRING("Interleaves: {} Spokes per interleave: {} Step: {}"), num_int, ns, spoke_step);
+    FMT_STRING("Interleaves: {} Spokes per interleave: {} Step: {}"), num_int, ns, spoke_step);
   int rem_spokes = hi_info.spokes_hi - num_full_int * ns;
   if (rem_spokes > 0) {
     log.info(FMT_STRING("Warning! Last interleave will have {} extra spokes."), rem_spokes);
@@ -65,10 +64,10 @@ int main_split(args::Subparser &parser)
     std::string const suffix = nspokes.Get() ? fmt::format("int{}", int_idx) : "hires";
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), suffix, "h5"), log);
     writer.writeTrajectory(Trajectory(
-        hi_info, all_points.slice(Sz3{0, 0, idx0}, Sz3{3, hi_info.read_points, n}) * scalef, log));
+      hi_info, all_points.slice(Sz3{0, 0, idx0}, Sz3{3, hi_info.read_points, n}) * scalef, log));
     writer.writeNoncartesian(
-        all_ks.slice(Sz3{0, 0, idx0}, Sz3{hi_info.channels, hi_info.read_points, n})
-            .reshape(Sz4{hi_info.channels, hi_info.read_points, n, 1}));
+      all_ks.slice(Sz3{0, 0, idx0}, Sz3{hi_info.channels, hi_info.read_points, n})
+        .reshape(Sz4{hi_info.channels, hi_info.read_points, n, 1}));
   }
 
   return EXIT_SUCCESS;

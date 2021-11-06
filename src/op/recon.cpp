@@ -4,25 +4,25 @@
 #include "../threads.h"
 
 ReconOp::ReconOp(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fast,
-    std::string const sdc,
-    Cx4 &maps,
-    Log &log)
-    : gridder_{make_grid(traj, os, kb, fast, log)}
-    , grid_{gridder_->newMultichannel(maps.dimension(0))}
-    , sense_{maps, grid_.dimensions()}
-    , apo_{gridder_->apodization(sense_.dimensions())}
-    , fft_{grid_, log}
-    , log_{log}
+  Trajectory const &traj,
+  float const os,
+  bool const kb,
+  bool const fast,
+  std::string const sdc,
+  Cx4 const &maps,
+  Log &log)
+  : gridder_{make_grid(traj, os, kb, fast, log)}
+  , grid_{gridder_->newMultichannel(maps.dimension(0))}
+  , sense_{maps, grid_.dimensions()}
+  , apo_{gridder_->apodization(sense_.dimensions())}
+  , fft_{grid_, log}
+  , log_{log}
 {
   if (sense_.channels() != traj.info().channels) {
     Log::Fail(
-        "Number of SENSE channels {} did not match data channels {}",
-        sense_.channels(),
-        traj.info().channels);
+      "Number of SENSE channels {} did not match header channels {}",
+      sense_.channels(),
+      traj.info().channels);
   }
 
   SDC::Choose(sdc, traj, gridder_, log);

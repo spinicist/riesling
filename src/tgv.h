@@ -9,11 +9,11 @@
  * doi: 10.1002/mrm.22595.
  */
 Cx3 tgv(
-    long const max_its,
-    float const thresh,
-    float const alpha0,
-    float const reduction,
-    float const step_size,
-    ReconOp &op,
-    Cx3 &radial,
-    Log &log);
+  long const max_its,
+  float const thresh,
+  float const alpha0,
+  float const reduction,
+  float const step_size,
+  ReconOp &op,
+  Cx3 const &radial,
+  Log &log);

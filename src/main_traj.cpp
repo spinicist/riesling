@@ -1,11 +1,10 @@
 #include "types.h"
 
 #include "fft_plan.h"
-#include "io_hd5.h"
-#include "io_nifti.h"
+#include "io.h"
 #include "log.h"
-#include "op/grid.h"
 #include "op/grid-basis.h"
+#include "op/grid.h"
 #include "parse_args.h"
 #include "tensorOps.h"
 #include "threads.h"
@@ -16,7 +15,7 @@ int main_traj(args::Subparser &parser)
   CORE_RECON_ARGS;
 
   args::ValueFlag<std::string> basisFile(
-      parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
+    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);

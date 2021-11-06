@@ -1,19 +1,19 @@
 #include "types.h"
 
 #include "fft_plan.h"
-#include "io_hd5.h"
+#include "io.h"
 #include "log.h"
-#include "op/grid.h"
 #include "op/grid-basis.h"
+#include "op/grid.h"
 #include "parse_args.h"
 
 int main_plan(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   args::ValueFlag<double> timelimit(
-      parser, "LIMIT", "Time limit for FFT planning (default 60 s)", {"time", 't'}, 60.0);
+    parser, "LIMIT", "Time limit for FFT planning (default 60 s)", {"time", 't'}, 60.0);
   args::ValueFlag<std::string> basisFile(
-      parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
+    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);

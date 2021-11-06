@@ -54,16 +54,16 @@ inline void Grad(Cx4 const &x, Cx4 &gx, Eigen::ThreadPoolDevice &dev)
   gx.chip<3>(2).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(2), 2);
 
   gx.chip<3>(3).slice(st1, sz).device(dev) =
-      (BackwardDiff(x.chip<3>(0), 1) + BackwardDiff(x.chip<3>(1), 0)) /
-      gx.chip<3>(3).slice(st1, sz).constant(2.f);
+    (BackwardDiff(x.chip<3>(0), 1) + BackwardDiff(x.chip<3>(1), 0)) /
+    gx.chip<3>(3).slice(st1, sz).constant(2.f);
 
   gx.chip<3>(4).slice(st1, sz).device(dev) =
-      (BackwardDiff(x.chip<3>(0), 2) + BackwardDiff(x.chip<3>(2), 0)) /
-      gx.chip<3>(4).slice(st1, sz).constant(2.f);
+    (BackwardDiff(x.chip<3>(0), 2) + BackwardDiff(x.chip<3>(2), 0)) /
+    gx.chip<3>(4).slice(st1, sz).constant(2.f);
 
   gx.chip<3>(5).slice(st1, sz).device(dev) =
-      (BackwardDiff(x.chip<3>(1), 2) + BackwardDiff(x.chip<3>(2), 1)) /
-      gx.chip<3>(5).slice(st1, sz).constant(2.f);
+    (BackwardDiff(x.chip<3>(1), 2) + BackwardDiff(x.chip<3>(2), 1)) /
+    gx.chip<3>(5).slice(st1, sz).constant(2.f);
 }
 
 inline void Div(Cx4 const &x, Cx3 &div, Eigen::ThreadPoolDevice &dev)
@@ -71,7 +71,7 @@ inline void Div(Cx4 const &x, Cx3 &div, Eigen::ThreadPoolDevice &dev)
   Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
   Sz3 const st1{1, 1, 1};
   div.slice(st1, sz).device(dev) =
-      BackwardDiff(x.chip<3>(0), 0) + BackwardDiff(x.chip<3>(1), 1) + BackwardDiff(x.chip<3>(2), 2);
+    BackwardDiff(x.chip<3>(0), 0) + BackwardDiff(x.chip<3>(1), 1) + BackwardDiff(x.chip<3>(2), 2);
 }
 
 inline void Div(Cx4 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
@@ -79,11 +79,11 @@ inline void Div(Cx4 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
   Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
   Sz3 const st1{1, 1, 1};
   div.chip<3>(0).slice(st1, sz).device(dev) =
-      ForwardDiff(x.chip<3>(0), 0) + ForwardDiff(x.chip<3>(3), 1) + ForwardDiff(x.chip<3>(4), 2);
+    ForwardDiff(x.chip<3>(0), 0) + ForwardDiff(x.chip<3>(3), 1) + ForwardDiff(x.chip<3>(4), 2);
   div.chip<3>(1).slice(st1, sz).device(dev) =
-      ForwardDiff(x.chip<3>(3), 0) + ForwardDiff(x.chip<3>(1), 1) + ForwardDiff(x.chip<3>(5), 2);
+    ForwardDiff(x.chip<3>(3), 0) + ForwardDiff(x.chip<3>(1), 1) + ForwardDiff(x.chip<3>(5), 2);
   div.chip<3>(2).slice(st1, sz).device(dev) =
-      ForwardDiff(x.chip<3>(4), 0) + ForwardDiff(x.chip<3>(5), 1) + ForwardDiff(x.chip<3>(2), 2);
+    ForwardDiff(x.chip<3>(4), 0) + ForwardDiff(x.chip<3>(5), 1) + ForwardDiff(x.chip<3>(2), 2);
 }
 
 inline void ProjectP(Cx4 &p, float const a, Eigen::ThreadPoolDevice &dev)
@@ -93,11 +93,11 @@ inline void ProjectP(Cx4 &p, float const a, Eigen::ThreadPoolDevice &dev)
   res.set(1, p.dimension(1));
   res.set(2, p.dimension(2));
   Eigen::IndexList<
-      Eigen::type2index<1>,
-      Eigen::type2index<1>,
-      Eigen::type2index<1>,
-      Eigen::type2index<3>>
-      brd;
+    Eigen::type2index<1>,
+    Eigen::type2index<1>,
+    Eigen::type2index<1>,
+    Eigen::type2index<3>>
+    brd;
 
   R3 normp(p.dimension(0), p.dimension(1), p.dimension(2));
   normp.device(dev) = (p * p.conjugate()).sum(Sz1{3}).real().sqrt() / a;
@@ -112,17 +112,17 @@ inline void ProjectQ(Cx4 &q, float const a, Eigen::ThreadPoolDevice &dev)
   res.set(1, q.dimension(1));
   res.set(2, q.dimension(2));
   Eigen::IndexList<
-      Eigen::type2index<1>,
-      Eigen::type2index<1>,
-      Eigen::type2index<1>,
-      Eigen::type2index<6>>
-      brd;
+    Eigen::type2index<1>,
+    Eigen::type2index<1>,
+    Eigen::type2index<1>,
+    Eigen::type2index<6>>
+    brd;
 
   auto const qsqr = q * q.conjugate();
   auto const q1 =
-      qsqr.slice(Sz4{0, 0, 0, 0}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
+    qsqr.slice(Sz4{0, 0, 0, 0}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
   auto const q2 =
-      qsqr.slice(Sz4{0, 0, 0, 3}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
+    qsqr.slice(Sz4{0, 0, 0, 3}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
   R3 normq(q.dimension(0), q.dimension(1), q.dimension(2));
   normq.device(dev) = (q1.sum(Sz1{3}).real() + q2.sum(Sz1{3}).real() * 2.f).sqrt() / a;
   normq.device(dev) = (normq > 1.f).select(normq, normq.constant(1.f));
@@ -130,14 +130,14 @@ inline void ProjectQ(Cx4 &q, float const a, Eigen::ThreadPoolDevice &dev)
 }
 
 Cx3 tgv(
-    long const max_its,
-    float const thresh,
-    float const alpha,
-    float const reduction,
-    float const step_size,
-    ReconOp &op,
-    Cx3 &ks_data,
-    Log &log)
+  long const max_its,
+  float const thresh,
+  float const alpha,
+  float const reduction,
+  float const step_size,
+  ReconOp &op,
+  Cx3 const &ks_data,
+  Log &log)
 {
   auto dev = Threads::GlobalDevice();
 
@@ -148,11 +148,9 @@ Cx3 tgv(
   // Primal variables
   Cx3 u(dims);                 // Main variable
   op.Adj(ks_data, u);          // Get starting point
-  float const scale = Norm(u); // Normalise so scaling factors stay sane
-  ks_data = ks_data / ks_data.constant(scale);
-  u = u / u.constant(scale);
-  Cx3 u_ = u;    // Bar variable (is this the "dual"?)
-  Cx3 u_old = u; // From previous iteration
+  float const scale = Norm(u); // Normalise regularisation factors
+  Cx3 u_ = u;                  // Bar variable (is this the "dual"?)
+  Cx3 u_old = u;               // From previous iteration
   Cx4 grad_u(dims3);
   grad_u.setZero();
   Cx4 v(dims3);
@@ -182,10 +180,10 @@ Cx3 tgv(
   Cx3 r(ks_data.dimensions());
   r.setZero();
 
-  float const alpha00 = alpha;
-  float const alpha10 = alpha / 2.f;
-  float const alpha01 = alpha00 * reduction;
-  float const alpha11 = alpha10 * reduction;
+  float const alpha00 = scale * alpha;
+  float const alpha10 = scale * alpha / 2.f;
+  float const alpha01 = scale * alpha00 * reduction;
+  float const alpha11 = scale * alpha10 * reduction;
 
   // Step lengths
   float const tau_p = 1.f / step_size;

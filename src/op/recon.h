@@ -9,13 +9,13 @@
 struct ReconOp final : Operator<3, 3>
 {
   ReconOp(
-      Trajectory const &traj,
-      float const os,
-      bool const kb,
-      bool const fast,
-      std::string const sdc,
-      Cx4 &maps,
-      Log &log);
+    Trajectory const &traj,
+    float const os,
+    bool const kb,
+    bool const fast,
+    std::string const sdc,
+    Cx4 const &maps,
+    Log &log);
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;

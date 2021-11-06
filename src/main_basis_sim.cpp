@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "io_hd5.h"
+#include "io.h"
 #include "log.h"
 #include "parse_args.h"
 #include "sim-eddy.h"

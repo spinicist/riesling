@@ -24,34 +24,32 @@ struct VectorReader
 };
 
 std::string OutName(
-    std::string const &iName,
-    std::string const &oName,
-    std::string const &suffix,
-    std::string const &extension = "nii");
+  std::string const &iName,
+  std::string const &oName,
+  std::string const &suffix,
+  std::string const &extension = "nii");
 
 extern void WriteOutput(
-    Cx4 const &vols,
-    bool const mag,
-    bool const needsSwap,
-    Info const &info,
-    std::string const &iname,
-    std::string const &oname,
-    std::string const &suffix,
-    std::string const &ext,
-    Log &log);
+  Cx4 const &vols,
+  bool const mag,
+  bool const needsSwap,
+  Info const &info,
+  std::string const &iname,
+  std::string const &oname,
+  std::string const &suffix,
+  std::string const &ext,
+  Log &log);
 
 void WriteBasisVolumes(
-    Cx5 const &basisVols,
-    R2 const &basis,
-    bool const mag,
-    Info const &info,
-    std::string const &iname,
-    std::string const &oname,
-    std::string const &suffix,
-    std::string const &ext,
-    Log &log);
-
-long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
+  Cx5 const &basisVols,
+  R2 const &basis,
+  bool const mag,
+  Info const &info,
+  std::string const &iname,
+  std::string const &oname,
+  std::string const &suffix,
+  std::string const &ext,
+  Log &log);
 
 #define CORE_RECON_ARGS                                                                            \
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");                           \
@@ -59,22 +57,22 @@ long LastOrVal(args::ValueFlag<long> &sFlag, long const vols);
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
   args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
   args::Flag fastgrid(                                                                             \
-      parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});               \
+    parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
   args::ValueFlag<std::string> sdc(                                                                \
-      parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");          \
+    parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");            \
   args::ValueFlag<float> sdc_exp(                                                                  \
-      parser, "SDC Exponent", "SDC Exponent (default 1.0)", {'e', "sdc_exp"}, 1.0f);               \
+    parser, "SDC Exponent", "SDC Exponent (default 1.0)", {'e', "sdc_exp"}, 1.0f);                 \
   args::ValueFlag<std::string> oftype(                                                             \
-      parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
 
 #define COMMON_RECON_ARGS                                                                          \
   CORE_RECON_ARGS                                                                                  \
   args::ValueFlag<float> out_fov(                                                                  \
-      parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                   \
+    parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                     \
   args::ValueFlag<float> tukey_s(                                                                  \
-      parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);                \
+    parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);                  \
   args::ValueFlag<float> tukey_e(                                                                  \
-      parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);                      \
+    parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);                        \
   args::ValueFlag<float> tukey_h(                                                                  \
-      parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);               \
+    parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);                 \
   args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});

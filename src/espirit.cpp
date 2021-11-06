@@ -4,7 +4,6 @@
 #include "decomp.h"
 #include "fft_plan.hpp"
 #include "hankel.h"
-#include "io_nifti.h"
 #include "op/grid.h"
 #include "padder.h"
 #include "tensorOps.h"
@@ -12,13 +11,13 @@
 #include "vc.h"
 
 Cx4 ESPIRIT(
-    std::unique_ptr<GridOp> const &gridder,
-    Cx3 const &data,
-    long const kRad,
-    long const calRad,
-    long const gap,
-    float const thresh,
-    Log &log)
+  std::unique_ptr<GridOp> const &gridder,
+  Cx3 const &data,
+  long const kRad,
+  long const calRad,
+  long const gap,
+  float const thresh,
+  Log &log)
 {
   log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
@@ -32,25 +31,24 @@ Cx4 ESPIRIT(
 
   log.info(FMT_STRING("Upsample last dimension"));
   Cx4 mix_grid(
-      mini_kernels.dimension(0),
-      mini_kernels.dimension(1),
-      mini_kernels.dimension(2),
-      grid.dimension(3));
+    mini_kernels.dimension(0),
+    mini_kernels.dimension(1),
+    mini_kernels.dimension(2),
+    grid.dimension(3));
   FFT::Plan<4, 1> mix_fft(mix_grid, log);
   Cx5 mix_kernels(
-      mini_kernels.dimension(0),
-      mini_kernels.dimension(1),
-      mini_kernels.dimension(2),
-      grid.dimension(3),
-      retain);
+    mini_kernels.dimension(0),
+    mini_kernels.dimension(1),
+    mini_kernels.dimension(2),
+    grid.dimension(3),
+    retain);
   mix_kernels.setZero();
   Cropper const lo_mix(
-      Sz3{mix_grid.dimension(1), mix_grid.dimension(2), mix_grid.dimension(3)},
-      Sz3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)},
-      log);
+    Sz3{mix_grid.dimension(1), mix_grid.dimension(2), mix_grid.dimension(3)},
+    Sz3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)},
+    log);
   float const scale =
-      (1.f /
-       sqrt(mini_kernels.dimension(1) * mini_kernels.dimension(2) * mini_kernels.dimension(3)));
+    (1.f / sqrt(mini_kernels.dimension(1) * mini_kernels.dimension(2) * mini_kernels.dimension(3)));
   for (long kk = 0; kk < retain; kk++) {
     mix_grid.setZero();
     lo_mix.crop4(mix_grid) = mini_kernels.chip(kk, 4) * mini_kernels.chip(kk, 4).constant(scale);
@@ -64,7 +62,7 @@ Cx4 ESPIRIT(
   auto slice_task = [&grid, &valsImage, &mix_kernels, &log](long const lo_z, long const hi_z) {
     for (long zz = lo_z; zz < hi_z; zz++) {
       Cx4 hi_kernels(
-          grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
+        grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
       Cx3 hi_slice(grid.dimension(0), grid.dimension(1), grid.dimension(2));
       Log nullLog;
       FFT::Plan<3, 2> hi_slice_fft(hi_slice, nullLog, 1);

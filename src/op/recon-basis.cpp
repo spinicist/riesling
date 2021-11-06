@@ -11,7 +11,7 @@ ReconBasisOp::ReconBasisOp(
     bool const kb,
     bool const fast,
     std::string const sdc,
-    Cx4 &maps,
+    Cx4 const &maps,
     R2 const &basis,
     Log &log)
     : gridder_{make_grid_basis(traj, os, kb, fast, basis, log)}
@@ -27,9 +27,9 @@ ReconBasisOp::ReconBasisOp(
 {
   if (sense_.channels() != traj.info().channels) {
     Log::Fail(
-        "Number of SENSE channels {} did not match data channels {}",
-        sense_.channels(),
-        traj.info().channels);
+      "Number of SENSE channels {} did not match data channels {}",
+      sense_.channels(),
+      traj.info().channels);
   }
 
   auto grid1 = make_grid(gridder_->mapping(), kb, fast, log);

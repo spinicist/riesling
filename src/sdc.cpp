@@ -1,15 +1,15 @@
 #include "sdc.h"
 
-#include "io_hd5.h"
-#include "op/grid.h"
+#include "io.h"
 #include "op/grid-basis.h"
+#include "op/grid.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "trajectory.h"
 
 namespace SDC {
 void Choose(
-    std::string const &iname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
+  std::string const &iname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
 {
   if (iname == "") {
     return;
@@ -23,25 +23,26 @@ void Choose(
     HD5::Reader reader(iname, log);
     auto const sdcInfo = reader.readInfo();
     auto const trajInfo = traj.info();
-    if (sdcInfo.read_points != trajInfo.read_points ||
-        sdcInfo.spokes_total() != trajInfo.spokes_total()) {
+    if (
+      sdcInfo.read_points != trajInfo.read_points ||
+      sdcInfo.spokes_total() != trajInfo.spokes_total()) {
       Log::Fail(
-          "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
-          sdcInfo.read_points,
-          sdcInfo.spokes_total(),
-          trajInfo.read_points,
-          trajInfo.spokes_total());
+        "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
+        sdcInfo.read_points,
+        sdcInfo.spokes_total(),
+        trajInfo.read_points,
+        trajInfo.spokes_total());
     }
     gridder->setSDC(reader.readSDC(sdcInfo));
   }
 }
 
 void Choose(
-    std::string const &iname,
-    Trajectory const &traj,
-    std::unique_ptr<GridOp> &gridder,
-    std::unique_ptr<GridBasisOp> &gridder2,
-    Log &log)
+  std::string const &iname,
+  Trajectory const &traj,
+  std::unique_ptr<GridOp> &gridder,
+  std::unique_ptr<GridBasisOp> &gridder2,
+  Log &log)
 {
   if (iname == "") {
     return;
@@ -55,14 +56,15 @@ void Choose(
     HD5::Reader reader(iname, log);
     auto const sdcInfo = reader.readInfo();
     auto const trajInfo = traj.info();
-    if (sdcInfo.read_points != trajInfo.read_points ||
-        sdcInfo.spokes_total() != trajInfo.spokes_total()) {
+    if (
+      sdcInfo.read_points != trajInfo.read_points ||
+      sdcInfo.spokes_total() != trajInfo.spokes_total()) {
       Log::Fail(
-          "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
-          sdcInfo.read_points,
-          sdcInfo.spokes_total(),
-          trajInfo.read_points,
-          trajInfo.spokes_total());
+        "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
+        sdcInfo.read_points,
+        sdcInfo.spokes_total(),
+        trajInfo.read_points,
+        trajInfo.spokes_total());
     }
     gridder2->setSDC(reader.readSDC(sdcInfo));
   }
@@ -89,7 +91,7 @@ R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
     gridder->Adj(W, temp);
     gridder->A(temp, Wp);
     Wp.device(Threads::GlobalDevice()) =
-        (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
+      (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().square().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 5.e-2) {
@@ -132,11 +134,11 @@ R2 Radial2D(Trajectory const &traj, Log &log)
   if (info.spokes_lo) {
     R1 const ss = spoke_sdc(0, info.spokes_lo, info.lo_scale);
     sdc.slice(Sz2{0, 0}, Sz2{info.read_points, info.spokes_lo}) =
-        ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_lo});
+      ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_lo});
   }
   R1 const ss = spoke_sdc(info.spokes_lo, info.spokes_hi, 1.f);
   sdc.slice(Sz2{0, info.spokes_lo}, Sz2{info.read_points, info.spokes_hi}) =
-      ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_hi});
+    ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_hi});
 
   log.info(FMT_STRING("Calculated 2D radial analytic SDC"));
   return sdc;
@@ -172,11 +174,11 @@ R2 Radial3D(Trajectory const &traj, Log &log)
   if (info.spokes_lo) {
     R1 const ss = spoke_sdc(0, info.spokes_lo, info.lo_scale);
     sdc.slice(Sz2{0, 0}, Sz2{info.read_points, info.spokes_lo}) =
-        ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_lo});
+      ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_lo});
   }
   R1 const ss = spoke_sdc(info.spokes_lo, info.spokes_hi, 1.f);
   sdc.slice(Sz2{0, info.spokes_lo}, Sz2{info.read_points, info.spokes_hi}) =
-      ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_hi});
+    ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_hi});
 
   log.info(FMT_STRING("Calculated 2D radial analytic SDC"));
   return sdc;

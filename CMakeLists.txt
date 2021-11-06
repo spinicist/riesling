@@ -36,6 +36,8 @@ add_library(vineyard
     src/hankel.cpp
     src/io_hd5.cpp
     src/io_nifti.cpp
+    src/io_reader.cpp
+    src/io_writer.cpp
     src/llr.cpp
     src/log.cpp
     src/padder.cpp
