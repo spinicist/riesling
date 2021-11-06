@@ -75,7 +75,7 @@ int main_basis_sim(args::Subparser &parser)
     Sim::Parameter const T2{65, 0.02, 0.2, true};
     result = Sim::MUPA(T1, T2, B1, seq, randomSamp.Get(), log);
   } else {
-    result = Sim::Simple(T1, beta, B1, seq, randomSamp.Get(), log);
+    result = Sim::Simple(T1, beta, seq, randomSamp.Get(), log);
   }
 
   // Normalize dictionary
