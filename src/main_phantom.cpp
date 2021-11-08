@@ -52,6 +52,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<long> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
   args::ValueFlag<long> spokes_per_interleave(
     parser, "N", "Phyllotaxis spokes per interleave", {"spi"}, 512);
+  args::Flag gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
   args::ValueFlag<std::string> trajfile(
     parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
   args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
@@ -89,7 +90,7 @@ int main_phantom(args::Subparser &parser)
       .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
       .direction = Eigen::Matrix3f::Identity()};
     if (phyllo) {
-      points = Phyllotaxis(info, smoothness.Get(), spokes_per_interleave.Get());
+      points = Phyllotaxis(info, smoothness.Get(), spokes_per_interleave.Get(), gmeans);
     } else {
       points = ArchimedeanSpiral(info);
     }

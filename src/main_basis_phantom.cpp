@@ -37,8 +37,8 @@ int main_basis_phantom(args::Subparser &parser)
     parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
   args::ValueFlag<float> read_samp(
     parser, "SRATE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
-  args::ValueFlag<float> spoke_samp(
-    parser, "SRATE", "Spoke undersampling (default 1)", {'s', "spokes"}, 1);
+  args::ValueFlag<long> sps(parser, "S", "Spokes per segment", {"sps"}, 1);
+  args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
   args::ValueFlag<long> lores(
     parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
   args::ValueFlag<long> gap(parser, "DEAD-TIME", "Dead-time gap in read samples", {"gap"}, 0);
@@ -51,8 +51,8 @@ int main_basis_phantom(args::Subparser &parser)
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});
   args::ValueFlag<long> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
-  args::ValueFlag<long> spokes_per_interleave(
-    parser, "N", "Phyllotaxis spokes per interleave", {"spi"}, 512);
+  args::ValueFlag<long> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 1);
+  args::Flag gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
   args::ValueFlag<std::string> trajfile(
     parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
   args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
@@ -86,7 +86,11 @@ int main_basis_phantom(args::Subparser &parser)
     use_lores = info.spokes_lo > 0;
     info.spokes_lo = 0;
   } else {
-    auto const spokes_hi = std::lrint(matrix.Get() * matrix.Get() / spoke_samp.Get());
+    // Follow the GE definition where factor of PI is ignored
+    auto const spokes_hi =
+      sps.Get() *
+      ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
+    fmt::print("nspokes {}\n", spokes_hi);
     info = Info{
       .type = Info::Type::ThreeD,
       .channels = nchan.Get(),
@@ -103,7 +107,7 @@ int main_basis_phantom(args::Subparser &parser)
       .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
       .direction = Eigen::Matrix3f::Identity()};
     if (phyllo) {
-      points = Phyllotaxis(info, smoothness.Get(), spokes_per_interleave.Get());
+      points = Phyllotaxis(info, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
     } else {
       points = ArchimedeanSpiral(info);
     }

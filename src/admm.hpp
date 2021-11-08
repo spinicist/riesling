@@ -20,14 +20,14 @@ struct AugmentedOp
 
 template <typename Op>
 void admm(
-    long const outer_its,
-    long const lsq_its,
-    float const lsq_thresh,
-    Op const &lsq_op,
-    float const rho,
-    std::function<Cx4(Cx4 const &)> const &reg,
-    typename Op::Input &x,
-    Log &log)
+  long const outer_its,
+  long const lsq_its,
+  float const lsq_thresh,
+  Op const &lsq_op,
+  float const rho,
+  std::function<Cx4(Cx4 const &)> const &reg,
+  typename Op::Input &x,
+  Log &log)
 {
   if (outer_its < 1)
     return;
@@ -39,12 +39,10 @@ void admm(
   T b(dims);
   T z(dims);
   T u(dims);
-  T b_aug(dims);
   T xpu(dims);
   b = x;
   z.setZero();
   u.setZero();
-  b_aug.setZero();
   xpu.setZero();
 
   // Augment system

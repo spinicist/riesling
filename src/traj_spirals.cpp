@@ -1,5 +1,5 @@
-#include "log.h"
 #include "traj_spirals.h"
+#include "log.h"
 
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
@@ -70,16 +70,19 @@ long Fib(long n)
   }
 }
 
-R3 Phyllotaxis(Info const &info, long const smoothness, long const spi)
+R3 Phyllotaxis(Info const &info, long const smoothness, long const spi, bool const gm)
 {
   long const nRead = info.read_points;
   long const nSpokes = info.spokes_total();
   if ((nSpokes % spi) != 0) {
-    Log::Fail("Spokers per interleave {} is not a divisor of total spokes {}", spi, nSpokes);
+    Log::Fail("Spokes per interleave {} is not a divisor of total spokes {}", spi, nSpokes);
   }
   long nInterleaves = nSpokes / spi;
-  constexpr double phi_gold = 2.399963229728653;
-  double dphi = phi_gold * Fib(smoothness);
+  constexpr float phi_gold = 2.399963229728653;
+  constexpr float phi_gm1 = 0.465571231876768;
+  constexpr float phi_gm2 = 0.682327803828019;
+
+  float dphi = phi_gold * Fib(smoothness);
 
   R1 read(nRead);
   for (long ir = 0; ir < nRead; ir++) {
@@ -91,15 +94,33 @@ R3 Phyllotaxis(Info const &info, long const smoothness, long const spi)
   R3 traj(3, nRead, nSpokes);
   R1 endPoint(3);
   for (long ii = 0; ii < nInterleaves; ii++) {
-    double const z_ii = (ii * 2.) / (nSpokes - 1);
-    double const phi_ii = (ii * phi_gold);
+    float const z_ii = (ii * 2.) / (nSpokes - 1);
+    float const phi_ii = (ii * phi_gold);
+
+    float const gm_phi = 2 * M_PI * ii * phi_gm2;
+    float const gm_theta = acos(fmod(ii * phi_gm1, 1.0));
+
     for (long is = 0; is < spi; is++) {
-      double const z = (1 - (2. * nInterleaves * is) / (nSpokes - 1.)) - z_ii;
-      double const theta = acos(z);
-      double const phi = (is * dphi) + phi_ii;
+      float const z = (1 - (2. * nInterleaves * is) / (nSpokes - 1.)) - z_ii;
+      float const theta = acos(z);
+      float const phi = (is * dphi) + phi_ii;
       endPoint(0) = sin(theta) * cos(phi);
       endPoint(1) = sin(theta) * sin(phi);
       endPoint(2) = z;
+      if (gm) {
+        R2 rot(3, 3);
+        rot(0, 0) = cos(gm_theta) * cos(gm_phi);
+        rot(0, 1) = -sin(gm_phi);
+        rot(0, 2) = cos(gm_phi) * sin(gm_theta);
+        rot(1, 0) = cos(gm_theta) * sin(gm_phi);
+        rot(1, 1) = cos(gm_phi);
+        rot(1, 2) = sin(gm_theta) * sin(gm_phi);
+        rot(2, 0) = -sin(gm_theta);
+        rot(2, 1) = 0;
+        rot(2, 2) = cos(gm_theta);
+        endPoint =
+          rot.contract(endPoint, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()).eval();
+      }
       traj.chip((ii * spi) + is, 2) = endPoint.contract(read, empty);
     }
   }
