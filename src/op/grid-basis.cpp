@@ -10,11 +10,11 @@
 #include <cmath>
 
 GridBasisOp::GridBasisOp(Mapping map, bool const unsafe, R2 basis, Log &log)
-    : GridBase(map, unsafe, log)
-    , basis_{basis}
-    , scale_{std::sqrt((float)basis_.dimension(0))}
+  : GridBase(map, unsafe, log)
+  , basis_{basis}
+  , basisScale_{std::sqrt((float)basis_.dimension(0))}
 {
-  log_.info("Basis size {}x{}", basis_.dimension(0), basis_.dimension(1));
+  log_.info("Basis size {}x{}, scale {}", basis_.dimension(0), basis_.dimension(1), basisScale_);
 }
 
 long GridBasisOp::dimension(long const D) const
@@ -34,14 +34,14 @@ R2 const &GridBasisOp::basis() const
 }
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fastgrid,
-    R2 const &basis,
-    Log &log,
-    float const res,
-    bool const shrink)
+  Trajectory const &traj,
+  float const os,
+  bool const kb,
+  bool const fastgrid,
+  R2 const &basis,
+  Log &log,
+  float const res,
+  bool const shrink)
 {
   if (kb) {
     if (traj.info().type == Info::Type::ThreeD) {
@@ -55,7 +55,7 @@ std::unique_ptr<GridBasisOp> make_grid_basis(
 }
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-    Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log)
+  Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log)
 {
   if (kb) {
     if (mapping.type == Info::Type::ThreeD) {

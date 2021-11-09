@@ -84,26 +84,24 @@ target_link_libraries(vineyard PUBLIC
 
 # Main executable
 add_executable(riesling
-    src/main_basis_admm.cpp
-    src/main_basis_blend.cpp
-    src/main_basis_cg.cpp
-    src/main_basis_dict.cpp
-    src/main_basis_phantom.cpp
-    src/main_basis_recon.cpp
-    src/main_basis_sim.cpp
+    src/main_admm.cpp
+    src/main_blend.cpp
+    src/main_lookup.cpp
     src/main_cg.cpp
     src/main_compress.cpp
     src/main_espirit.cpp
     src/main_grid.cpp
     src/main_hdr.cpp
     src/main_phantom.cpp
+    src/main_phantom_basis.cpp
     src/main_plan.cpp
     src/main_recon.cpp
-    src/main_tgv.cpp
-    src/main_traj.cpp
     src/main_sdc.cpp
     src/main_sense.cpp
+    src/main_sim.cpp
     src/main_split.cpp
+    src/main_tgv.cpp
+    src/main_traj.cpp
     src/main_version.cpp
     src/main_zinfandel.cpp
     src/main.cpp

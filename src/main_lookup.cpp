@@ -6,7 +6,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-int main_basis_dict(args::Subparser &parser)
+int main_lookup(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
   args::Positional<std::string> dname(parser, "DICT", "h5 file containing lookup dictionary");

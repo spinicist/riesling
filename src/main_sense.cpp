@@ -15,7 +15,7 @@ int main_sense(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
 
-  args::ValueFlag<long> volume(
+  args::ValueFlag<long> vol(
     parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
   args::ValueFlag<float> lambda(
     parser, "LAMBDA", "Tikhonov regularisation parameter", {"lambda"}, 0.f);
@@ -30,8 +30,15 @@ int main_sense(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
-  Cx4 sense =
-    DirectSENSE(traj, osamp.Get(), kb, fov.Get(), lambda.Get(), volume.Get(), reader, log);
+  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
+  Cx4 sense = DirectSENSE(
+    info,
+    gridder.get(),
+    fov.Get(),
+    lambda.Get(),
+    reader.noncartesian(ValOrLast(vol.Get(), info.volumes)),
+    log);
 
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", oftype.Get());
   if (oftype.Get().compare("h5") == 0) {

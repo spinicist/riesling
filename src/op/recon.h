@@ -8,14 +8,7 @@
 
 struct ReconOp final : Operator<3, 3>
 {
-  ReconOp(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fast,
-    std::string const sdc,
-    Cx4 const &maps,
-    Log &log);
+  ReconOp(GridOp *gridder, Cx4 const &maps, Log &log);
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;
@@ -26,7 +19,7 @@ struct ReconOp final : Operator<3, 3>
   void calcToeplitz(Info const &info);
 
 private:
-  std::unique_ptr<GridOp> gridder_;
+  GridOp *gridder_;
   Cx4 mutable grid_;
   Cx4 transfer_;
   SenseOp sense_;

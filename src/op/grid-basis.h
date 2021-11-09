@@ -22,18 +22,18 @@ struct GridBasisOp : Operator<5, 3>, GridBase
 
 protected:
   R2 basis_;
-  float scale_;
+  float basisScale_;
 };
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fastgrid,
-    R2 const &basis,
-    Log &log,
-    float const res = -1.f,
-    bool const shrink = false);
+  Trajectory const &traj,
+  float const os,
+  bool const kb,
+  bool const fastgrid,
+  R2 const &basis,
+  Log &log,
+  float const res = -1.f,
+  bool const shrink = false);
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-    Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log);
+  Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log);

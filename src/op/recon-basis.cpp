@@ -6,16 +6,11 @@
 #include "grid.h"
 
 ReconBasisOp::ReconBasisOp(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fast,
-    std::string const sdc,
+    GridBasisOp *gridder,
     Cx4 const &maps,
-    R2 const &basis,
     Log &log)
-    : gridder_{make_grid_basis(traj, os, kb, fast, basis, log)}
-    , grid_{traj.info().channels,
+    : gridder_{gridder}
+    , grid_{maps.dimension(0),
             gridder_->basis().dimension(1),
             gridder_->dimension(0),
             gridder_->dimension(1),
@@ -25,15 +20,6 @@ ReconBasisOp::ReconBasisOp(
     , fft_{grid_, log}
     , log_{log}
 {
-  if (sense_.channels() != traj.info().channels) {
-    Log::Fail(
-      "Number of SENSE channels {} did not match data channels {}",
-      sense_.channels(),
-      traj.info().channels);
-  }
-
-  auto grid1 = make_grid(gridder_->mapping(), kb, fast, log);
-  gridder_->setSDC(SDC::Choose(sdc, traj, grid1, log));
 }
 
 Sz3 ReconBasisOp::dimensions() const

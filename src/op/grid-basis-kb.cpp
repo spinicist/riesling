@@ -98,7 +98,7 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const nck = noncart.chip(nc.spoke, 2).chip(nc.read, 1);
-      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si]);
+      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si] * basisScale_);
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       if (safe_) {
@@ -162,7 +162,7 @@ void GridBasisKB<InPlane, ThroughPlane>::A(Input const &cart, Output &noncart) c
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const k = kernel_(mapping_.offset[si], 1.f);
+      auto const k = kernel_(mapping_.offset[si], 1.f / basisScale_);
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       stC.set(4, c.z - (ThroughPlane / 2));

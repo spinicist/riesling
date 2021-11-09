@@ -13,7 +13,7 @@
 #include "parse_args.h"
 #include "sense.h"
 
-int main_basis_admm(args::Subparser &parser)
+int main_admm(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
@@ -29,25 +29,33 @@ int main_basis_admm(args::Subparser &parser)
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   Log log = ParseCommand(parser, iname);
+
+  if (!basisFile) {
+    Log::Fail("ADMM only currently implemented for subspace reconstructions with basis");
+  }
+
   FFT::Start(log);
 
   HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
-
+  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  R2 const w = SDC::Choose(sdc.Get(), traj, gridder, log);
+  gridder->setSDC(w);
+  Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)
+                            : DirectSENSE(
+                                info,
+                                gridder.get(),
+                                iter_fov.Get(),
+                                senseLambda.Get(),
+                                reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
+                                log);
   HD5::Reader basisReader(basisFile.Get(), log);
   R2 const basis = basisReader.readBasis();
   long const nB = basis.dimension(1);
-
-  Cx4 senseMaps;
-  if (senseFile) {
-    senseMaps = LoadSENSE(senseFile.Get(), log);
-  } else {
-    senseMaps = DirectSENSE(
-      traj, osamp.Get(), kb, iter_fov.Get(), senseLambda.Get(), senseVol.Get(), reader, log);
-  }
-
-  ReconBasisOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, basis, log);
+  auto basisGridder = make_grid_basis(gridder->mapping(), kb, fastgrid, basis, log);
+  basisGridder->setSDC(w);
+  ReconBasisOp recon(basisGridder.get(), senseMaps, log);
 
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get(), log); };
 

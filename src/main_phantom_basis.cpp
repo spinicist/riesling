@@ -13,7 +13,7 @@
 #include "types.h"
 #include <filesystem>
 
-int main_basis_phantom(args::Subparser &parser)
+int main_phantom_basis(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
   args::Positional<std::string> bname(parser, "BASIS", "Filename with basis");
@@ -129,7 +129,8 @@ int main_basis_phantom(args::Subparser &parser)
                             coil_r.Get(),
                             log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
-  ReconBasisOp recon(traj, osamp.Get(), kb, false, "none", senseMaps, basis, log);
+  auto gridder = make_grid_basis(traj, osamp.Get(), kb, false, basis, log);
+  ReconBasisOp recon(gridder.get(), senseMaps, log);
   auto const sz = recon.dimensions();
 
   Cx4 phan(nB, sz[0], sz[1], sz[2]);
@@ -202,7 +203,8 @@ int main_basis_phantom(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    ReconBasisOp lo_recon(lo_traj, osamp.Get(), kb, false, "none", senseMaps, basis, log);
+    auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kb, false, basis, log);
+    ReconBasisOp lo_recon(lo_gridder.get(), senseMaps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
     // Combine

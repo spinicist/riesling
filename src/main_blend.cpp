@@ -4,7 +4,7 @@
 #include "log.h"
 #include "parse_args.h"
 
-int main_basis_blend(args::Subparser &parser)
+int main_blend(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
   args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});

@@ -113,7 +113,8 @@ int main_phantom(args::Subparser &parser)
                              coil_r.Get(),
                              log);
   info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
-  ReconOp recon(traj, osamp.Get(), kb, false, "none", sense_maps, log);
+  auto gridder = make_grid(traj, osamp.Get(), kb, false, log);
+  ReconOp recon(gridder.get(), sense_maps, log);
 
   Cx3 phan = shepplogan
                ? SheppLoganPhantom(
@@ -181,7 +182,8 @@ int main_phantom(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    ReconOp lo_recon(lo_traj, osamp.Get(), kb, false, "none", sense_maps, log);
+    auto lo_grid = make_grid(lo_traj, osamp.Get(), kb, false, log);
+    ReconOp lo_recon(lo_grid.get(), sense_maps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
     // Combine

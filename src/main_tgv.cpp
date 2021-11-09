@@ -35,25 +35,20 @@ int main_tgv(args::Subparser &parser)
   auto const &info = traj.info();
 
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
+  R2 const w = SDC::Choose(sdc.Get(), traj, gridder, log);
+  gridder->setSDC(w);
+  Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)
+                            : DirectSENSE(
+                                info,
+                                gridder.get(),
+                                iter_fov.Get(),
+                                senseLambda.Get(),
+                                reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
+                                log);
 
-  Cx4 grid = gridder->newMultichannel(info.channels);
-  grid.setZero();
-  FFT::ThreeDMulti fft(grid, log);
-
-  Cropper iter_cropper(info, gridder->gridDims(), iter_fov.Get(), log);
-  R3 const apo = gridder->apodization(iter_cropper.size());
-  Cx4 sense = iter_cropper.newMultichannel(info.channels);
-  if (senseFile) {
-    sense = LoadSENSE(senseFile.Get(), log);
-  } else {
-    sense = DirectSENSE(
-      traj, osamp.Get(), kb, iter_fov.Get(), senseLambda.Get(), senseVol.Get(), reader, log);
-  }
-
-  ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), sense, log);
-
-  Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
+  ReconOp recon(gridder.get(), senseMaps, log);
+  auto sz = recon.dimensions();
+  Cropper out_cropper(info, sz, out_fov.Get(), log);
   Cx3 image = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   for (long iv = 0; iv < info.volumes; iv++) {

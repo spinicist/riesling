@@ -10,7 +10,7 @@
 #define COMMON_SENSE_ARGS                                                                          \
   args::ValueFlag<std::string> senseFile(                                                          \
     parser, "SENSE", "Read SENSE maps from specified .h5 file", {"sense", 's'});                   \
-  args::ValueFlag<long> senseVol(                                                               \
+  args::ValueFlag<long> senseVol(                                                                  \
     parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"senseVolume"}, -1);              \
   args::ValueFlag<float> senseLambda(                                                              \
     parser, "LAMBDA", "SENSE regularization", {"lambda", 'l'}, 0.f);
@@ -22,13 +22,11 @@ long ValOrLast(long const val, long const last);
  * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
  */
 Cx4 DirectSENSE(
-  Trajectory const &traj,
-  float const os,
-  bool const kb,
+  Info const &info,
+  GridOp const *g,
   float const fov,
   float const lambda,
-  long const volume,
-  HD5::Reader &reader,
+  Cx3 const &data,
   Log &log);
 
 /*!

@@ -8,15 +8,7 @@
 
 struct ReconBasisOp final : Operator<4, 3>
 {
-  ReconBasisOp(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fast,
-    std::string const sdc,
-    Cx4 const &maps,
-    R2 const &basis,
-    Log &log);
+  ReconBasisOp(GridBasisOp *gridder, Cx4 const &maps, Log &log);
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;
@@ -25,7 +17,7 @@ struct ReconBasisOp final : Operator<4, 3>
   Sz3 outputDimensions() const;
 
 private:
-  std::unique_ptr<GridBasisOp> gridder_;
+  GridBasisOp *gridder_;
   Cx5 mutable grid_;
   SenseBasisOp sense_;
   R3 apo_;

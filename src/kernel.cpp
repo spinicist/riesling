@@ -36,8 +36,8 @@ inline decltype(auto) KB(T const &x, float const beta, float const scale)
   constexpr float W_2 = (W / 2.f) * (W / 2.f);
   return (x > W_2).select(
     x.constant(0.f),
-    (x.constant(beta) * (x.constant(1.f) - (x / x.constant(W_2))).sqrt()).bessel_i0() *
-      x.constant(scale));
+    x.constant(scale) *
+      (x.constant(beta) * (x.constant(1.f) - (x / x.constant(W_2))).sqrt()).bessel_i0());
 }
 
 template <int InPlane, int ThroughPlane>

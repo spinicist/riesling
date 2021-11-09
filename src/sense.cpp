@@ -23,28 +23,23 @@ long ValOrLast(long const val, long const vols)
 }
 
 Cx4 DirectSENSE(
-  Trajectory const &traj,
-  float const os,
-  bool const kb,
+  Info const &info,
+  GridOp const *gridder,
   float const fov,
   float const lambda,
-  long const volume,
-  HD5::Reader &reader,
+  Cx3 const &data,
   Log &log)
 {
-  auto gridder = make_grid(traj, os, kb, false, log, 8.f, false);
-  gridder->setSDC(SDC::Choose("pipe", traj, gridder, log));
-
-  Cx4 grid = gridder->newMultichannel(traj.info().channels);
+  Cx4 grid = gridder->newMultichannel(data.dimension(0));
   FFT::ThreeDMulti fftN(grid, log);
-  gridder->Adj(reader.noncartesian(ValOrLast(volume, traj.info().volumes)), grid);
-  float const end_rad = traj.info().voxel_size.minCoeff() / sense_res;
+  gridder->Adj(data, grid);
+  float const end_rad = info.voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid, log);
   fftN.reverse(grid);
 
-  Cropper crop(traj.info(), gridder->gridDims(), fov, log);
+  Cropper crop(info, gridder->gridDims(), fov, log);
   Cx4 channels = crop.crop4(grid);
   Cx3 rss = crop.newImage();
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();

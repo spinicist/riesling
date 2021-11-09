@@ -67,7 +67,7 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const scale = mapping_.sdc[si] * scale_;
+      auto const scale = mapping_.sdc[si] * basisScale_;
       if (safe_) {
         workspace[ti].chip(c.z - minZ[ti], 4).chip(c.y, 3).chip(c.x, 2) +=
           (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
@@ -123,7 +123,7 @@ void GridBasisNN::A(Input const &cart, Output &noncart) const
         cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).contract(
           basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>(),
           Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()) *
-        noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale_);
+        noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(basisScale_);
     }
   };
   auto const &start = log_.now();
