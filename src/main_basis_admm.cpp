@@ -48,7 +48,6 @@ int main_basis_admm(args::Subparser &parser)
   }
 
   ReconBasisOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, basis, log);
-  recon.setPreconditioning(sdc_exp.Get());
 
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get(), log); };
 

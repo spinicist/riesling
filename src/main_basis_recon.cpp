@@ -32,8 +32,7 @@ int main_basis_recon(args::Subparser &parser)
 
   auto gridder = make_grid_basis(traj, osamp.Get(), kb, fastgrid, basis, log);
   auto grid1 = make_grid(gridder->mapping(), kb, fastgrid, log);
-  SDC::Choose(sdc.Get(), traj, grid1, gridder, log);
-  gridder->setSDCExponent(sdc_exp.Get());
+  SDC::Choose(sdc.Get(), traj, grid1, log);
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
   Sz3 const cropSz = cropper.size();
   R3 const apo = gridder->apodization(cropper.size());

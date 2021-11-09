@@ -60,8 +60,6 @@ void WriteBasisVolumes(
     parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
   args::ValueFlag<std::string> sdc(                                                                \
     parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");            \
-  args::ValueFlag<float> sdc_exp(                                                                  \
-    parser, "SDC Exponent", "SDC Exponent (default 1.0)", {'e', "sdc_exp"}, 1.0f);                 \
   args::ValueFlag<std::string> oftype(                                                             \
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
 

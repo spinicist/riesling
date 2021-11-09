@@ -90,7 +90,6 @@ int main_basis_phantom(args::Subparser &parser)
     auto const spokes_hi =
       sps.Get() *
       ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
-    fmt::print("nspokes {}\n", spokes_hi);
     info = Info{
       .type = Info::Type::ThreeD,
       .channels = nchan.Get(),

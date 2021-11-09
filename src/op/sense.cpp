@@ -125,7 +125,6 @@ void SenseBasisOp::A(Input const &x, Output &y) const
   assert(y.dimension(3) == (maps_.dimension(2) + left_[3] + right_[3]));
   assert(y.dimension(4) == (maps_.dimension(3) + left_[4] + right_[4]));
 
-  using FixOne = Eigen::type2index<1>;
   Eigen::IndexList<FixOne, int, int, int, int> resX;
   resX.set(1, x.dimension(0));
   resX.set(2, x.dimension(1));
@@ -163,7 +162,6 @@ void SenseBasisOp::Adj(Output const &x, Input &y) const
   assert(y.dimension(2) == maps_.dimension(2));
   assert(y.dimension(3) == maps_.dimension(3));
 
-  using FixOne = Eigen::type2index<1>;
   Eigen::IndexList<int, FixOne, int, int, int> resMaps;
   resMaps.set(0, maps_.dimension(0));
   resMaps.set(2, maps_.dimension(1));

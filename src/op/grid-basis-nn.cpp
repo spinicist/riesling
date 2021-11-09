@@ -8,19 +8,19 @@
 #include <cmath>
 
 GridBasisNN::GridBasisNN(
-    Trajectory const &traj,
-    float const os,
-    bool const unsafe,
-    R2 const &basis,
-    Log &log,
-    float const inRes,
-    bool const shrink)
-    : GridBasisOp(traj.mapping(os, 0, inRes, shrink), unsafe, basis, log)
+  Trajectory const &traj,
+  float const os,
+  bool const unsafe,
+  R2 const &basis,
+  Log &log,
+  float const inRes,
+  bool const shrink)
+  : GridBasisOp(traj.mapping(os, 0, inRes, shrink), unsafe, basis, log)
 {
 }
 
 GridBasisNN::GridBasisNN(Mapping const &map, bool const unsafe, R2 const &basis, Log &log)
-    : GridBasisOp(map, unsafe, basis, log)
+  : GridBasisOp(map, unsafe, basis, log)
 {
 }
 
@@ -33,7 +33,6 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
   assert(cart.dimension(4) == mapping_.cartDims[2]);
   assert(mapping_.sortedIndices.size() == mapping_.cart.size());
 
-  using FixOne = Eigen::type2index<1>;
   long const nchan = cart.dimension(0);
   long const nB = cart.dimension(1);
 
@@ -59,7 +58,7 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
       long const maxZ = mapping_.cart[mapping_.sortedIndices[hi - 1]].z;
       szZ[ti] = maxZ - minZ[ti] + 1;
       workspace[ti].resize(
-          cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
+        cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
       workspace[ti].setZero();
     }
 
@@ -68,21 +67,21 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const scale = pow(mapping_.sdc[si], DCexp_) * scale_;
+      auto const scale = mapping_.sdc[si] * scale_;
       if (safe_) {
         workspace[ti].chip(c.z - minZ[ti], 4).chip(c.y, 3).chip(c.x, 2) +=
-            (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-             noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale))
-                .reshape(rshNC)
-                .broadcast(brdNC) *
-            basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>().reshape(rshB).broadcast(brdB);
+          (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
+           noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale))
+            .reshape(rshNC)
+            .broadcast(brdNC) *
+          basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>().reshape(rshB).broadcast(brdB);
       } else {
         cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2) +=
-            (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-             noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale))
-                .reshape(rshNC)
-                .broadcast(brdNC) *
-            basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>().reshape(rshB).broadcast(brdB);
+          (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
+           noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale))
+            .reshape(rshNC)
+            .broadcast(brdNC) *
+          basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>().reshape(rshB).broadcast(brdB);
       }
     }
   };
@@ -94,14 +93,12 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
     log_.info("Combining thread workspaces...");
     for (long ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
-        cart.slice(
-                Sz5{0, 0, 0, 0, minZ[ti]},
-                Sz5{cart.dimension(0),
-                    cart.dimension(1),
-                    cart.dimension(2),
-                    cart.dimension(3),
-                    szZ[ti]})
-            .device(dev) += workspace[ti];
+        cart
+          .slice(
+            Sz5{0, 0, 0, 0, minZ[ti]},
+            Sz5{
+              cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]})
+          .device(dev) += workspace[ti];
       }
     }
   }
@@ -123,10 +120,10 @@ void GridBasisNN::A(Input const &cart, Output &noncart) const
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       noncart.chip(nc.spoke, 2).chip(nc.read, 1) =
-          cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).contract(
-              basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>(),
-              Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()) *
-          noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale_);
+        cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).contract(
+          basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>(),
+          Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()) *
+        noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale_);
     }
   };
   auto const &start = log_.now();

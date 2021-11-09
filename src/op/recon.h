@@ -23,7 +23,6 @@ struct ReconOp final : Operator<3, 3>
 
   Sz3 dimensions() const;
   Sz3 outputDimensions() const;
-  void setPreconditioning(float const p);
   void calcToeplitz(Info const &info);
 
 private:

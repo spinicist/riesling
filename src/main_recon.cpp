@@ -24,8 +24,7 @@ int main_recon(args::Subparser &parser)
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Choose(sdc.Get(), traj, gridder, log);
-  gridder->setSDCExponent(sdc_exp.Get());
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
   R3 const apo = gridder->apodization(cropper.size());
   Cx4 grid = gridder->newMultichannel(info.channels);

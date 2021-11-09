@@ -23,7 +23,6 @@ struct ReconBasisOp final : Operator<4, 3>
 
   Sz3 dimensions() const;
   Sz3 outputDimensions() const;
-  void setPreconditioning(float const p);
 
 private:
   std::unique_ptr<GridBasisOp> gridder_;

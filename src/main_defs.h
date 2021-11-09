@@ -10,7 +10,6 @@ int main_basis_phantom(args::Subparser &parser);
 int main_basis_recon(args::Subparser &parser);
 int main_basis_sim(args::Subparser &parser);
 int main_cg(args::Subparser &parser);
-int main_cgvar(args::Subparser &parser);
 int main_compress(args::Subparser &parser);
 int main_espirit(args::Subparser &parser);
 int main_grid(args::Subparser &parser);

@@ -8,17 +8,18 @@
 #include "trajectory.h"
 
 namespace SDC {
-void Choose(
+R2 Choose(
   std::string const &iname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
 {
+  R2 sdc(traj.info().read_points, traj.info().spokes_total());
   if (iname == "") {
-    return;
+    sdc.setConstant(1.f);
   } else if (iname == "none") {
-    return;
+    sdc.setConstant(1.f);
   } else if (iname == "pipe") {
-    gridder->setSDC(Pipe(traj, gridder, log));
+    sdc = Pipe(traj, gridder, log);
   } else if (iname == "radial") {
-    gridder->setSDC(Radial(traj, log));
+    sdc = Radial(traj, log);
   } else {
     HD5::Reader reader(iname, log);
     auto const sdcInfo = reader.readInfo();
@@ -33,8 +34,9 @@ void Choose(
         trajInfo.read_points,
         trajInfo.spokes_total());
     }
-    gridder->setSDC(reader.readSDC(sdcInfo));
+    sdc = reader.readSDC(sdcInfo);
   }
+  return sdc;
 }
 
 void Choose(
@@ -44,14 +46,15 @@ void Choose(
   std::unique_ptr<GridBasisOp> &gridder2,
   Log &log)
 {
+  R2 sdc;
   if (iname == "") {
     return;
   } else if (iname == "none") {
     return;
   } else if (iname == "pipe") {
-    gridder2->setSDC(Pipe(traj, gridder, log));
+    sdc = Pipe(traj, gridder, log);
   } else if (iname == "radial") {
-    gridder2->setSDC(Radial(traj, log));
+    sdc = Radial(traj, log);
   } else {
     HD5::Reader reader(iname, log);
     auto const sdcInfo = reader.readInfo();
@@ -66,8 +69,9 @@ void Choose(
         trajInfo.read_points,
         trajInfo.spokes_total());
     }
-    gridder2->setSDC(reader.readSDC(sdcInfo));
+    sdc = reader.readSDC(sdcInfo);
   }
+  gridder2->setSDC(sdc);
 }
 
 R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
@@ -91,8 +95,8 @@ R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
     gridder->Adj(W, temp);
     gridder->A(temp, Wp);
     Wp.device(Threads::GlobalDevice()) =
-      (Wp.real() > 0.f).select(W / Wp, W); // Avoid divide by zero problems
-    float const delta = R0((Wp - W).real().square().maximum())();
+      (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
+    float const delta = R0((Wp - W).real().abs().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 5.e-2) {
       log.info("SDC converged, delta was {}", delta);

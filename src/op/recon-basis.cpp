@@ -33,7 +33,7 @@ ReconBasisOp::ReconBasisOp(
   }
 
   auto grid1 = make_grid(gridder_->mapping(), kb, fast, log);
-  SDC::Choose(sdc, traj, grid1, gridder_, log);
+  gridder_->setSDC(SDC::Choose(sdc, traj, grid1, log));
 }
 
 Sz3 ReconBasisOp::dimensions() const
@@ -46,17 +46,11 @@ Sz3 ReconBasisOp::outputDimensions() const
   return gridder_->outputDimensions();
 }
 
-void ReconBasisOp::setPreconditioning(float const p)
-{
-  gridder_->setSDCExponent(p);
-}
-
 void ReconBasisOp::A(Input const &x, Output &y) const
 {
   auto dev = Threads::GlobalDevice();
   auto const &start = log_.now();
 
-  using FixOne = Eigen::type2index<1>;
   long const nB = x.dimension(0);
   Eigen::IndexList<FixOne, int, int, int> rshA;
   Eigen::IndexList<int, FixOne, FixOne, FixOne> brdA;
@@ -81,7 +75,6 @@ void ReconBasisOp::Adj(Output const &x, Input &y) const
   fft_.reverse(grid_);
   sense_.Adj(grid_, y);
 
-  using FixOne = Eigen::type2index<1>;
   long const nB = y.dimension(0);
   Eigen::IndexList<FixOne, int, int, int> rshA;
   Eigen::IndexList<int, FixOne, FixOne, FixOne> brdA;

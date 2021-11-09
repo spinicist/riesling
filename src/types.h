@@ -14,6 +14,9 @@ using Array3l = Array<long, 3, 1>;
 using ArrayXl = Array<long, -1, 1>;
 } // namespace Eigen
 
+using FixZero = Eigen::type2index<0>; // Fix a dimension to zero in reshape/broadcast
+using FixOne = Eigen::type2index<1>;  // Fix a dimension to one in reshape/broadcast
+
 using B0 = Eigen::TensorFixedSize<bool, Eigen::Sizes<>>;
 using B3 = Eigen::Tensor<bool, 3>;
 

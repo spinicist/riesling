@@ -8,6 +8,7 @@
 int main_sdc(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
+  args::ValueFlag<float> sdcPow(parser, "P", "SDC Power (default 1.0)", {'p', "pow"}, 1.0f);
 
   Log log = ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get(), log);
@@ -22,6 +23,9 @@ int main_sdc(args::Subparser &parser)
     dc = SDC::Radial(traj, log);
   } else {
     Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
+  }
+  if (sdcPow) {
+    dc = dc.pow(sdcPow.Get());
   }
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sdc", "h5"), log);
   writer.writeInfo(info);

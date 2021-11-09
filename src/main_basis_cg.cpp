@@ -46,7 +46,6 @@ int main_basis_cg(args::Subparser &parser)
   }
 
   ReconBasisOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, basis, log);
-  recon.setPreconditioning(sdc_exp.Get());
 
   auto sz = recon.dimensions();
   Cropper out_cropper(info, sz, out_fov.Get(), log);

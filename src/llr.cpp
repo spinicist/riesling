@@ -25,7 +25,7 @@ Cx4 llr(Cx4 const &x, float const l, long const p, Log &log)
           s = (s > sl).select(s, 0.f);
           patch.transpose() = svd.matrixU() * s.matrix().asDiagonal() * svd.matrixV().adjoint();
           lr.chip(iz + p / 2, 3).chip(iy + p / 2, 2).chip(ix + p / 2, 1) =
-              px.chip(p / 2, 3).chip(p / 2, 2).chip(p / 2, 1);
+            px.chip(p / 2, 3).chip(p / 2, 2).chip(p / 2, 1);
         }
       }
     }
@@ -45,15 +45,14 @@ Cx4 llr_patch(Cx4 const &x, float const l, long const p, Log &log)
   for (long ii = 0; ii < 3; ii++) {
     if (x.dimension(ii + 1) % p != 0) {
       Log::Fail(
-          FMT_STRING("Patch size {} does not evenly divide {} (dimension {})"),
-          p,
-          x.dimension(ii + 1),
-          ii);
+        FMT_STRING("Patch size {} does not evenly divide {} (dimension {})"),
+        p,
+        x.dimension(ii + 1),
+        ii);
     }
     nP[ii] = (x.dimension(ii + 1) / p) - 1;
     shift[ii] = int_dist(gen);
   }
-  fmt::print("Offset: {}\n", fmt::join(shift, ","));
   long const K = x.dimension(0);
   long const pSz = p * p * p;
   Cx4 lr(x.dimensions());
@@ -63,7 +62,7 @@ Cx4 llr_patch(Cx4 const &x, float const l, long const p, Log &log)
       for (long iy = 0; iy < nP[1]; iy++) {
         for (long ix = 0; ix < nP[0]; ix++) {
           Cx4 px = x.slice(
-              Sz4{0, ix * p + shift[0], iy * p + shift[1], iz * p + shift[2]}, Sz4{K, p, p, p});
+            Sz4{0, ix * p + shift[0], iy * p + shift[1], iz * p + shift[2]}, Sz4{K, p, p, p});
           Eigen::Map<Eigen::MatrixXcf> patch(px.data(), K, pSz);
           auto const svd = patch.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
           // Soft-threhold svals
@@ -73,8 +72,7 @@ Cx4 llr_patch(Cx4 const &x, float const l, long const p, Log &log)
           s = (s > sl).select(s, 0.f);
           patch.transpose() = svd.matrixU() * s.matrix().asDiagonal() * svd.matrixV().adjoint();
           lr.slice(
-              Sz4{0, ix * p + shift[0], iy * p + shift[1], iz * p + shift[2]}, Sz4{K, p, p, p}) =
-              px;
+            Sz4{0, ix * p + shift[0], iy * p + shift[1], iz * p + shift[2]}, Sz4{K, p, p, p}) = px;
         }
       }
     }

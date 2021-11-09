@@ -8,14 +8,14 @@ TEST_CASE("Gridding", "GRIDDING")
 {
   Log log;
   Info info{
-      .type = Info::Type::ThreeD,
-      .channels = 4,
-      .matrix = {2, 2, 2},
-      .read_points = 1,
-      .read_gap = 0,
-      .spokes_hi = 1,
-      .spokes_lo = 0,
-      .lo_scale = 1};
+    .type = Info::Type::ThreeD,
+    .channels = 4,
+    .matrix = {2, 2, 2},
+    .read_points = 1,
+    .read_gap = 0,
+    .spokes_hi = 1,
+    .spokes_lo = 0,
+    .lo_scale = 1};
   float const osamp = 2.f;
   R3 points(3, 1, 1);
   points.setZero();
@@ -79,10 +79,10 @@ TEST_CASE("Gridding", "GRIDDING")
     cart.setZero();
     gridder.Adj(rad, cart);
     gridder.A(cart, rad);
-    CHECK(rad(0, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
-    CHECK(rad(1, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
-    CHECK(rad(2, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
-    CHECK(rad(3, 0, 0).real() == Approx(0.14457f).margin(1.e-5f));
+    CHECK(rad(0, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
+    CHECK(rad(1, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
+    CHECK(rad(2, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
+    CHECK(rad(3, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
   }
 }
 
@@ -90,14 +90,14 @@ TEST_CASE("SingleSpoke", "GRIDDING")
 {
   Log log;
   Info info{
-      .type = Info::Type::ThreeD,
-      .channels = 1,
-      .matrix = {4, 4, 4},
-      .read_points = 4,
-      .read_gap = 0,
-      .spokes_hi = 1,
-      .spokes_lo = 0,
-      .lo_scale = 1};
+    .type = Info::Type::ThreeD,
+    .channels = 1,
+    .matrix = {4, 4, 4},
+    .read_points = 4,
+    .read_gap = 0,
+    .spokes_hi = 1,
+    .spokes_lo = 0,
+    .lo_scale = 1};
   float const osamp = 2.f;
   R3 points(3, info.read_points, info.spokes_total());
   points.setZero();

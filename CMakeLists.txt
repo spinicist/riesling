@@ -38,6 +38,7 @@ add_library(vineyard
     src/io_nifti.cpp
     src/io_reader.cpp
     src/io_writer.cpp
+    src/kernel.cpp
     src/llr.cpp
     src/log.cpp
     src/padder.cpp
@@ -91,7 +92,6 @@ add_executable(riesling
     src/main_basis_recon.cpp
     src/main_basis_sim.cpp
     src/main_cg.cpp
-    src/main_cgvar.cpp
     src/main_compress.cpp
     src/main_espirit.cpp
     src/main_grid.cpp

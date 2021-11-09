@@ -25,7 +25,7 @@ ReconOp::ReconOp(
       traj.info().channels);
   }
 
-  SDC::Choose(sdc, traj, gridder_, log);
+  gridder_->setSDC(SDC::Choose(sdc, traj, gridder_, log));
 }
 
 Sz3 ReconOp::dimensions() const
@@ -38,18 +38,15 @@ Sz3 ReconOp::outputDimensions() const
   return gridder_->outputDimensions();
 }
 
-void ReconOp::setPreconditioning(float const p)
-{
-  gridder_->setSDCExponent(p);
-}
-
 void ReconOp::calcToeplitz(Info const &info)
 {
   log_.info("Calculating Töplitz embedding");
   transfer_ = gridder_->newMultichannel(1);
-  Cx3 ones(1, info.read_points, info.spokes_total());
-  ones.setConstant({1.0f});
-  gridder_->Adj(ones, transfer_);
+  transfer_.setConstant(1.f);
+  Cx3 tf(1, info.read_points, info.spokes_total());
+  gridder_->A(transfer_, tf);
+  gridder_->Adj(tf, transfer_);
+  log_.image(transfer_, "recon-transfer.nii");
 }
 
 void ReconOp::A(Input const &x, Output &y) const

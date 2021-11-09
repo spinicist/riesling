@@ -35,8 +35,7 @@ int main_tgv(args::Subparser &parser)
   auto const &info = traj.info();
 
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Choose(sdc.Get(), traj, gridder, log);
-  gridder->setSDCExponent(sdc_exp.Get());
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
 
   Cx4 grid = gridder->newMultichannel(info.channels);
   grid.setZero();
@@ -53,7 +52,6 @@ int main_tgv(args::Subparser &parser)
   }
 
   ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), sense, log);
-  recon.setPreconditioning(sdc_exp.Get());
 
   Cropper out_cropper(info, iter_cropper.size(), out_fov.Get(), log);
   Cx3 image = out_cropper.newImage();

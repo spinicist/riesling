@@ -35,7 +35,6 @@ int main_cg(args::Subparser &parser)
           traj, osamp.Get(), kb, iter_fov.Get(), senseLambda.Get(), senseVol.Get(), reader, log);
 
   ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, log);
-  recon.setPreconditioning(sdc_exp.Get());
   recon.calcToeplitz(traj.info());
   Cx3 vol(recon.dimensions());
   Cropper out_cropper(info, vol.dimensions(), out_fov.Get(), log);

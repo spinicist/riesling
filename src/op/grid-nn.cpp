@@ -8,21 +8,18 @@
 #include <cmath>
 
 GridNN::GridNN(
-    Trajectory const &traj,
-    float const os,
-    bool const unsafe,
-    Log &log,
-    float const inRes,
-    bool const shrink)
-    : GridOp(traj.mapping(os, 0, inRes, shrink), unsafe, log)
+  Trajectory const &traj,
+  float const os,
+  bool const unsafe,
+  Log &log,
+  float const inRes,
+  bool const shrink)
+  : GridOp(traj.mapping(os, 0, inRes, shrink), unsafe, log)
 {
 }
 
-GridNN::GridNN(
-    Mapping const &mapping,
-    bool const unsafe,
-    Log &log)
-    : GridOp(mapping, unsafe, log)
+GridNN::GridNN(Mapping const &mapping, bool const unsafe, Log &log)
+  : GridOp(mapping, unsafe, log)
 {
 }
 
@@ -54,15 +51,15 @@ void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const dc = pow(mapping_.sdc[si], DCexp_);
+      auto const dc = mapping_.sdc[si];
       if (safe_) {
         workspace[ti].chip(c.z - minZ[ti], 3).chip(c.y, 2).chip(c.x, 1) +=
-            noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-            noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
       } else {
         cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) +=
-            noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-            noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
       }
     }
   };
@@ -74,10 +71,11 @@ void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
     log_.info("Combining thread workspaces...");
     for (long ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
-        cart.slice(
-                Sz4{0, 0, 0, minZ[ti]},
-                Sz4{cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]})
-            .device(dev) += workspace[ti];
+        cart
+          .slice(
+            Sz4{0, 0, 0, minZ[ti]},
+            Sz4{cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]})
+          .device(dev) += workspace[ti];
       }
     }
   }

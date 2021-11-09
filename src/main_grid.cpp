@@ -17,8 +17,7 @@ int main_grid(args::Subparser &parser)
   auto const info = traj.info();
 
   auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
-  SDC::Choose(sdc.Get(), traj, gridder, log);
-  gridder->setSDCExponent(sdc_exp.Get());
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
   Cx3 rad_ks = info.noncartesianVolume();
   Cx4 grid = gridder->newMultichannel(info.channels);
 
@@ -35,7 +34,6 @@ int main_grid(args::Subparser &parser)
   } else {
     rad_ks = reader.noncartesian(0);
     gridder->Adj(rad_ks, grid);
-    log.image(grid, "grid.nii");
     writer.writeCartesian(grid);
     log.info("Wrote cartesian k-space. Took {}", log.toNow(vol_start));
   }

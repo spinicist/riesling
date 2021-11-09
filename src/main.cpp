@@ -10,11 +10,10 @@ int main(int const argc, char const *const argv[])
   args::Command basis_cg(commands, "basis-cg", "cgSENSE with basis", &main_basis_cg);
   args::Command basis_dict(commands, "basis-dict", "Dictionary lookup", &main_basis_dict);
   args::Command basis_phantom(
-      commands, "basis-phantom", "Phantom with a basis", &main_basis_phantom);
+    commands, "basis-phantom", "Phantom with a basis", &main_basis_phantom);
   args::Command basis_recon(commands, "basis-recon", "Basis recon with a basis", &main_basis_recon);
   args::Command basis_sim(commands, "basis-sim", "Simulate a basis set", &main_basis_sim);
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
-  args::Command cgvar(commands, "cgvar", "cgSENSE with variable preconditioning", &main_cgvar);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command espirit(commands, "espirit", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
