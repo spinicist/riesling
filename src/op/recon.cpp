@@ -66,7 +66,9 @@ void ReconOp::AdjA(Input const &x, Input &y) const
   auto const start = log_.now();
   sense_.A(x, grid_);
   fft_.forward(grid_);
-  grid_.device(dev) = grid_ * transfer_.broadcast(Sz4{grid_.dimension(0), 1, 1, 1});
+  Eigen::IndexList<int, FixOne, FixOne, FixOne> brd;
+  brd.set(0, grid_.dimension(0));
+  grid_.device(dev) = grid_ * transfer_.broadcast(brd);
   fft_.reverse(grid_);
   sense_.Adj(grid_, y);
   log_.debug("Töplitz embedded: {}", log_.toNow(start));

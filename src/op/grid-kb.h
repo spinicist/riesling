@@ -29,6 +29,3 @@ private:
 
   Kernel<InPlane, ThroughPlane> kernel_;
 };
-
-using GridKB3D = GridKB<3, 3>;
-using GridKB2D = GridKB<3, 1>;

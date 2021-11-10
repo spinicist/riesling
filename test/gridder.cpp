@@ -66,7 +66,7 @@ TEST_CASE("Gridding", "GRIDDING")
 
   SECTION("KB Multicoil")
   {
-    GridKB3D gridder(traj, osamp, false, log);
+    GridKB<3, 3> gridder(traj, osamp, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);

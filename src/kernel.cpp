@@ -13,6 +13,13 @@ Kernel<InPlane, ThroughPlane>::Kernel(float const os)
   static_assert((ThroughPlane == 1) || (ThroughPlane == InPlane));
   // Set up arrays of indices for building kernel
   std::iota(indices_.data(), indices_.data() + InPlane, -InPlane / 2);
+  calcScale();
+}
+
+template <int InPlane, int ThroughPlane>
+void Kernel<InPlane, ThroughPlane>::calcScale()
+{
+  kScale_ = 1.f;
   auto k = operator()(Point3::Zero(), 1.f);
   kScale_ = 1.f / Sum(k);
 }
@@ -21,12 +28,14 @@ template <int InPlane, int ThroughPlane>
 void Kernel<InPlane, ThroughPlane>::sqrtOn()
 {
   sqrt_ = true;
+  calcScale();
 }
 
 template <int InPlane, int ThroughPlane>
 void Kernel<InPlane, ThroughPlane>::sqrtOff()
 {
   sqrt_ = false;
+  calcScale();
 }
 
 // This expects x to already be squared
@@ -64,18 +73,21 @@ auto Kernel<InPlane, ThroughPlane>::operator()(Point3 const r, float const scale
     auto const ky = (indices_.constant(r[1]) - indices_).square().reshape(rshY).broadcast(brdY);
     k = kx + ky;
   }
-  k = KB<InPlane>(k, beta_, scale * kScale_);
+  k = KB<InPlane>(k, beta_, scale);
   if (sqrt_) {
     // This is the worst possible way to do this but I cannot figure out what IFFT(SQRT(FFT(KB))) is
     Cx3 temp(InPlane, InPlane, ThroughPlane);
     temp = k.template cast<Cx>();
     fft_.reverse(temp);
-    temp.sqrt();
+    temp = temp.sqrt();
     fft_.forward(temp);
     k = temp.real();
   }
+  k = k * k.constant(kScale_);
   return k;
 }
 
-template struct Kernel<3, 3>;
 template struct Kernel<3, 1>;
+template struct Kernel<3, 3>;
+template struct Kernel<5, 1>;
+template struct Kernel<5, 5>;

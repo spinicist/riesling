@@ -36,34 +36,50 @@ R2 const &GridBasisOp::basis() const
 std::unique_ptr<GridBasisOp> make_grid_basis(
   Trajectory const &traj,
   float const os,
-  bool const kb,
+  Kernels const k,
   bool const fastgrid,
   R2 const &basis,
   Log &log,
   float const res,
   bool const shrink)
 {
-  if (kb) {
-    if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<GridBasisKB3D>(traj, os, fastgrid, basis, log, res, shrink);
-    } else {
-      return std::make_unique<GridBasisKB2D>(traj, os, fastgrid, basis, log, res, shrink);
-    }
-  } else {
+  switch (k) {
+  case Kernels::NN:
     return std::make_unique<GridBasisNN>(traj, os, fastgrid, basis, log, res, shrink);
+  case Kernels::KB3:
+    if (traj.info().type == Info::Type::ThreeD) {
+      return std::make_unique<GridBasisKB<3, 3>>(traj, os, fastgrid, basis, log, res, shrink);
+    } else {
+      return std::make_unique<GridBasisKB<3, 1>>(traj, os, fastgrid, basis, log, res, shrink);
+    }
+  case Kernels::KB5:
+    if (traj.info().type == Info::Type::ThreeD) {
+      return std::make_unique<GridBasisKB<5, 5>>(traj, os, fastgrid, basis, log, res, shrink);
+    } else {
+      return std::make_unique<GridBasisKB<5, 1>>(traj, os, fastgrid, basis, log, res, shrink);
+    }
   }
+  __builtin_unreachable();
 }
 
 std::unique_ptr<GridBasisOp> make_grid_basis(
-  Mapping const &mapping, bool const kb, bool const fastgrid, R2 const &basis, Log &log)
+  Mapping const &mapping, Kernels const k, bool const fastgrid, R2 const &basis, Log &log)
 {
-  if (kb) {
-    if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<GridBasisKB3D>(mapping, fastgrid, basis, log);
-    } else {
-      return std::make_unique<GridBasisKB2D>(mapping, fastgrid, basis, log);
-    }
-  } else {
+  switch (k) {
+  case Kernels::NN:
     return std::make_unique<GridBasisNN>(mapping, fastgrid, basis, log);
+  case Kernels::KB3:
+    if (mapping.type == Info::Type::ThreeD) {
+      return std::make_unique<GridBasisKB<3, 3>>(mapping, fastgrid, basis, log);
+    } else {
+      return std::make_unique<GridBasisKB<3, 1>>(mapping, fastgrid, basis, log);
+    }
+  case Kernels::KB5:
+    if (mapping.type == Info::Type::ThreeD) {
+      return std::make_unique<GridBasisKB<5, 5>>(mapping, fastgrid, basis, log);
+    } else {
+      return std::make_unique<GridBasisKB<5, 1>>(mapping, fastgrid, basis, log);
+    }
   }
+  __builtin_unreachable();
 }

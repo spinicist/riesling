@@ -173,5 +173,7 @@ R3 GridKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
   return a;
 }
 
-template struct GridKB<3, 3>;
 template struct GridKB<3, 1>;
+template struct GridKB<3, 3>;
+template struct GridKB<5, 1>;
+template struct GridKB<5, 5>;

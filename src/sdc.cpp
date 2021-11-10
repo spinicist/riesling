@@ -98,7 +98,7 @@ R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().abs().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 5.e-2) {
+    if (delta < 2.5e-2) {
       log.info("SDC converged, delta was {}", delta);
       break;
     } else {

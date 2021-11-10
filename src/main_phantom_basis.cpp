@@ -20,7 +20,10 @@ int main_phantom_basis(args::Subparser &parser)
   args::ValueFlag<std::string> oftype(
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
+  std::unordered_map<std::string, Kernels> kernelMap{
+    {"NN", Kernels::NN}, {"KB3", Kernels::KB3}, {"KB5", Kernels::KB5}};
+  args::MapFlag<std::string, Kernels> kernel(
+    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, kernelMap);
   args::ValueFlag<float> fov(
     parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
@@ -129,7 +132,7 @@ int main_phantom_basis(args::Subparser &parser)
                             coil_r.Get(),
                             log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
-  auto gridder = make_grid_basis(traj, osamp.Get(), kb, false, basis, log);
+  auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
   ReconBasisOp recon(gridder.get(), senseMaps, log);
   auto const sz = recon.dimensions();
 
@@ -203,7 +206,7 @@ int main_phantom_basis(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kb, false, basis, log);
+    auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kernel.Get(), false, basis, log);
     ReconBasisOp lo_recon(lo_gridder.get(), senseMaps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);

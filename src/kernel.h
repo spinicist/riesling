@@ -19,8 +19,17 @@ private:
   using FixIn = Eigen::type2index<InPlane>;
   using FixThrough = Eigen::type2index<ThroughPlane>;
 
+  void calcScale();
+
   float beta_, kScale_;
   KArray indices_;
   FFT::ThreeD fft_; // For sqrt kernel
   bool sqrt_;
+};
+
+enum struct Kernels
+{
+  NN = 0,
+  KB3 = 1,
+  KB5 = 2,
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../kernel.h"
 #include "../trajectory.h"
 #include "gridBase.h"
 #include "operator.h"
@@ -16,23 +17,20 @@ struct GridOp : Operator<4, 3>, GridBase
   Input::Dimensions inSize() const;
   Output::Dimensions outputDimensions() const;
 
-  Cx4 newMultichannel(long const nChan) const; // Returns a correctly sized multi-channel grid
+  Cx4 newMultichannel(long const nChan) const;    // Returns a correctly sized multi-channel grid
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
 
 protected:
 };
 
 std::unique_ptr<GridOp> make_grid(
-    Trajectory const &traj,
-    float const os,
-    bool const kb,
-    bool const fastgrid,
-    Log &log,
-    float const res = -1.f,
-    bool const shrink = false);
+  Trajectory const &traj,
+  float const os,
+  Kernels const k,
+  bool const fastgrid,
+  Log &log,
+  float const res = -1.f,
+  bool const shrink = false);
 
-std::unique_ptr<GridOp> make_grid(
-    Mapping const &mapping,
-    bool const kb,
-    bool const fastgrid,
-    Log &log);
+std::unique_ptr<GridOp>
+make_grid(Mapping const &mapping, Kernels const k, bool const fastgrid, Log &log);

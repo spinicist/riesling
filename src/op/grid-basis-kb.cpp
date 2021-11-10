@@ -204,5 +204,7 @@ R3 GridBasisKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
   return a;
 }
 
-template struct GridBasisKB<3, 3>;
 template struct GridBasisKB<3, 1>;
+template struct GridBasisKB<3, 3>;
+template struct GridBasisKB<5, 1>;
+template struct GridBasisKB<5, 5>;

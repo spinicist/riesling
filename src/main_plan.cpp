@@ -20,7 +20,7 @@ int main_plan(args::Subparser &parser)
   FFT::SetTimelimit(timelimit.Get());
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   Cx4 grid4 = gridder->newMultichannel(traj.info().channels);
   Cx4 grid3 = gridder->newMultichannel(1);
   FFT::ThreeDMulti fft3(grid3, log);
@@ -30,13 +30,7 @@ int main_plan(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
-    // if ((traj.info().spokes_total() % basis.dimension(0)) != 0) {
-    //   Log::Fail(
-    //       FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
-    //       basis.dimension(0),
-    //       traj.info().spokes_total());
-    // }
-    auto gridderBasis = make_grid_basis(traj, osamp.Get(), kb, fastgrid, basis, log);
+    auto gridderBasis = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
     auto const gridSz = gridderBasis->gridDims();
     Cx5 grid5(traj.info().channels, nB, gridSz[0], gridSz[1], gridSz[2]);
     FFT::ThreeDBasis fft(grid5, log);

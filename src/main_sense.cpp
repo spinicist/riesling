@@ -30,7 +30,7 @@ int main_sense(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
   Cx4 sense = DirectSENSE(
     info,

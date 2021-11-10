@@ -39,7 +39,7 @@ int main_admm(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, gridder, log);
   gridder->setSDC(w);
   Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)
@@ -53,7 +53,7 @@ int main_admm(args::Subparser &parser)
   HD5::Reader basisReader(basisFile.Get(), log);
   R2 const basis = basisReader.readBasis();
   long const nB = basis.dimension(1);
-  auto basisGridder = make_grid_basis(gridder->mapping(), kb, fastgrid, basis, log);
+  auto basisGridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
   basisGridder->setSDC(w);
   ReconBasisOp recon(basisGridder.get(), senseMaps, log);
 
@@ -75,8 +75,7 @@ int main_admm(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  WriteBasisVolumes(
-    out, basis, mag, info, iname.Get(), oname.Get(), "admm", oftype.Get(), log);
+  WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "admm", oftype.Get(), log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

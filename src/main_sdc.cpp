@@ -17,7 +17,7 @@ int main_sdc(args::Subparser &parser)
 
   R2 dc;
   if (sdc.Get() == "pipe") {
-    auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+    auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
     dc = SDC::Pipe(traj, gridder, log);
   } else if (sdc.Get() == "radial") {
     dc = SDC::Radial(traj, log);

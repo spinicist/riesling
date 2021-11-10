@@ -25,7 +25,7 @@ int main_traj(args::Subparser &parser)
   Cx3 rad_ks(1, info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
 
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
   Cx4 gridded, psf;
 
@@ -33,13 +33,7 @@ int main_traj(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
-    // if ((traj.info().spokes_total() % basis.dimension(0)) != 0) {
-    //   Log::Fail(
-    //       FMT_STRING("Basis length {} does not evenly divide number of spokes {}"),
-    //       basis.dimension(0),
-    //       traj.info().spokes_total());
-    // }
-    auto gridderBasis = make_grid_basis(gridder->mapping(), kb, fastgrid, basis, log);
+    auto gridderBasis = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     gridderBasis->setSDC(gridder->SDC());
     auto const gridSz = gridderBasis->gridDims();
     Cx5 grid5(1, nB, gridSz[0], gridSz[1], gridSz[2]);

@@ -34,7 +34,7 @@ int main_tgv(args::Subparser &parser)
   Trajectory const traj = reader.readTrajectory();
   auto const &info = traj.info();
 
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, gridder, log);
   gridder->setSDC(w);
   Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)

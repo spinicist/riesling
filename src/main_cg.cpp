@@ -28,7 +28,7 @@ int main_cg(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, gridder, log);
   gridder->setSDC(w);
   Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)
@@ -44,9 +44,10 @@ int main_cg(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
-    auto basisGridder = make_grid_basis(gridder->mapping(), kb, fastgrid, basis, log);
+    auto basisGridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     basisGridder->setSDC(w);
     ReconBasisOp recon(basisGridder.get(), senseMaps, log);
+    recon.calcToeplitz(traj.info());
     auto sz = recon.dimensions();
     Cropper out_cropper(info, sz, out_fov.Get(), log);
     Cx4 vol(nB, sz[0], sz[1], sz[2]);

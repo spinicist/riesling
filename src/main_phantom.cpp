@@ -19,7 +19,10 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<std::string> oftype(
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});
+  std::unordered_map<std::string, Kernels> kernelMap{
+    {"NN", Kernels::NN}, {"KB3", Kernels::KB3}, {"KB5", Kernels::KB5}};
+  args::MapFlag<std::string, Kernels> kernel(
+    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, kernelMap);
   args::ValueFlag<float> fov(
     parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
@@ -115,7 +118,7 @@ int main_phantom(args::Subparser &parser)
                              coil_r.Get(),
                              log);
   info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
-  auto gridder = make_grid(traj, osamp.Get(), kb, false, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), false, log);
   ReconOp recon(gridder.get(), sense_maps, log);
 
   Cx3 phan = shepplogan
@@ -184,7 +187,7 @@ int main_phantom(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    auto lo_grid = make_grid(lo_traj, osamp.Get(), kb, false, log);
+    auto lo_grid = make_grid(lo_traj, osamp.Get(), kernel.Get(), false, log);
     ReconOp lo_recon(lo_grid.get(), sense_maps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);

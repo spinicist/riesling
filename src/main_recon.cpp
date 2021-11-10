@@ -26,7 +26,7 @@ int main_recon(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
-  auto gridder = make_grid(traj, osamp.Get(), kb, fastgrid, log);
+  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, gridder, log);
   gridder->setSDC(w);
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
@@ -51,7 +51,7 @@ int main_recon(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
-    auto basisGridder = make_grid_basis(gridder->mapping(), kb, fastgrid, basis, log);
+    auto basisGridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     gridder->setSDC(w);
     auto const gridSz = gridder->gridDims();
     Cx5 grid(info.channels, nB, gridSz[0], gridSz[1], gridSz[2]);

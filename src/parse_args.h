@@ -1,6 +1,7 @@
 #pragma once
 
 #include "info.h"
+#include "kernel.h"
 #include "log.h"
 #include "sdc.h"
 #include <args.hxx>
@@ -55,7 +56,10 @@ void WriteBasisVolumes(
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");                           \
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
-  args::Flag kb(parser, "KB", "Use Kaiser-Bessel interpolation", {"kb"});                          \
+  std::unordered_map<std::string, Kernels> kernelMap{                                              \
+    {"NN", Kernels::NN}, {"KB3", Kernels::KB3}, {"KB5", Kernels::KB5}};                            \
+  args::MapFlag<std::string, Kernels> kernel(                                                      \
+    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, kernelMap);                      \
   args::Flag fastgrid(                                                                             \
     parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
   args::ValueFlag<std::string> sdc(                                                                \
