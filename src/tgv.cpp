@@ -182,8 +182,8 @@ Cx3 tgv(
 
   float const alpha00 = scale * alpha;
   float const alpha10 = scale * alpha / 2.f;
-  float const alpha01 = scale * alpha00 * reduction;
-  float const alpha11 = scale * alpha10 * reduction;
+  float const alpha01 = alpha00 * reduction;
+  float const alpha11 = alpha10 * reduction;
 
   // Step lengths
   float const tau_p = 1.f / step_size;
@@ -233,8 +233,6 @@ Cx3 tgv(
       log.info("Reached threshold on delta, stopping");
       break;
     }
-  }
-
-  u = u * u.constant(scale);
+  };
   return u;
 }

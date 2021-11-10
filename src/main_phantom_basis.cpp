@@ -37,7 +37,7 @@ int main_phantom_basis(args::Subparser &parser)
     parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
   args::ValueFlag<float> read_samp(
     parser, "SRATE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
-  args::ValueFlag<long> sps(parser, "S", "Spokes per segment", {"sps"}, 1);
+  args::ValueFlag<long> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
   args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
   args::ValueFlag<long> lores(
     parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
@@ -51,7 +51,7 @@ int main_phantom_basis(args::Subparser &parser)
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});
   args::ValueFlag<long> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
-  args::ValueFlag<long> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 1);
+  args::ValueFlag<long> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
   args::Flag gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
   args::ValueFlag<std::string> trajfile(
     parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
