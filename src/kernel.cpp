@@ -43,21 +43,25 @@ inline decltype(auto) KB(T const &x, float const beta, float const scale)
 template <int InPlane, int ThroughPlane>
 auto Kernel<InPlane, ThroughPlane>::operator()(Point3 const r, float const scale) const -> KTensor
 {
-  constexpr Eigen::IndexList<FixIn, FixOne, FixOne> rshX;
-  constexpr Eigen::IndexList<FixOne, FixIn, FixIn> brdX;
-  constexpr Eigen::IndexList<FixOne, FixIn, FixOne> rshY;
-  constexpr Eigen::IndexList<FixIn, FixOne, FixIn> brdY;
-
-  auto const kx = (indices_.constant(r[0]) - indices_).square().reshape(rshX).broadcast(brdX);
-  auto const ky = (indices_.constant(r[1]) - indices_).square().reshape(rshY).broadcast(brdY);
-
   KTensor k;
   if constexpr (ThroughPlane > 1) {
+    constexpr Eigen::IndexList<FixIn, FixOne, FixOne> rshX;
+    constexpr Eigen::IndexList<FixOne, FixIn, FixIn> brdX;
+    constexpr Eigen::IndexList<FixOne, FixIn, FixOne> rshY;
+    constexpr Eigen::IndexList<FixIn, FixOne, FixIn> brdY;
     constexpr Eigen::IndexList<FixOne, FixOne, FixIn> rshZ;
     constexpr Eigen::IndexList<FixIn, FixIn, FixOne> brdZ;
+    auto const kx = (indices_.constant(r[0]) - indices_).square().reshape(rshX).broadcast(brdX);
+    auto const ky = (indices_.constant(r[1]) - indices_).square().reshape(rshY).broadcast(brdY);
     auto const kz = (indices_.constant(r[2]) - indices_).square().reshape(rshZ).broadcast(brdZ);
     k = kx + ky + kz;
   } else {
+    constexpr Eigen::IndexList<FixIn, FixOne, FixOne> rshX;
+    constexpr Eigen::IndexList<FixOne, FixIn, FixOne> brdX;
+    constexpr Eigen::IndexList<FixOne, FixIn, FixOne> rshY;
+    constexpr Eigen::IndexList<FixIn, FixOne, FixOne> brdY;
+    auto const kx = (indices_.constant(r[0]) - indices_).square().reshape(rshX).broadcast(brdX);
+    auto const ky = (indices_.constant(r[1]) - indices_).square().reshape(rshY).broadcast(brdY);
     k = kx + ky;
   }
   k = KB<InPlane>(k, beta_, scale * kScale_);
