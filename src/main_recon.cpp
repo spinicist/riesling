@@ -85,8 +85,7 @@ int main_recon(args::Subparser &parser)
       log.info("Volume {}: {}", iv, log.toNow(vol_start));
     }
     log.info("All volumes: {}", log.toNow(all_start));
-    WriteBasisVolumes(
-      out, basis, mag, info, iname.Get(), oname.Get(), "basis-recon", oftype.Get(), log);
+    WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "recon", oftype.Get(), log);
   } else {
 
     Cx4 grid = gridder->newMultichannel(info.channels);
