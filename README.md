@@ -39,7 +39,9 @@ straightforward as long as you have access to a C++17 compiler (GCC 8 or higher,
 Clang 7 or higher). RIESLING relies on `vcpkg` for dependency management. To 
 download and compile RIESLING, follow these steps:
 
-0. Install the dependencies: `cmake` \& `curl` (`vcpkg` requires `curl`).
+0. Install the dependencies (see https://github.com/microsoft/vcpkg#installing-linux-developer-tools)
+0.1. On Mac, these are `cmake` and X-Code
+0.2. On Linux, these are `cmake`, `tar`, `curl`, `zip`, `unzip`, `pkg-config` \& `build-essentials`. You may be surprised by which distributions do not include these by default.
 1. Clone the repository. `git clone https://github.com/spinicist/riesling`
 2. Run `bootstraph.sh`.
 
