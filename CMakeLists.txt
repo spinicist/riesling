@@ -129,6 +129,7 @@ if( ${BUILD_TESTS} )
         test/fft3.cpp
         test/gridder.cpp
         test/hankel.cpp
+        test/kernel.cpp
         test/parameters.cpp
         test/sdc.cpp
         test/zinfandel.cpp
