@@ -12,7 +12,7 @@ struct ReconBasisOp final : Operator<4, 3>
 
   void A(Input const &x, Output &y) const;
   void Adj(Output const &x, Input &y) const;
-  void AdjA(Input const &x, Input &y) const;
+  // void AdjA(Input const &x, Input &y) const;
 
   Sz3 dimensions() const;
   Sz3 outputDimensions() const;

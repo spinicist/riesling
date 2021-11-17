@@ -88,19 +88,19 @@ void ReconBasisOp::Adj(Output const &x, Input &y) const
   log_.debug("Decode: {}", log_.toNow(start));
 }
 
-void ReconBasisOp::AdjA(Input const &x, Input &y) const
-{
-  if (transfer_.size() == 0) {
-    Log::Fail("Töplitz embedding not calculated");
-  }
-  auto dev = Threads::GlobalDevice();
-  auto const start = log_.now();
-  sense_.A(x, grid_);
-  fft_.forward(grid_);
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd;
-  brd.set(0, grid_.dimension(0));
-  grid_.device(dev) = grid_ * transfer_.broadcast(brd);
-  fft_.reverse(grid_);
-  sense_.Adj(grid_, y);
-  log_.debug("Töplitz embedded: {}", log_.toNow(start));
-}
+// void ReconBasisOp::AdjA(Input const &x, Input &y) const
+// {
+//   if (transfer_.size() == 0) {
+//     Log::Fail("Töplitz embedding not calculated");
+//   }
+//   auto dev = Threads::GlobalDevice();
+//   auto const start = log_.now();
+//   sense_.A(x, grid_);
+//   fft_.forward(grid_);
+//   Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd;
+//   brd.set(0, grid_.dimension(0));
+//   grid_.device(dev) = grid_ * transfer_.broadcast(brd);
+//   fft_.reverse(grid_);
+//   sense_.Adj(grid_, y);
+//   log_.debug("Töplitz embedded: {}", log_.toNow(start));
+// }
