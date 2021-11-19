@@ -86,12 +86,13 @@ target_link_libraries(vineyard PUBLIC
 add_executable(riesling
     src/main_admm.cpp
     src/main_blend.cpp
-    src/main_lookup.cpp
     src/main_cg.cpp
     src/main_compress.cpp
     src/main_espirit.cpp
     src/main_grid.cpp
     src/main_hdr.cpp
+    src/main_lookup.cpp
+    src/main_meta.cpp
     src/main_phantom.cpp
     src/main_phantom_basis.cpp
     src/main_plan.cpp

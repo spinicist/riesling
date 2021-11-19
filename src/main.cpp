@@ -7,12 +7,13 @@ int main(int const argc, char const *const argv[])
   args::Group commands(parser, "COMMANDS");
   args::Command admm(commands, "admm", "ADMM recon", &main_admm);
   args::Command blend(commands, "blend", "Blend basis images", &main_blend);
-  args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command espirit(commands, "espirit", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command hdr(commands, "hdr", "Print the header from an HD5 file", &main_hdr);
+  args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
+  args::Command meta(commands, "meta", "Print meta-data entries", &main_meta);
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command phantom_basis(commands, "phantom-basis", "Phantom with basis", &main_phantom_basis);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
