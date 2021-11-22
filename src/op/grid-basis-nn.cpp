@@ -67,21 +67,17 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const scale = mapping_.sdc[si] * basisScale_;
+      auto const b =
+        (basis_.chip(nc.spoke % basis_.dimension(0), 0) * mapping_.sdc[si] * basisScale_)
+          .cast<Cx>();
       if (safe_) {
         workspace[ti].chip(c.z - minZ[ti], 4).chip(c.y, 3).chip(c.x, 2) +=
-          (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-           noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale))
-            .reshape(rshNC)
-            .broadcast(brdNC) *
-          basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>().reshape(rshB).broadcast(brdB);
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1).reshape(rshNC).broadcast(brdNC) *
+          b.reshape(rshB).broadcast(brdB);
       } else {
         cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2) +=
-          (noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-           noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(scale))
-            .reshape(rshNC)
-            .broadcast(brdNC) *
-          basis_.chip(nc.spoke % basis_.dimension(0), 0).cast<Cx>().reshape(rshB).broadcast(brdB);
+          noncart.chip(nc.spoke, 2).chip(nc.read, 1).reshape(rshNC).broadcast(brdNC) *
+          b.reshape(rshB).broadcast(brdB);
       }
     }
   };

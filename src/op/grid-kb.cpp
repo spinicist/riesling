@@ -55,9 +55,9 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
   constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> brdNC;
   rshNC.set(0, nchan);
 
-  constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> rshC;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne> brdC;
-  brdC.set(0, nchan);
+  constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> rshK;
+  Eigen::IndexList<int, FixOne, FixOne, FixOne> brdK;
+  brdK.set(0, nchan);
 
   Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
   szC.set(0, nchan);
@@ -84,17 +84,17 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const nck = noncart.chip(nc.spoke, 2).chip(nc.read, 1);
-      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si]);
+      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si]).template cast<Cx>();
       stC.set(1, c.x - (InPlane / 2));
       stC.set(2, c.y - (InPlane / 2));
       if (safe_) {
         stC.set(3, c.z - (ThroughPlane / 2) - minZ[ti]);
         workspace[ti].slice(stC, szC) +=
-          nck.reshape(rshNC).broadcast(brdNC) * k.template cast<Cx>().reshape(rshC).broadcast(brdC);
+          nck.reshape(rshNC).broadcast(brdNC) * k.reshape(rshK).broadcast(brdK);
       } else {
         stC.set(3, c.z - (ThroughPlane / 2));
         cart.slice(stC, szC) +=
-          nck.reshape(rshNC).broadcast(brdNC) * k.template cast<Cx>().reshape(rshC).broadcast(brdC);
+          nck.reshape(rshNC).broadcast(brdNC) * k.reshape(rshK).broadcast(brdK);
       }
     }
   };

@@ -56,20 +56,25 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
   long const nchan = cart.dimension(0);
   long const nB = cart.dimension(1);
 
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> rshNC;
-  Eigen::IndexList<FixOne, int, FixIn, FixIn, FixThrough> brdNC;
+  Eigen::IndexList<int, FixOne> rshNC;
+  Eigen::IndexList<FixOne, int> brdNC;
   rshNC.set(0, nchan);
   brdNC.set(1, nB);
 
-  Eigen::IndexList<FixOne, FixOne, FixIn, FixIn, FixThrough> rshK;
+  Eigen::IndexList<FixOne, int> rshB;
+  Eigen::IndexList<int, FixOne> brdB;
+  rshB.set(1, nB);
+  brdB.set(0, nchan);
+
+  constexpr Eigen::IndexList<FixOne, FixOne, FixIn, FixIn, FixThrough> rshK;
   Eigen::IndexList<int, int, FixOne, FixOne, FixOne> brdK;
   brdK.set(0, nchan);
   brdK.set(1, nB);
 
-  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> rshB;
-  Eigen::IndexList<int, FixOne, FixIn, FixIn, FixThrough> brdB;
-  rshB.set(1, nB);
-  brdB.set(0, nchan);
+  Eigen::IndexList<int, int, FixOne, FixOne, FixOne> rshNCB;
+  constexpr Eigen::IndexList<FixOne, FixOne, FixIn, FixIn, FixThrough> brdNCB;
+  rshNCB.set(0, nchan);
+  rshNCB.set(1, nB);
 
   Eigen::IndexList<int, int, FixIn, FixIn, FixThrough> szC;
   szC.set(0, nchan);
@@ -82,6 +87,8 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
   auto grid_task = [&](long const lo, long const hi, long const ti) {
     // Allocate working space for this thread
     Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
+    Cx2 ncb(nchan, nB);
+
     minZ[ti] = mapping_.cart[mapping_.sortedIndices[lo]].z - ((ThroughPlane - 1) / 2);
 
     if (safe_) {
@@ -97,26 +104,21 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      auto const nck = noncart.chip(nc.spoke, 2).chip(nc.read, 1);
-      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si] * basisScale_);
+      auto const b = (basis_.chip(nc.spoke % basis_.dimension(0), 0) * basisScale_).cast<Cx>();
+      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si]).template cast<Cx>();
+
+      ncb = noncart.chip(nc.spoke, 2).chip(nc.read, 1).reshape(rshNC).broadcast(brdNC) *
+            b.reshape(rshB).broadcast(brdB);
+      auto const nbk = ncb.reshape(rshNCB).broadcast(brdNCB) * k.reshape(rshK).broadcast(brdK);
+
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       if (safe_) {
         stC.set(4, c.z - (ThroughPlane / 2) - minZ[ti]);
-        workspace[ti].slice(stC, szC) += nck.reshape(rshNC).broadcast(brdNC) *
-                                         k.template cast<Cx>().reshape(rshK).broadcast(brdK) *
-                                         basis_.chip(nc.spoke % basis_.dimension(0), 0)
-                                           .template cast<Cx>()
-                                           .reshape(rshB)
-                                           .broadcast(brdB);
+        workspace[ti].slice(stC, szC) += nbk;
       } else {
         stC.set(4, c.z - (ThroughPlane / 2));
-        cart.slice(stC, szC) += nck.reshape(rshNC).broadcast(brdNC) *
-                                k.template cast<Cx>().reshape(rshK).broadcast(brdK) *
-                                basis_.chip(nc.spoke % basis_.dimension(0), 0)
-                                  .template cast<Cx>()
-                                  .reshape(rshB)
-                                  .broadcast(brdB);
+        cart.slice(stC, szC) += nbk;
       }
     }
   };
