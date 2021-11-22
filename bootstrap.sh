@@ -6,12 +6,13 @@
 
 git submodule update --init --recursive
 
-PLATFORM="$( uname -s )"
-case "$PLATFORM" in
-  Linux*)  TOOLCHAIN="../cmake/x64-linux-native.toolchain.cmake";;
-  Darwin*) TOOLCHAIN="../cmake/x64-osx-native.toolchain.cmake";;
-  *)       TOOLCHAIN="../cmake/vcpkg/scripts/buildsystems/vcpkg.cmake";;
-esac
+export VCPKG_OVERLAY_TRIPLETS="$PWD/cmake/triplets"
+export FLAGS="base"
+while getopts "o" opt; do
+    case $opt in
+        o) export FLAGS="avx2";;
+    esac
+done
 
 # Use Ninja if available, otherwise CMake default
 if [ -x "$( command -v ninja )" ]; then
@@ -20,9 +21,10 @@ else
   GEN=""
 fi
 
+
 mkdir -p build
 cd build
 cmake -S ../ $GEN \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN"
+  -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake"
 cmake --build .
