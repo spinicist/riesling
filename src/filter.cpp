@@ -15,10 +15,8 @@ inline float Tukey(float const &r, float const &sw, float const &ew, float const
   }
 }
 
-template<typename Scalar, int D>
-void KSFilter(std::function<float(float const &)> const &f,
-              Eigen::Tensor<Scalar, D> &ks,
-              Log &log)
+template <typename Scalar, int D>
+void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar, D> &ks, Log &log)
 {
   auto const sz = ks.dimension(D - 1);
   auto const sy = ks.dimension(D - 2);
@@ -37,13 +35,15 @@ void KSFilter(std::function<float(float const &)> const &f,
           float const rx = static_cast<float>(ix - hx) / hx;
           float const r = sqrt(rx * rx + ry * ry + rz * rz);
           float const val = f(r);
-          ks.chip(iz, D - 1).chip(iy, D - 2).chip(ix, D - 3) *= 
+          ks.chip(iz, D - 1).chip(iy, D - 2).chip(ix, D - 3) *=
             ks.chip(iz, D - 1).chip(iy, D - 2).chip(ix, D - 3).constant(val);
         }
       }
     }
   };
+  auto const start = log.now();
   Threads::RangeFor(task, sz);
+  log.debug("Filtering took: {}", log.toNow(start));
 }
 
 void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x, Log &log)

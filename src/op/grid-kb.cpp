@@ -99,11 +99,13 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
     }
   };
 
-  auto const &start = log_.now();
+  auto const start = log_.now();
   cart.setZero();
   Threads::RangeFor(grid_task, mapping_.cart.size());
+  log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
   if (safe_) {
     log_.info("Combining thread workspaces...");
+    auto const start2 = log_.now();
     for (long ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
         cart
@@ -113,8 +115,8 @@ void GridKB<InPlane, ThroughPlane>::Adj(Cx3 const &noncart, Cx4 &cart) const
           .device(dev) += workspace[ti];
       }
     }
+    log_.debug("Combining took: {}", log_.toNow(start2));
   }
-  log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
 }
 
 template <int InPlane, int ThroughPlane>

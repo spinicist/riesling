@@ -9,8 +9,8 @@
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-  {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Images}, {3, Log::Level::Debug}};
-} // namespace
+  {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Debug}, {3, Log::Level::Images}};
+}
 
 void Vector3fReader::operator()(
   std::string const &name, std::string const &value, Eigen::Vector3f &v)

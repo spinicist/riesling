@@ -12,8 +12,8 @@ struct Log
   {
     None = 0,
     Info = 1,
-    Images = 2,
-    Debug = 3
+    Debug = 2,
+    Images = 3
   };
 
   using Time = std::chrono::high_resolution_clock::time_point;
@@ -23,19 +23,19 @@ struct Log
   Level level() const;
 
   template <typename S, typename... Args>
-  inline void info(const S &fmt_str, const Args &... args) const
+  inline void info(const S &fmt_str, const Args &...args) const
   {
     vinfo(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
-  inline void debug(const S &fmt_str, const Args &... args) const
+  inline void debug(const S &fmt_str, const Args &...args) const
   {
     vdebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
-  static void Fail(const S &fmt_str, const Args &... args)
+  static void Fail(const S &fmt_str, const Args &...args)
   {
     vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
