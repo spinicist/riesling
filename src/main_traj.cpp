@@ -16,6 +16,7 @@ int main_traj(args::Subparser &parser)
 
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
+  args::Flag savePSF(parser, "PSF", "Write out Point-Spread-Function", {"psf", 'p'});
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
@@ -27,8 +28,7 @@ int main_traj(args::Subparser &parser)
 
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, gridder, log));
-  Cx4 gridded, psf;
-
+  Cx4 gridded;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
@@ -38,22 +38,36 @@ int main_traj(args::Subparser &parser)
     auto const gridSz = gridderBasis->gridDims();
     Cx5 grid5(1, nB, gridSz[0], gridSz[1], gridSz[2]);
     gridderBasis->Adj(rad_ks, grid5);
-    Cx4 grid = gridder->newMultichannel(nB);
-    FFT::ThreeDMulti fft(grid, log);
-    grid = grid5.chip(0, 0);
-    gridded = FirstToLast4(grid);
-    fft.reverse(grid);
-    psf = FirstToLast4(grid);
+    gridded = grid5.chip(0, 0);
   } else {
     Cx4 grid = gridder->newMultichannel(1);
-    FFT::ThreeDMulti fft(grid, log);
     gridder->Adj(rad_ks, grid);
-    gridded = FirstToLast4(grid);
-    fft.reverse(grid);
-    psf = FirstToLast4(grid);
+    gridded = grid;
   }
-  WriteOutput(gridded, false, false, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
-  WriteOutput(psf, false, false, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
+
+  Cx4 psf;
+  if (savePSF) {
+    log.info("Calculating PSF");
+    FFT::ThreeDMulti fft(gridded.dimensions(), log);
+    psf = gridded;
+    fft.reverse(psf);
+  }
+
+  auto const ext = oftype.Get();
+  if (ext.compare("h5") == 0) {
+    auto const fname = OutName(iname.Get(), oname.Get(), "traj", ext);
+    HD5::Writer writer(fname, log);
+    writer.writeTensor(gridded, "traj-image");
+    if (savePSF) {
+      writer.writeTensor(psf, "psf-image");
+    }
+  } else {
+    WriteOutput(gridded, false, true, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
+    if (savePSF) {
+      WriteOutput(psf, false, true, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
+    }
+  }
+
   FFT::End(log);
   return EXIT_SUCCESS;
 }
