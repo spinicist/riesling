@@ -53,6 +53,14 @@ int main_traj(args::Subparser &parser)
     fft.reverse(psf);
   }
 
+  // Cheap hack to get the data in the right order for non-basis trajectory
+  if (!basisFile) {
+    gridded = FirstToLast4(gridded);
+    if (savePSF) {
+      psf = FirstToLast4(psf);
+    }
+  }
+
   auto const ext = oftype.Get();
   if (ext.compare("h5") == 0) {
     auto const fname = OutName(iname.Get(), oname.Get(), "traj", ext);
