@@ -7,7 +7,11 @@
 
 int main_sdc(args::Subparser &parser)
 {
-  CORE_RECON_ARGS;
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::ValueFlag<std::string> sdc(parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
+  args::ValueFlag<std::string> oftype(
+    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<float> sdcPow(parser, "P", "SDC Power (default 1.0)", {'p', "pow"}, 1.0f);
 
   Log log = ParseCommand(parser, iname);
@@ -17,8 +21,7 @@ int main_sdc(args::Subparser &parser)
 
   R2 dc;
   if (sdc.Get() == "pipe") {
-    auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-    dc = SDC::Pipe(traj, gridder, log);
+    dc = SDC::Pipe(traj, log);
   } else if (sdc.Get() == "radial") {
     dc = SDC::Radial(traj, log);
   } else {

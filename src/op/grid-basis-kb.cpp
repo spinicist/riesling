@@ -32,18 +32,6 @@ GridBasisKB<InPlane, ThroughPlane>::GridBasisKB(
 }
 
 template <int InPlane, int ThroughPlane>
-void GridBasisKB<InPlane, ThroughPlane>::sqrtOn()
-{
-  kernel_.sqrtOn();
-}
-
-template <int InPlane, int ThroughPlane>
-void GridBasisKB<InPlane, ThroughPlane>::sqrtOff()
-{
-  kernel_.sqrtOff();
-}
-
-template <int InPlane, int ThroughPlane>
 void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart) const
 {
   assert(cart.dimension(0) == noncart.dimension(0));
@@ -103,11 +91,11 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
       log_.progress(ii, lo, hi);
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
-      auto const nc = mapping_.noncart[si];
-      auto const b = (basis_.chip(nc.spoke % basis_.dimension(0), 0) * basisScale_).cast<Cx>();
-      auto const k = kernel_(mapping_.offset[si], mapping_.sdc[si]).template cast<Cx>();
-
-      ncb = noncart.chip(nc.spoke, 2).chip(nc.read, 1).reshape(rshNC).broadcast(brdNC) *
+      auto const n = mapping_.noncart[si];
+      auto const nc = noncart.chip(n.spoke, 2).chip(n.read, 1);
+      auto const b = (basis_.chip(n.spoke % basis_.dimension(0), 0) * basisScale_).cast<Cx>();
+      auto const k = kernel_(mapping_.offset[si]).template cast<Cx>();
+      ncb = (nc * nc.constant(mapping_.sdc[si])).reshape(rshNC).broadcast(brdNC) *
             b.reshape(rshB).broadcast(brdB);
       auto const nbk = ncb.reshape(rshNCB).broadcast(brdNCB) * k.reshape(rshK).broadcast(brdK);
 
@@ -165,16 +153,15 @@ void GridBasisKB<InPlane, ThroughPlane>::A(Input const &cart, Output &noncart) c
       log_.progress(ii, lo, hi);
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
-      auto const nc = mapping_.noncart[si];
-      auto const k = kernel_(mapping_.offset[si], basisScale_);
+      auto const n = mapping_.noncart[si];
+      auto const b = (basis_.chip(n.spoke % basis_.dimension(0), 0) * basisScale_).cast<Cx>();
+      auto const k = kernel_(mapping_.offset[si]);
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       stC.set(4, c.z - (ThroughPlane / 2));
-      noncart.chip(nc.spoke, 2).chip(nc.read, 1) =
+      noncart.chip(n.spoke, 2).chip(n.read, 1) =
         cart.slice(stC, szC)
-          .contract(
-            basis_.chip(nc.spoke % basis_.dimension(0), 0).template cast<Cx>(),
-            Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
+          .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
           .contract(
             k.template cast<Cx>(),
             Eigen::IndexPairList<
@@ -196,7 +183,7 @@ R3 GridBasisKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
   Cx3 temp(gridSz);
   FFT::ThreeD fft(temp, log_);
   temp.setZero();
-  auto const k = kernel_(Point3{0, 0, 0}, 1.f);
+  auto const k = kernel_(Point3{0, 0, 0});
   Crop3(temp, k.dimensions()) = k.template cast<Cx>();
   fft.reverse(temp);
   R3 a = Crop3(R3(temp.real()), sz);

@@ -2,10 +2,8 @@
 
 #include "../src/op/grid.h"
 #include "../src/info.h"
-#include "../src/op/grid-basis-kb.h"
-#include "../src/op/grid-basis-nn.h"
-#include "../src/op/grid-kb.h"
-#include "../src/op/grid-nn.h"
+#include "../src/op/grid-basis.h"
+#include "../src/op/grid.h"
 #include "../src/traj_spirals.h"
 
 #include <catch2/catch.hpp>
@@ -40,50 +38,50 @@ TEST_CASE("Grid")
     traj.mapping(os, 1);
   };
 
-  GridNN gridnn(traj, os, false, log);
-  GridKB<5, 5> gridkb(traj, os, false, log);
+  auto gridnn = make_grid(traj, os, Kernels::NN, false, log);
+  auto gridkb = make_grid(traj, os, Kernels::KB5, false, log);
 
   auto nc = info.noncartesianVolume();
-  auto c = gridkb.newMultichannel(C);
+  auto c = gridkb->newMultichannel(C);
   long const nB = 4;
   R2 basis(256, nB);
   basis.setConstant(1.f);
 
-  GridBasisNN gridbnn(traj, os, false, basis, log);
-  GridBasisKB<5, 5> gridbkb(traj, os, false, basis, log);
+  auto gridbnn = make_grid_basis(traj, os, Kernels::NN, false, basis, log);
+  auto gridbkb = make_grid_basis(traj, os, Kernels::KB5, false, basis, log);
   Cx5 b(C, nB, c.dimension(1), c.dimension(2), c.dimension(3));
 
   BENCHMARK("NN Noncartesian->Cartesian")
   {
-    gridnn.Adj(nc, c);
+    gridnn->Adj(nc, c);
   };
   BENCHMARK("NN Basis Noncartesian->Cartesian")
   {
-    gridbnn.Adj(nc, b);
+    gridbnn->Adj(nc, b);
   };
   BENCHMARK("KB Noncartesian->Cartesian")
   {
-    gridkb.Adj(nc, c);
+    gridkb->Adj(nc, c);
   };
   BENCHMARK("KB Basis Noncartesian->Cartesian")
   {
-    gridbkb.Adj(nc, b);
+    gridbkb->Adj(nc, b);
   };
 
   BENCHMARK("NN Cartesian->Noncartesian")
   {
-    gridnn.A(c, nc);
+    gridnn->A(c, nc);
   };
   BENCHMARK("KB Cartesian->Noncartesian")
   {
-    gridkb.A(c, nc);
+    gridkb->A(c, nc);
   };
   BENCHMARK("NN Basis Cartesian->Noncartesian")
   {
-    gridbnn.A(b, nc);
+    gridbnn->A(b, nc);
   };
   BENCHMARK("KB Basis Cartesian->Noncartesian")
   {
-    gridbkb.A(b, nc);
+    gridbkb->A(b, nc);
   };
 }

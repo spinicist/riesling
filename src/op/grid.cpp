@@ -1,5 +1,5 @@
 #include "grid.h"
-#include "grid-kb.h"
+#include "grid-kernel.hpp"
 #include "grid-nn.h"
 
 #include "../tensorOps.h"
@@ -40,15 +40,15 @@ std::unique_ptr<GridOp> make_grid(
     return std::make_unique<GridNN>(traj, os, fastgrid, log, res, shrink);
   case Kernels::KB3:
     if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<GridKB<3, 3>>(traj, os, fastgrid, log, res, shrink);
+      return std::make_unique<Grid<KaiserBessel<3, 3>>>(traj, os, fastgrid, log, res, shrink);
     } else {
-      return std::make_unique<GridKB<3, 1>>(traj, os, fastgrid, log, res, shrink);
+      return std::make_unique<Grid<KaiserBessel<3, 1>>>(traj, os, fastgrid, log, res, shrink);
     }
   case Kernels::KB5:
     if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<GridKB<5, 5>>(traj, os, fastgrid, log, res, shrink);
+      return std::make_unique<Grid<KaiserBessel<5, 5>>>(traj, os, fastgrid, log, res, shrink);
     } else {
-      return std::make_unique<GridKB<5, 1>>(traj, os, fastgrid, log, res, shrink);
+      return std::make_unique<Grid<KaiserBessel<5, 1>>>(traj, os, fastgrid, log, res, shrink);
     }
   }
   __builtin_unreachable();
@@ -62,15 +62,15 @@ make_grid(Mapping const &mapping, Kernels const k, bool const fastgrid, Log &log
     return std::make_unique<GridNN>(mapping, fastgrid, log);
   case Kernels::KB3:
     if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<GridKB<3, 3>>(mapping, fastgrid, log);
+      return std::make_unique<Grid<KaiserBessel<3, 3>>>(mapping, fastgrid, log);
     } else {
-      return std::make_unique<GridKB<3, 1>>(mapping, fastgrid, log);
+      return std::make_unique<Grid<KaiserBessel<3, 1>>>(mapping, fastgrid, log);
     }
   case Kernels::KB5:
     if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<GridKB<5, 5>>(mapping, fastgrid, log);
+      return std::make_unique<Grid<KaiserBessel<5, 5>>>(mapping, fastgrid, log);
     } else {
-      return std::make_unique<GridKB<5, 1>>(mapping, fastgrid, log);
+      return std::make_unique<Grid<KaiserBessel<5, 1>>>(mapping, fastgrid, log);
     }
   }
   __builtin_unreachable();

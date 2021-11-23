@@ -48,9 +48,10 @@ add_library(vineyard
     src/sdc.cpp
     src/sense.cpp
     src/sim.cpp
-    src/sim-prep.cpp
     src/sim-eddy.cpp
+    src/sim-flair.cpp
     src/sim-mupa.cpp
+    src/sim-prep.cpp
     src/slab_correct.cpp
     src/tgv.cpp
     src/threads.cpp
@@ -64,10 +65,8 @@ add_library(vineyard
     src/op/grid.cpp
     src/op/gridBase.cpp
     src/op/grid-nn.cpp
-    src/op/grid-kb.cpp
     src/op/grid-basis.cpp
     src/op/grid-basis-nn.cpp
-    src/op/grid-basis-kb.cpp
     src/op/recon.cpp
     src/op/recon-basis.cpp
     src/op/sense.cpp

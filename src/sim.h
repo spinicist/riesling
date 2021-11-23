@@ -17,7 +17,7 @@ struct Result
 struct Sequence
 {
   long sps;
-  float alpha, TR, Tramp, Tssi, TI, Trec;
+  float alpha, TR, Tramp, Tssi, TI, Trec, TE;
 };
 
 // Arg lists are getting annoyingly long
@@ -40,7 +40,7 @@ struct ParameterGenerator
   using Parameters = Eigen::Array<float, NP, 1>;
 
   ParameterGenerator(std::array<Parameter, NP> const &p)
-      : pars{p}
+    : pars{p}
   {
   }
 

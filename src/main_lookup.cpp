@@ -65,7 +65,7 @@ int main_lookup(args::Subparser &parser)
               }
             }
             out_pars.chip(iv, 4).chip(iz, 3).chip(iy, 2).chip(ix, 1) = parameters.chip(index, 0);
-            pd(ix, iy, iz, iv) = Dot(proj, basis_ss) / Mz_ss(index, 0); // Scale Mz_ss to M0
+            pd(ix, iy, iz, iv) = Dot(basis_ss, proj) / Mz_ss(index, 0); // Scale Mz_ss to M0
           }
         }
       }

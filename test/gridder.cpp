@@ -1,6 +1,5 @@
 #include "../src/log.h"
-#include "../src/op/grid-kb.h"
-#include "../src/op/grid-nn.h"
+#include "../src/op/grid.h"
 #include "../src/trajectory.h"
 #include <catch2/catch.hpp>
 
@@ -23,41 +22,41 @@ TEST_CASE("Gridding", "GRIDDING")
 
   SECTION("NN")
   {
-    GridNN gridder(traj, osamp, false, log);
+    auto gridder = make_grid(traj, osamp, Kernels::NN, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == 4);
     CHECK(rad.dimension(1) == 1);
-    Cx4 cart = gridder.newMultichannel(info.channels);
+    Cx4 cart = gridder->newMultichannel(info.channels);
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
     CHECK(cart.dimension(3) == 4);
     rad.setConstant(1.f);
     cart.setZero();
-    gridder.Adj(rad, cart);
+    gridder->Adj(rad, cart);
     CHECK(cart(0, 2, 2, 2).real() == Approx(1.f));
-    gridder.A(cart, rad);
+    gridder->A(cart, rad);
     CHECK(rad(0, 0, 0).real() == Approx(1.f));
   }
 
   SECTION("NN Multicoil")
   {
-    GridNN gridder(traj, osamp, false, log);
+    auto gridder = make_grid(traj, osamp, Kernels::NN, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
-    Cx4 cart = gridder.newMultichannel(info.channels);
+    Cx4 cart = gridder->newMultichannel(info.channels);
     CHECK(cart.dimension(0) == info.channels);
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
     CHECK(cart.dimension(3) == 4);
     rad.setConstant(1.f);
     cart.setZero();
-    gridder.Adj(rad, cart);
+    gridder->Adj(rad, cart);
     CHECK(cart(0, 2, 2, 2).real() == Approx(1.f));
     CHECK(cart(1, 2, 2, 2).real() == Approx(1.f));
     CHECK(cart(2, 2, 2, 2).real() == Approx(1.f));
     CHECK(cart(3, 2, 2, 2).real() == Approx(1.f));
-    gridder.A(cart, rad);
+    gridder->A(cart, rad);
     CHECK(rad(0, 0, 0).real() == Approx(1.f));
     CHECK(rad(1, 0, 0).real() == Approx(1.f));
     CHECK(rad(2, 0, 0).real() == Approx(1.f));
@@ -66,23 +65,23 @@ TEST_CASE("Gridding", "GRIDDING")
 
   SECTION("KB Multicoil")
   {
-    GridKB<3, 3> gridder(traj, osamp, false, log);
+    auto gridder = make_grid(traj, osamp, Kernels::KB3, false, log);
     Cx3 rad = info.noncartesianVolume();
     CHECK(rad.dimension(0) == info.channels);
     CHECK(rad.dimension(1) == info.read_points);
-    Cx4 cart = gridder.newMultichannel(info.channels);
+    Cx4 cart = gridder->newMultichannel(info.channels);
     CHECK(cart.dimension(0) == info.channels);
     CHECK(cart.dimension(1) == 4);
     CHECK(cart.dimension(2) == 4);
     CHECK(cart.dimension(3) == 4);
     rad.setConstant(1.f);
     cart.setZero();
-    gridder.Adj(rad, cart);
-    gridder.A(cart, rad);
-    CHECK(rad(0, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
-    CHECK(rad(1, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
-    CHECK(rad(2, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
-    CHECK(rad(3, 0, 0).real() == Approx(0.18822f).margin(1.e-5f));
+    gridder->Adj(rad, cart);
+    gridder->A(cart, rad);
+    CHECK(rad(0, 0, 0).real() == Approx(1.30807f).margin(1.e-5f));
+    CHECK(rad(1, 0, 0).real() == Approx(1.30807f).margin(1.e-5f));
+    CHECK(rad(2, 0, 0).real() == Approx(1.30807f).margin(1.e-5f));
+    CHECK(rad(3, 0, 0).real() == Approx(1.30807f).margin(1.e-5f));
   }
 }
 
@@ -109,8 +108,8 @@ TEST_CASE("SingleSpoke", "GRIDDING")
 
   SECTION("NN")
   {
-    GridNN gridder(traj, osamp, false, log);
-    Cx4 cart = gridder.newMultichannel(1);
+    auto gridder = make_grid(traj, osamp, Kernels::NN, false, log);
+    Cx4 cart = gridder->newMultichannel(1);
     CHECK(cart.dimension(0) == 1);
     CHECK(cart.dimension(1) == 8);
     CHECK(cart.dimension(2) == 8);
@@ -118,7 +117,7 @@ TEST_CASE("SingleSpoke", "GRIDDING")
     Cx3 rad(1, info.read_points, info.spokes_total());
     rad.setConstant(1.f);
     cart.setZero();
-    gridder.Adj(rad, cart);
+    gridder->Adj(rad, cart);
     CHECK(cart(0, 4, 4, 4).real() == Approx(1.f));
     CHECK(cart(0, 5, 4, 4).real() == Approx(1.f));
     CHECK(cart(0, 6, 4, 4).real() == Approx(1.f));
@@ -126,7 +125,7 @@ TEST_CASE("SingleSpoke", "GRIDDING")
     CHECK(cart(0, 4, 5, 5).real() == Approx(0.f));
     CHECK(cart(0, 4, 5, 4).real() == Approx(0.f));
     CHECK(cart(0, 4, 4, 5).real() == Approx(0.f));
-    gridder.A(cart, rad);
+    gridder->A(cart, rad);
     CHECK(rad(0, 0, 0).real() == Approx(1.f));
   }
 }

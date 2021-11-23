@@ -4,6 +4,7 @@
 #include "log.h"
 #include "parse_args.h"
 #include "sim-eddy.h"
+#include "sim-flair.h"
 #include "sim-mupa.h"
 #include "sim-prep.h"
 
@@ -44,6 +45,8 @@ int main_sim(args::Subparser &parser)
     parser, "ɣ", "High value for eddy-current angles (default π)", {"eddyhi"}, M_PI);
 
   args::Flag mupa(parser, "M", "Run a MUPA simulation", {"mupa"});
+  args::Flag flair(parser, "F", "Run a FLAIR simulation", {"flair"});
+  args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
 
   args::ValueFlag<long> randomSamp(
     parser, "N", "Use N random parameter samples for dictionary", {"random"}, 0);
@@ -63,7 +66,8 @@ int main_sim(args::Subparser &parser)
     .Tramp = Tramp.Get(),
     .Tssi = Tssi.Get(),
     .TI = TI.Get(),
-    .Trec = Trec.Get()};
+    .Trec = Trec.Get(),
+    .TE = te.Get()};
   Sim::Parameter const T1{nT1.Get(), T1Lo.Get(), T1Hi.Get(), true};
   Sim::Parameter const beta{nb.Get(), bLo.Get(), bHi.Get(), bLog};
   Sim::Parameter const B1{nB1.Get(), B1Lo.Get(), B1Hi.Get(), false};
@@ -74,6 +78,9 @@ int main_sim(args::Subparser &parser)
   } else if (mupa) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
     result = Sim::MUPA(T1, T2, B1, seq, randomSamp.Get(), log);
+  } else if (flair) {
+    Sim::Parameter const T2{65, 0.02, 0.2, true};
+    result = Sim::FLAIR(T1, T2, B1, seq, randomSamp.Get(), log);
   } else {
     result = Sim::Simple(T1, beta, seq, randomSamp.Get(), log);
   }

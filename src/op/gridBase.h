@@ -14,8 +14,6 @@ struct GridBase
   void setSDC(R2 const &sdc);
   void setUnsafe();
   void setSafe();
-  virtual void sqrtOn(){}; // Use square-root of gridding kernel for Pipe SDC
-  virtual void sqrtOff(){};
 
   Mapping const &mapping() const;
   R2 SDC() const;

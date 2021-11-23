@@ -1,23 +1,23 @@
 #include "sdc.h"
 
 #include "io.h"
-#include "op/grid-basis.h"
-#include "op/grid.h"
+#include "op/grid-kernel.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include "trajectory.h"
 
 namespace SDC {
-R2 Choose(
-  std::string const &iname, Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
+R2 Choose(std::string const &iname, Trajectory const &traj, Log &log)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes_total());
   if (iname == "") {
+    log.info("Using no density compensation");
     sdc.setConstant(1.f);
   } else if (iname == "none") {
+    log.info("Using no density compensation");
     sdc.setConstant(1.f);
   } else if (iname == "pipe") {
-    sdc = Pipe(traj, gridder, log);
+    sdc = Pipe(traj, log);
   } else if (iname == "radial") {
     sdc = Radial(traj, log);
   } else {
@@ -39,55 +39,27 @@ R2 Choose(
   return sdc;
 }
 
-void Choose(
-  std::string const &iname,
-  Trajectory const &traj,
-  std::unique_ptr<GridOp> &gridder,
-  std::unique_ptr<GridBasisOp> &gridder2,
-  Log &log)
-{
-  R2 sdc;
-  if (iname == "") {
-    return;
-  } else if (iname == "none") {
-    return;
-  } else if (iname == "pipe") {
-    sdc = Pipe(traj, gridder, log);
-  } else if (iname == "radial") {
-    sdc = Radial(traj, log);
-  } else {
-    HD5::Reader reader(iname, log);
-    auto const sdcInfo = reader.readInfo();
-    auto const trajInfo = traj.info();
-    if (
-      sdcInfo.read_points != trajInfo.read_points ||
-      sdcInfo.spokes_total() != trajInfo.spokes_total()) {
-      Log::Fail(
-        "SDC trajectory dimensions {}x{} do not match main trajectory {}x{}",
-        sdcInfo.read_points,
-        sdcInfo.spokes_total(),
-        trajInfo.read_points,
-        trajInfo.spokes_total());
-    }
-    sdc = reader.readSDC(sdcInfo);
-  }
-  gridder2->setSDC(sdc);
-}
-
-R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
+R2 Pipe(Trajectory const &traj, Log &log)
 {
   log.info("Using Pipe/Zwart/Menon SDC...");
-  Cx3 W(1, traj.info().read_points, traj.info().spokes_total());
+  auto const info = traj.info();
+  Cx3 W(1, info.read_points, info.spokes_total());
   Cx3 Wp(W.dimensions());
 
+  float const os = 2.1f; // From Zwart paper
+  std::unique_ptr<GridOp> gridder;
+  if (info.type == Info::Type::ThreeD) {
+    gridder = std::make_unique<Grid<PipeSDC<5, 5>>>(traj, os, false, log);
+  } else {
+    gridder = std::make_unique<Grid<PipeSDC<5, 1>>>(traj, os, false, log);
+  }
   W.setZero();
-  for (long is = 0; is < traj.info().spokes_total(); is++) {
-    for (long ir = 0; ir < traj.info().read_points; ir++) {
+  for (long is = 0; is < info.spokes_total(); is++) {
+    for (long ir = 0; ir < info.read_points; ir++) {
       W(0, ir, is) = traj.merge(ir, is);
     }
   }
 
-  gridder->sqrtOn();
   Cx4 temp = gridder->newMultichannel(1);
   for (long ii = 0; ii < 10; ii++) {
     Wp.setZero();
@@ -98,20 +70,20 @@ R2 Pipe(Trajectory const &traj, std::unique_ptr<GridOp> &gridder, Log &log)
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().abs().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 2.5e-2) {
+    if (delta < 1e-9) {
       log.info("SDC converged, delta was {}", delta);
       break;
     } else {
       log.info("SDC Delta {}", delta);
     }
   }
-  gridder->sqrtOff();
   log.info("SDC finished.");
   return W.real().chip(0, 0);
 }
 
 R2 Radial2D(Trajectory const &traj, Log &log)
 {
+  log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
   Info const &info = traj.info();
   auto spoke_sdc = [&](long const spoke, long const N, float const scale) -> R1 {
     float const k_delta = 1. / (info.read_oversamp() * scale);
@@ -143,13 +115,12 @@ R2 Radial2D(Trajectory const &traj, Log &log)
   R1 const ss = spoke_sdc(info.spokes_lo, info.spokes_hi, 1.f);
   sdc.slice(Sz2{0, info.spokes_lo}, Sz2{info.read_points, info.spokes_hi}) =
     ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_hi});
-
-  log.info(FMT_STRING("Calculated 2D radial analytic SDC"));
   return sdc;
 }
 
 R2 Radial3D(Trajectory const &traj, Log &log)
 {
+  log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
   auto const &info = traj.info();
   auto spoke_sdc = [&](long const &spoke, long const N, float const scale) -> R1 {
     // Calculate the point spacing
@@ -184,7 +155,6 @@ R2 Radial3D(Trajectory const &traj, Log &log)
   sdc.slice(Sz2{0, info.spokes_lo}, Sz2{info.read_points, info.spokes_hi}) =
     ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes_hi});
 
-  log.info(FMT_STRING("Calculated 2D radial analytic SDC"));
   return sdc;
 }
 

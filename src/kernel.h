@@ -3,33 +3,37 @@
 #include "fft_plan.h"
 #include "types.h"
 
-template <int InPlane, int ThroughPlane>
-struct Kernel
+template <int InPlane_, int ThroughPlane_>
+struct KaiserBessel
 {
+  constexpr static int InPlane = InPlane_;
+  constexpr static int ThroughPlane = ThroughPlane_;
   using KTensor = Eigen::TensorFixedSize<float, Eigen::Sizes<InPlane, InPlane, ThroughPlane>>;
+  KaiserBessel(float os);
 
-  Kernel(float const os);
-  KTensor operator()(Point3 const offset, float const scale) const;
-
-  void sqrtOn();
-  void sqrtOff();
+  KTensor operator()(Point3 const offset) const; // This expects x to already be squared
 
 private:
-  using KArray = Eigen::TensorFixedSize<float, Eigen::Sizes<InPlane>>;
-  using FixIn = Eigen::type2index<InPlane>;
-  using FixThrough = Eigen::type2index<ThroughPlane>;
+  float beta_, scale_;
+};
 
-  void calcScale();
+template <int InPlane_, int ThroughPlane_>
+struct PipeSDC
+{
+  constexpr static int InPlane = InPlane_;
+  constexpr static int ThroughPlane = ThroughPlane_;
+  using KTensor = Eigen::TensorFixedSize<float, Eigen::Sizes<InPlane, InPlane, ThroughPlane>>;
+  PipeSDC(float os);
 
-  float beta_, kScale_;
-  KArray indices_;
-  FFT::ThreeD fft_; // For sqrt kernel
-  bool sqrt_;
+  KTensor operator()(Point3 const offset) const;
+
+private:
+  float distScale_, valScale_;
 };
 
 enum struct Kernels
 {
   NN = 0,
   KB3 = 1,
-  KB5 = 2,
+  KB5 = 2
 };

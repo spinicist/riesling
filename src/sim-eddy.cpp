@@ -6,23 +6,23 @@
 namespace Sim {
 
 Result Eddy(
-    Parameter const T1p,
-    Parameter const betap,
-    Parameter const gammap,
-    Parameter const B1p,
-    Sequence const seq,
-    long const nRand,
-    Log &log)
+  Parameter const T1p,
+  Parameter const betap,
+  Parameter const gammap,
+  Parameter const B1p,
+  Sequence const seq,
+  long const nRand,
+  Log &log)
 {
   log.info("Eddy Current MP-ZTE simulation");
   log.info(
-      FMT_STRING("SPS {}, FA {}, TR {}s, Trec {}s, Tramp {}s, Tssi {}s"),
-      seq.sps,
-      seq.alpha,
-      seq.TR,
-      seq.Trec,
-      seq.Tramp,
-      seq.Tssi);
+    FMT_STRING("SPS {}, FA {}, TR {}s, Trec {}s, Tramp {}s, Tssi {}s"),
+    seq.sps,
+    seq.alpha,
+    seq.TR,
+    seq.Trec,
+    seq.Tramp,
+    seq.Tssi);
   log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
   log.info(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
   log.info(FMT_STRING("{} values of ɣ from {} to {}"), gammap.N, gammap.lo, gammap.hi);
@@ -97,7 +97,7 @@ Result Eddy(
       if (col != (4 * seq.sps)) {
         Log::Fail("Programmer error");
       }
-      result.Mz_ss(ip) = m_ss;
+      result.Mz_ss(ip) = result.dynamics(ip, 0);
       result.parameters.row(ip) = P;
     }
   };
