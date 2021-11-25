@@ -39,10 +39,9 @@ KaiserBessel<IP, TP>::KaiserBessel(float const os)
   : beta_{(float)M_PI * sqrtf(pow(IP * (os - 0.5f) / os, 2.f) - 0.8f)}
 {
   // Get the normalization factor
-  R1 p(1);
-  p.setConstant(beta_);
-  p = p.bessel_i0();
-  scale_ = 1.f / p(0);
+  scale_ = 1.f;
+  KTensor k = operator()(Point3::Zero());
+  scale_ = 1.f / Sum(k);
 }
 
 template <int IP, int TP>
@@ -63,7 +62,7 @@ PipeSDC<IP, TP>::PipeSDC(float const os)
 {
   valScale_ = 1.f;
   KTensor k = operator()(Point3::Zero());
-  valScale_ = 1.f / sqrt(Sum(k));
+  valScale_ = 1.f / Sum(k);
 }
 
 template <int IP, int TP>

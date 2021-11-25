@@ -127,7 +127,6 @@ if( ${BUILD_TESTS} )
         test/decomp.cpp
         test/fft1.cpp
         test/fft3.cpp
-        test/gridder.cpp
         test/hankel.cpp
         test/kernel.cpp
         test/parameters.cpp

@@ -27,7 +27,7 @@ int main_recon(args::Subparser &parser)
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-  R2 const w = SDC::Choose(sdc.Get(), traj, log);
+  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get(), log);
   gridder->setSDC(w);
   Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
   auto const cropSz = cropper.size();

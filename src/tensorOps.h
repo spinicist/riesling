@@ -26,6 +26,14 @@ typename T::Scalar Sum(T const &a)
 }
 
 template <typename T>
+typename T::Scalar Mean(T const &a)
+{
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s;
+  s.device(Threads::GlobalDevice()) = a.mean();
+  return s();
+}
+
+template <typename T>
 typename T::Scalar Maximum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;
@@ -80,11 +88,11 @@ template <typename T>
 inline decltype(auto) FirstToLast4(T const &x)
 {
   Eigen::IndexList<
-      Eigen::type2index<1>,
-      Eigen::type2index<2>,
-      Eigen::type2index<3>,
-      Eigen::type2index<0>>
-      indices;
+    Eigen::type2index<1>,
+    Eigen::type2index<2>,
+    Eigen::type2index<3>,
+    Eigen::type2index<0>>
+    indices;
   return x.shuffle(indices);
 }
 
@@ -154,10 +162,10 @@ inline decltype(auto) CollapseToVector(T &t)
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, 1, Eigen::Dynamic>> mapped(
-      t.data(),
-      1,
-      std::accumulate(
-          t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+    t.data(),
+    1,
+    std::accumulate(
+      t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
   return mapped;
 }
 
@@ -166,17 +174,17 @@ inline decltype(auto) CollapseToMatrix(T &t)
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
-      t.data(),
-      std::accumulate(
-          t.dimensions().begin(),
-          t.dimensions().begin() + toCollapse,
-          1,
-          std::multiplies<Eigen::Index>()),
-      std::accumulate(
-          t.dimensions().begin() + toCollapse,
-          t.dimensions().end(),
-          1,
-          std::multiplies<Eigen::Index>()));
+    t.data(),
+    std::accumulate(
+      t.dimensions().begin(),
+      t.dimensions().begin() + toCollapse,
+      1,
+      std::multiplies<Eigen::Index>()),
+    std::accumulate(
+      t.dimensions().begin() + toCollapse,
+      t.dimensions().end(),
+      1,
+      std::multiplies<Eigen::Index>()));
   return mapped;
 }
 
@@ -185,16 +193,16 @@ inline decltype(auto) CollapseToMatrix(T const &t)
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
-      t.data(),
-      std::accumulate(
-          t.dimensions().begin(),
-          t.dimensions().begin() + toCollapse,
-          1,
-          std::multiplies<Eigen::Index>()),
-      std::accumulate(
-          t.dimensions().begin() + toCollapse,
-          t.dimensions().end(),
-          1,
-          std::multiplies<Eigen::Index>()));
+    t.data(),
+    std::accumulate(
+      t.dimensions().begin(),
+      t.dimensions().begin() + toCollapse,
+      1,
+      std::multiplies<Eigen::Index>()),
+    std::accumulate(
+      t.dimensions().begin() + toCollapse,
+      t.dimensions().end(),
+      1,
+      std::multiplies<Eigen::Index>()));
   return mapped;
 }

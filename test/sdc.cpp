@@ -1,38 +1,45 @@
 #include "../src/sdc.h"
 #include "../src/log.h"
 #include "../src/op/grid-kernel.hpp"
+#include "../src/traj_spirals.h"
 #include "../src/trajectory.h"
 #include <catch2/catch.hpp>
 
 TEST_CASE("NN", "[SDC]")
 {
   Log log;
-  Info info{
-    .type = Info::Type::ThreeDStack,
+  long const M = 32;
+  float const os = 2.f;
+  Info const info{
+    .type = Info::Type::ThreeD,
     .channels = 1,
-    .matrix = {4, 4, 1},
-    .read_points = 4,
+    .matrix = Eigen::Array3l::Constant(M),
+    .read_points = long(os * M / 2),
     .read_gap = 0,
-    .spokes_hi = 1,
+    .spokes_hi = long(M * M / 4),
     .spokes_lo = 0,
-    .lo_scale = 1};
-  R3 points(3, 4, 1);
-  points.setZero();
-  points(0, 0, 0) = 0.5f * 0.f;
-  points(0, 1, 0) = 0.5f * 1.f / 3.f;
-  points(0, 2, 0) = 0.5f * 2.f / 3.f;
-  points(0, 3, 0) = 0.5f * 3.f / 3.f;
-  Trajectory traj(info, points, log);
+    .lo_scale = 1.f,
+    .volumes = 1,
+    .echoes = 1,
+    .tr = 1.f,
+    .voxel_size = Eigen::Array3f::Constant(1.f),
+    .origin = Eigen::Array3f::Constant(0.f),
+    .direction = Eigen::Matrix3f::Identity()};
+  auto const points = ArchimedeanSpiral(info);
+  Trajectory const traj(info, points, log);
 
   SECTION("Pipe")
   {
-    R2 sdc = SDC::Pipe(traj, log);
+    R2 sdc = SDC::Pipe(traj, false, 2.1f, log);
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes_total());
-    CHECK(sdc(0, 0) == Approx(1.04336f).margin(1.e-4f));
-    CHECK(sdc(1, 0) == Approx(1.04336f).margin(1.e-4f));
-    // Next two points excluded by margin at edge of grid
-    CHECK(sdc(2, 0) == Approx(0.0f).margin(1.e-4f));
-    CHECK(sdc(3, 0) == Approx(0.0f).margin(1.e-4f));
+    // Central points should be very small
+    CHECK(sdc(0, 0) == Approx(0.00129f).margin(1.e-4f));
+    CHECK(sdc(1, 0) == Approx(0.00519f).margin(1.e-4f));
+    // Undersampled points should be one
+    CHECK(sdc(25, 0) == Approx(1.0f).margin(1.e-1f));
+    CHECK(sdc(26, 0) == Approx(1.0f).margin(1.e-1f));
+    // Point excluded by margin at edge of grid
+    CHECK(sdc(31, 0) == Approx(0.0f).margin(1.e-4f));
   }
 }

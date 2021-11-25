@@ -31,7 +31,7 @@ int main_sense(args::Subparser &parser)
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-  gridder->setSDC(SDC::Choose(sdc.Get(), traj, log));
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
   Cx4 sense = DirectSENSE(
     info,
     gridder.get(),

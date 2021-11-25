@@ -22,21 +22,21 @@ inline long fft_size(float const x)
 }
 
 Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
-    : info_{info}
-    , points_{points}
-    , log_{log}
+  : info_{info}
+  , points_{points}
+  , log_{log}
 {
   if (info_.read_points != points_.dimension(1)) {
     Log::Fail(
-        "Mismatch between info read points {} and trajectory points {}",
-        info_.read_points,
-        points_.dimension(1));
+      "Mismatch between info read points {} and trajectory points {}",
+      info_.read_points,
+      points_.dimension(1));
   }
   if (info_.spokes_total() != points_.dimension(2)) {
     Log::Fail(
-        "Mismatch between info spokes {} and trajectory spokes {}",
-        info_.spokes_total(),
-        points_.dimension(2));
+      "Mismatch between info spokes {} and trajectory spokes {}",
+      info_.spokes_total(),
+      points_.dimension(2));
   }
 
   if (info_.type == Info::Type::ThreeD) {
@@ -46,7 +46,7 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
     }
   } else {
     float const maxCoord = Maximum(
-        points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
+      points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
     if (maxCoord > 0.5f) {
       Log::Fail("Maximum in-plane trajectory {} co-ordinate exceeded 0.5", maxCoord);
     }
@@ -111,7 +111,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   float const ratio = info_.voxel_size.minCoeff() / res;
   long const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
   log_.info(
-      FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
+    FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
 
   Mapping mapping;
   mapping.type = info_.type;
@@ -159,12 +159,12 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   mapping.sortedIndices.resize(mapping.cart.size());
   std::iota(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), 0);
   std::sort(
-      mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](long const a, long const b) {
-        auto const &ac = mapping.cart[a];
-        auto const &bc = mapping.cart[b];
-        return (ac.z < bc.z) ||
-               ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
-      });
+    mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](long const a, long const b) {
+      auto const &ac = mapping.cart[a];
+      auto const &bc = mapping.cart[b];
+      return (ac.z < bc.z) ||
+             ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
+    });
   log_.debug("Grid co-ord sorting: {}", log_.toNow(start));
 
   return mapping;

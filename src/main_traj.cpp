@@ -27,7 +27,7 @@ int main_traj(args::Subparser &parser)
   rad_ks.setConstant(1.0f);
 
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-  gridder->setSDC(SDC::Choose(sdc.Get(), traj, log));
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
   Cx4 gridded;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
