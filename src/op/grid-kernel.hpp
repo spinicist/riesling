@@ -106,9 +106,9 @@ struct Grid final : GridOp
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
         auto const nc = noncart.chip(n.spoke, 2).chip(n.read, 1);
-        auto const k = kernel_(mapping_.offset[si]).template cast<Cx>();
+        auto const k = kernel_(mapping_.offset[si]);
         auto const nck = (nc * nc.constant(mapping_.sdc[si])).reshape(rshNC).broadcast(brdNC) *
-                         k.reshape(rshK).broadcast(brdK);
+                         k.template cast<Cx>().reshape(rshK).broadcast(brdK);
         stC.set(1, c.x - (Kernel::InPlane / 2));
         stC.set(2, c.y - (Kernel::InPlane / 2));
         if (safe_) {
