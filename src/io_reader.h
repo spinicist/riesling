@@ -19,7 +19,7 @@ struct Reader
   Trajectory readTrajectory();
   R2 readSDC(Info const &info);
 
-  void readCartesian(Cx4 &volume);
+  void readCartesian(Cx5 &volume);
   Cx3 const &noncartesian(long const index); // This will be cached
   Cx4 readSENSE();
   R2 readBasis();

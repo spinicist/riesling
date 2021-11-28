@@ -11,21 +11,20 @@ TEST_CASE("ops-grid", "[ops]")
   Log log;
   long const M = 16;
   float const os = 2.f;
-  Info const info{
-    .type = Info::Type::ThreeD,
-    .channels = 1,
-    .matrix = Eigen::Array3l::Constant(M),
-    .read_points = long(os * M / 2),
-    .read_gap = 0,
-    .spokes_hi = long(M * M),
-    .spokes_lo = 0,
-    .lo_scale = 1.f,
-    .volumes = 1,
-    .echoes = 1,
-    .tr = 1.f,
-    .voxel_size = Eigen::Array3f::Constant(1.f),
-    .origin = Eigen::Array3f::Constant(0.f),
-    .direction = Eigen::Matrix3f::Identity()};
+  Info const info{.type = Info::Type::ThreeD,
+                  .channels = 1,
+                  .matrix = Eigen::Array3l::Constant(M),
+                  .read_points = long(os * M / 2),
+                  .read_gap = 0,
+                  .spokes_hi = long(M * M),
+                  .spokes_lo = 0,
+                  .lo_scale = 1.f,
+                  .volumes = 1,
+                  .echoes = 1,
+                  .tr = 1.f,
+                  .voxel_size = Eigen::Array3f::Constant(1.f),
+                  .origin = Eigen::Array3f::Constant(0.f),
+                  .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info);
   Trajectory const traj(info, points, log);
   R2 const sdc = SDC::Pipe(traj, true, os, log);
@@ -42,7 +41,8 @@ TEST_CASE("ops-grid", "[ops]")
   {
     auto grid = make_grid(traj, os, Kernels::NN, false, log);
     grid->setSDC(sdc);
-    Cx4 x = grid->newMultichannel(1), y = grid->newMultichannel(1);
+    auto const dims = grid->inputDimensions(1, 1);
+    Cx5 x(dims), y(dims);
     Cx3 r(info.channels, info.read_points, info.spokes_total());
 
     x.setRandom();

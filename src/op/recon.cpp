@@ -1,11 +1,12 @@
 #include "recon.h"
 
 #include "../sdc.h"
+#include "../tensorOps.h"
 #include "../threads.h"
 
 ReconOp::ReconOp(GridOp *gridder, Cx4 const &maps, Log &log)
   : gridder_{gridder}
-  , grid_{gridder_->newMultichannel(maps.dimension(0))}
+  , grid_{gridder_->inputDimensions(maps.dimension(0), gridder_->mapping().echoes)}
   , sense_{maps, grid_.dimensions()}
   , apo_{gridder_->apodization(sense_.dimensions())}
   , fft_{grid_, log}
@@ -26,20 +27,19 @@ Sz3 ReconOp::outputDimensions() const
 void ReconOp::calcToeplitz(Info const &info)
 {
   log_.info("Calculating Töplitz embedding");
-  transfer_ = gridder_->newMultichannel(1);
+  transfer_.resize(gridder_->inputDimensions(1, grid_.dimension(1)));
   transfer_.setConstant(1.f);
   Cx3 tf(1, info.read_points, info.spokes_total());
   gridder_->A(transfer_, tf);
   gridder_->Adj(tf, transfer_);
-  log_.image(transfer_, "recon-transfer.nii");
 }
 
 void ReconOp::A(Input const &x, Output &y) const
 {
   auto dev = Threads::GlobalDevice();
   auto const &start = log_.now();
-  Cx3 apodised(x.dimensions());
-  apodised.device(dev) = x / apo_.cast<Cx>();
+  Input apodised(x.dimensions());
+  apodised.device(dev) = x / Tile(apo_, x.dimension(0)).cast<Cx>();
   sense_.A(apodised, grid_);
   fft_.forward(grid_);
   gridder_->A(grid_, y);

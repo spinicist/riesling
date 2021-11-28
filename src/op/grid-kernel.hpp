@@ -45,11 +45,12 @@ struct Grid final : GridOp
         auto const si = mapping_.sortedIndices[ii];
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
+        auto const e = std::max(mapping_.echo[si], int8_t(cart.dimension(1)));
         auto const k = kernel_(mapping_.offset[si]);
         stC.set(1, c.x - (Kernel::InPlane / 2));
         stC.set(2, c.y - (Kernel::InPlane / 2));
         stC.set(3, c.z - (Kernel::ThroughPlane / 2));
-        noncart.chip(n.spoke, 2).chip(n.read, 1) = cart.slice(stC, szC).contract(
+        noncart.chip(n.spoke, 2).chip(n.read, 1) = cart.chip(e, 1).slice(stC, szC).contract(
           k.template cast<Cx>(),
           Eigen::IndexPairList<
             Eigen::type2indexpair<1, 0>,
@@ -105,6 +106,7 @@ struct Grid final : GridOp
         auto const si = mapping_.sortedIndices[ii];
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
+        auto const e = std::max(mapping_.echo[si], int8_t(cart.dimension(1)));
         auto const nc = noncart.chip(n.spoke, 2).chip(n.read, 1);
         auto const k = kernel_(mapping_.offset[si]);
         auto const nck = (nc * nc.constant(mapping_.sdc[si])).reshape(rshNC).broadcast(brdNC) *
@@ -113,10 +115,10 @@ struct Grid final : GridOp
         stC.set(2, c.y - (Kernel::InPlane / 2));
         if (safe_) {
           stC.set(3, c.z - (Kernel::ThroughPlane / 2) - minZ[ti]);
-          workspace[ti].slice(stC, szC) += nck;
+          workspace[ti].chip(e, 1).slice(stC, szC) += nck;
         } else {
           stC.set(3, c.z - (Kernel::ThroughPlane / 2));
-          cart.slice(stC, szC) += nck;
+          cart.chip(e, 1).slice(stC, szC) += nck;
         }
       }
     };

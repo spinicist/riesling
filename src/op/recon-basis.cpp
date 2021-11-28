@@ -5,20 +5,13 @@
 #include "../threads.h"
 #include "grid.h"
 
-ReconBasisOp::ReconBasisOp(
-    GridBasisOp *gridder,
-    Cx4 const &maps,
-    Log &log)
-    : gridder_{gridder}
-    , grid_{maps.dimension(0),
-            gridder_->basis().dimension(1),
-            gridder_->dimension(0),
-            gridder_->dimension(1),
-            gridder_->dimension(2)}
-    , sense_{maps, grid_.dimensions()}
-    , apo_{gridder_->apodization(sense_.dimensions())}
-    , fft_{grid_, log}
-    , log_{log}
+ReconBasisOp::ReconBasisOp(GridBase *gridder, Cx4 const &maps, Log &log)
+  : gridder_{gridder}
+  , grid_{gridder_->inputDimensions(maps.dimension(0))}
+  , sense_{maps, gridder_.cartDimensions()}
+  , apo_{gridder_->apodization(sense_.inputDimensions())}
+  , fft_{grid_, log}
+  , log_{log}
 {
 }
 
@@ -35,17 +28,11 @@ Sz3 ReconBasisOp::outputDimensions() const
 void ReconBasisOp::calcToeplitz(Info const &info)
 {
   log_.info("Calculating Töplitz embedding");
-  transfer_ = Cx5{
-    1,
-    gridder_->basis().dimension(1),
-    gridder_->dimension(0),
-    gridder_->dimension(1),
-    gridder_->dimension(2)};
+  transfer_.resize(gridder_->inputDimensions(1));
   transfer_.setConstant(1.f);
   Cx3 tf(1, info.read_points, info.spokes_total());
   gridder_->A(transfer_, tf);
   gridder_->Adj(tf, transfer_);
-  log_.image(Cx4(transfer_.chip(0, 0)), "recon-basis-transfer.nii");
 }
 
 void ReconBasisOp::A(Input const &x, Output &y) const
@@ -88,19 +75,19 @@ void ReconBasisOp::Adj(Output const &x, Input &y) const
   log_.debug("Decode: {}", log_.toNow(start));
 }
 
-// void ReconBasisOp::AdjA(Input const &x, Input &y) const
-// {
-//   if (transfer_.size() == 0) {
-//     Log::Fail("Töplitz embedding not calculated");
-//   }
-//   auto dev = Threads::GlobalDevice();
-//   auto const start = log_.now();
-//   sense_.A(x, grid_);
-//   fft_.forward(grid_);
-//   Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd;
-//   brd.set(0, grid_.dimension(0));
-//   grid_.device(dev) = grid_ * transfer_.broadcast(brd);
-//   fft_.reverse(grid_);
-//   sense_.Adj(grid_, y);
-//   log_.debug("Töplitz embedded: {}", log_.toNow(start));
-// }
+void ReconBasisOp::AdjA(Input const &x, Input &y) const
+{
+  if (transfer_.size() == 0) {
+    Log::Fail("Töplitz embedding not calculated");
+  }
+  auto dev = Threads::GlobalDevice();
+  auto const start = log_.now();
+  sense_.A(x, grid_);
+  fft_.forward(grid_);
+  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd;
+  brd.set(0, grid_.dimension(0));
+  grid_.device(dev) = grid_ * transfer_.broadcast(brd);
+  fft_.reverse(grid_);
+  sense_.Adj(grid_, y);
+  log_.debug("Töplitz embedded: {}", log_.toNow(start));
+}

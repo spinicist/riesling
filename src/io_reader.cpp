@@ -1,6 +1,6 @@
-#include "io_reader.h"
 #include "io_hd5.h"
 #include "io_hd5.hpp"
+#include "io_reader.h"
 
 #include <filesystem>
 
@@ -76,8 +76,14 @@ Trajectory Reader::readTrajectory()
   Info info = readInfo();
   log_.info("Reading trajectory");
   R3 points(3, info.read_points, info.spokes_total());
-  HD5::load_tensor(handle_, Keys::Trajectory, points, log_);
-  return Trajectory(info, points, log_);
+  if (HD5::Exists(handle_, "echoes")) {
+    L1 echoes(info.spokes_total());
+    HD5::load_tensor(handle_, "echoes", echoes, log_);
+    return Trajectory(info, points, echoes, log_);
+  } else {
+    HD5::load_tensor(handle_, Keys::Trajectory, points, log_);
+    return Trajectory(info, points, log_);
+  }
 }
 
 R2 Reader::readSDC(Info const &info)
@@ -108,7 +114,7 @@ Cx3 const &Reader::noncartesian(long const index)
   return nc_;
 }
 
-void Reader::readCartesian(Cx4 &grid)
+void Reader::readCartesian(Cx5 &grid)
 {
   log_.info("Reading cartesian data");
   HD5::load_tensor(handle_, Keys::Cartesian, grid, log_);

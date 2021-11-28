@@ -6,7 +6,7 @@
 #include "operator.h"
 #include <memory>
 
-struct GridOp : Operator<4, 3>, GridBase
+struct GridOp : GridBase
 {
   GridOp(Mapping map, bool const unsafe, Log &log);
   virtual ~GridOp(){};
@@ -14,10 +14,10 @@ struct GridOp : Operator<4, 3>, GridBase
   virtual void A(Input const &x, Output &y) const = 0;
   virtual void Adj(Output const &x, Input &y) const = 0;
 
-  Input::Dimensions inSize() const;
+  Input::Dimensions inputDimensions(long const nc) const;
+  Input::Dimensions inputDimensions(long const nc, long const ne) const;
   Output::Dimensions outputDimensions() const;
 
-  Cx4 newMultichannel(long const nChan) const;    // Returns a correctly sized multi-channel grid
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
 
 protected:

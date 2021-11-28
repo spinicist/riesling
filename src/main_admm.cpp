@@ -7,6 +7,7 @@
 #include "io.h"
 #include "llr.h"
 #include "log.h"
+#include "op/grid-basis.h"
 #include "op/grid.h"
 #include "op/recon-basis.h"
 #include "op/sense.h"

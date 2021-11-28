@@ -10,7 +10,7 @@ namespace FFT {
  * be transformed, and the first (TensorRank - FFTRank) will not be transformed.
  */
 template <int TensorRank, int FFTRank>
-struct Plan
+struct Planned
 {
   static_assert(FFTRank <= TensorRank);
   using Tensor = Eigen::Tensor<Cx, TensorRank>;
@@ -18,13 +18,13 @@ struct Plan
 
   /*! Uses the specified Tensor as a workspace during planning
    */
-  Plan(Tensor &workspace, Log log, long const nThreads = Threads::GlobalThreadCount());
+  Planned(Tensor &workspace, Log log, long const nThreads = Threads::GlobalThreadCount());
 
   /*! Will allocate a workspace during planning
    */
-  Plan(TensorDims const &dims, Log log, long const nThreads = Threads::GlobalThreadCount());
+  Planned(TensorDims const &dims, Log log, long const nThreads = Threads::GlobalThreadCount());
 
-  ~Plan();
+  ~Planned();
 
   void forward(Tensor &x) const; //!< Image space to k-space
   void reverse(Tensor &x) const; //!< K-space to image space
@@ -43,9 +43,7 @@ private:
   bool threaded_;
 };
 
-using ThreeD = Plan<3, 3>;
-using ThreeDMulti = Plan<4, 3>;
-using ThreeDBasis = Plan<5, 3>;
-using TwoDMulti = Plan<3, 2>;
+using ThreeD = Planned<3, 3>;
+using TwoDMulti = Planned<3, 2>;
 
 } // namespace FFT

@@ -59,7 +59,7 @@ int main_recon(args::Subparser &parser)
     Cx5 out(nB, cropSz[0], cropSz[1], cropSz[2], info.volumes);
     out.setZero();
     images.setZero();
-    FFT::ThreeDBasis fft(grid, log);
+    FFT::Planned<5, 3> fft(grid, log);
 
     auto dev = Threads::GlobalDevice();
     auto const &all_start = log.now();
@@ -88,12 +88,12 @@ int main_recon(args::Subparser &parser)
     WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "recon", oftype.Get(), log);
   } else {
 
-    Cx4 grid = gridder->newMultichannel(info.channels);
+    Cx5 grid(gridder->inputDimensions(info.channels, 1));
     Cx3 image = cropper.newImage();
     Cx4 out = cropper.newSeries(info.volumes);
     out.setZero();
     image.setZero();
-    FFT::ThreeDMulti fft(grid, log);
+    FFT::Planned<5, 3> fft(grid, log);
 
     auto dev = Threads::GlobalDevice();
     auto const &all_start = log.now();

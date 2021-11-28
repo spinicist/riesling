@@ -33,7 +33,7 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
     }
   }
 
-  Cx4 temp = gridder->newMultichannel(1);
+  Cx5 temp(gridder->inputDimensions(1, info.echoes));
   for (long ii = 0; ii < 40; ii++) {
     Wp.setZero();
     temp.setZero();

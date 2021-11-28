@@ -9,9 +9,9 @@ TEST_CASE("ops-sense", "[ops]")
   // With credit to PyLops
   SECTION("Dot Test")
   {
-    Cx3 x(mapSz, mapSz, mapSz), u(mapSz, mapSz, mapSz);
-    Cx4 maps(channels, mapSz, mapSz, mapSz), y(channels, gridSz, gridSz, gridSz),
-        v(channels, gridSz, gridSz, gridSz);
+    Cx4 x(1, mapSz, mapSz, mapSz), u(1, mapSz, mapSz, mapSz);
+    Cx4 maps(channels, mapSz, mapSz, mapSz);
+    Cx5 y(channels, 1, gridSz, gridSz, gridSz), v(channels, 1, gridSz, gridSz, gridSz);
 
     v.setRandom();
     u.setRandom();

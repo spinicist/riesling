@@ -28,7 +28,7 @@ int main_traj(args::Subparser &parser)
 
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
-  Cx4 gridded;
+  Cx5 gridded;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
@@ -36,44 +36,26 @@ int main_traj(args::Subparser &parser)
     auto gridderBasis = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     gridderBasis->setSDC(gridder->SDC());
     auto const gridSz = gridderBasis->gridDims();
-    Cx5 grid5(1, nB, gridSz[0], gridSz[1], gridSz[2]);
-    gridderBasis->Adj(rad_ks, grid5);
-    gridded = grid5.chip(0, 0);
+    gridded.resize(1, nB, gridSz[0], gridSz[1], gridSz[2]);
+    gridderBasis->Adj(rad_ks, gridded);
   } else {
-    Cx4 grid = gridder->newMultichannel(1);
-    gridder->Adj(rad_ks, grid);
-    gridded = grid;
+    gridded.resize(gridder->inputDimensions(1, info.echoes));
+    gridder->Adj(rad_ks, gridded);
   }
 
-  Cx4 psf;
+  Cx5 psf;
   if (savePSF) {
     log.info("Calculating PSF");
-    FFT::ThreeDMulti fft(gridded.dimensions(), log);
+    FFT::Planned<5, 3> fft(gridded.dimensions(), log);
     psf = gridded;
     fft.reverse(psf);
   }
 
-  // Cheap hack to get the data in the right order for non-basis trajectory
-  if (!basisFile) {
-    gridded = FirstToLast4(gridded);
-    if (savePSF) {
-      psf = FirstToLast4(psf);
-    }
-  }
-
-  auto const ext = oftype.Get();
-  if (ext.compare("h5") == 0) {
-    auto const fname = OutName(iname.Get(), oname.Get(), "traj", ext);
-    HD5::Writer writer(fname, log);
-    writer.writeTensor(gridded, "traj-image");
-    if (savePSF) {
-      writer.writeTensor(psf, "psf-image");
-    }
-  } else {
-    WriteOutput(gridded, false, true, info, iname.Get(), oname.Get(), "traj", oftype.Get(), log);
-    if (savePSF) {
-      WriteOutput(psf, false, true, info, iname.Get(), oname.Get(), "psf", oftype.Get(), log);
-    }
+  auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeTensor(gridded, "traj-image");
+  if (savePSF) {
+    writer.writeTensor(psf, "psf-image");
   }
 
   FFT::End(log);

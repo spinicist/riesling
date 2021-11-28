@@ -1,6 +1,6 @@
-#include "grid-basis.h"
 #include "grid-basis-kernel.hpp"
 #include "grid-basis-nn.h"
+#include "grid-basis.h"
 
 #include "../tensorOps.h"
 #include "../threads.h"
@@ -21,6 +21,12 @@ long GridBasisOp::dimension(long const D) const
 {
   assert(D < 3);
   return mapping_.cartDims[D];
+}
+
+Sz5 GridBasisOp::inputDimensions(long const nc) const
+{
+  return Sz5{
+    nc, basis_.dimension(1), mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]};
 }
 
 Sz3 GridBasisOp::outputDimensions() const

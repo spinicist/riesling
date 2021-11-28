@@ -6,7 +6,7 @@
 #include "grid.h"
 #include "sense.h"
 
-struct ReconOp final : Operator<3, 3>
+struct ReconOp final : Operator<4, 3>
 {
   ReconOp(GridOp *gridder, Cx4 const &maps, Log &log);
 
@@ -20,10 +20,10 @@ struct ReconOp final : Operator<3, 3>
 
 private:
   GridOp *gridder_;
-  Cx4 mutable grid_;
-  Cx4 transfer_;
+  Cx5 mutable grid_;
+  Cx5 transfer_;
   SenseOp sense_;
   R3 apo_;
-  FFT::ThreeDMulti fft_;
+  FFT::Planned<5, 3> fft_;
   Log log_;
 };

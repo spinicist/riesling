@@ -34,14 +34,14 @@ void VCC(Cx4 &data, Log &log)
 
   // Assemble our virtual conjugate channels
   Cx4 cdata(nc, nx, ny, nz);
-  FFT::ThreeDMulti fft(cdata, log);
+  FFT::Planned<5, 3> fft(cdata, log);
   cdata = data;
   log.image(cdata, "vcc-cdata.nii");
   fft.forward(cdata);
   log.image(cdata, "vcc-cdata-ks.nii");
   Cx4 rdata = cdata.slice(Sz4{0, 1, 1, 1}, Sz4{nc, nx - 1, ny - 1, nz - 1})
-                  .reverse(Eigen::array<bool, 4>({false, true, true, true}))
-                  .conjugate();
+                .reverse(Eigen::array<bool, 4>({false, true, true, true}))
+                .conjugate();
   cdata.setZero();
   cdata.slice(Sz4{0, 1, 1, 1}, Sz4{nc, nx - 1, ny - 1, nz - 1}) = rdata;
   log.image(cdata, "vcc-cdata-conj-ks.nii");
@@ -76,8 +76,8 @@ Cx3 Hammond(Cx4 const &maps, Log &log)
 
   long const refSz = 9;
   Cropper refCrop(Sz3{nx, ny, nz}, Sz3{refSz, refSz, refSz}, log);
-  Cx1 const ref = refCrop.crop4(maps).sum(Sz3{1, 2, 3}).conjugate() /
-                  refCrop.crop4(maps).sum(Sz3{1, 2, 3}).abs();
+  Cx1 const ref =
+    refCrop.crop4(maps).sum(Sz3{1, 2, 3}).conjugate() / refCrop.crop4(maps).sum(Sz3{1, 2, 3}).abs();
 
   using FixedOne = Eigen::type2index<1>;
   Eigen::IndexList<int, FixedOne, FixedOne, FixedOne> rsh;

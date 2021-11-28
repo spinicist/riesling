@@ -2,9 +2,9 @@
 
 namespace FFT {
 
-template struct Plan<3, 3>;
-template struct Plan<4, 3>;
-template struct Plan<5, 3>;
-template struct Plan<3, 2>;
+template struct Planned<3, 3>;
+template struct Planned<4, 3>;
+template struct Planned<5, 3>;
+template struct Planned<3, 2>;
 
 } // namespace FFT

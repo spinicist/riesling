@@ -23,7 +23,7 @@ GridNN::GridNN(Mapping const &mapping, bool const unsafe, Log &log)
 {
 }
 
-void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
+void GridNN::Adj(Cx3 const &noncart, Cx5 &cart) const
 {
   assert(noncart.dimension(0) == cart.dimension(0));
   assert(cart.dimension(1) == mapping_.cartDims[0]);
@@ -51,13 +51,14 @@ void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
+      auto const e = std::max(mapping_.echo[si], int8_t(cart.dimension(1)));
       auto const dc = mapping_.sdc[si];
       if (safe_) {
-        workspace[ti].chip(c.z - minZ[ti], 3).chip(c.y, 2).chip(c.x, 1) +=
+        workspace[ti].chip(c.z - minZ[ti], 4).chip(c.y, 3).chip(c.x, 2).chip(e, 1) +=
           noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
           noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
       } else {
-        cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1) +=
+        cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).chip(e, 1) +=
           noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
           noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
       }
@@ -82,12 +83,12 @@ void GridNN::Adj(Cx3 const &noncart, Cx4 &cart) const
   log_.debug("Non-cart -> Cart: {}", log_.toNow(start));
 }
 
-void GridNN::A(Cx4 const &cart, Cx3 &noncart) const
+void GridNN::A(Cx5 const &cart, Cx3 &noncart) const
 {
   assert(noncart.dimension(0) == cart.dimension(0));
-  assert(cart.dimension(1) == mapping_.cartDims[0]);
-  assert(cart.dimension(2) == mapping_.cartDims[1]);
-  assert(cart.dimension(3) == mapping_.cartDims[2]);
+  assert(cart.dimension(2) == mapping_.cartDims[0]);
+  assert(cart.dimension(3) == mapping_.cartDims[1]);
+  assert(cart.dimension(4) == mapping_.cartDims[2]);
 
   auto grid_task = [&](long const lo, long const hi) {
     for (auto ii = lo; ii < hi; ii++) {
@@ -95,7 +96,9 @@ void GridNN::A(Cx4 const &cart, Cx3 &noncart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
-      noncart.chip(nc.spoke, 2).chip(nc.read, 1) = cart.chip(c.z, 3).chip(c.y, 2).chip(c.x, 1);
+      auto const e = std::max(mapping_.echo[si], int8_t(cart.dimension(1)));
+      noncart.chip(nc.spoke, 2).chip(nc.read, 1) =
+        cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).chip(e, 1);
     }
   };
   auto const &start = log_.now();

@@ -6,26 +6,26 @@
 namespace FFT {
 
 template <int TRank, int FRank>
-Plan<TRank, FRank>::Plan(Tensor &workspace, Log log, long const nThreads)
-    : dims_{workspace.dimensions()}
-    , log_{log}
-    , threaded_{nThreads > 1}
+Planned<TRank, FRank>::Planned(Tensor &workspace, Log log, long const nThreads)
+  : dims_{workspace.dimensions()}
+  , log_{log}
+  , threaded_{nThreads > 1}
 {
   plan(workspace, nThreads);
 }
 
 template <int TRank, int FRank>
-Plan<TRank, FRank>::Plan(TensorDims const &dims, Log log, long const nThreads)
-    : dims_{dims}
-    , log_{log}
-    , threaded_{nThreads > 1}
+Planned<TRank, FRank>::Planned(TensorDims const &dims, Log log, long const nThreads)
+  : dims_{dims}
+  , log_{log}
+  , threaded_{nThreads > 1}
 {
   Tensor ws(dims);
   plan(ws, nThreads);
 }
 
 template <int TRank, int FRank>
-void Plan<TRank, FRank>::plan(Tensor &ws, long const nThreads)
+void Planned<TRank, FRank>::plan(Tensor &ws, long const nThreads)
 {
   std::array<int, FRank> sizes;
   int N = 1;
@@ -54,35 +54,35 @@ void Plan<TRank, FRank>::plan(Tensor &ws, long const nThreads)
   auto const start = log_.now();
   fftwf_plan_with_nthreads(nThreads);
   forward_plan_ = fftwf_plan_many_dft(
-      FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_FORWARD, FFTW_MEASURE);
+    FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_FORWARD, FFTW_MEASURE);
   reverse_plan_ = fftwf_plan_many_dft(
-      FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_BACKWARD, FFTW_MEASURE);
+    FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
   if (forward_plan_ == NULL) {
-    Log::Fail("Could not create forward FFT plan");
+    Log::Fail("Could not create forward FFT Planned");
   }
   if (reverse_plan_ == NULL) {
-    Log::Fail("Could not create reverse FFT plan");
+    Log::Fail("Could not create reverse FFT Planned");
   }
 
   log_.debug("FFT planning took {}", log_.toNow(start));
 }
 
 template <int TRank, int FRank>
-Plan<TRank, FRank>::~Plan()
+Planned<TRank, FRank>::~Planned()
 {
   fftwf_destroy_plan(forward_plan_);
   fftwf_destroy_plan(reverse_plan_);
 }
 
 template <int TRank, int FRank>
-float Plan<TRank, FRank>::scale() const
+float Planned<TRank, FRank>::scale() const
 {
   return scale_;
 }
 
 template <int TRank, int FRank>
-void Plan<TRank, FRank>::applyPhase(Tensor &x, float const scale, bool const forward) const
+void Planned<TRank, FRank>::applyPhase(Tensor &x, float const scale, bool const forward) const
 {
   constexpr int FStart = TRank - FRank;
   for (long ii = 0; ii < FRank; ii++) {
@@ -118,7 +118,7 @@ void Plan<TRank, FRank>::applyPhase(Tensor &x, float const scale, bool const for
 }
 
 template <int TRank, int FRank>
-void Plan<TRank, FRank>::forward(Tensor &x) const
+void Planned<TRank, FRank>::forward(Tensor &x) const
 {
   for (long ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
@@ -132,7 +132,7 @@ void Plan<TRank, FRank>::forward(Tensor &x) const
 }
 
 template <int TRank, int FRank>
-void Plan<TRank, FRank>::reverse(Tensor &x) const
+void Planned<TRank, FRank>::reverse(Tensor &x) const
 {
   for (long ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);

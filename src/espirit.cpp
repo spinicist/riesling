@@ -22,9 +22,11 @@ Cx4 ESPIRIT(
   log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   log.info(FMT_STRING("Calculating k-space kernels"));
-  Cx4 grid = gridder->newMultichannel(data.dimension(0)); // Maps will end up here
+  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0), 1)); // Maps will end up here
+  gridder->Adj(data, grid_temp);
+  Cx4 grid = grid_temp.chip(0, 1); // Get rid of the echoes dimension
   R3 valsImage(gridder->gridDims());
-  gridder->Adj(data, grid);
+
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap, log);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh, log);
   long const retain = mini_kernels.dimension(4);
@@ -35,7 +37,7 @@ Cx4 ESPIRIT(
     mini_kernels.dimension(1),
     mini_kernels.dimension(2),
     grid.dimension(3));
-  FFT::Plan<4, 1> mix_fft(mix_grid, log);
+  FFT::Planned<4, 1> mix_fft(mix_grid, log);
   Cx5 mix_kernels(
     mini_kernels.dimension(0),
     mini_kernels.dimension(1),
@@ -65,7 +67,7 @@ Cx4 ESPIRIT(
         grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
       Cx3 hi_slice(grid.dimension(0), grid.dimension(1), grid.dimension(2));
       Log nullLog;
-      FFT::Plan<3, 2> hi_slice_fft(hi_slice, nullLog, 1);
+      FFT::Planned<3, 2> hi_slice_fft(hi_slice, nullLog, 1);
 
       // Now do a lot of FFTs
       for (long kk = 0; kk < mix_kernels.dimension(4); kk++) {
@@ -96,6 +98,5 @@ Cx4 ESPIRIT(
 
   log.info("Finished ESPIRIT");
   log.image(valsImage, "espirit-val.nii");
-  log.image(grid, "espirit-vec.nii");
   return grid;
 }

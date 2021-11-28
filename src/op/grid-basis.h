@@ -6,7 +6,7 @@
 #include "operator.h"
 #include <memory>
 
-struct GridBasisOp : Operator<5, 3>, GridBase
+struct GridBasisOp : GridBase
 {
   GridBasisOp(Mapping map, bool const unsafe, R2 basis, Log &log);
   virtual ~GridBasisOp(){};
@@ -14,7 +14,7 @@ struct GridBasisOp : Operator<5, 3>, GridBase
   virtual void A(Input const &x, Output &y) const = 0;
   virtual void Adj(Output const &x, Input &y) const = 0;
 
-  Input::Dimensions inSize() const;
+  Input::Dimensions inputDimensions(long const nc) const;
   Output::Dimensions outputDimensions() const;
 
   long dimension(long const D) const; // Returns a specific grid dimension

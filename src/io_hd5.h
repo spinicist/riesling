@@ -9,6 +9,7 @@ using Handle = int64_t;
 void Init();
 Handle InfoType();
 void CheckInfoType(Handle h);
+bool Exists(Handle const h, std::string const name);
 
 namespace Keys {
 std::string const Info = "info";

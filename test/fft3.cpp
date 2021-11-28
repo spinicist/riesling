@@ -30,23 +30,24 @@ TEST_CASE("FFT", "[3D]")
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
   }
 
-  SECTION("ThreeDMulti")
+  SECTION("Planned<5, 3>")
   {
     auto sz = GENERATE(1, 3, 7, 8, 16);
     long const N = sx * sy * sz;
     long const nc = 32;
-    Cx4 data(nc, sx, sy, sz);
-    Cx4 ref(nc, sx, sy, sz);
-    FFT::ThreeDMulti fft(data, log);
+    long const ne = 1;
+    Cx5 data(nc, ne, sx, sy, sz);
+    Cx5 ref(nc, ne, sx, sy, sz);
+    FFT::Planned<5, 3> fft(data, log);
 
     ref.setConstant(1.f);
     data.setZero();
-    data.chip(sz / 2, 3).chip(sy / 2, 2).chip(sx / 2, 1).setConstant(sqrt(N));
+    data.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
     fft.forward(data);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
     fft.reverse(data);
     ref.setZero();
-    ref.chip(sz / 2, 3).chip(sy / 2, 2).chip(sx / 2, 1).setConstant(sqrt(N));
+    ref.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
   }
 

@@ -1,5 +1,5 @@
-#include "io_hd5.h"
 #include "info.h"
+#include "io_hd5.h"
 #include "io_hd5.hpp"
 #include <Eigen/Eigenvalues>
 #include <filesystem>
@@ -59,21 +59,20 @@ void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   constexpr int N = 14;
-  std::array<std::string, N> const names{
-    "matrix",
-    "voxel_size",
-    "read_points",
-    "read_gap",
-    "spokes_hi",
-    "spokes_lo",
-    "lo_scale",
-    "channels",
-    "type",
-    "volumes",
-    "echoes",
-    "tr",
-    "origin",
-    "direction"};
+  std::array<std::string, N> const names{"matrix",
+                                         "voxel_size",
+                                         "read_points",
+                                         "read_gap",
+                                         "spokes_hi",
+                                         "spokes_lo",
+                                         "lo_scale",
+                                         "channels",
+                                         "type",
+                                         "volumes",
+                                         "echoes",
+                                         "tr",
+                                         "origin",
+                                         "direction"};
 
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
@@ -94,6 +93,11 @@ void CheckInfoType(hid_t handle)
       Log::Fail("Field {} not found in header info", check_name);
     }
   }
+}
+
+bool Exists(hid_t const parent, std::string const name)
+{
+  return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0);
 }
 
 template <>

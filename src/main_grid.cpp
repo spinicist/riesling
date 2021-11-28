@@ -19,7 +19,7 @@ int main_grid(args::Subparser &parser)
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
   Cx3 rad_ks = info.noncartesianVolume();
-  Cx4 grid = gridder->newMultichannel(info.channels);
+  Cx5 grid(gridder->inputDimensions(info.channels, 1));
 
   auto const &vol_start = log.now();
 
@@ -34,7 +34,7 @@ int main_grid(args::Subparser &parser)
   } else {
     rad_ks = reader.noncartesian(0);
     gridder->Adj(rad_ks, grid);
-    writer.writeCartesian(grid);
+    writer.writeTensor(grid, "cartesian");
     log.info("Wrote cartesian k-space. Took {}", log.toNow(vol_start));
   }
 

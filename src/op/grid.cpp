@@ -1,6 +1,6 @@
-#include "grid.h"
 #include "grid-kernel.hpp"
 #include "grid-nn.h"
+#include "grid.h"
 
 #include "../tensorOps.h"
 #include "../threads.h"
@@ -19,11 +19,9 @@ Sz3 GridOp::outputDimensions() const
   return mapping_.noncartDims;
 }
 
-Cx4 GridOp::newMultichannel(long const nc) const
+Sz5 GridOp::inputDimensions(long const nc, long const ne) const
 {
-  Cx4 g(nc, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]);
-  g.setZero();
-  return g;
+  return Sz5{nc, ne, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]};
 }
 
 std::unique_ptr<GridOp> make_grid(

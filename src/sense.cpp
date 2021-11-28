@@ -30,9 +30,13 @@ Cx4 DirectSENSE(
   Cx3 const &data,
   Log &log)
 {
-  Cx4 grid = gridder->newMultichannel(data.dimension(0));
-  FFT::ThreeDMulti fftN(grid, log);
-  gridder->Adj(data, grid);
+  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0), 1));
+  gridder->Adj(data, grid_temp);
+  Cx4 grid(
+    grid_temp.dimension(0), grid_temp.dimension(2), grid_temp.dimension(3), grid_temp.dimension(4));
+  FFT::Planned<4, 3> fftN(grid, log);
+  grid = grid_temp.chip(0, 1);
+
   float const end_rad = info.voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);
@@ -67,12 +71,12 @@ Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims, Log &log)
   HD5::Reader senseReader(file, log);
   Cx4 disk_sense = senseReader.readSENSE();
   log.info("Interpolating SENSE maps to dimensions {}", dims.transpose());
-  FFT::ThreeDMulti fft1(disk_sense.dimensions(), log);
+  FFT::Planned<4, 3> fft1(disk_sense.dimensions(), log);
   fft1.forward(disk_sense);
   Sz3 size1{disk_sense.dimension(1), disk_sense.dimension(2), disk_sense.dimension(3)};
   Sz3 size2{dims[0], dims[1], dims[2]};
   Cx4 sense(disk_sense.dimension(0), dims[0], dims[1], dims[2]);
-  FFT::ThreeDMulti fft2(sense, log);
+  FFT::Planned<4, 3> fft2(sense, log);
   sense.setZero();
   if (size1[0] < size2[0]) {
     Crop4(sense, size1) = disk_sense;

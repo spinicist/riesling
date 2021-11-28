@@ -21,19 +21,18 @@ int main_plan(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-  Cx4 grid4 = gridder->newMultichannel(traj.info().channels);
-  Cx4 grid3 = gridder->newMultichannel(1);
-  FFT::ThreeDMulti fft3(grid3, log);
-  FFT::ThreeDMulti fft4(grid4, log);
+  Cx5 grid4(gridder->inputDimensions(traj.info().channels, 1));
+  Cx5 grid3(gridder->inputDimensions(1, 1));
+  FFT::Planned<5, 3> fft3(grid3, log);
+  FFT::Planned<5, 3> fft4(grid4, log);
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
     long const nB = basis.dimension(1);
     auto gridderBasis = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
-    auto const gridSz = gridderBasis->gridDims();
-    Cx5 grid5(traj.info().channels, nB, gridSz[0], gridSz[1], gridSz[2]);
-    FFT::ThreeDBasis fft(grid5, log);
+    Cx5 grid5(gridderBasis->inputDimensions(traj.info().channels));
+    FFT::Planned<5, 3> fft(grid5, log);
   }
 
   FFT::End(log);

@@ -26,6 +26,22 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
   , points_{points}
   , log_{log}
 {
+  echoes_ = L1(info_.spokes_total());
+  echoes_.setZero();
+  init();
+}
+
+Trajectory::Trajectory(Info const &info, R3 const &points, L1 const &echoes, Log const &log)
+  : info_{info}
+  , points_{points}
+  , echoes_{echoes}
+  , log_{log}
+{
+  init();
+}
+
+void Trajectory::init()
+{
   if (info_.read_points != points_.dimension(1)) {
     Log::Fail(
       "Mismatch between info read points {} and trajectory points {}",
@@ -37,6 +53,16 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
       "Mismatch between info spokes {} and trajectory spokes {}",
       info_.spokes_total(),
       points_.dimension(2));
+  }
+  if (info_.spokes_total() != echoes_.dimension(0)) {
+    Log::Fail(
+      "Mismatch between info spokes {} and echoes array {}",
+      info_.spokes_total(),
+      echoes_.dimension(0));
+  }
+  if (info_.echoes < Maximum(echoes_)) {
+    Log::Fail(
+      "Maximum echo {} exceeds number of echoes in header {}", Maximum(echoes_), info_.echoes);
   }
 
   if (info_.type == Info::Type::ThreeD) {
@@ -128,8 +154,10 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   long const totalSz = info_.read_points * info_.spokes_total();
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);
+  mapping.echo.reserve(totalSz);
   mapping.sdc.reserve(totalSz);
   mapping.offset.reserve(totalSz);
+  mapping.echoes = info_.echoes;
   std::fesetround(FE_TONEAREST);
   float const maxRad = ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
@@ -148,6 +176,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
         Size3 const cart = gp + center;
         mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
         mapping.noncart.push_back(nc);
+        mapping.echo.push_back(echoes_(is));
         mapping.sdc.push_back(1.f);
         mapping.offset.push_back(xyz - gp.cast<float>().matrix());
       }
