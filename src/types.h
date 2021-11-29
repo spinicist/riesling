@@ -61,3 +61,8 @@ using Point4 = Eigen::Matrix<float, 4, 1>;
 using Points3 = Eigen::Matrix<float, 3, -1>;
 using Points4 = Eigen::Matrix<float, 4, -1>;
 using Pads3 = Eigen::array<std::pair<long, long>, 3>;
+
+template<typename T>
+Sz3 Last3(T &sz) {
+  return Sz3{sz.back() - 2, sz.back() - 1, sz.back()};
+}

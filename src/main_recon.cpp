@@ -85,7 +85,7 @@ int main_recon(args::Subparser &parser)
       log.info("Volume {}: {}", iv, log.toNow(vol_start));
     }
     log.info("All volumes: {}", log.toNow(all_start));
-    WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "recon", oftype.Get(), log);
+    WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "recon", "h5", log);
   } else {
 
     Cx5 grid(gridder->inputDimensions(info.channels, 1));
@@ -117,12 +117,11 @@ int main_recon(args::Subparser &parser)
       log.info("Volume {}: {}", iv, log.toNow(vol_start));
       if (save_channels && (iv == 0)) {
         Cx4 const cropped = FirstToLast4(cropper.crop4(grid));
-        WriteOutput(
-          cropped, false, false, info, iname.Get(), oname.Get(), "channels", oftype.Get(), log);
+        WriteOutput(cropped, false, false, info, iname.Get(), oname.Get(), "channels", "h5", log);
       }
     }
     log.info("All volumes: {}", log.toNow(all_start));
-    WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "recon", oftype.Get(), log);
+    WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "recon", "h5", log);
   }
   FFT::End(log);
   return EXIT_SUCCESS;

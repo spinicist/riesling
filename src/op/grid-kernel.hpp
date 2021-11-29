@@ -30,9 +30,9 @@ struct Grid final : GridOp
   void A(Input const &cart, Output &noncart) const
   {
     assert(noncart.dimension(0) == cart.dimension(0));
-    assert(cart.dimension(1) == mapping_.cartDims[0]);
-    assert(cart.dimension(2) == mapping_.cartDims[1]);
-    assert(cart.dimension(3) == mapping_.cartDims[2]);
+    assert(cart.dimension(2) == mapping_.cartDims[0]);
+    assert(cart.dimension(3) == mapping_.cartDims[1]);
+    assert(cart.dimension(4) == mapping_.cartDims[2]);
 
     long const nchan = cart.dimension(0);
     Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
@@ -45,7 +45,7 @@ struct Grid final : GridOp
         auto const si = mapping_.sortedIndices[ii];
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
-        auto const e = std::max(mapping_.echo[si], int8_t(cart.dimension(1)));
+        auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
         auto const k = kernel_(mapping_.offset[si]);
         stC.set(1, c.x - (Kernel::InPlane / 2));
         stC.set(2, c.y - (Kernel::InPlane / 2));
@@ -67,9 +67,9 @@ struct Grid final : GridOp
   void Adj(Output const &noncart, Input &cart) const
   {
     assert(noncart.dimension(0) == cart.dimension(0));
-    assert(cart.dimension(1) == mapping_.cartDims[0]);
-    assert(cart.dimension(2) == mapping_.cartDims[1]);
-    assert(cart.dimension(3) == mapping_.cartDims[2]);
+    assert(cart.dimension(2) == mapping_.cartDims[0]);
+    assert(cart.dimension(3) == mapping_.cartDims[1]);
+    assert(cart.dimension(4) == mapping_.cartDims[2]);
     assert(mapping_.sortedIndices.size() == mapping_.cart.size());
 
     long const nchan = cart.dimension(0);
@@ -86,7 +86,7 @@ struct Grid final : GridOp
 
     auto dev = Threads::GlobalDevice();
     long const nThreads = dev.numThreads();
-    std::vector<Cx4> workspace(nThreads);
+    std::vector<Cx5> workspace(nThreads);
     std::vector<long> minZ(nThreads, 0L), szZ(nThreads, 0L);
     auto grid_task = [&](long const lo, long const hi, long const ti) {
       // Allocate working space for this thread
@@ -97,7 +97,8 @@ struct Grid final : GridOp
         long const maxZ =
           mapping_.cart[mapping_.sortedIndices[hi - 1]].z + (Kernel::ThroughPlane / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
-        workspace[ti].resize(cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]);
+        workspace[ti].resize(
+          cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
         workspace[ti].setZero();
       }
 
@@ -106,7 +107,7 @@ struct Grid final : GridOp
         auto const si = mapping_.sortedIndices[ii];
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
-        auto const e = std::max(mapping_.echo[si], int8_t(cart.dimension(1)));
+        auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
         auto const nc = noncart.chip(n.spoke, 2).chip(n.read, 1);
         auto const k = kernel_(mapping_.offset[si]);
         auto const nck = (nc * nc.constant(mapping_.sdc[si])).reshape(rshNC).broadcast(brdNC) *
@@ -134,8 +135,13 @@ struct Grid final : GridOp
         if (szZ[ti]) {
           cart
             .slice(
-              Sz4{0, 0, 0, minZ[ti]},
-              Sz4{cart.dimension(0), cart.dimension(1), cart.dimension(2), szZ[ti]})
+              Sz5{0, 0, 0, 0, minZ[ti]},
+              Sz5{
+                cart.dimension(0),
+                cart.dimension(1),
+                cart.dimension(2),
+                cart.dimension(3),
+                szZ[ti]})
             .device(dev) += workspace[ti];
         }
       }

@@ -47,7 +47,7 @@ int main_tgv(args::Subparser &parser)
                                 log);
 
   ReconOp recon(gridder.get(), senseMaps, log);
-  auto sz = recon.dimensions();
+  auto sz = recon.inputDimensions();
   Cropper out_cropper(info, sz, out_fov.Get(), log);
   Cx3 image = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
@@ -69,7 +69,7 @@ int main_tgv(args::Subparser &parser)
     out.chip(iv, 3) = image;
     log.info("Volume {}: {}", iv, log.toNow(start));
   }
-  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "tgv", oftype.Get(), log);
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "tgv", "h5", log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

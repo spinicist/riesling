@@ -4,7 +4,6 @@
 #include "filter.h"
 #include "log.h"
 #include "op/grid-basis.h"
-#include "op/recon-basis.h"
 #include "op/recon.h"
 #include "parse_args.h"
 #include "sense.h"
@@ -42,28 +41,25 @@ int main_cg(args::Subparser &parser)
                                 log);
 
   std::unique_ptr<GridBase> gridder2;
-  long n1; // Size of first dimension
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
-    n1 = basis.dimension(1);
     gridder2 = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     gridder2->setSDC(w);
   } else {
     gridder2 = std::move(gridder);
-    n1 = info.echoes;
   }
 
-  ReconBasisOp recon(gridder2.get(), senseMaps, log);
+  ReconOp recon(gridder2.get(), senseMaps, log);
   if (!basisFile) {
     recon.calcToeplitz(traj.info());
   }
-  auto sz = recon.dimensions();
-  Cropper out_cropper(info, sz, out_fov.Get(), log);
-  Cx4 vol(n1, sz[0], sz[1], sz[2]);
+  auto sz = recon.inputDimensions();
+  Cropper out_cropper(info, Last3(sz), out_fov.Get(), log);
+  Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
-  Cx4 cropped(n1, outSz[0], outSz[1], outSz[2]);
-  Cx5 out(n1, outSz[0], outSz[1], outSz[2], info.volumes);
+  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = log.now();
   for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
@@ -74,13 +70,10 @@ int main_cg(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-
-  if (basisFile) {
-    WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "cg", oftype.Get(), log);
-  } else {
-    WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cg", oftype.Get(), log);
-  }
-
+  auto const fname = OutName(iname.Get(), oname.Get(), "cg", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeInfo(info);
+  writer.writeTensor(out, "image");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

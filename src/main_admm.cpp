@@ -9,7 +9,7 @@
 #include "log.h"
 #include "op/grid-basis.h"
 #include "op/grid.h"
-#include "op/recon-basis.h"
+#include "op/recon.h"
 #include "op/sense.h"
 #include "parse_args.h"
 #include "sense.h"
@@ -53,19 +53,18 @@ int main_admm(args::Subparser &parser)
                                 log);
   HD5::Reader basisReader(basisFile.Get(), log);
   R2 const basis = basisReader.readBasis();
-  long const nB = basis.dimension(1);
   auto basisGridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
   basisGridder->setSDC(w);
-  ReconBasisOp recon(basisGridder.get(), senseMaps, log);
+  ReconOp recon(basisGridder.get(), senseMaps, log);
 
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get(), log); };
 
-  auto sz = recon.dimensions();
-  Cropper out_cropper(info, sz, out_fov.Get(), log);
-  Cx4 vol(nB, sz[0], sz[1], sz[2]);
+  auto sz = recon.inputDimensions();
+  Cropper out_cropper(info, Last3(sz), out_fov.Get(), log);
+  Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
-  Cx4 cropped(nB, outSz[0], outSz[1], outSz[2]);
-  Cx5 out(nB, outSz[0], outSz[1], outSz[2], info.volumes);
+  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = log.now();
   for (long iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
@@ -76,7 +75,10 @@ int main_admm(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "admm", oftype.Get(), log);
+  auto const fname = OutName(iname.Get(), oname.Get(), "cg", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeInfo(info);
+  writer.writeTensor(out, "image");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

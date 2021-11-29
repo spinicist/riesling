@@ -2,6 +2,7 @@
 #include "coils.h"
 #include "io.h"
 #include "log.h"
+#include "op/grid-basis.h"
 #include "op/recon.h"
 #include "parse_args.h"
 #include "phantom_shepplogan.h"
@@ -16,6 +17,7 @@
 int main_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
+  args::Positional<std::string> bname(parser, "BASIS", "Filename with basis");
   args::ValueFlag<std::string> oftype(
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
@@ -48,8 +50,8 @@ int main_phantom(args::Subparser &parser)
     parser, "CHANNELS", "Number of channels (default 12)", {'c', "channels"}, 12);
   args::ValueFlag<std::string> sense(
     parser, "PATH", "File to read sensitivity maps from", {"sense"});
-  args::ValueFlag<float> intensity(
-    parser, "INTENSITY", "Phantom intensity (default 1000)", {'i', "intensity"}, 1000.f);
+  args::ValueFlag<std::vector<float>, VectorReader> intFlag(
+    parser, "I", "Phantom intensities (default all 100)", {'i', "intensities"});
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});
   args::ValueFlag<long> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
@@ -61,6 +63,19 @@ int main_phantom(args::Subparser &parser)
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
+
+  HD5::Reader basisReader(bname.Get(), log);
+  R2 basis = basisReader.readBasis();
+  long const nB = basis.dimension(1);
+
+  std::vector<float> intensities = intFlag.Get();
+  if ((long)intensities.size() == 0) {
+    intensities.resize(nB);
+    std::fill(intensities.begin(), intensities.end(), 100.f);
+  }
+  if ((long)intensities.size() != nB) {
+    Log::Fail("Number of intensities {} does not match basis size {}", intensities.size(), nB);
+  }
 
   R3 points;
   Info info;
@@ -108,42 +123,36 @@ int main_phantom(args::Subparser &parser)
   log.info(FMT_STRING("Hi-res spokes: {}"), info.spokes_hi);
 
   Trajectory traj(info, points, log);
-  Cx4 sense_maps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
-                         : birdcage(
-                             info.matrix,
-                             info.voxel_size,
-                             info.channels,
-                             coil_rings.Get(),
-                             coil_r.Get(),
-                             coil_r.Get(),
-                             log);
-  info.channels = sense_maps.dimension(0); // InterpSENSE may have changed this
-  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), false, log);
-  ReconOp recon(gridder.get(), sense_maps, log);
+  Cx4 senseMaps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
+                        : birdcage(
+                            info.matrix,
+                            info.voxel_size,
+                            info.channels,
+                            coil_rings.Get(),
+                            coil_r.Get(),
+                            coil_r.Get(),
+                            log);
+  info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
+  auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
+  ReconOp recon(gridder.get(), senseMaps, log);
+  auto const sz = recon.inputDimensions();
 
-  Cx3 phan = shepplogan
-               ? SheppLoganPhantom(
-                   info.matrix,
-                   info.voxel_size,
-                   phan_c.Get(),
-                   phan_rot.Get(),
-                   phan_r.Get(),
-                   intensity.Get(),
-                   log)
-               : SphericalPhantom(
-                   info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensity.Get(), log);
-  WriteOutput(
-    phan.reshape(Sz4{phan.dimension(0), phan.dimension(1), phan.dimension(2), 1}),
-    false,
-    false,
-    info,
-    iname.Get(),
-    "",
-    "image",
-    oftype.Get(),
-    log);
-
-  log.info("Generating k-space...");
+  Cx4 phan(nB, sz[0], sz[1], sz[2]);
+  for (long ii = 0; ii < nB; ii++) {
+    phan.chip(ii, 0) =
+      shepplogan
+        ? SheppLoganPhantom(
+            info.matrix,
+            info.voxel_size,
+            phan_c.Get(),
+            phan_rot.Get(),
+            phan_r.Get(),
+            intensities[ii],
+            log)
+        : SphericalPhantom(
+            info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii], log);
+  }
+  log.info("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
   recon.A(phan, radial);
 
@@ -187,8 +196,8 @@ int main_phantom(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    auto lo_grid = make_grid(lo_traj, osamp.Get(), kernel.Get(), false, log);
-    ReconOp lo_recon(lo_grid.get(), sense_maps, log);
+    auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kernel.Get(), false, basis, log);
+    ReconOp lo_recon(lo_gridder.get(), senseMaps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
     // Combine
@@ -202,7 +211,8 @@ int main_phantom(args::Subparser &parser)
   }
 
   if (snr) {
-    float const level = intensity.Get() / (info.channels * sqrt(snr.Get()));
+    float avg = std::reduce(intensities.begin(), intensities.end()) / intensities.size();
+    float const level = avg / (info.channels * sqrt(snr.Get()));
     log.info(FMT_STRING("Adding noise effective level {}"), level);
     Cx3 noise(radial.dimensions());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
@@ -214,11 +224,12 @@ int main_phantom(args::Subparser &parser)
     radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_gap, info.spokes_total()}).setZero();
     traj = Trajectory(info, traj.points(), log);
   }
-
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);
   writer.writeTrajectory(traj);
-  writer.writeNoncartesian(
-    radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1}));
+  writer.writeTensor(
+    Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1})),
+    "noncartesian");
+  writer.writeTensor(Cx5(phan.reshape(Sz5{nB, sz[0], sz[1], sz[2], 1})), "phantom");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

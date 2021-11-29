@@ -11,8 +11,8 @@ struct SenseOp final : Operator<4, 5>
   void AdjA(Input const &x, Input &y) const;
 
   long channels() const;
-  Sz3 dimensions() const;
-  Sz5 outputDimensions() const;
+  InputDims inputDimensions() const;
+  OutputDims outputDimensions() const;
 
 private:
   Cx4 const &maps_;

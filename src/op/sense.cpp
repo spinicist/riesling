@@ -1,6 +1,6 @@
+#include "sense.h"
 #include "../tensorOps.h"
 #include "../threads.h"
-#include "sense.h"
 
 SenseOp::SenseOp(Cx4 const &maps, Output::Dimensions const &bigSize)
   : maps_{maps}
@@ -30,12 +30,12 @@ long SenseOp::channels() const
   return maps_.dimension(0);
 }
 
-Sz3 SenseOp::dimensions() const
+SenseOp::InputDims SenseOp::inputDimensions() const
 {
-  return Sz3{maps_.dimension(1), maps_.dimension(2), maps_.dimension(3)};
+  return Sz4{size_[1], size_[2], size_[3], size_[4]};
 }
 
-Sz5 SenseOp::outputDimensions() const
+SenseOp::OutputDims SenseOp::outputDimensions() const
 {
   return full_;
 }

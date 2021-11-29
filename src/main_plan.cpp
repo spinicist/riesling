@@ -29,7 +29,6 @@ int main_plan(args::Subparser &parser)
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
-    long const nB = basis.dimension(1);
     auto gridderBasis = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
     Cx5 grid5(gridderBasis->inputDimensions(traj.info().channels));
     FFT::Planned<5, 3> fft(grid5, log);

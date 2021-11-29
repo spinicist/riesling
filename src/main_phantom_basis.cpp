@@ -3,7 +3,7 @@
 #include "io.h"
 #include "log.h"
 #include "op/grid-basis.h"
-#include "op/recon-basis.h"
+#include "op/recon.h"
 #include "parse_args.h"
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
@@ -94,20 +94,21 @@ int main_phantom_basis(args::Subparser &parser)
     auto const spokes_hi =
       sps.Get() *
       ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
-    info = Info{.type = Info::Type::ThreeD,
-                .channels = nchan.Get(),
-                .matrix = Eigen::Array3l::Constant(matrix.Get()),
-                .read_points = (long)read_samp.Get() * matrix.Get() / 2,
-                .read_gap = 0,
-                .spokes_hi = spokes_hi,
-                .spokes_lo = 0,
-                .lo_scale = lores ? lores.Get() : 1.f,
-                .volumes = 1,
-                .echoes = 1,
-                .tr = 1.f,
-                .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
-                .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
-                .direction = Eigen::Matrix3f::Identity()};
+    info = Info{
+      .type = Info::Type::ThreeD,
+      .channels = nchan.Get(),
+      .matrix = Eigen::Array3l::Constant(matrix.Get()),
+      .read_points = (long)read_samp.Get() * matrix.Get() / 2,
+      .read_gap = 0,
+      .spokes_hi = spokes_hi,
+      .spokes_lo = 0,
+      .lo_scale = lores ? lores.Get() : 1.f,
+      .volumes = 1,
+      .echoes = 1,
+      .tr = 1.f,
+      .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
+      .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
+      .direction = Eigen::Matrix3f::Identity()};
     if (phyllo) {
       points = Phyllotaxis(info, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
     } else {
@@ -133,8 +134,8 @@ int main_phantom_basis(args::Subparser &parser)
                             log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
   auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
-  ReconBasisOp recon(gridder.get(), senseMaps, log);
-  auto const sz = recon.dimensions();
+  ReconOp recon(gridder.get(), senseMaps, log);
+  auto const sz = recon.inputDimensions();
 
   Cx4 phan(nB, sz[0], sz[1], sz[2]);
   for (long ii = 0; ii < nB; ii++) {
@@ -151,17 +152,6 @@ int main_phantom_basis(args::Subparser &parser)
         : SphericalPhantom(
             info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii], log);
   }
-  WriteBasisVolumes(
-    phan.reshape(Sz5{nB, sz[0], sz[1], sz[2], 1}),
-    basis,
-    false,
-    info,
-    iname.Get(),
-    "",
-    "basis-images",
-    oftype.Get(),
-    log);
-
   log.info("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
   recon.A(phan, radial);
@@ -185,20 +175,21 @@ int main_phantom_basis(args::Subparser &parser)
       // GridOp does funky stuff to merge k-spaces. Sample lo-res as if it was hi-res
       lowres_scale = lores.Get();
       auto const spokes_lo = info.spokes_hi / lowres_scale;
-      lo_info = Info{.type = Info::Type::ThreeD,
-                     .channels = info.channels,
-                     .matrix = info.matrix,
-                     .read_points = info.read_points,
-                     .read_gap = 0,
-                     .spokes_hi = spokes_lo,
-                     .spokes_lo = 0,
-                     .lo_scale = 1.f,
-                     .volumes = 1,
-                     .echoes = 1,
-                     .tr = 1.f,
-                     .voxel_size = info.voxel_size,
-                     .origin = info.origin,
-                     .direction = Eigen::Matrix3f::Identity()};
+      lo_info = Info{
+        .type = Info::Type::ThreeD,
+        .channels = info.channels,
+        .matrix = info.matrix,
+        .read_points = info.read_points,
+        .read_gap = 0,
+        .spokes_hi = spokes_lo,
+        .spokes_lo = 0,
+        .lo_scale = 1.f,
+        .volumes = 1,
+        .echoes = 1,
+        .tr = 1.f,
+        .voxel_size = info.voxel_size,
+        .origin = info.origin,
+        .direction = Eigen::Matrix3f::Identity()};
       lo_points = ArchimedeanSpiral(lo_info);
     }
     Trajectory lo_traj(
@@ -206,7 +197,7 @@ int main_phantom_basis(args::Subparser &parser)
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
     auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kernel.Get(), false, basis, log);
-    ReconBasisOp lo_recon(lo_gridder.get(), senseMaps, log);
+    ReconOp lo_recon(lo_gridder.get(), senseMaps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
     // Combine
@@ -233,11 +224,12 @@ int main_phantom_basis(args::Subparser &parser)
     radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_gap, info.spokes_total()}).setZero();
     traj = Trajectory(info, traj.points(), log);
   }
-
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);
   writer.writeTrajectory(traj);
-  writer.writeNoncartesian(
-    radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1}));
+  writer.writeTensor(
+    Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1})),
+    "noncartesian");
+  writer.writeTensor(Cx5(phan.reshape(Sz5{nB, sz[0], sz[1], sz[2], 1})), "phantom");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

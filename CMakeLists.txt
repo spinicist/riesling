@@ -53,11 +53,11 @@ add_library(vineyard
     src/sim-mupa.cpp
     src/sim-prep.cpp
     src/slab_correct.cpp
-    src/tgv.cpp
+    # src/tgv.cpp
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp
-    src/vc.cpp
+    # src/vc.cpp
     src/wavelets.cpp
     src/zinfandel.cpp
     src/op/operator.cpp
@@ -68,7 +68,6 @@ add_library(vineyard
     src/op/grid-basis.cpp
     src/op/grid-basis-nn.cpp
     src/op/recon.cpp
-    src/op/recon-basis.cpp
     src/op/sense.cpp
 )
 target_link_libraries(vineyard PUBLIC
@@ -93,14 +92,13 @@ add_executable(riesling
     src/main_lookup.cpp
     src/main_meta.cpp
     src/main_phantom.cpp
-    src/main_phantom_basis.cpp
     src/main_plan.cpp
     src/main_recon.cpp
     src/main_sdc.cpp
     src/main_sense.cpp
     src/main_sim.cpp
     src/main_split.cpp
-    src/main_tgv.cpp
+    # src/main_tgv.cpp
     src/main_traj.cpp
     src/main_version.cpp
     src/main_zinfandel.cpp

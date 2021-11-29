@@ -18,8 +18,6 @@ int main_lookup(args::Subparser &parser)
   HD5::Reader input(iname.Get(), log);
   HD5::Reader dict(dname.Get(), log);
 
-  auto const info = input.readInfo();
-
   Cx5 const images = input.readBasisImages();
 
   R2 const basis = input.readBasis();
@@ -73,21 +71,10 @@ int main_lookup(args::Subparser &parser)
     Threads::RangeFor(ztask, images.dimension(3));
   }
 
-  auto const ext = oftype.Get();
-  if (ext.compare("h5") == 0) {
-    auto const fname = OutName(iname.Get(), oname.Get(), "dict", ext);
-    HD5::Writer writer(fname, log);
-    writer.writeTensor(out_pars, "parameters");
-    writer.writeTensor(pd, "pd");
-  } else {
-    WriteOutput(pd, false, false, info, iname.Get(), oname.Get(), "pd", ext, log);
-    for (long iv = 0; iv < out_pars.dimension(4); iv++) {
-      auto const fname =
-        OutName(iname.Get(), oname.Get(), fmt::format("parameter-{:02d}", iv), ext);
-      R4 const p = FirstToLast4(out_pars.chip(iv, 4));
-      WriteNifti(info, p, fname, log);
-    }
-  }
+  auto const fname = OutName(iname.Get(), oname.Get(), "dict", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeTensor(out_pars, "parameters");
+  writer.writeTensor(pd, "pd");
 
   return EXIT_SUCCESS;
 }

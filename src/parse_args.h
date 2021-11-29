@@ -63,9 +63,7 @@ void WriteBasisVolumes(
   args::Flag fastgrid(                                                                             \
     parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
   args::ValueFlag<std::string> sdc(                                                                \
-    parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");            \
-  args::ValueFlag<std::string> oftype(                                                             \
-    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+    parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");
 
 #define COMMON_RECON_ARGS                                                                          \
   CORE_RECON_ARGS                                                                                  \

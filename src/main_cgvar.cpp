@@ -61,7 +61,7 @@ int main_cgvar(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", oftype.Get(), log);
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", "h5", log);
   FFT::End(log);
   return EXIT_SUCCESS;
 }

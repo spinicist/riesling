@@ -19,6 +19,7 @@ decltype(auto) Blend(Cx5 const &images, R1 const &b)
 int main_blend(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
+  args::Positional<std::string> bname(parser, "BASIS", "h5 file containing basis");
   args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> oftype(
@@ -30,8 +31,9 @@ int main_blend(args::Subparser &parser)
   Log log = ParseCommand(parser);
 
   HD5::Reader input(iname.Get(), log);
-  R2 const basis = input.readBasis();
   Cx5 const images = input.readBasisImages();
+  HD5::Reader binput(bname.Get(), log);
+  R2 const basis = binput.readBasis();
 
   if ((tp.Get() < 0) || (tp.Get() >= basis.dimension(0))) {
     Log::Fail(
@@ -46,13 +48,12 @@ int main_blend(args::Subparser &parser)
     Cx4 const rss = ((Blend(images, b2) - Blend(images, b0)).square() +
                      (Blend(images, b3) - Blend(images, b1)).square())
                       .sqrt();
-    WriteOutput(
-      rss, mag, false, input.readInfo(), iname.Get(), oname.Get(), "blend", oftype.Get(), log);
+    WriteOutput(rss, mag, false, input.readInfo(), iname.Get(), oname.Get(), "blend", "h5", log);
   } else {
     R1 const b = basis.chip(tp.Get(), 0);
     Cx4 const combined = Blend(images, b);
     WriteOutput(
-      combined, mag, false, input.readInfo(), iname.Get(), oname.Get(), "blend", oftype.Get(), log);
+      combined, mag, false, input.readInfo(), iname.Get(), oname.Get(), "blend", "h5", log);
   }
   return EXIT_SUCCESS;
 }

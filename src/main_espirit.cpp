@@ -47,15 +47,10 @@ int main_espirit(args::Subparser &parser)
     thresh.Get(),
     log));
 
-  auto const fname = OutName(iname.Get(), oname.Get(), "espirit", oftype.Get());
-  if (oftype.Get().compare("h5") == 0) {
-    HD5::Writer writer(fname, log);
-    writer.writeInfo(info);
-    writer.writeSENSE(sense);
-  } else {
-    Cx4 const output = FirstToLast4(sense);
-    WriteNifti(info, output, fname, log);
-  }
+  auto const fname = OutName(iname.Get(), oname.Get(), "espirit", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeInfo(info);
+  writer.writeSENSE(sense);
 
   FFT::End(log);
   return EXIT_SUCCESS;
