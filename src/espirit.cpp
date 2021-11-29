@@ -25,7 +25,7 @@ Cx4 ESPIRIT(
   Cx5 grid_temp(gridder->inputDimensions(data.dimension(0), 1)); // Maps will end up here
   gridder->Adj(data, grid_temp);
   Cx4 grid = grid_temp.chip(0, 1); // Get rid of the echoes dimension
-  R3 valsImage(gridder->gridDims());
+  R3 valsImage(gridder->mapping().cartDims);
 
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap, log);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh, log);

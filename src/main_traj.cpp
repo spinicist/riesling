@@ -35,7 +35,7 @@ int main_traj(args::Subparser &parser)
     long const nB = basis.dimension(1);
     auto gridderBasis = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     gridderBasis->setSDC(gridder->SDC());
-    auto const gridSz = gridderBasis->gridDims();
+    auto const gridSz = gridderBasis->mapping().cartDims;
     gridded.resize(1, nB, gridSz[0], gridSz[1], gridSz[2]);
     gridderBasis->Adj(rad_ks, gridded);
   } else {
@@ -49,7 +49,10 @@ int main_traj(args::Subparser &parser)
     FFT::Planned<5, 3> fft(gridded.dimensions(), log);
     psf = gridded;
     fft.reverse(psf);
+    psf = psf.shuffle(Sz5{1, 2, 3, 4, 0});
   }
+  // Cheap hack to get equivalent dimensions to reconstructed images
+  gridded = gridded.shuffle(Sz5{1, 2, 3, 4, 0});
 
   auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");
   HD5::Writer writer(fname, log);

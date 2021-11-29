@@ -3,6 +3,7 @@
 #include "io.h"
 #include "log.h"
 #include "op/grid-basis.h"
+#include "op/grid.h"
 #include "op/recon.h"
 #include "parse_args.h"
 #include "phantom_shepplogan.h"
@@ -17,9 +18,7 @@
 int main_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
-  args::Positional<std::string> bname(parser, "BASIS", "Filename with basis");
-  args::ValueFlag<std::string> oftype(
-    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Filename with basis", {'b', "basis"});
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
   std::unordered_map<std::string, Kernels> kernelMap{
     {"NN", Kernels::NN}, {"KB3", Kernels::KB3}, {"KB5", Kernels::KB5}};
@@ -63,19 +62,6 @@ int main_phantom(args::Subparser &parser)
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
-
-  HD5::Reader basisReader(bname.Get(), log);
-  R2 basis = basisReader.readBasis();
-  long const nB = basis.dimension(1);
-
-  std::vector<float> intensities = intFlag.Get();
-  if ((long)intensities.size() == 0) {
-    intensities.resize(nB);
-    std::fill(intensities.begin(), intensities.end(), 100.f);
-  }
-  if ((long)intensities.size() != nB) {
-    Log::Fail("Number of intensities {} does not match basis size {}", intensities.size(), nB);
-  }
 
   R3 points;
   Info info;
@@ -133,12 +119,30 @@ int main_phantom(args::Subparser &parser)
                             coil_r.Get(),
                             log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
-  auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
+
+  std::unique_ptr<GridBase> gridder;
+  if (basisFile) {
+    HD5::Reader basisReader(basisFile.Get(), log);
+    R2 const basis = basisReader.readBasis();
+    gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
+  } else {
+    gridder = make_grid(traj, osamp.Get(), kernel.Get(), false, log);
+  }
   ReconOp recon(gridder.get(), senseMaps, log);
   auto const sz = recon.inputDimensions();
+  Cx4 phan(sz);
 
-  Cx4 phan(nB, sz[0], sz[1], sz[2]);
-  for (long ii = 0; ii < nB; ii++) {
+  std::vector<float> intensities = intFlag.Get();
+  if ((long)intensities.size() == 0) {
+    intensities.resize(phan.dimension(0));
+    std::fill(intensities.begin(), intensities.end(), 100.f);
+  } else if ((long)intensities.size() != phan.dimension(0)) {
+    Log::Fail(
+      "Number of intensities {} does not match phantom first dimension {}",
+      intensities.size(),
+      phan.dimension(0));
+  }
+  for (long ii = 0; ii < phan.dimension(0); ii++) {
     phan.chip(ii, 0) =
       shepplogan
         ? SheppLoganPhantom(
@@ -196,7 +200,15 @@ int main_phantom(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kernel.Get(), false, basis, log);
+
+    std::unique_ptr<GridBase> lo_gridder;
+    if (basisFile) {
+      HD5::Reader basisReader(basisFile.Get(), log);
+      R2 const basis = basisReader.readBasis();
+      lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kernel.Get(), false, basis, log);
+    } else {
+      lo_gridder = make_grid(lo_traj, osamp.Get(), kernel.Get(), false, log);
+    }
     ReconOp lo_recon(lo_gridder.get(), senseMaps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
@@ -229,7 +241,7 @@ int main_phantom(args::Subparser &parser)
   writer.writeTensor(
     Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1})),
     "noncartesian");
-  writer.writeTensor(Cx5(phan.reshape(Sz5{nB, sz[0], sz[1], sz[2], 1})), "phantom");
+  writer.writeTensor(Cx5(phan.reshape(Sz5{sz[0], sz[1], sz[2], sz[3], 1})), "phantom");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

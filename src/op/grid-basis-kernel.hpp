@@ -164,11 +164,12 @@ struct GridBasis final : GridBasisOp
           cart
             .slice(
               Sz5{0, 0, 0, 0, minZ[ti]},
-              Sz5{cart.dimension(0),
-                  cart.dimension(1),
-                  cart.dimension(2),
-                  cart.dimension(3),
-                  szZ[ti]})
+              Sz5{
+                cart.dimension(0),
+                cart.dimension(1),
+                cart.dimension(2),
+                cart.dimension(3),
+                szZ[ti]})
             .device(dev) += workspace[ti];
         }
       }
@@ -178,7 +179,7 @@ struct GridBasis final : GridBasisOp
 
   R3 apodization(Sz3 const sz) const
   {
-    auto gridSz = this->gridDims();
+    auto gridSz = this->mapping().cartDims;
     Cx3 temp(gridSz);
     FFT::ThreeD fft(temp, log_);
     temp.setZero();

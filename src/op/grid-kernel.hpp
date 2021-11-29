@@ -151,7 +151,7 @@ struct Grid final : GridOp
 
   R3 apodization(Sz3 const sz) const
   {
-    auto gridSz = this->gridDims();
+    auto gridSz = this->mapping().cartDims;
     Cx3 temp(gridSz);
     FFT::ThreeD fft(temp, log_);
     temp.setZero();

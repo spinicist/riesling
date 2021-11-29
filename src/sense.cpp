@@ -36,14 +36,13 @@ Cx4 DirectSENSE(
     grid_temp.dimension(0), grid_temp.dimension(2), grid_temp.dimension(3), grid_temp.dimension(4));
   FFT::Planned<4, 3> fftN(grid, log);
   grid = grid_temp.chip(0, 1);
-
   float const end_rad = info.voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid, log);
   fftN.reverse(grid);
 
-  Cropper crop(info, gridder->gridDims(), fov, log);
+  Cropper crop(info, gridder->mapping().cartDims, fov, log);
   Cx4 channels = crop.crop4(grid);
   Cx3 rss = crop.newImage();
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();

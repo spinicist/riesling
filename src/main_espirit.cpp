@@ -37,7 +37,7 @@ int main_espirit(args::Subparser &parser)
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log, res);
   gridder->setSDC(SDC::Pipe(traj, true, osamp.Get(), log));
   long const totalCalRad = kRad.Get() + calRad.Get() + (info.spokes_lo ? 0 : info.read_gap);
-  Cropper cropper(info, gridder->gridDims(), fov.Get(), log);
+  Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder,
     reader.noncartesian(ValOrLast(volume.Get(), info.volumes)),

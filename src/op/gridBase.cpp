@@ -7,11 +7,6 @@ GridBase::GridBase(Mapping map, bool const unsafe, Log &log)
 {
 }
 
-Sz3 GridBase::gridDims() const
-{
-  return mapping_.cartDims;
-}
-
 void GridBase::setSDC(float const d)
 {
   std::fill(mapping_.sdc.begin(), mapping_.sdc.end(), d);

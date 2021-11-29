@@ -29,7 +29,7 @@ int main_recon(args::Subparser &parser)
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get(), log);
   gridder->setSDC(w);
-  Cropper cropper(info, gridder->gridDims(), out_fov.Get(), log);
+  Cropper cropper(info, gridder->mapping().cartDims, out_fov.Get(), log);
   auto const cropSz = cropper.size();
   R3 const apo = gridder->apodization(cropSz);
   Cx4 sense;
@@ -47,82 +47,46 @@ int main_recon(args::Subparser &parser)
     }
   }
 
+  std::unique_ptr<GridBase> gridder2;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
-    long const nB = basis.dimension(1);
-    auto basisGridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
-    gridder->setSDC(w);
-    auto const gridSz = gridder->gridDims();
-    Cx5 grid(info.channels, nB, gridSz[0], gridSz[1], gridSz[2]);
-    Cx4 images(nB, cropSz[0], cropSz[1], cropSz[2]);
-    Cx5 out(nB, cropSz[0], cropSz[1], cropSz[2], info.volumes);
-    out.setZero();
-    images.setZero();
-    FFT::Planned<5, 3> fft(grid, log);
-
-    auto dev = Threads::GlobalDevice();
-    auto const &all_start = log.now();
-    for (long iv = 0; iv < info.volumes; iv++) {
-      auto const &vol_start = log.now();
-      grid.setZero();
-      basisGridder->Adj(reader.noncartesian(iv), grid);
-      log.info("FFT...");
-      fft.reverse(grid);
-      log.info("Channel combination...");
-      if (rss) {
-        images.device(dev) = ConjugateSum(cropper.crop5(grid), cropper.crop5(grid)).sqrt();
-      } else {
-        images.device(dev) = ConjugateSum(
-          cropper.crop5(grid),
-          sense.reshape(Sz5{info.channels, 1, cropSz[0], cropSz[1], cropSz[2]})
-            .broadcast(Sz5{1, nB, 1, 1, 1}));
-      }
-      images.device(dev) =
-        images /
-        apo.cast<Cx>().reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]}).broadcast(Sz4{nB, 1, 1, 1});
-      out.chip(iv, 4) = images;
-      log.info("Volume {}: {}", iv, log.toNow(vol_start));
-    }
-    log.info("All volumes: {}", log.toNow(all_start));
-    WriteBasisVolumes(out, basis, mag, info, iname.Get(), oname.Get(), "recon", "h5", log);
+    gridder2 = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
+    gridder2->setSDC(w);
   } else {
-
-    Cx5 grid(gridder->inputDimensions(info.channels, 1));
-    Cx3 image = cropper.newImage();
-    Cx4 out = cropper.newSeries(info.volumes);
-    out.setZero();
-    image.setZero();
-    FFT::Planned<5, 3> fft(grid, log);
-
-    auto dev = Threads::GlobalDevice();
-    auto const &all_start = log.now();
-    for (long iv = 0; iv < info.volumes; iv++) {
-      auto const &vol_start = log.now();
-      grid.setZero();
-      gridder->Adj(reader.noncartesian(iv), grid);
-      log.info("FFT...");
-      fft.reverse(grid);
-      log.info("Channel combination...");
-      if (rss) {
-        image.device(dev) = ConjugateSum(cropper.crop4(grid), cropper.crop4(grid)).sqrt();
-      } else {
-        image.device(dev) = ConjugateSum(cropper.crop4(grid), sense);
-      }
-      image.device(dev) = image / apo.cast<Cx>();
-      if (tukey_s || tukey_e || tukey_h) {
-        ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
-      }
-      out.chip(iv, 3) = image;
-      log.info("Volume {}: {}", iv, log.toNow(vol_start));
-      if (save_channels && (iv == 0)) {
-        Cx4 const cropped = FirstToLast4(cropper.crop4(grid));
-        WriteOutput(cropped, false, false, info, iname.Get(), oname.Get(), "channels", "h5", log);
-      }
-    }
-    log.info("All volumes: {}", log.toNow(all_start));
-    WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "recon", "h5", log);
+    gridder2 = std::move(gridder);
   }
+  Cx5 grid(gridder2->inputDimensions(info.channels));
+  Cx4 image(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2]);
+  Cx5 out(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2], info.volumes);
+  FFT::Planned<5, 3> fft(grid, log);
+  auto dev = Threads::GlobalDevice();
+  auto const &all_start = log.now();
+  for (long iv = 0; iv < info.volumes; iv++) {
+    auto const &vol_start = log.now();
+    gridder2->Adj(reader.noncartesian(iv), grid);
+    log.info("FFT...");
+    fft.reverse(grid);
+    log.info("Channel combination...");
+    if (rss) {
+      image.device(dev) = ConjugateSum(cropper.crop5(grid), cropper.crop5(grid)).sqrt();
+    } else {
+      image.device(dev) = ConjugateSum(
+        cropper.crop5(grid),
+        sense.reshape(Sz5{info.channels, 1, cropSz[0], cropSz[1], cropSz[2]})
+          .broadcast(Sz5{1, grid.dimension(1), 1, 1, 1}));
+    }
+    image.device(dev) = image / apo.cast<Cx>()
+                                  .reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]})
+                                  .broadcast(Sz4{grid.dimension(1), 1, 1, 1});
+    out.chip(iv, 4) = image;
+    log.info("Volume {}: {}", iv, log.toNow(vol_start));
+  }
+  log.info("All volumes: {}", log.toNow(all_start));
+  auto const fname = OutName(iname.Get(), oname.Get(), "recon", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeInfo(info);
+  writer.writeTensor(out, "image");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

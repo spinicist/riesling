@@ -17,9 +17,7 @@
 int main_phantom_basis(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
-  args::Positional<std::string> bname(parser, "BASIS", "Filename with basis");
-  args::ValueFlag<std::string> oftype(
-    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Filename with basis");
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
   std::unordered_map<std::string, Kernels> kernelMap{
     {"NN", Kernels::NN}, {"KB3", Kernels::KB3}, {"KB5", Kernels::KB5}};
@@ -133,12 +131,20 @@ int main_phantom_basis(args::Subparser &parser)
                             coil_r.Get(),
                             log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
-  auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
+
+  std::unique_ptr<GridBase> gridder;
+  if (basisFile) {
+    HD5::Reader basisReader(basisFile.Get(), log);
+    R2 const basis = basisReader.readBasis();
+    gridder = make_grid_basis(traj, osamp, kernel.Get(), false, basis, log);
+  } else {
+    gridder = make_grid(traj, osamp, kernel.Get(), false, log);
+  }
   ReconOp recon(gridder.get(), senseMaps, log);
   auto const sz = recon.inputDimensions();
 
-  Cx4 phan(nB, sz[0], sz[1], sz[2]);
-  for (long ii = 0; ii < nB; ii++) {
+  Cx4 phan(gridder->inputDimensions());
+  for (long ii = 0; ii < phan.dimension(0); ii++) {
     phan.chip(ii, 0) =
       shepplogan
         ? SheppLoganPhantom(
@@ -196,7 +202,15 @@ int main_phantom_basis(args::Subparser &parser)
       lo_info,
       R3(lo_points / lo_points.constant(lowres_scale)), // Points need to be scaled down here
       log);
-    auto lo_gridder = make_grid_basis(lo_traj, osamp.Get(), kernel.Get(), false, basis, log);
+
+    std::unique_ptr<GridBase> lo_gridder;
+    if (basisFile) {
+      HD5::Reader basisReader(basisFile.Get(), log);
+      R2 const basis = basisReader.readBasis();
+      lo_gridder = make_grid_basis(lo_traj, osamp, kernel.Get(), false, basis, log);
+    } else {
+      lo_gridder = make_grid(lo_traj, osamp, kernel.Get(), false, log);
+    }
     ReconOp lo_recon(lo_gridder.get(), senseMaps, log);
     Cx3 lo_radial = lo_info.noncartesianVolume();
     lo_recon.A(phan, lo_radial);
