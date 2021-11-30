@@ -7,7 +7,7 @@
  */
 struct FFT1DReal2Complex
 {
-  FFT1DReal2Complex(long const N, Log &log);
+  FFT1DReal2Complex(Index const N, Log &log);
   ~FFT1DReal2Complex();
 
   Cx1 forward(R1 const &in) const; //!< Real to complex
@@ -16,7 +16,7 @@ struct FFT1DReal2Complex
   void shift(Cx1 &in) const;
 
 private:
-  long const N_;
+  Index const N_;
   fftwf_plan forward_plan_, reverse_plan_;
   float scale_;
   Log &log_;

@@ -20,7 +20,7 @@ struct Reader
   R2 readSDC(Info const &info);
 
   void readCartesian(Cx5 &volume);
-  Cx3 const &noncartesian(long const index); // This will be cached
+  Cx3 const &noncartesian(Index const index); // This will be cached
   Cx4 readSENSE();
   R2 readBasis();
   R2 readRealMatrix(std::string const &label);
@@ -29,7 +29,7 @@ struct Reader
 private:
   Log &log_;
   int64_t handle_;
-  long currentNCVol_;
+  Index currentNCVol_;
   Cx3 nc_;
 };
 

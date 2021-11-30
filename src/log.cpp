@@ -4,7 +4,7 @@
 #include "tensorOps.h"
 
 Log::Log(Level const l)
-    : out_level_{l}
+  : out_level_{l}
 {
 }
 
@@ -36,12 +36,12 @@ void Log::vfail(fmt::string_view fstr, fmt::format_args args)
   exit(EXIT_FAILURE);
 }
 
-void Log::progress(long const ii, long const lo, long const hi) const
+void Log::progress(Index const ii, Index const lo, Index const hi) const
 {
   if ((out_level_ >= Level::Info) && lo == 0) {
-    long const N = hi - lo;
-    long const steps = std::min(N, 10L);
-    long const N_per_step = N / steps;
+    Index const N = hi - lo;
+    Index const steps = std::min(N, 10L);
+    Index const N_per_step = N / steps;
     if (ii % N_per_step == 0) { // Check for div by zero
       float progress = std::min((100.f * ii) / N, 100.f);
       if (progress < ((N - 1) * N_per_step * 100.f)) {

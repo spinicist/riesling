@@ -26,10 +26,10 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
   auto const hy = sy / 2;
   auto const hx = sx / 2;
 
-  auto task = [&](long const lo, long const hi) {
-    for (long iz = lo; iz < hi; iz++) {
-      for (long iy = 0; iy < sy; iy++) {
-        for (long ix = 0; ix < sx; ix++) {
+  auto task = [&](Index const lo, Index const hi) {
+    for (Index iz = lo; iz < hi; iz++) {
+      for (Index iy = 0; iy < sy; iy++) {
+        for (Index ix = 0; ix < sx; ix++) {
           float const rz = static_cast<float>(iz - hz) / hz;
           float const ry = static_cast<float>(iy - hy) / hy;
           float const rx = static_cast<float>(ix - hx) / hx;

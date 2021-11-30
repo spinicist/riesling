@@ -32,11 +32,11 @@ double sinc(const double x)
 void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 &ks, Log &log)
 {
   log.info(
-      FMT_STRING("Applying slab profile correction for pulse-width {} us, bandwidth {} kHz"),
-      pw_us,
-      rbw_kHz);
+    FMT_STRING("Applying slab profile correction for pulse-width {} us, bandwidth {} kHz"),
+    pw_us,
+    rbw_kHz);
   FFT::Start(log);
-  long const N = 2 * info.read_points;
+  Index const N = 2 * info.read_points;
   float const os = (2.f * info.read_points) / info.matrix.maxCoeff();
   float const fov = (info.matrix.cast<float>() * info.voxel_size * 1e-3).maxCoeff();
   float const os_fov = os * fov;
@@ -55,9 +55,9 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
 
   FFT1DReal2Complex fft(N, log);
   float const beta = 1.e-1; // Regularize sinc nulls
-  auto spoke_task = [&](long const spoke_lo, long const spoke_hi) {
-    for (long is = spoke_lo; is < spoke_hi; is++) {
-      for (long ic = 0; ic < info.channels; ic++) {
+  auto spoke_task = [&](Index const spoke_lo, Index const spoke_hi) {
+    for (Index is = spoke_lo; is < spoke_hi; is++) {
+      for (Index ic = 0; ic < info.channels; ic++) {
         auto phase = std::polar(1.f, std::arg(ks(ic, 0, is)));
         Cx1 spoke = ks.chip(is, 2).chip(ic, 0) / phase;
         R1 projection = fft.reverse(spoke);

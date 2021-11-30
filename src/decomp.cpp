@@ -5,13 +5,13 @@
 
 Cx5 LowRankKernels(Cx5 const &mIn, float const thresh, Log const &log)
 {
-  long const kSz = mIn.dimension(0) * mIn.dimension(1) * mIn.dimension(2) * mIn.dimension(3);
-  long const nK = mIn.dimension(4);
+  Index const kSz = mIn.dimension(0) * mIn.dimension(1) * mIn.dimension(2) * mIn.dimension(3);
+  Index const nK = mIn.dimension(4);
   Eigen::Map<Eigen::MatrixXcf const> m(mIn.data(), kSz, nK);
   log.info(FMT_STRING("SVD Kernel Size {} Kernels {}"), kSz, nK);
   auto const svd = m.transpose().bdcSvd(Eigen::ComputeThinV);
   Eigen::ArrayXf const vals = svd.singularValues();
-  long const nRetain = (vals > (vals[0] * thresh)).cast<int>().sum();
+  Index const nRetain = (vals > (vals[0] * thresh)).cast<int>().sum();
   log.info(FMT_STRING("Retaining {} kernels"), nRetain);
   Cx5 out(mIn.dimension(0), mIn.dimension(1), mIn.dimension(2), mIn.dimension(3), nRetain);
   Eigen::Map<Eigen::MatrixXcf> lr(out.data(), kSz, nRetain);

@@ -6,9 +6,9 @@
 
 TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
 {
-  long const n_readpoints = 16;
-  long const n_spoke = 1;
-  long const n_coil = 4;
+  Index const n_readpoints = 16;
+  Index const n_spoke = 1;
+  Index const n_coil = 4;
   float const scale = 2.f;
   Cx3 kspace(n_coil, n_readpoints, n_spoke);
   kspace.setZero();
@@ -23,21 +23,21 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
 
   SECTION("Grab Sources")
   {
-    long const n_src = 4;
-    long const n_read = 4;
+    Index const n_src = 4;
+    Index const n_read = 4;
     auto const S = GrabSources(kspace, scale, n_src, 0, n_read, {0});
     CHECK(S.rows() == (n_coil * n_src));
     CHECK(S.cols() == n_read);
     CHECK((S.array().real() > 0.).all());
     CHECK(S(0, 0).real() == Approx(1. / scale));
     CHECK(
-        S((n_coil * n_src) - 1, n_read - 1).real() ==
-        Approx((n_read - 1 + n_src - 1 + n_coil - 1 + 1) / scale));
+      S((n_coil * n_src) - 1, n_read - 1).real() ==
+      Approx((n_read - 1 + n_src - 1 + n_coil - 1 + 1) / scale));
   }
 
   SECTION("Grab Targets")
   {
-    long const n_read = 4;
+    Index const n_read = 4;
     auto const T = GrabTargets(kspace, scale, 0, n_read, {0});
     CHECK(T.rows() == n_coil);
     CHECK(T.cols() == n_read);
@@ -50,9 +50,9 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
 TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
 {
   Log log;
-  long const n_read = 12;
-  long const n_spoke = 4;
-  long const n_coil = 4;
+  Index const n_read = 12;
+  Index const n_spoke = 4;
+  Index const n_coil = 4;
   Cx3 kspace(n_coil, n_read, n_spoke);
   kspace.setZero();
   for (auto is = 0; is < n_spoke; is++) {
@@ -76,7 +76,7 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
 
   SECTION("Run")
   {
-    long const n_gap = 2;
+    Index const n_gap = 2;
     Cx3 test_kspace = kspace;
     test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}).setZero();
     zinfandel(n_gap, 2, 1, 4, 0.0, traj, test_kspace, log);

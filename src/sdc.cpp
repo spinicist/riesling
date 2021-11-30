@@ -27,14 +27,14 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
     }
   }
   W.setZero();
-  for (long is = 0; is < info.spokes_total(); is++) {
-    for (long ir = 0; ir < info.read_points; ir++) {
+  for (Index is = 0; is < info.spokes_total(); is++) {
+    for (Index ir = 0; ir < info.read_points; ir++) {
       W(0, ir, is) = traj.merge(ir, is);
     }
   }
 
   Cx5 temp(gridder->inputDimensions(1, info.echoes));
-  for (long ii = 0; ii < 40; ii++) {
+  for (Index ii = 0; ii < 40; ii++) {
     Wp.setZero();
     temp.setZero();
     gridder->Adj(W, temp);
@@ -64,7 +64,7 @@ R2 Radial2D(Trajectory const &traj, Log &log)
 {
   log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
   Info const &info = traj.info();
-  auto spoke_sdc = [&](long const spoke, long const N, float const scale) -> R1 {
+  auto spoke_sdc = [&](Index const spoke, Index const N, float const scale) -> R1 {
     float const k_delta = 1. / (info.read_oversamp() * scale);
     float const V = 2.f * k_delta * M_PI / N; // Area element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
@@ -72,7 +72,7 @@ R2 Radial2D(Trajectory const &traj, Log &log)
     float const flat_start = info.read_points / sqrt(R);
     float const flat_val = V * flat_start;
     R1 sdc(info.read_points);
-    for (long ir = 0; ir < info.read_points; ir++) {
+    for (Index ir = 0; ir < info.read_points; ir++) {
       float const rad = traj.point(ir, spoke, info.read_points).norm();
       if (rad == 0.f) {
         sdc(ir) = V / 8.f;
@@ -101,7 +101,7 @@ R2 Radial3D(Trajectory const &traj, Log &log)
 {
   log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
   auto const &info = traj.info();
-  auto spoke_sdc = [&](long const &spoke, long const N, float const scale) -> R1 {
+  auto spoke_sdc = [&](Index const &spoke, Index const N, float const scale) -> R1 {
     // Calculate the point spacing
     float const k_delta = 1.f / (info.read_oversamp() * scale);
     float const V = (4.f / 3.f) * k_delta * M_PI / N; // Volume element
@@ -110,7 +110,7 @@ R2 Radial3D(Trajectory const &traj, Log &log)
     float const flat_start = info.read_points / sqrt(R);
     float const flat_val = V * (3. * (flat_start * flat_start) + 1. / 4.);
     R1 sdc(info.read_points);
-    for (long ir = 0; ir < info.read_points; ir++) {
+    for (Index ir = 0; ir < info.read_points; ir++) {
       float const rad = traj.point(ir, spoke, info.read_points).norm();
       float const merge = traj.merge(ir, spoke);
       if (rad == 0.f) {

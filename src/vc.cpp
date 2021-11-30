@@ -8,10 +8,10 @@
 
 Cx4 VBC(Cx4 &maps, Log &log)
 {
-  long const nc = maps.dimension(0);
-  long const nx = maps.dimension(1);
-  long const ny = maps.dimension(2);
-  long const nz = maps.dimension(3);
+  Index const nc = maps.dimension(0);
+  Index const nx = maps.dimension(1);
+  Index const ny = maps.dimension(2);
+  Index const nz = maps.dimension(3);
 
   Eigen::Map<Eigen::MatrixXcf const> mat(maps.data(), nc, nx * ny * nz);
   log.info("VBC SVD size {}x{}", mat.rows(), mat.cols());
@@ -27,10 +27,10 @@ Cx4 VBC(Cx4 &maps, Log &log)
 
 void VCC(Cx4 &data, Log &log)
 {
-  long const nc = data.dimension(0);
-  long const nx = data.dimension(1);
-  long const ny = data.dimension(2);
-  long const nz = data.dimension(3);
+  Index const nc = data.dimension(0);
+  Index const nx = data.dimension(1);
+  Index const ny = data.dimension(2);
+  Index const nz = data.dimension(3);
 
   // Assemble our virtual conjugate channels
   Cx4 cdata(nc, nx, ny, nz);
@@ -50,9 +50,9 @@ void VCC(Cx4 &data, Log &log)
 
   Cx3 phase(nx, ny, nz);
   phase.setZero();
-  for (long iz = 1; iz < nz; iz++) {
-    for (long iy = 1; iy < ny; iy++) {
-      for (long ix = 1; ix < nx; ix++) {
+  for (Index iz = 1; iz < nz; iz++) {
+    for (Index iy = 1; iy < ny; iy++) {
+      for (Index ix = 1; ix < nx; ix++) {
         Cx1 const vals = data.chip(iz, 3).chip(iy, 2).chip(ix, 1);
         Cx1 const cvals = cdata.chip(iz, 3).chip(iy, 2).chip(ix, 1).conjugate(); // Dot has a conj
         float const p = std::log(Dot(cvals, vals)).imag() / 2.f;
@@ -68,13 +68,13 @@ void VCC(Cx4 &data, Log &log)
 
 Cx3 Hammond(Cx4 const &maps, Log &log)
 {
-  long const nc = maps.dimension(0);
-  long const nx = maps.dimension(1);
-  long const ny = maps.dimension(2);
-  long const nz = maps.dimension(3);
+  Index const nc = maps.dimension(0);
+  Index const nx = maps.dimension(1);
+  Index const ny = maps.dimension(2);
+  Index const nz = maps.dimension(3);
   log.info("Combining images via the Hammond method");
 
-  long const refSz = 9;
+  Index const refSz = 9;
   Cropper refCrop(Sz3{nx, ny, nz}, Sz3{refSz, refSz, refSz}, log);
   Cx1 const ref =
     refCrop.crop4(maps).sum(Sz3{1, 2, 3}).conjugate() / refCrop.crop4(maps).sum(Sz3{1, 2, 3}).abs();

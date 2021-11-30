@@ -32,7 +32,7 @@ struct Mapping
 struct Trajectory
 {
   Trajectory(Info const &info, R3 const &points, Log const &log);
-  Trajectory(Info const &info, R3 const &points, L1 const &echoes, Log const &log);
+  Trajectory(Info const &info, R3 const &points, I1 const &echoes, Log const &log);
   Info const &info() const;
 
   R3 const &points() const;
@@ -43,14 +43,14 @@ struct Trajectory
 
   // Generate an appropriate mapping
   Mapping mapping(
-    float const os, long const kRad, float const inRes = -1.f, bool const shrink = false) const;
+    float const os, Index const kRad, float const inRes = -1.f, bool const shrink = false) const;
 
 private:
   void init();
 
   Info info_;
   R3 points_;
-  L1 echoes_;
+  I1 echoes_;
   Log log_;
   Eigen::ArrayXf mergeHi_, mergeLo_;
 };

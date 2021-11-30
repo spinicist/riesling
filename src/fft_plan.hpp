@@ -6,7 +6,7 @@
 namespace FFT {
 
 template <int TRank, int FRank>
-Planned<TRank, FRank>::Planned(Tensor &workspace, Log log, long const nThreads)
+Planned<TRank, FRank>::Planned(Tensor &workspace, Log log, Index const nThreads)
   : dims_{workspace.dimensions()}
   , log_{log}
   , threaded_{nThreads > 1}
@@ -15,7 +15,7 @@ Planned<TRank, FRank>::Planned(Tensor &workspace, Log log, long const nThreads)
 }
 
 template <int TRank, int FRank>
-Planned<TRank, FRank>::Planned(TensorDims const &dims, Log log, long const nThreads)
+Planned<TRank, FRank>::Planned(TensorDims const &dims, Log log, Index const nThreads)
   : dims_{dims}
   , log_{log}
   , threaded_{nThreads > 1}
@@ -25,7 +25,7 @@ Planned<TRank, FRank>::Planned(TensorDims const &dims, Log log, long const nThre
 }
 
 template <int TRank, int FRank>
-void Planned<TRank, FRank>::plan(Tensor &ws, long const nThreads)
+void Planned<TRank, FRank>::plan(Tensor &ws, Index const nThreads)
 {
   std::array<int, FRank> sizes;
   int N = 1;
@@ -85,9 +85,9 @@ template <int TRank, int FRank>
 void Planned<TRank, FRank>::applyPhase(Tensor &x, float const scale, bool const forward) const
 {
   constexpr int FStart = TRank - FRank;
-  for (long ii = 0; ii < FRank; ii++) {
-    Eigen::array<long, TRank> rsh, brd;
-    for (long in = 0; in < TRank; in++) {
+  for (Index ii = 0; ii < FRank; ii++) {
+    Eigen::array<Index, TRank> rsh, brd;
+    for (Index in = 0; in < TRank; in++) {
       rsh[in] = 1;
       brd[in] = x.dimension(in);
     }
@@ -120,7 +120,7 @@ void Planned<TRank, FRank>::applyPhase(Tensor &x, float const scale, bool const 
 template <int TRank, int FRank>
 void Planned<TRank, FRank>::forward(Tensor &x) const
 {
-  for (long ii = 0; ii < TRank; ii++) {
+  for (Index ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
   }
   auto const start = log_.now();
@@ -134,7 +134,7 @@ void Planned<TRank, FRank>::forward(Tensor &x) const
 template <int TRank, int FRank>
 void Planned<TRank, FRank>::reverse(Tensor &x) const
 {
-  for (long ii = 0; ii < TRank; ii++) {
+  for (Index ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
   }
   auto start = log_.now();

@@ -18,11 +18,11 @@ struct Planned
 
   /*! Uses the specified Tensor as a workspace during planning
    */
-  Planned(Tensor &workspace, Log log, long const nThreads = Threads::GlobalThreadCount());
+  Planned(Tensor &workspace, Log log, Index const nThreads = Threads::GlobalThreadCount());
 
   /*! Will allocate a workspace during planning
    */
-  Planned(TensorDims const &dims, Log log, long const nThreads = Threads::GlobalThreadCount());
+  Planned(TensorDims const &dims, Log log, Index const nThreads = Threads::GlobalThreadCount());
 
   ~Planned();
 
@@ -32,7 +32,7 @@ struct Planned
   float scale() const; //!< Return the scaling for the unitary transform
 
 private:
-  void plan(Tensor &x, long const nThreads);
+  void plan(Tensor &x, Index const nThreads);
   void applyPhase(Tensor &x, float const scale, bool const forward) const;
 
   TensorDims dims_;

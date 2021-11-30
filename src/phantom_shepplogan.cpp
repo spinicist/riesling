@@ -39,44 +39,44 @@ std::vector<float> const pd{1, -0.4, -0.1, -0.1, 0.1, 0.1, 0.05, 0.05, 0.1, -0.1
 } // namespace
 
 Cx3 SheppLoganPhantom(
-    Eigen::Array3l const &matrix,
-    Eigen::Array3f const &voxel_size,
-    Eigen::Vector3f const &c,
-    Eigen::Vector3f const &imr,
-    float const rad,
-    float const intensity,
-    Log const &log)
+  Eigen::Array3l const &matrix,
+  Eigen::Array3f const &voxel_size,
+  Eigen::Vector3f const &c,
+  Eigen::Vector3f const &imr,
+  float const rad,
+  float const intensity,
+  Log const &log)
 {
   log.info(FMT_STRING("Drawing 3D Shepp Logan Phantom. Intensity {}"), intensity);
   Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();
 
-  long const cx = phan.dimension(0) / 2;
-  long const cy = phan.dimension(1) / 2;
-  long const cz = phan.dimension(2) / 2;
+  Index const cx = phan.dimension(0) / 2;
+  Index const cy = phan.dimension(1) / 2;
+  Index const cz = phan.dimension(2) / 2;
 
   // Global rotation
   Eigen::Matrix3f yaw;
   Eigen::Matrix3f pitch;
   Eigen::Matrix3f roll;
   float d2r = M_PI / 180.0;
-  roll << 1.f, 0.f, 0.f,                          //
-      0.f, cos(imr[0] * d2r), -sin(imr[0] * d2r), //
-      0.f, sin(imr[0] * d2r), cos(imr[0] * d2r);
+  roll << 1.f, 0.f, 0.f,                        //
+    0.f, cos(imr[0] * d2r), -sin(imr[0] * d2r), //
+    0.f, sin(imr[0] * d2r), cos(imr[0] * d2r);
 
   pitch << cos(imr[1] * d2r), 0.f, sin(imr[1] * d2r), //
-      0.f, 1.f, 0.f,                                  //
-      -sin(imr[1] * d2r), 0.f, cos(imr[1] * d2r);
+    0.f, 1.f, 0.f,                                    //
+    -sin(imr[1] * d2r), 0.f, cos(imr[1] * d2r);
 
   yaw << cos(imr[2] * d2r), -sin(imr[2] * d2r), 0.f, //
-      sin(imr[2] * d2r), cos(imr[2] * d2r), 0.f,     //
-      0.f, 0.f, 1.f;
+    sin(imr[2] * d2r), cos(imr[2] * d2r), 0.f,       //
+    0.f, 0.f, 1.f;
 
-  for (long iz = 0; iz < phan.dimension(2); iz++) {
+  for (Index iz = 0; iz < phan.dimension(2); iz++) {
     auto const pz = (iz - cz) * voxel_size[2];
-    for (long iy = 0; iy < phan.dimension(1); iy++) {
+    for (Index iy = 0; iy < phan.dimension(1); iy++) {
       auto const py = (iy - cy) * voxel_size[1];
-      for (long ix = 0; ix < phan.dimension(0); ix++) {
+      for (Index ix = 0; ix < phan.dimension(0); ix++) {
         auto const px = (ix - cx) * voxel_size[0];
         Eigen::Vector3f p0{px, py, pz};
         Eigen::Vector3f const p = yaw * pitch * roll * p0;
@@ -85,11 +85,11 @@ Cx3 SheppLoganPhantom(
         Eigen::Vector3f const r = (p - c) / rad;
 
         // Loop over the 10 elipsoids
-        for (long ie = 0; ie < 10; ie++) {
+        for (Index ie = 0; ie < 10; ie++) {
           Eigen::Matrix3f rot;
           rot << cos(angles[ie]), sin(angles[ie]), 0.f, //
-              -sin(angles[ie]), cos(angles[ie]), 0.f,   //
-              0.f, 0.f, 1.f;
+            -sin(angles[ie]), cos(angles[ie]), 0.f,     //
+            0.f, 0.f, 1.f;
 
           Eigen::Vector3f const pe = ((rot * (r - centres[ie])).array() / ha[ie]);
           if (pe.norm() < 1.f) {

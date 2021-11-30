@@ -8,10 +8,10 @@ int main_split(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<long> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
-  args::ValueFlag<long> vol(parser, "VOLUME", "Only take this volume", {"v", "vol"}, 0);
+  args::ValueFlag<Index> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
+  args::ValueFlag<Index> vol(parser, "VOLUME", "Only take this volume", {"v", "vol"}, 0);
   args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
-  args::ValueFlag<long> step(parser, "STEP", "Step size", {"s", "step"}, 0);
+  args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
 
   Log log = ParseCommand(parser, iname);
 
@@ -41,10 +41,10 @@ int main_split(args::Subparser &parser)
   hi_info.lo_scale = 0.f;
   float scalef = 1.0f;
   if (ds) {
-    hi_info.read_points = (long)std::round((float)info.read_points / ds.Get());
+    hi_info.read_points = (Index)std::round((float)info.read_points / ds.Get());
     scalef = (float)info.read_points / (float)hi_info.read_points;
     hi_info.voxel_size = info.voxel_size * scalef;
-    hi_info.matrix = (info.matrix.cast<float>() / scalef).cast<long>();
+    hi_info.matrix = (info.matrix.cast<float>() / scalef).cast<Index>();
   }
   int const ns = nspokes ? nspokes.Get() : info.spokes_hi;
   int const spoke_step = step ? step.Get() : ns;

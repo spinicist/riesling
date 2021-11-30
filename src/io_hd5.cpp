@@ -1,5 +1,5 @@
-#include "io_hd5.h"
 #include "info.h"
+#include "io_hd5.h"
 #include "io_hd5.hpp"
 #include <Eigen/Eigenvalues>
 #include <filesystem>
@@ -14,7 +14,7 @@ void Init()
   if (NeedsInit) {
 
     auto err = H5open();
-    // herr_t (*old_func)(long long, void *);
+    // herr_t (*old_func)(Index Index, void *);
     // void *old_client_data;
     // hid_t errorStack;
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
@@ -59,21 +59,20 @@ void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   constexpr int N = 14;
-  std::array<std::string, N> const names{
-    "matrix",
-    "voxel_size",
-    "read_points",
-    "read_gap",
-    "spokes_hi",
-    "spokes_lo",
-    "lo_scale",
-    "channels",
-    "type",
-    "volumes",
-    "echoes",
-    "tr",
-    "origin",
-    "direction"};
+  std::array<std::string, N> const names{"matrix",
+                                         "voxel_size",
+                                         "read_points",
+                                         "read_gap",
+                                         "spokes_hi",
+                                         "spokes_lo",
+                                         "lo_scale",
+                                         "channels",
+                                         "type",
+                                         "volumes",
+                                         "echoes",
+                                         "tr",
+                                         "origin",
+                                         "direction"};
 
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
@@ -102,7 +101,7 @@ bool Exists(hid_t const parent, std::string const name)
 }
 
 template <>
-hid_t type_impl(type_tag<long>)
+hid_t type_impl(type_tag<Index>)
 {
   return H5T_NATIVE_LONG;
 }

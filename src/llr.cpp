@@ -4,17 +4,17 @@
 #include <Eigen/SVD>
 #include <random>
 
-Cx4 llr(Cx4 const &x, float const l, long const p, Log &log)
+Cx4 llr(Cx4 const &x, float const l, Index const p, Log &log)
 {
-  long const K = x.dimension(0);
+  Index const K = x.dimension(0);
   log.info("LLR regularization patch size {} lamdba {}", p, l);
   Cx4 lr(x.dimensions());
   lr.setZero();
 
-  auto zTask = [&](long const lo, long const hi) {
-    for (long iz = lo; iz < hi; iz++) {
-      for (long iy = 0; iy < x.dimension(2) - p; iy++) {
-        for (long ix = 0; ix < x.dimension(1) - p; ix++) {
+  auto zTask = [&](Index const lo, Index const hi) {
+    for (Index iz = lo; iz < hi; iz++) {
+      for (Index iy = 0; iy < x.dimension(2) - p; iy++) {
+        for (Index ix = 0; ix < x.dimension(1) - p; ix++) {
           Cx4 px = x.slice(Sz4{0, ix, iy, iz}, Sz4{K, p, p, p});
           Eigen::Map<Eigen::MatrixXcf> patch(px.data(), K, p * p * p);
           auto const svd = patch.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -36,13 +36,13 @@ Cx4 llr(Cx4 const &x, float const l, long const p, Log &log)
   return lr;
 }
 
-Cx4 llr_patch(Cx4 const &x, float const l, long const p, Log &log)
+Cx4 llr_patch(Cx4 const &x, float const l, Index const p, Log &log)
 {
-  std::array<long, 3> nP, shift;
+  std::array<Index, 3> nP, shift;
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> int_dist(0, p - 1);
-  for (long ii = 0; ii < 3; ii++) {
+  for (Index ii = 0; ii < 3; ii++) {
     if (x.dimension(ii + 1) % p != 0) {
       Log::Fail(
         FMT_STRING("Patch size {} does not evenly divide {} (dimension {})"),
@@ -53,14 +53,14 @@ Cx4 llr_patch(Cx4 const &x, float const l, long const p, Log &log)
     nP[ii] = (x.dimension(ii + 1) / p) - 1;
     shift[ii] = int_dist(gen);
   }
-  long const K = x.dimension(0);
-  long const pSz = p * p * p;
+  Index const K = x.dimension(0);
+  Index const pSz = p * p * p;
   Cx4 lr(x.dimensions());
   lr.setZero();
-  auto zTask = [&](long const lo, long const hi) {
-    for (long iz = lo; iz < hi; iz++) {
-      for (long iy = 0; iy < nP[1]; iy++) {
-        for (long ix = 0; ix < nP[0]; ix++) {
+  auto zTask = [&](Index const lo, Index const hi) {
+    for (Index iz = lo; iz < hi; iz++) {
+      for (Index iy = 0; iy < nP[1]; iy++) {
+        for (Index ix = 0; ix < nP[0]; ix++) {
           Cx4 px = x.slice(
             Sz4{0, ix * p + shift[0], iy * p + shift[1], iz * p + shift[2]}, Sz4{K, p, p, p});
           Eigen::Map<Eigen::MatrixXcf> patch(px.data(), K, pSz);

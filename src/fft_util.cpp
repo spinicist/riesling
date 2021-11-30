@@ -51,9 +51,9 @@ void SetTimelimit(double time)
  *
  * I am indebted to Martin Uecker for putting this code in BART
  */
-Cx1 Phase(long const sz)
+Cx1 Phase(Index const sz)
 {
-  long const c = sz / 2;
+  Index const c = sz / 2;
   double const shift = (double)c / sz;
   Rd1 ii(sz);
   std::iota(ii.data(), ii.data() + ii.size(), 0.);

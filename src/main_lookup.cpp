@@ -37,24 +37,24 @@ int main_lookup(args::Subparser &parser)
   Cx4 pd(images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   pd.setZero();
 
-  long const N = dictionary.dimension(0);
+  Index const N = dictionary.dimension(0);
   if (parameters.dimension(0) != N) {
     Log::Fail("Dictionary has {} entries but parameters has {}", N, parameters.dimension(0));
   }
   log.info(FMT_STRING("Dictionary has {} entries"), N);
 
   Cx1 const basis_ss = basis.chip<0>(0).cast<Cx>();
-  for (long iv = 0; iv < images.dimension(4); iv++) {
+  for (Index iv = 0; iv < images.dimension(4); iv++) {
     log.info("Processing volume {}", iv);
-    auto ztask = [&](long const lo, long const hi, long const ti) {
-      for (long iz = lo; iz < hi; iz++) {
+    auto ztask = [&](Index const lo, Index const hi, Index const ti) {
+      for (Index iz = lo; iz < hi; iz++) {
         log.progress(iz, lo, hi);
-        for (long iy = 0; iy < images.dimension(2); iy++) {
-          for (long ix = 0; ix < images.dimension(1); ix++) {
+        for (Index iy = 0; iy < images.dimension(2); iy++) {
+          for (Index ix = 0; ix < images.dimension(1); ix++) {
             Cx1 const proj = images.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix);
-            long index = 0;
+            Index index = 0;
             float bestDot = 0;
-            for (long in = 0; in < N; in++) {
+            for (Index in = 0; in < N; in++) {
               R1 const atom = dictionary.chip<0>(in);
               float const dot = std::abs(Dot(atom.cast<Cx>(), proj));
               if (dot > bestDot) {

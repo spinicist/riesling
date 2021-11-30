@@ -17,13 +17,13 @@ GridBasisOp::GridBasisOp(Mapping map, bool const unsafe, R2 basis, Log &log)
   log_.info("Basis size {}x{}, scale {}", basis_.dimension(0), basis_.dimension(1), basisScale_);
 }
 
-long GridBasisOp::dimension(long const D) const
+Index GridBasisOp::dimension(Index const D) const
 {
   assert(D < 3);
   return mapping_.cartDims[D];
 }
 
-Sz5 GridBasisOp::inputDimensions(long const nc) const
+Sz5 GridBasisOp::inputDimensions(Index const nc) const
 {
   return Sz5{
     nc, basis_.dimension(1), mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]};

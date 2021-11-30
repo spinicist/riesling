@@ -5,14 +5,14 @@
 // Non-linear Conjugate Gradients with l1-regularisation
 // See http://doi.wiley.com/10.1002/mrm.21391
 Cx3 nlcg(
-    Cx3 &data,                       // Raw data
-    Cx3::Dimensions const &dims,     // Output dimensions (not oversampled)
-    EncodeFunction const &encode_ks, // FT + sampling
-    DecodeFunction const &decode_ks, // Gridding + FT
-    long const &max_its,             // Maximum iterations
-    float const &thresh,             // Stop if fractional change in cost-function is below thresh
-    float const &lambda,             // l1-norm weight
-    Log &log)
+  Cx3 &data,                       // Raw data
+  Cx3::Dimensions const &dims,     // Output dimensions (not oversampled)
+  EncodeFunction const &encode_ks, // FT + sampling
+  DecodeFunction const &decode_ks, // Gridding + FT
+  Index const &max_its,            // Maximum iterations
+  float const &thresh,             // Stop if fractional change in cost-function is below thresh
+  float const &lambda,             // l1-norm weight
+  Log &log)
 {
   float const alpha = 0.05f; // Line-search threshold (allow slightly higher residual)
   float const beta = 0.6f;   // Line-search step size will be reduced by this each iteration
@@ -43,7 +43,7 @@ Cx3 nlcg(
 
     // Calculate the gradient
     grad.device(Threads::GlobalDevice()) =
-        2.0f * resid + (lambda * x / W.cast<std::complex<float>>());
+      2.0f * resid + (lambda * x / W.cast<std::complex<float>>());
 
     // Calculate cost
     R0 const rsum = (resid * resid.conjugate()).real().sum();
@@ -66,17 +66,17 @@ Cx3 nlcg(
   float t = 1.0f;
   log.info("Starting Non-linear Conjugate Gradients");
   log.info(FMT_STRING("Scale %f Starting cost {}"), scale(), f_current);
-  for (long ii = 0; ii < max_its; ii++) {
+  for (Index ii = 0; ii < max_its; ii++) {
     R0 const dx_g = -(dx * g.conjugate()).real().sum(); // - because dx ~= -g
 
     // Line search
     float f_t;
     float line_thresh = f_current + alpha * t * dx_g();
     log.info(
-        FMT_STRING("Start line search, current cost {}% threshold {}%"),
-        100.f * f_current / f_start,
-        100.f * line_thresh / f_start);
-    for (long il = 0; il < 10; il++) {
+      FMT_STRING("Start line search, current cost {}% threshold {}%"),
+      100.f * f_current / f_start,
+      100.f * line_thresh / f_start);
+    for (Index il = 0; il < 10; il++) {
       temp_x.device(Threads::GlobalDevice()) = x + t * dx;
       f_t = f_g(temp_x, g);
       log.info(FMT_STRING("t={} Cost {}%"), t, 100.f * f_t / f_start);
@@ -92,7 +92,7 @@ Cx3 nlcg(
     float const gamma = g_norm_new() / g_norm_old();
     float const df = (f_current - f_t) / f_start;
     log.info(
-        FMT_STRING("Iteration {} Cost change {}% Threshold {}%"), ii, df * 100.f, 100.f * thresh);
+      FMT_STRING("Iteration {} Cost change {}% Threshold {}%"), ii, df * 100.f, 100.f * thresh);
 
     if (fabs(df) < thresh) {
       log.info("Cost change reached threshold, stopping");

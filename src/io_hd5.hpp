@@ -58,7 +58,7 @@ void store_tensor(
 }
 
 template <int ND>
-Eigen::DSizes<long, ND> get_dims(Handle const &parent, std::string const &name, Log const &log)
+Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name, Log const &log)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
@@ -72,7 +72,7 @@ Eigen::DSizes<long, ND> get_dims(Handle const &parent, std::string const &name, 
   }
   std::array<hsize_t, ND> hdims;
   H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
-  Eigen::DSizes<long, ND> dims;
+  Eigen::DSizes<Index, ND> dims;
   std::reverse_copy(hdims.begin(), hdims.end(), dims.begin());
   return dims;
 }
@@ -90,7 +90,7 @@ void load_tensor(
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND; ii++) {
-    if ((long)dims[ii] != tensor.dimension(ii)) {
+    if ((Index)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
         FMT_STRING("Expected dimensions were {}, but were {} on disk"),
         fmt::join(tensor.dimensions(), ","),
@@ -110,7 +110,7 @@ template <typename Scalar, int CD>
 void load_tensor_slab(
   Handle const &parent,
   std::string const &name,
-  long const index,
+  Index const index,
   Eigen::Tensor<Scalar, CD> &tensor,
   Log const &log)
 {
@@ -129,7 +129,7 @@ void load_tensor_slab(
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
-    if ((long)dims[ii] != tensor.dimension(ii)) {
+    if ((Index)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
         FMT_STRING("Expected dimensions were {}, but were {} on disk"),
         fmt::join(tensor.dimensions(), ","),

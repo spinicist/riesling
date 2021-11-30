@@ -6,10 +6,10 @@
 
 decltype(auto) Blend(Cx5 const &images, R1 const &b)
 {
-  long const x = images.dimension(1);
-  long const y = images.dimension(2);
-  long const z = images.dimension(3);
-  long const v = images.dimension(4);
+  Index const x = images.dimension(1);
+  Index const y = images.dimension(2);
+  Index const z = images.dimension(3);
+  Index const v = images.dimension(4);
   Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> rsh;
   rsh.set(0, b.dimension(0));
   Eigen::IndexList<FixOne, int, int, int, int> brd;
@@ -28,7 +28,7 @@ int main_blend(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> oftype(
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
-  args::ValueFlag<long> tp(parser, "TP", "Timepoint within basis for combination", {"tp", 't'}, 0);
+  args::ValueFlag<Index> tp(parser, "TP", "Timepoint within basis for combination", {"tp", 't'}, 0);
   args::Flag eddy_rss(
     parser, "", "Produce an RSS image for eddy-current correction", {"eddy", 'e'});
 

@@ -4,7 +4,7 @@
 
 TEST_CASE("ops-sense", "[ops]")
 {
-  long const channels = 2, mapSz = 4, gridSz = 6;
+  Index const channels = 2, mapSz = 4, gridSz = 6;
 
   // With credit to PyLops
   SECTION("Dot Test")

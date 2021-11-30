@@ -33,8 +33,8 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
   assert(cart.dimension(4) == mapping_.cartDims[2]);
   assert(mapping_.sortedIndices.size() == mapping_.cart.size());
 
-  long const nchan = cart.dimension(0);
-  long const nB = cart.dimension(1);
+  Index const nchan = cart.dimension(0);
+  Index const nB = cart.dimension(1);
 
   Eigen::IndexList<int, FixOne> rshNC;
   Eigen::IndexList<FixOne, int> brdNC;
@@ -47,15 +47,15 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
   brdB.set(0, nchan);
 
   auto dev = Threads::GlobalDevice();
-  long const nThreads = dev.numThreads();
+  Index const nThreads = dev.numThreads();
   std::vector<Cx5> workspace(nThreads);
-  std::vector<long> minZ(nThreads, 0L), szZ(nThreads, 0L);
-  auto grid_task = [&](long const lo, long const hi, long const ti) {
+  std::vector<Index> minZ(nThreads, 0L), szZ(nThreads, 0L);
+  auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
     // Allocate working space for this thread
     minZ[ti] = mapping_.cart[mapping_.sortedIndices[lo]].z;
 
     if (safe_) {
-      long const maxZ = mapping_.cart[mapping_.sortedIndices[hi - 1]].z;
+      Index const maxZ = mapping_.cart[mapping_.sortedIndices[hi - 1]].z;
       szZ[ti] = maxZ - minZ[ti] + 1;
       workspace[ti].resize(
         cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
@@ -87,7 +87,7 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
   Threads::RangeFor(grid_task, mapping_.cart.size());
   if (safe_) {
     log_.info("Combining thread workspaces...");
-    for (long ti = 0; ti < nThreads; ti++) {
+    for (Index ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
         cart
           .slice(
@@ -109,7 +109,7 @@ void GridBasisNN::A(Input const &cart, Output &noncart) const
   assert(cart.dimension(3) == mapping_.cartDims[1]);
   assert(cart.dimension(4) == mapping_.cartDims[2]);
 
-  auto grid_task = [&](long const lo, long const hi) {
+  auto grid_task = [&](Index const lo, Index const hi) {
     for (auto ii = lo; ii < hi; ii++) {
       log_.progress(ii, lo, hi);
       auto const si = mapping_.sortedIndices[ii];

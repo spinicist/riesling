@@ -2,7 +2,7 @@
 
 namespace Sim {
 
-float Parameter::value(long ii) const
+float Parameter::value(Index ii) const
 {
   if (logspaced) {
     return logspace(ii);
@@ -11,7 +11,7 @@ float Parameter::value(long ii) const
   }
 }
 
-float Parameter::linspace(long ii) const
+float Parameter::linspace(Index ii) const
 {
   assert(ii < N);
   if (N == 1) {
@@ -22,7 +22,7 @@ float Parameter::linspace(long ii) const
   }
 }
 
-float Parameter::logspace(long ii) const
+float Parameter::logspace(Index ii) const
 {
   assert(ii < N);
   if (N == 1) {

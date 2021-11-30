@@ -10,11 +10,11 @@ using DecodeFunction = std::function<void(Cx3 const &x, Cx3 &y)>;
 
 // Nonlinear Conjugate Gradient
 Cx3 nlcg(
-    Cx3 &radial,
-    Cx3::Dimensions const &dims,
-    EncodeFunction const &encode,
-    DecodeFunction const &decode,
-    long const &max_its,
-    float const &thresh,
-    float const &lambda,
-    Log &log);
+  Cx3 &radial,
+  Cx3::Dimensions const &dims,
+  EncodeFunction const &encode,
+  DecodeFunction const &decode,
+  Index const &max_its,
+  float const &thresh,
+  float const &lambda,
+  Log &log);

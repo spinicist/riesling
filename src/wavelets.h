@@ -5,7 +5,7 @@
 
 struct Wavelets
 {
-  Wavelets(long const N, long const levels, Log &io);
+  Wavelets(Index const N, Index const levels, Log &io);
 
   std::tuple<Sz3, Sz3> pad_setup(Sz3 const &dims) const;
   void pad(Cx3 const &src, Cx3 &dest);
@@ -15,9 +15,9 @@ struct Wavelets
   void decode(Cx3 &image);
 
 private:
-  void encode_dim(Cx3 &image, long const dim, long const level);
-  void decode_dim(Cx3 &image, long const dim, long const level);
-  long const N_, L_;
+  void encode_dim(Cx3 &image, Index const dim, Index const level);
+  void decode_dim(Cx3 &image, Index const dim, Index const level);
+  Index const N_, L_;
   Log &log_;
   R1 D_; // Coefficients
 };

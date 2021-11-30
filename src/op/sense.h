@@ -10,7 +10,7 @@ struct SenseOp final : Operator<4, 5>
   void Adj(Output const &x, Input &y) const;
   void AdjA(Input const &x, Input &y) const;
 
-  long channels() const;
+  Index channels() const;
   InputDims inputDimensions() const;
   OutputDims outputDimensions() const;
 

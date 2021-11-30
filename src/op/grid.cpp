@@ -1,6 +1,6 @@
-#include "grid.h"
 #include "grid-kernel.hpp"
 #include "grid-nn.h"
+#include "grid.h"
 
 #include "../tensorOps.h"
 #include "../threads.h"
@@ -19,12 +19,12 @@ Sz3 GridOp::outputDimensions() const
   return mapping_.noncartDims;
 }
 
-Sz5 GridOp::inputDimensions(long const nc) const
+Sz5 GridOp::inputDimensions(Index const nc) const
 {
   return Sz5{nc, mapping_.echoes, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]};
 }
 
-Sz5 GridOp::inputDimensions(long const nc, long const ne) const
+Sz5 GridOp::inputDimensions(Index const nc, Index const ne) const
 {
   return Sz5{nc, ne, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]};
 }

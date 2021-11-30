@@ -13,7 +13,7 @@
 
 float const sense_res = 8.f;
 
-long ValOrLast(long const val, long const vols)
+Index ValOrLast(Index const val, Index const vols)
 {
   if (val < 0) {
     return vols - 1;

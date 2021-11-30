@@ -10,7 +10,7 @@
  * no. 5, pp. 952–962, 1999.
  */
 template <typename Op>
-void cg(long const &max_its, float const &thresh, Op const &op, typename Op::Input &x, Log &log)
+void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::Input &x, Log &log)
 {
   log.info(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
   auto dev = Threads::GlobalDevice();
@@ -27,7 +27,7 @@ void cg(long const &max_its, float const &thresh, Op const &op, typename Op::Inp
   p.device(dev) = r;
   float r_old = Norm2(r);
 
-  for (long icg = 0; icg < max_its; icg++) {
+  for (Index icg = 0; icg < max_its; icg++) {
     op.AdjA(p, q);
     float const alpha = r_old / std::real(Dot(p, q));
     x.device(dev) = x + p * p.constant(alpha);
@@ -51,7 +51,7 @@ void cg(long const &max_its, float const &thresh, Op const &op, typename Op::Inp
 
 template <typename Op>
 void cgvar(
-  long const &max_its,
+  Index const &max_its,
   float const &thresh,
   float const &pre0,
   float const &pre1,
@@ -75,7 +75,7 @@ void cgvar(
   r = x;
   float const a2 = Norm2(x);
 
-  for (long icg = 0; icg < max_its; icg++) {
+  for (Index icg = 0; icg < max_its; icg++) {
     float const prog = static_cast<float>(icg) / ((max_its == 1) ? 1. : (max_its - 1.f));
     float const pre = std::exp(std::log(pre1) * prog + std::log(pre0) * (1.f - prog));
     op.setPreconditioning(pre);

@@ -1,6 +1,6 @@
-#include "../src/sdc.h"
 #include "../src/log.h"
 #include "../src/op/grid-kernel.hpp"
+#include "../src/sdc.h"
 #include "../src/traj_spirals.h"
 #include "../src/trajectory.h"
 #include <catch2/catch.hpp>
@@ -8,23 +8,22 @@
 TEST_CASE("NN", "[SDC]")
 {
   Log log;
-  long const M = 32;
+  Index const M = 32;
   float const os = 2.f;
-  Info const info{
-    .type = Info::Type::ThreeD,
-    .channels = 1,
-    .matrix = Eigen::Array3l::Constant(M),
-    .read_points = long(os * M / 2),
-    .read_gap = 0,
-    .spokes_hi = long(M * M / 4),
-    .spokes_lo = 0,
-    .lo_scale = 1.f,
-    .volumes = 1,
-    .echoes = 1,
-    .tr = 1.f,
-    .voxel_size = Eigen::Array3f::Constant(1.f),
-    .origin = Eigen::Array3f::Constant(0.f),
-    .direction = Eigen::Matrix3f::Identity()};
+  Info const info{.type = Info::Type::ThreeD,
+                  .channels = 1,
+                  .matrix = Eigen::Array3l::Constant(M),
+                  .read_points = Index(os * M / 2),
+                  .read_gap = 0,
+                  .spokes_hi = Index(M * M / 4),
+                  .spokes_lo = 0,
+                  .lo_scale = 1.f,
+                  .volumes = 1,
+                  .echoes = 1,
+                  .tr = 1.f,
+                  .voxel_size = Eigen::Array3f::Constant(1.f),
+                  .origin = Eigen::Array3f::Constant(0.f),
+                  .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info);
   Trajectory const traj(info, points, log);
 

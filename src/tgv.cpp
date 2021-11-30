@@ -122,7 +122,7 @@ inline void ProjectQ(Cx5 &q, float const a, Eigen::ThreadPoolDevice &dev)
 }
 
 Cx4 tgv(
-  long const max_its,
+  Index const max_its,
   float const thresh,
   float const alpha,
   float const reduction,

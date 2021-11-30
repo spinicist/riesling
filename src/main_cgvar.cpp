@@ -17,7 +17,7 @@ int main_cgvar(args::Subparser &parser)
 
   args::ValueFlag<float> thr(
     parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
-  args::ValueFlag<long> its(
+  args::ValueFlag<Index> its(
     parser, "MAX ITS", "Maximum number of iterations (8)", {'i', "max_its"}, 8);
   args::ValueFlag<float> iter_fov(
     parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
@@ -49,7 +49,7 @@ int main_cgvar(args::Subparser &parser)
   Cx3 cropped = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
   auto const &all_start = log.now();
-  for (long iv = 0; iv < info.volumes; iv++) {
+  for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     recon.Adj(reader.noncartesian(iv), vol); // Initialize
     cgvar(its.Get(), thr.Get(), pre0.Get(), pre1.Get(), recon, vol, log);

@@ -32,7 +32,7 @@ int main_traj(args::Subparser &parser)
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
-    long const nB = basis.dimension(1);
+    Index const nB = basis.dimension(1);
     auto gridderBasis = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
     gridderBasis->setSDC(gridder->SDC());
     auto const gridSz = gridderBasis->mapping().cartDims;

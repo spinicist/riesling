@@ -15,11 +15,11 @@ int main_espirit(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
 
-  args::ValueFlag<long> volume(
+  args::ValueFlag<Index> volume(
     parser, "VOL", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
-  args::ValueFlag<long> kRad(parser, "RAD", "Kernel radius (default 4)", {"kRad", 'k'}, 4);
-  args::ValueFlag<long> calRad(
+  args::ValueFlag<Index> kRad(parser, "RAD", "Kernel radius (default 4)", {"kRad", 'k'}, 4);
+  args::ValueFlag<Index> calRad(
     parser, "RAD", "Additional calibration radius (default 1)", {"calRad", 'c'}, 1);
   args::ValueFlag<float> thresh(
     parser, "T", "Variance threshold to retain kernels (0.015)", {"thresh"}, 0.015);
@@ -36,7 +36,7 @@ int main_espirit(args::Subparser &parser)
   log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log, res);
   gridder->setSDC(SDC::Pipe(traj, true, osamp.Get(), log));
-  long const totalCalRad = kRad.Get() + calRad.Get() + (info.spokes_lo ? 0 : info.read_gap);
+  Index const totalCalRad = kRad.Get() + calRad.Get() + (info.spokes_lo ? 0 : info.read_gap);
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder,

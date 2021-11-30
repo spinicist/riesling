@@ -12,12 +12,12 @@ inline decltype(auto) nearby(T &&x)
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
-inline long fft_size(float const x)
+inline Index fft_size(float const x)
 {
   if (x > 8.f) {
     return (std::lrint(x) + 7L) & ~7L;
   } else {
-    return (long)std::ceil(x);
+    return (Index)std::ceil(x);
   }
 }
 
@@ -26,12 +26,12 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
   , points_{points}
   , log_{log}
 {
-  echoes_ = L1(info_.spokes_total());
+  echoes_ = I1(info_.spokes_total());
   echoes_.setZero();
   init();
 }
 
-Trajectory::Trajectory(Info const &info, R3 const &points, L1 const &echoes, Log const &log)
+Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &echoes, Log const &log)
   : info_{info}
   , points_{points}
   , echoes_{echoes}
@@ -131,11 +131,11 @@ float Trajectory::merge(int16_t const read, int32_t const spoke) const
 }
 
 Mapping
-Trajectory::mapping(float const os, long const kRad, float const inRes, bool const shrink) const
+Trajectory::mapping(float const os, Index const kRad, float const inRes, bool const shrink) const
 {
   float const res = inRes < 0.f ? info_.voxel_size.minCoeff() : inRes;
   float const ratio = info_.voxel_size.minCoeff() / res;
-  long const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
+  Index const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
   log_.info(
     FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
 
@@ -151,7 +151,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   }
   mapping.noncartDims = Sz3{info_.channels, info_.read_points, info_.spokes_total()};
   mapping.osamp = os;
-  long const totalSz = info_.read_points * info_.spokes_total();
+  Index const totalSz = info_.read_points * info_.spokes_total();
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);
   mapping.echo.reserve(totalSz);
@@ -191,7 +191,7 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   mapping.sortedIndices.resize(mapping.cart.size());
   std::iota(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), 0);
   std::sort(
-    mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](long const a, long const b) {
+    mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](Index const a, Index const b) {
       auto const &ac = mapping.cart[a];
       auto const &bc = mapping.cart[b];
       return (ac.z < bc.z) ||

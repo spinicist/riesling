@@ -6,7 +6,7 @@
 namespace Sim {
 
 Result
-Simple(Parameter const T1p, Parameter const betap, Sequence const seq, long const nRand, Log &log)
+Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index const nRand, Log &log)
 {
   log.info("Basic MP-ZTE simulation");
   log.info(
@@ -18,7 +18,7 @@ Simple(Parameter const T1p, Parameter const betap, Sequence const seq, long cons
     seq.Trec);
 
   ParameterGenerator<2> gen({T1p, betap});
-  long totalN = (nRand > 0) ? nRand : gen.totalN();
+  Index totalN = (nRand > 0) ? nRand : gen.totalN();
   if (nRand > 0) {
     log.info(FMT_STRING("Random values of T1 from {} to {}s"), T1p.lo, T1p.hi);
     log.info(FMT_STRING("Random values of β from {} to {}"), betap.lo, betap.hi);
@@ -33,8 +33,8 @@ Simple(Parameter const T1p, Parameter const betap, Sequence const seq, long cons
   result.parameters.resize(totalN, 2);
   result.Mz_ss.resize(totalN);
 
-  auto task = [&](long const lo, long const hi, long const ti) {
-    for (long ip = lo; ip < hi; ip++) {
+  auto task = [&](Index const lo, Index const hi, Index const ti) {
+    for (Index ip = lo; ip < hi; ip++) {
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const T1 = P(0);
       float const beta = P(1);
@@ -67,7 +67,7 @@ Simple(Parameter const T1p, Parameter const betap, Sequence const seq, long cons
 
       // Now fill in dynamic
       Eigen::Vector2f Mz{m_ss, 1.f};
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, ii) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }

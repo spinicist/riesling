@@ -6,26 +6,26 @@
 namespace Sim {
 
 Result MUPA(
-    Parameter const T1p,
-    Parameter const T2p,
-    Parameter const B1p,
-    Sequence const seq,
-    long const nRand,
-    Log &log)
+  Parameter const T1p,
+  Parameter const T2p,
+  Parameter const B1p,
+  Sequence const seq,
+  Index const nRand,
+  Log &log)
 {
   log.info("MUPA MP-ZTE simulation");
   log.info(
-      FMT_STRING("SPS {}, FA {}, TR {}s, TI {}s, Trec {}s"),
-      seq.sps,
-      seq.alpha,
-      seq.TR,
-      seq.TI,
-      seq.Trec);
+    FMT_STRING("SPS {}, FA {}, TR {}s, TI {}s, Trec {}s"),
+    seq.sps,
+    seq.alpha,
+    seq.TR,
+    seq.TI,
+    seq.Trec);
   log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
   log.info(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
   log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   ParameterGenerator<3> gen({T1p, T2p, B1p});
-  long totalN = (nRand > 0) ? nRand : gen.totalN();
+  Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
   result.dynamics.resize(totalN, 4 * seq.sps);
   result.parameters.resize(totalN, 3);
@@ -33,8 +33,8 @@ Result MUPA(
 
   Eigen::Matrix2f inv;
   inv << -1.f, 0.f, 0.f, 1.f;
-  auto task = [&](long const lo, long const hi, long const ti) {
-    for (long ip = lo; ip < hi; ip++) {
+  auto task = [&](Index const lo, Index const hi, Index const ti) {
+    for (Index ip = lo; ip < hi; ip++) {
       log.progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
@@ -68,15 +68,15 @@ Result MUPA(
       float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
       // Now fill in dynamic
-      long tp = 0;
+      Index tp = 0;
       Eigen::Vector2f Mz{m_ss, 1.f};
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, tp++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }
       Mz = Eramp * Ei * inv * Essi * Eramp * Mz;
-      for (long is = 0; is < 3; is++) {
-        for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index is = 0; is < 3; is++) {
+        for (Index ii = 0; ii < seq.sps; ii++) {
           result.dynamics(ip, tp++) = Mz(0) * sina;
           Mz = E1 * A * Mz;
         }

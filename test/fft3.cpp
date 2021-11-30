@@ -14,7 +14,7 @@ TEST_CASE("FFT", "[3D]")
   SECTION("ThreeD")
   {
     auto sz = GENERATE(1, 2, 3, 16, 32);
-    long const N = sx * sy * sz;
+    Index const N = sx * sy * sz;
     Cx3 data(Sz3{sx, sy, sz});
     Cx3 ref(sx, sy, sz);
     FFT::ThreeD fft(data, log);
@@ -33,9 +33,9 @@ TEST_CASE("FFT", "[3D]")
   SECTION("Planned<5, 3>")
   {
     auto sz = GENERATE(1, 3, 7, 8, 16);
-    long const N = sx * sy * sz;
-    long const nc = 32;
-    long const ne = 1;
+    Index const N = sx * sy * sz;
+    Index const nc = 32;
+    Index const ne = 1;
     Cx5 data(nc, ne, sx, sy, sz);
     Cx5 ref(nc, ne, sx, sy, sz);
     FFT::Planned<5, 3> fft(data, log);

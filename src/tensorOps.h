@@ -14,7 +14,7 @@ template <typename T>
 decltype(auto) Transpose(T const &a)
 {
   assert(a.NumDimensions == 1);
-  return a.reshape(Eigen::array<long, 2>{1, a.size()});
+  return a.reshape(Eigen::array<Index, 2>{1, a.size()});
 }
 
 template <typename T>
@@ -62,7 +62,7 @@ float Norm(T const &a)
 }
 
 template <typename T>
-inline decltype(auto) Wrap(T const &index, long const &sz)
+inline decltype(auto) Wrap(T const &index, Index const &sz)
 {
   auto const t = index + sz;
   auto const w = t - sz * (t / sz);
@@ -97,7 +97,7 @@ inline decltype(auto) FirstToLast4(T const &x)
 }
 
 template <typename T>
-inline decltype(auto) Tile(T &&x, long const N)
+inline decltype(auto) Tile(T &&x, Index const N)
 {
   Eigen::IndexList<Eigen::type2index<1>, int, int, int> res;
   res.set(1, x.dimension(0));
@@ -130,7 +130,7 @@ inline decltype(auto) Contract(T1 const &a, T2 const &b)
 template <typename T1, typename T2>
 inline decltype(auto) Outer(T1 const &a, T2 const &b)
 {
-  constexpr Eigen::array<Eigen::IndexPair<long>, 0> empty = {};
+  constexpr Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
   return a.contract(b, empty);
 }
 

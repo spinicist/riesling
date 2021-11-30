@@ -6,8 +6,8 @@ TEST_CASE("Decomp", "[Decomp]")
 {
   Log log;
 
-  long const nvar = 64;
-  long const nsamp = 256;
+  Index const nvar = 64;
+  Index const nsamp = 256;
 
   SECTION("PCA")
   {

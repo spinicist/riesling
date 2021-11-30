@@ -10,7 +10,7 @@ Result FLAIR(
   Parameter const T2p,
   Parameter const B1p,
   Sequence const seq,
-  long const nRand,
+  Index const nRand,
   Log &log)
 {
   log.info("FLAIR-ZTE simulation");
@@ -23,7 +23,7 @@ Result FLAIR(
     seq.Trec,
     seq.TE);
   ParameterGenerator<3> gen({T1p, T2p, B1p});
-  long totalN = (nRand > 0) ? nRand : gen.totalN();
+  Index totalN = (nRand > 0) ? nRand : gen.totalN();
   if (nRand > 0) {
     log.info(FMT_STRING("Random values of T1 from {} to {}s"), T1p.lo, T1p.hi);
     log.info(FMT_STRING("Random values of T2 from {} to {}"), T2p.lo, T2p.hi);
@@ -42,8 +42,8 @@ Result FLAIR(
 
   Eigen::Matrix2f inv;
   inv << -1.f, 0.f, 0.f, 1.f;
-  auto task = [&](long const lo, long const hi, long const ti) {
-    for (long ip = lo; ip < hi; ip++) {
+  auto task = [&](Index const lo, Index const hi, Index const ti) {
+    for (Index ip = lo; ip < hi; ip++) {
       log.progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
@@ -79,9 +79,9 @@ Result FLAIR(
       float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
       // Now fill in dynamic
-      long tp = 0;
+      Index tp = 0;
       Eigen::Vector2f Mz{m_ss, 1.f};
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, tp++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }

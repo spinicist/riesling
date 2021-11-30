@@ -5,9 +5,9 @@ namespace {
 
 } // namespace
 
-FFT1DReal2Complex::FFT1DReal2Complex(long const N, Log &log)
-    : N_{N}
-    , log_{log}
+FFT1DReal2Complex::FFT1DReal2Complex(Index const N, Log &log)
+  : N_{N}
+  , log_{log}
 {
   assert(N % 2 == 0);
   R1 real(N_);
@@ -33,7 +33,7 @@ FFT1DReal2Complex::~FFT1DReal2Complex()
 void FFT1DReal2Complex::shift(R1 &x) const
 {
   assert(x.size() == N_);
-  long const hsz = N_ / 2;
+  Index const hsz = N_ / 2;
   R1 temp = x.slice(Sz1{0}, Sz1{hsz});
   x.slice(Sz1{0}, Sz1{hsz}) = x.slice(Sz1{hsz}, Sz1{hsz});
   x.slice(Sz1{hsz}, Sz1{hsz}) = temp;
@@ -42,7 +42,7 @@ void FFT1DReal2Complex::shift(R1 &x) const
 void FFT1DReal2Complex::shift(Cx1 &x) const
 {
   assert(x.size() == N_);
-  long const hsz = N_ / 2;
+  Index const hsz = N_ / 2;
   Cx1 temp = x.slice(Sz1{0}, Sz1{hsz});
   x.slice(Sz1{0}, Sz1{hsz}) = x.slice(Sz1{hsz}, Sz1{hsz});
   x.slice(Sz1{hsz}, Sz1{hsz}) = temp;

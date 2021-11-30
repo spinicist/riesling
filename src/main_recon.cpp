@@ -60,7 +60,7 @@ int main_recon(args::Subparser &parser)
   FFT::Planned<5, 3> fft(grid, log);
   auto dev = Threads::GlobalDevice();
   auto const &all_start = log.now();
-  for (long iv = 0; iv < info.volumes; iv++) {
+  for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     gridder2->Adj(reader.noncartesian(iv), grid);
     log.info("FFT...");

@@ -10,13 +10,13 @@
 #define COMMON_SENSE_ARGS                                                                          \
   args::ValueFlag<std::string> senseFile(                                                          \
     parser, "SENSE", "Read SENSE maps from specified .h5 file", {"sense", 's'});                   \
-  args::ValueFlag<long> senseVol(                                                                  \
+  args::ValueFlag<Index> senseVol(                                                                 \
     parser, "SENSE VOLUME", "Take SENSE maps from this volume", {"senseVolume"}, -1);              \
   args::ValueFlag<float> senseLambda(                                                              \
     parser, "LAMBDA", "SENSE regularization", {"lambda", 'l'}, 0.f);
 
 // Helper function for getting a good volume to take SENSE maps from
-long ValOrLast(long const val, long const last);
+Index ValOrLast(Index const val, Index const last);
 
 /*!
  * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region

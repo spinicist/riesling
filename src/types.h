@@ -9,9 +9,11 @@
 
 #include <complex>
 
+using Index = Eigen::Index;
+
 namespace Eigen {
-using Array3l = Array<long, 3, 1>;
-using ArrayXl = Array<long, -1, 1>;
+using Array3l = Array<Index, 3, 1>;
+using ArrayXl = Array<Index, -1, 1>;
 } // namespace Eigen
 
 using FixZero = Eigen::type2index<0>; // Fix a dimension to zero in reshape/broadcast
@@ -20,16 +22,16 @@ using FixOne = Eigen::type2index<1>;  // Fix a dimension to one in reshape/broad
 using B0 = Eigen::TensorFixedSize<bool, Eigen::Sizes<>>;
 using B3 = Eigen::Tensor<bool, 3>;
 
-using L0 = Eigen::TensorFixedSize<long, Eigen::Sizes<>>;
-using L1 = Eigen::Tensor<long, 1>;
-using L2 = Eigen::Tensor<long, 2>;
+using I0 = Eigen::TensorFixedSize<Index, Eigen::Sizes<>>;
+using I1 = Eigen::Tensor<Index, 1>;
+using I2 = Eigen::Tensor<Index, 2>;
 
 using R0 = Eigen::TensorFixedSize<float, Eigen::Sizes<>>; // Annoying return type for reductions
 using R1 = Eigen::Tensor<float, 1>;                       // 1D Real data
 using R2 = Eigen::Tensor<float, 2>;                       // 2D Real data
 using R3 = Eigen::Tensor<float, 3>;                       // 3D Real data
 using R4 = Eigen::Tensor<float, 4>;                       // 4D Real data
-using R5 = Eigen::Tensor<float, 5>;                       // 4D Real data
+using R5 = Eigen::Tensor<float, 5>;                       // 5D Real data
 
 using Rd1 = Eigen::Tensor<double, 1>;
 
@@ -52,17 +54,11 @@ using Sz2 = Cx2::Dimensions;
 using Sz3 = Cx3::Dimensions;
 using Sz4 = Cx4::Dimensions;
 using Sz5 = Cx5::Dimensions;
-using Size2 = Eigen::Array<int16_t, 2, 1>;
-using Size3 = Eigen::Array<int16_t, 3, 1>;
-using Size4 = Eigen::Array<int16_t, 4, 1>;
-using Point2 = Eigen::Matrix<float, 2, 1>;
-using Point3 = Eigen::Matrix<float, 3, 1>;
-using Point4 = Eigen::Matrix<float, 4, 1>;
-using Points3 = Eigen::Matrix<float, 3, -1>;
-using Points4 = Eigen::Matrix<float, 4, -1>;
-using Pads3 = Eigen::array<std::pair<long, long>, 3>;
-
-template<typename T>
-Sz3 Last3(T &sz) {
+template <typename T>
+Sz3 Last3(T &sz)
+{
   return Sz3{sz.back() - 2, sz.back() - 1, sz.back()};
 }
+
+using Size3 = Eigen::Array<int16_t, 3, 1>;
+using Point3 = Eigen::Matrix<float, 3, 1>;

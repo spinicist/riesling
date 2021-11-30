@@ -41,8 +41,8 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
   assert(cart.dimension(4) == mapping_.cartDims[2]);
   assert(mapping_.sortedIndices.size() == mapping_.cart.size());
 
-  long const nchan = cart.dimension(0);
-  long const nB = cart.dimension(1);
+  Index const nchan = cart.dimension(0);
+  Index const nB = cart.dimension(1);
 
   Eigen::IndexList<int, FixOne> rshNC;
   Eigen::IndexList<FixOne, int> brdNC;
@@ -69,10 +69,10 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
   szC.set(1, nB);
 
   auto dev = Threads::GlobalDevice();
-  long const nThreads = dev.numThreads();
+  Index const nThreads = dev.numThreads();
   std::vector<Cx5> workspace(nThreads);
-  std::vector<long> minZ(nThreads, 0L), szZ(nThreads, 0L);
-  auto grid_task = [&](long const lo, long const hi, long const ti) {
+  std::vector<Index> minZ(nThreads, 0L), szZ(nThreads, 0L);
+  auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
     // Allocate working space for this thread
     Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
     Cx2 ncb(nchan, nB);
@@ -80,7 +80,7 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
     minZ[ti] = mapping_.cart[mapping_.sortedIndices[lo]].z - ((ThroughPlane - 1) / 2);
 
     if (safe_) {
-      long const maxZ = mapping_.cart[mapping_.sortedIndices[hi - 1]].z + (ThroughPlane / 2);
+      Index const maxZ = mapping_.cart[mapping_.sortedIndices[hi - 1]].z + (ThroughPlane / 2);
       szZ[ti] = maxZ - minZ[ti] + 1;
       workspace[ti].resize(
         cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
@@ -118,7 +118,7 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
   if (safe_) {
     log_.info("Combining thread workspaces...");
     auto const start2 = log_.now();
-    for (long ti = 0; ti < nThreads; ti++) {
+    for (Index ti = 0; ti < nThreads; ti++) {
       if (szZ[ti]) {
         cart
           .slice(
@@ -141,13 +141,13 @@ void GridBasisKB<InPlane, ThroughPlane>::A(Input const &cart, Output &noncart) c
   assert(cart.dimension(3) == mapping_.cartDims[1]);
   assert(cart.dimension(4) == mapping_.cartDims[2]);
 
-  long const nchan = cart.dimension(0);
-  long const nB = basis_.dimension(1);
+  Index const nchan = cart.dimension(0);
+  Index const nB = basis_.dimension(1);
   Eigen::IndexList<int, int, FixIn, FixIn, FixThrough> szC;
   szC.set(0, nchan);
   szC.set(1, nB);
 
-  auto grid_task = [&](long const lo, long const hi) {
+  auto grid_task = [&](Index const lo, Index const hi) {
     Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
     for (auto ii = lo; ii < hi; ii++) {
       log_.progress(ii, lo, hi);
@@ -188,7 +188,7 @@ R3 GridBasisKB<InPlane, ThroughPlane>::apodization(Sz3 const sz) const
   fft.reverse(temp);
   R3 a = Crop3(R3(temp.real()), sz);
   float const scale =
-    sqrt(std::accumulate(gridSz.cbegin(), gridSz.cend(), 1, std::multiplies<long>()));
+    sqrt(std::accumulate(gridSz.cbegin(), gridSz.cend(), 1, std::multiplies<Index>()));
   log_.info(
     FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
   a.device(Threads::GlobalDevice()) = a * a.constant(scale);

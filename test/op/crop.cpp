@@ -5,13 +5,13 @@
 
 TEST_CASE("ops-crop", "[ops]")
 {
-  long const fullSz = 16;
+  Index const fullSz = 16;
 
   SECTION("Dot Test")
   {
-    long const cropSz = 7;
+    Index const cropSz = 7;
     Cx3 x(fullSz, fullSz, fullSz), xy(cropSz, cropSz, cropSz), y(cropSz, cropSz, cropSz),
-        yx(fullSz, fullSz, fullSz);
+      yx(fullSz, fullSz, fullSz);
 
     x.setRandom();
     y.setRandom();

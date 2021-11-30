@@ -1,6 +1,6 @@
-#include "sense.h"
 #include "../tensorOps.h"
 #include "../threads.h"
+#include "sense.h"
 
 SenseOp::SenseOp(Cx4 const &maps, Output::Dimensions const &bigSize)
   : maps_{maps}
@@ -25,7 +25,7 @@ SenseOp::SenseOp(Cx4 const &maps, Output::Dimensions const &bigSize)
   right_[4] = (full_[4] - size_[4]) / 2;
 }
 
-long SenseOp::channels() const
+Index SenseOp::channels() const
 {
   return maps_.dimension(0);
 }
@@ -69,7 +69,7 @@ void SenseOp::A(Input const &x, Output &y) const
 
   Eigen::array<std::pair<int, int>, 5> paddings;
   std::transform(
-    left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](long left, long right) {
+    left_.begin(), left_.end(), right_.begin(), paddings.begin(), [](Index left, Index right) {
       return std::make_pair(left, right);
     });
 

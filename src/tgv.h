@@ -9,7 +9,7 @@
  * doi: 10.1002/mrm.22595.
  */
 Cx4 tgv(
-  long const max_its,
+  Index const max_its,
   float const thresh,
   float const alpha0,
   float const reduction,

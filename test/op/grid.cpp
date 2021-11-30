@@ -9,14 +9,14 @@
 TEST_CASE("ops-grid", "[ops]")
 {
   Log log;
-  long const M = 16;
+  Index const M = 16;
   float const os = 2.f;
   Info const info{.type = Info::Type::ThreeD,
                   .channels = 1,
                   .matrix = Eigen::Array3l::Constant(M),
-                  .read_points = long(os * M / 2),
+                  .read_points = Index(os * M / 2),
                   .read_gap = 0,
-                  .spokes_hi = long(M * M),
+                  .spokes_hi = Index(M * M),
                   .spokes_lo = 0,
                   .lo_scale = 1.f,
                   .volumes = 1,

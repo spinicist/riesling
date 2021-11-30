@@ -4,28 +4,28 @@
 
 struct Info
 {
-  enum struct Type : long
+  enum struct Type : Index
   {
     ThreeD = 1,
     ThreeDStack = 2
   };
 
   Type type = Type::ThreeD;
-  long channels;
+  Index channels;
   Eigen::Array3l matrix;
-  long read_points;
-  long read_gap;
-  long spokes_hi;
-  long spokes_lo;
+  Index read_points;
+  Index read_gap;
+  Index spokes_hi;
+  Index spokes_lo;
   float lo_scale;
-  long volumes = 1;
-  long echoes = 1;
+  Index volumes = 1;
+  Index echoes = 1;
   float tr = 1.f;
   Eigen::Array3f voxel_size = Eigen::Vector3f::Ones();
   Eigen::Vector3f origin = Eigen::Vector3f::Zero();
   Eigen::Matrix3f direction = Eigen::Matrix3f::Identity();
 
-  inline long spokes_total() const
+  inline Index spokes_total() const
   {
     return spokes_hi + spokes_lo;
   }

@@ -11,7 +11,7 @@ Result Eddy(
   Parameter const gammap,
   Parameter const B1p,
   Sequence const seq,
-  long const nRand,
+  Index const nRand,
   Log &log)
 {
   log.info("Eddy Current MP-ZTE simulation");
@@ -28,14 +28,14 @@ Result Eddy(
   log.info(FMT_STRING("{} values of ɣ from {} to {}"), gammap.N, gammap.lo, gammap.hi);
   log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   ParameterGenerator<4> gen({T1p, betap, gammap, B1p});
-  long totalN = (nRand > 0) ? nRand : gen.totalN();
+  Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
   result.dynamics.resize(totalN, 4 * seq.sps);
   result.parameters.resize(totalN, 4);
   result.Mz_ss.resize(totalN);
 
-  auto task = [&](long const lo, long const hi, long const ti) {
-    for (long ip = lo; ip < hi; ip++) {
+  auto task = [&](Index const lo, Index const hi, Index const ti) {
+    for (Index ip = lo; ip < hi; ip++) {
       log.progress(ip, lo, hi);
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       // Set up matrices
@@ -72,25 +72,25 @@ Result Eddy(
       float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
       // Now fill in dynamic
-      long col = 0;
+      Index col = 0;
       Eigen::Vector2f Mz{m_ss, 1.f};
       Mz = Eramp * Mz;
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, col++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }
       Mz = Eramp * PC1 * Erec * Essi * Eramp * Mz;
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, col++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }
       Mz = Eramp * PC2 * Erec * Essi * Eramp * Mz;
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, col++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }
       Mz = Eramp * PC3 * Erec * Essi * Eramp * Mz;
-      for (long ii = 0; ii < seq.sps; ii++) {
+      for (Index ii = 0; ii < seq.sps; ii++) {
         result.dynamics(ip, col++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }

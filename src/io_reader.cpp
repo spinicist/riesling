@@ -77,7 +77,7 @@ Trajectory Reader::readTrajectory()
   log_.info("Reading trajectory");
   R3 points(3, info.read_points, info.spokes_total());
   if (HD5::Exists(handle_, "echoes")) {
-    L1 echoes(info.spokes_total());
+    I1 echoes(info.spokes_total());
     HD5::load_tensor(handle_, "echoes", echoes, log_);
     return Trajectory(info, points, echoes, log_);
   } else {
@@ -94,7 +94,7 @@ R2 Reader::readSDC(Info const &info)
   return sdc;
 }
 
-Cx3 const &Reader::noncartesian(long const index)
+Cx3 const &Reader::noncartesian(Index const index)
 {
   if (index == currentNCVol_) {
     log_.info("Using cached non-cartesion volume {}", index);

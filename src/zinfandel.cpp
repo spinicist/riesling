@@ -9,28 +9,28 @@
 
 // Helper Functions
 Eigen::MatrixXcf GrabSources(
-    Cx3 const &ks,
-    float const scale,
-    long const n_src,
-    long const s_read,
-    long const n_read,
-    std::vector<long> const &spokes)
+  Cx3 const &ks,
+  float const scale,
+  Index const n_src,
+  Index const s_read,
+  Index const n_read,
+  std::vector<Index> const &spokes)
 {
   assert((s_read + n_read + n_src) < ks.dimension(1));
-  long const n_chan = ks.dimension(0);
-  long const n_spoke = spokes.size();
+  Index const n_chan = ks.dimension(0);
+  Index const n_spoke = spokes.size();
   Eigen::MatrixXcf S(n_chan * n_src, n_read * n_spoke);
   S.setZero();
-  for (long i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
-    long const col_spoke = i_spoke * n_read;
-    long const ind_spoke = spokes[i_spoke];
+  for (Index i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
+    Index const col_spoke = i_spoke * n_read;
+    Index const ind_spoke = spokes[i_spoke];
     assert(ind_spoke < ks.dimension(2));
-    for (long i_read = 0; i_read < n_read; i_read++) {
-      long const col = col_spoke + i_read;
-      for (long i_coil = 0; i_coil < n_chan; i_coil++) {
-        long const row_coil = i_coil * n_src;
-        for (long i_src = 0; i_src < n_src; i_src++) {
-          long const row = row_coil + i_src;
+    for (Index i_read = 0; i_read < n_read; i_read++) {
+      Index const col = col_spoke + i_read;
+      for (Index i_coil = 0; i_coil < n_chan; i_coil++) {
+        Index const row_coil = i_coil * n_src;
+        for (Index i_src = 0; i_src < n_src; i_src++) {
+          Index const row = row_coil + i_src;
           S(row, col) = ks(i_coil, s_read + i_read + i_src, ind_spoke) / scale;
         }
       }
@@ -40,22 +40,22 @@ Eigen::MatrixXcf GrabSources(
 }
 
 Eigen::MatrixXcf GrabTargets(
-    Cx3 const &ks,
-    float const scale,
-    long const s_read,
-    long const n_read,
-    std::vector<long> const &spokes)
+  Cx3 const &ks,
+  float const scale,
+  Index const s_read,
+  Index const n_read,
+  std::vector<Index> const &spokes)
 {
-  long const n_chan = ks.dimension(0);
-  long const n_spoke = spokes.size();
+  Index const n_chan = ks.dimension(0);
+  Index const n_spoke = spokes.size();
   Eigen::MatrixXcf T(n_chan, n_read * n_spoke);
   T.setZero();
-  for (long i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
-    long const col_spoke = i_spoke * n_read;
-    long const ind_spoke = spokes[i_spoke];
-    for (long i_read = 0; i_read < n_read; i_read++) {
-      long const col = col_spoke + i_read;
-      for (long i_coil = 0; i_coil < n_chan; i_coil++) {
+  for (Index i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
+    Index const col_spoke = i_spoke * n_read;
+    Index const ind_spoke = spokes[i_spoke];
+    for (Index i_read = 0; i_read < n_read; i_read++) {
+      Index const col = col_spoke + i_read;
+      for (Index i_coil = 0; i_coil < n_chan; i_coil++) {
         T(i_coil, col) = ks(i_coil, s_read + i_read, ind_spoke) / scale;
       }
     }
@@ -77,47 +77,47 @@ CalcWeights(Eigen::MatrixXcf const &src, Eigen::MatrixXcf const tgt, float const
   }
 }
 
-std::vector<long>
-FindClosest(R3 const &traj, long const &tgt, long const &n_spoke, std::vector<long> &all_spokes)
+std::vector<Index>
+FindClosest(R3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_spokes)
 {
-  std::vector<long> spokes(n_spoke);
+  std::vector<Index> spokes(n_spoke);
   R1 const end_is = traj.chip(tgt, 2).chip(traj.dimension(1) - 1, 1);
   std::partial_sort(
-      all_spokes.begin(),
-      all_spokes.begin() + n_spoke,
-      all_spokes.end(),
-      [&traj, end_is](long const a, long const b) {
-        auto const &end_a = traj.chip(a, 2).chip(traj.dimension(1) - 1, 1);
-        auto const &end_b = traj.chip(b, 2).chip(traj.dimension(1) - 1, 1);
-        return Norm(end_a - end_is) < Norm(end_b - end_is);
-      });
+    all_spokes.begin(),
+    all_spokes.begin() + n_spoke,
+    all_spokes.end(),
+    [&traj, end_is](Index const a, Index const b) {
+      auto const &end_a = traj.chip(a, 2).chip(traj.dimension(1) - 1, 1);
+      auto const &end_b = traj.chip(b, 2).chip(traj.dimension(1) - 1, 1);
+      return Norm(end_a - end_is) < Norm(end_b - end_is);
+    });
   std::copy_n(all_spokes.begin(), n_spoke, spokes.begin());
   return spokes;
 }
 
 // Actual calculation
 void zinfandel(
-    long const gap_sz,
-    long const n_src,
-    long const n_spoke,
-    long const n_read1,
-    float const lambda,
-    R3 const &traj,
-    Cx3 &ks,
-    Log &log)
+  Index const gap_sz,
+  Index const n_src,
+  Index const n_spoke,
+  Index const n_read1,
+  float const lambda,
+  R3 const &traj,
+  Cx3 &ks,
+  Log &log)
 {
-  long const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
+  Index const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
 
   log.info(
-      FMT_STRING("ZINFANDEL Gap {} Sources {} Cal Spokes/Read {}/{} "),
-      gap_sz,
-      n_src,
-      n_spoke,
-      n_read);
+    FMT_STRING("ZINFANDEL Gap {} Sources {} Cal Spokes/Read {}/{} "),
+    gap_sz,
+    n_src,
+    n_spoke,
+    n_read);
 
-  for (long ig = gap_sz; ig > 0; ig--) {
-    auto spoke_task = [&](long const spoke_lo, long const spoke_hi) {
-      std::vector<long> all_spokes(ks.dimension(2)); // Need a thread-local copy of the indices
+  for (Index ig = gap_sz; ig > 0; ig--) {
+    auto spoke_task = [&](Index const spoke_lo, Index const spoke_hi) {
+      std::vector<Index> all_spokes(ks.dimension(2)); // Need a thread-local copy of the indices
       std::iota(all_spokes.begin(), all_spokes.end(), 0L);
       for (auto is = spoke_lo; is < spoke_hi; is++) {
         float const scale = R0(ks.chip(is, 2).abs().maximum())();
@@ -127,7 +127,7 @@ void zinfandel(
         auto const W = CalcWeights(calS, calT, lambda);
         auto const S = GrabSources(ks, scale, n_src, ig, 1, {is});
         auto const T = W * S;
-        for (long icoil = 0; icoil < ks.dimension(0); icoil++) {
+        for (Index icoil = 0; icoil < ks.dimension(0); icoil++) {
           ks(icoil, ig - 1, is) = T(icoil) * scale;
         }
       }

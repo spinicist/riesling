@@ -1,27 +1,27 @@
-#include "traj_spirals.h"
 #include "log.h"
+#include "traj_spirals.h"
 
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
  * vol. 32, no. 6, pp. 778–784, Dec. 1994, doi: 10.1002/mrm.1910320614.
  */
 
-R3 ASpiral(long const nRead, long const nSpoke)
+R3 ASpiral(Index const nRead, Index const nSpoke)
 {
   R3 traj(3, nRead, nSpoke);
   R1 read(nRead);
-  for (long ir = 0; ir < nRead; ir++) {
+  for (Index ir = 0; ir < nRead; ir++) {
     read(ir) = (float)(ir) / nRead;
   }
   // Currently to do an outer product, you need to contract over empty indices
-  Eigen::array<Eigen::IndexPair<long>, 0> empty = {};
+  Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
   Point3 point;
   Eigen::TensorMap<R1> endPoint(point.data(), Sz1{3});
 
   // Slightly annoying as can't initialize a 1D Tensor with {} notation yet
   point = {0.f, 0.f, 1.f};
   traj.chip(0, 2) = endPoint.contract(read, empty);
-  long const half = nSpoke / 2;
+  Index const half = nSpoke / 2;
   point = {1.f, 0.f, 0.f};
   traj.chip(half, 2) = endPoint.contract(read, empty);
 
@@ -29,7 +29,7 @@ R3 ASpiral(long const nRead, long const nSpoke)
   float const c2 = nSpoke * 4.f * M_PI; // The velocity squared
   float t = 0.f;
   float phi = 0.f;
-  for (long is = 1; is < half; is++) {
+  for (Index is = 1; is < half; is++) {
     t += d_t;
     float const cos_t2 = t * t;
     float const sin_t2 = 1 - cos_t2;
@@ -57,7 +57,7 @@ R3 ArchimedeanSpiral(Info const &info)
   return traj;
 }
 
-long Fib(long n)
+Index Fib(Index n)
 {
   if (n == 0) {
     return 0;
@@ -70,14 +70,14 @@ long Fib(long n)
   }
 }
 
-R3 Phyllotaxis(Info const &info, long const smoothness, long const spi, bool const gm)
+R3 Phyllotaxis(Info const &info, Index const smoothness, Index const spi, bool const gm)
 {
-  long const nRead = info.read_points;
-  long const nSpokes = info.spokes_total();
+  Index const nRead = info.read_points;
+  Index const nSpokes = info.spokes_total();
   if ((nSpokes % spi) != 0) {
     Log::Fail("Spokes per interleave {} is not a divisor of total spokes {}", spi, nSpokes);
   }
-  long nInterleaves = nSpokes / spi;
+  Index nInterleaves = nSpokes / spi;
   constexpr float phi_gold = 2.399963229728653;
   constexpr float phi_gm1 = 0.465571231876768;
   constexpr float phi_gm2 = 0.682327803828019;
@@ -85,22 +85,22 @@ R3 Phyllotaxis(Info const &info, long const smoothness, long const spi, bool con
   float dphi = phi_gold * Fib(smoothness);
 
   R1 read(nRead);
-  for (long ir = 0; ir < nRead; ir++) {
+  for (Index ir = 0; ir < nRead; ir++) {
     read(ir) = (float)(ir) / nRead;
   }
   // Currently to do an outer product, you need to contract over empty indices
-  Eigen::array<Eigen::IndexPair<long>, 0> empty = {};
+  Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
 
   R3 traj(3, nRead, nSpokes);
   R1 endPoint(3);
-  for (long ii = 0; ii < nInterleaves; ii++) {
+  for (Index ii = 0; ii < nInterleaves; ii++) {
     float const z_ii = (ii * 2.) / (nSpokes - 1);
     float const phi_ii = (ii * phi_gold);
 
     float const gm_phi = 2 * M_PI * ii * phi_gm2;
     float const gm_theta = acos(fmod(ii * phi_gm1, 1.0));
 
-    for (long is = 0; is < spi; is++) {
+    for (Index is = 0; is < spi; is++) {
       float const z = (1 - (2. * nInterleaves * is) / (nSpokes - 1.)) - z_ii;
       float const theta = acos(z);
       float const phi = (is * dphi) + phi_ii;

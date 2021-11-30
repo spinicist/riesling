@@ -29,7 +29,7 @@ Eigen::ThreadPool *GlobalPool()
   return gp;
 }
 
-void SetGlobalThreadCount(long nT)
+void SetGlobalThreadCount(Index nT)
 {
   if (gp) {
     delete gp;
@@ -37,7 +37,7 @@ void SetGlobalThreadCount(long nT)
   gp = new Eigen::ThreadPool(nT);
 }
 
-long GlobalThreadCount()
+Index GlobalThreadCount()
 {
   return GlobalPool()->NumThreads();
 }
@@ -47,11 +47,11 @@ Eigen::ThreadPoolDevice GlobalDevice()
   return Eigen::ThreadPoolDevice(GlobalPool(), GlobalPool()->NumThreads());
 }
 
-void For(ForFunc f, long const lo, long const hi)
+void For(ForFunc f, Index const lo, Index const hi)
 {
-  long const barrier_size = hi - lo;
+  Index const barrier_size = hi - lo;
   Eigen::Barrier barrier(static_cast<unsigned int>(barrier_size));
-  for (long i = lo; i < hi; i++) {
+  for (Index i = lo; i < hi; i++) {
     GlobalPool()->Schedule([&barrier, &f, i] {
       f(i);
       barrier.Notify();
@@ -60,29 +60,29 @@ void For(ForFunc f, long const lo, long const hi)
   barrier.Wait();
 }
 
-void For(ForFunc f, long const n)
+void For(ForFunc f, Index const n)
 {
   For(f, 0, n);
 }
 
-void RangeFor(RangeFunc f, long const n)
+void RangeFor(RangeFunc f, Index const n)
 {
   RangeFor(f, 0, n);
 }
 
-void RangeFor(RangeFunc f, long const lo, long const hi)
+void RangeFor(RangeFunc f, Index const lo, Index const hi)
 {
-  long const nt = GlobalPool()->NumThreads();
-  long const ni = hi - lo;
+  Index const nt = GlobalPool()->NumThreads();
+  Index const ni = hi - lo;
   if (ni == 0) {
     return;
   }
-  long const num = std::min(nt, ni);
+  Index const num = std::min(nt, ni);
   Eigen::Barrier barrier(static_cast<unsigned int>(num));
-  long const range_sz = static_cast<long>(std::ceil(static_cast<float>(ni) / num));
-  long range_lo = lo;
-  long range_hi = lo + range_sz;
-  for (long ti = 0; ti < num; ti++) {
+  Index const range_sz = static_cast<Index>(std::ceil(static_cast<float>(ni) / num));
+  Index range_lo = lo;
+  Index range_hi = lo + range_sz;
+  for (Index ti = 0; ti < num; ti++) {
     GlobalPool()->Schedule([&barrier, &f, range_lo, range_hi, hi] {
       f(range_lo, std::min(range_hi, hi));
       barrier.Notify();
@@ -93,24 +93,24 @@ void RangeFor(RangeFunc f, long const lo, long const hi)
   barrier.Wait();
 }
 
-void RangeFor(RangeThreadFunc f, long const n)
+void RangeFor(RangeThreadFunc f, Index const n)
 {
   RangeFor(f, 0, n);
 }
 
-void RangeFor(RangeThreadFunc f, long const lo, long const hi)
+void RangeFor(RangeThreadFunc f, Index const lo, Index const hi)
 {
-  long const nt = GlobalPool()->NumThreads();
-  long const ni = hi - lo;
+  Index const nt = GlobalPool()->NumThreads();
+  Index const ni = hi - lo;
   if (ni == 0) {
     return;
   }
-  long const num = std::min(nt, ni);
+  Index const num = std::min(nt, ni);
   Eigen::Barrier barrier(static_cast<unsigned int>(num));
-  long const range_sz = static_cast<long>(std::ceil(static_cast<float>(ni) / num));
-  long range_lo = lo;
-  long range_hi = lo + range_sz;
-  for (long ti = 0; ti < num; ti++) {
+  Index const range_sz = static_cast<Index>(std::ceil(static_cast<float>(ni) / num));
+  Index range_lo = lo;
+  Index range_hi = lo + range_sz;
+  for (Index ti = 0; ti < num; ti++) {
     GlobalPool()->Schedule([&barrier, &f, range_lo, range_hi, hi, ti] {
       f(range_lo, std::min(range_hi, hi), ti);
       barrier.Notify();

@@ -23,24 +23,24 @@ struct Log
   Level level() const;
 
   template <typename S, typename... Args>
-  inline void info(const S &fmt_str, const Args &...args) const
+  inline void info(const S &fmt_str, const Args &... args) const
   {
     vinfo(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
-  inline void debug(const S &fmt_str, const Args &...args) const
+  inline void debug(const S &fmt_str, const Args &... args) const
   {
     vdebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
-  static void Fail(const S &fmt_str, const Args &...args)
+  static void Fail(const S &fmt_str, const Args &... args)
   {
     vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
-  void progress(long const ii, long const lo, long const hi) const;
+  void progress(Index const ii, Index const lo, Index const hi) const;
   Time now() const;
   std::string toNow(Time const t) const;
 

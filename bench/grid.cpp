@@ -10,8 +10,8 @@
 TEST_CASE("Grid")
 {
   Log log;
-  long const M = 32;
-  long const C = 8;
+  Index const M = 32;
+  Index const C = 8;
   Info const info{.type = Info::Type::ThreeD,
                   .channels = C,
                   .matrix = Eigen::Array3l::Constant(M),
@@ -41,7 +41,7 @@ TEST_CASE("Grid")
 
   auto nc = info.noncartesianVolume();
   Cx5 c(gridkb->inputDimensions(C, 1));
-  long const nB = 4;
+  Index const nB = 4;
   R2 basis(256, nB);
   basis.setConstant(1.f);
 

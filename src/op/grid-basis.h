@@ -14,10 +14,10 @@ struct GridBasisOp : GridBase
   virtual void A(Input const &x, Output &y) const = 0;
   virtual void Adj(Output const &x, Input &y) const = 0;
 
-  Input::Dimensions inputDimensions(long const nc) const;
+  Input::Dimensions inputDimensions(Index const nc) const;
   Output::Dimensions outputDimensions() const;
 
-  long dimension(long const D) const; // Returns a specific grid dimension
+  Index dimension(Index const D) const; // Returns a specific grid dimension
   R2 const &basis() const;
 
 protected:

@@ -25,7 +25,8 @@ int main_phantom_basis(args::Subparser &parser)
     parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, kernelMap);
   args::ValueFlag<float> fov(
     parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
-  args::ValueFlag<long> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
+  args::ValueFlag<Index> matrix(
+    parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
   args::ValueFlag<float> phan_r(
     parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
@@ -33,18 +34,18 @@ int main_phantom_basis(args::Subparser &parser)
     parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_rot(
     parser, "ax,ay,az", "Rotation of phantom (in deg)", {"rotation"}, Eigen::Vector3f::Zero());
-  args::ValueFlag<long> coil_rings(
+  args::ValueFlag<Index> coil_rings(
     parser, "COIL RINGS", "Number of rings in coil (default 1)", {"rings"}, 1);
   args::ValueFlag<float> coil_r(
     parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
   args::ValueFlag<float> read_samp(
     parser, "SRATE", "Read-out oversampling (default 2)", {'r', "read"}, 2);
-  args::ValueFlag<long> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
+  args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
   args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
-  args::ValueFlag<long> lores(
+  args::ValueFlag<Index> lores(
     parser, "LO-RES", "Include lo-res k-space with scale factor (suggest 8)", {'l', "lores"}, 0);
-  args::ValueFlag<long> gap(parser, "DEAD-TIME", "Dead-time gap in read samples", {"gap"}, 0);
-  args::ValueFlag<long> nchan(
+  args::ValueFlag<Index> gap(parser, "DEAD-TIME", "Dead-time gap in read samples", {"gap"}, 0);
+  args::ValueFlag<Index> nchan(
     parser, "CHANNELS", "Number of channels (default 12)", {'c', "channels"}, 12);
   args::ValueFlag<std::string> sense(
     parser, "PATH", "File to read sensitivity maps from", {"sense"});
@@ -52,8 +53,8 @@ int main_phantom_basis(args::Subparser &parser)
     parser, "I", "Phantom intensities (default all 100)", {'i', "intensities"});
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});
-  args::ValueFlag<long> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
-  args::ValueFlag<long> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
+  args::ValueFlag<Index> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
+  args::ValueFlag<Index> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
   args::Flag gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
   args::ValueFlag<std::string> trajfile(
     parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
@@ -64,14 +65,14 @@ int main_phantom_basis(args::Subparser &parser)
 
   HD5::Reader basisReader(bname.Get(), log);
   R2 basis = basisReader.readBasis();
-  long const nB = basis.dimension(1);
+  Index const nB = basis.dimension(1);
 
   std::vector<float> intensities = intFlag.Get();
-  if ((long)intensities.size() == 0) {
+  if ((Index)intensities.size() == 0) {
     intensities.resize(nB);
     std::fill(intensities.begin(), intensities.end(), 100.f);
   }
-  if ((long)intensities.size() != nB) {
+  if ((Index)intensities.size() != nB) {
     Log::Fail("Number of intensities {} does not match basis size {}", intensities.size(), nB);
   }
 
@@ -95,7 +96,7 @@ int main_phantom_basis(args::Subparser &parser)
     info = Info{.type = Info::Type::ThreeD,
                 .channels = nchan.Get(),
                 .matrix = Eigen::Array3l::Constant(matrix.Get()),
-                .read_points = (long)read_samp.Get() * matrix.Get() / 2,
+                .read_points = (Index)read_samp.Get() * matrix.Get() / 2,
                 .read_gap = 0,
                 .spokes_hi = spokes_hi,
                 .spokes_lo = 0,
@@ -143,7 +144,7 @@ int main_phantom_basis(args::Subparser &parser)
   auto const sz = recon.inputDimensions();
 
   Cx4 phan(gridder->inputDimensions());
-  for (long ii = 0; ii < phan.dimension(0); ii++) {
+  for (Index ii = 0; ii < phan.dimension(0); ii++) {
     phan.chip<0>(ii) =
       shepplogan
         ? SheppLoganPhantom(
@@ -164,7 +165,7 @@ int main_phantom_basis(args::Subparser &parser)
   if (use_lores) {
     Info lo_info;
     R3 lo_points;
-    long lowres_scale;
+    Index lowres_scale;
     if (trajfile) {
       log.info("Reading external trajectory from {}", trajfile.Get());
       HD5::Reader reader(trajfile.Get(), log);

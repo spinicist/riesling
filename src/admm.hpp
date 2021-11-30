@@ -20,8 +20,8 @@ struct AugmentedOp
 
 template <typename Op>
 void admm(
-  long const outer_its,
-  long const lsq_its,
+  Index const outer_its,
+  Index const lsq_its,
   float const lsq_thresh,
   Op const &lsq_op,
   float const rho,
@@ -48,7 +48,7 @@ void admm(
   // Augment system
   AugmentedOp<Op> augmented{lsq_op, rho};
 
-  for (long ii = 0; ii < outer_its; ii++) {
+  for (Index ii = 0; ii < outer_its; ii++) {
     x.device(dev) = b + b.constant(rho) * (z - u);
     cg(lsq_its, lsq_thresh, augmented, x, log);
     xpu.device(dev) = x + u;

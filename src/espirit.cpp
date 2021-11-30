@@ -13,9 +13,9 @@
 Cx4 ESPIRIT(
   std::unique_ptr<GridOp> const &gridder,
   Cx3 const &data,
-  long const kRad,
-  long const calRad,
-  long const gap,
+  Index const kRad,
+  Index const calRad,
+  Index const gap,
   float const thresh,
   Log &log)
 {
@@ -29,7 +29,7 @@ Cx4 ESPIRIT(
 
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap, log);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh, log);
-  long const retain = mini_kernels.dimension(4);
+  Index const retain = mini_kernels.dimension(4);
 
   log.info(FMT_STRING("Upsample last dimension"));
   Cx4 mix_grid(
@@ -51,7 +51,7 @@ Cx4 ESPIRIT(
     log);
   float const scale =
     (1.f / sqrt(mini_kernels.dimension(1) * mini_kernels.dimension(2) * mini_kernels.dimension(3)));
-  for (long kk = 0; kk < retain; kk++) {
+  for (Index kk = 0; kk < retain; kk++) {
     mix_grid.setZero();
     lo_mix.crop4(mix_grid) = mini_kernels.chip<4>(kk) * mini_kernels.chip<4>(kk).constant(scale);
     mix_fft.reverse(mix_grid);
@@ -61,8 +61,8 @@ Cx4 ESPIRIT(
 
   log.info(FMT_STRING("Image space Eigenanalysis"));
   // Do this slice-by-slice
-  auto slice_task = [&grid, &valsImage, &mix_kernels, &log](long const lo_z, long const hi_z) {
-    for (long zz = lo_z; zz < hi_z; zz++) {
+  auto slice_task = [&grid, &valsImage, &mix_kernels, &log](Index const lo_z, Index const hi_z) {
+    for (Index zz = lo_z; zz < hi_z; zz++) {
       Cx4 hi_kernels(
         grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
       Cx3 hi_slice(grid.dimension(0), grid.dimension(1), grid.dimension(2));
@@ -70,7 +70,7 @@ Cx4 ESPIRIT(
       FFT::Planned<3, 2> hi_slice_fft(hi_slice, nullLog, 1);
 
       // Now do a lot of FFTs
-      for (long kk = 0; kk < mix_kernels.dimension(4); kk++) {
+      for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
         Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
         hi_slice.setZero();
         CropLast2(hi_slice, mix_kernel.dimensions()) = mix_kernel;
@@ -79,8 +79,8 @@ Cx4 ESPIRIT(
       }
 
       // Now voxel-wise covariance
-      for (long yy = 0; yy < hi_slice.dimension(2); yy++) {
-        for (long xx = 0; xx < hi_slice.dimension(1); xx++) {
+      for (Index yy = 0; yy < hi_slice.dimension(2); yy++) {
+        for (Index xx = 0; xx < hi_slice.dimension(1); xx++) {
           Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
           Cx2 vecs(samples.dimension(0), samples.dimension(0));
           R1 vals(samples.dimension(0));

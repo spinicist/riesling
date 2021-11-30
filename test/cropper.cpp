@@ -5,14 +5,14 @@
 TEST_CASE("Cropper", "[Crop]")
 {
   Log log;
-  long const fullSz = 16;
+  Index const fullSz = 16;
   R3 grid(fullSz, fullSz, fullSz);
   grid.setZero();
   grid(fullSz / 2, fullSz / 2, fullSz / 2) = 1.f;
 
   SECTION("Even")
   {
-    long const small = 8;
+    Index const small = 8;
     Cropper crop(Sz3{fullSz, fullSz, fullSz}, Sz3{small, small, small}, log);
     R3 const cropSmall = crop.crop3(grid);
 
@@ -26,7 +26,7 @@ TEST_CASE("Cropper", "[Crop]")
 
   SECTION("Odd")
   {
-    long const small = 7;
+    Index const small = 7;
     Cropper crop(Sz3{fullSz, fullSz, fullSz}, Sz3{small, small, small}, log);
     R3 const cropSmall = crop.crop3(grid);
 

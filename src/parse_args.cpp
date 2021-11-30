@@ -49,7 +49,7 @@ args::MapFlag<int, Log::Level> verbosity(
   "Talk even more (values 0-3, see documentation)",
   {"verbosity"},
   levelMap);
-args::ValueFlag<long> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
+args::ValueFlag<Index> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
 Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {

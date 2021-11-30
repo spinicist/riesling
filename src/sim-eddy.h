@@ -12,7 +12,7 @@ Result Eddy(
   Parameter const gamma,
   Parameter const B1,
   Sequence const seq,
-  long const nRand,
+  Index const nRand,
   Log &log);
 
 }

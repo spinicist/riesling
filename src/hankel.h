@@ -3,5 +3,5 @@
 #include "log.h"
 #include "types.h"
 
-Cx5 ToKernels(Cx4 const &grid, long const kRad, long const calRad, long const gapRad, Log &log);
-void FromKernels(long const blkSz, long const kSz, Cx2 const &kernels, Cx4 &grid, Log &log);
+Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const gapRad, Log &log);
+void FromKernels(Index const blkSz, Index const kSz, Cx2 const &kernels, Cx4 &grid, Log &log);

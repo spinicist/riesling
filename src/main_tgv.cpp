@@ -18,7 +18,7 @@ int main_tgv(args::Subparser &parser)
 
   args::ValueFlag<float> thr(
     parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
-  args::ValueFlag<long> its(
+  args::ValueFlag<Index> its(
     parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
   args::ValueFlag<float> iter_fov(
     parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
@@ -69,7 +69,7 @@ int main_tgv(args::Subparser &parser)
   Sz3 outSz = out_cropper.size();
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = log.now();
-  for (long iv = 0; iv < info.volumes; iv++) {
+  for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
     out.chip<4>(iv) = out_cropper.crop4(tgv(
       its.Get(),

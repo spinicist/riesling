@@ -15,7 +15,7 @@ int main_sense(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
 
-  args::ValueFlag<long> vol(
+  args::ValueFlag<Index> vol(
     parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
   args::ValueFlag<float> lambda(
     parser, "LAMBDA", "Tikhonov regularisation parameter", {"lambda"}, 0.f);

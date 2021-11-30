@@ -14,8 +14,8 @@ struct GridOp : GridBase
   virtual void A(Input const &x, Output &y) const = 0;
   virtual void Adj(Output const &x, Input &y) const = 0;
 
-  Input::Dimensions inputDimensions(long const nc) const;
-  Input::Dimensions inputDimensions(long const nc, long const ne) const;
+  Input::Dimensions inputDimensions(Index const nc) const;
+  Input::Dimensions inputDimensions(Index const nc, Index const ne) const;
   Output::Dimensions outputDimensions() const;
 
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
