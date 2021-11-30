@@ -26,6 +26,9 @@ struct Reader
   R2 readRealMatrix(std::string const &label);
   Cx5 readBasisImages();
 
+  template <typename T>
+  T readTensor(std::string const &label);
+
 private:
   Log &log_;
   int64_t handle_;

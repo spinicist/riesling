@@ -35,9 +35,10 @@ int main_blend(args::Subparser &parser)
   Log log = ParseCommand(parser);
 
   HD5::Reader input(iname.Get(), log);
-  Cx5 const images = input.readBasisImages();
+  Cx5 const images = input.readTensor<Cx5>("images");
+
   HD5::Reader binput(bname.Get(), log);
-  R2 const basis = binput.readBasis();
+  R2 const basis = binput.readTensor<R2>("basis");
 
   if ((tp.Get() < 0) || (tp.Get() >= basis.dimension(0))) {
     Log::Fail(

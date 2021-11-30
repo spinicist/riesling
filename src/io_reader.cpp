@@ -147,4 +147,13 @@ Cx5 Reader::readBasisImages()
   return HD5::load_tensor<Cx, 5>(handle_, Keys::BasisImages, log_);
 }
 
+template <typename T>
+T Reader::readTensor(std::string const &label)
+{
+  return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label, log_);
+}
+
+template R2 Reader::readTensor<R2>(std::string const &);
+template Cx5 Reader::readTensor<Cx5>(std::string const &);
+
 } // namespace HD5
