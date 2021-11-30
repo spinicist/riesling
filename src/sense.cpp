@@ -35,7 +35,7 @@ Cx4 DirectSENSE(
   Cx4 grid(
     grid_temp.dimension(0), grid_temp.dimension(2), grid_temp.dimension(3), grid_temp.dimension(4));
   FFT::Planned<4, 3> fftN(grid, log);
-  grid = grid_temp.chip(0, 1);
+  grid = grid_temp.chip<1>(0);
   float const end_rad = info.voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   log.info(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);

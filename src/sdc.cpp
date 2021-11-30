@@ -57,7 +57,7 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
               W.slice(Sz3{0, info.read_points - 10, info.spokes_lo}, Sz3{1, 1, info.spokes_hi})));
   }
   log.info("SDC finished.");
-  return W.real().chip(0, 0);
+  return W.real().chip<0>(0);
 }
 
 R2 Radial2D(Trajectory const &traj, Log &log)

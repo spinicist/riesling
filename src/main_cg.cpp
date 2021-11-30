@@ -67,7 +67,7 @@ int main_cg(args::Subparser &parser)
     recon.Adj(reader.noncartesian(iv), vol); // Initialize
     cg(its.Get(), thr.Get(), recon, vol, log);
     cropped = out_cropper.crop4(vol);
-    out.chip(iv, 4) = cropped;
+    out.chip<4>(iv) = cropped;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));

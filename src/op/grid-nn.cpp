@@ -55,13 +55,13 @@ void GridNN::Adj(Cx3 const &noncart, Cx5 &cart) const
       auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
       auto const dc = mapping_.sdc[si];
       if (safe_) {
-        workspace[ti].chip(c.z - minZ[ti], 4).chip(c.y, 3).chip(c.x, 2).chip(e, 1) +=
-          noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-          noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
+        workspace[ti].chip<4>(c.z - minZ[ti]).chip<3>(c.y).chip<2>(c.x).chip<1>(e) +=
+          noncart.chip<2>(nc.spoke).chip<1>(nc.read) *
+          noncart.chip<2>(nc.spoke).chip<1>(nc.read).constant(dc);
       } else {
-        cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).chip(e, 1) +=
-          noncart.chip(nc.spoke, 2).chip(nc.read, 1) *
-          noncart.chip(nc.spoke, 2).chip(nc.read, 1).constant(dc);
+        cart.chip<4>(c.z).chip<3>(c.y).chip<2>(c.x).chip<1>(e) +=
+          noncart.chip<2>(nc.spoke).chip<1>(nc.read) *
+          noncart.chip<2>(nc.spoke).chip<1>(nc.read).constant(dc);
       }
     }
   };
@@ -99,8 +99,8 @@ void GridNN::A(Cx5 const &cart, Cx3 &noncart) const
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
-      noncart.chip(nc.spoke, 2).chip(nc.read, 1) =
-        cart.chip(c.z, 4).chip(c.y, 3).chip(c.x, 2).chip(e, 1);
+      noncart.chip<2>(nc.spoke).chip<1>(nc.read) =
+        cart.chip<4>(c.z).chip<3>(c.y).chip<2>(c.x).chip<1>(e);
     }
   };
   auto const &start = log_.now();

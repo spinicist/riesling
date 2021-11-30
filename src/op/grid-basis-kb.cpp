@@ -92,8 +92,8 @@ void GridBasisKB<InPlane, ThroughPlane>::Adj(Output const &noncart, Input &cart)
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const n = mapping_.noncart[si];
-      auto const nc = noncart.chip(n.spoke, 2).chip(n.read, 1);
-      auto const b = (basis_.chip(n.spoke % basis_.dimension(0), 0) * basisScale_).cast<Cx>();
+      auto const nc = noncart.chip<2>(n.spoke).chip<1>(n.read);
+      auto const b = (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_).cast<Cx>();
       auto const k = kernel_(mapping_.offset[si]).template cast<Cx>();
       ncb = (nc * nc.constant(mapping_.sdc[si])).reshape(rshNC).broadcast(brdNC) *
             b.reshape(rshB).broadcast(brdB);
@@ -154,12 +154,12 @@ void GridBasisKB<InPlane, ThroughPlane>::A(Input const &cart, Output &noncart) c
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const n = mapping_.noncart[si];
-      auto const b = (basis_.chip(n.spoke % basis_.dimension(0), 0) * basisScale_).cast<Cx>();
+      auto const b = (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_).cast<Cx>();
       auto const k = kernel_(mapping_.offset[si]);
       stC.set(2, c.x - (InPlane / 2));
       stC.set(3, c.y - (InPlane / 2));
       stC.set(4, c.z - (ThroughPlane / 2));
-      noncart.chip(n.spoke, 2).chip(n.read, 1) =
+      noncart.chip<2>(n.spoke).chip<1>(n.read) =
         cart.slice(stC, szC)
           .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
           .contract(

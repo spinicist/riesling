@@ -24,8 +24,8 @@ Cx4 llr(Cx4 const &x, float const l, long const p, Log &log)
           s = s * (s.abs() - sl) / s.abs();
           s = (s > sl).select(s, 0.f);
           patch.transpose() = svd.matrixU() * s.matrix().asDiagonal() * svd.matrixV().adjoint();
-          lr.chip(iz + p / 2, 3).chip(iy + p / 2, 2).chip(ix + p / 2, 1) =
-            px.chip(p / 2, 3).chip(p / 2, 2).chip(p / 2, 1);
+          lr.chip<3>(iz + p / 2).chip<2>(iy + p / 2).chip<1>(ix + p / 2) =
+            px.chip<3>(p / 2).chip<2>(p / 2).chip<1>(p / 2);
         }
       }
     }

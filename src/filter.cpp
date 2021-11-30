@@ -35,8 +35,9 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
           float const rx = static_cast<float>(ix - hx) / hx;
           float const r = sqrt(rx * rx + ry * ry + rz * rz);
           float const val = f(r);
-          ks.chip(iz, D - 1).chip(iy, D - 2).chip(ix, D - 3) *=
-            ks.chip(iz, D - 1).chip(iy, D - 2).chip(ix, D - 3).constant(val);
+          ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix) *=
+            ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix).constant(
+              val);
         }
       }
     }

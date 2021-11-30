@@ -50,7 +50,7 @@ int main_zinfandel(args::Subparser &parser)
     if (pw && rbw) {
       slab_correct(out_info, pw.Get(), rbw.Get(), vol, log);
     }
-    rad_ks.chip(iv, 3) = vol;
+    rad_ks.chip<3>(iv) = vol;
   }
   writer.writeNoncartesian(rad_ks);
   log.info("Finished");

@@ -24,45 +24,34 @@ Cx5 ToKernels(Cx4 const &grid, long const kRad, long const calRad, long const ga
   long const st = gridHalf - (calRad - 1) - (kRad - 1);
   if (st < 0) {
     Log::Fail(
-        FMT_STRING("Grid size {} not large enough for calibration radius {} + kernel radius {}"),
-        grid.dimension(1),
-        calRad,
-        kRad);
+      FMT_STRING("Grid size {} not large enough for calibration radius {} + kernel radius {}"),
+      grid.dimension(1),
+      calRad,
+      kRad);
   }
 
   log.info(
-      FMT_STRING("Hankel calibration rad {} kernel rad {} gap {}, {} kernels"),
-      calRad,
-      kRad,
-      gapRad,
-      nk);
+    FMT_STRING("Hankel calibration rad {} kernel rad {} gap {}, {} kernels"),
+    calRad,
+    kRad,
+    gapRad,
+    nk);
   for (long iz = 0; iz < calW; iz++) {
     long const st_z = st + iz;
     for (long iy = 0; iy < calW; iy++) {
       long const st_y = st + iy;
       for (long ix = 0; ix < calW; ix++) {
-        if (gapRad && (ix >= gapSt && ix < gapEnd) && (iy >= gapSt && iy < gapEnd) &&
-            (iz >= gapSt && iz < gapEnd)) {
+        if (
+          gapRad && (ix >= gapSt && ix < gapEnd) && (iy >= gapSt && iy < gapEnd) &&
+          (iz >= gapSt && iz < gapEnd)) {
           s++;
-          // fmt::print("SKIP {} {} {} GAP {} {}\n", iz, iy, ix, gapSt, gapEnd);
           continue;
         }
 
         long const st_x = st + ix;
         Sz4 sst{0, st_x, st_y, st_z};
         Sz4 ssz{nchan, kW, kW, kW};
-        // fmt::print(
-        //     "USE  {} {} {} GAP {} {} ST {} SZ {} k {} dim {}\n",
-        //     iz,
-        //     iy,
-        //     ix,
-        //     gapSt,
-        //     gapEnd,
-        //     fmt::join(sst, ","),
-        //     fmt::join(ssz, ","),
-        //     k,
-        //     kernels.dimension(4));
-        kernels.chip(k, 4) = grid.slice(sst, ssz);
+        kernels.chip<4>(k) = grid.slice(sst, ssz);
         k++;
       }
     }
@@ -80,10 +69,10 @@ void FromKernels(long const calSz, long const kSz, Cx2 const &kernels, Cx4 &grid
   long const kHalf = kSz / 2;
   if (grid.dimension(1) < (calSz + kSz - 1)) {
     Log::Fail(
-        FMT_STRING("Grid size {} not large enough for block size {} + kernel size {}"),
-        grid.dimension(1),
-        calSz,
-        kSz);
+      FMT_STRING("Grid size {} not large enough for block size {} + kernel size {}"),
+      grid.dimension(1),
+      calSz,
+      kSz);
   }
   assert(kernels.dimension(0) == nchan * kSz * kSz * kSz);
   assert(kernels.dimension(1) == calSz * calSz * calSz);
@@ -99,14 +88,14 @@ void FromKernels(long const calSz, long const kSz, Cx2 const &kernels, Cx4 &grid
     for (long iy = 0; iy < calSz; iy++) {
       for (long ix = 0; ix < calSz; ix++) {
         data.slice(Sz4{0, ix, iy, iz}, Sz4{nchan, kSz, kSz, kSz}) +=
-            kernels.chip(col, 1).reshape(Sz4{nchan, kSz, kSz, kSz});
+          kernels.chip<1>(col).reshape(Sz4{nchan, kSz, kSz, kSz});
         count.slice(Sz3{ix, iy, iz}, Sz3{kSz, kSz, kSz}) +=
-            count.slice(Sz3{ix, iy, iz}, Sz3{kSz, kSz, kSz}).constant(1.f);
+          count.slice(Sz3{ix, iy, iz}, Sz3{kSz, kSz, kSz}).constant(1.f);
         col++;
       }
     }
   }
   assert(col == calSz * calSz * calSz);
   grid.slice(Sz4{0, st, st, st}, Sz4{nchan, sz, sz, sz}) =
-      data.abs().select(data / Tile(count, nchan).cast<Cx>(), data);
+    data.abs().select(data / Tile(count, nchan).cast<Cx>(), data);
 }

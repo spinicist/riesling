@@ -24,7 +24,7 @@ Cx4 ESPIRIT(
   log.info(FMT_STRING("Calculating k-space kernels"));
   Cx5 grid_temp(gridder->inputDimensions(data.dimension(0), 1)); // Maps will end up here
   gridder->Adj(data, grid_temp);
-  Cx4 grid = grid_temp.chip(0, 1); // Get rid of the echoes dimension
+  Cx4 grid = grid_temp.chip<1>(0); // Get rid of the echoes dimension
   R3 valsImage(gridder->mapping().cartDims);
 
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap, log);
@@ -53,9 +53,9 @@ Cx4 ESPIRIT(
     (1.f / sqrt(mini_kernels.dimension(1) * mini_kernels.dimension(2) * mini_kernels.dimension(3)));
   for (long kk = 0; kk < retain; kk++) {
     mix_grid.setZero();
-    lo_mix.crop4(mix_grid) = mini_kernels.chip(kk, 4) * mini_kernels.chip(kk, 4).constant(scale);
+    lo_mix.crop4(mix_grid) = mini_kernels.chip<4>(kk) * mini_kernels.chip<4>(kk).constant(scale);
     mix_fft.reverse(mix_grid);
-    mix_kernels.chip(kk, 4) = mix_grid;
+    mix_kernels.chip<4>(kk) = mix_grid;
     log.progress(kk, 0, retain);
   }
 
@@ -71,23 +71,23 @@ Cx4 ESPIRIT(
 
       // Now do a lot of FFTs
       for (long kk = 0; kk < mix_kernels.dimension(4); kk++) {
-        Cx3 const mix_kernel = mix_kernels.chip(kk, 4).chip(zz, 3);
+        Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
         hi_slice.setZero();
         CropLast2(hi_slice, mix_kernel.dimensions()) = mix_kernel;
         hi_slice_fft.reverse(hi_slice);
-        hi_kernels.chip(kk, 3) = hi_slice;
+        hi_kernels.chip<3>(kk) = hi_slice;
       }
 
       // Now voxel-wise covariance
       for (long yy = 0; yy < hi_slice.dimension(2); yy++) {
         for (long xx = 0; xx < hi_slice.dimension(1); xx++) {
-          Cx2 const samples = hi_kernels.chip(yy, 2).chip(xx, 1);
+          Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
           Cx2 vecs(samples.dimension(0), samples.dimension(0));
           R1 vals(samples.dimension(0));
           PCA(samples, vecs, vals, log);
-          Cx1 const vec0 = vecs.chip(0, 1);
+          Cx1 const vec0 = vecs.chip<1>(0);
           float const phase = std::arg(vec0(0));
-          grid.chip(zz, 3).chip(yy, 2).chip(xx, 1) = (vec0 * std::polar(1.f, -phase)).conjugate();
+          grid.chip<3>(zz).chip<2>(yy).chip<1>(xx) = (vec0 * std::polar(1.f, -phase)).conjugate();
           valsImage(xx, yy, zz) = vals(0);
         }
       }

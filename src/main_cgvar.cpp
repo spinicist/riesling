@@ -57,7 +57,7 @@ int main_cgvar(args::Subparser &parser)
     if (tukey_s || tukey_e || tukey_h) {
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped, log);
     }
-    out.chip(iv, 3) = cropped;
+    out.chip<3>(iv) = cropped;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));

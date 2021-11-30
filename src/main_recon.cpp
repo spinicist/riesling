@@ -77,7 +77,7 @@ int main_recon(args::Subparser &parser)
     image.device(dev) = image / apo.cast<Cx>()
                                   .reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]})
                                   .broadcast(Sz4{grid.dimension(1), 1, 1, 1});
-    out.chip(iv, 4) = image;
+    out.chip<4>(iv) = image;
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All volumes: {}", log.toNow(all_start));

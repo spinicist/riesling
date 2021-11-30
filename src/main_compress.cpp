@@ -35,7 +35,7 @@ int main_compress(args::Subparser &parser)
 
   Cx4 all_ks = in_info.noncartesianSeries();
   for (long iv = 0; iv < in_info.volumes; iv++) {
-    all_ks.chip(iv, 3) = reader.noncartesian(iv);
+    all_ks.chip<3>(iv) = reader.noncartesian(iv);
   }
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
