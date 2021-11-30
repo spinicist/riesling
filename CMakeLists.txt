@@ -53,7 +53,7 @@ add_library(vineyard
     src/sim-mupa.cpp
     src/sim-prep.cpp
     src/slab_correct.cpp
-    # src/tgv.cpp
+    src/tgv.cpp
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp
@@ -98,7 +98,7 @@ add_executable(riesling
     src/main_sense.cpp
     src/main_sim.cpp
     src/main_split.cpp
-    # src/main_tgv.cpp
+    src/main_tgv.cpp
     src/main_traj.cpp
     src/main_version.cpp
     src/main_zinfandel.cpp

@@ -8,7 +8,7 @@
  * (TGV) for MRI’, Magnetic Resonance in Medicine, vol. 65, no. 2, pp. 480–491, Feb. 2011,
  * doi: 10.1002/mrm.22595.
  */
-Cx3 tgv(
+Cx4 tgv(
   long const max_its,
   float const thresh,
   float const alpha0,

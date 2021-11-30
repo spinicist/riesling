@@ -3,133 +3,125 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-inline auto ForwardDiff(Cx3 const &a, Eigen::Index const d)
+inline auto ForwardDiff(Cx4 const &a, Eigen::Index const d)
 {
-  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
-  Sz3 fwd{1, 1, 1};
-  fwd[d] = 2;
+  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
+  Sz4 fwd{0, 1, 1, 1};
+  fwd[d + 1] = 2;
 
   return (a.slice(fwd, sz) - a.slice(st1, sz));
 }
 
-inline auto BackwardDiff(Cx3 const &a, Eigen::Index const d)
+inline auto BackwardDiff(Cx4 const &a, Eigen::Index const d)
 {
-  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
-  Sz3 bck{1, 1, 1};
-  bck[d] = 0;
+  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
+  Sz4 bck{0, 1, 1, 1};
+  bck[d + 1] = 0;
 
   return (a.slice(st1, sz) - a.slice(bck, sz));
 }
 
-inline auto CentralDiff(Cx3 const &a, Eigen::Index const d)
+inline auto CentralDiff(Cx4 const &a, Eigen::Index const d)
 {
-  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
-  Sz3 fwd{1, 1, 1};
-  Sz3 bck{1, 1, 1};
-  fwd[d] = 2;
-  bck[d] = 0;
+  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
+  Sz4 fwd{0, 1, 1, 1};
+  Sz4 bck{0, 1, 1, 1};
+  fwd[d + 1] = 2;
+  bck[d + 1] = 0;
 
   return (a.slice(fwd, sz) - a.slice(bck, sz)) / a.slice(st1, sz).constant(2.f);
 }
 
-inline void Grad(Cx3 const &a, Cx4 &g, Eigen::ThreadPoolDevice &dev)
+inline void Grad(Cx4 const &a, Cx5 &g, Eigen::ThreadPoolDevice &dev)
 {
-  Sz3 const sz{a.dimension(0) - 2, a.dimension(1) - 2, a.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
-  g.chip<3>(0).slice(st1, sz).device(dev) = ForwardDiff(a, 0);
-  g.chip<3>(1).slice(st1, sz).device(dev) = ForwardDiff(a, 1);
-  g.chip<3>(2).slice(st1, sz).device(dev) = ForwardDiff(a, 2);
+  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
+  g.chip<4>(0).slice(st1, sz).device(dev) = ForwardDiff(a, 0);
+  g.chip<4>(1).slice(st1, sz).device(dev) = ForwardDiff(a, 1);
+  g.chip<4>(2).slice(st1, sz).device(dev) = ForwardDiff(a, 2);
 }
 
-inline void Grad(Cx4 const &x, Cx4 &gx, Eigen::ThreadPoolDevice &dev)
+inline void Grad(Cx5 const &x, Cx5 &gx, Eigen::ThreadPoolDevice &dev)
 {
-  Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
+  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
 
-  gx.chip<3>(0).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(0), 0);
-  gx.chip<3>(1).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(1), 1);
-  gx.chip<3>(2).slice(st1, sz).device(dev) = BackwardDiff(x.chip<3>(2), 2);
+  gx.chip<4>(0).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(0), 0);
+  gx.chip<4>(1).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(1), 1);
+  gx.chip<4>(2).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(2), 2);
 
-  gx.chip<3>(3).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<3>(0), 1) + BackwardDiff(x.chip<3>(1), 0)) /
-    gx.chip<3>(3).slice(st1, sz).constant(2.f);
+  gx.chip<4>(3).slice(st1, sz).device(dev) =
+    (BackwardDiff(x.chip<4>(0), 1) + BackwardDiff(x.chip<4>(1), 0)) /
+    gx.chip<4>(3).slice(st1, sz).constant(2.f);
 
-  gx.chip<3>(4).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<3>(0), 2) + BackwardDiff(x.chip<3>(2), 0)) /
-    gx.chip<3>(4).slice(st1, sz).constant(2.f);
+  gx.chip<4>(4).slice(st1, sz).device(dev) =
+    (BackwardDiff(x.chip<4>(0), 2) + BackwardDiff(x.chip<4>(2), 0)) /
+    gx.chip<4>(4).slice(st1, sz).constant(2.f);
 
-  gx.chip<3>(5).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<3>(1), 2) + BackwardDiff(x.chip<3>(2), 1)) /
-    gx.chip<3>(5).slice(st1, sz).constant(2.f);
+  gx.chip<4>(5).slice(st1, sz).device(dev) =
+    (BackwardDiff(x.chip<4>(1), 2) + BackwardDiff(x.chip<4>(2), 1)) /
+    gx.chip<4>(5).slice(st1, sz).constant(2.f);
 }
 
-inline void Div(Cx4 const &x, Cx3 &div, Eigen::ThreadPoolDevice &dev)
+inline void Div(Cx5 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
 {
-  Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
+  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
   div.slice(st1, sz).device(dev) =
-    BackwardDiff(x.chip<3>(0), 0) + BackwardDiff(x.chip<3>(1), 1) + BackwardDiff(x.chip<3>(2), 2);
+    BackwardDiff(x.chip<4>(0), 0) + BackwardDiff(x.chip<4>(1), 1) + BackwardDiff(x.chip<4>(2), 2);
 }
 
-inline void Div(Cx4 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
+inline void Div(Cx5 const &x, Cx5 &div, Eigen::ThreadPoolDevice &dev)
 {
-  Sz3 const sz{x.dimension(0) - 2, x.dimension(1) - 2, x.dimension(2) - 2};
-  Sz3 const st1{1, 1, 1};
-  div.chip<3>(0).slice(st1, sz).device(dev) =
-    ForwardDiff(x.chip<3>(0), 0) + ForwardDiff(x.chip<3>(3), 1) + ForwardDiff(x.chip<3>(4), 2);
-  div.chip<3>(1).slice(st1, sz).device(dev) =
-    ForwardDiff(x.chip<3>(3), 0) + ForwardDiff(x.chip<3>(1), 1) + ForwardDiff(x.chip<3>(5), 2);
-  div.chip<3>(2).slice(st1, sz).device(dev) =
-    ForwardDiff(x.chip<3>(4), 0) + ForwardDiff(x.chip<3>(5), 1) + ForwardDiff(x.chip<3>(2), 2);
+  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
+  Sz4 const st1{0, 1, 1, 1};
+  div.chip<4>(0).slice(st1, sz).device(dev) =
+    ForwardDiff(x.chip<4>(0), 0) + ForwardDiff(x.chip<4>(3), 1) + ForwardDiff(x.chip<4>(4), 2);
+  div.chip<4>(1).slice(st1, sz).device(dev) =
+    ForwardDiff(x.chip<4>(3), 0) + ForwardDiff(x.chip<4>(1), 1) + ForwardDiff(x.chip<4>(5), 2);
+  div.chip<4>(2).slice(st1, sz).device(dev) =
+    ForwardDiff(x.chip<4>(4), 0) + ForwardDiff(x.chip<4>(5), 1) + ForwardDiff(x.chip<4>(2), 2);
 }
 
-inline void ProjectP(Cx4 &p, float const a, Eigen::ThreadPoolDevice &dev)
+inline void ProjectP(Cx5 &p, float const a, Eigen::ThreadPoolDevice &dev)
 {
-  Eigen::IndexList<int, int, int, Eigen::type2index<1>> res;
+  Eigen::IndexList<int, int, int, int, FixOne> res;
   res.set(0, p.dimension(0));
   res.set(1, p.dimension(1));
   res.set(2, p.dimension(2));
-  Eigen::IndexList<
-    Eigen::type2index<1>,
-    Eigen::type2index<1>,
-    Eigen::type2index<1>,
-    Eigen::type2index<3>>
-    brd;
+  res.set(3, p.dimension(3));
+  Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, Eigen::type2index<3>> brd;
 
-  R3 normp(p.dimension(0), p.dimension(1), p.dimension(2));
-  normp.device(dev) = (p * p.conjugate()).sum(Sz1{3}).real().sqrt() / a;
+  R4 normp(p.dimension(0), p.dimension(1), p.dimension(2), p.dimension(3));
+  normp.device(dev) = (p * p.conjugate()).sum(Sz1{4}).real().sqrt() / a;
   normp.device(dev) = (normp > 1.f).select(normp, normp.constant(1.f));
   p.device(dev) = p / normp.reshape(res).broadcast(brd).cast<Cx>();
 }
 
-inline void ProjectQ(Cx4 &q, float const a, Eigen::ThreadPoolDevice &dev)
+inline void ProjectQ(Cx5 &q, float const a, Eigen::ThreadPoolDevice &dev)
 {
-  Eigen::IndexList<int, int, int, Eigen::type2index<1>> res;
+  Eigen::IndexList<int, int, int, int, FixOne> res;
   res.set(0, q.dimension(0));
   res.set(1, q.dimension(1));
   res.set(2, q.dimension(2));
-  Eigen::IndexList<
-    Eigen::type2index<1>,
-    Eigen::type2index<1>,
-    Eigen::type2index<1>,
-    Eigen::type2index<6>>
-    brd;
+  res.set(3, q.dimension(3));
+  Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, Eigen::type2index<6>> brd;
 
   auto const qsqr = q * q.conjugate();
-  auto const q1 =
-    qsqr.slice(Sz4{0, 0, 0, 0}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
-  auto const q2 =
-    qsqr.slice(Sz4{0, 0, 0, 3}, Sz4{q.dimension(0), q.dimension(1), q.dimension(2), 3});
-  R3 normq(q.dimension(0), q.dimension(1), q.dimension(2));
-  normq.device(dev) = (q1.sum(Sz1{3}).real() + q2.sum(Sz1{3}).real() * 2.f).sqrt() / a;
+  auto const q1 = qsqr.slice(
+    Sz5{0, 0, 0, 0, 0}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
+  auto const q2 = qsqr.slice(
+    Sz5{0, 0, 0, 0, 3}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
+  R4 normq(q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3));
+  normq.device(dev) = (q1.sum(Sz1{4}).real() + q2.sum(Sz1{4}).real() * 2.f).sqrt() / a;
   normq.device(dev) = (normq > 1.f).select(normq, normq.constant(1.f));
   q.device(dev) = q / normq.reshape(res).broadcast(brd).cast<Cx>();
 }
 
-Cx3 tgv(
+Cx4 tgv(
   long const max_its,
   float const thresh,
   float const alpha,
@@ -141,37 +133,37 @@ Cx3 tgv(
 {
   auto dev = Threads::GlobalDevice();
 
-  auto const dims = op.dimensions();
-  Sz4 dims3{dims[0], dims[1], dims[2], 3};
-  Sz4 dims6{dims[0], dims[1], dims[2], 6};
+  auto const dims = op.inputDimensions();
+  Sz5 dims3{dims[0], dims[1], dims[2], dims[3], 3};
+  Sz5 dims6{dims[0], dims[1], dims[2], dims[3], 6};
 
   // Primal variables
-  Cx3 u(dims);                 // Main variable
+  Cx4 u(dims);                 // Main variable
   op.Adj(ks_data, u);          // Get starting point
   float const scale = Norm(u); // Normalise regularisation factors
-  Cx3 u_ = u;                  // Bar variable (is this the "dual"?)
-  Cx3 u_old = u;               // From previous iteration
-  Cx4 grad_u(dims3);
+  Cx4 u_ = u;                  // Bar variable (is this the "dual"?)
+  Cx4 u_old = u;               // From previous iteration
+  Cx5 grad_u(dims3);
   grad_u.setZero();
-  Cx4 v(dims3);
+  Cx5 v(dims3);
   v.setZero();
-  Cx4 v_(dims3);
+  Cx5 v_(dims3);
   v_.setZero();
-  Cx4 v_old(dims3);
+  Cx5 v_old(dims3);
   v_old.setZero();
-  Cx4 grad_v(dims6); // Symmetric rank-2 tensor stored as xx yy zz (xy + yx) (xz + zx) (yz + zy)
+  Cx5 grad_v(dims6); // Symmetric rank-2 tensor stored as xx yy zz (xy + yx) (xz + zx) (yz + zy)
   grad_v.setZero();
 
   // Dual variables
-  Cx4 p(dims3);
+  Cx5 p(dims3);
   p.setZero();
-  Cx3 divp(dims);
+  Cx4 divp(dims);
   divp.setZero();
-  Cx4 q(dims6);
+  Cx5 q(dims6);
   q.setZero();
-  Cx4 divq(dims3);
+  Cx5 divq(dims3);
   divq.setZero();
-  Cx3 v_decode(dims);
+  Cx4 v_decode(dims);
   v_decode.setZero();
 
   // k-Space variables

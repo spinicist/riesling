@@ -22,7 +22,7 @@ int main(int const argc, char const *const argv[])
   args::Command sim(commands, "sim", "Simulate a basis set", &main_sim);
   args::Command split(commands, "split", "Split data", &main_split);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
-  // args::Command tgv(commands, "tgv", "Iterative TGV regularised recon", &main_tgv);
+  args::Command tgv(commands, "tgv", "Iterative TGV regularised recon", &main_tgv);
   args::Command version(commands, "version", "Print version number", &main_version);
   args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::GlobalOptions globals(parser, global_group);

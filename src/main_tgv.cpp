@@ -3,6 +3,8 @@
 #include "cropper.h"
 #include "filter.h"
 #include "log.h"
+#include "op/grid-basis.h"
+#include "op/grid.h"
 #include "op/recon.h"
 #include "parse_args.h"
 #include "sense.h"
@@ -20,6 +22,8 @@ int main_tgv(args::Subparser &parser)
     parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
   args::ValueFlag<float> iter_fov(
     parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
+  args::ValueFlag<std::string> basisFile(
+    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   args::ValueFlag<float> alpha(
     parser, "ALPHA", "Regularisation weighting (1e-5)", {"alpha"}, 1.e-5f);
   args::ValueFlag<float> reduce(
@@ -46,15 +50,28 @@ int main_tgv(args::Subparser &parser)
                                 reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
                                 log);
 
-  ReconOp recon(gridder.get(), senseMaps, log);
+  std::unique_ptr<GridBase> gridder2;
+  if (basisFile) {
+    HD5::Reader basisReader(basisFile.Get(), log);
+    R2 const basis = basisReader.readBasis();
+    gridder2 = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
+    gridder2->setSDC(w);
+  } else {
+    gridder2 = std::move(gridder);
+  }
+
+  ReconOp recon(gridder2.get(), senseMaps, log);
+  if (!basisFile) {
+    recon.calcToeplitz(traj.info());
+  }
   auto sz = recon.inputDimensions();
-  Cropper out_cropper(info, sz, out_fov.Get(), log);
-  Cx3 image = out_cropper.newImage();
-  Cx4 out = out_cropper.newSeries(info.volumes);
+  Cropper out_cropper(info, Last3(sz), out_fov.Get(), log);
+  Sz3 outSz = out_cropper.size();
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
+  auto const &all_start = log.now();
   for (long iv = 0; iv < info.volumes; iv++) {
-    auto const start = log.now();
-    log.info(FMT_STRING("Processing volume: {}"), iv);
-    image = out_cropper.crop3(tgv(
+    auto const &vol_start = log.now();
+    out.chip<4>(iv) = out_cropper.crop4(tgv(
       its.Get(),
       thr.Get(),
       alpha.Get(),
@@ -63,13 +80,14 @@ int main_tgv(args::Subparser &parser)
       recon,
       reader.noncartesian(iv),
       log));
-    if (tukey_s || tukey_e || tukey_h) {
-      ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), image, log);
-    }
-    out.chip(iv, 3) = image;
-    log.info("Volume {}: {}", iv, log.toNow(start));
+    log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
-  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "tgv", "h5", log);
+  log.info("All Volumes: {}", log.toNow(all_start));
+  auto const fname = OutName(iname.Get(), oname.Get(), "tgv", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeInfo(info);
+  writer.writeTensor(out, "image");
   FFT::End(log);
+
   return EXIT_SUCCESS;
 }
