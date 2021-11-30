@@ -30,16 +30,12 @@ int main_admm(args::Subparser &parser)
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   Log log = ParseCommand(parser, iname);
-
-  if (!basisFile) {
-    Log::Fail("ADMM only currently implemented for subspace reconstructions with basis");
-  }
-
   FFT::Start(log);
 
   HD5::Reader reader(iname.Get(), log);
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
+
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get(), log);
   gridder->setSDC(w);
@@ -51,11 +47,20 @@ int main_admm(args::Subparser &parser)
                                 senseLambda.Get(),
                                 reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
                                 log);
-  HD5::Reader basisReader(basisFile.Get(), log);
-  R2 const basis = basisReader.readBasis();
-  auto basisGridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
-  basisGridder->setSDC(w);
-  ReconOp recon(basisGridder.get(), senseMaps, log);
+
+  std::unique_ptr<GridBase> gridder2;
+  if (basisFile) {
+    HD5::Reader basisReader(basisFile.Get(), log);
+    R2 const basis = basisReader.readBasis();
+    gridder2 = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
+    gridder2->setSDC(w);
+  } else {
+    gridder2 = std::move(gridder);
+  }
+  ReconOp recon(gridder2.get(), senseMaps, log);
+  if (!basisFile) {
+    recon.calcToeplitz(traj.info());
+  }
 
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get(), log); };
 
