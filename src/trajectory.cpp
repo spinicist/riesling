@@ -130,6 +130,19 @@ float Trajectory::merge(int16_t const read, int32_t const spoke) const
   }
 }
 
+bool CheckOnGrid(Size3 const xyz, Index const kRad, float const maxRad)
+{
+  if (std::abs(xyz[0]) + kRad > maxRad) {
+    return false;
+  } else if (std::abs(xyz[1]) + kRad > maxRad) {
+    return false;
+  } else if (std::abs(xyz[2]) + kRad > maxRad) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 Mapping
 Trajectory::mapping(float const os, Index const kRad, float const inRes, bool const shrink) const
 {
@@ -162,7 +175,7 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
   float const maxRad = ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
   float const maxLoRad = maxRad * (float)(info_.read_gap) / (float)info_.read_points;
-  float const maxHiRad = std::min(maxRad - kRad, ratio * maxRad);
+  float const maxHiRad = ratio * maxRad;
   auto start = log_.now();
   for (int32_t is = 0; is < info_.spokes_total(); is++) {
     auto const echo = echoes_(is);
@@ -171,10 +184,12 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
         NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = point(ir, is, maxRad);
 
+        // Check points are not going to fall off the grid when the kernel radius is added to them
         // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
-        // Otherwise leave space for kernel
-        if (xyz.norm() <= (is < info_.spokes_lo ? maxLoRad : maxHiRad)) {
-          Size3 const gp = nearby(xyz).cast<int16_t>();
+        Size3 const gp = nearby(xyz).cast<int16_t>();
+        if (
+          CheckOnGrid(gp, kRad, maxRad) &&
+          (xyz.norm() <= (is < info_.spokes_lo ? maxLoRad : maxHiRad))) {
           Size3 const cart = gp + center;
           mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
           mapping.noncart.push_back(nc);
