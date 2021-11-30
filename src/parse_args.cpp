@@ -1,5 +1,5 @@
-#include "parse_args.h"
 #include "io.h"
+#include "parse_args.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <algorithm>
@@ -94,64 +94,4 @@ std::string OutName(
     oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
     suffix,
     extension);
-}
-
-void WriteOutput(
-  Cx4 const &vols,
-  bool const mag,
-  bool const needsSwap,
-  Info const &info,
-  std::string const &iname,
-  std::string const &oname,
-  std::string const &suffix,
-  std::string const &ext,
-  Log &log)
-{
-  auto const fname = OutName(iname, oname, suffix, ext);
-  if (ext.compare("h5") == 0) {
-    HD5::Writer writer(fname, log);
-    writer.writeInfo(info);
-    writer.writeImage(vols);
-  } else if (ext.compare("nii") == 0) {
-    auto &output = needsSwap ? FirstToLast4(vols) : vols;
-    if (mag) {
-      R4 const mVols = output.abs();
-      WriteNifti(info, mVols, fname, log);
-    } else {
-      WriteNifti(info, output, fname, log);
-    }
-  } else {
-    Log::Fail("Unsupported output format: {}", ext);
-  }
-}
-
-void WriteBasisVolumes(
-  Cx5 const &vols,
-  R2 const &basis,
-  bool const mag,
-  Info const &info,
-  std::string const &iname,
-  std::string const &oname,
-  std::string const &suffix,
-  std::string const &ext,
-  Log &log)
-{
-  if (ext.compare("h5") == 0) {
-    auto const fname = OutName(iname, oname, suffix, ext);
-    HD5::Writer writer(fname, log);
-    writer.writeInfo(info);
-    writer.writeBasis(basis);
-    writer.writeBasisImages(vols);
-  } else {
-    for (long iv = 0; iv < vols.dimension(4); iv++) {
-      auto const fname = OutName(iname, oname, fmt::format("{}-{:02d}", suffix, iv), ext);
-      Cx4 const output = FirstToLast4(vols.chip(iv, 4));
-      if (mag) {
-        R4 const mVols = output.abs();
-        WriteNifti(info, mVols, fname, log);
-      } else {
-        WriteNifti(info, output, fname, log);
-      }
-    }
-  }
 }

@@ -6,14 +6,18 @@
 
 decltype(auto) Blend(Cx5 const &images, R1 const &b)
 {
+  long const x = images.dimension(1);
+  long const y = images.dimension(2);
+  long const z = images.dimension(3);
+  long const v = images.dimension(4);
   Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> rsh;
   rsh.set(0, b.dimension(0));
   Eigen::IndexList<FixOne, int, int, int, int> brd;
-  brd.set(1, images.dimension(1));
-  brd.set(2, images.dimension(2));
-  brd.set(3, images.dimension(3));
+  brd.set(1, x);
+  brd.set(2, y);
+  brd.set(3, z);
   Eigen::IndexList<FixZero> sum;
-  return (images * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum);
+  return (images * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum).reshape(Sz5{1, x, y, z, v});
 }
 
 int main_blend(args::Subparser &parser)
@@ -40,20 +44,24 @@ int main_blend(args::Subparser &parser)
       FMT_STRING("Requested timepoint {} exceeds basis length {}"), tp.Get(), basis.dimension(0));
   }
 
+  Cx5 out;
   if (eddy_rss) {
     R1 const b0 = basis.chip<0>(0);
     R1 const b1 = basis.chip<0>(tp.Get());
     R1 const b2 = basis.chip<0>(2 * tp.Get());
     R1 const b3 = basis.chip<0>(3 * tp.Get());
-    Cx4 const rss = ((Blend(images, b2) - Blend(images, b0)).square() +
-                     (Blend(images, b3) - Blend(images, b1)).square())
-                      .sqrt();
-    WriteOutput(rss, mag, false, input.readInfo(), iname.Get(), oname.Get(), "blend", "h5", log);
+    out = ((Blend(images, b2) - Blend(images, b0)).square() +
+           (Blend(images, b3) - Blend(images, b1)).square())
+            .sqrt();
   } else {
     R1 const b = basis.chip<0>(tp.Get());
-    Cx4 const combined = Blend(images, b);
-    WriteOutput(
-      combined, mag, false, input.readInfo(), iname.Get(), oname.Get(), "blend", "h5", log);
+    out = Blend(images, b);
   }
+
+  auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
+  HD5::Writer writer(fname, log);
+  writer.writeInfo(input.readInfo());
+  writer.writeTensor(out, "image");
+
   return EXIT_SUCCESS;
 }

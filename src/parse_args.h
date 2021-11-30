@@ -30,28 +30,6 @@ std::string OutName(
   std::string const &suffix,
   std::string const &extension = "nii");
 
-extern void WriteOutput(
-  Cx4 const &vols,
-  bool const mag,
-  bool const needsSwap,
-  Info const &info,
-  std::string const &iname,
-  std::string const &oname,
-  std::string const &suffix,
-  std::string const &ext,
-  Log &log);
-
-void WriteBasisVolumes(
-  Cx5 const &basisVols,
-  R2 const &basis,
-  bool const mag,
-  Info const &info,
-  std::string const &iname,
-  std::string const &oname,
-  std::string const &suffix,
-  std::string const &ext,
-  Log &log);
-
 #define CORE_RECON_ARGS                                                                            \
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");                           \
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
