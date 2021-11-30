@@ -165,20 +165,23 @@ Trajectory::mapping(float const os, long const kRad, float const inRes, bool con
   float const maxHiRad = std::min(maxRad - kRad, ratio * maxRad);
   auto start = log_.now();
   for (int32_t is = 0; is < info_.spokes_total(); is++) {
-    for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
-      NoncartesianIndex const nc{.spoke = is, .read = ir};
-      Point3 const xyz = point(ir, is, maxRad);
+    auto const echo = echoes_(is);
+    if ((echo >= 0) && (echo < info_.echoes)) {
+      for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
+        NoncartesianIndex const nc{.spoke = is, .read = ir};
+        Point3 const xyz = point(ir, is, maxRad);
 
-      // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
-      // Otherwise leave space for kernel
-      if (xyz.norm() <= (is < info_.spokes_lo ? maxLoRad : maxHiRad)) {
-        Size3 const gp = nearby(xyz).cast<int16_t>();
-        Size3 const cart = gp + center;
-        mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
-        mapping.noncart.push_back(nc);
-        mapping.echo.push_back(echoes_(is));
-        mapping.sdc.push_back(1.f);
-        mapping.offset.push_back(xyz - gp.cast<float>().matrix());
+        // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
+        // Otherwise leave space for kernel
+        if (xyz.norm() <= (is < info_.spokes_lo ? maxLoRad : maxHiRad)) {
+          Size3 const gp = nearby(xyz).cast<int16_t>();
+          Size3 const cart = gp + center;
+          mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
+          mapping.noncart.push_back(nc);
+          mapping.echo.push_back(echo);
+          mapping.sdc.push_back(1.f);
+          mapping.offset.push_back(xyz - gp.cast<float>().matrix());
+        }
       }
     }
   }
