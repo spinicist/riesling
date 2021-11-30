@@ -43,7 +43,7 @@ int main_sense(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", "h5");
   HD5::Writer writer(fname, log);
   writer.writeInfo(info);
-  writer.writeSENSE(sense);
+  writer.writeTensor(sense, "sense");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

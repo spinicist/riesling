@@ -16,8 +16,6 @@ int main_recon(args::Subparser &parser)
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
-  args::Flag save_channels(
-    parser, "CHANNELS", "Write out individual channels from first volume", {"channels", 'c'});
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
