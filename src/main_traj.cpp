@@ -26,39 +26,38 @@ int main_traj(args::Subparser &parser)
   Cx3 rad_ks(1, info.read_points, info.spokes_total());
   rad_ks.setConstant(1.0f);
 
-  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
-  Cx5 gridded;
+  Cx4 out;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
-    Index const nB = basis.dimension(1);
-    auto gridderBasis = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
-    gridderBasis->setSDC(gridder->SDC());
-    auto const gridSz = gridderBasis->mapping().cartDims;
-    gridded.resize(1, nB, gridSz[0], gridSz[1], gridSz[2]);
-    gridderBasis->Adj(rad_ks, gridded);
+    auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
+    gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+    Cx5 grid(gridder->inputDimensions(1));
+    gridder->Adj(rad_ks, grid);
+    out = grid.chip<0>(0);
   } else {
-    gridded.resize(gridder->inputDimensions(1, info.echoes));
-    gridder->Adj(rad_ks, gridded);
+    auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
+    gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+    Cx5 grid(gridder->inputDimensions(1));
+    gridder->Adj(rad_ks, grid);
+    out = grid.chip<0>(0);
   }
-
-  Cx5 psf;
-  if (savePSF) {
-    log.info("Calculating PSF");
-    FFT::Planned<5, 3> fft(gridded.dimensions(), log);
-    psf = gridded;
-    fft.reverse(psf);
-    psf = psf.shuffle(Sz5{1, 2, 3, 4, 0});
-  }
-  // Cheap hack to get equivalent dimensions to reconstructed images
-  gridded = gridded.shuffle(Sz5{1, 2, 3, 4, 0});
 
   auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");
   HD5::Writer writer(fname, log);
-  writer.writeTensor(gridded, "traj-image");
+  writer.writeTensor(
+    Cx5(
+      out.reshape(Sz5{out.dimension(0), out.dimension(1), out.dimension(2), out.dimension(3), 1})),
+    "traj-image");
+
   if (savePSF) {
-    writer.writeTensor(psf, "psf-image");
+    log.info("Calculating PSF");
+    FFT::Planned<4, 3> fft(out.dimensions(), log);
+    fft.reverse(out);
+    writer.writeTensor(
+      Cx5(out.reshape(
+        Sz5{out.dimension(0), out.dimension(1), out.dimension(2), out.dimension(3), 1})),
+      "psf-image");
   }
 
   FFT::End(log);

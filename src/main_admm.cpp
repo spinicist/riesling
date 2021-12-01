@@ -80,7 +80,7 @@ int main_admm(args::Subparser &parser)
     log.info("Volume {}: {}", iv, log.toNow(vol_start));
   }
   log.info("All Volumes: {}", log.toNow(all_start));
-  auto const fname = OutName(iname.Get(), oname.Get(), "cg", "h5");
+  auto const fname = OutName(iname.Get(), oname.Get(), "admm", "h5");
   HD5::Writer writer(fname, log);
   writer.writeInfo(info);
   writer.writeTensor(out, "image");

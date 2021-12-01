@@ -16,6 +16,7 @@ decltype(auto) Blend(Cx5 const &images, R1 const &b)
   brd.set(1, x);
   brd.set(2, y);
   brd.set(3, z);
+  brd.set(4, v);
   Eigen::IndexList<FixZero> sum;
   return (images * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum).reshape(Sz5{1, x, y, z, v});
 }
@@ -35,7 +36,7 @@ int main_blend(args::Subparser &parser)
   Log log = ParseCommand(parser);
 
   HD5::Reader input(iname.Get(), log);
-  Cx5 const images = input.readTensor<Cx5>("images");
+  Cx5 const images = input.readTensor<Cx5>("image");
 
   HD5::Reader binput(bname.Get(), log);
   R2 const basis = binput.readTensor<R2>("basis");
