@@ -40,7 +40,7 @@ TEST_CASE("Grid")
   auto gridkb = make_grid(traj, os, Kernels::KB5, false, log);
 
   auto nc = info.noncartesianVolume();
-  Cx5 c(gridkb->inputDimensions(C, 1));
+  Cx5 c(gridkb->inputDimensions(C));
   Index const nB = 4;
   R2 basis(256, nB);
   basis.setConstant(1.f);

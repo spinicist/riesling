@@ -41,7 +41,8 @@ std::string OutName(
   args::Flag fastgrid(                                                                             \
     parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
   args::ValueFlag<std::string> sdc(                                                                \
-    parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");
+    parser, "SDC", "SDC type: 'pipe', 'radial', 'none', or filename", {"sdc"}, "pipe");            \
+  args::ValueFlag<float> sdcPow(parser, "P", "SDC Power (default 1.0)", {"sdcPow"}, 1.0f);
 
 #define COMMON_RECON_ARGS                                                                          \
   CORE_RECON_ARGS                                                                                  \

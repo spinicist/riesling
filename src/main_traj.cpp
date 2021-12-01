@@ -32,12 +32,14 @@ int main_traj(args::Subparser &parser)
     R2 basis = basisReader.readBasis();
     auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
     gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+    gridder->setSDCPower(sdcPow.Get());
     Cx5 grid(gridder->inputDimensions(1));
     gridder->Adj(rad_ks, grid);
     out = grid.chip<0>(0);
   } else {
     auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
     gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+    gridder->setSDCPower(sdcPow.Get());
     Cx5 grid(gridder->inputDimensions(1));
     gridder->Adj(rad_ks, grid);
     out = grid.chip<0>(0);

@@ -11,7 +11,7 @@
 #include "vc.h"
 
 Cx4 ESPIRIT(
-  std::unique_ptr<GridOp> const &gridder,
+  GridBase *gridder,
   Cx3 const &data,
   Index const kRad,
   Index const calRad,
@@ -22,7 +22,7 @@ Cx4 ESPIRIT(
   log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   log.info(FMT_STRING("Calculating k-space kernels"));
-  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0), 1)); // Maps will end up here
+  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0))); // Maps will end up here
   gridder->Adj(data, grid_temp);
   Cx4 grid = grid_temp.chip<1>(0); // Get rid of the echoes dimension
   R3 valsImage(gridder->mapping().cartDims);

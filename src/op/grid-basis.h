@@ -25,7 +25,7 @@ protected:
   float basisScale_;
 };
 
-std::unique_ptr<GridBasisOp> make_grid_basis(
+std::unique_ptr<GridBase> make_grid_basis(
   Trajectory const &traj,
   float const os,
   Kernels const k,
@@ -35,5 +35,5 @@ std::unique_ptr<GridBasisOp> make_grid_basis(
   float const res = -1.f,
   bool const shrink = false);
 
-std::unique_ptr<GridBasisOp> make_grid_basis(
+std::unique_ptr<GridBase> make_grid_basis(
   Mapping const &mapping, Kernels const k, bool const fastgrid, R2 const &basis, Log &log);

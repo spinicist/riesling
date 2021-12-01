@@ -18,8 +18,9 @@ int main_grid(args::Subparser &parser)
 
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+  gridder->setSDCPower(sdcPow.Get());
   Cx3 rad_ks = info.noncartesianVolume();
-  Cx5 grid(gridder->inputDimensions(info.channels, 1));
+  Cx5 grid(gridder->inputDimensions(info.channels));
 
   auto const &vol_start = log.now();
 

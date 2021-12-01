@@ -24,13 +24,13 @@ Index ValOrLast(Index const val, Index const vols)
 
 Cx4 DirectSENSE(
   Info const &info,
-  GridOp const *gridder,
+  GridBase const *gridder,
   float const fov,
   float const lambda,
   Cx3 const &data,
   Log &log)
 {
-  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0), 1));
+  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0)));
   gridder->Adj(data, grid_temp);
   Cx4 grid(
     grid_temp.dimension(0), grid_temp.dimension(2), grid_temp.dimension(3), grid_temp.dimension(4));

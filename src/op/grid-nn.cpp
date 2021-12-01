@@ -53,15 +53,15 @@ void GridNN::Adj(Cx3 const &noncart, Cx5 &cart) const
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
-      auto const dc = mapping_.sdc[si];
+      auto const sdc = pow(mapping_.sdc[si], sdcPow_);
       if (safe_) {
         workspace[ti].chip<4>(c.z - minZ[ti]).chip<3>(c.y).chip<2>(c.x).chip<1>(e) +=
           noncart.chip<2>(nc.spoke).chip<1>(nc.read) *
-          noncart.chip<2>(nc.spoke).chip<1>(nc.read).constant(dc);
+          noncart.chip<2>(nc.spoke).chip<1>(nc.read).constant(sdc);
       } else {
         cart.chip<4>(c.z).chip<3>(c.y).chip<2>(c.x).chip<1>(e) +=
           noncart.chip<2>(nc.spoke).chip<1>(nc.read) *
-          noncart.chip<2>(nc.spoke).chip<1>(nc.read).constant(dc);
+          noncart.chip<2>(nc.spoke).chip<1>(nc.read).constant(sdc);
       }
     }
   };

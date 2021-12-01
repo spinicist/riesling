@@ -4,7 +4,7 @@
 #include "op/grid.h"
 
 Cx4 ESPIRIT(
-  std::unique_ptr<GridOp> const &grid,
+  GridBase *grid,
   Cx3 const &data,
   Index const kernelRad,
   Index const calRad,

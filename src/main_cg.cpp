@@ -38,17 +38,14 @@ int main_cg(args::Subparser &parser)
                                 reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
                                 log);
 
-  std::unique_ptr<GridBase> gridder2;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
-    gridder2 = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
-    gridder2->setSDC(w);
-  } else {
-    gridder2 = std::move(gridder);
+    gridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
+    gridder->setSDC(w);
   }
-
-  ReconOp recon(gridder2.get(), senseMaps, log);
+  gridder->setSDCPower(sdcPow.Get());
+  ReconOp recon(gridder.get(), senseMaps, log);
   if (toeplitz) {
     recon.calcToeplitz(traj.info());
   }

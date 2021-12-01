@@ -67,9 +67,9 @@ void GridBasisNN::Adj(Output const &noncart, Input &cart) const
       auto const si = mapping_.sortedIndices[ii];
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
+      auto const sdc = pow(mapping_.sdc[si], sdcPow_);
       auto const b =
-        (basis_.chip<0>(nc.spoke % basis_.dimension(0)) * mapping_.sdc[si] * basisScale_)
-          .cast<Cx>();
+        (basis_.chip<0>(nc.spoke % basis_.dimension(0)) * sdc * basisScale_).cast<Cx>();
       if (safe_) {
         workspace[ti].chip<4>(c.z - minZ[ti]).chip<3>(c.y).chip<2>(c.x) +=
           noncart.chip<2>(nc.spoke).chip<1>(nc.read).reshape(rshNC).broadcast(brdNC) *

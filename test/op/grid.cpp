@@ -41,7 +41,7 @@ TEST_CASE("ops-grid", "[ops]")
   {
     auto grid = make_grid(traj, os, Kernels::NN, false, log);
     grid->setSDC(sdc);
-    auto const dims = grid->inputDimensions(1, 1);
+    auto const dims = grid->inputDimensions(1);
     Cx5 x(dims), y(dims);
     Cx3 r(info.channels, info.read_points, info.spokes_total());
 

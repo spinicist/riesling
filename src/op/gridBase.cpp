@@ -3,6 +3,7 @@
 GridBase::GridBase(Mapping map, bool const unsafe, Log &log)
   : mapping_{std::move(map)}
   , safe_{!unsafe}
+  , sdcPow_{1.f}
   , log_{log}
 {
 }
@@ -29,6 +30,11 @@ R2 GridBase::SDC() const
     sdc(mapping_.noncart[ii].read, mapping_.noncart[ii].spoke) = mapping_.sdc[ii];
   }
   return sdc;
+}
+
+void GridBase::setSDCPower(float const p)
+{
+  sdcPow_ = p;
 }
 
 void GridBase::setUnsafe()

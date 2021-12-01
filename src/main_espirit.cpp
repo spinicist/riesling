@@ -39,7 +39,7 @@ int main_espirit(args::Subparser &parser)
   Index const totalCalRad = kRad.Get() + calRad.Get() + (info.spokes_lo ? 0 : info.read_gap);
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);
   Cx4 sense = cropper.crop4(ESPIRIT(
-    gridder,
+    gridder.get(),
     reader.noncartesian(ValOrLast(volume.Get(), info.volumes)),
     kRad.Get(),
     totalCalRad,

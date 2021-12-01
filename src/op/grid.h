@@ -23,7 +23,7 @@ struct GridOp : GridBase
 protected:
 };
 
-std::unique_ptr<GridOp> make_grid(
+std::unique_ptr<GridBase> make_grid(
   Trajectory const &traj,
   float const os,
   Kernels const k,
@@ -32,5 +32,5 @@ std::unique_ptr<GridOp> make_grid(
   float const res = -1.f,
   bool const shrink = false);
 
-std::unique_ptr<GridOp>
+std::unique_ptr<GridBase>
 make_grid(Mapping const &mapping, Kernels const k, bool const fastgrid, Log &log);

@@ -132,10 +132,11 @@ struct GridBasis final : GridBasisOp
         auto const si = mapping_.sortedIndices[ii];
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
+        auto const sdc = pow(mapping_.sdc[si], sdcPow_);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
         auto const b = (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_);
         auto const k = kernel_(mapping_.offset[si]);
-        ncb = (nc * nc.constant(mapping_.sdc[si])).reshape(rshNC).broadcast(brdNC) *
+        ncb = (nc * nc.constant(sdc)).reshape(rshNC).broadcast(brdNC) *
               b.template cast<Cx>().reshape(rshB).broadcast(brdB);
         auto const nbk = ncb.reshape(rshNCB).broadcast(brdNCB) *
                          k.template cast<Cx>().reshape(rshK).broadcast(brdK);

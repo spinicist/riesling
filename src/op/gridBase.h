@@ -15,6 +15,7 @@ struct GridBase : Operator<5, 3>
 
   void setSDC(float const dc);
   void setSDC(R2 const &sdc);
+  void setSDCPower(float const p);
   void setUnsafe();
   void setSafe();
 
@@ -24,5 +25,6 @@ struct GridBase : Operator<5, 3>
 protected:
   Mapping mapping_;
   bool safe_;
+  float sdcPow_;
   Log log_;
 };

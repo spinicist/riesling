@@ -29,7 +29,7 @@ Sz5 GridOp::inputDimensions(Index const nc, Index const ne) const
   return Sz5{nc, ne, mapping_.cartDims[0], mapping_.cartDims[1], mapping_.cartDims[2]};
 }
 
-std::unique_ptr<GridOp> make_grid(
+std::unique_ptr<GridBase> make_grid(
   Trajectory const &traj,
   float const os,
   Kernels const k,
@@ -57,7 +57,7 @@ std::unique_ptr<GridOp> make_grid(
   __builtin_unreachable();
 }
 
-std::unique_ptr<GridOp>
+std::unique_ptr<GridBase>
 make_grid(Mapping const &mapping, Kernels const k, bool const fastgrid, Log &log)
 {
   switch (k) {

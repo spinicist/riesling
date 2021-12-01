@@ -23,7 +23,7 @@ Index ValOrLast(Index const val, Index const last);
  */
 Cx4 DirectSENSE(
   Info const &info,
-  GridOp const *g,
+  GridBase const *g,
   float const fov,
   float const lambda,
   Cx3 const &data,

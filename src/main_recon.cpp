@@ -45,16 +45,15 @@ int main_recon(args::Subparser &parser)
     }
   }
 
-  std::unique_ptr<GridBase> gridder2;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
-    gridder2 = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
-    gridder2->setSDC(w);
-  } else {
-    gridder2 = std::move(gridder);
+    gridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
+    gridder->setSDC(w);
   }
-  Cx5 grid(gridder2->inputDimensions(info.channels));
+  gridder->setSDCPower(sdcPow.Get());
+
+  Cx5 grid(gridder->inputDimensions(info.channels));
   Cx4 image(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2]);
   Cx5 out(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2], info.volumes);
   FFT::Planned<5, 3> fft(grid, log);
@@ -62,7 +61,7 @@ int main_recon(args::Subparser &parser)
   auto const &all_start = log.now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = log.now();
-    gridder2->Adj(reader.noncartesian(iv), grid);
+    gridder->Adj(reader.noncartesian(iv), grid);
     log.info("FFT...");
     fft.reverse(grid);
     log.info("Channel combination...");
