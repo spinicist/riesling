@@ -16,16 +16,13 @@ int main_lookup(args::Subparser &parser)
   Log log = ParseCommand(parser);
 
   HD5::Reader input(iname.Get(), log);
-  HD5::Reader dict(dname.Get(), log);
+  Cx5 const images = input.readTensor<Cx5>("image");
 
-  Cx5 const images = input.readBasisImages();
-
-  R2 const basis = input.readBasis();
-  R2 const check = dict.readBasis();
-
-  R2 const dictionary = dict.readRealMatrix("dictionary");
-  R2 const parameters = dict.readRealMatrix("parameters");
-  R2 const Mz_ss = dict.readRealMatrix("Mz_ss");
+  HD5::Reader dfile(dname.Get(), log);
+  R2 const basis = dfile.readTensor<R2>("basis");
+  R2 const dictionary = dfile.readTensor<R2>("dictionary");
+  R2 const parameters = dfile.readTensor<R2>("parameters");
+  R2 const Mz_ss = dfile.readTensor<R2>("Mz_ss");
 
   R5 out_pars(
     parameters.dimension(1),
