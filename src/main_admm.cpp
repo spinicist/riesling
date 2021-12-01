@@ -18,16 +18,15 @@ int main_admm(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
+  args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
+  args::ValueFlag<float> iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);
+  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<float> thr(parser, "T", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> lsq_its(parser, "ITS", "Inner iterations (8)", {"lsq_its"}, 8);
   args::ValueFlag<Index> admm_its(parser, "ITS", "Outer iterations (8)", {"admm_its"}, 8);
-  args::ValueFlag<float> iter_fov(
-    parser, "FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
   args::ValueFlag<float> reg_lambda(parser, "L", "ADMM lambda (default 0.1)", {"reg"}, 0.1f);
   args::ValueFlag<float> reg_rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
   args::ValueFlag<Index> patch(parser, "P", "Patch size for LLR (default 8)", {"patch"}, 8);
-  args::ValueFlag<std::string> basisFile(
-    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);

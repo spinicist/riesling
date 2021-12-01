@@ -29,6 +29,10 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
 
   for (Index icg = 0; icg < max_its; icg++) {
     op.AdjA(p, q);
+    log.image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
+    log.image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
+    log.image(x, fmt::format(FMT_STRING("cg-x-{:02}.nii"), icg));
+    log.image(r, fmt::format(FMT_STRING("cg-r-{:02}.nii"), icg));
     float const alpha = r_old / std::real(Dot(p, q));
     x.device(dev) = x + p * p.constant(alpha);
     r.device(dev) = r - q * q.constant(alpha);
@@ -36,10 +40,6 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
     float const delta = r_new / norm_x0;
-    log.image(x, fmt::format(FMT_STRING("cg-x-{:02}.nii"), icg));
-    log.image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
-    log.image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
-    log.image(r, fmt::format(FMT_STRING("cg-r-{:02}.nii"), icg));
     log.info(FMT_STRING("CG {}: ɑ {} β {} δ {}"), icg, alpha, beta, delta);
     if (delta < thresh) {
       log.info(FMT_STRING("Reached convergence threshold"));

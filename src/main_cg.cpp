@@ -14,15 +14,12 @@ int main_cg(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
+  args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
+  args::ValueFlag<float> iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);
+  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
+  args::ValueFlag<float> thr(parser, "T", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
+  args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max_its"}, 8);
 
-  args::ValueFlag<float> thr(
-    parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
-  args::ValueFlag<Index> its(
-    parser, "MAX ITS", "Maximum number of iterations (8)", {'i', "max_its"}, 8);
-  args::ValueFlag<float> iter_fov(
-    parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
-  args::ValueFlag<std::string> basisFile(
-    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
   HD5::Reader reader(iname.Get(), log);
@@ -52,7 +49,7 @@ int main_cg(args::Subparser &parser)
   }
 
   ReconOp recon(gridder2.get(), senseMaps, log);
-  if (!basisFile) {
+  if (toeplitz) {
     recon.calcToeplitz(traj.info());
   }
   auto sz = recon.inputDimensions();
