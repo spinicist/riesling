@@ -152,6 +152,7 @@ if ( ${BUILD_BENCHMARKS} )
         bench/rss.cpp
         bench/grid.cpp
         bench/dot.cpp
+        bench/kernel.cpp
     )
     target_link_libraries(riesling-bench PUBLIC
         vineyard
