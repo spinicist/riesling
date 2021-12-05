@@ -123,6 +123,7 @@ void Planned<TRank, FRank>::forward(Tensor &x) const
   for (Index ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
   }
+  log_.info("Forward FFT");
   auto const start = log_.now();
   applyPhase(x, 1.f, true);
   auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
@@ -137,6 +138,7 @@ void Planned<TRank, FRank>::reverse(Tensor &x) const
   for (Index ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
   }
+  log_.info("Reverse FFT");
   auto start = log_.now();
   applyPhase(x, scale_, false);
   auto ptr = reinterpret_cast<fftwf_complex *>(x.data());

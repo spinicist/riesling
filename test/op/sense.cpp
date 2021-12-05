@@ -5,7 +5,7 @@
 TEST_CASE("ops-sense", "[ops]")
 {
   Index const channels = 2, mapSz = 4, gridSz = 6;
-
+  Log log;
   // With credit to PyLops
   SECTION("Dot Test")
   {
@@ -20,7 +20,7 @@ TEST_CASE("ops-sense", "[ops]")
     Cx3 rss = ConjugateSum(maps, maps).sqrt();
     maps = maps / Tile(rss, channels);
 
-    SenseOp sense(maps, y.dimensions());
+    SenseOp sense(maps, y.dimensions(), log);
     sense.A(u, y);
     sense.Adj(v, x);
 

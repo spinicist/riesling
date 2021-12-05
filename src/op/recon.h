@@ -23,7 +23,6 @@ private:
   Cx5 mutable grid_;
   Cx5 transfer_;
   SenseOp sense_;
-  R3 apo_;
   FFT::Planned<5, 3> fft_;
   Log log_;
 };
