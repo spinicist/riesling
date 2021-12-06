@@ -14,8 +14,8 @@ int main_hdr(args::Subparser &parser)
     "Matrix: {}\nVoxel-size: {}\n"
     "Read points: {} Gap: {}\n"
     "Hi-res spokes: {} Lo-res spokes: {} Lo-res scale: {}\n"
-    "Channels: {} Volumes: {} TR: {}\n"
-    "Origin: {}\nDirection:\n{}\n",
+    "Channels: {} Volumes: {} Echoes: {}\n"
+    "TR: {}\nOrigin: {}\nDirection:\n{}\n",
     info.matrix.transpose(),
     info.voxel_size.transpose(),
     info.read_points,
@@ -25,6 +25,7 @@ int main_hdr(args::Subparser &parser)
     info.lo_scale,
     info.channels,
     info.volumes,
+    info.echoes,
     info.tr,
     info.origin.transpose(),
     info.direction);

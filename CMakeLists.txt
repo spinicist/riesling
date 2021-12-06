@@ -91,6 +91,7 @@ add_executable(riesling
     src/main_hdr.cpp
     src/main_lookup.cpp
     src/main_meta.cpp
+    src/main_nii.cpp
     src/main_phantom.cpp
     src/main_plan.cpp
     src/main_recon.cpp

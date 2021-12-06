@@ -14,6 +14,7 @@ int main(int const argc, char const *const argv[])
   args::Command hdr(commands, "hdr", "Print the header from an HD5 file", &main_hdr);
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
   args::Command meta(commands, "meta", "Print meta-data entries", &main_meta);
+  args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
   args::Command recon(commands, "recon", "Basic non-iterative reconstruction", &main_recon);
