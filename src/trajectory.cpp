@@ -104,6 +104,11 @@ R3 const &Trajectory::points() const
   return points_;
 }
 
+I1 const &Trajectory::echoes() const
+{
+  return echoes_;
+}
+
 Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const rad_hi) const
 {
   assert(read < info_.read_points);

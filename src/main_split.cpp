@@ -21,6 +21,7 @@ int main_split(args::Subparser &parser)
   auto info = traj.info();
   info.volumes = 1; // Only output one volume
   R3 points = traj.points();
+  I1 echoes = traj.echoes();
   Cx3 ks = reader.noncartesian(vol.Get());
 
   if (ds) {
@@ -41,14 +42,16 @@ int main_split(args::Subparser &parser)
       points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, lores.Get()}) / info.lo_scale;
     Cx4 lo_ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, lores.Get()})
                   .reshape(Sz4{info.channels, info.read_points, lores.Get(), 1});
+    I1 lo_echoes = echoes.slice(Sz1{0}, Sz1{lores.Get()});
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores", "h5"), log);
-    writer.writeTrajectory(Trajectory(lo_info, lo_points, log));
+    writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes, log));
     writer.writeNoncartesian(lo_ks);
     info.spokes_lo = 0;
     info.spokes_hi = info.spokes_total() - lores.Get();
     info.lo_scale = 0.f;
     points = points.slice(Sz3{0, lores.Get(), 0}, Sz3{3, info.read_points, info.spokes_hi});
     ks = ks.slice(Sz3{0, lores.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes_hi});
+    echoes = echoes.slice(Sz1{0}, Sz1{info.spokes_total() - lores.Get()});
   }
 
   if (nspokes) {
@@ -69,14 +72,17 @@ int main_split(args::Subparser &parser)
       info.spokes_hi = n;
       HD5::Writer writer(
         OutName(iname.Get(), oname.Get(), fmt::format("int{}", int_idx), "h5"), log);
-      writer.writeTrajectory(
-        Trajectory(info, points.slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}), log));
+      writer.writeTrajectory(Trajectory(
+        info,
+        points.slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}),
+        echoes.slice(Sz1{idx0}, Sz1{n}),
+        log));
       writer.writeNoncartesian(ks.slice(Sz3{0, 0, idx0}, Sz3{info.channels, info.read_points, n})
                                  .reshape(Sz4{info.channels, info.read_points, n, 1}));
     }
   } else {
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "hires", "h5"), log);
-    writer.writeTrajectory(Trajectory(info, points, log));
+    writer.writeTrajectory(Trajectory(info, points, echoes, log));
     writer.writeNoncartesian(
       ks.reshape(Sz4{info.channels, info.read_points, info.spokes_total(), 1}));
   }

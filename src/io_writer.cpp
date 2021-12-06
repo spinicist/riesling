@@ -1,6 +1,6 @@
-#include "io_writer.h"
 #include "io_hd5.h"
 #include "io_hd5.hpp"
+#include "io_writer.h"
 
 namespace HD5 {
 
@@ -95,6 +95,7 @@ void Writer::writeTrajectory(Trajectory const &t)
 {
   writeInfo(t.info());
   HD5::store_tensor(handle_, Keys::Trajectory, t.points(), log_);
+  HD5::store_tensor(handle_, "echoes", t.echoes(), log_);
 }
 
 void Writer::writeSDC(R2 const &sdc)
