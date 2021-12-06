@@ -115,7 +115,7 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   assert(spoke < info_.spokes_total());
 
   // Convention is to store the points between -0.5 and 0.5, so we need a factor of 2 here
-  float const diameter = 2.f * (spoke < info_.spokes_lo ? rad_hi / info_.lo_scale : rad_hi);
+  float const diameter = 2.f * rad_hi;
   R1 const p = points_.chip(spoke, 2).chip(read, 1);
   switch (info_.type) {
   case Info::Type::ThreeD:
@@ -132,19 +132,6 @@ float Trajectory::merge(int16_t const read, int32_t const spoke) const
     return mergeLo_(read);
   } else {
     return mergeHi_(read);
-  }
-}
-
-bool CheckOnGrid(Size3 const xyz, Index const kRad, float const maxRad)
-{
-  if (std::abs(xyz[0]) + kRad > maxRad) {
-    return false;
-  } else if (std::abs(xyz[1]) + kRad > maxRad) {
-    return false;
-  } else if (std::abs(xyz[2]) + kRad > maxRad) {
-    return false;
-  } else {
-    return true;
   }
 }
 
@@ -177,10 +164,8 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
   mapping.offset.reserve(totalSz);
   mapping.echoes = info_.echoes;
   std::fesetround(FE_TONEAREST);
-  float const maxRad = ((gridSz / 2) - 1.f);
+  float const maxRad = ratio * ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
-  float const maxLoRad = maxRad * (float)(info_.read_gap) / (float)info_.read_points;
-  float const maxHiRad = ratio * maxRad;
   auto start = log_.now();
   for (int32_t is = 0; is < info_.spokes_total(); is++) {
     auto const echo = echoes_(is);
@@ -188,14 +173,9 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
       for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
         NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = point(ir, is, maxRad);
-
-        // Check points are not going to fall off the grid when the kernel radius is added to them
-        // Only grid lo-res to where hi-res begins (i.e. fill the dead-time gap)
-        Size3 const gp = nearby(xyz).cast<int16_t>();
-        if (
-          CheckOnGrid(gp, kRad, maxRad) &&
-          (xyz.norm() <= (is < info_.spokes_lo ? maxLoRad : maxHiRad))) {
-          Size3 const cart = gp + center;
+        Point3 const gp = nearby(xyz);
+        if (((gp.array().abs() + kRad) < maxRad).all()) {
+          Size3 const cart = center + Size3(gp.cast<int16_t>());
           mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
           mapping.noncart.push_back(nc);
           mapping.echo.push_back(echo);
