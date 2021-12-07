@@ -24,8 +24,6 @@ int main_sdc(args::Subparser &parser)
     dc = SDC::Pipe(traj, false, 2.1f, log);
   } else if (sdc.Get() == "pipenn") {
     dc = SDC::Pipe(traj, true, osamp.Get(), log);
-  } else if (sdc.Get() == "radial") {
-    dc = SDC::Radial(traj, log);
   } else {
     Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
   }

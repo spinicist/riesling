@@ -39,9 +39,7 @@ hid_t InfoType()
   status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
   status = H5Tinsert(info_id, "read_points", HOFFSET(Info, read_points), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "read_gap", HOFFSET(Info, read_gap), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "spokes_hi", HOFFSET(Info, spokes_hi), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "spokes_lo", HOFFSET(Info, spokes_lo), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "lo_scale", HOFFSET(Info, lo_scale), H5T_NATIVE_FLOAT);
+  status = H5Tinsert(info_id, "spokes", HOFFSET(Info, spokes), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);

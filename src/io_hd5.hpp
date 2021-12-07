@@ -33,10 +33,10 @@ void store_tensor(
   std::copy_n(ds_dims, ND, chunk_dims);
   if constexpr (ND > 3) {
     chunk_dims[0] = 1;
-  }
-  // Try to stop chunk dimension going over 4 gig
-  if (chunk_dims[1] > 1024) {
-    chunk_dims[1] = 1024;
+    // Try to stop chunk dimension going over 4 gig
+    if (chunk_dims[1] > 1024) {
+      chunk_dims[1] = 1024;
+    }
   }
 
   auto const space = H5Screate_simple(ND, ds_dims, NULL);

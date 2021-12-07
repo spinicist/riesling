@@ -75,10 +75,10 @@ Trajectory Reader::readTrajectory()
 {
   Info info = readInfo();
   log_.info("Reading trajectory");
-  R3 points(3, info.read_points, info.spokes_total());
+  R3 points(3, info.read_points, info.spokes);
   HD5::load_tensor(handle_, Keys::Trajectory, points, log_);
   if (HD5::Exists(handle_, "echoes")) {
-    I1 echoes(info.spokes_total());
+    I1 echoes(info.spokes);
     HD5::load_tensor(handle_, "echoes", echoes, log_);
     return Trajectory(info, points, echoes, log_);
   } else {
@@ -89,7 +89,7 @@ Trajectory Reader::readTrajectory()
 R2 Reader::readSDC(Info const &info)
 {
   log_.info("Reading SDC");
-  R2 sdc(info.read_points, info.spokes_total());
+  R2 sdc(info.read_points, info.spokes);
   HD5::load_tensor(handle_, Keys::SDC, sdc, log_);
   return sdc;
 }

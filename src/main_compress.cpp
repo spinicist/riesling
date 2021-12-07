@@ -9,13 +9,11 @@ int main_compress(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<Index> cc(parser, "CHANNEL COUNT", "Retain N channels (default 8)", {"cc"}, 8);
-  args::ValueFlag<Index> ref_vol(
-    parser, "REF VOLUME", "Calculate PCA from this volume (default last)", {"vol"});
-  args::ValueFlag<Index> readSize(
-    parser, "READ SIZE", "Number of read-out points to use in PCA (default 16)", {"read"}, 16);
-  args::ValueFlag<Index> spokeStride(
-    parser, "SPOKE STRIDE", "Stride/subsample across spokes (default 4)", {"spokes"}, 4);
+  args::ValueFlag<Index> cc(parser, "CHANNEL COUNT", "Retain N channels (8)", {"cc"}, 8);
+  args::ValueFlag<Index> ref_vol(parser, "V", "Calculate PCA from volume (last)", {"vol"});
+  args::ValueFlag<Index> readSize(parser, "R", "Points for PCA (16)", {"read"}, 16);
+  args::ValueFlag<Index> spokeStart(parser, "S", "Ignore first N spokes", {"start"}, 0);
+  args::ValueFlag<Index> spokeStride(parser, "S", "Stride across spokes (4)", {"stride"}, 4);
   Log log = ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get(), log);
@@ -23,12 +21,12 @@ int main_compress(args::Subparser &parser)
   Cx3 ks = reader.noncartesian(ValOrLast(ref_vol, in_info.volumes));
   Index const max_ref = in_info.read_points - in_info.read_gap;
   Index const nread = (readSize.Get() > max_ref) ? max_ref : readSize.Get();
+  Index const nspoke = (in_info.spokes - spokeStart.Get()) / spokeStride.Get();
   log.info(
-    FMT_STRING("Using {} read points and {} spokes"), nread, in_info.spokes_hi / spokeStride.Get());
-  Cx3 ref = ks.slice(
-                Sz3{0, in_info.read_gap, in_info.spokes_lo},
-                Sz3{in_info.channels, nread, in_info.spokes_hi})
-              .stride(Sz3{1, 1, spokeStride.Get()});
+    FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, nspoke, spokeStride.Get());
+  Cx3 ref =
+    ks.slice(Sz3{0, in_info.read_gap, spokeStart.Get()}, Sz3{in_info.channels, nread, nspoke})
+      .stride(Sz3{1, 1, spokeStride.Get()});
   Compressor compressor(ref, cc.Get(), log);
   Info out_info = in_info;
   out_info.channels = compressor.out_channels();

@@ -29,7 +29,7 @@ void ReconOp::calcToeplitz(Info const &info)
   log_.info("Calculating Töplitz embedding");
   transfer_.resize(gridder_->inputDimensions(1));
   transfer_.setConstant(1.f);
-  Cx3 tf(1, info.read_points, info.spokes_total());
+  Cx3 tf(1, info.read_points, info.spokes);
   gridder_->A(transfer_, tf);
   gridder_->Adj(tf, transfer_);
   sense_.resetApodization();

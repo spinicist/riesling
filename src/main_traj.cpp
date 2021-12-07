@@ -23,7 +23,7 @@ int main_traj(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
-  Cx3 rad_ks(1, info.read_points, info.spokes_total());
+  Cx3 rad_ks(1, info.read_points, info.spokes);
   rad_ks.setConstant(1.0f);
 
   Cx4 out;

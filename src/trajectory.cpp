@@ -26,7 +26,7 @@ Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
   , points_{points}
   , log_{log}
 {
-  echoes_ = I1(info_.spokes_total());
+  echoes_ = I1(info_.spokes);
   echoes_.setZero();
   init();
 }
@@ -48,17 +48,15 @@ void Trajectory::init()
       info_.read_points,
       points_.dimension(1));
   }
-  if (info_.spokes_total() != points_.dimension(2)) {
+  if (info_.spokes != points_.dimension(2)) {
     Log::Fail(
       "Mismatch between info spokes {} and trajectory spokes {}",
-      info_.spokes_total(),
+      info_.spokes,
       points_.dimension(2));
   }
-  if (info_.spokes_total() != echoes_.dimension(0)) {
+  if (info_.spokes != echoes_.dimension(0)) {
     Log::Fail(
-      "Mismatch between info spokes {} and echoes array {}",
-      info_.spokes_total(),
-      echoes_.dimension(0));
+      "Mismatch between info spokes {} and echoes array {}", info_.spokes, echoes_.dimension(0));
   }
   if (info_.echoes < Maximum(echoes_)) {
     Log::Fail(
@@ -78,20 +76,7 @@ void Trajectory::init()
     }
   }
 
-  Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(info_.read_points, 0, info_.read_points - 1);
-  mergeHi_ = ind - (info_.read_gap - 1);
-  mergeHi_ = (mergeHi_ > 0).select(mergeHi_, 0);
-  mergeHi_ = (mergeHi_ < 1).select(mergeHi_, 1);
-
-  if (info_.spokes_lo) {
-    ind = Eigen::ArrayXf::LinSpaced(info_.read_points, 0, info_.read_points - 1);
-    mergeLo_ = ind / info_.lo_scale - (info_.read_gap - 1);
-    mergeLo_ = (mergeLo_ > 0).select(mergeLo_, 0);
-    mergeLo_ = (mergeLo_ < 1).select(mergeLo_, 1);
-    mergeLo_ = (1 - mergeLo_) / info_.lo_scale; // Match intensities of k-space
-    mergeLo_.head(info_.read_gap) = 0.;         // Don't touch these points
-  }
-  log_.info("Created trajectory object with {} spokes", info_.spokes_total());
+  log_.info("Created trajectory object with {} spokes", info_.spokes);
 }
 
 Info const &Trajectory::info() const
@@ -126,15 +111,6 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   __builtin_unreachable(); // Because the GCC devs are very obtuse
 }
 
-float Trajectory::merge(int16_t const read, int32_t const spoke) const
-{
-  if (spoke < info_.spokes_lo) {
-    return mergeLo_(read);
-  } else {
-    return mergeHi_(read);
-  }
-}
-
 Mapping
 Trajectory::mapping(float const os, Index const kRad, float const inRes, bool const shrink) const
 {
@@ -154,9 +130,9 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
     mapping.cartDims = Sz3{gridSz, gridSz, info_.matrix[2]};
     break;
   }
-  mapping.noncartDims = Sz3{info_.channels, info_.read_points, info_.spokes_total()};
+  mapping.noncartDims = Sz3{info_.channels, info_.read_points, info_.spokes};
   mapping.osamp = os;
-  Index const totalSz = info_.read_points * info_.spokes_total();
+  Index const totalSz = info_.read_points * info_.spokes;
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);
   mapping.echo.reserve(totalSz);
@@ -167,7 +143,7 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
   float const maxRad = ratio * ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
   auto start = log_.now();
-  for (int32_t is = 0; is < info_.spokes_total(); is++) {
+  for (int32_t is = 0; is < info_.spokes; is++) {
     auto const echo = echoes_(is);
     if ((echo >= 0) && (echo < info_.echoes)) {
       for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {

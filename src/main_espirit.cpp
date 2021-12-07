@@ -36,7 +36,7 @@ int main_espirit(args::Subparser &parser)
   log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log, res);
   gridder->setSDC(SDC::Pipe(traj, true, osamp.Get(), log));
-  Index const totalCalRad = kRad.Get() + calRad.Get() + (info.spokes_lo ? 0 : info.read_gap);
+  Index const totalCalRad = kRad.Get() + calRad.Get() + info.read_gap;
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder.get(),

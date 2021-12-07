@@ -37,17 +37,13 @@ struct Trajectory
   R3 const &points() const;
   I1 const &echoes() const;
 
-  Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
-
-  // Return the appropriate filter value for merging lo/hi-res k-spaces
-  float merge(int16_t const read, int32_t const spoke) const;
-
   // Generate an appropriate mapping
   Mapping mapping(
     float const os, Index const kRad, float const inRes = -1.f, bool const shrink = false) const;
 
 private:
   void init();
+  Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
 
   Info info_;
   R3 points_;

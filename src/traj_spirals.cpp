@@ -6,7 +6,7 @@
  * vol. 32, no. 6, pp. 778–784, Dec. 1994, doi: 10.1002/mrm.1910320614.
  */
 
-R3 ASpiral(Index const nRead, Index const nSpoke)
+R3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
 {
   R3 traj(3, nRead, nSpoke);
   R1 read(nRead);
@@ -45,18 +45,6 @@ R3 ASpiral(Index const nRead, Index const nSpoke)
   return 0.5 * traj;
 }
 
-R3 ArchimedeanSpiral(Info const &info)
-{
-  R3 traj(3, info.read_points, info.spokes_total());
-  if (info.spokes_lo) {
-    R3 lo = ASpiral(info.read_points, info.spokes_lo);
-    traj.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes_lo}) = lo;
-  }
-  R3 hi = ASpiral(info.read_points, info.spokes_hi);
-  traj.slice(Sz3{0, 0, info.spokes_lo}, Sz3{3, info.read_points, info.spokes_hi}) = hi;
-  return traj;
-}
-
 Index Fib(Index n)
 {
   if (n == 0) {
@@ -70,10 +58,9 @@ Index Fib(Index n)
   }
 }
 
-R3 Phyllotaxis(Info const &info, Index const smoothness, Index const spi, bool const gm)
+R3 Phyllotaxis(
+  Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
 {
-  Index const nRead = info.read_points;
-  Index const nSpokes = info.spokes_total();
   if ((nSpokes % spi) != 0) {
     Log::Fail("Spokes per interleave {} is not a divisor of total spokes {}", spi, nSpokes);
   }

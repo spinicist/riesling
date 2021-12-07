@@ -15,23 +15,21 @@ TEST_CASE("NN", "[SDC]")
                   .matrix = Eigen::Array3l::Constant(M),
                   .read_points = Index(os * M / 2),
                   .read_gap = 0,
-                  .spokes_hi = Index(M * M / 4),
-                  .spokes_lo = 0,
-                  .lo_scale = 1.f,
+                  .spokes = Index(M * M / 4),
                   .volumes = 1,
                   .echoes = 1,
                   .tr = 1.f,
                   .voxel_size = Eigen::Array3f::Constant(1.f),
                   .origin = Eigen::Array3f::Constant(0.f),
                   .direction = Eigen::Matrix3f::Identity()};
-  auto const points = ArchimedeanSpiral(info);
+  auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory const traj(info, points, log);
 
   SECTION("Pipe")
   {
     R2 sdc = SDC::Pipe(traj, false, 2.1f, log);
     CHECK(sdc.dimension(0) == info.read_points);
-    CHECK(sdc.dimension(1) == info.spokes_total());
+    CHECK(sdc.dimension(1) == info.spokes);
     // Central points should be very small
     CHECK(sdc(0, 0) == Approx(0.00129f).margin(1.e-4f));
     CHECK(sdc(1, 0) == Approx(0.00519f).margin(1.e-4f));

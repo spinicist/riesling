@@ -10,19 +10,16 @@ int main_hdr(args::Subparser &parser)
   auto const &info = reader.readInfo();
 
   fmt::print(
-    "Header\n"
-    "Matrix: {}\nVoxel-size: {}\n"
-    "Read points: {} Gap: {}\n"
-    "Hi-res spokes: {} Lo-res spokes: {} Lo-res scale: {}\n"
-    "Channels: {} Volumes: {} Echoes: {}\n"
-    "TR: {}\nOrigin: {}\nDirection:\n{}\n",
+    FMT_STRING("Header\n"
+               "Matrix: {}\nVoxel-size: {}\n"
+               "Read points: {} Gap: {} Spokes: {}\n"
+               "Channels: {} Volumes: {} Echoes: {}\n"
+               "TR: {}\nOrigin: {}\nDirection:\n{}\n"),
     info.matrix.transpose(),
     info.voxel_size.transpose(),
     info.read_points,
     info.read_gap,
-    info.spokes_hi,
-    info.spokes_lo,
-    info.lo_scale,
+    info.spokes,
     info.channels,
     info.volumes,
     info.echoes,
