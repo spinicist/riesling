@@ -56,31 +56,29 @@ hid_t InfoType()
 void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
-  constexpr int N = 14;
-  std::array<std::string, N> const names{"matrix",
-                                         "voxel_size",
-                                         "read_points",
-                                         "read_gap",
-                                         "spokes_hi",
-                                         "spokes_lo",
-                                         "lo_scale",
-                                         "channels",
-                                         "type",
-                                         "volumes",
-                                         "echoes",
-                                         "tr",
-                                         "origin",
-                                         "direction"};
+  // Also use vector instead of array so I don't forget to change the size if the members change
+  std::vector<std::string> const names{"matrix",
+                                       "voxel_size",
+                                       "read_points",
+                                       "read_gap",
+                                       "spokes",
+                                       "channels",
+                                       "type",
+                                       "volumes",
+                                       "echoes",
+                                       "tr",
+                                       "origin",
+                                       "direction"};
 
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
-  if (n_members != N) {
-    Log::Fail("Header info had {} members, should be {}", n_members, N);
+  if (n_members != names.size()) {
+    Log::Fail("Header info had {} members, should be {}", n_members, names.size());
   }
   // Re-orderd fields are okay. Missing is not
   for (auto const &check_name : names) {
     bool found = false;
-    for (int ii = 0; ii < N; ii++) {
+    for (int ii = 0; ii < names.size(); ii++) {
       std::string const member_name(H5Tget_member_name(dtype, ii));
       if (member_name == check_name) {
         found = true;

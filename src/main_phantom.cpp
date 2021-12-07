@@ -85,6 +85,7 @@ int main_phantom(args::Subparser &parser)
                 .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
                 .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
                 .direction = Eigen::Matrix3f::Identity()};
+    log.info(FMT_STRING("Using {} hi-res spokes"), info.spokes);
     if (phyllo) {
       points =
         Phyllotaxis(info.read_points, info.spokes, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
@@ -98,8 +99,9 @@ int main_phantom(args::Subparser &parser)
         sps.Get() * ((std::lrint(nex.Get() * loMat * loMat) + sps.Get() - 1) / sps.Get());
       auto loPoints = ArchimedeanSpiral(info.read_points, loSpokes);
       loPoints = loPoints / loPoints.constant(lores.Get());
-      points = loPoints.concatenate(points, 2);
+      points = R3(loPoints.concatenate(points, 2));
       info.spokes += loSpokes;
+      log.info(FMT_STRING("Added {} lo-res spokes"), loSpokes);
     }
   }
   log.info(
