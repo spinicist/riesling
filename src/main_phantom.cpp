@@ -181,7 +181,7 @@ int main_phantom(args::Subparser &parser)
   writer.writeTrajectory(traj);
   writer.writeTensor(
     Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})), "noncartesian");
-  writer.writeTensor(Cx5(phan.reshape(Sz5{sz[0], sz[1], sz[2], sz[3], 1})), "phantom");
+  writer.writeTensor(phan, "phantom");
   FFT::End(log);
   return EXIT_SUCCESS;
 }

@@ -28,7 +28,8 @@ struct Reader
 
   template <typename T>
   T readTensor(std::string const &label);
-
+  template <typename T>
+  void readTensor(std::string const &label, T &tensor); // Read with size checks
 private:
   Log &log_;
   int64_t handle_;

@@ -154,6 +154,16 @@ T Reader::readTensor(std::string const &label)
 }
 
 template R2 Reader::readTensor<R2>(std::string const &);
+template Cx3 Reader::readTensor<Cx3>(std::string const &);
+template Cx4 Reader::readTensor<Cx4>(std::string const &);
 template Cx5 Reader::readTensor<Cx5>(std::string const &);
+
+template <typename T>
+void Reader::readTensor(std::string const &label, T &tensor)
+{
+  HD5::load_tensor(handle_, label, tensor, log_);
+}
+
+template void Reader::readTensor<Cx5>(std::string const &, Cx5 &);
 
 } // namespace HD5

@@ -1,22 +1,22 @@
-#include "../../src/op/crop.h"
+#include "../../src/op/pad.h"
 #include "../../src/tensorOps.h"
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
-TEST_CASE("ops-crop", "[ops]")
+TEST_CASE("ops-pad", "[ops]")
 {
   Index const fullSz = 16;
 
   SECTION("Dot Test")
   {
     Index const cropSz = 7;
-    Cx3 x(fullSz, fullSz, fullSz), xy(cropSz, cropSz, cropSz), y(cropSz, cropSz, cropSz),
-      yx(fullSz, fullSz, fullSz);
+    Cx3 y(fullSz, fullSz, fullSz), yx(cropSz, cropSz, cropSz), x(cropSz, cropSz, cropSz),
+      xy(fullSz, fullSz, fullSz);
 
     x.setRandom();
     y.setRandom();
 
-    CropOp3 crop(x.dimensions(), y.dimensions());
+    PadOp<3> crop(x.dimensions(), y.dimensions());
     crop.A(x, xy);
     crop.Adj(y, yx);
 

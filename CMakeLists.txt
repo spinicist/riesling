@@ -41,7 +41,6 @@ add_library(vineyard
     src/kernel.cpp
     src/llr.cpp
     src/log.cpp
-    src/padder.cpp
     src/phantom_sphere.cpp
     src/phantom_shepplogan.cpp
     src/parse_args.cpp
@@ -61,12 +60,13 @@ add_library(vineyard
     src/wavelets.cpp
     src/zinfandel.cpp
     src/op/operator.cpp
-    src/op/crop.cpp
     src/op/grid.cpp
     src/op/gridBase.cpp
     src/op/grid-nn.cpp
     src/op/grid-basis.cpp
     src/op/grid-basis-nn.cpp
+    src/op/nufft.cpp
+    src/op/pad.cpp
     src/op/recon.cpp
     src/op/sense.cpp
 )
@@ -92,6 +92,7 @@ add_executable(riesling
     src/main_lookup.cpp
     src/main_meta.cpp
     src/main_nii.cpp
+    src/main_nufft.cpp
     src/main_phantom.cpp
     src/main_plan.cpp
     src/main_recon.cpp
@@ -131,7 +132,7 @@ if( ${BUILD_TESTS} )
         test/parameters.cpp
         test/sdc.cpp
         test/zinfandel.cpp
-        test/op/crop.cpp
+        test/op/pad.cpp
         test/op/grid.cpp
         test/op/sense.cpp
     )

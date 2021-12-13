@@ -97,7 +97,7 @@ I1 const &Trajectory::echoes() const
 Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const rad_hi) const
 {
   assert(read < info_.read_points);
-  assert(spoke < info_.spokes_total());
+  assert(spoke < info_.spokes);
 
   // Convention is to store the points between -0.5 and 0.5, so we need a factor of 2 here
   float const diameter = 2.f * rad_hi;
