@@ -50,7 +50,7 @@ traj_us = traj(:,:,1:2:end);
 
 % We also need to modify the infor structure
 info_us = info;
-info_us.spokes_hi = size(kspace_us, 3);
+info_us.spokes = size(kspace_us, 3);
 
 % Now we write the data back to a new file
 riesling_write('sl-phantom-us.h5', kspace_us, traj_us, info_us);

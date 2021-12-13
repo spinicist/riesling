@@ -11,6 +11,7 @@ RIESLING is provided as a single executable file, similar to ``bart``. The ``rie
 - ``riesling sdc`` Pre-calculate sample densities
 - ``riesling plan`` Pre-plan FFTs
 - ``riesling cg`` Iterative conjugate-gradients SENSE reconstruction
+- ``riesling admm`` Regularized cgSENSE reconstruction (only Locally-Low-Rank available currently)
 - ``riesling tgv`` TGV-regularized iterative reconstruction
 
 A `tutorial notebook <https://github.com/spinicist/riesling-examples/tutorial.ipynb>`_ can be run interactively at on `MyBinder <https://mybinder.org/v2/gh/spinicist/riesling-examples/HEAD?filepath=tutorial.ipynb>`_. This explains the various steps required to generate a simulated phantom dataset and then reconstruct it. You will need to reduce the matrix size to 64 to run with MyBinder's RAM limit.

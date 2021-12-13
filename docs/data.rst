@@ -14,14 +14,11 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
 
   struct Info {
     long type;
-    long channels;
     long matrix[3];
 
+    long channels;
     long read_points;
-    long read_gap;
-    long spokes_hi;
-    long spokes_lo;
-    float lo_scale;
+    long spokes;
 
     long volumes;
     long echoes;
@@ -33,13 +30,10 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
   };
 
 * ``type`` defines the kind of acquisition. Currently two values are supported - 1 means the acquisition is fully 3D, while 2 means the acquisition is a 3D stack-of-stars or stack-of-spirals type acquisition, with cartesian phase-encoding blips for the third axis.
-* ``channels`` defines the number of k-space channels / coil-elements.
 * ``matrix`` defines the nominal matrix size for the scan - i.e. it determines the matrix size of the final reconstructed image (unless the `--fov` option is used).
+* ``channels`` defines the number of k-space channels / coil-elements.
 * ``read_points`` sets the number of data-points in the readout direction, i.e. how many readout points per spoke.
-* ``read_gap`` sets the number of data-points in the dead-time gap for a ZTE acquisition. These points will not be used in the reconstruction.
-* ``spokes_hi`` sets the number of spokes in the main, high-resolution k-space acquisition. For non-ZTE acquisitions, this should be the total number of spokes / read-outs.
-* ``spokes_lo`` sets the number of spokes for an extra low-resolution k-space data (i.e. for WASPI acquisitions). Probably only useful for ZTE.
-* ``lo_scale`` determines the scaling of the low-resolution k-space relative to the high-resolution k-space. It should be set to the ratio of the high-res k-space to the low-res k-space, i.e. for a WASPI acquisition that only reaches 1/4 of the radius in k-space of the main acquisition, ``lo_scale`` should be set to 4. The trajectory points for the lo-res k-space should NOT include this scaling factor, i.e. the maximum value of lo-res trajectory points should be 1 (this scaling will then be applied to the data to give the correct k-space locations).
+* ``spokes`` sets the number of spokes in the non-cartesian k-space acquisition.
 * ``volumes`` indicates how many volumes or time-points were acquired in the acquisition.
 * ``echoes`` specifies how many separate echoes were acquired per time-point.
 
@@ -55,6 +49,11 @@ Trajectory
 
 The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``SxNx3``. HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then this will be ``3xNxS``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial spokes the k-space locations go between 0 and 0.5, and for diameter spokes between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
 
+Echoes
+------
+
+If the dataset contains multiple echoes, or other temporal points (e.g. cardiac or respiratory phases) which should be reconstructed together, then an additional dataset should be added to the input H5 file called ``echoes``. This should be an integer valued, one-dimensional array with the number of entries equal to the number of spokes specified in the ``info`` structure.
+
 Non-cartesian Data
 ------------------
 
@@ -68,7 +67,7 @@ The ``riesling grid`` command will produce a complex-valued dataset named ``cart
 Image Data
 ----------
 
-The output of a reconstruction command will write a complex-valued dataset ``image`` with dimensions ``VxZxYxX`` where V is the number of volumes, and X, Y & Z are the matrix size, unless the ``--mag`` command is specified in which case the dataset will be real-valued.
+The output of a reconstruction command will write a complex-valued dataset named ``image``, unless the ``--mag`` command is specified in which case the dataset will be real-valued. The dimensions will be ``VxZxYxXxE`` where V is the number of volumes, X, Y & Z are the matrix size, and E is either the number of echoes or the number of basis-vectors if a low-rank reconstruction has been used.
 
 Density Compensation
 --------------------

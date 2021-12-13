@@ -14,6 +14,8 @@ To run the tests, simply run ``./riesling-tests`` within the build directory. By
 
 The test case code is located in ``/test``. Generally the files are named after the corresponding file in ``/src``, unless it makes sense to sub-divide the tests further.
 
+The ultimate set of tests are the various notebooks contained in the `riesling-examples` repository.
+
 Code Structure
 --------------
 
@@ -27,6 +29,8 @@ After the ``GridOp`` is constructed, the Sample Density Compensation is either c
 
 The next key step is calculating the sensitivity maps, or loading them from disk. Calculating them currently requires constructing a second ``GridOp`` object within the ``DirectSENSE`` function. This uses a very low resolution, so constructing and sorting the grid co-ordinates is usually fast.
 
-At this point we have all the basic building blocks of a reconstruction pipeline, so we proceed to set one up. Generally this means constructing operators that take us from non-Cartesian data to image and vice versa. C++ lambda functions are used to provide functions that act as the overall Linear Operator/System. These functions are then passed to the iterative optimization routines. For conjugate gradients we require two operators - a decoding operator that goes from non-Cartesian data to image, and a system operator that applies both encoding and decoding (i.e. maps from the image to the image, passing through the system).
+If a basis has been specified for a low-rank/subspace reconstruction, then the next step is to replace the GridOp with one including the basis.
 
-After these lambda functions have been constructed, we loop through all the volumes in the input file, load the data, apply the decoding operator to get a starting image, and then apply conjugate gradients to optimize the image. We crop to the desired output FoV and apply a Tukey filter if requested by the user. Finally the images are written to disk.
+At this point we can create the ReconOp object which combines gridding, FFT, and SENSE channel combination. This object is then passed to the iterative optimization routines. If the user wants, Töplitz embedding can be enabled.
+
+We then loop through all the volumes in the input file, load the data, apply the adjoint operator to get a starting image, and then apply conjugate gradients to optimize the image. We crop to the desired output FoV and apply a Tukey filter if requested by the user. Finally the images are written to disk.
