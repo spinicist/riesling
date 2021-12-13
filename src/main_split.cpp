@@ -23,6 +23,7 @@ int main_split(args::Subparser &parser)
   R3 points = traj.points();
   I1 echoes = traj.echoes();
   Cx3 ks = reader.noncartesian(vol.Get());
+  auto const volName = fmt::format("vol-{:02d}", vol.Get());
 
   if (ds) {
     info.read_points = (Index)std::round((float)info.read_points / ds.Get());
@@ -40,7 +41,8 @@ int main_split(args::Subparser &parser)
     Cx4 lo_ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, lores.Get()})
                   .reshape(Sz4{info.channels, info.read_points, lores.Get(), 1});
     I1 lo_echoes = echoes.slice(Sz1{0}, Sz1{lores.Get()});
-    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores", "h5"), log);
+    HD5::Writer writer(
+      OutName(iname.Get(), oname.Get(), fmt::format("{}-lores", volName), "h5"), log);
     writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes, log));
     writer.writeNoncartesian(lo_ks);
     info.spokes -= lores.Get();
@@ -66,7 +68,12 @@ int main_split(args::Subparser &parser)
       int const n = ns + (int_idx == (num_int - 1) ? rem_spokes : 0);
       info.spokes = n;
       HD5::Writer writer(
-        OutName(iname.Get(), oname.Get(), fmt::format("int{}", int_idx), "h5"), log);
+        OutName(
+          iname.Get(),
+          oname.Get(),
+          fmt::format(FMT_STRING("{}-int-{:02d}"), volName, int_idx),
+          "h5"),
+        log);
       writer.writeTrajectory(Trajectory(
         info,
         points.slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}),
@@ -76,7 +83,7 @@ int main_split(args::Subparser &parser)
                                  .reshape(Sz4{info.channels, info.read_points, n, 1}));
     }
   } else {
-    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "hires", "h5"), log);
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), volName, "h5"), log);
     writer.writeTrajectory(Trajectory(info, points, echoes, log));
     writer.writeNoncartesian(ks.reshape(Sz4{info.channels, info.read_points, info.spokes, 1}));
   }
