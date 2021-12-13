@@ -54,6 +54,103 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
   return W.real().chip<0>(0);
 }
 
+R2 Radial2D(Trajectory const &traj, Log &log)
+{
+  log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
+  Info const &info = traj.info();
+  auto spoke_sdc = [&](Index const spoke, Index const N) -> R1 {
+    float const k_delta = (traj.point(1, spoke, 1.f) - traj.point(0, spoke, 1.f)).norm();
+    float const V = 2.f * k_delta * M_PI / N; // Area element
+    // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
+    float const R = (M_PI * info.matrix.maxCoeff()) / N;
+    float const flat_start = info.read_points / sqrt(R);
+    float const flat_val = V * flat_start;
+    R1 sdc(info.read_points);
+    for (Index ir = 0; ir < info.read_points; ir++) {
+      float const rad = traj.point(ir, spoke, info.read_points).norm();
+      if (rad == 0.f) {
+        sdc(ir) = V / 8.f;
+      } else if (rad < flat_start) {
+        sdc(ir) = V * rad;
+      } else {
+        sdc(ir) = flat_val;
+      }
+    }
+    return sdc;
+  };
+
+  R1 const ss = spoke_sdc(0, info.spokes);
+  R2 sdc = ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes});
+  return sdc;
+}
+
+R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap, Log &log)
+{
+  log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
+  auto const &info = traj.info();
+
+  Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(info.read_points, 0, info.read_points - 1);
+  Eigen::ArrayXf mergeHi = ind - (gap - 1);
+  mergeHi = (mergeHi > 0).select(mergeHi, 0);
+  mergeHi = (mergeHi < 1).select(mergeHi, 1);
+
+  Eigen::ArrayXf mergeLo;
+  if (lores) {
+    float const scale = traj.point(info.read_points - 1, lores, 1.f).norm() /
+                        traj.point(info.read_points - 1, 0, 1.f).norm();
+    mergeLo = ind / scale - (gap - 1);
+    mergeLo = (mergeLo > 0).select(mergeLo, 0);
+    mergeLo = (mergeLo < 1).select(mergeLo, 1);
+    mergeLo = (1 - mergeLo) / scale; // Match intensities of k-space
+    mergeLo.head(gap) = 0.;          // Don't touch these points
+  }
+
+  auto spoke_sdc = [&](Index const &spoke, Index const N) -> R1 {
+    // Calculate the point spacing
+    float const k_delta = (traj.point(1, spoke, 1.f) - traj.point(0, spoke, 1.f)).norm();
+    float const V = (4.f / 3.f) * k_delta * M_PI / N; // Volume element
+    // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
+    float const R = (M_PI * info.matrix.maxCoeff() * info.matrix.maxCoeff()) / N;
+    float const flat_start = info.read_points / sqrt(R);
+    float const flat_val = V * (3. * (flat_start * flat_start) + 1. / 4.);
+    R1 sdc(info.read_points);
+    for (Index ir = 0; ir < info.read_points; ir++) {
+      float const rad = traj.point(ir, spoke, info.read_points).norm();
+      float const merge = (spoke < lores) ? mergeLo(ir) : mergeHi(ir);
+      if (rad == 0.f) {
+        sdc(ir) = merge * V * 1.f / 8.f;
+      } else if (rad < flat_start) {
+        sdc(ir) = merge * V * (3.f * (rad * rad) + 1.f / 4.f);
+      } else {
+        sdc(ir) = merge * flat_val;
+      }
+    }
+    return sdc;
+  };
+
+  R2 sdc(info.read_points, info.spokes);
+  if (lores) {
+    R1 const ss = spoke_sdc(0, lores);
+    sdc.slice(Sz2{0, 0}, Sz2{info.read_points, lores}) =
+      ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, lores});
+  }
+  R1 const ss = spoke_sdc(lores, info.spokes - lores);
+  sdc.slice(Sz2{0, lores}, Sz2{info.read_points, info.spokes - lores}) =
+    ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes - lores});
+
+  return sdc;
+}
+
+R2 Radial(Trajectory const &traj, Index const lores, Index const gap, Log &log)
+{
+
+  if (traj.info().type == Info::Type::ThreeD) {
+    return Radial3D(traj, lores, gap, log);
+  } else {
+    return Radial2D(traj, log);
+  }
+}
+
 R2 Choose(std::string const &iname, Trajectory const &traj, float const os, Log &log)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);

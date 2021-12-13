@@ -36,6 +36,7 @@ struct Trajectory
   Info const &info() const;
   R3 const &points() const;
   I1 const &echoes() const;
+  Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
 
   // Generate an appropriate mapping
   Mapping mapping(
@@ -43,7 +44,6 @@ struct Trajectory
 
 private:
   void init();
-  Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
 
   Info info_;
   R3 points_;
