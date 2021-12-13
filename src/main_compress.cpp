@@ -11,21 +11,22 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<Index> cc(parser, "CHANNEL COUNT", "Retain N channels (8)", {"cc"}, 8);
   args::ValueFlag<Index> ref_vol(parser, "V", "Calculate PCA from volume (last)", {"vol"});
+  args::ValueFlag<Index> readStart(parser, "R", "Reference region start (0)", {"read_start"}, 0);
   args::ValueFlag<Index> readSize(parser, "R", "Points for PCA (16)", {"read"}, 16);
-  args::ValueFlag<Index> spokeStart(parser, "S", "Ignore first N spokes", {"start"}, 0);
+  args::ValueFlag<Index> spokeStart(parser, "S", "Ignore first N spokes", {"spoke_start"}, 0);
   args::ValueFlag<Index> spokeStride(parser, "S", "Stride across spokes (4)", {"stride"}, 4);
   Log log = ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get(), log);
   Info const in_info = reader.readInfo();
   Cx3 ks = reader.noncartesian(ValOrLast(ref_vol, in_info.volumes));
-  Index const max_ref = in_info.read_points - in_info.read_gap;
-  Index const nread = (readSize.Get() > max_ref) ? max_ref : readSize.Get();
+  Index const maxRead = in_info.read_points - readStart.Get();
+  Index const nread = (readSize.Get() > maxRead) ? maxRead : readSize.Get();
   Index const nspoke = (in_info.spokes - spokeStart.Get()) / spokeStride.Get();
   log.info(
     FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, nspoke, spokeStride.Get());
   Cx3 ref =
-    ks.slice(Sz3{0, in_info.read_gap, spokeStart.Get()}, Sz3{in_info.channels, nread, nspoke})
+    ks.slice(Sz3{0, readStart.Get(), spokeStart.Get()}, Sz3{in_info.channels, nread, nspoke})
       .stride(Sz3{1, 1, spokeStride.Get()});
   Compressor compressor(ref, cc.Get(), log);
   Info out_info = in_info;

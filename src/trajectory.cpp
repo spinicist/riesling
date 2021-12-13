@@ -146,7 +146,7 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
   for (int32_t is = 0; is < info_.spokes; is++) {
     auto const echo = echoes_(is);
     if ((echo >= 0) && (echo < info_.echoes)) {
-      for (int16_t ir = info_.read_gap; ir < info_.read_points; ir++) {
+      for (int16_t ir = 0; ir < info_.read_points; ir++) {
         NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = point(ir, is, maxRad);
         Point3 const gp = nearby(xyz);

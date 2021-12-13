@@ -74,10 +74,9 @@ int main_phantom(args::Subparser &parser)
       sps.Get() *
       ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
     info = Info{.type = Info::Type::ThreeD,
-                .channels = nchan.Get(),
                 .matrix = Eigen::Array3l::Constant(matrix.Get()),
+                .channels = nchan.Get(),
                 .read_points = (Index)read_samp.Get() * matrix.Get() / 2,
-                .read_gap = 0,
                 .spokes = spokes,
                 .volumes = 1,
                 .echoes = 1,
@@ -172,9 +171,11 @@ int main_phantom(args::Subparser &parser)
   }
 
   if (gap) {
-    info.read_gap = gap.Get();
-    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_gap, info.spokes}).setZero();
-    traj = Trajectory(info, traj.points(), log);
+    info.read_points -= gap.Get();
+    points = R3(points.slice(Sz3{0, gap.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
+    radial =
+      Cx3(radial.slice(Sz3{0, gap.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
+    traj = Trajectory(info, points, log);
   }
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);
   writer.writeTrajectory(traj);

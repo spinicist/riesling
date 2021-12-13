@@ -31,10 +31,9 @@ int main_zinfandel(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get(), log);
   auto info = reader.readInfo();
-  Index const gap_sz = gap ? gap.Get() : info.read_gap;
+  Index const gap_sz = gap.Get();
   auto const traj = reader.readTrajectory();
   auto out_info = info;
-  out_info.read_gap = 0;
   if (volume) {
     out_info.volumes = 1;
   }

@@ -45,10 +45,10 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
       log.info("SDC Delta {}", delta);
     }
   }
-  if (!nn && (info.read_points > 10)) {
+  if (!nn && (info.read_points > 6)) {
     // At this point we have relative weights. There might be something odd going on at the end of
     // the spokes. Count back from the ends to miss that and then average.
-    W = W / W.constant(Mean(W.slice(Sz3{0, info.read_points - 10, 0}, Sz3{1, 1, info.spokes})));
+    W = W / W.constant(Mean(W.slice(Sz3{0, info.read_points - 6, 0}, Sz3{1, 1, info.spokes})));
   }
   log.info("SDC finished.");
   return W.real().chip<0>(0);

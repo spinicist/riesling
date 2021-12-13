@@ -38,7 +38,6 @@ hid_t InfoType()
   status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
   status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
   status = H5Tinsert(info_id, "read_points", HOFFSET(Info, read_points), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "read_gap", HOFFSET(Info, read_gap), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "spokes", HOFFSET(Info, spokes), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
@@ -60,7 +59,6 @@ void CheckInfoType(hid_t handle)
   std::vector<std::string> const names{"matrix",
                                        "voxel_size",
                                        "read_points",
-                                       "read_gap",
                                        "spokes",
                                        "channels",
                                        "type",
@@ -72,7 +70,7 @@ void CheckInfoType(hid_t handle)
 
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
-  if (n_members != names.size()) {
+  if (n_members < names.size()) {
     Log::Fail("Header info had {} members, should be {}", n_members, names.size());
   }
   // Re-orderd fields are okay. Missing is not

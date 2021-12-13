@@ -13,10 +13,9 @@ TEST_CASE("Grid")
   Index const M = 32;
   Index const C = 8;
   Info const info{.type = Info::Type::ThreeD,
-                  .channels = C,
                   .matrix = Eigen::Array3l::Constant(M),
+                  .channels = C,
                   .read_points = M / 2,
-                  .read_gap = 0,
                   .spokes = M * M,
                   .volumes = 1,
                   .echoes = 1,

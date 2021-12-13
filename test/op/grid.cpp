@@ -12,10 +12,9 @@ TEST_CASE("ops-grid", "[ops]")
   Index const M = 16;
   float const os = 2.f;
   Info const info{.type = Info::Type::ThreeD,
-                  .channels = 1,
                   .matrix = Eigen::Array3l::Constant(M),
+                  .channels = 1,
                   .read_points = Index(os * M / 2),
-                  .read_gap = 0,
                   .spokes = Index(M * M),
                   .volumes = 1,
                   .echoes = 1,

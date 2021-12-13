@@ -11,10 +11,9 @@ struct Info
   };
 
   Type type = Type::ThreeD;
-  Index channels;
   Eigen::Array3l matrix;
+  Index channels;
   Index read_points;
-  Index read_gap;
   Index spokes;
   Index volumes = 1;
   Index echoes = 1;

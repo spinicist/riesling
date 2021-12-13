@@ -10,19 +10,20 @@ int main_hdr(args::Subparser &parser)
   auto const &info = reader.readInfo();
 
   fmt::print(
-    FMT_STRING("Header\n"
-               "Matrix: {}\nVoxel-size: {}\n"
-               "Read points: {} Gap: {} Spokes: {}\n"
-               "Channels: {} Volumes: {} Echoes: {}\n"
-               "TR: {}\nOrigin: {}\nDirection:\n{}\n"),
+    FMT_STRING("Type: {}\n"
+               "Matrix: {}\n"
+               "Channels: {} Read points: {} Spokes: {}\n"
+               "Volumes: {} Echoes: {}\n"
+               "Voxel-size: {}\t TR: {}\t Origin: {}\n"
+               "Direction:\n{}\n"),
+    (info.type == Info::Type::ThreeD ? "3D" : "3D Stack"),
     info.matrix.transpose(),
-    info.voxel_size.transpose(),
-    info.read_points,
-    info.read_gap,
-    info.spokes,
     info.channels,
+    info.read_points,
+    info.spokes,
     info.volumes,
     info.echoes,
+    info.voxel_size.transpose(),
     info.tr,
     info.origin.transpose(),
     info.direction);

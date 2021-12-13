@@ -18,6 +18,7 @@ int main_espirit(args::Subparser &parser)
   args::ValueFlag<Index> volume(
     parser, "VOL", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
+  args::ValueFlag<Index> readStart(parser, "R", "Reference region start (0)", {"read_start"}, 0);
   args::ValueFlag<Index> kRad(parser, "RAD", "Kernel radius (default 4)", {"kRad", 'k'}, 4);
   args::ValueFlag<Index> calRad(
     parser, "RAD", "Additional calibration radius (default 1)", {"calRad", 'c'}, 1);
@@ -25,7 +26,6 @@ int main_espirit(args::Subparser &parser)
     parser, "T", "Variance threshold to retain kernels (0.015)", {"thresh"}, 0.015);
   args::ValueFlag<float> res(
     parser, "R", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
-  args::Flag nifti(parser, "NIFTI", "Write output to nifti instead of .h5", {"nii"});
 
   Log log = ParseCommand(parser, iname);
   FFT::Start(log);
@@ -36,14 +36,14 @@ int main_espirit(args::Subparser &parser)
   log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log, res);
   gridder->setSDC(SDC::Pipe(traj, true, osamp.Get(), log));
-  Index const totalCalRad = kRad.Get() + calRad.Get() + info.read_gap;
+  Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder.get(),
     reader.noncartesian(ValOrLast(volume.Get(), info.volumes)),
     kRad.Get(),
     totalCalRad,
-    info.read_gap,
+    readStart.Get(),
     thresh.Get(),
     log));
 
