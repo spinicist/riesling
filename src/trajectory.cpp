@@ -139,6 +139,7 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
   mapping.sdc.reserve(totalSz);
   mapping.offset.reserve(totalSz);
   mapping.echoes = info_.echoes;
+  mapping.echoWeights = Eigen::ArrayXf::Zero(mapping.echoes);
   std::fesetround(FE_TONEAREST);
   float const maxRad = ratio * ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
@@ -155,6 +156,7 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
           mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
           mapping.noncart.push_back(nc);
           mapping.echo.push_back(echo);
+          mapping.echoWeights[echo] += 1;
           mapping.sdc.push_back(1.f);
           mapping.offset.push_back(xyz - gp.cast<float>().matrix());
         }
@@ -162,6 +164,9 @@ Trajectory::mapping(float const os, Index const kRad, float const inRes, bool co
     }
   }
   log_.info("Generated {} co-ordinates in {}", mapping.cart.size(), log_.toNow(start));
+
+  mapping.echoWeights = mapping.echoWeights.maxCoeff() / mapping.echoWeights;
+  log_.info("Echo weights: {}", mapping.echoWeights.transpose());
 
   start = log_.now();
   mapping.sortedIndices.resize(mapping.cart.size());

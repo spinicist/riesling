@@ -53,7 +53,8 @@ void GridNN::Adj(Cx3 const &noncart, Cx5 &cart) const
       auto const c = mapping_.cart[si];
       auto const nc = mapping_.noncart[si];
       auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
-      auto const sdc = pow(mapping_.sdc[si], sdcPow_);
+      auto const sdc = weightEchoes_ ? pow(mapping_.sdc[si], sdcPow_) * mapping_.echoWeights[e]
+                                     : pow(mapping_.sdc[si], sdcPow_);
       if (safe_) {
         workspace[ti].chip<4>(c.z - minZ[ti]).chip<3>(c.y).chip<2>(c.x).chip<1>(e) +=
           noncart.chip<2>(nc.spoke).chip<1>(nc.read) *

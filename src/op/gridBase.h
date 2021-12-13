@@ -18,13 +18,14 @@ struct GridBase : Operator<5, 3>
   void setSDCPower(float const p);
   void setUnsafe();
   void setSafe();
+  void doNotWeightEchoes();
 
   Mapping const &mapping() const;
   R2 SDC() const;
 
 protected:
   Mapping mapping_;
-  bool safe_;
+  bool safe_, weightEchoes_;
   float sdcPow_;
   Log log_;
 };

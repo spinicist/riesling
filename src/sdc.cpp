@@ -26,6 +26,7 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
       gridder = std::make_unique<Grid<PipeSDC<5, 1>>>(traj, os, false, log);
     }
   }
+  gridder->doNotWeightEchoes();
   W.setConstant(1.f);
 
   Cx5 temp(gridder->inputDimensions(1, info.echoes));

@@ -109,7 +109,8 @@ struct Grid final : GridOp
         auto const c = mapping_.cart[si];
         auto const n = mapping_.noncart[si];
         auto const e = std::min(mapping_.echo[si], int8_t(cart.dimension(1) - 1));
-        auto const sdc = pow(mapping_.sdc[si], sdcPow_);
+        auto const sdc = weightEchoes_ ? pow(mapping_.sdc[si], sdcPow_) * mapping_.echoWeights[e]
+                                       : pow(mapping_.sdc[si], sdcPow_);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
         auto const k = kernel_(mapping_.offset[si]);
         auto const nck = (nc * nc.constant(sdc)).reshape(rshNC).broadcast(brdNC) *

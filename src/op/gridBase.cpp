@@ -3,6 +3,7 @@
 GridBase::GridBase(Mapping map, bool const unsafe, Log &log)
   : mapping_{std::move(map)}
   , safe_{!unsafe}
+  , weightEchoes_{true}
   , sdcPow_{1.f}
   , log_{log}
 {
@@ -45,6 +46,11 @@ void GridBase::setUnsafe()
 void GridBase::setSafe()
 {
   safe_ = false;
+}
+
+void GridBase::doNotWeightEchoes()
+{
+  weightEchoes_ = false;
 }
 
 Mapping const &GridBase::mapping() const
