@@ -55,7 +55,7 @@ int main_admm(args::Subparser &parser)
   }
   gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps, log);
-  if (!basisFile) {
+  if (toeplitz) {
     recon.calcToeplitz(traj.info());
   }
 
