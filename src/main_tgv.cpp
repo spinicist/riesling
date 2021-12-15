@@ -57,11 +57,8 @@ int main_tgv(args::Subparser &parser)
     gridder->setSDC(w);
   }
   gridder->setSDCPower(sdcPow.Get());
-
   ReconOp recon(gridder.get(), senseMaps, log);
-  if (!basisFile) {
-    recon.calcToeplitz(traj.info());
-  }
+
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, Last3(sz), out_fov.Get(), log);
   Sz3 outSz = out_cropper.size();
