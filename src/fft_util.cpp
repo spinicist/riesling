@@ -21,10 +21,11 @@ void Start(Log &log)
   fftwf_init_threads();
   fftwf_make_planner_thread_safe();
   fftwf_set_timelimit(60.0);
+  auto const wp = WisdomPath();
   if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
-    log.info("Read wisdom successfully");
+    log.info("Read wisdom successfully from {}", wp);
   } else {
-    log.info("Could not read wisdom");
+    log.info("Could not read wisdom from {}", wp);
   }
 }
 
