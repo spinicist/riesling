@@ -3,7 +3,12 @@
 Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &log)
 {
   if (extent < 0.f) {
-    std::copy_n(info.matrix.begin(), 3, sz_.begin());
+    std::transform(
+      info.matrix.begin(),
+      info.matrix.end(),
+      fullSz.begin(),
+      sz_.begin(),
+      [](Index const a, Index const b) { return std::min(a, b); });
   } else {
     Eigen::Array3l full;
     std::copy_n(&fullSz[0], 3, full.begin());

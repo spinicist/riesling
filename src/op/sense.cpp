@@ -105,7 +105,7 @@ void SenseOp::Adj(Output const &x, Input &y) const
 {
   assert(x.dimension(0) == maps_.dimension(0));
   assert(x.dimension(1) == y.dimension(0));
-  assert(x.dimension(2) == (maps_.dimension(1) + left_[2] + right_[4]));
+  assert(x.dimension(2) == (maps_.dimension(1) + left_[2] + right_[2]));
   assert(x.dimension(3) == (maps_.dimension(2) + left_[3] + right_[3]));
   assert(x.dimension(4) == (maps_.dimension(3) + left_[4] + right_[4]));
   assert(y.dimension(1) == maps_.dimension(1));

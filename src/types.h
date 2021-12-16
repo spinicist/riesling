@@ -57,7 +57,9 @@ using Sz5 = Cx5::Dimensions;
 template <typename T>
 Sz3 Last3(T &sz)
 {
-  return Sz3{sz.back() - 2, sz.back() - 1, sz.back()};
+  Sz3 result;
+  std::copy_n(sz.end() - 3, 3, result.begin());
+  return result;
 }
 
 using Size3 = Eigen::Array<int16_t, 3, 1>;

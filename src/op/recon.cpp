@@ -56,7 +56,7 @@ void ReconOp::Adj(Output const &x, Input &y) const
 void ReconOp::AdjA(Input const &x, Input &y) const
 {
   if (transfer_.size() == 0) {
-    Output temp(gridder_->mapping().noncartDims);
+    Output temp(outputDimensions());
     A(x, temp);
     Adj(temp, y);
   } else {
