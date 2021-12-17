@@ -18,7 +18,7 @@ int main_split(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
-  auto info = traj.info();
+  Info info = traj.info();
   info.volumes = 1; // Only output one volume
   R3 points = traj.points();
   I1 echoes = traj.echoes();
@@ -31,10 +31,12 @@ int main_split(args::Subparser &parser)
     info.voxel_size = info.voxel_size * scalef;
     info.matrix = (info.matrix.cast<float>() / scalef).cast<Index>();
     points = points * scalef;
-    ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes});
+    Cx3 ds_ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes});
+    ks = ds_ks;
   }
 
   if (lores) {
+    log.info(FMT_STRING("Extracting {} low res spokes"), lores.Get());
     Info lo_info = info;
     lo_info.spokes = lores.Get();
     R3 lo_points = points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, lores.Get()});
@@ -46,9 +48,15 @@ int main_split(args::Subparser &parser)
     writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes, log));
     writer.writeNoncartesian(lo_ks);
     info.spokes -= lores.Get();
-    points = points.slice(Sz3{0, lores.Get(), 0}, Sz3{3, info.read_points, info.spokes});
-    ks = ks.slice(Sz3{0, lores.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes});
-    echoes = echoes.slice(Sz1{lores.Get()}, Sz1{info.spokes});
+    log.info(FMT_STRING("Reduced spokes. {}, {}"), lores.Get(), info.spokes);
+    log.info(FMT_STRING("points: {}"), points.dimensions());
+
+    R3 hi_points = points.slice(Sz3{0, 0, lores.Get()}, Sz3{3, info.read_points, info.spokes});
+    Cx3 hi_ks = ks.slice(Sz3{0, 0, lores.Get()}, Sz3{info.channels, info.read_points, info.spokes});
+    I1 hi_echoes = echoes.slice(Sz1{lores.Get()}, Sz1{info.spokes});
+    points = hi_points;
+    ks = hi_ks;
+    echoes = hi_echoes;
   }
 
   if (nspokes) {
@@ -58,6 +66,8 @@ int main_split(args::Subparser &parser)
     int const num_int = static_cast<int>((num_full_int - 1) * ns * 1.f / spoke_step + 1);
     log.info(
       FMT_STRING("Interleaves: {} Spokes per interleave: {} Step: {}"), num_int, ns, spoke_step);
+    log.info(FMT_STRING("info.spokes={}"), info.spokes);
+
     int rem_spokes = info.spokes - num_full_int * ns;
     if (rem_spokes > 0) {
       log.info(FMT_STRING("Warning! Last interleave will have {} extra spokes."), rem_spokes);
