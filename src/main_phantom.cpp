@@ -73,17 +73,18 @@ int main_phantom(args::Subparser &parser)
     auto const spokes =
       sps.Get() *
       ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
-    info = Info{.type = Info::Type::ThreeD,
-                .matrix = Eigen::Array3l::Constant(matrix.Get()),
-                .channels = nchan.Get(),
-                .read_points = (Index)read_samp.Get() * matrix.Get() / 2,
-                .spokes = spokes,
-                .volumes = 1,
-                .echoes = 1,
-                .tr = 1.f,
-                .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
-                .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
-                .direction = Eigen::Matrix3f::Identity()};
+    info = Info{
+      .type = Info::Type::ThreeD,
+      .matrix = Eigen::Array3l::Constant(matrix.Get()),
+      .channels = nchan.Get(),
+      .read_points = (Index)read_samp.Get() * matrix.Get() / 2,
+      .spokes = spokes,
+      .volumes = 1,
+      .echoes = 1,
+      .tr = 1.f,
+      .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
+      .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
+      .direction = Eigen::Matrix3f::Identity()};
     log.info(FMT_STRING("Using {} hi-res spokes"), info.spokes);
     if (phyllo) {
       points =
@@ -171,10 +172,7 @@ int main_phantom(args::Subparser &parser)
   }
 
   if (gap) {
-    info.read_points -= gap.Get();
-    points = R3(points.slice(Sz3{0, gap.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
-    radial =
-      Cx3(radial.slice(Sz3{0, gap.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
+    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, gap.Get(), info.spokes}).setZero();
     traj = Trajectory(info, points, log);
   }
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);

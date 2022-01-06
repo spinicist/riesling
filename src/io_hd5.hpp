@@ -83,10 +83,15 @@ void load_tensor(
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail("Could not open tensor {}", name);
+    Log::Fail(FMT_STRING("Could not open tensor '{}'"), name);
   }
-  std::array<hsize_t, ND> dims;
   hid_t ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank != ND) {
+    Log::Fail(FMT_STRING("Tensor has '{}' has rank {}, expected {}"), name, rank, ND);
+  }
+
+  std::array<hsize_t, ND> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
   for (int ii = 0; ii < ND; ii++) {
@@ -117,14 +122,14 @@ void load_tensor_slab(
   int const ND = CD + 1;
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail("Could not open tensor {}", name);
+    Log::Fail(FMT_STRING("Could not open tensor '{}'"), name);
   }
-
-  auto const ds = H5Dget_space(dset);
+  hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail("Mismatch between tensor rank {} and HD5 rank {}", ND, rank);
+    Log::Fail(FMT_STRING("Tensor has '{}' has rank {}, expected {}"), name, rank, ND);
   }
+
   std::array<hsize_t, ND> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
@@ -176,10 +181,15 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail("Could not open tensor {}", name);
+    Log::Fail(FMT_STRING("Could not open tensor '{}'"), name);
   }
-  std::array<hsize_t, ND> dims;
   hid_t ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank != ND) {
+    Log::Fail(FMT_STRING("Tensor has '{}' has rank {}, expected {}"), name, rank, ND);
+  }
+
+  std::array<hsize_t, ND> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   typename Eigen::Tensor<Scalar, ND>::Dimensions tDims;
   std::copy_n(dims.begin(), ND, tDims.begin());
