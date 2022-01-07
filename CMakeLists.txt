@@ -73,7 +73,7 @@ add_library(vineyard
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     Eigen3::Eigen
-    fmt::fmt
+    fmt::fmt-header-only
     FFTW3::fftw3f
     hdf5::hdf5-static
     NIFTI::niftiio
