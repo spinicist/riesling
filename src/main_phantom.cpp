@@ -43,7 +43,8 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
   args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
   args::ValueFlag<Index> lores(parser, "L", "Add lo-res k-space scaled by L", {'l', "lores"}, 0);
-  args::ValueFlag<Index> gap(parser, "DEAD-TIME", "Dead-time gap in read samples", {"gap"}, 0);
+  args::ValueFlag<Index> blank(parser, "B", "Blank N samples for dead-time", {"blank"}, 0);
+  args::ValueFlag<Index> trim(parser, "T", "Trim N samples entirely", {"trim"}, 0);
   args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
   args::ValueFlag<std::string> sense(parser, "S", "Read SENSE maps from file", {"sense"});
   args::ValueFlag<std::vector<float>, VectorReader> intFlag(
@@ -171,10 +172,19 @@ int main_phantom(args::Subparser &parser)
     radial += noise * noise.constant(level);
   }
 
-  if (gap) {
-    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, gap.Get(), info.spokes}).setZero();
+  if (trim) {
+    info.read_points -= trim.Get();
+    points = R3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
+    radial =
+      Cx3(radial.slice(Sz3{0, trim.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
     traj = Trajectory(info, points, log);
   }
+
+  if (blank) {
+    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, blank.Get(), info.spokes}).setZero();
+    traj = Trajectory(info, points, log);
+  }
+
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);
   writer.writeTrajectory(traj);
   writer.writeTensor(
