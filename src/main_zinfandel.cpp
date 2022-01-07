@@ -13,8 +13,7 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<std::string> oname(
     parser, "OUTPUT NAME", "Name of output .h5 file", {"out", 'o'});
   args::ValueFlag<Index> volume(parser, "VOLUME", "Only recon this volume", {"vol"}, -1);
-  args::ValueFlag<Index> gap(
-    parser, "DEAD-TIME GAP", "Set gap value (default use header value)", {'g', "gap"}, -1);
+  args::ValueFlag<Index> gap(parser, "DEAD-TIME GAP", "Set gap value (default 2)", {'g', "gap"}, 2);
   args::ValueFlag<Index> src(
     parser, "SOURCES", "Number of ZINFANDEL sources (default 4)", {"src"}, 4);
   args::ValueFlag<Index> spokes(
@@ -31,7 +30,6 @@ int main_zinfandel(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get(), log);
   auto info = reader.readInfo();
-  Index const gap_sz = gap.Get();
   auto const traj = reader.readTrajectory();
   auto out_info = info;
   if (volume) {
@@ -45,7 +43,7 @@ int main_zinfandel(args::Subparser &parser)
   Cx4 rad_ks = info.noncartesianSeries();
   for (Index iv = 0; iv < info.volumes; iv++) {
     Cx3 vol = reader.noncartesian(iv);
-    zinfandel(gap_sz, src.Get(), spokes.Get(), read.Get(), l1.Get(), traj.points(), vol, log);
+    zinfandel(gap.Get(), src.Get(), spokes.Get(), read.Get(), l1.Get(), traj.points(), vol, log);
     if (pw && rbw) {
       slab_correct(out_info, pw.Get(), rbw.Get(), vol, log);
     }
