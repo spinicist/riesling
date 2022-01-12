@@ -7,10 +7,8 @@
 #include "io.h"
 #include "llr.h"
 #include "log.h"
-#include "op/grid-basis.h"
 #include "op/grid.h"
-#include "op/recon.h"
-#include "op/sense.h"
+#include "op/recon.hpp"
 #include "parse_args.h"
 #include "sense.h"
 

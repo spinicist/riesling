@@ -1,9 +1,10 @@
 #pragma once
 
+#include "grid-basis.hpp"
+
 #include "../cropper.h"
 #include "../kernel.h"
 #include "../trajectory.h"
-#include "grid-basis.h"
 
 template <typename Kernel>
 struct GridBasis final : GridBasisOp
@@ -165,11 +166,12 @@ struct GridBasis final : GridBasisOp
           cart
             .slice(
               Sz5{0, 0, 0, 0, minZ[ti]},
-              Sz5{cart.dimension(0),
-                  cart.dimension(1),
-                  cart.dimension(2),
-                  cart.dimension(3),
-                  szZ[ti]})
+              Sz5{
+                cart.dimension(0),
+                cart.dimension(1),
+                cart.dimension(2),
+                cart.dimension(3),
+                szZ[ti]})
             .device(dev) += workspace[ti];
         }
       }

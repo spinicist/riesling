@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.h"
-#include "op/recon.h"
+#include "op/recon.hpp"
 #include "types.h"
 
 /* F. Knoll, K. Bredies, T. Pock, and R. Stollberger, ‘Second order total generalized variation

@@ -1,4 +1,4 @@
-#include "../../src/op/sense.h"
+#include "../../src/op/sense.hpp"
 #include "../../src/tensorOps.h"
 #include <catch2/catch.hpp>
 

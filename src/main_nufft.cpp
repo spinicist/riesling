@@ -2,7 +2,7 @@
 
 #include "io.h"
 #include "log.h"
-#include "op/nufft.h"
+#include "op/nufft.hpp"
 #include "parse_args.h"
 #include "threads.h"
 

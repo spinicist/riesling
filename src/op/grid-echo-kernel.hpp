@@ -4,7 +4,7 @@
 #include "../kernel.h"
 #include "../trajectory.h"
 
-#include "grid.h"
+#include "grid-echo.hpp"
 
 template <typename Kernel>
 struct Grid final : GridOp
@@ -139,11 +139,12 @@ struct Grid final : GridOp
           cart
             .slice(
               Sz5{0, 0, 0, 0, minZ[ti]},
-              Sz5{cart.dimension(0),
-                  cart.dimension(1),
-                  cart.dimension(2),
-                  cart.dimension(3),
-                  szZ[ti]})
+              Sz5{
+                cart.dimension(0),
+                cart.dimension(1),
+                cart.dimension(2),
+                cart.dimension(3),
+                szZ[ti]})
             .device(dev) += workspace[ti];
         }
       }

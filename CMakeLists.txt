@@ -61,14 +61,10 @@ add_library(vineyard
     src/zinfandel.cpp
     src/op/operator.cpp
     src/op/grid.cpp
-    src/op/gridBase.cpp
-    src/op/grid-nn.cpp
-    src/op/grid-basis.cpp
-    src/op/grid-basis-nn.cpp
-    src/op/nufft.cpp
-    src/op/pad.cpp
-    src/op/recon.cpp
-    src/op/sense.cpp
+    src/op/nufft.hpp
+    src/op/pad.hpp
+    src/op/recon.hpp
+    src/op/sense.hpp
 )
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}

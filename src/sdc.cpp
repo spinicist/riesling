@@ -1,8 +1,8 @@
 #include "sdc.h"
 
 #include "io.h"
-#include "op/grid-kernel.hpp"
-#include "op/grid-nn.h"
+#include "op/grid-echo-kernel.hpp"
+#include "op/grid-echo-nn.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include "trajectory.h"
