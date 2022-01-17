@@ -1,4 +1,4 @@
-function [] = riesling_write(fname, data, traj, info)
+function [] = riesling_write(fname, data, traj, info,varargin)
 % WRITE_RIESLING writes radial k-space data to riesling .h5 format
 %
 % Input:
@@ -9,7 +9,22 @@ function [] = riesling_write(fname, data, traj, info)
 %
 % Inspired by: https://stackoverflow.com/questions/46203309/write-complex-numbers-in-an-hdf5-dataset-with-matlab
 % Emil Ljungberg, King's College London, 2021
+% Patrick Fuchs, University College London, 2022
 
+% Changes name / dimensions to write tensors used in the nufft command :PF
+if nargin > 4
+    tensorName = varargin{1};
+    if strcmp(tensorName,'image')
+        Ndims = 5;
+    elseif strcmp(tensorName,'nufft-forward')
+        Ndims = 3;
+    else
+        Ndims = 4;
+    end
+else
+    tensorName = 'noncartesian';
+    Ndims = 4;
+end
 
 if isfile(fname)
     error("%s already exists. Please delete or choose a different output name\n",fname);
@@ -51,12 +66,12 @@ filetype = H5T.create ('H5T_COMPOUND', sum(sz));
 H5T.insert(filetype, 'r', offset(1), floatType);
 H5T.insert(filetype, 'i', offset(2), floatType);
 
-% Ensure the data-space is 4D
-dims = ones(1, 4);
+% Ensure the data-space is ND
+dims = ones(1, Ndims);
 dims(1:ndims(data)) = size(data);
 dims = fliplr(dims);
-space = H5S.create_simple(4, dims, []);
-ncart = H5D.create(file, 'noncartesian', filetype, space, 'H5P_DEFAULT');
+space = H5S.create_simple(Ndims, dims, []);
+ncart = H5D.create(file, tensorName, filetype, space, 'H5P_DEFAULT');
 H5D.write(ncart, filetype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', wdata);
 H5D.close(ncart);
 
