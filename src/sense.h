@@ -15,9 +15,6 @@
   args::ValueFlag<float> senseLambda(                                                              \
     parser, "LAMBDA", "SENSE regularization", {"lambda", 'l'}, 0.f);
 
-// Helper function for getting a good volume to take SENSE maps from
-Index ValOrLast(Index const val, Index const last);
-
 /*!
  * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
  */

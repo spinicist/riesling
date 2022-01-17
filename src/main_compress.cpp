@@ -2,7 +2,6 @@
 #include "io.h"
 #include "log.h"
 #include "parse_args.h"
-#include "sense.h"
 #include "types.h"
 
 int main_compress(args::Subparser &parser)

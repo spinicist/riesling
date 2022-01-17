@@ -13,15 +13,6 @@
 
 float const sense_res = 8.f;
 
-Index ValOrLast(Index const val, Index const vols)
-{
-  if (val < 0) {
-    return vols - 1;
-  } else {
-    return std::min(val, vols - 1);
-  }
-}
-
 Cx4 DirectSENSE(
   Info const &info,
   GridBase const *gridder,

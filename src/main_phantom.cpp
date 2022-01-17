@@ -19,10 +19,8 @@ int main_phantom(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Filename with basis", {'b', "basis"});
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  std::unordered_map<std::string, Kernels> kernelMap{
-    {"NN", Kernels::NN}, {"KB3", Kernels::KB3}, {"KB5", Kernels::KB5}};
-  args::MapFlag<std::string, Kernels> kernel(
-    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, kernelMap);
+  args::ValueFlag<std::string> ktype(
+    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");
   args::ValueFlag<float> fov(
     parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<Index> matrix(
@@ -122,13 +120,15 @@ int main_phantom(args::Subparser &parser)
                             log);
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
 
+  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   std::unique_ptr<GridBase> gridder;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
-    gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), false, basis, log);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, false, log);
   } else {
-    gridder = make_grid(traj, osamp.Get(), kernel.Get(), false, log);
+    gridder = make_grid(kernel.get(), mapping, false, log);
   }
   ReconOp recon(gridder.get(), senseMaps, log);
   auto const sz = recon.inputDimensions();

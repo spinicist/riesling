@@ -1,5 +1,5 @@
-#include "io.h"
 #include "parse_args.h"
+#include "io.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <algorithm>
@@ -94,4 +94,13 @@ std::string OutName(
     oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
     suffix,
     extension);
+}
+
+Index ValOrLast(Index const val, Index const vols)
+{
+  if (val < 0) {
+    return vols - 1;
+  } else {
+    return std::min(val, vols - 1);
+  }
 }

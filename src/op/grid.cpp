@@ -1,113 +1,66 @@
 #include "grid.h"
-#include "grid-basis-kernel.hpp"
-#include "grid-basis-nn.hpp"
-#include "grid-echo-kernel.hpp"
-#include "grid-echo-nn.hpp"
+#include "grid-basis.hpp"
+#include "grid-echo.hpp"
 
 #include "../tensorOps.h"
 #include "../threads.h"
 
-std::unique_ptr<GridBase> make_grid(
-  Trajectory const &traj,
-  float const os,
-  Kernels const k,
-  bool const fastgrid,
-  Log &log,
-  float const res,
-  bool const shrink)
+std::unique_ptr<GridBase> make_grid(Kernel const *k, Mapping const &m, bool const fg, Log &log)
 {
-  switch (k) {
-  case Kernels::NN:
-    return std::make_unique<GridNN>(traj, os, fastgrid, log, res, shrink);
-  case Kernels::KB3:
-    if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<Grid<KaiserBessel<3, 3>>>(traj, os, fastgrid, log, res, shrink);
-    } else {
-      return std::make_unique<Grid<KaiserBessel<3, 1>>>(traj, os, fastgrid, log, res, shrink);
+  switch (k->inPlane()) {
+  case 1:
+    return std::make_unique<GridEcho<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k), m, fg, log);
+  case 3:
+    switch (k->inPlane()) {
+    case 1:
+      return std::make_unique<GridEcho<3, 1>>(
+        dynamic_cast<SizedKernel<3, 1> const *>(k), m, fg, log);
+    case 3:
+      return std::make_unique<GridEcho<3, 3>>(
+        dynamic_cast<SizedKernel<3, 3> const *>(k), m, fg, log);
     }
-  case Kernels::KB5:
-    if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<Grid<KaiserBessel<5, 5>>>(traj, os, fastgrid, log, res, shrink);
-    } else {
-      return std::make_unique<Grid<KaiserBessel<5, 1>>>(traj, os, fastgrid, log, res, shrink);
+    __builtin_unreachable();
+  case 5:
+    switch (k->inPlane()) {
+    case 1:
+      return std::make_unique<GridEcho<5, 1>>(
+        dynamic_cast<SizedKernel<5, 1> const *>(k), m, fg, log);
+    case 5:
+      return std::make_unique<GridEcho<5, 5>>(
+        dynamic_cast<SizedKernel<5, 5> const *>(k), m, fg, log);
     }
+    __builtin_unreachable();
   }
   __builtin_unreachable();
 }
 
 std::unique_ptr<GridBase>
-make_grid(Mapping const &mapping, Kernels const k, bool const fastgrid, Log &log)
+make_grid_basis(Kernel const *k, Mapping const &m, R2 const &b, bool const fg, Log &log)
 {
-  switch (k) {
-  case Kernels::NN:
-    return std::make_unique<GridNN>(mapping, fastgrid, log);
-  case Kernels::KB3:
-    if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<Grid<KaiserBessel<3, 3>>>(mapping, fastgrid, log);
-    } else {
-      return std::make_unique<Grid<KaiserBessel<3, 1>>>(mapping, fastgrid, log);
+  switch (k->inPlane()) {
+  case 1:
+    return std::make_unique<GridBasis<1, 1>>(
+      dynamic_cast<SizedKernel<1, 1> const *>(k), m, b, fg, log);
+  case 3:
+    switch (k->inPlane()) {
+    case 1:
+      return std::make_unique<GridBasis<3, 1>>(
+        dynamic_cast<SizedKernel<3, 1> const *>(k), m, b, fg, log);
+    case 3:
+      return std::make_unique<GridBasis<3, 3>>(
+        dynamic_cast<SizedKernel<3, 3> const *>(k), m, b, fg, log);
     }
-  case Kernels::KB5:
-    if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<Grid<KaiserBessel<5, 5>>>(mapping, fastgrid, log);
-    } else {
-      return std::make_unique<Grid<KaiserBessel<5, 1>>>(mapping, fastgrid, log);
+    __builtin_unreachable();
+  case 5:
+    switch (k->inPlane()) {
+    case 1:
+      return std::make_unique<GridBasis<5, 1>>(
+        dynamic_cast<SizedKernel<5, 1> const *>(k), m, b, fg, log);
+    case 5:
+      return std::make_unique<GridBasis<5, 5>>(
+        dynamic_cast<SizedKernel<5, 5> const *>(k), m, b, fg, log);
     }
-  }
-  __builtin_unreachable();
-}
-
-std::unique_ptr<GridBase> make_grid_basis(
-  Trajectory const &traj,
-  float const os,
-  Kernels const k,
-  bool const fastgrid,
-  R2 const &basis,
-  Log &log,
-  float const res,
-  bool const shrink)
-{
-  switch (k) {
-  case Kernels::NN:
-    return std::make_unique<GridBasisNN>(traj, os, fastgrid, basis, log, res, shrink);
-  case Kernels::KB3:
-    if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<GridBasis<KaiserBessel<3, 3>>>(
-        traj, os, fastgrid, basis, log, res, shrink);
-    } else {
-      return std::make_unique<GridBasis<KaiserBessel<3, 1>>>(
-        traj, os, fastgrid, basis, log, res, shrink);
-    }
-  case Kernels::KB5:
-    if (traj.info().type == Info::Type::ThreeD) {
-      return std::make_unique<GridBasis<KaiserBessel<5, 5>>>(
-        traj, os, fastgrid, basis, log, res, shrink);
-    } else {
-      return std::make_unique<GridBasis<KaiserBessel<5, 1>>>(
-        traj, os, fastgrid, basis, log, res, shrink);
-    }
-  }
-  __builtin_unreachable();
-}
-
-std::unique_ptr<GridBase> make_grid_basis(
-  Mapping const &mapping, Kernels const k, bool const fastgrid, R2 const &basis, Log &log)
-{
-  switch (k) {
-  case Kernels::NN:
-    return std::make_unique<GridBasisNN>(mapping, fastgrid, basis, log);
-  case Kernels::KB3:
-    if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<GridBasis<KaiserBessel<3, 3>>>(mapping, fastgrid, basis, log);
-    } else {
-      return std::make_unique<GridBasis<KaiserBessel<3, 1>>>(mapping, fastgrid, basis, log);
-    }
-  case Kernels::KB5:
-    if (mapping.type == Info::Type::ThreeD) {
-      return std::make_unique<GridBasis<KaiserBessel<5, 5>>>(mapping, fastgrid, basis, log);
-    } else {
-      return std::make_unique<GridBasis<KaiserBessel<5, 1>>>(mapping, fastgrid, basis, log);
-    }
+    __builtin_unreachable();
   }
   __builtin_unreachable();
 }

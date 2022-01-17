@@ -17,8 +17,9 @@ int main_nufft(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
-
-  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
+  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
   if (!forward) {
     gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
     gridder->setSDCPower(sdcPow.Get());

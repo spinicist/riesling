@@ -112,8 +112,9 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
 }
 
 Mapping
-Trajectory::mapping(float const os, Index const kRad, float const inRes, bool const shrink) const
+Trajectory::mapping(Index const kw, float const os, float const inRes, bool const shrink) const
 {
+  Index const kRad = kw / 2; // Radius to avoid at edge of grid
   float const res = inRes < 0.f ? info_.voxel_size.minCoeff() : inRes;
   float const ratio = info_.voxel_size.minCoeff() / res;
   Index const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));

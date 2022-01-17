@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../threads.h"
-#include "gridBase.hpp"
+#include "grid-base.hpp"
 #include "operator.h"
 
 template <int Rank>

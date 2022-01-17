@@ -34,7 +34,9 @@ int main_espirit(args::Subparser &parser)
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
-  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log, res);
+  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), res, true);
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
   gridder->setSDC(SDC::Pipe(traj, true, osamp.Get(), log));
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);

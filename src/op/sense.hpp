@@ -4,7 +4,7 @@
 #include "../tensorOps.h"
 #include "../threads.h"
 
-#include "gridBase.hpp"
+#include "grid-base.hpp"
 #include "operator.h"
 
 struct SenseOp final : Operator<4, 5>

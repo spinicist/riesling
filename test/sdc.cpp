@@ -1,6 +1,5 @@
 #include "../src/sdc.h"
 #include "../src/log.h"
-#include "../src/op/grid-echo-kernel.hpp"
 #include "../src/traj_spirals.h"
 #include "../src/trajectory.h"
 #include <catch2/catch.hpp>
@@ -33,9 +32,9 @@ TEST_CASE("NN", "[SDC]")
     // Central points should be very small
     CHECK(sdc(0, 0) == Approx(0.00129f).margin(1.e-4f));
     CHECK(sdc(1, 0) == Approx(0.00519f).margin(1.e-4f));
-    // Undersampled points should be one, but there are gridding issues.
-    CHECK(sdc(25, 0) == Approx(1.10136f).margin(1.e-1f));
-    CHECK(sdc(26, 0) == Approx(0.79628f).margin(1.e-1f));
+    // Undersampled points should be close to one
+    CHECK(sdc(25, 0) == Approx(0.99172f).margin(1.e-1f));
+    CHECK(sdc(26, 0) == Approx(1.08636f).margin(1.e-1f));
     // Point excluded by margin at edge of grid
     CHECK(sdc(31, 0) == Approx(0.0f).margin(1.e-4f));
   }

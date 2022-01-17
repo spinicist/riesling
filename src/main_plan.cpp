@@ -19,15 +19,18 @@ int main_plan(args::Subparser &parser)
   FFT::SetTimelimit(timelimit.Get());
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
-  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
+  auto const info = traj.info();
+  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
   FFT::Planned<5, 3> fft3(gridder->inputDimensions(traj.info().channels), log);
   FFT::Planned<5, 3> fft4(gridder->inputDimensions(1), log);
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
-    auto gridderBasis = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
-    FFT::Planned<5, 3> fft(gridderBasis->inputDimensions(traj.info().channels), log);
+    auto gb = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid, log);
+    FFT::Planned<5, 3> fft(gb->inputDimensions(traj.info().channels), log);
   }
 
   FFT::End(log);

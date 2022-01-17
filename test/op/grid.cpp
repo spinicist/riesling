@@ -11,17 +11,18 @@ TEST_CASE("ops-grid", "[ops]")
   Log log;
   Index const M = 16;
   float const os = 2.f;
-  Info const info{.type = Info::Type::ThreeD,
-                  .matrix = Eigen::Array3l::Constant(M),
-                  .channels = 1,
-                  .read_points = Index(os * M / 2),
-                  .spokes = Index(M * M),
-                  .volumes = 1,
-                  .echoes = 1,
-                  .tr = 1.f,
-                  .voxel_size = Eigen::Array3f::Constant(1.f),
-                  .origin = Eigen::Array3f::Constant(0.f),
-                  .direction = Eigen::Matrix3f::Identity()};
+  Info const info{
+    .type = Info::Type::ThreeD,
+    .matrix = Eigen::Array3l::Constant(M),
+    .channels = 1,
+    .read_points = Index(os * M / 2),
+    .spokes = Index(M * M),
+    .volumes = 1,
+    .echoes = 1,
+    .tr = 1.f,
+    .voxel_size = Eigen::Array3f::Constant(1.f),
+    .origin = Eigen::Array3f::Constant(0.f),
+    .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory const traj(info, points, log);
   R2 const sdc = SDC::Pipe(traj, true, os, log);
@@ -36,7 +37,9 @@ TEST_CASE("ops-grid", "[ops]")
    */
   SECTION("NN-Dot")
   {
-    auto grid = make_grid(traj, os, Kernels::NN, false, log);
+    auto const nn = make_kernel("NN", info.type, os);
+    auto const m1 = traj.mapping(1, os);
+    auto grid = make_grid(nn.get(), m1, false, log);
     grid->setSDC(sdc);
     auto const dims = grid->inputDimensions(1);
     Cx5 x(dims), y(dims);

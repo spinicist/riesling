@@ -33,7 +33,9 @@ int main_admm(args::Subparser &parser)
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
 
-  auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
+  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
   R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get(), log);
   gridder->setSDC(w);
   Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)
@@ -48,7 +50,7 @@ int main_admm(args::Subparser &parser)
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 const basis = basisReader.readBasis();
-    gridder = make_grid_basis(gridder->mapping(), kernel.Get(), fastgrid, basis, log);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid, log);
     gridder->setSDC(w);
   }
   gridder->setSDCPower(sdcPow.Get());

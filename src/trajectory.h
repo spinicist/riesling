@@ -42,7 +42,7 @@ struct Trajectory
 
   // Generate an appropriate mapping
   Mapping mapping(
-    float const os, Index const kRad, float const inRes = -1.f, bool const shrink = false) const;
+    Index const kw, float const os, float const inRes = -1.f, bool const shrink = false) const;
 
 private:
   void init();

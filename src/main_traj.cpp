@@ -22,27 +22,25 @@ int main_traj(args::Subparser &parser)
   HD5::Reader reader(iname.Get(), log);
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
+  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   Cx3 rad_ks(1, info.read_points, info.spokes);
   rad_ks.setConstant(1.0f);
 
   Cx4 out;
+  std::unique_ptr<GridBase> gridder;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get(), log);
     R2 basis = basisReader.readBasis();
-    auto gridder = make_grid_basis(traj, osamp.Get(), kernel.Get(), fastgrid, basis, log);
-    gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
-    gridder->setSDCPower(sdcPow.Get());
-    Cx5 grid(gridder->inputDimensions(1));
-    gridder->Adj(rad_ks, grid);
-    out = grid.chip<0>(0);
+    gridder = make_grid_basis(kernel.get(), mapping, basis, fastgrid, log);
   } else {
-    auto gridder = make_grid(traj, osamp.Get(), kernel.Get(), fastgrid, log);
-    gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
-    gridder->setSDCPower(sdcPow.Get());
-    Cx5 grid(gridder->inputDimensions(1));
-    gridder->Adj(rad_ks, grid);
-    out = grid.chip<0>(0);
+    gridder = make_grid(kernel.get(), mapping, fastgrid, log);
   }
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+  gridder->setSDCPower(sdcPow.Get());
+  Cx5 grid(gridder->inputDimensions(1));
+  gridder->Adj(rad_ks, grid);
+  out = grid.chip<0>(0);
 
   auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");
   HD5::Writer writer(fname, log);

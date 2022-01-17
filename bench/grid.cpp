@@ -1,8 +1,7 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
-#include "../src/info.h"
-#include "../src/op/grid-basis.h"
 #include "../src/op/grid.h"
+#include "../src/info.h"
 #include "../src/traj_spirals.h"
 
 #include <catch2/catch.hpp>
@@ -12,17 +11,18 @@ TEST_CASE("Grid")
   Log log;
   Index const M = 32;
   Index const C = 8;
-  Info const info{.type = Info::Type::ThreeD,
-                  .matrix = Eigen::Array3l::Constant(M),
-                  .channels = C,
-                  .read_points = M / 2,
-                  .spokes = M * M,
-                  .volumes = 1,
-                  .echoes = 1,
-                  .tr = 1.f,
-                  .voxel_size = Eigen::Array3f::Constant(1.f),
-                  .origin = Eigen::Array3f::Constant(0.f),
-                  .direction = Eigen::Matrix3f::Identity()};
+  Info const info{
+    .type = Info::Type::ThreeD,
+    .matrix = Eigen::Array3l::Constant(M),
+    .channels = C,
+    .read_points = M / 2,
+    .spokes = M * M,
+    .volumes = 1,
+    .echoes = 1,
+    .tr = 1.f,
+    .voxel_size = Eigen::Array3f::Constant(1.f),
+    .origin = Eigen::Array3f::Constant(0.f),
+    .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory traj(info, points, log);
 
@@ -30,11 +30,17 @@ TEST_CASE("Grid")
 
   BENCHMARK("Mapping")
   {
-    traj.mapping(os, 1);
+    traj.mapping(1, os);
   };
 
-  auto gridnn = make_grid(traj, os, Kernels::NN, false, log);
-  auto gridkb = make_grid(traj, os, Kernels::KB5, false, log);
+  auto const nn = make_kernel("NN", info.type, os);
+  auto const kb = make_kernel("KB5", info.type, os);
+
+  auto const m1 = traj.mapping(1, os);
+  auto const m5 = traj.mapping(5, os);
+
+  auto gridnn = make_grid(nn.get(), m1, false, log);
+  auto gridkb = make_grid(kb.get(), m5, false, log);
 
   auto nc = info.noncartesianVolume();
   Cx5 c(gridkb->inputDimensions(C));
@@ -42,8 +48,8 @@ TEST_CASE("Grid")
   R2 basis(256, nB);
   basis.setConstant(1.f);
 
-  auto gridbnn = make_grid_basis(traj, os, Kernels::NN, false, basis, log);
-  auto gridbkb = make_grid_basis(traj, os, Kernels::KB5, false, basis, log);
+  auto gridbnn = make_grid_basis(nn.get(), m1, basis, false, log);
+  auto gridbkb = make_grid_basis(kb.get(), m5, basis, false, log);
   Cx5 b(gridbkb->inputDimensions(C));
 
   BENCHMARK("NN Noncartesian->Cartesian")
