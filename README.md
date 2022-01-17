@@ -18,7 +18,7 @@ Tobias C Wood, Emil Ljungberg, Florian Wiesinger.
 
 Pre-compiled executables are provided for Linux and Mac OS X in a .tar.gz 
 archive from http://github.com/spinicist/riesling/releases. Download the 
-archive and extract it with `tar -xzf riesling-platform.tar.gz`. Then, move the ]
+archive and extract it with `tar -xzf riesling-platform.tar.gz`. Then, move the 
 resulting `riesling` executable to somewhere on your `$PATH`, for instance 
 `/usr/local/bin`. That's it.
 
@@ -39,11 +39,33 @@ straightforward as long as you have access to a C++17 compiler (GCC 8 or higher,
 Clang 7 or higher). RIESLING relies on `vcpkg` for dependency management. To 
 download and compile RIESLING, follow these steps:
 
-0. Install the dependencies (see https://github.com/microsoft/vcpkg#installing-linux-developer-tools)
-0.1. On Mac, these are `cmake` and X-Code
-0.2. On Linux, these are `cmake`, `tar`, `curl`, `zip`, `unzip`, `pkg-config` \& `build-essentials`. You may be surprised by which distributions do not include these by default.
-1. Clone the repository. `git clone https://github.com/spinicist/riesling`
-2. Run `bootstraph.sh`.
+### 0. MacOS Dependencies
+Install the [MacOS vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-macos-developer-tools). This includes:
+1. XCode from the AppStore
+2. Run `$ xcode-select --install` in the terminal
+
+You may also need to install `pkg-config` depending on your macOS version. This is easily installed with [Homebrew](https://brew.sh/) using
+```
+$ brew install pkg-config
+```
+
+**_(17/01/2022): The Apple Silicon Architecture (M1) is currently not supported. We are working on it though, stay tuned!)_**
+
+### 0. Linux Dependencies
+Install the [Linux vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-linux-developer-tools). These includes:
+
+These are `cmake`, `tar`, `curl`, `zip`, `unzip`, `pkg-config` \& `build-essentials`. You may be surprised by which distributions do not include these by default.
+
+### 1. Clone repository
+```
+$ git clone https://github.com/spinicist/riesling
+```
+
+### 2. Compile
+In the `riesling` folder execute
+```
+$ ./bootstraph.sh
+```
 
 ## Usage
 
