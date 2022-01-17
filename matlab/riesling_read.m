@@ -11,6 +11,7 @@ function varargout = riesling_read(fname)
 %
 % Emil Ljungberg, King's College London, 2021
 % Martin Krämer, University Hospital Jena, 2021
+% Patrick Fuchs, University College London, 2022
 
 % always read info 
 info = h5read(fname, '/info');
@@ -18,8 +19,22 @@ info = h5read(fname, '/info');
 % Open h5 file
 file_info = h5info(fname);
 is_img_data = any(contains({file_info.Datasets.Name}, 'image'));
+is_nufft_reverse_data = any(contains({file_info.Datasets.Name}, 'nufft-backward'));
+is_nufft_forward_data = any(contains({file_info.Datasets.Name}, 'nufft-forward'));
 if is_img_data % load only image data
     data = h5read(fname, '/image');
+    img = data.r + 1j*data.i;
+    
+    varargout{1} = img;
+    varargout{2} = info;
+elseif is_nufft_forward_data
+    data = h5read(fname, '/nufft-forward');
+    img = data.r + 1j*data.i;
+    
+    varargout{1} = img;
+    varargout{2} = info;
+elseif is_nufft_reverse_data
+    data = h5read(fname, '/nufft-backward');
     img = data.r + 1j*data.i;
     
     varargout{1} = img;
