@@ -23,19 +23,19 @@ struct Log
   Level level() const;
 
   template <typename S, typename... Args>
-  inline void info(const S &fmt_str, const Args &... args) const
+  inline void info(const S &fmt_str, const Args &...args) const
   {
     vinfo(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
-  inline void debug(const S &fmt_str, const Args &... args) const
+  inline void debug(const S &fmt_str, const Args &...args) const
   {
     vdebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
 
   template <typename S, typename... Args>
-  static void Fail(const S &fmt_str, const Args &... args)
+  __attribute__((noreturn)) static void Fail(const S &fmt_str, const Args &...args)
   {
     vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
   }
@@ -51,7 +51,7 @@ struct Log
 private:
   void vinfo(fmt::string_view format, fmt::format_args args) const;
   void vdebug(fmt::string_view format, fmt::format_args args) const;
-  static void vfail(fmt::string_view format, fmt::format_args args);
+  __attribute__((noreturn)) static void vfail(fmt::string_view format, fmt::format_args args);
   Level out_level_;
 };
 
