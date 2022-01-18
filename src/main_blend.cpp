@@ -41,6 +41,11 @@ int main_blend(args::Subparser &parser)
   HD5::Reader binput(bname.Get(), log);
   R2 const basis = binput.readTensor<R2>("basis");
 
+  if (basis.dimension(1) != images.dimension(0)) {
+    Log::Fail(
+      FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
+  }
+
   if ((tp.Get() < 0) || (tp.Get() >= basis.dimension(0))) {
     Log::Fail(
       FMT_STRING("Requested timepoint {} exceeds basis length {}"), tp.Get(), basis.dimension(0));

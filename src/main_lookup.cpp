@@ -31,7 +31,7 @@ int main_lookup(args::Subparser &parser)
     images.dimension(3),
     images.dimension(4));
   out_pars.setZero();
-  Cx4 pd(images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
+  Cx5 pd(1, images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   pd.setZero();
 
   Index const N = dictionary.dimension(0);
@@ -40,7 +40,8 @@ int main_lookup(args::Subparser &parser)
   }
   log.info(FMT_STRING("Dictionary has {} entries"), N);
 
-  Cx1 const basis_ss = basis.chip<0>(0).cast<Cx>();
+  Cx1 const basis_ss = basis.chip<0>(basis.dimension(0) - 1).cast<Cx>();
+  fmt::print("basis_ss dims {}\n", basis_ss.dimensions());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     log.info("Processing volume {}", iv);
     auto ztask = [&](Index const lo, Index const hi, Index const ti) {
@@ -60,7 +61,7 @@ int main_lookup(args::Subparser &parser)
               }
             }
             out_pars.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix) = parameters.chip<0>(index);
-            pd(ix, iy, iz, iv) = Dot(basis_ss, proj) / Mz_ss(index, 0); // Scale Mz_ss to M0
+            pd(0, ix, iy, iz, iv) = Dot(basis_ss, proj) / Mz_ss(index, 0); // Scale Mz_ss to M0
           }
         }
       }

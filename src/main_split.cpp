@@ -49,12 +49,9 @@ int main_split(args::Subparser &parser)
     writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes, log));
     writer.writeNoncartesian(lo_ks);
     info.spokes -= lores.Get();
-    R3 hi_points = points.slice(Sz3{0, 0, lores.Get()}, Sz3{3, info.read_points, info.spokes});
-    Cx3 hi_ks = ks.slice(Sz3{0, 0, lores.Get()}, Sz3{info.channels, info.read_points, info.spokes});
-    I1 hi_echoes = echoes.slice(Sz1{lores.Get()}, Sz1{info.spokes});
-    points = hi_points;
-    ks = hi_ks;
-    echoes = hi_echoes;
+    points = R3(points.slice(Sz3{0, lores.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
+    ks = Cx3(ks.slice(Sz3{0, lores.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
+    echoes = I1(echoes.slice(Sz1{lores.Get()}, Sz1{info.spokes}));
   }
 
   if (nspokes) {

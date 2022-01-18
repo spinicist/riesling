@@ -16,7 +16,7 @@ struct Result
 // Another simple struct for passing around the main ZTE sequence parameters
 struct Sequence
 {
-  Index sps;
+  Index sps, gps;
   float alpha, TR, Tramp, Tssi, TI, Trec, TE;
 };
 
