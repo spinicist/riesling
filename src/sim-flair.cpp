@@ -10,11 +10,10 @@ Result FLAIR(
   Parameter const T2p,
   Parameter const B1p,
   Sequence const seq,
-  Index const nRand,
-  Log &log)
+  Index const nRand)
 {
-  log.info("FLAIR-ZTE simulation");
-  log.info(
+  Log::Print("FLAIR-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, FA {}, TR {}s, TI {}s, Trec {}s, TE {}s"),
     seq.sps,
     seq.alpha,
@@ -25,15 +24,15 @@ Result FLAIR(
   ParameterGenerator<3> gen({T1p, T2p, B1p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   if (nRand > 0) {
-    log.info(FMT_STRING("Random values of T1 from {} to {}s"), T1p.lo, T1p.hi);
-    log.info(FMT_STRING("Random values of T2 from {} to {}"), T2p.lo, T2p.hi);
-    log.info(FMT_STRING("Random values of B1 from {} to {}"), B1p.lo, B1p.hi);
+    Log::Print(FMT_STRING("Random values of T1 from {} to {}s"), T1p.lo, T1p.hi);
+    Log::Print(FMT_STRING("Random values of T2 from {} to {}"), T2p.lo, T2p.hi);
+    Log::Print(FMT_STRING("Random values of B1 from {} to {}"), B1p.lo, B1p.hi);
   } else {
-    log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-    log.info(FMT_STRING("{} values of T2p from {} to {}"), T2p.N, T2p.lo, T2p.hi);
-    log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
+    Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+    Log::Print(FMT_STRING("{} values of T2p from {} to {}"), T2p.N, T2p.lo, T2p.hi);
+    Log::Print(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   }
-  log.info(FMT_STRING("{} total values"), totalN);
+  Log::Print(FMT_STRING("{} total values"), totalN);
 
   Result result;
   result.dynamics.resize(totalN, seq.sps);
@@ -44,7 +43,7 @@ Result FLAIR(
   inv << -1.f, 0.f, 0.f, 1.f;
   auto task = [&](Index const lo, Index const hi, Index const ti) {
     for (Index ip = lo; ip < hi; ip++) {
-      log.progress(ip, lo, hi);
+      Log::Progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const T1 = P(0);
@@ -92,9 +91,9 @@ Result FLAIR(
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 

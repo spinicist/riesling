@@ -29,13 +29,13 @@ double sinc(const double x)
   }
 }
 
-void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 &ks, Log &log)
+void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 &ks)
 {
-  log.info(
+  Log::Print(
     FMT_STRING("Applying slab profile correction for pulse-width {} us, bandwidth {} kHz"),
     pw_us,
     rbw_kHz);
-  FFT::Start(log);
+  FFT::Start();
   Index const N = 2 * info.read_points;
   float const os = (2.f * info.read_points) / info.matrix.maxCoeff();
   float const fov = (info.matrix.cast<float>() * info.voxel_size * 1e-3).maxCoeff();
@@ -53,7 +53,7 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
   });
   Eigen::TensorMap<R1 const> const profile(p.data(), N);
 
-  FFT1DReal2Complex fft(N, log);
+  FFT1DReal2Complex fft(N);
   float const beta = 1.e-1; // Regularize sinc nulls
   auto spoke_task = [&](Index const spoke_lo, Index const spoke_hi) {
     for (Index is = spoke_lo; is < spoke_hi; is++) {
@@ -68,5 +68,5 @@ void slab_correct(Info const &info, float const pw_us, float const rbw_kHz, Cx3 
   };
   //   spoke_task(0, ks.dimension(2));
   Threads::RangeFor(spoke_task, 0, ks.dimension(2));
-  FFT::End(log);
+  FFT::End();
 }

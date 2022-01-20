@@ -1,6 +1,6 @@
 #include "cropper.h"
 
-Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &log)
+Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent)
 {
   if (extent < 0.f) {
     std::transform(
@@ -21,23 +21,23 @@ Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &l
     st_[2] = 0;
     sz_[2] = info.matrix[2];
   }
-  log.debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
 }
 
-Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz, Log &log)
+Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)
 {
   sz_[0] = cropSz[0];
   sz_[1] = cropSz[1];
   sz_[2] = cropSz[2];
   calcStart(fullSz);
-  log.debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
 }
 
-Cropper::Cropper(Sz3 const &fullSz, Sz3 const &cropSz, Log &log)
+Cropper::Cropper(Sz3 const &fullSz, Sz3 const &cropSz)
 {
   sz_ = cropSz;
   calcStart(fullSz);
-  log.debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
 }
 
 void Cropper::calcStart(Sz3 const &fullSz)

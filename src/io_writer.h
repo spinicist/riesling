@@ -10,7 +10,7 @@ namespace HD5 {
 
 struct Writer
 {
-  Writer(std::string const &fname, Log &log_);
+  Writer(std::string const &fname_);
   ~Writer();
   void writeInfo(Info const &info);
   void writeMeta(std::map<std::string, float> const &meta);
@@ -30,8 +30,7 @@ struct Writer
   void writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label);
 
 private:
-  Log &log_;
-  int64_t handle_;
+    int64_t handle_;
 };
 
 } // namespace HD5

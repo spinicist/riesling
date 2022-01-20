@@ -4,10 +4,10 @@
 #include <Eigen/SVD>
 #include <random>
 
-Cx4 llr(Cx4 const &x, float const l, Index const p, Log &log)
+Cx4 llr(Cx4 const &x, float const l, Index const p)
 {
   Index const K = x.dimension(0);
-  log.info("LLR regularization patch size {} lamdba {}", p, l);
+  Log::Print("LLR regularization patch size {} lamdba {}", p, l);
   Cx4 lr(x.dimensions());
   lr.setZero();
 
@@ -30,13 +30,13 @@ Cx4 llr(Cx4 const &x, float const l, Index const p, Log &log)
       }
     }
   };
-  auto const now = log.now();
+  auto const now = Log::Now();
   Threads::RangeFor(zTask, 0, x.dimension(3) - p);
-  log.info("LLR Regularization took {}", log.toNow(now));
+  Log::Print("LLR Regularization took {}", Log::ToNow(now));
   return lr;
 }
 
-Cx4 llr_patch(Cx4 const &x, float const l, Index const p, Log &log)
+Cx4 llr_patch(Cx4 const &x, float const l, Index const p)
 {
   std::array<Index, 3> nP, shift;
   std::random_device rd;
@@ -77,9 +77,9 @@ Cx4 llr_patch(Cx4 const &x, float const l, Index const p, Log &log)
       }
     }
   };
-  auto const now = log.now();
+  auto const now = Log::Now();
   zTask(0, nP[2]);
   // Threads::RangeFor(zTask, nP[2]);
-  log.info("LLR Regularization took {}", log.toNow(now));
+  Log::Print("LLR Regularization took {}", Log::ToNow(now));
   return lr;
 }

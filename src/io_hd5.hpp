@@ -21,10 +21,7 @@ hid_t type()
 
 template <typename Scalar, int ND>
 void store_tensor(
-  Handle const &parent,
-  std::string const &name,
-  Eigen::Tensor<Scalar, ND> const &data,
-  Log const &log)
+  Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> const &data)
 {
   herr_t status;
   hsize_t ds_dims[ND], chunk_dims[ND];
@@ -53,12 +50,12 @@ void store_tensor(
   if (status) {
     Log::Fail("Could not write tensor {}, code: {}", name, status);
   } else {
-    log.info("Wrote dataset: {}", name);
+    Log::Print("Wrote dataset: {}", name);
   }
 }
 
 template <int ND>
-Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name, Log const &log)
+Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
@@ -78,8 +75,7 @@ Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name,
 }
 
 template <typename Scalar, int ND>
-void load_tensor(
-  Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> &tensor, Log const &log)
+void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> &tensor)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
@@ -107,7 +103,7 @@ void load_tensor(
   if (ret_value < 0) {
     Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {
-    log.info("Read dataset: {}", name);
+    Log::Print("Read dataset: {}", name);
   }
 }
 
@@ -116,8 +112,7 @@ void load_tensor_slab(
   Handle const &parent,
   std::string const &name,
   Index const index,
-  Eigen::Tensor<Scalar, CD> &tensor,
-  Log const &log)
+  Eigen::Tensor<Scalar, CD> &tensor)
 {
   int const ND = CD + 1;
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
@@ -172,12 +167,12 @@ void load_tensor_slab(
   if (status < 0) {
     Log::Fail("Error reading slab {} from tensor {}, code:", index, name, status);
   } else {
-    log.info("Read dataset: {} chunk: {}", name, index);
+    Log::Print("Read dataset: {} chunk: {}", name, index);
   }
 }
 
 template <typename Scalar, int ND>
-Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &name, Log const &log)
+Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
@@ -200,7 +195,7 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   if (ret_value < 0) {
     Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {
-    log.info("Read dataset: {}", name);
+    Log::Print("Read dataset: {}", name);
   }
   return tensor;
 }

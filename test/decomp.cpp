@@ -4,8 +4,6 @@
 
 TEST_CASE("Decomp", "[Decomp]")
 {
-  Log log;
-
   Index const nvar = 64;
   Index const nsamp = 256;
 
@@ -16,6 +14,6 @@ TEST_CASE("Decomp", "[Decomp]")
     data.setRandom();
     Cx2 vecs(nvar, nvar);
     R1 vals(nvar);
-    PCA(data, vecs, vals, log);
+    PCA(data, vecs, vals);
   }
 }

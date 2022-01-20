@@ -21,21 +21,21 @@ inline Index fft_size(float const x)
   }
 }
 
-Trajectory::Trajectory(Info const &info, R3 const &points, Log const &log)
+Trajectory::Trajectory(Info const &info, R3 const &points)
   : info_{info}
   , points_{points}
-  , log_{log}
+
 {
   echoes_ = I1(info_.spokes);
   echoes_.setZero();
   init();
 }
 
-Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &echoes, Log const &log)
+Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &echoes)
   : info_{info}
   , points_{points}
   , echoes_{echoes}
-  , log_{log}
+
 {
   init();
 }
@@ -76,7 +76,7 @@ void Trajectory::init()
     }
   }
 
-  log_.info("Created trajectory object with {} spokes", info_.spokes);
+  Log::Print("Created trajectory object with {} spokes", info_.spokes);
 }
 
 Info const &Trajectory::info() const
@@ -118,7 +118,7 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
   float const res = inRes < 0.f ? info_.voxel_size.minCoeff() : inRes;
   float const ratio = info_.voxel_size.minCoeff() / res;
   Index const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
-  log_.info(
+  Log::Print(
     FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
 
   Mapping mapping;
@@ -144,7 +144,7 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
   std::fesetround(FE_TONEAREST);
   float const maxRad = ratio * ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
-  auto start = log_.now();
+  auto start = Log::Now();
   for (int32_t is = 0; is < info_.spokes; is++) {
     auto const echo = echoes_(is);
     if ((echo >= 0) && (echo < info_.echoes)) {
@@ -164,12 +164,12 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
       }
     }
   }
-  log_.info("Generated {} co-ordinates in {}", mapping.cart.size(), log_.toNow(start));
+  Log::Print("Generated {} co-ordinates in {}", mapping.cart.size(), Log::ToNow(start));
 
   mapping.echoWeights = mapping.echoWeights.maxCoeff() / mapping.echoWeights;
-  log_.info("Echo weights: {}", mapping.echoWeights.transpose());
+  Log::Print("Echo weights: {}", mapping.echoWeights.transpose());
 
-  start = log_.now();
+  start = Log::Now();
   mapping.sortedIndices.resize(mapping.cart.size());
   std::iota(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), 0);
   std::sort(
@@ -179,7 +179,7 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
       return (ac.z < bc.z) ||
              ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
     });
-  log_.debug("Grid co-ord sorting: {}", log_.toNow(start));
+  Log::Debug("Grid co-ord sorting: {}", Log::ToNow(start));
 
   return mapping;
 }

@@ -7,8 +7,8 @@ int main_meta(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file to read meta-data from");
   args::PositionalList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed");
 
-  Log log = ParseCommand(parser, iname);
-  HD5::Reader reader(iname.Get(), log);
+  ParseCommand(parser, iname);
+  HD5::Reader reader(iname.Get());
   auto const &meta = reader.readMeta();
   if (meta.size() > 0) {
     for (auto const &k : keys.Get()) {

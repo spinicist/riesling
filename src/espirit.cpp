@@ -15,28 +15,27 @@ Cx4 ESPIRIT(
   Index const kRad,
   Index const calRad,
   Index const gap,
-  float const thresh,
-  Log &log)
+  float const thresh)
 {
-  log.info(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
+  Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
-  log.info(FMT_STRING("Calculating k-space kernels"));
+  Log::Print(FMT_STRING("Calculating k-space kernels"));
   Cx5 grid_temp(gridder->inputDimensions(data.dimension(0))); // Maps will end up here
   gridder->Adj(data, grid_temp);
   Cx4 grid = grid_temp.chip<1>(0); // Get rid of the echoes dimension
   R3 valsImage(gridder->mapping().cartDims);
 
-  Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap, log);
-  Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh, log);
+  Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);
+  Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh);
   Index const retain = mini_kernels.dimension(4);
 
-  log.info(FMT_STRING("Upsample last dimension"));
+  Log::Print(FMT_STRING("Upsample last dimension"));
   Cx4 mix_grid(
     mini_kernels.dimension(0),
     mini_kernels.dimension(1),
     mini_kernels.dimension(2),
     grid.dimension(3));
-  FFT::Planned<4, 1> mix_fft(mix_grid, log);
+  FFT::Planned<4, 1> mix_fft(mix_grid);
   Cx5 mix_kernels(
     mini_kernels.dimension(0),
     mini_kernels.dimension(1),
@@ -46,8 +45,7 @@ Cx4 ESPIRIT(
   mix_kernels.setZero();
   Cropper const lo_mix(
     Sz3{mix_grid.dimension(1), mix_grid.dimension(2), mix_grid.dimension(3)},
-    Sz3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)},
-    log);
+    Sz3{mini_kernels.dimension(1), mini_kernels.dimension(2), mini_kernels.dimension(3)});
   float const scale =
     (1.f / sqrt(mini_kernels.dimension(1) * mini_kernels.dimension(2) * mini_kernels.dimension(3)));
   for (Index kk = 0; kk < retain; kk++) {
@@ -55,18 +53,17 @@ Cx4 ESPIRIT(
     lo_mix.crop4(mix_grid) = mini_kernels.chip<4>(kk) * mini_kernels.chip<4>(kk).constant(scale);
     mix_fft.reverse(mix_grid);
     mix_kernels.chip<4>(kk) = mix_grid;
-    log.progress(kk, 0, retain);
+    Log::Progress(kk, 0, retain);
   }
 
-  log.info(FMT_STRING("Image space Eigenanalysis"));
+  Log::Print(FMT_STRING("Image space Eigenanalysis"));
   // Do this slice-by-slice
-  auto slice_task = [&grid, &valsImage, &mix_kernels, &log](Index const lo_z, Index const hi_z) {
+  auto slice_task = [&grid, &valsImage, &mix_kernels](Index const lo_z, Index const hi_z) {
     for (Index zz = lo_z; zz < hi_z; zz++) {
       Cx4 hi_kernels(
         grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
       Cx3 hi_slice(grid.dimension(0), grid.dimension(1), grid.dimension(2));
-      Log nullLog;
-      FFT::Planned<3, 2> hi_slice_fft(hi_slice, nullLog, 1);
+      FFT::Planned<3, 2> hi_slice_fft(hi_slice, 1);
 
       // Now do a lot of FFTs
       for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
@@ -83,19 +80,19 @@ Cx4 ESPIRIT(
           Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
           Cx2 vecs(samples.dimension(0), samples.dimension(0));
           R1 vals(samples.dimension(0));
-          PCA(samples, vecs, vals, log);
+          PCA(samples, vecs, vals);
           Cx1 const vec0 = vecs.chip<1>(0);
           float const phase = std::arg(vec0(0));
           grid.chip<3>(zz).chip<2>(yy).chip<1>(xx) = (vec0 * std::polar(1.f, -phase)).conjugate();
           valsImage(xx, yy, zz) = vals(0);
         }
       }
-      log.progress(zz, lo_z, hi_z);
+      Log::Progress(zz, lo_z, hi_z);
     }
   };
   Threads::RangeFor(slice_task, mix_kernels.dimension(3));
 
-  log.info("Finished ESPIRIT");
-  log.image(valsImage, "espirit-val.nii");
+  Log::Print("Finished ESPIRIT");
+  Log::Image(valsImage, "espirit-val.nii");
   return grid;
 }

@@ -12,7 +12,7 @@ namespace HD5 {
 struct Reader
 {
   Reader(Reader const &) = delete;
-  Reader(std::string const &fname, Log &log);
+  Reader(std::string const &fname);
   ~Reader();
   std::map<std::string, float> readMeta() const;
   Info readInfo();
@@ -31,8 +31,7 @@ struct Reader
   template <typename T>
   void readTensor(std::string const &label, T &tensor); // Read with size checks
 private:
-  Log &log_;
-  int64_t handle_;
+    int64_t handle_;
   Index currentNCVol_;
   Cx3 nc_;
 };

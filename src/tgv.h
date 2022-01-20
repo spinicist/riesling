@@ -15,5 +15,4 @@ Cx4 tgv(
   float const reduction,
   float const step_size,
   ReconOp &op,
-  Cx3 const &radial,
-  Log &log);
+  Cx3 const &radial);

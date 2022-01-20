@@ -4,8 +4,6 @@
 
 TEST_CASE("Hankel", "[Hankel]")
 {
-  Log log;
-
   Index const nchan = 2;
   Index const gridSz = 10;
   Cx4 grid(nchan, gridSz, gridSz, gridSz);
@@ -16,7 +14,7 @@ TEST_CASE("Hankel", "[Hankel]")
 
   SECTION("No Gap")
   {
-    Cx5 k = ToKernels(grid, kRad, calRad, 0, log);
+    Cx5 k = ToKernels(grid, kRad, calRad, 0);
 
     CHECK(k.dimension(0) == nchan);
     Index const kW = 2 * kRad - 1;
@@ -33,7 +31,7 @@ TEST_CASE("Hankel", "[Hankel]")
   {
     Index const gap = 1;
     grid.chip(gridSz / 2, 3).chip(gridSz / 2, 2).chip(gridSz / 2, 1).setZero();
-    Cx5 k = ToKernels(grid, kRad, calRad, gap, log);
+    Cx5 k = ToKernels(grid, kRad, calRad, gap);
     CHECK(k.dimension(0) == nchan);
     Index const kW = 2 * kRad - 1;
     CHECK(k.dimension(1) == kW);

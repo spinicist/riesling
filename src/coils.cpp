@@ -5,11 +5,10 @@ Cx4 birdcage(
   Eigen::Array3f const &voxel_size,
   Index const channels,
   Index const nrings,
-  float const coil_rad_mm,  // Radius of the actual coil, i.e. where the channels should go
-  float const sense_rad_mm, // Sensitivity radius
-  Log const &log)
+  float const coil_rad_mm, // Radius of the actual coil, i.e. where the channels should go
+  float const sense_rad_mm)
 {
-  log.info(
+  Log::Print(
     FMT_STRING("Constructing bird-cage sensitivities with {} channels in {} rings"),
     channels,
     nrings);
@@ -47,6 +46,6 @@ Cx4 birdcage(
       }
     }
   }
-  log.image(all, fmt::format(FMT_STRING("birdcage-{}.nii"), channels));
+  Log::Image(all, fmt::format(FMT_STRING("birdcage-{}.nii"), channels));
   return all;
 }

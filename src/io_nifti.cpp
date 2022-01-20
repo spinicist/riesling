@@ -32,8 +32,7 @@ struct nifti_traits<std::complex<float>>
 };
 
 template <typename T, int ND>
-void WriteNifti(
-    Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname, Log const &log)
+void WriteNifti(Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname)
 {
   nifti_image *ptr = nifti_simple_init_nim();
   ptr->fname = nifti_makehdrname(fname.c_str(), NIFTI_FTYPE_NIFTI1_1, false, false);
@@ -64,31 +63,31 @@ void WriteNifti(
   ptr->pixdim[4] = info.tr;
 
   mat44 matrix = nifti_make_orthog_mat44(
-      info.direction(0, 0),
-      info.direction(0, 1),
-      info.direction(0, 2),
-      info.direction(1, 0),
-      info.direction(1, 1),
-      info.direction(1, 2),
-      info.direction(2, 0),
-      info.direction(2, 1),
-      info.direction(2, 2));
+    info.direction(0, 0),
+    info.direction(0, 1),
+    info.direction(0, 2),
+    info.direction(1, 0),
+    info.direction(1, 1),
+    info.direction(1, 2),
+    info.direction(2, 0),
+    info.direction(2, 1),
+    info.direction(2, 2));
   matrix.m[0][3] = -info.origin(0);
   matrix.m[1][3] = -info.origin(1);
   matrix.m[2][3] = -info.origin(2);
 
   nifti_mat44_to_quatern(
-      matrix,
-      &(ptr->quatern_b),
-      &(ptr->quatern_c),
-      &(ptr->quatern_d),
-      &(ptr->qoffset_x),
-      &(ptr->qoffset_y),
-      &(ptr->qoffset_z),
-      nullptr,
-      nullptr,
-      nullptr,
-      &(ptr->qfac));
+    matrix,
+    &(ptr->quatern_b),
+    &(ptr->quatern_c),
+    &(ptr->quatern_d),
+    &(ptr->qoffset_x),
+    &(ptr->qoffset_y),
+    &(ptr->qoffset_z),
+    nullptr,
+    nullptr,
+    nullptr,
+    &(ptr->qfac));
 
   ptr->qto_xyz = matrix;
   ptr->sto_xyz = matrix;
@@ -102,11 +101,11 @@ void WriteNifti(
   ptr->pixdim[0] = ptr->qfac;
 
   ptr->data = const_cast<T *>(img.data()); // To avoid copying the buffer
-  log.info(FMT_STRING("Writing file: {}"), fname);
+  Log::Print(FMT_STRING("Writing file: {}"), fname);
   nifti_image_write(ptr);
 }
 
-template void WriteNifti(Info const &, Cx3 const &, std::string const &, Log const &);
-template void WriteNifti(Info const &, Cx4 const &, std::string const &, Log const &);
-template void WriteNifti(Info const &, R3 const &, std::string const &, Log const &);
-template void WriteNifti(Info const &, R4 const &, std::string const &, Log const &);
+template void WriteNifti(Info const &, Cx3 const &, std::string const &);
+template void WriteNifti(Info const &, Cx4 const &, std::string const &);
+template void WriteNifti(Info const &, R3 const &, std::string const &);
+template void WriteNifti(Info const &, R4 const &, std::string const &);

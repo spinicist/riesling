@@ -11,15 +11,12 @@ Result MUPA(
   Parameter const T2,
   Parameter const B1,
   Sequence const seq,
-  Index const randN,
-  Log &log);
+  Index const randN);
 
-Result T1Prep(Parameter const T1, Sequence const seq, Index const randN, Log &log);
+Result T1Prep(Parameter const T1, Sequence const seq, Index const randN);
 
-Result
-T2Prep(Parameter const T1, Parameter const T2, Sequence const seq, Index const randN, Log &log);
+Result T2Prep(Parameter const T1, Parameter const T2, Sequence const seq, Index const randN);
 
-Result
-T1T2Prep(Parameter const T1, Parameter const T2, Sequence const seq, Index const randN, Log &log);
+Result T1T2Prep(Parameter const T1, Parameter const T2, Sequence const seq, Index const randN);
 
 } // namespace Sim

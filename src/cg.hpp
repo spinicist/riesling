@@ -10,9 +10,9 @@
  * no. 5, pp. 952–962, 1999.
  */
 template <typename Op>
-void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::Input &x, Log &log)
+void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::Input &x)
 {
-  log.info(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
+  Log::Print(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
   auto dev = Threads::GlobalDevice();
   float const norm_x0 = Norm2(x);
   // Allocate all memory
@@ -29,10 +29,10 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
 
   for (Index icg = 0; icg < max_its; icg++) {
     op.AdjA(p, q);
-    log.image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
-    log.image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
-    log.image(x, fmt::format(FMT_STRING("cg-x-{:02}.nii"), icg));
-    log.image(r, fmt::format(FMT_STRING("cg-r-{:02}.nii"), icg));
+    Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
+    Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
+    Log::Image(x, fmt::format(FMT_STRING("cg-x-{:02}.nii"), icg));
+    Log::Image(r, fmt::format(FMT_STRING("cg-r-{:02}.nii"), icg));
     float const alpha = r_old / std::real(Dot(p, q));
     x.device(dev) = x + p * p.constant(alpha);
     r.device(dev) = r - q * q.constant(alpha);
@@ -40,9 +40,9 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
     float const delta = r_new / norm_x0;
-    log.info(FMT_STRING("CG {}: ɑ {} β {} δ {}"), icg, alpha, beta, delta);
+    Log::Print(FMT_STRING("CG {}: ɑ {} β {} δ {}"), icg, alpha, beta, delta);
     if (delta < thresh) {
-      log.info(FMT_STRING("Reached convergence threshold"));
+      Log::Print(FMT_STRING("Reached convergence threshold"));
       break;
     }
     r_old = r_new;
@@ -56,10 +56,9 @@ void cgvar(
   float const &pre0,
   float const &pre1,
   Op &op,
-  typename Op::Input &x,
-  Log &log)
+  typename Op::Input &x)
 {
-  log.info(FMT_STRING("Starting Variably Preconditioned Conjugate Gradients"));
+  Log::Print(FMT_STRING("Starting Variably Preconditioned Conjugate Gradients"));
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
@@ -90,10 +89,10 @@ void cgvar(
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
     float const delta = r_new / a2;
-    log.image(b, fmt::format(FMT_STRING("cg-b-{:02}.nii"), icg));
-    log.info(FMT_STRING("CG {}: ɑ {} β {} δ {} pre {}"), icg, alpha, beta, delta, pre);
+    Log::Image(b, fmt::format(FMT_STRING("cg-b-{:02}.nii"), icg));
+    Log::Print(FMT_STRING("CG {}: ɑ {} β {} δ {} pre {}"), icg, alpha, beta, delta, pre);
     if (delta < thresh) {
-      log.info(FMT_STRING("Reached convergence threshold"));
+      Log::Print(FMT_STRING("Reached convergence threshold"));
       break;
     }
   }

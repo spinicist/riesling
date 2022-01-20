@@ -6,7 +6,6 @@
 
 TEST_CASE("NN", "[SDC]")
 {
-  Log log;
   Index const M = 32;
   float const os = 2.f;
   Info const info{
@@ -22,11 +21,11 @@ TEST_CASE("NN", "[SDC]")
     .origin = Eigen::Array3f::Constant(0.f),
     .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
-  Trajectory const traj(info, points, log);
+  Trajectory const traj(info, points);
 
   SECTION("Pipe")
   {
-    R2 sdc = SDC::Pipe(traj, false, 2.1f, log);
+    R2 sdc = SDC::Pipe(traj, false, 2.1f);
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes);
     // Central points should be very small

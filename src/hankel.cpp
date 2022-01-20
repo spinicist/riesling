@@ -2,7 +2,7 @@
 
 #include "tensorOps.h"
 
-Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const gapRad, Log &log)
+Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const gapRad)
 {
   Index const nchan = grid.dimension(0);
   Index const gridHalf = grid.dimension(1) / 2;
@@ -30,7 +30,7 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
       kRad);
   }
 
-  log.info(
+  Log::Print(
     FMT_STRING("Hankel calibration rad {} kernel rad {} gap {}, {} kernels"),
     calRad,
     kRad,
@@ -61,7 +61,7 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
   return kernels;
 }
 
-void FromKernels(Index const calSz, Index const kSz, Cx2 const &kernels, Cx4 &grid, Log &log)
+void FromKernels(Index const calSz, Index const kSz, Cx2 const &kernels, Cx4 &grid)
 {
   Index const nchan = grid.dimension(0);
   Index const gridHalf = grid.dimension(1) / 2;

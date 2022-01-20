@@ -60,7 +60,7 @@ int main_sim(args::Subparser &parser)
   args::Flag t2sim(parser, "T2", "Run a T1 prep simulation", {"T2sim"});
   args::Flag t1t2sim(parser, "T1T2", "Run a T1 prep simulation", {"T1T2sim"});
 
-  Log log = ParseCommand(parser);
+  ParseCommand(parser);
 
   Sim::Sequence const seq{
     .sps = sps.Get(),
@@ -78,29 +78,30 @@ int main_sim(args::Subparser &parser)
   Sim::Result result;
   if (ng) {
     Sim::Parameter const gamma{ng.Get(), gLo.Get(), gHi.Get(), false};
-    result = Sim::Eddy(T1, beta, gamma, B1, seq, randomSamp.Get(), log);
+    result = Sim::Eddy(T1, beta, gamma, B1, seq, randomSamp.Get());
   } else if (mupa) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
-    result = Sim::MUPA(T1, T2, B1, seq, randomSamp.Get(), log);
+    result = Sim::MUPA(T1, T2, B1, seq, randomSamp.Get());
   } else if (t1sim) {
-    result = Sim::T1Prep(T1, seq, randomSamp.Get(), log);
+    result = Sim::T1Prep(T1, seq, randomSamp.Get());
   } else if (t2sim) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
-    result = Sim::T2Prep(T1, T2, seq, randomSamp.Get(), log);
+    result = Sim::T2Prep(T1, T2, seq, randomSamp.Get());
   } else if (t1t2sim) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
-    result = Sim::T1T2Prep(T1, T2, seq, randomSamp.Get(), log);
+    result = Sim::T1T2Prep(T1, T2, seq, randomSamp.Get());
   } else if (flair) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
-    result = Sim::FLAIR(T1, T2, B1, seq, randomSamp.Get(), log);
+    result = Sim::FLAIR(T1, T2, B1, seq, randomSamp.Get());
   } else {
-    result = Sim::Simple(T1, beta, seq, randomSamp.Get(), log);
+    result = Sim::Simple(T1, beta, seq, randomSamp.Get());
   }
 
   // Normalize dictionary
   result.dynamics.rowwise().normalize();
   // Calculate SVD - observations are in rows
-  log.info("Calculating SVD {}x{}", result.dynamics.cols() / subsamp.Get(), result.dynamics.rows());
+  Log::Print(
+    "Calculating SVD {}x{}", result.dynamics.cols() / subsamp.Get(), result.dynamics.rows());
   auto const svd = subsamp
                      ? result.dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all)
                          .matrix()
@@ -116,17 +117,17 @@ int main_sim(args::Subparser &parser)
   } else {
     nRetain = (cumsum < thresh.Get()).count();
   }
-  log.info(
+  Log::Print(
     "Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
   // Scale and flip the basis vectors to always have a positive first element for stability
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
   flip = (svd.matrixV().leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
   Eigen::MatrixXf const basis =
     svd.matrixV().leftCols(nRetain).array().rowwise() * flip.transpose();
-  log.info("Computing dictionary");
+  Log::Print("Computing dictionary");
   Eigen::ArrayXXf Dk = result.dynamics.matrix() * basis;
 
-  HD5::Writer writer(oname.Get(), log);
+  HD5::Writer writer(oname.Get());
   writer.writeMatrix(basis, "basis");
   writer.writeMatrix(Dk, "dictionary");
   writer.writeMatrix(result.parameters, "parameters");

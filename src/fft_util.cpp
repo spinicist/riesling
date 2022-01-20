@@ -16,26 +16,26 @@ std::filesystem::path WisdomPath()
   return std::filesystem::path(homedir) / ".riesling-wisdom";
 }
 
-void Start(Log &log)
+void Start()
 {
   fftwf_init_threads();
   fftwf_make_planner_thread_safe();
   fftwf_set_timelimit(60.0);
   auto const wp = WisdomPath();
   if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
-    log.info("Read wisdom successfully from {}", wp);
+    Log::Print("Read wisdom successfully from {}", wp);
   } else {
-    log.info("Could not read wisdom from {}", wp);
+    Log::Print("Could not read wisdom from {}", wp);
   }
 }
 
-void End(Log &log)
+void End()
 {
   auto const &wp = WisdomPath();
   if (fftwf_export_wisdom_to_filename(wp.string().c_str())) {
-    log.info(FMT_STRING("Saved wisdom to {}"), wp.string());
+    Log::Print(FMT_STRING("Saved wisdom to {}"), wp.string());
   } else {
-    log.info("Failed to save wisdom");
+    Log::Print("Failed to save wisdom");
   }
   // Get use after free errors if this is called before fftw_plan_destroy in the
   // destructors

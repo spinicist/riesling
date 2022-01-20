@@ -16,5 +16,4 @@ Cx3 nlcg(
   DecodeFunction const &decode,
   Index const &max_its,
   float const &thresh,
-  float const &lambda,
-  Log &log);
+  float const &lambda);

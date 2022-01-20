@@ -14,25 +14,25 @@ int main_plan(args::Subparser &parser)
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
+  ParseCommand(parser, iname);
+  FFT::Start();
   FFT::SetTimelimit(timelimit.Get());
-  HD5::Reader reader(iname.Get(), log);
+  HD5::Reader reader(iname.Get());
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
-  FFT::Planned<5, 3> fft3(gridder->inputDimensions(traj.info().channels), log);
-  FFT::Planned<5, 3> fft4(gridder->inputDimensions(1), log);
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
+  FFT::Planned<5, 3> fft3(gridder->inputDimensions(traj.info().channels));
+  FFT::Planned<5, 3> fft4(gridder->inputDimensions(1));
 
   if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get(), log);
+    HD5::Reader basisReader(basisFile.Get());
     R2 basis = basisReader.readBasis();
-    auto gb = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid, log);
-    FFT::Planned<5, 3> fft(gb->inputDimensions(traj.info().channels), log);
+    auto gb = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
+    FFT::Planned<5, 3> fft(gb->inputDimensions(traj.info().channels));
   }
 
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

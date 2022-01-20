@@ -8,12 +8,12 @@
 
 struct GridBase : Operator<5, 3>
 {
-  GridBase(Mapping map, bool const unsafe, Log &log)
+  GridBase(Mapping map, bool const unsafe)
     : mapping_{std::move(map)}
     , safe_{!unsafe}
     , weightEchoes_{true}
     , sdcPow_{1.f}
-    , log_{log}
+
   {
   }
 
@@ -79,14 +79,13 @@ protected:
   Mapping mapping_;
   bool safe_, weightEchoes_;
   float sdcPow_;
-  Log log_;
 };
 
 template <int IP, int TP>
 struct SizedGrid : GridBase
 {
-  SizedGrid(SizedKernel<IP, TP> const *k, Mapping map, bool const unsafe, Log &log)
-    : GridBase(map, unsafe, log)
+  SizedGrid(SizedKernel<IP, TP> const *k, Mapping map, bool const unsafe)
+    : GridBase(map, unsafe)
     , kernel_{k}
   {
   }
@@ -97,7 +96,7 @@ struct SizedGrid : GridBase
   {
     auto gridSz = this->mapping().cartDims;
     Cx3 temp(gridSz);
-    FFT::ThreeD fft(temp, this->log_);
+    FFT::ThreeD fft(temp);
     temp.setZero();
     auto const k = kernel_->k(Point3{0, 0, 0});
     Crop3(temp, k.dimensions()) = k.template cast<Cx>();
@@ -105,7 +104,7 @@ struct SizedGrid : GridBase
     R3 a = Crop3(R3(temp.real()), sz);
     float const scale =
       sqrt(std::accumulate(gridSz.cbegin(), gridSz.cend(), 1, std::multiplies<Index>()));
-    this->log_.info(
+    Log::Print(
       FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
     return a;

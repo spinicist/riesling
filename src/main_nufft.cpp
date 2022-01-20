@@ -12,25 +12,25 @@ int main_nufft(args::Subparser &parser)
   args::Flag forward(parser, "F", "Apply forward (default reverse)", {'f', "fwd"});
   args::ValueFlag<std::string> dset(
     parser, "D", "Dataset name (image/noncartesian)", {'d', "dset"});
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
-  HD5::Reader reader(iname.Get(), log);
+  ParseCommand(parser, iname);
+  FFT::Start();
+  HD5::Reader reader(iname.Get());
   auto const traj = reader.readTrajectory();
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   if (!forward) {
-    gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+    gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get()));
     gridder->setSDCPower(sdcPow.Get());
   }
 
-  NufftOp nufft(gridder.get(), info.channels, 1, info.matrix, log);
+  NufftOp nufft(gridder.get(), info.channels, 1, info.matrix);
   Cx5 channels{nufft.inputDimensions()};
   Cx3 noncart{nufft.outputDimensions()};
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "nufft", "h5"), log);
+  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "nufft", "h5"));
   writer.writeTrajectory(traj);
-  auto const start = log.now();
+  auto const start = Log::Now();
   if (forward) {
     std::string const name = dset ? dset.Get() : "image";
     auto const input = reader.readTensor<Cx4>(name);
@@ -38,7 +38,7 @@ int main_nufft(args::Subparser &parser)
       Sz5{input.dimension(0), 1, input.dimension(1), input.dimension(2), input.dimension(3)});
     nufft.A(channels, noncart);
     writer.writeTensor(noncart, "nufft-forward");
-    log.info("Forward NUFFT took {}", log.toNow(start));
+    Log::Print("Forward NUFFT took {}", Log::ToNow(start));
   } else {
     std::string const name = dset ? dset.Get() : "nufft-forward";
     noncart = reader.readTensor<Cx3>(name);
@@ -46,9 +46,9 @@ int main_nufft(args::Subparser &parser)
     Cx4 output = channels.reshape(Sz4{
       channels.dimension(0), channels.dimension(2), channels.dimension(3), channels.dimension(4)});
     writer.writeTensor(output, "nufft-backward");
-    log.info("Backward NUFFT took {}", log.toNow(start));
+    Log::Print("Backward NUFFT took {}", Log::ToNow(start));
   }
 
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

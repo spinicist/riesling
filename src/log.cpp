@@ -3,42 +3,48 @@
 #include "io_nifti.h"
 #include "tensorOps.h"
 
-Log::Log(Level const l)
-  : out_level_{l}
-{
+namespace Log {
+
+namespace {
+Level log_level = Level::None;
 }
 
-Log::Level Log::level() const
+Level CurrentLevel()
 {
-  return out_level_;
+  return log_level;
 }
 
-void Log::vinfo(fmt::string_view fstr, fmt::format_args args) const
+void SetLevel(Level const l)
 {
-  if (out_level_ >= Level::Info) {
+  log_level = l;
+}
+
+void lprint(fmt::string_view fstr, fmt::format_args args)
+{
+  if (log_level >= Level::Info) {
     fmt::vprint(stderr, fstr, args);
     fmt::print(stderr, "\n");
   }
 }
 
-void Log::vdebug(fmt::string_view fstr, fmt::format_args args) const
+void ldebug(fmt::string_view fstr, fmt::format_args args)
 {
-  if (out_level_ >= Level::Debug) {
+  if (log_level >= Level::Debug) {
     fmt::vprint(stderr, fstr, args);
     fmt::print(stderr, "\n");
   }
 }
 
-void Log::vfail(fmt::string_view fstr, fmt::format_args args)
+void lfail(fmt::string_view fstr, fmt::format_args args)
 {
   fmt::vprint(stderr, fmt::fg(fmt::terminal_color::bright_red), fstr, args);
   fmt::print(stderr, "\n");
   exit(EXIT_FAILURE);
 }
 
-void Log::progress(Index const ii, Index const lo, Index const hi) const
+void Progress(Index const ii, Index const lo, Index const hi)
 {
-  if ((out_level_ >= Level::Info) && lo == 0) {
+  if ((log_level >= Level::Info) && lo == 0) {
     Index const N = hi - lo;
     Index const steps = std::min(N, 10L);
     Index const N_per_step = N / steps;
@@ -53,12 +59,12 @@ void Log::progress(Index const ii, Index const lo, Index const hi) const
   }
 }
 
-Log::Time Log::now() const
+Time Now()
 {
   return std::chrono::high_resolution_clock::now();
 }
 
-std::string Log::toNow(Log::Time const t1) const
+std::string ToNow(Log::Time const t1)
 {
   using ms = std::chrono::milliseconds;
   auto const t2 = std::chrono::high_resolution_clock::now();
@@ -66,23 +72,25 @@ std::string Log::toNow(Log::Time const t1) const
   return fmt::format(FMT_STRING("{} ms"), diff);
 }
 
-void Log::image(Cx3 const &img, std::string const &name) const
+void Image(Cx3 const &img, std::string const &name)
 {
-  if ((out_level_ >= Level::Images)) {
-    WriteNifti(Info(), img, name, *this);
+  if ((log_level >= Level::Images)) {
+    WriteNifti(Info(), img, name);
   }
 }
 
-void Log::image(Cx4 const &img, std::string const &name) const
+void Image(Cx4 const &img, std::string const &name)
 {
-  if ((out_level_ >= Level::Images)) {
-    WriteNifti(Info(), Cx4(FirstToLast4(img)), name, *this);
+  if ((log_level >= Level::Images)) {
+    WriteNifti(Info(), Cx4(FirstToLast4(img)), name);
   }
 }
 
-void Log::image(R3 const &img, std::string const &name) const
+void Image(R3 const &img, std::string const &name)
 {
-  if ((out_level_ >= Level::Images)) {
-    WriteNifti(Info(), img, name, *this);
+  if ((log_level >= Level::Images)) {
+    WriteNifti(Info(), img, name);
   }
 }
+
+} // namespace Log

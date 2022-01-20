@@ -11,7 +11,6 @@ Result FLAIR(
   Parameter const T2,
   Parameter const B1,
   Sequence const seq,
-  Index const randN,
-  Log &log);
+  Index const randN);
 
 }

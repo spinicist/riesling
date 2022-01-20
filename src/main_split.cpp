@@ -14,9 +14,9 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
 
-  Log log = ParseCommand(parser, iname);
+  ParseCommand(parser, iname);
 
-  HD5::Reader reader(iname.Get(), log);
+  HD5::Reader reader(iname.Get());
   auto const traj = reader.readTrajectory();
   Info info = traj.info();
   info.volumes = 1; // Only output one volume
@@ -36,16 +36,15 @@ int main_split(args::Subparser &parser)
   }
 
   if (lores) {
-    log.info(FMT_STRING("Extracting {} low res spokes"), lores.Get());
+    Log::Print(FMT_STRING("Extracting {} low res spokes"), lores.Get());
     Info lo_info = info;
     lo_info.spokes = lores.Get();
     R3 lo_points = points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, lores.Get()});
     Cx4 lo_ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, lores.Get()})
                   .reshape(Sz4{info.channels, info.read_points, lores.Get(), 1});
     I1 lo_echoes = echoes.slice(Sz1{0}, Sz1{lores.Get()});
-    HD5::Writer writer(
-      OutName(iname.Get(), oname.Get(), fmt::format("{}-lores", volName), "h5"), log);
-    writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes, log));
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format("{}-lores", volName), "h5"));
+    writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes));
     writer.writeNoncartesian(lo_ks);
     info.spokes -= lores.Get();
     points = R3(points.slice(Sz3{0, lores.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
@@ -58,35 +57,32 @@ int main_split(args::Subparser &parser)
     int const spoke_step = step ? step.Get() : ns;
     int const num_full_int = static_cast<int>(info.spokes * 1.f / ns);
     int const num_int = static_cast<int>((num_full_int - 1) * ns * 1.f / spoke_step + 1);
-    log.info(
+    Log::Print(
       FMT_STRING("Interleaves: {} Spokes per interleave: {} Step: {}"), num_int, ns, spoke_step);
     int rem_spokes = info.spokes - num_full_int * ns;
     if (rem_spokes > 0) {
-      log.info(FMT_STRING("Warning! Last interleave will have {} extra spokes."), rem_spokes);
+      Log::Print(FMT_STRING("Warning! Last interleave will have {} extra spokes."), rem_spokes);
     }
 
     for (int int_idx = 0; int_idx < num_int; int_idx++) {
       int const idx0 = spoke_step * int_idx;
       int const n = ns + (int_idx == (num_int - 1) ? rem_spokes : 0);
       info.spokes = n;
-      HD5::Writer writer(
-        OutName(
-          iname.Get(),
-          oname.Get(),
-          fmt::format(FMT_STRING("{}-int-{:02d}"), volName, int_idx),
-          "h5"),
-        log);
+      HD5::Writer writer(OutName(
+        iname.Get(),
+        oname.Get(),
+        fmt::format(FMT_STRING("{}-int-{:02d}"), volName, int_idx),
+        "h5"));
       writer.writeTrajectory(Trajectory(
         info,
         points.slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}),
-        echoes.slice(Sz1{idx0}, Sz1{n}),
-        log));
+        echoes.slice(Sz1{idx0}, Sz1{n})));
       writer.writeNoncartesian(ks.slice(Sz3{0, 0, idx0}, Sz3{info.channels, info.read_points, n})
                                  .reshape(Sz4{info.channels, info.read_points, n, 1}));
     }
   } else {
-    HD5::Writer writer(OutName(iname.Get(), oname.Get(), volName, "h5"), log);
-    writer.writeTrajectory(Trajectory(info, points, echoes, log));
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), volName, "h5"));
+    writer.writeTrajectory(Trajectory(info, points, echoes));
     writer.writeNoncartesian(ks.reshape(Sz4{info.channels, info.read_points, info.spokes, 1}));
   }
 

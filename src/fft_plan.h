@@ -18,11 +18,11 @@ struct Planned
 
   /*! Uses the specified Tensor as a workspace during planning
    */
-  Planned(Tensor &workspace, Log log, Index const nThreads = Threads::GlobalThreadCount());
+  Planned(Tensor &workspace, Index const nThreads = Threads::GlobalThreadCount());
 
   /*! Will allocate a workspace during planning
    */
-  Planned(TensorDims const &dims, Log log, Index const nThreads = Threads::GlobalThreadCount());
+  Planned(TensorDims const &dims, Index const nThreads = Threads::GlobalThreadCount());
 
   ~Planned();
 
@@ -39,7 +39,7 @@ private:
   std::array<Cx1, FFTRank> phase_;
   fftwf_plan forward_plan_, reverse_plan_;
   float scale_;
-  Log log_;
+
   bool threaded_;
 };
 

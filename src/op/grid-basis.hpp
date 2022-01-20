@@ -9,12 +9,8 @@ struct GridBasis final : SizedGrid<IP, TP>
   using typename SizedGrid<IP, TP>::Output;
 
   GridBasis(
-    SizedKernel<IP, TP> const *k,
-    Mapping const &mapping,
-    R2 const &basis,
-    bool const unsafe,
-    Log &log)
-    : SizedGrid<IP, TP>(k, mapping, unsafe, log)
+    SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
+    : SizedGrid<IP, TP>(k, mapping, unsafe)
     , basis_{basis}
     , basisScale_{std::sqrt((float)basis_.dimension(0))}
   {
@@ -58,7 +54,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     auto grid_task = [&](Index const lo, Index const hi) {
       Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
       for (auto ii = lo; ii < hi; ii++) {
-        this->log_.progress(ii, lo, hi);
+        Log::Progress(ii, lo, hi);
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
@@ -79,10 +75,10 @@ struct GridBasis final : SizedGrid<IP, TP>
                 Eigen::type2indexpair<3, 2>>());
       }
     };
-    auto const &start = this->log_.now();
+    auto const &start = Log::Now();
     noncart.setZero();
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
-    this->log_.debug("Cart -> Non-cart: {}", this->log_.toNow(start));
+    Log::Debug("Cart -> Non-cart: {}", Log::ToNow(start));
   }
 
   void Adj(Output const &noncart, Input &cart) const
@@ -141,7 +137,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       }
 
       for (auto ii = lo; ii < hi; ii++) {
-        this->log_.progress(ii, lo, hi);
+        Log::Progress(ii, lo, hi);
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
@@ -166,13 +162,13 @@ struct GridBasis final : SizedGrid<IP, TP>
       }
     };
 
-    auto const start = this->log_.now();
+    auto const start = Log::Now();
     cart.setZero();
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
-    this->log_.debug("Basis Non-cart -> Cart: {}", this->log_.toNow(start));
+    Log::Debug("Basis Non-cart -> Cart: {}", Log::ToNow(start));
     if (this->safe_) {
-      this->log_.info("Combining thread workspaces...");
-      auto const start2 = this->log_.now();
+      Log::Print("Combining thread workspaces...");
+      auto const start2 = Log::Now();
       for (Index ti = 0; ti < nThreads; ti++) {
         if (szZ[ti]) {
           cart
@@ -187,7 +183,7 @@ struct GridBasis final : SizedGrid<IP, TP>
             .device(dev) += workspace[ti];
         }
       }
-      this->log_.debug("Combining took: {}", this->log_.toNow(start2));
+      Log::Debug("Combining took: {}", Log::ToNow(start2));
     }
   }
 

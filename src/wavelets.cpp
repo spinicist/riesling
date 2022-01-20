@@ -1,5 +1,5 @@
-#include "threads.h"
 #include "wavelets.h"
+#include "threads.h"
 #include <fmt/format.h>
 #include <iostream>
 #include <vector>
@@ -10,10 +10,10 @@ std::vector<Index> const dim1 = {1, 2, 0};
 std::vector<Index> const dim2 = {1, 0, 0};
 } // namespace
 
-Wavelets::Wavelets(Index const N, Index const L, Log &log)
+Wavelets::Wavelets(Index const N, Index const L)
   : N_{N}
   , L_{L}
-  , log_{log}
+
 {
 
   // Daubechie's coeffs courtesy of Wikipedia
@@ -26,20 +26,21 @@ Wavelets::Wavelets(Index const N, Index const L, Log &log)
     D_.setValues({0.47046721f, 1.14111692f, 0.650365f, -0.19093442f, -0.12083221f, 0.0498175f});
     break;
   case 8:
-    D_.setValues({0.32580343f,
-                  1.01094572f,
-                  0.89220014f,
-                  -0.03957503f,
-                  -0.26450717f,
-                  0.0436163f,
-                  0.0465036f,
-                  -0.01498699f});
+    D_.setValues(
+      {0.32580343f,
+       1.01094572f,
+       0.89220014f,
+       -0.03957503f,
+       -0.26450717f,
+       0.0436163f,
+       0.0465036f,
+       -0.01498699f});
     break;
   default:
     Log::Fail("Asked for co-efficients that have not been implemented");
   }
   D_ = D_ / static_cast<float>(M_SQRT2); // Get scaling correct
-  log_.info(FMT_STRING("Wavelets: N={} L={}"), N_, L_);
+  Log::Print(FMT_STRING("Wavelets: N={} L={}"), N_, L_);
 }
 
 std::tuple<Sz3, Sz3> Wavelets::pad_setup(Sz3 const &dims) const
@@ -56,7 +57,7 @@ std::tuple<Sz3, Sz3> Wavelets::pad_setup(Sz3 const &dims) const
       pads[ii] = 0;
     }
   }
-  log_.info(FMT_STRING("Wavelet pad {} padded size {}"), pads[0], pad_dims[0]);
+  Log::Print(FMT_STRING("Wavelet pad {} padded size {}"), pads[0], pad_dims[0]);
   return {pad_dims, pads};
 }
 
@@ -83,7 +84,7 @@ void Wavelets::encode_dim(Cx3 &image, Index const dim, Index const level)
   Index const hsz = sz / 2;
   Sz1 start{0};
   Sz1 end{sz};
-  log_.info(FMT_STRING("Wavelet encode level: {} dim {} sz {} hsz {}"), level, dim, sz, hsz);
+  Log::Print(FMT_STRING("Wavelet encode level: {} dim {} sz {} hsz {}"), level, dim, sz, hsz);
 
   auto encode_task = [&, sz, hsz, dim](Index const lo, Index const hi) {
     for (Index ii = lo; ii < hi; ii++) {
@@ -126,7 +127,7 @@ void Wavelets::decode_dim(Cx3 &image, Index const dim, Index const level)
   Index const hsz = sz / 2;
   Sz1 start{0};
   Sz1 end{sz};
-  log_.info(FMT_STRING("Wavelet decode level: {} dim {} sz {} hsz {}"), level, dim, sz, hsz);
+  Log::Print(FMT_STRING("Wavelet decode level: {} dim {} sz {} hsz {}"), level, dim, sz, hsz);
 
   auto decode_task = [&, sz, hsz, dim](Index const lo, Index const hi) {
     for (Index ii = lo; ii < hi; ii++) {

@@ -1,14 +1,11 @@
+#include "io_writer.h"
 #include "io_hd5.h"
 #include "io_hd5.hpp"
-#include "io_writer.h"
 
 namespace HD5 {
 
 void store_matrix(
-  Handle const &parent,
-  std::string const &name,
-  Eigen::Ref<Eigen::MatrixXf const> const &data,
-  Log const &log)
+  Handle const &parent, std::string const &name, Eigen::Ref<Eigen::MatrixXf const> const &data)
 {
   herr_t status;
   hsize_t ds_dims[2], chunk_dims[2];
@@ -30,19 +27,18 @@ void store_matrix(
   if (status) {
     Log::Fail("Could not write tensor {}, code: {}", name, status);
   } else {
-    log.info("Wrote dataset: {}", name);
+    Log::Print("Wrote dataset: {}", name);
   }
 }
 
-Writer::Writer(std::string const &fname, Log &log)
-  : log_(log)
+Writer::Writer(std::string const &fname)
 {
   Init();
   handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (handle_ < 0) {
     Log::Fail(FMT_STRING("Could not open file {} for writing"), fname);
   } else {
-    log_.info(FMT_STRING("Opened file {} for writing data"), fname);
+    Log::Print(FMT_STRING("Opened file {} for writing data"), fname);
   }
 }
 
@@ -53,7 +49,7 @@ Writer::~Writer()
 
 void Writer::writeInfo(Info const &info)
 {
-  log_.info("Writing info struct");
+  Log::Print("Writing info struct");
   hid_t info_id = InfoType();
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
@@ -73,7 +69,7 @@ void Writer::writeInfo(Info const &info)
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
-  log_.info("Writing meta data");
+  Log::Print("Writing meta data");
   auto m_group = H5Gcreate(handle_, Keys::Meta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t dims[1] = {1};
@@ -94,54 +90,54 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
 void Writer::writeTrajectory(Trajectory const &t)
 {
   writeInfo(t.info());
-  HD5::store_tensor(handle_, Keys::Trajectory, t.points(), log_);
-  HD5::store_tensor(handle_, "echoes", t.echoes(), log_);
+  HD5::store_tensor(handle_, Keys::Trajectory, t.points());
+  HD5::store_tensor(handle_, "echoes", t.echoes());
 }
 
 void Writer::writeSDC(R2 const &sdc)
 {
-  HD5::store_tensor(handle_, Keys::SDC, sdc, log_);
+  HD5::store_tensor(handle_, Keys::SDC, sdc);
 }
 
 void Writer::writeSENSE(Cx4 const &s)
 {
-  HD5::store_tensor(handle_, Keys::SENSE, s, log_);
+  HD5::store_tensor(handle_, Keys::SENSE, s);
 }
 
 void Writer::writeNoncartesian(Cx4 const &t)
 {
-  HD5::store_tensor(handle_, Keys::Noncartesian, t, log_);
+  HD5::store_tensor(handle_, Keys::Noncartesian, t);
 }
 
 void Writer::writeCartesian(Cx4 const &t)
 {
-  HD5::store_tensor(handle_, Keys::Cartesian, t, log_);
+  HD5::store_tensor(handle_, Keys::Cartesian, t);
 }
 
 void Writer::writeImage(R4 const &t)
 {
-  HD5::store_tensor(handle_, Keys::Image, t, log_);
+  HD5::store_tensor(handle_, Keys::Image, t);
 }
 
 void Writer::writeImage(Cx4 const &t)
 {
-  HD5::store_tensor(handle_, Keys::Image, t, log_);
+  HD5::store_tensor(handle_, Keys::Image, t);
 }
 
 void Writer::writeBasis(R2 const &b)
 {
-  HD5::store_tensor(handle_, Keys::Basis, b, log_);
+  HD5::store_tensor(handle_, Keys::Basis, b);
 }
 
 void Writer::writeDynamics(R2 const &d)
 {
-  HD5::store_tensor(handle_, Keys::Dynamics, d, log_);
+  HD5::store_tensor(handle_, Keys::Dynamics, d);
 }
 
 template <typename Scalar, int ND>
 void Writer::writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label)
 {
-  HD5::store_tensor(handle_, label, t, log_);
+  HD5::store_tensor(handle_, label, t);
 }
 
 template void Writer::writeTensor<float, 3>(R3 const &, std::string const &);
@@ -152,12 +148,12 @@ template void Writer::writeTensor<Cx, 5>(Cx5 const &, std::string const &);
 
 void Writer::writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label)
 {
-  HD5::store_matrix(handle_, label, m, log_);
+  HD5::store_matrix(handle_, label, m);
 }
 
 void Writer::writeBasisImages(Cx5 const &bi)
 {
-  HD5::store_tensor(handle_, Keys::BasisImages, bi, log_);
+  HD5::store_tensor(handle_, Keys::BasisImages, bi);
 }
 
 } // namespace HD5

@@ -1,6 +1,6 @@
+#include "../src/zinfandel.h"
 #include "../src/log.h"
 #include "../src/tensorOps.h"
-#include "../src/zinfandel.h"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
@@ -49,7 +49,6 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
 
 TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
 {
-  Log log;
   Index const n_read = 12;
   Index const n_spoke = 4;
   Index const n_coil = 4;
@@ -79,7 +78,7 @@ TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
     Index const n_gap = 2;
     Cx3 test_kspace = kspace;
     test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}).setZero();
-    zinfandel(n_gap, 2, 1, 4, 0.0, traj, test_kspace, log);
+    zinfandel(n_gap, 2, 1, 4, 0.0, traj, test_kspace);
     Cx3 diff = test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}) -
                kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke});
     float const sum_diff = Norm(diff) / diff.size();

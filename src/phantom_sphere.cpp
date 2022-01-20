@@ -5,12 +5,11 @@ Cx3 SphericalPhantom(
   Eigen::Array3f const &voxel_size,
   Eigen::Vector3f const &c,
   float const r,
-  float const i,
-  Log const &log)
+  float const i)
 {
 
   // Draw a spherical phantom
-  log.info(FMT_STRING("Drawing sphere center {} radius {} mm intensity {}"), c.transpose(), r, i);
+  Log::Print(FMT_STRING("Drawing sphere center {} radius {} mm intensity {}"), c.transpose(), r, i);
   Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();
   Index const cx = phan.dimension(0) / 2;

@@ -6,13 +6,12 @@
 
 TEST_CASE("1D-FFT", "[FFT1]")
 {
-  Log log;
-  FFT::Start(log);
+  FFT::Start();
 
   auto N = GENERATE(4, 8, 32);
   SECTION("FFT1")
   {
-    FFT1DReal2Complex fft(N, log);
+    FFT1DReal2Complex fft(N);
 
     R1 realRef(N);
     realRef.setZero();
@@ -25,5 +24,5 @@ TEST_CASE("1D-FFT", "[FFT1]")
     R1 real = fft.reverse(complex);
     CHECK(Norm(real - realRef) == Approx(0.f).margin(1.e-3f));
   }
-  FFT::End(log);
+  FFT::End();
 }

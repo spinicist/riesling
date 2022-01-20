@@ -6,7 +6,6 @@
 
 namespace Sim {
 
-Result
-Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index const nRand, Log &log);
+Result Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index const nRand);
 
 } // namespace Sim

@@ -11,6 +11,5 @@ Cx4 birdcage(
   Eigen::Array3f const &voxel_size,
   Index const channels,
   Index const nrings,
-  float const coil_rad_mm,  // Radius of the actual coil, i.e. where the channels should go
-  float const sense_rad_mm, // Sensitivity radius
-  Log const &log);
+  float const coil_rad_mm, // Radius of the actual coil, i.e. where the channels should go
+  float const sense_rad_mm);

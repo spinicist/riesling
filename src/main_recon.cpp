@@ -18,38 +18,37 @@ int main_recon(args::Subparser &parser)
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
-  HD5::Reader reader(iname.Get(), log);
+  ParseCommand(parser, iname);
+  FFT::Start();
+  HD5::Reader reader(iname.Get());
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
-  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get(), log);
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
+  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
   gridder->setSDC(w);
-  Cropper cropper(info, gridder->mapping().cartDims, out_fov.Get(), log);
+  Cropper cropper(info, gridder->mapping().cartDims, out_fov.Get());
   auto const cropSz = cropper.size();
   R3 const apo = gridder->apodization(cropSz);
   Cx4 sense;
   if (!rss) {
     if (senseFile) {
-      sense = LoadSENSE(senseFile.Get(), log);
+      sense = LoadSENSE(senseFile.Get());
     } else {
       sense = DirectSENSE(
         info,
         gridder.get(),
         out_fov.Get(),
         senseLambda.Get(),
-        reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
-        log);
+        reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)));
     }
   }
 
   if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get(), log);
+    HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readBasis();
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid, log);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
     gridder->setSDC(w);
   }
   gridder->setSDCPower(sdcPow.Get());
@@ -57,15 +56,15 @@ int main_recon(args::Subparser &parser)
   Cx5 grid(gridder->inputDimensions(info.channels));
   Cx4 image(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2]);
   Cx5 out(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2], info.volumes);
-  FFT::Planned<5, 3> fft(grid, log);
+  FFT::Planned<5, 3> fft(grid);
   auto dev = Threads::GlobalDevice();
-  auto const &all_start = log.now();
+  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
-    auto const &vol_start = log.now();
+    auto const &vol_start = Log::Now();
     gridder->Adj(reader.noncartesian(iv), grid);
-    log.info("FFT...");
+    Log::Print("FFT...");
     fft.reverse(grid);
-    log.info("Channel combination...");
+    Log::Print("Channel combination...");
     if (rss) {
       image.device(dev) = ConjugateSum(cropper.crop5(grid), cropper.crop5(grid)).sqrt();
     } else {
@@ -78,13 +77,13 @@ int main_recon(args::Subparser &parser)
                                   .reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]})
                                   .broadcast(Sz4{grid.dimension(1), 1, 1, 1});
     out.chip<4>(iv) = image;
-    log.info("Volume {}: {}", iv, log.toNow(vol_start));
+    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }
-  log.info("All volumes: {}", log.toNow(all_start));
+  Log::Print("All volumes: {}", Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "recon", "h5");
-  HD5::Writer writer(fname, log);
+  HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(out, "image");
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

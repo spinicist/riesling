@@ -33,12 +33,12 @@ int main_blend(args::Subparser &parser)
   args::Flag eddy_rss(
     parser, "", "Produce an RSS image for eddy-current correction", {"eddy", 'e'});
 
-  Log log = ParseCommand(parser);
+  ParseCommand(parser);
 
-  HD5::Reader input(iname.Get(), log);
+  HD5::Reader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
 
-  HD5::Reader binput(bname.Get(), log);
+  HD5::Reader binput(bname.Get());
   R2 const basis = binput.readTensor<R2>("basis");
 
   if (basis.dimension(1) != images.dimension(0)) {
@@ -66,7 +66,7 @@ int main_blend(args::Subparser &parser)
   }
 
   auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
-  HD5::Writer writer(fname, log);
+  HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
   writer.writeTensor(out, "image");
 

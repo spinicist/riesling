@@ -2,8 +2,7 @@
 
 #include "tensorOps.h"
 
-Compressor::Compressor(Cx3 const &ks, Index const nc, Log &log)
-  : log_{log}
+Compressor::Compressor(Cx3 const &ks, Index const nc)
 {
   auto const km = CollapseToMatrix(ks);
   auto const dm = km.colwise() - km.rowwise().mean();
@@ -12,7 +11,7 @@ Compressor::Compressor(Cx3 const &ks, Index const nc, Log &log)
   Eigen::ArrayXf vals = eig.eigenvalues().reverse().array().abs();
   vals /= vals.abs().sum();
   Index const n = std::max(std::min(nc, ks.dimension(0)), 1L);
-  log.info(
+  Log::Print(
     FMT_STRING("PCA Compression Retaining {} virtual coils, total energy {}%"),
     n,
     100.f * vals.head(n).sum());
@@ -28,7 +27,7 @@ void Compressor::compress(Cx3 const &source, Cx3 &dest)
 {
   assert(source.dimension(0) == psi_.rows());
   assert(dest.dimension(0) == psi_.cols());
-  log_.info(FMT_STRING("Applying coil compression"));
+  Log::Print(FMT_STRING("Applying coil compression"));
   auto const sourcemat = CollapseToMatrix(source);
   auto destmat = CollapseToMatrix(dest);
   destmat.noalias() = psi_ * sourcemat;
@@ -41,7 +40,7 @@ void Compressor::compress(Cx4 const &source, Cx4 &dest)
   assert(source.dimension(3) == dest.dimension(3));
   assert(source.dimension(0) == psi_.rows());
   assert(dest.dimension(0) == psi_.cols());
-  log_.info(FMT_STRING("Applying coil compression"));
+  Log::Print(FMT_STRING("Applying coil compression"));
   auto const sourcemat = CollapseToMatrix(source);
   auto destmat = CollapseToMatrix(dest);
   destmat.noalias() = psi_.transpose() * sourcemat;

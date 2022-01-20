@@ -20,57 +20,56 @@ int main_cg(args::Subparser &parser)
   args::ValueFlag<float> thr(parser, "T", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max_its"}, 8);
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
-  HD5::Reader reader(iname.Get(), log);
+  ParseCommand(parser, iname);
+  FFT::Start();
+  HD5::Reader reader(iname.Get());
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
-  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get(), log);
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
+  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
   gridder->setSDC(w);
-  Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get(), log)
+  Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get())
                             : DirectSENSE(
                                 info,
                                 gridder.get(),
                                 iter_fov.Get(),
                                 senseLambda.Get(),
-                                reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)),
-                                log);
+                                reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)));
 
   if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get(), log);
+    HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readBasis();
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid, log);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
     gridder->setSDC(w);
   }
   gridder->setSDCPower(sdcPow.Get());
-  ReconOp recon(gridder.get(), senseMaps, log);
+  ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
     recon.calcToeplitz(traj.info());
   }
   auto sz = recon.inputDimensions();
-  Cropper out_cropper(info, Last3(sz), out_fov.Get(), log);
+  Cropper out_cropper(info, Last3(sz), out_fov.Get());
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
-  auto const &all_start = log.now();
+  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
-    auto const &vol_start = log.now();
+    auto const &vol_start = Log::Now();
     recon.Adj(reader.noncartesian(iv), vol); // Initialize
-    cg(its.Get(), thr.Get(), recon, vol, log);
+    cg(its.Get(), thr.Get(), recon, vol);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
-    log.info("Volume {}: {}", iv, log.toNow(vol_start));
+    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }
-  log.info("All Volumes: {}", log.toNow(all_start));
+  Log::Print("All Volumes: {}", Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "cg", "h5");
-  HD5::Writer writer(fname, log);
+  HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(out, "image");
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

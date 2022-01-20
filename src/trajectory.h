@@ -32,8 +32,8 @@ struct Mapping
 
 struct Trajectory
 {
-  Trajectory(Info const &info, R3 const &points, Log const &log);
-  Trajectory(Info const &info, R3 const &points, I1 const &echoes, Log const &log);
+  Trajectory(Info const &info, R3 const &points);
+  Trajectory(Info const &info, R3 const &points, I1 const &echoes);
   Info const &info() const;
   R3 const &points() const;
   I1 const &echoes() const;
@@ -50,6 +50,6 @@ private:
   Info info_;
   R3 points_;
   I1 echoes_;
-  Log log_;
+
   Eigen::ArrayXf mergeHi_, mergeLo_;
 };

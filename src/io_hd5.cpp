@@ -73,7 +73,7 @@ void CheckInfoType(hid_t handle)
   if (n_members < names.size()) {
     Log::Fail("Header info had {} members, should be {}", n_members, names.size());
   }
-  // Re-orderd fields are okay. Missing is not
+  // Re-ordered fields are okay. Missing is not
   for (auto const &check_name : names) {
     bool found = false;
     for (int ii = 0; ii < n_members; ii++) {

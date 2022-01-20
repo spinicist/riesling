@@ -24,28 +24,27 @@ int main_sense(args::Subparser &parser)
     parser, "RESOLUTION", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
   args::Flag nifti(parser, "NIFTI", "Write output to nifti instead of .h5", {"nii"});
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
+  ParseCommand(parser, iname);
+  FFT::Start();
 
-  HD5::Reader reader(iname.Get(), log);
+  HD5::Reader reader(iname.Get());
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
-  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get(), log));
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
+  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get()));
   Cx4 sense = DirectSENSE(
     info,
     gridder.get(),
     fov.Get(),
     lambda.Get(),
-    reader.noncartesian(ValOrLast(vol.Get(), info.volumes)),
-    log);
+    reader.noncartesian(ValOrLast(vol.Get(), info.volumes)));
 
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", "h5");
-  HD5::Writer writer(fname, log);
+  HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(sense, "sense");
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

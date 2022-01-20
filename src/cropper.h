@@ -38,9 +38,9 @@ decltype(auto) Crop4(T &&x, Sz3 const &sz)
  */
 struct Cropper
 {
-  Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz, Log &log);
-  Cropper(Sz3 const &fullSz, Sz3 const &cropSz, Log &log);
-  Cropper(Info const &info, Sz3 const &fullSz, float const extent, Log &log);
+  Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz);
+  Cropper(Sz3 const &fullSz, Sz3 const &cropSz);
+  Cropper(Info const &info, Sz3 const &fullSz, float const extent);
   Sz3 size() const;
   Sz3 start() const;
   Sz4 dims(Index const nChan) const;

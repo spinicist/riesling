@@ -13,12 +13,12 @@ int main_lookup(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> oftype(
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
-  Log log = ParseCommand(parser);
+  ParseCommand(parser);
 
-  HD5::Reader input(iname.Get(), log);
+  HD5::Reader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
 
-  HD5::Reader dfile(dname.Get(), log);
+  HD5::Reader dfile(dname.Get());
   R2 const basis = dfile.readTensor<R2>("basis");
   R2 const dictionary = dfile.readTensor<R2>("dictionary");
   R2 const parameters = dfile.readTensor<R2>("parameters");
@@ -38,15 +38,15 @@ int main_lookup(args::Subparser &parser)
   if (parameters.dimension(0) != N) {
     Log::Fail("Dictionary has {} entries but parameters has {}", N, parameters.dimension(0));
   }
-  log.info(FMT_STRING("Dictionary has {} entries"), N);
+  Log::Print(FMT_STRING("Dictionary has {} entries"), N);
 
   Cx1 const basis_ss = basis.chip<0>(basis.dimension(0) - 1).cast<Cx>();
   fmt::print("basis_ss dims {}\n", basis_ss.dimensions());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
-    log.info("Processing volume {}", iv);
+    Log::Print("Processing volume {}", iv);
     auto ztask = [&](Index const lo, Index const hi, Index const ti) {
       for (Index iz = lo; iz < hi; iz++) {
-        log.progress(iz, lo, hi);
+        Log::Progress(iz, lo, hi);
         for (Index iy = 0; iy < images.dimension(2); iy++) {
           for (Index ix = 0; ix < images.dimension(1); ix++) {
             Cx1 const proj = images.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix);
@@ -70,7 +70,7 @@ int main_lookup(args::Subparser &parser)
   }
 
   auto const fname = OutName(iname.Get(), oname.Get(), "dict", "h5");
-  HD5::Writer writer(fname, log);
+  HD5::Writer writer(fname);
   writer.writeTensor(out_pars, "parameters");
   writer.writeTensor(pd, "pd");
 

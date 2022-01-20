@@ -103,12 +103,11 @@ void zinfandel(
   Index const n_read1,
   float const lambda,
   R3 const &traj,
-  Cx3 &ks,
-  Log &log)
+  Cx3 &ks)
 {
   Index const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
 
-  log.info(
+  Log::Print(
     FMT_STRING("ZINFANDEL Gap {} Sources {} Cal Spokes/Read {}/{} "),
     gap_sz,
     n_src,

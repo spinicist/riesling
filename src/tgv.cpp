@@ -128,8 +128,7 @@ Cx4 tgv(
   float const reduction,
   float const step_size,
   ReconOp &op,
-  Cx3 const &ks_data,
-  Log &log)
+  Cx3 const &ks_data)
 {
   auto dev = Threads::GlobalDevice();
 
@@ -181,10 +180,10 @@ Cx4 tgv(
   float const tau_p = 1.f / step_size;
   float const tau_d = 1.f / (step_size / 2.f);
 
-  log.info(FMT_STRING("TGV Scale {}"), scale);
+  Log::Print(FMT_STRING("TGV Scale {}"), scale);
 
   for (auto ii = 0.f; ii < max_its; ii++) {
-    log.image(u, fmt::format(FMT_STRING("tgv-u-{:02}.nii"), ii));
+    Log::Image(u, fmt::format(FMT_STRING("tgv-u-{:02}.nii"), ii));
     // Regularisation factors
     float const prog = static_cast<float>(ii) / ((max_its == 1) ? 1. : (max_its - 1.f));
     float const alpha0 = std::exp(std::log(alpha01) * prog + std::log(alpha00) * (1.f - prog));
@@ -220,9 +219,9 @@ Cx4 tgv(
 
     // Check for convergence
     float const delta = Norm(u - u_old);
-    log.info(FMT_STRING("TGV {}: ɑ0 {} δ {}"), ii + 1, alpha0, delta);
+    Log::Print(FMT_STRING("TGV {}: ɑ0 {} δ {}"), ii + 1, alpha0, delta);
     if (delta < thresh) {
-      log.info("Reached threshold on delta, stopping");
+      Log::Print("Reached threshold on delta, stopping");
       break;
     }
   };

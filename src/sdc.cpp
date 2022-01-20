@@ -9,9 +9,9 @@
 
 namespace SDC {
 
-R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
+R2 Pipe(Trajectory const &traj, bool const nn, float const os)
 {
-  log.info("Using Pipe/Zwart/Menon SDC...");
+  Log::Print("Using Pipe/Zwart/Menon SDC...");
   auto const info = traj.info();
   Cx3 W(1, info.read_points, info.spokes);
   Cx3 Wp(W.dimensions());
@@ -21,18 +21,18 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
   if (nn) {
     k = std::make_unique<NearestNeighbour>();
     auto const m = traj.mapping(1, os);
-    gridder = std::make_unique<GridEcho<1, 1>>(
-      dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false, log);
+    gridder =
+      std::make_unique<GridEcho<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false);
   } else {
     auto const m = traj.mapping(3, os);
     if (info.type == Info::Type::ThreeD) {
       k = std::make_unique<PipeSDC<5, 5>>(os);
       gridder = std::make_unique<GridEcho<5, 5>>(
-        dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false, log);
+        dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false);
     } else {
       k = std::make_unique<PipeSDC<5, 1>>(os);
       gridder = std::make_unique<GridEcho<5, 1>>(
-        dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false, log);
+        dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false);
     }
   }
   gridder->doNotWeightEchoes();
@@ -49,10 +49,10 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
     float const delta = R0((Wp - W).real().abs().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 1e-6) {
-      log.info("SDC converged, delta was {}", delta);
+      Log::Print("SDC converged, delta was {}", delta);
       break;
     } else {
-      log.info("SDC Delta {}", delta);
+      Log::Print("SDC Delta {}", delta);
     }
   }
   if (!nn && (info.read_points > 6)) {
@@ -60,13 +60,13 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os, Log &log)
     // the spokes. Count back from the ends to miss that and then average.
     W = W / W.constant(Mean(W.slice(Sz3{0, info.read_points - 6, 0}, Sz3{1, 1, info.spokes})));
   }
-  log.info("SDC finished.");
+  Log::Print("SDC finished.");
   return W.real().chip<0>(0);
 }
 
-R2 Radial2D(Trajectory const &traj, Log &log)
+R2 Radial2D(Trajectory const &traj)
 {
-  log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
+  Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
   Info const &info = traj.info();
   auto spoke_sdc = [&](Index const spoke, Index const N) -> R1 {
     float const k_delta = (traj.point(1, spoke, 1.f) - traj.point(0, spoke, 1.f)).norm();
@@ -94,9 +94,9 @@ R2 Radial2D(Trajectory const &traj, Log &log)
   return sdc;
 }
 
-R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap, Log &log)
+R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 {
-  log.info(FMT_STRING("Calculating 2D radial analytic SDC"));
+  Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
   auto const &info = traj.info();
 
   Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(info.read_points, 0, info.read_points - 1);
@@ -151,31 +151,31 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap, Log &log
   return sdc;
 }
 
-R2 Radial(Trajectory const &traj, Index const lores, Index const gap, Log &log)
+R2 Radial(Trajectory const &traj, Index const lores, Index const gap)
 {
 
   if (traj.info().type == Info::Type::ThreeD) {
-    return Radial3D(traj, lores, gap, log);
+    return Radial3D(traj, lores, gap);
   } else {
-    return Radial2D(traj, log);
+    return Radial2D(traj);
   }
 }
 
-R2 Choose(std::string const &iname, Trajectory const &traj, float const os, Log &log)
+R2 Choose(std::string const &iname, Trajectory const &traj, float const os)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);
   if (iname == "") {
-    log.info("Using no density compensation");
+    Log::Print("Using no density compensation");
     sdc.setConstant(1.f);
   } else if (iname == "none") {
-    log.info("Using no density compensation");
+    Log::Print("Using no density compensation");
     sdc.setConstant(1.f);
   } else if (iname == "pipe") {
-    sdc = Pipe(traj, false, 2.1f, log);
+    sdc = Pipe(traj, false, 2.1f);
   } else if (iname == "pipenn") {
-    sdc = Pipe(traj, true, os, log);
+    sdc = Pipe(traj, true, os);
   } else {
-    HD5::Reader reader(iname, log);
+    HD5::Reader reader(iname);
     auto const sdcInfo = reader.readInfo();
     auto const trajInfo = traj.info();
     if (sdcInfo.read_points != trajInfo.read_points || sdcInfo.spokes != trajInfo.spokes) {

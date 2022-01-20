@@ -8,8 +8,8 @@
 
 namespace FFT {
 
-void Start(Log &log);
-void End(Log &log);
+void Start();
+void End();
 void SetTimelimit(double time);
 Cx1 Phase(Index const sz);
 

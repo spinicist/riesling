@@ -8,12 +8,12 @@
 
 struct ReconOp final : Operator<4, 3>
 {
-  ReconOp(GridBase *gridder, Cx4 const &maps, Log &log)
+  ReconOp(GridBase *gridder, Cx4 const &maps)
     : gridder_{gridder}
     , grid_{gridder_->inputDimensions(maps.dimension(0))}
-    , sense_{maps, grid_.dimensions(), log}
-    , fft_{grid_, log}
-    , log_{log}
+    , sense_{maps, grid_.dimensions()}
+    , fft_{grid_}
+
   {
     sense_.setApodization(gridder);
   }
@@ -30,7 +30,7 @@ struct ReconOp final : Operator<4, 3>
 
   void calcToeplitz(Info const &info)
   {
-    log_.info("Calculating Töplitz embedding");
+    Log::Print("Calculating Töplitz embedding");
     transfer_.resize(gridder_->inputDimensions(1));
     transfer_.setConstant(1.f);
     Cx3 tf(1, info.read_points, info.spokes);
@@ -41,20 +41,20 @@ struct ReconOp final : Operator<4, 3>
 
   void A(Input const &x, Output &y) const
   {
-    auto const &start = log_.now();
+    auto const &start = Log::Now();
     sense_.A(x, grid_); // SENSE takes care of apodization
     fft_.forward(grid_);
     gridder_->A(grid_, y);
-    log_.debug("Encode: {}", log_.toNow(start));
+    Log::Debug("Encode: {}", Log::ToNow(start));
   }
 
   void Adj(Output const &x, Input &y) const
   {
-    auto const &start = log_.now();
+    auto const &start = Log::Now();
     gridder_->Adj(x, grid_);
     fft_.reverse(grid_);
     sense_.Adj(grid_, y); // SENSE takes care of apodization
-    log_.debug("Decode: {}", log_.toNow(start));
+    Log::Debug("Decode: {}", Log::ToNow(start));
   }
 
   void AdjA(Input const &x, Input &y) const
@@ -65,7 +65,7 @@ struct ReconOp final : Operator<4, 3>
       Adj(temp, y);
     } else {
       auto dev = Threads::GlobalDevice();
-      auto const start = log_.now();
+      auto const start = Log::Now();
       sense_.A(x, grid_);
       fft_.forward(grid_);
       Eigen::IndexList<int, FixOne, FixOne, FixOne> brd;
@@ -73,7 +73,7 @@ struct ReconOp final : Operator<4, 3>
       grid_.device(dev) = grid_ * transfer_.broadcast(brd);
       fft_.reverse(grid_);
       sense_.Adj(grid_, y);
-      log_.debug("Töplitz embedded: {}", log_.toNow(start));
+      Log::Debug("Töplitz embedded: {}", Log::ToNow(start));
     }
   }
 
@@ -83,5 +83,4 @@ private:
   Cx5 transfer_;
   SenseOp sense_;
   FFT::Planned<5, 3> fft_;
-  Log log_;
 };

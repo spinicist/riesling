@@ -6,57 +6,47 @@
 
 #include "types.h"
 
-struct Log
+namespace Log {
+enum struct Level
 {
-  enum struct Level
-  {
-    None = 0,
-    Info = 1,
-    Debug = 2,
-    Images = 3
-  };
-
-  using Time = std::chrono::high_resolution_clock::time_point;
-
-  Log(Level const l = Level::None);
-
-  Level level() const;
-
-  template <typename S, typename... Args>
-  inline void info(const S &fmt_str, const Args &...args) const
-  {
-    vinfo(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
-  }
-
-  template <typename S, typename... Args>
-  inline void debug(const S &fmt_str, const Args &...args) const
-  {
-    vdebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
-  }
-
-  template <typename S, typename... Args>
-  __attribute__((noreturn)) static void Fail(const S &fmt_str, const Args &...args)
-  {
-    vfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
-  }
-
-  void progress(Index const ii, Index const lo, Index const hi) const;
-  Time now() const;
-  std::string toNow(Time const t) const;
-
-  void image(Cx3 const &img, std::string const &name) const;
-  void image(Cx4 const &img, std::string const &name) const;
-  void image(R3 const &img, std::string const &name) const;
-
-private:
-  void vinfo(fmt::string_view format, fmt::format_args args) const;
-  void vdebug(fmt::string_view format, fmt::format_args args) const;
-  __attribute__((noreturn)) static void vfail(fmt::string_view format, fmt::format_args args);
-  Level out_level_;
+  None = 0,
+  Info = 1,
+  Debug = 2,
+  Images = 3
 };
 
-template <typename T>
-inline decltype(auto) Dims(T const &x)
+using Time = std::chrono::high_resolution_clock::time_point;
+
+Level CurrentLevel();
+void SetLevel(Level const l);
+
+void lprint(fmt::string_view fstr, fmt::format_args args);
+void ldebug(fmt::string_view fstr, fmt::format_args args);
+__attribute__((noreturn)) void lfail(fmt::string_view fstr, fmt::format_args args);
+
+template <typename S, typename... Args>
+inline void Print(const S &fmt_str, const Args &...args)
 {
-  return fmt::join(x.dimensions(), ",");
+  lprint(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
 }
+
+template <typename S, typename... Args>
+inline void Debug(const S &fmt_str, const Args &...args)
+{
+  ldebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
+}
+
+template <typename S, typename... Args>
+__attribute__((noreturn)) inline void Fail(const S &fmt_str, const Args &...args)
+{
+  lfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
+}
+
+void Progress(Index const ii, Index const lo, Index const hi);
+Time Now();
+std::string ToNow(Time const t);
+
+void Image(Cx3 const &img, std::string const &name);
+void Image(Cx4 const &img, std::string const &name);
+void Image(R3 const &img, std::string const &name);
+} // namespace Log

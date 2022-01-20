@@ -27,33 +27,32 @@ int main_espirit(args::Subparser &parser)
   args::ValueFlag<float> res(
     parser, "R", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
+  ParseCommand(parser, iname);
+  FFT::Start();
 
-  HD5::Reader reader(iname.Get(), log);
+  HD5::Reader reader(iname.Get());
   auto const traj = reader.readTrajectory();
   auto const &info = traj.info();
-  log.info(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
+  Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), res, true);
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid, log);
-  gridder->setSDC(SDC::Pipe(traj, true, osamp.Get(), log));
+  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
+  gridder->setSDC(SDC::Pipe(traj, true, osamp.Get()));
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
-  Cropper cropper(info, gridder->mapping().cartDims, fov.Get(), log);
+  Cropper cropper(info, gridder->mapping().cartDims, fov.Get());
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder.get(),
     reader.noncartesian(ValOrLast(volume.Get(), info.volumes)),
     kRad.Get(),
     totalCalRad,
     readStart.Get(),
-    thresh.Get(),
-    log));
+    thresh.Get()));
 
   auto const fname = OutName(iname.Get(), oname.Get(), "espirit", "h5");
-  HD5::Writer writer(fname, log);
+  HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeSENSE(sense);
 
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

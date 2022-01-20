@@ -9,5 +9,4 @@ Cx4 ESPIRIT(
   Index const kernelRad,
   Index const calRad,
   Index const gap,
-  float const thresh,
-  Log &log);
+  float const thresh);

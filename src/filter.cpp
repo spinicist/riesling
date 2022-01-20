@@ -16,7 +16,7 @@ inline float Tukey(float const &r, float const &sw, float const &ew, float const
 }
 
 template <typename Scalar, int D>
-void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar, D> &ks, Log &log)
+void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar, D> &ks)
 {
   auto const sz = ks.dimension(D - 1);
   auto const sy = ks.dimension(D - 2);
@@ -42,28 +42,28 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
       }
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, sz);
-  log.debug("Filtering took: {}", log.toNow(start));
+  Log::Debug("Filtering took: {}", Log::ToNow(start));
 }
 
-void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x, Log &log)
+void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x)
 {
-  log.info(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
+  Log::Print(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  FFT::ThreeD fft(x.dimensions(), log);
-  log.image(x, "tukey-img-before.nii");
+  FFT::ThreeD fft(x.dimensions());
+  Log::Image(x, "tukey-img-before.nii");
   fft.forward(x);
-  log.image(x, "tukey-ks-before.nii");
-  KSFilter(f, x, log);
-  log.image(x, "tukey-ks-after.nii");
+  Log::Image(x, "tukey-ks-before.nii");
+  KSFilter(f, x);
+  Log::Image(x, "tukey-ks-after.nii");
   fft.reverse(x);
-  log.image(x, "tukey-img-after.nii");
+  Log::Image(x, "tukey-img-after.nii");
 }
 
-void KSTukey(float const &s, float const &e, float const &h, Cx4 &x, Log &log)
+void KSTukey(float const &s, float const &e, float const &h, Cx4 &x)
 {
-  log.info(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
+  Log::Print(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  KSFilter(f, x, log);
+  KSFilter(f, x);
 }

@@ -19,19 +19,14 @@
  * Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
  */
 Cx4 DirectSENSE(
-  Info const &info,
-  GridBase const *g,
-  float const fov,
-  float const lambda,
-  Cx3 const &data,
-  Log &log);
+  Info const &info, GridBase const *g, float const fov, float const lambda, Cx3 const &data);
 
 /*!
  * Loads a set of SENSE maps from a file
  */
-Cx4 LoadSENSE(std::string const &calFile, Log &log);
+Cx4 LoadSENSE(std::string const &calFile);
 
 /*!
  * Loads a set of SENSE maps from a file and interpolate them to correct dims
  */
-Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims, Log &log);
+Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims);

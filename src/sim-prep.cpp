@@ -5,11 +5,10 @@
 
 namespace Sim {
 
-Result
-Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index const nRand, Log &log)
+Result Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index const nRand)
 {
-  log.info("Basic MP-ZTE simulation");
-  log.info(
+  Log::Print("Basic MP-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, FA {}, TR {}s, TI {}s, Trec {}s"),
     seq.sps,
     seq.alpha,
@@ -20,13 +19,13 @@ Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index con
   ParameterGenerator<2> gen({T1p, betap});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   if (nRand > 0) {
-    log.info(FMT_STRING("Random values of T1 from {} to {}s"), T1p.lo, T1p.hi);
-    log.info(FMT_STRING("Random values of β from {} to {}"), betap.lo, betap.hi);
+    Log::Print(FMT_STRING("Random values of T1 from {} to {}s"), T1p.lo, T1p.hi);
+    Log::Print(FMT_STRING("Random values of β from {} to {}"), betap.lo, betap.hi);
   } else {
-    log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-    log.info(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
+    Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+    Log::Print(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
   }
-  log.info(FMT_STRING("{} total values"), totalN);
+  Log::Print(FMT_STRING("{} total values"), totalN);
 
   Result result;
   result.dynamics.resize(totalN, seq.sps);
@@ -75,9 +74,9 @@ Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index con
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 

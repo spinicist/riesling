@@ -8,7 +8,6 @@
 
 TEST_CASE("ops-grid", "[ops]")
 {
-  Log log;
   Index const M = 16;
   float const os = 2.f;
   Info const info{
@@ -24,8 +23,8 @@ TEST_CASE("ops-grid", "[ops]")
     .origin = Eigen::Array3f::Constant(0.f),
     .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
-  Trajectory const traj(info, points, log);
-  R2 const sdc = SDC::Pipe(traj, true, os, log);
+  Trajectory const traj(info, points);
+  R2 const sdc = SDC::Pipe(traj, true, os);
 
   /* I don't think the classic Dot test from PyLops is applicable to gridding,
    * because it would not be correct to have a random radial k-space. The k0
@@ -39,7 +38,7 @@ TEST_CASE("ops-grid", "[ops]")
   {
     auto const nn = make_kernel("NN", info.type, os);
     auto const m1 = traj.mapping(1, os);
-    auto grid = make_grid(nn.get(), m1, false, log);
+    auto grid = make_grid(nn.get(), m1, false);
     grid->setSDC(sdc);
     auto const dims = grid->inputDimensions(1);
     Cx5 x(dims), y(dims);

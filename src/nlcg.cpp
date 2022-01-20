@@ -1,5 +1,5 @@
-#include "fft.h"
 #include "nlcg.h"
+#include "fft.h"
 #include "threads.h"
 
 // Non-linear Conjugate Gradients with l1-regularisation
@@ -12,7 +12,7 @@ Cx3 nlcg(
   Index const &max_its,            // Maximum iterations
   float const &thresh,             // Stop if fractional change in cost-function is below thresh
   float const &lambda,             // l1-norm weight
-  Log &log)
+)
 {
   float const alpha = 0.05f; // Line-search threshold (allow slightly higher residual)
   float const beta = 0.6f;   // Line-search step size will be reduced by this each iteration
@@ -48,7 +48,7 @@ Cx3 nlcg(
     // Calculate cost
     R0 const rsum = (resid * resid.conjugate()).real().sum();
     R0 const Wsum = W.sum();
-    log.info(FMT_STRING("Residual term {} l1-Term {}"), rsum(), Wsum());
+    Log::Print(FMT_STRING("Residual term {} l1-Term {}"), rsum(), Wsum());
     return rsum() + lambda * Wsum();
   };
 
@@ -64,22 +64,22 @@ Cx3 nlcg(
   dx.device(Threads::GlobalDevice()) = -g;
   R0 g_norm_old = (g * g.conjugate()).real().sum();
   float t = 1.0f;
-  log.info("Starting Non-linear Conjugate Gradients");
-  log.info(FMT_STRING("Scale %f Starting cost {}"), scale(), f_current);
+  Log::Print("Starting Non-linear Conjugate Gradients");
+  Log::Print(FMT_STRING("Scale %f Starting cost {}"), scale(), f_current);
   for (Index ii = 0; ii < max_its; ii++) {
     R0 const dx_g = -(dx * g.conjugate()).real().sum(); // - because dx ~= -g
 
     // Line search
     float f_t;
     float line_thresh = f_current + alpha * t * dx_g();
-    log.info(
+    Log::Print(
       FMT_STRING("Start line search, current cost {}% threshold {}%"),
       100.f * f_current / f_start,
       100.f * line_thresh / f_start);
     for (Index il = 0; il < 10; il++) {
       temp_x.device(Threads::GlobalDevice()) = x + t * dx;
       f_t = f_g(temp_x, g);
-      log.info(FMT_STRING("t={} Cost {}%"), t, 100.f * f_t / f_start);
+      Log::Print(FMT_STRING("t={} Cost {}%"), t, 100.f * f_t / f_start);
       if (f_t < line_thresh) {
         break;
       } else {
@@ -91,11 +91,11 @@ Cx3 nlcg(
     R0 const g_norm_new = (g * g.conjugate()).real().sum();
     float const gamma = g_norm_new() / g_norm_old();
     float const df = (f_current - f_t) / f_start;
-    log.info(
+    Log::Print(
       FMT_STRING("Iteration {} Cost change {}% Threshold {}%"), ii, df * 100.f, 100.f * thresh);
 
     if (fabs(df) < thresh) {
-      log.info("Cost change reached threshold, stopping");
+      Log::Print("Cost change reached threshold, stopping");
       break;
     }
 

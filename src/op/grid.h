@@ -6,6 +6,6 @@
 
 #include <memory>
 
-std::unique_ptr<GridBase> make_grid(Kernel const *k, Mapping const &m, bool const fg, Log &log);
+std::unique_ptr<GridBase> make_grid(Kernel const *k, Mapping const &m, bool const fg);
 std::unique_ptr<GridBase>
-make_grid_basis(Kernel const *k, Mapping const &m, R2 const &b, bool const fg, Log &log);
+make_grid_basis(Kernel const *k, Mapping const &m, R2 const &b, bool const fg);

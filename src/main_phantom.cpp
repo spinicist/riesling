@@ -55,14 +55,14 @@ int main_phantom(args::Subparser &parser)
     parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
   args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
+  ParseCommand(parser, iname);
+  FFT::Start();
 
   R3 points;
   Info info;
   if (trajfile) {
-    log.info("Reading external trajectory from {}", trajfile.Get());
-    HD5::Reader reader(trajfile.Get(), log);
+    Log::Print("Reading external trajectory from {}", trajfile.Get());
+    HD5::Reader reader(trajfile.Get());
     Trajectory const ext_traj = reader.readTrajectory();
     info = ext_traj.info();
     points = ext_traj.points().slice(Sz3{0, 0, info.spokes}, Sz3{3, info.read_points, info.spokes});
@@ -83,7 +83,7 @@ int main_phantom(args::Subparser &parser)
       .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
       .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
       .direction = Eigen::Matrix3f::Identity()};
-    log.info(FMT_STRING("Using {} hi-res spokes"), info.spokes);
+    Log::Print(FMT_STRING("Using {} hi-res spokes"), info.spokes);
     if (phyllo) {
       points =
         Phyllotaxis(info.read_points, info.spokes, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
@@ -99,38 +99,37 @@ int main_phantom(args::Subparser &parser)
       loPoints = loPoints / loPoints.constant(lores.Get());
       points = R3(loPoints.concatenate(points, 2));
       info.spokes += loSpokes;
-      log.info(FMT_STRING("Added {} lo-res spokes"), loSpokes);
+      Log::Print(FMT_STRING("Added {} lo-res spokes"), loSpokes);
     }
   }
-  log.info(
+  Log::Print(
     FMT_STRING("Matrix Size: {} Voxel Size: {}"),
     info.matrix.transpose(),
     info.voxel_size.transpose());
-  log.info(FMT_STRING("Read points: {} Spokes: {}"), info.read_points, info.spokes);
+  Log::Print(FMT_STRING("Read points: {} Spokes: {}"), info.read_points, info.spokes);
 
-  Trajectory traj(info, points, log);
-  Cx4 senseMaps = sense ? InterpSENSE(sense.Get(), info.matrix, log)
+  Trajectory traj(info, points);
+  Cx4 senseMaps = sense ? InterpSENSE(sense.Get(), info.matrix)
                         : birdcage(
                             info.matrix,
                             info.voxel_size,
                             info.channels,
                             coil_rings.Get(),
                             coil_r.Get(),
-                            coil_r.Get(),
-                            log);
+                            coil_r.Get());
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   std::unique_ptr<GridBase> gridder;
   if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get(), log);
+    HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readBasis();
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, false, log);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, false);
   } else {
-    gridder = make_grid(kernel.get(), mapping, false, log);
+    gridder = make_grid(kernel.get(), mapping, false);
   }
-  ReconOp recon(gridder.get(), senseMaps, log);
+  ReconOp recon(gridder.get(), senseMaps);
   auto const sz = recon.inputDimensions();
   Cx4 phan(sz);
 
@@ -146,26 +145,24 @@ int main_phantom(args::Subparser &parser)
   }
   for (Index ii = 0; ii < phan.dimension(0); ii++) {
     phan.chip<0>(ii) =
-      shepplogan
-        ? SheppLoganPhantom(
-            info.matrix,
-            info.voxel_size,
-            phan_c.Get(),
-            phan_rot.Get(),
-            phan_r.Get(),
-            intensities[ii],
-            log)
-        : SphericalPhantom(
-            info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii], log);
+      shepplogan ? SheppLoganPhantom(
+                     info.matrix,
+                     info.voxel_size,
+                     phan_c.Get(),
+                     phan_rot.Get(),
+                     phan_r.Get(),
+                     intensities[ii])
+                 : SphericalPhantom(
+                     info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii]);
   }
-  log.info("Sampling hi-res non-cartesian");
+  Log::Print("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
   recon.A(phan, radial);
 
   if (snr) {
     float avg = std::reduce(intensities.begin(), intensities.end()) / intensities.size();
     float const level = avg / (info.channels * sqrt(snr.Get()));
-    log.info(FMT_STRING("Adding noise effective level {}"), level);
+    Log::Print(FMT_STRING("Adding noise effective level {}"), level);
     Cx3 noise(radial.dimensions());
     noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
     radial += noise * noise.constant(level);
@@ -176,19 +173,19 @@ int main_phantom(args::Subparser &parser)
     points = R3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
     radial =
       Cx3(radial.slice(Sz3{0, trim.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
-    traj = Trajectory(info, points, log);
+    traj = Trajectory(info, points);
   }
 
   if (blank) {
     radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, blank.Get(), info.spokes}).setZero();
-    traj = Trajectory(info, points, log);
+    traj = Trajectory(info, points);
   }
 
-  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string(), log);
+  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeTrajectory(traj);
   writer.writeTensor(
     Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})), "noncartesian");
   writer.writeTensor(phan, "phantom");
-  FFT::End(log);
+  FFT::End();
   return EXIT_SUCCESS;
 }

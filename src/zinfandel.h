@@ -14,8 +14,7 @@ void zinfandel(
   Index const n_read,
   float const lambda,
   R3 const &traj,
-  Cx3 &ks,
-  Log &log);
+  Cx3 &ks);
 
 /*!
  *  Helper functions exposed for testing

@@ -26,42 +26,42 @@ int main_cgvar(args::Subparser &parser)
   args::ValueFlag<float> pre1(
     parser, "PRE1", "Preconditioning end value (default 1e-6)", {"pre1"}, 1.e-6f);
 
-  Log log = ParseCommand(parser, iname);
-  FFT::Start(log);
+  ParseCommand(parser, iname);
+  FFT::Start();
 
-  HD5::Reader reader(iname.Get(), log);
+  HD5::Reader reader(iname.Get());
   Trajectory const traj = reader.readTrajectory();
   Info const &info = traj.info();
 
   Cx4 senseMaps;
   if (senseFile) {
-    senseMaps = LoadSENSE(senseFile.Get(), log);
+    senseMaps = LoadSENSE(senseFile.Get());
   } else {
-    senseMaps = DirectSENSE(
-      traj, osamp.Get(), kb, iter_fov.Get(), senseLambda.Get(), senseVol.Get(), reader, log);
+    senseMaps =
+      DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), senseLambda.Get(), senseVol.Get(), reader);
   }
 
-  ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps, log);
+  ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps);
   recon.setPreconditioning(pre0);
   recon.calcToeplitz(traj.info());
   Cx3 vol(recon.dimensions());
-  Cropper out_cropper(info, vol.dimensions(), out_fov.Get(), log);
+  Cropper out_cropper(info, vol.dimensions(), out_fov.Get());
   Cx3 cropped = out_cropper.newImage();
   Cx4 out = out_cropper.newSeries(info.volumes);
-  auto const &all_start = log.now();
+  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
-    auto const &vol_start = log.now();
+    auto const &vol_start = Log::Now();
     recon.Adj(reader.noncartesian(iv), vol); // Initialize
-    cgvar(its.Get(), thr.Get(), pre0.Get(), pre1.Get(), recon, vol, log);
+    cgvar(its.Get(), thr.Get(), pre0.Get(), pre1.Get(), recon, vol);
     cropped = out_cropper.crop3(vol);
     if (tukey_s || tukey_e || tukey_h) {
-      ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped, log);
+      ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped);
     }
     out.chip<3>(iv) = cropped;
-    log.info("Volume {}: {}", iv, log.toNow(vol_start));
+    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }
-  log.info("All Volumes: {}", log.toNow(all_start));
-  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", "h5", log);
-  FFT::End(log);
+  Log::Print("All Volumes: {}", Log::ToNow(all_start));
+  WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", "h5");
+  FFT::End();
   return EXIT_SUCCESS;
 }

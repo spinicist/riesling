@@ -10,20 +10,19 @@ Result MUPA(
   Parameter const T2p,
   Parameter const B1p,
   Sequence const seq,
-  Index const nRand,
-  Log &log)
+  Index const nRand)
 {
-  log.info("MUPA MP-ZTE simulation");
-  log.info(
+  Log::Print("MUPA MP-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, FA {}, TR {}s, TI {}s, Trec {}s"),
     seq.sps,
     seq.alpha,
     seq.TR,
     seq.TI,
     seq.Trec);
-  log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-  log.info(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
-  log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
+  Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+  Log::Print(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
+  Log::Print(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   ParameterGenerator<3> gen({T1p, T2p, B1p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
@@ -35,7 +34,7 @@ Result MUPA(
   inv << -1.f, 0.f, 0.f, 1.f;
   auto task = [&](Index const lo, Index const hi, Index const ti) {
     for (Index ip = lo; ip < hi; ip++) {
-      log.progress(ip, lo, hi);
+      Log::Progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const T1 = P(0);
@@ -89,16 +88,16 @@ Result MUPA(
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 
-Result T1Prep(Parameter const T1p, Sequence const seq, Index const nRand, Log &log)
+Result T1Prep(Parameter const T1p, Sequence const seq, Index const nRand)
 {
-  log.info("T1 MP-ZTE simulation");
-  log.info(
+  Log::Print("T1 MP-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, GPS {}, FA {}, TR {}s, Trec {}s"),
     seq.sps,
     seq.gps,
@@ -106,7 +105,7 @@ Result T1Prep(Parameter const T1p, Sequence const seq, Index const nRand, Log &l
     seq.TR,
     seq.Trec);
   Index const spg = seq.sps / seq.gps; // Spokes per group
-  log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+  Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
   ParameterGenerator<3> gen({T1p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
@@ -118,7 +117,7 @@ Result T1Prep(Parameter const T1p, Sequence const seq, Index const nRand, Log &l
   inv << -1.f, 0.f, 0.f, 1.f;
   auto task = [&](Index const lo, Index const hi, Index const ti) {
     for (Index ip = lo; ip < hi; ip++) {
-      log.progress(ip, lo, hi);
+      Log::Progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const T1 = P(0);
@@ -162,17 +161,16 @@ Result T1Prep(Parameter const T1p, Sequence const seq, Index const nRand, Log &l
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 
-Result
-T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const nRand, Log &log)
+Result T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const nRand)
 {
-  log.info("T2 MP-ZTE simulation");
-  log.info(
+  Log::Print("T2 MP-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, GPS {}, FA {}, TR {}s, TE {}s, Trec {}s"),
     seq.sps,
     seq.gps,
@@ -181,8 +179,8 @@ T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const
     seq.TE,
     seq.Trec);
   Index const spg = seq.sps / seq.gps; // Spokes per group
-  log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-  log.info(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
+  Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+  Log::Print(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
   ParameterGenerator<3> gen({T1p, T2p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
@@ -194,7 +192,7 @@ T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const
   inv << -1.f, 0.f, 0.f, 1.f;
   auto task = [&](Index const lo, Index const hi, Index const ti) {
     for (Index ip = lo; ip < hi; ip++) {
-      log.progress(ip, lo, hi);
+      Log::Progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const T1 = P(0);
@@ -243,17 +241,16 @@ T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 
-Result
-T1T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const nRand, Log &log)
+Result T1T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index const nRand)
 {
-  log.info("T1T2 MP-ZTE simulation");
-  log.info(
+  Log::Print("T1T2 MP-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, GPS {}, FA {}, TR {}s, TE {}s, Trec {}s"),
     seq.sps,
     seq.gps,
@@ -262,8 +259,8 @@ T1T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index con
     seq.TE,
     seq.Trec);
   Index const spg = seq.sps / seq.gps; // Spokes per group
-  log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-  log.info(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
+  Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+  Log::Print(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
   ParameterGenerator<3> gen({T1p, T2p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
@@ -275,7 +272,7 @@ T1T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index con
   inv << -1.f, 0.f, 0.f, 1.f;
   auto task = [&](Index const lo, Index const hi, Index const ti) {
     for (Index ip = lo; ip < hi; ip++) {
-      log.progress(ip, lo, hi);
+      Log::Progress(ip, lo, hi);
       // Set up matrices
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       float const T1 = P(0);
@@ -331,9 +328,9 @@ T1T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Index con
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 

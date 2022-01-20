@@ -11,11 +11,10 @@ Result Eddy(
   Parameter const gammap,
   Parameter const B1p,
   Sequence const seq,
-  Index const nRand,
-  Log &log)
+  Index const nRand)
 {
-  log.info("Eddy Current MP-ZTE simulation");
-  log.info(
+  Log::Print("Eddy Current MP-ZTE simulation");
+  Log::Print(
     FMT_STRING("SPS {}, FA {}, TR {}s, Trec {}s, Tramp {}s, Tssi {}s"),
     seq.sps,
     seq.alpha,
@@ -23,10 +22,10 @@ Result Eddy(
     seq.Trec,
     seq.Tramp,
     seq.Tssi);
-  log.info(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-  log.info(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
-  log.info(FMT_STRING("{} values of ɣ from {} to {}"), gammap.N, gammap.lo, gammap.hi);
-  log.info(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
+  Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
+  Log::Print(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
+  Log::Print(FMT_STRING("{} values of ɣ from {} to {}"), gammap.N, gammap.lo, gammap.hi);
+  Log::Print(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
   ParameterGenerator<4> gen({T1p, betap, gammap, B1p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
@@ -36,7 +35,7 @@ Result Eddy(
 
   auto task = [&](Index const lo, Index const hi, Index const ti) {
     for (Index ip = lo; ip < hi; ip++) {
-      log.progress(ip, lo, hi);
+      Log::Progress(ip, lo, hi);
       auto const P = (nRand > 0) ? gen.rand() : gen.values(ip);
       // Set up matrices
       float const T1 = P(0);
@@ -101,9 +100,9 @@ Result Eddy(
       result.parameters.row(ip) = P;
     }
   };
-  auto const start = log.now();
+  auto const start = Log::Now();
   Threads::RangeFor(task, totalN);
-  log.info("Simulation took {}", log.toNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return result;
 }
 

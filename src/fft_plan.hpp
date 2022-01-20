@@ -6,18 +6,18 @@
 namespace FFT {
 
 template <int TRank, int FRank>
-Planned<TRank, FRank>::Planned(Tensor &workspace, Log log, Index const nThreads)
+Planned<TRank, FRank>::Planned(Tensor &workspace, Index const nThreads)
   : dims_{workspace.dimensions()}
-  , log_{log}
+
   , threaded_{nThreads > 1}
 {
   plan(workspace, nThreads);
 }
 
 template <int TRank, int FRank>
-Planned<TRank, FRank>::Planned(TensorDims const &dims, Log log, Index const nThreads)
+Planned<TRank, FRank>::Planned(TensorDims const &dims, Index const nThreads)
   : dims_{dims}
-  , log_{log}
+
   , threaded_{nThreads > 1}
 {
   Tensor ws(dims);
@@ -46,12 +46,12 @@ void Planned<TRank, FRank>::plan(Tensor &ws, Index const nThreads)
   }
   scale_ = 1. / sqrt(Nvox);
   auto ptr = reinterpret_cast<fftwf_complex *>(ws.data());
-  log_.info(FMT_STRING("Planning {} {} FFTs with {} threads"), N, fmt::join(sizes, "x"), nThreads);
+  Log::Print(FMT_STRING("Planning {} {} FFTs with {} threads"), N, fmt::join(sizes, "x"), nThreads);
 
   // FFTW is row-major. Reverse dims as per
   // http://www.fftw.org/fftw3_doc/Column_002dmajor-Format.html#Column_002dmajor-Format
   std::reverse(sizes.begin(), sizes.end());
-  auto const start = log_.now();
+  auto const start = Log::Now();
   fftwf_plan_with_nthreads(nThreads);
   forward_plan_ = fftwf_plan_many_dft(
     FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_FORWARD, FFTW_MEASURE);
@@ -65,7 +65,7 @@ void Planned<TRank, FRank>::plan(Tensor &ws, Index const nThreads)
     Log::Fail("Could not create reverse FFT Planned");
   }
 
-  log_.debug("FFT planning took {}", log_.toNow(start));
+  Log::Debug("FFT planning took {}", Log::ToNow(start));
 }
 
 template <int TRank, int FRank>
@@ -123,13 +123,13 @@ void Planned<TRank, FRank>::forward(Tensor &x) const
   for (Index ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
   }
-  log_.info("Forward FFT");
-  auto const start = log_.now();
+  Log::Print("Forward FFT");
+  auto const start = Log::Now();
   applyPhase(x, 1.f, true);
   auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
   fftwf_execute_dft(forward_plan_, ptr, ptr);
   applyPhase(x, scale_, true);
-  log_.debug("Forward FFT: {}", log_.toNow(start));
+  Log::Debug("Forward FFT: {}", Log::ToNow(start));
 }
 
 template <int TRank, int FRank>
@@ -138,13 +138,13 @@ void Planned<TRank, FRank>::reverse(Tensor &x) const
   for (Index ii = 0; ii < TRank; ii++) {
     assert(x.dimension(ii) == dims_[ii]);
   }
-  log_.info("Reverse FFT");
-  auto start = log_.now();
+  Log::Print("Reverse FFT");
+  auto start = Log::Now();
   applyPhase(x, scale_, false);
   auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
   fftwf_execute_dft(reverse_plan_, ptr, ptr);
   applyPhase(x, 1.f, false);
-  log_.debug("Reverse FFT: {}", log_.toNow(start));
+  Log::Debug("Reverse FFT: {}", Log::ToNow(start));
 }
 
 } // namespace FFT

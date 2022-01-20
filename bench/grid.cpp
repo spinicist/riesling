@@ -8,7 +8,6 @@
 
 TEST_CASE("Grid")
 {
-  Log log;
   Index const M = 32;
   Index const C = 8;
   Info const info{
@@ -24,7 +23,7 @@ TEST_CASE("Grid")
     .origin = Eigen::Array3f::Constant(0.f),
     .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
-  Trajectory traj(info, points, log);
+  Trajectory traj(info, points);
 
   float const os = 2.f;
 
@@ -39,8 +38,8 @@ TEST_CASE("Grid")
   auto const m1 = traj.mapping(1, os);
   auto const m5 = traj.mapping(5, os);
 
-  auto gridnn = make_grid(nn.get(), m1, false, log);
-  auto gridkb = make_grid(kb.get(), m5, false, log);
+  auto gridnn = make_grid(nn.get(), m1, false);
+  auto gridkb = make_grid(kb.get(), m5, false);
 
   auto nc = info.noncartesianVolume();
   Cx5 c(gridkb->inputDimensions(C));
@@ -48,8 +47,8 @@ TEST_CASE("Grid")
   R2 basis(256, nB);
   basis.setConstant(1.f);
 
-  auto gridbnn = make_grid_basis(nn.get(), m1, basis, false, log);
-  auto gridbkb = make_grid_basis(kb.get(), m5, basis, false, log);
+  auto gridbnn = make_grid_basis(nn.get(), m1, basis, false);
+  auto gridbkb = make_grid_basis(kb.get(), m5, basis, false);
   Cx5 b(gridbkb->inputDimensions(C));
 
   BENCHMARK("NN Noncartesian->Cartesian")

@@ -13,9 +13,9 @@ int main_nii(args::Subparser &parser)
     parser, "D", "Dataset name (default image)", {'d', "dset"}, "image");
   args::ValueFlag<Index> echoArg(parser, "E", "Echo (default all)", {'e', "echo"}, 0);
   args::ValueFlag<Index> volArg(parser, "V", "Volume (default all)", {"volume"}, 0);
-  Log log = ParseCommand(parser);
+  ParseCommand(parser);
 
-  HD5::Reader input(iname.Get(), log);
+  HD5::Reader input(iname.Get());
   Info const info = input.readInfo();
   Cx5 const image = input.readTensor<Cx5>(dset.Get());
   Sz5 const sz = image.dimensions();
@@ -35,9 +35,9 @@ int main_nii(args::Subparser &parser)
                        .shuffle(Sz5{1, 2, 3, 0, 4})
                        .reshape(Sz4{sz[1], sz[2], sz[3], szE * szV});
   if (mag) {
-    WriteNifti(info, R4(output.abs()), oname.Get(), log);
+    WriteNifti(info, R4(output.abs()), oname.Get());
   } else {
-    WriteNifti(info, output, oname.Get(), log);
+    WriteNifti(info, output, oname.Get());
   }
 
   return EXIT_SUCCESS;

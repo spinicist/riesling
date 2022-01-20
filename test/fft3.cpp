@@ -6,8 +6,7 @@
 
 TEST_CASE("FFT", "[3D]")
 {
-  Log log;
-  FFT::Start(log);
+  FFT::Start();
 
   auto sx = GENERATE(3, 5, 7, 32);
   auto sy = sx;
@@ -17,7 +16,7 @@ TEST_CASE("FFT", "[3D]")
     Index const N = sx * sy * sz;
     Cx3 data(Sz3{sx, sy, sz});
     Cx3 ref(sx, sy, sz);
-    FFT::ThreeD fft(data, log);
+    FFT::ThreeD fft(data);
 
     ref.setConstant(1.f);
     data.setZero();
@@ -38,7 +37,7 @@ TEST_CASE("FFT", "[3D]")
     Index const ne = 1;
     Cx5 data(nc, ne, sx, sy, sz);
     Cx5 ref(nc, ne, sx, sy, sz);
-    FFT::Planned<5, 3> fft(data, log);
+    FFT::Planned<5, 3> fft(data);
 
     ref.setConstant(1.f);
     data.setZero();
@@ -51,5 +50,5 @@ TEST_CASE("FFT", "[3D]")
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
   }
 
-  FFT::End(log);
+  FFT::End();
 }

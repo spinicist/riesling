@@ -51,36 +51,28 @@ args::MapFlag<int, Log::Level> verbosity(
   levelMap);
 args::ValueFlag<Index> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
-Log ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
+void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
-  Log::Level const level =
-    verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
-
-  Log log(level);
-  log.info(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
+  Log::SetLevel(verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None));
+  Log::Print(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
   if (!iname) {
     throw args::Error("No input file specified");
   }
   if (nthreads) {
-    log.info("Using {} threads", nthreads.Get());
+    Log::Print("Using {} threads", nthreads.Get());
     Threads::SetGlobalThreadCount(nthreads.Get());
   }
-  return log;
 }
 
-Log ParseCommand(args::Subparser &parser)
+void ParseCommand(args::Subparser &parser)
 {
   parser.Parse();
-  Log::Level const level =
-    verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None);
-
-  Log log(level);
+  Log::SetLevel(verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None));
   if (nthreads) {
     Threads::SetGlobalThreadCount(nthreads.Get());
   }
-  log.info(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
-  return log;
+  Log::Print(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
 }
 
 std::string OutName(
