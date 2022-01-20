@@ -30,10 +30,9 @@ int main_split(args::Subparser &parser)
     float const scalef = (float)info.read_points / (float)ds_read_points;
     info.voxel_size = info.voxel_size * scalef;
     info.matrix = (info.matrix.cast<float>() / scalef).cast<Index>();
-    points = points * scalef;
     info.read_points = static_cast<Index>(ds_read_points);
-    Cx3 ds_ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes});
-    ks = ds_ks;
+    points = R3(points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes})) * scalef;
+    ks = Cx3(ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, info.spokes}));
   }
 
   if (lores) {
