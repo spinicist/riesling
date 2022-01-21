@@ -3,7 +3,6 @@
 #include "types.h" // Make sure to include this first to set EIGEN_USE_THREADS
 
 #include "fftw3.h"
-#include "log.h"
 #include "threads.h"
 
 namespace FFT {

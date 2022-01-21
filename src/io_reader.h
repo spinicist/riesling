@@ -9,30 +9,37 @@
 
 namespace HD5 {
 
+/*
+ * This class is for reading tensors out of generic HDF5 files. Used for SDC, SENSE maps, etc.
+ */
 struct Reader
 {
   Reader(Reader const &) = delete;
   Reader(std::string const &fname);
   ~Reader();
-  std::map<std::string, float> readMeta() const;
-  Info readInfo();
-  Trajectory readTrajectory();
-  R2 readSDC(Info const &info);
-
-  void readCartesian(Cx5 &volume);
-  Cx3 const &noncartesian(Index const index); // This will be cached
-  Cx4 readSENSE();
-  R2 readBasis();
-  R2 readRealMatrix(std::string const &label);
-  Cx5 readBasisImages();
 
   template <typename T>
   T readTensor(std::string const &label);
   template <typename T>
   void readTensor(std::string const &label, T &tensor); // Read with size checks
+protected:
+  int64_t handle_;
+};
+
+/*
+ * This class is for reading "full" riesling datasets - i.e. the HDF5 file must contain the Info
+ * struct, a Trajectory, and then some valid data
+ */
+struct RieslingReader : Reader
+{
+  RieslingReader(std::string const &fname);
+  std::map<std::string, float> readMeta() const;
+  Trajectory const &trajectory() const;
+  Cx3 const &noncartesian(Index const index); // This will be cached
+
 private:
-    int64_t handle_;
   Index currentNCVol_;
+  Trajectory traj_;
   Cx3 nc_;
 };
 

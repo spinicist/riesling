@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fft_plan.h"
+#include "log.h"
 #include "tensorOps.h"
 
 namespace FFT {
@@ -8,7 +9,6 @@ namespace FFT {
 template <int TRank, int FRank>
 Planned<TRank, FRank>::Planned(Tensor &workspace, Index const nThreads)
   : dims_{workspace.dimensions()}
-
   , threaded_{nThreads > 1}
 {
   plan(workspace, nThreads);

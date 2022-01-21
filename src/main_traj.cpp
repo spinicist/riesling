@@ -19,8 +19,8 @@ int main_traj(args::Subparser &parser)
 
   ParseCommand(parser, iname);
   FFT::Start();
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
@@ -31,7 +31,7 @@ int main_traj(args::Subparser &parser)
   std::unique_ptr<GridBase> gridder;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
-    R2 basis = basisReader.readBasis();
+    R2 basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), mapping, basis, fastgrid);
   } else {
     gridder = make_grid(kernel.get(), mapping, fastgrid);

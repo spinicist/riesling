@@ -7,7 +7,6 @@
 namespace HD5 {
 
 Reader::Reader(std::string const &fname)
-  : currentNCVol_{-1}
 {
   if (!std::filesystem::exists(fname)) {
     Log::Fail(fmt::format("File does not exist: {}", fname));
@@ -15,24 +14,106 @@ Reader::Reader(std::string const &fname)
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   Log::Print(FMT_STRING("Opened file {} for reading"), fname);
+  Log::Debug(FMT_STRING("File handle: {}"), handle_);
 }
 
 Reader::~Reader()
 {
   H5Fclose(handle_);
+  Log::Debug(FMT_STRING("Closed HDF5 handle {}"), handle_);
 }
 
+template <typename T>
+T Reader::readTensor(std::string const &label)
+{
+  return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
+}
+
+template R2 Reader::readTensor<R2>(std::string const &);
+template Cx3 Reader::readTensor<Cx3>(std::string const &);
+template Cx4 Reader::readTensor<Cx4>(std::string const &);
+template Cx5 Reader::readTensor<Cx5>(std::string const &);
+
+template <typename T>
+void Reader::readTensor(std::string const &label, T &tensor)
+{
+  HD5::load_tensor(handle_, label, tensor);
+}
+
+template void Reader::readTensor<Cx5>(std::string const &, Cx5 &);
+
+namespace {
 herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
 {
   auto names = reinterpret_cast<std::vector<std::string> *>(opdata);
   names->push_back(name);
   return 0;
 }
+} // namespace
 
-std::map<std::string, float> Reader::readMeta() const
+void Check(std::string const &name, Index const dval, Index const ival)
+{
+  if (dval != ival) {
+    Log::Fail(FMT_STRING("Number of {} in data {} does not match info {}"), name, dval, ival);
+  }
+}
+
+RieslingReader::RieslingReader(std::string const &fname)
+  : Reader(fname)
+  , currentNCVol_{-1}
+{
+  // First get the Info struct
+  hid_t const info_id = InfoType();
+  hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
+  CheckInfoType(dset);
+  hid_t const space = H5Dget_space(dset);
+  Info info;
+  herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
+  status = H5Dclose(dset);
+  if (status != 0) {
+    Log::Fail("Could not load info struct, code: {}", status);
+  }
+
+  R3 points(3, info.read_points, info.spokes);
+  HD5::load_tensor(handle_, Keys::Trajectory, points);
+  if (HD5::Exists(handle_, "echoes")) {
+    I1 echoes(info.spokes);
+    HD5::load_tensor(handle_, "echoes", echoes);
+    Log::Debug("Read echoes successfully");
+    traj_ = Trajectory(info, points, echoes);
+  } else {
+    Log::Debug("No echoes information in file");
+    traj_ = Trajectory(info, points);
+  }
+
+  // Check if one of noncartesian / cartesian / image is present
+
+  bool okay = false;
+
+  if (Exists(handle_, Keys::Noncartesian)) {
+    auto const dims = HD5::get_dims<4>(handle_, Keys::Noncartesian);
+    Check("channels", dims[0], info.channels);
+    Check("read-points", dims[1], info.read_points);
+    Check("spokes", dims[2], info.spokes);
+    Check("volumes", dims[3], info.volumes);
+    okay = true;
+  } else if (Exists(handle_, Keys::Cartesian)) {
+    okay = true;
+  } else if (Exists(handle_, Keys::Image)) {
+    okay = true;
+  } else if (Exists(handle_, Keys::NUFFT)) {
+    okay = true;
+  }
+  if (!okay) {
+    Log::Fail("No valid datasets for riesling input found");
+  }
+}
+
+std::map<std::string, float> RieslingReader::readMeta() const
 {
   auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
+    Log::Debug(FMT_STRING("No meta-data found in file handle {}"), handle_);
     return {};
   }
   std::vector<std::string> names;
@@ -54,115 +135,24 @@ std::map<std::string, float> Reader::readMeta() const
   return meta;
 }
 
-Info Reader::readInfo()
+Trajectory const &RieslingReader::trajectory() const
 {
-  Log::Print("Reading info");
-  hid_t const info_id = InfoType();
-  hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
-  CheckInfoType(dset);
-  hid_t const space = H5Dget_space(dset);
-  Info info;
-  herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
-  status = H5Dclose(dset);
-  if (status != 0) {
-    Log::Fail("Could not load info struct, code: {}", status);
-  }
-  return info;
+  return traj_;
 }
 
-Trajectory Reader::readTrajectory()
-{
-  Info info = readInfo();
-  Log::Print("Reading trajectory");
-  R3 points(3, info.read_points, info.spokes);
-  HD5::load_tensor(handle_, Keys::Trajectory, points);
-  if (HD5::Exists(handle_, "echoes")) {
-    I1 echoes(info.spokes);
-    HD5::load_tensor(handle_, "echoes", echoes);
-    return Trajectory(info, points, echoes);
-  } else {
-    return Trajectory(info, points);
-  }
-}
-
-R2 Reader::readSDC(Info const &info)
-{
-  Log::Print("Reading SDC");
-  R2 sdc(info.read_points, info.spokes);
-  HD5::load_tensor(handle_, Keys::SDC, sdc);
-  return sdc;
-}
-
-Cx3 const &Reader::noncartesian(Index const index)
+Cx3 const &RieslingReader::noncartesian(Index const index)
 {
   if (index == currentNCVol_) {
     Log::Print("Using cached non-cartesion volume {}", index);
   } else {
     Log::Print("Reading non-cartesian volume {}", index);
     if (nc_.size() == 0) {
-      auto const dims4 = HD5::get_dims<4>(handle_, Keys::Noncartesian);
-      Cx3::Dimensions dims3;
-      dims3[0] = dims4[0];
-      dims3[1] = dims4[1];
-      dims3[2] = dims4[2];
-      nc_.resize(dims3);
+      nc_.resize(Sz3{traj_.info().channels, traj_.info().read_points, traj_.info().spokes});
     }
     HD5::load_tensor_slab(handle_, Keys::Noncartesian, index, nc_);
     currentNCVol_ = index;
   }
   return nc_;
 }
-
-void Reader::readCartesian(Cx5 &grid)
-{
-  Log::Print("Reading cartesian data");
-  HD5::load_tensor(handle_, Keys::Cartesian, grid);
-}
-
-Cx4 Reader::readSENSE()
-{
-  Log::Print("Reading SENSE maps");
-  auto const dims = HD5::get_dims<4>(handle_, Keys::SENSE);
-  Cx4 sense(dims);
-  HD5::load_tensor(handle_, Keys::SENSE, sense);
-  return sense;
-}
-
-R2 Reader::readBasis()
-{
-  Log::Print("Reading basis");
-  return HD5::load_tensor<float, 2>(handle_, Keys::Basis);
-}
-
-R2 Reader::readRealMatrix(std::string const &k)
-{
-  Log::Print("Reading {}", k);
-  return HD5::load_tensor<float, 2>(handle_, k);
-}
-
-Cx5 Reader::readBasisImages()
-{
-  Log::Print("Reading basis");
-  return HD5::load_tensor<Cx, 5>(handle_, Keys::BasisImages);
-}
-
-template <typename T>
-T Reader::readTensor(std::string const &label)
-{
-  return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
-}
-
-template R2 Reader::readTensor<R2>(std::string const &);
-template Cx3 Reader::readTensor<Cx3>(std::string const &);
-template Cx4 Reader::readTensor<Cx4>(std::string const &);
-template Cx5 Reader::readTensor<Cx5>(std::string const &);
-
-template <typename T>
-void Reader::readTensor(std::string const &label, T &tensor)
-{
-  HD5::load_tensor(handle_, label, tensor);
-}
-
-template void Reader::readTensor<Cx5>(std::string const &, Cx5 &);
 
 } // namespace HD5

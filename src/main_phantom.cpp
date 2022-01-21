@@ -62,8 +62,8 @@ int main_phantom(args::Subparser &parser)
   Info info;
   if (trajfile) {
     Log::Print("Reading external trajectory from {}", trajfile.Get());
-    HD5::Reader reader(trajfile.Get());
-    Trajectory const ext_traj = reader.readTrajectory();
+    HD5::RieslingReader reader(trajfile.Get());
+    Trajectory const ext_traj = reader.trajectory();
     info = ext_traj.info();
     points = ext_traj.points().slice(Sz3{0, 0, info.spokes}, Sz3{3, info.read_points, info.spokes});
   } else {
@@ -124,7 +124,7 @@ int main_phantom(args::Subparser &parser)
   std::unique_ptr<GridBase> gridder;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readBasis();
+    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, false);
   } else {
     gridder = make_grid(kernel.get(), mapping, false);

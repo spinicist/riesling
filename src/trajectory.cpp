@@ -21,6 +21,8 @@ inline Index fft_size(float const x)
   }
 }
 
+Trajectory::Trajectory() {}
+
 Trajectory::Trajectory(Info const &info, R3 const &points)
   : info_{info}
   , points_{points}

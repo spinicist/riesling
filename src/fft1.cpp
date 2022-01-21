@@ -1,4 +1,5 @@
 #include "fft1.h"
+#include "log.h"
 #include "tensorOps.h"
 
 namespace {

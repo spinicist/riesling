@@ -16,8 +16,8 @@ int main_split(args::Subparser &parser)
 
   ParseCommand(parser, iname);
 
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   Info info = traj.info();
   info.volumes = 1; // Only output one volume
   R3 points = traj.points();

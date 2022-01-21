@@ -17,6 +17,7 @@ std::string const Meta = "meta";
 std::string const Noncartesian = "noncartesian";
 std::string const Cartesian = "cartesian";
 std::string const Image = "image";
+std::string const NUFFT = "nufft-forward";
 std::string const Trajectory = "trajectory";
 std::string const Basis = "basis";
 std::string const BasisImages = "basis-images";

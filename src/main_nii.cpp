@@ -15,8 +15,8 @@ int main_nii(args::Subparser &parser)
   args::ValueFlag<Index> volArg(parser, "V", "Volume (default all)", {"volume"}, 0);
   ParseCommand(parser);
 
-  HD5::Reader input(iname.Get());
-  Info const info = input.readInfo();
+  HD5::RieslingReader input(iname.Get());
+  Info const info = input.trajectory().info();
   Cx5 const image = input.readTensor<Cx5>(dset.Get());
   Sz5 const sz = image.dimensions();
   Index const szE = echoArg ? 1 : sz[0];

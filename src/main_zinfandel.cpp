@@ -28,9 +28,9 @@ int main_zinfandel(args::Subparser &parser)
     parser, "BANDWIDTH", "Read-out bandwidth for slab profile correction (kHz)", {"rbw"}, 0.f);
   ParseCommand(parser, iname);
 
-  HD5::Reader reader(iname.Get());
-  auto info = reader.readInfo();
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
+  auto info = traj.info();
   auto out_info = info;
   if (volume) {
     out_info.volumes = 1;

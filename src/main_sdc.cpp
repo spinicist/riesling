@@ -16,9 +16,8 @@ int main_sdc(args::Subparser &parser)
     parser, "L", "Number of lo-res spokes for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
   ParseCommand(parser, iname);
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
-  auto const &info = traj.info();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
 
   R2 dc;
   if (sdc.Get() == "pipe") {
@@ -31,7 +30,7 @@ int main_sdc(args::Subparser &parser)
     Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
   }
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sdc", "h5"));
-  writer.writeInfo(info);
+  writer.writeTrajectory(traj);
   writer.writeSDC(dc);
   return EXIT_SUCCESS;
 }

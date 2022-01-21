@@ -32,6 +32,7 @@ struct Mapping
 
 struct Trajectory
 {
+  Trajectory();
   Trajectory(Info const &info, R3 const &points);
   Trajectory(Info const &info, R3 const &points, I1 const &echoes);
   Info const &info() const;

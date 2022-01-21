@@ -16,8 +16,8 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<Index> spokeStride(parser, "S", "Stride across spokes (4)", {"stride"}, 4);
   ParseCommand(parser, iname);
 
-  HD5::Reader reader(iname.Get());
-  Info const in_info = reader.readInfo();
+  HD5::RieslingReader reader(iname.Get());
+  Info const in_info = reader.trajectory().info();
   Cx3 ks = reader.noncartesian(ValOrLast(ref_vol, in_info.volumes));
   Index const maxRead = in_info.read_points - readStart.Get();
   Index const nread = (readSize.Get() > maxRead) ? maxRead : readSize.Get();
@@ -40,7 +40,7 @@ int main_compress(args::Subparser &parser)
 
   auto const ofile = OutName(iname.Get(), oname.Get(), "compressed", "h5");
   HD5::Writer writer(ofile);
-  writer.writeTrajectory(reader.readTrajectory());
+  writer.writeTrajectory(reader.trajectory());
   writer.writeNoncartesian(out_ks);
   return EXIT_SUCCESS;
 }

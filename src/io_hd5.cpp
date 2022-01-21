@@ -1,5 +1,5 @@
-#include "info.h"
 #include "io_hd5.h"
+#include "info.h"
 #include "io_hd5.hpp"
 #include <Eigen/Eigenvalues>
 #include <filesystem>
@@ -12,7 +12,6 @@ void Init()
   static bool NeedsInit = true;
 
   if (NeedsInit) {
-
     auto err = H5open();
     // herr_t (*old_func)(Index Index, void *);
     // void *old_client_data;
@@ -23,6 +22,9 @@ void Init()
       Log::Fail("Could not initialise HDF5, code: {}", err);
     }
     NeedsInit = false;
+    Log::Debug("Initialised HDF5");
+  } else {
+    Log::Debug("HDF5 already initialised");
   }
 }
 
@@ -56,17 +58,18 @@ void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   // Also use vector instead of array so I don't forget to change the size if the members change
-  std::vector<std::string> const names{"matrix",
-                                       "voxel_size",
-                                       "read_points",
-                                       "spokes",
-                                       "channels",
-                                       "type",
-                                       "volumes",
-                                       "echoes",
-                                       "tr",
-                                       "origin",
-                                       "direction"};
+  std::vector<std::string> const names{
+    "matrix",
+    "voxel_size",
+    "read_points",
+    "spokes",
+    "channels",
+    "type",
+    "volumes",
+    "echoes",
+    "tr",
+    "origin",
+    "direction"};
 
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);

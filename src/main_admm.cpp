@@ -29,8 +29,8 @@ int main_admm(args::Subparser &parser)
   ParseCommand(parser, iname);
   FFT::Start();
 
-  HD5::Reader reader(iname.Get());
-  Trajectory const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  Trajectory const traj = reader.trajectory();
   Info const &info = traj.info();
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
@@ -48,7 +48,7 @@ int main_admm(args::Subparser &parser)
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readBasis();
+    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
     gridder->setSDC(w);
   }

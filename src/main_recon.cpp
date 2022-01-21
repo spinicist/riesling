@@ -20,8 +20,8 @@ int main_recon(args::Subparser &parser)
 
   ParseCommand(parser, iname);
   FFT::Start();
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   auto const &info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
@@ -35,6 +35,15 @@ int main_recon(args::Subparser &parser)
   if (!rss) {
     if (senseFile) {
       sense = LoadSENSE(senseFile.Get());
+      if (
+        sense.dimension(0) != info.channels || sense.dimension(1) != cropSz[0] ||
+        sense.dimension(2) != cropSz[1] || sense.dimension(3) != cropSz[2]) {
+        Log::Fail(
+          FMT_STRING("SENSE dimensions on disk were {}, expected {},{}"),
+          fmt::join(sense.dimensions(), ","),
+          info.channels,
+          fmt::join(cropSz, ","));
+      }
     } else {
       sense = DirectSENSE(
         info,
@@ -47,7 +56,7 @@ int main_recon(args::Subparser &parser)
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readBasis();
+    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
     gridder->setSDC(w);
   }

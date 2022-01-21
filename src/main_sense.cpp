@@ -27,8 +27,8 @@ int main_sense(args::Subparser &parser)
   ParseCommand(parser, iname);
   FFT::Start();
 
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   auto const &info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());

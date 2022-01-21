@@ -12,8 +12,8 @@ int main_grid(args::Subparser &parser)
   COMMON_RECON_ARGS;
   args::Flag forward(parser, "F", "Apply forward gridding (to non-cartesian)", {'f', "fwd"});
   ParseCommand(parser, iname);
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   auto const info = traj.info();
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
@@ -27,7 +27,7 @@ int main_grid(args::Subparser &parser)
   writer.writeTrajectory(traj);
   auto const start = Log::Now();
   if (forward) {
-    reader.readCartesian(grid);
+    reader.readTensor(HD5::Keys::Cartesian, grid);
     gridder->A(grid, rad_ks);
     writer.writeNoncartesian(
       rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1}));

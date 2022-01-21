@@ -17,8 +17,8 @@ int main_plan(args::Subparser &parser)
   ParseCommand(parser, iname);
   FFT::Start();
   FFT::SetTimelimit(timelimit.Get());
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
@@ -28,7 +28,7 @@ int main_plan(args::Subparser &parser)
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
-    R2 basis = basisReader.readBasis();
+    R2 basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     auto gb = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
     FFT::Planned<5, 3> fft(gb->inputDimensions(traj.info().channels));
   }

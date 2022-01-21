@@ -16,6 +16,7 @@ float const sense_res = 8.f;
 Cx4 DirectSENSE(
   Info const &info, GridBase const *gridder, float const fov, float const lambda, Cx3 const &data)
 {
+  Log::Debug("*** Starting DirectSENSE ***");
   Cx5 grid_temp(gridder->inputDimensions(data.dimension(0)));
   gridder->Adj(data, grid_temp);
   Cx4 grid(
@@ -48,13 +49,13 @@ Cx4 DirectSENSE(
 Cx4 LoadSENSE(std::string const &calFile)
 {
   HD5::Reader senseReader(calFile);
-  return senseReader.readSENSE();
+  return senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
 }
 
 Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims)
 {
   HD5::Reader senseReader(file);
-  Cx4 disk_sense = senseReader.readSENSE();
+  Cx4 disk_sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
   Log::Print("Interpolating SENSE maps to dimensions {}", dims.transpose());
   FFT::Planned<4, 3> fft1(disk_sense.dimensions());
   fft1.forward(disk_sense);

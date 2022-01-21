@@ -6,8 +6,8 @@ int main_hdr(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file to print header from");
   ParseCommand(parser, iname);
-  HD5::Reader reader(iname.Get());
-  auto const &info = reader.readInfo();
+  HD5::RieslingReader reader(iname.Get());
+  auto const &info = reader.trajectory().info();
 
   fmt::print(
     FMT_STRING("Type: {}\n"

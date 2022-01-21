@@ -35,7 +35,7 @@ int main_blend(args::Subparser &parser)
 
   ParseCommand(parser);
 
-  HD5::Reader input(iname.Get());
+  HD5::RieslingReader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
 
   HD5::Reader binput(bname.Get());
@@ -67,7 +67,6 @@ int main_blend(args::Subparser &parser)
 
   auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
   HD5::Writer writer(fname);
-  writer.writeInfo(input.readInfo());
   writer.writeTensor(out, "image");
 
   return EXIT_SUCCESS;

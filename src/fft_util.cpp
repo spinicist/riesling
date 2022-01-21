@@ -1,5 +1,6 @@
 #include "fft_util.h"
 
+#include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <filesystem>
@@ -25,7 +26,7 @@ void Start()
   if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
     Log::Print("Read wisdom successfully from {}", wp);
   } else {
-    Log::Print("Could not read wisdom from {}", wp);
+    Log::Print("Could not read wisdom from {}, continuing", wp);
   }
 }
 
@@ -33,18 +34,19 @@ void End()
 {
   auto const &wp = WisdomPath();
   if (fftwf_export_wisdom_to_filename(wp.string().c_str())) {
-    Log::Print(FMT_STRING("Saved wisdom to {}"), wp.string());
+    Log::Print(FMT_STRING("Saved wisdom to {}"), wp);
   } else {
-    Log::Print("Failed to save wisdom");
+    Log::Print(FMT_STRING("Failed to save wisdom to {}"), wp);
   }
-  // Get use after free errors if this is called before fftw_plan_destroy in the
-  // destructors
+  // Causes use after free errors if this is called before fftw_plan_destroy in the
+  // destructors. We don't stop and re-start FFTW threads so calling this is not essential
   // fftwf_cleanup_threads();
 }
 
 void SetTimelimit(double time)
 {
   fftwf_set_timelimit(time);
+  Log::Debug(FMT_STRING("Set FFT planning timelimit to {} seconds"), time);
 }
 
 /*
@@ -61,6 +63,7 @@ Cx1 Phase(Index const sz)
   auto const s = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
   Cxd1 const ph = ((s - s.floor()) * s.constant(2. * M_PI)).cast<Cxd>();
   Cx1 const factors = (ph * ph.constant(Cxd{0., 1.})).exp().cast<Cx>();
+  Log::Debug(FMT_STRING("Calculated FFT Phase factors length {}"), sz);
   return factors;
 }
 

@@ -8,7 +8,7 @@ int main_meta(args::Subparser &parser)
   args::PositionalList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed");
 
   ParseCommand(parser, iname);
-  HD5::Reader reader(iname.Get());
+  HD5::RieslingReader reader(iname.Get());
   auto const &meta = reader.readMeta();
   if (meta.size() > 0) {
     for (auto const &k : keys.Get()) {

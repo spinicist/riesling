@@ -30,8 +30,8 @@ int main_espirit(args::Subparser &parser)
   ParseCommand(parser, iname);
   FFT::Start();
 
-  HD5::Reader reader(iname.Get());
-  auto const traj = reader.readTrajectory();
+  HD5::RieslingReader reader(iname.Get());
+  auto const traj = reader.trajectory();
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
