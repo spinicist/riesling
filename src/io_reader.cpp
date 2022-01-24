@@ -86,26 +86,13 @@ RieslingReader::RieslingReader(std::string const &fname)
     traj_ = Trajectory(info, points);
   }
 
-  // Check if one of noncartesian / cartesian / image is present
-
-  bool okay = false;
-
+  // For non-cartesian, check dimension sizes
   if (Exists(handle_, Keys::Noncartesian)) {
     auto const dims = HD5::get_dims<4>(handle_, Keys::Noncartesian);
     Check("channels", dims[0], info.channels);
     Check("read-points", dims[1], info.read_points);
     Check("spokes", dims[2], info.spokes);
     Check("volumes", dims[3], info.volumes);
-    okay = true;
-  } else if (Exists(handle_, Keys::Cartesian)) {
-    okay = true;
-  } else if (Exists(handle_, Keys::Image)) {
-    okay = true;
-  } else if (Exists(handle_, Keys::NUFFT)) {
-    okay = true;
-  }
-  if (!okay) {
-    Log::Fail("No valid datasets for riesling input found");
   }
 }
 
