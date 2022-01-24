@@ -13,7 +13,7 @@ int main_nii(args::Subparser &parser)
     parser, "D", "Dataset name (default image)", {'d', "dset"}, "image");
   args::ValueFlag<Index> echoArg(parser, "E", "Echo (default all)", {'e', "echo"}, 0);
   args::ValueFlag<Index> volArg(parser, "V", "Volume (default all)", {"volume"}, 0);
-  ParseCommand(parser);
+  ParseCommand(parser, iname);
 
   HD5::RieslingReader input(iname.Get());
   Info const info = input.trajectory().info();

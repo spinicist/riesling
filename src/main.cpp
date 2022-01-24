@@ -32,10 +32,10 @@ int main(int const argc, char const *const argv[])
   try {
     parser.ParseCLI(argc, argv);
   } catch (args::Help &) {
-    fmt::print("{}\n", parser);
+    fmt::print("{}\n", parser.Help());
     exit(EXIT_SUCCESS);
   } catch (args::Error &e) {
-    fmt::print("{}\n", parser);
+    fmt::print("{}\n", parser.Help());
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
     exit(EXIT_FAILURE);
   }

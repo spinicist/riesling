@@ -35,9 +35,15 @@ int main_blend(args::Subparser &parser)
 
   ParseCommand(parser);
 
+  if (!iname) {
+    throw args::Error("No input file specified");
+  }
   HD5::RieslingReader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
 
+  if (!iname) {
+    throw args::Error("No basis file specified");
+  }
   HD5::Reader binput(bname.Get());
   R2 const basis = binput.readTensor<R2>("basis");
 

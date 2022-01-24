@@ -61,6 +61,9 @@ int main_sim(args::Subparser &parser)
   args::Flag t1t2sim(parser, "T1T2", "Run a T1 prep simulation", {"T1T2sim"});
 
   ParseCommand(parser);
+  if (!oname) {
+    throw args::Error("No output filename specified");
+  }
 
   Sim::Sequence const seq{
     .sps = sps.Get(),

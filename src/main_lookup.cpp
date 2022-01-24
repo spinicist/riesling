@@ -15,9 +15,15 @@ int main_lookup(args::Subparser &parser)
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   ParseCommand(parser);
 
+  if (!iname) {
+    throw args::Error("No input file specified");
+  }
   HD5::Reader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
 
+  if (!dname) {
+    throw args::Error("No basis file specified");
+  }
   HD5::Reader dfile(dname.Get());
   R2 const basis = dfile.readTensor<R2>("basis");
   R2 const dictionary = dfile.readTensor<R2>("dictionary");
