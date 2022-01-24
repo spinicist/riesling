@@ -165,9 +165,13 @@ void load_tensor_slab(
 
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
-    Log::Fail("Error reading slab {} from tensor {}, code:", index, name, status);
+    Log::Fail(
+      FMT_STRING("Error reading slab {} from tensor {}. HD5 Message: {}"),
+      index,
+      name,
+      HD5::GetError());
   } else {
-    Log::Print("Read dataset: {} chunk: {}", name, index);
+    Log::Debug(FMT_STRING("Read slab {} from tensor {}"), index, name);
   }
 }
 
@@ -193,9 +197,9 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   herr_t ret_value =
     H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
-    Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
+    Log::Fail(FMT_STRING("Error reading tensor {}, code: {}"), name, ret_value);
   } else {
-    Log::Print("Read dataset: {}", name);
+    Log::Debug(FMT_STRING("Read tensor {}"), name);
   }
   return tensor;
 }

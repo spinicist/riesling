@@ -10,6 +10,7 @@ void Init();
 Handle InfoType();
 void CheckInfoType(Handle h);
 bool Exists(Handle const h, std::string const name);
+std::string GetError();
 
 namespace Keys {
 std::string const Info = "info";

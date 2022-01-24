@@ -141,6 +141,7 @@ void Writer::writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &
 }
 
 template void Writer::writeTensor<float, 3>(R3 const &, std::string const &);
+template void Writer::writeTensor<float, 4>(R4 const &, std::string const &);
 template void Writer::writeTensor<float, 5>(R5 const &, std::string const &);
 template void Writer::writeTensor<Cx, 3>(Cx3 const &, std::string const &);
 template void Writer::writeTensor<Cx, 4>(Cx4 const &, std::string const &);

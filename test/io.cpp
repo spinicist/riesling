@@ -56,9 +56,9 @@ TEST_CASE("io", "[io]")
     std::filesystem::remove(fname);
   }
 
-  SECTION("Failures")
+  SECTION("Bad-Dimensions")
   {
-    std::filesystem::path const fname("test-failures.h5");
+    std::filesystem::path const fname("test-dims.h5");
 
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
@@ -69,6 +69,21 @@ TEST_CASE("io", "[io]")
     }
     CHECK(std::filesystem::exists(fname));
     CHECK_THROWS_AS(Dummy(fname), Log::Failure);
+    std::filesystem::remove(fname);
+  }
+
+  SECTION("Real-Data")
+  {
+    std::filesystem::path const fname("test-real.h5");
+
+    { // Use destructor to ensure it is written
+      HD5::Writer writer(fname);
+      writer.writeTrajectory(traj);
+      writer.writeTensor(R4(refData.real()), HD5::Keys::Noncartesian);
+    }
+    CHECK(std::filesystem::exists(fname));
+    HD5::RieslingReader reader(fname);
+    CHECK_THROWS_AS(reader.noncartesian(0), Log::Failure);
     std::filesystem::remove(fname);
   }
 }

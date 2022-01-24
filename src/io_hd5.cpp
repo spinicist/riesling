@@ -28,6 +28,23 @@ void Init()
   }
 }
 
+// Saves the error at the top (bottom) of the stack in the supplied string
+herr_t ErrorWalker(unsigned n, const H5E_error2_t *err_desc, void *data)
+{
+  std::string *str = (std::string *)data;
+  if (n == 0) {
+    *str = fmt::format(FMT_STRING("{}\n"), err_desc->desc);
+  }
+  return 0;
+}
+
+std::string GetError()
+{
+  std::string error_string;
+  H5Ewalk(H5Eget_current_stack(), H5E_WALK_UPWARD, &ErrorWalker, (void *)&error_string);
+  return error_string;
+}
+
 hid_t InfoType()
 {
   hid_t info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
