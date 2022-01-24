@@ -17,8 +17,8 @@ TEST_CASE("ops-pad", "[ops]")
     y.setRandom();
 
     PadOp<3> crop(x.dimensions(), y.dimensions());
-    crop.A(x, xy);
-    crop.Adj(y, yx);
+    xy = crop.A(x);
+    yx = crop.Adj(y);
 
     // Don't forget conjugate on second dot argument
     auto const xx = Dot(x, yx);

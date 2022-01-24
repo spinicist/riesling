@@ -19,9 +19,9 @@ TEST_CASE("ops-sense", "[ops]")
     Cx3 rss = ConjugateSum(maps, maps).sqrt();
     maps = maps / Tile(rss, channels);
 
-    SenseOp sense(maps, y.dimensions());
-    sense.A(u, y);
-    sense.Adj(v, x);
+    SenseOp sense(maps, 1);
+    y = sense.A(u);
+    x = sense.Adj(v);
 
     auto const yy = Dot(y, v);
     auto const xx = Dot(u, x);

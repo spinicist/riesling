@@ -23,14 +23,13 @@ int main_plan(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  FFT::Planned<5, 3> fft3(gridder->inputDimensions(traj.info().channels));
-  FFT::Planned<5, 3> fft4(gridder->inputDimensions(1));
+  FFT::Planned<5, 3> fft(gridder->inputDimensions());
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     auto gb = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    FFT::Planned<5, 3> fft(gb->inputDimensions(traj.info().channels));
+    FFT::Planned<5, 3> fft(gb->inputDimensions());
   }
 
   FFT::End();

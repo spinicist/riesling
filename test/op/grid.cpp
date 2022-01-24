@@ -40,13 +40,13 @@ TEST_CASE("ops-grid", "[ops]")
     auto const m1 = traj.mapping(1, os);
     auto grid = make_grid(nn.get(), m1, false);
     grid->setSDC(sdc);
-    auto const dims = grid->inputDimensions(1);
+    auto const dims = grid->inputDimensions();
     Cx5 x(dims), y(dims);
     Cx3 r(info.channels, info.read_points, info.spokes);
 
     x.setRandom();
-    grid->A(x, r);
-    grid->Adj(r, y);
+    r = grid->A(x);
+    y = grid->Adj(r);
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
     CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-6));

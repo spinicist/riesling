@@ -17,8 +17,7 @@ Cx4 DirectSENSE(
   Info const &info, GridBase const *gridder, float const fov, float const lambda, Cx3 const &data)
 {
   Log::Debug("*** Starting DirectSENSE ***");
-  Cx5 grid_temp(gridder->inputDimensions(data.dimension(0)));
-  gridder->Adj(data, grid_temp);
+  auto &grid_temp = gridder->Adj(data);
   Cx4 grid(
     grid_temp.dimension(0), grid_temp.dimension(2), grid_temp.dimension(3), grid_temp.dimension(4));
   FFT::Planned<4, 3> fftN(grid);

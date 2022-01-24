@@ -23,20 +23,18 @@ int main_grid(args::Subparser &parser)
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get()));
   gridder->setSDCPower(sdcPow.Get());
   Cx3 rad_ks = info.noncartesianVolume();
-  Cx5 grid(gridder->inputDimensions(info.channels));
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "grid", "h5"));
   writer.writeTrajectory(traj);
   auto const start = Log::Now();
   if (forward) {
-    reader.readTensor(HD5::Keys::Cartesian, grid);
-    gridder->A(grid, rad_ks);
+    reader.readTensor(HD5::Keys::Cartesian, gridder->workspace());
+    rad_ks = gridder->A(gridder->workspace());
     writer.writeNoncartesian(
       rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1}));
     Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
   } else {
     rad_ks = reader.noncartesian(0);
-    gridder->Adj(rad_ks, grid);
-    writer.writeTensor(grid, "cartesian");
+    writer.writeTensor(gridder->Adj(rad_ks), "cartesian");
     Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
   }
 

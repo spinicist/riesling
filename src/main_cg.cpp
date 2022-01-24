@@ -49,10 +49,10 @@ int main_cg(args::Subparser &parser)
   gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
-    recon.calcToeplitz(traj.info());
+    recon.calcToeplitz();
   }
   auto sz = recon.inputDimensions();
-  Cropper out_cropper(info, Last3(sz), out_fov.Get());
+  Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
@@ -60,7 +60,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    recon.Adj(reader.noncartesian(iv), vol); // Initialize
+    vol = recon.Adj(reader.noncartesian(iv)); // Initialize
     cg(its.Get(), thr.Get(), recon, vol);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;

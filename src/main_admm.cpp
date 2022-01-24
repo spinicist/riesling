@@ -7,10 +7,10 @@
 #include "io.h"
 #include "llr.h"
 #include "log.h"
-#include "sdc.h"
 #include "op/grid.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
+#include "sdc.h"
 #include "sense.h"
 
 int main_admm(args::Subparser &parser)
@@ -56,13 +56,13 @@ int main_admm(args::Subparser &parser)
   gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
-    recon.calcToeplitz(traj.info());
+    recon.calcToeplitz();
   }
 
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get()); };
 
   auto sz = recon.inputDimensions();
-  Cropper out_cropper(info, Last3(sz), out_fov.Get());
+  Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
@@ -70,7 +70,7 @@ int main_admm(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    recon.Adj(reader.noncartesian(iv), vol); // Initialize
+    vol = recon.Adj(reader.noncartesian(iv)); // Initialize
     admm(admm_its.Get(), lsq_its.Get(), thr.Get(), recon, reg_rho.Get(), reg, vol);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;

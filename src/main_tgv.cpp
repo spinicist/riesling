@@ -60,7 +60,7 @@ int main_tgv(args::Subparser &parser)
   ReconOp recon(gridder.get(), senseMaps);
 
   auto sz = recon.inputDimensions();
-  Cropper out_cropper(info, Last3(sz), out_fov.Get());
+  Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = Log::Now();

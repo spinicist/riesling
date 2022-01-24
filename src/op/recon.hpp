@@ -3,19 +3,15 @@
 #include "operator.h"
 
 #include "../fft_plan.h"
-#include "grid.h"
+#include "nufft.hpp"
 #include "sense.hpp"
 
 struct ReconOp final : Operator<4, 3>
 {
   ReconOp(GridBase *gridder, Cx4 const &maps)
-    : gridder_{gridder}
-    , grid_{gridder_->inputDimensions(maps.dimension(0))}
-    , sense_{maps, grid_.dimensions()}
-    , fft_{grid_}
-
+    : nufft_{LastN<3>(maps.dimensions()), gridder}
+    , sense_{maps, gridder->inputDimensions()[1]}
   {
-    sense_.setApodization(gridder);
   }
 
   InputDims inputDimensions() const
@@ -25,62 +21,44 @@ struct ReconOp final : Operator<4, 3>
 
   OutputDims outputDimensions() const
   {
-    return gridder_->outputDimensions();
+    return nufft_.outputDimensions();
   }
 
-  void calcToeplitz(Info const &info)
-  {
-    Log::Print("Calculating Töplitz embedding");
-    transfer_.resize(gridder_->inputDimensions(1));
-    transfer_.setConstant(1.f);
-    Cx3 tf(1, info.read_points, info.spokes);
-    gridder_->A(transfer_, tf);
-    gridder_->Adj(tf, transfer_);
-    sense_.resetApodization();
+  void calcToeplitz() {
+    nufft_.calcToeplitz();
   }
 
-  void A(Input const &x, Output &y) const
+  template <typename T>
+  auto A(T const &x) const
   {
-    auto const &start = Log::Now();
-    sense_.A(x, grid_); // SENSE takes care of apodization
-    fft_.forward(grid_);
-    gridder_->A(grid_, y);
-    Log::Debug("Encode: {}", Log::ToNow(start));
+    Log::Debug("Starting ReconOp forward");
+    auto const start = Log::Now();
+    auto const result = nufft_.A(sense_.A(x));
+    Log::Debug("Finished ReconOp forward: {}", Log::ToNow(start));
+    return result;
   }
 
-  void Adj(Output const &x, Input &y) const
+  template <typename T>
+  auto Adj(T const &x) const
   {
-    auto const &start = Log::Now();
-    gridder_->Adj(x, grid_);
-    fft_.reverse(grid_);
-    sense_.Adj(grid_, y); // SENSE takes care of apodization
-    Log::Debug("Decode: {}", Log::ToNow(start));
+    Log::Debug("Starting ReconOp adjoint");
+    auto const start = Log::Now();
+    auto const result = sense_.Adj(nufft_.Adj(x));
+    Log::Debug("Finished ReconOp adjoint: {}", Log::ToNow(start));
+    return result;
   }
 
-  void AdjA(Input const &x, Input &y) const
+  template <typename T>
+  auto AdjA(T const &x) const
   {
-    if (transfer_.size() == 0) {
-      Output temp(outputDimensions());
-      A(x, temp);
-      Adj(temp, y);
-    } else {
-      auto dev = Threads::GlobalDevice();
-      auto const start = Log::Now();
-      sense_.A(x, grid_);
-      fft_.forward(grid_);
-      Eigen::IndexList<int, FixOne, FixOne, FixOne> brd;
-      brd.set(0, grid_.dimension(0));
-      grid_.device(dev) = grid_ * transfer_.broadcast(brd);
-      fft_.reverse(grid_);
-      sense_.Adj(grid_, y);
-      Log::Debug("Töplitz embedded: {}", Log::ToNow(start));
-    }
+    Log::Debug("Starting ReconOp adjoint*forward");
+    auto const start = Log::Now();
+    auto const result = sense_.Adj(nufft_.AdjA(sense_.A(x)));
+    Log::Debug("Finished ReconOp adjoint*forward: {}", Log::ToNow(start));
+    return result;
   }
 
 private:
-  GridBase *gridder_;
-  Cx5 mutable grid_;
-  Cx5 transfer_;
+  NUFFTOp nufft_;
   SenseOp sense_;
-  FFT::Planned<5, 3> fft_;
 };

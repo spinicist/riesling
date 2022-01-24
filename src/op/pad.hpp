@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../threads.h"
-#include "grid-base.hpp"
 #include "operator.h"
 
 template <int Rank>
@@ -36,15 +34,6 @@ struct PadOp final : Operator<Rank, Rank>
       left_.begin(), left_.end(), right_.begin(), paddings_.begin(), [](Index left, Index right) {
         return std::make_pair(left, right);
       });
-
-    for (Index ii = 0; ii < Rank - 3; ii++) {
-      resApo_[ii] = 1;
-      brdApo_[ii] = input_[ii];
-    }
-    for (Index ii = Rank - 3; ii < Rank; ii++) {
-      resApo_[ii] = input_[ii];
-      brdApo_[ii] = 1;
-    }
   }
 
   InputDims inputDimensions() const
@@ -57,58 +46,19 @@ struct PadOp final : Operator<Rank, Rank>
     return output_;
   }
 
-  void setApodization(GridBase *gridder)
+  template <typename T>
+  auto A(T const &x) const
   {
-    apo_ = gridder->apodization(Sz3{input_[Rank - 3], input_[Rank - 2], input_[Rank - 1]});
+    return x.pad(paddings_);
   }
 
-  void resetApodization()
+  template <typename T>
+  auto Adj(T const &x) const
   {
-    apo_ = R3();
-  }
-
-  void Adj(Output const &x, Input &y) const
-  {
-    for (auto ii = 0; ii < Rank; ii++) {
-      assert(x.dimension(ii) == output_[ii]);
-      assert(y.dimension(ii) == input_[ii]);
-    }
-
-    if (apo_.size()) {
-      y.device(Threads::GlobalDevice()) =
-        x.slice(left_, input_) / apo_.cast<Cx>().reshape(resApo_).broadcast(brdApo_);
-    } else {
-      y.device(Threads::GlobalDevice()) = x.slice(left_, input_);
-    }
-  }
-
-  void A(Input const &x, Output &y) const
-  {
-    for (auto ii = 0; ii < Rank; ii++) {
-      assert(x.dimension(ii) == input_[ii]);
-      assert(y.dimension(ii) == output_[ii]);
-    }
-
-    if (apo_.size()) {
-      y.device(Threads::GlobalDevice()) =
-        (x / apo_.cast<Cx>().reshape(resApo_).broadcast(brdApo_)).pad(paddings_);
-    } else {
-      y.device(Threads::GlobalDevice()) = x.pad(paddings_);
-    }
-  }
-
-  void AdjA(Input const &x, Input &y) const
-  {
-    for (auto ii = 0; ii < Rank; ii++) {
-      assert(x.dimension(ii) == input_[ii]);
-      assert(y.dimension(ii) == input_[ii]);
-    }
-
-    y.device(Threads::GlobalDevice()) = x;
+    return x.slice(left_, input_);
   }
 
 private:
-  InputDims input_, output_, left_, right_, resApo_, brdApo_;
-  R3 apo_;
+  InputDims input_, output_, left_, right_;
   Eigen::array<std::pair<Index, Index>, Rank> paddings_;
 };

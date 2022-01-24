@@ -11,10 +11,9 @@ struct AugmentedOp
   Op const &op;
   float rho;
 
-  void AdjA(typename Op::Input const &x, typename Op::Input &y) const
+  auto AdjA(typename Op::Input const &x) const
   {
-    op.AdjA(x, y);
-    y.device(Threads::GlobalDevice()) = y + rho * x;
+    return op.AdjA(x) + rho * x;
   }
 };
 

@@ -22,7 +22,8 @@ int main_traj(args::Subparser &parser)
   FFT::Start();
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();
-  auto const info = traj.info();
+  auto info = traj.info();
+  info.channels = 1;
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   Cx3 rad_ks(1, info.read_points, info.spokes);
@@ -39,9 +40,8 @@ int main_traj(args::Subparser &parser)
   }
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get()));
   gridder->setSDCPower(sdcPow.Get());
-  Cx5 grid(gridder->inputDimensions(1));
-  gridder->Adj(rad_ks, grid);
-  out = grid.chip<0>(0);
+  Cx5 grid(gridder->inputDimensions());
+  out = gridder->Adj(rad_ks).chip<0>(0);
 
   auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");
   HD5::Writer writer(fname);

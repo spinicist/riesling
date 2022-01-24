@@ -54,12 +54,13 @@ using Sz2 = Cx2::Dimensions;
 using Sz3 = Cx3::Dimensions;
 using Sz4 = Cx4::Dimensions;
 using Sz5 = Cx5::Dimensions;
-template <typename T>
-Sz3 Last3(T &sz)
+
+template <int N, typename T>
+Eigen::DSizes<Index, N> LastN(T const &sz)
 {
-  Sz3 result;
-  std::copy_n(sz.end() - 3, 3, result.begin());
-  return result;
+  Eigen::DSizes<Index, N> last;
+  std::copy_n(sz.end() - N, N, last.begin());
+  return last;
 }
 
 using Size3 = Eigen::Array<int16_t, 3, 1>;

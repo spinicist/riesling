@@ -18,12 +18,18 @@ struct GridBase : Operator<5, 3>
   }
 
   virtual ~GridBase(){};
-  virtual Input::Dimensions inputDimensions(Index const nc) const = 0;
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
+  virtual Output A(Input const &cart) const = 0;
+  virtual Input &Adj(Output const &noncart) const = 0;
 
   Sz3 outputDimensions() const override
   {
     return this->mapping_.noncartDims;
+  }
+
+  Sz5 inputDimensions() const override
+  {
+    return workspace_.dimensions();
   }
 
   void setSDC(float const d)
@@ -75,10 +81,16 @@ struct GridBase : Operator<5, 3>
     return mapping_;
   }
 
+  Cx5 &workspace()
+  {
+    return workspace_;
+  }
+
 protected:
   Mapping mapping_;
   bool safe_, weightEchoes_;
   float sdcPow_;
+  Cx5 mutable workspace_;
 };
 
 template <int IP, int TP>

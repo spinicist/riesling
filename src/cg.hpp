@@ -22,13 +22,13 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
   T p(dims);
   T r(dims);
   q.setZero();
-  op.AdjA(x, r);
+  r = op.AdjA(x);
   r.device(dev) = x - r;
   p.device(dev) = r;
   float r_old = Norm2(r);
 
   for (Index icg = 0; icg < max_its; icg++) {
-    op.AdjA(p, q);
+    q = op.AdjA(p);
     Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
     Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
     Log::Image(x, fmt::format(FMT_STRING("cg-x-{:02}.nii"), icg));

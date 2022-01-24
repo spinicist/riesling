@@ -62,30 +62,28 @@ int main_recon(args::Subparser &parser)
     gridder->setSDC(w);
   }
   gridder->setSDCPower(sdcPow.Get());
-
-  Cx5 grid(gridder->inputDimensions(info.channels));
-  Cx4 image(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2]);
-  Cx5 out(grid.dimension(1), cropSz[0], cropSz[1], cropSz[2], info.volumes);
-  FFT::Planned<5, 3> fft(grid);
+  Cx4 image(gridder->inputDimensions()[1], cropSz[0], cropSz[1], cropSz[2]);
+  Cx5 out(gridder->inputDimensions()[1], cropSz[0], cropSz[1], cropSz[2], info.volumes);
+  FFT::Planned<5, 3> fft(gridder->inputDimensions());
   auto dev = Threads::GlobalDevice();
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    gridder->Adj(reader.noncartesian(iv), grid);
-    Log::Print("FFT...");
-    fft.reverse(grid);
+    fft.reverse(gridder->Adj(reader.noncartesian(iv)));
     Log::Print("Channel combination...");
     if (rss) {
-      image.device(dev) = ConjugateSum(cropper.crop5(grid), cropper.crop5(grid)).sqrt();
+      image.device(dev) =
+        ConjugateSum(cropper.crop5(gridder->workspace()), cropper.crop5(gridder->workspace()))
+          .sqrt();
     } else {
       image.device(dev) = ConjugateSum(
-        cropper.crop5(grid),
+        cropper.crop5(gridder->workspace()),
         sense.reshape(Sz5{info.channels, 1, cropSz[0], cropSz[1], cropSz[2]})
-          .broadcast(Sz5{1, grid.dimension(1), 1, 1, 1}));
+          .broadcast(Sz5{1, out.dimension(0), 1, 1, 1}));
     }
     image.device(dev) = image / apo.cast<Cx>()
                                   .reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]})
-                                  .broadcast(Sz4{grid.dimension(1), 1, 1, 1});
+                                  .broadcast(Sz4{out.dimension(0), 1, 1, 1});
     out.chip<4>(iv) = image;
     Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }

@@ -157,7 +157,7 @@ int main_phantom(args::Subparser &parser)
   }
   Log::Print("Sampling hi-res non-cartesian");
   Cx3 radial = info.noncartesianVolume();
-  recon.A(phan, radial);
+  radial = recon.A(phan);
 
   if (snr) {
     float avg = std::reduce(intensities.begin(), intensities.end()) / intensities.size();

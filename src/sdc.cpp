@@ -12,7 +12,8 @@ namespace SDC {
 R2 Pipe(Trajectory const &traj, bool const nn, float const os)
 {
   Log::Print("Using Pipe/Zwart/Menon SDC...");
-  auto const info = traj.info();
+  auto info = traj.info();
+  info.channels = 1; // Make sure we edit this!
   Cx3 W(1, info.read_points, info.spokes);
   Cx3 Wp(W.dimensions());
 
@@ -38,12 +39,12 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os)
   gridder->doNotWeightEchoes();
   W.setConstant(1.f);
 
-  Cx5 temp(gridder->inputDimensions(1));
+  Cx5 temp(gridder->inputDimensions());
   for (Index ii = 0; ii < 40; ii++) {
     Wp.setZero();
     temp.setZero();
-    gridder->Adj(W, temp);
-    gridder->A(temp, Wp);
+    temp = gridder->Adj(W);
+    Wp = gridder->A(temp);
     Wp.device(Threads::GlobalDevice()) =
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().abs().maximum())();

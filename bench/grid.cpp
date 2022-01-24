@@ -42,46 +42,44 @@ TEST_CASE("Grid")
   auto gridkb = make_grid(kb.get(), m5, false);
 
   auto nc = info.noncartesianVolume();
-  Cx5 c(gridkb->inputDimensions(C));
   Index const nB = 4;
   R2 basis(256, nB);
   basis.setConstant(1.f);
 
   auto gridbnn = make_grid_basis(nn.get(), m1, basis, false);
   auto gridbkb = make_grid_basis(kb.get(), m5, basis, false);
-  Cx5 b(gridbkb->inputDimensions(C));
 
   BENCHMARK("NN Noncartesian->Cartesian")
   {
-    gridnn->Adj(nc, c);
+    gridnn->Adj(nc);
   };
   BENCHMARK("NN Basis Noncartesian->Cartesian")
   {
-    gridbnn->Adj(nc, b);
+    gridbnn->Adj(nc);
   };
   BENCHMARK("KB Noncartesian->Cartesian")
   {
-    gridkb->Adj(nc, c);
+    gridkb->Adj(nc);
   };
   BENCHMARK("KB Basis Noncartesian->Cartesian")
   {
-    gridbkb->Adj(nc, b);
+    gridbkb->Adj(nc);
   };
 
   BENCHMARK("NN Cartesian->Noncartesian")
   {
-    gridnn->A(c, nc);
+    gridnn->A(gridnn->workspace());
   };
   BENCHMARK("KB Cartesian->Noncartesian")
   {
-    gridkb->A(c, nc);
+    gridkb->A(gridkb->workspace());
   };
   BENCHMARK("NN Basis Cartesian->Noncartesian")
   {
-    gridbnn->A(b, nc);
+    gridbnn->A(gridbnn->workspace());
   };
   BENCHMARK("KB Basis Cartesian->Noncartesian")
   {
-    gridbkb->A(b, nc);
+    gridbkb->A(gridbkb->workspace());
   };
 }

@@ -14,22 +14,12 @@ struct GridBasis final : SizedGrid<IP, TP>
     , basis_{basis}
     , basisScale_{std::sqrt((float)basis_.dimension(0))}
   {
-  }
-
-  Index dimension(Index const D) const
-  {
-    assert(D < 3);
-    return this->mapping_.cartDims[D];
-  }
-
-  Sz5 inputDimensions(Index const nc) const
-  {
-    return Sz5{
-      nc,
+    this->workspace_.resize(Sz5{
+      mapping.noncartDims[0],
       basis_.dimension(1),
-      this->mapping_.cartDims[0],
-      this->mapping_.cartDims[1],
-      this->mapping_.cartDims[2]};
+      mapping.cartDims[0],
+      mapping.cartDims[1],
+      mapping.cartDims[2]});
   }
 
   R2 const &basis() const
@@ -37,13 +27,15 @@ struct GridBasis final : SizedGrid<IP, TP>
     return basis_;
   }
 
-  void A(Input const &cart, Output &noncart) const
+  Output A(Input const &cart) const
   {
-    assert(cart.dimension(0) == noncart.dimension(0));
     assert(cart.dimension(1) == basis_.dimension(1));
     assert(cart.dimension(2) == this->mapping_.cartDims[0]);
     assert(cart.dimension(3) == this->mapping_.cartDims[1]);
     assert(cart.dimension(4) == this->mapping_.cartDims[2]);
+
+    Output noncart(this->outputDimensions());
+    noncart.setZero();
 
     Index const nchan = cart.dimension(0);
     Index const nB = basis_.dimension(1);
@@ -81,59 +73,59 @@ struct GridBasis final : SizedGrid<IP, TP>
     Log::Debug("Cart -> Non-cart: {}", Log::ToNow(start));
   }
 
-  void Adj(Output const &noncart, Input &cart) const
+  Input &Adj(Output const &noncart) const
   {
-    assert(cart.dimension(0) == noncart.dimension(0));
     assert(cart.dimension(1) == basis_.dimension(1));
     assert(cart.dimension(2) == this->mapping_.cartDims[0]);
     assert(cart.dimension(3) == this->mapping_.cartDims[1]);
     assert(cart.dimension(4) == this->mapping_.cartDims[2]);
     assert(this->mapping_.sortedIndices.size() == this->mapping_.cart.size());
 
-    Index const nchan = cart.dimension(0);
-    Index const nB = cart.dimension(1);
+    auto const dims = this->inputDimensions();
+
+    Index const nC = dims[0];
+    Index const nB = dims[1];
 
     Eigen::IndexList<int, FixOne> rshNC;
     Eigen::IndexList<FixOne, int> brdNC;
-    rshNC.set(0, nchan);
+    rshNC.set(0, nC);
     brdNC.set(1, nB);
 
     Eigen::IndexList<FixOne, int> rshB;
     Eigen::IndexList<int, FixOne> brdB;
     rshB.set(1, nB);
-    brdB.set(0, nchan);
+    brdB.set(0, nC);
 
     constexpr Eigen::IndexList<FixOne, FixOne, FixIn, FixIn, FixThrough> rshK;
     Eigen::IndexList<int, int, FixOne, FixOne, FixOne> brdK;
-    brdK.set(0, nchan);
+    brdK.set(0, nC);
     brdK.set(1, nB);
 
     Eigen::IndexList<int, int, FixOne, FixOne, FixOne> rshNCB;
     constexpr Eigen::IndexList<FixOne, FixOne, FixIn, FixIn, FixThrough> brdNCB;
-    rshNCB.set(0, nchan);
+    rshNCB.set(0, nC);
     rshNCB.set(1, nB);
 
     Eigen::IndexList<int, int, FixIn, FixIn, FixThrough> szC;
-    szC.set(0, nchan);
+    szC.set(0, nC);
     szC.set(1, nB);
 
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
-    std::vector<Cx5> workspace(nThreads);
+    std::vector<Cx5> threadSpaces(nThreads);
     std::vector<Index> minZ(nThreads, 0L), szZ(nThreads, 0L);
     auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
       // Allocate working space for this thread
       Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
-      Cx2 ncb(nchan, nB);
+      Cx2 ncb(nC, nB);
 
       minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z - ((TP - 1) / 2);
 
       if (this->safe_) {
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
-        workspace[ti].resize(
-          cart.dimension(0), cart.dimension(1), cart.dimension(2), cart.dimension(3), szZ[ti]);
-        workspace[ti].setZero();
+        threadSpaces[ti].resize(dims[0], dims[1], dims[2], dims[3], szZ[ti]);
+        threadSpaces[ti].setZero();
       }
 
       for (auto ii = lo; ii < hi; ii++) {
@@ -154,16 +146,16 @@ struct GridBasis final : SizedGrid<IP, TP>
         stC.set(3, c.y - (IP / 2));
         if (this->safe_) {
           stC.set(4, c.z - (TP / 2) - minZ[ti]);
-          workspace[ti].slice(stC, szC) += nbk;
+          threadSpaces[ti].slice(stC, szC) += nbk;
         } else {
           stC.set(4, c.z - (TP / 2));
-          cart.slice(stC, szC) += nbk;
+          this->workspace_.slice(stC, szC) += nbk;
         }
       }
     };
 
     auto const start = Log::Now();
-    cart.setZero();
+    this->workspace_.setZero();
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::Debug("Basis Non-cart -> Cart: {}", Log::ToNow(start));
     if (this->safe_) {
@@ -171,20 +163,14 @@ struct GridBasis final : SizedGrid<IP, TP>
       auto const start2 = Log::Now();
       for (Index ti = 0; ti < nThreads; ti++) {
         if (szZ[ti]) {
-          cart
-            .slice(
-              Sz5{0, 0, 0, 0, minZ[ti]},
-              Sz5{
-                cart.dimension(0),
-                cart.dimension(1),
-                cart.dimension(2),
-                cart.dimension(3),
-                szZ[ti]})
-            .device(dev) += workspace[ti];
+          this->workspace_
+            .slice(Sz5{0, 0, 0, 0, minZ[ti]}, Sz5{dims[0], dims[1], dims[2], dims[3], szZ[ti]})
+            .device(dev) += threadSpaces[ti];
         }
       }
       Log::Debug("Combining took: {}", Log::ToNow(start2));
     }
+    return this->workspace_;
   }
 
 private:

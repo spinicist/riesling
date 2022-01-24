@@ -26,7 +26,7 @@ int main_nufft(args::Subparser &parser)
     gridder->setSDCPower(sdcPow.Get());
   }
 
-  NufftOp nufft(gridder.get(), info.channels, 1, info.matrix);
+  NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
   Cx5 channels{nufft.inputDimensions()};
   Cx3 noncart{nufft.outputDimensions()};
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "nufft", "h5"));
@@ -37,13 +37,13 @@ int main_nufft(args::Subparser &parser)
     auto const input = reader.readTensor<Cx4>(name);
     channels = input.reshape(
       Sz5{input.dimension(0), 1, input.dimension(1), input.dimension(2), input.dimension(3)});
-    nufft.A(channels, noncart);
+    noncart = nufft.A(channels);
     writer.writeTensor(noncart, "nufft-forward");
     Log::Print("Forward NUFFT took {}", Log::ToNow(start));
   } else {
     std::string const name = dset ? dset.Get() : "nufft-forward";
     noncart = reader.readTensor<Cx3>(name);
-    nufft.Adj(noncart, channels);
+    channels = nufft.Adj(noncart);
     Cx4 output = channels.reshape(Sz4{
       channels.dimension(0), channels.dimension(2), channels.dimension(3), channels.dimension(4)});
     writer.writeTensor(output, "nufft-backward");
