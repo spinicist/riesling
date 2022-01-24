@@ -124,6 +124,7 @@ if( ${BUILD_TESTS} )
         test/fft1.cpp
         test/fft3.cpp
         test/hankel.cpp
+        test/io.cpp
         test/kernel.cpp
         test/parameters.cpp
         test/sdc.cpp

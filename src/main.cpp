@@ -38,6 +38,9 @@ int main(int const argc, char const *const argv[])
     fmt::print("{}\n", parser.Help());
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
     exit(EXIT_FAILURE);
+  } catch (Log::Failure &f) {
+    fmt::print(stderr, "{}\n", f.what());
+    exit(EXIT_FAILURE);
   }
 
   exit(EXIT_SUCCESS);

@@ -5,6 +5,11 @@
 
 namespace Log {
 
+Failure::Failure(std::string const &msg)
+  : std::runtime_error(msg)
+{
+}
+
 namespace {
 Level log_level = Level::None;
 }
@@ -37,9 +42,7 @@ void ldebug(fmt::string_view fstr, fmt::format_args args)
 
 void lfail(fmt::string_view fstr, fmt::format_args args)
 {
-  fmt::vprint(stderr, fmt::fg(fmt::terminal_color::bright_red), fstr, args);
-  fmt::print(stderr, "\n");
-  exit(EXIT_FAILURE);
+  throw Failure(fmt::vformat(fmt::fg(fmt::terminal_color::bright_red), fstr, args));
 }
 
 void Progress(Index const ii, Index const lo, Index const hi)

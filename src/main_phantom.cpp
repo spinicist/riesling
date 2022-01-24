@@ -184,7 +184,8 @@ int main_phantom(args::Subparser &parser)
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeTrajectory(traj);
   writer.writeTensor(
-    Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})), "noncartesian");
+    Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})),
+    HD5::Keys::Noncartesian);
   writer.writeTensor(phan, "phantom");
   FFT::End();
   return EXIT_SUCCESS;

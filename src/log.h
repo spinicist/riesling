@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <exception>
 #include <fmt/color.h>
 #include <fmt/ostream.h>
 
@@ -13,6 +14,12 @@ enum struct Level
   Info = 1,
   Debug = 2,
   Images = 3
+};
+
+class Failure : public std::runtime_error
+{
+public:
+  Failure(std::string const &msg);
 };
 
 using Time = std::chrono::high_resolution_clock::time_point;
