@@ -4,6 +4,7 @@
 #include "log.h"
 #include "op/nufft.hpp"
 #include "parse_args.h"
+#include "sdc.h"
 #include "threads.h"
 
 int main_nufft(args::Subparser &parser)

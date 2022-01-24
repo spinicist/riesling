@@ -1,5 +1,5 @@
+#include "log.h"
 #include "main_defs.h"
-#include <iostream>
 
 int main(int const argc, char const *const argv[])
 {

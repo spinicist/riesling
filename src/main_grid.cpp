@@ -4,6 +4,7 @@
 #include "log.h"
 #include "op/grid.h"
 #include "parse_args.h"
+#include "sdc.h"
 #include "threads.h"
 #include <filesystem>
 

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "info.h"
-#include "log.h"
-#include "sdc.h"
 #include <args.hxx>
 #include <vector>
+
+#include "types.h"
 
 extern args::Group global_group;
 extern args::HelpFlag help;

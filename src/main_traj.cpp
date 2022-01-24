@@ -5,6 +5,7 @@
 #include "log.h"
 #include "op/grid.h"
 #include "parse_args.h"
+#include "sdc.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include <complex>

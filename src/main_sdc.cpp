@@ -4,6 +4,7 @@
 #include "log.h"
 #include "op/grid.h"
 #include "parse_args.h"
+#include "sdc.h"
 
 int main_sdc(args::Subparser &parser)
 {

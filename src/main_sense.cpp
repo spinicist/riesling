@@ -8,6 +8,7 @@
 #include "log.h"
 #include "op/grid.h"
 #include "parse_args.h"
+#include "sdc.h"
 #include "sense.h"
 #include "tensorOps.h"
 
