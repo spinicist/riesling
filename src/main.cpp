@@ -16,6 +16,7 @@ int main(int const argc, char const *const argv[])
   args::Command meta(commands, "meta", "Print meta-data entries", &main_meta);
   args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
   args::Command nufft(commands, "nufft", "Apply forward/reverse NUFFT", &main_nufft);
+  args::Command pad(commands, "pad", "Pad / crop an image", &main_pad);
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
   args::Command recon(commands, "recon", "Basic non-iterative reconstruction", &main_recon);

@@ -22,6 +22,11 @@ struct VectorReader
   void operator()(std::string const &name, std::string const &value, std::vector<float> &x);
 };
 
+struct Sz3Reader
+{
+  void operator()(std::string const &name, std::string const &value, Sz3 &x);
+};
+
 // Helper function to generate a good output name
 std::string OutName(
   std::string const &iName,

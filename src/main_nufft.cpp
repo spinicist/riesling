@@ -22,7 +22,7 @@ int main_nufft(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
 
-  NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
+  NUFFTOp nufft(LastN<3>(gridder->inputDimensions()), gridder.get());
   Cx6 channels(AddBack(nufft.inputDimensions(), info.volumes));
   Cx4 noncart(AddBack(nufft.outputDimensions(), info.volumes));
 

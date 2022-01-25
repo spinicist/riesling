@@ -89,6 +89,7 @@ add_executable(riesling
     src/main_meta.cpp
     src/main_nii.cpp
     src/main_nufft.cpp
+    src/main_pad.cpp
     src/main_phantom.cpp
     src/main_plan.cpp
     src/main_recon.cpp

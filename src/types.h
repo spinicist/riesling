@@ -55,6 +55,7 @@ using Sz2 = Cx2::Dimensions;
 using Sz3 = Cx3::Dimensions;
 using Sz4 = Cx4::Dimensions;
 using Sz5 = Cx5::Dimensions;
+using Sz6 = Cx6::Dimensions;
 
 template <typename T, int N>
 Eigen::DSizes<T, N + 1> AddFront(Eigen::DSizes<T, N> const &sz, Index const ii)

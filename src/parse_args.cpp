@@ -40,6 +40,16 @@ void VectorReader::operator()(
   }
 }
 
+void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz3 &v)
+{
+  Index i, j, k;
+  auto result = scn::scan(value, "{},{},{}", i, j, k);
+  if (!result) {
+    Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error());
+  }
+  v = Sz3{i, j, k};
+}
+
 args::Group global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "HELP", "Show this help message", {'h', "help"});
 args::Flag verbose(global_group, "VERBOSE", "Talk more", {'v', "verbose"});
