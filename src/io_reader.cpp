@@ -33,6 +33,7 @@ template R2 Reader::readTensor<R2>(std::string const &);
 template Cx3 Reader::readTensor<Cx3>(std::string const &);
 template Cx4 Reader::readTensor<Cx4>(std::string const &);
 template Cx5 Reader::readTensor<Cx5>(std::string const &);
+template Cx6 Reader::readTensor<Cx6>(std::string const &);
 
 template <typename T>
 void Reader::readTensor(std::string const &label, T &tensor)
@@ -40,7 +41,9 @@ void Reader::readTensor(std::string const &label, T &tensor)
   HD5::load_tensor(handle_, label, tensor);
 }
 
+template void Reader::readTensor<Cx4>(std::string const &, Cx4 &);
 template void Reader::readTensor<Cx5>(std::string const &, Cx5 &);
+template void Reader::readTensor<Cx6>(std::string const &, Cx6 &);
 
 namespace {
 herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)

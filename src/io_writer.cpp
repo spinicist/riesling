@@ -146,6 +146,7 @@ template void Writer::writeTensor<float, 5>(R5 const &, std::string const &);
 template void Writer::writeTensor<Cx, 3>(Cx3 const &, std::string const &);
 template void Writer::writeTensor<Cx, 4>(Cx4 const &, std::string const &);
 template void Writer::writeTensor<Cx, 5>(Cx5 const &, std::string const &);
+template void Writer::writeTensor<Cx, 6>(Cx6 const &, std::string const &);
 
 void Writer::writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label)
 {

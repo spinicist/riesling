@@ -69,7 +69,7 @@ int main_cg(args::Subparser &parser)
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "cg", "h5");
   HD5::Writer writer(fname);
-  writer.writeInfo(info);
+  writer.writeTrajectory(traj);
   writer.writeTensor(out, "image");
   FFT::End();
   return EXIT_SUCCESS;

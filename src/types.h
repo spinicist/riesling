@@ -44,6 +44,7 @@ using Cx2 = Eigen::Tensor<Cx, 2>; // 2D Complex data
 using Cx3 = Eigen::Tensor<Cx, 3>; // 3D Complex data
 using Cx4 = Eigen::Tensor<Cx, 4>; // 4D Complex data...spotted a pattern yet?
 using Cx5 = Eigen::Tensor<Cx, 5>;
+using Cx6 = Eigen::Tensor<Cx, 6>;
 using Cx7 = Eigen::Tensor<Cx, 7>;
 
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
@@ -55,9 +56,28 @@ using Sz3 = Cx3::Dimensions;
 using Sz4 = Cx4::Dimensions;
 using Sz5 = Cx5::Dimensions;
 
+template <typename T, int N>
+Eigen::DSizes<T, N + 1> AddFront(Eigen::DSizes<T, N> const &sz, Index const ii)
+{
+  Eigen::DSizes<Index, N + 1> out;
+  out[0] = ii;
+  std::copy_n(sz.begin(), N, out.begin() + 1);
+  return out;
+}
+
+template <typename T, int N>
+Eigen::DSizes<T, N + 1> AddBack(Eigen::DSizes<T, N> const &sz, Index const ii)
+{
+  Eigen::DSizes<Index, N + 1> out;
+  std::copy_n(sz.begin(), N, out.begin());
+  out[N] = ii;
+  return out;
+}
+
 template <int N, typename T>
 Eigen::DSizes<Index, N> LastN(T const &sz)
 {
+  assert(N <= sz.size());
   Eigen::DSizes<Index, N> last;
   std::copy_n(sz.end() - N, N, last.begin());
   return last;
