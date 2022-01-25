@@ -14,14 +14,14 @@
 float const sense_res = 8.f;
 
 Cx4 DirectSENSE(
-  Info const &info, GridBase const *gridder, float const fov, float const lambda, Cx3 const &data)
+  Info const &info, GridBase *gridder, float const fov, float const lambda, Cx3 const &data)
 {
   Log::Debug("*** Starting DirectSENSE ***");
-  auto &grid_temp = gridder->Adj(data);
-  Cx4 grid(
-    grid_temp.dimension(0), grid_temp.dimension(2), grid_temp.dimension(3), grid_temp.dimension(4));
+  Sz5 const dims = gridder->inputDimensions();
+  Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
   FFT::Planned<4, 3> fftN(grid);
-  grid = grid_temp.chip<1>(0); // Assume we want the first echo
+  gridder->Adj(data);
+  grid = gridder->workspace().chip<1>(0); // Assume we want the first echo
   float const end_rad = info.voxel_size.minCoeff() / sense_res;
   float const start_rad = 0.5 * end_rad;
   Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);

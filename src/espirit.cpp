@@ -20,8 +20,8 @@ Cx4 ESPIRIT(
   Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   Log::Print(FMT_STRING("Calculating k-space kernels"));
-  Cx5 &grid_temp = gridder->Adj(data);
-  Cx4 grid = grid_temp.chip<1>(0); // Get rid of the echoes dimension
+  gridder->Adj(data);
+  Cx4 grid = gridder->workspace().chip<1>(0); // Get rid of the echoes dimension
   R3 valsImage(gridder->mapping().cartDims);
 
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);

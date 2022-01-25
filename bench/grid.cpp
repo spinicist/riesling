@@ -68,18 +68,18 @@ TEST_CASE("Grid")
 
   BENCHMARK("NN Cartesian->Noncartesian")
   {
-    gridnn->A(gridnn->workspace());
+    nc = gridnn->A();
   };
   BENCHMARK("KB Cartesian->Noncartesian")
   {
-    gridkb->A(gridkb->workspace());
+    nc = gridkb->A();
   };
   BENCHMARK("NN Basis Cartesian->Noncartesian")
   {
-    gridbnn->A(gridbnn->workspace());
+    nc = gridbnn->A();
   };
   BENCHMARK("KB Basis Cartesian->Noncartesian")
   {
-    gridbkb->A(gridbkb->workspace());
+    nc = gridbkb->A();
   };
 }

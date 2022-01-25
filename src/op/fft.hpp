@@ -29,20 +29,19 @@ struct FFTOp final : Operator<Rank, Rank>
     return ws_.dimensions();
   }
 
-  template <typename T>
-  Tensor const &A(T const &x) const
+  Tensor &workspace() const
   {
-    ws_.device(Threads::GlobalDevice()) = x;
-    fft_.forward(ws_);
     return ws_;
   }
 
-  template <typename T>
-  Tensor const &Adj(T const &x) const
+  void A() const
   {
-    ws_.device(Threads::GlobalDevice()) = x;
+    fft_.forward(ws_);
+  }
+
+  void Adj() const
+  {
     fft_.reverse(ws_);
-    return ws_;
   }
 
 private:

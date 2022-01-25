@@ -45,8 +45,10 @@ TEST_CASE("ops-grid", "[ops]")
     Cx3 r(info.channels, info.read_points, info.spokes);
 
     x.setRandom();
-    r = grid->A(x);
-    y = grid->Adj(r);
+    grid->workspace() = x;
+    r = grid->A();
+    grid->Adj(r);
+    y = grid->workspace();
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
     CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-6));

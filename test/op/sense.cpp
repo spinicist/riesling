@@ -4,13 +4,13 @@
 
 TEST_CASE("ops-sense", "[ops]")
 {
-  Index const channels = 2, mapSz = 4, gridSz = 6;
+  Index const channels = 2, mapSz = 4;
   // With credit to PyLops
   SECTION("Dot Test")
   {
     Cx4 x(1, mapSz, mapSz, mapSz), u(1, mapSz, mapSz, mapSz);
     Cx4 maps(channels, mapSz, mapSz, mapSz);
-    Cx5 y(channels, 1, gridSz, gridSz, gridSz), v(channels, 1, gridSz, gridSz, gridSz);
+    Cx5 y(channels, 1, mapSz, mapSz, mapSz), v(channels, 1, mapSz, mapSz, mapSz);
 
     v.setRandom();
     u.setRandom();

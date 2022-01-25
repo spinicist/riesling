@@ -69,7 +69,8 @@ int main_recon(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    fft.reverse(gridder->Adj(reader.noncartesian(iv)));
+    gridder->Adj(reader.noncartesian(iv));
+    fft.reverse(gridder->workspace());
     Log::Print("Channel combination...");
     if (rss) {
       image.device(dev) =

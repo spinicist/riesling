@@ -30,9 +30,14 @@ struct NUFFTOp final : Operator<5, 3>
   void calcToeplitz()
   {
     Log::Debug("NUFFT: Calculating Töplitz embedding");
-    tf_.resize(gridder_->inputDimensions());
-    tf_.setConstant(1.f);
-    tf_ = gridder_->Adj(gridder_->A(tf_));
+    Sz5 fullDims = gridder_->inputDimensions();
+    fullDims[0] = 1;
+    tf_.resize(fullDims);
+    gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, fullDims).setConstant(1.f);
+    gridder_->Adj(gridder_->A(1), 1);
+    tf_ = gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, fullDims);
+    Log::Debug(
+      FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));
   }
 
   template <typename T>
@@ -40,7 +45,9 @@ struct NUFFTOp final : Operator<5, 3>
   {
     Log::Debug("Starting NUFFT forward");
     auto const &start = Log::Now();
-    auto result = gridder_->A(fft_.A(pad_.A(apo_.A(x))));
+    fft_.workspace().device(Threads::GlobalDevice()) = pad_.A(apo_.A(x));
+    fft_.A(); // FFT shares gridder->workspace()
+    auto result = gridder_->A();
     Log::Debug("Finished NUFFT forward: {}", Log::ToNow(start));
     return result;
   }
@@ -50,25 +57,33 @@ struct NUFFTOp final : Operator<5, 3>
   {
     Log::Debug("Starting NUFFT adjoint");
     auto const start = Log::Now();
-    auto result = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(x))));
+    gridder_->Adj(x);
+    fft_.Adj(); // FFT and gridder share workspace
+    auto result = apo_.Adj(pad_.Adj(fft_.workspace()));
     Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
     return result;
   }
 
   template <typename T>
-  auto AdjA(T const &x) const
+  Input AdjA(T const &x) const
   {
+    Log::Debug("Starting NUFFT adjoint*forward");
+    auto const start = Log::Now();
+    Input result(inputDimensions());
     if (tf_.size() == 0) {
-      return Adj(A(x));
+      result.device(Threads::GlobalDevice()) = Adj(A(x));
     } else {
-      Log::Debug("Starting NUFFT Töplitz embedded adjoint*forward");
-      auto const start = Log::Now();
-      Eigen::IndexList<int, FixOne, FixOne, FixOne> brd;
+      Log::Debug("Using Töplitz embedding");
+      Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd;
       brd.set(0, this->inputDimensions()[0]);
-      auto result = apo_.Adj(pad_.Adj(fft_.Adj(tf_.broadcast(brd) * fft_.A(pad_.A(apo_.A(x))))));
-      Log::Debug("Finished NUFFT Töplitz embedded adjoint*forward: {}", Log::ToNow(start));
-      return result;
+      fft_.workspace().device(Threads::GlobalDevice()) = pad_.A(x);
+      fft_.A();
+      fft_.workspace().device(Threads::GlobalDevice()) = tf_.broadcast(brd) * fft_.workspace();
+      fft_.Adj();
+      result.device(Threads::GlobalDevice()) = pad_.Adj(fft_.workspace());
     }
+    Log::Debug("Finished NUFFT adjoint*forward: {}", Log::ToNow(start));
+    return result;
   }
 
 private:

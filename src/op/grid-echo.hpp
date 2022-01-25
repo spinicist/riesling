@@ -11,6 +11,7 @@ struct GridEcho final : SizedGrid<IP, TP>
   GridEcho(SizedKernel<IP, TP> const *k, Mapping const &mapping, bool const unsafe)
     : SizedGrid<IP, TP>(k, mapping, unsafe)
   {
+    assert(this->mapping_.sortedIndices.size() == this->mapping_.cart.size());
     this->workspace_.resize(Sz5{
       mapping.noncartDims[0],
       mapping.echoes,
@@ -19,18 +20,18 @@ struct GridEcho final : SizedGrid<IP, TP>
       mapping.cartDims[2]});
   }
 
-  Output A(Input const &cart) const
+  Output A(Index const inChan) const
   {
-    assert(cart.dimension(2) == this->mapping_.cartDims[0]);
-    assert(cart.dimension(3) == this->mapping_.cartDims[1]);
-    assert(cart.dimension(4) == this->mapping_.cartDims[2]);
+    Sz5 const dims = this->inputDimensions();
+    Index const nC = inChan < 1 ? dims[0] : inChan;
 
-    Output noncart(this->outputDimensions());
+    Sz3 odims = this->outputDimensions();
+    odims[0] = nC;
+    Output noncart(odims);
     noncart.setZero();
 
-    Index const nchan = cart.dimension(0);
     Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
-    szC.set(0, nchan);
+    szC.set(0, nC);
 
     auto grid_task = [&](Index const lo, Index const hi) {
       Eigen::IndexList<FixZero, int, int, int> stC;
@@ -39,13 +40,13 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const e = std::min(this->mapping_.echo[si], int8_t(cart.dimension(1) - 1));
+        auto const e = std::min(this->mapping_.echo[si], int8_t(dims[1] - 1));
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         stC.set(1, c.x - (IP / 2));
         stC.set(2, c.y - (IP / 2));
         stC.set(3, c.z - (TP / 2));
         noncart.template chip<2>(n.spoke).template chip<1>(n.read) =
-          cart.template chip<1>(e).slice(stC, szC).contract(
+          this->workspace_.template chip<1>(e).slice(stC, szC).contract(
             k.template cast<Cx>(),
             Eigen::IndexPairList<
               Eigen::type2indexpair<1, 0>,
@@ -59,26 +60,22 @@ struct GridEcho final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  Input &Adj(Output const &noncart) const
+  void Adj(Output const &noncart, Index const inChan) const
   {
-    assert(cart.dimension(2) == this->mapping_.cartDims[0]);
-    assert(cart.dimension(3) == this->mapping_.cartDims[1]);
-    assert(cart.dimension(4) == this->mapping_.cartDims[2]);
-    assert(this->mapping_.sortedIndices.size() == this->mapping_.cart.size());
-
     auto const dims = this->inputDimensions();
+    Index const nC = inChan < 1 ? dims[0] : inChan;
+    assert(nC == noncart.dimension(0));
 
-    Index const nchan = dims[0];
     Eigen::IndexList<int, FixOne, FixOne, FixOne> rshNC;
     constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> brdNC;
-    rshNC.set(0, nchan);
+    rshNC.set(0, nC);
 
     constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> rshK;
     Eigen::IndexList<int, FixOne, FixOne, FixOne> brdK;
-    brdK.set(0, nchan);
+    brdK.set(0, nC);
 
     Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
-    szC.set(0, nchan);
+    szC.set(0, nC);
 
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
@@ -94,7 +91,7 @@ struct GridEcho final : SizedGrid<IP, TP>
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z +
                            (this->kernel_->throughPlane() / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
-        threadSpaces[ti].resize(dims[0], dims[1], dims[2], dims[3], szZ[ti]);
+        threadSpaces[ti].resize(nC, dims[1], dims[2], dims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
 
@@ -131,7 +128,7 @@ struct GridEcho final : SizedGrid<IP, TP>
       Log::Print("Combining thread workspaces...");
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
-      Sz5 sz = dims;
+      Sz5 sz{nC, dims[1], dims[2], dims[3], 0};
       for (Index ti = 0; ti < nThreads; ti++) {
         if (szZ[ti]) {
           st[4] = minZ[ti];
@@ -141,8 +138,6 @@ struct GridEcho final : SizedGrid<IP, TP>
       }
       Log::Debug("Combining took: {}", Log::ToNow(start2));
     }
-
-    return this->workspace_;
   }
 
 private:

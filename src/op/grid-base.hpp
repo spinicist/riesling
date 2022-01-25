@@ -19,8 +19,9 @@ struct GridBase : Operator<5, 3>
 
   virtual ~GridBase(){};
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
-  virtual Output A(Input const &cart) const = 0;
-  virtual Input &Adj(Output const &noncart) const = 0;
+  virtual Output A(Index const nc = 0) const = 0; // Cart k-space must be in workspace()
+  virtual void
+  Adj(Output const &noncart, Index const nc = 0) const = 0; // Cart k-space -> workspace()
 
   Sz3 outputDimensions() const override
   {

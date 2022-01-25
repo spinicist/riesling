@@ -24,7 +24,8 @@ struct ReconOp final : Operator<4, 3>
     return nufft_.outputDimensions();
   }
 
-  void calcToeplitz() {
+  void calcToeplitz()
+  {
     nufft_.calcToeplitz();
   }
 
@@ -49,11 +50,12 @@ struct ReconOp final : Operator<4, 3>
   }
 
   template <typename T>
-  auto AdjA(T const &x) const
+  Input AdjA(T const &x) const
   {
     Log::Debug("Starting ReconOp adjoint*forward");
+    Input result(inputDimensions());
     auto const start = Log::Now();
-    auto const result = sense_.Adj(nufft_.AdjA(sense_.A(x)));
+    result.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.AdjA(sense_.A(x)));
     Log::Debug("Finished ReconOp adjoint*forward: {}", Log::ToNow(start));
     return result;
   }

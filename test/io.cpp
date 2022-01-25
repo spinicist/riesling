@@ -50,9 +50,10 @@ TEST_CASE("io", "[io]")
     CHECK(checkInfo.spokes == info.spokes);
     CHECK(checkInfo.volumes == info.volumes);
 
-    auto const checkData = reader.noncartesian(0);
-    CHECK(Norm(checkData - refData) == Approx(0.f).margin(1.e-9));
-
+    auto const check0 = reader.noncartesian(0);
+    CHECK(Norm(check0 - refData.chip<3>(0)) == Approx(0.f).margin(1.e-9));
+    auto const check1 = reader.noncartesian(1);
+    CHECK(Norm(check1 - refData.chip<3>(1)) == Approx(0.f).margin(1.e-9));
     std::filesystem::remove(fname);
   }
 
