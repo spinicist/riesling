@@ -93,7 +93,7 @@ add_executable(riesling
     src/main_plan.cpp
     src/main_recon.cpp
     src/main_sdc.cpp
-    src/main_sense.cpp
+    src/main_sense_calib.cpp
     src/main_sim.cpp
     src/main_split.cpp
     src/main_tgv.cpp

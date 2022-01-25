@@ -12,7 +12,7 @@
 #include "sense.h"
 #include "tensorOps.h"
 
-int main_sense(args::Subparser &parser)
+int main_sense_calib(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
 
