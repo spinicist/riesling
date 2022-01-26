@@ -42,9 +42,9 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const n = this->mapping_.noncart[si];
         auto const e = std::min(this->mapping_.echo[si], int8_t(dims[1] - 1));
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        stC.set(1, c.x - (IP / 2));
-        stC.set(2, c.y - (IP / 2));
-        stC.set(3, c.z - (TP / 2));
+        stC.set(1, c.x - ((IP - 1) / 2));
+        stC.set(2, c.y - ((IP - 1) / 2));
+        stC.set(3, c.z - ((TP - 1) / 2));
         noncart.template chip<2>(n.spoke).template chip<1>(n.read) =
           this->workspace_.template chip<1>(e).slice(stC, szC).contract(
             k.template cast<Cx>(),
@@ -108,13 +108,13 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         auto const nck = (nc * nc.constant(sdc)).reshape(rshNC).broadcast(brdNC) *
                          k.template cast<Cx>().reshape(rshK).broadcast(brdK);
-        stC.set(1, c.x - (IP / 2));
-        stC.set(2, c.y - (IP / 2));
+        stC.set(1, c.x - ((IP - 1) / 2));
+        stC.set(2, c.y - ((IP - 1) / 2));
         if (this->safe_) {
-          stC.set(3, c.z - (TP / 2) - minZ[ti]);
+          stC.set(3, c.z - ((TP - 1) / 2) - minZ[ti]);
           threadSpaces[ti].chip<1>(e).slice(stC, szC) += nck;
         } else {
-          stC.set(3, c.z - (TP / 2));
+          stC.set(3, c.z - ((TP - 1) / 2));
           this->workspace_.template chip<1>(e).slice(stC, szC) += nck;
         }
       }
@@ -125,7 +125,7 @@ struct GridEcho final : SizedGrid<IP, TP>
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::Debug("Non-cart -> Cart: {}", Log::ToNow(start));
     if (this->safe_) {
-      Log::Print("Combining thread workspaces...");
+      Log::Print(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
       Sz5 sz{nC, dims[1], dims[2], dims[3], 0};
@@ -136,7 +136,7 @@ struct GridEcho final : SizedGrid<IP, TP>
           this->workspace_.slice(st, sz).device(dev) += threadSpaces[ti];
         }
       }
-      Log::Debug("Combining took: {}", Log::ToNow(start2));
+      Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
   }
 

@@ -52,9 +52,9 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const b =
           (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_).template cast<Cx>();
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        stC.set(2, c.x - (IP / 2));
-        stC.set(3, c.y - (IP / 2));
-        stC.set(4, c.z - (TP / 2));
+        stC.set(2, c.x - ((IP - 1) / 2));
+        stC.set(3, c.y - ((IP - 1) / 2));
+        stC.set(4, c.z - ((TP - 1) / 2));
         noncart.template chip<2>(n.spoke).template chip<1>(n.read) =
           this->workspace_.slice(stC, szC)
             .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
@@ -136,13 +136,13 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const nbk = ncb.reshape(rshNCB).broadcast(brdNCB) *
                          k.template cast<Cx>().reshape(rshK).broadcast(brdK);
 
-        stC.set(2, c.x - (IP / 2));
-        stC.set(3, c.y - (IP / 2));
+        stC.set(2, c.x - ((IP - 1) / 2));
+        stC.set(3, c.y - ((IP - 1) / 2));
         if (this->safe_) {
-          stC.set(4, c.z - (TP / 2) - minZ[ti]);
+          stC.set(4, c.z - ((TP - 1) / 2) - minZ[ti]);
           threadSpaces[ti].slice(stC, szC) += nbk;
         } else {
-          stC.set(4, c.z - (TP / 2));
+          stC.set(4, c.z - ((TP - 1) / 2));
           this->workspace_.slice(stC, szC) += nbk;
         }
       }
@@ -153,7 +153,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::Debug("Basis Non-cart -> Cart: {}", Log::ToNow(start));
     if (this->safe_) {
-      Log::Print("Combining thread workspaces...");
+      Log::Print(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
       Sz5 sz{nC, dims[1], dims[2], dims[3], 0};
@@ -164,7 +164,7 @@ struct GridBasis final : SizedGrid<IP, TP>
           this->workspace_.slice(st, sz).device(dev) += threadSpaces[ti];
         }
       }
-      Log::Debug("Combining took: {}", Log::ToNow(start2));
+      Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
   }
 
