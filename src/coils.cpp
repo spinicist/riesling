@@ -15,7 +15,7 @@ Cx4 birdcage(
   Cx4 all(channels, matrix[0], matrix[1], matrix[2]);
 
   if (channels < 1) {
-    Log::Fail("Must have at least one channel for birdcage sensitivities");
+    Log::Fail(FMT_STRING("Must have at least one channel for birdcage sensitivities"));
   } else if (channels == 1) {
     all.setConstant(1.f);
   } else {

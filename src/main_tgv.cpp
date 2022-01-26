@@ -74,9 +74,9 @@ int main_tgv(args::Subparser &parser)
       step_size.Get(),
       recon,
       reader.noncartesian(iv)));
-    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
+    Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
+  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "tgv", "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(info);

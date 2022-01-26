@@ -9,7 +9,7 @@ namespace HD5 {
 Reader::Reader(std::string const &fname)
 {
   if (!std::filesystem::exists(fname)) {
-    Log::Fail(fmt::format("File does not exist: {}", fname));
+    Log::Fail(FMT_STRING("File does not exist: {}"), fname);
   }
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -74,7 +74,7 @@ RieslingReader::RieslingReader(std::string const &fname)
   herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
   status = H5Dclose(dset);
   if (status != 0) {
-    Log::Fail("Could not load info struct, code: {}", status);
+    Log::Fail(FMT_STRING("Could not load info struct, code: {}"), status);
   }
 
   R3 points(3, info.read_points, info.spokes);
@@ -82,10 +82,10 @@ RieslingReader::RieslingReader(std::string const &fname)
   if (HD5::Exists(handle_, "echoes")) {
     I1 echoes(info.spokes);
     HD5::load_tensor(handle_, "echoes", echoes);
-    Log::Debug("Read echoes successfully");
+    Log::Debug(FMT_STRING("Read echoes successfully"));
     traj_ = Trajectory(info, points, echoes);
   } else {
-    Log::Debug("No echoes information in file");
+    Log::Debug(FMT_STRING("No echoes information in file"));
     traj_ = Trajectory(info, points);
   }
 
@@ -120,7 +120,7 @@ std::map<std::string, float> RieslingReader::readMeta() const
   }
   status = H5Gclose(meta_group);
   if (status != 0) {
-    Log::Fail("Could not load meta-data, code: {}", status);
+    Log::Fail(FMT_STRING("Could not load meta-data, code: {}"), status);
   }
   return meta;
 }
@@ -133,9 +133,9 @@ Trajectory const &RieslingReader::trajectory() const
 Cx3 const &RieslingReader::noncartesian(Index const index)
 {
   if (index == currentNCVol_) {
-    Log::Print("Using cached non-cartesion volume {}", index);
+    Log::Print(FMT_STRING("Using cached non-cartesion volume {}"), index);
   } else {
-    Log::Print("Reading non-cartesian volume {}", index);
+    Log::Print(FMT_STRING("Reading non-cartesian volume {}"), index);
     if (nc_.size() == 0) {
       nc_.resize(Sz3{traj_.info().channels, traj_.info().read_points, traj_.info().spokes});
     }

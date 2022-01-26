@@ -19,12 +19,12 @@ void Init()
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) {
-      Log::Fail("Could not initialise HDF5, code: {}", err);
+      Log::Fail(FMT_STRING("Could not initialise HDF5, code: {}"), err);
     }
     NeedsInit = false;
-    Log::Debug("Initialised HDF5");
+    Log::Debug(FMT_STRING("Initialised HDF5"));
   } else {
-    Log::Debug("HDF5 already initialised");
+    Log::Debug(FMT_STRING("HDF5 already initialised"));
   }
 }
 
@@ -66,7 +66,7 @@ hid_t InfoType()
   status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
   status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
   if (status) {
-    Log::Fail("Could not create Info struct type in HDF5, code: {}", status);
+    Log::Fail(FMT_STRING("Could not create Info struct type in HDF5, code: {}"), status);
   }
   return info_id;
 }
@@ -91,7 +91,7 @@ void CheckInfoType(hid_t handle)
   auto const dtype = H5Dget_type(handle);
   int n_members = H5Tget_nmembers(dtype);
   if (n_members < names.size()) {
-    Log::Fail("Header info had {} members, should be {}", n_members, names.size());
+    Log::Fail(FMT_STRING("Header info had {} members, should be {}"), n_members, names.size());
   }
   // Re-ordered fields are okay. Missing is not
   for (auto const &check_name : names) {
@@ -104,7 +104,7 @@ void CheckInfoType(hid_t handle)
       }
     }
     if (!found) {
-      Log::Fail("Field {} not found in header info", check_name);
+      Log::Fail(FMT_STRING("Field {} not found in header info"), check_name);
     }
   }
 }

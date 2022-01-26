@@ -51,7 +51,7 @@ int main_traj(args::Subparser &parser)
     "traj-image");
 
   if (savePSF) {
-    Log::Print("Calculating PSF");
+    Log::Print(FMT_STRING("Calculating PSF"));
     FFT::Planned<4, 3> fft(out.dimensions());
     fft.reverse(out);
     writer.writeTensor(

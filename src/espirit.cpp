@@ -91,7 +91,7 @@ Cx4 ESPIRIT(
   };
   Threads::RangeFor(slice_task, mix_kernels.dimension(3));
 
-  Log::Print("Finished ESPIRIT");
+  Log::Print(FMT_STRING("Finished ESPIRIT"));
   Log::Image(valsImage, "espirit-val.nii");
   return grid;
 }

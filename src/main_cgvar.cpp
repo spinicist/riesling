@@ -58,9 +58,9 @@ int main_cgvar(args::Subparser &parser)
       ImageTukey(tukey_s.Get(), tukey_e.Get(), tukey_h.Get(), cropped);
     }
     out.chip<3>(iv) = cropped;
-    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
+    Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
+  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, mag, false, info, iname.Get(), oname.Get(), "cgvar", "h5");
   FFT::End();
   return EXIT_SUCCESS;

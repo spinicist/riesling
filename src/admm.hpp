@@ -52,7 +52,7 @@ void admm(
     xpu.device(dev) = x + u;
     z = reg(xpu);
     u.device(dev) = xpu - z;
-    Log::Print("Finished ADMM iteration {}", ii);
+    Log::Print(FMT_STRING("Finished ADMM iteration {}"), ii);
     Log::Image(x, fmt::format("admm-x-{:02d}.nii", ii));
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}.nii", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}.nii", ii));

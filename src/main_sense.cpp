@@ -15,7 +15,7 @@ int main_sense(args::Subparser &parser)
   ParseCommand(parser, iname);
   HD5::RieslingReader ireader(iname.Get());
   if (!sname) {
-    Log::Fail("No input SENSE map file specified");
+    Log::Fail(FMT_STRING("No input SENSE map file specified"));
   }
   HD5::Reader sreader(sname.Get());
   auto const maps = sreader.readTensor<Cx4>(HD5::Keys::SENSE);
@@ -47,7 +47,7 @@ int main_sense(args::Subparser &parser)
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.Adj(channels.chip<5>(ii));
     }
-    Log::Print("SENSE Adjoint took {}", Log::ToNow(start));
+    Log::Print(FMT_STRING("SENSE Adjoint took {}"), Log::ToNow(start));
     writer.writeTensor(images, HD5::Keys::Image);
   } else {
     std::string const name = dset ? dset.Get() : HD5::Keys::Image;
@@ -72,7 +72,7 @@ int main_sense(args::Subparser &parser)
     for (auto ii = 0; ii < images.dimension(4); ii++) {
       channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.A(images.chip<4>(ii));
     }
-    Log::Print("SENSE took {}", Log::ToNow(start));
+    Log::Print(FMT_STRING("SENSE took {}"), Log::ToNow(start));
     writer.writeTensor(channels, HD5::Keys::Channels);
   }
 

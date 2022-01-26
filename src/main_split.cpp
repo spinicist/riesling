@@ -23,7 +23,7 @@ int main_split(args::Subparser &parser)
   R3 points = traj.points();
   I1 echoes = traj.echoes();
   Cx3 ks = reader.noncartesian(vol.Get());
-  auto const volName = fmt::format("vol-{:02d}", vol.Get());
+  auto const volName = fmt::format(FMT_STRING("vol-{:02d}"), vol.Get());
 
   if (ds) {
     int ds_read_points = (Index)std::round((float)info.read_points / ds.Get());
@@ -43,7 +43,8 @@ int main_split(args::Subparser &parser)
     Cx4 lo_ks = ks.slice(Sz3{0, 0, 0}, Sz3{info.channels, info.read_points, lores.Get()})
                   .reshape(Sz4{info.channels, info.read_points, lores.Get(), 1});
     I1 lo_echoes = echoes.slice(Sz1{0}, Sz1{lores.Get()});
-    HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format("{}-lores", volName), "h5"));
+    HD5::Writer writer(
+      OutName(iname.Get(), oname.Get(), fmt::format(FMT_STRING("{}-lores"), volName), "h5"));
     writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes));
     writer.writeNoncartesian(lo_ks);
     info.spokes -= lores.Get();

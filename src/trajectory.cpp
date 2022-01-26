@@ -68,17 +68,17 @@ void Trajectory::init()
   if (info_.type == Info::Type::ThreeD) {
     float const maxCoord = Maximum(points_.abs());
     if (maxCoord > 0.5f) {
-      Log::Fail("Maximum trajectory co-ordinate {} exceeded 0.5", maxCoord);
+      Log::Fail(FMT_STRING("Maximum trajectory co-ordinate {} exceeded 0.5"), maxCoord);
     }
   } else {
     float const maxCoord = Maximum(
       points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
     if (maxCoord > 0.5f) {
-      Log::Fail("Maximum in-plane trajectory {} co-ordinate exceeded 0.5", maxCoord);
+      Log::Fail(FMT_STRING("Maximum in-plane trajectory {} co-ordinate exceeded 0.5"), maxCoord);
     }
   }
 
-  Log::Print("Created trajectory object with {} spokes", info_.spokes);
+  Log::Print(FMT_STRING("Created trajectory object with {} spokes"), info_.spokes);
 }
 
 Info const &Trajectory::info() const
@@ -166,10 +166,10 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
       }
     }
   }
-  Log::Print("Generated {} co-ordinates in {}", mapping.cart.size(), Log::ToNow(start));
+  Log::Print(FMT_STRING("Generated {} co-ordinates in {}"), mapping.cart.size(), Log::ToNow(start));
 
   mapping.echoWeights = mapping.echoWeights.maxCoeff() / mapping.echoWeights;
-  Log::Print("Echo weights: {}", mapping.echoWeights.transpose());
+  Log::Print(FMT_STRING("Echo weights: {}"), mapping.echoWeights.transpose());
 
   start = Log::Now();
   mapping.sortedIndices.resize(mapping.cart.size());
@@ -181,7 +181,7 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
       return (ac.z < bc.z) ||
              ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
     });
-  Log::Debug("Grid co-ord sorting: {}", Log::ToNow(start));
+  Log::Debug(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
 
   return mapping;
 }

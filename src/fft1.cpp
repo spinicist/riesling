@@ -16,13 +16,13 @@ FFT1DReal2Complex::FFT1DReal2Complex(Index const N)
   real.setZero();
   complex.setZero();
   scale_ = 1. / sqrt(N_);
-  Log::Print("Planning 1D FFT...");
+  Log::Print(FMT_STRING("Planning 1D FFT..."));
   auto const start = Log::Now();
   fftwf_plan_with_nthreads(Threads::GlobalThreadCount());
   auto cptr = reinterpret_cast<fftwf_complex *>(complex.data());
   forward_plan_ = fftwf_plan_dft_r2c_1d(real.size(), real.data(), cptr, FFTW_MEASURE);
   reverse_plan_ = fftwf_plan_dft_c2r_1d(real.size(), cptr, real.data(), FFTW_MEASURE);
-  Log::Debug("FFT Plan took: {}", Log::ToNow(start));
+  Log::Debug(FMT_STRING("FFT Plan took: {}"), Log::ToNow(start));
 }
 
 FFT1DReal2Complex::~FFT1DReal2Complex()

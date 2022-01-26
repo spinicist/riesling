@@ -71,7 +71,7 @@ int main_recon(args::Subparser &parser)
     auto const &vol_start = Log::Now();
     gridder->Adj(reader.noncartesian(iv));
     fft.reverse(gridder->workspace());
-    Log::Print("Channel combination...");
+    Log::Print(FMT_STRING("Channel combination..."));
     if (rss) {
       image.device(dev) =
         ConjugateSum(cropper.crop5(gridder->workspace()), cropper.crop5(gridder->workspace()))
@@ -86,9 +86,9 @@ int main_recon(args::Subparser &parser)
                                   .reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]})
                                   .broadcast(Sz4{out.dimension(0), 1, 1, 1});
     out.chip<4>(iv) = image;
-    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
+    Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
-  Log::Print("All volumes: {}", Log::ToNow(all_start));
+  Log::Print(FMT_STRING("All volumes: {}"), Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "recon", "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(info);

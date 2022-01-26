@@ -64,9 +64,9 @@ int main_cg(args::Subparser &parser)
     cg(its.Get(), thr.Get(), recon, vol);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
-    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
+    Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
+  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "cg", "h5");
   HD5::Writer writer(fname);
   writer.writeTrajectory(traj);

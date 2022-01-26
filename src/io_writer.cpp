@@ -25,9 +25,9 @@ void store_matrix(
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    Log::Fail("Could not write tensor {}, code: {}", name, status);
+    Log::Fail(FMT_STRING("Could not write tensor {}, code: {}"), name, status);
   } else {
-    Log::Print("Wrote dataset: {}", name);
+    Log::Print(FMT_STRING("Wrote dataset: {}"), name);
   }
 }
 
@@ -49,27 +49,27 @@ Writer::~Writer()
 
 void Writer::writeInfo(Info const &info)
 {
-  Log::Print("Writing info struct");
+  Log::Print(FMT_STRING("Writing info struct"));
   hid_t info_id = InfoType();
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
   hid_t const dset =
     H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail("Could not create info struct, code: {}", dset);
+    Log::Fail(FMT_STRING("Could not create info struct, code: {}"), dset);
   }
   herr_t status;
   status = H5Dwrite(dset, info_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &info);
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status != 0) {
-    Log::Fail("Could not write Info struct, code: {}", status);
+    Log::Fail(FMT_STRING("Could not write Info struct, code: {}"), status);
   }
 }
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
-  Log::Print("Writing meta data");
+  Log::Print(FMT_STRING("Writing meta data"));
   auto m_group = H5Gcreate(handle_, Keys::Meta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t dims[1] = {1};
@@ -83,7 +83,7 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   }
   status = H5Sclose(space);
   if (status != 0) {
-    throw std::runtime_error("Exception occured storing meta-data");
+    Log::Fail(FMT_STRING("Exception occured storing meta-data"));
   }
 }
 

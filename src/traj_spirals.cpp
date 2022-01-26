@@ -1,5 +1,5 @@
-#include "log.h"
 #include "traj_spirals.h"
+#include "log.h"
 
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
@@ -62,7 +62,8 @@ R3 Phyllotaxis(
   Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
 {
   if ((nSpokes % spi) != 0) {
-    Log::Fail("Spokes per interleave {} is not a divisor of total spokes {}", spi, nSpokes);
+    Log::Fail(
+      FMT_STRING("Spokes per interleave {} is not a divisor of total spokes {}"), spi, nSpokes);
   }
   Index nInterleaves = nSpokes / spi;
   constexpr float phi_gold = 2.399963229728653;

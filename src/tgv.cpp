@@ -221,7 +221,7 @@ Cx4 tgv(
     float const delta = Norm(u - u_old);
     Log::Print(FMT_STRING("TGV {}: ɑ0 {} δ {}"), ii + 1, alpha0, delta);
     if (delta < thresh) {
-      Log::Print("Reached threshold on delta, stopping");
+      Log::Print(FMT_STRING("Reached threshold on delta, stopping"));
       break;
     }
   };

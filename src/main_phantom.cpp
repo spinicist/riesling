@@ -61,7 +61,7 @@ int main_phantom(args::Subparser &parser)
   R3 points;
   Info info;
   if (trajfile) {
-    Log::Print("Reading external trajectory from {}", trajfile.Get());
+    Log::Print(FMT_STRING("Reading external trajectory from {}"), trajfile.Get());
     HD5::RieslingReader reader(trajfile.Get());
     Trajectory const ext_traj = reader.trajectory();
     info = ext_traj.info();
@@ -155,7 +155,7 @@ int main_phantom(args::Subparser &parser)
                  : SphericalPhantom(
                      info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii]);
   }
-  Log::Print("Sampling hi-res non-cartesian");
+  Log::Print(FMT_STRING("Sampling hi-res non-cartesian"));
   Cx3 radial = info.noncartesianVolume();
   radial = recon.A(phan);
 

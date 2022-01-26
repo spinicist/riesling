@@ -33,6 +33,6 @@ std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, fl
       return std::make_unique<KaiserBessel<6, 1>>(os);
     }
   } else {
-    Log::Fail("Unknown kernel type: {}", k);
+    Log::Fail(FMT_STRING("Unknown kernel type: {}"), k);
   }
 }

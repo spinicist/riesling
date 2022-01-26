@@ -39,7 +39,7 @@ int main_nufft(args::Subparser &parser)
       channels.chip<5>(ii).device(Threads::GlobalDevice()) = nufft.Adj(noncart.chip<3>(ii));
     }
     writer.writeTensor(channels, HD5::Keys::Channels);
-    Log::Print("NUFFT Adjoint took {}", Log::ToNow(start));
+    Log::Print(FMT_STRING("NUFFT Adjoint took {}"), Log::ToNow(start));
   } else {
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     reader.readTensor(name, channels);
@@ -47,7 +47,7 @@ int main_nufft(args::Subparser &parser)
       noncart.chip<3>(ii).device(Threads::GlobalDevice()) = nufft.A(channels.chip<5>(ii));
     }
     writer.writeTensor(noncart, HD5::Keys::Noncartesian);
-    Log::Print("Forward NUFFT took {}", Log::ToNow(start));
+    Log::Print(FMT_STRING("Forward NUFFT took {}"), Log::ToNow(start));
   }
 
   FFT::End();

@@ -44,7 +44,7 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
   };
   auto const start = Log::Now();
   Threads::RangeFor(task, sz);
-  Log::Debug("Filtering took: {}", Log::ToNow(start));
+  Log::Debug(FMT_STRING("Filtering took: {}"), Log::ToNow(start));
 }
 
 void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x)

@@ -31,12 +31,12 @@ int main_grid(args::Subparser &parser)
     rad_ks = gridder->A();
     writer.writeNoncartesian(
       rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1}));
-    Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
+    Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
     rad_ks = reader.noncartesian(0);
     gridder->Adj(reader.noncartesian(0));
     writer.writeTensor(gridder->workspace(), "cartesian");
-    Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
+    Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }
 
   return EXIT_SUCCESS;

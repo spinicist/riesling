@@ -24,9 +24,9 @@ void Start()
   fftwf_set_timelimit(60.0);
   auto const wp = WisdomPath();
   if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
-    Log::Print("Read wisdom successfully from {}", wp);
+    Log::Print(FMT_STRING("Read wisdom successfully from {}"), wp);
   } else {
-    Log::Print("Could not read wisdom from {}, continuing", wp);
+    Log::Print(FMT_STRING("Could not read wisdom from {}, continuing"), wp);
   }
 }
 

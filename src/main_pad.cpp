@@ -29,11 +29,11 @@ int main_pad(args::Subparser &parser)
     if (adjoint) {
       PadOp<6> pad(outDims, inDims);
       outImages = pad.Adj(inImages);
-      Log::Print("Pad Adjoint took {}", Log::ToNow(start));
+      Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     } else {
       PadOp<6> pad(inDims, outDims);
       outImages = pad.A(inImages);
-      Log::Print("Pad took {}", Log::ToNow(start));
+      Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     }
     writer.writeTensor(outImages, HD5::Keys::Channels);
   } else {
@@ -45,11 +45,11 @@ int main_pad(args::Subparser &parser)
     if (adjoint) {
       PadOp<5> pad(outDims, inDims);
       outImages = pad.Adj(inImages);
-      Log::Print("Pad Adjoint took {}", Log::ToNow(start));
+      Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     } else {
       PadOp<5> pad(inDims, outDims);
       outImages = pad.A(inImages);
-      Log::Print("Pad took {}", Log::ToNow(start));
+      Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     }
     writer.writeTensor(outImages, HD5::Keys::Image);
   }

@@ -18,7 +18,11 @@ void Vector3fReader::operator()(
   float x, y, z;
   auto result = scn::scan(value, "{},{},{}", x, y, z);
   if (!result) {
-    Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error());
+    Log::Fail(
+      FMT_STRING("Could not read vector for {} from value {} because {}"),
+      name,
+      value,
+      result.error());
   }
   v.x() = x;
   v.y() = y;
@@ -33,7 +37,7 @@ void VectorReader::operator()(
   if (result) {
     values.push_back(val);
   } else {
-    Log::Fail("Could not read argument for {}", name);
+    Log::Fail(FMT_STRING("Could not read argument for {}"), name);
   }
   while ((result = scn::scan(result.range(), ",{}", val))) {
     values.push_back(val);
@@ -45,7 +49,7 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
   Index i, j, k;
   auto result = scn::scan(value, "{},{},{}", i, j, k);
   if (!result) {
-    Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error());
+    Log::Fail(FMT_STRING("Could not read {} from '{}': {}"), name, value, result.error());
   }
   v = Sz3{i, j, k};
 }
@@ -70,7 +74,7 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
     throw args::Error("No input file specified");
   }
   if (nthreads) {
-    Log::Print("Using {} threads", nthreads.Get());
+    Log::Print(FMT_STRING("Using {} threads"), nthreads.Get());
     Threads::SetGlobalThreadCount(nthreads.Get());
   }
 }

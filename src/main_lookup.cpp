@@ -42,14 +42,15 @@ int main_lookup(args::Subparser &parser)
 
   Index const N = dictionary.dimension(0);
   if (parameters.dimension(0) != N) {
-    Log::Fail("Dictionary has {} entries but parameters has {}", N, parameters.dimension(0));
+    Log::Fail(
+      FMT_STRING("Dictionary has {} entries but parameters has {}"), N, parameters.dimension(0));
   }
   Log::Print(FMT_STRING("Dictionary has {} entries"), N);
 
   Cx1 const basis_ss = basis.chip<0>(basis.dimension(0) - 1).cast<Cx>();
   fmt::print("basis_ss dims {}\n", basis_ss.dimensions());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
-    Log::Print("Processing volume {}", iv);
+    Log::Print(FMT_STRING("Processing volume {}"), iv);
     auto ztask = [&](Index const lo, Index const hi, Index const ti) {
       for (Index iz = lo; iz < hi; iz++) {
         Log::Progress(iz, lo, hi);

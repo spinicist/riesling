@@ -7,7 +7,7 @@
 Cx4 llr(Cx4 const &x, float const l, Index const p)
 {
   Index const K = x.dimension(0);
-  Log::Print("LLR regularization patch size {} lamdba {}", p, l);
+  Log::Print(FMT_STRING("LLR regularization patch size {} lamdba {}"), p, l);
   Cx4 lr(x.dimensions());
   lr.setZero();
 
@@ -32,7 +32,7 @@ Cx4 llr(Cx4 const &x, float const l, Index const p)
   };
   auto const now = Log::Now();
   Threads::RangeFor(zTask, 0, x.dimension(3) - p);
-  Log::Print("LLR Regularization took {}", Log::ToNow(now));
+  Log::Print(FMT_STRING("LLR Regularization took {}"), Log::ToNow(now));
   return lr;
 }
 
@@ -80,6 +80,6 @@ Cx4 llr_patch(Cx4 const &x, float const l, Index const p)
   auto const now = Log::Now();
   zTask(0, nP[2]);
   // Threads::RangeFor(zTask, nP[2]);
-  Log::Print("LLR Regularization took {}", Log::ToNow(now));
+  Log::Print(FMT_STRING("LLR Regularization took {}"), Log::ToNow(now));
   return lr;
 }

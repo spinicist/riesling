@@ -48,9 +48,9 @@ void store_tensor(
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    Log::Fail("Could not write tensor {}, code: {}", name, status);
+    Log::Fail(FMT_STRING("Could not write tensor {}, code: {}"), name, status);
   } else {
-    Log::Print("Wrote dataset: {}", name);
+    Log::Print(FMT_STRING("Wrote dataset: {}"), name);
   }
 }
 
@@ -59,13 +59,13 @@ Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail("Could not open tensor {}", name);
+    Log::Fail(FMT_STRING("Could not open tensor {}"), name);
   }
 
   hid_t ds = H5Dget_space(dset);
   int const ndims = H5Sget_simple_extent_ndims(ds);
   if (ndims != ND) {
-    Log::Fail("Number of dimensions {} does match on-disk number {}", ndims, ND);
+    Log::Fail(FMT_STRING("Number of dimensions {} does match on-disk number {}"), ndims, ND);
   }
   std::array<hsize_t, ND> hdims;
   H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
@@ -101,9 +101,9 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   herr_t ret_value =
     H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
-    Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
+    Log::Fail(FMT_STRING("Error reading tensor tensor {}, code: {}"), name, ret_value);
   } else {
-    Log::Print("Read dataset: {}", name);
+    Log::Print(FMT_STRING("Read dataset: {}"), name);
   }
 }
 

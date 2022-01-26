@@ -11,7 +11,7 @@ namespace SDC {
 
 R2 Pipe(Trajectory const &traj, bool const nn, float const os)
 {
-  Log::Print("Using Pipe/Zwart/Menon SDC...");
+  Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
   auto info = traj.info();
   Cx3 W(1, info.read_points, info.spokes);
   Cx3 Wp(W.dimensions());
@@ -47,10 +47,10 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os)
     float const delta = R0((Wp - W).real().abs().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 1e-6) {
-      Log::Print("SDC converged, delta was {}", delta);
+      Log::Print(FMT_STRING("SDC converged, delta was {}"), delta);
       break;
     } else {
-      Log::Print("SDC Delta {}", delta);
+      Log::Print(FMT_STRING("SDC Delta {}"), delta);
     }
   }
   if (!nn && (info.read_points > 6)) {
@@ -58,7 +58,7 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os)
     // the spokes. Count back from the ends to miss that and then average.
     W = W / W.constant(Mean(W.slice(Sz3{0, info.read_points - 6, 0}, Sz3{1, 1, info.spokes})));
   }
-  Log::Print("SDC finished.");
+  Log::Print(FMT_STRING("SDC finished."));
   return W.real().chip<0>(0);
 }
 
@@ -163,10 +163,10 @@ R2 Choose(std::string const &iname, Trajectory const &traj, float const os)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);
   if (iname == "") {
-    Log::Print("Using no density compensation");
+    Log::Print(FMT_STRING("Using no density compensation"));
     sdc.setConstant(1.f);
   } else if (iname == "none") {
-    Log::Print("Using no density compensation");
+    Log::Print(FMT_STRING("Using no density compensation"));
     sdc.setConstant(1.f);
   } else if (iname == "pipe") {
     sdc = Pipe(traj, false, 2.1f);
