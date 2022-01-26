@@ -29,6 +29,10 @@ Gridding
 
 To diagnose trajectory and sample density issues, you can instead use ``riesling traj``. This will apply the gridding and sample density compensation to a set of ones, allowing you to see if the Cartesian k-space has an even weighting.
 
+Forward NUFFT
+-------------
+``riesling nufft'' applies a forward/reverse(adjoint) NUFFT. The default option is performing an adjoint transorm, the forward requires the ``--fwd'' flag. When performing a forward transformation the expected data format is the same as the image data format given in :doc:`data'.[?? check this] The expected dataset name can be changed with the ``-dset=[D]'' command. Output dataset names are ``nufft-backward'' and ``nufft-forward'' respectively for adjoint and forward operations, unless the ``-out=[OUTPUT]'' flag is used.
+
 Simulations
 -----------
 
