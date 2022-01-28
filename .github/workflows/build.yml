@@ -50,11 +50,9 @@ jobs:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
         run: |
-          if [ "${{runner.os}}" == "macOS" ]; then
-            TC="${{github.workspace}}/cmake/x64-osx-avx2.toolchain.cmake"
-          else
-            TC="${{github.workspace}}/cmake/x64-linux.toolchain.cmake"
-          fi
+          TC="${{github.workspace}}/cmake/toolchain.cmake"
+          export VCPKG_OVERLAY_TRIPLETS="${{github.workspace}}/cmake/triplets"
+          export FLAGS="ci"
           cd ${{github.workspace}}
           cmake -B build -S . \
             -DCMAKE_BUILD_TYPE=Release \
