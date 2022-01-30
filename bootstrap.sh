@@ -6,11 +6,10 @@
 
 git submodule update --init --recursive
 
-export VCPKG_OVERLAY_TRIPLETS="$PWD/cmake/triplets"
 export FLAGS="base"
-while getopts "o" opt; do
+while getopts "a" opt; do
     case $opt in
-        o) export FLAGS="avx2";;
+        a) export FLAGS="avx2";;
     esac
 done
 
@@ -21,10 +20,10 @@ else
   GEN=""
 fi
 
-
 mkdir -p build
 cd build
 cmake -S ../ $GEN \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake"
+  -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake" \
+  -DFLAGS_FILE="${FLAGS}"
 cmake --build .
