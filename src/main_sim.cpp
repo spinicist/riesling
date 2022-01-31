@@ -100,9 +100,6 @@ int main_sim(args::Subparser &parser)
     result = Sim::Simple(T1, beta, seq, randomSamp.Get());
   }
 
-  // Normalize dictionary
-  auto const norm = result.dynamics.rowwise().norm();
-  result.dynamics.rowwise().normalize();
   // Calculate SVD - observations are in rows
   Log::Print(
     "Calculating SVD {}x{}", result.dynamics.cols() / subsamp.Get(), result.dynamics.rows());
@@ -129,11 +126,13 @@ int main_sim(args::Subparser &parser)
   Eigen::MatrixXf const basis =
     svd.matrixV().leftCols(nRetain).array().rowwise() * flip.transpose();
   Log::Print("Computing dictionary");
-  Eigen::ArrayXXf Dk = result.dynamics.matrix() * basis;
+  Eigen::ArrayXXf dict = result.dynamics.matrix() * basis;
+  auto const norm = dict.rowwise().norm();
+  dict.rowwise().normalize();
 
   HD5::Writer writer(oname.Get());
   writer.writeMatrix(basis, HD5::Keys::Basis);
-  writer.writeMatrix(Dk, HD5::Keys::Dictionary);
+  writer.writeMatrix(dict, HD5::Keys::Dictionary);
   writer.writeMatrix(result.parameters, HD5::Keys::Parameters);
   writer.writeMatrix(norm, HD5::Keys::Norm);
   writer.writeMatrix(result.dynamics, HD5::Keys::Dynamics);

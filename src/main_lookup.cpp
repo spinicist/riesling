@@ -54,19 +54,22 @@ int main_lookup(args::Subparser &parser)
         Log::Progress(iz, lo, hi);
         for (Index iy = 0; iy < images.dimension(2); iy++) {
           for (Index ix = 0; ix < images.dimension(1); ix++) {
-            Cx1 const proj = images.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix);
+            Cx1 const x = images.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix);
             Index index = 0;
-            float bestDot = 0;
+            Cx bestCorr{0.f, 0.f};
+            float bestAbsCorr = 0;
+
             for (Index in = 0; in < N; in++) {
               R1 const atom = dictionary.chip<0>(in);
-              float const dot = std::abs(Dot(atom.cast<Cx>(), proj));
-              if (dot > bestDot) {
-                bestDot = dot;
+              Cx const corr = Dot(atom.cast<Cx>(), x);
+              if (std::abs(corr) > bestAbsCorr) {
+                bestAbsCorr = std::abs(corr);
+                bestCorr = corr;
                 index = in;
               }
             }
             out_pars.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix) = parameters.chip<0>(index);
-            pd(0, ix, iy, iz, iv) = bestDot / norm(index, 0);
+            pd(0, ix, iy, iz, iv) = bestCorr / norm(index, 0);
           }
         }
       }
