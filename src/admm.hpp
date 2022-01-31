@@ -11,9 +11,9 @@ struct AugmentedOp
   Op const &op;
   float rho;
 
-  auto AdjA(typename Op::Input const &x) const
+  Input AdjA(typename Op::Input const &x) const
   {
-    return op.AdjA(x) + rho * x;
+    return Input(op.AdjA(x) + rho * x);
   }
 };
 
