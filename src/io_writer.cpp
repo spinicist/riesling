@@ -94,52 +94,13 @@ void Writer::writeTrajectory(Trajectory const &t)
   HD5::store_tensor(handle_, "echoes", t.echoes());
 }
 
-void Writer::writeSDC(R2 const &sdc)
-{
-  HD5::store_tensor(handle_, Keys::SDC, sdc);
-}
-
-void Writer::writeSENSE(Cx4 const &s)
-{
-  HD5::store_tensor(handle_, Keys::SENSE, s);
-}
-
-void Writer::writeNoncartesian(Cx4 const &t)
-{
-  HD5::store_tensor(handle_, Keys::Noncartesian, t);
-}
-
-void Writer::writeCartesian(Cx4 const &t)
-{
-  HD5::store_tensor(handle_, Keys::Cartesian, t);
-}
-
-void Writer::writeImage(R4 const &t)
-{
-  HD5::store_tensor(handle_, Keys::Image, t);
-}
-
-void Writer::writeImage(Cx4 const &t)
-{
-  HD5::store_tensor(handle_, Keys::Image, t);
-}
-
-void Writer::writeBasis(R2 const &b)
-{
-  HD5::store_tensor(handle_, Keys::Basis, b);
-}
-
-void Writer::writeDynamics(R2 const &d)
-{
-  HD5::store_tensor(handle_, Keys::Dynamics, d);
-}
-
 template <typename Scalar, int ND>
 void Writer::writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label)
 {
   HD5::store_tensor(handle_, label, t);
 }
 
+template void Writer::writeTensor<float, 2>(R2 const &, std::string const &);
 template void Writer::writeTensor<float, 3>(R3 const &, std::string const &);
 template void Writer::writeTensor<float, 4>(R4 const &, std::string const &);
 template void Writer::writeTensor<float, 5>(R5 const &, std::string const &);
@@ -151,11 +112,6 @@ template void Writer::writeTensor<Cx, 6>(Cx6 const &, std::string const &);
 void Writer::writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label)
 {
   HD5::store_matrix(handle_, label, m);
-}
-
-void Writer::writeBasisImages(Cx5 const &bi)
-{
-  HD5::store_tensor(handle_, Keys::BasisImages, bi);
 }
 
 } // namespace HD5

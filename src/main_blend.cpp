@@ -38,7 +38,7 @@ int main_blend(args::Subparser &parser)
   if (!iname) {
     throw args::Error("No input file specified");
   }
-  HD5::RieslingReader input(iname.Get());
+  HD5::Reader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
 
   if (!iname) {

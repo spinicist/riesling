@@ -52,7 +52,7 @@ int main_espirit(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), "espirit", "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(info);
-  writer.writeSENSE(sense);
+  writer.writeTensor(sense, HD5::Keys::SENSE);
 
   FFT::End();
   return EXIT_SUCCESS;

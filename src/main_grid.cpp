@@ -29,8 +29,9 @@ int main_grid(args::Subparser &parser)
   if (forward) {
     reader.readTensor(HD5::Keys::Cartesian, gridder->workspace());
     rad_ks = gridder->A();
-    writer.writeNoncartesian(
-      rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1}));
+    writer.writeTensor(
+      Cx4(rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1})),
+      HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
     rad_ks = reader.noncartesian(0);

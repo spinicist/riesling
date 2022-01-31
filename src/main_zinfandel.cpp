@@ -49,7 +49,7 @@ int main_zinfandel(args::Subparser &parser)
     }
     rad_ks.chip<3>(iv) = vol;
   }
-  writer.writeNoncartesian(rad_ks);
+  writer.writeTensor(rad_ks, HD5::Keys::Noncartesian);
   Log::Print(FMT_STRING("Finished"));
   return EXIT_SUCCESS;
 }

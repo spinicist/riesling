@@ -28,7 +28,7 @@ int main_lookup(args::Subparser &parser)
   R2 const basis = dfile.readTensor<R2>("basis");
   R2 const dictionary = dfile.readTensor<R2>("dictionary");
   R2 const parameters = dfile.readTensor<R2>("parameters");
-  R2 const Mz_ss = dfile.readTensor<R2>("Mz_ss");
+  R2 const norm = dfile.readTensor<R2>(HD5::Keys::Norm);
 
   R5 out_pars(
     parameters.dimension(1),
@@ -47,8 +47,6 @@ int main_lookup(args::Subparser &parser)
   }
   Log::Print(FMT_STRING("Dictionary has {} entries"), N);
 
-  Cx1 const basis_ss = basis.chip<0>(basis.dimension(0) - 1).cast<Cx>();
-  fmt::print("basis_ss dims {}\n", basis_ss.dimensions());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     Log::Print(FMT_STRING("Processing volume {}"), iv);
     auto ztask = [&](Index const lo, Index const hi, Index const ti) {
@@ -68,7 +66,7 @@ int main_lookup(args::Subparser &parser)
               }
             }
             out_pars.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix) = parameters.chip<0>(index);
-            pd(0, ix, iy, iz, iv) = Dot(basis_ss, proj) / Mz_ss(index, 0); // Scale Mz_ss to M0
+            pd(0, ix, iy, iz, iv) = bestDot / norm(index, 0);
           }
         }
       }

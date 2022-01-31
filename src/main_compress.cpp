@@ -41,6 +41,6 @@ int main_compress(args::Subparser &parser)
   auto const ofile = OutName(iname.Get(), oname.Get(), "compressed", "h5");
   HD5::Writer writer(ofile);
   writer.writeTrajectory(reader.trajectory());
-  writer.writeNoncartesian(out_ks);
+  writer.writeTensor(out_ks, HD5::Keys::Noncartesian);
   return EXIT_SUCCESS;
 }

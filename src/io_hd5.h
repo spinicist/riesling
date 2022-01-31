@@ -13,18 +13,20 @@ bool Exists(Handle const h, std::string const name);
 std::string GetError();
 
 namespace Keys {
+std::string const Basis = "basis";
+std::string const Cartesian = "cartesian";
+std::string const Channels = "channels";
+std::string const Dictionary = "dictionary";
+std::string const Dynamics = "dynamics";
+std::string const Image = "image";
 std::string const Info = "info";
 std::string const Meta = "meta";
 std::string const Noncartesian = "noncartesian";
-std::string const Cartesian = "cartesian";
-std::string const Image = "image";
-std::string const Channels = "channels";
-std::string const Trajectory = "trajectory";
-std::string const Basis = "basis";
-std::string const BasisImages = "basis-images";
-std::string const Dynamics = "dynamics";
+std::string const Norm = "norm";
+std::string const Parameters = "parameters";
 std::string const SDC = "sdc";
 std::string const SENSE = "sense";
+std::string const Trajectory = "trajectory";
 } // namespace Keys
 
 } // namespace HD5

@@ -32,6 +32,6 @@ int main_sdc(args::Subparser &parser)
   }
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sdc", "h5"));
   writer.writeTrajectory(traj);
-  writer.writeSDC(dc);
+  writer.writeTensor(dc, HD5::Keys::SDC);
   return EXIT_SUCCESS;
 }
