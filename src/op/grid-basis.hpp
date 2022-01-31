@@ -112,13 +112,12 @@ struct GridBasis final : SizedGrid<IP, TP>
       // Allocate working space for this thread
       Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
       Cx2 ncb(nC, nB);
-
       minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z - ((TP - 1) / 2);
 
       if (this->safe_) {
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
-        threadSpaces[ti].resize(dims[0], dims[1], dims[2], dims[3], szZ[ti]);
+        threadSpaces[ti].resize(nC, nB, dims[2], dims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
 
@@ -156,7 +155,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       Log::Print(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
-      Sz5 sz{nC, dims[1], dims[2], dims[3], 0};
+      Sz5 sz{nC, nB, dims[2], dims[3], 0};
       for (Index ti = 0; ti < nThreads; ti++) {
         if (szZ[ti]) {
           st[4] = minZ[ti];

@@ -84,12 +84,10 @@ struct GridEcho final : SizedGrid<IP, TP>
     auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
       // Allocate working space for this thread
       Eigen::IndexList<FixZero, int, int, int> stC;
-      minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z -
-                 ((this->kernel_->throughPlane() - 1) / 2);
+      minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z - ((TP - 1) / 2);
 
       if (this->safe_) {
-        Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z +
-                           (this->kernel_->throughPlane() / 2);
+        Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
         threadSpaces[ti].resize(nC, dims[1], dims[2], dims[3], szZ[ti]);
         threadSpaces[ti].setZero();
