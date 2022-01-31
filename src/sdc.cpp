@@ -173,25 +173,16 @@ R2 Choose(std::string const &iname, Trajectory const &traj, float const os)
   } else if (iname == "pipenn") {
     sdc = Pipe(traj, true, os);
   } else {
-    HD5::RieslingReader reader(iname);
-    auto const sdcInfo = reader.trajectory().info();
-    auto const trajInfo = traj.info();
-    if (sdcInfo.read_points != trajInfo.read_points || sdcInfo.spokes != trajInfo.spokes) {
-      Log::Fail(
-        FMT_STRING("SDC trajectory dimensions {}x{} did not match main trajectory {}x{}"),
-        sdcInfo.read_points,
-        sdcInfo.spokes,
-        trajInfo.read_points,
-        trajInfo.spokes);
-    }
+    HD5::Reader reader(iname);
     sdc = reader.readTensor<R2>(HD5::Keys::SDC);
-    if (sdc.dimension(0) != sdcInfo.read_points || sdc.dimension(1) != sdcInfo.spokes) {
+    auto const trajInfo = traj.info();
+    if (sdc.dimension(0) != trajInfo.read_points || sdc.dimension(1) != trajInfo.spokes) {
       Log::Fail(
         FMT_STRING("SDC dimensions on disk {}x{} did not match info {}x{}"),
         sdc.dimension(0),
         sdc.dimension(1),
-        sdcInfo.read_points,
-        sdcInfo.spokes);
+        trajInfo.read_points,
+        trajInfo.spokes);
     }
   }
   return sdc;
