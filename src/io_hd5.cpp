@@ -89,7 +89,7 @@ void CheckInfoType(hid_t handle)
     "direction"};
 
   auto const dtype = H5Dget_type(handle);
-  int n_members = H5Tget_nmembers(dtype);
+  size_t n_members = H5Tget_nmembers(dtype);
   if (n_members < names.size()) {
     Log::Fail(FMT_STRING("Header info had {} members, should be {}"), n_members, names.size());
   }

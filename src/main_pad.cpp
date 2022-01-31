@@ -16,10 +16,8 @@ int main_pad(args::Subparser &parser)
   args::ValueFlag<std::string> dset(parser, "D", "Dataset name (image)", {'d', "dset"});
   ParseCommand(parser, iname);
   HD5::RieslingReader reader(iname.Get());
-  auto const traj = reader.trajectory();
-  auto const info = traj.info();
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "pad", "h5"));
-  writer.writeTrajectory(traj);
+  writer.writeTrajectory(reader.trajectory());
   if (channels) {
     Cx6 inImages = reader.readTensor<Cx6>(HD5::Keys::Channels);
     Sz6 inDims = inImages.dimensions();
