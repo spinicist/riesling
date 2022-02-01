@@ -41,13 +41,14 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
         auto const e = std::min(this->mapping_.echo[si], int8_t(dims[1] - 1));
+        auto const scale = this->mapping_.scale;
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         stC.set(1, c.x - ((IP - 1) / 2));
         stC.set(2, c.y - ((IP - 1) / 2));
         stC.set(3, c.z - ((TP - 1) / 2));
         noncart.template chip<2>(n.spoke).template chip<1>(n.read) =
           this->workspace_.template chip<1>(e).slice(stC, szC).contract(
-            k.template cast<Cx>(),
+            (k * k.constant(scale)).template cast<Cx>(),
             Eigen::IndexPairList<
               Eigen::type2indexpair<1, 0>,
               Eigen::type2indexpair<2, 1>,
@@ -99,12 +100,11 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
         auto const e = std::min(this->mapping_.echo[si], int8_t(dims[1] - 1));
-        auto const sdc = this->weightEchoes_ ? pow(this->mapping_.sdc[si], this->sdcPow_) *
-                                                 this->mapping_.echoWeights[e]
-                                             : pow(this->mapping_.sdc[si], this->sdcPow_);
+        auto const scale = this->mapping_.scale * pow(this->mapping_.sdc[si], this->sdcPow_) *
+                           (this->weightEchoes_ ? this->mapping_.echoWeights[e] : 1.f);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        auto const nck = (nc * nc.constant(sdc)).reshape(rshNC).broadcast(brdNC) *
+        auto const nck = (nc * nc.constant(scale)).reshape(rshNC).broadcast(brdNC) *
                          k.template cast<Cx>().reshape(rshK).broadcast(brdK);
         stC.set(1, c.x - ((IP - 1) / 2));
         stC.set(2, c.y - ((IP - 1) / 2));

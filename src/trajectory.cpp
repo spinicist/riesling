@@ -134,7 +134,7 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
     break;
   }
   mapping.noncartDims = Sz3{info_.channels, info_.read_points, info_.spokes};
-  mapping.osamp = os;
+  mapping.scale = sqrt(info_.type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
   Index const totalSz = info_.read_points * info_.spokes;
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);

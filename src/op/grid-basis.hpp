@@ -51,6 +51,7 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const n = this->mapping_.noncart[si];
         auto const b =
           (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_).template cast<Cx>();
+        auto const scale = this->mapping_.scale;
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         stC.set(2, c.x - ((IP - 1) / 2));
         stC.set(3, c.y - ((IP - 1) / 2));
@@ -59,7 +60,7 @@ struct GridBasis final : SizedGrid<IP, TP>
           this->workspace_.slice(stC, szC)
             .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
             .contract(
-              k.template cast<Cx>(),
+              (k * k.constant(scale)).template cast<Cx>(),
               Eigen::IndexPairList<
                 Eigen::type2indexpair<1, 0>,
                 Eigen::type2indexpair<2, 1>,
@@ -126,11 +127,11 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const sdc = pow(this->mapping_.sdc[si], this->sdcPow_);
+        auto const scale = this->mapping_.scale * pow(this->mapping_.sdc[si], this->sdcPow_);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
         auto const b = (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_);
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        ncb = (nc * nc.constant(sdc)).reshape(rshNC).broadcast(brdNC) *
+        ncb = (nc * nc.constant(scale)).reshape(rshNC).broadcast(brdNC) *
               b.template cast<Cx>().reshape(rshB).broadcast(brdB);
         auto const nbk = ncb.reshape(rshNCB).broadcast(brdNCB) *
                          k.template cast<Cx>().reshape(rshK).broadcast(brdK);

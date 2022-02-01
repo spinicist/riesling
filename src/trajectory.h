@@ -25,9 +25,9 @@ struct Mapping
   std::vector<Point3> offset;
   std::vector<int32_t> sortedIndices;
   Sz3 cartDims, noncartDims;
-  float osamp;
   int8_t echoes;
   Eigen::ArrayXf echoWeights;
+  float scale; // Overall scaling due to oversampling
 };
 
 struct Trajectory
