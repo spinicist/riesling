@@ -10,6 +10,8 @@ int main_split(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<Index> lores(parser, "N", "Extract first N spokes as lo-res", {'l', "lores"}, 0);
+  args::ValueFlag<Index> spoke_stride(parser, "S", "Hi-res stride", {"stride"}, 1);
+  args::ValueFlag<Index> spoke_size(parser, "SZ", "Size of hi-res spokes to keep", {"size"});
   args::ValueFlag<Index> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
   args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
@@ -63,6 +65,27 @@ int main_split(args::Subparser &parser)
 
   if (ds) {
     traj = traj.downsample(ds.Get(), ks);
+  }
+
+  if (spoke_stride) {
+    auto info = traj.info();
+    ks = Cx4(ks.stride(Sz4{1, 1, spoke_stride.Get(), 1}));
+    info.spokes = ks.dimension(2);
+    traj = Trajectory(
+      info,
+      traj.points().stride(Sz3{1, 1, spoke_stride.Get()}),
+      traj.echoes().stride(Sz1{spoke_stride.Get()}));
+  }
+
+  if (spoke_size) {
+    auto info = traj.info();
+    info.spokes = spoke_size.Get();
+    ks = Cx4(
+      ks.slice(Sz4{0, 0, 0, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
+    traj = Trajectory(
+      info,
+      traj.points().slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes}),
+      traj.echoes().slice(Sz1{0}, Sz1{info.spokes}));
   }
 
   if (nspokes) {
