@@ -185,3 +185,46 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
 
   return mapping;
 }
+
+Trajectory Trajectory::downsample(float const dsIn, Cx4 &ks) const
+{
+  Info dsInfo = info_;
+  // Account for rounding
+  dsInfo.matrix = (info_.matrix.cast<float>() / dsIn).cast<Index>();
+  float const ds = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
+  dsInfo.voxel_size = info_.voxel_size * ds;
+  Index sz = 3; // Need this for slicing below
+  if (dsInfo.type == Info::Type::ThreeDStack) {
+    dsInfo.matrix[2] = info_.matrix[2];
+    dsInfo.voxel_size[2] = info_.voxel_size[2];
+    sz = 2;
+  }
+  Index minRead = info_.read_points, maxRead = 0;
+  R3 dsPoints(points_.dimensions());
+  for (Index is = 0; is < info_.spokes; is++) {
+    for (Index ir = 0; ir < info_.read_points; ir++) {
+      R1 p = points_.chip<2>(is).chip<1>(ir);
+      p.slice(Sz1{0}, Sz1{sz}) *= p.slice(Sz1{0}, Sz1{sz}).constant(ds);
+      if (Norm(p.slice(Sz1{0}, Sz1{sz})) <= 0.5f) {
+        dsPoints.chip<2>(is).chip<1>(ir) = p;
+        minRead = std::min(minRead, ir);
+        maxRead = std::max(maxRead, ir);
+      } else {
+        dsPoints.chip<2>(is).chip<1>(ir).setConstant(std::numeric_limits<float>::quiet_NaN());
+      }
+    }
+  }
+  dsInfo.read_points = maxRead - minRead;
+  dsPoints = R3(dsPoints.slice(Sz3{0, minRead, 0}, Sz3{3, dsInfo.read_points, dsInfo.spokes}));
+  ks = Cx4(ks.slice(
+    Sz4{0, minRead, 0, 0},
+    Sz4{dsInfo.channels, dsInfo.read_points, dsInfo.spokes, dsInfo.volumes}));
+  Log::Print(
+    FMT_STRING("Downsampled by {}, new voxel-size {} matrix {}, kept read-points {}-{}"),
+    ds,
+    dsInfo.voxel_size.transpose(),
+    dsInfo.matrix.transpose(),
+    minRead,
+    maxRead);
+  return Trajectory(dsInfo, dsPoints, echoes_);
+}

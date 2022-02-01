@@ -38,12 +38,10 @@ struct Trajectory
   Info const &info() const;
   R3 const &points() const;
   I1 const &echoes() const;
-
   Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
-
-  // Generate an appropriate mapping
   Mapping mapping(
     Index const kw, float const os, float const inRes = -1.f, bool const shrink = false) const;
+  Trajectory downsample(float const newVoxSize, Cx4 &ks) const;
 
 private:
   void init();

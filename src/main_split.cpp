@@ -3,6 +3,7 @@
 #include "io.h"
 #include "log.h"
 #include "parse_args.h"
+#include "tensorOps.h"
 
 int main_split(args::Subparser &parser)
 {
@@ -16,62 +17,56 @@ int main_split(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   HD5::RieslingReader reader(iname.Get());
-  auto const traj = reader.trajectory();
-  Info info = traj.info();
-  info.volumes = 1; // Only output one volume
-  R3 points = traj.points();
-  I1 echoes = traj.echoes();
+  auto traj = reader.trajectory();
   Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
 
-  if (ds) {
-    int ds_read_points = (Index)std::round((float)info.read_points / ds.Get());
-    float const scalef = (float)info.read_points / (float)ds_read_points;
-    info.voxel_size = info.voxel_size * scalef;
-    info.matrix = (info.matrix.cast<float>() / scalef).cast<Index>();
-    info.read_points = static_cast<Index>(ds_read_points);
-    Log::Print(
-      FMT_STRING("Downsampling by {}, new voxel size {} matrix {} read-points {}"),
-      ds.Get(),
-      info.voxel_size.transpose(),
-      info.matrix.transpose(),
-      info.read_points);
-    points = R3(points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes})) * scalef;
-    ks = Cx4(
-      ks.slice(Sz4{0, 0, 0, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
-  }
-
   if (lores) {
-    if ((lores.Get() == 0) || (std::abs(lores.Get()) > info.spokes)) {
+    if ((lores.Get() == 0) || (std::abs(lores.Get()) > traj.info().spokes)) {
       Log::Fail(FMT_STRING("Invalid number of low-res spokes {}"), lores.Get());
     }
 
     // Cope with WASPI at end
-    Index const lo_st = (lores.Get() < 0) ? (info.spokes + lores.Get()) : 0;
+    Index const lo_st = (lores.Get() < 0) ? (traj.info().spokes + lores.Get()) : 0;
     Index const hi_st = (lores.Get() < 0) ? 0 : lores.Get();
 
-    Info lo_info = info;
+    Info lo_info = traj.info();
     lo_info.spokes = std::abs(lores.Get());
-    info.spokes -= lo_info.spokes;
 
     Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), lo_st, lo_st + lo_info.spokes);
 
     // The trajectory still thinks WASPI is at the beginning
-    R3 lo_points = points.slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, lo_info.spokes});
-    I1 lo_echoes = echoes.slice(Sz1{lo_st}, Sz1{lo_info.spokes});
+    Trajectory lo_traj(
+      lo_info,
+      traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}),
+      traj.echoes().slice(Sz1{lo_st}, Sz1{lo_info.spokes}));
     Cx4 lo_ks = ks.slice(
-      Sz4{0, 0, lo_st, 0}, Sz4{info.channels, info.read_points, lo_info.spokes, lo_info.volumes});
+      Sz4{0, 0, lo_st, 0},
+      Sz4{lo_info.channels, lo_info.read_points, lo_info.spokes, lo_info.volumes});
 
-    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
-    writer.writeTrajectory(Trajectory(lo_info, lo_points, lo_echoes));
-    writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
+    auto info = traj.info();
+    info.spokes -= lo_info.spokes;
 
-    points = R3(points.slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes}));
-    echoes = I1(echoes.slice(Sz1{hi_st}, Sz1{info.spokes}));
+    traj = Trajectory(
+      info,
+      R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
+      I1(traj.echoes().slice(Sz1{hi_st}, Sz1{info.spokes})));
     ks = Cx4(ks.slice(
       Sz4{0, 0, hi_st, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
+
+    if (ds) {
+      lo_traj = lo_traj.downsample(ds.Get(), lo_ks);
+    }
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
+    writer.writeTrajectory(lo_traj);
+    writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
+  }
+
+  if (ds) {
+    traj = traj.downsample(ds.Get(), ks);
   }
 
   if (nspokes) {
+    auto info = traj.info();
     int const ns = nspokes.Get();
     int const spoke_step = step ? step.Get() : ns;
     int const num_full_int = static_cast<int>(info.spokes * 1.f / ns);
@@ -91,15 +86,15 @@ int main_split(args::Subparser &parser)
         OutName(iname.Get(), oname.Get(), fmt::format(FMT_STRING("hires-{:02d}"), int_idx)));
       writer.writeTrajectory(Trajectory(
         info,
-        points.slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}),
-        echoes.slice(Sz1{idx0}, Sz1{n})));
+        traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}),
+        traj.echoes().slice(Sz1{idx0}, Sz1{n})));
       writer.writeTensor(
         Cx4(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{info.channels, info.read_points, n, info.volumes})),
         HD5::Keys::Noncartesian);
     }
   } else {
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "hires"));
-    writer.writeTrajectory(Trajectory(info, points, echoes));
+    writer.writeTrajectory(traj);
     writer.writeTensor(ks, HD5::Keys::Noncartesian);
   }
 
