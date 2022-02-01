@@ -96,7 +96,7 @@ void CheckInfoType(hid_t handle)
   // Re-ordered fields are okay. Missing is not
   for (auto const &check_name : names) {
     bool found = false;
-    for (int ii = 0; ii < n_members; ii++) {
+    for (size_t ii = 0; ii < n_members; ii++) {
       std::string const member_name(H5Tget_member_name(dtype, ii));
       if (member_name == check_name) {
         found = true;
