@@ -25,10 +25,10 @@ int main_split(args::Subparser &parser)
 
   if (nE && spe) {
     Index const sps = spe.Get() * nE.Get();
-    if (traj.info().spokes % sps != 0) {
-      Log::Fail(FMT_STRING("SPS {} does not divide spokes {} cleanly"), sps, traj.info().spokes);
+    if (traj.info().spokes % spe != 0) {
+      Log::Fail(FMT_STRING("SPE {} does not divide spokes {} cleanly"), sps, traj.info().spokes);
     }
-    Index const segs = traj.info().spokes / sps;
+    Index const segs = std::ceil(static_cast<float>(traj.info().spokes) / sps);
     Log::Print(
       FMT_STRING("Adding info for {} echoes with {} spokes per echo, {} per segment, {} segments"),
       nE.Get(),
@@ -40,7 +40,8 @@ int main_split(args::Subparser &parser)
     I1 echoes = e.reshape(Sz2{1, nE.Get()})
                   .broadcast(Sz2{spe.Get(), 1})
                   .reshape(Sz1{sps})
-                  .broadcast(Sz1{segs});
+                  .broadcast(Sz1{segs})
+                  .slice(Sz1{0}, Sz1{traj.info().spokes});
     Info info = traj.info();
     info.echoes = nE.Get();
     traj = Trajectory(info, traj.points(), echoes);
@@ -59,14 +60,12 @@ int main_split(args::Subparser &parser)
 
     Info lo_info = traj.info();
     lo_info.spokes = std::abs(lores.Get());
-
+    lo_info.echoes = 1; // Don't even bother
     Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), lo_st, lo_st + lo_info.spokes);
 
-    // The trajectory still thinks WASPI is at the beginning
+    // The trajectory still thinks WASPI is at the beginning. Don't use echoes
     Trajectory lo_traj(
-      lo_info,
-      traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}),
-      traj.echoes().slice(Sz1{lo_st}, Sz1{lo_info.spokes}));
+      lo_info, traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}));
     Cx4 lo_ks = ks.slice(
       Sz4{0, 0, lo_st, 0},
       Sz4{lo_info.channels, lo_info.read_points, lo_info.spokes, lo_info.volumes});
@@ -77,7 +76,7 @@ int main_split(args::Subparser &parser)
     traj = Trajectory(
       info,
       R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
-      I1(traj.echoes().slice(Sz1{hi_st}, Sz1{info.spokes})));
+      I1(traj.echoes().slice(Sz1{0}, Sz1{info.spokes})));
     ks = Cx4(ks.slice(
       Sz4{0, 0, hi_st, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
 
