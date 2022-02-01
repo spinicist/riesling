@@ -8,8 +8,8 @@
 
 struct GridBase : Operator<5, 3>
 {
-  GridBase(Mapping map, bool const unsafe)
-    : mapping_{std::move(map)}
+  GridBase(Mapping const &map, bool const unsafe)
+    : mapping_{map}
     , safe_{!unsafe}
     , weightEchoes_{true}
     , sdcPow_{1.f}
@@ -97,7 +97,7 @@ protected:
 template <int IP, int TP>
 struct SizedGrid : GridBase
 {
-  SizedGrid(SizedKernel<IP, TP> const *k, Mapping map, bool const unsafe)
+  SizedGrid(SizedKernel<IP, TP> const *k, Mapping const &map, bool const unsafe)
     : GridBase(map, unsafe)
     , kernel_{k}
   {

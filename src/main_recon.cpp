@@ -6,92 +6,85 @@
 #include "io.h"
 #include "log.h"
 #include "op/grid.h"
+#include "op/recon-rss.hpp"
+#include "op/recon.hpp"
 #include "parse_args.h"
 #include "sdc.h"
 #include "sense.h"
 #include "tensorOps.h"
+
+#include <variant>
 
 int main_recon(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
+  args::ValueFlag<float> sense_fov(parser, "F", "SENSE FoV (default 256mm)", {"sense_fov"}, 256);
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   ParseCommand(parser, iname);
   FFT::Start();
   HD5::RieslingReader reader(iname.Get());
-  auto const traj = reader.trajectory();
-  auto const &info = traj.info();
+  Trajectory const traj = reader.trajectory();
+  Info const &info = traj.info();
+
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
   gridder->setSDC(w);
-  Cropper cropper(info, gridder->mapping().cartDims, out_fov.Get());
-  auto const cropSz = cropper.size();
-  R3 const apo = gridder->apodization(cropSz);
-  Cx4 sense;
-  if (!rss) {
-    if (senseFile) {
-      sense = LoadSENSE(senseFile.Get());
-      if (
-        sense.dimension(0) != info.channels || sense.dimension(1) != cropSz[0] ||
-        sense.dimension(2) != cropSz[1] || sense.dimension(3) != cropSz[2]) {
-        Log::Fail(
-          FMT_STRING("SENSE dimensions on disk were {}, expected {},{}"),
-          fmt::join(sense.dimensions(), ","),
-          info.channels,
-          fmt::join(cropSz, ","));
-      }
-    } else {
-      sense = DirectSENSE(
-        info,
-        gridder.get(),
-        out_fov.Get(),
-        senseLambda.Get(),
-        reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)));
-    }
-  }
+  gridder->setSDCPower(sdcPow.Get());
 
+  std::unique_ptr<GridBase> bgridder = nullptr;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    gridder->setSDC(w);
+    bgridder = make_grid_basis(kernel.get(), mapping, basis, fastgrid);
+    bgridder->setSDC(w);
   }
-  gridder->setSDCPower(sdcPow.Get());
-  Cx4 image(gridder->inputDimensions()[1], cropSz[0], cropSz[1], cropSz[2]);
-  Cx5 out(gridder->inputDimensions()[1], cropSz[0], cropSz[1], cropSz[2], info.volumes);
-  FFT::Planned<5, 3> fft(gridder->inputDimensions());
-  auto dev = Threads::GlobalDevice();
+
+  std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;
+
+  Sz4 sz;
+  if (rss) {
+    Cropper crop(info, gridder->mapping().cartDims, sense_fov); // To get correct dims
+    recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size());
+    sz = std::get<ReconRSSOp>(recon).inputDimensions();
+  } else {
+    Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get())
+                              : DirectSENSE(
+                                  info,
+                                  gridder.get(),
+                                  sense_fov.Get(),
+                                  senseLambda.Get(),
+                                  reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)));
+    recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps);
+    sz = std::get<ReconOp>(recon).inputDimensions();
+  }
+
+  Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
+  Cx4 vol(sz);
+  Sz3 outSz = out_cropper.size();
+  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    gridder->Adj(reader.noncartesian(iv));
-    fft.reverse(gridder->workspace());
-    Log::Print(FMT_STRING("Channel combination..."));
     if (rss) {
-      image.device(dev) =
-        ConjugateSum(cropper.crop5(gridder->workspace()), cropper.crop5(gridder->workspace()))
-          .sqrt();
+      vol = std::get<ReconRSSOp>(recon).Adj(reader.noncartesian(iv)); // Initialize
     } else {
-      image.device(dev) = ConjugateSum(
-        cropper.crop5(gridder->workspace()),
-        sense.reshape(Sz5{info.channels, 1, cropSz[0], cropSz[1], cropSz[2]})
-          .broadcast(Sz5{1, out.dimension(0), 1, 1, 1}));
+      vol = std::get<ReconOp>(recon).Adj(reader.noncartesian(iv));
     }
-    image.device(dev) = image / apo.cast<Cx>()
-                                  .reshape(Sz4{1, cropSz[0], cropSz[1], cropSz[2]})
-                                  .broadcast(Sz4{out.dimension(0), 1, 1, 1});
-    out.chip<4>(iv) = image;
+    cropped = out_cropper.crop4(vol);
+    out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
-  Log::Print(FMT_STRING("All volumes: {}"), Log::ToNow(all_start));
+  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   auto const fname = OutName(iname.Get(), oname.Get(), "recon", "h5");
   HD5::Writer writer(fname);
-  writer.writeInfo(info);
+  writer.writeTrajectory(traj);
   writer.writeTensor(out, "image");
   FFT::End();
   return EXIT_SUCCESS;
