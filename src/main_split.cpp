@@ -13,6 +13,8 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<Index> spoke_stride(parser, "S", "Hi-res stride", {"stride"}, 1);
   args::ValueFlag<Index> spoke_size(parser, "SZ", "Size of hi-res spokes to keep", {"size"});
   args::ValueFlag<Index> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
+  args::ValueFlag<Index> nE(parser, "E", "Break into N echoes", {"echoes"}, 1);
+  args::ValueFlag<Index> spe(parser, "S", "Spokes per echo", {"spe"}, 1);
   args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
 
@@ -20,6 +22,30 @@ int main_split(args::Subparser &parser)
 
   HD5::RieslingReader reader(iname.Get());
   auto traj = reader.trajectory();
+
+  if (nE && spe) {
+    Index const sps = spe.Get() * nE.Get();
+    if (traj.info().spokes % sps != 0) {
+      Log::Fail(FMT_STRING("SPS {} does not divide spokes {} cleanly"), sps, traj.info().spokes);
+    }
+    Index const segs = traj.info().spokes / sps;
+    Log::Print(
+      FMT_STRING("Adding info for {} echoes with {} spokes per echo, {} per segment, {} segments"),
+      nE.Get(),
+      spe.Get(),
+      sps,
+      segs);
+    I1 e(nE.Get());
+    std::iota(e.data(), e.data() + nE.Get(), 0);
+    I1 echoes = e.reshape(Sz2{1, nE.Get()})
+                  .broadcast(Sz2{spe.Get(), 1})
+                  .reshape(Sz1{sps})
+                  .broadcast(Sz1{segs});
+    Info info = traj.info();
+    info.echoes = nE.Get();
+    traj = Trajectory(info, traj.points(), echoes);
+  }
+
   Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
 
   if (lores) {
