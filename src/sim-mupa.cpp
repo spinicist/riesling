@@ -105,9 +105,9 @@ Result T1Prep(Parameter const T1p, Sequence const seq, Index const nRand)
     seq.TR,
     seq.Trec);
   Index const spg = seq.sps / seq.gps; // Spokes per group
-  Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
-  ParameterGenerator<3> gen({T1p});
+  ParameterGenerator<1> gen({T1p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
+  Log::Print(FMT_STRING("{} values, T1: {}-{}s"), totalN, T1p.lo, T1p.hi);
   Result result;
   result.dynamics.resize(totalN, seq.sps);
   result.parameters.resize(totalN, 1);
@@ -181,7 +181,7 @@ Result T2Prep(Parameter const T1p, Parameter const T2p, Sequence const seq, Inde
   Index const spg = seq.sps / seq.gps; // Spokes per group
   Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
   Log::Print(FMT_STRING("{} values of T2 from {} to {}"), T2p.N, T2p.lo, T2p.hi);
-  ParameterGenerator<3> gen({T1p, T2p});
+  ParameterGenerator<2> gen({T1p, T2p});
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
   result.dynamics.resize(totalN, seq.sps);

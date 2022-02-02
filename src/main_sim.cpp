@@ -24,7 +24,7 @@ int main_sim(args::Subparser &parser)
     parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
   args::ValueFlag<Index> nT1(
-    parser, "N", "Number of T1 values for basis (default 128)", {"nT1"}, 32);
+    parser, "N", "Number of T1 values for basis (default 512)", {"nT1"}, 512);
   args::ValueFlag<float> T1Lo(
     parser, "T1", "Low value of T1 for basis (default 0.4s)", {"T1lo"}, 0.4f);
   args::ValueFlag<float> T1Hi(
@@ -75,6 +75,7 @@ int main_sim(args::Subparser &parser)
     .TI = TI.Get(),
     .Trec = Trec.Get(),
     .TE = te.Get()};
+  fmt::print(FMT_STRING("nT1 {} \n"), nT1.Get());
   Sim::Parameter const T1{nT1.Get(), T1Lo.Get(), T1Hi.Get(), true};
   Sim::Parameter const beta{nb.Get(), bLo.Get(), bHi.Get(), bLog};
   Sim::Parameter const B1{nB1.Get(), B1Lo.Get(), B1Hi.Get(), false};
@@ -108,6 +109,9 @@ int main_sim(args::Subparser &parser)
                          .matrix()
                          .bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV)
                      : result.dynamics.matrix().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+  float const nullThresh = svd.singularValues()[0] * std::numeric_limits<float>::epsilon();
+  Index const nullCount = (svd.singularValues().array() > nullThresh).count();
+  fmt::print(FMT_STRING("{} values above null-space threshold {}\n"), nullCount, nullThresh);
   Eigen::ArrayXf const vals = svd.singularValues().array().square();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
