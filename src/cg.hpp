@@ -14,7 +14,6 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
 {
   Log::Print(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
   auto dev = Threads::GlobalDevice();
-  float const norm_x0 = Norm2(x);
   // Allocate all memory
   using T = typename Op::Input;
   auto const dims = x.dimensions();
@@ -26,6 +25,7 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
   r.device(dev) = x - r;
   p.device(dev) = r;
   float r_old = Norm2(r);
+  float const n0 = sqrt(r_old);
 
   for (Index icg = 0; icg < max_its; icg++) {
     q = op.AdjA(p);
@@ -39,9 +39,9 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
     float const r_new = Norm2(r);
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
-    float const delta = r_new / norm_x0;
-    Log::Print(FMT_STRING("CG {}: ɑ {} β {} δ {}"), icg, alpha, beta, delta);
-    if (delta < thresh) {
+    float const ni = sqrt(r_new) / n0;
+    Log::Print(FMT_STRING("CG {}: ɑ {} β {} norm resid {}"), icg, alpha, beta, ni);
+    if (ni < thresh) {
       Log::Print(FMT_STRING("Reached convergence threshold"));
       break;
     }

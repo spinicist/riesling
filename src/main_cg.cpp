@@ -18,8 +18,8 @@ int main_cg(args::Subparser &parser)
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<float> iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
-  args::ValueFlag<float> thr(parser, "T", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
-  args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max_its"}, 8);
+  args::ValueFlag<float> cg_thr(parser, "T", "CG threshold (1e-10)", {"cg_thresh"}, 1.e-10);
+  args::ValueFlag<Index> cg_its(parser, "N", "CG iterations (8)", {'i', "cg_its"}, 8);
 
   ParseCommand(parser, iname);
   FFT::Start();
@@ -61,7 +61,7 @@ int main_cg(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     vol = recon.Adj(reader.noncartesian(iv)); // Initialize
-    cg(its.Get(), thr.Get(), recon, vol);
+    cg(cg_its.Get(), cg_thr.Get(), recon, vol);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
