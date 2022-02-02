@@ -12,7 +12,6 @@ struct GridBasis final : SizedGrid<IP, TP>
     SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
     : SizedGrid<IP, TP>(k, mapping, unsafe)
     , basis_{basis}
-    , basisScale_{std::sqrt((float)basis_.dimension(0))}
   {
     this->workspace_.resize(Sz5{
       mapping.noncartDims[0],
@@ -49,8 +48,7 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const b =
-          (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_).template cast<Cx>();
+        auto const b = (basis_.chip<0>(n.spoke % basis_.dimension(0))).template cast<Cx>();
         auto const scale = this->mapping_.scale;
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         stC.set(2, c.x - ((IP - 1) / 2));
@@ -129,7 +127,7 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const n = this->mapping_.noncart[si];
         auto const scale = this->mapping_.scale * pow(this->mapping_.sdc[si], this->sdcPow_);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
-        auto const b = (basis_.chip<0>(n.spoke % basis_.dimension(0)) * basisScale_);
+        auto const b = basis_.chip<0>(n.spoke % basis_.dimension(0));
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         ncb = (nc * nc.constant(scale)).reshape(rshNC).broadcast(brdNC) *
               b.template cast<Cx>().reshape(rshB).broadcast(brdB);
@@ -173,5 +171,4 @@ private:
   using FixThrough = Eigen::type2index<TP>;
 
   R2 basis_;
-  float basisScale_;
 };
