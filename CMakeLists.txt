@@ -86,6 +86,7 @@ add_executable(riesling
     src/main_grid.cpp
     src/main_hdr.cpp
     src/main_lookup.cpp
+    src/main_lsqr.cpp
     src/main_meta.cpp
     src/main_nii.cpp
     src/main_nufft.cpp
