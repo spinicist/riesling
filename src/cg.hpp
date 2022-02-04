@@ -20,21 +20,23 @@ void cg(Index const &max_its, float const &thresh, Op const &op, typename Op::In
   T q(dims);
   T p(dims);
   T r(dims);
-  q.setZero();
-  r = op.AdjA(x);
-  r.device(dev) = x - r;
+  r.device(dev) = x;
+  x.setZero();
   p.device(dev) = r;
+
   float r_old = Norm2(r);
   float const n0 = sqrt(r_old);
 
   for (Index icg = 0; icg < max_its; icg++) {
     q = op.AdjA(p);
+    Cx const pdq = Dot(p, q);
+    Log::Debug(FMT_STRING("p.q = {}"), pdq);
+    float const alpha = r_old / std::real(pdq);
+    x.device(dev) = x + p * p.constant(alpha);
     Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
     Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
     Log::Image(x, fmt::format(FMT_STRING("cg-x-{:02}.nii"), icg));
     Log::Image(r, fmt::format(FMT_STRING("cg-r-{:02}.nii"), icg));
-    float const alpha = r_old / std::real(Dot(p, q));
-    x.device(dev) = x + p * p.constant(alpha);
     r.device(dev) = r - q * q.constant(alpha);
     float const r_new = Norm2(r);
     float const beta = r_new / r_old;

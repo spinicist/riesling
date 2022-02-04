@@ -120,6 +120,7 @@ struct SizedGrid : GridBase
     Log::Print(
       FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
+    Log::Image(a, "apodization.nii");
     return a;
   }
 
