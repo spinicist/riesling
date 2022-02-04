@@ -44,6 +44,20 @@ struct FFTOp final : Operator<Rank, Rank>
     fft_.reverse(ws_);
   }
 
+  Tensor &A(Tensor &x) const
+  {
+    ws_ = x;
+    fft_.forward(ws_);
+    return ws_;
+  }
+
+  Tensor &Adj(Tensor &y) const
+  {
+    ws_ = y;
+    fft_.reverse(ws_);
+    return ws_;
+  }
+
 private:
   InputDims sz_;
   Tensor &ws_;

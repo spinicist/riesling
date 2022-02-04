@@ -1,4 +1,4 @@
-#include "../../src/op/grid.h"
+#include "../../src/op/nufft.hpp"
 #include "../../src/sdc.h"
 #include "../../src/tensorOps.h"
 #include "../../src/traj_spirals.h"
@@ -6,7 +6,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("ops-grid", "[ops]")
+TEST_CASE("ops-nufft", "[ops]")
 {
   Index const M = 16;
   float const os = 2.f;
@@ -28,54 +28,47 @@ TEST_CASE("ops-grid", "[ops]")
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
   grid->setSDC(SDC::Pipe(traj, true, os));
-  auto const dims = grid->inputDimensions();
+
+  auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get());
+  auto const dims = nufft.inputDimensions();
   Cx5 x(dims), y(dims);
   Cx3 r(info.channels, info.read_points, info.spokes);
 
-  /* I don't think the classic Dot test from PyLops is applicable to gridding,
-   * because it would not be correct to have a random radial k-space. The k0
-   * samples should all be the same, not random. Hence instead I calculate
-   * y = Adj*A*x for NN and then check if Dot(x,y) is the same as Dot(y,y).
-   * Can't check for y = x because samples not on the radial spokes will be
-   * missing, and checking for KB kernel is not valid because the kernel blurs
-   * the grid.
+  /* See note in grid.cpp - classic Dot test isn't appropriate.
+   * Give this test a decent amount of tolerance because the cropping/padding means we don't
+   * get back exactly what we should
    */
   SECTION("SDC-Full")
   {
     grid->setSDCPower(1.0f);
     x.setRandom();
-    grid->workspace() = x;
-    r = grid->A();
-    grid->Adj(r);
-    y = grid->workspace();
+    y = nufft.AdjA(x);
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
-    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-6));
+    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-1));
   }
 
+  /*
+   * These two are waaaaaaay out because of how bad the condition number of the system is
+   * Keep them in for now as the difference appears stable
+   */
   SECTION("SDC-Half")
   {
     grid->setSDCPower(0.5f);
     x.setRandom();
-    grid->workspace() = x;
-    r = grid->A();
-    grid->Adj(r);
-    y = grid->workspace();
+    y = nufft.AdjA(x);
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
-    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0.6).margin(0.1));
+    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0.86f).margin(1.e-2));
   }
 
   SECTION("SDC-None")
   {
     grid->setSDCPower(0.0f);
     x.setRandom();
-    grid->workspace() = x;
-    r = grid->A();
-    grid->Adj(r);
-    y = grid->workspace();
+    y = nufft.AdjA(x);
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
-    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0.9).margin(0.1));
+    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0.99f).margin(1.e-2));
   }
 }

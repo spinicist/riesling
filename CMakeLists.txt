@@ -131,8 +131,10 @@ if( ${BUILD_TESTS} )
         test/parameters.cpp
         test/sdc.cpp
         test/zinfandel.cpp
-        test/op/pad.cpp
+        test/op/fft.cpp
         test/op/grid.cpp
+        test/op/nufft.cpp
+        test/op/pad.cpp
         test/op/sense.cpp
     )
     target_link_libraries(riesling-tests PUBLIC
