@@ -3,6 +3,7 @@
 #include "io.h"
 #include "log.h"
 #include "parse_args.h"
+#include "threads.h"
 
 decltype(auto) Blend(Cx5 const &images, R1 const &b)
 {
@@ -18,7 +19,7 @@ decltype(auto) Blend(Cx5 const &images, R1 const &b)
   brd.set(3, z);
   brd.set(4, v);
   Eigen::IndexList<FixZero> sum;
-  return (images * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum).reshape(Sz5{1, x, y, z, v});
+  return (images * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum);
 }
 
 int main_blend(args::Subparser &parser)
@@ -29,7 +30,8 @@ int main_blend(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> oftype(
     parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
-  args::ValueFlag<Index> tp(parser, "TP", "Timepoint within basis for combination", {"tp", 't'}, 0);
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(
+    parser, "TP", "Timepoints within basis for combination", {"tp", 't'}, {0});
   args::Flag eddy_rss(
     parser, "", "Produce an RSS image for eddy-current correction", {"eddy", 'e'});
 
@@ -40,7 +42,7 @@ int main_blend(args::Subparser &parser)
   }
   HD5::Reader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>("image");
-
+  Sz5 const dims = images.dimensions();
   if (!iname) {
     throw args::Error("No basis file specified");
   }
@@ -52,23 +54,18 @@ int main_blend(args::Subparser &parser)
       FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
   }
 
-  if ((tp.Get() < 0) || (tp.Get() >= basis.dimension(0))) {
-    Log::Fail(
-      FMT_STRING("Requested timepoint {} exceeds basis length {}"), tp.Get(), basis.dimension(0));
-  }
+  auto const &tps = tp.Get();
 
-  Cx5 out;
-  if (eddy_rss) {
-    R1 const b0 = basis.chip<0>(0);
-    R1 const b1 = basis.chip<0>(tp.Get());
-    R1 const b2 = basis.chip<0>(2 * tp.Get());
-    R1 const b3 = basis.chip<0>(3 * tp.Get());
-    out = ((Blend(images, b2) - Blend(images, b0)).square() +
-           (Blend(images, b3) - Blend(images, b1)).square())
-            .sqrt();
-  } else {
-    R1 const b = basis.chip<0>(tp.Get());
-    out = Blend(images, b);
+  Cx5 out(AddFront(LastN<4>(dims), tps.size()));
+
+  for (Index ii = 0; ii < tps.size(); ii++) {
+    if ((tps[ii] < 0) || (tps[ii] >= basis.dimension(0))) {
+      Log::Fail(
+        FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(0));
+    }
+    Log::Print(FMT_STRING("Blending timepoint {}"), tps[ii]);
+    R1 const b = basis.chip<0>(tps[ii]);
+    out.chip<0>(ii).device(Threads::GlobalDevice()) = Blend(images, b);
   }
 
   auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");

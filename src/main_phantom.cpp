@@ -44,7 +44,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<Index> trim(parser, "T", "Trim N samples entirely", {"trim"}, 0);
   args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
   args::ValueFlag<std::string> sense(parser, "S", "Read SENSE maps from file", {"sense"});
-  args::ValueFlag<std::vector<float>, VectorReader> intFlag(
+  args::ValueFlag<std::vector<float>, VectorReader<float>> intFlag(
     parser, "I", "Phantom intensities (default all 100)", {'i', "intensities"});
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
   args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});

@@ -17,9 +17,10 @@ struct Vector3fReader
   void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);
 };
 
+template <typename T>
 struct VectorReader
 {
-  void operator()(std::string const &name, std::string const &value, std::vector<float> &x);
+  void operator()(std::string const &name, std::string const &value, std::vector<T> &x);
 };
 
 struct Sz3Reader

@@ -29,20 +29,26 @@ void Vector3fReader::operator()(
   v.z() = z;
 }
 
-void VectorReader::operator()(
-  std::string const &name, std::string const &input, std::vector<float> &values)
+template <typename T>
+void VectorReader<T>::operator()(
+  std::string const &name, std::string const &input, std::vector<T> &values)
 {
-  float val;
+  T val;
   auto result = scn::scan(input, "{}", val);
   if (result) {
+    // Values will have been default initialized. Reset
+    values.clear();
     values.push_back(val);
+    while ((result = scn::scan(result.range(), ",{}", val))) {
+      values.push_back(val);
+    }
   } else {
     Log::Fail(FMT_STRING("Could not read argument for {}"), name);
   }
-  while ((result = scn::scan(result.range(), ",{}", val))) {
-    values.push_back(val);
-  }
 }
+
+template struct VectorReader<float>;
+template struct VectorReader<Index>;
 
 void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz3 &v)
 {
