@@ -5,11 +5,15 @@
 #include "threads.h"
 #include "types.h"
 
-/* Based on https://github.com/harusametime/LSQRwithEigen/blob/master/LSQR.cpp
+/* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
 template <typename Op>
-typename Op::Input
-lsqr(Index const &max_its, float const &thresh, Op &op, typename Op::Output const &b)
+typename Op::Input lsqr(
+  Index const &max_its,
+  float const &thresh,
+  Op &op,
+  typename Op::Output const &b,
+  typename Op::Output const &P)
 {
   Log::Print(FMT_STRING("Starting LSQR, threshold {}"), thresh);
   auto dev = Threads::GlobalDevice();
@@ -21,9 +25,13 @@ lsqr(Index const &max_its, float const &thresh, Op &op, typename Op::Output cons
   TI x(inDims);
   x.setZero();
 
-  float beta = Norm(b);
+  TO Pu(outDims);
   TO u(outDims);
-  u.device(dev) = b / b.constant(beta);
+  Pu.device(dev) = b;
+  u.device(dev) = P * Pu;
+  float beta = sqrt(std::real(Dot(u, Pu)));
+  Pu.device(dev) = Pu / b.constant(beta);
+  u.device(dev) = u / b.constant(beta);
 
   TI v(inDims);
   v.device(dev) = op.Adj(u);
@@ -37,8 +45,10 @@ lsqr(Index const &max_its, float const &thresh, Op &op, typename Op::Output cons
   float phi_ = beta;
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
-    u.device(dev) = op.A(v) - alpha * u;
-    beta = Norm(u);
+    Pu.device(dev) = op.A(v) - alpha * Pu;
+    u.device(dev) = P * Pu;
+    beta = sqrt(std::real(Dot(Pu, u)));
+    Pu.device(dev) = Pu / Pu.constant(beta);
     u.device(dev) = u / u.constant(beta);
 
     v.device(dev) = op.Adj(u) - beta * v;

@@ -31,7 +31,11 @@ int main_lsqr(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
-  gridder->setSDC(w);
+  Cx3 const P = w.pow(sdcPow.Get())
+                  .reshape(Sz3{1, info.read_points, info.spokes})
+                  .broadcast(Sz3{info.channels, 1, 1})
+                  .cast<Cx>();
+  // gridder->setSDC(w);
   Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get())
                             : DirectSENSE(
                                 info,
@@ -44,9 +48,9 @@ int main_lsqr(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    gridder->setSDC(w);
+    // gridder->setSDC(w);
   }
-  gridder->setSDCPower(sdcPow.Get());
+  // gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
     recon.calcToeplitz();
@@ -60,7 +64,7 @@ int main_lsqr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr(lsq_its.Get(), lsq_thr.Get(), recon, reader.noncartesian(iv));
+    vol = lsqr(lsq_its.Get(), lsq_thr.Get(), recon, reader.noncartesian(iv), P);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
