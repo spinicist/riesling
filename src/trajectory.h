@@ -21,7 +21,6 @@ struct Mapping
   std::vector<CartesianIndex> cart;
   std::vector<NoncartesianIndex> noncart;
   std::vector<int8_t> echo;
-  std::vector<float> sdc;
   std::vector<Point3> offset;
   std::vector<int32_t> sortedIndices;
   Sz3 cartDims, noncartDims;
@@ -40,7 +39,11 @@ struct Trajectory
   I1 const &echoes() const;
   Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
   Mapping mapping(
-    Index const kw, float const os, float const inRes = -1.f, bool const shrink = false) const;
+    Index const kw,
+    float const os,
+    Index const channels = 0,
+    float const inRes = -1.f,
+    bool const shrink = false) const;
   Trajectory downsample(float const newVoxSize, Cx4 &ks) const;
 
 private:

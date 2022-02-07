@@ -12,8 +12,6 @@ struct GridBase : Operator<5, 3>
     : mapping_{map}
     , safe_{!unsafe}
     , weightEchoes_{true}
-    , sdcPow_{1.f}
-
   {
   }
 
@@ -31,35 +29,6 @@ struct GridBase : Operator<5, 3>
   Sz5 inputDimensions() const override
   {
     return workspace_.dimensions();
-  }
-
-  void setSDC(float const d)
-  {
-    std::fill(mapping_.sdc.begin(), mapping_.sdc.end(), d);
-  }
-
-  void setSDC(R2 const &sdc)
-  {
-    std::transform(
-      mapping_.noncart.begin(),
-      mapping_.noncart.end(),
-      mapping_.sdc.begin(),
-      [&sdc](NoncartesianIndex const &nc) { return sdc(nc.read, nc.spoke); });
-  }
-
-  R2 SDC() const
-  {
-    R2 sdc(mapping_.noncartDims[1], mapping_.noncartDims[2]);
-    sdc.setZero();
-    for (size_t ii = 0; ii < mapping_.noncart.size(); ii++) {
-      sdc(mapping_.noncart[ii].read, mapping_.noncart[ii].spoke) = mapping_.sdc[ii];
-    }
-    return sdc;
-  }
-
-  void setSDCPower(float const p)
-  {
-    sdcPow_ = p;
   }
 
   void setUnsafe()
@@ -90,7 +59,6 @@ struct GridBase : Operator<5, 3>
 protected:
   Mapping mapping_;
   bool safe_, weightEchoes_;
-  float sdcPow_;
   Cx5 mutable workspace_;
 };
 

@@ -10,7 +10,7 @@ int main_sdc(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<std::string> sdc(
+  args::ValueFlag<std::string> sdcType(
     parser, "SDC", "SDC type: 'pipe', 'pipenn', 'radial'", {"sdc"}, "pipe");
   args::ValueFlag<float> osamp(parser, "OS", "Oversampling when using pipenn", {'s', "os"}, 2.f);
   args::ValueFlag<Index> lores(
@@ -21,14 +21,14 @@ int main_sdc(args::Subparser &parser)
   auto const traj = reader.trajectory();
 
   R2 dc;
-  if (sdc.Get() == "pipe") {
+  if (sdcType.Get() == "pipe") {
     dc = SDC::Pipe(traj, false, 2.1f);
-  } else if (sdc.Get() == "pipenn") {
+  } else if (sdcType.Get() == "pipenn") {
     dc = SDC::Pipe(traj, true, osamp.Get());
-  } else if (sdc.Get() == "radial") {
+  } else if (sdcType.Get() == "radial") {
     dc = SDC::Radial(traj, lores.Get(), gap.Get());
   } else {
-    Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdc.Get());
+    Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdcType.Get());
   }
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sdc", "h5"));
   writer.writeTrajectory(traj);

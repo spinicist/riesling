@@ -108,6 +108,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     std::vector<Cx5> threadSpaces(nThreads);
     std::vector<Index> minZ(nThreads, 0L), szZ(nThreads, 0L);
     auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
+      auto const scale = this->mapping_.scale;
       // Allocate working space for this thread
       Eigen::IndexList<FixZero, FixZero, int, int, int> stC;
       Cx2 ncb(nC, nB);
@@ -125,7 +126,6 @@ struct GridBasis final : SizedGrid<IP, TP>
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const scale = this->mapping_.scale * pow(this->mapping_.sdc[si], this->sdcPow_);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
         auto const b = basis_.chip<0>(n.spoke % basis_.dimension(0));
         auto const k = this->kernel_->k(this->mapping_.offset[si]);

@@ -24,9 +24,9 @@ struct ReconOp final : Operator<4, 3>
     return nufft_.outputDimensions();
   }
 
-  void calcToeplitz()
+  void calcToeplitz(SDCPrecond const &sdc)
   {
-    nufft_.calcToeplitz();
+    nufft_.calcToeplitz(sdc);
   }
 
   template <typename T>

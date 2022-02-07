@@ -20,7 +20,6 @@ int main_recon(args::Subparser &parser)
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
-  args::ValueFlag<float> sense_fov(parser, "F", "SENSE FoV (default 256mm)", {"sense_fov"}, 256);
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
@@ -33,23 +32,20 @@ int main_recon(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
-  gridder->setSDC(w);
-  gridder->setSDCPower(sdcPow.Get());
+  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
 
   std::unique_ptr<GridBase> bgridder = nullptr;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     bgridder = make_grid_basis(kernel.get(), mapping, basis, fastgrid);
-    bgridder->setSDC(w);
   }
 
   std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;
 
   Sz4 sz;
   if (rss) {
-    Cropper crop(info, gridder->mapping().cartDims, sense_fov); // To get correct dims
+    Cropper crop(info, gridder->mapping().cartDims, -1.f); // To get correct dims
     recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
@@ -57,7 +53,7 @@ int main_recon(args::Subparser &parser)
                           : SelfCalibration(
                               info,
                               gridder.get(),
-                              sense_fov.Get(),
+                              -1.f,
                               sRes.Get(),
                               sReg.Get(),
                               reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
@@ -74,9 +70,9 @@ int main_recon(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     if (rss) {
-      vol = std::get<ReconRSSOp>(recon).Adj(reader.noncartesian(iv)); // Initialize
+      vol = std::get<ReconRSSOp>(recon).Adj(sdc(reader.noncartesian(iv)));
     } else {
-      vol = std::get<ReconOp>(recon).Adj(reader.noncartesian(iv));
+      vol = std::get<ReconOp>(recon).Adj(sdc(reader.noncartesian(iv)));
     }
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;

@@ -46,7 +46,7 @@ Index ValOrLast(Index const val, Index const last);
     parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");                          \
   args::Flag fastgrid(                                                                             \
     parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
-  args::ValueFlag<std::string> sdc(                                                                \
+  args::ValueFlag<std::string> sdcType(                                                            \
     parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipenn");          \
   args::ValueFlag<float> sdcPow(parser, "P", "SDC Power (default 1.0)", {"sdcPow"}, 1.0f);
 

@@ -15,7 +15,6 @@ int main_lsqr(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
-  args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<float> iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<float> lsq_thr(parser, "T", "LSQ threshold (1e-10)", {"lsq_thresh"}, 1.e-10);
@@ -30,12 +29,7 @@ int main_lsqr(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
-  Cx3 const P = w.pow(sdcPow.Get())
-                  .reshape(Sz3{1, info.read_points, info.spokes})
-                  .broadcast(Sz3{info.channels, 1, 1})
-                  .cast<Cx>();
-  // gridder->setSDC(w);
+  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -43,19 +37,14 @@ int main_lsqr(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+                            sdc(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    // gridder->setSDC(w);
   }
-  // gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps);
-  if (toeplitz) {
-    recon.calcToeplitz();
-  }
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
   Cx4 vol(sz);
@@ -65,7 +54,7 @@ int main_lsqr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr(lsq_its.Get(), lsq_thr.Get(), recon, reader.noncartesian(iv), P);
+    vol = lsqr(lsq_its.Get(), lsq_thr.Get(), recon, sdc, reader.noncartesian(iv));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

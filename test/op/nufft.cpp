@@ -1,4 +1,5 @@
 #include "../../src/op/nufft.hpp"
+#include "../../src/precond/sdc.hpp"
 #include "../../src/sdc.h"
 #include "../../src/tensorOps.h"
 #include "../../src/traj_spirals.h"
@@ -27,9 +28,10 @@ TEST_CASE("ops-nufft", "[ops]")
   auto const nn = make_kernel("NN", info.type, os);
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
-  grid->setSDC(SDC::Pipe(traj, true, os));
+  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, os), info.channels};
 
   auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get());
+  nufft.calcToeplitz(sdc);
   auto const dims = nufft.inputDimensions();
   Cx5 x(dims), y(dims);
   Cx3 r(info.channels, info.read_points, info.spokes);
@@ -40,35 +42,10 @@ TEST_CASE("ops-nufft", "[ops]")
    */
   SECTION("SDC-Full")
   {
-    grid->setSDCPower(1.0f);
     x.setRandom();
     y = nufft.AdjA(x);
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
     CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-1));
-  }
-
-  /*
-   * These two are waaaaaaay out because of how bad the condition number of the system is
-   * Keep them in for now as the difference appears stable
-   */
-  SECTION("SDC-Half")
-  {
-    grid->setSDCPower(0.5f);
-    x.setRandom();
-    y = nufft.AdjA(x);
-    auto const xy = Dot(x, y);
-    auto const yy = Dot(y, y);
-    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0.86f).margin(1.e-2));
-  }
-
-  SECTION("SDC-None")
-  {
-    grid->setSDCPower(0.0f);
-    x.setRandom();
-    y = nufft.AdjA(x);
-    auto const xy = Dot(x, y);
-    auto const yy = Dot(y, y);
-    CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0.99f).margin(1.e-2));
   }
 }

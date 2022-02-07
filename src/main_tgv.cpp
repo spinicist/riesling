@@ -9,7 +9,7 @@
 #include "sdc.h"
 #include "sense.h"
 #include "tensorOps.h"
-#include "tgv.h"
+#include "tgv.hpp"
 
 int main_tgv(args::Subparser &parser)
 {
@@ -40,8 +40,7 @@ int main_tgv(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
-  gridder->setSDC(w);
+  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -55,9 +54,7 @@ int main_tgv(args::Subparser &parser)
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    gridder->setSDC(w);
   }
-  gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps);
 
   auto sz = recon.inputDimensions();
@@ -74,6 +71,7 @@ int main_tgv(args::Subparser &parser)
       reduce.Get(),
       step_size.Get(),
       recon,
+      sdc,
       reader.noncartesian(iv)));
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }

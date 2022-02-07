@@ -52,7 +52,6 @@ add_library(vineyard
     src/sim-mupa.cpp
     src/sim-prep.cpp
     src/slab_correct.cpp
-    src/tgv.cpp
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp

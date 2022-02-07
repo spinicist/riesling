@@ -34,6 +34,7 @@ struct GridEcho final : SizedGrid<IP, TP>
     szC.set(0, nC);
 
     auto grid_task = [&](Index const lo, Index const hi) {
+      auto const scale = this->mapping_.scale;
       Eigen::IndexList<FixZero, int, int, int> stC;
       for (auto ii = lo; ii < hi; ii++) {
         Log::Progress(ii, lo, hi);
@@ -41,7 +42,6 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
         auto const e = std::min(this->mapping_.echo[si], int8_t(dims[1] - 1));
-        auto const scale = this->mapping_.scale;
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         stC.set(1, c.x - ((IP - 1) / 2));
         stC.set(2, c.y - ((IP - 1) / 2));
@@ -100,8 +100,8 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
         auto const e = std::min(this->mapping_.echo[si], int8_t(dims[1] - 1));
-        auto const scale = this->mapping_.scale * pow(this->mapping_.sdc[si], this->sdcPow_) *
-                           (this->weightEchoes_ ? this->mapping_.echoWeights[e] : 1.f);
+        auto const scale =
+          this->mapping_.scale * (this->weightEchoes_ ? this->mapping_.echoWeights[e] : 1.f);
         auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         auto const nck = (nc * nc.constant(scale)).reshape(rshNC).broadcast(brdNC) *

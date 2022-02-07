@@ -36,14 +36,14 @@ int main_espirit(args::Subparser &parser)
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), res, true);
+  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res, true);
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  gridder->setSDC(SDC::Pipe(traj, true, osamp.Get()));
+  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, osamp.Get()), info.channels};
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get());
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder.get(),
-    reader.noncartesian(ValOrLast(volume.Get(), info.volumes)),
+    sdc(reader.noncartesian(ValOrLast(volume.Get(), info.volumes))),
     kRad.Get(),
     totalCalRad,
     readStart.Get(),

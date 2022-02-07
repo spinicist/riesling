@@ -7,13 +7,13 @@
 
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
-template <typename Op>
+template <typename Op, typename Precond>
 typename Op::Input lsqr(
   Index const &max_its,
   float const &thresh,
   Op &op,
-  typename Op::Output const &b,
-  typename Op::Output const &P)
+  Precond const &pre,
+  typename Op::Output const &b)
 {
   Log::Print(FMT_STRING("Starting LSQR, threshold {}"), thresh);
   auto dev = Threads::GlobalDevice();
@@ -28,7 +28,7 @@ typename Op::Input lsqr(
   TO Pu(outDims);
   TO u(outDims);
   Pu.device(dev) = b;
-  u.device(dev) = P * Pu;
+  u.device(dev) = pre(Pu);
   float beta = sqrt(std::real(Dot(u, Pu)));
   Pu.device(dev) = Pu / b.constant(beta);
   u.device(dev) = u / b.constant(beta);
@@ -46,7 +46,7 @@ typename Op::Input lsqr(
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
     Pu.device(dev) = op.A(v) - alpha * Pu;
-    u.device(dev) = P * Pu;
+    u.device(dev) = pre(Pu);
     beta = sqrt(std::real(Dot(Pu, u)));
     Pu.device(dev) = Pu / Pu.constant(beta);
     u.device(dev) = u / u.constant(beta);

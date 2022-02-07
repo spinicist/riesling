@@ -37,8 +37,7 @@ int main_admm(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
-  gridder->setSDC(w);
+  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -46,20 +45,17 @@ int main_admm(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+                            sdc(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    gridder->setSDC(w);
   }
-  gridder->setSDCPower(sdcPow.Get());
   ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
-    recon.calcToeplitz();
+    recon.calcToeplitz(sdc);
   }
-
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get()); };
 
   auto sz = recon.inputDimensions();
@@ -72,7 +68,15 @@ int main_admm(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     vol = recon.Adj(reader.noncartesian(iv)); // Initialize
-    admm(admm_its.Get(), cg_its.Get(), cg_thr.Get(), recon, reg_rho.Get(), reg, vol);
+    vol = admm(
+      admm_its.Get(),
+      cg_its.Get(),
+      cg_thr.Get(),
+      recon,
+      sdc,
+      reg,
+      reg_rho.Get(),
+      reader.noncartesian(iv));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

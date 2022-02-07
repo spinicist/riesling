@@ -20,7 +20,7 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os)
   std::unique_ptr<GridBase> gridder;
   if (nn) {
     k = std::make_unique<NearestNeighbour>();
-    auto const m = traj.mapping(1, os);
+    auto const m = traj.mapping(1, os, 1);
     gridder =
       std::make_unique<GridEcho<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false);
   } else {
@@ -40,8 +40,8 @@ R2 Pipe(Trajectory const &traj, bool const nn, float const os)
 
   for (Index ii = 0; ii < 40; ii++) {
     Wp.setZero();
-    gridder->Adj(W, 1); // Use the gridder's workspace
-    Wp = gridder->A(1);
+    gridder->Adj(W); // Use the gridder's workspace
+    Wp = gridder->A();
     Wp.device(Threads::GlobalDevice()) =
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().abs().maximum())();
@@ -159,7 +159,7 @@ R2 Radial(Trajectory const &traj, Index const lores, Index const gap)
   }
 }
 
-R2 Choose(std::string const &iname, Trajectory const &traj, float const os)
+SDCPrecond Choose(std::string const &iname, float const p, Trajectory const &traj, float const os)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);
   if (iname == "") {
@@ -185,7 +185,7 @@ R2 Choose(std::string const &iname, Trajectory const &traj, float const os)
         trajInfo.spokes);
     }
   }
-  return sdc;
+  return SDCPrecond{sdc.pow(p), traj.info().channels};
 }
 
 } // namespace SDC

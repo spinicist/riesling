@@ -113,9 +113,10 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   __builtin_unreachable(); // Because the GCC devs are very obtuse
 }
 
-Mapping
-Trajectory::mapping(Index const kw, float const os, float const inRes, bool const shrink) const
+Mapping Trajectory::mapping(
+  Index const kw, float const os, Index const inChan, float const inRes, bool const shrink) const
 {
+  Index const nChan = (inChan < 1) ? info_.channels : inChan;
   Index const kRad = kw / 2; // Radius to avoid at edge of grid
   float const res = inRes < 0.f ? info_.voxel_size.minCoeff() : inRes;
   float const ratio = info_.voxel_size.minCoeff() / res;
@@ -133,13 +134,12 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
     mapping.cartDims = Sz3{gridSz, gridSz, info_.matrix[2]};
     break;
   }
-  mapping.noncartDims = Sz3{info_.channels, info_.read_points, info_.spokes};
+  mapping.noncartDims = Sz3{nChan, info_.read_points, info_.spokes};
   mapping.scale = sqrt(info_.type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
   Index const totalSz = info_.read_points * info_.spokes;
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);
   mapping.echo.reserve(totalSz);
-  mapping.sdc.reserve(totalSz);
   mapping.offset.reserve(totalSz);
   mapping.echoes = info_.echoes;
   mapping.echoWeights = Eigen::ArrayXf::Zero(mapping.echoes);
@@ -160,7 +160,6 @@ Trajectory::mapping(Index const kw, float const os, float const inRes, bool cons
           mapping.noncart.push_back(nc);
           mapping.echo.push_back(echo);
           mapping.echoWeights[echo] += 1;
-          mapping.sdc.push_back(1.f);
           mapping.offset.push_back(xyz - gp.cast<float>().matrix());
         }
       }

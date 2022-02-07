@@ -20,8 +20,7 @@ int main_grid(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get()));
-  gridder->setSDCPower(sdcPow.Get());
+
   Cx3 rad_ks = info.noncartesianVolume();
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "grid", "h5"));
   writer.writeTrajectory(traj);
@@ -34,7 +33,8 @@ int main_grid(args::Subparser &parser)
       HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
-    rad_ks = reader.noncartesian(0);
+    auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+    rad_ks = sdc(reader.noncartesian(0));
     gridder->Adj(reader.noncartesian(0));
     writer.writeTensor(gridder->workspace(), "cartesian");
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
