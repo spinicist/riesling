@@ -15,15 +15,10 @@
 int main_sense_calib(args::Subparser &parser)
 {
   CORE_RECON_ARGS;
-
-  args::ValueFlag<Index> vol(
-    parser, "SENSE VOLUME", "Take SENSE maps from this volume (default last)", {"volume"}, -1);
-  args::ValueFlag<float> lambda(
-    parser, "LAMBDA", "Tikhonov regularisation parameter", {"lambda"}, 0.f);
+  args::ValueFlag<Index> sVol(parser, "V", "SENSE calibration volume", {"senseVolume"}, -1);
+  args::ValueFlag<float> sRes(parser, "R", "SENSE calibration res (12 mm)", {"senseRes"}, 12.f);
+  args::ValueFlag<float> sReg(parser, "L", "SENSE regularization", {"senseReg"}, 0.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
-  args::ValueFlag<float> res(
-    parser, "RESOLUTION", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
-  args::Flag nifti(parser, "NIFTI", "Write output to nifti instead of .h5", {"nii"});
 
   ParseCommand(parser, iname);
   FFT::Start();
@@ -35,12 +30,13 @@ int main_sense_calib(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   gridder->setSDC(SDC::Choose(sdc.Get(), traj, osamp.Get()));
-  Cx4 sense = DirectSENSE(
+  Cx4 sense = SelfCalibration(
     info,
     gridder.get(),
     fov.Get(),
-    lambda.Get(),
-    reader.noncartesian(ValOrLast(vol.Get(), info.volumes)));
+    sRes.Get(),
+    sReg.Get(),
+    reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);

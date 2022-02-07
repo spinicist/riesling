@@ -1,30 +1,29 @@
 #include "sense.h"
 
 #include "cropper.h"
-#include "espirit.h"
 #include "fft_plan.h"
 #include "filter.h"
 #include "io.h"
-#include "op/grid.h"
-#include "sdc.h"
 #include "tensorOps.h"
 #include "threads.h"
-#include "vc.h"
 
-float const sense_res = 8.f;
-
-Cx4 DirectSENSE(
-  Info const &info, GridBase *gridder, float const fov, float const lambda, Cx3 const &data)
+Cx4 SelfCalibration(
+  Info const &info,
+  GridBase *gridder,
+  float const fov,
+  float const res,
+  float const lambda,
+  Cx3 const &data)
 {
-  Log::Debug(FMT_STRING("*** Starting DirectSENSE ***"));
+  Log::Debug(FMT_STRING("*** Self-Calibrated SENSE ***"));
   Sz5 const dims = gridder->inputDimensions();
   Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
   FFT::Planned<4, 3> fftN(grid);
   gridder->Adj(data);
   grid = gridder->workspace().chip<1>(0); // Assume we want the first echo
-  float const end_rad = info.voxel_size.minCoeff() / sense_res;
+  float const end_rad = info.voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
-  Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), sense_res, start_rad, end_rad);
+  Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid);
   fftN.reverse(grid);
 

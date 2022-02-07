@@ -42,13 +42,14 @@ int main_tgv(args::Subparser &parser)
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   R2 const w = SDC::Choose(sdc.Get(), traj, osamp.Get());
   gridder->setSDC(w);
-  Cx4 senseMaps = senseFile ? LoadSENSE(senseFile.Get())
-                            : DirectSENSE(
-                                info,
-                                gridder.get(),
-                                iter_fov.Get(),
-                                senseLambda.Get(),
-                                reader.noncartesian(ValOrLast(senseVol.Get(), info.volumes)));
+  Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
+                        : SelfCalibration(
+                            info,
+                            gridder.get(),
+                            iter_fov.Get(),
+                            sRes.Get(),
+                            sReg.Get(),
+                            reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());

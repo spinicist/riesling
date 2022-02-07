@@ -34,11 +34,11 @@ int main_cgvar(args::Subparser &parser)
   Info const &info = traj.info();
 
   Cx4 senseMaps;
-  if (senseFile) {
-    senseMaps = LoadSENSE(senseFile.Get());
+  if (sFile) {
+    senseMaps = LoadSENSE(sFile.Get());
   } else {
-    senseMaps =
-      DirectSENSE(traj, osamp.Get(), kb, iter_fov.Get(), senseLambda.Get(), senseVol.Get(), reader);
+    senseMaps = SelfCalibration(
+      traj, osamp.Get(), kb, iter_fov.Get(), sRes.Get(), sReg.Get(), sVol.Get(), reader);
   }
 
   ReconOp recon(traj, osamp.Get(), kb, fastgrid, sdc.Get(), senseMaps);
