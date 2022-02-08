@@ -30,6 +30,7 @@ int main_cg(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  gridder->setSDC(&sdc);
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -37,16 +38,17 @@ int main_cg(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            sdc(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+                            reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
+    gridder->setSDC(&sdc);
   }
   ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
-    recon.calcToeplitz(sdc);
+    recon.calcToeplitz();
   }
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
@@ -57,7 +59,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = cgnorm(cg_its.Get(), cg_thr.Get(), recon, sdc, reader.noncartesian(iv));
+    vol = cgnorm(cg_its.Get(), cg_thr.Get(), recon, reader.noncartesian(iv));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

@@ -39,6 +39,7 @@ int main_tgv(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  gridder->setSDC(&sdc);
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -69,7 +70,6 @@ int main_tgv(args::Subparser &parser)
       reduce.Get(),
       step_size.Get(),
       recon,
-      sdc,
       reader.noncartesian(iv)));
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }

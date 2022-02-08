@@ -127,7 +127,7 @@ inline void ProjectQ(Cx5 &q, float const a, Eigen::ThreadPoolDevice &dev)
  * (TGV) for MRI’, Magnetic Resonance in Medicine, vol. 65, no. 2, pp. 480–491, Feb. 2011,
  * doi: 10.1002/mrm.22595.
  */
-template <typename Op, typename Precond>
+template <typename Op>
 Cx4 tgv(
   Index const max_its,
   float const thresh,
@@ -135,7 +135,6 @@ Cx4 tgv(
   float const reduction,
   float const step_size,
   Op &op,
-  Precond &pre,
   Cx3 const &ks_data)
 {
   auto dev = Threads::GlobalDevice();
@@ -146,7 +145,7 @@ Cx4 tgv(
 
   // Primal variables
   Cx4 u(dims);                 // Main variable
-  u = op.Adj(pre(ks_data));    // Get starting point
+  u = op.Adj(ks_data);         // Get starting point
   float const scale = Norm(u); // Normalise regularisation factors
   Cx4 u_ = u;                  // Bar variable (is this the "dual"?)
   Cx4 u_old = u;               // From previous iteration
@@ -215,7 +214,7 @@ Cx4 tgv(
     // Update u
     u_old.device(dev) = u;
     Div(p, divp, dev);
-    v_decode = op.Adj(pre(r));
+    v_decode = op.Adj(r);
     u.device(dev) = u - tau_p * (divp + v_decode); // Paper says +tau, but code says -tau
     u_.device(dev) = 2.0 * u - u_old;
 

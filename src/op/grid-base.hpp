@@ -3,6 +3,7 @@
 #include "../cropper.h"
 #include "../fft_plan.h"
 #include "../kernel.h"
+#include "../precond/sdc.hpp"
 #include "../trajectory.h"
 #include "operator.h"
 
@@ -12,6 +13,7 @@ struct GridBase : Operator<5, 3>
     : mapping_{map}
     , safe_{!unsafe}
     , weightEchoes_{true}
+    , sdc_{nullptr}
   {
   }
 
@@ -41,6 +43,11 @@ struct GridBase : Operator<5, 3>
     safe_ = false;
   }
 
+  void setSDC(SDCPrecond const *sdc)
+  {
+    sdc_ = sdc;
+  }
+
   void doNotWeightEchoes()
   {
     weightEchoes_ = false;
@@ -60,6 +67,7 @@ protected:
   Mapping mapping_;
   bool safe_, weightEchoes_;
   Cx5 mutable workspace_;
+  SDCPrecond const *sdc_;
 };
 
 template <int IP, int TP>

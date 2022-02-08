@@ -42,8 +42,9 @@ int main_traj(args::Subparser &parser)
     gridder = make_grid(kernel.get(), mapping, fastgrid);
   }
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  gridder->setSDC(&sdc);
   Cx5 grid(gridder->inputDimensions());
-  gridder->Adj(sdc(rad_ks));
+  gridder->Adj(rad_ks);
   out = gridder->workspace().chip<0>(0);
 
   auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");

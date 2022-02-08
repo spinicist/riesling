@@ -5,10 +5,9 @@
 /* NullOp Preconditioner
  */
 
-template <typename T>
-struct NoPrecond
+struct Precond
 {
-  T const &operator()(T const &in) const
+  Cx3 const apply(Cx3 const &in) const
   {
     return in;
   }

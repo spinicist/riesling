@@ -29,9 +29,9 @@ TEST_CASE("ops-nufft", "[ops]")
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
   auto const sdc = SDCPrecond{SDC::Pipe(traj, true, os), info.channels};
-
+  grid->setSDC(&sdc);
   auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get());
-  nufft.calcToeplitz(sdc);
+  nufft.calcToeplitz();
   auto const dims = nufft.inputDimensions();
   Cx5 x(dims), y(dims);
   Cx3 r(info.channels, info.read_points, info.spokes);

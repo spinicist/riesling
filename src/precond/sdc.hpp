@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../types.h"
+#include "precond.hpp"
 
 struct SDCPrecond
 {
@@ -12,7 +12,12 @@ struct SDCPrecond
     return AddFront(sdc_.dimensions(), channels_);
   }
 
-  auto operator()(Cx3 const &in, Index const ncIn = 0) const
+  Cx3 const apply(Cx3 const &in) const
+  {
+    return apply(in, channels_);
+  }
+
+  Cx3 const apply(Cx3 const &in, Index const ncIn) const
   {
     Index const nc = (ncIn > 0) ? ncIn : channels_;
     return in * sdc_.cast<Cx>()

@@ -61,11 +61,13 @@ struct GridEcho final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  void Adj(Output const &noncart, Index const inChan) const
+  void Adj(Output const &indata, Index const inChan) const
   {
     auto const dims = this->inputDimensions();
     Index const nC = inChan < 1 ? dims[0] : inChan;
-    assert(nC == noncart.dimension(0));
+    assert(nC == indata.dimension(0));
+
+    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(indata) : indata;
 
     Eigen::IndexList<int, FixOne, FixOne, FixOne> rshNC;
     constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> brdNC;

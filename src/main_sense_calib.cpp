@@ -30,13 +30,14 @@ int main_sense_calib(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  gridder->setSDC(&sdc);
   Cx4 sense = SelfCalibration(
     info,
     gridder.get(),
     fov.Get(),
     sRes.Get(),
     sReg.Get(),
-    sdc(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+    reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
   auto const fname = OutName(iname.Get(), oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);

@@ -8,12 +8,11 @@
 /*
  * Conjugate gradients on the normal equations.
  */
-template <typename Op, typename Precond>
+template <typename Op>
 typename Op::Input cgnorm(
   Index const &max_its,
   float const &thresh,
   Op const &op,
-  Precond const &pre,
   typename Op::Output const &b,
   typename Op::Input const &x0 = typename Op::Input())
 {
@@ -26,7 +25,7 @@ typename Op::Input cgnorm(
   T p(dims);
   T r(dims);
   T x(dims);
-  r.device(dev) = op.Adj(pre(b));
+  r.device(dev) = op.Adj(b);
   // If we have an initial guess, use it
   if (x0.size()) {
     if (x0.dimensions() != dims) {
@@ -35,7 +34,7 @@ typename Op::Input cgnorm(
         fmt::join(dims, ","),
         fmt::join(x0.dimensions(), ","));
     }
-    r.device(dev) = r - op.Adj(pre(op.A(x0)));
+    r.device(dev) = r - op.AdjA(x0);
     x.device(dev) = x0;
   } else {
     x.setZero();
@@ -46,10 +45,8 @@ typename Op::Input cgnorm(
   float const n0 = sqrt(r_old);
 
   for (Index icg = 0; icg < max_its; icg++) {
-    q = op.Adj(pre(op.A(p)));
-    Cx const pdq = Dot(p, q);
-    Log::Debug(FMT_STRING("p.q = {}"), pdq);
-    float const alpha = r_old / std::real(pdq);
+    q = op.AdjA(p);
+    float const alpha = r_old / std::real(Dot(p, q));
     x.device(dev) = x + p * p.constant(alpha);
     Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
     Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
@@ -73,12 +70,11 @@ typename Op::Input cgnorm(
 /*
  * Conjugate gradients not on the normal equations (for ADMM)
  */
-template <typename Op, typename Precond>
+template <typename Op>
 typename Op::Input cg(
   Index const &max_its,
   float const &thresh,
   Op const &op,
-  Precond const &pre,
   typename Op::Input const &b,
   typename Op::Input &x0 = typename Op::Input())
 {
@@ -91,7 +87,7 @@ typename Op::Input cg(
   T p(dims);
   T r(dims);
   T x(dims);
-  r.device(dev) = pre(b);
+  r.device(dev) = b;
   // If we have an initial guess, use it
   if (x0.size()) {
     if (x0.dimensions() != dims) {

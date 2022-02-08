@@ -45,7 +45,7 @@ TEST_CASE("ops-grid", "[ops]")
   {
     x.setRandom();
     grid->workspace() = x;
-    r = sdc(grid->A());
+    r = sdc.apply(grid->A());
     grid->Adj(r);
     y = grid->workspace();
     auto const xy = Dot(x, y);

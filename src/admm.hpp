@@ -1,7 +1,6 @@
 #pragma once
 
 #include "cg.hpp"
-#include "precond/none.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -23,13 +22,12 @@ struct AugmentedOp
   }
 };
 
-template <typename Op, typename Precond>
+template <typename Op>
 typename Op::Input admm(
   Index const outer_its,
   Index const lsq_its,
   float const lsq_thresh,
   Op const &op,
-  Precond const &pre,
   std::function<Cx4(Cx4 const &)> const &reg,
   float const rho,
   typename Op::Output const &b)
@@ -40,7 +38,7 @@ typename Op::Input admm(
   using T = typename Op::Input;
   auto const dims = op.inputDimensions();
   T x0(dims);
-  x0.device(dev) = op.Adj(pre(b));
+  x0.device(dev) = op.Adj(b);
   T x(dims);
   T z(dims);
   T u(dims);
@@ -55,7 +53,7 @@ typename Op::Input admm(
 
   for (Index ii = 0; ii < outer_its; ii++) {
     x.device(dev) = x0 + x0.constant(rho) * (z - u);
-    x = cg(lsq_its, lsq_thresh, augmented, NoPrecond<typename Op::Input>(), x0, x);
+    x = cg(lsq_its, lsq_thresh, augmented, x0, x);
     xpu.device(dev) = x + u;
     z = reg(xpu);
     u.device(dev) = xpu - z;

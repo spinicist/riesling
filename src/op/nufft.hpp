@@ -28,14 +28,14 @@ struct NUFFTOp final : Operator<5, 3>
     return gridder_->outputDimensions();
   }
 
-  void calcToeplitz(SDCPrecond const &sdc)
+  void calcToeplitz()
   {
     Log::Debug("NUFFT: Calculating Töplitz embedding");
     Sz5 fullDims = gridder_->inputDimensions();
     fullDims[0] = 1;
     tf_.resize(fullDims);
     gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, fullDims).setConstant(1.f);
-    gridder_->Adj(sdc(gridder_->A(1), 1), 1);
+    gridder_->Adj(gridder_->A(1), 1);
     tf_ = gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, fullDims);
     Log::Debug(
       FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));

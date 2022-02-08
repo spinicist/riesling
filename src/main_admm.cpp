@@ -37,6 +37,7 @@ int main_admm(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  gridder->setSDC(&sdc);
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -44,7 +45,7 @@ int main_admm(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            sdc(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+                            reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
@@ -53,7 +54,7 @@ int main_admm(args::Subparser &parser)
   }
   ReconOp recon(gridder.get(), senseMaps);
   if (toeplitz) {
-    recon.calcToeplitz(sdc);
+    recon.calcToeplitz();
   }
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get()); };
 
@@ -72,7 +73,6 @@ int main_admm(args::Subparser &parser)
       cg_its.Get(),
       cg_thr.Get(),
       recon,
-      sdc,
       reg,
       reg_rho.Get(),
       reader.noncartesian(iv));
