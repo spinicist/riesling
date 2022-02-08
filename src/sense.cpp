@@ -31,6 +31,10 @@ Cx4 DirectSENSE(
 
   Cropper crop(info, gridder->mapping().cartDims, fov);
   Cx4 channels = crop.crop4(grid);
+  if (dim[0] == 1) {
+    // setOnes() does not seem to work
+    channels.setConstant(1); // PSF to fix single channel SENSE estimation
+  }
   Cx3 rss = crop.newImage();
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
   if (lambda) {
