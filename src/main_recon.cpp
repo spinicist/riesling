@@ -45,7 +45,7 @@ int main_recon(args::Subparser &parser)
 
   Sz4 sz;
   if (rss) {
-    Cropper crop(info, gridder->mapping().cartDims, -1.f); // To get correct dims
+    Cropper crop(info, gridder->mapping().cartDims, iter_fov.Get()); // To get correct dims
     recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
@@ -53,10 +53,10 @@ int main_recon(args::Subparser &parser)
                           : SelfCalibration(
                               info,
                               gridder.get(),
-                              -1.f,
+                              iter_fov.Get(),
                               sRes.Get(),
                               sReg.Get(),
-                              reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+                              sdc(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
     recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps);
     sz = std::get<ReconOp>(recon).inputDimensions();
   }

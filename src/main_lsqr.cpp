@@ -15,7 +15,6 @@ int main_lsqr(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
-  args::ValueFlag<float> iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<float> lsq_thr(parser, "T", "LSQ threshold (1e-10)", {"lsq_thresh"}, 1.e-10);
   args::ValueFlag<Index> lsq_its(parser, "N", "LSQ iterations (8)", {'i', "lsq_its"}, 8);

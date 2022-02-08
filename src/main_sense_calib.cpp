@@ -18,7 +18,7 @@ int main_sense_calib(args::Subparser &parser)
   args::ValueFlag<Index> sVol(parser, "V", "SENSE calibration volume", {"senseVolume"}, -1);
   args::ValueFlag<float> sRes(parser, "R", "SENSE calibration res (12 mm)", {"senseRes"}, 12.f);
   args::ValueFlag<float> sReg(parser, "L", "SENSE regularization", {"senseReg"}, 0.f);
-  args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
+  args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default 256 mm)", {"fov"}, 256.f);
 
   ParseCommand(parser, iname);
   FFT::Start();

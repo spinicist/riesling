@@ -20,8 +20,6 @@ int main_tgv(args::Subparser &parser)
     parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(
     parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
-  args::ValueFlag<float> iter_fov(
-    parser, "ITER FOV", "Iterations FoV in mm (default 256 mm)", {"iter_fov"}, 256);
   args::ValueFlag<std::string> basisFile(
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   args::ValueFlag<float> alpha(

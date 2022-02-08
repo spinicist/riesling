@@ -18,7 +18,6 @@ int main_admm(args::Subparser &parser)
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
-  args::ValueFlag<float> iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<float> cg_thr(parser, "T", "CG threshold (1e-10)", {"cg_thresh"}, 1.e-10);
   args::ValueFlag<Index> cg_its(parser, "ITS", "CG iterations (8)", {"cg_its"}, 8);

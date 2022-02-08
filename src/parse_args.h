@@ -52,6 +52,8 @@ Index ValOrLast(Index const val, Index const last);
 
 #define COMMON_RECON_ARGS                                                                          \
   CORE_RECON_ARGS                                                                                  \
+  args::ValueFlag<float> iter_fov(                                                                 \
+    parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);                             \
   args::ValueFlag<float> out_fov(                                                                  \
     parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                     \
   args::ValueFlag<float> tukey_s(                                                                  \

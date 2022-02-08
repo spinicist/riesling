@@ -11,7 +11,7 @@ int main_sdc(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> sdcType(
-    parser, "SDC", "SDC type: 'pipe', 'pipenn', 'radial'", {"sdc"}, "pipe");
+    parser, "SDC", "SDC type: 'pipe', 'pipenn' (default), 'radial'", {"sdc"}, "pipenn");
   args::ValueFlag<float> osamp(parser, "OS", "Oversampling when using pipenn", {'s', "os"}, 2.f);
   args::ValueFlag<Index> lores(
     parser, "L", "Number of lo-res spokes for radial", {'l', "lores"}, 0);
