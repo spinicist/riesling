@@ -9,10 +9,13 @@
 
 namespace SDC {
 
-R2 Pipe(Trajectory const &traj, bool const nn, float const os)
+R2 Pipe(Trajectory const &inTraj, bool const nn, float const os)
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
-  auto info = traj.info();
+  auto info = inTraj.info();
+  // Reset to one channel
+  info.channels = 1;
+  Trajectory traj{info, inTraj.points(), inTraj.echoes()};
   Cx3 W(1, info.read_points, info.spokes);
   Cx3 Wp(W.dimensions());
 
