@@ -79,7 +79,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     Index const nB = dims[1];
     assert(nC == indata.dimension(0));
 
-    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(indata) : indata;
+    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(indata, nC) : indata;
 
     Eigen::IndexList<int, FixOne> rshNC;
     Eigen::IndexList<FixOne, int> brdNC;

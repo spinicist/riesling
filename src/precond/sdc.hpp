@@ -20,6 +20,7 @@ struct SDCPrecond
   Cx3 const apply(Cx3 const &in, Index const ncIn) const
   {
     Index const nc = (ncIn > 0) ? ncIn : channels_;
+    Log::Debug(FMT_STRING("Applying SDC to {} channels"), ncIn);
     return in * sdc_.cast<Cx>()
                   .reshape(Sz3{1, sdc_.dimension(0), sdc_.dimension(1)})
                   .broadcast(Sz3{nc, 1, 1});

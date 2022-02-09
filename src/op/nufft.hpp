@@ -31,12 +31,13 @@ struct NUFFTOp final : Operator<5, 3>
   void calcToeplitz()
   {
     Log::Debug("NUFFT: Calculating Töplitz embedding");
-    Sz5 fullDims = gridder_->inputDimensions();
-    fullDims[0] = 1;
-    tf_.resize(fullDims);
-    gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, fullDims).setConstant(1.f);
+    Sz5 dims = gridder_->inputDimensions();
+    dims[0] = 1;
+    tf_.resize(dims);
+    gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, dims).setConstant(1.f);
     gridder_->Adj(gridder_->A(1), 1);
-    tf_ = gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, fullDims);
+    tf_ = gridder_->workspace().slice(Sz5{0, 0, 0, 0, 0}, dims);
+    Log::Image(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf.nii");
     Log::Debug(
       FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));
   }
