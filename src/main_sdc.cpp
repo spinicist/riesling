@@ -16,15 +16,17 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<Index> lores(
     parser, "L", "Number of lo-res spokes for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
+  args::ValueFlag<Index> its(
+    parser, "N", "Maximum number of iterations (40)", {"max_its", 'n'}, 40);
   ParseCommand(parser, iname);
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();
 
   R2 dc;
   if (sdcType.Get() == "pipe") {
-    dc = SDC::Pipe(traj, false, 2.1f);
+    dc = SDC::Pipe(traj, false, 2.1f, its.Get());
   } else if (sdcType.Get() == "pipenn") {
-    dc = SDC::Pipe(traj, true, osamp.Get());
+    dc = SDC::Pipe(traj, true, osamp.Get(), its.Get());
   } else if (sdcType.Get() == "radial") {
     dc = SDC::Radial(traj, lores.Get(), gap.Get());
   } else {

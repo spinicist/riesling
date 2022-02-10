@@ -34,6 +34,7 @@ typename Op::Input cgnorm(
         fmt::join(dims, ","),
         fmt::join(x0.dimensions(), ","));
     }
+    Log::Print("Initialising CG with initial guess");
     r.device(dev) = r - op.AdjA(x0);
     x.device(dev) = x0;
   } else {

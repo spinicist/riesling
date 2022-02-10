@@ -9,7 +9,7 @@
 
 namespace SDC {
 
-R2 Pipe(Trajectory const &inTraj, bool const nn, float const os)
+R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its)
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
   auto info = inTraj.info();
@@ -41,7 +41,7 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os)
   gridder->doNotWeightEchoes();
   W.setConstant(1.f);
 
-  for (Index ii = 0; ii < 40; ii++) {
+  for (Index ii = 0; ii < its; ii++) {
     Wp.setZero();
     gridder->Adj(W); // Use the gridder's workspace
     Wp = gridder->A();
@@ -49,17 +49,12 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os)
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = R0((Wp - W).real().abs().maximum())();
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 1e-6) {
+    if (delta < 1e-12) {
       Log::Print(FMT_STRING("SDC converged, delta was {}"), delta);
       break;
     } else {
       Log::Print(FMT_STRING("SDC Delta {}"), delta);
     }
-  }
-  if (!nn && (info.read_points > 6)) {
-    // At this point we have relative weights. There might be something odd going on at the end of
-    // the spokes. Count back from the ends to miss that and then average.
-    W = W / W.constant(Mean(W.slice(Sz3{0, info.read_points - 6, 0}, Sz3{1, 1, info.spokes})));
   }
   Log::Print(FMT_STRING("SDC finished."));
   return W.real().chip<0>(0);
@@ -172,9 +167,9 @@ SDCPrecond Choose(std::string const &iname, float const p, Trajectory const &tra
     Log::Print(FMT_STRING("Using no density compensation"));
     sdc.setConstant(1.f);
   } else if (iname == "pipe") {
-    sdc = Pipe(traj, false, 2.1f);
+    sdc = Pipe(traj, false, 2.1f, 40);
   } else if (iname == "pipenn") {
-    sdc = Pipe(traj, true, os);
+    sdc = Pipe(traj, true, os, 40);
   } else {
     HD5::Reader reader(iname);
     sdc = reader.readTensor<R2>(HD5::Keys::SDC);
