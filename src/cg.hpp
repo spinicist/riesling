@@ -47,7 +47,7 @@ typename Op::Input cgnorm(
 
   for (Index icg = 0; icg < max_its; icg++) {
     q = op.AdjA(p);
-    float const alpha = r_old / std::real(Dot(p, q));
+    float const alpha = r_old / Dot(p, q).real();
     x.device(dev) = x + p * p.constant(alpha);
     Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
     Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));
@@ -77,7 +77,7 @@ typename Op::Input cg(
   float const &thresh,
   Op const &op,
   typename Op::Input const &b,
-  typename Op::Input &x0 = typename Op::Input())
+  typename Op::Input const &x0 = typename Op::Input())
 {
   Log::Print(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
   auto dev = Threads::GlobalDevice();
@@ -108,9 +108,7 @@ typename Op::Input cg(
 
   for (Index icg = 0; icg < max_its; icg++) {
     q = op.A(p);
-    Cx const pdq = Dot(p, q);
-    Log::Debug(FMT_STRING("p.q = {}"), pdq);
-    float const alpha = r_old / std::real(pdq);
+    float const alpha = r_old / Dot(p, q).real();
     x.device(dev) = x + p * p.constant(alpha);
     Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}.nii"), icg));
     Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}.nii"), icg));

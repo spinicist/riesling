@@ -165,7 +165,11 @@ Mapping Trajectory::mapping(
       }
     }
   }
-  Log::Print(FMT_STRING("Generated {} co-ordinates in {}"), mapping.cart.size(), Log::ToNow(start));
+  Log::Print(
+    FMT_STRING("Kept {} co-ords, {} discarded. Time {}"),
+    mapping.cart.size(),
+    totalSz - mapping.cart.size(),
+    Log::ToNow(start));
 
   mapping.echoWeights = mapping.echoWeights.maxCoeff() / mapping.echoWeights;
   Log::Print(FMT_STRING("Echo weights: {}"), mapping.echoWeights.transpose());

@@ -47,9 +47,9 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
     Wp = gridder->A();
     Wp.device(Threads::GlobalDevice()) =
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
-    float const delta = R0((Wp - W).real().abs().maximum())();
+    float const delta = Norm(Wp - W) / Norm(W);
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 1e-12) {
+    if (delta < 1e-8) {
       Log::Print(FMT_STRING("SDC converged, delta was {}"), delta);
       break;
     } else {

@@ -18,6 +18,11 @@ struct GridEcho final : SizedGrid<IP, TP>
       mapping.cartDims[0],
       mapping.cartDims[1],
       mapping.cartDims[2]});
+    Log::Debug(
+      FMT_STRING("GridEcho<{},{}>, workspace size {} constructed"),
+      IP,
+      TP,
+      this->workspace_.dimensions());
   }
 
   Output A(Index const inChan) const
@@ -61,7 +66,7 @@ struct GridEcho final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  void Adj(Output const &indata, Index const inChan) const
+  Input const &Adj(Output const &indata, Index const inChan) const
   {
     auto const dims = this->inputDimensions();
     Index const nC = inChan < 1 ? dims[0] : inChan;
@@ -138,6 +143,7 @@ struct GridEcho final : SizedGrid<IP, TP>
       }
       Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
+    return this->workspace_;
   }
 
 private:

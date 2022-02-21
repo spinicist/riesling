@@ -72,7 +72,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  void Adj(Output const &indata, Index const inChan) const
+  Input const &Adj(Output const &indata, Index const inChan) const
   {
     Sz5 const dims = this->inputDimensions();
     Index const nC = inChan < 1 ? dims[0] : inChan;
@@ -166,6 +166,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       }
       Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
+    return this->workspace_;
   }
 
 private:
