@@ -7,7 +7,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("ops-grid", "[ops]")
+TEST_CASE("ops-grid")
 {
   Index const M = 16;
   float const os = 2.f;

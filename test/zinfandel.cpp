@@ -4,7 +4,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
-TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
+TEST_CASE("zinfandel-data")
 {
   Index const n_readpoints = 16;
   Index const n_spoke = 1;
@@ -47,7 +47,7 @@ TEST_CASE("ZINFANDEL Data mangling", "[ZINFANDEL]")
   }
 }
 
-TEST_CASE("ZINFANDEL Algorithm", "[ZINFANDEL]")
+TEST_CASE("zinfandel-algo")
 {
   Index const n_read = 12;
   Index const n_spoke = 4;

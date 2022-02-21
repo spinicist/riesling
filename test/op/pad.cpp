@@ -3,7 +3,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
-TEST_CASE("ops-pad", "[ops]")
+TEST_CASE("ops-pad")
 {
   Index const fullSz = 16;
 

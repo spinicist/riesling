@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
-TEST_CASE("Cropper", "[Crop]")
+TEST_CASE("cropper")
 {
   Index const fullSz = 16;
   R3 grid(fullSz, fullSz, fullSz);

@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
-TEST_CASE("Hankel", "[Hankel]")
+TEST_CASE("hankel")
 {
   Index const nchan = 2;
   Index const gridSz = 10;

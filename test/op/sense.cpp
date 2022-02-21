@@ -2,7 +2,7 @@
 #include "../../src/tensorOps.h"
 #include <catch2/catch.hpp>
 
-TEST_CASE("ops-sense", "[ops]")
+TEST_CASE("ops-sense")
 {
   Index const channels = 2, mapSz = 4;
   // With credit to PyLops

@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
-TEST_CASE("Decomp", "[Decomp]")
+TEST_CASE("decomp")
 {
   Index const nvar = 64;
   Index const nsamp = 256;

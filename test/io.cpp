@@ -12,7 +12,7 @@ void Dummy(std::filesystem::path const &fname)
   HD5::RieslingReader reader(fname);
 }
 
-TEST_CASE("io", "[io]")
+TEST_CASE("io")
 {
   Index const M = 4;
   float const os = 2.f;

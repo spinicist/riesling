@@ -2,7 +2,7 @@
 #include "../src/tensorOps.h"
 #include <catch2/catch.hpp>
 
-TEST_CASE("Kernels", "[KERNELS]")
+TEST_CASE("kernels")
 {
   SECTION("NN")
   {

@@ -4,7 +4,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
-TEST_CASE("1D-FFT", "[FFT1]")
+TEST_CASE("FFT-1D")
 {
   FFT::Start();
 

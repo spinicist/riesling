@@ -7,7 +7,7 @@
 
 #include <catch2/catch.hpp>
 
-TEST_CASE("ops-nufft", "[ops]")
+TEST_CASE("ops-nufft")
 {
   Index const M = 16;
   float const os = 2.f;

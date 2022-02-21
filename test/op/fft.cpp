@@ -3,7 +3,7 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
-TEST_CASE("ops-fft", "[ops]")
+TEST_CASE("ops-fft")
 {
   Index const sz = 16;
   Cx5 ws(sz, sz, sz, sz, sz);
