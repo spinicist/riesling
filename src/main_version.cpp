@@ -5,6 +5,6 @@
 int main_version(args::Subparser &parser)
 {
   parser.Parse();
-  fmt::print(FMT_STRING("{}"), VERSION);
+  fmt::print(FMT_STRING("{}\n"), VERSION);
   return EXIT_SUCCESS;
 }
