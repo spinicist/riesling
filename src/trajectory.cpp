@@ -141,7 +141,7 @@ Mapping Trajectory::mapping(
   mapping.noncart.reserve(totalSz);
   mapping.echo.reserve(totalSz);
   mapping.offset.reserve(totalSz);
-  mapping.echoes = info_.echoes;
+  mapping.echoes = Maximum(echoes_) + 1;
   mapping.echoWeights = Eigen::ArrayXf::Zero(mapping.echoes);
   std::fesetround(FE_TONEAREST);
   float const maxRad = ratio * ((gridSz / 2) - 1.f);

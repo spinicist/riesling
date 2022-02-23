@@ -9,8 +9,9 @@
 
 struct GridBase : Operator<5, 3>
 {
-  GridBase(Mapping const &map, bool const unsafe)
+  GridBase(Mapping const &map, Index const d1, bool const unsafe)
     : mapping_{map}
+    , inputDims_{AddFront(map.cartDims, map.noncartDims[0], d1)}
     , safe_{!unsafe}
     , weightEchoes_{true}
     , sdc_{nullptr}
@@ -19,9 +20,8 @@ struct GridBase : Operator<5, 3>
 
   virtual ~GridBase(){};
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
-  virtual Output A(Index const nc = 0) const = 0; // Cart k-space must be in workspace()
-  virtual Input const &
-  Adj(Output const &noncart, Index const nc = 0) const = 0; // Cart k-space -> workspace()
+  virtual Output A(Input const &cart) const = 0;
+  virtual Input Adj(Output const &noncart) const = 0;
 
   Sz3 outputDimensions() const override
   {
@@ -30,7 +30,7 @@ struct GridBase : Operator<5, 3>
 
   Sz5 inputDimensions() const override
   {
-    return workspace_.dimensions();
+    return inputDims_;
   }
 
   void setUnsafe()
@@ -58,23 +58,18 @@ struct GridBase : Operator<5, 3>
     return mapping_;
   }
 
-  Cx5 &workspace()
-  {
-    return workspace_;
-  }
-
 protected:
   Mapping mapping_;
+  Sz5 inputDims_;
   bool safe_, weightEchoes_;
-  Cx5 mutable workspace_;
   SDCPrecond const *sdc_;
 };
 
 template <int IP, int TP>
 struct SizedGrid : GridBase
 {
-  SizedGrid(SizedKernel<IP, TP> const *k, Mapping const &map, bool const unsafe)
-    : GridBase(map, unsafe)
+  SizedGrid(SizedKernel<IP, TP> const *k, Mapping const &map, Index const d1, bool const unsafe)
+    : GridBase(map, d1, unsafe)
     , kernel_{k}
   {
   }

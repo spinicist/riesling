@@ -28,10 +28,9 @@ TEST_CASE("ops-grid")
   auto const nn = make_kernel("NN", info.type, os);
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
-  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, os), info.channels};
+  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, os)};
   auto const dims = grid->inputDimensions();
   Cx5 x(dims), y(dims);
-  Cx3 r(info.channels, info.read_points, info.spokes);
 
   /* I don't think the classic Dot test from PyLops is applicable to gridding,
    * because it would not be correct to have a random radial k-space. The k0
@@ -44,10 +43,7 @@ TEST_CASE("ops-grid")
   SECTION("SDC-Full")
   {
     x.setRandom();
-    grid->workspace() = x;
-    r = sdc.apply(grid->A());
-    grid->Adj(r);
-    y = grid->workspace();
+    y = grid->Adj(sdc.apply(grid->A(x)));
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
     CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-6));

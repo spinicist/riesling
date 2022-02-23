@@ -19,8 +19,7 @@ Cx4 SelfCalibration(
   Sz5 const dims = gridder->inputDimensions();
   Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
   FFT::Planned<4, 3> fftN(grid);
-  gridder->Adj(data);
-  grid = gridder->workspace().chip<1>(0); // Assume we want the first echo
+  grid = gridder->Adj(data).chip<1>(0); // Assume we want the first echo
   float const end_rad = info.voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
   Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);

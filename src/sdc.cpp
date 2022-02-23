@@ -42,9 +42,7 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   W.setConstant(1.f);
 
   for (Index ii = 0; ii < its; ii++) {
-    Wp.setZero();
-    gridder->Adj(W); // Use the gridder's workspace
-    Wp = gridder->A();
+    Wp = gridder->A(gridder->Adj(W)); // Use the gridder's workspace
     Wp.device(Threads::GlobalDevice()) =
       (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / Norm(W);
@@ -183,7 +181,7 @@ SDCPrecond Choose(std::string const &iname, float const p, Trajectory const &tra
         trajInfo.spokes);
     }
   }
-  return SDCPrecond{sdc.pow(p), traj.info().channels};
+  return SDCPrecond{sdc.pow(p)};
 }
 
 } // namespace SDC

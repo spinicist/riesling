@@ -38,7 +38,7 @@ int main_espirit(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res, true);
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, osamp.Get()), info.channels};
+  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, osamp.Get())};
   gridder->setSDC(&sdc);
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get());

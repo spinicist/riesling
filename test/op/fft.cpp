@@ -6,9 +6,8 @@
 TEST_CASE("ops-fft")
 {
   Index const sz = 16;
-  Cx5 ws(sz, sz, sz, sz, sz);
-  auto const dims = ws.dimensions();
-  FFTOp<5> fft(ws);
+  Sz5 const dims{sz, sz, sz, sz, sz};
+  FFTOp<5> fft(dims);
 
   SECTION("FFT-Dot")
   {

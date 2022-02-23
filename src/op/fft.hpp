@@ -13,53 +13,57 @@ struct FFTOp final : Operator<Rank, Rank>
   using OutputDims = typename Parent::OutputDims;
   using Tensor = typename Eigen::Tensor<Cx, Rank>;
 
-  FFTOp(Tensor &ws)
-    : ws_{ws}
-    , fft_{ws_}
+  FFTOp(InputDims const &dims)
+    : dims_{dims}
+    , fft_{dims_}
   {
   }
 
   InputDims inputDimensions() const
   {
-    return ws_.dimensions();
+    return dims_;
   }
 
   OutputDims outputDimensions() const
   {
-    return ws_.dimensions();
+    return dims_;
   }
 
-  Tensor &workspace() const
+  // Need these for Eigen expressions
+  template <typename T>
+  Tensor A(T const &x) const
   {
-    return ws_;
+    Log::Debug("Out-of-place forward FFT op");
+    Tensor y = x;
+    fft_.forward(y);
+    return y;
   }
 
-  void A() const
+  template <typename T>
+  Tensor Adj(T const &x) const
   {
-    fft_.forward(ws_);
+    Log::Debug("Out-of-place forward FFT op");
+    Tensor y = x;
+    fft_.reverse(y);
+    return y;
   }
 
-  void Adj() const
-  {
-    fft_.reverse(ws_);
-  }
-
+  // Provide these for in-place when we can
   Tensor &A(Tensor &x) const
   {
-    ws_ = x;
-    fft_.forward(ws_);
-    return ws_;
+    Log::Debug("In-place forward FFT op");
+    fft_.forward(x);
+    return x;
   }
 
-  Tensor &Adj(Tensor &y) const
+  Tensor &Adj(Tensor &x) const
   {
-    ws_ = y;
-    fft_.reverse(ws_);
-    return ws_;
+    Log::Debug("In-place adjoint FFT op");
+    fft_.reverse(x);
+    return x;
   }
 
 private:
-  InputDims sz_;
-  Tensor &ws_;
+  InputDims dims_;
   FFT::Planned<5, 3> fft_;
 };

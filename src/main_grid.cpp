@@ -25,17 +25,14 @@ int main_grid(args::Subparser &parser)
   writer.writeTrajectory(traj);
   auto const start = Log::Now();
   if (forward) {
-    reader.readTensor(HD5::Keys::Cartesian, gridder->workspace());
-    rad_ks = gridder->A();
+    rad_ks = gridder->A(reader.readTensor<Cx5>(HD5::Keys::Cartesian));
     writer.writeTensor(
       Cx4(rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1})),
       HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
     auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
-    gridder->setSDC(&sdc);
-    gridder->Adj(reader.noncartesian(0));
-    writer.writeTensor(gridder->workspace(), "cartesian");
+    writer.writeTensor(gridder->Adj(sdc.apply(reader.noncartesian(0))), "cartesian");
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }
 

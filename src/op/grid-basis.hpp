@@ -10,15 +10,10 @@ struct GridBasis final : SizedGrid<IP, TP>
 
   GridBasis(
     SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
-    : SizedGrid<IP, TP>(k, mapping, unsafe)
+    : SizedGrid<IP, TP>(k, mapping, basis_.dimension(1), unsafe)
     , basis_{basis}
   {
-    this->workspace_.resize(Sz5{
-      mapping.noncartDims[0],
-      basis_.dimension(1),
-      mapping.cartDims[0],
-      mapping.cartDims[1],
-      mapping.cartDims[2]});
+    Log::Debug(FMT_STRING("GridBasis<{},{}>, dims"), IP, TP, this->inputDimensions());
   }
 
   R2 const &basis() const
@@ -26,15 +21,18 @@ struct GridBasis final : SizedGrid<IP, TP>
     return basis_;
   }
 
-  Output A(Index const inChan) const
+  Output A(Input const &cart) const
   {
-    Sz5 const dims = this->inputDimensions();
-    Index const nC = inChan < 1 ? dims[0] : inChan;
-    Index const nB = dims[1];
-
-    Sz3 odims = this->outputDimensions();
-    odims[0] = nC;
-    Output noncart(odims);
+    Sz5 const cdims = cart.dimensions();
+    Index const nC = cdims[0];
+    Index const nB = cdims[1];
+    if (LastN<4>(cdims) != LastN<4>(this->inputDimensions())) {
+      Log::Fail(
+        FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
+    }
+    Sz3 ncdims = this->outputDimensions();
+    ncdims[0] = nC;
+    Output noncart(ncdims);
     noncart.setZero();
 
     Eigen::IndexList<int, int, FixIn, FixIn, FixThrough> szC;
@@ -55,7 +53,7 @@ struct GridBasis final : SizedGrid<IP, TP>
         stC.set(3, c.y - ((IP - 1) / 2));
         stC.set(4, c.z - ((TP - 1) / 2));
         noncart.template chip<2>(n.spoke).template chip<1>(n.read) =
-          this->workspace_.slice(stC, szC)
+          cart.slice(stC, szC)
             .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
             .contract(
               (k * k.constant(scale)).template cast<Cx>(),
@@ -72,14 +70,21 @@ struct GridBasis final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  Input const &Adj(Output const &indata, Index const inChan) const
+  Input Adj(Output const &inNC) const
   {
-    Sz5 const dims = this->inputDimensions();
-    Index const nC = inChan < 1 ? dims[0] : inChan;
-    Index const nB = dims[1];
-    assert(nC == indata.dimension(0));
-
-    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(indata, nC) : indata;
+    Sz5 const ncdims = this->inputDimensions();
+    Index const nC = ncdims[0];
+    if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
+      Log::Fail(
+        FMT_STRING("Noncartesian k-space dims {} did not match {}"),
+        ncdims,
+        this->outputDimensions());
+    }
+    auto cdims = this->inputDimensions();
+    cdims[0] = nC;
+    Index const nB = cdims[1];
+    Input cart(cdims);
+    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(inNC) : inNC;
 
     Eigen::IndexList<int, FixOne> rshNC;
     Eigen::IndexList<FixOne, int> brdNC;
@@ -119,7 +124,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       if (this->safe_) {
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
-        threadSpaces[ti].resize(nC, nB, dims[2], dims[3], szZ[ti]);
+        threadSpaces[ti].resize(nC, nB, ncdims[2], ncdims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
 
@@ -143,30 +148,30 @@ struct GridBasis final : SizedGrid<IP, TP>
           threadSpaces[ti].slice(stC, szC) += nbk;
         } else {
           stC.set(4, c.z - ((TP - 1) / 2));
-          this->workspace_.slice(stC, szC) += nbk;
+          cart.slice(stC, szC) += nbk;
         }
       }
     };
 
     auto const start = Log::Now();
-    this->workspace_.setZero();
+    cart.setZero();
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::Debug("Basis Non-cart -> Cart: {}", Log::ToNow(start));
     if (this->safe_) {
       Log::Print(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
-      Sz5 sz{nC, nB, dims[2], dims[3], 0};
+      Sz5 sz{nC, nB, ncdims[2], ncdims[3], 0};
       for (Index ti = 0; ti < nThreads; ti++) {
         if (szZ[ti]) {
           st[4] = minZ[ti];
           sz[4] = szZ[ti];
-          this->workspace_.slice(st, sz).device(dev) += threadSpaces[ti];
+          cart.slice(st, sz).device(dev) += threadSpaces[ti];
         }
       }
       Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
-    return this->workspace_;
+    return cart;
   }
 
 private:

@@ -22,9 +22,9 @@ int main_plan(args::Subparser &parser)
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto gridder = make_grid(kernel.get(), traj.mapping(kernel->inPlane(), osamp.Get()), fastgrid);
-  FFT::Planned<5, 3> fftN(gridder->workspace());
+  FFT::Planned<5, 3> fftN(gridder->inputDimensions());
   auto grid1 = make_grid(kernel.get(), traj.mapping(kernel->inPlane(), osamp.Get(), 1), fastgrid);
-  FFT::Planned<5, 3> fft1(grid1->workspace());
+  FFT::Planned<5, 3> fft1(grid1->inputDimensions());
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());

@@ -57,21 +57,25 @@ using Sz4 = Cx4::Dimensions;
 using Sz5 = Cx5::Dimensions;
 using Sz6 = Cx6::Dimensions;
 
-template <typename T, int N>
-Eigen::DSizes<T, N + 1> AddFront(Eigen::DSizes<T, N> const &sz, Index const ii)
+template <typename T, int N, typename... Args>
+decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
-  Eigen::DSizes<Index, N + 1> out;
-  out[0] = ii;
-  std::copy_n(sz.begin(), N, out.begin() + 1);
+  std::array<Index, sizeof...(Args)> front = {{toAdd...}};
+  Eigen::DSizes<Index, sizeof...(Args) + N> out;
+
+  std::copy_n(front.begin(), sizeof...(Args), out.begin());
+  std::copy_n(back.begin(), N, out.begin() + sizeof...(Args));
   return out;
 }
 
-template <typename T, int N>
-Eigen::DSizes<T, N + 1> AddBack(Eigen::DSizes<T, N> const &sz, Index const ii)
+template <typename T, int N, typename... Args>
+decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
 {
-  Eigen::DSizes<Index, N + 1> out;
-  std::copy_n(sz.begin(), N, out.begin());
-  out[N] = ii;
+  std::array<Index, sizeof...(Args)> back = {{toAdd...}};
+  Eigen::DSizes<Index, sizeof...(Args) + N> out;
+
+  std::copy_n(front.begin(), N, out.begin());
+  std::copy_n(back.begin(), sizeof...(Args), out.begin() + N);
   return out;
 }
 
