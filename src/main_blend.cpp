@@ -58,7 +58,7 @@ int main_blend(args::Subparser &parser)
 
   Cx5 out(AddFront(LastN<4>(dims), tps.size()));
 
-  for (Index ii = 0; ii < tps.size(); ii++) {
+  for (size_t ii = 0; ii < tps.size(); ii++) {
     if ((tps[ii] < 0) || (tps[ii] >= basis.dimension(0))) {
       Log::Fail(
         FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(0));
