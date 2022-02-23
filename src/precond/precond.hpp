@@ -11,4 +11,6 @@ struct Precond
   {
     return in;
   }
+
+  virtual ~Precond(){};
 };

@@ -56,7 +56,7 @@ int main_blend(args::Subparser &parser)
 
   auto const &tps = tp.Get();
 
-  Cx5 out(AddFront(LastN<4>(dims), tps.size()));
+  Cx5 out(AddFront(LastN<4>(dims), (Index)tps.size()));
 
   for (size_t ii = 0; ii < tps.size(); ii++) {
     if ((tps[ii] < 0) || (tps[ii] >= basis.dimension(0))) {

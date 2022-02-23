@@ -10,7 +10,7 @@ struct GridBasis final : SizedGrid<IP, TP>
 
   GridBasis(
     SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
-    : SizedGrid<IP, TP>(k, mapping, basis_.dimension(1), unsafe)
+    : SizedGrid<IP, TP>(k, mapping, basis.dimension(1), unsafe)
     , basis_{basis}
   {
     Log::Debug(FMT_STRING("GridBasis<{},{}>, dims"), IP, TP, this->inputDimensions());
