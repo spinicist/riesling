@@ -8,8 +8,8 @@
 
 struct ReconOp final : Operator<4, 3>
 {
-  ReconOp(GridBase *gridder, Cx4 const &maps)
-    : nufft_{LastN<3>(maps.dimensions()), gridder}
+  ReconOp(GridBase *gridder, Cx4 const &maps, Precond *sdc = nullptr)
+    : nufft_{LastN<3>(maps.dimensions()), gridder, sdc}
     , sense_{maps, gridder->inputDimensions()[1]}
   {
   }

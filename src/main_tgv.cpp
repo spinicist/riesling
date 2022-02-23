@@ -39,7 +39,6 @@ int main_tgv(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
-  gridder->setSDC(&sdc);
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -47,14 +46,14 @@ int main_tgv(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+                            sdc->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
   }
-  ReconOp recon(gridder.get(), senseMaps);
+  ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());

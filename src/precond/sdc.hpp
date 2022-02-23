@@ -2,16 +2,23 @@
 
 #include "precond.hpp"
 
-struct SDCPrecond
+struct SDCPrecond final : Precond
 {
-  R2 sdc_;
+  SDCPrecond(R2 const &dc)
+    : Precond{}
+    , dc_{dc}
+  {
+  }
 
   Cx3 const apply(Cx3 const &in) const
   {
     Index const nC = in.dimension(0);
     Log::Debug(FMT_STRING("Applying SDC to {} channels"), nC);
-    return in * sdc_.cast<Cx>()
-                  .reshape(Sz3{1, sdc_.dimension(0), sdc_.dimension(1)})
+    return in * dc_.cast<Cx>()
+                  .reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)})
                   .broadcast(Sz3{nC, 1, 1});
   }
+
+private:
+  R2 dc_;
 };

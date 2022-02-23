@@ -2,7 +2,7 @@
 
 #include "operator.h"
 
-#include "../precond/sdc.hpp"
+#include "../precond/precond.hpp"
 #include "apodize.hpp"
 #include "fft.hpp"
 #include "grid.h"
@@ -10,11 +10,12 @@
 
 struct NUFFTOp final : Operator<5, 3>
 {
-  NUFFTOp(Sz3 const imgDims, GridBase *g)
+  NUFFTOp(Sz3 const imgDims, GridBase *g, Precond *sdc = nullptr)
     : gridder_{g}
     , fft_{g->inputDimensions()}
     , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}
     , apo_{pad_.inputDimensions(), g}
+    , sdc_{sdc}
   {
   }
 
@@ -34,7 +35,11 @@ struct NUFFTOp final : Operator<5, 3>
     Sz5 const dims = AddFront(LastN<4>(gridder_->inputDimensions()), 1);
     tf_.resize(dims);
     tf_.setConstant(1.f);
-    tf_ = gridder_->Adj(gridder_->A(tf_));
+    if (sdc_) {
+      tf_ = gridder_->Adj(sdc_->apply(gridder_->A(tf_)));
+    } else {
+      tf_ = gridder_->Adj(gridder_->A(tf_));
+    }
     Log::Image(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf.nii");
     Log::Debug(
       FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));
@@ -55,7 +60,8 @@ struct NUFFTOp final : Operator<5, 3>
   {
     Log::Debug("Starting NUFFT adjoint");
     auto const start = Log::Now();
-    auto result = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(x))));
+    auto const &px = sdc_ ? sdc_->apply(x) : x;
+    auto result = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(px))));
     Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
     return result;
   }
@@ -85,4 +91,5 @@ private:
   PadOp<5> pad_;
   ApodizeOp<5> apo_;
   Cx5 tf_;
+  Precond *sdc_;
 };

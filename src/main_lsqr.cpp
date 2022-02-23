@@ -36,7 +36,7 @@ int main_lsqr(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            sdc.apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+                            sdc->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());

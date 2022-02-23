@@ -28,7 +28,7 @@ typename Op::Input lsqr(
   TO Pu(outDims);
   TO u(outDims);
   Pu.device(dev) = b;
-  u.device(dev) = pre.apply(Pu);
+  u.device(dev) = pre->apply(Pu);
   float beta = sqrt(std::real(Dot(u, Pu)));
   Pu.device(dev) = Pu / b.constant(beta);
   u.device(dev) = u / b.constant(beta);
@@ -46,7 +46,7 @@ typename Op::Input lsqr(
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
     Pu.device(dev) = op.A(v) - alpha * Pu;
-    u.device(dev) = pre.apply(Pu);
+    u.device(dev) = pre->apply(Pu);
     beta = sqrt(std::real(Dot(Pu, u)));
     Pu.device(dev) = Pu / Pu.constant(beta);
     u.device(dev) = u / u.constant(beta);

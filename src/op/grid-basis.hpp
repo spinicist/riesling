@@ -70,7 +70,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  Input Adj(Output const &inNC) const
+  Input Adj(Output const &noncart) const
   {
     Sz5 const ncdims = this->inputDimensions();
     Index const nC = ncdims[0];
@@ -84,7 +84,6 @@ struct GridBasis final : SizedGrid<IP, TP>
     cdims[0] = nC;
     Index const nB = cdims[1];
     Input cart(cdims);
-    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(inNC) : inNC;
 
     Eigen::IndexList<int, FixOne> rshNC;
     Eigen::IndexList<FixOne, int> brdNC;

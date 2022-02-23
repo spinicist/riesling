@@ -14,7 +14,6 @@ struct GridBase : Operator<5, 3>
     , inputDims_{AddFront(map.cartDims, map.noncartDims[0], d1)}
     , safe_{!unsafe}
     , weightEchoes_{true}
-    , sdc_{nullptr}
   {
   }
 
@@ -43,11 +42,6 @@ struct GridBase : Operator<5, 3>
     safe_ = false;
   }
 
-  void setSDC(SDCPrecond const *sdc)
-  {
-    sdc_ = sdc;
-  }
-
   void doNotWeightEchoes()
   {
     weightEchoes_ = false;
@@ -62,7 +56,6 @@ protected:
   Mapping mapping_;
   Sz5 inputDims_;
   bool safe_, weightEchoes_;
-  SDCPrecond const *sdc_;
 };
 
 template <int IP, int TP>

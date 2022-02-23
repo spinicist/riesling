@@ -33,13 +33,11 @@ int main_recon(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
-  gridder->setSDC(&sdc);
   std::unique_ptr<GridBase> bgridder = nullptr;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     bgridder = make_grid_basis(kernel.get(), mapping, basis, fastgrid);
-    bgridder->setSDC(&sdc);
   }
 
   std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;
@@ -47,7 +45,7 @@ int main_recon(args::Subparser &parser)
   Sz4 sz;
   if (rss) {
     Cropper crop(info, gridder->mapping().cartDims, iter_fov.Get()); // To get correct dims
-    recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size());
+    recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size(), sdc.get());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
     Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
@@ -57,8 +55,8 @@ int main_recon(args::Subparser &parser)
                               iter_fov.Get(),
                               sRes.Get(),
                               sReg.Get(),
-                              reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
-    recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps);
+                              sdc->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+    recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps, sdc.get());
     sz = std::get<ReconOp>(recon).inputDimensions();
   }
 

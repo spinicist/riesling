@@ -8,8 +8,8 @@
 
 struct ReconRSSOp final : Operator<4, 3>
 {
-  ReconRSSOp(GridBase *gridder, Sz3 const &dims)
-    : nufft_{dims, gridder}
+  ReconRSSOp(GridBase *gridder, Sz3 const &dims, Precond *sdc = nullptr)
+    : nufft_{dims, gridder, sdc}
   {
   }
 

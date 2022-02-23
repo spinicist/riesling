@@ -57,10 +57,9 @@ struct GridEcho final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  Input Adj(Output const &inNC) const
+  Input Adj(Output const &noncart) const
   {
-    auto const ncdims = inNC.dimensions();
-    ;
+    auto const ncdims = noncart.dimensions();
     Index const nC = ncdims[0];
     if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
       Log::Fail(
@@ -71,7 +70,6 @@ struct GridEcho final : SizedGrid<IP, TP>
     auto cdims = this->inputDimensions();
     cdims[0] = nC;
     Input cart(cdims);
-    Cx3 const noncart = this->sdc_ ? this->sdc_->apply(inNC) : inNC;
 
     Eigen::IndexList<int, FixOne, FixOne, FixOne> rshNC;
     constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> brdNC;
