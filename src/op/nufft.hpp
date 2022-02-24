@@ -50,7 +50,8 @@ struct NUFFTOp final : Operator<5, 3>
   {
     Log::Debug("Starting NUFFT forward");
     auto const &start = Log::Now();
-    auto result = gridder_->A(fft_.A(pad_.A(apo_.A(x))));
+    Output result(outputDimensions());
+    result.device(Threads::GlobalDevice()) = gridder_->A(fft_.A(pad_.A(apo_.A(x))));
     Log::Debug("Finished NUFFT forward: {}", Log::ToNow(start));
     return result;
   }
@@ -61,7 +62,8 @@ struct NUFFTOp final : Operator<5, 3>
     Log::Debug("Starting NUFFT adjoint");
     auto const start = Log::Now();
     auto const &px = sdc_ ? sdc_->apply(x) : x;
-    auto result = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(px))));
+    Input result(inputDimensions());
+    result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(px))));
     Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
     return result;
   }

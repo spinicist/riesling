@@ -44,7 +44,8 @@ struct ReconOp final : Operator<4, 3>
   {
     Log::Debug("Starting ReconOp adjoint");
     auto const start = Log::Now();
-    auto const result = sense_.Adj(nufft_.Adj(x));
+    Input result(inputDimensions());
+    result.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.Adj(x));
     Log::Debug("Finished ReconOp adjoint: {}", Log::ToNow(start));
     return result;
   }

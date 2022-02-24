@@ -34,7 +34,8 @@ struct FFTOp final : Operator<Rank, Rank>
   Tensor A(T const &x) const
   {
     Log::Debug("Out-of-place forward FFT op");
-    Tensor y = x;
+    Tensor y(dims_);
+    y.device(Threads::GlobalDevice()) = x;
     fft_.forward(y);
     return y;
   }
@@ -42,21 +43,22 @@ struct FFTOp final : Operator<Rank, Rank>
   template <typename T>
   Tensor Adj(T const &x) const
   {
-    Log::Debug("Out-of-place forward FFT op");
-    Tensor y = x;
+    Log::Debug("Out-of-place reverse FFT op");
+    Tensor y(dims_);
+    y.device(Threads::GlobalDevice()) = x;
     fft_.reverse(y);
     return y;
   }
 
   // Provide these for in-place when we can
-  Tensor &A(Tensor &x) const
+  Tensor A(Tensor x) const
   {
     Log::Debug("In-place forward FFT op");
     fft_.forward(x);
     return x;
   }
 
-  Tensor &Adj(Tensor &x) const
+  Tensor Adj(Tensor x) const
   {
     Log::Debug("In-place adjoint FFT op");
     fft_.reverse(x);

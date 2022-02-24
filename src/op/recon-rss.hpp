@@ -28,8 +28,7 @@ struct ReconRSSOp final : Operator<4, 3>
   {
     Log::Debug("Starting ReconRSSOp adjoint");
     auto const start = Log::Now();
-    Cx5 channels = nufft_.Adj(x);
-
+    Cx5 const channels = nufft_.Adj(x);
     Cx4 image(inputDimensions());
     image.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
 

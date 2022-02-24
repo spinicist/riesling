@@ -11,7 +11,7 @@ struct GridEcho final : SizedGrid<IP, TP>
   GridEcho(SizedKernel<IP, TP> const *k, Mapping const &mapping, bool const unsafe)
     : SizedGrid<IP, TP>(k, mapping, mapping.echoes, unsafe)
   {
-    Log::Debug(FMT_STRING("GridEcho<{},{}>, dims"), IP, TP, this->inputDimensions());
+    Log::Debug(FMT_STRING("GridEcho<{},{}>, dims {}"), IP, TP, this->inputDimensions());
   }
 
   Output A(Input const &cart) const
