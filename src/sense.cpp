@@ -17,6 +17,13 @@ Cx4 SelfCalibration(
 {
   Log::Debug(FMT_STRING("*** Self-Calibrated SENSE ***"));
   Sz5 const dims = gridder->inputDimensions();
+  Cropper crop(info, LastN<3>(dims), fov);
+  Cx4 channels(crop.dims(dims[0]));
+  if (dims[0] == 1) { // Only one channel, return all ones
+    channels.setConstant(1.);
+    return channels;
+  }
+
   Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
   FFT::Planned<4, 3> fftN(grid);
   grid = gridder->Adj(data).chip<1>(0); // Assume we want the first echo
@@ -25,13 +32,8 @@ Cx4 SelfCalibration(
   Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid);
   fftN.reverse(grid);
+  channels = crop.crop4(grid);
 
-  Cropper crop(info, gridder->mapping().cartDims, fov);
-  Cx4 channels = crop.crop4(grid);
-  if (dim[0] == 1) {
-    // setOnes() does not seem to work
-    channels.setConstant(1); // PSF to fix single channel SENSE estimation
-  }
   Cx3 rss = crop.newImage();
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
   if (lambda) {
