@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "fft_plan.h"
+#include "fft/fft.hpp"
 #include "io.h"
 #include "log.h"
 #include "op/grid.h"
@@ -22,15 +22,15 @@ int main_plan(args::Subparser &parser)
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto gridder = make_grid(kernel.get(), traj.mapping(kernel->inPlane(), osamp.Get()), fastgrid);
-  FFT::Planned<5, 3> fftN(gridder->inputDimensions());
+  auto const fftN = FFT::Make<5, 3>(gridder->inputDimensions());
   auto grid1 = make_grid(kernel.get(), traj.mapping(kernel->inPlane(), osamp.Get(), 1), fastgrid);
-  FFT::Planned<5, 3> fft1(grid1->inputDimensions());
+  auto const fft1 = FFT::Make<5, 3>(grid1->inputDimensions());
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     auto gb = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    FFT::Planned<5, 3> fftB(gb->inputDimensions());
+    auto const fftB = FFT::Make<5, 3>(gb->inputDimensions());
   }
 
   FFT::End();

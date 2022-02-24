@@ -2,7 +2,6 @@
 
 #include "cropper.h"
 #include "espirit.h"
-#include "fft_plan.h"
 #include "filter.h"
 #include "io.h"
 #include "log.h"

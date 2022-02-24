@@ -2,7 +2,6 @@
 
 #include "operator.h"
 
-#include "../fft_plan.h"
 #include "nufft.hpp"
 #include "sense.hpp"
 

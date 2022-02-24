@@ -1,7 +1,6 @@
 #include "io.h"
 #include "log.h"
 #include "parse_args.h"
-#include "slab_correct.h"
 #include "threads.h"
 #include "types.h"
 #include "zinfandel.h"
@@ -22,10 +21,6 @@ int main_zinfandel(args::Subparser &parser)
     parser, "CAL READ", "Read calibration size (default all)", {"read"}, 0);
   args::ValueFlag<float> l1(
     parser, "LAMBDA", "Tikhonov regularization (default 0)", {"lambda"}, 0.f);
-  args::ValueFlag<float> pw(
-    parser, "PULSE WIDTH", "Pulse-width for slab profile correction", {"pw"}, 0.f);
-  args::ValueFlag<float> rbw(
-    parser, "BANDWIDTH", "Read-out bandwidth for slab profile correction (kHz)", {"rbw"}, 0.f);
   ParseCommand(parser, iname);
 
   HD5::RieslingReader reader(iname.Get());
@@ -44,9 +39,6 @@ int main_zinfandel(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     Cx3 vol = reader.noncartesian(iv);
     zinfandel(gap.Get(), src.Get(), spokes.Get(), read.Get(), l1.Get(), traj.points(), vol);
-    if (pw && rbw) {
-      slab_correct(out_info, pw.Get(), rbw.Get(), vol);
-    }
     rad_ks.chip<3>(iv) = vol;
   }
   writer.writeTensor(rad_ks, HD5::Keys::Noncartesian);

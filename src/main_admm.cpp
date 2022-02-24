@@ -2,12 +2,9 @@
 
 #include "admm.hpp"
 #include "cropper.h"
-#include "fft_plan.h"
-#include "filter.h"
 #include "io.h"
 #include "llr.h"
 #include "log.h"
-#include "op/grid.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
 #include "sdc.h"

@@ -29,9 +29,6 @@ add_library(vineyard
     src/cropper.cpp
     src/decomp.cpp
     src/espirit.cpp
-    src/fft1.cpp
-    src/fft_plan.cpp
-    src/fft_util.cpp
     src/filter.cpp
     src/hankel.cpp
     src/io_hd5.cpp
@@ -51,13 +48,13 @@ add_library(vineyard
     src/sim-flair.cpp
     src/sim-mupa.cpp
     src/sim-prep.cpp
-    src/slab_correct.cpp
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp
     # src/vc.cpp
     src/wavelets.cpp
     src/zinfandel.cpp
+    src/fft/fft.cpp
     src/op/operator.cpp
     src/op/grid.cpp
     src/op/nufft.hpp
@@ -123,7 +120,6 @@ if( ${BUILD_TESTS} )
         test/main.cpp
         test/cropper.cpp
         test/decomp.cpp
-        test/fft1.cpp
         test/fft3.cpp
         test/hankel.cpp
         test/io.cpp

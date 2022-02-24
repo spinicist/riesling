@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../fft_plan.h"
 #include "operator.h"
+
+#include "../fft/fft.hpp"
+#include "../threads.h"
 
 template <int Rank, int FFTRank = 3>
 struct FFTOp final : Operator<Rank, Rank>
@@ -15,7 +17,7 @@ struct FFTOp final : Operator<Rank, Rank>
 
   FFTOp(InputDims const &dims)
     : dims_{dims}
-    , fft_{dims_}
+    , fft_{FFT::Make<5, 3>(dims_)}
   {
   }
 
@@ -36,7 +38,7 @@ struct FFTOp final : Operator<Rank, Rank>
     Log::Debug("Out-of-place forward FFT op");
     Tensor y(dims_);
     y.device(Threads::GlobalDevice()) = x;
-    fft_.forward(y);
+    fft_->forward(y);
     return y;
   }
 
@@ -46,7 +48,7 @@ struct FFTOp final : Operator<Rank, Rank>
     Log::Debug("Out-of-place reverse FFT op");
     Tensor y(dims_);
     y.device(Threads::GlobalDevice()) = x;
-    fft_.reverse(y);
+    fft_->reverse(y);
     return y;
   }
 
@@ -54,18 +56,18 @@ struct FFTOp final : Operator<Rank, Rank>
   Tensor A(Tensor x) const
   {
     Log::Debug("In-place forward FFT op");
-    fft_.forward(x);
+    fft_->forward(x);
     return x;
   }
 
   Tensor Adj(Tensor x) const
   {
     Log::Debug("In-place adjoint FFT op");
-    fft_.reverse(x);
+    fft_->reverse(x);
     return x;
   }
 
 private:
   InputDims dims_;
-  FFT::Planned<5, 3> fft_;
+  std::unique_ptr<FFT::FFT<5, 3>> fft_;
 };

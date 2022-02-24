@@ -1,8 +1,11 @@
-#include "fft_util.h"
+#include "fft.hpp"
 
-#include "log.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "cpu.hpp"
+
+#include "../log.h"
+#include "../tensorOps.h"
+#include "../threads.h"
+#include "fftw3.h"
 #include <filesystem>
 #include <pwd.h>
 #include <sys/types.h>
@@ -66,5 +69,20 @@ Cx1 Phase(Index const sz)
   Log::Debug(FMT_STRING("Calculated FFT Phase factors length {}"), sz);
   return factors;
 }
+
+template <int TRank, int FFTRank>
+std::unique_ptr<FFT<TRank, FFTRank>>
+Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const inThreads)
+{
+
+  Index const nThreads = (inThreads > 0) ? inThreads : Threads::GlobalThreadCount();
+  return std::make_unique<CPU<TRank, FFTRank>>(dims, nThreads);
+}
+
+template std::unique_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorDims const &, Index const);
+template std::unique_ptr<FFT<4, 3>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::unique_ptr<FFT<4, 1>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorDims const &, Index const);
+template std::unique_ptr<FFT<3, 2>> Make(typename FFT<3, 2>::TensorDims const &, Index const);
 
 } // namespace FFT

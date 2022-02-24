@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "fft_plan.h"
+#include "fft/fft.hpp"
 #include "io.h"
 #include "log.h"
 #include "op/grid.h"
@@ -52,8 +52,8 @@ int main_traj(args::Subparser &parser)
 
   if (savePSF) {
     Log::Print(FMT_STRING("Calculating PSF"));
-    FFT::Planned<4, 3> fft(out.dimensions());
-    fft.reverse(out);
+    auto const fft = FFT::Make<4, 3>(out.dimensions());
+    fft->reverse(out);
     writer.writeTensor(
       Cx5(out.reshape(
         Sz5{out.dimension(0), out.dimension(1), out.dimension(2), out.dimension(3), 1})),

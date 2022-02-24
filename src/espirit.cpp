@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "decomp.h"
-#include "fft_plan.hpp"
+#include "fft/fft.hpp"
 #include "hankel.h"
 #include "op/grid.h"
 #include "tensorOps.h"
@@ -33,7 +33,7 @@ Cx4 ESPIRIT(
     mini_kernels.dimension(1),
     mini_kernels.dimension(2),
     grid.dimension(3));
-  FFT::Planned<4, 1> mix_fft(mix_grid);
+  auto const mix_fft = FFT::Make<4, 1>(mix_grid.dimensions());
   Cx5 mix_kernels(
     mini_kernels.dimension(0),
     mini_kernels.dimension(1),
@@ -49,7 +49,7 @@ Cx4 ESPIRIT(
   for (Index kk = 0; kk < retain; kk++) {
     mix_grid.setZero();
     lo_mix.crop4(mix_grid) = mini_kernels.chip<4>(kk) * mini_kernels.chip<4>(kk).constant(scale);
-    mix_fft.reverse(mix_grid);
+    mix_fft->reverse(mix_grid);
     mix_kernels.chip<4>(kk) = mix_grid;
     Log::Progress(kk, 0, retain);
   }
@@ -61,14 +61,14 @@ Cx4 ESPIRIT(
       Cx4 hi_kernels(
         grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
       Cx3 hi_slice(grid.dimension(0), grid.dimension(1), grid.dimension(2));
-      FFT::Planned<3, 2> hi_slice_fft(hi_slice, 1);
+      auto const hi_slice_fft = FFT::Make<3, 2>(hi_slice.dimensions(), 1);
 
       // Now do a lot of FFTs
       for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
         Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
         hi_slice.setZero();
         CropLast2(hi_slice, mix_kernel.dimensions()) = mix_kernel;
-        hi_slice_fft.reverse(hi_slice);
+        hi_slice_fft->reverse(hi_slice);
         hi_kernels.chip<3>(kk) = hi_slice;
       }
 

@@ -1,11 +1,8 @@
 #include "types.h"
 
 #include "cropper.h"
-#include "fft_plan.h"
-#include "filter.h"
 #include "io.h"
 #include "log.h"
-#include "op/grid.h"
 #include "op/recon-rss.hpp"
 #include "op/recon.hpp"
 #include "parse_args.h"

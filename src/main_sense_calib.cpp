@@ -1,16 +1,11 @@
 #include "types.h"
 
-#include "cropper.h"
-#include "espirit.h"
-#include "fft_plan.h"
-#include "filter.h"
 #include "io.h"
 #include "log.h"
 #include "op/grid.h"
 #include "parse_args.h"
 #include "sdc.h"
 #include "sense.h"
-#include "tensorOps.h"
 
 int main_sense_calib(args::Subparser &parser)
 {

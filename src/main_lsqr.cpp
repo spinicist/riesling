@@ -1,9 +1,7 @@
 #include "types.h"
 
-#include "filter.h"
 #include "log.h"
 #include "lsqr.hpp"
-#include "op/grid.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
 #include "sdc.h"

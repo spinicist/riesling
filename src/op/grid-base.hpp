@@ -1,9 +1,10 @@
 #pragma once
 
 #include "../cropper.h"
-#include "../fft_plan.h"
+#include "../fft/fft.hpp"
 #include "../kernel.h"
 #include "../precond/sdc.hpp"
+#include "../threads.h"
 #include "../trajectory.h"
 #include "operator.h"
 
@@ -73,12 +74,12 @@ struct SizedGrid : GridBase
   {
     auto gridSz = this->mapping().cartDims;
     Cx3 temp(gridSz);
-    FFT::ThreeD fft(temp);
+    auto const fft = FFT::Make<3, 3>(gridSz);
     temp.setZero();
     auto const k = kernel_->k(Point3{0, 0, 0});
     Crop3(temp, k.dimensions()) = k.template cast<Cx>();
     Log::Image(temp, "apo-kernel.nii");
-    fft.reverse(temp);
+    fft->reverse(temp);
     R3 a = Crop3(R3(temp.real()), sz);
     float const scale =
       sqrt(std::accumulate(gridSz.cbegin(), gridSz.cend(), 1, std::multiplies<Index>()));

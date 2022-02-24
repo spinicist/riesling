@@ -1,6 +1,6 @@
 #include "filter.h"
 
-#include "fft_plan.h"
+#include "fft/fft.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -51,13 +51,13 @@ void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x)
 {
   Log::Print(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  FFT::ThreeD fft(x.dimensions());
+  auto const fft = FFT::Make<3, 3>(x.dimensions());
   Log::Image(x, "tukey-img-before.nii");
-  fft.forward(x);
+  fft->forward(x);
   Log::Image(x, "tukey-ks-before.nii");
   KSFilter(f, x);
   Log::Image(x, "tukey-ks-after.nii");
-  fft.reverse(x);
+  fft->reverse(x);
   Log::Image(x, "tukey-img-after.nii");
 }
 
