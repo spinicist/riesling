@@ -25,14 +25,13 @@ struct ReconRSSOp final : Operator<4, 3>
   template <typename T>
   auto Adj(T const &x) const
   {
-    Log::Debug("Starting ReconRSSOp adjoint");
+    Log::Debug("Starting ReconRSSOp adjoint. Norm {}", Norm(x));
     auto const start = Log::Now();
     Cx5 const channels = nufft_.Adj(x);
-    Cx4 image(inputDimensions());
-    image.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
-
-    Log::Debug("Finished ReconOp adjoint: {}", Log::ToNow(start));
-    return image;
+    Cx4 y(inputDimensions());
+    y.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
+    Log::Debug("Finished ReconOp adjoint. Norm {}. Took {}", Norm(y), Log::ToNow(start));
+    return y;
   }
 
 private:

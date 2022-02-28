@@ -16,7 +16,7 @@ int main_cg(args::Subparser &parser)
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<float> cg_thr(parser, "T", "CG threshold (1e-10)", {"cg_thresh"}, 1.e-10);
-  args::ValueFlag<Index> cg_its(parser, "N", "CG iterations (8)", {'i', "cg_its"}, 8);
+  args::ValueFlag<Index> cg_its(parser, "N", "CG iterations (8)", {"cg_its"}, 8);
 
   ParseCommand(parser, iname);
   FFT::Start();

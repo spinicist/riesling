@@ -18,6 +18,8 @@ struct CPU final : FFT<TRank, FRank>
   /*! Will allocate a workspace during planning
    */
   CPU(TensorDims const &dims, Index const nThreads)
+    : dims_{dims}
+    , threaded_{nThreads > 1}
   {
     Tensor ws(dims);
     std::array<int, FRank> sizes;
@@ -30,14 +32,18 @@ struct CPU final : FFT<TRank, FRank>
       for (; ii < FStart; ii++) {
         N *= ws.dimension(ii);
       }
+      std::array<Cx1, FRank> phases;
       for (; ii < TRank; ii++) {
         int const sz = ws.dimension(ii);
         Nvox *= sz;
         sizes[ii - FStart] = sz;
-        phase_[ii - FStart] = Phase(sz); // Prep FFT phase factors
+        phases[ii - FStart] = Phase(sz); // Prep FFT phase factors
       }
+      scale_ = 1. / sqrt(Nvox);
+      phase_.resize(LastN<FRank>(dims));
+      phase_.device(Threads::GlobalDevice()) = startPhase(phases);
     }
-    scale_ = 1. / sqrt(Nvox);
+
     auto ptr = reinterpret_cast<fftwf_complex *>(ws.data());
     Log::Print(
       FMT_STRING("Planning {} {} FFTs with {} threads"), N, fmt::join(sizes, "x"), nThreads);
@@ -97,43 +103,69 @@ struct CPU final : FFT<TRank, FRank>
   }
 
 private:
-  void applyPhase(Tensor &x, float const scale, bool const forward) const
+  template <int D, typename T>
+  decltype(auto) nextPhase(T const &x, std::array<Cx1, FRank> const &ph) const
   {
-    constexpr int FStart = TRank - FRank;
-    for (Index ii = 0; ii < FRank; ii++) {
-      Eigen::array<Index, TRank> rsh, brd;
-      for (Index in = 0; in < TRank; in++) {
-        rsh[in] = 1;
-        brd[in] = x.dimension(in);
-      }
-      rsh[FStart + ii] = phase_[ii].dimension(0);
-      brd[FStart + ii] = 1;
-
-      if (threaded_) {
-        if (forward) {
-          x.device(Threads::GlobalDevice()) = x * phase_[ii].reshape(rsh).broadcast(brd);
-        } else {
-          x.device(Threads::GlobalDevice()) = x / phase_[ii].reshape(rsh).broadcast(brd);
-        }
-      } else {
-        if (forward) {
-          x = x * phase_[ii].reshape(rsh).broadcast(brd);
-        } else {
-          x = x / phase_[ii].reshape(rsh).broadcast(brd);
-        }
-      }
+    Eigen::array<Index, FRank> rsh, brd;
+    for (Index in = 0; in < FRank; in++) {
+      rsh[in] = 1;
+      brd[in] = ph[in].dimension(0);
     }
-    if (scale != 1.f) {
-      if (threaded_) {
-        x.device(Threads::GlobalDevice()) = x * x.constant(scale);
-      } else {
-        x = x * x.constant(scale);
-      }
+    rsh[D] = ph[D].dimension(0);
+    brd[D] = 1;
+    if constexpr (D < FRank - 1) {
+      return ph[D].reshape(rsh).broadcast(brd) * nextPhase<D + 1>(x, ph);
+    } else {
+      return ph[D].reshape(rsh).broadcast(brd) * x;
     }
   }
 
+  decltype(auto) startPhase(std::array<Cx1, FRank> const &ph) const
+  {
+    Eigen::array<Index, FRank> rsh, brd;
+    for (Index in = 0; in < FRank; in++) {
+      rsh[in] = 1;
+      brd[in] = ph[in].dimension(0);
+    }
+    rsh[0] = ph[0].dimension(0);
+    brd[0] = 1;
+    return nextPhase<1>(ph[0].reshape(rsh).broadcast(brd), ph);
+  }
+
+  void applyPhase(Tensor &x, float const scale, bool const fwd) const
+  {
+    auto start = Log::Now();
+    TensorDims rsh, brd;
+    constexpr int FStart = TRank - FRank;
+    int ii = 0;
+    for (; ii < FStart; ii++) {
+      rsh[ii] = 1;
+      brd[ii] = dims_[ii];
+    }
+    for (; ii < TRank; ii++) {
+      rsh[ii] = dims_[ii];
+      brd[ii] = 1;
+    }
+
+    auto const rbPhase = phase_.reshape(rsh).broadcast(brd);
+    if (threaded_) {
+      if (fwd) {
+        x.device(Threads::GlobalDevice()) = x * x.constant(scale_) * rbPhase;
+      } else {
+        x.device(Threads::GlobalDevice()) = x * x.constant(scale_) / rbPhase;
+      }
+    } else {
+      if (fwd) {
+        x = x * x.constant(scale_) * rbPhase;
+      } else {
+        x = x * x.constant(scale_) / rbPhase;
+      }
+    }
+    Log::Debug(FMT_STRING("FFT phase correction: {}"), Log::ToNow(start));
+  }
+
   TensorDims dims_;
-  std::array<Cx1, FRank> phase_;
+  Eigen::Tensor<Cx, FRank> phase_;
   fftwf_plan forward_plan_, reverse_plan_;
   float scale_;
 

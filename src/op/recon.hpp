@@ -31,33 +31,33 @@ struct ReconOp final : Operator<4, 3>
   template <typename T>
   auto A(T const &x) const
   {
-    Log::Debug("Starting ReconOp forward");
+    Log::Debug("Starting ReconOp forward. Norm {}", Norm(x));
     auto const start = Log::Now();
-    auto const result = nufft_.A(sense_.A(x));
-    Log::Debug("Finished ReconOp forward: {}", Log::ToNow(start));
-    return result;
+    auto const y = nufft_.A(sense_.A(x));
+    Log::Debug("Finished ReconOp forward. Norm {}. Took {}", Norm(y), Log::ToNow(start));
+    return y;
   }
 
   template <typename T>
   auto Adj(T const &x) const
   {
-    Log::Debug("Starting ReconOp adjoint");
+    Log::Debug("Starting ReconOp adjoint. Norm {}", Norm(x));
     auto const start = Log::Now();
-    Input result(inputDimensions());
-    result.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.Adj(x));
-    Log::Debug("Finished ReconOp adjoint: {}", Log::ToNow(start));
-    return result;
+    Input y(inputDimensions());
+    y.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.Adj(x));
+    Log::Debug("Finished ReconOp adjoint. Norm {}. Took {}.", Norm(y), Log::ToNow(start));
+    return y;
   }
 
   template <typename T>
   Input AdjA(T const &x) const
   {
-    Log::Debug("Starting ReconOp adjoint*forward");
-    Input result(inputDimensions());
+    Log::Debug("Starting ReconOp adjoint*forward. Norm {}", Norm(x));
+    Input y(inputDimensions());
     auto const start = Log::Now();
-    result.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.AdjA(sense_.A(x)));
-    Log::Debug("Finished ReconOp adjoint*forward: {}", Log::ToNow(start));
-    return result;
+    y.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.AdjA(sense_.A(x)));
+    Log::Debug("Finished ReconOp adjoint*forward. Norm {}. Took {}", Norm(y), Log::ToNow(start));
+    return y;
   }
 
 private:

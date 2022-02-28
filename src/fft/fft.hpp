@@ -15,8 +15,8 @@ struct FFT
 
   virtual ~FFT() {}
 
-  virtual void forward(Tensor &x) const; //!< Image space to k-space
-  virtual void reverse(Tensor &x) const; //!< K-space to image space
+  virtual void forward(Tensor &x) const = 0; //!< Image space to k-space
+  virtual void reverse(Tensor &x) const = 0; //!< K-space to image space
 };
 
 void Start();
