@@ -72,7 +72,7 @@ struct GridBasis final : SizedGrid<IP, TP>
 
   Input Adj(Output const &noncart) const
   {
-    Sz5 const ncdims = this->inputDimensions();
+    auto const ncdims = noncart.dimensions();
     Index const nC = ncdims[0];
     if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
       Log::Fail(
@@ -123,7 +123,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       if (this->safe_) {
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
-        threadSpaces[ti].resize(nC, nB, ncdims[2], ncdims[3], szZ[ti]);
+        threadSpaces[ti].resize(nC, nB, cdims[2], cdims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
 
@@ -160,7 +160,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       Log::Print(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
-      Sz5 sz{nC, nB, ncdims[2], ncdims[3], 0};
+      Sz5 sz{nC, nB, cdims[2], cdims[3], 0};
       for (Index ti = 0; ti < nThreads; ti++) {
         if (szZ[ti]) {
           st[4] = minZ[ti];
