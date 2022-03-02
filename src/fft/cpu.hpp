@@ -111,12 +111,12 @@ private:
       rsh[in] = 1;
       brd[in] = ph[in].dimension(0);
     }
-    rsh[D] = ph[D].dimension(0);
-    brd[D] = 1;
-    if constexpr (D < FRank - 1) {
+    if constexpr (D < FRank) {
+      rsh[D] = ph[D].dimension(0);
+      brd[D] = 1;
       return ph[D].reshape(rsh).broadcast(brd) * nextPhase<D + 1>(x, ph);
     } else {
-      return ph[D].reshape(rsh).broadcast(brd) * x;
+      return x;
     }
   }
 
@@ -129,7 +129,11 @@ private:
     }
     rsh[0] = ph[0].dimension(0);
     brd[0] = 1;
-    return nextPhase<1>(ph[0].reshape(rsh).broadcast(brd), ph);
+    if constexpr (FRank == 1) {
+      return ph[0];
+    } else {
+      return nextPhase<1>(ph[0].reshape(rsh).broadcast(brd), ph);
+    }
   }
 
   void applyPhase(Tensor &x, float const scale, bool const fwd) const
