@@ -11,6 +11,7 @@ TEST_CASE("kernels")
     CHECK(k(0, 0, 0) == Approx(1.f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
+
   SECTION("KB31")
   {
     auto const kb = KaiserBessel<3, 1>(2.f);
@@ -25,6 +26,7 @@ TEST_CASE("kernels")
     CHECK(k(1, 1, 0) == Approx(0.01997f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
+
   SECTION("FI31")
   {
     auto const fi = FlatIron<3, 1>(2.f);
@@ -32,6 +34,7 @@ TEST_CASE("kernels")
     CHECK(k(1, 1, 0) == Approx(0.99609f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
+
   SECTION("KB3")
   {
     auto const kb = KaiserBessel<3, 3>(2.f);
@@ -53,13 +56,12 @@ TEST_CASE("kernels")
     auto const pipe = PipeSDC<5, 1>(2.f);
     auto const k = pipe.k(Point3{0.f, 0.f, 0.f});
     CHECK(Sum(k) == Approx(1.f).margin(1.e-3));
-    fmt::print("{}\n", k);
   }
+
   SECTION("Pipe55")
   {
     auto const pipe = PipeSDC<5, 5>(2.f);
     auto const k = pipe.k(Point3{0.f, 0.f, 0.f});
     CHECK(Sum(k) == Approx(1.f).margin(1.e-3));
-    fmt::print("{}\n", k);
   }
 }

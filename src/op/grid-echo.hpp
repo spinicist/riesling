@@ -76,7 +76,6 @@ struct GridEcho final : SizedGrid<IP, TP>
     std::vector<Cx5> threadSpaces(nThreads);
     std::vector<Index> minZ(nThreads, 0L), szZ(nThreads, 0L);
     auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
-      // Allocate working space for this thread
       if (this->safe_) {
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
         minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z - ((TP - 1) / 2);
@@ -84,19 +83,18 @@ struct GridEcho final : SizedGrid<IP, TP>
         threadSpaces[ti].resize(nC, cdims[1], cdims[2], cdims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
+      Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
 
-      Cx4 workspace(AddFront(this->kernel_->dimensions(), nC));
       for (auto ii = lo; ii < hi; ii++) {
         Log::Progress(ii, lo, hi);
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
         auto const ie = this->mapping_.echo[si];
+        auto const k = this->kernel_->k(this->mapping_.offset[si]);
         auto const scale =
           this->mapping_.scale * (this->weightEchoes_ ? this->mapping_.echoWeights[ie] : 1.f);
-        auto const k = this->kernel_->k(this->mapping_.offset[si]);
 
-        Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
         Index const stX = c.x - ((IP - 1) / 2);
         Index const stY = c.y - ((IP - 1) / 2);
         Index const stZ = c.z - ((TP - 1) / 2) - minZ[ti];
