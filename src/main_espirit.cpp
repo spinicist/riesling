@@ -36,6 +36,7 @@ int main_espirit(args::Subparser &parser)
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res, true);
+  Log::Debug(FMT_STRING("Mapping dims {}"), mapping.cartDims);
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDCPrecond{SDC::Pipe(traj, true, osamp.Get())};
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();

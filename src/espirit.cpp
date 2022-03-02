@@ -20,8 +20,7 @@ Cx4 ESPIRIT(
   Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   Log::Print(FMT_STRING("Calculating k-space kernels"));
-  Cx4 grid = gridder->Adj(data).chip<1>(0); // Get rid of the echoes dimension
-  R3 valsImage(gridder->mapping().cartDims);
+  Cx4 grid = gridder->Adj(data).chip<1>(0);
 
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh);
@@ -56,38 +55,41 @@ Cx4 ESPIRIT(
 
   Log::Print(FMT_STRING("Image space Eigenanalysis"));
   // Do this slice-by-slice
-  auto slice_task = [&grid, &valsImage, &mix_kernels](Index const lo_z, Index const hi_z) {
-    for (Index zz = lo_z; zz < hi_z; zz++) {
-      Cx4 hi_kernels(
-        grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
-      Cx3 hi_slice(grid.dimension(0), grid.dimension(1), grid.dimension(2));
-      auto const hi_slice_fft = FFT::Make<3, 2>(hi_slice.dimensions(), 1);
+  R3 valsImage(gridder->mapping().cartDims);
+  auto const hiSz = FirstN<3>(grid.dimensions());
+  auto const hiFFT = FFT::Make<3, 2>(hiSz, 1);
+  auto slice_task =
+    [&grid, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const lo_z, Index const hi_z) {
+      for (Index zz = lo_z; zz < hi_z; zz++) {
+        Cx4 hi_kernels(
+          grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
+        Cx3 hi_slice(hiSz);
 
-      // Now do a lot of FFTs
-      for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
-        Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
-        hi_slice.setZero();
-        CropLast2(hi_slice, mix_kernel.dimensions()) = mix_kernel;
-        hi_slice_fft->reverse(hi_slice);
-        hi_kernels.chip<3>(kk) = hi_slice;
-      }
-
-      // Now voxel-wise covariance
-      for (Index yy = 0; yy < hi_slice.dimension(2); yy++) {
-        for (Index xx = 0; xx < hi_slice.dimension(1); xx++) {
-          Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
-          Cx2 vecs(samples.dimension(0), samples.dimension(0));
-          R1 vals(samples.dimension(0));
-          PCA(samples, vecs, vals);
-          Cx1 const vec0 = vecs.chip<1>(0);
-          float const phase = std::arg(vec0(0));
-          grid.chip<3>(zz).chip<2>(yy).chip<1>(xx) = (vec0 * std::polar(1.f, -phase)).conjugate();
-          valsImage(xx, yy, zz) = vals(0);
+        // Now do a lot of FFTs
+        for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
+          Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
+          hi_slice.setZero();
+          CropLast2(hi_slice, mix_kernel.dimensions()) = mix_kernel;
+          hiFFT->reverse(hi_slice);
+          hi_kernels.chip<3>(kk) = hi_slice;
         }
+
+        // Now voxel-wise covariance
+        for (Index yy = 0; yy < hi_slice.dimension(2); yy++) {
+          for (Index xx = 0; xx < hi_slice.dimension(1); xx++) {
+            Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
+            Cx2 vecs(samples.dimension(0), samples.dimension(0));
+            R1 vals(samples.dimension(0));
+            PCA(samples, vecs, vals);
+            Cx1 const vec0 = vecs.chip<1>(0);
+            float const phase = std::arg(vec0(0));
+            grid.chip<3>(zz).chip<2>(yy).chip<1>(xx) = (vec0 * std::polar(1.f, -phase)).conjugate();
+            valsImage(xx, yy, zz) = vals(0);
+          }
+        }
+        Log::Progress(zz, lo_z, hi_z);
       }
-      Log::Progress(zz, lo_z, hi_z);
-    }
-  };
+    };
   Threads::RangeFor(slice_task, mix_kernels.dimension(3));
 
   Log::Print(FMT_STRING("Finished ESPIRIT"));

@@ -9,7 +9,7 @@ int main(int const argc, char const *const argv[])
   args::Command blend(commands, "blend", "Blend basis images", &main_blend);
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
-  args::Command espirit(commands, "espirit", "Create SENSE maps with ESPIRiT", &main_espirit);
+  args::Command espirit(commands, "espirit-calib", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command hdr(commands, "hdr", "Print the header from an HD5 file", &main_hdr);
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);

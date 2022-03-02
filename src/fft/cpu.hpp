@@ -93,7 +93,7 @@ struct CPU final : FFT<TRank, FRank>
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
     }
-    Log::Print(FMT_STRING("Reverse FFT"));
+    Log::Debug(FMT_STRING("Reverse FFT"));
     auto start = Log::Now();
     applyPhase(x, scale_, false);
     auto ptr = reinterpret_cast<fftwf_complex *>(x.data());

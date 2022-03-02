@@ -80,6 +80,15 @@ decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
 }
 
 template <int N, typename T>
+Eigen::DSizes<Index, N> FirstN(T const &sz)
+{
+  assert(N <= sz.size());
+  Eigen::DSizes<Index, N> first;
+  std::copy_n(sz.begin(), N, first.begin());
+  return first;
+}
+
+template <int N, typename T>
 Eigen::DSizes<Index, N> LastN(T const &sz)
 {
   assert(N <= sz.size());
