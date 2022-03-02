@@ -54,7 +54,7 @@ struct GridBasis final : SizedGrid<IP, TP>
               for (Index ib = 0; ib < nB; ib++) {
                 for (Index ic = 0; ic < nC; ic++) {
                   noncart(ic, n.read, n.spoke) +=
-                    cart(ic, ib, stX + ix, stY + iy, stZ + iz) * b(ib);
+                    cart(ic, ib, stX + ix, stY + iy, stZ + iz) * b(ib) * kval;
                 }
               }
             }
@@ -115,7 +115,8 @@ struct GridBasis final : SizedGrid<IP, TP>
               for (Index ib = 0; ib < nB; ib++) {
                 float const kval = k(ix, iy, iz) * scale;
                 for (Index ic = 0; ic < nC; ic++) {
-                  out(ic, ib, stX + ix, stY + iy, stZ + iz) += noncart(ic, n.read, n.spoke) * b(ib);
+                  out(ic, ib, stX + ix, stY + iy, stZ + iz) +=
+                    noncart(ic, n.read, n.spoke) * b(ib) * kval;
                 }
               }
             }

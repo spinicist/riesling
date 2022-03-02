@@ -59,6 +59,7 @@ struct GridEcho final : SizedGrid<IP, TP>
 
   Input Adj(Output const &noncart) const
   {
+    Log::Debug("Grid Echo Adjoint");
     auto const ncdims = noncart.dimensions();
     Index const nC = ncdims[0];
     if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
@@ -114,7 +115,7 @@ struct GridEcho final : SizedGrid<IP, TP>
     auto const start = Log::Now();
     cart.setZero();
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
-    Log::Debug("Non-cart -> Cart: {}", Log::ToNow(start));
+    Log::Debug("Grid Echo Adjoint took: {}", Log::ToNow(start));
     if (this->safe_) {
       Log::Print(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
