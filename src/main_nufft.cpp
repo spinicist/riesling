@@ -11,12 +11,23 @@ int main_nufft(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   args::Flag adjoint(parser, "A", "Apply adjoint", {'a', "adj"});
+  args::ValueFlag<std::string> trajFile(
+    parser, "T", "Alternative trajectory file for sampling", {"traj"});
   args::ValueFlag<std::string> dset(
     parser, "D", "Dataset name (channels/noncartesian)", {'d', "dset"});
   ParseCommand(parser, iname);
   FFT::Start();
   HD5::RieslingReader reader(iname.Get());
-  auto const traj = reader.trajectory();
+  Trajectory traj;
+  if (trajFile) {
+    if (adjoint) {
+      Log::Fail("Specifying a trajectory file in the adjoint direction is not supported");
+    }
+    HD5::RieslingReader trajReader(trajFile.Get());
+    traj = trajReader.trajectory();
+  } else {
+    traj = reader.trajectory();
+  }
   auto const info = traj.info();
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
