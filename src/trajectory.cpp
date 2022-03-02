@@ -118,7 +118,7 @@ Mapping Trajectory::mapping(
 {
   Index const nChan = (inChan < 1) ? info_.channels : inChan;
   Index const kRad = kw / 2; // Radius to avoid at edge of grid
-  float const res = inRes < 0.f ? info_.voxel_size.minCoeff() : inRes;
+  float const res = inRes > 0.f ? inRes : info_.voxel_size.minCoeff();
   float const ratio = info_.voxel_size.minCoeff() / res;
   Index const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
   Log::Print(
