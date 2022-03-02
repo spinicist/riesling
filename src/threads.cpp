@@ -56,15 +56,21 @@ Eigen::ThreadPoolDevice GlobalDevice()
 
 void For(ForFunc f, Index const lo, Index const hi)
 {
-  Index const barrier_size = hi - lo;
-  Eigen::Barrier barrier(static_cast<unsigned int>(barrier_size));
-  for (Index i = lo; i < hi; i++) {
-    GlobalPool()->Schedule([&barrier, &f, i] {
+  if (GlobalPool()->NumThreads() == 1) {
+    for (Index i = lo; i < hi; i++) {
       f(i);
-      barrier.Notify();
-    });
+    }
+  } else {
+    Index const barrier_size = hi - lo;
+    Eigen::Barrier barrier(static_cast<unsigned int>(barrier_size));
+    for (Index i = lo; i < hi; i++) {
+      GlobalPool()->Schedule([&barrier, &f, i] {
+        f(i);
+        barrier.Notify();
+      });
+    }
+    barrier.Wait();
   }
-  barrier.Wait();
 }
 
 void For(ForFunc f, Index const n)
@@ -80,24 +86,28 @@ void RangeFor(RangeFunc f, Index const n)
 void RangeFor(RangeFunc f, Index const lo, Index const hi)
 {
   Index const nt = GlobalPool()->NumThreads();
-  Index const ni = hi - lo;
-  if (ni == 0) {
-    return;
+  if (nt == 1) {
+    f(lo, hi);
+  } else {
+    Index const ni = hi - lo;
+    if (ni == 0) {
+      return;
+    }
+    Index const num = std::min(nt, ni);
+    Eigen::Barrier barrier(static_cast<unsigned int>(num));
+    Index const range_sz = static_cast<Index>(std::ceil(static_cast<float>(ni) / num));
+    Index range_lo = lo;
+    Index range_hi = lo + range_sz;
+    for (Index ti = 0; ti < num; ti++) {
+      GlobalPool()->Schedule([&barrier, &f, range_lo, range_hi, hi] {
+        f(range_lo, std::min(range_hi, hi));
+        barrier.Notify();
+      });
+      range_lo += range_sz;
+      range_hi += range_sz;
+    }
+    barrier.Wait();
   }
-  Index const num = std::min(nt, ni);
-  Eigen::Barrier barrier(static_cast<unsigned int>(num));
-  Index const range_sz = static_cast<Index>(std::ceil(static_cast<float>(ni) / num));
-  Index range_lo = lo;
-  Index range_hi = lo + range_sz;
-  for (Index ti = 0; ti < num; ti++) {
-    GlobalPool()->Schedule([&barrier, &f, range_lo, range_hi, hi] {
-      f(range_lo, std::min(range_hi, hi));
-      barrier.Notify();
-    });
-    range_lo += range_sz;
-    range_hi += range_sz;
-  }
-  barrier.Wait();
 }
 
 void RangeFor(RangeThreadFunc f, Index const n)
