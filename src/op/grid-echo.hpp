@@ -42,9 +42,9 @@ struct GridEcho final : SizedGrid<IP, TP>
         for (Index iz = 0; iz < TP; iz++) {
           for (Index iy = 0; iy < IP; iy++) {
             for (Index ix = 0; ix < IP; ix++) {
+              float const kval = k(ix, iy, iz) * scale;
               for (Index ic = 0; ic < nC; ic++) {
-                noncart(ic, n.read, n.spoke) +=
-                  cart(ic, ie, stX + ix, stY + iy, stZ + iz) * k(ix, iy, iz) * scale;
+                noncart(ic, n.read, n.spoke) += cart(ic, ie, stX + ix, stY + iy, stZ + iz) * kval;
               }
             }
           }
@@ -101,9 +101,9 @@ struct GridEcho final : SizedGrid<IP, TP>
         for (Index iz = 0; iz < TP; iz++) {
           for (Index iy = 0; iy < IP; iy++) {
             for (Index ix = 0; ix < IP; ix++) {
+              float const kval = k(ix, iy, iz) * scale;
               for (Index ic = 0; ic < nC; ic++) {
-                out(ic, ie, stX + ix, stY + iy, stZ + iz) +=
-                  noncart(ic, n.read, n.spoke) * k(ix, iy, iz) * scale;
+                out(ic, ie, stX + ix, stY + iy, stZ + iz) += noncart(ic, n.read, n.spoke) * kval;
               }
             }
           }

@@ -33,7 +33,7 @@ auto const kb5 = make_kernel("KB5", info.type, os);
 auto const fi3 = make_kernel("FI3", info.type, os);
 auto const fi5 = make_kernel("FI5", info.type, os);
 
-TEST_CASE("GridEcho")
+TEST_CASE("GridEchoAdj")
 {
   auto gridnn = make_grid(nn.get(), m1, false);
   auto gridkb3 = make_grid(kb3.get(), m3, false);
@@ -42,7 +42,6 @@ TEST_CASE("GridEcho")
   auto gridfi5 = make_grid(fi5.get(), m5, false);
 
   Cx3 nc(gridnn->outputDimensions());
-  Cx5 c(gridnn->inputDimensions());
 
   BENCHMARK("NN Noncartesian->Cartesian")
   {
@@ -68,6 +67,17 @@ TEST_CASE("GridEcho")
   {
     gridfi5->Adj(nc);
   };
+}
+
+TEST_CASE("GridEchoA")
+{
+  auto gridnn = make_grid(nn.get(), m1, false);
+  auto gridkb3 = make_grid(kb3.get(), m3, false);
+  auto gridkb5 = make_grid(kb5.get(), m5, false);
+  auto gridfi3 = make_grid(fi3.get(), m3, false);
+  auto gridfi5 = make_grid(fi5.get(), m5, false);
+
+  Cx5 c(gridnn->inputDimensions());
 
   BENCHMARK("NN Cartesian->Noncartesian")
   {
@@ -95,7 +105,7 @@ TEST_CASE("GridEcho")
   };
 }
 
-TEST_CASE("GridBasis")
+TEST_CASE("GridBasisAdj")
 {
   Index const nB = 4;
   R2 basis(256, nB);
@@ -108,7 +118,6 @@ TEST_CASE("GridBasis")
   auto gridfi5 = make_grid_basis(fi5.get(), m5, basis, false);
 
   Cx3 nc(gridnn->outputDimensions());
-  Cx5 c(gridnn->inputDimensions());
 
   BENCHMARK("NN Noncartesian->Cartesian")
   {
@@ -134,6 +143,21 @@ TEST_CASE("GridBasis")
   {
     gridfi5->Adj(nc);
   };
+}
+
+TEST_CASE("GridBasisA")
+{
+  Index const nB = 4;
+  R2 basis(256, nB);
+  basis.setConstant(1.f);
+
+  auto gridnn = make_grid_basis(nn.get(), m1, basis, false);
+  auto gridkb3 = make_grid_basis(kb3.get(), m3, basis, false);
+  auto gridkb5 = make_grid_basis(kb5.get(), m5, basis, false);
+  auto gridfi3 = make_grid_basis(fi3.get(), m3, basis, false);
+  auto gridfi5 = make_grid_basis(fi5.get(), m5, basis, false);
+
+  Cx5 c(gridnn->inputDimensions());
 
   BENCHMARK("NN Cartesian->Noncartesian")
   {
