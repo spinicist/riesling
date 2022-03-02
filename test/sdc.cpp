@@ -29,8 +29,8 @@ TEST_CASE("SDC")
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes);
     // Central points should be very small
-    CHECK(sdc(0, 0) == Approx(0.00106f).margin(1.e-4f));
-    CHECK(sdc(1, 0) == Approx(0.00427f).margin(1.e-4f));
+    CHECK(sdc(0, 0) == Approx(0.00308f).margin(1.e-4f));
+    CHECK(sdc(1, 0) == Approx(0.00363f).margin(1.e-4f));
     // Undersampled points should be close to one
     CHECK(sdc(25, 0) == Approx(0.81739f).margin(1.e-1f));
     CHECK(sdc(26, 0) == Approx(0.8954f).margin(1.e-1f));

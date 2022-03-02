@@ -1,4 +1,4 @@
-#include "../../src/op/grid.h"
+#include "../../src/op/grids.h"
 #include "../../src/precond/sdc.hpp"
 #include "../../src/sdc.h"
 #include "../../src/tensorOps.h"

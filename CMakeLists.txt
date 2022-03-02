@@ -56,7 +56,13 @@ add_library(vineyard
     src/zinfandel.cpp
     src/fft/fft.cpp
     src/op/operator.cpp
-    src/op/grid.cpp
+    src/op/grids.cpp
+    src/op/grid1e.cpp
+    src/op/grid1b.cpp
+    src/op/grid3e.cpp
+    src/op/grid3b.cpp
+    src/op/grid5e.cpp
+    src/op/grid5b.cpp
     src/op/nufft.hpp
     src/op/pad.hpp
     src/op/recon.hpp

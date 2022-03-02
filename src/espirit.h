@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.h"
-#include "op/grid.h"
+#include "op/grids.h"
 
 Cx4 ESPIRIT(
   GridBase *grid,

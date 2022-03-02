@@ -27,28 +27,28 @@ struct GridEcho final : SizedGrid<IP, TP>
     Output noncart(ncdims);
     noncart.setZero();
 
-    Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
-    szC.set(0, nC);
+    auto const scale = this->mapping_.scale;
     auto grid_task = [&](Index const lo, Index const hi) {
-      auto const scale = this->mapping_.scale;
-      Eigen::IndexList<FixZero, int, int, int> stC;
       for (auto ii = lo; ii < hi; ii++) {
         Log::Progress(ii, lo, hi);
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const e = std::min(this->mapping_.echo[si], int8_t(cdims[1] - 1));
+        auto const ie = this->mapping_.echo[si];
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        stC.set(1, c.x - ((IP - 1) / 2));
-        stC.set(2, c.y - ((IP - 1) / 2));
-        stC.set(3, c.z - ((TP - 1) / 2));
-        noncart.template chip<2>(n.spoke).template chip<1>(n.read) =
-          cart.template chip<1>(e).slice(stC, szC).contract(
-            (k * k.constant(scale)).template cast<Cx>(),
-            Eigen::IndexPairList<
-              Eigen::type2indexpair<1, 0>,
-              Eigen::type2indexpair<2, 1>,
-              Eigen::type2indexpair<3, 2>>());
+        Index const stX = c.x - ((IP - 1) / 2);
+        Index const stY = c.y - ((IP - 1) / 2);
+        Index const stZ = c.z - ((TP - 1) / 2);
+        for (Index iz = 0; iz < TP; iz++) {
+          for (Index iy = 0; iy < IP; iy++) {
+            for (Index ix = 0; ix < IP; ix++) {
+              for (Index ic = 0; ic < nC; ic++) {
+                noncart(ic, n.read, n.spoke) +=
+                  cart(ic, ie, stX + ix, stY + iy, stZ + iz) * k(ix, iy, iz) * scale;
+              }
+            }
+          }
+        }
       }
     };
     auto const &start = Log::Now();
@@ -71,53 +71,44 @@ struct GridEcho final : SizedGrid<IP, TP>
     cdims[0] = nC;
     Input cart(cdims);
 
-    Eigen::IndexList<int, FixOne, FixOne, FixOne> rshNC;
-    constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> brdNC;
-    rshNC.set(0, nC);
-
-    constexpr Eigen::IndexList<FixOne, FixIn, FixIn, FixThrough> rshK;
-    Eigen::IndexList<int, FixOne, FixOne, FixOne> brdK;
-    brdK.set(0, nC);
-
-    Eigen::IndexList<int, FixIn, FixIn, FixThrough> szC;
-    szC.set(0, nC);
-
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
     std::vector<Cx5> threadSpaces(nThreads);
     std::vector<Index> minZ(nThreads, 0L), szZ(nThreads, 0L);
     auto grid_task = [&](Index const lo, Index const hi, Index const ti) {
       // Allocate working space for this thread
-      Eigen::IndexList<FixZero, int, int, int> stC;
-      minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z - ((TP - 1) / 2);
-
       if (this->safe_) {
         Index const maxZ = this->mapping_.cart[this->mapping_.sortedIndices[hi - 1]].z + (TP / 2);
+        minZ[ti] = this->mapping_.cart[this->mapping_.sortedIndices[lo]].z - ((TP - 1) / 2);
         szZ[ti] = maxZ - minZ[ti] + 1;
         threadSpaces[ti].resize(nC, cdims[1], cdims[2], cdims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
 
+      Cx4 workspace(AddFront(this->kernel_->dimensions(), nC));
       for (auto ii = lo; ii < hi; ii++) {
         Log::Progress(ii, lo, hi);
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const e = this->mapping_.echo[si];
+        auto const ie = this->mapping_.echo[si];
         auto const scale =
-          this->mapping_.scale * (this->weightEchoes_ ? this->mapping_.echoWeights[e] : 1.f);
-        auto const nc = noncart.template chip<2>(n.spoke).template chip<1>(n.read);
+          this->mapping_.scale * (this->weightEchoes_ ? this->mapping_.echoWeights[ie] : 1.f);
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        auto const nck = (nc * nc.constant(scale)).reshape(rshNC).broadcast(brdNC) *
-                         k.template cast<Cx>().reshape(rshK).broadcast(brdK);
-        stC.set(1, c.x - ((IP - 1) / 2));
-        stC.set(2, c.y - ((IP - 1) / 2));
-        if (this->safe_) {
-          stC.set(3, c.z - ((TP - 1) / 2) - minZ[ti]);
-          threadSpaces[ti].chip<1>(e).slice(stC, szC) += nck;
-        } else {
-          stC.set(3, c.z - ((TP - 1) / 2));
-          cart.template chip<1>(e).slice(stC, szC) += nck;
+
+        Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
+        Index const stX = c.x - ((IP - 1) / 2);
+        Index const stY = c.y - ((IP - 1) / 2);
+        Index const stZ = c.z - ((TP - 1) / 2) - minZ[ti];
+        for (Index iz = 0; iz < TP; iz++) {
+          for (Index iy = 0; iy < IP; iy++) {
+            for (Index ix = 0; ix < IP; ix++) {
+              for (Index ic = 0; ic < nC; ic++) {
+                out(ic, ie, stX + ix, stY + iy, stZ + iz) +=
+                  noncart(ic, n.read, n.spoke) * k(ix, iy, iz) * scale;
+              }
+            }
+          }
         }
       }
     };

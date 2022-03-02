@@ -3,7 +3,7 @@
 #include "fft/fft.hpp"
 #include "io.h"
 #include "log.h"
-#include "op/grid.h"
+#include "op/grids.h"
 #include "parse_args.h"
 #include "sdc.h"
 #include "tensorOps.h"

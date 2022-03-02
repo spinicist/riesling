@@ -1,32 +1,46 @@
 #pragma once
 
 #include "kernel.h"
+#include "log.h"
 #include "tensorOps.h"
 
 template <int IP, int TP>
 auto SizedKernel<IP, TP>::distSq(Point3 const p) const -> KTensor
 {
-  using FixIP = Eigen::type2index<IP>;
-  using FixTP = Eigen::type2index<TP>;
-  Eigen::TensorFixedSize<float, Eigen::Sizes<IP>> indIP;
-  Eigen::TensorFixedSize<float, Eigen::Sizes<TP>> indTP;
-  std::iota(indIP.data(), indIP.data() + IP, -IP / 2); // Note INTEGER division
-  std::iota(indTP.data(), indTP.data() + TP, -TP / 2); // Note INTEGER division
-  constexpr Eigen::IndexList<FixIP, FixOne, FixOne> rshX;
-  constexpr Eigen::IndexList<FixOne, FixIP, FixTP> brdX;
-  constexpr Eigen::IndexList<FixOne, FixIP, FixOne> rshY;
-  constexpr Eigen::IndexList<FixIP, FixOne, FixTP> brdY;
-  constexpr Eigen::IndexList<FixOne, FixOne, FixTP> rshZ;
-  constexpr Eigen::IndexList<FixIP, FixIP, FixOne> brdZ;
-  auto const kx = (indIP.constant(p[0]) - indIP).square().reshape(rshX).broadcast(brdX);
-  auto const ky = (indIP.constant(p[1]) - indIP).square().reshape(rshY).broadcast(brdY);
-  auto const kz = (indTP.constant(p[2]) - indTP).square().reshape(rshZ).broadcast(brdZ);
-  return kx + ky + kz;
+  KTensor k;
+  if constexpr (TP > 1) {
+    Point3 const np = p.array() / Point3(IP / 2.f, IP / 2.f, TP / 2.f).array();
+    for (Index iz = 0; iz < TP; iz++) {
+      for (Index iy = 0; iy < IP; iy++) {
+        for (Index ix = 0; ix < IP; ix++) {
+          k(ix, iy, iz) = (np - Point3(
+                                  ix * 2.f / (IP - 1.f) - 1.f,
+                                  iy * 2.f / (IP - 1.f) - 1.f,
+                                  iz * 2.f / (TP - 1.f) - 1.f))
+                            .squaredNorm();
+        }
+      }
+    }
+  } else {
+    Point3 const np = p.array() / Point3(IP / 2.f, IP / 2.f, 1.f).array();
+    for (Index iy = 0; iy < IP; iy++) {
+      for (Index ix = 0; ix < IP; ix++) {
+        k(ix, iy, 0) = (np - Point3(ix * 2.f / (IP - 1.f) - 1.f, iy * 2.f / (IP - 1.f) - 1.f, 0.f))
+                         .squaredNorm();
+      }
+    }
+  }
+  return k;
 }
 
 struct NearestNeighbour final : SizedKernel<1, 1>
 {
   using typename SizedKernel<1, 1>::KTensor;
+
+  NearestNeighbour()
+  {
+    Log::Debug("Nearest-neighbour kernel");
+  }
 
   KTensor k(Point3 const offset) const
   {
@@ -47,16 +61,41 @@ struct KaiserBessel final : SizedKernel<IP, TP>
     // Get the normalization factor
     scale_ = 1.f;
     scale_ = 1.f / Sum(k(Point3::Zero()));
+    Log::Debug(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={} "), IP, TP, beta_, scale_);
   }
 
   KTensor k(Point3 const p) const
   {
-    constexpr float W_2 = (IP / 2.f) * (IP / 2.f);
-    auto const x = SizedKernel<IP, TP>::distSq(p);
-    return (x < W_2).select(
-      x.constant(scale_) *
-        (x.constant(beta_) * (x.constant(1.f) - (x / x.constant(W_2))).sqrt()).bessel_i0(),
-      x.constant(0.f));
+    auto const z2 = this->distSq(p);
+    return (z2 > 1.f).select(
+      z2.constant(0.f),
+      z2.constant(scale_) * (z2.constant(beta_) * (z2.constant(1.f) - z2).sqrt()).bessel_i0());
+  }
+
+private:
+  float beta_, scale_;
+};
+
+template <int IP, int TP>
+struct FlatIron final : SizedKernel<IP, TP>
+{
+  using typename SizedKernel<IP, TP>::KTensor;
+
+  FlatIron(float os)
+    : beta_{(float)M_PI * 0.98f * IP * (1.f - 0.5f / os)}
+  {
+    // Get the normalization factor
+    scale_ = 1.f;
+    scale_ = 1.f / Sum(k(Point3::Zero()));
+    Log::Debug(FMT_STRING("Flat Iron kernel <{},{}> β={}, scale={}"), IP, TP, beta_, scale_);
+  }
+
+  KTensor k(Point3 const p) const
+  {
+    auto const z2 = this->distSq(p);
+    return (z2 > 1.f).select(
+      z2.constant(0.f),
+      z2.constant(scale_) * ((z2.constant(1.f) - z2).sqrt() * z2.constant(beta_)).exp());
   }
 
 private:
@@ -74,11 +113,13 @@ struct PipeSDC final : SizedKernel<IP, TP>
   {
     valScale_ = 1.f;
     valScale_ = 1.f / Sum(k(Point3::Zero()));
+    Log::Debug(
+      FMT_STRING("Pipe/Zwart kernel <{},{}> β={}, scale={}"), IP, TP, distScale_, valScale_);
   }
 
   KTensor k(Point3 const p) const
   {
-    auto const x = SizedKernel<IP, TP>::distSq(p);
+    auto const x = distSq(p);
     auto const x2 = (x * x.constant(distScale_)).sqrt(); // Pipe code unclear if sq or not
     constexpr float c = 0.99992359966186584;             // Constant term
     constexpr std::array<double, 5> coeffs{
@@ -96,6 +137,28 @@ struct PipeSDC final : SizedKernel<IP, TP>
     result = (result > 0.f).select(result * result.constant(valScale_), result.constant(0.f));
     // fmt::print("p {}\n{}\n{}\n", p.transpose(), x, result);
     return result;
+  }
+
+  // Pipe et al use a different (unscaled) convention
+  KTensor distSq(Point3 const p) const
+  {
+    KTensor k;
+    if constexpr (TP > 1) {
+      for (Index iz = 0; iz < TP; iz++) {
+        for (Index iy = 0; iy < IP; iy++) {
+          for (Index ix = 0; ix < IP; ix++) {
+            k(ix, iy, iz) = (p - Point3(ix - IP / 2, iy - IP / 2, iz - TP / 2)).squaredNorm();
+          }
+        }
+      }
+    } else {
+      for (Index iy = 0; iy < IP; iy++) {
+        for (Index ix = 0; ix < IP; ix++) {
+          k(ix, iy, 0) = (p - Point3(ix - IP / 2, iy - IP / 2, 0.f)).squaredNorm();
+        }
+      }
+    }
+    return k;
   }
 
 private:

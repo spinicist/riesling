@@ -5,7 +5,7 @@
 #include "../precond/precond.hpp"
 #include "apodize.hpp"
 #include "fft.hpp"
-#include "grid.h"
+#include "grids.h"
 #include "pad.hpp"
 
 struct NUFFTOp final : Operator<5, 3>

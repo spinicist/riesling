@@ -4,7 +4,7 @@
 #include "decomp.h"
 #include "fft/fft.hpp"
 #include "hankel.h"
-#include "op/grid.h"
+#include "op/grids.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "vc.h"

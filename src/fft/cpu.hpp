@@ -150,15 +150,15 @@ private:
     auto const rbPhase = phase_.reshape(rsh).broadcast(brd);
     if (threaded_) {
       if (fwd) {
-        x.device(Threads::GlobalDevice()) = x * x.constant(scale_) * rbPhase;
+        x.device(Threads::GlobalDevice()) = x * x.constant(scale) * rbPhase;
       } else {
-        x.device(Threads::GlobalDevice()) = x * x.constant(scale_) / rbPhase;
+        x.device(Threads::GlobalDevice()) = x * x.constant(scale) / rbPhase;
       }
     } else {
       if (fwd) {
-        x = x * x.constant(scale_) * rbPhase;
+        x = x * x.constant(scale) * rbPhase;
       } else {
-        x = x * x.constant(scale_) / rbPhase;
+        x = x * x.constant(scale) / rbPhase;
       }
     }
     Log::Debug(FMT_STRING("FFT phase correction: {}"), Log::ToNow(start));
