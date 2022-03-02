@@ -7,26 +7,29 @@
 template <int IP, int TP>
 auto SizedKernel<IP, TP>::distSq(Point3 const p) const -> KTensor
 {
+  // Yes, below is a weird mix of integer and floating point division.
+  // But it works
   KTensor k;
+  constexpr float IP_2 = IP / 2.f;
+  constexpr Index IIP_2 = IP / 2;
   if constexpr (TP > 1) {
-    Point3 const np = p.array() / Point3(IP / 2.f, IP / 2.f, TP / 2.f).array();
+    float const TP_2 = TP / 2.f;
+    Index const ITP_2 = TP / 2;
+    Point3 const np = p.array() / Point3(IP_2, IP_2, TP_2).array();
     for (Index iz = 0; iz < TP; iz++) {
       for (Index iy = 0; iy < IP; iy++) {
         for (Index ix = 0; ix < IP; ix++) {
-          k(ix, iy, iz) = (np - Point3(
-                                  ix * 2.f / (IP - 1.f) - 1.f,
-                                  iy * 2.f / (IP - 1.f) - 1.f,
-                                  iz * 2.f / (TP - 1.f) - 1.f))
-                            .squaredNorm();
+          k(ix, iy, iz) =
+            (np - Point3((-IIP_2 + ix) / IP_2, (-IIP_2 + iy) / IP_2, (-ITP_2 + iz) / TP_2))
+              .squaredNorm();
         }
       }
     }
   } else {
-    Point3 const np = p.array() / Point3(IP / 2.f, IP / 2.f, 1.f).array();
+    Point3 const np = p.array() / Point3(IP_2, IP_2, 1.f).array();
     for (Index iy = 0; iy < IP; iy++) {
       for (Index ix = 0; ix < IP; ix++) {
-        k(ix, iy, 0) = (np - Point3(ix * 2.f / (IP - 1.f) - 1.f, iy * 2.f / (IP - 1.f) - 1.f, 0.f))
-                         .squaredNorm();
+        k(ix, iy, 0) = (np - Point3((-IIP_2 + ix) / IP_2, (-IIP_2 + iy) / IP_2, 0.f)).squaredNorm();
       }
     }
   }
