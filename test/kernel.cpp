@@ -16,14 +16,14 @@ TEST_CASE("kernels")
   {
     auto const kb = KaiserBessel<3, 1>(2.f);
     auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 0) == Approx(0.96328f).margin(1.e-5));
+    CHECK(k(1, 1, 0) == Approx(0.50168f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
   SECTION("KB51")
   {
     auto const kb = KaiserBessel<5, 1>(2.f);
     auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 0) == Approx(0.01997f).margin(1.e-5));
+    CHECK(k(1, 1, 0) == Approx(0.04528f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
 
@@ -31,7 +31,7 @@ TEST_CASE("kernels")
   {
     auto const fi = FlatIron<3, 1>(2.f);
     auto const k = fi.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 0) == Approx(0.99609f).margin(1.e-5));
+    CHECK(k(1, 1, 0) == Approx(0.57973f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
 
@@ -39,7 +39,7 @@ TEST_CASE("kernels")
   {
     auto const kb = KaiserBessel<3, 3>(2.f);
     auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 1) == Approx(0.94592f).margin(1.e-5));
+    CHECK(k(1, 1, 1) == Approx(0.37933f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
 
@@ -47,7 +47,7 @@ TEST_CASE("kernels")
   {
     auto const kb = KaiserBessel<5, 5>(2.f);
     auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(2, 2, 2) == Approx(0.34064f).margin(1.e-5));
+    CHECK(k(2, 2, 2) == Approx(0.17432f).margin(1.e-5));
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
   }
 
