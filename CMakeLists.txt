@@ -51,7 +51,6 @@ add_library(vineyard
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp
-    # src/vc.cpp
     src/wavelets.cpp
     src/zinfandel.cpp
     src/fft/fft.cpp
@@ -88,7 +87,7 @@ add_executable(riesling
     src/main_grid.cpp
     src/main_hdr.cpp
     src/main_lookup.cpp
-    src/main_lsqr.cpp
+    src/main_lsmr.cpp
     src/main_meta.cpp
     src/main_nii.cpp
     src/main_nufft.cpp
