@@ -1,6 +1,6 @@
 #include "sdc.h"
 
-#include "io.h"
+#include "io/io.h"
 #include "kernel.hpp"
 #include "op/grid-echo.hpp"
 #include "tensorOps.h"

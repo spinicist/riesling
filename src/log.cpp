@@ -1,6 +1,6 @@
 #include "log.h"
 
-#include "io_nifti.h"
+#include "io/nifti.h"
 #include "tensorOps.h"
 
 namespace Log {

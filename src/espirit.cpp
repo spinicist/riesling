@@ -1,9 +1,9 @@
 #include "espirit.h"
 
+#include "algo/decomp.h"
+#include "algo/hankel.h"
 #include "cropper.h"
-#include "decomp.h"
 #include "fft/fft.hpp"
-#include "hankel.h"
 #include "op/grids.h"
 #include "tensorOps.h"
 #include "threads.h"

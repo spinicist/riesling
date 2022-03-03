@@ -1,5 +1,5 @@
-#include "../src/log.h"
-#include "../src/sim.h"
+#include "log.h"
+#include "sim/sim.h"
 #include <catch2/catch.hpp>
 
 TEST_CASE("SIM-Parameters", "[SIM]")

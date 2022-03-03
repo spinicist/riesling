@@ -1,4 +1,4 @@
-#include "../src/decomp.h"
+#include "algo/decomp.h"
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 

@@ -1,4 +1,4 @@
-#include "../src/hankel.h"
+#include "algo/hankel.h"
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 

@@ -1,7 +1,7 @@
-#include "../src/io.h"
-#include "../src/log.h"
-#include "../src/tensorOps.h"
-#include "../src/traj_spirals.h"
+#include "io/io.h"
+#include "log.h"
+#include "tensorOps.h"
+#include "traj_spirals.h"
 
 #include <filesystem>
 

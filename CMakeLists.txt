@@ -27,33 +27,28 @@ add_library(vineyard
     src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp
-    src/decomp.cpp
     src/espirit.cpp
     src/filter.cpp
-    src/hankel.cpp
-    src/io_hd5.cpp
-    src/io_nifti.cpp
-    src/io_reader.cpp
-    src/io_writer.cpp
     src/kernel.cpp
-    src/llr.cpp
     src/log.cpp
     src/phantom_sphere.cpp
     src/phantom_shepplogan.cpp
     src/parse_args.cpp
     src/sdc.cpp
     src/sense.cpp
-    src/sim.cpp
-    src/sim-eddy.cpp
-    src/sim-flair.cpp
-    src/sim-mupa.cpp
-    src/sim-prep.cpp
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp
     src/wavelets.cpp
     src/zinfandel.cpp
+    src/algo/decomp.cpp
+    src/algo/hankel.cpp
+    src/algo/llr.cpp
     src/fft/fft.cpp
+    src/io/hd5.cpp
+    src/io/nifti.cpp
+    src/io/reader.cpp
+    src/io/writer.cpp
     src/op/operator.cpp
     src/op/grids.cpp
     src/op/grid1e.cpp
@@ -66,7 +61,13 @@ add_library(vineyard
     src/op/pad.hpp
     src/op/recon.hpp
     src/op/sense.hpp
+    src/sim/sim.cpp
+    src/sim/eddy.cpp
+    src/sim/flair.cpp
+    src/sim/mupa.cpp
+    src/sim/prep.cpp
 )
+target_include_directories(vineyard PUBLIC src)
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     Eigen3::Eigen
@@ -79,31 +80,31 @@ target_link_libraries(vineyard PUBLIC
 
 # Main executable
 add_executable(riesling
-    src/main_admm.cpp
-    src/main_blend.cpp
-    src/main_cg.cpp
-    src/main_compress.cpp
-    src/main_espirit.cpp
-    src/main_grid.cpp
-    src/main_hdr.cpp
-    src/main_lookup.cpp
-    src/main_lsmr.cpp
-    src/main_meta.cpp
-    src/main_nii.cpp
-    src/main_nufft.cpp
-    src/main_pad.cpp
-    src/main_phantom.cpp
-    src/main_plan.cpp
-    src/main_recon.cpp
-    src/main_sdc.cpp
-    src/main_sense.cpp
-    src/main_sense_calib.cpp
-    src/main_sim.cpp
-    src/main_split.cpp
-    src/main_tgv.cpp
-    src/main_traj.cpp
-    src/main_version.cpp
-    src/main_zinfandel.cpp
+    src/cmd/admm.cpp
+    src/cmd/blend.cpp
+    src/cmd/cg.cpp
+    src/cmd/compress.cpp
+    src/cmd/espirit.cpp
+    src/cmd/grid.cpp
+    src/cmd/hdr.cpp
+    src/cmd/lookup.cpp
+    src/cmd/lsmr.cpp
+    src/cmd/meta.cpp
+    src/cmd/nii.cpp
+    src/cmd/nufft.cpp
+    src/cmd/pad.cpp
+    src/cmd/phantom.cpp
+    src/cmd/plan.cpp
+    src/cmd/recon.cpp
+    src/cmd/sdc.cpp
+    src/cmd/sense.cpp
+    src/cmd/sense_calib.cpp
+    src/cmd/sim.cpp
+    src/cmd/split.cpp
+    src/cmd/tgv.cpp
+    src/cmd/traj.cpp
+    src/cmd/version.cpp
+    src/cmd/zinfandel.cpp
     src/main.cpp
 )
 target_link_libraries(riesling
