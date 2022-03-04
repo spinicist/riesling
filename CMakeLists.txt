@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(riesling LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 include(BuildType)
-include(GitVersion)
+include(Version)
 
 # Deal with GCC 8 and std::filesystem
 add_link_options( "$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>" )
@@ -116,9 +116,6 @@ set_target_properties(vineyard riesling PROPERTIES
     CXX_EXTENSIONS OFF
 )
 install(TARGETS riesling RUNTIME DESTINATION bin)
-# Parse version number
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/version.h)
-target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 option(BUILD_TESTS "Build the tests" ON)
 if( ${BUILD_TESTS} )
