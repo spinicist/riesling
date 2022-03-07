@@ -12,8 +12,9 @@ enum struct Level
 {
   None = 0,
   Info = 1,
-  Debug = 2,
-  Images = 3
+  Progress = 2,
+  Debug = 3,
+  Images = 4
 };
 
 class Failure : public std::runtime_error

@@ -47,7 +47,7 @@ void lfail(fmt::string_view fstr, fmt::format_args args)
 
 void Progress(Index const ii, Index const lo, Index const hi)
 {
-  if ((log_level >= Level::Info) && lo == 0) {
+  if ((log_level >= Level::Progress) && lo == 0) {
     Index const N = hi - lo;
     Index const steps = std::min(N, 10L);
     Index const N_per_step = N / steps;
