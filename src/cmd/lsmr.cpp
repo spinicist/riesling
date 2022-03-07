@@ -4,6 +4,7 @@
 #include "log.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
+#include "precond/single.hpp"
 #include "sdc.h"
 #include "sense.h"
 #include "tensorOps.h"
@@ -14,8 +15,12 @@ int main_lsmr(args::Subparser &parser)
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
-  args::ValueFlag<float> lsq_thr(parser, "T", "LSQ threshold (1e-10)", {"lsq_thresh"}, 1.e-10);
   args::ValueFlag<Index> lsq_its(parser, "N", "LSQ iterations (8)", {'i', "lsq_its"}, 8);
+  args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
+  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+  args::ValueFlag<float> damp(parser, "D", "Damping (regularization) factor", {"damp"}, 0.f);
 
   ParseCommand(parser, iname);
   FFT::Start();
@@ -26,7 +31,9 @@ int main_lsmr(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+
+  std::unique_ptr<Precond> pre =
+    precond.Get() ? std::make_unique<SingleChannel>(gridder.get()) : nullptr;
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -34,7 +41,8 @@ int main_lsmr(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            sdc->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+                            SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get())
+                              ->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
@@ -51,13 +59,21 @@ int main_lsmr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr(lsq_its.Get(), lsq_thr.Get(), recon, sdc, reader.noncartesian(iv));
+    vol = lsmr(
+      lsq_its.Get(),
+      recon,
+      reader.noncartesian(iv),
+      pre.get(),
+      atol.Get(),
+      btol.Get(),
+      ctol.Get(),
+      damp.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-  auto const fname = OutName(iname.Get(), oname.Get(), "lsqr", "h5");
+  auto const fname = OutName(iname.Get(), oname.Get(), "lsmr", "h5");
   HD5::Writer writer(fname);
   writer.writeTrajectory(traj);
   writer.writeTensor(out, "image");

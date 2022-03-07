@@ -16,7 +16,8 @@ typename Op::Input cgnorm(
   typename Op::Output const &b,
   typename Op::Input const &x0 = typename Op::Input())
 {
-  Log::Print(FMT_STRING("Starting Conjugate Gradients, threshold {}"), thresh);
+  float const scale = Norm(b);
+  Log::Print(FMT_STRING("Starting Conjugate Gradients, scale {} threshold {}"), scale, thresh);
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
@@ -25,7 +26,7 @@ typename Op::Input cgnorm(
   T p(dims);
   T r(dims);
   T x(dims);
-  r.device(dev) = op.Adj(b);
+  r.device(dev) = op.Adj(b / b.constant(scale));
   // If we have an initial guess, use it
   if (x0.size()) {
     if (x0.dimensions() != dims) {
@@ -65,7 +66,7 @@ typename Op::Input cgnorm(
     }
     r_old = r_new;
   }
-  return x;
+  return x * x.constant(scale);
 }
 
 /*

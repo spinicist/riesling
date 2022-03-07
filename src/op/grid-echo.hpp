@@ -117,7 +117,7 @@ struct GridEcho final : SizedGrid<IP, TP>
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::Debug("Grid Echo Adjoint took: {}", Log::ToNow(start));
     if (this->safe_) {
-      Log::Print(FMT_STRING("Combining thread workspaces..."));
+      Log::Debug(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();
       Sz5 st{0, 0, 0, 0, 0};
       Sz5 sz{nC, cdims[1], cdims[2], cdims[3], 0};

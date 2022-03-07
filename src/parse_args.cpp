@@ -9,7 +9,11 @@
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-  {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Debug}, {3, Log::Level::Images}};
+  {0, Log::Level::None},
+  {1, Log::Level::Info},
+  {2, Log::Level::Progress},
+  {3, Log::Level::Debug},
+  {4, Log::Level::Images}};
 }
 
 void Vector3fReader::operator()(

@@ -37,18 +37,19 @@ enum struct Reason
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
 template <typename Op, typename Precond>
-typename Op::Input lsqr(
+typename Op::Input lsmr(
   Index const &max_its,
-  float const &thresh,
   Op &op,
-  Precond const &pre,
   typename Op::Output const &b,
+  Precond const *M = nullptr, // Left preconditioner
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
   float const damp = 0.f)
 {
-  Log::Print(FMT_STRING("Starting LSMR, threshold {}"), thresh);
+  float const scale = Norm(b);
+  Log::Print(
+    FMT_STRING("Starting LSMR, scale {} Atol {} btol {} ctol {}"), scale, atol, btol, ctol);
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using TI = typename Op::Input;
@@ -56,13 +57,13 @@ typename Op::Input lsqr(
   auto const inDims = op.inputDimensions();
   auto const outDims = op.outputDimensions();
 
-  TO Pu(outDims);
+  TO Mu(outDims);
   TO u(outDims);
-  Pu.device(dev) = b;
-  u.device(dev) = pre->apply(Pu);
-  float β = sqrt(std::real(Dot(u, Pu)));
-  Pu.device(dev) = Pu / b.constant(β);
-  u.device(dev) = u / b.constant(β);
+  Mu.device(dev) = b / b.constant(scale);
+  u.device(dev) = M ? M->apply(Mu) : Mu;
+  float β = sqrt(std::real(Dot(u, Mu)));
+  Mu.device(dev) = Mu / Mu.constant(β);
+  u.device(dev) = u / u.constant(β);
 
   TI v(inDims);
   v.device(dev) = op.Adj(u);
@@ -96,13 +97,14 @@ typename Op::Input lsqr(
   float maxrbar = 0;
   float minrbar = std::numeric_limits<float>::max();
   float const normb = β;
+  Log::Print(FMT_STRING("Initial residual {}"), normb);
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
-    Pu.device(dev) = op.A(v) - α * Pu;
-    u.device(dev) = pre->apply(Pu);
-    β = sqrt(std::real(Dot(Pu, u)));
-    Pu.device(dev) = Pu / Pu.constant(β);
+    Mu.device(dev) = op.A(v) - α * Mu;
+    u.device(dev) = M ? M->apply(Mu) : Mu;
+    β = sqrt(std::real(Dot(Mu, u)));
+    Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);
 
     v.device(dev) = op.Adj(u) - β * v;
@@ -178,7 +180,7 @@ typename Op::Input lsqr(
     }
     float const condA = std::max(maxrbar, ρtemp) / std::min(minrbar, ρtemp);
 
-    Log::Print(FMT_STRING("LSMR {}: Residual {} Condition Number {}"), ii, normr, condA);
+    Log::Print(FMT_STRING("LSMR {}: Residual {} Estimate cond(A) {}"), ii, normr, condA);
 
     // Convergence tests - go in pairs which check large/small values then the user tolerance
     float const normar = abs(ζ_);
@@ -211,5 +213,5 @@ typename Op::Input lsqr(
       break;
     }
   }
-  return x;
+  return x * x.constant(scale);
 }
