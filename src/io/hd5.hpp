@@ -65,7 +65,11 @@ Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
   hid_t ds = H5Dget_space(dset);
   int const ndims = H5Sget_simple_extent_ndims(ds);
   if (ndims != ND) {
-    Log::Fail(FMT_STRING("Number of dimensions {} does match on-disk number {}"), ndims, ND);
+    Log::Fail(
+      FMT_STRING("In tensor {}, number of dimensions {} does match on-disk number {}"),
+      name,
+      ndims,
+      ND);
   }
   std::array<hsize_t, ND> hdims;
   H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
@@ -84,7 +88,7 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor has '{}' has rank {}, expected {}"), name, rank, ND);
+    Log::Fail(FMT_STRING("Tensor {}: has rank {}, expected {}"), name, rank, ND);
   }
 
   std::array<hsize_t, ND> dims;
@@ -93,7 +97,8 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   for (int ii = 0; ii < ND; ii++) {
     if ((Index)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
-        FMT_STRING("Expected dimensions were {}, but were {} on disk"),
+        FMT_STRING("Tensor {}: expected dimensions were {}, but were {} on disk"),
+        name,
         fmt::join(tensor.dimensions(), ","),
         fmt::join(dims, ","));
     }
@@ -122,7 +127,7 @@ void load_tensor_slab(
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor has '{}' has rank {}, expected {}"), name, rank, ND);
+    Log::Fail(FMT_STRING("Tensor {}: has rank {}, expected {}"), name, rank, ND);
   }
 
   std::array<hsize_t, ND> dims;
@@ -131,7 +136,8 @@ void load_tensor_slab(
   for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
     if ((Index)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
-        FMT_STRING("Expected dimensions were {}, but were {} on disk"),
+        FMT_STRING("Tensor {}: expected dimensions were {}, but were {} on disk"),
+        name,
         fmt::join(tensor.dimensions(), ","),
         fmt::join(dims, ","));
     }
@@ -166,9 +172,9 @@ void load_tensor_slab(
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
     Log::Fail(
-      FMT_STRING("Error reading slab {} from tensor {}. HD5 Message: {}"),
-      index,
+      FMT_STRING("Tensor {}: Error reading slab {}. HD5 Message: {}"),
       name,
+      index,
       HD5::GetError());
   } else {
     Log::Debug(FMT_STRING("Read slab {} from tensor {}"), index, name);
@@ -185,7 +191,7 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor has '{}' has rank {}, expected {}"), name, rank, ND);
+    Log::Fail(FMT_STRING("Tensor {}: has rank {}, expected {}"), name, rank, ND);
   }
 
   std::array<hsize_t, ND> dims;
