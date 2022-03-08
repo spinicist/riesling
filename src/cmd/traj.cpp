@@ -25,7 +25,7 @@ int main_traj(args::Subparser &parser)
   // Ensure only one channel for sanity
   auto info = inTraj.info();
   info.channels = 1;
-  Trajectory traj(info, inTraj.points(), inTraj.echoes());
+  Trajectory traj(info, inTraj.points(), inTraj.frames());
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());

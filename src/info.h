@@ -16,7 +16,7 @@ struct Info
   Index read_points;
   Index spokes;
   Index volumes = 1;
-  Index echoes = 1;
+  Index frames = 1;
   float tr = 1.f;
   Eigen::Array3f voxel_size = Eigen::Vector3f::Ones();
   Eigen::Vector3f origin = Eigen::Vector3f::Zero();

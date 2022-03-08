@@ -15,7 +15,7 @@ TEST_CASE("SDC")
     .read_points = Index(os * M / 2),
     .spokes = Index(M * M / 4),
     .volumes = 1,
-    .echoes = 1,
+    .frames = 1,
     .tr = 1.f,
     .voxel_size = Eigen::Array3f::Constant(1.f),
     .origin = Eigen::Array3f::Constant(0.f),

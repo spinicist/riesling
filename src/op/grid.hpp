@@ -3,15 +3,15 @@
 #include "grid-base.hpp"
 
 template <int IP, int TP>
-struct GridEcho final : SizedGrid<IP, TP>
+struct Grid final : SizedGrid<IP, TP>
 {
   using typename SizedGrid<IP, TP>::Input;
   using typename SizedGrid<IP, TP>::Output;
 
-  GridEcho(SizedKernel<IP, TP> const *k, Mapping const &mapping, bool const unsafe)
-    : SizedGrid<IP, TP>(k, mapping, mapping.echoes, unsafe)
+  Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, bool const unsafe)
+    : SizedGrid<IP, TP>(k, mapping, mapping.frames, unsafe)
   {
-    Log::Debug(FMT_STRING("GridEcho<{},{}>, dims {}"), IP, TP, this->inputDimensions());
+    Log::Debug(FMT_STRING("Grid<{},{}>, dims {}"), IP, TP, this->inputDimensions());
   }
 
   Output A(Input const &cart) const
@@ -34,7 +34,7 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const ie = this->mapping_.echo[si];
+        auto const ifr = this->mapping_.frame[si];
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         Index const stX = c.x - ((IP - 1) / 2);
         Index const stY = c.y - ((IP - 1) / 2);
@@ -44,7 +44,7 @@ struct GridEcho final : SizedGrid<IP, TP>
             for (Index ix = 0; ix < IP; ix++) {
               float const kval = k(ix, iy, iz) * scale;
               for (Index ic = 0; ic < nC; ic++) {
-                noncart(ic, n.read, n.spoke) += cart(ic, ie, stX + ix, stY + iy, stZ + iz) * kval;
+                noncart(ic, n.read, n.spoke) += cart(ic, ifr, stX + ix, stY + iy, stZ + iz) * kval;
               }
             }
           }
@@ -59,7 +59,7 @@ struct GridEcho final : SizedGrid<IP, TP>
 
   Input Adj(Output const &noncart) const
   {
-    Log::Debug("Grid Echo Adjoint");
+    Log::Debug("Grid Adjoint");
     auto const ncdims = noncart.dimensions();
     Index const nC = ncdims[0];
     if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
@@ -91,10 +91,10 @@ struct GridEcho final : SizedGrid<IP, TP>
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
-        auto const ie = this->mapping_.echo[si];
+        auto const ifr = this->mapping_.frame[si];
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
         auto const scale =
-          this->mapping_.scale * (this->weightEchoes_ ? this->mapping_.echoWeights[ie] : 1.f);
+          this->mapping_.scale * (this->weightFrames_ ? this->mapping_.frameWeights[ifr] : 1.f);
 
         Index const stX = c.x - ((IP - 1) / 2);
         Index const stY = c.y - ((IP - 1) / 2);
@@ -104,7 +104,7 @@ struct GridEcho final : SizedGrid<IP, TP>
             for (Index ix = 0; ix < IP; ix++) {
               float const kval = k(ix, iy, iz) * scale;
               for (Index ic = 0; ic < nC; ic++) {
-                out(ic, ie, stX + ix, stY + iy, stZ + iz) += noncart(ic, n.read, n.spoke) * kval;
+                out(ic, ifr, stX + ix, stY + iy, stZ + iz) += noncart(ic, n.read, n.spoke) * kval;
               }
             }
           }
@@ -115,7 +115,7 @@ struct GridEcho final : SizedGrid<IP, TP>
     auto const start = Log::Now();
     cart.setZero();
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
-    Log::Debug("Grid Echo Adjoint took: {}", Log::ToNow(start));
+    Log::Debug("Grid Adjoint took: {}", Log::ToNow(start));
     if (this->safe_) {
       Log::Debug(FMT_STRING("Combining thread workspaces..."));
       auto const start2 = Log::Now();

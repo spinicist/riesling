@@ -51,12 +51,12 @@ add_library(vineyard
     src/io/writer.cpp
     src/op/operator.cpp
     src/op/grids.cpp
-    src/op/grid1e.cpp
-    src/op/grid1b.cpp
-    src/op/grid3e.cpp
-    src/op/grid3b.cpp
-    src/op/grid5e.cpp
-    src/op/grid5b.cpp
+    src/op/grid1.cpp
+    src/op/grid-basis1.cpp
+    src/op/grid3.cpp
+    src/op/grid-basis3.cpp
+    src/op/grid5.cpp
+    src/op/grid-basis5.cpp
     src/op/nufft.hpp
     src/op/pad.hpp
     src/op/recon.hpp

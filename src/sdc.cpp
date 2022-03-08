@@ -2,7 +2,7 @@
 
 #include "io/io.h"
 #include "kernel.hpp"
-#include "op/grid-echo.hpp"
+#include "op/grid.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include "trajectory.h"
@@ -15,7 +15,7 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   auto info = inTraj.info();
   // Reset to one channel
   info.channels = 1;
-  Trajectory traj{info, inTraj.points(), inTraj.echoes()};
+  Trajectory traj{info, inTraj.points(), inTraj.frames()};
   Cx3 W(1, info.read_points, info.spokes);
   Cx3 Wp(W.dimensions());
 
@@ -25,20 +25,20 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
     k = std::make_unique<NearestNeighbour>();
     auto const m = traj.mapping(1, os, 1);
     gridder =
-      std::make_unique<GridEcho<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false);
+      std::make_unique<Grid<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false);
   } else {
     auto const m = traj.mapping(3, os);
     if (info.type == Info::Type::ThreeD) {
       k = std::make_unique<PipeSDC<5, 5>>(os);
-      gridder = std::make_unique<GridEcho<5, 5>>(
-        dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false);
+      gridder =
+        std::make_unique<Grid<5, 5>>(dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false);
     } else {
       k = std::make_unique<PipeSDC<5, 1>>(os);
-      gridder = std::make_unique<GridEcho<5, 1>>(
-        dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false);
+      gridder =
+        std::make_unique<Grid<5, 1>>(dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false);
     }
   }
-  gridder->doNotWeightEchoes();
+  gridder->doNotWeightFrames();
   W.setConstant(1.f);
 
   for (Index ii = 0; ii < its; ii++) {

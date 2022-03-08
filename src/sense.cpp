@@ -25,7 +25,7 @@ Cx4 SelfCalibration(
   }
 
   Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
-  grid = gridder->Adj(data).chip<1>(0); // Assume we want the first echo
+  grid = gridder->Adj(data).chip<1>(0); // Assume we want the first frame only
   float const end_rad = info.voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
   Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);

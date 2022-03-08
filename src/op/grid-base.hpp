@@ -14,7 +14,7 @@ struct GridBase : Operator<5, 3>
     : mapping_{map}
     , inputDims_{AddFront(map.cartDims, map.noncartDims[0], d1)}
     , safe_{!unsafe}
-    , weightEchoes_{true}
+    , weightFrames_{true}
   {
   }
 
@@ -43,9 +43,9 @@ struct GridBase : Operator<5, 3>
     safe_ = false;
   }
 
-  void doNotWeightEchoes()
+  void doNotWeightFrames()
   {
-    weightEchoes_ = false;
+    weightFrames_ = false;
   }
 
   Mapping const &mapping() const
@@ -56,7 +56,7 @@ struct GridBase : Operator<5, 3>
 protected:
   Mapping mapping_;
   Sz5 inputDims_;
-  bool safe_, weightEchoes_;
+  bool safe_, weightFrames_;
 };
 
 template <int IP, int TP>

@@ -61,7 +61,7 @@ hid_t InfoType()
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "echoes", HOFFSET(Info, echoes), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
   status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
   status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
@@ -83,7 +83,7 @@ void CheckInfoType(hid_t handle)
     "channels",
     "type",
     "volumes",
-    "echoes",
+    "frames",
     "tr",
     "origin",
     "direction"};

@@ -28,15 +28,15 @@ Trajectory::Trajectory(Info const &info, R3 const &points)
   , points_{points}
 
 {
-  echoes_ = I1(info_.spokes);
-  echoes_.setZero();
+  frames_ = I1(info_.spokes);
+  frames_.setZero();
   init();
 }
 
-Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &echoes)
+Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &fr)
   : info_{info}
   , points_{points}
-  , echoes_{echoes}
+  , frames_{fr}
 
 {
   init();
@@ -56,13 +56,13 @@ void Trajectory::init()
       info_.spokes,
       points_.dimension(2));
   }
-  if (info_.spokes != echoes_.dimension(0)) {
+  if (info_.spokes != frames_.dimension(0)) {
     Log::Fail(
-      "Mismatch between info spokes {} and echoes array {}", info_.spokes, echoes_.dimension(0));
+      "Mismatch between info spokes {} and frames array {}", info_.spokes, frames_.dimension(0));
   }
-  if (info_.echoes < Maximum(echoes_)) {
+  if (info_.frames < Maximum(frames_)) {
     Log::Fail(
-      "Maximum echo {} exceeds number of echoes in header {}", Maximum(echoes_), info_.echoes);
+      "Maximum frame {} exceeds number of frames in header {}", Maximum(frames_), info_.frames);
   }
 
   if (info_.type == Info::Type::ThreeD) {
@@ -91,9 +91,9 @@ R3 const &Trajectory::points() const
   return points_;
 }
 
-I1 const &Trajectory::echoes() const
+I1 const &Trajectory::frames() const
 {
-  return echoes_;
+  return frames_;
 }
 
 Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const rad_hi) const
@@ -139,17 +139,17 @@ Mapping Trajectory::mapping(
   Index const totalSz = info_.read_points * info_.spokes;
   mapping.cart.reserve(totalSz);
   mapping.noncart.reserve(totalSz);
-  mapping.echo.reserve(totalSz);
+  mapping.frame.reserve(totalSz);
   mapping.offset.reserve(totalSz);
-  mapping.echoes = Maximum(echoes_) + 1;
-  mapping.echoWeights = Eigen::ArrayXf::Zero(mapping.echoes);
+  mapping.frames = Maximum(frames_) + 1;
+  mapping.frameWeights = Eigen::ArrayXf::Zero(mapping.frames);
   std::fesetround(FE_TONEAREST);
   float const maxRad = ratio * ((gridSz / 2) - 1.f);
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
   auto start = Log::Now();
   for (int32_t is = 0; is < info_.spokes; is++) {
-    auto const echo = echoes_(is);
-    if ((echo >= 0) && (echo < info_.echoes)) {
+    auto const frame = frames_(is);
+    if ((frame >= 0) && (frame < info_.frames)) {
       for (int16_t ir = 0; ir < info_.read_points; ir++) {
         NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = point(ir, is, maxRad);
@@ -158,8 +158,8 @@ Mapping Trajectory::mapping(
           Size3 const cart = center + Size3(gp.cast<int16_t>());
           mapping.cart.push_back(CartesianIndex{cart(0), cart(1), cart(2)});
           mapping.noncart.push_back(nc);
-          mapping.echo.push_back(echo);
-          mapping.echoWeights[echo] += 1;
+          mapping.frame.push_back(frame);
+          mapping.frameWeights[frame] += 1;
           mapping.offset.push_back(xyz - gp.cast<float>().matrix());
         }
       }
@@ -171,8 +171,8 @@ Mapping Trajectory::mapping(
     totalSz - mapping.cart.size(),
     Log::ToNow(start));
 
-  mapping.echoWeights = mapping.echoWeights.maxCoeff() / mapping.echoWeights;
-  Log::Print(FMT_STRING("Echo weights: {}"), mapping.echoWeights.transpose());
+  mapping.frameWeights = mapping.frameWeights.maxCoeff() / mapping.frameWeights;
+  Log::Print(FMT_STRING("frame weights: {}"), mapping.frameWeights.transpose());
 
   start = Log::Now();
   mapping.sortedIndices.resize(mapping.cart.size());
@@ -229,5 +229,5 @@ Trajectory Trajectory::downsample(float const dsIn, Cx4 &ks) const
     dsInfo.matrix.transpose(),
     minRead,
     maxRead);
-  return Trajectory(dsInfo, dsPoints, echoes_);
+  return Trajectory(dsInfo, dsPoints, frames_);
 }

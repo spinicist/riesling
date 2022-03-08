@@ -79,13 +79,13 @@ RieslingReader::RieslingReader(std::string const &fname)
 
   R3 points(3, info.read_points, info.spokes);
   HD5::load_tensor(handle_, Keys::Trajectory, points);
-  if (HD5::Exists(handle_, "echoes")) {
-    I1 echoes(info.spokes);
-    HD5::load_tensor(handle_, "echoes", echoes);
-    Log::Debug(FMT_STRING("Read echoes successfully"));
-    traj_ = Trajectory(info, points, echoes);
+  if (HD5::Exists(handle_, "frames")) {
+    I1 frames(info.spokes);
+    HD5::load_tensor(handle_, "frames", frames);
+    Log::Debug(FMT_STRING("Read frames successfully"));
+    traj_ = Trajectory(info, points, frames);
   } else {
-    Log::Debug(FMT_STRING("No echoes information in file"));
+    Log::Debug(FMT_STRING("No frames information in file"));
     traj_ = Trajectory(info, points);
   }
 

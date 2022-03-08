@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../op/grid-echo.hpp"
+#include "../op/grid.hpp"
 #include "precond.hpp"
 
 struct SingleChannel final : Precond

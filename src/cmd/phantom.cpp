@@ -77,7 +77,7 @@ int main_phantom(args::Subparser &parser)
       .read_points = (Index)read_samp.Get() * matrix.Get() / 2,
       .spokes = spokes,
       .volumes = 1,
-      .echoes = 1,
+      .frames = 1,
       .tr = 1.f,
       .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
       .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),

@@ -15,7 +15,7 @@ Info const info{
   .read_points = M / 2,
   .spokes = M * M,
   .volumes = 1,
-  .echoes = 1,
+  .frames = 1,
   .tr = 1.f,
   .voxel_size = Eigen::Array3f::Constant(1.f),
   .origin = Eigen::Array3f::Constant(0.f),
@@ -33,7 +33,7 @@ auto const kb5 = make_kernel("KB5", info.type, os);
 auto const fi3 = make_kernel("FI3", info.type, os);
 auto const fi5 = make_kernel("FI5", info.type, os);
 
-TEST_CASE("GridEchoAdj")
+TEST_CASE("GridAdj")
 {
   auto gridnn = make_grid(nn.get(), m1, false);
   auto gridkb3 = make_grid(kb3.get(), m3, false);
@@ -69,7 +69,7 @@ TEST_CASE("GridEchoAdj")
   };
 }
 
-TEST_CASE("GridEchoA")
+TEST_CASE("GridA")
 {
   auto gridnn = make_grid(nn.get(), m1, false);
   auto gridkb3 = make_grid(kb3.get(), m3, false);

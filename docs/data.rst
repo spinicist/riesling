@@ -21,7 +21,7 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
     long spokes;
 
     long volumes;
-    long echoes;
+    long frames;
 
     float tr;
     float voxel_size[3];
@@ -35,7 +35,7 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
 * ``read_points`` sets the number of data-points in the readout direction, i.e. how many readout points per spoke.
 * ``spokes`` sets the number of spokes in the non-cartesian k-space acquisition.
 * ``volumes`` indicates how many volumes or time-points were acquired in the acquisition.
-* ``echoes`` specifies how many separate echoes were acquired per time-point.
+* ``frames`` specifies how many separate frames (or echoes) were acquired per volume.
 
 The final four fields specify the TR and image orientation as required to build a valid NIfTI output file.
 
@@ -49,10 +49,10 @@ Trajectory
 
 The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``SxNx3``. HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then this will be ``3xNxS``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial spokes the k-space locations go between 0 and 0.5, and for diameter spokes between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
 
-Echoes
+Frames
 ------
 
-If the dataset contains multiple echoes, or other temporal points (e.g. cardiac or respiratory phases) which should be reconstructed together, then an additional dataset should be added to the input H5 file called ``echoes``. This should be an integer valued, one-dimensional array with the number of entries equal to the number of spokes specified in the ``info`` structure.
+If the dataset contains multiple frames, or other temporal points (e.g. echoes or respiratory phases) which should be reconstructed together, then an additional dataset should be added to the input H5 file called ``frames``. This should be a zero-based integer valued, one-dimensional array with the number of entries equal to the number of spokes specified in the ``info`` structure. Each entry specifies the frame that each spoke should be allocated to.
 
 Non-cartesian Data
 ------------------
@@ -67,7 +67,7 @@ The ``riesling grid`` command will produce a complex-valued dataset named ``cart
 Image Data
 ----------
 
-The output of a reconstruction command will write a complex-valued dataset named ``image``, unless the ``--mag`` command is specified in which case the dataset will be real-valued. The dimensions will be ``VxZxYxXxE`` where V is the number of volumes, X, Y & Z are the matrix size, and E is either the number of echoes or the number of basis-vectors if a low-rank reconstruction has been used.
+The output of a reconstruction command will write a complex-valued dataset named ``image``, unless the ``--mag`` command is specified in which case the dataset will be real-valued. The dimensions will be ``VxZxYxXxE`` where V is the number of volumes, X, Y & Z are the matrix size, and E is either the number of frames or the number of basis-vectors if a low-rank reconstruction has been used.
 
 Density Compensation
 --------------------

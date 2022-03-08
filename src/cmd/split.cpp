@@ -13,8 +13,8 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<Index> spoke_stride(parser, "S", "Hi-res stride", {"stride"}, 1);
   args::ValueFlag<Index> spoke_size(parser, "SZ", "Size of hi-res spokes to keep", {"size"});
   args::ValueFlag<Index> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
-  args::ValueFlag<Index> nE(parser, "E", "Break into N echoes", {"echoes"}, 1);
-  args::ValueFlag<Index> spe(parser, "S", "Spokes per echo", {"spe"}, 1);
+  args::ValueFlag<Index> nF(parser, "F", "Break into N frames", {"frames"}, 1);
+  args::ValueFlag<Index> spe(parser, "S", "Spokes per frame", {"spe"}, 1);
   args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
 
@@ -23,28 +23,28 @@ int main_split(args::Subparser &parser)
   HD5::RieslingReader reader(iname.Get());
   auto traj = reader.trajectory();
 
-  if (nE && spe) {
-    Index const sps = spe.Get() * nE.Get();
+  if (nF && spe) {
+    Index const sps = spe.Get() * nF.Get();
     if (traj.info().spokes % spe != 0) {
       Log::Fail(FMT_STRING("SPE {} does not divide spokes {} cleanly"), sps, traj.info().spokes);
     }
     Index const segs = std::ceil(static_cast<float>(traj.info().spokes) / sps);
     Log::Print(
-      FMT_STRING("Adding info for {} echoes with {} spokes per echo, {} per segment, {} segments"),
-      nE.Get(),
+      FMT_STRING("Adding info for {} frames with {} spokes per frame, {} per segment, {} segments"),
+      nF.Get(),
       spe.Get(),
       sps,
       segs);
-    I1 e(nE.Get());
-    std::iota(e.data(), e.data() + nE.Get(), 0);
-    I1 echoes = e.reshape(Sz2{1, nE.Get()})
+    I1 e(nF.Get());
+    std::iota(e.data(), e.data() + nF.Get(), 0);
+    I1 frames = e.reshape(Sz2{1, nF.Get()})
                   .broadcast(Sz2{spe.Get(), 1})
                   .reshape(Sz1{sps})
                   .broadcast(Sz1{segs})
                   .slice(Sz1{0}, Sz1{traj.info().spokes});
     Info info = traj.info();
-    info.echoes = nE.Get();
-    traj = Trajectory(info, traj.points(), echoes);
+    info.frames = nF.Get();
+    traj = Trajectory(info, traj.points(), frames);
   }
 
   Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
@@ -60,10 +60,10 @@ int main_split(args::Subparser &parser)
 
     Info lo_info = traj.info();
     lo_info.spokes = std::abs(lores.Get());
-    lo_info.echoes = 1; // Don't even bother
+    lo_info.frames = 1; // Don't even bother
     Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), lo_st, lo_st + lo_info.spokes);
 
-    // The trajectory still thinks WASPI is at the beginning. Don't use echoes
+    // The trajectory still thinks WASPI is at the beginning. Don't use frames
     Trajectory lo_traj(
       lo_info, traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}));
     Cx4 lo_ks = ks.slice(
@@ -76,7 +76,7 @@ int main_split(args::Subparser &parser)
     traj = Trajectory(
       info,
       R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
-      I1(traj.echoes().slice(Sz1{0}, Sz1{info.spokes})));
+      I1(traj.frames().slice(Sz1{0}, Sz1{info.spokes})));
     ks = Cx4(ks.slice(
       Sz4{0, 0, hi_st, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
 
@@ -99,7 +99,7 @@ int main_split(args::Subparser &parser)
     traj = Trajectory(
       info,
       traj.points().stride(Sz3{1, 1, spoke_stride.Get()}),
-      traj.echoes().stride(Sz1{spoke_stride.Get()}));
+      traj.frames().stride(Sz1{spoke_stride.Get()}));
   }
 
   if (spoke_size) {
@@ -110,7 +110,7 @@ int main_split(args::Subparser &parser)
     traj = Trajectory(
       info,
       traj.points().slice(Sz3{0, 0, 0}, Sz3{3, info.read_points, info.spokes}),
-      traj.echoes().slice(Sz1{0}, Sz1{info.spokes}));
+      traj.frames().slice(Sz1{0}, Sz1{info.spokes}));
   }
 
   if (nspokes) {
@@ -135,7 +135,7 @@ int main_split(args::Subparser &parser)
       writer.writeTrajectory(Trajectory(
         info,
         traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, info.read_points, n}),
-        traj.echoes().slice(Sz1{idx0}, Sz1{n})));
+        traj.frames().slice(Sz1{idx0}, Sz1{n})));
       writer.writeTensor(
         Cx4(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{info.channels, info.read_points, n, info.volumes})),
         HD5::Keys::Noncartesian);

@@ -13,7 +13,7 @@ int main_hdr(args::Subparser &parser)
     FMT_STRING("Type: {}\n"
                "Matrix: {}\n"
                "Channels: {} Read points: {} Spokes: {}\n"
-               "Volumes: {} Echoes: {}\n"
+               "Volumes: {} Frames: {}\n"
                "Voxel-size: {}\t TR: {}\t Origin: {}\n"
                "Direction:\n{}\n"),
     (info.type == Info::Type::ThreeD ? "3D" : "3D Stack"),
@@ -22,7 +22,7 @@ int main_hdr(args::Subparser &parser)
     info.read_points,
     info.spokes,
     info.volumes,
-    info.echoes,
+    info.frames,
     info.voxel_size.transpose(),
     info.tr,
     info.origin.transpose(),
