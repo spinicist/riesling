@@ -22,41 +22,42 @@ struct CPU final : FFT<TRank, FRank>
     , threaded_{nThreads > 1}
   {
     Tensor ws(dims);
-    std::array<int, FRank> sizes;
-    int N = 1;
-    int Nvox = 1;
+    std::array<int, FRank> sz;
+    N_ = 1;
+    nVox_ = 1;
     // Process the two different kinds of dimensions - howmany / FFT
     {
       constexpr int FStart = TRank - FRank;
       int ii = 0;
       for (; ii < FStart; ii++) {
-        N *= ws.dimension(ii);
+        N_ *= ws.dimension(ii);
       }
       std::array<Cx1, FRank> phases;
+
       for (; ii < TRank; ii++) {
-        int const sz = ws.dimension(ii);
-        Nvox *= sz;
-        sizes[ii - FStart] = sz;
-        phases[ii - FStart] = Phase(sz); // Prep FFT phase factors
+        sz[ii - FStart] = ws.dimension(ii);
+        nVox_ *= sz[ii - FStart];
+        phases[ii - FStart] = Phase(sz[ii - FStart]); // Prep FFT phase factors
       }
-      scale_ = 1. / sqrt(Nvox);
-      phase_.resize(LastN<FRank>(dims));
-      phase_.device(Threads::GlobalDevice()) = startPhase(phases);
+      scale_ = 1. / sqrt(nVox_);
+      Eigen::Tensor<Cx, FRank> tempPhase_(LastN<FRank>(dims));
+      tempPhase_.device(Threads::GlobalDevice()) = startPhase(phases);
+      phase_.resize(Sz1{nVox_});
+      phase_.device(Threads::GlobalDevice()) = tempPhase_.reshape(Sz1{nVox_});
     }
 
     auto ptr = reinterpret_cast<fftwf_complex *>(ws.data());
-    Log::Print(
-      FMT_STRING("Planning {} {} FFTs with {} threads"), N, fmt::join(sizes, "x"), nThreads);
+    Log::Print(FMT_STRING("Planning {} {} FFTs with {} threads"), N_, fmt::join(sz, "x"), nThreads);
 
     // FFTW is row-major. Reverse dims as per
     // http://www.fftw.org/fftw3_doc/Column_002dmajor-Format.html#Column_002dmajor-Format
-    std::reverse(sizes.begin(), sizes.end());
+    std::reverse(sz.begin(), sz.end());
     auto const start = Log::Now();
     fftwf_plan_with_nthreads(nThreads);
     forward_plan_ = fftwf_plan_many_dft(
-      FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_FORWARD, FFTW_MEASURE);
+      FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_FORWARD, FFTW_MEASURE);
     reverse_plan_ = fftwf_plan_many_dft(
-      FRank, sizes.data(), N, ptr, nullptr, N, 1, ptr, nullptr, N, 1, FFTW_BACKWARD, FFTW_MEASURE);
+      FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
     if (forward_plan_ == NULL) {
       Log::Fail(FMT_STRING("Could not create forward FFT Planned"));
@@ -139,40 +140,30 @@ private:
   void applyPhase(Tensor &x, float const scale, bool const fwd) const
   {
     auto start = Log::Now();
-    TensorDims rsh, brd;
-    constexpr int FStart = TRank - FRank;
-    int ii = 0;
-    for (; ii < FStart; ii++) {
-      rsh[ii] = 1;
-      brd[ii] = dims_[ii];
-    }
-    for (; ii < TRank; ii++) {
-      rsh[ii] = dims_[ii];
-      brd[ii] = 1;
-    }
-
-    auto const rbPhase = phase_.reshape(rsh).broadcast(brd);
+    Sz2 rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
+    auto const rbPhase = phase_.reshape(rshP).broadcast(brdP);
+    auto xr = x.reshape(rshX);
     if (threaded_) {
       if (fwd) {
-        x.device(Threads::GlobalDevice()) = x * x.constant(scale) * rbPhase;
+        xr.device(Threads::GlobalDevice()) = xr * rbPhase.constant(scale) * rbPhase;
       } else {
-        x.device(Threads::GlobalDevice()) = x * x.constant(scale) / rbPhase;
+        xr.device(Threads::GlobalDevice()) = xr * rbPhase.constant(scale) / rbPhase;
       }
     } else {
       if (fwd) {
-        x = x * x.constant(scale) * rbPhase;
+        xr = xr * rbPhase.constant(scale) * rbPhase;
       } else {
-        x = x * x.constant(scale) / rbPhase;
+        xr = xr * rbPhase.constant(scale) / rbPhase;
       }
     }
     Log::Debug(FMT_STRING("FFT phase correction: {}"), Log::ToNow(start));
   }
 
   TensorDims dims_;
-  Eigen::Tensor<Cx, FRank> phase_;
+  Cx1 phase_;
   fftwf_plan forward_plan_, reverse_plan_;
   float scale_;
-
+  Index N_, nVox_;
   bool threaded_;
 };
 
