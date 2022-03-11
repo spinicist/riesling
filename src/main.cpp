@@ -1,4 +1,5 @@
 #include "cmd/defs.h"
+#include "fft/fft.hpp"
 #include "log.h"
 
 int main(int const argc, char const *const argv[])
@@ -31,9 +32,11 @@ int main(int const argc, char const *const argv[])
   args::Command version(commands, "version", "Print version number", &main_version);
   args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::GlobalOptions globals(parser, global_group);
-
+  FFT::Start();
   try {
     parser.ParseCLI(argc, argv);
+    FFT::End();
+    Log::End();
   } catch (args::Help &) {
     fmt::print("{}\n", parser.Help());
     exit(EXIT_SUCCESS);
@@ -43,6 +46,8 @@ int main(int const argc, char const *const argv[])
     exit(EXIT_FAILURE);
   } catch (Log::Failure &f) {
     fmt::print(stderr, "{}\n", f.what());
+    FFT::End();
+    Log::End();
     exit(EXIT_FAILURE);
   }
 

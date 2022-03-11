@@ -29,7 +29,6 @@ int main_tgv(args::Subparser &parser)
     parser, "STEP SIZE", "Inverse of step size (default 8)", {"step"}, 8.f);
 
   ParseCommand(parser, iname);
-  FFT::Start();
 
   HD5::RieslingReader reader(iname.Get());
   Trajectory const traj = reader.trajectory();
@@ -76,7 +75,6 @@ int main_tgv(args::Subparser &parser)
   HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(out, "image");
-  FFT::End();
 
   return EXIT_SUCCESS;
 }

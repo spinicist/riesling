@@ -24,7 +24,6 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> patch(parser, "P", "Patch size for LLR (default 8)", {"patch"}, 8);
 
   ParseCommand(parser, iname);
-  FFT::Start();
 
   HD5::RieslingReader reader(iname.Get());
   Trajectory const traj = reader.trajectory();
@@ -81,6 +80,6 @@ int main_admm(args::Subparser &parser)
   HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(out, "image");
-  FFT::End();
+
   return EXIT_SUCCESS;
 }

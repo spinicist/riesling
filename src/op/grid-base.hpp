@@ -78,15 +78,14 @@ struct SizedGrid : GridBase
     temp.setZero();
     auto const k = kernel_->k(Point3{0, 0, 0});
     Crop3(temp, k.dimensions()) = k.template cast<Cx>();
-    Log::Image(temp, "apo-kernel.nii");
+    Log::Image(temp, "apo-kernel");
     fft->reverse(temp);
     R3 a = Crop3(R3(temp.real()), sz);
-    float const scale =
-      sqrt(std::accumulate(gridSz.cbegin(), gridSz.cend(), 1, std::multiplies<Index>()));
+    float const scale = sqrt(Product(gridSz));
     Log::Print(
       FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
-    Log::Image(a, "apo-final.nii");
+    Log::Image(a, "apo-final");
     return a;
   }
 

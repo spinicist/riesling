@@ -23,6 +23,11 @@ struct VectorReader
   void operator()(std::string const &name, std::string const &value, std::vector<T> &x);
 };
 
+struct Sz2Reader
+{
+  void operator()(std::string const &name, std::string const &value, Sz2 &x);
+};
+
 struct Sz3Reader
 {
   void operator()(std::string const &name, std::string const &value, Sz3 &x);

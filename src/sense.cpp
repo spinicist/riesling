@@ -40,11 +40,11 @@ Cx4 SelfCalibration(
     Log::Print(FMT_STRING("Regularization lambda {}"), lambda);
     rss.device(Threads::GlobalDevice()) = rss + rss.constant(lambda);
   }
-  Log::Image(rss, "sense-rss.nii");
-  Log::Image(channels, "sense-channels.nii");
+  Log::Image(rss, "sense-rss");
+  Log::Image(channels, "sense-channels");
   Log::Print(FMT_STRING("Normalizing channel images"));
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
-  Log::Image(channels, "sense-maps.nii");
+  Log::Image(channels, "sense-maps");
   Log::Print(FMT_STRING("Finished SENSE maps"));
   return channels;
 }

@@ -189,7 +189,7 @@ inline decltype(auto) CollapseToMatrix(T &t)
 }
 
 template <typename T, int toCollapse = 1>
-inline decltype(auto) CollapseToMatrix(T const &t)
+inline decltype(auto) CollapseToConstMatrix(T const &t)
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(

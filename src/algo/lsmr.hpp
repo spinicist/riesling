@@ -137,9 +137,9 @@ typename Op::Input lsmr(
     x.device(dev) = x + (ζ / (ρ * ρ_)) * h_;
     h.device(dev) = v - (θnew / ρ) * h;
 
-    Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}.nii"), ii));
-    Log::Image(x, fmt::format(FMT_STRING("lsmr-x-{:02d}.nii"), ii));
-    Log::Image(h, fmt::format(FMT_STRING("lsmr-h-{:02d}.nii"), ii));
+    Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
+    Log::Image(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
+    Log::Image(h, fmt::format(FMT_STRING("lsmr-h-{:02d}"), ii));
 
     // Estimate of ||r||.
 

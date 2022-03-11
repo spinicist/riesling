@@ -40,7 +40,7 @@ struct NUFFTOp final : Operator<5, 3>
     } else {
       tf_ = gridder_->Adj(gridder_->A(tf_));
     }
-    Log::Image(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf.nii");
+    Log::Image(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf");
     Log::Debug(
       FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));
   }

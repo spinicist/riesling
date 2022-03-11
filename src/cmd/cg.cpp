@@ -19,7 +19,7 @@ int main_cg(args::Subparser &parser)
   args::ValueFlag<Index> cg_its(parser, "N", "CG iterations (8)", {"cg_its"}, 8);
 
   ParseCommand(parser, iname);
-  FFT::Start();
+
   HD5::RieslingReader reader(iname.Get());
   Trajectory const traj = reader.trajectory();
   Info const &info = traj.info();
@@ -65,6 +65,6 @@ int main_cg(args::Subparser &parser)
   HD5::Writer writer(fname);
   writer.writeTrajectory(traj);
   writer.writeTensor(out, "image");
-  FFT::End();
+
   return EXIT_SUCCESS;
 }

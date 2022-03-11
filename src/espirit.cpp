@@ -78,13 +78,12 @@ Cx4 ESPIRIT(
         for (Index yy = 0; yy < hi_slice.dimension(2); yy++) {
           for (Index xx = 0; xx < hi_slice.dimension(1); xx++) {
             Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
-            Cx2 vecs(samples.dimension(0), samples.dimension(0));
-            R1 vals(samples.dimension(0));
-            PCA(samples, vecs, vals);
-            Cx1 const vec0 = vecs.chip<1>(0);
-            float const phase = std::arg(vec0(0));
-            grid.chip<3>(zz).chip<2>(yy).chip<1>(xx) = (vec0 * std::polar(1.f, -phase)).conjugate();
-            valsImage(xx, yy, zz) = vals(0);
+            auto const pcs = PCA(CollapseToConstMatrix(samples), 1);
+            float const phase = std::arg(pcs.vecs(0, 0));
+            for (Index ic = 0; ic < samples.dimension(0); ic++) {
+              grid(ic, xx, yy, zz) = std::conj(pcs.vecs(ic, 0) * std::polar(1.f, -phase));
+            }
+            valsImage(xx, yy, zz) = pcs.vals[0];
           }
         }
         Log::Progress(zz, lo_z, hi_z);
@@ -93,6 +92,6 @@ Cx4 ESPIRIT(
   Threads::RangeFor(slice_task, mix_kernels.dimension(3));
 
   Log::Print(FMT_STRING("Finished ESPIRIT"));
-  Log::Image(valsImage, "espirit-val.nii");
+  Log::Image(valsImage, "espirit-val");
   return grid;
 }

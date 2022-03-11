@@ -54,6 +54,16 @@ void VectorReader<T>::operator()(
 template struct VectorReader<float>;
 template struct VectorReader<Index>;
 
+void Sz2Reader::operator()(std::string const &name, std::string const &value, Sz2 &v)
+{
+  Index i, j;
+  auto result = scn::scan(value, "{},{}", i, j);
+  if (!result) {
+    Log::Fail(FMT_STRING("Could not read {} from '{}': {}"), name, value, result.error());
+  }
+  v = Sz2{i, j};
+}
+
 void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz3 &v)
 {
   Index i, j, k;

@@ -190,7 +190,7 @@ Cx4 tgv(
   Log::Print(FMT_STRING("TGV Scale {}"), scale);
 
   for (auto ii = 0.f; ii < max_its; ii++) {
-    Log::Image(u, fmt::format(FMT_STRING("tgv-u-{:02}.nii"), ii));
+    Log::Image(u, fmt::format(FMT_STRING("tgv-u-{:02}"), ii));
     // Regularisation factors
     float const prog = static_cast<float>(ii) / ((max_its == 1) ? 1. : (max_its - 1.f));
     float const alpha0 = std::exp(std::log(alpha01) * prog + std::log(alpha00) * (1.f - prog));

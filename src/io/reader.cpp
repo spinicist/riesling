@@ -13,8 +13,7 @@ Reader::Reader(std::string const &fname)
   }
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  Log::Print(FMT_STRING("Opened file {} for reading"), fname);
-  Log::Debug(FMT_STRING("File handle: {}"), handle_);
+  Log::Print(FMT_STRING("Opened file {} for reading, handle {}"), fname, handle_);
 }
 
 Reader::~Reader()

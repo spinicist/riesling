@@ -58,10 +58,10 @@ typename Op::Input admm(
     z = reg(xpu);
     u.device(dev) = xpu - z;
     Log::Print(FMT_STRING("Finished ADMM iteration {}"), ii);
-    Log::Image(x, fmt::format("admm-x-{:02d}.nii", ii));
-    Log::Image(xpu, fmt::format("admm-xpu-{:02d}.nii", ii));
-    Log::Image(z, fmt::format("admm-z-{:02d}.nii", ii));
-    Log::Image(u, fmt::format("admm-u-{:02d}.nii", ii));
+    Log::Image(x, fmt::format("admm-x-{:02d}", ii));
+    Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
+    Log::Image(z, fmt::format("admm-z-{:02d}", ii));
+    Log::Image(u, fmt::format("admm-u-{:02d}", ii));
   }
   return x;
 }

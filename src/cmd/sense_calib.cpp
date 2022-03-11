@@ -16,7 +16,6 @@ int main_sense_calib(args::Subparser &parser)
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default 256 mm)", {"fov"}, 256.f);
 
   ParseCommand(parser, iname);
-  FFT::Start();
 
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();
@@ -37,6 +36,6 @@ int main_sense_calib(args::Subparser &parser)
   HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(sense, "sense");
-  FFT::End();
+
   return EXIT_SUCCESS;
 }

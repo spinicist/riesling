@@ -2,35 +2,9 @@
 
 #include "tensorOps.h"
 
-Compressor::Compressor(Cx3 const &ks, Index const nc)
-{
-  auto const km = CollapseToMatrix(ks);
-  auto const dm = km.colwise() - km.rowwise().mean();
-  Eigen::MatrixXcf gramian = (dm.conjugate() * dm.transpose()) / (km.rows() - 1);
-  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcf> eig(gramian);
-  Eigen::ArrayXf vals = eig.eigenvalues().reverse().array().abs();
-  vals /= vals.abs().sum();
-  Index const n = std::max(std::min(nc, ks.dimension(0)), 1L);
-  Log::Print(
-    FMT_STRING("PCA Compression Retaining {} virtual coils, total energy {}%"),
-    n,
-    100.f * vals.head(n).sum());
-  psi_ = eig.eigenvectors().rightCols(n).rowwise().reverse();
-}
-
 Index Compressor::out_channels() const
 {
-  return psi_.cols();
-}
-
-void Compressor::compress(Cx3 const &source, Cx3 &dest)
-{
-  assert(source.dimension(0) == psi_.rows());
-  assert(dest.dimension(0) == psi_.cols());
-  Log::Print(FMT_STRING("Applying coil compression"));
-  auto const sourcemat = CollapseToMatrix(source);
-  auto destmat = CollapseToMatrix(dest);
-  destmat.noalias() = psi_ * sourcemat;
+  return psi.cols();
 }
 
 void Compressor::compress(Cx4 const &source, Cx4 &dest)
@@ -38,10 +12,32 @@ void Compressor::compress(Cx4 const &source, Cx4 &dest)
   assert(source.dimension(1) == dest.dimension(1));
   assert(source.dimension(2) == dest.dimension(2));
   assert(source.dimension(3) == dest.dimension(3));
-  assert(source.dimension(0) == psi_.rows());
-  assert(dest.dimension(0) == psi_.cols());
+  assert(source.dimension(0) == psi.rows());
+  assert(dest.dimension(0) == psi.cols());
   Log::Print(FMT_STRING("Applying coil compression"));
-  auto const sourcemat = CollapseToMatrix(source);
+  auto const sourcemat = CollapseToConstMatrix(source);
   auto destmat = CollapseToMatrix(dest);
-  destmat.noalias() = psi_.transpose() * sourcemat;
+  destmat.noalias() = psi.transpose() * sourcemat;
+}
+
+Cx3 Compressor::compress(Cx3 const &source)
+{
+  assert(source.dimension(0) == psi.rows());
+  Log::Print(FMT_STRING("Applying coil compression"));
+  auto const sourcemat = CollapseToConstMatrix(source);
+  Cx3 dest(psi.cols(), source.dimension(1), source.dimension(2));
+  auto destmat = CollapseToMatrix(dest);
+  destmat.noalias() = psi.transpose() * sourcemat;
+  return dest;
+}
+
+Cx4 Compressor::compress(Cx4 const &source)
+{
+  assert(source.dimension(0) == psi.rows());
+  Log::Print(FMT_STRING("Applying coil compression"));
+  auto const sourcemat = CollapseToConstMatrix(source);
+  Cx4 dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3));
+  auto destmat = CollapseToMatrix(dest);
+  destmat.noalias() = psi.transpose() * sourcemat;
+  return dest;
 }

@@ -99,3 +99,9 @@ Eigen::DSizes<Index, N> LastN(T const &sz)
 
 using Size3 = Eigen::Array<int16_t, 3, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
+
+template <typename T>
+Index Product(T const &indices)
+{
+  return std::accumulate(indices.cbegin(), indices.cend(), 1, std::multiplies<Index>());
+}

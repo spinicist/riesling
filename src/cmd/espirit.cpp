@@ -28,7 +28,6 @@ int main_espirit(args::Subparser &parser)
     parser, "R", "Resolution for initial gridding (default 8 mm)", {"res", 'r'}, 8.f);
 
   ParseCommand(parser, iname);
-  FFT::Start();
 
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();
@@ -54,6 +53,5 @@ int main_espirit(args::Subparser &parser)
   writer.writeInfo(info);
   writer.writeTensor(sense, HD5::Keys::SENSE);
 
-  FFT::End();
   return EXIT_SUCCESS;
 }

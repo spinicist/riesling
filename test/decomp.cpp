@@ -1,4 +1,5 @@
 #include "algo/decomp.h"
+#include "tensorOps.h"
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
@@ -12,8 +13,6 @@ TEST_CASE("decomp")
     // Due to how channels are stored, we put each sample in a column instead of a row
     Cx2 data(nvar, nsamp);
     data.setRandom();
-    Cx2 vecs(nvar, nvar);
-    R1 vals(nvar);
-    PCA(data, vecs, vals);
+    PCA(CollapseToConstMatrix(data), 1);
   }
 }

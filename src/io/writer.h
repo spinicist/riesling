@@ -18,7 +18,8 @@ struct Writer
 
   template <typename Scalar, int ND>
   void writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label);
-  void writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label);
+  template <typename Derived>
+  void writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label);
 
 private:
   int64_t handle_;

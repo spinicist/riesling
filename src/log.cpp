@@ -1,6 +1,6 @@
 #include "log.h"
 
-#include "io/nifti.h"
+#include "io/writer.h"
 #include "tensorOps.h"
 
 namespace Log {
@@ -12,7 +12,8 @@ Failure::Failure(std::string const &msg)
 
 namespace {
 Level log_level = Level::None;
-}
+std::unique_ptr<HD5::Writer> debug_file = nullptr;
+} // namespace
 
 Level CurrentLevel()
 {
@@ -22,6 +23,17 @@ Level CurrentLevel()
 void SetLevel(Level const l)
 {
   log_level = l;
+  if (log_level == Level::Images) {
+    debug_file = std::make_unique<HD5::Writer>("riesling-debug.h5");
+  } else {
+    debug_file.reset();
+  }
+}
+
+void End()
+{
+  debug_file.reset();
+  log_level = Level::None;
 }
 
 void lprint(fmt::string_view fstr, fmt::format_args args)
@@ -75,25 +87,17 @@ std::string ToNow(Log::Time const t1)
   return fmt::format(FMT_STRING("{} ms"), diff);
 }
 
-void Image(Cx3 const &img, std::string const &name)
+template <typename Scalar, int ND>
+void Image(Eigen::Tensor<Scalar, ND> const &img, std::string const &name)
 {
-  if ((log_level >= Level::Images)) {
-    WriteNifti(Info(), img, name);
+  if (debug_file) {
+    debug_file->writeTensor(img, name);
   }
 }
 
-void Image(Cx4 const &img, std::string const &name)
-{
-  if ((log_level >= Level::Images)) {
-    WriteNifti(Info(), Cx4(FirstToLast4(img)), name);
-  }
-}
-
-void Image(R3 const &img, std::string const &name)
-{
-  if ((log_level >= Level::Images)) {
-    WriteNifti(Info(), img, name);
-  }
-}
+template void Image(R3 const &, std::string const &);
+template void Image(Cx3 const &, std::string const &);
+template void Image(Cx4 const &, std::string const &);
+template void Image(Cx5 const &, std::string const &);
 
 } // namespace Log

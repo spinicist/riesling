@@ -23,7 +23,7 @@ int main_lsmr(args::Subparser &parser)
   args::ValueFlag<float> damp(parser, "D", "Damping (regularization) factor", {"damp"}, 0.f);
 
   ParseCommand(parser, iname);
-  FFT::Start();
+
   HD5::RieslingReader reader(iname.Get());
   Trajectory const traj = reader.trajectory();
   Info const &info = traj.info();
@@ -77,6 +77,6 @@ int main_lsmr(args::Subparser &parser)
   HD5::Writer writer(fname);
   writer.writeTrajectory(traj);
   writer.writeTensor(out, "image");
-  FFT::End();
+
   return EXIT_SUCCESS;
 }

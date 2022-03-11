@@ -16,6 +16,7 @@ namespace Keys {
 std::string const Basis = "basis";
 std::string const Cartesian = "cartesian";
 std::string const Channels = "channels";
+std::string const CompressionMatrix = "ccmat";
 std::string const Dictionary = "dictionary";
 std::string const Dynamics = "dynamics";
 std::string const Image = "image";

@@ -55,7 +55,6 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
 
   ParseCommand(parser, iname);
-  FFT::Start();
 
   R3 points;
   Info info;
@@ -186,6 +185,6 @@ int main_phantom(args::Subparser &parser)
     Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})),
     HD5::Keys::Noncartesian);
   writer.writeTensor(phan, "phantom");
-  FFT::End();
+
   return EXIT_SUCCESS;
 }

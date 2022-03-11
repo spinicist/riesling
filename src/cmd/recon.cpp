@@ -23,7 +23,7 @@ int main_recon(args::Subparser &parser)
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   ParseCommand(parser, iname);
-  FFT::Start();
+
   HD5::RieslingReader reader(iname.Get());
   Trajectory traj;
   if (trajName) {
@@ -106,6 +106,6 @@ int main_recon(args::Subparser &parser)
     writer.writeTrajectory(traj);
     writer.writeTensor(out, HD5::Keys::Image);
   }
-  FFT::End();
+
   return EXIT_SUCCESS;
 }

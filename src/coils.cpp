@@ -46,6 +46,6 @@ Cx4 birdcage(
       }
     }
   }
-  Log::Image(all, fmt::format(FMT_STRING("birdcage-{}.nii"), channels));
+  Log::Image(all, fmt::format(FMT_STRING("birdcage-{}"), channels));
   return all;
 }

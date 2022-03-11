@@ -27,6 +27,7 @@ using Time = std::chrono::high_resolution_clock::time_point;
 
 Level CurrentLevel();
 void SetLevel(Level const l);
+void End();
 
 void lprint(fmt::string_view fstr, fmt::format_args args);
 void ldebug(fmt::string_view fstr, fmt::format_args args);
@@ -54,7 +55,7 @@ void Progress(Index const ii, Index const lo, Index const hi);
 Time Now();
 std::string ToNow(Time const t);
 
-void Image(Cx3 const &img, std::string const &name);
-void Image(Cx4 const &img, std::string const &name);
-void Image(R3 const &img, std::string const &name);
+template <typename Scalar, int ND>
+void Image(Eigen::Tensor<Scalar, ND> const &i, std::string const &name);
+
 } // namespace Log

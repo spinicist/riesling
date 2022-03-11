@@ -4,33 +4,6 @@
 
 namespace HD5 {
 
-void store_matrix(
-  Handle const &parent, std::string const &name, Eigen::Ref<Eigen::MatrixXf const> const &data)
-{
-  herr_t status;
-  hsize_t ds_dims[2], chunk_dims[2];
-  // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
-  ds_dims[0] = data.cols();
-  ds_dims[1] = data.rows();
-  std::copy_n(ds_dims, 2, chunk_dims);
-  auto const space = H5Screate_simple(2, ds_dims, NULL);
-  auto const plist = H5Pcreate(H5P_DATASET_CREATE);
-  status = H5Pset_deflate(plist, 2);
-  status = H5Pset_chunk(plist, 2, chunk_dims);
-
-  hid_t const tid = type<float>();
-  hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
-  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
-  status = H5Pclose(plist);
-  status = H5Sclose(space);
-  status = H5Dclose(dset);
-  if (status) {
-    Log::Fail(FMT_STRING("Could not write tensor {}, code: {}"), name, status);
-  } else {
-    Log::Print(FMT_STRING("Wrote dataset: {}"), name);
-  }
-}
-
 Writer::Writer(std::string const &fname)
 {
   Init();
@@ -38,13 +11,14 @@ Writer::Writer(std::string const &fname)
   if (handle_ < 0) {
     Log::Fail(FMT_STRING("Could not open file {} for writing"), fname);
   } else {
-    Log::Print(FMT_STRING("Opened file {} for writing data"), fname);
+    Log::Print(FMT_STRING("Opened file {} for writing, handle {}"), fname, handle_);
   }
 }
 
 Writer::~Writer()
 {
   H5Fclose(handle_);
+  Log::Debug(FMT_STRING("Closed HDF5 handle {}"), handle_);
 }
 
 void Writer::writeInfo(Info const &info)
@@ -56,14 +30,14 @@ void Writer::writeInfo(Info const &info)
   hid_t const dset =
     H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not create info struct, code: {}"), dset);
+    Log::Fail(FMT_STRING("Could not create info struct in file {}, code: {}"), handle_, dset);
   }
   herr_t status;
   status = H5Dwrite(dset, info_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &info);
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status != 0) {
-    Log::Fail(FMT_STRING("Could not write Info struct, code: {}"), status);
+    Log::Fail(FMT_STRING("Could not write info struct in file {}, code: {}"), handle_, status);
   }
 }
 
@@ -83,7 +57,7 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   }
   status = H5Sclose(space);
   if (status != 0) {
-    Log::Fail(FMT_STRING("Exception occured storing meta-data"));
+    Log::Fail(FMT_STRING("Exception occured storing meta-data in file {}"), handle_);
   }
 }
 
@@ -109,9 +83,20 @@ template void Writer::writeTensor<Cx, 4>(Cx4 const &, std::string const &);
 template void Writer::writeTensor<Cx, 5>(Cx5 const &, std::string const &);
 template void Writer::writeTensor<Cx, 6>(Cx6 const &, std::string const &);
 
-void Writer::writeMatrix(Eigen::Ref<Eigen::MatrixXf const> const &m, std::string const &label)
+template <typename Derived>
+void Writer::writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label)
 {
   HD5::store_matrix(handle_, label, m);
 }
+
+template void Writer::writeMatrix<Eigen::MatrixXf>(
+  Eigen::DenseBase<Eigen::MatrixXf> const &, std::string const &);
+template void Writer::writeMatrix<Eigen::MatrixXcf>(
+  Eigen::DenseBase<Eigen::MatrixXcf> const &, std::string const &);
+
+template void
+Writer::writeMatrix<Eigen::ArrayXf>(Eigen::DenseBase<Eigen::ArrayXf> const &, std::string const &);
+template void Writer::writeMatrix<Eigen::ArrayXXf>(
+  Eigen::DenseBase<Eigen::ArrayXXf> const &, std::string const &);
 
 } // namespace HD5

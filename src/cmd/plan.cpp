@@ -15,7 +15,7 @@ int main_plan(args::Subparser &parser)
     parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   ParseCommand(parser, iname);
-  FFT::Start();
+
   FFT::SetTimelimit(timelimit.Get());
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();
@@ -33,6 +33,5 @@ int main_plan(args::Subparser &parser)
     auto const fftB = FFT::Make<5, 3>(gb->inputDimensions());
   }
 
-  FFT::End();
   return EXIT_SUCCESS;
 }

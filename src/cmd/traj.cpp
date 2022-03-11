@@ -19,7 +19,7 @@ int main_traj(args::Subparser &parser)
   args::Flag savePSF(parser, "PSF", "Write out Point-Spread-Function", {"psf", 'p'});
 
   ParseCommand(parser, iname);
-  FFT::Start();
+
   HD5::RieslingReader reader(iname.Get());
   auto const inTraj = reader.trajectory();
   // Ensure only one channel for sanity
@@ -60,6 +60,5 @@ int main_traj(args::Subparser &parser)
       "psf-image");
   }
 
-  FFT::End();
   return EXIT_SUCCESS;
 }

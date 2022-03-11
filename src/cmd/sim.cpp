@@ -131,7 +131,7 @@ int main_sim(args::Subparser &parser)
     svd.matrixV().leftCols(nRetain).array().rowwise() * flip.transpose();
   Log::Print("Computing dictionary");
   Eigen::ArrayXXf dict = result.dynamics.matrix() * basis;
-  auto const norm = dict.rowwise().norm();
+  Eigen::ArrayXf const norm = dict.rowwise().norm();
   dict.rowwise().normalize();
 
   HD5::Writer writer(oname.Get());

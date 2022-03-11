@@ -12,7 +12,7 @@ struct SingleChannel final : Precond
     W.setConstant(1.f);
     W = gridder->A(gridder->Adj(W));
     pre_ = (W.real() > 0.f).select(W.real().inverse(), W.constant(0.f).real());
-    Log::Image(pre_, "pre.nii");
+    Log::Image(pre_, "pre");
   }
 
   Cx3 const apply(Cx3 const &in) const
