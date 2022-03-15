@@ -84,10 +84,6 @@ R3 Phyllotaxis(
   for (Index ii = 0; ii < nInterleaves; ii++) {
     float const z_ii = (ii * 2.) / (nSpokes - 1);
     float const phi_ii = (ii * phi_gold);
-
-    float const gm_phi = 2 * M_PI * ii * phi_gm2;
-    float const gm_theta = acos(fmod(ii * phi_gm1, 1.0));
-
     for (Index is = 0; is < spi; is++) {
       float const z = (1 - (2. * nInterleaves * is) / (nSpokes - 1.)) - z_ii;
       float const theta = acos(z);
@@ -96,6 +92,8 @@ R3 Phyllotaxis(
       endPoint(1) = sin(theta) * sin(phi);
       endPoint(2) = z;
       if (gm) {
+        float const gm_phi = 2 * M_PI * ii * phi_gm2;
+        float const gm_theta = acos(fmod(ii * phi_gm1, 1.0) * 2.f - 1.f);
         R2 rot(3, 3);
         rot(0, 0) = cos(gm_theta) * cos(gm_phi);
         rot(0, 1) = -sin(gm_phi);
