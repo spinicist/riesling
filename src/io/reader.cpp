@@ -13,6 +13,9 @@ Reader::Reader(std::string const &fname)
   }
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  if (handle_ < 0) {
+    Log::Fail(FMT_STRING("Failed to open {}"), fname);
+  }
   Log::Print(FMT_STRING("Opened file {} for reading, handle {}"), fname, handle_);
 }
 
