@@ -50,25 +50,19 @@ int main_split(args::Subparser &parser)
   Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
 
   if (lores) {
-    if ((lores.Get() == 0) || (std::abs(lores.Get()) > traj.info().spokes)) {
+    if ((lores.Get() < 1) || (lores.Get() > traj.info().spokes)) {
       Log::Fail(FMT_STRING("Invalid number of low-res spokes {}"), lores.Get());
     }
 
-    // Cope with WASPI at end
-    Index const lo_st = (lores.Get() < 0) ? (traj.info().spokes + lores.Get()) : 0;
-    Index const hi_st = (lores.Get() < 0) ? 0 : lores.Get();
-
     Info lo_info = traj.info();
-    lo_info.spokes = std::abs(lores.Get());
+    lo_info.spokes = lores.Get();
     lo_info.frames = 1; // Don't even bother
-    Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), lo_st, lo_st + lo_info.spokes);
+    Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), 0, lo_info.spokes);
 
-    // The trajectory still thinks WASPI is at the beginning. Don't use frames
     Trajectory lo_traj(
       lo_info, traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}));
     Cx4 lo_ks = ks.slice(
-      Sz4{0, 0, lo_st, 0},
-      Sz4{lo_info.channels, lo_info.read_points, lo_info.spokes, lo_info.volumes});
+      Sz4{0, 0, 0, 0}, Sz4{lo_info.channels, lo_info.read_points, lo_info.spokes, lo_info.volumes});
 
     auto info = traj.info();
     info.spokes -= lo_info.spokes;
@@ -78,7 +72,8 @@ int main_split(args::Subparser &parser)
       R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
       I1(traj.frames().slice(Sz1{0}, Sz1{info.spokes})));
     ks = Cx4(ks.slice(
-      Sz4{0, 0, hi_st, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
+      Sz4{0, 0, lo_info.spokes, 0},
+      Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
 
     if (ds) {
       lo_traj = lo_traj.downsample(ds.Get(), lo_ks);
