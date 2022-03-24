@@ -17,7 +17,7 @@ int main_compress(args::Subparser &parser)
   CORE_RECON_ARGS;
 
   // One of the following must be set
-  args::ValueFlag<Index> pca(parser, "V", "Calculate PCA compression", {"pca"});
+  args::Flag pca(parser, "V", "Calculate PCA compression", {"pca"});
   args::Flag rovir(parser, "R", "Calculate ROVIR compression", {"rovir"});
   args::ValueFlag<std::string> ccFile(
     parser, "F", "Read compression matrix from file", {"cc-file"});
@@ -46,25 +46,25 @@ int main_compress(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   HD5::RieslingReader reader(iname.Get());
-  Info const in_info = reader.trajectory().info();
-  Cx3 const ks = reader.noncartesian(ValOrLast(refVol, in_info.volumes));
+  auto const traj = reader.trajectory();
+  auto const info = traj.info();
+  Cx3 const ks = reader.noncartesian(ValOrLast(refVol, info.volumes));
 
   Compressor compressor;
   if (pca) {
     Sz2 const read = pcaRead.Get();
     Sz2 const spokes = pcaSpokes.Get();
-    Index const maxRead = in_info.read_points - read[0];
+    Index const maxRead = info.read_points - read[0];
     Index const nread = (read[1] > maxRead) ? maxRead : read[1];
-    Index const nspoke = (in_info.spokes - spokes[0]) / spokes[1];
+    Index const nspoke = (info.spokes - spokes[0]) / spokes[1];
     Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, nspoke, spokes[1]);
-    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{in_info.channels, nread, nspoke})
+    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, nread, nspoke})
                       .stride(Sz3{1, 1, spokes[1]});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), channels.Get(), energy.Get());
     compressor.psi = pc.vecs;
   } else if (rovir) {
-    auto const traj = reader.trajectory();
-    auto const info = traj.info();
+
     Index const nC = info.channels;
     auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
     auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res.Get(), true);
@@ -163,19 +163,20 @@ int main_compress(args::Subparser &parser)
       nRetain = std::min(channels.Get(), vals.rows());
     }
     compressor.psi = eig.eigenvectors().rightCols(nRetain).rowwise().reverse();
+  } else {
+    Log::Fail("Must specify either PCA or ROVIR");
   }
-  Info out_info = in_info;
-  out_info.channels = compressor.out_channels();
-
-  Cx4 all_ks = in_info.noncartesianSeries();
-  for (Index iv = 0; iv < in_info.volumes; iv++) {
+  Cx4 all_ks = info.noncartesianSeries();
+  for (Index iv = 0; iv < info.volumes; iv++) {
     all_ks.chip<3>(iv) = reader.noncartesian(iv);
   }
+  Info out_info = info;
+  out_info.channels = compressor.out_channels();
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "compressed"));
-  writer.writeTrajectory(reader.trajectory());
+  writer.writeTrajectory(Trajectory(out_info, traj.points(), traj.frames()));
   writer.writeTensor(out_ks, HD5::Keys::Noncartesian);
 
   if (save) {
