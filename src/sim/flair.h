@@ -6,11 +6,6 @@
 
 namespace Sim {
 
-Result FLAIR(
-  Parameter const T1,
-  Parameter const T2,
-  Parameter const B1,
-  Sequence const seq,
-  Index const randN);
+Result FLAIR(Parameter const T1, Parameter const T2, Sequence const seq, Index const randN);
 
 }

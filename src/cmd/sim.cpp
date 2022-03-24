@@ -96,7 +96,7 @@ int main_sim(args::Subparser &parser)
     result = Sim::T1T2Prep(T1, T2, seq, randomSamp.Get());
   } else if (flair) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
-    result = Sim::FLAIR(T1, T2, B1, seq, randomSamp.Get());
+    result = Sim::FLAIR(T1, T2, seq, randomSamp.Get());
   } else {
     result = Sim::Simple(T1, beta, seq, randomSamp.Get());
   }

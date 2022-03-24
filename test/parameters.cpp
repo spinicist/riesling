@@ -10,7 +10,7 @@ TEST_CASE("SIM-Parameters", "[SIM]")
 
   SECTION("Generator")
   {
-    Sim::ParameterGenerator<3> gen{{A, B, C}};
+    Sim::ParameterGenerator<3> gen{A, B, C};
 
     CHECK(gen.totalN() == (A.N * B.N * C.N));
     Eigen::Array3f p{0.1, 1.0, 10.};

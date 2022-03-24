@@ -39,8 +39,9 @@ struct ParameterGenerator
 {
   using Parameters = Eigen::Array<float, NP, 1>;
 
-  ParameterGenerator(std::array<Parameter, NP> const &p)
-    : pars{p}
+  template <typename... Args>
+  ParameterGenerator(Args &&...args) requires(sizeof...(Args) == NP)
+    : pars{std::forward<Args>(args)...}
   {
   }
 

@@ -84,6 +84,7 @@ add_executable(riesling
     src/cmd/blend.cpp
     src/cmd/cg.cpp
     src/cmd/compress.cpp
+    src/cmd/downsamp.cpp
     src/cmd/espirit.cpp
     src/cmd/grid.cpp
     src/cmd/hdr.cpp
@@ -111,7 +112,7 @@ target_link_libraries(riesling
     vineyard
 )
 set_target_properties(vineyard riesling PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
@@ -141,7 +142,7 @@ if( ${BUILD_TESTS} )
         Catch2::Catch2
     )
     set_target_properties(vineyard riesling-tests PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
     )
@@ -161,7 +162,7 @@ if ( ${BUILD_BENCHMARKS} )
         Catch2::Catch2
     )
     set_target_properties(vineyard riesling-bench PROPERTIES
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
     )

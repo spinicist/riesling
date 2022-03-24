@@ -44,7 +44,6 @@ struct Trajectory
     Index const channels = 0,
     float const inRes = -1.f,
     bool const shrink = false) const;
-  Trajectory downsample(float const newVoxSize, Cx4 &ks) const;
 
 private:
   void init();

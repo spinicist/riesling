@@ -26,7 +26,7 @@ Result Eddy(
   Log::Print(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
   Log::Print(FMT_STRING("{} values of ɣ from {} to {}"), gammap.N, gammap.lo, gammap.hi);
   Log::Print(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
-  ParameterGenerator<4> gen({T1p, betap, gammap, B1p});
+  ParameterGenerator<4> gen(T1p, betap, gammap, B1p);
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
   result.dynamics.resize(totalN, 4 * seq.sps);

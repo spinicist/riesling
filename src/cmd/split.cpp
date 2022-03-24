@@ -15,7 +15,6 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<Index> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
   args::ValueFlag<Index> nF(parser, "F", "Break into N frames", {"frames"}, 1);
   args::ValueFlag<Index> spe(parser, "S", "Spokes per frame", {"spe"}, 1);
-  args::ValueFlag<float> ds(parser, "DS", "Downsample by factor", {"ds"}, 1.0);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
 
   ParseCommand(parser, iname);
@@ -75,16 +74,9 @@ int main_split(args::Subparser &parser)
       Sz4{0, 0, lo_info.spokes, 0},
       Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
 
-    if (ds) {
-      lo_traj = lo_traj.downsample(ds.Get(), lo_ks);
-    }
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
     writer.writeTrajectory(lo_traj);
     writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
-  }
-
-  if (ds) {
-    traj = traj.downsample(ds.Get(), ks);
   }
 
   if (spoke_stride) {

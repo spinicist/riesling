@@ -26,10 +26,10 @@ PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const 
   auto const dm = data.colwise() - data.rowwise().mean();
   Eigen::MatrixXcf gramian = (dm.conjugate() * dm.transpose()) / (dm.rows() - 1);
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcf> eig(gramian);
-  Eigen::ArrayXf vals = eig.eigenvalues().reverse().array().abs();
+  Eigen::ArrayXf const vals = eig.eigenvalues().reverse().array().abs();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
-  cumsum /= *cumsum.end();
+  cumsum /= cumsum.tail(1)(0);
   Index nRetain = vals.rows();
   if ((thresh > 0.f) && (thresh <= 1.f)) {
     nRetain = (cumsum < thresh).count();
