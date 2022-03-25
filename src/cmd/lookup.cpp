@@ -9,25 +9,23 @@
 int main_lookup(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
-  args::Positional<std::string> dname(parser, "DICT", "h5 file containing lookup dictionary");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<std::string> oftype(
-    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+  args::Positional<std::string> dname(parser, "DICT", "h5 file containing lookup dictionary");
   ParseCommand(parser);
 
   if (!iname) {
     throw args::Error("No input file specified");
   }
   HD5::Reader input(iname.Get());
-  Cx5 const images = input.readTensor<Cx5>("image");
+  Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
 
   if (!dname) {
     throw args::Error("No basis file specified");
   }
   HD5::Reader dfile(dname.Get());
-  R2 const basis = dfile.readTensor<R2>("basis");
-  R2 const dictionary = dfile.readTensor<R2>("dictionary");
-  R2 const parameters = dfile.readTensor<R2>("parameters");
+  R2 const basis = dfile.readTensor<R2>(HD5::Keys::Basis);
+  R2 const dictionary = dfile.readTensor<R2>(HD5::Keys::Dictionary);
+  R2 const parameters = dfile.readTensor<R2>(HD5::Keys::Parameters);
   R2 const norm = dfile.readTensor<R2>(HD5::Keys::Norm);
 
   R5 out_pars(
@@ -79,8 +77,8 @@ int main_lookup(args::Subparser &parser)
 
   auto const fname = OutName(iname.Get(), oname.Get(), "dict", "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(out_pars, "parameters");
-  writer.writeTensor(pd, "pd");
+  writer.writeTensor(out_pars, HD5::Keys::Parameters);
+  writer.writeTensor(pd, HD5::Keys::ProtonDensity);
 
   return EXIT_SUCCESS;
 }

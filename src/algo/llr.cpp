@@ -1,10 +1,11 @@
 #include "llr.h"
 
+#include "tensorOps.h"
 #include "threads.h"
 #include <Eigen/SVD>
 #include <random>
 
-Cx4 llr(Cx4 const &x, float const l, Index const p)
+Cx4 llr_sliding(Cx4 const &x, float const l, Index const p)
 {
   Index const K = x.dimension(0);
   Log::Print(FMT_STRING("LLR regularization patch size {} lamdba {}"), p, l);
@@ -13,10 +14,11 @@ Cx4 llr(Cx4 const &x, float const l, Index const p)
 
   auto zTask = [&](Index const lo, Index const hi) {
     for (Index iz = lo; iz < hi; iz++) {
+      Log::Progress(iz, lo, hi);
       for (Index iy = 0; iy < x.dimension(2) - p; iy++) {
         for (Index ix = 0; ix < x.dimension(1) - p; ix++) {
           Cx4 px = x.slice(Sz4{0, ix, iy, iz}, Sz4{K, p, p, p});
-          Eigen::Map<Eigen::MatrixXcf> patch(px.data(), K, p * p * p);
+          auto patch = CollapseToMatrix(px);
           auto const svd = patch.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
           // Soft-threhold svals
           Eigen::ArrayXf s = svd.singularValues();

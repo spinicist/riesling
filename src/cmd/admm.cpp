@@ -51,7 +51,7 @@ int main_admm(args::Subparser &parser)
   if (toeplitz) {
     recon.calcToeplitz();
   }
-  auto reg = [&](Cx4 const &x) -> Cx4 { return llr(x, reg_lambda.Get(), patch.Get()); };
+  auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, reg_lambda.Get(), patch.Get()); };
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());

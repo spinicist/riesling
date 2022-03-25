@@ -97,6 +97,7 @@ add_executable(riesling
     src/cmd/phantom.cpp
     src/cmd/plan.cpp
     src/cmd/recon.cpp
+    src/cmd/reg.cpp
     src/cmd/sdc.cpp
     src/cmd/sense.cpp
     src/cmd/sense_calib.cpp

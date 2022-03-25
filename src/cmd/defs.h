@@ -20,6 +20,7 @@ int main_phantom(args::Subparser &parser);
 int main_phantom_basis(args::Subparser &parser);
 int main_plan(args::Subparser &parser);
 int main_recon(args::Subparser &parser);
+int main_reg(args::Subparser &parser);
 int main_sdc(args::Subparser &parser);
 int main_sense(args::Subparser &parser);
 int main_sense_calib(args::Subparser &parser);
