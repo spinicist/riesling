@@ -15,8 +15,8 @@ int main_cg(args::Subparser &parser)
   COMMON_SENSE_ARGS;
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
-  args::ValueFlag<float> cg_thr(parser, "T", "CG threshold (1e-10)", {"cg_thresh"}, 1.e-10);
-  args::ValueFlag<Index> cg_its(parser, "N", "CG iterations (8)", {"cg_its"}, 8);
+  args::ValueFlag<float> thr(parser, "T", "Termination threshold (1e-10)", {"thresh"}, 1.e-10);
+  args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {"max-its"}, 8);
 
   ParseCommand(parser, iname);
 
@@ -55,7 +55,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = cgnorm(cg_its.Get(), cg_thr.Get(), recon, reader.noncartesian(iv));
+    vol = cgnorm(its.Get(), thr.Get(), recon, reader.noncartesian(iv));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

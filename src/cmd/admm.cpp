@@ -16,9 +16,10 @@ int main_admm(args::Subparser &parser)
   COMMON_SENSE_ARGS;
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
-  args::ValueFlag<float> cg_thr(parser, "T", "CG threshold (1e-10)", {"cg_thresh"}, 1.e-10);
-  args::ValueFlag<Index> cg_its(parser, "ITS", "CG iterations (8)", {"cg_its"}, 8);
-  args::ValueFlag<Index> admm_its(parser, "ITS", "Outer iterations (8)", {"admm_its"}, 8);
+  args::ValueFlag<float> inner_thr(
+    parser, "T", "Inner termination threshold (1e-10)", {"thresh"}, 1.e-10);
+  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (8)", {"max-its"}, 8);
+  args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
   args::ValueFlag<float> reg_lambda(parser, "L", "ADMM lambda (default 0.1)", {"reg"}, 0.1f);
   args::ValueFlag<float> reg_rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
   args::ValueFlag<Index> patch(parser, "P", "Patch size for LLR (default 8)", {"patch"}, 8);
@@ -64,9 +65,9 @@ int main_admm(args::Subparser &parser)
     auto const &vol_start = Log::Now();
     vol = recon.Adj(reader.noncartesian(iv)); // Initialize
     vol = admm(
-      admm_its.Get(),
-      cg_its.Get(),
-      cg_thr.Get(),
+      outer_its.Get(),
+      inner_its.Get(),
+      inner_thr.Get(),
       recon,
       reg,
       reg_rho.Get(),

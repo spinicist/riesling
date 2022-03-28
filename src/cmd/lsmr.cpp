@@ -15,7 +15,7 @@ int main_lsmr(args::Subparser &parser)
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
-  args::ValueFlag<Index> lsq_its(parser, "N", "LSQ iterations (8)", {'i', "lsq_its"}, 8);
+  args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
@@ -60,7 +60,7 @@ int main_lsmr(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     vol = lsmr(
-      lsq_its.Get(),
+      its.Get(),
       recon,
       reader.noncartesian(iv),
       pre.get(),
