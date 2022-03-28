@@ -46,6 +46,7 @@ int main_cg(args::Subparser &parser)
   if (toeplitz) {
     recon.calcToeplitz();
   }
+  NormalEqOp<ReconOp> normEqs{recon};
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
   Cx4 vol(sz);
@@ -55,7 +56,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = cgnorm(its.Get(), thr.Get(), recon, reader.noncartesian(iv));
+    vol = cg(its.Get(), thr.Get(), normEqs, recon.Adj(reader.noncartesian(iv)));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
