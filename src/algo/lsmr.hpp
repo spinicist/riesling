@@ -70,32 +70,31 @@ typename Op::Input lsmr(
   float α = Norm(v);
   v.device(dev) = v / v.constant(α);
 
-  TI h(inDims), h_(inDims), x(inDims);
+  TI h(inDims), h̅(inDims), x(inDims);
   h.device(dev) = v;
-  h_.setZero();
+  h̅.setZero();
   x.setZero();
 
   // Initialize transformation variables. There are a lot
-  float ζ_ = α * β;
-  float α_ = α;
+  float ζ̅ = α * β;
+  float α̅ = α;
   float ρ = 1;
-  float ρ_ = 1;
-  float c_ = 1;
-  float s_ = 0;
+  float ρ̅ = 1;
+  float c̅ = 1;
+  float s̅ = 0;
 
   // Initialize variables for ||r||
-  float βdd = β;
-  float βd = 0;
-  float ρdold = 1;
-  float τtildeold = 0;
-  float θtilde = 0;
+  float β̈ = β;
+  float β̇ = 0;
+  float ρ̇old = 1;
+  float τ̃old = 0;
+  float θ̃ = 0;
   float ζ = 0;
-  float d = 0;
 
   // Initialize variables for estimation of ||A|| and cond(A)
   float normA2 = α * α;
-  float maxrbar = 0;
-  float minrbar = std::numeric_limits<float>::max();
+  float maxρ̅ = 0;
+  float minρ̅ = std::numeric_limits<float>::max();
   float const normb = β;
   Log::Print(FMT_STRING("Initial residual {}"), normb);
 
@@ -111,30 +110,27 @@ typename Op::Input lsmr(
     α = Norm(v);
     v.device(dev) = v / v.constant(α);
 
-    float ch, sh, αh;
-    std::tie(ch, sh, αh) = SymOrtho(α_, damp);
-
     // Construct rotation
     float ρold = ρ;
     float c, s;
-    std::tie(c, s, ρ) = SymOrtho(αh, β);
+    std::tie(c, s, ρ) = SymOrtho(α̅, β);
     float θnew = s * α;
-    α_ = c * α;
+    α̅ = c * α;
 
     // Use a plane rotation (Qbar_i) to turn R_i^T to R_i^bar
 
-    float ρ_old = ρ_;
+    float ρ̅old = ρ̅;
     float ζold = ζ;
-    float θ_ = s_ * ρ;
-    float ρtemp = c_ * ρ;
-    std::tie(c_, s_, ρ_) = SymOrtho(c_ * ρ, θnew);
-    ζ = c_ * ζ_;
-    ζ_ = -s_ * ζ_;
+    float θ̅ = s̅ * ρ;
+    float ρtemp = c̅ * ρ;
+    std::tie(c̅, s̅, ρ̅) = SymOrtho(c̅ * ρ, θnew);
+    ζ = c̅ * ζ̅;
+    ζ̅ = -s̅ * ζ̅;
 
-    // Update h, h_h, x.
+    // Update h, h̅h, x.
 
-    h_.device(dev) = h - (θ_ * ρ / (ρold * ρ_old)) * h_;
-    x.device(dev) = x + (ζ / (ρ * ρ_)) * h_;
+    h̅.device(dev) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
+    x.device(dev) = x + (ζ / (ρ * ρ̅)) * h̅;
     h.device(dev) = v - (θnew / ρ) * h;
 
     Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
@@ -142,31 +138,25 @@ typename Op::Input lsmr(
     Log::Image(h, fmt::format(FMT_STRING("lsmr-h-{:02d}"), ii));
 
     // Estimate of ||r||.
-
-    // Apply rotation Qh_{k,2k+1}.
-    float βacute = ch * βdd;
-    float βcheck = -sh * βdd;
-
-    // Apply rotation Q_{k,k+1}.
-    float βh = c * βacute;
-    βdd = -s * βacute;
+    // Apply rotation P{k-1}.
+    float const β̂ = c * β̈;
+    β̈ = -s * β̈;
 
     // Apply rotation Qtilde_{k-1}.
-    // βd = βd_{k-1} here.
+    // β̇ = β̇_{k-1} here.
 
-    float const θtildeold = θtilde;
-    auto [ctildeold, stildeold, ρtildeold] = SymOrtho(ρdold, θ_);
-    θtilde = stildeold * ρ_;
-    ρdold = ctildeold * ρ_;
-    βd = -stildeold * βd + ctildeold * βh;
+    float const θ̃old = θ̃;
+    auto [c̃old, s̃old, ρ̃old] = SymOrtho(ρ̇old, θ̅);
+    θ̃ = s̃old * ρ̅;
+    ρ̇old = c̃old * ρ̅;
+    β̇ = -s̃old * β̇ + c̃old * β̂;
 
-    // βd   = βd_k here.
-    // ρdold = ρd_k  here.
+    // β̇   = β̇_k here.
+    // ρ̇old = ρ̇_k  here.
 
-    τtildeold = (ζold - θtildeold * τtildeold) / ρtildeold;
-    float const τd = (ζ - θtilde * τtildeold) / ρdold;
-    d = d + βcheck * βcheck;
-    float const normr = sqrt(d + pow(βd - τd, 2.f) + βdd * βdd);
+    τ̃old = (ζold - θ̃old * τ̃old) / ρ̃old;
+    float const τ̇ = (ζ - θ̃ * τ̃old) / ρ̇old;
+    float const normr = sqrt(pow(β̇ - τ̇, 2.f) + β̈ * β̈);
 
     // Estimate ||A||.
     normA2 += β * β;
@@ -174,16 +164,16 @@ typename Op::Input lsmr(
     normA2 += α * α;
 
     // Estimate cond(A).
-    maxrbar = std::max(maxrbar, ρ_old);
+    maxρ̅ = std::max(maxρ̅, ρ̅old);
     if (ii > 1) {
-      minrbar = std::min(minrbar, ρ_old);
+      minρ̅ = std::min(minρ̅, ρ̅old);
     }
-    float const condA = std::max(maxrbar, ρtemp) / std::min(minrbar, ρtemp);
+    float const condA = std::max(maxρ̅, ρtemp) / std::min(minρ̅, ρtemp);
 
     Log::Print(FMT_STRING("LSMR {}: Residual {} Estimate cond(A) {}"), ii, normr, condA);
 
     // Convergence tests - go in pairs which check large/small values then the user tolerance
-    float const normar = abs(ζ_);
+    float const normar = abs(ζ̅);
     float const normx = Norm(x);
 
     if (1.f + (1.f / condA) <= 1.f) {
