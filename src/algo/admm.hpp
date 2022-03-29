@@ -1,36 +1,21 @@
 #pragma once
 
-#include "cg.hpp"
+#include "lsmr.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 
-template <typename Op>
-struct AugmentedOp
-{
-  using Input = typename Op::Input;
-  Op const &op;
-  float rho;
-
-  auto inputDimensions() const
-  {
-    return op.inputDimensions();
-  }
-
-  Input A(typename Op::Input const &x) const
-  {
-    return Input(op.AdjA(x) + rho * x);
-  }
-};
-
-template <typename Op>
+template <typename Op, typename Precond>
 typename Op::Input admm(
   Index const outer_its,
-  Index const lsq_its,
-  float const lsq_thresh,
-  Op const &op,
-  std::function<Cx4(Cx4 const &)> const &reg,
   float const rho,
-  typename Op::Output const &b)
+  std::function<Cx4(Cx4 const &)> const &reg,
+  Index const lsq_its,
+  Op const &op,
+  typename Op::Output const &b,
+  Precond const *M = nullptr, // Left preconditioner
+  float const atol = 1.e-6f,
+  float const btol = 1.e-6f,
+  float const ctol = 1.e-6f)
 {
   Log::Print(FMT_STRING("Starting ADMM"));
   auto dev = Threads::GlobalDevice();
@@ -39,21 +24,14 @@ typename Op::Input admm(
   auto const dims = op.inputDimensions();
   T x0(dims);
   x0.device(dev) = op.Adj(b);
-  T x(dims);
-  T z(dims);
-  T u(dims);
-  T xpu(dims);
+  T u(dims), x(dims), z(dims), xpu(dims);
   x.setZero();
   z.setZero();
   u.setZero();
   xpu.setZero();
 
-  // Augment system
-  AugmentedOp<Op> augmented{op, rho};
-
   for (Index ii = 0; ii < outer_its; ii++) {
-    x.device(dev) = x0 + x0.constant(rho) * (z - u);
-    x = cg(lsq_its, lsq_thresh, augmented, x0, x);
+    x = lsmr(lsq_its, op, b, M, atol, btol, ctol, rho, (z - u));
     xpu.device(dev) = x + u;
     z = reg(xpu);
     u.device(dev) = xpu - z;

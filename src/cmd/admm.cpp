@@ -7,6 +7,7 @@
 #include "log.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
+#include "precond/single.hpp"
 #include "sdc.h"
 #include "sense.h"
 
@@ -16,13 +17,19 @@ int main_admm(args::Subparser &parser)
   COMMON_SENSE_ARGS;
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
-  args::ValueFlag<float> inner_thr(
-    parser, "T", "Inner termination threshold (1e-10)", {"thresh"}, 1.e-10);
-  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (8)", {"max-its"}, 8);
+
   args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
-  args::ValueFlag<float> reg_lambda(parser, "L", "ADMM lambda (default 0.1)", {"reg"}, 0.1f);
   args::ValueFlag<float> reg_rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
-  args::ValueFlag<Index> patch(parser, "P", "Patch size for LLR (default 8)", {"patch"}, 8);
+
+  args::ValueFlag<float> lambda(
+    parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
+  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
+
+  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
+  args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
+  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
   ParseCommand(parser, iname);
 
@@ -34,6 +41,8 @@ int main_admm(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
   auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  std::unique_ptr<Precond> pre =
+    precond.Get() ? std::make_unique<SingleChannel>(gridder.get()) : nullptr;
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -52,7 +61,7 @@ int main_admm(args::Subparser &parser)
   if (toeplitz) {
     recon.calcToeplitz();
   }
-  auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, reg_lambda.Get(), patch.Get()); };
+  auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, lambda.Get(), patchSize.Get()); };
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
@@ -66,12 +75,15 @@ int main_admm(args::Subparser &parser)
     vol = recon.Adj(reader.noncartesian(iv)); // Initialize
     vol = admm(
       outer_its.Get(),
-      inner_its.Get(),
-      inner_thr.Get(),
-      recon,
-      reg,
       reg_rho.Get(),
-      reader.noncartesian(iv));
+      reg,
+      inner_its.Get(),
+      recon,
+      reader.noncartesian(iv),
+      pre.get(),
+      atol.Get(),
+      btol.Get(),
+      ctol.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.hpp"
 #include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
@@ -19,19 +20,16 @@ struct NormalEqOp
     return op.inputDimensions();
   }
 
+  auto outputDimensions() const
+  {
+    return op.inputDimensions();
+  }
+
   Input A(typename Op::Input const &x) const
   {
     return Input(op.AdjA(x));
   }
 };
-
-template <typename Dims>
-void CheckDims(Dims const a, Dims const b)
-{
-  if (a != b) {
-    Log::Fail(FMT_STRING("Dimensions mismatch {} != {}"), a, b);
-  }
-}
 
 /*
  * Conjugate gradients
@@ -49,12 +47,12 @@ typename Op::Input cg(
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
+  CheckDimsEqual(op.outputDimensions(), b.dimensions());
   auto const dims = op.inputDimensions();
-  CheckDims(dims, b.dimensions());
   T q(dims), p(dims), r(dims), x(dims);
   // If we have an initial guess, use it
   if (x0.size()) {
-    CheckDims(dims, x0.dimensions());
+    CheckDimsEqual(dims, x0.dimensions());
     Log::Print("Initialising CG with initial guess");
     r.device(dev) = (b - op.A(x0)) / r.constant(scale);
     x.device(dev) = x0 / x.constant(scale);
@@ -108,9 +106,9 @@ typename Op::Input pcg(
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
+  CheckDimsEqual(op.outputDimensions(), b.dimensions());
   auto const dims = op.inputDimensions();
-  CheckDims(dims, b.dimensions());
-  CheckDims(dims, x0.dimensions());
+  CheckDimsEqual(dims, x0.dimensions());
   T q(dims), p(dims), r(dims), Pr(dims), x(dims);
   Log::Print("Initialising PCG with initial guess");
   Pr.device(dev) = (b - op.A(x0)) / r.constant(scale);

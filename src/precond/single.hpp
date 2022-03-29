@@ -19,6 +19,7 @@ struct SingleChannel final : Precond
 
   Cx3 const apply(Cx3 const &in) const
   {
+    Log::Debug("Applying single-channel pre-conditioner");
     Index const nC = in.dimension(0);
     Cx3 p(in.dimensions());
     p.device(Threads::GlobalDevice()) = in * pre_.cast<Cx>().broadcast(Sz3{nC, 1, 1});

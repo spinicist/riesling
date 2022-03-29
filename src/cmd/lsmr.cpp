@@ -20,7 +20,6 @@ int main_lsmr(args::Subparser &parser)
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
-  args::ValueFlag<float> damp(parser, "D", "Damping (regularization) factor", {"damp"}, 0.f);
 
   ParseCommand(parser, iname);
 
@@ -60,14 +59,7 @@ int main_lsmr(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     vol = lsmr(
-      its.Get(),
-      recon,
-      reader.noncartesian(iv),
-      pre.get(),
-      atol.Get(),
-      btol.Get(),
-      ctol.Get(),
-      damp.Get());
+      its.Get(), recon, reader.noncartesian(iv), pre.get(), atol.Get(), btol.Get(), ctol.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

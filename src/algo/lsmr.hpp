@@ -1,10 +1,12 @@
 #pragma once
 
+#include "common.hpp"
 #include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
 #include "types.h"
 
+namespace {
 auto SymOrtho(float const a, float const b)
 {
   if (b == 0.f) {
@@ -34,6 +36,8 @@ enum struct Reason
   Iteratons
 };
 
+} // namespace
+
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
 template <typename Op, typename Precond>
@@ -45,11 +49,9 @@ typename Op::Input lsmr(
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
-  float const damp = 0.f)
+  float const λ = 0.f,
+  typename Op::Input const &reg = typename Op::Input())
 {
-  float const scale = Norm(b);
-  Log::Print(
-    FMT_STRING("Starting LSMR, scale {} Atol {} btol {} ctol {}"), scale, atol, btol, ctol);
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using TI = typename Op::Input;
@@ -57,20 +59,29 @@ typename Op::Input lsmr(
   auto const inDims = op.inputDimensions();
   auto const outDims = op.outputDimensions();
 
-  TO Mu(outDims);
-  TO u(outDims);
+  // Workspace variables
+  TO Mu(outDims), u(outDims);
+  TI v(inDims), h(inDims), h̅(inDims), x(inDims), ureg;
+
+  float scale;
+  if (λ > 0.f) {
+    scale = sqrt(Norm2(b) + Norm2(reg));
+    CheckDimsEqual(reg.dimensions(), inDims);
+    ureg.resize(inDims);
+    ureg.device(dev) = reg * reg.constant(sqrt(λ) / scale);
+  } else {
+    scale = Norm(b);
+  }
   Mu.device(dev) = b / b.constant(scale);
   u.device(dev) = M ? M->apply(Mu) : Mu;
   float β = sqrt(std::real(Dot(u, Mu)));
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
 
-  TI v(inDims);
   v.device(dev) = op.Adj(u);
   float α = Norm(v);
   v.device(dev) = v / v.constant(α);
 
-  TI h(inDims), h̅(inDims), x(inDims);
   h.device(dev) = v;
   h̅.setZero();
   x.setZero();
@@ -96,18 +107,34 @@ typename Op::Input lsmr(
   float maxρ̅ = 0;
   float minρ̅ = std::numeric_limits<float>::max();
   float const normb = β;
-  Log::Print(FMT_STRING("Initial residual {}"), normb);
+  Log::Print(
+    FMT_STRING("Starting LSMR, scale {} Atol {} btol {} ctol {}, initial residual {}"),
+    scale,
+    atol,
+    btol,
+    ctol,
+    normb);
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
     Mu.device(dev) = op.A(v) - α * Mu;
     u.device(dev) = M ? M->apply(Mu) : Mu;
-    β = sqrt(std::real(Dot(Mu, u)));
+    if (λ > 0.f) {
+      ureg.device(dev) = sqrt(λ) * v - α * ureg;
+      β = sqrt(std::real(Dot(Mu, u) + Dot(ureg, ureg)));
+      ureg.device(dev) = ureg / ureg.constant(β);
+    } else {
+      β = sqrt(std::real(Dot(Mu, u)));
+    }
     Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);
 
-    v.device(dev) = op.Adj(u) - β * v;
-    α = Norm(v);
+    if (λ > 0.f) {
+      v.device(dev) = op.Adj(u) + sqrt(λ) * ureg - β * v;
+    } else {
+      v.device(dev) = op.Adj(u) - β * v;
+    }
+    α = sqrt(std::real(Dot(v, v)));
     v.device(dev) = v / v.constant(α);
 
     // Construct rotation
@@ -118,7 +145,6 @@ typename Op::Input lsmr(
     α̅ = c * α;
 
     // Use a plane rotation (Qbar_i) to turn R_i^T to R_i^bar
-
     float ρ̅old = ρ̅;
     float ζold = ζ;
     float θ̅ = s̅ * ρ;
@@ -128,7 +154,6 @@ typename Op::Input lsmr(
     ζ̅ = -s̅ * ζ̅;
 
     // Update h, h̅h, x.
-
     h̅.device(dev) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
     x.device(dev) = x + (ζ / (ρ * ρ̅)) * h̅;
     h.device(dev) = v - (θnew / ρ) * h;
@@ -170,7 +195,8 @@ typename Op::Input lsmr(
     }
     float const condA = std::max(maxρ̅, ρtemp) / std::min(minρ̅, ρtemp);
 
-    Log::Print(FMT_STRING("LSMR {}: Residual {} Estimate cond(A) {}"), ii, normr, condA);
+    Log::Print(
+      FMT_STRING("LSMR {}: Residual {} Estimate cond(A) {} α {} β {}"), ii, normr, condA, α, β);
 
     // Convergence tests - go in pairs which check large/small values then the user tolerance
     float const normar = abs(ζ̅);
@@ -190,7 +216,7 @@ typename Op::Input lsmr(
       break;
     }
     if ((normar / (normA * normr)) <= atol) {
-      Log::Print(FMT_STRING("Least-squares < atol"));
+      Log::Print(FMT_STRING("Least-squares = {} < atol = {}"), normar / (normA * normr), atol);
       break;
     }
 
