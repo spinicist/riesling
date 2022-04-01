@@ -23,11 +23,11 @@ Level CurrentLevel()
 void SetLevel(Level const l)
 {
   log_level = l;
-  if (log_level == Level::Images) {
-    debug_file = std::make_unique<HD5::Writer>("riesling-debug.h5");
-  } else {
-    debug_file.reset();
-  }
+}
+
+void SetDebugFile(std::string const &fname)
+{
+  debug_file = std::make_unique<HD5::Writer>(fname);
 }
 
 void End()

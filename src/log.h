@@ -13,8 +13,7 @@ enum struct Level
   None = 0,
   Info = 1,
   Progress = 2,
-  Debug = 3,
-  Images = 4
+  Debug = 3
 };
 
 class Failure : public std::runtime_error
@@ -27,6 +26,7 @@ using Time = std::chrono::high_resolution_clock::time_point;
 
 Level CurrentLevel();
 void SetLevel(Level const l);
+void SetDebugFile(std::string const &fname);
 void End();
 
 void lprint(fmt::string_view fstr, fmt::format_args args);

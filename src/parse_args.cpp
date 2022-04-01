@@ -9,11 +9,7 @@
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-  {0, Log::Level::None},
-  {1, Log::Level::Info},
-  {2, Log::Level::Progress},
-  {3, Log::Level::Debug},
-  {4, Log::Level::Images}};
+  {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Progress}, {3, Log::Level::Debug}};
 }
 
 void Vector3fReader::operator()(
@@ -75,14 +71,11 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
 }
 
 args::Group global_group("GLOBAL OPTIONS");
-args::HelpFlag help(global_group, "HELP", "Show this help message", {'h', "help"});
-args::Flag verbose(global_group, "VERBOSE", "Talk more", {'v', "verbose"});
+args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
+args::Flag verbose(global_group, "V", "Print logging messages to stdout", {'v', "verbose"});
 args::MapFlag<int, Log::Level> verbosity(
-  global_group,
-  "VERBOSITY",
-  "Talk even more (values 0-3, see documentation)",
-  {"verbosity"},
-  levelMap);
+  global_group, "VERBOSITY", "Talk more (values 0-3, see documentation)", {"verbosity"}, levelMap);
+args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
 args::ValueFlag<Index> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
 
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
@@ -90,6 +83,9 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
   parser.Parse();
   Log::SetLevel(verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None));
   Log::Print(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
+  if (debug) {
+    Log::SetDebugFile(debug.Get());
+  }
   if (!iname) {
     throw args::Error("No input file specified");
   }
