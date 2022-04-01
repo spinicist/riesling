@@ -58,7 +58,7 @@ void store_tensor(
     Log::Fail(
       FMT_STRING("Could not write tensor {} into handle {}, code: {}"), name, parent, status);
   } else {
-    Log::Print(FMT_STRING("Wrote tensor: {}"), name);
+    Log::Debug(FMT_STRING("Wrote tensor: {}"), name);
   }
 }
 
@@ -87,7 +87,7 @@ void store_matrix(
     Log::Fail(
       FMT_STRING("Could not write matrix {} into handle {}, code: {}"), name, parent, status);
   } else {
-    Log::Print(FMT_STRING("Wrote matrix: {}"), name);
+    Log::Debug(FMT_STRING("Wrote matrix: {}"), name);
   }
 }
 
@@ -145,7 +145,7 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   if (ret_value < 0) {
     Log::Fail(FMT_STRING("Error reading tensor tensor {}, code: {}"), name, ret_value);
   } else {
-    Log::Print(FMT_STRING("Read dataset: {}"), name);
+    Log::Debug(FMT_STRING("Read dataset: {}"), name);
   }
 }
 

@@ -5,20 +5,35 @@
 #include <Eigen/SVD>
 #include <random>
 
-Cx4 llr_sliding(Cx4 const &x, float const l, Index const p)
+Index PatchClamp(Index const ii, Index const pSz, Index const dimSz)
 {
-  Index const K = x.dimension(0);
-  Log::Print(FMT_STRING("LLR regularization patch size {} lamdba {}"), p, l);
-  Cx4 lr(x.dimensions());
-  lr.setZero();
+  Index const hSz = pSz / 2;
+  if (ii < hSz) {
+    return ii;
+  } else if (ii > (dimSz - hSz)) {
+    return ii - (dimSz - pSz);
+  } else {
+    return hSz;
+  }
+}
+
+Cx4 llr_sliding(Cx4 const &img, float const l, Index const pSz)
+{
+  Index const K = img.dimension(0);
+  Log::Print(FMT_STRING("LLR regularization patch size {} lambda {}"), pSz, l);
+  Cx4 lr(img.dimensions());
+  lr = img;
 
   auto zTask = [&](Index const lo, Index const hi) {
     for (Index iz = lo; iz < hi; iz++) {
       Log::Progress(iz, lo, hi);
-      for (Index iy = 0; iy < x.dimension(2) - p; iy++) {
-        for (Index ix = 0; ix < x.dimension(1) - p; ix++) {
-          Cx4 px = x.slice(Sz4{0, ix, iy, iz}, Sz4{K, p, p, p});
-          auto patch = CollapseToMatrix(px);
+      for (Index iy = 0; iy < img.dimension(2); iy++) {
+        for (Index ix = 0; ix < img.dimension(1); ix++) {
+          Index const stx = std::min(std::max(0L, ix - pSz / 2), img.dimension(1) - pSz);
+          Index const sty = std::min(std::max(0L, iy - pSz / 2), img.dimension(2) - pSz);
+          Index const stz = std::min(std::max(0L, iz - pSz / 2), img.dimension(3) - pSz);
+          Cx4 patchTensor = img.slice(Sz4{0, stx, sty, stz}, Sz4{K, pSz, pSz, pSz});
+          auto patch = CollapseToMatrix(patchTensor);
           auto const svd = patch.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
           // Soft-threhold svals
           Eigen::ArrayXf s = svd.singularValues();
@@ -26,14 +41,16 @@ Cx4 llr_sliding(Cx4 const &x, float const l, Index const p)
           s = s * (s.abs() - sl) / s.abs();
           s = (s > sl).select(s, 0.f);
           patch.transpose() = svd.matrixU() * s.matrix().asDiagonal() * svd.matrixV().adjoint();
-          lr.chip<3>(iz + p / 2).chip<2>(iy + p / 2).chip<1>(ix + p / 2) =
-            px.chip<3>(p / 2).chip<2>(p / 2).chip<1>(p / 2);
+          lr.chip<3>(iz).chip<2>(iy).chip<1>(ix) =
+            patchTensor.chip<3>(PatchClamp(iz, pSz, img.dimension(3)))
+              .chip<2>(PatchClamp(iy, pSz, img.dimension(2)))
+              .chip<1>(PatchClamp(ix, pSz, img.dimension(1)));
         }
       }
     }
   };
   auto const now = Log::Now();
-  Threads::RangeFor(zTask, 0, x.dimension(3) - p);
+  Threads::RangeFor(zTask, 0, img.dimension(3));
   Log::Print(FMT_STRING("LLR Regularization took {}"), Log::ToNow(now));
   return lr;
 }

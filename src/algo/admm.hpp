@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cg.hpp"
 #include "lsmr.hpp"
 #include "tensorOps.h"
 #include "threads.h"
@@ -9,7 +10,7 @@ typename Op::Input admm(
   Index const outer_its,
   float const rho,
   std::function<Cx4(Cx4 const &)> const &reg,
-  Index const lsq_its,
+  Index const start_its,
   Op const &op,
   typename Op::Output const &b,
   Precond const *M = nullptr, // Left preconditioner
@@ -22,16 +23,16 @@ typename Op::Input admm(
   // Allocate all memory
   using T = typename Op::Input;
   auto const dims = op.inputDimensions();
-  T x0(dims);
-  x0.device(dev) = op.Adj(b);
   T u(dims), x(dims), z(dims), xpu(dims);
   x.setZero();
   z.setZero();
   u.setZero();
   xpu.setZero();
 
+  Index lsq_its = start_its;
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsmr(lsq_its, op, b, M, atol, btol, ctol, rho, (z - u));
+    x = lsmr(lsq_its, op, b, x, rho, (z - u), M, atol, btol, ctol, (ii == 1));
+    lsq_its = std::max(lsq_its / 2L, 1L);
     xpu.device(dev) = x + u;
     z = reg(xpu);
     u.device(dev) = xpu - z;
@@ -40,6 +41,74 @@ typename Op::Input admm(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
+    Log::Image(Cx4(z - u), fmt::format("admm-zmu-{:02d}", ii));
+  }
+  return x;
+}
+
+template <typename Op>
+struct AugmentedOp
+{
+  using Input = typename Op::Input;
+  Op const &op;
+  float rho;
+
+  auto inputDimensions() const
+  {
+    return op.inputDimensions();
+  }
+
+  auto outputDimensions() const
+  {
+    return op.inputDimensions();
+  }
+
+  Input A(typename Op::Input const &x) const
+  {
+    return Input(op.AdjA(x) + rho * x);
+  }
+};
+
+template <typename Op>
+typename Op::Input admm_cg(
+  Index const outer_its,
+  Index const lsq_its,
+  float const lsq_thresh,
+  Op const &op,
+  std::function<Cx4(Cx4 const &)> const &reg,
+  float const rho,
+  typename Op::Output const &b)
+{
+  Log::Print(FMT_STRING("Starting ADMM"));
+  auto dev = Threads::GlobalDevice();
+  // Allocate all memory
+  using T = typename Op::Input;
+  auto const dims = op.inputDimensions();
+  T x0(dims);
+  x0.device(dev) = op.Adj(b);
+  T x(dims);
+  T z(dims);
+  T u(dims);
+  T xpu(dims);
+  x.setZero();
+  z.setZero();
+  u.setZero();
+  xpu.setZero();
+
+  // Augment system
+  AugmentedOp<Op> augmented{op, rho};
+
+  for (Index ii = 0; ii < outer_its; ii++) {
+    x.device(dev) = x0 + x0.constant(rho) * (z - u);
+    x = cg(lsq_its, lsq_thresh, augmented, x0, x);
+    xpu.device(dev) = x + u;
+    z = reg(xpu);
+    u.device(dev) = xpu - z;
+    Log::Print(FMT_STRING("Finished ADMM iteration {}"), ii);
+    Log::Image(x, fmt::format("admm-x-{:02d}.nii", ii));
+    Log::Image(xpu, fmt::format("admm-xpu-{:02d}.nii", ii));
+    Log::Image(z, fmt::format("admm-z-{:02d}.nii", ii));
+    Log::Image(u, fmt::format("admm-u-{:02d}.nii", ii));
   }
   return x;
 }

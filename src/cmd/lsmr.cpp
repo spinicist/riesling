@@ -20,6 +20,7 @@ int main_lsmr(args::Subparser &parser)
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+  args::ValueFlag<float> damp(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f);
 
   ParseCommand(parser, iname);
 
@@ -49,17 +50,28 @@ int main_lsmr(args::Subparser &parser)
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
   }
   ReconOp recon(gridder.get(), senseMaps);
+
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
+
+  Cx4 zeros(sz);
+  zeros.setZero();
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsmr(
-      its.Get(), recon, reader.noncartesian(iv), pre.get(), atol.Get(), btol.Get(), ctol.Get());
+    vol = lsmr_damp(
+      its.Get(),
+      recon,
+      reader.noncartesian(iv),
+      pre.get(),
+      atol.Get(),
+      btol.Get(),
+      ctol.Get(),
+      damp.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

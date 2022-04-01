@@ -40,7 +40,8 @@ typename Op::Input cg(
   float const &thresh,
   Op const &op,
   typename Op::Input const &b,
-  typename Op::Input const &x0 = typename Op::Input())
+  typename Op::Input const &x0 = typename Op::Input(),
+  bool const debug = false)
 {
   float const scale = Norm(b);
   Log::Print(FMT_STRING("Starting Conjugate Gradients, scale {} threshold {}"), scale, thresh);
@@ -53,7 +54,7 @@ typename Op::Input cg(
   // If we have an initial guess, use it
   if (x0.size()) {
     CheckDimsEqual(dims, x0.dimensions());
-    Log::Print("Initialising CG with initial guess");
+    Log::Print("Warm-start CG");
     r.device(dev) = (b - op.A(x0)) / r.constant(scale);
     x.device(dev) = x0 / x.constant(scale);
   } else {
@@ -67,10 +68,12 @@ typename Op::Input cg(
     q = op.A(p);
     float const alpha = r_old / Dot(p, q).real();
     x.device(dev) = x + p * p.constant(alpha);
-    Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}"), icg));
-    Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}"), icg));
-    Log::Image(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
-    Log::Image(r, fmt::format(FMT_STRING("cg-r-{:02}"), icg));
+    if (debug) {
+      Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}"), icg));
+      Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}"), icg));
+      Log::Image(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
+      Log::Image(r, fmt::format(FMT_STRING("cg-r-{:02}"), icg));
+    }
     r.device(dev) = r - q * q.constant(alpha);
     float const r_new = Norm2(r);
     float const beta = r_new / r_old;

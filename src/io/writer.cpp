@@ -23,7 +23,6 @@ Writer::~Writer()
 
 void Writer::writeInfo(Info const &info)
 {
-  Log::Print(FMT_STRING("Writing info struct"));
   hid_t info_id = InfoType();
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
@@ -39,6 +38,7 @@ void Writer::writeInfo(Info const &info)
   if (status != 0) {
     Log::Fail(FMT_STRING("Could not write info struct in file {}, code: {}"), handle_, status);
   }
+  Log::Debug(FMT_STRING("Wrote info struct"));
 }
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)

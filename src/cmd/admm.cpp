@@ -15,7 +15,6 @@ int main_admm(args::Subparser &parser)
 {
   COMMON_RECON_ARGS;
   COMMON_SENSE_ARGS;
-  args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
 
   args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
@@ -30,6 +29,8 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+
+  args::Flag use_cg(parser, "C", "Use CG instead of LSMR for inner loop", {"cg"});
 
   ParseCommand(parser, iname);
 
@@ -58,9 +59,6 @@ int main_admm(args::Subparser &parser)
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
   }
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
-  if (toeplitz) {
-    recon.calcToeplitz();
-  }
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, lambda.Get(), patchSize.Get()); };
 
   auto sz = recon.inputDimensions();
@@ -72,18 +70,28 @@ int main_admm(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = recon.Adj(reader.noncartesian(iv)); // Initialize
-    vol = admm(
-      outer_its.Get(),
-      reg_rho.Get(),
-      reg,
-      inner_its.Get(),
-      recon,
-      reader.noncartesian(iv),
-      pre.get(),
-      atol.Get(),
-      btol.Get(),
-      ctol.Get());
+    if (use_cg) {
+      vol = admm_cg(
+        outer_its.Get(),
+        inner_its.Get(),
+        atol.Get(),
+        recon,
+        reg,
+        reg_rho.Get(),
+        reader.noncartesian(iv));
+    } else {
+      vol = admm(
+        outer_its.Get(),
+        reg_rho.Get(),
+        reg,
+        inner_its.Get(),
+        recon,
+        reader.noncartesian(iv),
+        pre.get(),
+        atol.Get(),
+        btol.Get(),
+        ctol.Get());
+    }
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
