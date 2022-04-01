@@ -35,7 +35,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     Output noncart(ncdims);
     noncart.setZero();
 
-    auto const scale = this->mapping_.scale;
+    auto const scale = this->mapping_.scale * sqrt(basis_.dimension(0));
     auto grid_task = [&](Index const lo, Index const hi) {
       for (auto ii = lo; ii < hi; ii++) {
         Log::Progress(ii, lo, hi);
@@ -83,7 +83,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     cdims[0] = nC;
     Index const nB = cdims[1];
     Input cart(cdims);
-    auto const scale = this->mapping_.scale;
+    auto const scale = this->mapping_.scale * sqrt(basis_.dimension(0));
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
     std::vector<Cx5> threadSpaces(nThreads);
