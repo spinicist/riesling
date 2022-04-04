@@ -55,8 +55,7 @@ void store_tensor(
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    Log::Fail(
-      FMT_STRING("Could not write tensor {} into handle {}, code: {}"), name, parent, status);
+    Log::Fail(FMT_STRING("Writing Tensor {}: Error {}"), name, HD5::GetError());
   } else {
     Log::Debug(FMT_STRING("Wrote tensor: {}"), name);
   }
