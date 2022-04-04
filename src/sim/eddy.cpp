@@ -9,7 +9,6 @@ Result Eddy(
   Parameter const T1p,
   Parameter const betap,
   Parameter const gammap,
-  Parameter const B1p,
   Sequence const seq,
   Index const nRand)
 {
@@ -25,12 +24,11 @@ Result Eddy(
   Log::Print(FMT_STRING("{} values of T1 from {} to {}s"), T1p.N, T1p.lo, T1p.hi);
   Log::Print(FMT_STRING("{} values of β from {} to {}"), betap.N, betap.lo, betap.hi);
   Log::Print(FMT_STRING("{} values of ɣ from {} to {}"), gammap.N, gammap.lo, gammap.hi);
-  Log::Print(FMT_STRING("{} values of B1 from {} to {}"), B1p.N, B1p.lo, B1p.hi);
-  ParameterGenerator<4> gen(T1p, betap, gammap, B1p);
+  ParameterGenerator<3> gen(T1p, betap, gammap);
   Index totalN = (nRand > 0) ? nRand : gen.totalN();
   Result result;
   result.dynamics.resize(totalN, 4 * seq.sps);
-  result.parameters.resize(totalN, 4);
+  result.parameters.resize(totalN, 3);
   result.Mz_ss.resize(totalN);
 
   auto task = [&](Index const lo, Index const hi, Index const ti) {

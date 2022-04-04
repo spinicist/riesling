@@ -82,7 +82,7 @@ int main_sim(args::Subparser &parser)
   Sim::Result result;
   if (ng) {
     Sim::Parameter const gamma{ng.Get(), gLo.Get(), gHi.Get(), false};
-    result = Sim::Eddy(T1, beta, gamma, B1, seq, randomSamp.Get());
+    result = Sim::Eddy(T1, beta, gamma, seq, randomSamp.Get());
   } else if (mupa) {
     Sim::Parameter const T2{65, 0.02, 0.2, true};
     result = Sim::MUPA(T1, T2, B1, seq, randomSamp.Get());
