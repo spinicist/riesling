@@ -24,18 +24,6 @@ auto SymOrtho(float const a, float const b)
   }
 }
 
-enum struct Reason
-{
-  XisZero = 0,
-  AtolBtol,
-  Atol,
-  Cond1,
-  Eps1,
-  Eps2,
-  Cond2,
-  Iteratons
-};
-
 } // namespace
 
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
@@ -78,7 +66,7 @@ typename Op::Input lsmr(
   x.device(dev) = x0 / x.constant(scale);
   Mu.device(dev) = (b / b.constant(scale)) - op.A(x);
   u.device(dev) = M ? M->apply(Mu) : Mu;
-  ur.device(dev) = xr * ur.constant(sqrt(λ) / scale);
+  ur.device(dev) = xr * xr.constant(sqrt(λ) / scale) - x * x.constant(sqrt(λ));
 
   float β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
   Mu.device(dev) = Mu / Mu.constant(β);

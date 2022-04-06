@@ -58,8 +58,6 @@ int main_lsmr(args::Subparser &parser)
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
 
-  Cx4 zeros(sz);
-  zeros.setZero();
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
