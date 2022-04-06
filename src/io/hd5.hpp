@@ -35,12 +35,15 @@ void store_tensor(
   // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
   std::copy_n(data.dimensions().rbegin(), ND, ds_dims);
   std::copy_n(ds_dims, ND, chunk_dims);
-  if constexpr (ND > 3) {
-    chunk_dims[0] = 1;
-    // Try to stop chunk dimension going over 4 gig
-    if (chunk_dims[1] > 1024) {
-      chunk_dims[1] = 1024;
+  // Try to stop chunk dimension going over 4 gig
+  Index sizeInBytes = Product(data.dimensions()) * sizeof(Scalar);
+  Index dimToShrink = 0;
+  while (sizeInBytes > (1L << 32L)) {
+    if (chunk_dims[dimToShrink] > 1) {
+      chunk_dims[dimToShrink] /= 2;
+      sizeInBytes /= 2;
     }
+    dimToShrink = (dimToShrink + 1) % ND;
   }
 
   auto const space = H5Screate_simple(ND, ds_dims, NULL);
@@ -50,6 +53,14 @@ void store_tensor(
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
+  if (dset < 0) {
+    Log::Fail(
+      FMT_STRING("Could not create tensor {}/{}. Dims {}. Error {}"),
+      parent,
+      name,
+      fmt::join(data.dimensions(), ","),
+      HD5::GetError());
+  }
   status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
   status = H5Pclose(plist);
   status = H5Sclose(space);
