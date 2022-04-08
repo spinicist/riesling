@@ -28,33 +28,38 @@ resulting `riesling` executable to somewhere on your `$PATH`, for instance
   which prevents them being run as the binary is unsigned. It is possible to 
   remove the quarantine flag with `xattr`, but downloading with `curl` is more 
   straightforward.
-- The Linux executable is compiled on Ubuntu 16.04 with GLIBC version 2.3 and a 
-  statically linked libc++. This means it will hopefully run on most modern 
-  Linux distributions. Let us know if it doesn't.
+- The Linux executable is compiled on Ubuntu 18.04 and a statically linked
+  libstdc++. This means it will hopefully run on most modern Linux
+  distributions. Let us know if it doesn't.
+- The Mac executable is compiled with MacOS 11. GitHub CI uses Intel machines,
+  and a native M1 version will not be available until these changes.
 
 ## Compilation
 
 If you wish to compile RIESLING yourself, compilation should hopefully be 
-straightforward as long as you have access to a C++17 compiler (GCC 8 or higher,
-Clang 7 or higher). RIESLING relies on `vcpkg` for dependency management. To 
-download and compile RIESLING, follow these steps:
+straightforward as long as you have access to a C++20 compiler (GCC 10 or
+higher, Clang 7 or higher). RIESLING relies on `vcpkg` for dependency
+management. To download and compile RIESLING, follow these steps:
 
 ### 0. MacOS Dependencies
-Install the [MacOS vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-macos-developer-tools). This includes:
+Install the [MacOS vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-macos-developer-tools).
+
 1. XCode from the AppStore
 2. Run `$ xcode-select --install` in the terminal
 
-You may also need to install `pkg-config` depending on your macOS version. This is easily installed with [Homebrew](https://brew.sh/) using
+You may also need to install `pkg-config` depending on your macOS version. This
+is easily installed with [Homebrew](https://brew.sh/) using
 ```
 $ brew install pkg-config
 ```
 
-**_(17/01/2022): The Apple Silicon Architecture (M1) is currently not supported. We are working on it though, stay tuned!)_**
+Apple Silicon (M1) is now supported.
 
 ### 0. Linux Dependencies
-Install the [Linux vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-linux-developer-tools). These includes:
-
-These are `cmake`, `tar`, `curl`, `zip`, `unzip`, `pkg-config` \& `build-essentials`. You may be surprised by which distributions do not include these by default.
+Install the [Linux vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-linux-developer-tools).
+These include `cmake`, `tar`, `curl`, `zip`, `unzip`, `pkg-config` \&
+`build-essentials`. You may be surprised by which distributions do not include
+these by default.
 
 ### 1. Clone repository
 ```
@@ -70,7 +75,9 @@ $ ./bootstraph.sh
 ## Usage
 
 RIESLING comes as a single executable file with multiple commands, similar to 
-`git` or `bart`. Type `riesling` to see a list of all the available commands. If you run a RIESLING command without any additional parameter RIESLING will output all available options for the given command.
+`git` or `bart`. Type `riesling` to see a list of all the available commands. If
+you run a RIESLING command without any additional parameter RIESLING will output
+all available options for the given command.
 
 RIESLING uses HDF5 (.h5) files but can also output NIFTI (.nii). To create an 
 example digital phantom, use `riesling phantom`. RIESLING will append suffixes 
