@@ -88,6 +88,9 @@ void CheckInfoType(hid_t handle)
     "origin",
     "direction"};
 
+  if (handle < 0) {
+    Log::Fail("Info struct does not exist");
+  }
   auto const dtype = H5Dget_type(handle);
   size_t n_members = H5Tget_nmembers(dtype);
   if (n_members < names.size()) {

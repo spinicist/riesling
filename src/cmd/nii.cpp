@@ -14,11 +14,14 @@ int main_nii(args::Subparser &parser)
   args::ValueFlag<Index> frameArg(parser, "E", "Frame (default all)", {'e', "frame"}, 0);
   args::ValueFlag<Index> volArg(parser, "V", "Volume (default all)", {"volume"}, 0);
   ParseCommand(parser, iname);
-
+  if (!oname) {
+    Log::Fail("No output name specified");
+  }
   HD5::RieslingReader input(iname.Get());
   Info const info = input.trajectory().info();
   Cx5 const image = input.readTensor<Cx5>(dset.Get());
   Sz5 const sz = image.dimensions();
+
   Index const szE = frameArg ? 1 : sz[0];
   Index const stE = frameArg ? 0 : frameArg.Get();
   Index const szV = volArg ? 1 : sz[4];
