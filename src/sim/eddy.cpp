@@ -48,13 +48,12 @@ Result Eddy(
       Essi << essi, 1 - essi, 0.f, 1.f;
       Erec << erec, 1 - erec, 0.f, 1.f;
 
-      float const B1 = P(1);
-      float const cosa = cos(B1 * seq.alpha * M_PI / 180.f);
-      float const sina = sin(B1 * seq.alpha * M_PI / 180.f);
+      float const cosa = cos(seq.alpha * M_PI / 180.f);
+      float const sina = sin(seq.alpha * M_PI / 180.f);
       Eigen::Matrix2f A;
       A << cosa, 0.f, 0.f, 1.f;
 
-      float const beta = P(3);
+      float const beta = P(1);
       float const gamma = P(2);
       Eigen::Matrix2f PC0, PC1, PC2, PC3;
       float pinc = M_PI / 2.f;
