@@ -61,12 +61,10 @@ typename Op::Input lsmr(
   TO Mu(outDims), u(outDims);
   TI v(inDims), h(inDims), h̅(inDims), x(inDims), ur(inDims);
 
-  float scale = Norm(b);
-
-  x.device(dev) = x0 / x.constant(scale);
-  Mu.device(dev) = (b / b.constant(scale)) - op.A(x);
+  x.device(dev) = x0;
+  Mu.device(dev) = b - op.A(x);
   u.device(dev) = M ? M->apply(Mu) : Mu;
-  ur.device(dev) = xr * xr.constant(sqrt(λ) / scale) - x * x.constant(sqrt(λ));
+  ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
 
   float β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
   Mu.device(dev) = Mu / Mu.constant(β);
@@ -109,14 +107,11 @@ typename Op::Input lsmr(
   }
 
   Log::Print(
-    FMT_STRING(
-      "Starting regularized LSMR: scale {} λ {} Atol {} btol {} ctol {}, initial residual {}"),
-    scale,
+    FMT_STRING("LSMR λ {:3g} Atol {:.3g} btol {:.3g} ctol {:.3g}"),
     λ,
     atol,
     btol,
-    ctol,
-    normb);
+    ctol);
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
@@ -194,19 +189,28 @@ typename Op::Input lsmr(
     }
     float const condA = std::max(maxρ̅, ρtemp) / std::min(minρ̅, ρtemp);
 
-    Log::Print(
-      FMT_STRING("LSMR {}: Residual {} Estimate cond(A) {} α {} β {}"), ii, normr, condA, α, β);
-
     // Convergence tests - go in pairs which check large/small values then the user tolerance
     float const normar = abs(ζ̅);
     float const normx = Norm(x);
 
+    Log::Print(
+      FMT_STRING("LSMR {:02d} α {:.3g} β {:.3g} |r| {:.3g} cond(A) {:.3g} |A| {:.3g} "
+                 "|Ar| {:.3g} |x| {:.3g}"),
+      ii,
+      α,
+      β,
+      normr,
+      condA,
+      normA,
+      normar,
+      normx);
+
     if (1.f + (1.f / condA) <= 1.f) {
-      Log::Print(FMT_STRING("Cond(A_) is very large"));
+      Log::Print(FMT_STRING("Cond(A) is very large"));
       break;
     }
     if ((1.f / condA) <= ctol) {
-      Log::Print(FMT_STRING("Cond(A_) has exceeded limit"));
+      Log::Print(FMT_STRING("Cond(A) has exceeded limit"));
       break;
     }
 
@@ -228,7 +232,7 @@ typename Op::Input lsmr(
       break;
     }
   }
-  return x * x.constant(scale);
+  return x;
 }
 
 /*
