@@ -122,7 +122,7 @@ typename Op::Input lsmr(
     // Bidiagonalization step
     Mu.device(dev) = op.A(v) - α * Mu;
     u.device(dev) = M ? M->apply(Mu) : Mu;
-    ur.device(dev) = ((sqrt(λ) * v) - (α * ur));
+    ur.device(dev) = (sqrt(λ) * v) - (α * ur);
     β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
     Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);

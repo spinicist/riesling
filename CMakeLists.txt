@@ -61,11 +61,8 @@ add_library(vineyard
     src/op/pad.hpp
     src/op/recon.hpp
     src/op/sense.hpp
-    src/sim/sim.cpp
-    src/sim/eddy.cpp
-    src/sim/flair.cpp
-    src/sim/mupa.cpp
-    src/sim/prep.cpp
+    src/sim/parameter.cpp
+    src/sim/t1t2.cpp
 )
 target_include_directories(vineyard PUBLIC src)
 target_link_libraries(vineyard PUBLIC

@@ -62,7 +62,7 @@ typename Op::Input cg(
   p.device(dev) = r;
   float r_old = Norm2(r);
   float const thresh = tol * sqrt(r_old);
-  Log::Print(FMT_STRING("CG |r| {:5.3E} threshold {:5.3E}"), tol, thresh);
+  Log::Print(FMT_STRING("CG    |r| {:5.3E} threshold {:5.3E}"), r_old, thresh);
   for (Index icg = 0; icg < max_its; icg++) {
     q = op.A(p);
     float const alpha = r_old / Dot(p, q).real();
@@ -78,7 +78,7 @@ typename Op::Input cg(
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
     float const nr = sqrt(r_new);
-    Log::Print(FMT_STRING("CG {:02d} ɑ {:5.3E} β {:5.3E} |r| {:5.3E}"), icg, alpha, beta, nr);
+    Log::Print(FMT_STRING("CG {:02d} |r| {:5.3E} ɑ {:5.3E} β {:5.3E}"), icg, nr, alpha, beta);
     if (nr < thresh) {
       Log::Print(FMT_STRING("Reached convergence threshold"));
       break;

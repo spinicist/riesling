@@ -20,7 +20,7 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
   return out;
 }
 
-PrincipalComponents
+VecsAndValsCx
 PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const thresh)
 {
   auto const dm = data.colwise() - data.rowwise().mean();
@@ -39,4 +39,10 @@ PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const 
   Log::Print(
     FMT_STRING("PCA retained {} components, total energy {}%"), nRetain, 100.f * cumsum[nRetain]);
   return {eig.eigenvectors().rightCols(nRetain).rowwise().reverse(), vals.head(nRetain)};
+}
+
+VecsAndVals SVD(Eigen::ArrayXXf const &mat)
+{
+  auto const svd = mat.matrix().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+  return VecsAndVals{.vecs = svd.matrixV(), .vals = svd.singularValues()};
 }
