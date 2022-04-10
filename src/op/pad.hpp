@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator.h"
+#include "operator.hpp"
 
 template <int Rank>
 struct PadOp final : Operator<Rank, Rank>

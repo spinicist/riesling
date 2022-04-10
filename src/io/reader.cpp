@@ -31,6 +31,7 @@ T Reader::readTensor(std::string const &label)
   return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
 }
 
+template R1 Reader::readTensor<R1>(std::string const &);
 template R2 Reader::readTensor<R2>(std::string const &);
 template Cx3 Reader::readTensor<Cx3>(std::string const &);
 template Cx4 Reader::readTensor<Cx4>(std::string const &);

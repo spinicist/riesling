@@ -1,5 +1,4 @@
 #include "../../src/op/nufft.hpp"
-#include "../../src/precond/sdc.hpp"
 #include "../../src/sdc.h"
 #include "../../src/tensorOps.h"
 #include "../../src/traj_spirals.h"
@@ -28,8 +27,8 @@ TEST_CASE("ops-nufft")
   auto const nn = make_kernel("NN", info.type, os);
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
-  SDCPrecond sdc{SDC::Pipe(traj, true, os)};
-  auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get(), &sdc);
+  auto const sdc = SDC::Choose("pipenn", traj, os);
+  auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get(), sdc.get());
   nufft.calcToeplitz();
   auto const dims = nufft.inputDimensions();
   Cx5 x(dims), y(dims);

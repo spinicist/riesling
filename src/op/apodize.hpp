@@ -1,7 +1,7 @@
 #pragma once
 
 #include "grid-base.hpp"
-#include "operator.h"
+#include "operator.hpp"
 
 template <int Rank>
 struct ApodizeOp final : Operator<Rank, Rank>

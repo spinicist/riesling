@@ -5,7 +5,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-template <typename Op, typename Precond>
+template <typename Op, typename LeftPrecond, typename RightPrecond>
 typename Op::Input admm(
   Index const outer_its,
   float const rho,
@@ -13,7 +13,8 @@ typename Op::Input admm(
   Index const lsq_its,
   Op const &op,
   typename Op::Output const &b,
-  Precond const *M = nullptr, // Left preconditioner
+  LeftPrecond const *M = nullptr,  // Left preconditioner
+  RightPrecond const *N = nullptr, // Right preconditioner
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
@@ -25,7 +26,7 @@ typename Op::Input admm(
   // Allocate all memory
   using T = typename Op::Input;
   auto const dims = op.inputDimensions();
-  Index const N = Product(dims);
+  Index const nvox = Product(dims);
   T u(dims), x(dims), z(dims), zold(dims), xpu(dims);
   x.setZero();
   z.setZero();
@@ -34,7 +35,7 @@ typename Op::Input admm(
   xpu.setZero();
 
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsmr(lsq_its, op, b, x, rho, (z - u), M, atol, btol, ctol, (ii == 1));
+    x = lsmr(lsq_its, op, b, x, rho, (z - u), M, N, atol, btol, ctol, (ii == 0));
 
     xpu.device(dev) = x + u;
     zold = z;
@@ -44,8 +45,8 @@ typename Op::Input admm(
     float const norm_prim = Norm(x - z);
     float const norm_dual = Norm(-rho * (z - zold));
 
-    float const eps_prim = sqrtf(N) * abstol + reltol * std::max(Norm(x), Norm(-z));
-    float const eps_dual = sqrtf(N) * abstol + reltol * rho * Norm(u);
+    float const eps_prim = sqrtf(nvox) * abstol + reltol * std::max(Norm(x), Norm(-z));
+    float const eps_dual = sqrtf(nvox) * abstol + reltol * rho * Norm(u);
 
     Log::Image(x, fmt::format("admm-x-{:02d}", ii));
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));

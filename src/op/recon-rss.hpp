@@ -1,13 +1,14 @@
 #pragma once
 
-#include "operator.h"
+#include "operator.hpp"
 
 #include "nufft.hpp"
+#include "sdc.hpp"
 #include "sense.hpp"
 
 struct ReconRSSOp final : Operator<4, 3>
 {
-  ReconRSSOp(GridBase *gridder, Sz3 const &dims, Precond *sdc = nullptr)
+  ReconRSSOp(GridBase *gridder, Sz3 const &dims, SDCOp *sdc = nullptr)
     : nufft_{dims, gridder, sdc}
   {
   }

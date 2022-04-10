@@ -3,10 +3,9 @@
 #include "../cropper.h"
 #include "../fft/fft.hpp"
 #include "../kernel.h"
-#include "../precond/sdc.hpp"
 #include "../threads.h"
 #include "../trajectory.h"
-#include "operator.h"
+#include "operator.hpp"
 
 struct GridBase : Operator<5, 3>
 {

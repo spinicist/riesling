@@ -31,8 +31,8 @@ int main_grid(args::Subparser &parser)
       HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
-    auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
-    writer.writeTensor(gridder->Adj(sdc->apply(reader.noncartesian(0))), "cartesian");
+    auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
+    writer.writeTensor(gridder->Adj(sdc->Adj(reader.noncartesian(0))), "cartesian");
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }
 

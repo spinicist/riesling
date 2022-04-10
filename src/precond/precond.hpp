@@ -5,9 +5,15 @@
 /* NullOp Preconditioner
  */
 
+template <typename T>
 struct Precond
 {
-  virtual Cx3 const apply(Cx3 const &in) const
+  virtual T apply(T const &in) const
+  {
+    return in;
+  }
+
+  virtual T inv(T const &in) const
   {
     return in;
   }

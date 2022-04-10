@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../tensorOps.h"
-#include "operator.h"
+#include "operator.hpp"
 
 struct SenseOp final : Operator<4, 5>
 {

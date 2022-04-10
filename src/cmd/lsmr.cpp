@@ -32,7 +32,7 @@ int main_lsmr(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
 
-  std::unique_ptr<Precond> pre =
+  std::unique_ptr<Precond<Cx3>> pre =
     precond.Get() ? std::make_unique<SingleChannel>(gridder.get()) : nullptr;
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
@@ -41,8 +41,8 @@ int main_lsmr(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get())
-                              ->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+                            SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get())
+                              ->Adj(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());

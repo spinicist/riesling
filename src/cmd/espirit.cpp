@@ -37,12 +37,12 @@ int main_espirit(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res, true);
   Log::Debug(FMT_STRING("Mapping dims {}"), mapping.cartDims);
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  auto const sdc = SDCPrecond{SDC::Pipe(traj, true, osamp.Get())};
+  auto const sdc = SDC::Choose("pipe", traj, osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get());
   Cx4 sense = cropper.crop4(ESPIRIT(
     gridder.get(),
-    sdc.apply(reader.noncartesian(ValOrLast(volume.Get(), info.volumes))),
+    sdc->Adj(reader.noncartesian(ValOrLast(volume.Get(), info.volumes))),
     kRad.Get(),
     totalCalRad,
     readStart.Get(),

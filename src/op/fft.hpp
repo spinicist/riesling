@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator.h"
+#include "operator.hpp"
 
 #include "../fft/fft.hpp"
 #include "../threads.h"

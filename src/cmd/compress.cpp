@@ -69,7 +69,7 @@ int main_compress(args::Subparser &parser)
     auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
     auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res.Get(), true);
     auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-    auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+    auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
     auto const sz = LastN<3>(gridder->inputDimensions());
     NUFFTOp nufft(sz, gridder.get(), sdc.get());
     Cx4 const channelImages = nufft.Adj(ks).chip<1>(0);

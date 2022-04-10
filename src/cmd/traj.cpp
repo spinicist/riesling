@@ -41,8 +41,8 @@ int main_traj(args::Subparser &parser)
   } else {
     gridder = make_grid(kernel.get(), mapping, fastgrid);
   }
-  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
-  out = gridder->Adj(sdc->apply(rad_ks)).chip<0>(0);
+  auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
+  out = gridder->Adj(sdc->Adj(rad_ks)).chip<0>(0);
   auto const fname = OutName(iname.Get(), oname.Get(), "traj", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(

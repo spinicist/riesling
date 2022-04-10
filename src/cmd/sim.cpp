@@ -61,7 +61,7 @@ int main_sim(args::Subparser &parser)
 
   Eigen::ArrayXXf dynamics(tissues.size() * nsamp.Get(), 2 * seq.sps);
   for (Index ii = 0; ii < parameters.cols(); ii++) {
-    dynamics.col(ii) = T1T2Prep(seq, parameters(0, ii), parameters(1, ii));
+    dynamics.row(ii) = T1T2Prep(seq, parameters(0, ii), parameters(1, ii));
   }
 
   // Calculate SVD - observations are in rows
@@ -88,7 +88,7 @@ int main_sim(args::Subparser &parser)
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
   flip = (svd.vecs.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
   Eigen::MatrixXf const basis = svd.vecs.leftCols(nRetain).array().rowwise() * flip.transpose();
-  Eigen::ArrayXf const scales = vals.head(nRetain).sqrt() / sqrt(vals(0));
+  Eigen::ArrayXf const scales = 1.f / vals.head(nRetain);
   Log::Print("Computing dictionary");
   Eigen::ArrayXXf dict = dynamics.matrix() * basis;
   Eigen::ArrayXf const norm = dict.rowwise().norm();

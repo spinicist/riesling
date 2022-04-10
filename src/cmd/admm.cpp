@@ -7,6 +7,7 @@
 #include "log.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
+#include "precond/scales.hpp"
 #include "precond/single.hpp"
 #include "sdc.h"
 #include "sense.h"
@@ -25,7 +26,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
 
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
-  args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
+  args::Flag precond(parser, "P", "Apply Ong's single-channel M-conditioner", {"pre"});
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
@@ -41,9 +42,7 @@ int main_admm(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
-  std::unique_ptr<Precond> pre =
-    precond.Get() ? std::make_unique<SingleChannel>(gridder.get()) : nullptr;
+  auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -51,12 +50,17 @@ int main_admm(args::Subparser &parser)
                             iter_fov.Get(),
                             sRes.Get(),
                             sReg.Get(),
-                            sdc->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
-
+                            sdc->Adj(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+  std::unique_ptr<Precond<Cx3>> M =
+    precond ? std::make_unique<SingleChannel>(gridder.get()) : nullptr;
+  std::unique_ptr<Precond<Cx4>> N;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
+    // if (precond) {
+    //   N = std::make_unique<Scales>(basisReader.readTensor<R1>(HD5::Keys::Scales));
+    // }
   }
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, lambda.Get(), patchSize.Get()); };
@@ -87,7 +91,8 @@ int main_admm(args::Subparser &parser)
         inner_its.Get(),
         recon,
         reader.noncartesian(iv),
-        pre.get(),
+        M.get(),
+        N.get(),
         atol.Get(),
         btol.Get(),
         ctol.Get());

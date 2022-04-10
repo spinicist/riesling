@@ -155,16 +155,16 @@ R2 Radial(Trajectory const &traj, Index const lores, Index const gap)
   }
 }
 
-std::unique_ptr<Precond>
-Choose(std::string const &iname, float const p, Trajectory const &traj, float const os)
+std::unique_ptr<SDCOp>
+Choose(std::string const &iname, Trajectory const &traj, float const os, float const p)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);
   if (iname == "") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::make_unique<Precond>();
+    return nullptr;
   } else if (iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::make_unique<Precond>();
+    return nullptr;
   } else if (iname == "pipe") {
     sdc = Pipe(traj, false, 2.1f, 40);
   } else if (iname == "pipenn") {
@@ -182,7 +182,7 @@ Choose(std::string const &iname, float const p, Trajectory const &traj, float co
         trajInfo.spokes);
     }
   }
-  return std::make_unique<SDCPrecond>(sdc.pow(p));
+  return std::make_unique<SDCOp>(sdc.pow(p), traj.info().channels);
 }
 
 } // namespace SDC

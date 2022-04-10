@@ -49,7 +49,6 @@ add_library(vineyard
     src/io/nifti.cpp
     src/io/reader.cpp
     src/io/writer.cpp
-    src/op/operator.cpp
     src/op/grids.cpp
     src/op/grid1.cpp
     src/op/grid-basis1.cpp
@@ -57,9 +56,8 @@ add_library(vineyard
     src/op/grid-basis3.cpp
     src/op/grid5.cpp
     src/op/grid-basis5.cpp
-    src/op/nufft.hpp
-    src/op/pad.hpp
-    src/op/recon.hpp
+    src/precond/scales.cpp
+    src/precond/single.cpp
     src/op/sense.hpp
     src/sim/parameter.cpp
     src/sim/t1t2.cpp

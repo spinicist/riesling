@@ -32,7 +32,7 @@ auto SymOrtho(float const a, float const b)
 /*
  * LSMR with arbitrary regularization, i.e. Solve (A'A + λI)x = A'b + c with warm start
  */
-template <typename Op, typename Precond>
+template <typename Op, typename LeftPrecond, typename RightPrecond>
 typename Op::Input lsmr(
   Index const &max_its,
   Op &op,
@@ -40,7 +40,8 @@ typename Op::Input lsmr(
   typename Op::Input const &x0,
   float const λ,
   typename Op::Input const &xr,
-  Precond const *M = nullptr, // Left preconditioner
+  LeftPrecond const *M = nullptr,  // Left preconditioner
+  RightPrecond const *N = nullptr, // Right preconditioner
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
@@ -59,7 +60,7 @@ typename Op::Input lsmr(
 
   // Workspace variables
   TO Mu(outDims), u(outDims);
-  TI v(inDims), h(inDims), h̅(inDims), x(inDims), ur(inDims);
+  TI Nv(inDims), v(inDims), h(inDims), h̅(inDims), x(inDims), ur(inDims);
 
   x.device(dev) = x0;
   Mu.device(dev) = b - op.A(x);
@@ -73,8 +74,10 @@ typename Op::Input lsmr(
   u.device(dev) = u / u.constant(β);
   ur.device(dev) = ur / ur.constant(β);
 
-  v.device(dev) = op.Adj(u) + sqrt(λ) * ur;
-  float α = Norm(v);
+  Nv.device(dev) = op.Adj(u) + sqrt(λ) * ur;
+  v = N ? N->apply(Nv) : Nv;
+  float α = sqrt(std::real(Dot(v, Nv)));
+  Nv.device(dev) = Nv / Nv.constant(α);
   v.device(dev) = v / v.constant(α);
   h.device(dev) = v;
   h̅.setZero();
@@ -108,15 +111,12 @@ typename Op::Input lsmr(
   }
 
   Log::Print(
-    FMT_STRING("LSMR |uMu| {:5.3E} |u'| {:5.3E} |r| {:5.3E} λ {:5.3E} Atol {:5.3E} btol {:5.3E} "
-               "ctol {:5.3E}"),
-    sqrt(uMu),
-    sqrt(normur),
+    FMT_STRING("LSMR    |r| {:5.3E} α {:5.3E} β {:5.3E} |uMu| {:5.3E} |u'| {:5.3E} "),
     normb,
-    λ,
-    atol,
-    btol,
-    ctol);
+    α,
+    β,
+    sqrt(uMu),
+    sqrt(normur));
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
@@ -128,8 +128,10 @@ typename Op::Input lsmr(
     u.device(dev) = u / u.constant(β);
     ur.device(dev) = ur / ur.constant(β);
 
-    v.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * v);
-    α = sqrt(std::real(Dot(v, v)));
+    Nv.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * Nv);
+    v = N ? N->apply(Nv) : Nv;
+    α = sqrt(std::real(Dot(v, Nv)));
+    Nv.device(dev) = Nv / Nv.constant(α);
     v.device(dev) = v / v.constant(α);
 
     // Construct rotation
@@ -154,6 +156,7 @@ typename Op::Input lsmr(
     h.device(dev) = v - (θnew / ρ) * h;
 
     if (debug) {
+      Log::Image(Nv, fmt::format(FMT_STRING("lsmr-Nv-{:02d}"), ii));
       Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
       Log::Image(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
       Log::Image(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
@@ -198,12 +201,12 @@ typename Op::Input lsmr(
     float const normx = Norm(x);
 
     Log::Print(
-      FMT_STRING("LSMR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
+      FMT_STRING("LSMR {:02d} |r| {:5.3E} α {:5.3E} β {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
                  "{:5.3E} |x| {:5.3E}"),
       ii,
+      normr,
       α,
       β,
-      normr,
       normar,
       normA,
       condA,

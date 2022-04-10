@@ -42,12 +42,12 @@ int main_nufft(args::Subparser &parser)
 
   auto const start = Log::Now();
   if (adjoint) {
-    auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+    auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
     reader.readTensor(name, noncart);
     for (auto ii = 0; ii < info.volumes; ii++) {
       channels.chip<5>(ii).device(Threads::GlobalDevice()) =
-        nufft.Adj(sdc->apply(noncart.chip<3>(ii)));
+        nufft.Adj(sdc->Adj(noncart.chip<3>(ii)));
     }
     writer.writeTensor(channels, HD5::Keys::Channels);
     Log::Print(FMT_STRING("NUFFT Adjoint took {}"), Log::ToNow(start));

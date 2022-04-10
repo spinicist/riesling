@@ -1,16 +1,16 @@
 #pragma once
 
-#include "operator.h"
+#include "operator.hpp"
 
-#include "../precond/precond.hpp"
 #include "apodize.hpp"
 #include "fft.hpp"
 #include "grids.h"
 #include "pad.hpp"
+#include "sdc.hpp"
 
 struct NUFFTOp final : Operator<5, 3>
 {
-  NUFFTOp(Sz3 const imgDims, GridBase *g, Precond *sdc = nullptr)
+  NUFFTOp(Sz3 const imgDims, GridBase *g, SDCOp *sdc = nullptr)
     : gridder_{g}
     , fft_{g->inputDimensions()}
     , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}
@@ -36,7 +36,7 @@ struct NUFFTOp final : Operator<5, 3>
     tf_.resize(dims);
     tf_.setConstant(1.f);
     if (sdc_) {
-      tf_ = gridder_->Adj(sdc_->apply(gridder_->A(tf_)));
+      tf_ = gridder_->Adj(sdc_->Adj(gridder_->A(tf_)));
     } else {
       tf_ = gridder_->Adj(gridder_->A(tf_));
     }
@@ -61,7 +61,7 @@ struct NUFFTOp final : Operator<5, 3>
   {
     Log::Debug("Starting NUFFT adjoint");
     auto const start = Log::Now();
-    T const px = sdc_ ? T(sdc_->apply(x)) : x;
+    T const px = sdc_ ? sdc_->Adj(x) : x;
     Input result(inputDimensions());
     result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(px))));
     Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
@@ -93,5 +93,5 @@ private:
   PadOp<5> pad_;
   ApodizeOp<5> apo_;
   Cx5 tf_;
-  Precond *sdc_;
+  SDCOp *sdc_;
 };

@@ -78,14 +78,20 @@ void store_matrix(
 {
   herr_t status;
   hsize_t ds_dims[2], chunk_dims[2];
-  // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
-  ds_dims[0] = data.cols();
-  ds_dims[1] = data.rows();
-  std::copy_n(ds_dims, 2, chunk_dims);
-  auto const space = H5Screate_simple(2, ds_dims, NULL);
+  hsize_t const rank = data.cols() > 1 ? 2 : 1;
+  if (rank == 2) {
+    // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
+    ds_dims[0] = data.cols();
+    ds_dims[1] = data.rows();
+  } else {
+    ds_dims[0] = data.rows();
+  }
+
+  std::copy_n(ds_dims, rank, chunk_dims);
+  auto const space = H5Screate_simple(rank, ds_dims, NULL);
   auto const plist = H5Pcreate(H5P_DATASET_CREATE);
-  status = H5Pset_deflate(plist, 2);
-  status = H5Pset_chunk(plist, 2, chunk_dims);
+  status = H5Pset_deflate(plist, rank);
+  status = H5Pset_chunk(plist, rank, chunk_dims);
 
   hid_t const tid = type<typename Derived::Scalar>();
   hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);

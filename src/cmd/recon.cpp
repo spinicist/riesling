@@ -37,7 +37,7 @@ int main_recon(args::Subparser &parser)
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  auto const sdc = SDC::Choose(sdcType.Get(), sdcPow.Get(), traj, osamp.Get());
+  auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
   std::unique_ptr<GridBase> bgridder = nullptr;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
@@ -63,7 +63,7 @@ int main_recon(args::Subparser &parser)
                               iter_fov.Get(),
                               sRes.Get(),
                               sReg.Get(),
-                              sdc->apply(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+                              sdc->Adj(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
     recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps, sdc.get());
     sz = std::get<ReconOp>(recon).inputDimensions();
   }
