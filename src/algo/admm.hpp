@@ -35,6 +35,7 @@ typename Op::Input admm(
 
   for (Index ii = 0; ii < outer_its; ii++) {
     x = lsmr(lsq_its, op, b, x, rho, (z - u), M, atol, btol, ctol, (ii == 1));
+
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);
@@ -117,8 +118,7 @@ typename Op::Input admm_cg(
   // Augment system
   AugmentedOp<Op> augmented{op, rho};
   for (Index ii = 0; ii < outer_its; ii++) {
-    x.device(dev) = x0 + x0.constant(rho) * (z - u);
-    x = cg(lsq_its, lsq_thresh, augmented, x0, x);
+    x = cg(lsq_its, lsq_thresh, augmented, x0 + x0.constant(rho) * (z - u), x);
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);

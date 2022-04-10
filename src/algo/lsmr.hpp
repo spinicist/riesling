@@ -66,7 +66,9 @@ typename Op::Input lsmr(
   u.device(dev) = M ? M->apply(Mu) : Mu;
   ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
 
-  float β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
+  float const uMu = std::real(Dot(u, Mu));
+  float const normur = Norm2(ur);
+  float β = sqrt(uMu + normur);
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
   ur.device(dev) = ur / ur.constant(β);
@@ -100,14 +102,17 @@ typename Op::Input lsmr(
   float const normb = β;
 
   if (debug) {
-    Log::Image(u, "lsmr-u-init");
     Log::Image(v, "lsmr-v-init");
     Log::Image(x, "lsmr-x-init");
     Log::Image(ur, "lsmr-ur-init");
   }
 
   Log::Print(
-    FMT_STRING("LSMR λ {:3g} Atol {:.3g} btol {:.3g} ctol {:.3g}"),
+    FMT_STRING("LSMR |uMu| {:5.3E} |u'| {:5.3E} |r| {:5.3E} λ {:5.3E} Atol {:5.3E} btol {:5.3E} "
+               "ctol {:5.3E}"),
+    sqrt(uMu),
+    sqrt(normur),
+    normb,
     λ,
     atol,
     btol,
@@ -149,7 +154,6 @@ typename Op::Input lsmr(
     h.device(dev) = v - (θnew / ρ) * h;
 
     if (debug) {
-      Log::Image(u, fmt::format(FMT_STRING("lsmr-u-{:02d}"), ii));
       Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
       Log::Image(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
       Log::Image(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
@@ -194,15 +198,15 @@ typename Op::Input lsmr(
     float const normx = Norm(x);
 
     Log::Print(
-      FMT_STRING("LSMR {:02d} α {:.3g} β {:.3g} |r| {:.3g} cond(A) {:.3g} |A| {:.3g} "
-                 "|Ar| {:.3g} |x| {:.3g}"),
+      FMT_STRING("LSMR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
+                 "{:5.3E} |x| {:5.3E}"),
       ii,
       α,
       β,
       normr,
-      condA,
-      normA,
       normar,
+      normA,
+      condA,
       normx);
 
     if (1.f + (1.f / condA) <= 1.f) {
@@ -219,7 +223,8 @@ typename Op::Input lsmr(
       break;
     }
     if ((normar / (normA * normr)) <= atol) {
-      Log::Print(FMT_STRING("Least-squares = {} < atol = {}"), normar / (normA * normr), atol);
+      Log::Print(
+        FMT_STRING("Least-squares = {:5.3E} < atol = {:5.3E}"), normar / (normA * normr), atol);
       break;
     }
 
@@ -344,7 +349,6 @@ typename Op::Input lsmr_damp(
     x.device(dev) = x + (ζ / (ρ * ρ̅)) * h̅;
     h.device(dev) = v - (θnew / ρ) * h;
 
-    Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
     Log::Image(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
     Log::Image(h, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
     Log::Image(h, fmt::format(FMT_STRING("lsmr-h-{:02d}"), ii));
