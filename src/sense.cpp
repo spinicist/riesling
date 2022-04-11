@@ -7,6 +7,8 @@
 #include "tensorOps.h"
 #include "threads.h"
 
+namespace SENSE {
+
 Cx4 SelfCalibration(
   Info const &info,
   GridBase *gridder,
@@ -49,13 +51,13 @@ Cx4 SelfCalibration(
   return channels;
 }
 
-Cx4 LoadSENSE(std::string const &calFile)
+Cx4 Load(std::string const &calFile)
 {
   HD5::Reader senseReader(calFile);
   return senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
 }
 
-Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims)
+Cx4 Interp(std::string const &file, Eigen::Array3l const dims)
 {
   HD5::Reader senseReader(file);
   Cx4 disk_sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
@@ -75,3 +77,22 @@ Cx4 InterpSENSE(std::string const &file, Eigen::Array3l const dims)
   fft2->reverse(sense);
   return sense;
 }
+
+Cx4 Choose(
+  std::string const &path,
+  Info const &i,
+  GridBase *g,
+  float const fov,
+  float const res,
+  float const reg,
+  SDCOp *sdc,
+  Cx3 const &data)
+{
+  if (path != "") {
+    return Load(path);
+  } else {
+    return SelfCalibration(i, g, fov, res, reg, sdc ? sdc->Adj(data) : data);
+  }
+}
+
+} // namespace SENSE

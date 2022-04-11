@@ -34,15 +34,16 @@ int main_lsmr(args::Subparser &parser)
 
   std::unique_ptr<Precond<Cx3>> pre =
     precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
-  Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
-                        : SelfCalibration(
-                            info,
-                            gridder.get(),
-                            iter_fov.Get(),
-                            sRes.Get(),
-                            sReg.Get(),
-                            SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get())
-                              ->Adj(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+  auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
+  Cx4 senseMaps = SENSE::Choose(
+    sFile.Get(),
+    info,
+    gridder.get(),
+    iter_fov.Get(),
+    sRes.Get(),
+    sReg.Get(),
+    sdc.get(),
+    reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
   std::unique_ptr<Scaling> S;
   if (basisFile) {

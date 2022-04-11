@@ -107,7 +107,7 @@ int main_phantom(args::Subparser &parser)
   Log::Print(FMT_STRING("Read points: {} Spokes: {}"), info.read_points, info.spokes);
 
   Trajectory traj(info, points);
-  Cx4 senseMaps = sense ? InterpSENSE(sense.Get(), info.matrix)
+  Cx4 senseMaps = sense ? SENSE::Interp(sense.Get(), info.matrix)
                         : birdcage(
                             info.matrix,
                             info.voxel_size,

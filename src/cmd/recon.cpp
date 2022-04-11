@@ -56,14 +56,15 @@ int main_recon(args::Subparser &parser)
     recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size(), sdc.get());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
-    Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
-                          : SelfCalibration(
-                              info,
-                              gridder.get(),
-                              iter_fov.Get(),
-                              sRes.Get(),
-                              sReg.Get(),
-                              sdc->Adj(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
+    Cx4 senseMaps = SENSE::Choose(
+      sFile.Get(),
+      info,
+      gridder.get(),
+      iter_fov.Get(),
+      sRes.Get(),
+      sReg.Get(),
+      sdc.get(),
+      reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
     recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps, sdc.get());
     sz = std::get<ReconOp>(recon).inputDimensions();
   }
