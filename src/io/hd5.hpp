@@ -55,8 +55,7 @@ void store_tensor(
   hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   if (dset < 0) {
     Log::Fail(
-      FMT_STRING("Could not create tensor {}/{}. Dims {}. Error {}"),
-      parent,
+      FMT_STRING("Could not create tensor {}. Dims {}. Error {}"),
       name,
       fmt::join(data.dimensions(), ","),
       HD5::GetError());

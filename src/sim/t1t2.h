@@ -6,6 +6,6 @@
 
 namespace Sim {
 
-Eigen::ArrayXf T1T2Prep(Sequence const &seq, float const T1, float const T2);
+Eigen::ArrayXf T1T2Prep(Sequence const &seq, float const T1, float const T2, float const B1);
 
 } // namespace Sim

@@ -26,10 +26,10 @@ int main_lookup(args::Subparser &parser)
   R2 const basis = dfile.readTensor<R2>(HD5::Keys::Basis);
   R2 const dictionary = dfile.readTensor<R2>(HD5::Keys::Dictionary);
   R2 const parameters = dfile.readTensor<R2>(HD5::Keys::Parameters);
-  R2 const norm = dfile.readTensor<R2>(HD5::Keys::Norm);
+  R1 const norm = dfile.readTensor<R1>(HD5::Keys::Norm);
 
   R5 out_pars(
-    parameters.dimension(1),
+    parameters.dimension(0),
     images.dimension(1),
     images.dimension(2),
     images.dimension(3),
@@ -39,9 +39,9 @@ int main_lookup(args::Subparser &parser)
   pd.setZero();
 
   Index const N = dictionary.dimension(0);
-  if (parameters.dimension(0) != N) {
+  if (parameters.dimension(1) != N) {
     Log::Fail(
-      FMT_STRING("Dictionary has {} entries but parameters has {}"), N, parameters.dimension(0));
+      FMT_STRING("Dictionary has {} entries but parameters has {}"), N, parameters.dimension(1));
   }
   Log::Print(FMT_STRING("Dictionary has {} entries"), N);
 
@@ -66,8 +66,8 @@ int main_lookup(args::Subparser &parser)
                 index = in;
               }
             }
-            out_pars.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix) = parameters.chip<0>(index);
-            pd(0, ix, iy, iz, iv) = bestCorr / norm(index, 0);
+            out_pars.chip<4>(iv).chip<3>(iz).chip<2>(iy).chip<1>(ix) = parameters.chip<1>(index);
+            pd(0, ix, iy, iz, iv) = bestCorr / norm(index);
           }
         }
       }

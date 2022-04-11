@@ -158,7 +158,7 @@ namespace Sim {
 //   return result;
 // }
 
-Eigen::ArrayXf T1T2Prep(Sequence const &seq, float const T1, float const T2)
+Eigen::ArrayXf T1T2Prep(Sequence const &seq, float const T1, float const T2, float const B1)
 {
   Index const spg = seq.sps / seq.gps; // Spokes per group
 
@@ -176,8 +176,8 @@ Eigen::ArrayXf T1T2Prep(Sequence const &seq, float const T1, float const T2)
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
 
-  float const cosa = cos(seq.alpha * M_PI / 180.f);
-  float const sina = sin(seq.alpha * M_PI / 180.f);
+  float const cosa = cos(B1 * seq.alpha * M_PI / 180.f);
+  float const sina = sin(B1 * seq.alpha * M_PI / 180.f);
 
   Eigen::Matrix2f A;
   A << cosa, 0.f, 0.f, 1.f;

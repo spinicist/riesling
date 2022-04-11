@@ -48,20 +48,17 @@ int main_sim(args::Subparser &parser)
     .Trec = Trec.Get(),
     .TE = te.Get()};
 
-  Sim::Tissue wm({{0.8, 0.1, 0.5, 1.2}, {0.04, 0.01, 0.01, 0.08}});
-  Sim::Tissue gm({{1.2, 0.1, 1.0, 1.8}, {0.1, 0.025, 0.05, 0.15}});
-  Sim::Tissue csf({{3.5, 0.1, 3.0, 4.5}, {1.0, 0.1, 0.5, 2.0}});
+  // T1, T2, B1
+  Sim::Tissue wm({{0.8, 0.25, 0.5, 2.0}, {0.05, 0.025, 0.01, 0.25}});
+  Sim::Tissue gm({{1.2, 0.25, 0.5, 2.0}, {0.075, 0.025, 0.01, 0.25}});
+  Sim::Tissue csf({{3.5, 0.5, 2.5, 4.5}, {1.0, 0.4, 0.5, 2.5}});
 
-  std::vector<Sim::Tissue> tissues({wm, gm, csf});
-  Eigen::ArrayXXf parameters(2, tissues.size() * nsamp.Get());
+  Sim::Tissues tissues({wm, gm, csf});
+  auto const parameters = tissues.values(nsamp.Get());
 
-  for (size_t ii = 0; ii < tissues.size(); ii++) {
-    parameters.middleCols(ii * nsamp.Get(), nsamp.Get()) = tissues[ii].values(nsamp.Get());
-  }
-
-  Eigen::ArrayXXf dynamics(tissues.size() * nsamp.Get(), 2 * seq.sps);
+  Eigen::ArrayXXf dynamics(parameters.cols(), 2 * seq.sps);
   for (Index ii = 0; ii < parameters.cols(); ii++) {
-    dynamics.row(ii) = T1T2Prep(seq, parameters(0, ii), parameters(1, ii));
+    dynamics.row(ii) = T1T2Prep(seq, parameters(0, ii), parameters(1, ii), 1.f);
   }
 
   // Calculate SVD - observations are in rows
