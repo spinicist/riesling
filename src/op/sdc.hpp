@@ -24,11 +24,11 @@ struct SDCOp final : Operator<3, 3>
   template <typename T>
   auto Adj(T const &in) const
   {
-    Log::Debug(FMT_STRING("Applying SDC to {} channels"), nc_);
-    Cx3 p(outputDimensions());
-    p.device(Threads::GlobalDevice()) =
+    auto const start = Log::Now();
+    auto p =
       in *
       dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{nc_, 1, 1});
+    Log::Debug(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
     return p;
   }
 

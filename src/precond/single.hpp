@@ -1,12 +1,13 @@
 #pragma once
 
+#include "../kernel.hpp"
+#include "../trajectory.h"
 #include "precond.hpp"
-
 struct GridBase; // Forward declare
 
 struct SingleChannel final : Precond<Cx3>
 {
-  SingleChannel(GridBase *gridder);
+  SingleChannel(Trajectory const &traj, Kernel const *k);
   Cx3 apply(Cx3 const &in) const;
   Cx3 inv(Cx3 const &in) const;
 

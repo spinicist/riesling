@@ -61,9 +61,13 @@ struct NUFFTOp final : Operator<5, 3>
   {
     Log::Debug("Starting NUFFT adjoint");
     auto const start = Log::Now();
-    T const px = sdc_ ? sdc_->Adj(x) : x;
     Input result(inputDimensions());
-    result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(px))));
+    if (sdc_) {
+      result.device(Threads::GlobalDevice()) =
+        apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(sdc_->Adj(x)))));
+    } else {
+      result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(x))));
+    }
     Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
     return result;
   }

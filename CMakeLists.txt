@@ -56,9 +56,9 @@ add_library(vineyard
     src/op/grid-basis3.cpp
     src/op/grid5.cpp
     src/op/grid-basis5.cpp
-    src/precond/scales.cpp
-    src/precond/single.cpp
+    src/op/scaling.cpp
     src/op/sense.hpp
+    src/precond/single.cpp
     src/sim/parameter.cpp
     src/sim/t1t2.cpp
 )

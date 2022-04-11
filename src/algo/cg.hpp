@@ -62,7 +62,7 @@ typename Op::Input cg(
   p.device(dev) = r;
   float r_old = Norm2(r);
   float const thresh = tol * sqrt(r_old);
-  Log::Print(FMT_STRING("CG    |r| {:5.3E} threshold {:5.3E}"), r_old, thresh);
+  Log::Print(FMT_STRING("CG    |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
   for (Index icg = 0; icg < max_its; icg++) {
     q = op.A(p);
     float const alpha = r_old / Dot(p, q).real();

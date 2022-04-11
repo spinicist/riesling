@@ -1,12 +1,13 @@
 #include "single.hpp"
 
 #include "../log.h"
-#include "../op/grid.hpp"
+#include "../op/grids.h"
 #include "../threads.h"
 
-SingleChannel::SingleChannel(GridBase *gridder)
+SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k)
   : Precond{}
 {
+  auto gridder = make_grid(k, traj.mapping(k->inPlane(), 2.3f), false);
   Cx3 W(AddFront(LastN<2>(gridder->outputDimensions()), 1));
   W.setConstant(1.f);
   W = gridder->A(gridder->Adj(W));

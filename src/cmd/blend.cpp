@@ -2,24 +2,23 @@
 
 #include "io/io.h"
 #include "log.h"
+#include "op/scaling.hpp"
 #include "parse_args.h"
 #include "threads.h"
 
-decltype(auto) Blend(Cx5 const &images, R1 const &b)
+decltype(auto) Blend(Cx4 const &image, R1 const &b)
 {
-  Index const x = images.dimension(1);
-  Index const y = images.dimension(2);
-  Index const z = images.dimension(3);
-  Index const v = images.dimension(4);
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> rsh;
+  Index const x = image.dimension(1);
+  Index const y = image.dimension(2);
+  Index const z = image.dimension(3);
+  Eigen::IndexList<int, FixOne, FixOne, FixOne> rsh;
   rsh.set(0, b.dimension(0));
-  Eigen::IndexList<FixOne, int, int, int, int> brd;
+  Eigen::IndexList<FixOne, int, int, int> brd;
   brd.set(1, x);
   brd.set(2, y);
   brd.set(3, z);
-  brd.set(4, v);
   Eigen::IndexList<FixZero> sum;
-  return (images * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum);
+  return (image * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum);
 }
 
 int main_blend(args::Subparser &parser)
@@ -48,6 +47,8 @@ int main_blend(args::Subparser &parser)
   }
   HD5::Reader binput(bname.Get());
   R2 const basis = binput.readTensor<R2>("basis");
+  Scaling const S(
+    binput.readTensor<R1>(HD5::Keys::Scales), LastN<3>(FirstN<4>(images.dimensions())));
 
   if (basis.dimension(1) != images.dimension(0)) {
     Log::Fail(
@@ -65,7 +66,10 @@ int main_blend(args::Subparser &parser)
     }
     Log::Print(FMT_STRING("Blending timepoint {}"), tps[ii]);
     R1 const b = basis.chip<0>(tps[ii]);
-    out.chip<0>(ii).device(Threads::GlobalDevice()) = Blend(images, b);
+    for (Index iv = 0; iv < out.dimension(4); iv++) {
+      out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) =
+        Blend(S.Inv(images.chip<4>(iv)), b);
+    }
   }
 
   auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");

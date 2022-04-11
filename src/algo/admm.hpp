@@ -5,7 +5,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
-template <typename Op, typename LeftPrecond, typename RightPrecond>
+template <typename Op, typename LeftPrecond>
 typename Op::Input admm(
   Index const outer_its,
   float const rho,
@@ -13,8 +13,7 @@ typename Op::Input admm(
   Index const lsq_its,
   Op const &op,
   typename Op::Output const &b,
-  LeftPrecond const *M = nullptr,  // Left preconditioner
-  RightPrecond const *N = nullptr, // Right preconditioner
+  LeftPrecond const *M = nullptr, // Left preconditioner
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
@@ -35,7 +34,7 @@ typename Op::Input admm(
   xpu.setZero();
 
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsmr(lsq_its, op, b, x, rho, (z - u), M, N, atol, btol, ctol, (ii == 0));
+    x = lsmr(lsq_its, op, b, x, rho, (z - u), M, atol, btol, ctol, (ii == 0));
 
     xpu.device(dev) = x + u;
     zold = z;
@@ -103,7 +102,7 @@ typename Op::Input admm_cg(
   float const abstol = 1.e-3f,
   float const reltol = 1.e-3f)
 {
-  Log::Print(FMT_STRING("Starting ADMM rho {}"), rho);
+  Log::Print(FMT_STRING("ADMM-CG rho {}"), rho);
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
@@ -138,7 +137,7 @@ typename Op::Input admm_cg(
     Log::Image(Cx4(z - u), fmt::format("admm-zmu-{:02d}", ii));
     Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
     Log::Print(
-      FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
+      FMT_STRING("ADMM-CG {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,
       norm_prim,
       eps_prim,

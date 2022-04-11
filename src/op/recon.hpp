@@ -3,14 +3,16 @@
 #include "operator.hpp"
 
 #include "nufft.hpp"
+#include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 
 struct ReconOp final : Operator<4, 3>
 {
-  ReconOp(GridBase *gridder, Cx4 const &maps, SDCOp *sdc = nullptr)
+  ReconOp(GridBase *gridder, Cx4 const &maps, SDCOp *sdc = nullptr, Scaling *scaling = nullptr)
     : nufft_{LastN<3>(maps.dimensions()), gridder, sdc}
     , sense_{maps, gridder->inputDimensions()[1]}
+    , scale_{scaling}
   {
   }
 
@@ -34,7 +36,7 @@ struct ReconOp final : Operator<4, 3>
   {
     Log::Debug("Starting ReconOp forward. Norm {}", Norm(x));
     auto const start = Log::Now();
-    auto const y = nufft_.A(sense_.A(x));
+    auto const y = nufft_.A(sense_.A(scale_ ? scale_->A(x) : x));
     Log::Debug("Finished ReconOp forward. Norm {}. Took {}", Norm(y), Log::ToNow(start));
     return y;
   }
@@ -46,6 +48,9 @@ struct ReconOp final : Operator<4, 3>
     auto const start = Log::Now();
     Input y(inputDimensions());
     y.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.Adj(x));
+    if (scale_) {
+      y.device(Threads::GlobalDevice()) = scale_->Adj(y);
+    }
     Log::Debug("Finished ReconOp adjoint. Norm {}. Took {}.", Norm(y), Log::ToNow(start));
     return y;
   }
@@ -56,7 +61,11 @@ struct ReconOp final : Operator<4, 3>
     Log::Debug("Starting ReconOp adjoint*forward. Norm {}", Norm(x));
     Input y(inputDimensions());
     auto const start = Log::Now();
-    y.device(Threads::GlobalDevice()) = sense_.Adj(nufft_.AdjA(sense_.A(x)));
+    y.device(Threads::GlobalDevice()) =
+      sense_.Adj(nufft_.AdjA(sense_.A(scale_ ? scale_->A(x) : x)));
+    if (scale_) {
+      y.device(Threads::GlobalDevice()) = scale_->Adj(y);
+    }
     Log::Debug("Finished ReconOp adjoint*forward. Norm {}. Took {}", Norm(y), Log::ToNow(start));
     return y;
   }
@@ -64,4 +73,5 @@ struct ReconOp final : Operator<4, 3>
 private:
   NUFFTOp nufft_;
   SenseOp sense_;
+  Scaling *scale_;
 };

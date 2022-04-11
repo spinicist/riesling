@@ -33,7 +33,7 @@ int main_lsmr(args::Subparser &parser)
   auto gridder = make_grid(kernel.get(), mapping, fastgrid);
 
   std::unique_ptr<Precond<Cx3>> pre =
-    precond.Get() ? std::make_unique<SingleChannel>(gridder.get()) : nullptr;
+    precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
   Cx4 senseMaps = sFile ? LoadSENSE(sFile.Get())
                         : SelfCalibration(
                             info,
@@ -44,12 +44,15 @@ int main_lsmr(args::Subparser &parser)
                             SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get())
                               ->Adj(reader.noncartesian(ValOrLast(sVol.Get(), info.volumes))));
 
+  std::unique_ptr<Scaling> S;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
+    S = std::make_unique<Scaling>(
+      basisReader.readTensor<R1>(HD5::Keys::Scales), LastN<3>(senseMaps.dimensions()));
   }
-  ReconOp recon(gridder.get(), senseMaps);
+  ReconOp recon(gridder.get(), senseMaps, nullptr, S.get());
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
