@@ -64,15 +64,15 @@ int main_lsmr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsmr_damp(
+    vol = lsmr(
       its.Get(),
       recon,
       reader.noncartesian(iv),
-      pre.get(),
       atol.Get(),
       btol.Get(),
       ctol.Get(),
-      damp.Get());
+      damp.Get(),
+      pre.get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

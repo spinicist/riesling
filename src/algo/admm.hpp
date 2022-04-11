@@ -34,7 +34,7 @@ typename Op::Input admm(
   xpu.setZero();
 
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsmr(lsq_its, op, b, x, rho, (z - u), M, atol, btol, ctol, (ii == 0));
+    x = lsmr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 0));
 
     xpu.device(dev) = x + u;
     zold = z;
