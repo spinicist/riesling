@@ -69,7 +69,7 @@ int main_split(args::Subparser &parser)
     traj = Trajectory(
       info,
       R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
-      I1(traj.frames().slice(Sz1{0}, Sz1{info.spokes})));
+      I1(traj.frames().slice(Sz1{lo_info.spokes}, Sz1{info.spokes})));
     ks = Cx4(ks.slice(
       Sz4{0, 0, lo_info.spokes, 0},
       Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
