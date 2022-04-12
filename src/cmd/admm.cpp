@@ -54,23 +54,14 @@ int main_admm(args::Subparser &parser)
 
   std::unique_ptr<Precond<Cx3>> M =
     precond ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
-  std::unique_ptr<Scaling> S;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    S = std::make_unique<Scaling>(
-      basisReader.readTensor<R1>(HD5::Keys::Scales), LastN<3>(senseMaps.dimensions()));
   }
-  ReconOp recon(gridder.get(), senseMaps, sdc.get(), S.get());
+  ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
-  auto reg = [&](Cx4 const &x) -> Cx4 {
-    if (S) {
-      return S->A(llr_sliding(S->Inv(x), lambda.Get(), patchSize.Get()));
-    } else {
-      return llr_sliding(x, lambda.Get(), patchSize.Get());
-    }
-  };
+  auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, lambda.Get(), patchSize.Get()); };
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());

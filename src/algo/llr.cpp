@@ -22,7 +22,7 @@ Cx4 llr_sliding(Cx4 const &img, float const l, Index const pSz)
   Index const K = img.dimension(0);
   Log::Print(FMT_STRING("LLR regularization patch size {} lambda {}"), pSz, l);
   Cx4 lr(img.dimensions());
-  lr = img;
+  lr.setZero();
 
   auto zTask = [&](Index const lo, Index const hi) {
     for (Index iz = lo; iz < hi; iz++) {

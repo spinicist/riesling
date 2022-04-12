@@ -78,7 +78,13 @@ typename Op::Input cg(
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
     float const nr = sqrt(r_new);
-    Log::Print(FMT_STRING("CG {:02d} |r| {:5.3E} ɑ {:5.3E} β {:5.3E}"), icg, nr, alpha, beta);
+    Log::Print(
+      FMT_STRING("CG {:02d} |r| {:5.3E} ɑ {:5.3E} β {:5.3E} |x| {:5.3E}"),
+      icg,
+      nr,
+      alpha,
+      beta,
+      Norm(x));
     if (nr < thresh) {
       Log::Print(FMT_STRING("Reached convergence threshold"));
       break;

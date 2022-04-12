@@ -17,9 +17,9 @@ int main_lsmr(args::Subparser &parser)
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
-  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
+  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
   args::ValueFlag<float> damp(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f);
 
   ParseCommand(parser, iname);
@@ -45,15 +45,12 @@ int main_lsmr(args::Subparser &parser)
     sdc.get(),
     reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
 
-  std::unique_ptr<Scaling> S;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
     gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, fastgrid);
-    S = std::make_unique<Scaling>(
-      basisReader.readTensor<R1>(HD5::Keys::Scales), LastN<3>(senseMaps.dimensions()));
   }
-  ReconOp recon(gridder.get(), senseMaps, nullptr, S.get());
+  ReconOp recon(gridder.get(), senseMaps, nullptr);
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());

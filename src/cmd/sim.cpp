@@ -85,7 +85,7 @@ int main_sim(args::Subparser &parser)
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
   flip = (svd.vecs.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
   Eigen::MatrixXf const basis = svd.vecs.leftCols(nRetain).array().rowwise() * flip.transpose();
-  Eigen::ArrayXf const scales = 1.f / vals.head(nRetain);
+  Eigen::ArrayXf const scales = svd.vals.head(nRetain) / svd.vals(0);
   Log::Print("Computing dictionary");
   Eigen::ArrayXXf dict = dynamics.matrix() * basis;
   Eigen::ArrayXf const norm = dict.rowwise().norm();

@@ -2,7 +2,6 @@
 
 #include "io/io.h"
 #include "log.h"
-#include "op/scaling.hpp"
 #include "parse_args.h"
 #include "threads.h"
 
@@ -47,8 +46,6 @@ int main_blend(args::Subparser &parser)
   }
   HD5::Reader binput(bname.Get());
   R2 const basis = binput.readTensor<R2>("basis");
-  Scaling const S(
-    binput.readTensor<R1>(HD5::Keys::Scales), LastN<3>(FirstN<4>(images.dimensions())));
 
   if (basis.dimension(1) != images.dimension(0)) {
     Log::Fail(
@@ -67,8 +64,7 @@ int main_blend(args::Subparser &parser)
     Log::Print(FMT_STRING("Blending timepoint {}"), tps[ii]);
     R1 const b = basis.chip<0>(tps[ii]);
     for (Index iv = 0; iv < out.dimension(4); iv++) {
-      out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) =
-        Blend(S.Inv(images.chip<4>(iv)), b);
+      out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) = Blend(images.chip<4>(iv), b);
     }
   }
 
