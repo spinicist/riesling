@@ -8,7 +8,7 @@
 template <typename Op, typename LeftPrecond>
 typename Op::Input admm(
   Index const outer_its,
-  float const rho,
+  float rho,
   std::function<Cx4(Cx4 const &)> const &reg,
   Index const lsq_its,
   Op const &op,
@@ -34,7 +34,7 @@ typename Op::Input admm(
   xpu.setZero();
 
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsmr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 0));
+    x = lsmr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 2));
 
     xpu.device(dev) = x + u;
     zold = z;
@@ -62,6 +62,17 @@ typename Op::Input admm(
       eps_dual);
     if ((norm_prim < eps_prim) && (norm_dual < eps_dual)) {
       break;
+    }
+    float const mu = 10.f;
+    float const tau = 2.f;
+    if (norm_prim > mu * norm_dual) {
+      rho = rho * tau;
+      u.device(dev) = u / u.constant(tau);
+      Log::Print(FMT_STRING("Rescaled rho to {}"), rho);
+    } else if (norm_dual > mu * norm_prim) {
+      rho = rho / tau;
+      u.device(dev) = u * u.constant(tau);
+      Log::Print(FMT_STRING("Rescaled rho to {}"), rho);
     }
   }
   return x;
@@ -97,7 +108,7 @@ typename Op::Input admm_cg(
   float const lsq_thresh,
   Op const &op,
   std::function<Cx4(Cx4 const &)> const &reg,
-  float const rho,
+  float rho,
   typename Op::Output const &b,
   float const abstol = 1.e-3f,
   float const reltol = 1.e-3f)
@@ -145,6 +156,17 @@ typename Op::Input admm_cg(
       eps_dual);
     if ((norm_prim < eps_prim) && (norm_dual < eps_dual)) {
       break;
+    }
+    float const mu = 10.f;
+    float const tau = 2.f;
+    if (norm_prim > mu * norm_dual) {
+      rho = rho * tau;
+      u.device(dev) = u / u.constant(tau);
+      Log::Print(FMT_STRING("Rescaled rho to {}"), rho);
+    } else if (norm_dual > mu * norm_prim) {
+      rho = rho / tau;
+      u.device(dev) = u * u.constant(tau);
+      Log::Print(FMT_STRING("Rescaled rho to {}"), rho);
     }
   }
   return x;
