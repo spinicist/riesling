@@ -73,10 +73,10 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
 args::Group global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
 args::Flag verbose(global_group, "V", "Print logging messages to stdout", {'v', "verbose"});
-args::MapFlag<int, Log::Level> verbosity(
-  global_group, "VERBOSITY", "Talk more (values 0-3, see documentation)", {"verbosity"}, levelMap);
+args::MapFlag<int, Log::Level>
+  verbosity(global_group, "V", "Talk more (values 0-3)", {"verbosity"}, levelMap);
 args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
-args::ValueFlag<Index> nthreads(global_group, "THREADS", "Limit number of threads", {"nthreads"});
+args::ValueFlag<Index> nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {

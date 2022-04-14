@@ -3,7 +3,7 @@
 #include "threads.h"
 #include "unsupported/Eigen/MatrixFunctions"
 
-namespace Sim {
+namespace rl {
 
 Result Simple(Parameter const T1p, Parameter const betap, Sequence const seq, Index const nRand)
 {
@@ -80,4 +80,4 @@ Result Simple(Parameter const T1p, Parameter const betap, Sequence const seq, In
   return result;
 }
 
-} // namespace Sim
+} // namespace rl

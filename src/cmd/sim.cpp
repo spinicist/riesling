@@ -4,13 +4,53 @@
 #include "io/io.h"
 #include "log.h"
 #include "parse_args.h"
-#include "sim/parameter.h"
-#include "sim/t1t2.h"
+#include "sim/dwi.hpp"
+#include "sim/mprage.hpp"
+#include "sim/parameter.hpp"
+#include "sim/t1t2.hpp"
+#include "sim/t2flair.hpp"
+#include "sim/t2prep.hpp"
+#include "threads.h"
+
+template <typename T>
+auto Simulate(rl::Settings const &s, Index const nsamp)
+{
+  T simulator{s};
+
+  Eigen::ArrayXXf parameters = simulator.parameters(nsamp);
+  Eigen::ArrayXXf dynamics(parameters.cols(), simulator.length());
+  auto const start = Log::Now();
+  auto task = [&](Index const lo, Index const hi, Index const ii) {
+    Log::Progress(ii, lo, hi);
+    dynamics.row(ii) = simulator.simulate(parameters.col(ii));
+  };
+  Threads::RangeFor(task, parameters.cols());
+  Log::Print(FMT_STRING("Simulation took {}"), Log::ToNow(start));
+  return std::make_tuple(parameters, dynamics);
+}
+
+enum struct Sequence
+{
+  T1T2 = 0,
+  MPRAGE,
+  T2PREP,
+  T2FLAIR,
+  DWI
+};
+
+std::unordered_map<std::string, Sequence> SequenceMap{
+  {"T1T2Prep", Sequence::T1T2},
+  {"MPRAGE", Sequence::MPRAGE},
+  {"T2Prep", Sequence::T2PREP},
+  {"T2FLAIR", Sequence::T2FLAIR},
+  {"DWI", Sequence::DWI}};
 
 int main_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
+  args::MapFlag<std::string, Sequence> seq(
+    parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
   args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "spokes"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
@@ -22,6 +62,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> Trec(
     parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
+  args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
 
   args::ValueFlag<Index> nsamp(
     parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
@@ -37,7 +78,7 @@ int main_sim(args::Subparser &parser)
     throw args::Error("No output filename specified");
   }
 
-  Sim::Sequence const seq{
+  rl::Settings const settings{
     .sps = sps.Get(),
     .gps = gps.Get(),
     .alpha = alpha.Get(),
@@ -46,19 +87,26 @@ int main_sim(args::Subparser &parser)
     .Tssi = Tssi.Get(),
     .TI = TI.Get(),
     .Trec = Trec.Get(),
-    .TE = te.Get()};
+    .TE = te.Get(),
+    .bval = bval.Get()};
 
-  // T1, T2, B1
-  Sim::Tissue wm({{0.8, 0.25, 0.5, 2.0}, {0.05, 0.025, 0.01, 0.25}});
-  Sim::Tissue gm({{1.2, 0.25, 0.5, 2.0}, {0.075, 0.025, 0.01, 0.25}});
-  Sim::Tissue csf({{3.5, 0.5, 2.5, 4.5}, {1.0, 0.4, 0.5, 2.5}});
-
-  Sim::Tissues tissues({wm, gm, csf});
-  auto const parameters = tissues.values(nsamp.Get());
-
-  Eigen::ArrayXXf dynamics(parameters.cols(), 2 * seq.sps);
-  for (Index ii = 0; ii < parameters.cols(); ii++) {
-    dynamics.row(ii) = T1T2Prep(seq, parameters(0, ii), parameters(1, ii), 1.f);
+  Eigen::ArrayXXf parameters, dynamics;
+  switch (seq.Get()) {
+  case Sequence::MPRAGE:
+    std::tie(parameters, dynamics) = Simulate<rl::MPRAGE>(settings, nsamp.Get());
+    break;
+  case Sequence::T2FLAIR:
+    std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get());
+    break;
+  case Sequence::T2PREP:
+    std::tie(parameters, dynamics) = Simulate<rl::T2Prep>(settings, nsamp.Get());
+    break;
+  case Sequence::T1T2:
+    std::tie(parameters, dynamics) = Simulate<rl::T1T2Prep>(settings, nsamp.Get());
+    break;
+  case Sequence::DWI:
+    std::tie(parameters, dynamics) = Simulate<rl::DWI>(settings, nsamp.Get());
+    break;
   }
 
   // Calculate SVD - observations are in rows

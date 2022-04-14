@@ -61,6 +61,10 @@ add_library(vineyard
     src/op/sense.hpp
     src/precond/single.cpp
     src/sim/parameter.cpp
+    src/sim/dwi.cpp
+    src/sim/mprage.cpp
+    src/sim/t2flair.cpp
+    src/sim/t2prep.cpp
     src/sim/t1t2.cpp
 )
 target_include_directories(vineyard PUBLIC src)

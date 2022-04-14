@@ -1,12 +1,12 @@
 #include "log.h"
-#include "sim/parameter.h"
+#include "sim/parameter.hpp"
 #include <catch2/catch.hpp>
 
 TEST_CASE("parameters", "")
 {
-  Sim::Parameter A{10, 5.0, 5.0, 15.0};
-  Sim::Parameter B{20, 5.0, 15.0, 25.0};
-  Sim::Tissue T({A, B});
+  rl::Parameter A{10, 5.0, 5.0, 15.0};
+  rl::Parameter B{20, 5.0, 15.0, 25.0};
+  rl::Tissue T({A, B});
 
   SECTION("Tissue")
   {
