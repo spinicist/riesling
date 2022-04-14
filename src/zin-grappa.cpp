@@ -1,4 +1,4 @@
-#include "zinfandel.h"
+#include "zin-grappa.hpp"
 
 #include "parse_args.h"
 #include "tensorOps.h"
@@ -96,7 +96,7 @@ FindClosest(R3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<
 }
 
 // Actual calculation
-void zinfandel(
+void zinGRAPPA(
   Index const gap_sz,
   Index const n_src,
   Index const n_spoke,

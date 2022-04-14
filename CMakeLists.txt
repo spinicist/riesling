@@ -40,7 +40,8 @@ add_library(vineyard
     src/trajectory.cpp
     src/traj_spirals.cpp
     src/wavelets.cpp
-    src/zinfandel.cpp
+    src/zin-grappa.cpp
+    src/zin-slr.cpp
     src/algo/decomp.cpp
     src/algo/hankel.cpp
     src/algo/llr.cpp

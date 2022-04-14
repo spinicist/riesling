@@ -7,7 +7,7 @@
 /*!
  * ZTE Infilling From Autocallibration NeighbourhooD ELements
  */
-void zinfandel(
+void zinGRAPPA(
   Index const gap_sz,
   Index const n_src,
   Index const n_spoke,

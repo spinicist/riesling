@@ -1,6 +1,6 @@
-#include "../src/zinfandel.h"
 #include "../src/log.h"
 #include "../src/tensorOps.h"
+#include "../src/zin-grappa.hpp"
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
@@ -78,7 +78,7 @@ TEST_CASE("zinfandel-algo")
     Index const n_gap = 2;
     Cx3 test_kspace = kspace;
     test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}).setZero();
-    zinfandel(n_gap, 2, 1, 4, 0.0, traj, test_kspace);
+    zinGRAPPA(n_gap, 2, 1, 4, 0.0, traj, test_kspace);
     Cx3 diff = test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}) -
                kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke});
     float const sum_diff = Norm(diff) / diff.size();
