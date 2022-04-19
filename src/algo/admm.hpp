@@ -2,6 +2,7 @@
 
 #include "cg.hpp"
 #include "lsmr.hpp"
+#include "lsqr.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -35,6 +36,79 @@ typename Op::Input admm(
 
   for (Index ii = 0; ii < outer_its; ii++) {
     x = lsmr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 2));
+
+    xpu.device(dev) = x + u;
+    zold = z;
+    z = reg(xpu);
+    u.device(dev) = xpu - z;
+
+    float const norm_prim = Norm(x - z);
+    float const norm_dual = Norm(-rho * (z - zold));
+
+    float const eps_prim = sqrtf(nvox) * abstol + reltol * std::max(Norm(x), Norm(z));
+    float const eps_dual = sqrtf(nvox) * abstol + reltol * rho * Norm(u);
+
+    Log::Image(x, fmt::format("admm-x-{:02d}", ii));
+    Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
+    Log::Image(z, fmt::format("admm-z-{:02d}", ii));
+    Log::Image(u, fmt::format("admm-u-{:02d}", ii));
+    Log::Image(Cx4(z - u), fmt::format("admm-zmu-{:02d}", ii));
+    Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
+    Log::Print(
+      FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
+      ii,
+      norm_prim,
+      eps_prim,
+      norm_dual,
+      eps_dual);
+    if ((norm_prim < eps_prim) && (norm_dual < eps_dual)) {
+      break;
+    }
+    float const mu = 10.f;
+    float const tau = 2.f;
+    if (norm_prim > mu * norm_dual) {
+      rho = rho * tau;
+      u.device(dev) = u / u.constant(tau);
+      Log::Print(FMT_STRING("Rescaled rho to {}"), rho);
+    } else if (norm_dual > mu * norm_prim) {
+      rho = rho / tau;
+      u.device(dev) = u * u.constant(tau);
+      Log::Print(FMT_STRING("Rescaled rho to {}"), rho);
+    }
+  }
+  return x;
+}
+
+template <typename Op, typename LeftPrecond>
+typename Op::Input admm_lsqr(
+  Index const outer_its,
+  float rho,
+  std::function<Cx4(Cx4 const &)> const &reg,
+  Index const lsq_its,
+  Op const &op,
+  typename Op::Output const &b,
+  LeftPrecond const *M = nullptr, // Left preconditioner
+  float const atol = 1.e-6f,
+  float const btol = 1.e-6f,
+  float const ctol = 1.e-6f,
+  float const abstol = 1.e-3f,
+  float const reltol = 1.e-3f)
+{
+  Log::Print(FMT_STRING("Starting ADMM rho {}"), rho);
+  auto dev = Threads::GlobalDevice();
+  // Allocate all memory
+  using T = typename Op::Input;
+  auto const dims = op.inputDimensions();
+  Index const nvox = Product(dims);
+  T u(dims), x(dims), z(dims), zold(dims), xpu(dims);
+  x.setZero();
+  z.setZero();
+  zold.setZero();
+  u.setZero();
+  xpu.setZero();
+
+  for (Index ii = 0; ii < outer_its; ii++) {
+    x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 2));
 
     xpu.device(dev) = x + u;
     zold = z;

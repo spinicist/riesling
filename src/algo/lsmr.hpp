@@ -194,11 +194,11 @@ typename Op::Input lsmr(
 
     τ̃old = (ζold - θ̃old * τ̃old) / ρ̃old;
     float const τ̇ = (ζ - θ̃ * τ̃old) / ρ̇old;
-    float const normr = sqrt(pow(β̇ - τ̇, 2.f) + β̈ * β̈);
+    float const normr = std::sqrt(pow(β̇ - τ̇, 2.f) + β̈ * β̈);
 
     // Estimate ||A||.
     normA2 += β * β;
-    float const normA = sqrt(normA2);
+    float const normA = std::sqrt(normA2);
     normA2 += α * α;
 
     // Estimate cond(A).
@@ -252,5 +252,25 @@ typename Op::Input lsmr(
       break;
     }
   }
+
+  // Final check of residual
+  Mu.device(dev) = b - op.A(x);
+  u.device(dev) = M ? M->apply(Mu) : Mu;
+  if (λ > 0) {
+    if (xr.size()) {
+      ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
+    } else {
+      ur.device(dev) = -x * x.constant(sqrt(λ));
+    }
+  }
+  β = std::sqrt(std::real(Dot(u, Mu) + Norm2(ur)));
+  Log::Print(
+    FMT_STRING("Final |Mu| {:5.3E} |u| {:5.3E} |uMu| {:5.3E} |ur| {:5.3E} β {:5.3E}"),
+    Norm(Mu),
+    Norm(u),
+    std::sqrt(std::real(Dot(u, Mu))),
+    Norm(ur),
+    β);
+
   return x;
 }

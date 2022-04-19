@@ -90,6 +90,7 @@ add_executable(riesling
     src/cmd/hdr.cpp
     src/cmd/lookup.cpp
     src/cmd/lsmr.cpp
+    src/cmd/lsqr.cpp
     src/cmd/meta.cpp
     src/cmd/nii.cpp
     src/cmd/nufft.cpp

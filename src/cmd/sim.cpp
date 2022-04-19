@@ -20,9 +20,11 @@ auto Simulate(rl::Settings const &s, Index const nsamp)
   Eigen::ArrayXXf parameters = simulator.parameters(nsamp);
   Eigen::ArrayXXf dynamics(parameters.cols(), simulator.length());
   auto const start = Log::Now();
-  auto task = [&](Index const lo, Index const hi, Index const ii) {
-    Log::Progress(ii, lo, hi);
-    dynamics.row(ii) = simulator.simulate(parameters.col(ii));
+  auto task = [&](Index const lo, Index const hi) {
+    for (Index ii = lo; ii < hi; ii++) {
+      Log::Progress(ii, lo, hi);
+      dynamics.row(ii) = simulator.simulate(parameters.col(ii));
+    }
   };
   Threads::RangeFor(task, parameters.cols());
   Log::Print(FMT_STRING("Simulation took {}"), Log::ToNow(start));
@@ -72,6 +74,7 @@ int main_sim(args::Subparser &parser)
     parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
   args::ValueFlag<Index> nBasis(
     parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
+  args::Flag varimax(parser, "V", "Apply varimax rotation", {"varimax"});
 
   ParseCommand(parser);
   if (!oname) {
@@ -131,8 +134,33 @@ int main_sim(args::Subparser &parser)
     "Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
   // Scale and flip the basis vectors to always have a positive first element for stability
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
-  flip = (svd.vecs.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
-  Eigen::MatrixXf const basis = svd.vecs.leftCols(nRetain).array().rowwise() * flip.transpose();
+  flip = (svd.v.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
+  Eigen::MatrixXf basis = svd.v.leftCols(nRetain).array().rowwise() * flip.transpose();
+
+  if (varimax) {
+    Log::Print("SIM Applying varimax rotation");
+    float gamma = 1.0f;
+    float const tol = 1e-6f;
+    float q = 20;
+    Index const p = basis.rows();
+    Index const k = basis.cols();
+    Eigen::MatrixXf R = Eigen::MatrixXf::Identity(k, k);
+    float d = 0.f;
+    for (Index ii = 0; ii < q; ii++) {
+      float const d_old = d;
+      Eigen::MatrixXf const λ = basis * R;
+      Eigen::MatrixXf const x =
+        basis.transpose() * (λ.array().pow(3.f).matrix() -
+                             (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
+      auto const svdv = SVD(x);
+      R = svdv.u * svdv.v.adjoint();
+      d = svdv.vals.sum();
+      if (d_old != 0.f && (d / d_old) < 1 + tol)
+        break;
+    }
+    basis = basis * R;
+  }
+
   Eigen::ArrayXf const scales = svd.vals.head(nRetain) / svd.vals(0);
   Log::Print("Computing dictionary");
   Eigen::ArrayXXf dict = dynamics.matrix() * basis;

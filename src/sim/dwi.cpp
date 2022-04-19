@@ -66,7 +66,7 @@ Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
   // Now fill in dynamic
   Index tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  for (int ii = 0; ii < 4; ii++) {
+  for (int ip = 0; ip < 4; ip++) {
     for (Index ig = 0; ig < seq.gps; ig++) {
       Mz = Eramp * Mz;
       for (Index ii = 0; ii < spg; ii++) {
@@ -75,7 +75,7 @@ Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
       }
       Mz = Essi * Eramp * Mz;
     }
-    Mz = preps[ii] * Mz;
+    Mz = preps[ip] * Mz;
   }
 
   if (tp != (4 * seq.sps)) {

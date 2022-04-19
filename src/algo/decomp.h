@@ -5,19 +5,19 @@
 
 Cx5 LowRankKernels(Cx5 const &m, float const thresh);
 
-struct VecsAndValsCx
+struct PCAResult
 {
   Eigen::MatrixXcf vecs;
   Eigen::ArrayXf vals;
 };
 
-VecsAndValsCx
+PCAResult
 PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const thresh = -1.f);
 
-struct VecsAndVals
+struct SVDResult
 {
-  Eigen::MatrixXf vecs;
+  Eigen::MatrixXf v, u;
   Eigen::ArrayXf vals;
 };
 
-VecsAndVals SVD(Eigen::ArrayXXf const &mat);
+SVDResult SVD(Eigen::ArrayXXf const &mat);

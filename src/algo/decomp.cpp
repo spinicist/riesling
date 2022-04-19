@@ -20,8 +20,7 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
   return out;
 }
 
-VecsAndValsCx
-PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const thresh)
+PCAResult PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const thresh)
 {
   auto const dm = data.colwise() - data.rowwise().mean();
   Eigen::MatrixXcf gramian = (dm.conjugate() * dm.transpose()) / (dm.rows() - 1);
@@ -41,8 +40,8 @@ PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const 
   return {eig.eigenvectors().rightCols(nRetain).rowwise().reverse(), vals.head(nRetain)};
 }
 
-VecsAndVals SVD(Eigen::ArrayXXf const &mat)
+SVDResult SVD(Eigen::ArrayXXf const &mat)
 {
   auto const svd = mat.matrix().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-  return VecsAndVals{.vecs = svd.matrixV(), .vals = svd.singularValues()};
+  return SVDResult{.v = svd.matrixV(), .u = svd.matrixU(), .vals = svd.singularValues()};
 }

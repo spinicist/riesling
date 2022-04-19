@@ -15,7 +15,8 @@ int main(int const argc, char const *const argv[])
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command hdr(commands, "hdr", "Print the header from an HD5 file", &main_hdr);
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
-  args::Command lsmr(commands, "lsmr", "Iterative recon with LSQR optimizer", &main_lsmr);
+  args::Command lsmr(commands, "lsmr", "Iterative recon with LSMR optimizer", &main_lsmr);
+  args::Command lsqr(commands, "lsqr", "Iterative recon with LSQR optimizer", &main_lsqr);
   args::Command meta(commands, "meta", "Print meta-data entries", &main_meta);
   args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
   args::Command nufft(commands, "nufft", "Apply forward/reverse NUFFT", &main_nufft);
