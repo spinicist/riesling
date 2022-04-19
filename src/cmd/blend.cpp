@@ -55,14 +55,14 @@ int main_blend(args::Subparser &parser)
   auto const &tps = tp.Get();
 
   Cx5 out(AddFront(LastN<4>(dims), (Index)tps.size()));
-
+  R1 const scale = basis.chip<0>(0).constant(std::sqrt(basis.dimension(0)));
   for (size_t ii = 0; ii < tps.size(); ii++) {
     if ((tps[ii] < 0) || (tps[ii] >= basis.dimension(0))) {
       Log::Fail(
         FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(0));
     }
     Log::Print(FMT_STRING("Blending timepoint {}"), tps[ii]);
-    R1 const b = basis.chip<0>(tps[ii]);
+    R1 const b = basis.chip<0>(tps[ii]) * scale;
     for (Index iv = 0; iv < out.dimension(4); iv++) {
       out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) = Blend(images.chip<4>(iv), b);
     }
