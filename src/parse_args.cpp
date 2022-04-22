@@ -4,6 +4,7 @@
 #include "threads.h"
 #include <algorithm>
 #include <filesystem>
+#include <cstdlib>
 #include <fmt/format.h>
 #include <scn/scn.h>
 
@@ -78,10 +79,30 @@ args::MapFlag<int, Log::Level>
 args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
 args::ValueFlag<Index> nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
+Log::Level GetVerbosity(bool const v)
+{
+  if (v) {
+    return Log::Level::Info;
+  } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
+    std::string env_level(env_p);
+    if (env_level == "1") {
+    return Log::Level::Info;
+    } else if (env_level == "2") {
+      return Log::Level::Progress;
+    } else if (env_level == "3") {
+      return Log::Level::Debug;
+    } else {
+      return Log::Level::None;
+    }
+  } else {
+    return Log::Level::None;
+  }
+}
+
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
-  Log::SetLevel(verbosity ? verbosity.Get() : (verbose ? Log::Level::Info : Log::Level::None));
+  Log::SetLevel(verbosity ? verbosity.Get() : GetVerbosity(verbose.Get()));
   Log::Print(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
   if (debug) {
     Log::SetDebugFile(debug.Get());
