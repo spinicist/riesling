@@ -32,8 +32,8 @@ int main_compress(args::Subparser &parser)
   // PCA Options
   args::ValueFlag<Sz2, Sz2Reader> pcaRead(
     parser, "R", "PCA Read Points (start, size)", {"pca-read"}, Sz2{0, 16});
-  args::ValueFlag<Sz2, Sz2Reader> pcaSpokes(
-    parser, "R", "PCA Spokes (start, stride)", {"pca-spokes"}, Sz2{0, 4});
+  args::ValueFlag<Sz3, Sz3Reader> pcaSpokes(
+    parser, "R", "PCA Spokes (start, size, stride)", {"pca-spokes"}, Sz3{0, 1024, 4});
 
   // ROVIR Options
   args::ValueFlag<float> res(parser, "R", "ROVIR recon resolution", {"rovir-res"}, -1.f);
@@ -53,13 +53,15 @@ int main_compress(args::Subparser &parser)
   Compressor compressor;
   if (pca) {
     Sz2 const read = pcaRead.Get();
-    Sz2 const spokes = pcaSpokes.Get();
+    Sz3 const spokes = pcaSpokes.Get();
     Index const maxRead = info.read_points - read[0];
     Index const nread = (read[1] > maxRead) ? maxRead : read[1];
-    Index const nspoke = (info.spokes - spokes[0]) / spokes[1];
-    Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, nspoke, spokes[1]);
-    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, nread, nspoke})
-                      .stride(Sz3{1, 1, spokes[1]});
+    if (spokes[0] + spokes[1] > info.spokes) {
+      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), spokes[0]+spokes[1], info.spokes);
+    }
+    Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, spokes[1], spokes[2]);
+    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, spokes[1], spokes[1]})
+                      .stride(Sz3{1, 1, spokes[2]});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), channels.Get(), energy.Get());
     compressor.psi = pc.vecs;
