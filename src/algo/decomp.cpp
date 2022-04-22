@@ -35,8 +35,6 @@ PCAResult PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, fl
   } else {
     nRetain = std::min(nR, vals.rows());
   }
-  Log::Print(
-    FMT_STRING("PCA retained {} components, total energy {}%"), nRetain, 100.f * cumsum[nRetain]);
   return {eig.eigenvectors().rightCols(nRetain).rowwise().reverse(), vals.head(nRetain)};
 }
 
