@@ -21,6 +21,40 @@ int main_split(args::Subparser &parser)
 
   HD5::RieslingReader reader(iname.Get());
   auto traj = reader.trajectory();
+  Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
+
+  // Deal with this first
+  if (lores) {
+    if ((lores.Get() < 1) || (lores.Get() > traj.info().spokes)) {
+      Log::Fail(FMT_STRING("Invalid number of low-res spokes {}"), lores.Get());
+    }
+
+    Info lo_info = traj.info();
+    lo_info.spokes = lores.Get();
+    I1 const lo_frames = traj.frames().slice(Sz1{0}, Sz1{lo_info.spokes});
+    Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), 0, lo_info.spokes);
+
+    Trajectory lo_traj(
+      lo_info, traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}), lo_frames);
+    Cx4 lo_ks = ks.slice(
+      Sz4{0, 0, 0, 0}, Sz4{lo_info.channels, lo_info.read_points, lo_info.spokes, lo_info.volumes});
+
+    auto info = traj.info();
+    info.spokes -= lo_info.spokes;
+    I1 const hi_frames(traj.frames().slice(Sz1{lo_info.spokes}, Sz1{info.spokes}));
+    traj = Trajectory(
+      info,
+      R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
+      hi_frames);
+    ks = Cx4(ks.slice(
+      Sz4{0, 0, lo_info.spokes, 0},
+      Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
+
+    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
+    writer.writeTrajectory(lo_traj);
+    writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
+  }
+
 
   if (nF && spe) {
     Index const sps = spe.Get() * nF.Get();
@@ -44,39 +78,6 @@ int main_split(args::Subparser &parser)
     Info info = traj.info();
     info.frames = nF.Get();
     traj = Trajectory(info, traj.points(), frames);
-  }
-
-  Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
-
-  if (lores) {
-    if ((lores.Get() < 1) || (lores.Get() > traj.info().spokes)) {
-      Log::Fail(FMT_STRING("Invalid number of low-res spokes {}"), lores.Get());
-    }
-
-    Info lo_info = traj.info();
-    lo_info.spokes = lores.Get();
-    lo_info.frames = 1; // Don't even bother
-    Log::Print(FMT_STRING("Extracting spokes {}-{} as low-res"), 0, lo_info.spokes);
-
-    Trajectory lo_traj(
-      lo_info, traj.points().slice(Sz3{0, 0, 0}, Sz3{3, lo_info.read_points, lo_info.spokes}));
-    Cx4 lo_ks = ks.slice(
-      Sz4{0, 0, 0, 0}, Sz4{lo_info.channels, lo_info.read_points, lo_info.spokes, lo_info.volumes});
-
-    auto info = traj.info();
-    info.spokes -= lo_info.spokes;
-
-    traj = Trajectory(
-      info,
-      R3(traj.points().slice(Sz3{0, 0, lo_info.spokes}, Sz3{3, info.read_points, info.spokes})),
-      I1(traj.frames().slice(Sz1{lo_info.spokes}, Sz1{info.spokes})));
-    ks = Cx4(ks.slice(
-      Sz4{0, 0, lo_info.spokes, 0},
-      Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
-
-    HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
-    writer.writeTrajectory(lo_traj);
-    writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
   }
 
   if (spoke_stride) {
