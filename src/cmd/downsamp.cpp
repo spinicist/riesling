@@ -49,7 +49,7 @@ int main_downsamp(args::Subparser &parser)
       }
     }
   }
-  dsInfo.read_points = maxRead - minRead;
+  dsInfo.read_points = 1 + maxRead - minRead;
   Log::Print(
     FMT_STRING("Downsampling by {}, new voxel-size {} matrix {}, kept read-points {}-{}"),
     ds,

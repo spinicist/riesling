@@ -99,5 +99,6 @@ template void Image(R3 const &, std::string const &);
 template void Image(Cx3 const &, std::string const &);
 template void Image(Cx4 const &, std::string const &);
 template void Image(Cx5 const &, std::string const &);
+template void Image(Cx6 const &, std::string const &);
 
 } // namespace Log

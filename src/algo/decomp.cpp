@@ -1,24 +1,9 @@
 #include "decomp.h"
+#include "log.h"
 #include "tensorOps.h"
 
-// #include <Eigen/Eigenvalues>
+#include <Eigen/Eigenvalues>
 #include <Eigen/SVD>
-
-Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
-{
-  Index const kSz = mIn.dimension(0) * mIn.dimension(1) * mIn.dimension(2) * mIn.dimension(3);
-  Index const nK = mIn.dimension(4);
-  Eigen::Map<Eigen::MatrixXcf const> m(mIn.data(), kSz, nK);
-  Log::Print(FMT_STRING("SVD Kernel Size {} Kernels {}"), kSz, nK);
-  auto const svd = m.transpose().bdcSvd(Eigen::ComputeThinV);
-  Eigen::ArrayXf const vals = svd.singularValues();
-  Index const nRetain = (vals > (vals[0] * thresh)).cast<int>().sum();
-  Log::Print(FMT_STRING("Retaining {} kernels"), nRetain);
-  Cx5 out(mIn.dimension(0), mIn.dimension(1), mIn.dimension(2), mIn.dimension(3), nRetain);
-  Eigen::Map<Eigen::MatrixXcf> lr(out.data(), kSz, nRetain);
-  lr = svd.matrixV().leftCols(nRetain).conjugate();
-  return out;
-}
 
 PCAResult PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const thresh)
 {
@@ -38,8 +23,27 @@ PCAResult PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, fl
   return {eig.eigenvectors().rightCols(nRetain).rowwise().reverse(), vals.head(nRetain)};
 }
 
-SVDResult SVD(Eigen::ArrayXXf const &mat)
+template <typename Scalar>
+SVD<Scalar>::SVD(Eigen::Ref<Matrix const> const &mat, bool const transpose, bool const verbose)
 {
-  auto const svd = mat.matrix().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-  return SVDResult{.v = svd.matrixV(), .u = svd.matrixU(), .vals = svd.singularValues()};
+  if (transpose) {
+    if (verbose) {
+      Log::Print(FMT_STRING("SVD Transpose Size {}x{}"), mat.rows(), mat.cols());
+      auto const svd = mat.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+      this->vals = svd.singularValues();
+      this->U = svd.matrixU();
+      this->V = svd.matrixV();
+    }
+  } else {
+    if (verbose) {
+      Log::Print(FMT_STRING("SVD Size {}x{}"), mat.rows(), mat.cols());
+      auto const svd = mat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+      this->vals = svd.singularValues();
+      this->U = svd.matrixU();
+      this->V = svd.matrixV();
+    }
+  }
 }
+
+template struct SVD<float>;
+template struct SVD<Cx>;

@@ -97,6 +97,15 @@ Eigen::DSizes<Index, N> LastN(T const &sz)
   return last;
 }
 
+template <int F, int N, typename T>
+Eigen::DSizes<Index, N> MidN(T const &sz)
+{
+  assert(F + N <= sz.size());
+  Eigen::DSizes<Index, N> out;
+  std::copy_n(sz.begin() + F, N, out.begin());
+  return out;
+}
+
 using Size3 = Eigen::Array<int16_t, 3, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
 

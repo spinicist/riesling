@@ -43,7 +43,6 @@ add_library(vineyard
     src/zin-grappa.cpp
     src/zin-slr.cpp
     src/algo/decomp.cpp
-    src/algo/hankel.cpp
     src/algo/llr.cpp
     src/fft/fft.cpp
     src/io/hd5.cpp
@@ -127,7 +126,6 @@ if( ${BUILD_TESTS} )
         test/cropper.cpp
         test/decomp.cpp
         test/fft3.cpp
-        test/hankel.cpp
         test/io.cpp
         test/kernel.cpp
         test/parameters.cpp

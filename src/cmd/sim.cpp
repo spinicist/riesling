@@ -115,7 +115,7 @@ int main_sim(args::Subparser &parser)
   // Calculate SVD - observations are in rows
   Log::Print("Calculating SVD {}x{}", dynamics.cols() / subsamp.Get(), dynamics.rows());
   auto const svd =
-    SVD(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics);
+    SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics);
 
   float const nullThresh = svd.vals[0] * std::numeric_limits<float>::epsilon();
   Index const nullCount = (svd.vals > nullThresh).count();
@@ -134,8 +134,8 @@ int main_sim(args::Subparser &parser)
     "Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
   // Scale and flip the basis vectors to always have a positive first element for stability
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
-  flip = (svd.v.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
-  Eigen::MatrixXf basis = svd.v.leftCols(nRetain).array().rowwise() * flip.transpose();
+  flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
+  Eigen::MatrixXf basis = svd.V.leftCols(nRetain).array().rowwise() * flip.transpose();
 
   if (varimax) {
     Log::Print("SIM Applying varimax rotation");
@@ -152,8 +152,8 @@ int main_sim(args::Subparser &parser)
       Eigen::MatrixXf const x =
         basis.transpose() * (λ.array().pow(3.f).matrix() -
                              (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
-      auto const svdv = SVD(x);
-      R = svdv.u * svdv.v.adjoint();
+      auto const svdv = SVD<float>(x);
+      R = svdv.U * svdv.V.adjoint();
       d = svdv.vals.sum();
       if (d_old != 0.f && (d / d_old) < 1 + tol)
         break;
