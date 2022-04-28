@@ -2,11 +2,13 @@ Reconstruction
 ==============
 
 This page details the reconstruction commands in RIESLING:
-* `recon`
-* `cg`
-* `lsqr`
-* `admm`
-* `tgv`
+
+* `recon`_
+* `cg`_
+* `lsqr`_
+* `admm`_
+* `tgv`_
+
 These commands combine the operations in :doc:`op` into a pipeline, and then use a specific optimizer to solve the reconstruction problem.
 
 The final image quality depends a great deal on the choice of optimizer and parameters. What works well for one particular problem may not work for another. However, at the time of writing, the ``lsqr`` method is the favourite of the authors (above ``cg``). ``lsqr`` solves the reconstruction problem :raw-latex:`y=Ex` in a least-squares sense directly, instead of solving the normal equations :raw-latex:`E^{\dagger}y=E^{\dagger}Ex`. This allows the use of correct k-space pre-conditioning instead of sample density compensation, which gives fast convergence without inflating noise.

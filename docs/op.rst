@@ -5,11 +5,11 @@ The MRI reconstruction problem can best be represented by a series of linear ope
 
 Note that all of these operators are defined with the forward, default, direction going from image space towards non-cartesian space. Hence you likely want to specify the ``--adj`` option.
 
-* `grid`
-* `nufft`
-* `pad`
-* `reg`
-* `sense`
+* `grid`_
+* `nufft`_
+* `pad`_
+* `reg`_
+* `sense`_
 
 grid
 ----

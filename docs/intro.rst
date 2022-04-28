@@ -17,7 +17,7 @@ RIESLING exploits the inherent oversampling of most non-Cartesian trajectories a
 Examples
 --------
 
-A `tutorial notebook <https://github.com/spinicist/riesling-examples/tutorial.ipynb>`_ can be run interactively at on `MyBinder <https://mybinder.org/v2/gh/spinicist/riesling-examples/HEAD?filepath=tutorial.ipynb>`_. This explains the various steps required to generate a simulated phantom dataset and then reconstruct it. You will need to reduce the matrix size to 64 to run with MyBinder's RAM limit.
+A `tutorial notebook <https://github.com/spinicist/riesling-examples/tutorial.ipynb>`_ can be run interactively at on `MyBinder <https://mybinder.org/v2/gh/spinicist/riesling-examples/HEAD?filepath=tutorial.ipynb>`_. This explains the various steps required to generate a simulated phantom dataset and then reconstruct it.
 
 Input Data
 ----------

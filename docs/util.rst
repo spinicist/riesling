@@ -4,24 +4,28 @@ Utilities
 RIESLING includes a number of utility commands. These can be broken down into categories.
 
 Basics:
-* `hdr`
-* `meta`
-* `nii`
-* `phantom`
-* `plan`
-* `traj`
+
+* `hdr`_
+* `meta`_
+* `nii`_
+* `phantom`_
+* `plan`_
+* `traj`_
 
 SENSE maps:
-* `sense-calib`
-* `espirit-calib`
+
+* `sense-calib`_
+* `espirit-calib`_
 
 Density Compensation:
-* `sdc`
+
+* `sdc`_
 
 Data manipulation:
-* `compress`
-* `downsamp`
-* `split`
+
+* `compress`_
+* `downsamp`_
+* `split`_
 
 hdr
 ---

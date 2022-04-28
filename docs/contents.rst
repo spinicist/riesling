@@ -5,7 +5,8 @@ Contents
    :maxdepth: 2
    
    intro
-   recon
-   util
    data
+   util
+   op
+   recon
    devel
