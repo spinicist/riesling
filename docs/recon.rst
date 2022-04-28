@@ -11,13 +11,13 @@ This page details the reconstruction commands in RIESLING:
 
 These commands combine the operations in :doc:`op` into a pipeline, and then use a specific optimizer to solve the reconstruction problem.
 
-The final image quality depends a great deal on the choice of optimizer and parameters. What works well for one particular problem may not work for another. However, at the time of writing, the ``lsqr`` method is the favourite of the authors (above ``cg``). ``lsqr`` solves the reconstruction problem :raw-latex:`y=Ex` in a least-squares sense directly, instead of solving the normal equations :raw-latex:`E^{\dagger}y=E^{\dagger}Ex`. This allows the use of correct k-space pre-conditioning instead of sample density compensation, which gives fast convergence without inflating noise.
+The final image quality depends a great deal on the choice of optimizer and parameters. What works well for one particular problem may not work for another. However, at the time of writing, the ``lsqr`` method is the favourite of the authors (above ``cg``). ``lsqr`` solves the reconstruction problem :math:`y=Ex` in a least-squares sense directly, instead of solving the normal equations :math:`E^{\dagger}y=E^{\dagger}Ex`. This allows the use of correct k-space pre-conditioning instead of sample density compensation, which gives fast convergence without inflating noise.
 
 *Shared Options*
 
 * ``--kernel=NN,KB3,KB5,FI3,FI5``
 
-    Choose the gridding kernel. Valid options are NN (see `C. Oesterle, M. Markl, R. Strecker, F. M. Kraemer, and J. Hennig, ‘Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems’, Journal of Magnetic Resonance Imaging, vol. 10, no. 1, pp. 84–92, Jul. 1999 <http://doi.wiley.com/10.1002/%28SICI%291522-2586%28199907%2910%3A1%3C84%3A%3AAID-JMRI12%3E3.0.CO%3B2-D>`), KB3 & KB5 (Kaiser-Bessel, see `P. J. Beatty, D. G. Nishimura, and J. M. Pauly, ‘Rapid gridding reconstruction with a minimal oversampling ratio’, IEEE Transactions on Medical Imaging, vol. 24, no. 6, pp. 799–808, Jun. 2005 <http://ieeexplore.ieee.org/document/1435541/>`), and FI3 & FI5 (see `A. H. Barnett, ‘Aliasing error of the exp ⁡ ( β 1 − z 2 ) kernel in the nonuniform fast Fourier transform’, Applied and Computational Harmonic Analysis, vol. 51, pp. 1–16, Mar. 2021 <https://linkinghub.elsevier.com/retrieve/pii/S1063520320300725>`). The numbers after KB/FI refer to the width of the kernel. The default is FI3, the Flat-Iron kernel is marginally faster than the usual Kaiser-Bessel and gives comparable results.
+    Choose the gridding kernel. Valid options are NN (see `C. Oesterle, M. Markl, R. Strecker, F. M. Kraemer, and J. Hennig, ‘Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems’, Journal of Magnetic Resonance Imaging, vol. 10, no. 1, pp. 84–92, Jul. 1999 <http://doi.wiley.com/10.1002/%28SICI%291522-2586%28199907%2910%3A1%3C84%3A%3AAID-JMRI12%3E3.0.CO%3B2-D>`_), KB3 & KB5 (Kaiser-Bessel, see `P. J. Beatty, D. G. Nishimura, and J. M. Pauly, ‘Rapid gridding reconstruction with a minimal oversampling ratio’, IEEE Transactions on Medical Imaging, vol. 24, no. 6, pp. 799–808, Jun. 2005 <http://ieeexplore.ieee.org/document/1435541/>`_), and FI3 & FI5 (see `A. H. Barnett, ‘Aliasing error of the exp ⁡ ( β 1 − z 2 ) kernel in the nonuniform fast Fourier transform’, Applied and Computational Harmonic Analysis, vol. 51, pp. 1–16, Mar. 2021 <https://linkinghub.elsevier.com/retrieve/pii/S1063520320300725>`_). The numbers after KB/FI refer to the width of the kernel. The default is FI3, the Flat-Iron kernel is marginally faster than the usual Kaiser-Bessel and gives comparable results.
 
 * ``--osamp=S``
 
@@ -41,7 +41,7 @@ The final image quality depends a great deal on the choice of optimizer and para
 
 * ``--sdc-pow=P``
 
-    Apply the SDC power trick from `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, <http://doi.wiley.com/10.1002/mrm.26928>`.
+    Apply the SDC power trick from `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, <http://doi.wiley.com/10.1002/mrm.26928>`_.
 
 * ``--fov=F``, ``--iter-fov=F``
 
@@ -83,7 +83,7 @@ The ``recon`` command provides basic non-iterative reconstructions. This is usef
 cg
 --
 
-Uses the conjugate-gradients optimizer as described in `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`.
+Uses the conjugate-gradients optimizer as described in `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`_.
 
 *Usage*
 
@@ -95,7 +95,7 @@ Uses the conjugate-gradients optimizer as described in `K. P. Pruessmann, M. Wei
 
 * ``--toe``
 
-    Use Töplitz embedding as described in `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, <http://doi.wiley.com/10.1002/mrm.26928>`. If this option is used, the reconstruction grid must be at least twice as large as the true region of support of your image. This means that if your acquisition FOV did not completely include the object, you likely need to increase ``--osamp`` beyond 2. This option skips the gridding step during iterations by calculating a transfer function, hence only requiring a Fourier Transform to cartesian k-space.
+    Use Töplitz embedding as described in `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, <http://doi.wiley.com/10.1002/mrm.26928>`_. If this option is used, the reconstruction grid must be at least twice as large as the true region of support of your image. This means that if your acquisition FOV did not completely include the object, you likely need to increase ``--osamp`` beyond 2. This option skips the gridding step during iterations by calculating a transfer function, hence only requiring a Fourier Transform to cartesian k-space.
 
 * ``--thresh=T``, ``--max-its=N``
 
@@ -116,7 +116,7 @@ As described above, ``lsqr`` is an algorithm for solving non-square systems of e
 
 * ``--pre``
 
-    Use Ong's single-channel pre-conditioner (see `F. Ong, M. Uecker, and M. Lustig, ‘Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’, IEEE Trans. Med. Imaging, vol. 39, no. 5, pp. 1646–1654, May 2020, <https://ieeexplore.ieee.org/document/8906069/>`). Highly recommended, likely to become the default.
+    Use Ong's single-channel pre-conditioner (see `F. Ong, M. Uecker, and M. Lustig, ‘Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’, IEEE Trans. Med. Imaging, vol. 39, no. 5, pp. 1646–1654, May 2020, <https://ieeexplore.ieee.org/document/8906069/>`_). Highly recommended, likely to become the default.
 
 * ``--sdc=none``
 
@@ -133,7 +133,7 @@ As described above, ``lsqr`` is an algorithm for solving non-square systems of e
 admm
 ----
 
-Uses the Alternating Directions Method-of-Multipliers, also known as an Augmented Lagrangian method, to add a regularizer to the reconstruction problem. Currently the only regularizer available is Locally Low-Rank, which is only useful when reconstructing a multi-frame / basis dataset. By default the inner optimizer is LSQR. See `J. I. Tamir et al., ‘T2 shuffling: Sharp, multicontrast, volumetric fast spin‐echo imaging’, vol. 77, pp. 180–195, 2017 <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`.
+Uses the Alternating Directions Method-of-Multipliers, also known as an Augmented Lagrangian method, to add a regularizer to the reconstruction problem. Currently the only regularizer available is Locally Low-Rank, which is only useful when reconstructing a multi-frame / basis dataset. By default the inner optimizer is LSQR. See `J. I. Tamir et al., ‘T2 shuffling: Sharp, multicontrast, volumetric fast spin‐echo imaging’, vol. 77, pp. 180–195, 2017 <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_.
 
 *Usage*
 
@@ -162,7 +162,7 @@ Uses the Alternating Directions Method-of-Multipliers, also known as an Augmente
 tgv
 ---
 
-This command uses Total Generalized Variation regularization to improve image quality. See `Knoll, F., Bredies, K., Pock, T. & Stollberger, R. Second order total generalized variation (TGV) for MRI. Magnetic Resonance in Medicine 65, 480–491 (2011).<http://doi.wiley.com/10.1002/mrm.22595>` It uses a different optimization algorithm to ``admm`` and hence is not implemented there. The regularization only applies in the spatial dimensions.
+This command uses Total Generalized Variation regularization to improve image quality. See `Knoll, F., Bredies, K., Pock, T. & Stollberger, R. Second order total generalized variation (TGV) for MRI. Magnetic Resonance in Medicine 65, 480–491 (2011).<http://doi.wiley.com/10.1002/mrm.22595>`_ It uses a different optimization algorithm to ``admm`` and hence is not implemented there. The regularization only applies in the spatial dimensions.
 
 *Usage*
 

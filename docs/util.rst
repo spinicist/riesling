@@ -3,7 +3,7 @@ Utilities
 
 RIESLING includes a number of utility commands. These can be broken down into categories.
 
-Basics:
+*Basics*
 
 * `hdr`_
 * `meta`_
@@ -12,16 +12,16 @@ Basics:
 * `plan`_
 * `traj`_
 
-SENSE maps:
+*SENSE maps*
 
 * `sense-calib`_
 * `espirit-calib`_
 
-Density Compensation:
+*Density Compensation*
 
 * `sdc`_
 
-Data manipulation:
+*Data manipulation*
 
 * `compress`_
 * `downsamp`_
@@ -192,7 +192,7 @@ Performs the gridding step using the trajectory information only, i.e. grids a s
 sense-calib
 -----------
 
-This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrating non-cartesian parallel imaging. Magnetic Resonance in Medicine 54, 1–8 (2005). <http://doi.wiley.com/10.1002/mrm.20517>`. Non-cartesian trajectories generally oversampling the center of k-space and hence inherently contain the information necessary to extract SENSE maps. This step is performed by default in the RIESLING pipelines, but if you wish to examine the sensitivities, or use a second file to create them, then you can use this command to write them out explicitly.
+This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrating non-cartesian parallel imaging. Magnetic Resonance in Medicine 54, 1–8 (2005). <http://doi.wiley.com/10.1002/mrm.20517>`_. Non-cartesian trajectories generally oversampling the center of k-space and hence inherently contain the information necessary to extract SENSE maps. This step is performed by default in the RIESLING pipelines, but if you wish to examine the sensitivities, or use a second file to create them, then you can use this command to write them out explicitly.
 
 *Usage*
 
@@ -216,7 +216,7 @@ This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrati
 
 * ``--sense-lambda=L``
 
-    Apply Tikohonov regularization. See `Ying, L. & Xu, D. On Tikhonov regularization for image reconstruction in parallel MRI. 4. <https://ieeexplore.ieee.org/document/1403345>`
+    Apply Tikohonov regularization. See `Ying, L. & Xu, D. On Tikhonov regularization for image reconstruction in parallel MRI. 4. <https://ieeexplore.ieee.org/document/1403345>`_.
 
 * ``--fov=F``
 
@@ -225,7 +225,7 @@ This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrati
 espirit-calib
 -------------
 
-An implementation of `Uecker, M. et al. ESPIRiT-an eigenvalue approach to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magnetic Resonance in Medicine 71, 990–1001 (2014).<http://doi.wiley.com/10.1002/mrm.24751>` for estimating SENSE maps.
+An implementation of `Uecker, M. et al. ESPIRiT-an eigenvalue approach to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magnetic Resonance in Medicine 71, 990–1001 (2014).<http://doi.wiley.com/10.1002/mrm.24751>`_ for estimating SENSE maps.
 
 *Usage*
 
@@ -268,7 +268,7 @@ sdc
 
 Non-cartesian trajectories by definition have a non-uniform sample density in cartesian k-space - i.e. there are more samples points per unit volume in some parts of k-space than others. Because the gridding step is a simple convolution, this results in artefactually higher k-space intensities on the cartesian grid. For a non-iterative reconstruction this must be compensated by dividing samples in non-cartesian k-space by their sample density before gridding.
 
-In iterative reconstructions the situation is more complicated, because the forward gridding step does not require density compensation (because after the forward FFT samples are evenly spaced on the cartesian grid). The uneven density affects the condition number of the problem, and hence can lead to slow convergence, but does not fundamentally alter the solution. Hence density compensation is often ommitted in 2D non-cartesian reconstructions. However, in 3D convergence becomes problematic. Strictly speaking, density compensation cannot be inserted into the conjugate-gradients method that is implemented in ``riesling cg``. In practice it can be, and is implemented in RIESLING, but this leads to noise inflation (see `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`). The correct method, implemented in ``riesling lsqr``, is pre-conditioning in k-space.
+In iterative reconstructions the situation is more complicated, because the forward gridding step does not require density compensation (because after the forward FFT samples are evenly spaced on the cartesian grid). The uneven density affects the condition number of the problem, and hence can lead to slow convergence, but does not fundamentally alter the solution. Hence density compensation is often ommitted in 2D non-cartesian reconstructions. However, in 3D convergence becomes problematic. Strictly speaking, density compensation cannot be inserted into the conjugate-gradients method that is implemented in ``riesling cg``. In practice it can be, and is implemented in RIESLING, but this leads to noise inflation (see `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`_). The correct method, implemented in ``riesling lsqr``, is pre-conditioning in k-space.
 
 The sample density is a property of the trajectory and not of the acquired k-space data. Calculating the Sample Density Compensation (SDC) can be time consuming for large trajectories, hence this command exists to pre-calculate it once for a particular trajectory and save it for future use. There are three different methods implemented which are detailed below.
 
@@ -286,7 +286,7 @@ The sample density is a property of the trajectory and not of the acquired k-spa
 
 * `--sdc=pipe,pipenn,radial`
 
-    Choose the method to calculate the density compensation. ``pipe`` chooses the method of Pipe, Zwart & Menon. See `N. R. Zwart, K. O. Johnson, and J. G. Pipe, ‘Efficient sample density estimation by combining gridding and an optimized kernel: Efficient Sample Density Estimation’, Magn. Reson. Med., vol. 67, no. 3, pp. 701–710, Mar. 2012 <http://doi.wiley.com/10.1002/mrm.23041>`. This generates the best results but is slow to compute (requiring 40 iterations on a highly oversampled grid). Hence the default ``pipenn`` method  uses nearest-neighbour gridding to speed up the process, but with a loss of accuracy. Use ``pipe`` for high-quality reconstructions. ``radial`` implements analytic density compensation for 2D and 3D radial trajectories, but from experience this does deal perfectly with undersampling in the spoke direction and the results from ``pipe`` are superior.
+    Choose the method to calculate the density compensation. ``pipe`` chooses the method of Pipe, Zwart & Menon. See `N. R. Zwart, K. O. Johnson, and J. G. Pipe, ‘Efficient sample density estimation by combining gridding and an optimized kernel: Efficient Sample Density Estimation’, Magn. Reson. Med., vol. 67, no. 3, pp. 701–710, Mar. 2012 <http://doi.wiley.com/10.1002/mrm.23041>`_. This generates the best results but is slow to compute (requiring 40 iterations on a highly oversampled grid). Hence the default ``pipenn`` method  uses nearest-neighbour gridding to speed up the process, but with a loss of accuracy. Use ``pipe`` for high-quality reconstructions. ``radial`` implements analytic density compensation for 2D and 3D radial trajectories, but from experience this does deal perfectly with undersampling in the spoke direction and the results from ``pipe`` are superior.
 
 * `--os=N`
 
@@ -311,7 +311,7 @@ Reduce the channel count using a coil-compression method.
 
 * ``--pca``
 
-    Use PCA coil compression. See `Huang, F., Vijayakumar, S., Li, Y., Hertel, S. & Duensing, G. R. A software channel compression technique for faster reconstruction with many channels. Magnetic Resonance Imaging 26, 133–141 (2008). <https://linkinghub.elsevier.com/retrieve/pii/S0730725X07002731>`
+    Use PCA coil compression. See `Huang, F., Vijayakumar, S., Li, Y., Hertel, S. & Duensing, G. R. A software channel compression technique for faster reconstruction with many channels. Magnetic Resonance Imaging 26, 133–141 (2008). <https://linkinghub.elsevier.com/retrieve/pii/S0730725X07002731>`_.
 
 * ``--channels=N``
 

@@ -78,7 +78,7 @@ The second option ``X,Y,Z`` is a comma-delimited set of numbers indicating the r
 
 *Output*
 
-`file-pad.h5` containing the padded/cropped dataset.
+``file-pad.h5`` containing the padded/cropped dataset.
 
 *Important Options*
 
