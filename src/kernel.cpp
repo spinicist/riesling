@@ -14,23 +14,11 @@ std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, fl
     } else {
       return std::make_unique<KaiserBessel<3, 1>>(os);
     }
-  } else if (k == "KB4") {
-    if (t == Info::Type::ThreeD) {
-      return std::make_unique<KaiserBessel<4, 4>>(os);
-    } else {
-      return std::make_unique<KaiserBessel<4, 1>>(os);
-    }
   } else if (k == "KB5") {
     if (t == Info::Type::ThreeD) {
       return std::make_unique<KaiserBessel<5, 5>>(os);
     } else {
       return std::make_unique<KaiserBessel<5, 1>>(os);
-    }
-  } else if (k == "KB6") {
-    if (t == Info::Type::ThreeD) {
-      return std::make_unique<KaiserBessel<6, 6>>(os);
-    } else {
-      return std::make_unique<KaiserBessel<6, 1>>(os);
     }
   } else if (k == "FI3") {
     if (t == Info::Type::ThreeD) {
