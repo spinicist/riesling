@@ -56,9 +56,7 @@ typename Op::Input lsqr(
     }
   }
 
-  float const uMu = std::real(Dot(u, Mu));
-  float const normur = Norm2(ur);
-  float β = sqrt(uMu + normur);
+  float β = sqrt(std::real(Dot(u, Mu)) + Norm2(ur));
   float const normb = β; // For convergence tests
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
@@ -83,12 +81,7 @@ typename Op::Input lsqr(
     Log::Image(ur, "lsqr-ur-init");
   }
 
-  Log::Print(
-    FMT_STRING("LSQR    α {:5.3E} β {:5.3E} |uMu| {:5.3E} |u'| {:5.3E} "),
-    α,
-    β,
-    sqrt(uMu),
-    sqrt(normur));
+  Log::Print(FMT_STRING("LSQR    α {:5.3E} β {:5.3E}  "), α, β);
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
@@ -135,12 +128,12 @@ typename Op::Input lsqr(
     float const condA = normA * std::sqrt(ddnorm);
 
     Log::Print(
-      FMT_STRING("LSQR {:02d} |r| {:5.3E} α {:5.3E} β {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
+      FMT_STRING("LSQR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
                  "{:5.3E} |x| {:5.3E}"),
       ii,
-      normr,
       α,
       β,
+      normr,
       normAr,
       normA,
       condA,
@@ -173,25 +166,6 @@ typename Op::Input lsqr(
       break;
     }
   }
-
-  // Final check of residual
-  Mu.device(dev) = b - op.A(x);
-  u.device(dev) = M ? M->apply(Mu) : Mu;
-  if (λ > 0) {
-    if (xr.size()) {
-      ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
-    } else {
-      ur.device(dev) = -x * x.constant(sqrt(λ));
-    }
-  }
-  β = std::sqrt(std::real(Dot(u, Mu) + Norm2(ur)));
-  Log::Print(
-    FMT_STRING("Final |Mu| {:5.3E} |u| {:5.3E} |uMu| {:5.3E} |ur| {:5.3E} β {:5.3E}"),
-    Norm(Mu),
-    Norm(u),
-    std::sqrt(std::real(Dot(u, Mu))),
-    Norm(ur),
-    β);
 
   return x;
 }
