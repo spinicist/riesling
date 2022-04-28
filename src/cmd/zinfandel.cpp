@@ -1,6 +1,9 @@
+#include "algo/admm.hpp"
 #include "io/io.h"
 #include "log.h"
+#include "op/nufft.hpp"
 #include "parse_args.h"
+#include "precond/single.hpp"
 #include "threads.h"
 #include "types.h"
 #include "zin-grappa.hpp"
@@ -10,36 +13,29 @@
 int main_zinfandel(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT FILE", "Input radial k-space to fill");
-  args::ValueFlag<std::string> oname(
-    parser, "OUTPUT NAME", "Name of output .h5 file", {"out", 'o'});
+  args::ValueFlag<std::string> oname(parser, "OUTPUT NAME", "Name of output .h5 file", {"out", 'o'});
 
   args::ValueFlag<Index> gap(parser, "G", "Set gap value (default 2)", {'g', "gap"}, 2);
 
   args::Flag grappa(parser, "", "Use projection GRAPPA", {"grappa"});
   args::ValueFlag<Index> gSrc(parser, "S", "GRAPPA sources (default 4)", {"grappa-src"}, 4);
-  args::ValueFlag<Index> gSpokes(
-    parser, "S", "GRAPPA calibration spokes (default 4)", {"spokes"}, 4);
-  args::ValueFlag<Index> gRead(
-    parser, "R", "GRAPPA calibration read samples (default 8)", {"read"}, 8);
+  args::ValueFlag<Index> gSpokes(parser, "S", "GRAPPA calibration spokes (default 4)", {"spokes"}, 4);
+  args::ValueFlag<Index> gRead(parser, "R", "GRAPPA calibration read samples (default 8)", {"read"}, 8);
   args::ValueFlag<float> gλ(parser, "L", "Tikhonov regularization (default 0)", {"lamda"}, 0.f);
 
   // SLR options
   args::ValueFlag<float> osamp(parser, "OS", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  args::ValueFlag<std::string> ktype(
-    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");
-  args::ValueFlag<float> res(parser, "R", "Resolution for SLR (default 5mm)", {'r', "res"}, 5.f);
+  args::ValueFlag<std::string> ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");
+  args::ValueFlag<float> res(parser, "R", "Resolution for SLR (default 20mm)", {'r', "res"}, 20.f);
 
-  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
-  args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
-  args::ValueFlag<float> reg_rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
-  args::Flag precond(parser, "P", "Apply Ong's single-channel M-conditioner", {"pre"});
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
+  args::ValueFlag<Index> iits(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
+  args::ValueFlag<Index> oits(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
+  args::ValueFlag<float> rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 1.0f);
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-3f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-3f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
-
-  args::ValueFlag<float> lambda(
-    parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
-  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
+  args::ValueFlag<float> winSz(parser, "T", "SLR normalized window size (default 1.5)", {"win-size"}, 1.5f);
+  args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 4)", {"kernel-size"}, 4);
 
   ParseCommand(parser, iname);
 
@@ -59,13 +55,26 @@ int main_zinfandel(args::Subparser &parser)
   } else {
     // Use SLR
     auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
-    auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res.Get(), true);
-    auto gridder = make_grid(kernel.get(), mapping, false);
-
+    auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
+    auto const dsInfo = dsTraj.info();
+    auto const map0 = dsTraj.mapping(kernel->inPlane(), osamp.Get(), 0, 0);
+    auto const mapN = dsTraj.mapping(kernel->inPlane(), osamp.Get(), 0, gap.Get());
+    auto grid0 = make_grid(kernel.get(), map0, false);
+    auto gridN = make_grid(kernel.get(), mapN, false);
+    NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
+    NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
+    auto const pre = std::make_unique<SingleChannel>(dsTraj, kernel.get());
+    auto reg = [&](Cx5 const &x) -> Cx5 { return zinSLR(x, nufftN.fft(), kSz.Get(), winSz.Get()); };
+    Sz3 const st{0, 0, 0};
+    Sz3 const sz{info.channels, gap.Get(), info.spokes};
     for (Index iv = 0; iv < info.volumes; iv++) {
-      Cx3 vol = reader.noncartesian(iv);
-      // zinSLR(gap.Get(), gridder.get(), vol);
-      rad_ks.chip<3>(iv) = vol;
+      Cx3 const ks = reader.noncartesian(iv);
+      Cx3 const dsKS = ks.slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.read_points, dsInfo.spokes});
+      Cx5 const img =
+        admm_lsqr(oits.Get(), rho.Get(), reg, iits.Get(), nufftN, dsKS, pre.get(), atol.Get(), btol.Get(), ctol.Get());
+      Cx3 const filled = nufft0.A(img);
+      rad_ks.chip<3>(iv) = ks;
+      rad_ks.chip<3>(iv).slice(st, sz) = filled.slice(st, sz);
     }
   }
 

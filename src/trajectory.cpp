@@ -45,24 +45,16 @@ Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &fr)
 void Trajectory::init()
 {
   if (info_.read_points != points_.dimension(1)) {
-    Log::Fail(
-      "Mismatch between info read points {} and trajectory points {}",
-      info_.read_points,
-      points_.dimension(1));
+    Log::Fail("Mismatch between info read points {} and trajectory points {}", info_.read_points, points_.dimension(1));
   }
   if (info_.spokes != points_.dimension(2)) {
-    Log::Fail(
-      "Mismatch between info spokes {} and trajectory spokes {}",
-      info_.spokes,
-      points_.dimension(2));
+    Log::Fail("Mismatch between info spokes {} and trajectory spokes {}", info_.spokes, points_.dimension(2));
   }
   if (info_.spokes != frames_.dimension(0)) {
-    Log::Fail(
-      "Mismatch between info spokes {} and frames array {}", info_.spokes, frames_.dimension(0));
+    Log::Fail("Mismatch between info spokes {} and frames array {}", info_.spokes, frames_.dimension(0));
   }
   if (info_.frames < Maximum(frames_)) {
-    Log::Fail(
-      "Maximum frame {} exceeds number of frames in header {}", Maximum(frames_), info_.frames);
+    Log::Fail("Maximum frame {} exceeds number of frames in header {}", Maximum(frames_), info_.frames);
   }
 
   if (info_.type == Info::Type::ThreeD) {
@@ -71,8 +63,7 @@ void Trajectory::init()
       Log::Fail(FMT_STRING("Maximum trajectory co-ordinate {} exceeded 0.5"), maxCoord);
     }
   } else {
-    float const maxCoord = Maximum(
-      points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
+    float const maxCoord = Maximum(points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
     if (maxCoord > 0.5f) {
       Log::Fail(FMT_STRING("Maximum in-plane trajectory {} co-ordinate exceeded 0.5"), maxCoord);
     }
@@ -113,16 +104,12 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   __builtin_unreachable(); // Because the GCC devs are very obtuse
 }
 
-Mapping Trajectory::mapping(
-  Index const kw, float const os, Index const inChan, float const inRes, bool const shrink) const
+Mapping Trajectory::mapping(Index const kw, float const os, Index const inChan, Index const read0) const
 {
   Index const nChan = (inChan < 1) ? info_.channels : inChan;
   Index const kRad = kw / 2; // Radius to avoid at edge of grid
-  float const res = inRes > 0.f ? inRes : info_.voxel_size.minCoeff();
-  float const ratio = info_.voxel_size.minCoeff() / res;
-  Index const gridSz = fft_size(info_.matrix.maxCoeff() * os * (shrink ? ratio : 1.f));
-  Log::Print(
-    FMT_STRING("Generating mapping to grid size {} at {} mm effective resolution"), gridSz, res);
+  Index const gridSz = fft_size(info_.matrix.maxCoeff() * os);
+  Log::Print(FMT_STRING("Generating mapping to grid size {}"), gridSz);
 
   Mapping mapping;
   mapping.type = info_.type;
@@ -144,13 +131,13 @@ Mapping Trajectory::mapping(
   mapping.frames = Maximum(frames_) + 1;
   mapping.frameWeights = Eigen::ArrayXf::Zero(mapping.frames);
   std::fesetround(FE_TONEAREST);
-  float const maxRad = ratio * ((gridSz / 2) - 1.f);
+  float const maxRad = (gridSz / 2) - 1.f;
   Size3 const center(mapping.cartDims[0] / 2, mapping.cartDims[1] / 2, mapping.cartDims[2] / 2);
   auto start = Log::Now();
   for (int32_t is = 0; is < info_.spokes; is++) {
     auto const frame = frames_(is);
     if ((frame >= 0) && (frame < info_.frames)) {
-      for (int16_t ir = 0; ir < info_.read_points; ir++) {
+      for (int16_t ir = read0; ir < info_.read_points; ir++) {
         NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = point(ir, is, maxRad);
         Point3 const gp = nearby(xyz);
@@ -177,14 +164,61 @@ Mapping Trajectory::mapping(
   start = Log::Now();
   mapping.sortedIndices.resize(mapping.cart.size());
   std::iota(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), 0);
-  std::sort(
-    mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](Index const a, Index const b) {
-      auto const &ac = mapping.cart[a];
-      auto const &bc = mapping.cart[b];
-      return (ac.z < bc.z) ||
-             ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
-    });
+  std::sort(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](Index const a, Index const b) {
+    auto const &ac = mapping.cart[a];
+    auto const &bc = mapping.cart[b];
+    return (ac.z < bc.z) || ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
+  });
   Log::Debug(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
 
   return mapping;
+}
+
+std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index const lores, bool const shrink) const
+{
+  float const dsamp = res / info_.voxel_size.minCoeff();
+  if (dsamp < 1.f) {
+    Log::Fail(FMT_STRING("Downsample resolution {} is lower than input resolution {}"), res, info_.voxel_size.minCoeff());
+  }
+  auto dsInfo = info_;
+  float scale = 1.f;
+  if (shrink) {
+    // Account for rounding
+    dsInfo.matrix = (info_.matrix.cast<float>() / dsamp).cast<Index>();
+    scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
+    dsInfo.voxel_size = info_.voxel_size * scale;
+    if (dsInfo.type == Info::Type::ThreeDStack) {
+      dsInfo.matrix[2] = info_.matrix[2];
+      dsInfo.voxel_size[2] = info_.voxel_size[2];
+    }
+  }
+  Index const sz = (info_.type == Info::Type::ThreeD) ? 3 : 2; // Need this for slicing below
+  Index minRead = info_.read_points, maxRead = 0;
+  R3 dsPoints(points_.dimensions());
+  for (Index is = 0; is < info_.spokes; is++) {
+    for (Index ir = 0; ir < info_.read_points; ir++) {
+      R1 p = points_.chip<2>(is).chip<1>(ir);
+      p.slice(Sz1{0}, Sz1{sz}) *= p.slice(Sz1{0}, Sz1{sz}).constant(scale);
+      if (Norm(p.slice(Sz1{0}, Sz1{sz})) <= 0.5f) {
+        dsPoints.chip<2>(is).chip<1>(ir) = p;
+        if (is >= lores) { // Ignore lo-res spokes for this calculation
+          minRead = std::min(minRead, ir);
+          maxRead = std::max(maxRead, ir);
+        }
+      } else {
+        dsPoints.chip<2>(is).chip<1>(ir).setConstant(std::numeric_limits<float>::quiet_NaN());
+      }
+    }
+  }
+  dsInfo.read_points = 1 + maxRead - minRead;
+  Log::Print(
+    FMT_STRING("Downsampled by {}, new voxel-size {} matrix {}, read-points {}-{}{}"),
+    scale,
+    dsInfo.voxel_size.transpose(),
+    dsInfo.matrix.transpose(),
+    minRead,
+    maxRead,
+    lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res spokes"), lores) : "");
+  dsPoints = R3(dsPoints.slice(Sz3{0, minRead, 0}, Sz3{3, dsInfo.read_points, dsInfo.spokes}));
+  return std::make_tuple(Trajectory(dsInfo, dsPoints, frames_), minRead);
 }

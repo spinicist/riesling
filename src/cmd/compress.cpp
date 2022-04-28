@@ -19,29 +19,24 @@ int main_compress(args::Subparser &parser)
   // One of the following must be set
   args::Flag pca(parser, "V", "Calculate PCA compression", {"pca"});
   args::Flag rovir(parser, "R", "Calculate ROVIR compression", {"rovir"});
-  args::ValueFlag<std::string> ccFile(
-    parser, "F", "Read compression matrix from file", {"cc-file"});
+  args::ValueFlag<std::string> ccFile(parser, "F", "Read compression matrix from file", {"cc-file"});
 
   // General options
   args::Flag save(parser, "S", "Save compression matrix to .h5 file", {"save"});
   args::ValueFlag<Index> channels(parser, "C", "Retain N channels (8)", {"channels"}, 8);
-  args::ValueFlag<float> energy(
-    parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
+  args::ValueFlag<float> energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
   args::ValueFlag<Index> refVol(parser, "V", "Use this volume (default last)", {"vol"});
+  args::ValueFlag<Index> lores(parser, "L", "Number of lores spokes", {"lores"}, 0);
 
   // PCA Options
-  args::ValueFlag<Sz2, Sz2Reader> pcaRead(
-    parser, "R", "PCA Read Points (start, size)", {"pca-read"}, Sz2{0, 16});
-  args::ValueFlag<Sz3, Sz3Reader> pcaSpokes(
-    parser, "R", "PCA Spokes (start, size, stride)", {"pca-spokes"}, Sz3{0, 1024, 4});
+  args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Read Points (start, size)", {"pca-read"}, Sz2{0, 16});
+  args::ValueFlag<Sz3, Sz3Reader> pcaSpokes(parser, "R", "PCA Spokes (start, size, stride)", {"pca-spokes"}, Sz3{0, 1024, 4});
 
   // ROVIR Options
   args::ValueFlag<float> res(parser, "R", "ROVIR recon resolution", {"rovir-res"}, -1.f);
   args::ValueFlag<float> fov(parser, "F", "ROVIR Signal FoV", {"rovir-fov"}, -1.f);
-  args::ValueFlag<float> loThresh(
-    parser, "L", "ROVIR low threshold (percentile)", {"rovir-lo"}, 0.1f);
-  args::ValueFlag<float> hiThresh(
-    parser, "H", "ROVIR high threshold (percentile)", {"rovir-hi"}, 0.9f);
+  args::ValueFlag<float> loThresh(parser, "L", "ROVIR low threshold (percentile)", {"rovir-lo"}, 0.1f);
+  args::ValueFlag<float> hiThresh(parser, "H", "ROVIR high threshold (percentile)", {"rovir-hi"}, 0.9f);
   args::ValueFlag<float> gap(parser, "G", "ROVIR FOV gap", {"rovir-gap"}, 0.f);
   ParseCommand(parser, iname);
 
@@ -57,11 +52,10 @@ int main_compress(args::Subparser &parser)
     Index const maxRead = info.read_points - read[0];
     Index const nread = (read[1] > maxRead) ? maxRead : read[1];
     if (spokes[0] + spokes[1] > info.spokes) {
-      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), spokes[0]+spokes[1], info.spokes);
+      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), spokes[0] + spokes[1], info.spokes);
     }
     Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, spokes[1], spokes[2]);
-    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, spokes[1], spokes[1]})
-                      .stride(Sz3{1, 1, spokes[2]});
+    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, spokes[1], spokes[1]}).stride(Sz3{1, 1, spokes[2]});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), channels.Get(), energy.Get());
     compressor.psi = pc.vecs;
@@ -69,12 +63,13 @@ int main_compress(args::Subparser &parser)
 
     Index const nC = info.channels;
     auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
-    auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get(), 0, res.Get(), true);
-    auto gridder = make_grid(kernel.get(), mapping, fastgrid);
+    auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), true);
+    auto gridder = make_grid(kernel.get(), dsTraj.mapping(kernel->inPlane(), osamp.Get()), fastgrid);
     auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
     auto const sz = LastN<3>(gridder->inputDimensions());
     NUFFTOp nufft(sz, gridder.get(), sdc.get());
-    Cx4 const channelImages = nufft.Adj(ks).chip<1>(0);
+    Cx4 const channelImages =
+      nufft.Adj(ks.slice(Sz3{0, minRead, 0}, Sz3{nC, dsTraj.info().read_points, dsTraj.info().spokes})).chip<1>(0);
 
     // Get the signal distribution for thresholding
     R3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
@@ -82,16 +77,10 @@ int main_compress(args::Subparser &parser)
     std::vector<float> percentiles(rss.size());
     std::copy_n(rss.data(), rss.size(), percentiles.begin());
     std::sort(percentiles.begin(), percentiles.end());
-    float const loVal =
-      percentiles[(Index)std::floor(std::clamp(loThresh.Get(), 0.f, 1.f) * (rss.size() - 1))];
-    float const hiVal =
-      percentiles[(Index)std::floor(std::clamp(hiThresh.Get(), 0.f, 1.f) * (rss.size() - 1))];
+    float const loVal = percentiles[(Index)std::floor(std::clamp(loThresh.Get(), 0.f, 1.f) * (rss.size() - 1))];
+    float const hiVal = percentiles[(Index)std::floor(std::clamp(hiThresh.Get(), 0.f, 1.f) * (rss.size() - 1))];
     Log::Print(
-      FMT_STRING("ROVIR signal thresholds {}-{}, full range {}-{}"),
-      loVal,
-      hiVal,
-      percentiles.front(),
-      percentiles.back());
+      FMT_STRING("ROVIR signal thresholds {}-{}, full range {}-{}"), loVal, hiVal, percentiles.front(), percentiles.back());
 
     // Set up the masks
 

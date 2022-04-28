@@ -65,14 +65,20 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
 
 Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float const wnThresh)
 {
+  Index const nC = channels.dimension(0); // Include frames here
+  if (kSz < 3) {
+    Log::Fail(FMT_STRING("SLR kernel size less than 3 not supported"));
+  }
+  if (wnThresh < 1.f || wnThresh >= nC) {
+    Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), wnThresh, 1.f, nC);
+  }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, wnThresh);
   Cx5 kspaces = fft.A(channels);
   Cx6 kernels = ToKernels(kspaces, kSz);
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   auto const svd = SVD<Cx>(kMat, true, true);
   Index const nK = kernels.dimension(1) * kernels.dimension(2) * kernels.dimension(3) * kernels.dimension(4);
-  Index const nC = kernels.dimension(0); // Include frames here
-  Index const nZero = (nC - wnThresh) * nK; // Window-Normalized 
+  Index const nZero = (nC - wnThresh) * nK; // Window-Normalized
   Log::Print(FMT_STRING("Zeroing {} values check {} nK {}"), nZero, (nC - wnThresh), nK);
   auto lrVals = svd.vals;
   lrVals.tail(nZero).setZero();

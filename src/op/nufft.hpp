@@ -91,6 +91,8 @@ struct NUFFTOp final : Operator<5, 3>
     return result;
   }
 
+  FFTOp<5> const &fft() const { return fft_; };
+
 private:
   GridBase *gridder_;
   FFTOp<5> fft_;
