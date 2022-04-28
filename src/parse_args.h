@@ -46,9 +46,9 @@ Index ValOrLast(Index const val, Index const last);
 #define CORE_RECON_ARGS                                                                            \
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");                           \
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
-  args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f); \
+  args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f); \
   args::ValueFlag<std::string> ktype(                                                              \
-    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");                          \
+    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "FI3");                          \
   args::Flag fastgrid(                                                                             \
     parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
   args::ValueFlag<std::string> sdcType(                                                            \
@@ -61,10 +61,4 @@ Index ValOrLast(Index const val, Index const last);
     parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);                             \
   args::ValueFlag<float> out_fov(                                                                  \
     parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                     \
-  args::ValueFlag<float> tukey_s(                                                                  \
-    parser, "TUKEY START", "Start-width of Tukey filter", {"tukey_start"}, 1.0f);                  \
-  args::ValueFlag<float> tukey_e(                                                                  \
-    parser, "TUKEY END", "End-width of Tukey filter", {"tukey_end"}, 1.0f);                        \
-  args::ValueFlag<float> tukey_h(                                                                  \
-    parser, "TUKEY HEIGHT", "End height of Tukey filter", {"tukey_height"}, 0.0f);                 \
   args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
