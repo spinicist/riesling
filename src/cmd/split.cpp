@@ -12,9 +12,9 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<Index> lores(parser, "N", "Extract first N spokes as lo-res", {'l', "lores"}, 0);
   args::ValueFlag<Index> spoke_stride(parser, "S", "Hi-res stride", {"stride"}, 1);
   args::ValueFlag<Index> spoke_size(parser, "SZ", "Size of hi-res spokes to keep", {"size"});
-  args::ValueFlag<Index> nspokes(parser, "SPOKES", "Spokes per segment", {"n", "nspokes"});
+  args::ValueFlag<Index> sps(parser, "SPOKES", "Spokes per segment", {"n", "sps"});
   args::ValueFlag<Index> nF(parser, "F", "Break into N frames", {"frames"}, 1);
-  args::ValueFlag<Index> spe(parser, "S", "Spokes per frame", {"spe"}, 1);
+  args::ValueFlag<Index> spf(parser, "S", "Spokes per frame", {"spf"}, 1);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
   args::ValueFlag<Index> zero(parser, "Z", "Zero the first N samples", {"zero"}, 0);
 
@@ -54,22 +54,22 @@ int main_split(args::Subparser &parser)
     writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
   }
 
-  if (nF && spe) {
-    Index const sps = spe.Get() * nF.Get();
-    if (traj.info().spokes % spe != 0) {
+  if (nF && spf) {
+    Index const sps = spf.Get() * nF.Get();
+    if (traj.info().spokes % spf != 0) {
       Log::Fail(FMT_STRING("SPE {} does not divide spokes {} cleanly"), sps, traj.info().spokes);
     }
     Index const segs = std::ceil(static_cast<float>(traj.info().spokes) / sps);
     Log::Print(
       FMT_STRING("Adding info for {} frames with {} spokes per frame, {} per segment, {} segments"),
       nF.Get(),
-      spe.Get(),
+      spf.Get(),
       sps,
       segs);
     I1 e(nF.Get());
     std::iota(e.data(), e.data() + nF.Get(), 0);
     I1 frames = e.reshape(Sz2{1, nF.Get()})
-                  .broadcast(Sz2{spe.Get(), 1})
+                  .broadcast(Sz2{spf.Get(), 1})
                   .reshape(Sz1{sps})
                   .broadcast(Sz1{segs})
                   .slice(Sz1{0}, Sz1{traj.info().spokes});
@@ -95,9 +95,9 @@ int main_split(args::Subparser &parser)
       traj.frames().slice(Sz1{0}, Sz1{info.spokes}));
   }
 
-  if (nspokes) {
+  if (sps) {
     auto info = traj.info();
-    int const ns = nspokes.Get();
+    int const ns = sps.Get();
     int const spoke_step = step ? step.Get() : ns;
     int const num_full_int = static_cast<int>(info.spokes * 1.f / ns);
     int const num_int = static_cast<int>((num_full_int - 1) * ns * 1.f / spoke_step + 1);
