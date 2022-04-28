@@ -30,8 +30,8 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
-  args::Flag use_cg(parser, "C", "Use CG instead of LSMR for inner loop", {"cg"});
-  args::Flag use_lsqr(parser, "L", "Use LSQR instead of LSRM for inner loop", {"lsqr"});
+  args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
+  args::Flag use_lsmr(parser, "L", "Use LSMR instead of LSQR for inner loop", {"lsmr"});
   ParseCommand(parser, iname);
 
   HD5::RieslingReader reader(iname.Get());
@@ -81,8 +81,8 @@ int main_admm(args::Subparser &parser)
         reg,
         reg_rho.Get(),
         reader.noncartesian(iv));
-    } else if (use_lsqr) {
-      vol = admm_lsqr(
+    } else if (use_lsmr) {
+      vol = admm_lsmr(
         outer_its.Get(),
         reg_rho.Get(),
         reg,
@@ -94,7 +94,7 @@ int main_admm(args::Subparser &parser)
         btol.Get(),
         ctol.Get());
     } else {
-      vol = admm(
+      vol = admm_lsqr(
         outer_its.Get(),
         reg_rho.Get(),
         reg,

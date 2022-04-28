@@ -7,7 +7,7 @@
 #include "threads.h"
 
 template <typename Op, typename LeftPrecond>
-typename Op::Input admm(
+typename Op::Input admm_lsmr(
   Index const outer_its,
   float rho,
   std::function<Cx4(Cx4 const &)> const &reg,
@@ -52,7 +52,6 @@ typename Op::Input admm(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Image(Cx4(z - u), fmt::format("admm-zmu-{:02d}", ii));
     Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
@@ -83,7 +82,7 @@ template <typename Op, typename LeftPrecond>
 typename Op::Input admm_lsqr(
   Index const outer_its,
   float rho,
-  std::function<Cx4(Cx4 const &)> const &reg,
+  std::function<typename Op::Input(typename Op::Input const &)> const &reg,
   Index const lsq_its,
   Op const &op,
   typename Op::Output const &b,
@@ -94,7 +93,6 @@ typename Op::Input admm_lsqr(
   float const abstol = 1.e-3f,
   float const reltol = 1.e-3f)
 {
-  Log::Print(FMT_STRING("Starting ADMM rho {}"), rho);
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
@@ -107,9 +105,11 @@ typename Op::Input admm_lsqr(
   u.setZero();
   xpu.setZero();
 
+  Log::Print(FMT_STRING("Starting ADMM rho {} dims {}"), rho, dims);
   for (Index ii = 0; ii < outer_its; ii++) {
+    Log::Print(FMT_STRING("x dims {}"), x.dimensions());
     x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 2));
-
+    Log::Print(FMT_STRING("x after dims {}"), x.dimensions());
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);
@@ -125,7 +125,6 @@ typename Op::Input admm_lsqr(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Image(Cx4(z - u), fmt::format("admm-zmu-{:02d}", ii));
     Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
@@ -219,7 +218,6 @@ typename Op::Input admm_cg(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Image(Cx4(z - u), fmt::format("admm-zmu-{:02d}", ii));
     Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
     Log::Print(
       FMT_STRING("ADMM-CG {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
