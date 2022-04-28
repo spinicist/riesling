@@ -14,7 +14,8 @@
 
 int main_compress(args::Subparser &parser)
 {
-  CORE_RECON_ARGS;
+  CoreOpts core(parser);
+  SDC::Opts sdcOpts(parser);
 
   // One of the following must be set
   args::Flag pca(parser, "V", "Calculate PCA compression", {"pca"});
@@ -30,7 +31,8 @@ int main_compress(args::Subparser &parser)
 
   // PCA Options
   args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Read Points (start, size)", {"pca-read"}, Sz2{0, 16});
-  args::ValueFlag<Sz3, Sz3Reader> pcaSpokes(parser, "R", "PCA Spokes (start, size, stride)", {"pca-spokes"}, Sz3{0, 1024, 4});
+  args::ValueFlag<Sz3, Sz3Reader> pcaSpokes(
+    parser, "R", "PCA Spokes (start, size, stride)", {"pca-spokes"}, Sz3{0, 1024, 4});
 
   // ROVIR Options
   args::ValueFlag<float> res(parser, "R", "ROVIR recon resolution", {"rovir-res"}, -1.f);
@@ -38,9 +40,9 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<float> loThresh(parser, "L", "ROVIR low threshold (percentile)", {"rovir-lo"}, 0.1f);
   args::ValueFlag<float> hiThresh(parser, "H", "ROVIR high threshold (percentile)", {"rovir-hi"}, 0.9f);
   args::ValueFlag<float> gap(parser, "G", "ROVIR FOV gap", {"rovir-gap"}, 0.f);
-  ParseCommand(parser, iname);
+  ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(iname.Get());
+  HD5::RieslingReader reader(core.iname.Get());
   auto const traj = reader.trajectory();
   auto const info = traj.info();
   Cx3 const ks = reader.noncartesian(ValOrLast(refVol, info.volumes));
@@ -55,17 +57,18 @@ int main_compress(args::Subparser &parser)
       Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), spokes[0] + spokes[1], info.spokes);
     }
     Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, spokes[1], spokes[2]);
-    Cx3 const ref = ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, spokes[1], spokes[1]}).stride(Sz3{1, 1, spokes[2]});
+    Cx3 const ref =
+      ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, spokes[1], spokes[1]}).stride(Sz3{1, 1, spokes[2]});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), channels.Get(), energy.Get());
     compressor.psi = pc.vecs;
   } else if (rovir) {
 
     Index const nC = info.channels;
-    auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+    auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
     auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), true);
-    auto gridder = make_grid(kernel.get(), dsTraj.mapping(kernel->inPlane(), osamp.Get()), fastgrid);
-    auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
+    auto gridder = make_grid(kernel.get(), dsTraj.mapping(kernel->inPlane(), core.osamp.Get()), core.fast);
+    auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
     auto const sz = LastN<3>(gridder->inputDimensions());
     NUFFTOp nufft(sz, gridder.get(), sdc.get());
     Cx4 const channelImages =
@@ -80,7 +83,11 @@ int main_compress(args::Subparser &parser)
     float const loVal = percentiles[(Index)std::floor(std::clamp(loThresh.Get(), 0.f, 1.f) * (rss.size() - 1))];
     float const hiVal = percentiles[(Index)std::floor(std::clamp(hiThresh.Get(), 0.f, 1.f) * (rss.size() - 1))];
     Log::Print(
-      FMT_STRING("ROVIR signal thresholds {}-{}, full range {}-{}"), loVal, hiVal, percentiles.front(), percentiles.back());
+      FMT_STRING("ROVIR signal thresholds {}-{}, full range {}-{}"),
+      loVal,
+      hiVal,
+      percentiles.front(),
+      percentiles.back());
 
     // Set up the masks
 
@@ -166,12 +173,12 @@ int main_compress(args::Subparser &parser)
   Cx4 out_ks = out_info.noncartesianSeries();
   compressor.compress(all_ks, out_ks);
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "compressed"));
+  HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "compressed"));
   writer.writeTrajectory(Trajectory(out_info, traj.points(), traj.frames()));
   writer.writeTensor(out_ks, HD5::Keys::Noncartesian);
 
   if (save) {
-    HD5::Writer matfile(OutName(iname.Get(), oname.Get(), "ccmat"));
+    HD5::Writer matfile(OutName(core.iname.Get(), core.oname.Get(), "ccmat"));
     writer.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
   }
   return EXIT_SUCCESS;

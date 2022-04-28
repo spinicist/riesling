@@ -12,7 +12,7 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<Index> lores(parser, "N", "Extract first N spokes as lo-res", {'l', "lores"}, 0);
   args::ValueFlag<Index> spoke_stride(parser, "S", "Hi-res stride", {"stride"}, 1);
   args::ValueFlag<Index> spoke_size(parser, "SZ", "Size of hi-res spokes to keep", {"size"});
-  args::ValueFlag<Index> sps(parser, "SPOKES", "Spokes per segment", {"n", "sps"});
+  args::ValueFlag<Index> spi(parser, "SPOKES", "Spokes per interleave", {"spi"});
   args::ValueFlag<Index> nF(parser, "F", "Break into N frames", {"frames"}, 1);
   args::ValueFlag<Index> spf(parser, "S", "Spokes per frame", {"spf"}, 1);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
@@ -95,9 +95,9 @@ int main_split(args::Subparser &parser)
       traj.frames().slice(Sz1{0}, Sz1{info.spokes}));
   }
 
-  if (sps) {
+  if (spi) {
     auto info = traj.info();
-    int const ns = sps.Get();
+    int const ns = spi.Get();
     int const spoke_step = step ? step.Get() : ns;
     int const num_full_int = static_cast<int>(info.spokes * 1.f / ns);
     int const num_int = static_cast<int>((num_full_int - 1) * ns * 1.f / spoke_step + 1);

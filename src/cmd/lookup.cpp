@@ -29,19 +29,14 @@ int main_lookup(args::Subparser &parser)
   R1 const norm = dfile.readTensor<R1>(HD5::Keys::Norm);
 
   R5 out_pars(
-    parameters.dimension(0),
-    images.dimension(1),
-    images.dimension(2),
-    images.dimension(3),
-    images.dimension(4));
+    parameters.dimension(0), images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   out_pars.setZero();
   Cx5 pd(1, images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   pd.setZero();
 
   Index const N = dictionary.dimension(0);
   if (parameters.dimension(1) != N) {
-    Log::Fail(
-      FMT_STRING("Dictionary has {} entries but parameters has {}"), N, parameters.dimension(1));
+    Log::Fail(FMT_STRING("Dictionary has {} entries but parameters has {}"), N, parameters.dimension(1));
   }
   Log::Print(FMT_STRING("Dictionary has {} entries"), N);
 

@@ -35,30 +35,23 @@ struct Sz3Reader
 
 // Helper function to generate a good output name
 std::string OutName(
-  std::string const &iName,
-  std::string const &oName,
-  std::string const &suffix,
-  std::string const &extension = "h5");
+  std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension = "h5");
 
 // Helper function for getting a good volume to take SENSE maps from
 Index ValOrLast(Index const val, Index const last);
 
-#define CORE_RECON_ARGS                                                                            \
-  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");                           \
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});      \
-  args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f); \
-  args::ValueFlag<std::string> ktype(                                                              \
-    parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "FI3");                          \
-  args::Flag fastgrid(                                                                             \
-    parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'});                 \
-  args::ValueFlag<std::string> sdcType(                                                            \
-    parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipenn");          \
-  args::ValueFlag<float> sdcPow(parser, "P", "SDC Power (default 1.0)", {"sdcPow"}, 1.0f);
+struct CoreOpts
+{
+  CoreOpts(args::Subparser &parser);
+  args::Positional<std::string> iname;
+  args::ValueFlag<std::string> oname, ktype;
+  args::ValueFlag<float> osamp;
+  args::Flag fast;
+};
 
-#define COMMON_RECON_ARGS                                                                          \
-  CORE_RECON_ARGS                                                                                  \
-  args::ValueFlag<float> iter_fov(                                                                 \
-    parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256);                             \
-  args::ValueFlag<float> out_fov(                                                                  \
-    parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1);                     \
-  args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
+struct ExtraOpts
+{
+  ExtraOpts(args::Subparser &parser);
+  args::ValueFlag<float> iter_fov, out_fov;
+  args::Flag mag;
+};

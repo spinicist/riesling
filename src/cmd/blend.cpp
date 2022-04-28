@@ -26,12 +26,10 @@ int main_blend(args::Subparser &parser)
   args::Positional<std::string> bname(parser, "BASIS", "h5 file containing basis");
   args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<std::string> oftype(
-    parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+  args::ValueFlag<std::string> oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(
     parser, "TP", "Timepoints within basis for combination", {"tp", 't'}, {0});
-  args::Flag eddy_rss(
-    parser, "", "Produce an RSS image for eddy-current correction", {"eddy", 'e'});
+  args::Flag eddy_rss(parser, "", "Produce an RSS image for eddy-current correction", {"eddy", 'e'});
 
   ParseCommand(parser);
 
@@ -48,8 +46,7 @@ int main_blend(args::Subparser &parser)
   R2 const basis = binput.readTensor<R2>("basis");
 
   if (basis.dimension(1) != images.dimension(0)) {
-    Log::Fail(
-      FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
+    Log::Fail(FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
   }
 
   auto const &tps = tp.Get();
@@ -58,8 +55,7 @@ int main_blend(args::Subparser &parser)
   R1 const scale = basis.chip<0>(0).constant(std::sqrt(basis.dimension(0)));
   for (size_t ii = 0; ii < tps.size(); ii++) {
     if ((tps[ii] < 0) || (tps[ii] >= basis.dimension(0))) {
-      Log::Fail(
-        FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(0));
+      Log::Fail(FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(0));
     }
     Log::Print(FMT_STRING("Blending timepoint {}"), tps[ii]);
     R1 const b = basis.chip<0>(tps[ii]) * scale;

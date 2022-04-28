@@ -9,8 +9,7 @@ int main_nii(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "INPUT", "Input h5 file");
   args::Positional<std::string> oname(parser, "OUTPUT", "Output nii file");
   args::Flag mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
-  args::ValueFlag<std::string> dset(
-    parser, "D", "Dataset name (default image)", {'d', "dset"}, "image");
+  args::ValueFlag<std::string> dset(parser, "D", "Dataset name (default image)", {'d', "dset"}, "image");
   args::ValueFlag<Index> frameArg(parser, "E", "Frame (default all)", {'e', "frame"}, 0);
   args::ValueFlag<Index> volArg(parser, "V", "Volume (default all)", {"volume"}, 0);
   ParseCommand(parser, iname);

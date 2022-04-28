@@ -9,6 +9,12 @@
 
 namespace SDC {
 
+Opts::Opts(args::Subparser &parser)
+  : type(parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipenn")
+  , pow(parser, "P", "SDC Power (default 1.0)", {"sdcPow"}, 1.0f)
+{
+}
+
 R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its)
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
@@ -24,18 +30,15 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   if (nn) {
     k = std::make_unique<NearestNeighbour>();
     auto const m = traj.mapping(1, os, 1);
-    gridder =
-      std::make_unique<Grid<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false);
+    gridder = std::make_unique<Grid<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false);
   } else {
     auto const m = traj.mapping(3, os);
     if (info.type == Info::Type::ThreeD) {
       k = std::make_unique<PipeSDC<5, 5>>(os);
-      gridder =
-        std::make_unique<Grid<5, 5>>(dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false);
+      gridder = std::make_unique<Grid<5, 5>>(dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false);
     } else {
       k = std::make_unique<PipeSDC<5, 1>>(os);
-      gridder =
-        std::make_unique<Grid<5, 1>>(dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false);
+      gridder = std::make_unique<Grid<5, 1>>(dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false);
     }
   }
   gridder->doNotWeightFrames();
@@ -100,8 +103,8 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 
   Eigen::ArrayXf mergeLo;
   if (lores) {
-    float const scale = traj.point(info.read_points - 1, lores, 1.f).norm() /
-                        traj.point(info.read_points - 1, 0, 1.f).norm();
+    float const scale =
+      traj.point(info.read_points - 1, lores, 1.f).norm() / traj.point(info.read_points - 1, 0, 1.f).norm();
     mergeLo = ind / scale - (gap - 1);
     mergeLo = (mergeLo > 0).select(mergeLo, 0);
     mergeLo = (mergeLo < 1).select(mergeLo, 1);
@@ -135,8 +138,7 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
   R2 sdc(info.read_points, info.spokes);
   if (lores) {
     R1 const ss = spoke_sdc(0, lores);
-    sdc.slice(Sz2{0, 0}, Sz2{info.read_points, lores}) =
-      ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, lores});
+    sdc.slice(Sz2{0, 0}, Sz2{info.read_points, lores}) = ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, lores});
   }
   R1 const ss = spoke_sdc(lores, info.spokes - lores);
   sdc.slice(Sz2{0, lores}, Sz2{info.read_points, info.spokes - lores}) =
@@ -155,10 +157,10 @@ R2 Radial(Trajectory const &traj, Index const lores, Index const gap)
   }
 }
 
-std::unique_ptr<SDCOp>
-Choose(std::string const &iname, Trajectory const &traj, float const os, float const p)
+std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os)
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);
+  auto const iname = opts.type.Get();
   if (iname == "") {
     Log::Print(FMT_STRING("Using no density compensation"));
     return nullptr;
@@ -182,7 +184,7 @@ Choose(std::string const &iname, Trajectory const &traj, float const os, float c
         trajInfo.spokes);
     }
   }
-  return std::make_unique<SDCOp>(sdc.pow(p), traj.info().channels);
+  return std::make_unique<SDCOp>(sdc.pow(opts.pow.Get()), traj.info().channels);
 }
 
 } // namespace SDC

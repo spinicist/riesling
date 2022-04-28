@@ -27,8 +27,8 @@ TEST_CASE("ops-nufft")
   auto const nn = make_kernel("NN", info.type, os);
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
-  auto const sdc = SDC::Choose("pipenn", traj, os);
-  auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get(), sdc.get());
+  SDCOp sdc(SDC::Pipe(traj, true, os), info.channels);
+  auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get(), &sdc);
   nufft.calcToeplitz();
   auto const dims = nufft.inputDimensions();
   Cx5 x(dims), y(dims);

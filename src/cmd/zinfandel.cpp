@@ -12,8 +12,7 @@
 
 int main_zinfandel(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT FILE", "Input radial k-space to fill");
-  args::ValueFlag<std::string> oname(parser, "OUTPUT NAME", "Name of output .h5 file", {"out", 'o'});
+  CoreOpts core(parser);
 
   args::ValueFlag<Index> gap(parser, "G", "Set gap value (default 2)", {'g', "gap"}, 2);
 
@@ -24,8 +23,6 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<float> gλ(parser, "L", "Tikhonov regularization (default 0)", {"lamda"}, 0.f);
 
   // SLR options
-  args::ValueFlag<float> osamp(parser, "OS", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  args::ValueFlag<std::string> ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");
   args::ValueFlag<float> res(parser, "R", "Resolution for SLR (default 20mm)", {'r', "res"}, 20.f);
 
   args::ValueFlag<Index> iits(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
@@ -37,9 +34,9 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<float> winSz(parser, "T", "SLR normalized window size (default 1.5)", {"win-size"}, 1.5f);
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 4)", {"kernel-size"}, 4);
 
-  ParseCommand(parser, iname);
+  ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(iname.Get());
+  HD5::RieslingReader reader(core.iname.Get());
   auto const traj = reader.trajectory();
   auto info = traj.info();
   auto out_info = info;
@@ -54,11 +51,11 @@ int main_zinfandel(args::Subparser &parser)
     }
   } else {
     // Use SLR
-    auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+    auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
     auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
     auto const dsInfo = dsTraj.info();
-    auto const map0 = dsTraj.mapping(kernel->inPlane(), osamp.Get(), 0, 0);
-    auto const mapN = dsTraj.mapping(kernel->inPlane(), osamp.Get(), 0, gap.Get());
+    auto const map0 = dsTraj.mapping(kernel->inPlane(), core.osamp.Get(), 0, 0);
+    auto const mapN = dsTraj.mapping(kernel->inPlane(), core.osamp.Get(), 0, gap.Get());
     auto grid0 = make_grid(kernel.get(), map0, false);
     auto gridN = make_grid(kernel.get(), mapN, false);
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
@@ -78,7 +75,7 @@ int main_zinfandel(args::Subparser &parser)
     }
   }
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "zinfandel", "h5"));
+  HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "zinfandel", "h5"));
   writer.writeTrajectory(Trajectory(out_info, traj.points()));
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(rad_ks, HD5::Keys::Noncartesian);

@@ -27,7 +27,7 @@ TEST_CASE("ops-grid")
   auto const nn = make_kernel("NN", info.type, os);
   auto const m1 = traj.mapping(1, os);
   auto grid = make_grid(nn.get(), m1, false);
-  auto const sdc = SDC::Choose("pipenn", traj, os);
+  SDCOp sdc(SDC::Pipe(traj, true, os), info.channels);
   auto const dims = grid->inputDimensions();
   Cx5 x(dims), y(dims);
 
@@ -42,7 +42,7 @@ TEST_CASE("ops-grid")
   SECTION("SDC-Full")
   {
     x.setRandom();
-    y = grid->Adj(sdc->Adj(grid->A(x)));
+    y = grid->Adj(sdc.Adj(grid->A(x)));
     auto const xy = Dot(x, y);
     auto const yy = Dot(y, y);
     CHECK(std::abs((yy - xy) / (yy + xy + 1.e-15f)) == Approx(0).margin(1.e-6));

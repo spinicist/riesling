@@ -15,8 +15,7 @@ int main_reg(args::Subparser &parser)
   args::Flag llr(parser, "", "Apply sliding-window Locally Low-Rank reg", {"llr"});
   args::Flag llrPatch(parser, "", "Apply patch-based Locally Low-Rank reg", {"llr-patch"});
   args::Flag slr(parser, "", "Apply Structured Low Rank to channel images", {"slr"});
-  args::ValueFlag<float> lambda(
-    parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
+  args::ValueFlag<float> lambda(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
   ParseCommand(parser);
 

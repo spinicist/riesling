@@ -51,29 +51,22 @@ int main_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::MapFlag<std::string, Sequence> seq(
-    parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
+  args::MapFlag<std::string, Sequence> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
   args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "spokes"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
   args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.01f);
   args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.012f);
-  args::ValueFlag<float> TI(
-    parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.45f);
-  args::ValueFlag<float> Trec(
-    parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
+  args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.45f);
+  args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
   args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
 
-  args::ValueFlag<Index> nsamp(
-    parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
-  args::ValueFlag<Index> subsamp(
-    parser, "S", "Subsample dictionary for SVD step (saves time)", {"subsamp"}, 1);
-  args::ValueFlag<float> thresh(
-    parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
-  args::ValueFlag<Index> nBasis(
-    parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
+  args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
+  args::ValueFlag<Index> subsamp(parser, "S", "Subsample dictionary for SVD step (saves time)", {"subsamp"}, 1);
+  args::ValueFlag<float> thresh(parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
+  args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
   args::Flag varimax(parser, "V", "Apply varimax rotation", {"varimax"});
 
   ParseCommand(parser);
@@ -114,8 +107,7 @@ int main_sim(args::Subparser &parser)
 
   // Calculate SVD - observations are in rows
   Log::Print("Calculating SVD {}x{}", dynamics.cols() / subsamp.Get(), dynamics.rows());
-  auto const svd =
-    SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics);
+  auto const svd = SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics);
 
   float const nullThresh = svd.vals[0] * std::numeric_limits<float>::epsilon();
   Index const nullCount = (svd.vals > nullThresh).count();
@@ -130,8 +122,7 @@ int main_sim(args::Subparser &parser)
   } else {
     nRetain = (cumsum < thresh.Get()).count();
   }
-  Log::Print(
-    "Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
+  Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
   // Scale and flip the basis vectors to always have a positive first element for stability
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
   flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
@@ -149,9 +140,8 @@ int main_sim(args::Subparser &parser)
     for (Index ii = 0; ii < q; ii++) {
       float const d_old = d;
       Eigen::MatrixXf const λ = basis * R;
-      Eigen::MatrixXf const x =
-        basis.transpose() * (λ.array().pow(3.f).matrix() -
-                             (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
+      Eigen::MatrixXf const x = basis.transpose() * (λ.array().pow(3.f).matrix() -
+                                                     (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
       auto const svdv = SVD<float>(x);
       R = svdv.U * svdv.V.adjoint();
       d = svdv.vals.sum();

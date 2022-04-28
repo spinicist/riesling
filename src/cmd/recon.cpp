@@ -14,17 +14,18 @@
 
 int main_recon(args::Subparser &parser)
 {
-  COMMON_RECON_ARGS;
+  CoreOpts core(parser);
+  ExtraOpts extra(parser);
+  SDC::Opts sdcOpts(parser);
   COMMON_SENSE_ARGS;
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
   args::Flag fwd(parser, "F", "Apply forward operation", {"fwd"});
   args::ValueFlag<std::string> trajName(parser, "T", "Override trajectory", {"traj"});
-  args::ValueFlag<std::string> basisFile(
-    parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
+  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
-  ParseCommand(parser, iname);
+  ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(iname.Get());
+  HD5::RieslingReader reader(core.iname.Get());
   Trajectory traj;
   if (trajName) {
     HD5::RieslingReader trajReader(trajName.Get());
@@ -34,15 +35,15 @@ int main_recon(args::Subparser &parser)
   }
   Info const &info = traj.info();
 
-  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, fastgrid);
-  auto const sdc = SDC::Choose(sdcType.Get(), traj, osamp.Get(), sdcPow.Get());
+  auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
+  auto gridder = make_grid(kernel.get(), mapping, core.fast);
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   std::unique_ptr<GridBase> bgridder = nullptr;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    bgridder = make_grid_basis(kernel.get(), mapping, basis, fastgrid);
+    bgridder = make_grid_basis(kernel.get(), mapping, basis, core.fast);
   }
 
   std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;
@@ -52,7 +53,7 @@ int main_recon(args::Subparser &parser)
     if (fwd) {
       Log::Fail("RSS is not compatible with forward Recon Op");
     }
-    Cropper crop(info, gridder->mapping().cartDims, iter_fov.Get()); // To get correct dims
+    Cropper crop(info, gridder->mapping().cartDims, extra.iter_fov.Get()); // To get correct dims
     recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size(), sdc.get());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
@@ -60,7 +61,7 @@ int main_recon(args::Subparser &parser)
       sFile.Get(),
       info,
       gridder.get(),
-      iter_fov.Get(),
+      extra.iter_fov.Get(),
       sRes.Get(),
       sReg.Get(),
       sdc.get(),
@@ -68,7 +69,7 @@ int main_recon(args::Subparser &parser)
     recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps, sdc.get());
     sz = std::get<ReconOp>(recon).inputDimensions();
   }
-  Cropper out_cropper(info, LastN<3>(sz), out_fov.Get());
+  Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());
   Sz3 outSz = out_cropper.size();
 
   if (fwd) {
@@ -83,7 +84,7 @@ int main_recon(args::Subparser &parser)
       kspace.chip<3>(iv) = std::get<ReconOp>(recon).A(padded);
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-    auto const fname = OutName(iname.Get(), oname.Get(), "recon", "h5");
+    auto const fname = OutName(core.iname.Get(), core.oname.Get(), "recon", "h5");
     HD5::Writer writer(fname);
     writer.writeTrajectory(traj);
     writer.writeTensor(kspace, HD5::Keys::Noncartesian);
@@ -102,7 +103,7 @@ int main_recon(args::Subparser &parser)
       out.chip<4>(iv) = cropped;
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-    auto const fname = OutName(iname.Get(), oname.Get(), "recon", "h5");
+    auto const fname = OutName(core.iname.Get(), core.oname.Get(), "recon", "h5");
     HD5::Writer writer(fname);
     writer.writeTrajectory(traj);
     writer.writeTensor(out, HD5::Keys::Image);

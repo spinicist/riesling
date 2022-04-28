@@ -3,8 +3,8 @@
 #include "tensorOps.h"
 #include "threads.h"
 #include <algorithm>
-#include <filesystem>
 #include <cstdlib>
+#include <filesystem>
 #include <fmt/format.h>
 #include <scn/scn.h>
 
@@ -13,17 +13,12 @@ std::unordered_map<int, Log::Level> levelMap{
   {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Progress}, {3, Log::Level::Debug}};
 }
 
-void Vector3fReader::operator()(
-  std::string const &name, std::string const &value, Eigen::Vector3f &v)
+void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
   float x, y, z;
   auto result = scn::scan(value, "{},{},{}", x, y, z);
   if (!result) {
-    Log::Fail(
-      FMT_STRING("Could not read vector for {} from value {} because {}"),
-      name,
-      value,
-      result.error());
+    Log::Fail(FMT_STRING("Could not read vector for {} from value {} because {}"), name, value, result.error());
   }
   v.x() = x;
   v.y() = y;
@@ -31,8 +26,7 @@ void Vector3fReader::operator()(
 }
 
 template <typename T>
-void VectorReader<T>::operator()(
-  std::string const &name, std::string const &input, std::vector<T> &values)
+void VectorReader<T>::operator()(std::string const &name, std::string const &input, std::vector<T> &values)
 {
   T val;
   auto result = scn::scan(input, "{}", val);
@@ -71,11 +65,26 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
   v = Sz3{i, j, k};
 }
 
+CoreOpts::CoreOpts(args::Subparser &parser)
+  : iname(parser, "FILE", "Input HD5 file")
+  , oname(parser, "OUTPUT", "Override output name", {'o', "out"})
+  , ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "FI3")
+  , osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
+  , fast(parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'})
+{
+}
+
+ExtraOpts::ExtraOpts(args::Subparser &parser)
+  : iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256)
+  , out_fov(parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
+  , mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'})
+{
+}
+
 args::Group global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
 args::Flag verbose(global_group, "V", "Print logging messages to stdout", {'v', "verbose"});
-args::MapFlag<int, Log::Level>
-  verbosity(global_group, "V", "Talk more (values 0-3)", {"verbosity"}, levelMap);
+args::MapFlag<int, Log::Level> verbosity(global_group, "V", "Talk more (values 0-3)", {"verbosity"}, levelMap);
 args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
 args::ValueFlag<Index> nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
@@ -92,10 +101,10 @@ void SetLogging()
   if (debug) {
     Log::SetDebugFile(debug.Get());
   }
-
 }
 
-void SetThreadCount() {
+void SetThreadCount()
+{
   if (nthreads) {
     Threads::SetGlobalThreadCount(nthreads.Get());
   } else if (char *const env_p = std::getenv("RL_THREADS")) {
@@ -122,11 +131,8 @@ void ParseCommand(args::Subparser &parser)
   SetThreadCount();
 }
 
-std::string OutName(
-  std::string const &iName,
-  std::string const &oName,
-  std::string const &suffix,
-  std::string const &extension)
+std::string
+OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
 {
   return fmt::format(
     FMT_STRING("{}-{}.{}"),

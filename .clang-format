@@ -23,4 +23,4 @@ AlwaysBreakTemplateDeclarations: true
 AllowShortFunctionsOnASingleLine: Empty
 AlignAfterOpenBracket: AlwaysBreak
 BreakConstructorInitializers: BeforeComma
-ColumnLimit: 128
+ColumnLimit: 120
