@@ -27,7 +27,7 @@ int main_grid(args::Subparser &parser)
   auto const start = Log::Now();
   if (adjoint) {
     auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-    writer.writeTensor(gridder->Adj(sdc->Adj(reader.noncartesian(0))), "cartesian");
+    writer.writeTensor(gridder->Adj(sdc->Adj(reader.noncartesian(0))), HD5::Keys::Cartesian);
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
     rad_ks = gridder->A(reader.readTensor<Cx5>(HD5::Keys::Cartesian));

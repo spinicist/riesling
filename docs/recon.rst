@@ -47,10 +47,6 @@ The final image quality depends a great deal on the choice of optimizer and para
 
     Set the output FOV (override the matrix/voxel-size in the header info), and set the FOV used during iterations. As part of the pipeline the images are cropped to a region slightly larger than the output FOV, this helps stabilize the maths. The default value is 256 mm, for body reconstructions a larger value may be required.
 
-* ``--mag``
-
-    Output magnitude value images at the end instead of complex.
-
 * ``--basis=basis.h5``
 
     RIESLING supports sub-space reconstruction using the specified basis vectors.

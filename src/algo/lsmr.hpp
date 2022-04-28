@@ -238,8 +238,7 @@ typename Op::Input lsmr(
       break;
     }
     if ((normar / (normA * normr)) <= atol) {
-      Log::Print(
-        FMT_STRING("Least-squares = {:5.3E} < atol = {:5.3E}"), normar / (normA * normr), atol);
+      Log::Print(FMT_STRING("Least-squares = {:5.3E} < atol = {:5.3E}"), normar / (normA * normr), atol);
       break;
     }
 

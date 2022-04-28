@@ -17,7 +17,7 @@ int main_recon(args::Subparser &parser)
   CoreOpts core(parser);
   ExtraOpts extra(parser);
   SDC::Opts sdcOpts(parser);
-  COMMON_SENSE_ARGS;
+  SENSE::Opts senseOpts(parser);
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
   args::Flag fwd(parser, "F", "Apply forward operation", {"fwd"});
   args::ValueFlag<std::string> trajName(parser, "T", "Override trajectory", {"traj"});
@@ -57,15 +57,7 @@ int main_recon(args::Subparser &parser)
     recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size(), sdc.get());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
-    Cx4 senseMaps = SENSE::Choose(
-      sFile.Get(),
-      info,
-      gridder.get(),
-      extra.iter_fov.Get(),
-      sRes.Get(),
-      sReg.Get(),
-      sdc.get(),
-      reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+    Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
     recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps, sdc.get());
     sz = std::get<ReconOp>(recon).inputDimensions();
   }

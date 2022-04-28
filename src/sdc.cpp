@@ -3,6 +3,7 @@
 #include "io/io.h"
 #include "kernel.hpp"
 #include "op/grid.hpp"
+#include "op/sdc.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include "trajectory.h"
@@ -11,7 +12,7 @@ namespace SDC {
 
 Opts::Opts(args::Subparser &parser)
   : type(parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipenn")
-  , pow(parser, "P", "SDC Power (default 1.0)", {"sdcPow"}, 1.0f)
+  , pow(parser, "P", "SDC Power (default 1.0)", {"sdc-pow"}, 1.0f)
 {
 }
 
@@ -163,7 +164,8 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os
   auto const iname = opts.type.Get();
   if (iname == "") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return nullptr;
+    auto const info = traj.info();
+    return std::make_unique<SDCOp>(Sz2{info.read_points, info.spokes}, info.channels);
   } else if (iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
     return nullptr;

@@ -32,7 +32,6 @@ int main_nufft(args::Subparser &parser)
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, core.fast);
-
   NUFFTOp nufft(LastN<3>(gridder->inputDimensions()), gridder.get());
   Cx6 channels(AddBack(nufft.inputDimensions(), info.volumes));
   Cx4 noncart(AddBack(nufft.outputDimensions(), info.volumes));

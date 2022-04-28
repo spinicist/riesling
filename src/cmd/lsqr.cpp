@@ -15,7 +15,7 @@ int main_lsqr(args::Subparser &parser)
   CoreOpts core(parser);
   ExtraOpts extra(parser);
   SDC::Opts sdcOpts(parser);
-  COMMON_SENSE_ARGS;
+  SENSE::Opts senseOpts(parser);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
@@ -36,15 +36,7 @@ int main_lsqr(args::Subparser &parser)
 
   std::unique_ptr<Precond<Cx3>> pre = precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(
-    sFile.Get(),
-    info,
-    gridder.get(),
-    extra.iter_fov.Get(),
-    sRes.Get(),
-    sReg.Get(),
-    sdc.get(),
-    reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+  Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());

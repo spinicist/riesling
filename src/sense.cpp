@@ -9,13 +9,16 @@
 
 namespace SENSE {
 
+Opts::Opts(args::Subparser &parser)
+  : file(parser, "F", "Read SENSE maps from .h5", {"sense", 's'})
+  , volume(parser, "V", "SENSE calibration volume", {"sense-vol"}, -1)
+  , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, 12.f)
+  , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
+{
+}
+
 Cx4 SelfCalibration(
-  Info const &info,
-  GridBase *gridder,
-  float const fov,
-  float const res,
-  float const lambda,
-  Cx3 const &data)
+  Info const &info, GridBase *gridder, float const fov, float const res, float const λ, Cx3 const &data)
 {
   Log::Debug(FMT_STRING("*** Self-Calibrated SENSE ***"));
   Sz5 const dims = gridder->inputDimensions();
@@ -38,9 +41,9 @@ Cx4 SelfCalibration(
 
   Cx3 rss = crop.newImage();
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
-  if (lambda) {
-    Log::Print(FMT_STRING("Regularization lambda {}"), lambda);
-    rss.device(Threads::GlobalDevice()) = rss + rss.constant(lambda);
+  if (λ > 0.f) {
+    Log::Print(FMT_STRING("Regularization lambda {}"), λ);
+    rss.device(Threads::GlobalDevice()) = rss + rss.constant(λ);
   }
   Log::Image(rss, "sense-rss");
   Log::Image(channels, "sense-channels");
@@ -78,20 +81,18 @@ Cx4 Interp(std::string const &file, Eigen::Array3l const dims)
   return sense;
 }
 
-Cx4 Choose(
-  std::string const &path,
-  Info const &i,
-  GridBase *g,
-  float const fov,
-  float const res,
-  float const reg,
-  SDCOp *sdc,
-  Cx3 const &data)
+Cx4 Choose(Opts &opts, Info const &i, GridBase *g, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
 {
-  if (path != "") {
-    return Load(path);
+  if (opts.file) {
+    return Load(opts.file.Get());
   } else {
-    return SelfCalibration(i, g, fov, res, reg, sdc ? sdc->Adj(data) : data);
+    return SelfCalibration(
+      i,
+      g,
+      fov,
+      opts.res.Get(),
+      opts.λ.Get(),
+      sdc->Adj(reader.noncartesian(ValOrLast(opts.volume.Get(), reader.trajectory().info().volumes))));
   }
 }
 

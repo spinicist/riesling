@@ -15,15 +15,13 @@ int main_tgv(args::Subparser &parser)
   CoreOpts core(parser);
   ExtraOpts extra(parser);
   SDC::Opts sdcOpts(parser);
-  COMMON_SENSE_ARGS;
-
+  SENSE::Opts senseOpts(parser);
   args::ValueFlag<float> thr(parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max_its"}, 16);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   args::ValueFlag<float> alpha(parser, "ALPHA", "Regularisation weighting (1e-5)", {"alpha"}, 1.e-5f);
   args::ValueFlag<float> reduce(parser, "REDUCE", "Reduce regularisation over iters (suggest 0.1)", {"reduce"}, 1.f);
   args::ValueFlag<float> step_size(parser, "STEP SIZE", "Inverse of step size (default 8)", {"step"}, 8.f);
-
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
@@ -33,15 +31,7 @@ int main_tgv(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, core.fast);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(
-    sFile.Get(),
-    info,
-    gridder.get(),
-    extra.iter_fov.Get(),
-    sRes.Get(),
-    sReg.Get(),
-    sdc.get(),
-    reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+  Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());

@@ -53,5 +53,4 @@ struct ExtraOpts
 {
   ExtraOpts(args::Subparser &parser);
   args::ValueFlag<float> iter_fov, out_fov;
-  args::Flag mag;
 };

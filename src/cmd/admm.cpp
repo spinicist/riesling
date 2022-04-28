@@ -16,7 +16,7 @@ int main_admm(args::Subparser &parser)
   CoreOpts core(parser);
   ExtraOpts extra(parser);
   SDC::Opts sdcOpts(parser);
-  COMMON_SENSE_ARGS;
+  SENSE::Opts senseOpts(parser);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
 
   args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
@@ -43,15 +43,7 @@ int main_admm(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, core.fast);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(
-    sFile.Get(),
-    info,
-    gridder.get(),
-    extra.iter_fov.Get(),
-    sRes.Get(),
-    sReg.Get(),
-    sdc.get(),
-    reader.noncartesian(ValOrLast(sVol.Get(), info.volumes)));
+  Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
   std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
   if (basisFile) {

@@ -11,9 +11,9 @@ int main_sense_calib(args::Subparser &parser)
 {
   CoreOpts core(parser);
   SDC::Opts sdcOpts(parser);
-  args::ValueFlag<Index> sVol(parser, "V", "SENSE calibration volume", {"senseVolume"}, -1);
-  args::ValueFlag<float> sRes(parser, "R", "SENSE calibration res (12 mm)", {"senseRes"}, 12.f);
-  args::ValueFlag<float> sReg(parser, "L", "SENSE regularization", {"senseReg"}, 0.f);
+  args::ValueFlag<Index> volume(parser, "V", "SENSE calibration volume", {"sense-vol"}, -1);
+  args::ValueFlag<float> res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, 12.f);
+  args::ValueFlag<float> λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default 256 mm)", {"fov"}, 256.f);
 
   ParseCommand(parser, core.iname);
@@ -25,9 +25,8 @@ int main_sense_calib(args::Subparser &parser)
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
   auto gridder = make_grid(kernel.get(), mapping, core.fast);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  Cx3 const data = reader.noncartesian(ValOrLast(sVol.Get(), info.volumes));
-  Cx4 sense =
-    SENSE::SelfCalibration(info, gridder.get(), fov.Get(), sRes.Get(), sReg.Get(), sdc ? sdc->Adj(data) : data);
+  Cx3 const data = sdc->Adj(reader.noncartesian(ValOrLast(volume.Get(), info.volumes)));
+  Cx4 sense = SENSE::SelfCalibration(info, gridder.get(), fov.Get(), res.Get(), λ.Get(), data);
 
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);

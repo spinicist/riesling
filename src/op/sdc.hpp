@@ -6,33 +6,43 @@
 struct SDCOp final : Operator<3, 3>
 {
   SDCOp(R2 const &dc, Index const nc)
-    : dc_{dc}
-    , nc_{nc}
+    : dims_{AddFront(dc.dimensions(), nc)}
+    , dc_{dc}
+  {
+  }
+
+  SDCOp(Sz2 const &dims, Index const nc)
+    : dims_{AddFront(dims, nc)}
   {
   }
 
   InputDims inputDimensions() const
   {
-    return AddFront(dc_.dimensions(), nc_);
+    return dims_;
   }
 
   OutputDims outputDimensions() const
   {
-    return AddFront(dc_.dimensions(), nc_);
+    return dims_;
   }
 
   template <typename T>
-  auto Adj(T const &in) const
+  Cx3 Adj(T const &in) const
   {
-    auto const start = Log::Now();
-    auto p =
-      in *
-      dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{nc_, 1, 1});
-    Log::Debug(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
-    return p;
+    if (dc_.size()) {
+      auto const start = Log::Now();
+      Cx3 p(dims_);
+      p.device(Threads::GlobalDevice()) =
+        in * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims_[0], 1, 1});
+      Log::Debug(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
+      return p;
+    } else {
+      Log::Debug(FMT_STRING("No SDC"));
+      return in;
+    }
   }
 
 private:
+  Sz3 dims_;
   R2 dc_;
-  Index nc_;
 };
