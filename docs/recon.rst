@@ -1,50 +1,184 @@
 Reconstruction
 ==============
 
-There are currently three different reconstruction commands provided in RIESLING - ``recon``, ``cg`` and ``tgv``. More may be added in future.
+This page details the reconstruction commands in RIESLING:
+* `recon`
+* `cg`
+* `lsqr`
+* `admm`
+* `tgv`
+These commands combine the operations in :doc:`op` into a pipeline, and then use a specific optimizer to solve the reconstruction problem.
 
-Non-iterative
--------------
+The final image quality depends a great deal on the choice of optimizer and parameters. What works well for one particular problem may not work for another. However, at the time of writing, the ``lsqr`` method is the favourite of the authors (above ``cg``). ``lsqr`` solves the reconstruction problem :raw-latex:`y=Ex` in a least-squares sense directly, instead of solving the normal equations :raw-latex:`E^{\dagger}y=E^{\dagger}Ex`. This allows the use of correct k-space pre-conditioning instead of sample density compensation, which gives fast convergence without inflating noise.
 
-The ``recon`` command provides basic non-iterative reconstructions. This is useful when you want to run a quick reconstruction to ensure that the data file is in the correct format, but is unlikely to yield optimal image quality. However it will be useful to describe some of the command options here, because they are shared with ``cg`` and ``tgv``.
+*Shared Options*
 
-By default ``recon`` will output complex-valued images in ``.h5`` format that have been combined using channel sensitivities extracted from the scan. If you are only interested in the magnitude images, add ``--mag`` to the command-line. If you only want a root-sum-squares reconstruction, add ``--rss``. If you would like NIFTI images as output, add ``--oft=nii``.
+* ``--kernel=NN,KB3,KB5,FI3,FI5``
 
-Non-cartesian MRI data requires a Non-Uniform FFT (NUFFT) instead of a simple FFT for conversion between k-space and image space. The NUFFT consists of a gridding step and then a normal FFT [1, 2]. The gridding step in RIESLING is controlled by the oversampling and kernel options.
+    Choose the gridding kernel. Valid options are NN (see `C. Oesterle, M. Markl, R. Strecker, F. M. Kraemer, and J. Hennig, ‘Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems’, Journal of Magnetic Resonance Imaging, vol. 10, no. 1, pp. 84–92, Jul. 1999 <http://doi.wiley.com/10.1002/%28SICI%291522-2586%28199907%2910%3A1%3C84%3A%3AAID-JMRI12%3E3.0.CO%3B2-D>`), KB3 & KB5 (Kaiser-Bessel, see `P. J. Beatty, D. G. Nishimura, and J. M. Pauly, ‘Rapid gridding reconstruction with a minimal oversampling ratio’, IEEE Transactions on Medical Imaging, vol. 24, no. 6, pp. 799–808, Jun. 2005 <http://ieeexplore.ieee.org/document/1435541/>`), and FI3 & FI5 (see `A. H. Barnett, ‘Aliasing error of the exp ⁡ ( β 1 − z 2 ) kernel in the nonuniform fast Fourier transform’, Applied and Computational Harmonic Analysis, vol. 51, pp. 1–16, Mar. 2021 <https://linkinghub.elsevier.com/retrieve/pii/S1063520320300725>`). The numbers after KB/FI refer to the width of the kernel. The default is FI3, the Flat-Iron kernel is marginally faster than the usual Kaiser-Bessel and gives comparable results.
 
-``--os=X`` controls the grid oversampling ratio. The default value is 2, but this is very memory intensive (as it is a 3D grid, 2x oversampling requires 8 times the memory of the native matrix size). Reducing the over-sampling to a value of 1.3 leads to a reduced memory foot-print for little impact in image quality [3]. However, oversampling factors below 2 do not work with Töplitz embedding.
+* ``--osamp=S``
 
-``--kernel=KB3`` selects a width 3 Kaiser-Bessel (KB) kernel instead of the default nearest-neighbour (NN)kernel [3, 4]. Kaiser-Bessel is the default in most other toolboxes and may become the default in RIESLING in the future. KB5 is also available.
+    Grid oversampling factor, default 2. In certain situations, namely non-iterative reconstruction and the entire object contained within the FOV, it is possible to reduce this below 2 (see the Beatty paper linked above). For iterative reconstruction, it is generally best to leave this at 2. When using Töplitz embedding it is required that the grid be at least twice the size of the region of support.
 
-The final gridding option is ``--fast-grid``. RIESLING uses a parallelized gridding operation. In order to avoid multiple threads writing to the same Cartesian k-space point, the trajectory is sorted by Cartesian k-space location and each thread processes its own chunk of the sorted co-ordinates. However, there may still be race conditions at the edge of each chunk, particularly for small images with highly oversampled k-space centers. To prevent this, each thread uses its own workspace, and then these are combined into the final grid at the end. This process is thread-safe but doubles the memory requirements for the gridding operations. The ``--fast-grid`` option makes the threads write directly into the final grid, reducing memory consumption but at the risk of conflicting writes into the grid. When gridding high resolution images on a small number of threads, e.g. 10 or fewer, the probability of a race condition is vanishingly small. Use at your own risk.
+* ``--fast-grid``
 
-The gridding step can also compensate for the increased density of samples in the oversampled central k-space region with most non-Cartesian trajectories. This step is often omitted in 2D non-Cartesian iterative reconstructions, but is essential for reasonable convergence in 3D non-Cartesian reconstruction. The ``--sdc`` option controls the sample density compensation method - valid values are "none" to turn it off, "pipe" for the iterative method of Pipe et al [5], and "pipenn" for an approximate but fast version of the Pipe method. In the ``riesling sdc`` command analytic radial weights are also available. The default is "pipenn". It is also possible to pre-calculate the densities of a given trajectory using the ``riesling sdc`` command and then pass in the resulting file, i.e. ``--sdc=file-sdc.h5``. The weighting of the compensation can be reduced using the ``--sdcPow`` option - the power is applied to all k-space densities equally and values between 0 and 1 make sense.
+    The gridding in RIESLING is multi-threaded. To prevent conflicting writes during the adjoint gridding step, each thread writes to a local grid. This increases memory costs by a factor of two, which can be prohibitive for large 3D reconstructions. This option allows threads to write directly to the final grid, at the risk of conflicting writes (memory races). In the typical case of a large grid and a handful of threads, the chances of a conflicting write actually happening are vanishingly small. The impact of such a conflict is a slight error in the gridded k-space. Use at your own risk.
 
-Due to the oversampled central region in most non-Cartesian trajectories reasonable channel sensitivities can be extracted directly from the data. This is the default option. Tikhonov regularization can be applied to the sensitivities using the ``--lambda`` option (the value should be approximately the same as the background noise in the ``--rss`` reconstruction). In a multi-volume reconstruction, the sensitivities are taken from the last volume by default but can be specified using ``--senseVolume``, or can be taken from an external file using ``--sense``.
+* ``--sense=file.h5``
 
-You can apply a basic Tukey filter to the final image k-space using ``--tukey_start``, ``--tukey_end`` and ``--tukey_height``. The start and end are defined as the fractional radius in k-space, i.e. 0.5 and 1. The height option is specified at the end radius and should be between 0 (heavy filtering) and 1 (no filtering). Finally, if you want to expand (or contract) the field-of-view of an image, for instance with a read-oversampled acquisition, then use the ``--fov`` option.
+    Read SENSE maps from the specified file. The dimensions of the SENSE maps must match the reconstruction grid size.
 
-Iterative
----------
+* ``--sense-vol=V, --sense-res=R, --sense-lambda=L`
 
-The workhorse reconstruction tool in RIESLING is ``cg``, which runs an un-regularized cgSENSE reconstruction. For speed RIESLING uses a Töplitz embedding strategy [6]. This uses the gridding method to calculate the k-space transfer function on the Cartesian grid. After the initial gridding from non-Cartesian to Cartesian grid, each iteration only requires SENSE combination/expansion, the forwards/reverse FFT, and a multiplication of Cartesian k-space by the transfer function.
+    Choose the volume, effective resolution and regularization for generating SENSE maps. See :doc:`util` for more information.
 
-The additional options added for ``cg`` control the iterations strategy. ``--max_its`` specifies the maximum number of iterations. cgSENSE image quality often benefits from early stopping of the iterations, which is an implicit form of regularization as it prevents the algorithm from over-fitting noise. The default value is 8, with correct density compensation reasonable images can often be obtained in only 4. You can also specify a threshold to terminate the iterations using ``--thresh``. The default value is 1e-10 which is very strict and rarely reached. Values of ``1e-3`` or so would lead to early stopping.
+* ``--sdc=none,pipe,pipenn,file.h5``
 
-Finally, ``cg`` adds an additional ``--iter_fov`` option which controls the field-of-view cropping used during the iterations. This needs to be larger than the final FOV to avoid aliasing and edge effects. The default value is 256 mm which is sufficient for most brain reconstructions. Note that if you pre-compute sensitivities, their FOV must match this value.
+    Choose the Sample Density Compensation method. Will also be applied to generated SENSE maps.
 
-The ``riesling admm`` command uses the Alternating Directions Method-of-Multipliers, also known as an Augmented Lagrangian method, to add regularizers to the cgSENSE method. Currently the only regularizer available is Locally Low-Rank. Additional options are available to: control the number of outer iterations ``--admm_its``, the regularization strength ``--reg``, the patch size for LLR ``--patch``, and how tightly coupled the regularizer and data-fidelity terms are ``--rho`` [7].
+* ``--sdc-pow=P``
 
-The ``tgv`` command uses Total Generalized Variation regularization to improve image quality [8]. It uses a different optimization algorithm to ``cg`` which is noticeable slower, but still reasonable. It adds three more options. ``--alpha`` controls the initial regularization level. The default is 1e-5, better results can often be obtained with 2e-5. ``--reduce`` will reduce the regularization over the course of the iterations, which can prevent over-smoothing. ``--step`` controls the gradient-descent step size and is specified as an inverse, i.e. a value of 8 results in a step-size of 1/8th the gradient. Smaller values (larger step sizes) give faster convergence but can lead to artefacts.
+    Apply the SDC power trick from `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, <http://doi.wiley.com/10.1002/mrm.26928>`.
 
-References
-----------
+* ``--fov=F``, ``--iter-fov=F``
 
-1. Pruessmann, K. P., Weiger, M., Börnert, P. & Boesiger, P. Advances in sensitivity encoding with arbitrary k-space trajectories. Magn. Reson. Med. 46, 638–651 (2001).
-2. JI Jackson, C. H. Meyer, D. G. Nishimura, and A. Macovski, ‘Selection of a convolution function for Fourier inversion using gridding (computerised tomography application)’, IEEE Transactions on Medical Imaging, vol. 10, no. 3, pp. 473–478, Sep. 1991, doi: 10.1109/42.97598.
-3. Beatty, P. J., Nishimura, D. G. & Pauly, J. M. Rapid gridding reconstruction with a minimal oversampling ratio. IEEE Transactions on Medical Imaging 24, 799–808 (2005).
-4. Oesterle, C., Markl, M., Strecker, R., Kraemer, F. M. & Hennig, J. Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems. Journal of Magnetic Resonance Imaging 10, 84–92 (1999).
-5. Zwart, N. R., Johnson, K. O. & Pipe, J. G. Efficient sample density estimation by combining gridding and an optimized kernel: Efficient Sample Density Estimation. Magn. Reson. Med. 67, 701–710 (2012).
-6. CA Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, doi: 10.1002/mrm.26928.
-7. J. I. Tamir et al., ‘T2 shuffling: Sharp, multicontrast, volumetric fast spin‐echo imaging’, vol. 77, pp. 180–195, 2017.
-8. Knoll, F., Bredies, K., Pock, T. & Stollberger, R. Second order total generalized variation (TGV) for MRI. Magnetic Resonance in Medicine 65, 480–491 (2011).
+    Set the output FOV (override the matrix/voxel-size in the header info), and set the FOV used during iterations. As part of the pipeline the images are cropped to a region slightly larger than the output FOV, this helps stabilize the maths. The default value is 256 mm, for body reconstructions a larger value may be required.
+
+* ``--mag``
+
+    Output magnitude value images at the end instead of complex.
+
+* ``--basis=basis.h5``
+
+    RIESLING supports sub-space reconstruction using the specified basis vectors.
+
+*Output*
+
+All reconstruction commands will output a file titled ``file-command.h5`` where ``command`` is the name of the particular command. This will contain the final ``image`` dataset. It will also contain the trajectory and header-information in case you wish to sample the image back to k-space.
+
+recon
+-----
+
+The ``recon`` command provides basic non-iterative reconstructions. This is useful when you want to run a quick reconstruction to ensure that the data file is in the correct format, but is unlikely to yield optimal image quality.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling recon file.h5 --rss
+
+*Important Options*
+
+* ``--rss``
+
+    Apply a root-sum-squares channel combination. Do not generate or use SENSE maps.
+
+* ``--fwd``
+
+    Apply the forward operation, i.e. sample through to non-cartesian k-space. Requires SENSE maps to be supplied.
+
+cg
+--
+
+Uses the conjugate-gradients optimizer as described in `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling cg file.h5 --toe --max-its=N
+
+*Important Options*
+
+* ``--toe``
+
+    Use Töplitz embedding as described in `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018, <http://doi.wiley.com/10.1002/mrm.26928>`. If this option is used, the reconstruction grid must be at least twice as large as the true region of support of your image. This means that if your acquisition FOV did not completely include the object, you likely need to increase ``--osamp`` beyond 2. This option skips the gridding step during iterations by calculating a transfer function, hence only requiring a Fourier Transform to cartesian k-space.
+
+* ``--thresh=T``, ``--max-its=N``
+
+    Termination conditions. The threshold is applied to the normalized residual. With Density Compensation, reasonable quality images can be obtained in around 8 iterations.
+
+lsqr
+----
+
+As described above, ``lsqr`` is an algorithm for solving non-square systems of equations without forming the normal equations. This keeps the condition number low, and allows correct pre-conditioning to be applied in k-space. However, it cannot use Töplitz embedding. This means that individual iterations are slower, but typically fewer of them are needed to reach convergence compared to ``cg``.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling lsqr file.h5 --pre --atol=1e-4 --sdc=none
+
+*Important Options*
+
+* ``--pre``
+
+    Use Ong's single-channel pre-conditioner (see `F. Ong, M. Uecker, and M. Lustig, ‘Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’, IEEE Trans. Med. Imaging, vol. 39, no. 5, pp. 1646–1654, May 2020, <https://ieeexplore.ieee.org/document/8906069/>`). Highly recommended, likely to become the default.
+
+* ``--sdc=none``
+
+    If using Ong's preconditioner you should switch SDC off. How these arguments are structured is likely to change in a future version.
+
+* ``--atol=A``, ``--btol=B``
+
+    Termination conditions. Determine the absolute and relative residual sizes for termination.
+
+* ``--lambda=L``
+
+    Tikohonov regularization parameter for the reconstruction problem (not for the SENSE maps). Doesn't seem to help much.
+
+admm
+----
+
+Uses the Alternating Directions Method-of-Multipliers, also known as an Augmented Lagrangian method, to add a regularizer to the reconstruction problem. Currently the only regularizer available is Locally Low-Rank, which is only useful when reconstructing a multi-frame / basis dataset. By default the inner optimizer is LSQR. See `J. I. Tamir et al., ‘T2 shuffling: Sharp, multicontrast, volumetric fast spin‐echo imaging’, vol. 77, pp. 180–195, 2017 <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling admm file.h5 --basis=basis.h5 --pre --sdc=none --rho=1.0 --lambda=0.1
+
+*Important Options*
+
+* ``--pre``
+
+    Use pre-conditioning (see ``lsqr`` above).
+
+* ``--cg``
+
+    Use CG instead of LSQR for the inner loop.
+
+* ``--rho=P``
+
+    Coupling factor for ADMM. Values of 1.0 seem to work, and will be adjusted inside the algorithm according to some heuristics if deemed sub-optimal.
+
+* ``--lambda=L``
+
+    Regularization parameter (currently only LLR implemented). See the ``reg`` command in :doc:`util` for further details.
+
+tgv
+---
+
+This command uses Total Generalized Variation regularization to improve image quality. See `Knoll, F., Bredies, K., Pock, T. & Stollberger, R. Second order total generalized variation (TGV) for MRI. Magnetic Resonance in Medicine 65, 480–491 (2011).<http://doi.wiley.com/10.1002/mrm.22595>` It uses a different optimization algorithm to ``admm`` and hence is not implemented there. The regularization only applies in the spatial dimensions.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling tgv file.h5 --alpha=2.e-5
+
+*Important Options*
+
+* ``--alpha=N``
+
+    Regularization parameter. 2e-5 seems to be a magic value and should probably be the default.
+
+* ``--step=S``
+
+    Inverse of the gradient descent step-size taken. Smaller values can lead to faster convergence at the risk of oscillations/artefacts.
+
+* ``--reduce=R``
+
+    Reduce the regularization factor by this factor over the iterations. Can prevent over-smoothing. Default is 0.1.
+

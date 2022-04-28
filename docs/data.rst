@@ -1,9 +1,18 @@
 Data Format
 ===========
 
-RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input and intermediate data. Output data is by default written to HDF5 (``.h5``), but optionally can also be output to NiFTI (``.nii``).
+RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input, intermediate and output data. A command is provided to convert the ``.h5`` format to NiFTI (``.nii``).
 
-RIESLING mandates that the non-cartesian data is stored in "spokes", which could equally be called frames or traces. Here we will treat the data as being stored in `S` spokes, with `N` data-points per spoke, and `C` k-space channels.
+RIESLING mandates that the non-cartesian data is stored in "spokes", which could equally be called frames or traces. Here we will treat the data as being stored in `S` spokes, with `N` data-points per spoke, and `C` k-space channels. In RIESLING a "frame" is a collection of spokes that should be reconstructed together - e.g. from a particular echo or position in the cardiac cycle.
+
+**Important** HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then the order of the dimensions given below should be reversed.
+
+In contrast to BART, RIESLING uses named datasets within the ``.h5`` file. The names correspond to the steps in the reconstruction pipeline. The key ones are:
+1. ``noncartesian`` - The noncartesian input k-space data
+2. ``cartesian`` - K-space after the gridding operation to the Cartesian grid
+3. ``channels`` - Separate channel images after Fourier Transfrom to image space
+4. ``image`` - The reconstructed image
+In addition, the header ``info`` and ``trajectory`` are required at all steps. Below are details of each of these.
 
 Header
 ------
@@ -44,35 +53,44 @@ The final four fields specify the TR and image orientation as required to build 
 * ``origin`` The physical-space location of the center of the voxel at index 0,0,0, as per ITK convention.
 * ``direction`` The physical-space axes directions, as per ITK convention.
 
+Non-cartesian Data
+------------------
+
+The non-cartesian data must be stored in a complex-valued float-precision dataset named ``noncartesian`` with dimensions ``V,S,N,C`` where V is the number of volumes. HDF5 does not have a native complex-valued datatype, hence a compound datatype with ``r`` and ``i`` members corresponding to the real and imaginary parts must be used. In contrast to other toolkits RIESLING stores the channels as the fastest-varying index, i.e. the data for each k-space point across all channels is stored contiguously.
+
 Trajectory
 ----------
 
-The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``SxNx3``. HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then this will be ``3xNxS``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial spokes the k-space locations go between 0 and 0.5, and for diameter spokes between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
+The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``S,N,3``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial spokes the k-space locations go between 0 and 0.5, and for diameter spokes between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
+
+The trajectory is assumed to repeat for each volume.
 
 Frames
 ------
 
-If the dataset contains multiple frames, or other temporal points (e.g. echoes or respiratory phases) which should be reconstructed together, then an additional dataset should be added to the input H5 file called ``frames``. This should be a zero-based integer valued, one-dimensional array with the number of entries equal to the number of spokes specified in the ``info`` structure. Each entry specifies the frame that each spoke should be allocated to.
+If the trajectory (and corresponding data) contains multiple frames, e.g. temporal points, echoes or respiratory phases, which logically form separate images, then an additional dataset should be added to the input H5 file called ``frames``. This should be a zero-based integer valued, one-dimensional array with the number of entries equal to the number of spokes specified in the ``info`` structure. Each entry specifies the frame that each spoke should be allocated to.
 
-Non-cartesian Data
-------------------
+The key difference between a frame and a volume is that all frames will have the NuFFT applied simultaneously, i.e. they will be gridded and Fourier Transformed together, whereas volumes will be reconstructed completely separately.
 
-The non-cartesian data itself must be stored in a complex-valued float-precision dataset named ``noncartesian`` with dimensions ``VxSxNxC`` where V is the number of volumes. HDF5 does not have a native complex-valued datatype, hence a compound datatype with a ``r`` and ``i`` members corresponding to the real and imaginary parts must be used. In contrast to other toolkits RIESLING stores the channels as the fastest-varying index, i.e. the data for each k-space point across all channels is stored contiguously.
+Cartesian k-Space
+-----------------
 
-Cartesian Data
+The ``riesling grid --adj`` command will produce a complex-valued dataset named ``cartesian`` containing the gridded cartesian data for all channels. The dimensions will depend on the reconstruction settings (notably the oversampling factor).
+
+Channel Images
 --------------
 
-The ``riesling grid`` command will produce a complex-valued dataset named ``cartesian`` containing the gridded cartesian data for all channels. The dimensions will depend on the reconstruction settings (notably the oversampling factor).
+The ``riesling nufft --adj`` command will produce complex-valued individual channel images in the ``channels`` dataset. The dimensions will be ```GZ,GY,GX,F,C`` where GX, GY & GZ are the grid dimensions (determined by the oversampling factor) and F is the number of frames.
 
 Image Data
 ----------
 
-The output of a reconstruction command will write a complex-valued dataset named ``image``, unless the ``--mag`` command is specified in which case the dataset will be real-valued. The dimensions will be ``VxZxYxXxE`` where V is the number of volumes, X, Y & Z are the matrix size, and E is either the number of frames or the number of basis-vectors if a low-rank reconstruction has been used.
+The output of a reconstruction command will write a complex-valued dataset named ``image``, unless the ``--mag`` command is specified in which case the dataset will be real-valued. The dimensions will be ``V,Z,Y,X,F`` where V is the number of volumes, X, Y & Z are the matrix size as specified in ``info`` (unless the ``--fov`` argument was used), and F is the number of frames.
 
 Density Compensation
 --------------------
 
-``riesling sdc`` pre-calculates Sample Density Correction factors. It produces a real-valued dataset ``sdc`` of dimension ``SxN``.
+``riesling sdc`` pre-calculates Sample Density Correction factors. It produces a real-valued dataset ``sdc`` of dimension ``S,N``.
 
 Meta-Information
 ----------------

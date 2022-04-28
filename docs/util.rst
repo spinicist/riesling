@@ -1,57 +1,399 @@
 Utilities
 =========
 
-RIESLING includes a number of utilities that either implement functionality that is not strictly reconstruction or assist with basic file management.
+RIESLING includes a number of utility commands. These can be broken down into categories.
 
-Sensitivities
--------------
+Basics:
+* `hdr`
+* `meta`
+* `nii`
+* `phantom`
+* `plan`
+* `traj`
 
-Estimating channel sensitivities is a key step in modern reconstruction methods. The ``sense`` command allows you to run the direct sensitivity extraction step that is incorporated into the main reconstruction commands and save the results, either for inspection or for use across multiple images. As described in :doc:`recon`, Tikhonov regularization can be applied with ``--lambda``. You must set the ``--fov`` option to match the FOV that the channels will be combined at - for the iterative recon methods this is equal to the ``--iter_fov`` value, which defaults to 256 mm.
+SENSE maps:
+* `sense-calib`
+* `espirit-calib`
 
-``riesling espirit`` implements the popular ESPIRiT method for estimating channel sensitivities that exploits the correlations between channels in k-space. Important options are ``--kRad``, which sets the initial k-space kernel radius and ``--calRad`` which determines the size of the calibration region. RIESLING defines the calibration region as the cubic region with "radius" of twice the kernel radius plus the calibration radius, i.e. the calibration radius is expanded by the kernel width. The default value is one, or one plus the dead-time gap if the data has a gap. ``--thresh`` defines the threshold for retaining kernels after the first SVD step. Any kernel/singular vector with a singular value (as a fraction of the first singular value) above the threshold will be retained.
+Density Compensation:
+* `sdc`
 
-Pre-calculation
----------------
+Data manipulation:
+* `compress`
+* `downsamp`
+* `split`
 
-In addition to pre-calculating sensitivities, it is also possible to pre-calculate sample densities using the ``--sdc`` command. All the reconstruction options (``--kb``, ``--kw``, ``--os``) must match to the settings you will use for the actual reconstruction or you will get artefacts. This command is useful if you will be running many reconstructions with the same trajectory.
+hdr
+---
 
-The first time you run RIESLING with a new trajectory it will be fairly slow while it "plans" the Fourier transforms. This is a feature of the FFTW library that RIESLING uses internally. In short, FFTW attempts different strategies for any given FFT, measures which is fastest, and then saves this "wisdom" for future use. RIESLING stores these in a file called ``.riesling-wisdom`` in the user's home directory. Similarly to sample densities, the FFT settings can be re-used for any future FFT of the same size. The size of the FFT in RIESLING is controlled by the trajectory and the ``--os`` option. You can run ``riesling plan`` with a particular ``.h5`` file and ``--os`` value to force the planning before you run any real reconstructions.
+Prints out the header information from a RIESLING ``.h5`` file.
 
-Compression
+*Usage*
+
+.. code-block:: bash
+
+    riesling hdr file.h5
+
+*Output*
+
+The entire header and meta-data will be written to stdout.
+
+*Important Options*
+
+None!
+
+meta
+----
+
+Extracts information from the meta-data or header fields and returns it. Helpful for writing shell scripts that need this information for reconstruction steps.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling meta file.h5 KEY1 KEY2 ...
+
+*Output*
+
+The desired meta-data will be written to stdout, one field per line.
+
+*Important Options*
+
+None!
+
+The valid header info fields are ``matrix``, ``channels``, ``read_points``, ``spokes``, ``volumes`` & ``frames``.
+
+nii
+---
+
+*Usage*
+
+.. code-block:: bash
+    
+    riesling nii file.h5 output_file
+
+*Output*
+
+A NIfTI image containing the desired images as separate volumes. The ``.nii`` extension will be added automatically. Currently converting a ``channels`` dataset is not supported.
+
+*Important Options*
+
+* ``--mag``
+
+    Output magnitude images instead of complex.
+
+* ``--dset=NAME``
+
+    Specify the dataset you want to convert. The default is ``image``.
+
+* ``--frame=F``
+
+    Choose a specific frame to convert and discard the others.
+
+* ``--volume=V``
+
+    Choose a specific volume to convert and discard the others.
+
+phantom
+-------
+
+Create phantom data, both in image and k-space. Currently RIESLING uses a NUFFT to generate the k-space data and does not generate the phantom data directly in k-space.
+
+*Usage*
+
+.. code-block:: bash
+    
+    riesling phantom phantom.h5 --matrix=64
+
+*Output*
+
+The specified file (above ``phantom.h5``) containing the phantom image, trajectory and k-space data.
+
+*Important Options*
+
+* ``--matrix=M``
+
+    The matrix size (isotropic matrix assumed).
+
+* ``--shepp_logan``
+
+    Create a Shepp-Logan phantom instead of a boring sphere.
+
+* ``--channels=C``
+
+    Set the number of coil channels.
+
+* ``--rings=N``
+
+    Divide the channels into N rings.
+
+* ``--sense=file.h5``
+
+    Read SENSE maps from a file instead of creating bird-cage sensitivities.
+
+plan
+----
+
+RIESLING uses the FFTW library to perform Fourier Transforms. To improve speed RIESLING uses the Wisdom functionality in FFTW. This means the first time you perform an FFT of a particular size, the FFTW library will test different ways of performing the transform and choose the fastest. Hence the first time you run RIESLING on a particular trajectory it will pause while this measurement takes place. Subsequent calls to RIESLING will not pause. You can plan this wisdom up-front for a particular trajectory using this command.
+
+*Usage*
+
+.. code-block:: bash
+    
+    riesling plan file.h5
+
+*Output*
+
+None.
+
+*Important Options*
+
+* ``--oversamp=S``
+
+    This must match the oversampling that will be used for the reconstruction. Otherwise RIESLING will calculate a different grid size and the results of ``plan`` will be useless.
+
+* ``--time=L``
+
+    Specify a time-limit for planning. May lead to suboptimal results.
+
+traj
+----
+
+Performs the gridding step using the trajectory information only, i.e. grids a set of ones instead of the actual k-space data. Useful for producing plots of the trajectory including gridding kernel effects etc.
+
+*Usage*
+
+.. code-block:: bash
+    
+    riesling traj file.h5 --psf
+
+*Output*
+
+``file-traj.h5`` which will contain the gridded trajectory and optionally the Point Spread Function
+
+*Important Options*
+
+* ``--oversamp=S``
+
+    Grid oversampling factor, default 2.0.
+
+* ``--kernel=K``
+
+    Gridding kernel. Valid options are ``NN`` (Nearest-Neighbour), ``KB3`` & ``KB5`` (Kaiser-Bessel width 3 or 5) and ``FI3`` & ``FI5`` (Flat-Iron width 3 or 5)
+
+* ``--psf``
+
+    Write out the Point Spread Function as well as the trajectory.
+
+sense-calib
 -----------
 
-Modern MR scanners are often equipped with multi-channel receive coils with a high number of elements. This increases memory requirements, both on disk and in RAM, and can make steps in the reconstruction ill-conditioned. It is hence advisable to compress the the raw data to a smaller number of virtual channels before running the reconstruction. This step should be carried out first before any subsequent operations, e.g. sensitivity estimation. The ``compress`` command in RIESLING implements basic PCA coil-compression, with the number of output virtual channels specified by the ``--cc`` option. We have not implemented other methods, such as Geometric Coil Compression, because they rely on properties of Cartesian sequences that we cannot rely on for non-Cartesian.
+This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrating non-cartesian parallel imaging. Magnetic Resonance in Medicine 54, 1–8 (2005). <http://doi.wiley.com/10.1002/mrm.20517>`. Non-cartesian trajectories generally oversampling the center of k-space and hence inherently contain the information necessary to extract SENSE maps. This step is performed by default in the RIESLING pipelines, but if you wish to examine the sensitivities, or use a second file to create them, then you can use this command to write them out explicitly.
 
-Gridding
+*Usage*
+
+.. code-block:: bash
+
+    riesling sense-calib file.h5
+
+*Output*
+
+``file-sense.h5`` containing a dataset ``sense``.
+
+*Important Options*
+
+* ``--sense-vol=N``
+
+    Use the specified volume for SENSE map estimation (default last).
+
+* ``--sense-res=R``
+
+    Calculate the maps at approximately this resolution (default 12 mm).
+
+* ``--sense-lambda=L``
+
+    Apply Tikohonov regularization. See `Ying, L. & Xu, D. On Tikhonov regularization for image reconstruction in parallel MRI. 4. <https://ieeexplore.ieee.org/document/1403345>`
+
+* ``--fov=F``
+
+    Calculate the SENSE maps for this FOV. If you are using the maps for subsequent reconstruction, this must match the cropping FOV used during iterations. The default value is 256 mm, which matches the default iterations cropping FOV.
+
+espirit-calib
+-------------
+
+An implementation of `Uecker, M. et al. ESPIRiT-an eigenvalue approach to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magnetic Resonance in Medicine 71, 990–1001 (2014).<http://doi.wiley.com/10.1002/mrm.24751>` for estimating SENSE maps.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling espirit-calib file.h5
+
+*Output*
+
+``file-espirit.h5`` containing a dataset ``sense``.
+
+*Important Options*
+
+* ``--sense-vol=N``
+
+    Use the specified volume for SENSE map estimation (default last).
+
+* ``--sense-res=R``
+
+    Calculate the maps at approximately this resolution (default 12 mm).
+
+* ``--fov=F``
+
+    Calculate the SENSE maps for this FOV. If you are using the maps for subsequent reconstruction, this must match the cropping FOV used during iterations. The default value is 256 mm, which matches the default iterations cropping FOV.
+
+* ``--read-start=R``
+
+    Index to start taking samples on spokes (to avoid dead-time gap)
+
+* ``--krad=R``
+
+    ESPIRiT kernel radius
+
+* ``--thresh=T``
+
+    Variance threshold to retain kernels (default 0.015)
+
+sdc
+---
+
+Non-cartesian trajectories by definition have a non-uniform sample density in cartesian k-space - i.e. there are more samples points per unit volume in some parts of k-space than others. Because the gridding step is a simple convolution, this results in artefactually higher k-space intensities on the cartesian grid. For a non-iterative reconstruction this must be compensated by dividing samples in non-cartesian k-space by their sample density before gridding.
+
+In iterative reconstructions the situation is more complicated, because the forward gridding step does not require density compensation (because after the forward FFT samples are evenly spaced on the cartesian grid). The uneven density affects the condition number of the problem, and hence can lead to slow convergence, but does not fundamentally alter the solution. Hence density compensation is often ommitted in 2D non-cartesian reconstructions. However, in 3D convergence becomes problematic. Strictly speaking, density compensation cannot be inserted into the conjugate-gradients method that is implemented in ``riesling cg``. In practice it can be, and is implemented in RIESLING, but this leads to noise inflation (see `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`). The correct method, implemented in ``riesling lsqr``, is pre-conditioning in k-space.
+
+The sample density is a property of the trajectory and not of the acquired k-space data. Calculating the Sample Density Compensation (SDC) can be time consuming for large trajectories, hence this command exists to pre-calculate it once for a particular trajectory and save it for future use. There are three different methods implemented which are detailed below.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling sdc sdc.h5 --sdc=pipe
+
+*Output*
+
+``sdc.h5`` containing the density compensation dataset.
+
+*Important Options*
+
+* `--sdc=pipe,pipenn,radial`
+
+    Choose the method to calculate the density compensation. ``pipe`` chooses the method of Pipe, Zwart & Menon. See `N. R. Zwart, K. O. Johnson, and J. G. Pipe, ‘Efficient sample density estimation by combining gridding and an optimized kernel: Efficient Sample Density Estimation’, Magn. Reson. Med., vol. 67, no. 3, pp. 701–710, Mar. 2012 <http://doi.wiley.com/10.1002/mrm.23041>`. This generates the best results but is slow to compute (requiring 40 iterations on a highly oversampled grid). Hence the default ``pipenn`` method  uses nearest-neighbour gridding to speed up the process, but with a loss of accuracy. Use ``pipe`` for high-quality reconstructions. ``radial`` implements analytic density compensation for 2D and 3D radial trajectories, but from experience this does deal perfectly with undersampling in the spoke direction and the results from ``pipe`` are superior.
+
+* `--os=N`
+
+    Oversampling factor when using ``pipenn``. Should match the oversampling for the final reconstruction.
+
+compress
 --------
 
-``riesling grid`` will carry out only the first step of the NUFFT, i.e. it will grid non-Cartesian k-space to Cartesian (or vice versa) and save the result. This can be useful to check that a dataset has been acquired correctly.
+Reduce the channel count using a coil-compression method.
 
-To diagnose trajectory and sample density issues, you can instead use ``riesling traj``. This will apply the gridding and sample density compensation to a set of ones, allowing you to see if the Cartesian k-space has an even weighting.
+*Usage*
 
-Forward NUFFT
--------------
-``riesling nufft'' applies a forward/reverse(adjoint) NUFFT. The default option is performing an adjoint transorm, the forward requires the ``--fwd'' flag. When performing a forward transformation the expected data format is the same as the image data format given in :doc:`data'. The expected dataset name can be changed with the ``-dset=[D]'' command. Output dataset names are ``nufft-backward'' and ``nufft-forward'' respectively for adjoint and forward operations, unless the ``-out=[OUTPUT]'' flag is used.
+.. code-block:: bash
 
-Simulations
------------
+    riesling compress file.h5 --pca --channels=12
 
-``riesling phantom`` will produce a simulated image, useful for experimenting with reconstruction settings. Currently spherical and Shepp-Logan phantoms with simple multi-channel coil sensitivities are implemented. It is advisable to use a high grid oversampling rate to minimise rasterization errors. The trajectory can be read from a ``.h5`` file with the ``--traj`` command, otherwise an Archimedean 3D spiral trajectory will be used.
+*Output*
 
-Data Tools
-----------
+``file-compressed.h5`` containing the compressed non-cartesian data, trajectory and header information.
 
-``riesling split`` will split out a single volume from a multi-volume ``.h5`` file, and will separate the low- and high-resolution k-space trajectories if they are present.
+*Important Options*
 
-Dead-time Gap Filling
----------------------
+* ``--pca``
 
-``riesling zinfandel`` implements an experimental ZTE dead-time gap filling method based on 1D GRAPPA. This will be the subject of a future publication.
+    Use PCA coil compression. See `Huang, F., Vijayakumar, S., Li, Y., Hertel, S. & Duensing, G. R. A software channel compression technique for faster reconstruction with many channels. Magnetic Resonance Imaging 26, 133–141 (2008). <https://linkinghub.elsevier.com/retrieve/pii/S0730725X07002731>`
 
-References
-----------
+* ``--channels=N``
 
-1. Yeh, E. N. et al. Inherently self-calibrating non-cartesian parallel imaging. Magnetic Resonance in Medicine 54, 1–8 (2005).
-2. Uecker, M. et al. ESPIRiT-an eigenvalue approach to autocalibrating parallel MRI: Where SENSE meets GRAPPA. Magnetic Resonance in Medicine 71, 990–1001 (2014).
-3. Zwart, N. R., Johnson, K. O. & Pipe, J. G. Efficient sample density estimation by combining gridding and an optimized kernel: Efficient Sample Density Estimation. Magn. Reson. Med. 67, 701–710 (2012).
-4. Wong, S. T. S. & Roos, M. S. A strategy for sampling on a sphere applied to 3D selective RF pulse design. Magnetic Resonance in Medicine 32, 778–784 (1994).
+    Compress to N channels.
+
+* ``--energy=E``
+
+    Retain the number of channels required to retain the specified fraction of the variance/energy. Valid values are between 0 and 1.
+
+* ``--pca-read=ST,SZ``
+
+    Take the samples for PCA from `ST` to `ST + SZ` along the read direction.
+
+* ``--pca-spokes=ST,SZ,STRIDE``
+
+    Take the samples for PCA from `ST` to `ST + SZ` every `STRIDE` along the spoke direction.
+
+downsamp
+--------
+
+Remove non-Cartesian samples and trajectory points in order to reconstruct a low resolution down-sampled image.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling downsamp file.h5 --res=4
+
+*Output*
+
+``file-downsamp.h5`` containing the downsampled non-cartesian data, trajectory and header information.
+
+*Important Options*
+
+* ``--res=R``
+
+    The desired resolution.
+
+* ``--channels=N``
+
+    Compress to N channels.
+
+* ``--energy=E``
+
+    Retain the number of channels required to retain the specified fraction of the variance/energy. Valid values are between 0 and 1.
+
+* ``--pca-read=ST,SZ``
+
+    Take the samples for PCA from `ST` to `ST + SZ` along the read direction.
+
+* ``--pca-spokes=ST,SZ,STRIDE``
+
+    Take the samples for PCA from `ST` to `ST + SZ` every `STRIDE` along the spoke direction.
+
+
+split
+-----
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling split file.h5 --lores=N --sps=S
+
+*Output*
+
+Depends on arguments, but may result in ``file-lores.h5``, ``file-hires.h5`` or files of the form ``file-hires-000.h5``.
+
+*Important Options*
+
+* ``--lores=N``
+
+    Split out the first N spokes assuming that they are a low-resolution k-space.
+
+* ``--stride=S``
+
+    Keep only one out of every S spokes for further processing (applied after ``--lores``)
+
+* ``--size=N``
+
+    Keep only the first N spokes for further processing (applied after ``--lores`` and ``--stride``)
+
+* ``--sps=N``
+
+    Split the hi-res k-space data into multiple files, each containing N spokes. If N does not divide the number of spokes in the file exactly, the last file will contain the remainder.
+
+* ``--frames=F``, ``--spf=N``
+
+    Add a ``frames`` object to the output header with F frames, each containing N spokes. These will be repeated to match the number of spokes in the file.
