@@ -55,7 +55,8 @@ int main_lsqr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr(its.Get(), recon, reader.noncartesian(iv), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), pre.get());
+    vol =
+      lsqr(its.Get(), recon, reader.noncartesian(iv), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), pre.get(), true);
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

@@ -7,7 +7,7 @@
 #include "types.h"
 
 namespace {
-auto SymOrtho(float const a, float const b)
+inline auto SymOrtho(float const a, float const b)
 {
   if (b == 0.f) {
     return std::make_tuple(std::copysign(1.f, a), 0.f, std::abs(a));
@@ -55,7 +55,7 @@ typename Op::Input lsmr(
 
   // Workspace variables
   TO Mu(outDims), u(outDims);
-  TI v(inDims), h(inDims), h̅(inDims), x(inDims), ur(inDims);
+  TI v(inDims), h(inDims), h̅(inDims), x(inDims), ur;
 
   CheckDimsEqual(b.dimensions(), outDims);
   if (x0.size()) {
@@ -67,21 +67,22 @@ typename Op::Input lsmr(
     Mu.device(dev) = b;
   }
   u.device(dev) = M ? M->apply(Mu) : Mu;
-  if (λ > 0) {
+  float β;
+  if (λ > 0.f) {
+    ur.resize(inDims);
     if (xr.size()) {
       CheckDimsEqual(xr.dimensions(), inDims);
       ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
     } else {
       ur.device(dev) = -x * x.constant(sqrt(λ));
     }
+    β = sqrt(std::real(Dot(u, Mu)) + Norm2(ur));
+  } else {
+    β = sqrt(std::real(Dot(u, Mu)));
   }
-
-  float const uMu = std::real(Dot(u, Mu));
-  float const normur = Norm2(ur);
-  float β = sqrt(uMu + normur);
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
-  if (λ > 0) {
+  if (λ > 0.f) {
     ur.device(dev) = ur / ur.constant(β);
     v.device(dev) = op.Adj(u) + sqrt(λ) * ur;
   } else {
@@ -120,25 +121,21 @@ typename Op::Input lsmr(
     Log::Image(ur, "lsmr-ur-init");
   }
 
-  Log::Print(
-    FMT_STRING("LSMR    |r| {:5.3E} α {:5.3E} β {:5.3E} |uMu| {:5.3E} |u'| {:5.3E} "),
-    normb,
-    α,
-    β,
-    sqrt(uMu),
-    sqrt(normur));
+  Log::Print(FMT_STRING("LSMR    |r| {:5.3E} α {:5.3E} β {:5.3E}"), normb, α, β);
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
     Mu.device(dev) = op.A(v) - α * Mu;
     u.device(dev) = M ? M->apply(Mu) : Mu;
-    if (λ) {
+    if (λ > 0.f) {
       ur.device(dev) = (sqrt(λ) * v) - (α * ur);
+      β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
+    } else {
+      β = sqrt(std::real(Dot(Mu, u)));
     }
-    β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
     Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);
-    if (λ) {
+    if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
       v.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * v);
     } else {
@@ -255,14 +252,16 @@ typename Op::Input lsmr(
   // Final check of residual
   Mu.device(dev) = b - op.A(x);
   u.device(dev) = M ? M->apply(Mu) : Mu;
-  if (λ > 0) {
+  if (λ > 0.f) {
     if (xr.size()) {
       ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
+      β = std::sqrt(std::real(Dot(u, Mu) + Norm2(ur)));
     } else {
       ur.device(dev) = -x * x.constant(sqrt(λ));
+      β = std::sqrt(std::real(Dot(u, Mu)));
     }
   }
-  β = std::sqrt(std::real(Dot(u, Mu) + Norm2(ur)));
+
   Log::Print(
     FMT_STRING("Final |Mu| {:5.3E} |u| {:5.3E} |uMu| {:5.3E} |ur| {:5.3E} β {:5.3E}"),
     Norm(Mu),

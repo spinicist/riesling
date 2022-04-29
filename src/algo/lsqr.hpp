@@ -22,9 +22,9 @@ typename Op::Input lsqr(
   float const ctol = 1.e-6f,
   float const λ = 0.f,
   LeftPrecond const *M = nullptr, // Left preconditioner
+  bool const debug = false,
   typename Op::Input const &x0 = typename Op::Input(),
-  typename Op::Input const &xr = typename Op::Input(),
-  bool const debug = false)
+  typename Op::Input const &xr = typename Op::Input())
 {
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
@@ -35,7 +35,7 @@ typename Op::Input lsqr(
 
   // Workspace variables
   TO Mu(outDims), u(outDims);
-  TI x(inDims), v(inDims), w(inDims), ur(inDims);
+  TI x(inDims), v(inDims), w(inDims), ur;
 
   CheckDimsEqual(b.dimensions(), outDims);
   if (x0.size()) {
@@ -47,20 +47,23 @@ typename Op::Input lsqr(
     Mu.device(dev) = b;
   }
   u.device(dev) = M ? M->apply(Mu) : Mu;
+  float β;
   if (λ > 0) {
+    ur.resize(inDims);
     if (xr.size()) {
       CheckDimsEqual(xr.dimensions(), inDims);
       ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
     } else {
       ur.device(dev) = -x * x.constant(sqrt(λ));
     }
+    β = sqrt(std::real(Dot(u, Mu)) + Norm2(ur));
+  } else {
+    β = sqrt(std::real(Dot(u, Mu)));
   }
-
-  float β = sqrt(std::real(Dot(u, Mu)) + Norm2(ur));
   float const normb = β; // For convergence tests
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
-  if (λ > 0) {
+  if (λ > 0.f) {
     ur.device(dev) = ur / ur.constant(β);
     v.device(dev) = op.Adj(u) + sqrt(λ) * ur;
   } else {
@@ -81,19 +84,21 @@ typename Op::Input lsqr(
     Log::Image(ur, "lsqr-ur-init");
   }
 
-  Log::Print(FMT_STRING("LSQR    α {:5.3E} β {:5.3E}  "), α, β);
+  Log::Print(FMT_STRING("LSQR    α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
 
   for (Index ii = 0; ii < max_its; ii++) {
     // Bidiagonalization step
     Mu.device(dev) = op.A(v) - α * Mu;
     u.device(dev) = M ? M->apply(Mu) : Mu;
-    if (λ) {
+    if (λ > 0.f) {
       ur.device(dev) = (sqrt(λ) * v) - (α * ur);
+      β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
+    } else {
+      β = sqrt(std::real(Dot(Mu, u)));
     }
-    β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
     Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);
-    if (λ) {
+    if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
       v.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * v);
     } else {
@@ -116,7 +121,7 @@ typename Op::Input lsqr(
     if (debug) {
       Log::Image(x, fmt::format(FMT_STRING("lsqr-x-{:02d}"), ii));
       Log::Image(v, fmt::format(FMT_STRING("lsqr-v-{:02d}"), ii));
-      Log::Image(w, fmt::format(FMT_STRING("lsqr-x-{:02d}"), ii));
+      Log::Image(w, fmt::format(FMT_STRING("lsqr-w-{:02d}"), ii));
       Log::Image(ur, fmt::format(FMT_STRING("lsqr-ur-{:02d}"), ii));
     }
 
