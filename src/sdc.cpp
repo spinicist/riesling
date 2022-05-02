@@ -162,13 +162,10 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os
 {
   R2 sdc(traj.info().read_points, traj.info().spokes);
   auto const iname = opts.type.Get();
-  if (iname == "") {
+  if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
     auto const info = traj.info();
     return std::make_unique<SDCOp>(Sz2{info.read_points, info.spokes}, info.channels);
-  } else if (iname == "none") {
-    Log::Print(FMT_STRING("Using no density compensation"));
-    return nullptr;
   } else if (iname == "pipe") {
     sdc = Pipe(traj, false, 2.1f, 40);
   } else if (iname == "pipenn") {
