@@ -69,8 +69,8 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   if (kSz < 3) {
     Log::Fail(FMT_STRING("SLR kernel size less than 3 not supported"));
   }
-  if (wnThresh < 1.f || wnThresh >= nC) {
-    Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), wnThresh, 1.f, nC);
+  if (wnThresh < 0.f || wnThresh >= nC) {
+    Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), wnThresh, 0.f, nC);
   }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, wnThresh);
   Cx5 kspaces = fft.A(channels);

@@ -54,11 +54,13 @@ Eigen::ThreadPoolDevice GlobalDevice()
   return Eigen::ThreadPoolDevice(GlobalPool(), GlobalPool()->NumThreads());
 }
 
-void For(ForFunc f, Index const lo, Index const hi)
+void For(ForFunc f, Index const lo, Index const hi, std::string const &label)
 {
+  Log::StartProgress(hi - lo, label);
   if (GlobalPool()->NumThreads() == 1) {
     for (Index i = lo; i < hi; i++) {
       f(i);
+      Log::Tick();
     }
   } else {
     Index const barrier_size = hi - lo;
@@ -66,16 +68,18 @@ void For(ForFunc f, Index const lo, Index const hi)
     for (Index i = lo; i < hi; i++) {
       GlobalPool()->Schedule([&barrier, &f, i] {
         f(i);
+        Log::Tick();
         barrier.Notify();
       });
     }
     barrier.Wait();
   }
+  Log::StopProgress();
 }
 
-void For(ForFunc f, Index const n)
+void For(ForFunc f, Index const n, std::string const &label)
 {
-  For(f, 0, n);
+  For(f, 0, n, label);
 }
 
 void RangeFor(RangeFunc f, Index const n)

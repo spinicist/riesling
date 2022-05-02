@@ -29,19 +29,19 @@ SVD<Scalar>::SVD(Eigen::Ref<Matrix const> const &mat, bool const transpose, bool
   if (transpose) {
     if (verbose) {
       Log::Print(FMT_STRING("SVD Transpose Size {}x{}"), mat.rows(), mat.cols());
-      auto const svd = mat.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-      this->vals = svd.singularValues();
-      this->U = svd.matrixU();
-      this->V = svd.matrixV();
     }
+    auto const svd = mat.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    this->vals = svd.singularValues();
+    this->U = svd.matrixU();
+    this->V = svd.matrixV();
   } else {
     if (verbose) {
       Log::Print(FMT_STRING("SVD Size {}x{}"), mat.rows(), mat.cols());
-      auto const svd = mat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-      this->vals = svd.singularValues();
-      this->U = svd.matrixU();
-      this->V = svd.matrixV();
     }
+    auto const svd = mat.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    this->vals = svd.singularValues();
+    this->U = svd.matrixU();
+    this->V = svd.matrixV();
   }
 }
 

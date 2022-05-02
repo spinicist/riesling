@@ -72,6 +72,7 @@ int main_recon(args::Subparser &parser)
     Cx4 padded(sz);
     Cx4 kspace(info.channels, info.read_points, info.spokes, info.volumes);
     for (Index iv = 0; iv < info.volumes; iv++) {
+      padded.setZero();
       out_cropper.crop4(padded) = images.chip<4>(iv);
       kspace.chip<3>(iv) = std::get<ReconOp>(recon).A(padded);
     }

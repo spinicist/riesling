@@ -19,8 +19,7 @@ struct Grid final : SizedGrid<IP, TP>
     Sz5 const cdims = cart.dimensions();
     Index const nC = cart.dimension(0);
     if (LastN<4>(cdims) != LastN<4>(this->inputDimensions())) {
-      Log::Fail(
-        FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
+      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
     }
     Sz3 ncdims = this->outputDimensions();
     ncdims[0] = nC;
@@ -28,31 +27,28 @@ struct Grid final : SizedGrid<IP, TP>
     noncart.setZero();
 
     auto const scale = this->mapping_.scale;
-    auto grid_task = [&](Index const lo, Index const hi) {
-      for (auto ii = lo; ii < hi; ii++) {
-        Log::Progress(ii, lo, hi);
-        auto const si = this->mapping_.sortedIndices[ii];
-        auto const c = this->mapping_.cart[si];
-        auto const n = this->mapping_.noncart[si];
-        auto const ifr = this->mapping_.frame[si];
-        auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        Index const stX = c.x - ((IP - 1) / 2);
-        Index const stY = c.y - ((IP - 1) / 2);
-        Index const stZ = c.z - ((TP - 1) / 2);
-        for (Index iz = 0; iz < TP; iz++) {
-          for (Index iy = 0; iy < IP; iy++) {
-            for (Index ix = 0; ix < IP; ix++) {
-              float const kval = k(ix, iy, iz) * scale;
-              for (Index ic = 0; ic < nC; ic++) {
-                noncart(ic, n.read, n.spoke) += cart(ic, ifr, stX + ix, stY + iy, stZ + iz) * kval;
-              }
+    auto grid_task = [&](Index const ii) {
+      auto const si = this->mapping_.sortedIndices[ii];
+      auto const c = this->mapping_.cart[si];
+      auto const n = this->mapping_.noncart[si];
+      auto const ifr = this->mapping_.frame[si];
+      auto const k = this->kernel_->k(this->mapping_.offset[si]);
+      Index const stX = c.x - ((IP - 1) / 2);
+      Index const stY = c.y - ((IP - 1) / 2);
+      Index const stZ = c.z - ((TP - 1) / 2);
+      for (Index iz = 0; iz < TP; iz++) {
+        for (Index iy = 0; iy < IP; iy++) {
+          for (Index ix = 0; ix < IP; ix++) {
+            float const kval = k(ix, iy, iz) * scale;
+            for (Index ic = 0; ic < nC; ic++) {
+              noncart(ic, n.read, n.spoke) += cart(ic, ifr, stX + ix, stY + iy, stZ + iz) * kval;
             }
           }
         }
       }
     };
     auto const &start = Log::Now();
-    Threads::RangeFor(grid_task, this->mapping_.cart.size());
+    Threads::For(grid_task, this->mapping_.cart.size(), "Forward Gridding");
     Log::Debug("Cart -> Non-cart: {}", Log::ToNow(start));
     return noncart;
   }
@@ -63,10 +59,7 @@ struct Grid final : SizedGrid<IP, TP>
     auto const ncdims = noncart.dimensions();
     Index const nC = ncdims[0];
     if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
-      Log::Fail(
-        FMT_STRING("Noncartesian k-space dims {} did not match {}"),
-        ncdims,
-        this->outputDimensions());
+      Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), ncdims, this->outputDimensions());
     }
     auto cdims = this->inputDimensions();
     cdims[0] = nC;
@@ -87,14 +80,13 @@ struct Grid final : SizedGrid<IP, TP>
       Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
 
       for (auto ii = lo; ii < hi; ii++) {
-        Log::Progress(ii, lo, hi);
+        Log::Tick();
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
         auto const ifr = this->mapping_.frame[si];
         auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        auto const scale =
-          this->mapping_.scale * (this->weightFrames_ ? this->mapping_.frameWeights[ifr] : 1.f);
+        auto const scale = this->mapping_.scale * (this->weightFrames_ ? this->mapping_.frameWeights[ifr] : 1.f);
 
         Index const stX = c.x - ((IP - 1) / 2);
         Index const stY = c.y - ((IP - 1) / 2);
@@ -114,7 +106,9 @@ struct Grid final : SizedGrid<IP, TP>
 
     auto const start = Log::Now();
     cart.setZero();
+    Log::StartProgress(this->mapping_.cart.size(), "Adjoint Gridding");
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
+    Log::StopProgress();
     Log::Debug("Grid Adjoint took: {}", Log::ToNow(start));
     if (this->safe_) {
       Log::Debug(FMT_STRING("Combining thread workspaces..."));

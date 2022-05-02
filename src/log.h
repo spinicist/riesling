@@ -51,7 +51,9 @@ __attribute__((noreturn)) inline void Fail(const S &fmt_str, const Args &...args
   lfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
 }
 
-void Progress(Index const ii, Index const lo, Index const hi);
+void StartProgress(Index const counst, std::string const &label);
+void StopProgress();
+void Tick();
 Time Now();
 std::string ToNow(Time const t);
 

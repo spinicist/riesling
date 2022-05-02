@@ -107,9 +107,7 @@ typename Op::Input admm_lsqr(
 
   Log::Print(FMT_STRING("Starting ADMM rho {} dims {}"), rho, dims);
   for (Index ii = 0; ii < outer_its; ii++) {
-    Log::Print(FMT_STRING("x dims {}"), x.dimensions());
     x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, (ii == 1), x, (z - u));
-    Log::Print(FMT_STRING("x after dims {}"), x.dimensions());
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);

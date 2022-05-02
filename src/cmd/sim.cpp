@@ -20,13 +20,8 @@ auto Simulate(rl::Settings const &s, Index const nsamp)
   Eigen::ArrayXXf parameters = simulator.parameters(nsamp);
   Eigen::ArrayXXf dynamics(parameters.cols(), simulator.length());
   auto const start = Log::Now();
-  auto task = [&](Index const lo, Index const hi) {
-    for (Index ii = lo; ii < hi; ii++) {
-      Log::Progress(ii, lo, hi);
-      dynamics.row(ii) = simulator.simulate(parameters.col(ii));
-    }
-  };
-  Threads::RangeFor(task, parameters.cols());
+  auto task = [&](Index const ii) { dynamics.row(ii) = simulator.simulate(parameters.col(ii)); };
+  Threads::For(task, parameters.cols(), "Simulation");
   Log::Print(FMT_STRING("Simulation took {}"), Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
 }
@@ -106,9 +101,10 @@ int main_sim(args::Subparser &parser)
   }
 
   // Calculate SVD - observations are in rows
-  Log::Print("Calculating SVD {}x{}", dynamics.cols() / subsamp.Get(), dynamics.rows());
-  auto const svd = SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics);
+  auto const svd =
+    SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics, false, true);
 
+  fmt::print("svd.vals.size() {}\n", svd.vals.size());
   float const nullThresh = svd.vals[0] * std::numeric_limits<float>::epsilon();
   Index const nullCount = (svd.vals > nullThresh).count();
   fmt::print(FMT_STRING("{} values above null-space threshold {}\n"), nullCount, nullThresh);

@@ -20,9 +20,9 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
 
   args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
-  args::ValueFlag<float> reg_rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
+  args::ValueFlag<float> ρ(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
 
-  args::ValueFlag<float> lambda(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
+  args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
 
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
@@ -53,7 +53,7 @@ int main_admm(args::Subparser &parser)
   }
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
-  auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, lambda.Get(), patchSize.Get()); };
+  auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, λ.Get() / ρ.Get(), patchSize.Get()); };
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());
@@ -65,11 +65,11 @@ int main_admm(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     if (use_cg) {
-      vol = admm_cg(outer_its.Get(), inner_its.Get(), atol.Get(), recon, reg, reg_rho.Get(), reader.noncartesian(iv));
+      vol = admm_cg(outer_its.Get(), inner_its.Get(), atol.Get(), recon, reg, ρ.Get(), reader.noncartesian(iv));
     } else if (use_lsmr) {
       vol = admm_lsmr(
         outer_its.Get(),
-        reg_rho.Get(),
+        ρ.Get(),
         reg,
         inner_its.Get(),
         recon,
@@ -81,7 +81,7 @@ int main_admm(args::Subparser &parser)
     } else {
       vol = admm_lsqr(
         outer_its.Get(),
-        reg_rho.Get(),
+        ρ.Get(),
         reg,
         inner_its.Get(),
         recon,

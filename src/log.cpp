@@ -1,5 +1,7 @@
 #include "log.h"
 
+#include "fmt/chrono.h"
+#include "indicators/progress_bar.hpp"
 #include "io/writer.h"
 #include "tensorOps.h"
 
@@ -13,6 +15,9 @@ Failure::Failure(std::string const &msg)
 namespace {
 Level log_level = Level::None;
 std::unique_ptr<HD5::Writer> debug_file = nullptr;
+std::unique_ptr<indicators::ProgressBar> progress = nullptr;
+Index progressTarget;
+std::atomic<Index> progressAmount;
 } // namespace
 
 Level CurrentLevel()
@@ -39,37 +44,58 @@ void End()
 void lprint(fmt::string_view fstr, fmt::format_args args)
 {
   if (log_level >= Level::Info) {
-    fmt::vprint(stderr, fstr, args);
-    fmt::print(stderr, "\n");
+    auto const t = std::chrono::system_clock::now();
+    fmt::print(stderr, FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
   }
 }
 
 void ldebug(fmt::string_view fstr, fmt::format_args args)
 {
   if (log_level >= Level::Debug) {
-    fmt::vprint(stderr, fstr, args);
-    fmt::print(stderr, "\n");
+    auto const t = std::chrono::system_clock::now();
+    fmt::print(stderr, FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
   }
 }
 
 void lfail(fmt::string_view fstr, fmt::format_args args)
 {
-  throw Failure(fmt::vformat(fmt::fg(fmt::terminal_color::bright_red), fstr, args));
+  auto const t = std::chrono::system_clock::now();
+  auto const msg = fmt::format(
+    FMT_STRING("[{:%H:%M:%S}] {}\n"),
+    fmt::localtime(t),
+    fmt::vformat(fmt::fg(fmt::terminal_color::bright_red), fstr, args));
+  fmt::print(stderr, msg);
+  throw Failure(msg);
 }
 
-void Progress(Index const ii, Index const lo, Index const hi)
+void StartProgress(Index const amount, std::string const &text)
 {
-  if ((log_level >= Level::Progress) && lo == 0) {
-    Index const N = hi - lo;
-    Index const steps = std::min(N, 10L);
-    Index const N_per_step = N / steps;
-    if (ii % N_per_step == 0) { // Check for div by zero
-      float progress = std::min((100.f * ii) / N, 100.f);
-      if (progress < ((N - 1) * N_per_step * 100.f)) {
-        fmt::print(stderr, FMT_STRING("{:.0f}%..."), progress);
-      } else {
-        fmt::print(stderr, FMT_STRING("{:.0f}%\n"), progress);
-      }
+  if (log_level >= Level::Progress) {
+    progress = std::make_unique<indicators::ProgressBar>(
+      indicators::option::BarWidth{80},
+      indicators::option::PrefixText{text},
+      indicators::option::ShowElapsedTime{true},
+      indicators::option::ShowRemainingTime{true});
+    progressTarget = amount;
+    progressAmount = 0;
+  }
+}
+
+void StopProgress()
+{
+  if (progress) {
+    progress->mark_as_completed();
+    progress = nullptr;
+  }
+}
+
+void Tick()
+{
+  if (progress) {
+    progressAmount++;
+    float const percent = (100.f * progressAmount) / progressTarget;
+    if (percent - progress->current() > 1.f) {
+      progress->set_progress(percent);
     }
   }
 }

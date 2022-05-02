@@ -28,8 +28,8 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<Index> iits(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
   args::ValueFlag<Index> oits(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
   args::ValueFlag<float> rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 1.0f);
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-3f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-3f);
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-4f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-4f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
   args::ValueFlag<float> winSz(parser, "T", "SLR normalized window size (default 1.5)", {"win-size"}, 1.5f);
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 4)", {"kernel-size"}, 4);

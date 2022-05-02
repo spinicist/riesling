@@ -17,8 +17,8 @@ Index GlobalThreadCount();
 void SetGlobalThreadCount(Index n_threads);
 Eigen::ThreadPoolDevice GlobalDevice();
 
-void For(ForFunc f, Index const n);
-void For(ForFunc f, Index const lo, Index const hi);
+void For(ForFunc f, Index const n, std::string const &label);
+void For(ForFunc f, Index const lo, Index const hi, std::string const &label);
 void RangeFor(RangeFunc f, Index const n);
 void RangeFor(RangeFunc f, Index const lo, Index const hi);
 void RangeFor(RangeThreadFunc f, Index const n);

@@ -22,18 +22,15 @@ struct PadOp final : Operator<Rank, Rank>
     }
     std::copy_n(inSize.begin(), Rank, input_.begin());
     std::copy_n(outSize.begin(), Rank, output_.begin());
-    std::transform(
-      output_.begin(), output_.end(), input_.begin(), left_.begin(), [](Index big, Index small) {
-        return (big - small + 1) / 2;
-      });
-    std::transform(
-      output_.begin(), output_.end(), input_.begin(), right_.begin(), [](Index big, Index small) {
-        return (big - small) / 2;
-      });
-    std::transform(
-      left_.begin(), left_.end(), right_.begin(), paddings_.begin(), [](Index left, Index right) {
-        return std::make_pair(left, right);
-      });
+    std::transform(output_.begin(), output_.end(), input_.begin(), left_.begin(), [](Index big, Index small) {
+      return (big - small + 1) / 2;
+    });
+    std::transform(output_.begin(), output_.end(), input_.begin(), right_.begin(), [](Index big, Index small) {
+      return (big - small) / 2;
+    });
+    std::transform(left_.begin(), left_.end(), right_.begin(), paddings_.begin(), [](Index left, Index right) {
+      return std::make_pair(left, right);
+    });
   }
 
   InputDims inputDimensions() const

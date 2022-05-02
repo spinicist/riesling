@@ -26,25 +26,20 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
   auto const hy = sy / 2;
   auto const hx = sx / 2;
 
-  auto task = [&](Index const lo, Index const hi) {
-    for (Index iz = lo; iz < hi; iz++) {
-      for (Index iy = 0; iy < sy; iy++) {
-        for (Index ix = 0; ix < sx; ix++) {
-          float const rz = static_cast<float>(iz - hz) / hz;
-          float const ry = static_cast<float>(iy - hy) / hy;
-          float const rx = static_cast<float>(ix - hx) / hx;
-          float const r = sqrt(rx * rx + ry * ry + rz * rz);
-          float const val = f(r);
-          ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix) *=
-            ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix).constant(
-              val);
-        }
+  auto task = [&](Index const iz) {
+    for (Index iy = 0; iy < sy; iy++) {
+      for (Index ix = 0; ix < sx; ix++) {
+        float const rz = static_cast<float>(iz - hz) / hz;
+        float const ry = static_cast<float>(iy - hy) / hy;
+        float const rx = static_cast<float>(ix - hx) / hx;
+        float const r = sqrt(rx * rx + ry * ry + rz * rz);
+        float const val = f(r);
+        ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix) *=
+          ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix).constant(val);
       }
     }
   };
-  auto const start = Log::Now();
-  Threads::RangeFor(task, sz);
-  Log::Debug(FMT_STRING("Filtering took: {}"), Log::ToNow(start));
+  Threads::For(task, sz, "Filtering");
 }
 
 void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x)

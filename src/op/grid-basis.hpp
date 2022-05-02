@@ -8,8 +8,7 @@ struct GridBasis final : SizedGrid<IP, TP>
   using typename SizedGrid<IP, TP>::Input;
   using typename SizedGrid<IP, TP>::Output;
 
-  GridBasis(
-    SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
+  GridBasis(SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
     : SizedGrid<IP, TP>(k, mapping, basis.dimension(1), unsafe)
     , basis_{basis}
   {
@@ -27,8 +26,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     Index const nC = cdims[0];
     Index const nB = cdims[1];
     if (LastN<4>(cdims) != LastN<4>(this->inputDimensions())) {
-      Log::Fail(
-        FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
+      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
     }
     Sz3 ncdims = this->outputDimensions();
     ncdims[0] = nC;
@@ -36,26 +34,22 @@ struct GridBasis final : SizedGrid<IP, TP>
     noncart.setZero();
 
     auto const scale = this->mapping_.scale * sqrt(basis_.dimension(0));
-    auto grid_task = [&](Index const lo, Index const hi) {
-      for (auto ii = lo; ii < hi; ii++) {
-        Log::Progress(ii, lo, hi);
-        auto const si = this->mapping_.sortedIndices[ii];
-        auto const c = this->mapping_.cart[si];
-        auto const n = this->mapping_.noncart[si];
-        auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        R1 const b = basis_.chip<0>(n.spoke % basis_.dimension(0));
-        Index const stX = c.x - ((IP - 1) / 2);
-        Index const stY = c.y - ((IP - 1) / 2);
-        Index const stZ = c.z - ((TP - 1) / 2);
-        for (Index iz = 0; iz < TP; iz++) {
-          for (Index iy = 0; iy < IP; iy++) {
-            for (Index ix = 0; ix < IP; ix++) {
-              float const kval = k(ix, iy, iz) * scale;
-              for (Index ib = 0; ib < nB; ib++) {
-                for (Index ic = 0; ic < nC; ic++) {
-                  noncart(ic, n.read, n.spoke) +=
-                    cart(ic, ib, stX + ix, stY + iy, stZ + iz) * b(ib) * kval;
-                }
+    auto grid_task = [&](Index const ii) {
+      auto const si = this->mapping_.sortedIndices[ii];
+      auto const c = this->mapping_.cart[si];
+      auto const n = this->mapping_.noncart[si];
+      auto const k = this->kernel_->k(this->mapping_.offset[si]);
+      R1 const b = basis_.chip<0>(n.spoke % basis_.dimension(0));
+      Index const stX = c.x - ((IP - 1) / 2);
+      Index const stY = c.y - ((IP - 1) / 2);
+      Index const stZ = c.z - ((TP - 1) / 2);
+      for (Index iz = 0; iz < TP; iz++) {
+        for (Index iy = 0; iy < IP; iy++) {
+          for (Index ix = 0; ix < IP; ix++) {
+            float const kval = k(ix, iy, iz) * scale;
+            for (Index ib = 0; ib < nB; ib++) {
+              for (Index ic = 0; ic < nC; ic++) {
+                noncart(ic, n.read, n.spoke) += cart(ic, ib, stX + ix, stY + iy, stZ + iz) * b(ib) * kval;
               }
             }
           }
@@ -64,7 +58,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     };
     auto const &start = Log::Now();
     noncart.setZero();
-    Threads::RangeFor(grid_task, this->mapping_.cart.size());
+    Threads::For(grid_task, this->mapping_.cart.size(), "Basis Gridding Forward");
     Log::Debug("Cart -> Non-cart: {}", Log::ToNow(start));
     return noncart;
   }
@@ -74,10 +68,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     auto const ncdims = noncart.dimensions();
     Index const nC = ncdims[0];
     if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
-      Log::Fail(
-        FMT_STRING("Noncartesian k-space dims {} did not match {}"),
-        ncdims,
-        this->outputDimensions());
+      Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), ncdims, this->outputDimensions());
     }
     auto cdims = this->inputDimensions();
     cdims[0] = nC;
@@ -99,7 +90,7 @@ struct GridBasis final : SizedGrid<IP, TP>
       Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
 
       for (auto ii = lo; ii < hi; ii++) {
-        Log::Progress(ii, lo, hi);
+        Log::Tick();
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
@@ -115,8 +106,7 @@ struct GridBasis final : SizedGrid<IP, TP>
               for (Index ib = 0; ib < nB; ib++) {
                 float const kval = k(ix, iy, iz) * scale;
                 for (Index ic = 0; ic < nC; ic++) {
-                  out(ic, ib, stX + ix, stY + iy, stZ + iz) +=
-                    noncart(ic, n.read, n.spoke) * b(ib) * kval;
+                  out(ic, ib, stX + ix, stY + iy, stZ + iz) += noncart(ic, n.read, n.spoke) * b(ib) * kval;
                 }
               }
             }
@@ -127,7 +117,9 @@ struct GridBasis final : SizedGrid<IP, TP>
 
     auto const start = Log::Now();
     cart.setZero();
+    Log::StartProgress(this->mapping_.cart.size(), "Adjoint Basis Gridding");
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
+    Log::StopProgress();
     Log::Debug("Basis Non-cart -> Cart: {}", Log::ToNow(start));
     if (this->safe_) {
       Log::Debug(FMT_STRING("Combining thread workspaces..."));

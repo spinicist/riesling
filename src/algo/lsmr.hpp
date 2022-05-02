@@ -249,26 +249,5 @@ typename Op::Input lsmr(
     }
   }
 
-  // Final check of residual
-  Mu.device(dev) = b - op.A(x);
-  u.device(dev) = M ? M->apply(Mu) : Mu;
-  if (λ > 0.f) {
-    if (xr.size()) {
-      ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
-      β = std::sqrt(std::real(Dot(u, Mu) + Norm2(ur)));
-    } else {
-      ur.device(dev) = -x * x.constant(sqrt(λ));
-      β = std::sqrt(std::real(Dot(u, Mu)));
-    }
-  }
-
-  Log::Print(
-    FMT_STRING("Final |Mu| {:5.3E} |u| {:5.3E} |uMu| {:5.3E} |ur| {:5.3E} β {:5.3E}"),
-    Norm(Mu),
-    Norm(u),
-    std::sqrt(std::real(Dot(u, Mu))),
-    Norm(ur),
-    β);
-
   return x;
 }

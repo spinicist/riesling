@@ -48,7 +48,6 @@ int main(int const argc, char const *const argv[])
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
     exit(EXIT_FAILURE);
   } catch (Log::Failure &f) {
-    fmt::print(stderr, "{}\n", f.what());
     FFT::End();
     Log::End();
     exit(EXIT_FAILURE);
