@@ -16,13 +16,14 @@ Reader::Reader(std::string const &fname)
   if (handle_ < 0) {
     Log::Fail(FMT_STRING("Failed to open {}"), fname);
   }
-  Log::Print(FMT_STRING("Opened file {} for reading, handle {}"), fname, handle_);
+  Log::Print(FMT_STRING("Opened file to read: {}"), fname);
+  Log::Debug(FMT_STRING("Handle: {}"), handle_);
 }
 
 Reader::~Reader()
 {
   H5Fclose(handle_);
-  Log::Debug(FMT_STRING("Closed HDF5 handle {}"), handle_);
+  Log::Debug(FMT_STRING("Closed handle: {}"), handle_);
 }
 
 template <typename T>

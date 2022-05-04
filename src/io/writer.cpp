@@ -11,14 +11,15 @@ Writer::Writer(std::string const &fname)
   if (handle_ < 0) {
     Log::Fail(FMT_STRING("Could not open file {} for writing"), fname);
   } else {
-    Log::Print(FMT_STRING("Opened file {} for writing, handle {}"), fname, handle_);
+    Log::Print(FMT_STRING("Opened file to write: {}"), fname);
+    Log::Debug(FMT_STRING("Handle: {}"), handle_);
   }
 }
 
 Writer::~Writer()
 {
   H5Fclose(handle_);
-  Log::Debug(FMT_STRING("Closed HDF5 handle {}"), handle_);
+  Log::Debug(FMT_STRING("Closed handle: {}"), handle_);
 }
 
 void Writer::writeInfo(Info const &info)

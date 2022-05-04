@@ -52,7 +52,7 @@ typename Op::Input admm_lsmr(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
+    
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,
@@ -123,7 +123,7 @@ typename Op::Input admm_lsqr(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
+    
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,
@@ -216,7 +216,7 @@ typename Op::Input admm_cg(
     Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Image(z, fmt::format("admm-z-{:02d}", ii));
     Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Print(FMT_STRING("x {} z {} u {}"), Norm(x), Norm(z), Norm(u));
+    
     Log::Print(
       FMT_STRING("ADMM-CG {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,

@@ -19,7 +19,7 @@ int main_recon(args::Subparser &parser)
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
   args::Flag rss(parser, "RSS", "Use Root-Sum-Squares channel combination", {"rss", 'r'});
-  args::Flag fwd(parser, "F", "Apply forward operation", {"fwd"});
+  args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string> trajName(parser, "T", "Override trajectory", {"traj"});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 

@@ -87,7 +87,7 @@ args::MapFlag<int, Log::Level> verbosity(global_group, "V", "Talk more (values 0
 args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
 args::ValueFlag<Index> nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
-void SetLogging()
+void SetLogging(std::string const &name)
 {
   if (verbosity) {
     Log::SetLevel(verbosity.Get());
@@ -96,6 +96,9 @@ void SetLogging()
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
     Log::SetLevel(levelMap.at(std::atoi(env_p)));
   }
+
+  Log::Print("Welcome to RIESLING");
+  Log::Print(FMT_STRING("Command: {}"), name);
 
   if (debug) {
     Log::SetDebugFile(debug.Get());
@@ -109,13 +112,13 @@ void SetThreadCount()
   } else if (char *const env_p = std::getenv("RL_THREADS")) {
     Threads::SetGlobalThreadCount(std::atoi(env_p));
   }
+  Log::Print(FMT_STRING("Using {} threads"), Threads::GlobalThreadCount());
 }
 
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 {
   parser.Parse();
-  Log::Print(FMT_STRING("Starting: {}"), parser.GetCommand().Name());
-  SetLogging();
+  SetLogging(parser.GetCommand().Name());
   SetThreadCount();
   if (!iname) {
     throw args::Error("No input file specified");
@@ -125,8 +128,7 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
 void ParseCommand(args::Subparser &parser)
 {
   parser.Parse();
-  Log::Print(FMT_STRING("Starting operation: {}"), parser.GetCommand().Name());
-  SetLogging();
+  SetLogging(parser.GetCommand().Name());
   SetThreadCount();
 }
 

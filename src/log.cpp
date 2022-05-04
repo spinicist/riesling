@@ -60,11 +60,8 @@ void ldebug(fmt::string_view fstr, fmt::format_args args)
 void lfail(fmt::string_view fstr, fmt::format_args args)
 {
   auto const t = std::chrono::system_clock::now();
-  auto const msg = fmt::format(
-    FMT_STRING("[{:%H:%M:%S}] {}\n"),
-    fmt::localtime(t),
-    fmt::vformat(fmt::fg(fmt::terminal_color::bright_red), fstr, args));
-  fmt::print(stderr, msg);
+  auto const msg = fmt::format(FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
+  fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), msg);
   throw Failure(msg);
 }
 
@@ -76,7 +73,7 @@ void StartProgress(Index const amount, std::string const &text)
       indicators::option::PrefixText{text},
       indicators::option::ShowElapsedTime{true},
       indicators::option::ShowRemainingTime{true});
-    progressTarget = amount;
+    progressTarget = amount - 1;
     progressAmount = 0;
   }
 }
@@ -84,7 +81,9 @@ void StartProgress(Index const amount, std::string const &text)
 void StopProgress()
 {
   if (progress) {
-    progress->mark_as_completed();
+    if (!progress->is_completed()) {
+      progress->mark_as_completed();
+    }
     progress = nullptr;
   }
 }
