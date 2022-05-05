@@ -13,7 +13,7 @@ SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k)
   W = gridder->A(gridder->Adj(W));
   pre_ = (W.real() > 0.f).select(W.real().inverse(), W.constant(0.f).real());
   Log::Debug("SINGLE-CHANNEL Created");
-  Log::Image(pre_, "pre");
+  Log::Tensor(pre_, "pre");
 }
 
 Cx3 SingleChannel::apply(Cx3 const &in) const

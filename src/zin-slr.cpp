@@ -17,7 +17,6 @@ Cx6 ToKernels(Cx5 const &grid, Index const kW)
     Log::Fail(FMT_STRING("No kernels to Hankelfy"));
   }
   Log::Print(FMT_STRING("Hankelfying {} kernels"), nK);
-  Log::Image(grid, "zin-slr-to-grid");
   Cx6 kernels(nC, nF, kW, kW, kW, nK);
   Index ik = 0;
   for (Index iz = 0; iz < nKx; iz++) {
@@ -58,9 +57,7 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
     }
   }
   assert(ik == nK);
-  Log::Image(count, "zin-slr-from-count");
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
-  Log::Image(grid, "zin-slr-from-grid");
 }
 
 Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float const wnThresh)
@@ -73,18 +70,23 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
     Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), wnThresh, 0.f, nC);
   }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, wnThresh);
-  Cx5 kspaces = fft.A(channels);
-  Cx6 kernels = ToKernels(kspaces, kSz);
+  Cx5 grid = fft.A(channels);
+  Cx6 kernels = ToKernels(grid, kSz);
+  Log::Tensor(grid, "zin-slr-to-grid");
+  Log::Tensor(kernels, "zin-slr-to-kernels");
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   auto const svd = SVD<Cx>(kMat, true, true);
   Index const nK = kernels.dimension(1) * kernels.dimension(2) * kernels.dimension(3) * kernels.dimension(4);
   Index const nZero = (nC - wnThresh) * nK; // Window-Normalized
   Log::Print(FMT_STRING("Zeroing {} values check {} nK {}"), nZero, (nC - wnThresh), nK);
   auto lrVals = svd.vals;
+  fmt::print(FMT_STRING("{}\n"), svd.vals.transpose());
   lrVals.tail(nZero).setZero();
   kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();
-  FromKernels(kernels, kspaces);
-  Cx5 outChannels = fft.Adj(kspaces);
-  Log::Image(outChannels, "zin-slr-channels");
+  FromKernels(kernels, grid);
+  Log::Tensor(grid, "zin-slr-from-grid");
+  Log::Tensor(kernels, "zin-slr-from-kernels");
+  Cx5 outChannels = fft.Adj(grid);
+  Log::Tensor(outChannels, "zin-slr-channels");
   return outChannels;
 }

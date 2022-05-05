@@ -1,9 +1,6 @@
 #pragma once
 
-#include "io/hd5.h"
-#include "log.h"
 #include "trajectory.h"
-
 #include <map>
 #include <string>
 

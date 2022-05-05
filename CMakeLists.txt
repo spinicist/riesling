@@ -45,7 +45,7 @@ add_library(vineyard
     src/algo/decomp.cpp
     src/algo/llr.cpp
     src/fft/fft.cpp
-    src/io/hd5.cpp
+    src/io/hd5-core.cpp
     src/io/nifti.cpp
     src/io/reader.cpp
     src/io/writer.cpp

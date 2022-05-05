@@ -1,7 +1,7 @@
 #include "types.h"
 
 #include "algo/decomp.h"
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "log.h"
 #include "parse_args.h"
 #include "sim/dwi.hpp"

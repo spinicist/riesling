@@ -68,23 +68,17 @@ typename Op::Input cg(
     float const alpha = r_old / Dot(p, q).real();
     x.device(dev) = x + p * p.constant(alpha);
     if (debug) {
-      Log::Image(p, fmt::format(FMT_STRING("cg-p-{:02}"), icg));
-      Log::Image(q, fmt::format(FMT_STRING("cg-q-{:02}"), icg));
-      Log::Image(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
-      Log::Image(r, fmt::format(FMT_STRING("cg-r-{:02}"), icg));
+      Log::Tensor(p, fmt::format(FMT_STRING("cg-p-{:02}"), icg));
+      Log::Tensor(q, fmt::format(FMT_STRING("cg-q-{:02}"), icg));
+      Log::Tensor(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
+      Log::Tensor(r, fmt::format(FMT_STRING("cg-r-{:02}"), icg));
     }
     r.device(dev) = r - q * q.constant(alpha);
     float const r_new = Norm2(r);
     float const beta = r_new / r_old;
     p.device(dev) = r + p * p.constant(beta);
     float const nr = sqrt(r_new);
-    Log::Print(
-      FMT_STRING("CG {:02d} |r| {:5.3E} ɑ {:5.3E} β {:5.3E} |x| {:5.3E}"),
-      icg,
-      nr,
-      alpha,
-      beta,
-      Norm(x));
+    Log::Print(FMT_STRING("CG {:02d} |r| {:5.3E} ɑ {:5.3E} β {:5.3E} |x| {:5.3E}"), icg, nr, alpha, beta, Norm(x));
     if (nr < thresh) {
       Log::Print(FMT_STRING("Reached convergence threshold"));
       break;

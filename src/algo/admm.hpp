@@ -48,11 +48,11 @@ typename Op::Input admm_lsmr(
     float const eps_prim = sqrtf(nvox) * abstol + reltol * std::max(Norm(x), Norm(z));
     float const eps_dual = sqrtf(nvox) * abstol + reltol * rho * Norm(u);
 
-    Log::Image(x, fmt::format("admm-x-{:02d}", ii));
-    Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
-    Log::Image(z, fmt::format("admm-z-{:02d}", ii));
-    Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    
+    Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
+    Log::Tensor(xpu, fmt::format("admm-xpu-{:02d}", ii));
+    Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
+    Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
+
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,
@@ -119,11 +119,11 @@ typename Op::Input admm_lsqr(
     float const eps_prim = sqrtf(nvox) * abstol + reltol * std::max(Norm(x), Norm(-z));
     float const eps_dual = sqrtf(nvox) * abstol + reltol * rho * Norm(u);
 
-    Log::Image(x, fmt::format("admm-x-{:02d}", ii));
-    Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
-    Log::Image(z, fmt::format("admm-z-{:02d}", ii));
-    Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    
+    Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
+    Log::Tensor(xpu, fmt::format("admm-xpu-{:02d}", ii));
+    Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
+    Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
+
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,
@@ -212,11 +212,11 @@ typename Op::Input admm_cg(
     float const eps_prim = sqrtf(N) * abstol + reltol * std::max(Norm(x), Norm(-z));
     float const eps_dual = sqrtf(N) * abstol + reltol * rho * Norm(u);
 
-    Log::Image(x, fmt::format("admm-x-{:02d}", ii));
-    Log::Image(xpu, fmt::format("admm-xpu-{:02d}", ii));
-    Log::Image(z, fmt::format("admm-z-{:02d}", ii));
-    Log::Image(u, fmt::format("admm-u-{:02d}", ii));
-    
+    Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
+    Log::Tensor(xpu, fmt::format("admm-xpu-{:02d}", ii));
+    Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
+    Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
+
     Log::Print(
       FMT_STRING("ADMM-CG {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,

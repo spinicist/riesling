@@ -40,9 +40,8 @@ struct NUFFTOp final : Operator<5, 3>
     } else {
       tf_ = gridder_->Adj(gridder_->A(tf_));
     }
-    Log::Image(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf");
-    Log::Debug(
-      FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));
+    Log::Tensor(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf");
+    Log::Debug(FMT_STRING("NUFFT: Calculated Töplitz. TF dimensions {}"), fmt::join(tf_.dimensions(), ","));
   }
 
   template <typename T>
@@ -63,8 +62,7 @@ struct NUFFTOp final : Operator<5, 3>
     auto const start = Log::Now();
     Input result(inputDimensions());
     if (sdc_) {
-      result.device(Threads::GlobalDevice()) =
-        apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(sdc_->Adj(x)))));
+      result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(sdc_->Adj(x)))));
     } else {
       result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(x))));
     }
@@ -84,14 +82,16 @@ struct NUFFTOp final : Operator<5, 3>
       Log::Debug("Using Töplitz embedding");
       Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd;
       brd.set(0, this->inputDimensions()[0]);
-      result.device(Threads::GlobalDevice()) =
-        pad_.Adj(fft_.Adj(tf_.broadcast(brd) * fft_.A(pad_.A(x))));
+      result.device(Threads::GlobalDevice()) = pad_.Adj(fft_.Adj(tf_.broadcast(brd) * fft_.A(pad_.A(x))));
     }
     Log::Debug("Finished NUFFT adjoint*forward: {}", Log::ToNow(start));
     return result;
   }
 
-  FFTOp<5> const &fft() const { return fft_; };
+  FFTOp<5> const &fft() const
+  {
+    return fft_;
+  };
 
 private:
   GridBase *gridder_;

@@ -56,16 +56,13 @@ inline void Grad(Cx5 const &x, Cx5 &gx, Eigen::ThreadPoolDevice &dev)
   gx.chip<4>(2).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(2), 2);
 
   gx.chip<4>(3).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<4>(0), 1) + BackwardDiff(x.chip<4>(1), 0)) /
-    gx.chip<4>(3).slice(st1, sz).constant(2.f);
+    (BackwardDiff(x.chip<4>(0), 1) + BackwardDiff(x.chip<4>(1), 0)) / gx.chip<4>(3).slice(st1, sz).constant(2.f);
 
   gx.chip<4>(4).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<4>(0), 2) + BackwardDiff(x.chip<4>(2), 0)) /
-    gx.chip<4>(4).slice(st1, sz).constant(2.f);
+    (BackwardDiff(x.chip<4>(0), 2) + BackwardDiff(x.chip<4>(2), 0)) / gx.chip<4>(4).slice(st1, sz).constant(2.f);
 
   gx.chip<4>(5).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<4>(1), 2) + BackwardDiff(x.chip<4>(2), 1)) /
-    gx.chip<4>(5).slice(st1, sz).constant(2.f);
+    (BackwardDiff(x.chip<4>(1), 2) + BackwardDiff(x.chip<4>(2), 1)) / gx.chip<4>(5).slice(st1, sz).constant(2.f);
 }
 
 inline void Div(Cx5 const &x, Cx4 &div, Eigen::ThreadPoolDevice &dev)
@@ -113,10 +110,10 @@ inline void ProjectQ(Cx5 &q, float const a, Eigen::ThreadPoolDevice &dev)
   Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, Eigen::type2index<6>> brd;
 
   auto const qsqr = q * q.conjugate();
-  auto const q1 = qsqr.slice(
-    Sz5{0, 0, 0, 0, 0}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
-  auto const q2 = qsqr.slice(
-    Sz5{0, 0, 0, 0, 3}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
+  auto const q1 =
+    qsqr.slice(Sz5{0, 0, 0, 0, 0}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
+  auto const q2 =
+    qsqr.slice(Sz5{0, 0, 0, 0, 3}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
   R4 normq(q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3));
   normq.device(dev) = (q1.sum(Sz1{4}).real() + q2.sum(Sz1{4}).real() * 2.f).sqrt() / a;
   normq.device(dev) = (normq > 1.f).select(normq, normq.constant(1.f));
@@ -190,7 +187,7 @@ Cx4 tgv(
   Log::Print(FMT_STRING("TGV Scale {}"), scale);
 
   for (auto ii = 0.f; ii < max_its; ii++) {
-    Log::Image(u, fmt::format(FMT_STRING("tgv-u-{:02}"), ii));
+    Log::Tensor(u, fmt::format(FMT_STRING("tgv-u-{:02}"), ii));
     // Regularisation factors
     float const prog = static_cast<float>(ii) / ((max_its == 1) ? 1. : (max_its - 1.f));
     float const alpha0 = std::exp(std::log(alpha01) * prog + std::log(alpha00) * (1.f - prog));

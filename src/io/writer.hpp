@@ -1,8 +1,6 @@
 #pragma once
 
-#include "log.h"
 #include "trajectory.h"
-
 #include <map>
 #include <string>
 
@@ -20,6 +18,8 @@ struct Writer
   void writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label);
   template <typename Derived>
   void writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label);
+
+  bool exists(std::string const &name) const;
 
 private:
   int64_t handle_;

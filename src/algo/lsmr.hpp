@@ -116,9 +116,9 @@ typename Op::Input lsmr(
   float const normb = β;
 
   if (debug) {
-    Log::Image(v, "lsmr-v-init");
-    Log::Image(x, "lsmr-x-init");
-    Log::Image(ur, "lsmr-ur-init");
+    Log::Tensor(v, "lsmr-v-init");
+    Log::Tensor(x, "lsmr-x-init");
+    Log::Tensor(ur, "lsmr-ur-init");
   }
 
   Log::Print(FMT_STRING("LSMR    |r| {:5.3E} α {:5.3E} β {:5.3E}"), normb, α, β);
@@ -166,11 +166,11 @@ typename Op::Input lsmr(
     h.device(dev) = v - (θnew / ρ) * h;
 
     if (debug) {
-      Log::Image(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
-      Log::Image(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
-      Log::Image(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
-      Log::Image(h, fmt::format(FMT_STRING("lsmr-h-{:02d}"), ii));
-      Log::Image(ur, fmt::format(FMT_STRING("lsmr-ur-{:02d}"), ii));
+      Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
+      Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
+      Log::Tensor(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
+      Log::Tensor(h, fmt::format(FMT_STRING("lsmr-h-{:02d}"), ii));
+      Log::Tensor(ur, fmt::format(FMT_STRING("lsmr-ur-{:02d}"), ii));
     }
     // Estimate of ||r||.
     // Apply rotation P{k-1}.

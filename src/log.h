@@ -58,6 +58,6 @@ Time Now();
 std::string ToNow(Time const t);
 
 template <typename Scalar, int ND>
-void Image(Eigen::Tensor<Scalar, ND> const &i, std::string const &name);
+void Tensor(Eigen::Tensor<Scalar, ND> const &i, std::string const &name);
 
 } // namespace Log

@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "log.h"
 #include "op/pad.hpp"
 #include "parse_args.h"
@@ -48,7 +48,7 @@ int main_pad(args::Subparser &parser)
       PadOp<5> pad(outDims, inDims);
       outImages = pad.Adj(inImages);
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
-    } 
+    }
     writer.writeTensor(outImages, HD5::Keys::Image);
   }
   return EXIT_SUCCESS;

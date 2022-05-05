@@ -1,4 +1,4 @@
-#include "io/nifti.h"
+#include "io/nifti.hpp"
 #include "nifti1_io.h"
 #include <fmt/ostream.h>
 

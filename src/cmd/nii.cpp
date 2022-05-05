@@ -1,6 +1,7 @@
 #include "types.h"
 
-#include "io/io.h"
+#include "io/hd5.hpp"
+#include "io/nifti.hpp"
 #include "log.h"
 #include "parse_args.h"
 

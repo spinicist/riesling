@@ -8,10 +8,7 @@ Cx4 birdcage(
   float const coil_rad_mm, // Radius of the actual coil, i.e. where the channels should go
   float const sense_rad_mm)
 {
-  Log::Print(
-    FMT_STRING("Constructing bird-cage sensitivities with {} channels in {} rings"),
-    channels,
-    nrings);
+  Log::Print(FMT_STRING("Constructing bird-cage sensitivities with {} channels in {} rings"), channels, nrings);
   Cx4 all(channels, matrix[0], matrix[1], matrix[2]);
 
   if (channels < 1) {
@@ -38,14 +35,13 @@ Cx4 birdcage(
               Eigen::Vector3f const pos(px, py, pz);
               Eigen::Vector3f const vec = pos - chan_pos;
               float const r = vec.norm() < avoid_div_zero ? 0.f : sense_rad_mm / vec.norm();
-              all(ic + ir * chan_per_ring, ix, iy, iz) =
-                std::polar(r, atan2(vec(0), vec(1)) + coil_phs);
+              all(ic + ir * chan_per_ring, ix, iy, iz) = std::polar(r, atan2(vec(0), vec(1)) + coil_phs);
             }
           }
         }
       }
     }
   }
-  Log::Image(all, fmt::format(FMT_STRING("birdcage-{}"), channels));
+  Log::Tensor(all, fmt::format(FMT_STRING("birdcage-{}"), channels));
   return all;
 }

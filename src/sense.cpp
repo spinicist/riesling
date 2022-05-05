@@ -3,7 +3,7 @@
 #include "cropper.h"
 #include "fft/fft.hpp"
 #include "filter.h"
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 
@@ -45,11 +45,11 @@ Cx4 SelfCalibration(
     Log::Print(FMT_STRING("Regularization lambda {}"), λ);
     rss.device(Threads::GlobalDevice()) = rss + rss.constant(λ);
   }
-  Log::Image(rss, "sense-rss");
-  Log::Image(channels, "sense-channels");
+  Log::Tensor(rss, "sense-rss");
+  Log::Tensor(channels, "sense-channels");
   Log::Print(FMT_STRING("Normalizing channel images"));
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
-  Log::Image(channels, "sense-maps");
+  Log::Tensor(channels, "sense-maps");
   Log::Print(FMT_STRING("Finished SENSE maps"));
   return channels;
 }

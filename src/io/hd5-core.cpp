@@ -1,9 +1,7 @@
-#include "io/hd5.h"
+#include "hd5-core.hpp"
 #include "info.h"
-#include "io/hd5.hpp"
-#include <Eigen/Eigenvalues>
+#include "log.h"
 #include <filesystem>
-#include <fmt/format.h>
 
 namespace HD5 {
 
@@ -150,8 +148,7 @@ hid_t type_impl(type_tag<std::complex<float>>)
   status = H5Tinsert(complex_id, "r", HOFFSET(complex_t, r), scalar_id);
   status = H5Tinsert(complex_id, "i", HOFFSET(complex_t, i), scalar_id);
   if (status) {
-    throw std::runtime_error(
-      "Exception occurred creating complex datatype " + std::to_string(status));
+    throw std::runtime_error("Exception occurred creating complex datatype " + std::to_string(status));
   }
   return complex_id;
 }

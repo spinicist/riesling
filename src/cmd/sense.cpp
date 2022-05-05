@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "log.h"
 #include "op/sense.hpp"
 #include "parse_args.h"
@@ -27,10 +27,7 @@ int main_sense(args::Subparser &parser)
   if (fwd) {
     std::string const name = dset ? dset.Get() : HD5::Keys::Image;
     auto const images = ireader.readTensor<Cx5>(name);
-    if (!std::equal(
-          images.dimensions().begin() + 1,
-          images.dimensions().begin() + 4,
-          maps.dimensions().begin() + 1)) {
+    if (!std::equal(images.dimensions().begin() + 1, images.dimensions().begin() + 4, maps.dimensions().begin() + 1)) {
       Log::Fail(
         FMT_STRING("Image dimensions {} did not match SENSE maps {}"),
         fmt::join(images.dimensions(), ","),
@@ -54,14 +51,9 @@ int main_sense(args::Subparser &parser)
     auto const channels = ireader.readTensor<Cx6>(name);
     if (channels.dimension(0) != maps.dimension(0)) {
       Log::Fail(
-        FMT_STRING("Number of channels {} did not match SENSE maps {}"),
-        channels.dimension(0),
-        maps.dimension(0));
+        FMT_STRING("Number of channels {} did not match SENSE maps {}"), channels.dimension(0), maps.dimension(0));
     }
-    if (!std::equal(
-          channels.dimensions().begin() + 2,
-          channels.dimensions().end(),
-          maps.dimensions().begin() + 1)) {
+    if (!std::equal(channels.dimensions().begin() + 2, channels.dimensions().end(), maps.dimensions().begin() + 1)) {
       Log::Fail(
         FMT_STRING("Image dimensions {} did not match SENSE maps {}"),
         fmt::join(channels.dimensions(), ","),

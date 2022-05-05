@@ -19,8 +19,8 @@ Cx4 VBC(Cx4 &maps)
   Cx4 body(maps.dimensions());
   Eigen::Map<Eigen::MatrixXcf> bodymat(body.data(), nc, nx * ny * nz);
   bodymat = svd.matrixV().transpose();
-  Log::Image(maps, "vbc-maps.nii");
-  Log::Image(body, "vbc-body.nii");
+  Log::Tensor(maps, "vbc-maps.nii");
+  Log::Tensor(body, "vbc-body.nii");
   bodymat = bodymat.array().conjugate() / bodymat.array().abs();
   return body;
 }
@@ -36,17 +36,17 @@ void VCC(Cx4 &data)
   Cx4 cdata(nc, nx, ny, nz);
   FFT::Planned<5, 3> fft(cdata);
   cdata = data;
-  Log::Image(cdata, "vcc-cdata.nii");
+  Log::Tensor(cdata, "vcc-cdata.nii");
   fft.forward(cdata);
-  Log::Image(cdata, "vcc-cdata-ks.nii");
+  Log::Tensor(cdata, "vcc-cdata-ks.nii");
   Cx4 rdata = cdata.slice(Sz4{0, 1, 1, 1}, Sz4{nc, nx - 1, ny - 1, nz - 1})
                 .reverse(Eigen::array<bool, 4>({false, true, true, true}))
                 .conjugate();
   cdata.setZero();
   cdata.slice(Sz4{0, 1, 1, 1}, Sz4{nc, nx - 1, ny - 1, nz - 1}) = rdata;
-  Log::Image(cdata, "vcc-cdata-conj-ks.nii");
+  Log::Tensor(cdata, "vcc-cdata-conj-ks.nii");
   fft.reverse(cdata);
-  Log::Image(cdata, "vcc-cdata-conj.nii");
+  Log::Tensor(cdata, "vcc-cdata-conj.nii");
 
   Cx3 phase(nx, ny, nz);
   phase.setZero();
@@ -60,10 +60,10 @@ void VCC(Cx4 &data)
       }
     }
   }
-  Log::Image(phase, "vcc-correction.nii");
+  Log::Tensor(phase, "vcc-correction.nii");
   Log::Print("Applying Virtual Conjugate Coil phase correction");
   data = data * Tile(phase, nc);
-  Log::Image(data, "vcc-corrected.nii");
+  Log::Tensor(data, "vcc-corrected.nii");
 }
 
 Cx3 Hammond(Cx4 const &maps)
@@ -76,8 +76,7 @@ Cx3 Hammond(Cx4 const &maps)
 
   Index const refSz = 9;
   Cropper refCrop(Sz3{nx, ny, nz}, Sz3{refSz, refSz, refSz});
-  Cx1 const ref =
-    refCrop.crop4(maps).sum(Sz3{1, 2, 3}).conjugate() / refCrop.crop4(maps).sum(Sz3{1, 2, 3}).abs();
+  Cx1 const ref = refCrop.crop4(maps).sum(Sz3{1, 2, 3}).conjugate() / refCrop.crop4(maps).sum(Sz3{1, 2, 3}).abs();
 
   using FixedOne = Eigen::type2index<1>;
   Eigen::IndexList<int, FixedOne, FixedOne, FixedOne> rsh;
@@ -89,8 +88,8 @@ Cx3 Hammond(Cx4 const &maps)
   auto const broadcasted = ref.reshape(rsh).broadcast(brd);
   Cx3 const combined = (maps * broadcasted).sum(Sz1{0});
   Cx3 const rss = maps.square().sum(Sz1{0}).sqrt();
-  Log::Image(combined, "hammond-combined.nii");
-  Log::Image(rss, "hammond-rss.nii");
+  Log::Tensor(combined, "hammond-combined.nii");
+  Log::Tensor(rss, "hammond-rss.nii");
 
   return combined;
 }

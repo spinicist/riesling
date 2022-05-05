@@ -101,6 +101,6 @@ Cx3 SheppLoganPhantom(
     }
   }
 
-  Log::Image(phan, "phantom-shepplogan");
+  Log::Tensor(phan, "phantom-shepplogan");
   return phan;
 }

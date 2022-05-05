@@ -79,9 +79,9 @@ typename Op::Input lsqr(
   float normA = 0;
 
   if (debug) {
-    Log::Image(v, "lsqr-v-init");
-    Log::Image(x, "lsqr-x-init");
-    Log::Image(ur, "lsqr-ur-init");
+    Log::Tensor(v, "lsqr-v-init");
+    Log::Tensor(x, "lsqr-x-init");
+    Log::Tensor(ur, "lsqr-ur-init");
   }
 
   Log::Print(FMT_STRING("LSQR    α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
@@ -119,10 +119,10 @@ typename Op::Input lsqr(
     w.device(dev) = v - w * w.constant(θ / ρ);
 
     if (debug) {
-      Log::Image(x, fmt::format(FMT_STRING("lsqr-x-{:02d}"), ii));
-      Log::Image(v, fmt::format(FMT_STRING("lsqr-v-{:02d}"), ii));
-      Log::Image(w, fmt::format(FMT_STRING("lsqr-w-{:02d}"), ii));
-      Log::Image(ur, fmt::format(FMT_STRING("lsqr-ur-{:02d}"), ii));
+      Log::Tensor(x, fmt::format(FMT_STRING("lsqr-x-{:02d}"), ii));
+      Log::Tensor(v, fmt::format(FMT_STRING("lsqr-v-{:02d}"), ii));
+      Log::Tensor(w, fmt::format(FMT_STRING("lsqr-w-{:02d}"), ii));
+      Log::Tensor(ur, fmt::format(FMT_STRING("lsqr-ur-{:02d}"), ii));
     }
 
     // Estimate norms

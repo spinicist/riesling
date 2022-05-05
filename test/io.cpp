@@ -1,4 +1,4 @@
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "log.h"
 #include "tensorOps.h"
 #include "traj_spirals.h"
@@ -65,8 +65,7 @@ TEST_CASE("io")
       HD5::Writer writer(fname);
       writer.writeTrajectory(traj);
       writer.writeTensor(
-        Cx4(refData.reshape(Sz4{info.volumes, info.read_points, info.spokes, info.channels})),
-        HD5::Keys::Noncartesian);
+        Cx4(refData.reshape(Sz4{info.volumes, info.read_points, info.spokes, info.channels})), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
     CHECK_THROWS_AS(Dummy(fname), Log::Failure);

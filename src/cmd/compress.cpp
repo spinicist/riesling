@@ -1,7 +1,7 @@
 #include "algo/decomp.h"
 #include "compressor.h"
 #include "cropper.h"
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "log.h"
 #include "op/grids.h"
 #include "op/nufft.hpp"
@@ -76,7 +76,7 @@ int main_compress(args::Subparser &parser)
 
     // Get the signal distribution for thresholding
     R3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
-    Log::Image(rss, "rovir-rss");
+    Log::Tensor(rss, "rovir-rss");
     std::vector<float> percentiles(rss.size());
     std::copy_n(rss.data(), rss.size(), percentiles.begin());
     std::sort(percentiles.begin(), percentiles.end());
@@ -99,8 +99,8 @@ int main_compress(args::Subparser &parser)
     Cropper intCrop(info, sz, fov.Get() + gap.Get());
     intCrop.crop3(interMask).setZero();
 
-    Log::Image(signalMask, "rovir-signalmask");
-    Log::Image(interMask, "rovir-interferencemask");
+    Log::Tensor(signalMask, "rovir-signalmask");
+    Log::Tensor(interMask, "rovir-interferencemask");
 
     // Copy to A & B matrices
     Index const nSig = Sum(signalMask);
@@ -146,8 +146,8 @@ int main_compress(args::Subparser &parser)
       compressor.psi = eig.eigenvectors().rowwise().reverse();
       Cx3 const rks = compressor.compress(ks);
       Cx4 const rImages = nufft.Adj(rks).chip<1>(0);
-      Log::Image(channelImages, "rovir-channels");
-      Log::Image(rImages, "rovir-rchannels");
+      Log::Tensor(channelImages, "rovir-channels");
+      Log::Tensor(rImages, "rovir-rchannels");
     }
 
     Eigen::ArrayXf vals = eig.eigenvalues().reverse().array().abs();

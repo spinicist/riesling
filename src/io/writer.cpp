@@ -1,8 +1,91 @@
-#include "io/writer.h"
-#include "io/hd5.h"
-#include "io/hd5.hpp"
+#include "io/writer.hpp"
+#include "io/hd5-core.hpp"
 
 namespace HD5 {
+
+template <typename Scalar, int ND>
+void store_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> const &data)
+{
+  // Check for sane dimensions
+  for (Index ii = 0; ii < ND; ii++) {
+    if (data.dimension(ii) == 0) {
+      Log::Fail(FMT_STRING("Tensor {} had a zero dimension. Dims: {}"), name, data.dimensions());
+    }
+  }
+
+  herr_t status;
+  hsize_t ds_dims[ND], chunk_dims[ND];
+  // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
+  std::copy_n(data.dimensions().rbegin(), ND, ds_dims);
+  std::copy_n(ds_dims, ND, chunk_dims);
+  // Try to stop chunk dimension going over 4 gig
+  Index sizeInBytes = Product(data.dimensions()) * sizeof(Scalar);
+  Index dimToShrink = 0;
+  while (sizeInBytes > (1L << 32L)) {
+    if (chunk_dims[dimToShrink] > 1) {
+      chunk_dims[dimToShrink] /= 2;
+      sizeInBytes /= 2;
+    }
+    dimToShrink = (dimToShrink + 1) % ND;
+  }
+
+  auto const space = H5Screate_simple(ND, ds_dims, NULL);
+  auto const plist = H5Pcreate(H5P_DATASET_CREATE);
+  status = H5Pset_deflate(plist, 2);
+  status = H5Pset_chunk(plist, ND, chunk_dims);
+
+  hid_t const tid = type<Scalar>();
+  hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
+  if (dset < 0) {
+    Log::Fail(
+      FMT_STRING("Could not create tensor {}. Dims {}. Error {}"),
+      name,
+      fmt::join(data.dimensions(), ","),
+      HD5::GetError());
+  }
+  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
+  status = H5Pclose(plist);
+  status = H5Sclose(space);
+  status = H5Dclose(dset);
+  if (status) {
+    Log::Fail(FMT_STRING("Writing Tensor {}: Error {}"), name, HD5::GetError());
+  } else {
+    Log::Debug(FMT_STRING("Wrote tensor: {}"), name);
+  }
+}
+
+template <typename Derived>
+void store_matrix(Handle const &parent, std::string const &name, Eigen::DenseBase<Derived> const &data)
+{
+  herr_t status;
+  hsize_t ds_dims[2], chunk_dims[2];
+  hsize_t const rank = data.cols() > 1 ? 2 : 1;
+  if (rank == 2) {
+    // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
+    ds_dims[0] = data.cols();
+    ds_dims[1] = data.rows();
+  } else {
+    ds_dims[0] = data.rows();
+  }
+
+  std::copy_n(ds_dims, rank, chunk_dims);
+  auto const space = H5Screate_simple(rank, ds_dims, NULL);
+  auto const plist = H5Pcreate(H5P_DATASET_CREATE);
+  status = H5Pset_deflate(plist, rank);
+  status = H5Pset_chunk(plist, rank, chunk_dims);
+
+  hid_t const tid = type<typename Derived::Scalar>();
+  hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
+  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.derived().data());
+  status = H5Pclose(plist);
+  status = H5Sclose(space);
+  status = H5Dclose(dset);
+  if (status) {
+    Log::Fail(FMT_STRING("Could not write matrix {} into handle {}, code: {}"), name, parent, status);
+  } else {
+    Log::Debug(FMT_STRING("Wrote matrix: {}"), name);
+  }
+}
 
 Writer::Writer(std::string const &fname)
 {
@@ -27,8 +110,7 @@ void Writer::writeInfo(Info const &info)
   hid_t info_id = InfoType();
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
-  hid_t const dset =
-    H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t const dset = H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (dset < 0) {
     Log::Fail(FMT_STRING("Could not create info struct in file {}, code: {}"), handle_, dset);
   }
@@ -51,8 +133,8 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   auto const space = H5Screate_simple(1, dims, NULL);
   herr_t status;
   for (auto const &kvp : meta) {
-    hid_t const dset = H5Dcreate(
-      m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t const dset =
+      H5Dcreate(m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(kvp.second));
     status = H5Dclose(dset);
   }
@@ -67,6 +149,11 @@ void Writer::writeTrajectory(Trajectory const &t)
   writeInfo(t.info());
   HD5::store_tensor(handle_, Keys::Trajectory, t.points());
   HD5::store_tensor(handle_, "frames", t.frames());
+}
+
+bool Writer::exists(std::string const &name) const
+{
+  return HD5::Exists(handle_, name);
 }
 
 template <typename Scalar, int ND>
@@ -90,14 +177,10 @@ void Writer::writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &
   HD5::store_matrix(handle_, label, m);
 }
 
-template void Writer::writeMatrix<Eigen::MatrixXf>(
-  Eigen::DenseBase<Eigen::MatrixXf> const &, std::string const &);
-template void Writer::writeMatrix<Eigen::MatrixXcf>(
-  Eigen::DenseBase<Eigen::MatrixXcf> const &, std::string const &);
+template void Writer::writeMatrix<Eigen::MatrixXf>(Eigen::DenseBase<Eigen::MatrixXf> const &, std::string const &);
+template void Writer::writeMatrix<Eigen::MatrixXcf>(Eigen::DenseBase<Eigen::MatrixXcf> const &, std::string const &);
 
-template void
-Writer::writeMatrix<Eigen::ArrayXf>(Eigen::DenseBase<Eigen::ArrayXf> const &, std::string const &);
-template void Writer::writeMatrix<Eigen::ArrayXXf>(
-  Eigen::DenseBase<Eigen::ArrayXXf> const &, std::string const &);
+template void Writer::writeMatrix<Eigen::ArrayXf>(Eigen::DenseBase<Eigen::ArrayXf> const &, std::string const &);
+template void Writer::writeMatrix<Eigen::ArrayXXf>(Eigen::DenseBase<Eigen::ArrayXXf> const &, std::string const &);
 
 } // namespace HD5

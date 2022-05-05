@@ -1,6 +1,6 @@
 
 #include "coils.h"
-#include "io/io.h"
+#include "io/hd5.hpp"
 #include "log.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
@@ -22,7 +22,8 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> fov(parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<Index> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
-  args::ValueFlag<float> phan_r(parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
+  args::ValueFlag<float> phan_r(
+    parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
     parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_rot(
@@ -93,8 +94,9 @@ int main_phantom(args::Subparser &parser)
   Log::Print(FMT_STRING("Read points: {} Spokes: {}"), info.read_points, info.spokes);
 
   Trajectory traj(info, points);
-  Cx4 senseMaps = sense ? SENSE::Interp(sense.Get(), info.matrix)
-                        : birdcage(info.matrix, info.voxel_size, info.channels, coil_rings.Get(), coil_r.Get(), coil_r.Get());
+  Cx4 senseMaps =
+    sense ? SENSE::Interp(sense.Get(), info.matrix)
+          : birdcage(info.matrix, info.voxel_size, info.channels, coil_rings.Get(), coil_r.Get(), coil_r.Get());
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
@@ -116,12 +118,14 @@ int main_phantom(args::Subparser &parser)
     intensities.resize(phan.dimension(0));
     std::fill(intensities.begin(), intensities.end(), 100.f);
   } else if ((Index)intensities.size() != phan.dimension(0)) {
-    Log::Fail("Number of intensities {} does not match phantom first dimension {}", intensities.size(), phan.dimension(0));
+    Log::Fail(
+      "Number of intensities {} does not match phantom first dimension {}", intensities.size(), phan.dimension(0));
   }
   for (Index ii = 0; ii < phan.dimension(0); ii++) {
     phan.chip<0>(ii) =
-      shepplogan ? SheppLoganPhantom(info.matrix, info.voxel_size, phan_c.Get(), phan_rot.Get(), phan_r.Get(), intensities[ii])
-                 : SphericalPhantom(info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii]);
+      shepplogan
+        ? SheppLoganPhantom(info.matrix, info.voxel_size, phan_c.Get(), phan_rot.Get(), phan_r.Get(), intensities[ii])
+        : SphericalPhantom(info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii]);
   }
   Log::Print(FMT_STRING("Sampling hi-res non-cartesian"));
   Cx3 radial = info.noncartesianVolume();
@@ -150,7 +154,8 @@ int main_phantom(args::Subparser &parser)
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeTrajectory(traj);
-  writer.writeTensor(Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})), HD5::Keys::Noncartesian);
+  writer.writeTensor(
+    Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})), HD5::Keys::Noncartesian);
   writer.writeTensor(Cx5(phan.reshape(AddBack(phan.dimensions(), 1))), HD5::Keys::Image);
 
   return EXIT_SUCCESS;

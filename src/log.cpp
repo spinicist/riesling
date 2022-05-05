@@ -2,7 +2,7 @@
 
 #include "fmt/chrono.h"
 #include "indicators/progress_bar.hpp"
-#include "io/writer.h"
+#include "io/hd5.hpp"
 #include "tensorOps.h"
 
 namespace Log {
@@ -113,17 +113,23 @@ std::string ToNow(Log::Time const t1)
 }
 
 template <typename Scalar, int ND>
-void Image(Eigen::Tensor<Scalar, ND> const &img, std::string const &name)
+void Tensor(Eigen::Tensor<Scalar, ND> const &img, std::string const &nameIn)
 {
   if (debug_file) {
+    Index count = 0;
+    std::string name = nameIn;
+    while (debug_file->exists(name)) {
+      count++;
+      name = fmt::format("{}-{}", nameIn, count);
+    }
     debug_file->writeTensor(img, name);
   }
 }
 
-template void Image(R3 const &, std::string const &);
-template void Image(Cx3 const &, std::string const &);
-template void Image(Cx4 const &, std::string const &);
-template void Image(Cx5 const &, std::string const &);
-template void Image(Cx6 const &, std::string const &);
+template void Tensor(R3 const &, std::string const &);
+template void Tensor(Cx3 const &, std::string const &);
+template void Tensor(Cx4 const &, std::string const &);
+template void Tensor(Cx5 const &, std::string const &);
+template void Tensor(Cx6 const &, std::string const &);
 
 } // namespace Log
