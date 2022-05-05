@@ -1,6 +1,7 @@
 #include "zin-slr.hpp"
 
 #include "algo/decomp.h"
+#include "cropper.h"
 #include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
@@ -71,10 +72,19 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, wnThresh);
   Cx5 grid = fft.A(channels);
-  Cx6 kernels = ToKernels(grid, kSz);
-  Log::Tensor(grid, "zin-slr-to-grid");
-  Log::Tensor(kernels, "zin-slr-to-kernels");
+  // Now crop out corners which will have zeros
+  Index const w = std::floor(grid.dimension(2) / sqrt(3));
+  Log::Print(FMT_STRING("Extract width {}"), w);
+
+  Cx5 cropped = CropLast3(grid, Sz3{w, w, w});
+  Cx6 kernels = ToKernels(cropped, kSz);
+  Log::Tensor(grid, "zin-slr-b4-grid");
+  Log::Tensor(cropped, "zin-slr-b4-cropped");
+  Log::Tensor(kernels, "zin-slr-b4-kernels");
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
+  if (kMat.rows() > kMat.cols()) {
+    Log::Fail(FMT_STRING("Insufficient kernels for SVD {}x{}"), kMat.rows(), kMat.cols());
+  }
   auto const svd = SVD<Cx>(kMat, true, true);
   Index const nK = kernels.dimension(1) * kernels.dimension(2) * kernels.dimension(3) * kernels.dimension(4);
   Index const nZero = (nC - wnThresh) * nK; // Window-Normalized
@@ -83,10 +93,13 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   fmt::print(FMT_STRING("{}\n"), svd.vals.transpose());
   lrVals.tail(nZero).setZero();
   kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();
-  FromKernels(kernels, grid);
-  Log::Tensor(grid, "zin-slr-from-grid");
-  Log::Tensor(kernels, "zin-slr-from-kernels");
+  FromKernels(kernels, cropped);
+  CropLast3(grid, Sz3{w, w, w}) = cropped;
+  Log::Tensor(cropped, "zin-slr-after-cropped");
+  Log::Tensor(grid, "zin-slr-after-grid");
+  Log::Tensor(kernels, "zin-slr-after-kernels");
   Cx5 outChannels = fft.Adj(grid);
-  Log::Tensor(outChannels, "zin-slr-channels");
+  Log::Tensor(channels, "zin-slr-b4-channels");
+  Log::Tensor(outChannels, "zin-slr-after-channels");
   return outChannels;
 }

@@ -18,6 +18,7 @@ int main_lsqr(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
+  args::ValueFlag<Index> readStart(parser, "N", "Read start", {"rs"}, 0);
   args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
@@ -31,7 +32,7 @@ int main_lsqr(args::Subparser &parser)
   Info const &info = traj.info();
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
+  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get(), 0, readStart.Get());
   auto gridder = make_grid(kernel.get(), mapping, core.fast);
 
   std::unique_ptr<Precond<Cx3>> pre = precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;

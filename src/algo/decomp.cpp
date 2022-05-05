@@ -28,7 +28,7 @@ SVD<Scalar>::SVD(Eigen::Ref<Matrix const> const &mat, bool const transpose, bool
 {
   if (transpose) {
     if (verbose) {
-      Log::Print(FMT_STRING("SVD Transpose Size {}x{}"), mat.rows(), mat.cols());
+      Log::Print(FMT_STRING("SVD Transpose Size {}x{}"), mat.cols(), mat.rows());
     }
     auto const svd = mat.transpose().bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
     this->vals = svd.singularValues();

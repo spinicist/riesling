@@ -17,8 +17,7 @@ template <typename T>
 decltype(auto) Crop3(T &&x, Sz3 const &sz)
 {
   Sz3 const fullSz = x.dimensions();
-  Sz3 const st = Sz3{
-    (fullSz[0] - (sz[0] - 1)) / 2, (fullSz[1] - (sz[1] - 1)) / 2, (fullSz[2] - (sz[2] - 1)) / 2};
+  Sz3 const st = Sz3{(fullSz[0] - (sz[0] - 1)) / 2, (fullSz[1] - (sz[1] - 1)) / 2, (fullSz[2] - (sz[2] - 1)) / 2};
   return x.slice(st, Sz3{sz[0], sz[1], sz[2]});
 }
 
@@ -31,6 +30,22 @@ decltype(auto) Crop4(T &&x, Sz3 const &sz)
   st.set(2, (fullSz[2] - (sz[1] - 1)) / 2);
   st.set(3, (fullSz[3] - (sz[2] - 1)) / 2);
   return x.slice(st, Sz4{x.dimension(0), sz[0], sz[1], sz[2]});
+}
+
+template <typename T>
+decltype(auto) CropLast3(T &&x, Sz3 const &crop)
+{
+  auto xsz = x.dimensions();
+  decltype(xsz) st, sz;
+
+  Index const N = x.NumDimensions;
+  std::copy_n(xsz.begin(), N - 3, sz.begin());
+  std::copy_n(crop.begin(), 3, sz.end() - 3);
+
+  std::fill_n(st.begin(), N - 3, 0);
+  std::transform(
+    xsz.end() - 3, xsz.end(), crop.begin(), st.end() - 3, [](Index big, Index small) { return (big - small + 1) / 2; });
+  return x.slice(st, sz);
 }
 
 /** Cropper object - useful for when the same cropping operation will be carried out multiple times
@@ -70,9 +85,7 @@ struct Cropper
   template <typename T>
   decltype(auto) crop5(T &&x) const
   {
-    return x.slice(
-      Sz5{0, 0, st_[0], st_[1], st_[2]},
-      Sz5{x.dimension(0), x.dimension(1), sz_[0], sz_[1], sz_[2]});
+    return x.slice(Sz5{0, 0, st_[0], st_[1], st_[2]}, Sz5{x.dimension(0), x.dimension(1), sz_[0], sz_[1], sz_[2]});
   }
 
 private:
