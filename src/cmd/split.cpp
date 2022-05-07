@@ -17,6 +17,7 @@ int main_split(args::Subparser &parser)
   args::ValueFlag<Index> spf(parser, "S", "Spokes per frame", {"spf"}, 1);
   args::ValueFlag<Index> step(parser, "STEP", "Step size", {"s", "step"}, 0);
   args::ValueFlag<Index> zero(parser, "Z", "Zero the first N samples", {"zero"}, 0);
+  args::ValueFlag<Index> trim(parser, "T", "Trim the first N samples", {"trim"}, 0);
 
   ParseCommand(parser, iname);
 
@@ -24,7 +25,18 @@ int main_split(args::Subparser &parser)
   auto traj = reader.trajectory();
   Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
 
+  if (trim) {
+    Log::Print(FMT_STRING("Trimming {} points"), trim.Get());
+    auto info = traj.info();
+    info.read_points = info.read_points - trim.Get();
+    R3 points = traj.points();
+    points = R3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
+    traj = Trajectory(info, points, traj.frames());
+    ks = Cx4(ks.slice(Sz4{0, trim.Get(), 0, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
+  }
+
   if (zero) {
+    Log::Print(FMT_STRING("Zeroing {} popints"), zero.Get());
     ks.slice(Sz4{0, 0, 0, 0}, Sz4{ks.dimension(0), zero.Get(), ks.dimension(2), ks.dimension(3)}).setZero();
   }
 

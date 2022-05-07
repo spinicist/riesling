@@ -103,11 +103,6 @@ int main_sim(args::Subparser &parser)
   // Calculate SVD - observations are in rows
   auto const svd =
     SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics, false, true);
-
-  fmt::print("svd.vals.size() {}\n", svd.vals.size());
-  float const nullThresh = svd.vals[0] * std::numeric_limits<float>::epsilon();
-  Index const nullCount = (svd.vals > nullThresh).count();
-  fmt::print(FMT_STRING("{} values above null-space threshold {}\n"), nullCount, nullThresh);
   Eigen::ArrayXf const vals = svd.vals.square();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
