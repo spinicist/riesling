@@ -14,6 +14,7 @@ void Dummy(std::filesystem::path const &fname)
 
 TEST_CASE("io")
 {
+  Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
   float const os = 2.f;
   Info const info{
@@ -38,18 +39,21 @@ TEST_CASE("io")
     std::filesystem::path const fname("test.h5");
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
-      writer.writeTrajectory(traj);
-      writer.writeTensor(refData, HD5::Keys::Noncartesian);
+      CHECK_NOTHROW(writer.writeTrajectory(traj));
+      CHECK_NOTHROW(writer.writeTensor(refData, HD5::Keys::Noncartesian));
     }
     CHECK(std::filesystem::exists(fname));
 
+    REQUIRE_NOTHROW(HD5::RieslingReader(fname));
     HD5::RieslingReader reader(fname);
+
     auto const checkInfo = reader.trajectory().info();
     CHECK(checkInfo.channels == info.channels);
     CHECK(checkInfo.read_points == info.read_points);
     CHECK(checkInfo.spokes == info.spokes);
     CHECK(checkInfo.volumes == info.volumes);
 
+    CHECK_NOTHROW(reader.noncartesian(0));
     auto const check0 = reader.noncartesian(0);
     CHECK(Norm(check0 - refData.chip<3>(0)) == Approx(0.f).margin(1.e-9));
     auto const check1 = reader.noncartesian(1);

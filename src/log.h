@@ -10,6 +10,7 @@
 namespace Log {
 enum struct Level
 {
+  Testing = -1, // Suppress everything, even failures
   None = 0,
   Info = 1,
   Progress = 2,

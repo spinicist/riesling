@@ -61,7 +61,9 @@ void lfail(fmt::string_view fstr, fmt::format_args args)
 {
   auto const t = std::chrono::system_clock::now();
   auto const msg = fmt::format(FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
-  fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), msg);
+  if (log_level > Level::Testing) {
+    fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), msg);
+  }
   throw Failure(msg);
 }
 
