@@ -14,6 +14,7 @@ int main(int const argc, char const *const argv[])
   args::Command espirit(commands, "espirit-calib", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command hdr(commands, "hdr", "Print the header from an HD5 file", &main_hdr);
+  args::Command h5(commands, "h5", "List datasets in an H5 file", &main_h5);
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
   args::Command lsmr(commands, "lsmr", "Iterative recon with LSMR optimizer", &main_lsmr);
   args::Command lsqr(commands, "lsqr", "Iterative recon with LSQR optimizer", &main_lsqr);

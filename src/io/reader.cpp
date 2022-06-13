@@ -143,6 +143,32 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   return tensor;
 }
 
+template <typename Derived>
+Derived load_matrix(Handle const &parent, std::string const &name)
+{
+  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) {
+    Log::Fail(FMT_STRING("Could not open matrix '{}'"), name);
+  }
+  hid_t ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank > 2) {
+    Log::Fail(FMT_STRING("Matrix {}: has rank {} on disk, must be 1 or 2"), name, rank);
+  }
+
+  std::array<hsize_t, 2> dims;
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  Derived matrix((rank == 2) ? dims[1] : dims[0], (rank == 2) ? dims[0] : 1);
+  herr_t ret_value =
+    H5Dread(dset, type<typename Derived::Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, matrix.data());
+  if (ret_value < 0) {
+    Log::Fail(FMT_STRING("Error reading matrix {}, code: {}"), name, ret_value);
+  } else {
+    Log::Debug(FMT_STRING("Read matrix {}"), name);
+  }
+  return matrix;
+}
+
 Reader::Reader(std::string const &fname)
 {
   if (!std::filesystem::exists(fname)) {
@@ -161,6 +187,11 @@ Reader::~Reader()
 {
   H5Fclose(handle_);
   Log::Debug(FMT_STRING("Closed handle: {}"), handle_);
+}
+
+std::vector<std::string> Reader::list()
+{
+  return HD5::List(handle_);
 }
 
 template <typename T>
@@ -186,14 +217,17 @@ template void Reader::readTensor<Cx4>(std::string const &, Cx4 &);
 template void Reader::readTensor<Cx5>(std::string const &, Cx5 &);
 template void Reader::readTensor<Cx6>(std::string const &, Cx6 &);
 
-namespace {
-herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
+template <typename Derived>
+Derived Reader::readMatrix(std::string const &label)
 {
-  auto names = reinterpret_cast<std::vector<std::string> *>(opdata);
-  names->push_back(name);
-  return 0;
+  return HD5::load_matrix<Derived>(handle_, label);
 }
-} // namespace
+
+template Eigen::MatrixXf Reader::readMatrix<Eigen::MatrixXf>(std::string const &);
+template Eigen::MatrixXcf Reader::readMatrix<Eigen::MatrixXcf>(std::string const &);
+
+template Eigen::ArrayXf Reader::readMatrix<Eigen::ArrayXf>(std::string const &);
+template Eigen::ArrayXXf Reader::readMatrix<Eigen::ArrayXXf>(std::string const &);
 
 void Check(std::string const &name, Index const dval, Index const ival)
 {
@@ -247,9 +281,7 @@ std::map<std::string, float> RieslingReader::readMeta() const
     Log::Debug(FMT_STRING("No meta-data found in file handle {}"), handle_);
     return {};
   }
-  std::vector<std::string> names;
-  H5Literate(meta_group, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
-
+  auto const names = HD5::List(meta_group);
   std::map<std::string, float> meta;
   herr_t status = 0;
   for (auto const &name : names) {

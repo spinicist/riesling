@@ -15,10 +15,15 @@ struct Reader
   Reader(std::string const &fname);
   ~Reader();
 
+  std::vector<std::string> list(); // List all datasets
+
   template <typename T>
   T readTensor(std::string const &label);
   template <typename T>
   void readTensor(std::string const &label, T &tensor); // Read with size checks
+  template <typename Derived>
+  Derived readMatrix(std::string const &label);
+
 protected:
   int64_t handle_;
 };

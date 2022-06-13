@@ -10,6 +10,7 @@ int main_downsamp(args::Subparser &parser);
 int main_espirit(args::Subparser &parser);
 int main_grid(args::Subparser &parser);
 int main_hdr(args::Subparser &parser);
+int main_h5(args::Subparser &parser);
 int main_lookup(args::Subparser &parser);
 int main_lsmr(args::Subparser &parser);
 int main_lsqr(args::Subparser &parser);

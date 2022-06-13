@@ -153,4 +153,17 @@ hid_t type_impl(type_tag<std::complex<float>>)
   return complex_id;
 }
 
+herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
+{
+  auto names = reinterpret_cast<std::vector<std::string> *>(opdata);
+  names->push_back(name);
+  return 0;
+}
+
+std::vector<std::string> List(Handle h) {
+  std::vector<std::string> names;
+  H5Literate(h, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
+  return names;
+}
+
 } // namespace HD5
