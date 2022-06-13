@@ -11,14 +11,15 @@ namespace SENSE {
 
 Opts::Opts(args::Subparser &parser)
   : file(parser, "F", "Read SENSE maps from .h5", {"sense", 's'})
-  , volume(parser, "V", "SENSE calibration volume", {"sense-vol"}, -1)
+  , volume(parser, "V", "SENSE calibration volume (last)", {"sense-vol"}, -1)
+  , frame(parser, "F", "SENSE calibration frame (first)", {"sense-frame"}, 0)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, 12.f)
   , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
 {
 }
 
 Cx4 SelfCalibration(
-  Info const &info, GridBase *gridder, float const fov, float const res, float const λ, Cx3 const &data)
+  Info const &info, GridBase *gridder, float const fov, float const res, float const λ, Index const frame, Cx3 const &data)
 {
   Log::Debug(FMT_STRING("*** Self-Calibrated SENSE ***"));
   Sz5 const dims = gridder->inputDimensions();
@@ -30,7 +31,10 @@ Cx4 SelfCalibration(
   }
 
   Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
-  grid = gridder->Adj(data).chip<1>(0); // Assume we want the first frame only
+  if (frame >= info.frames) {
+    Log::Fail("Specified SENSE frame {} is greater than number of frames in data {}", frame, info.frames);
+  }
+  grid = gridder->Adj(data).chip<1>(frame);
   float const end_rad = info.voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
   Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);
@@ -54,10 +58,14 @@ Cx4 SelfCalibration(
   return channels;
 }
 
-Cx4 Load(std::string const &calFile)
+Cx4 Load(std::string const &calFile, Info const &i)
 {
   HD5::Reader senseReader(calFile);
-  return senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
+  auto const maps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
+  if (maps.dimension(0) != i.channels) {
+    Log::Fail("SENSE maps had {} channels, should be {}", maps.dimension(0), i.channels);
+  }
+  return maps;
 }
 
 Cx4 Interp(std::string const &file, Eigen::Array3l const dims)
@@ -84,7 +92,7 @@ Cx4 Interp(std::string const &file, Eigen::Array3l const dims)
 Cx4 Choose(Opts &opts, Info const &i, GridBase *g, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
 {
   if (opts.file) {
-    return Load(opts.file.Get());
+    return Load(opts.file.Get(), i);
   } else {
     return SelfCalibration(
       i,
@@ -92,6 +100,7 @@ Cx4 Choose(Opts &opts, Info const &i, GridBase *g, float const fov, SDCOp *sdc, 
       fov,
       opts.res.Get(),
       opts.λ.Get(),
+      opts.frame.Get(),
       sdc->Adj(reader.noncartesian(ValOrLast(opts.volume.Get(), reader.trajectory().info().volumes))));
   }
 }

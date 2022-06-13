@@ -13,13 +13,13 @@ struct Opts
 {
   Opts(args::Subparser &parser);
   args::ValueFlag<std::string> file;
-  args::ValueFlag<Index> volume;
+  args::ValueFlag<Index> volume, frame;
   args::ValueFlag<float> res, λ;
 };
 
 //! Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
 Cx4 SelfCalibration(
-  Info const &info, GridBase *gridder, float const fov, float const res, float const λ, Cx3 const &data);
+  Info const &i, GridBase *g, float const fov, float const res, float const λ, Index const frame, Cx3 const &data);
 Cx4 Load(std::string const &calFile);                              //! Loads a set of SENSE maps from a file
 Cx4 Interp(std::string const &calFile, Eigen::Array3l const dims); //! Interpolate with FFT
 
