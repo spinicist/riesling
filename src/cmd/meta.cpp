@@ -13,26 +13,32 @@ int main_meta(args::Subparser &parser)
   auto const info = reader.trajectory().info();
 
   for (auto const &k : keys.Get()) {
-    if (meta.size() > 0) {
-      for (auto const &kvp : meta) {
-        if (k == kvp.first) {
-          fmt::print("{}\n", kvp.second);
-          break;
-        }
-      }
-    }
     if (k == "matrix") {
       fmt::print("{}\n", info.matrix.transpose());
+      continue;
     } else if (k == "channels") {
       fmt::print("{}\n", info.channels);
+      continue;
     } else if (k == "read_points") {
       fmt::print("{}\n", info.read_points);
+      continue;
     } else if (k == "spokes") {
       fmt::print("{}\n", info.spokes);
+      continue;
     } else if (k == "volumes") {
       fmt::print("{}\n", info.volumes);
+      continue;
     } else if (k == "frames") {
       fmt::print("{}\n", info.frames);
+      continue;
+    }
+
+    if (meta.size() > 0) {
+      try {
+        fmt::print("{}\n", meta.at(k));
+      } catch (std::out_of_range) {
+        Log::Fail("Could not find key {}", k);
+      }
     }
   }
   return EXIT_SUCCESS;
