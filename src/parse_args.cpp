@@ -75,7 +75,7 @@ CoreOpts::CoreOpts(args::Subparser &parser)
 }
 
 ExtraOpts::ExtraOpts(args::Subparser &parser)
-  : iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter_fov"}, 256)
+  : iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter-fov"}, 256)
   , out_fov(parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
 {
 }
