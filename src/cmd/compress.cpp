@@ -58,7 +58,7 @@ int main_compress(args::Subparser &parser)
     }
     Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, spokes[1], spokes[2]);
     Cx3 const ref =
-      ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, spokes[1], spokes[1]}).stride(Sz3{1, 1, spokes[2]});
+      ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, read[1], spokes[1]}).stride(Sz3{1, 1, spokes[2]});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), channels.Get(), energy.Get());
     compressor.psi = pc.vecs;
@@ -161,8 +161,11 @@ int main_compress(args::Subparser &parser)
       nRetain = std::min(channels.Get(), vals.rows());
     }
     compressor.psi = eig.eigenvectors().rightCols(nRetain).rowwise().reverse();
+  } else if (ccFile) {
+    HD5::Reader matFile(ccFile.Get());
+    compressor.psi = matFile.readMatrix<Eigen::MatrixXcf>(HD5::Keys::CompressionMatrix);
   } else {
-    Log::Fail("Must specify either PCA or ROVIR");
+    Log::Fail("Must specify PCA/ROVIR/load from file");
   }
   Cx4 all_ks = info.noncartesianSeries();
   for (Index iv = 0; iv < info.volumes; iv++) {
@@ -179,7 +182,7 @@ int main_compress(args::Subparser &parser)
 
   if (save) {
     HD5::Writer matfile(OutName(core.iname.Get(), core.oname.Get(), "ccmat"));
-    writer.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
+    matfile.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
   }
   return EXIT_SUCCESS;
 }
