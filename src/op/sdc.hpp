@@ -26,14 +26,14 @@ struct SDCOp final : Operator<3, 3>
     return dims_;
   }
 
-  template <typename T>
-  Cx3 Adj(T const &in) const
+  Cx3 Adj(Cx3 const &in) const
   {
     if (dc_.size()) {
       auto const start = Log::Now();
-      Cx3 p(dims_);
+      auto const dims = in.dimensions();
+      Cx3 p(dims);
       p.device(Threads::GlobalDevice()) =
-        in * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims_[0], 1, 1});
+        in * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims[0], 1, 1});
       Log::Debug(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
       return p;
     } else {
