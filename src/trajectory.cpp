@@ -63,7 +63,8 @@ void Trajectory::init()
       Log::Fail(FMT_STRING("Maximum trajectory co-ordinate {} exceeded 0.5"), maxCoord);
     }
   } else {
-    float const maxCoord = Maximum(points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
+    float const maxCoord =
+      Maximum(points_.slice(Sz3{0, 0, 0}, Sz3{2, points_.dimension(1), points_.dimension(2)}).abs());
     if (maxCoord > 0.5f) {
       Log::Fail(FMT_STRING("Maximum in-plane trajectory {} co-ordinate exceeded 0.5"), maxCoord);
     }
@@ -99,9 +100,23 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   case Info::Type::ThreeD:
     return Point3{p(0) * diameter, p(1) * diameter, p(2) * diameter};
   case Info::Type::ThreeDStack:
-    return Point3{p(0) * diameter, p(1) * diameter, p(2)};
+    return Point3{p(0) * diameter, p(1) * diameter, p(2) - (info_.matrix[2] / 2)};
   }
   __builtin_unreachable(); // Because the GCC devs are very obtuse
+}
+
+std::vector<int32_t> sort(std::vector<CartesianIndex> const &cart)
+{
+  auto const start = Log::Now();
+  std::vector<int32_t> sorted(cart.size());
+  std::iota(sorted.begin(), sorted.end(), 0);
+  std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
+    auto const &ac = cart[a];
+    auto const &bc = cart[b];
+    return (ac.z < bc.z) || ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
+  });
+  Log::Debug(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
+  return sorted;
 }
 
 Mapping Trajectory::mapping(Index const kw, float const os, Index const inChan, Index const read0) const
@@ -140,6 +155,7 @@ Mapping Trajectory::mapping(Index const kw, float const os, Index const inChan, 
       for (int16_t ir = read0; ir < info_.read_points; ir++) {
         NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = point(ir, is, maxRad);
+
         Point3 const gp = nearby(xyz);
         if (((gp.array().abs() + kRad) < maxRad).all()) {
           Size3 const cart = center + Size3(gp.cast<int16_t>());
@@ -161,15 +177,7 @@ Mapping Trajectory::mapping(Index const kw, float const os, Index const inChan, 
   mapping.frameWeights = mapping.frameWeights.maxCoeff() / mapping.frameWeights;
   Log::Print(FMT_STRING("Frame weights: {}"), mapping.frameWeights.transpose());
 
-  start = Log::Now();
-  mapping.sortedIndices.resize(mapping.cart.size());
-  std::iota(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), 0);
-  std::sort(mapping.sortedIndices.begin(), mapping.sortedIndices.end(), [&](Index const a, Index const b) {
-    auto const &ac = mapping.cart[a];
-    auto const &bc = mapping.cart[b];
-    return (ac.z < bc.z) || ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
-  });
-  Log::Debug(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
+  mapping.sortedIndices = sort(mapping.cart);
 
   return mapping;
 }
@@ -178,7 +186,8 @@ std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index cons
 {
   float const dsamp = res / info_.voxel_size.minCoeff();
   if (dsamp < 1.f) {
-    Log::Fail(FMT_STRING("Downsample resolution {} is lower than input resolution {}"), res, info_.voxel_size.minCoeff());
+    Log::Fail(
+      FMT_STRING("Downsample resolution {} is lower than input resolution {}"), res, info_.voxel_size.minCoeff());
   }
   auto dsInfo = info_;
   float scale = 1.f;
