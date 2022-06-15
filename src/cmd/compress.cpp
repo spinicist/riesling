@@ -43,7 +43,7 @@ int main_compress(args::Subparser &parser)
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  auto traj = reader.trajectory();
   auto const info = traj.info();
   Cx3 const ks = reader.noncartesian(ValOrLast(refVol, info.volumes));
 
@@ -66,13 +66,16 @@ int main_compress(args::Subparser &parser)
 
     Index const nC = info.channels;
     auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-    auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), true);
-    auto gridder = make_grid(kernel.get(), dsTraj.mapping(kernel->inPlane(), core.osamp.Get()), core.fast);
+    Index minRead = 0;
+    if (res) {
+      std::tie(traj, minRead) = traj.downsample(res.Get(), lores.Get(), true);
+    }
+    auto gridder = make_grid(kernel.get(), traj.mapping(kernel->inPlane(), core.osamp.Get()), core.fast);
     auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
     auto const sz = LastN<3>(gridder->inputDimensions());
     NUFFTOp nufft(sz, gridder.get(), sdc.get());
     Cx4 const channelImages =
-      nufft.Adj(ks.slice(Sz3{0, minRead, 0}, Sz3{nC, dsTraj.info().read_points, dsTraj.info().spokes})).chip<1>(0);
+      nufft.Adj(ks.slice(Sz3{0, minRead, 0}, Sz3{nC, traj.info().read_points, traj.info().spokes})).chip<1>(0);
 
     // Get the signal distribution for thresholding
     R3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
