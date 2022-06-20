@@ -3,6 +3,7 @@
 #include "hd5-keys.hpp"
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace HD5 {
 
