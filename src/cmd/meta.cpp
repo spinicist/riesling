@@ -36,7 +36,7 @@ int main_meta(args::Subparser &parser)
     if (meta.size() > 0) {
       try {
         fmt::print("{}\n", meta.at(k));
-      } catch (std::out_of_range) {
+      } catch (std::out_of_range const &) {
         Log::Fail("Could not find key {}", k);
       }
     }
