@@ -67,7 +67,7 @@ int main_lookup(args::Subparser &parser)
     Threads::For(ztask, images.dimension(3), "Lookup");
   }
 
-  auto const fname = OutName(iname.Get(), oname.Get(), "dict", "h5");
+  auto const fname = OutName(iname.Get(), oname.Get(), "lookup", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(out_pars, HD5::Keys::Parameters);
   writer.writeTensor(pd, HD5::Keys::ProtonDensity);

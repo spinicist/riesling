@@ -50,6 +50,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "spokes"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
+  args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
   args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.01f);
   args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.012f);
@@ -73,6 +74,7 @@ int main_sim(args::Subparser &parser)
     .sps = sps.Get(),
     .gps = gps.Get(),
     .alpha = alpha.Get(),
+    .ascale = ascale.Get(),
     .TR = TR.Get(),
     .Tramp = Tramp.Get(),
     .Tssi = Tssi.Get(),

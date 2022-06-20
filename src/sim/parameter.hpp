@@ -32,6 +32,6 @@ private:
   Index nP_;
 };
 
-extern Parameter const T1gm, T1wm, T1csf, T2gm, T2wm, T2csf;
+extern Parameter const T1gm, T1wm, T1csf, T2gm, T2wm, T2csf, B1;
 
 } // namespace rl
