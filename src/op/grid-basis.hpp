@@ -52,7 +52,7 @@ struct GridBasis final : SizedGrid<IP, TP>
             for (Index ib = 0; ib < nB; ib++) {
               float const bval = b(ib) * kval;
               for (Index ic = 0; ic < nC; ic++) {
-                sum(nC) += cart(ic, ib, stX + ix, stY + iy, stZ + iz) * bval;
+                sum(ic) += cart(ic, ib, stX + ix, stY + iy, stZ + iz) * bval;
               }
             }
           }
