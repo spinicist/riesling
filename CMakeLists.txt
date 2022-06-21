@@ -62,6 +62,7 @@ add_library(vineyard
     src/sim/parameter.cpp
     src/sim/dwi.cpp
     src/sim/mprage.cpp
+    src/sim/dir.cpp
     src/sim/t2flair.cpp
     src/sim/t2prep.cpp
     src/sim/t1t2.cpp

@@ -1,21 +1,21 @@
-#include "mprage.hpp"
+#include "dir.hpp"
 
 #include "unsupported/Eigen/MatrixFunctions"
 
 namespace rl {
 
-Index MPRAGE::length() const
+Index DIR::length() const
 {
   return seq.sps;
 }
 
-Eigen::ArrayXXf MPRAGE::parameters(Index const nsamp) const
+Eigen::ArrayXXf DIR::parameters(Index const nsamp) const
 {
   Tissues tissues({Tissue{{T1wm}}, Tissue{{T1gm}}, Tissue{{T1csf}}});
   return tissues.values(nsamp);
 }
 
-Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const
+Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
   Index const spg = seq.sps / seq.gps; // Spokes per group
@@ -25,14 +25,16 @@ Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const
   inv << -1.f, 0.f, 0.f, 1.f;
 
   float const R1 = 1.f / T1;
-  Eigen::Matrix2f E1, Einv, Eramp, Essi, Erec;
+  Eigen::Matrix2f E1, Einv, Einv2, Eramp, Essi, Erec;
   float const e1 = exp(-R1 * seq.TR);
   float const einv = exp(-R1 * seq.TI);
+  float const einv2 = exp(-R1 * seq.TI2);
   float const eramp = exp(-R1 * seq.Tramp);
   float const essi = exp(-R1 * seq.Tssi);
   float const erec = exp(-R1 * seq.Trec);
   E1 << e1, 1 - e1, 0.f, 1.f;
   Einv << einv, 1 - einv, 0.f, 1.f;
+  Einv2 << einv2, 1 - einv2, 0.f, 1.f;
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
@@ -45,7 +47,7 @@ Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const
 
   // Get steady state after prep-pulse for first segment
   Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(spg) * Eramp).pow(seq.gps);
-  Eigen::Matrix2f const SS = Einv * inv * Erec * seg;
+  Eigen::Matrix2f const SS = Einv2 * inv * Einv * inv * Erec * seg;
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic

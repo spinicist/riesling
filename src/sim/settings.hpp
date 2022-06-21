@@ -7,7 +7,7 @@ namespace rl {
 struct Settings
 {
   Index sps, gps;
-  float alpha, ascale, TR, Tramp, Tssi, TI, Trec, TE, bval;
+  float alpha, ascale, TR, Tramp, Tssi, TI, TI2, Trec, TE, bval;
 };
 
 } // namespace rl
