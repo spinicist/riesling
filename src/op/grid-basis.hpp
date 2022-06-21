@@ -43,6 +43,8 @@ struct GridBasis final : SizedGrid<IP, TP>
       Index const stX = c.x - ((IP - 1) / 2);
       Index const stY = c.y - ((IP - 1) / 2);
       Index const stZ = c.z - ((TP - 1) / 2);
+      Cx1 sum(nC);
+      sum.setZero();
       for (Index iz = 0; iz < TP; iz++) {
         for (Index iy = 0; iy < IP; iy++) {
           for (Index ix = 0; ix < IP; ix++) {
@@ -50,12 +52,13 @@ struct GridBasis final : SizedGrid<IP, TP>
             for (Index ib = 0; ib < nB; ib++) {
               float const bval = b(ib) * kval;
               for (Index ic = 0; ic < nC; ic++) {
-                noncart(ic, n.read, n.spoke) += cart(ic, ib, stX + ix, stY + iy, stZ + iz) * bval;
+                sum(nC) += cart(ic, ib, stX + ix, stY + iy, stZ + iz) * bval;
               }
             }
           }
         }
       }
+      noncart.chip(n.spoke, 2).chip(n.read, 1) = sum;
     };
     auto const &start = Log::Now();
     noncart.setZero();
@@ -91,7 +94,9 @@ struct GridBasis final : SizedGrid<IP, TP>
       Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
 
       for (auto ii = lo; ii < hi; ii++) {
-        Log::Tick();
+        if (ti == 0) {
+          Log::Tick();
+        }
         auto const si = this->mapping_.sortedIndices[ii];
         auto const c = this->mapping_.cart[si];
         auto const n = this->mapping_.noncart[si];
@@ -118,7 +123,7 @@ struct GridBasis final : SizedGrid<IP, TP>
 
     auto const start = Log::Now();
     cart.setZero();
-    Log::StartProgress(this->mapping_.cart.size(), "Adjoint Basis Gridding");
+    Log::StartProgress(this->mapping_.cart.size() / dev.numThreads(), "Adjoint Basis Gridding");
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::StopProgress();
     Log::Debug("Basis Non-cart -> Cart: {}", Log::ToNow(start));
