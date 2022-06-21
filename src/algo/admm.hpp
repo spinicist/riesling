@@ -21,7 +21,7 @@ typename Op::Input admm_lsmr(
   float const abstol = 1.e-3f,
   float const reltol = 1.e-3f)
 {
-  Log::Print(FMT_STRING("Starting ADMM rho {}"), rho);
+  Log::Print(FMT_STRING("ADMM LSMR rho {}"), rho);
   auto dev = Threads::GlobalDevice();
   // Allocate all memory
   using T = typename Op::Input;
@@ -105,7 +105,7 @@ typename Op::Input admm_lsqr(
   u.setZero();
   xpu.setZero();
 
-  Log::Print(FMT_STRING("Starting ADMM rho {} dims {}"), rho, dims);
+  Log::Print(FMT_STRING("ADMM LSQR rho {}"), rho);
   for (Index ii = 0; ii < outer_its; ii++) {
     x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, (ii == 1), x, (z - u));
     xpu.device(dev) = x + u;

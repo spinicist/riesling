@@ -4,6 +4,13 @@
 
 namespace rl {
 
+DIR::DIR(Settings const s)
+  : seq{s}
+{
+  Log::Print(
+    "DIR simulation TI1 {} TI2 {} Trec {} ⍺ {} TR {} SPS {}", seq.TI, seq.TI2, seq.Trec, seq.alpha, seq.TR, seq.sps);
+}
+
 Index DIR::length() const
 {
   return seq.sps;

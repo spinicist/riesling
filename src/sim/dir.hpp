@@ -10,6 +10,7 @@ namespace rl {
 struct DIR
 {
   Settings seq;
+  DIR(Settings const s);
 
   Index length() const;
   Eigen::ArrayXXf parameters(Index const nsamp) const;
