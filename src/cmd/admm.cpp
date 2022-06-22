@@ -19,20 +19,23 @@ int main_admm(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
 
+  args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
+  args::Flag use_lsmr(parser, "L", "Use LSMR instead of LSQR for inner loop", {"lsmr"});
+
+  args::Flag precond(parser, "P", "Apply Ong's single-channel M-conditioner", {"pre"});
+  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
+  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+
   args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
+  args::ValueFlag<float> abstol(parser, "ABS", "Outer absolute tolerance (1e-3)", {"abs-tol"}, 1.e-3f);
+  args::ValueFlag<float> reltol(parser, "REL", "Outer relative tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
   args::ValueFlag<float> ρ(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
 
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
 
-  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
-  args::Flag precond(parser, "P", "Apply Ong's single-channel M-conditioner", {"pre"});
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
-  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
-
-  args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
-  args::Flag use_lsmr(parser, "L", "Use LSMR instead of LSQR for inner loop", {"lsmr"});
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
@@ -65,7 +68,16 @@ int main_admm(args::Subparser &parser)
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
     if (use_cg) {
-      vol = admm_cg(outer_its.Get(), inner_its.Get(), atol.Get(), recon, reg, ρ.Get(), reader.noncartesian(iv));
+      vol = admm_cg(
+        outer_its.Get(),
+        inner_its.Get(),
+        atol.Get(),
+        recon,
+        reg,
+        ρ.Get(),
+        reader.noncartesian(iv),
+        abstol.Get(),
+        reltol.Get());
     } else if (use_lsmr) {
       vol = admm_lsmr(
         outer_its.Get(),
@@ -77,7 +89,9 @@ int main_admm(args::Subparser &parser)
         M.get(),
         atol.Get(),
         btol.Get(),
-        ctol.Get());
+        ctol.Get(),
+        abstol.Get(),
+        reltol.Get());
     } else {
       vol = admm_lsqr(
         outer_its.Get(),
@@ -89,7 +103,9 @@ int main_admm(args::Subparser &parser)
         M.get(),
         atol.Get(),
         btol.Get(),
-        ctol.Get());
+        ctol.Get(),
+        abstol.Get(),
+        reltol.Get());
     }
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;

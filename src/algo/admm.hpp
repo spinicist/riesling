@@ -97,13 +97,14 @@ typename Op::Input admm_lsqr(
   // Allocate all memory
   using T = typename Op::Input;
   auto const dims = op.inputDimensions();
-  Index const nvox = Product(dims);
   T u(dims), x(dims), z(dims), zold(dims), xpu(dims);
   x.setZero();
   z.setZero();
   zold.setZero();
   u.setZero();
   xpu.setZero();
+
+  float const sp = std::sqrt(float(Product(dims)));
 
   Log::Print(FMT_STRING("ADMM LSQR rho {}"), rho);
   for (Index ii = 0; ii < outer_its; ii++) {
@@ -116,14 +117,13 @@ typename Op::Input admm_lsqr(
     float const norm_prim = Norm(x - z);
     float const norm_dual = Norm(-rho * (z - zold));
 
-    float const eps_prim = sqrtf(nvox) * abstol + reltol * std::max(Norm(x), Norm(-z));
-    float const eps_dual = sqrtf(nvox) * abstol + reltol * rho * Norm(u);
+    float const eps_prim = sp * abstol + reltol * std::max(Norm(x), Norm(z));
+    float const eps_dual = sp * abstol + reltol * rho * Norm(u);
 
     Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
     Log::Tensor(xpu, fmt::format("admm-xpu-{:02d}", ii));
     Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
     Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
-
     Log::Print(
       FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
       ii,
