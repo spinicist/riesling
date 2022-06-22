@@ -8,8 +8,9 @@ struct GridBasis final : SizedGrid<IP, TP>
   using typename SizedGrid<IP, TP>::Input;
   using typename SizedGrid<IP, TP>::Output;
 
-  GridBasis(SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe)
-    : SizedGrid<IP, TP>(k, mapping, basis.dimension(1), unsafe)
+  GridBasis(
+    SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe, std::shared_ptr<Cx5> ws)
+    : SizedGrid<IP, TP>(k, mapping, basis.dimension(1), unsafe, ws)
     , basis_{basis}
   {
     Log::Debug(FMT_STRING("GridBasis<{},{}>, dims"), IP, TP, this->inputDimensions());
@@ -75,9 +76,12 @@ struct GridBasis final : SizedGrid<IP, TP>
       Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), ncdims, this->outputDimensions());
     }
     auto cdims = this->inputDimensions();
+    if (nC > cdims[0]) {
+      Log::Fail(FMT_STRING("Request more channels {} than workspace channels {}"), nC, cdims[0]);
+    }
     cdims[0] = nC;
     Index const nB = cdims[1];
-    Input cart(cdims);
+    Input &cart = *(this->ws_);
     auto const scale = this->mapping_.scale * sqrt(basis_.dimension(0));
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
@@ -141,7 +145,12 @@ struct GridBasis final : SizedGrid<IP, TP>
       }
       Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
-    return cart;
+
+    if (nC == this->inputDimensions()[0]) {
+      return cart;
+    } else {
+      return cart.slice(Sz5{0, 0, 0, 0, 0}, Sz5{nC, cdims[1], cdims[2], cdims[3], cdims[4]});
+    }
   }
 
 private:

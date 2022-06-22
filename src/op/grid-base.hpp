@@ -9,12 +9,18 @@
 
 struct GridBase : Operator<5, 3>
 {
-  GridBase(Mapping const &map, Index const d1, bool const unsafe)
+  GridBase(Mapping const &map, Index const d1, bool const unsafe, std::shared_ptr<Cx5> ws)
     : mapping_{map}
     , inputDims_{AddFront(map.cartDims, map.noncartDims[0], d1)}
+    , ws_{ws}
     , safe_{!unsafe}
     , weightFrames_{true}
   {
+    if (!ws_) {
+      ws_ = std::make_shared<Cx5>(inputDims_);
+    } else if (ws_->dimensions() != inputDims_) {
+      Log::Fail(FMT_STRING("Workspace dimensions {} did not match input dimensions {}"), ws_->dimensions(), inputDims_);
+    }
   }
 
   virtual ~GridBase(){};
@@ -55,14 +61,15 @@ struct GridBase : Operator<5, 3>
 protected:
   Mapping mapping_;
   Sz5 inputDims_;
+  std::shared_ptr<Cx5> ws_;
   bool safe_, weightFrames_;
 };
 
 template <int IP, int TP>
 struct SizedGrid : GridBase
 {
-  SizedGrid(SizedKernel<IP, TP> const *k, Mapping const &map, Index const d1, bool const unsafe)
-    : GridBase(map, d1, unsafe)
+  SizedGrid(SizedKernel<IP, TP> const *k, Mapping const &map, Index const d1, bool const unsafe, std::shared_ptr<Cx5> ws)
+    : GridBase(map, d1, unsafe, ws)
     , kernel_{k}
   {
   }
