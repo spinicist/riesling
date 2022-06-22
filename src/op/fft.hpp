@@ -17,8 +17,19 @@ struct FFTOp final : Operator<Rank, Rank>
 
   FFTOp(InputDims const &dims)
     : dims_{dims}
-    , fft_{FFT::Make<5, 3>(dims_)}
+    , ws_{std::make_shared<Tensor>(dims_)}
+    , fft_{FFT::Make<5, 3>(*ws_)}
   {
+  }
+
+  FFTOp(InputDims const &dims, std::shared_ptr<Tensor> ws)
+    : dims_{dims}
+    , ws_{ws}
+    , fft_{ws_}
+  {
+    if (dims != ws_->dimensions()) {
+      Log::Fail(FMT_STRING("Workspace dimensions {} did not match FFT dimensions {}"), ws_->dimensions(), dims_);
+    }
   }
 
   InputDims inputDimensions() const
@@ -31,43 +42,26 @@ struct FFTOp final : Operator<Rank, Rank>
     return dims_;
   }
 
-  // Need these for Eigen expressions
   template <typename T>
-  Tensor A(T const &x) const
+  Tensor const &A(T const &x) const
   {
-    Log::Debug("Out-of-place forward FFT op");
-    Tensor y(dims_);
-    y.device(Threads::GlobalDevice()) = x;
-    fft_->forward(y);
-    return y;
+    Log::Debug("Forward FFT Op");
+    ws_->device(Threads::GlobalDevice()) = x;
+    fft_->forward(*ws_);
+    return *ws_;
   }
 
   template <typename T>
   Tensor Adj(T const &x) const
   {
-    Log::Debug("Out-of-place reverse FFT op");
-    Tensor y(dims_);
-    y.device(Threads::GlobalDevice()) = x;
-    fft_->reverse(y);
-    return y;
-  }
-
-  // Provide these for in-place when we can
-  Tensor A(Tensor x) const
-  {
-    Log::Debug("In-place forward FFT op");
-    fft_->forward(x);
-    return x;
-  }
-
-  Tensor Adj(Tensor x) const
-  {
-    Log::Debug("In-place adjoint FFT op");
-    fft_->reverse(x);
-    return x;
+    Log::Debug("Adjoint FFT Op");
+    ws_->device(Threads::GlobalDevice()) = x;
+    fft_->reverse(*ws_);
+    return *ws_;
   }
 
 private:
   InputDims dims_;
+  std::shared_ptr<Tensor> ws_;
   std::unique_ptr<FFT::FFT<5, 3>> fft_;
 };

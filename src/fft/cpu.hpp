@@ -22,6 +22,18 @@ struct CPU final : FFT<TRank, FRank>
     , threaded_{nThreads > 1}
   {
     Tensor ws(dims);
+    plan(ws, nThreads);
+  }
+
+  CPU(Tensor &ws, Index const nThreads)
+    : dims_(ws.dimensions())
+    , threaded_{nThreads > 1}
+  {
+    plan(ws, nThreads);
+  }
+
+  void plan(Tensor &ws, Index const nThreads)
+  {
     std::array<int, FRank> sz;
     N_ = 1;
     nVox_ = 1;
@@ -40,7 +52,7 @@ struct CPU final : FFT<TRank, FRank>
         phases[ii - FStart] = Phase(sz[ii - FStart]); // Prep FFT phase factors
       }
       scale_ = 1. / sqrt(nVox_);
-      Eigen::Tensor<Cx, FRank> tempPhase_(LastN<FRank>(dims));
+      Eigen::Tensor<Cx, FRank> tempPhase_(LastN<FRank>(dims_));
       tempPhase_.device(Threads::GlobalDevice()) = startPhase(phases);
       phase_.resize(Sz1{nVox_});
       phase_.device(Threads::GlobalDevice()) = tempPhase_.reshape(Sz1{nVox_});
@@ -54,10 +66,10 @@ struct CPU final : FFT<TRank, FRank>
     std::reverse(sz.begin(), sz.end());
     auto const start = Log::Now();
     fftwf_plan_with_nthreads(nThreads);
-    forward_plan_ = fftwf_plan_many_dft(
-      FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_FORWARD, FFTW_MEASURE);
-    reverse_plan_ = fftwf_plan_many_dft(
-      FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_BACKWARD, FFTW_MEASURE);
+    forward_plan_ =
+      fftwf_plan_many_dft(FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_FORWARD, FFTW_MEASURE);
+    reverse_plan_ =
+      fftwf_plan_many_dft(FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
     if (forward_plan_ == NULL) {
       Log::Fail(FMT_STRING("Could not create forward FFT Planned"));

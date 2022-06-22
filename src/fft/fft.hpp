@@ -28,4 +28,8 @@ template <int TRank, int FFTRank>
 std::unique_ptr<FFT<TRank, FFTRank>>
 Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const threads = 0);
 
+template <int TRank, int FFTRank>
+std::unique_ptr<FFT<TRank, FFTRank>>
+Make(typename FFT<TRank, FFTRank>::Tensor &ws, Index const threads = 0);
+
 } // namespace FFT
