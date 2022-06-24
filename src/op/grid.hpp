@@ -8,24 +8,20 @@ struct Grid final : SizedGrid<IP, TP>
   using typename SizedGrid<IP, TP>::Input;
   using typename SizedGrid<IP, TP>::Output;
 
-  Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, bool const unsafe, std::shared_ptr<Cx5> ws)
-    : SizedGrid<IP, TP>(k, mapping, mapping.frames, unsafe, ws)
+  Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, Index const nC, bool const unsafe)
+    : SizedGrid<IP, TP>(k, mapping, nC, mapping.frames, unsafe)
   {
     Log::Debug(FMT_STRING("Grid<{},{}>, dims {}"), IP, TP, this->inputDimensions());
   }
 
   Output A(Input const &cart) const
   {
-    Sz5 const cdims = cart.dimensions();
-    Index const nC = cart.dimension(0);
-    if (LastN<4>(cdims) != LastN<4>(this->inputDimensions())) {
-      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
+    if (cart.dimensions() != this->inputDimensions()) {
+      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
     }
-    Sz3 ncdims = this->outputDimensions();
-    ncdims[0] = nC;
-    Output noncart(ncdims);
+    Output noncart(this->outputDimensions());
     noncart.setZero();
-
+    Index const nC = this->outputDimensions()[0];
     auto const scale = this->mapping_.scale;
     auto grid_task = [&](Index const ii) {
       auto const si = this->mapping_.sortedIndices[ii];
@@ -56,21 +52,14 @@ struct Grid final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  Input Adj(Output const &noncart) const
+  Input &Adj(Output const &noncart) const
   {
     Log::Debug("Grid Adjoint");
-    auto const ncdims = noncart.dimensions();
-    Index const nC = ncdims[0];
-    if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
-      Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), ncdims, this->outputDimensions());
+    if (noncart.dimensions() != this->outputDimensions()) {
+      Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
     }
-    auto cdims = this->inputDimensions();
-    if (nC > cdims[0]) {
-      Log::Fail(FMT_STRING("Request more channels {} than workspace channels {}"), nC, cdims[0]);
-    }
-    cdims[0] = nC;
-    Input &cart = *(this->ws_);
-
+    auto const &cdims = this->inputDimensions();
+    Index const nC = cdims[0];
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
     std::vector<Cx5> threadSpaces(nThreads);
@@ -83,7 +72,7 @@ struct Grid final : SizedGrid<IP, TP>
         threadSpaces[ti].resize(nC, cdims[1], cdims[2], cdims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
-      Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
+      Cx5 &out = this->safe_ ? threadSpaces[ti] : *(this->ws_);
 
       for (auto ii = lo; ii < hi; ii++) {
         if (ti == 0) {
@@ -99,12 +88,13 @@ struct Grid final : SizedGrid<IP, TP>
         Index const stX = c.x - ((IP - 1) / 2);
         Index const stY = c.y - ((IP - 1) / 2);
         Index const stZ = c.z - ((TP - 1) / 2) - minZ[ti];
+        Cx1 const sample = noncart.chip(n.spoke, 2).chip(n.read, 1);
         for (Index iz = 0; iz < TP; iz++) {
           for (Index iy = 0; iy < IP; iy++) {
             for (Index ix = 0; ix < IP; ix++) {
               float const kval = k(ix, iy, iz) * scale;
               for (Index ic = 0; ic < nC; ic++) {
-                out(ic, ifr, stX + ix, stY + iy, stZ + iz) += noncart(ic, n.read, n.spoke) * kval;
+                out(ic, ifr, stX + ix, stY + iy, stZ + iz) += sample(ic) * kval;
               }
             }
           }
@@ -113,7 +103,7 @@ struct Grid final : SizedGrid<IP, TP>
     };
 
     auto const start = Log::Now();
-    cart.setZero();
+    this->ws_->setZero();
     Log::StartProgress(this->mapping_.cart.size() / dev.numThreads(), "Adjoint Gridding");
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::StopProgress();
@@ -127,17 +117,12 @@ struct Grid final : SizedGrid<IP, TP>
         if (szZ[ti]) {
           st[4] = minZ[ti];
           sz[4] = szZ[ti];
-          cart.slice(st, sz).device(dev) += threadSpaces[ti];
+          this->ws_->slice(st, sz).device(dev) += threadSpaces[ti];
         }
       }
       Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
-
-    if (nC == this->inputDimensions()[0]) {
-      return cart;
-    } else {
-      return cart.slice(Sz5{0, 0, 0, 0, 0}, Sz5{nC, cdims[1], cdims[2], cdims[3], cdims[4]});
-    }
+    return *(this->ws_);
   }
 
 private:

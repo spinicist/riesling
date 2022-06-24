@@ -7,7 +7,7 @@
 SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k)
   : Precond{}
 {
-  auto gridder = make_grid(k, traj.mapping(k->inPlane(), 4.f, 1), false);
+  auto gridder = make_grid(k, traj.mapping(k->inPlane(), 4.f, 1), 1, false);
   Cx3 W(AddFront(LastN<2>(gridder->outputDimensions()), 1));
   W.setConstant(1.f);
   W = gridder->A(gridder->Adj(W));

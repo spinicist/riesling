@@ -37,13 +37,13 @@ int main_recon(args::Subparser &parser)
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, core.fast);
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   std::unique_ptr<GridBase> bgridder = nullptr;
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    bgridder = make_grid_basis(kernel.get(), mapping, basis, core.fast);
+    bgridder = make_grid_basis(kernel.get(), mapping, info.channels, basis, core.fast);
   }
 
   std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;

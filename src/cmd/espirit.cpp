@@ -33,7 +33,7 @@ int main_espirit(args::Subparser &parser)
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
-  auto gridder = make_grid(kernel.get(), dsTraj.mapping(kernel->inPlane(), core.osamp.Get(), 0), core.fast);
+  auto gridder = make_grid(kernel.get(), dsTraj.mapping(kernel->inPlane(), core.osamp.Get(), 0), info.channels, core.fast);
   auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get());

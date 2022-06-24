@@ -32,8 +32,8 @@ int main_lsqr(args::Subparser &parser)
   Info const &info = traj.info();
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get(), 0, readStart.Get());
-  auto gridder = make_grid(kernel.get(), mapping, core.fast);
+  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get(), readStart.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
 
   std::unique_ptr<Precond<Cx3>> pre = precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
@@ -42,7 +42,7 @@ int main_lsqr(args::Subparser &parser)
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, core.fast);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, core.fast);
   }
   ReconOp recon(gridder.get(), senseMaps, nullptr);
 

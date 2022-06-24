@@ -26,7 +26,7 @@ TEST_CASE("ops-nufft")
   Trajectory const traj(info, points);
   auto const nn = make_kernel("NN", info.type, os);
   auto const m1 = traj.mapping(1, os);
-  auto grid = make_grid(nn.get(), m1, false);
+  auto grid = make_grid(nn.get(), m1, info.channels, false);
   SDCOp sdc(SDC::Pipe(traj, true, os), info.channels);
   auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get(), &sdc);
   nufft.calcToeplitz();

@@ -20,7 +20,7 @@ int main_grid(args::Subparser &parser)
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, core.fast);
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
   Cx3 rad_ks = info.noncartesianVolume();
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "grid", "h5"));
   writer.writeTrajectory(traj);

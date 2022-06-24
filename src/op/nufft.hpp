@@ -12,7 +12,7 @@ struct NUFFTOp final : Operator<5, 3>
 {
   NUFFTOp(Sz3 const imgDims, GridBase *g, SDCOp *sdc = nullptr)
     : gridder_{g}
-    , fft_{g->inputDimensions()}
+    , fft_{gridder_->workspace()}
     , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}
     , apo_{pad_.inputDimensions(), g}
     , sdc_{sdc}

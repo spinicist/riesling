@@ -23,7 +23,8 @@ struct Mapping
   std::vector<int8_t> frame;
   std::vector<Point3> offset;
   std::vector<int32_t> sortedIndices;
-  Sz3 cartDims, noncartDims;
+  Sz2 noncartDims;
+  Sz3 cartDims;
   int8_t frames;
   Eigen::ArrayXf frameWeights;
   float scale; // Overall scaling due to oversampling
@@ -38,7 +39,7 @@ struct Trajectory
   R3 const &points() const;
   I1 const &frames() const;
   Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
-  Mapping mapping(Index const kw, float const os, Index const channels = 0, Index const read0 = 0) const;
+  Mapping mapping(Index const kw, float const os, Index const read0 = 0) const;
   std::tuple<Trajectory, Index> downsample(float const res, Index const lores, bool const shrink) const;
 
 private:

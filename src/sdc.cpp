@@ -30,16 +30,16 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   std::unique_ptr<GridBase> gridder;
   if (nn) {
     k = std::make_unique<NearestNeighbour>();
-    auto const m = traj.mapping(1, os, 1);
-    gridder = std::make_unique<Grid<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, false, nullptr);
+    auto const m = traj.mapping(1, os);
+    gridder = std::make_unique<Grid<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, 1, false);
   } else {
     auto const m = traj.mapping(3, os);
     if (info.type == Info::Type::ThreeD) {
       k = std::make_unique<PipeSDC<5, 5>>(os);
-      gridder = std::make_unique<Grid<5, 5>>(dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, false, nullptr);
+      gridder = std::make_unique<Grid<5, 5>>(dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, 1, false);
     } else {
       k = std::make_unique<PipeSDC<5, 1>>(os);
-      gridder = std::make_unique<Grid<5, 1>>(dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, false, nullptr);
+      gridder = std::make_unique<Grid<5, 1>>(dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, 1, false);
     }
   }
   gridder->doNotWeightFrames();

@@ -37,9 +37,9 @@ int main_traj(args::Subparser &parser)
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), mapping, basis, core.fast);
+    gridder = make_grid_basis(kernel.get(), mapping, info.channels, basis, core.fast);
   } else {
-    gridder = make_grid(kernel.get(), mapping, core.fast);
+    gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
   }
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   out = gridder->Adj(sdc->Adj(rad_ks)).chip<0>(0);

@@ -9,8 +9,8 @@ struct GridBasis final : SizedGrid<IP, TP>
   using typename SizedGrid<IP, TP>::Output;
 
   GridBasis(
-    SizedKernel<IP, TP> const *k, Mapping const &mapping, R2 const &basis, bool const unsafe, std::shared_ptr<Cx5> ws)
-    : SizedGrid<IP, TP>(k, mapping, basis.dimension(1), unsafe, ws)
+    SizedKernel<IP, TP> const *k, Mapping const &mapping, Index const nC, R2 const &basis, bool const unsafe)
+    : SizedGrid<IP, TP>(k, mapping, nC, basis.dimension(1), unsafe)
     , basis_{basis}
   {
     Log::Debug(FMT_STRING("GridBasis<{},{}>, dims"), IP, TP, this->inputDimensions());
@@ -23,17 +23,13 @@ struct GridBasis final : SizedGrid<IP, TP>
 
   Output A(Input const &cart) const
   {
-    Sz5 const cdims = cart.dimensions();
-    Index const nC = cdims[0];
-    Index const nB = cdims[1];
-    if (LastN<4>(cdims) != LastN<4>(this->inputDimensions())) {
-      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cdims, this->inputDimensions());
+    if (cart.dimensions() != this->inputDimensions()) {
+      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
     }
-    Sz3 ncdims = this->outputDimensions();
-    ncdims[0] = nC;
-    Output noncart(ncdims);
+    Output noncart(this->outputDimensions());
     noncart.setZero();
-
+    Index const nC = this->inputDimensions()[0];
+    Index const nB = this->inputDimensions()[1];
     auto const scale = this->mapping_.scale * sqrt(basis_.dimension(0));
     auto grid_task = [&](Index const ii) {
       auto const si = this->mapping_.sortedIndices[ii];
@@ -68,20 +64,15 @@ struct GridBasis final : SizedGrid<IP, TP>
     return noncart;
   }
 
-  Input Adj(Output const &noncart) const
+  Input &Adj(Output const &noncart) const
   {
-    auto const ncdims = noncart.dimensions();
-    Index const nC = ncdims[0];
-    if (LastN<2>(ncdims) != LastN<2>(this->outputDimensions())) {
-      Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), ncdims, this->outputDimensions());
+    Log::Debug("Grid with Basis Adjoint");
+    if (noncart.dimensions() != this->outputDimensions()) {
+      Log::Fail(FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
     }
-    auto cdims = this->inputDimensions();
-    if (nC > cdims[0]) {
-      Log::Fail(FMT_STRING("Request more channels {} than workspace channels {}"), nC, cdims[0]);
-    }
-    cdims[0] = nC;
+    auto const &cdims = this->inputDimensions();
+    Index const nC = cdims[0];
     Index const nB = cdims[1];
-    Input &cart = *(this->ws_);
     auto const scale = this->mapping_.scale * sqrt(basis_.dimension(0));
     auto dev = Threads::GlobalDevice();
     Index const nThreads = dev.numThreads();
@@ -95,7 +86,7 @@ struct GridBasis final : SizedGrid<IP, TP>
         threadSpaces[ti].resize(nC, nB, cdims[2], cdims[3], szZ[ti]);
         threadSpaces[ti].setZero();
       }
-      Cx5 &out = this->safe_ ? threadSpaces[ti] : cart;
+      Cx5 &out = this->safe_ ? threadSpaces[ti] : *(this->ws_);
 
       for (auto ii = lo; ii < hi; ii++) {
         if (ti == 0) {
@@ -126,7 +117,7 @@ struct GridBasis final : SizedGrid<IP, TP>
     };
 
     auto const start = Log::Now();
-    cart.setZero();
+    this->ws_->setZero();
     Log::StartProgress(this->mapping_.cart.size() / dev.numThreads(), "Adjoint Basis Gridding");
     Threads::RangeFor(grid_task, this->mapping_.cart.size());
     Log::StopProgress();
@@ -140,17 +131,13 @@ struct GridBasis final : SizedGrid<IP, TP>
         if (szZ[ti]) {
           st[4] = minZ[ti];
           sz[4] = szZ[ti];
-          cart.slice(st, sz).device(dev) += threadSpaces[ti];
+          this->ws_->slice(st, sz).device(dev) += threadSpaces[ti];
         }
       }
       Log::Debug(FMT_STRING("Combining took: {}"), Log::ToNow(start2));
     }
 
-    if (nC == this->inputDimensions()[0]) {
-      return cart;
-    } else {
-      return cart.slice(Sz5{0, 0, 0, 0, 0}, Sz5{nC, cdims[1], cdims[2], cdims[3], cdims[4]});
-    }
+    return *(this->ws_);
   }
 
 private:

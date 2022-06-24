@@ -1,41 +1,43 @@
 #pragma once
 
-#include "../cropper.h"
-#include "../fft/fft.hpp"
-#include "../kernel.h"
-#include "../threads.h"
-#include "../trajectory.h"
+#include "cropper.h"
+#include "fft/fft.hpp"
+#include "kernel.h"
 #include "operator.hpp"
+#include "threads.h"
+#include "trajectory.h"
+#include "types.h"
 
 struct GridBase : Operator<5, 3>
 {
-  GridBase(Mapping const &map, Index const d1, bool const unsafe, std::shared_ptr<Cx5> ws)
+  GridBase(Mapping const &map, Index const nC, Index const d1, bool const unsafe)
     : mapping_{map}
-    , inputDims_{AddFront(map.cartDims, map.noncartDims[0], d1)}
-    , ws_{ws}
+    , inputDims_{AddFront(map.cartDims, nC, d1)}
+    , outputDims_{AddFront(map.noncartDims, nC)}
+    , ws_{std::make_shared<Cx5>(inputDims_)}
     , safe_{!unsafe}
     , weightFrames_{true}
   {
-    if (!ws_) {
-      ws_ = std::make_shared<Cx5>(inputDims_);
-    } else if (ws_->dimensions() != inputDims_) {
-      Log::Fail(FMT_STRING("Workspace dimensions {} did not match input dimensions {}"), ws_->dimensions(), inputDims_);
-    }
   }
 
   virtual ~GridBase(){};
   virtual R3 apodization(Sz3 const sz) const = 0; // Calculate the apodization factor for this grid
   virtual Output A(Input const &cart) const = 0;
-  virtual Input Adj(Output const &noncart) const = 0;
+  virtual Input &Adj(Output const &noncart) const = 0;
 
   Sz3 outputDimensions() const override
   {
-    return this->mapping_.noncartDims;
+    return outputDims_;
   }
 
   Sz5 inputDimensions() const override
   {
     return inputDims_;
+  }
+
+  std::shared_ptr<Cx5> workspace() const
+  {
+    return ws_;
   }
 
   void setUnsafe()
@@ -61,6 +63,7 @@ struct GridBase : Operator<5, 3>
 protected:
   Mapping mapping_;
   Sz5 inputDims_;
+  Sz3 outputDims_;
   std::shared_ptr<Cx5> ws_;
   bool safe_, weightFrames_;
 };
@@ -68,8 +71,9 @@ protected:
 template <int IP, int TP>
 struct SizedGrid : GridBase
 {
-  SizedGrid(SizedKernel<IP, TP> const *k, Mapping const &map, Index const d1, bool const unsafe, std::shared_ptr<Cx5> ws)
-    : GridBase(map, d1, unsafe, ws)
+  SizedGrid(
+    SizedKernel<IP, TP> const *k, Mapping const &map, Index const nC, Index const d1, bool const unsafe)
+    : GridBase(map, nC, d1, unsafe)
     , kernel_{k}
   {
   }

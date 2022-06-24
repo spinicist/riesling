@@ -28,14 +28,14 @@ int main_cg(args::Subparser &parser)
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, core.fast);
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, core.fast);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, core.fast);
   }
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   if (toeplitz) {

@@ -105,9 +105,9 @@ int main_phantom(args::Subparser &parser)
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
     R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), basis, false);
+    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, false);
   } else {
-    gridder = make_grid(kernel.get(), mapping, false);
+    gridder = make_grid(kernel.get(), mapping, info.channels, false);
   }
   ReconOp recon(gridder.get(), senseMaps);
   auto const sz = recon.inputDimensions();

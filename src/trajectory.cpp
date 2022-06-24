@@ -119,9 +119,8 @@ std::vector<int32_t> sort(std::vector<CartesianIndex> const &cart)
   return sorted;
 }
 
-Mapping Trajectory::mapping(Index const kw, float const os, Index const inChan, Index const read0) const
+Mapping Trajectory::mapping(Index const kw, float const os, Index const read0) const
 {
-  Index const nChan = (inChan < 1) ? info_.channels : inChan;
   Index const kRad = kw / 2; // Radius to avoid at edge of grid
   Index const gridSz = fft_size(info_.matrix.maxCoeff() * os);
   Log::Print(FMT_STRING("Generating mapping to grid size {}"), gridSz);
@@ -136,7 +135,7 @@ Mapping Trajectory::mapping(Index const kw, float const os, Index const inChan, 
     mapping.cartDims = Sz3{gridSz, gridSz, info_.matrix[2]};
     break;
   }
-  mapping.noncartDims = Sz3{nChan, info_.read_points, info_.spokes};
+  mapping.noncartDims = Sz2{info_.read_points, info_.spokes};
   mapping.scale = sqrt(info_.type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
   Index const totalSz = info_.read_points * info_.spokes;
   mapping.cart.reserve(totalSz);
