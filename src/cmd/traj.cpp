@@ -28,21 +28,12 @@ int main_traj(args::Subparser &parser)
   Trajectory traj(info, inTraj.points(), inTraj.frames());
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
+  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx3 rad_ks(1, info.read_points, info.spokes);
   rad_ks.setConstant(1.0f);
-
-  Cx4 out;
-  std::unique_ptr<GridBase> gridder;
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get());
-    R2 basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), mapping, info.channels, basis, core.fast);
-  } else {
-    gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
-  }
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  out = gridder->Adj(sdc->Adj(rad_ks)).chip<0>(0);
+  Cx4 out = gridder->Adj(sdc->Adj(rad_ks)).chip<0>(0);
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "traj", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(

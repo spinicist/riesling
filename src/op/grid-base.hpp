@@ -5,17 +5,16 @@
 #include "kernel.h"
 #include "operator.hpp"
 #include "threads.h"
-#include "trajectory.h"
+#include "mapping.h"
 #include "types.h"
 
 struct GridBase : Operator<5, 3>
 {
-  GridBase(Mapping const &map, Index const nC, Index const d1, bool const unsafe)
+  GridBase(Mapping const &map, Index const nC, Index const d1)
     : mapping_{map}
     , inputDims_{AddFront(map.cartDims, nC, d1)}
     , outputDims_{AddFront(map.noncartDims, nC)}
     , ws_{std::make_shared<Cx5>(inputDims_)}
-    , safe_{!unsafe}
     , weightFrames_{true}
   {
   }
@@ -40,16 +39,6 @@ struct GridBase : Operator<5, 3>
     return ws_;
   }
 
-  void setUnsafe()
-  {
-    safe_ = true;
-  }
-
-  void setSafe()
-  {
-    safe_ = false;
-  }
-
   void doNotWeightFrames()
   {
     weightFrames_ = false;
@@ -72,8 +61,8 @@ template <int IP, int TP>
 struct SizedGrid : GridBase
 {
   SizedGrid(
-    SizedKernel<IP, TP> const *k, Mapping const &map, Index const nC, Index const d1, bool const unsafe)
-    : GridBase(map, nC, d1, unsafe)
+    SizedKernel<IP, TP> const *k, Mapping const &map, Index const nC, Index const d1)
+    : GridBase(map, nC, d1)
     , kernel_{k}
   {
   }

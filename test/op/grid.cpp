@@ -25,8 +25,9 @@ TEST_CASE("ops-grid")
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory const traj(info, points);
   auto const nn = make_kernel("NN", info.type, os);
-  auto const m1 = traj.mapping(1, os);
-  auto grid = make_grid(nn.get(), m1, info.channels, false);
+  Mapping const mapping(traj, nn.get(), os);
+  auto grid = make_grid(nn.get(), mapping, 1);
+
   SDCOp sdc(SDC::Pipe(traj, true, os), info.channels);
   auto const dims = grid->inputDimensions();
   Cx5 x(dims), y(dims);

@@ -66,11 +66,12 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
 }
 
 CoreOpts::CoreOpts(args::Subparser &parser)
-  : iname(parser, "FILE", "Input HD5 file")
-  , oname(parser, "OUTPUT", "Override output name", {'o', "out"})
+  : iname(parser, "F", "Input HD5 file")
+  , oname(parser, "O", "Override output name", {'o', "out"})
   , ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "FI3")
-  , osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
-  , fast(parser, "FAST", "Enable fast but thread-unsafe gridding", {"fast-grid", 'f'})
+  , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
+  , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
+  , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
 {
 }
 

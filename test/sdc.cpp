@@ -23,21 +23,6 @@ TEST_CASE("SDC")
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory const traj(info, points);
 
-  SECTION("Pipe")
-  {
-    R2 sdc = SDC::Pipe(traj, false, 2.1f);
-    CHECK(sdc.dimension(0) == info.read_points);
-    CHECK(sdc.dimension(1) == info.spokes);
-    // Central points should be very small
-    CHECK(sdc(0, 0) == Approx(0.00106f).margin(1.e-4f));
-    CHECK(sdc(1, 0) == Approx(0.00427f).margin(1.e-4f));
-    // Undersampled points should be close to one
-    CHECK(sdc(25, 0) == Approx(0.81739f).margin(1.e-1f));
-    CHECK(sdc(26, 0) == Approx(0.8954f).margin(1.e-1f));
-    // Point excluded by margin at edge of grid
-    CHECK(sdc(31, 0) == Approx(0.0f).margin(1.e-4f));
-  }
-
   SECTION("Pipe-NN")
   {
     R2 sdc = SDC::Pipe(traj, true, 2.1f);
@@ -51,4 +36,19 @@ TEST_CASE("SDC")
     CHECK(sdc(26, 0) == Approx(0.10798f).margin(1.e-1f));
     CHECK(sdc(31, 0) == Approx(0.10798f).margin(1.e-4f));
   }
+
+  SECTION("Pipe")
+  {
+    R2 sdc = SDC::Pipe(traj, false, 2.1f);
+    CHECK(sdc.dimension(0) == info.read_points);
+    CHECK(sdc.dimension(1) == info.spokes);
+    // Central points should be very small
+    CHECK(sdc(0, 0) == Approx(0.00106f).margin(1.e-4f));
+    CHECK(sdc(1, 0) == Approx(0.00427f).margin(1.e-4f));
+    // Undersampled points should be close to one
+    CHECK(sdc(25, 0) == Approx(0.81739f).margin(1.e-1f));
+    CHECK(sdc(26, 0) == Approx(0.8954f).margin(1.e-1f));
+    CHECK(sdc(31, 0) == Approx(1.77723f).margin(1.e-4f));
+  }
+
 }

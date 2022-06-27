@@ -46,7 +46,8 @@ struct CoreOpts
   args::Positional<std::string> iname;
   args::ValueFlag<std::string> oname, ktype;
   args::ValueFlag<float> osamp;
-  args::Flag fast;
+  args::ValueFlag<Index> bucketSize;
+  args::ValueFlag<std::string> basisFile;
 };
 
 struct ExtraOpts

@@ -1,13 +1,14 @@
 #include "single.hpp"
 
-#include "../log.h"
-#include "../op/grids.h"
-#include "../threads.h"
+#include "log.h"
+#include "mapping.h"
+#include "op/grids.h"
+#include "threads.h"
 
 SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k)
   : Precond{}
 {
-  auto gridder = make_grid(k, traj.mapping(k->inPlane(), 4.f, 1), 1, false);
+  auto gridder = make_grid(k, Mapping(traj, k, 4.f, 32), 1);
   Cx3 W(AddFront(LastN<2>(gridder->outputDimensions()), 1));
   W.setConstant(1.f);
   W = gridder->A(gridder->Adj(W));

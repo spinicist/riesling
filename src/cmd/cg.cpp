@@ -16,27 +16,20 @@ int main_cg(args::Subparser &parser)
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<float> thr(parser, "T", "Termination threshold (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {"max-its"}, 8);
 
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
-  Trajectory const traj = reader.trajectory();
+  auto const &traj = reader.trajectory();
   Info const &info = traj.info();
-
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
+  Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, core.fast);
-  }
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   if (toeplitz) {
     recon.calcToeplitz();

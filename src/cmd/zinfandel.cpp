@@ -54,10 +54,10 @@ int main_zinfandel(args::Subparser &parser)
     auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
     auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
     auto const dsInfo = dsTraj.info();
-    auto const map0 = dsTraj.mapping(kernel->inPlane(), core.osamp.Get(), 0);
-    auto const mapN = dsTraj.mapping(kernel->inPlane(), core.osamp.Get(), gap.Get());
-    auto grid0 = make_grid(kernel.get(), map0, info.channels, false);
-    auto gridN = make_grid(kernel.get(), mapN, info.channels, false);
+    auto const map0 = Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get(), 0);
+    auto const mapN = Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get(), gap.Get());
+    auto grid0 = make_grid(kernel.get(), map0, info.channels);
+    auto gridN = make_grid(kernel.get(), mapN, info.channels);
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
     auto const pre = std::make_unique<SingleChannel>(dsTraj, kernel.get());

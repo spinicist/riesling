@@ -16,7 +16,6 @@ int main_lsmr(args::Subparser &parser)
   ExtraOpts extra(parser);
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::Flag precond(parser, "P", "Apply Ong's single-channel pre-conditioner", {"pre"});
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
@@ -31,18 +30,11 @@ int main_lsmr(args::Subparser &parser)
   Info const &info = traj.info();
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
-
+  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
   std::unique_ptr<Precond<Cx3>> pre = precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
-
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, core.fast);
-  }
   ReconOp recon(gridder.get(), senseMaps, nullptr);
 
   auto sz = recon.inputDimensions();

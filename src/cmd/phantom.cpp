@@ -18,6 +18,7 @@ int main_phantom(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Filename with basis", {'b', "basis"});
   args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
+  args::ValueFlag<Index> bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32);
   args::ValueFlag<std::string> ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");
   args::ValueFlag<float> fov(parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
   args::ValueFlag<Index> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
@@ -100,15 +101,8 @@ int main_phantom(args::Subparser &parser)
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
 
   auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), osamp.Get());
-  std::unique_ptr<GridBase> gridder;
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, false);
-  } else {
-    gridder = make_grid(kernel.get(), mapping, info.channels, false);
-  }
+  Mapping const mapping(traj, kernel.get(), osamp.Get(), bucketSize.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, basisFile.Get());
   ReconOp recon(gridder.get(), senseMaps);
   auto const sz = recon.inputDimensions();
   Cx4 phan(sz);

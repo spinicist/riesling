@@ -18,7 +18,6 @@ int main_tgv(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<float> thr(parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max-its"}, 16);
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   args::ValueFlag<float> alpha(parser, "ALPHA", "Regularisation weighting (1e-5)", {"alpha"}, 1.e-5f);
   args::ValueFlag<float> reduce(parser, "REDUCE", "Reduce regularisation over iters (suggest 0.1)", {"reduce"}, 1.f);
   args::ValueFlag<float> step_size(parser, "STEP SIZE", "Inverse of step size (default 8)", {"step"}, 8.f);
@@ -28,16 +27,10 @@ int main_tgv(args::Subparser &parser)
   Trajectory const traj = reader.trajectory();
   auto const &info = traj.info();
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
+  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
-
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    gridder = make_grid_basis(kernel.get(), gridder->mapping(), info.channels, basis, core.fast);
-  }
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
   auto sz = recon.inputDimensions();

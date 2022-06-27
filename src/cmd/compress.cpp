@@ -70,7 +70,8 @@ int main_compress(args::Subparser &parser)
     if (res) {
       std::tie(traj, minRead) = traj.downsample(res.Get(), lores.Get(), true);
     }
-    auto gridder = make_grid(kernel.get(), traj.mapping(kernel->inPlane(), core.osamp.Get()), nC, core.fast);
+    Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
+    auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
     auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
     auto const sz = LastN<3>(gridder->inputDimensions());
     NUFFTOp nufft(sz, gridder.get(), sdc.get());

@@ -36,29 +36,22 @@ int main_recon(args::Subparser &parser)
   Info const &info = traj.info();
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
-  auto const mapping = traj.mapping(kernel->inPlane(), core.osamp.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.fast);
+  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  std::unique_ptr<GridBase> bgridder = nullptr;
-  if (basisFile) {
-    HD5::Reader basisReader(basisFile.Get());
-    R2 const basis = basisReader.readTensor<R2>(HD5::Keys::Basis);
-    bgridder = make_grid_basis(kernel.get(), mapping, info.channels, basis, core.fast);
-  }
 
   std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;
-
   Sz4 sz;
   if (rss) {
     if (fwd) {
       Log::Fail("RSS is not compatible with forward Recon Op");
     }
     Cropper crop(info, gridder->mapping().cartDims, extra.iter_fov.Get()); // To get correct dims
-    recon.emplace<ReconRSSOp>(basisFile ? bgridder.get() : gridder.get(), crop.size(), sdc.get());
+    recon.emplace<ReconRSSOp>(gridder.get(), crop.size(), sdc.get());
     sz = std::get<ReconRSSOp>(recon).inputDimensions();
   } else {
     Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
-    recon.emplace<ReconOp>(basisFile ? bgridder.get() : gridder.get(), senseMaps, sdc.get());
+    recon.emplace<ReconOp>(gridder.get(), senseMaps, sdc.get());
     sz = std::get<ReconOp>(recon).inputDimensions();
   }
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());

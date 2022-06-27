@@ -5,6 +5,8 @@
 #include "parse_args.h"
 #include "tensorOps.h"
 
+#include <numeric>
+
 int main_split(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
