@@ -80,6 +80,7 @@ Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const inThreads
 
 template std::unique_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorDims const &, Index const);
 template std::unique_ptr<FFT<4, 3>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::unique_ptr<FFT<4, 2>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
 template std::unique_ptr<FFT<4, 1>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
 template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorDims const &, Index const);
 template std::unique_ptr<FFT<3, 2>> Make(typename FFT<3, 2>::TensorDims const &, Index const);
@@ -92,6 +93,7 @@ Make(typename FFT<TRank, FFTRank>::Tensor &ws, Index const inThreads)
   return std::make_unique<CPU<TRank, FFTRank>>(ws, nThreads);
 }
 
+template std::unique_ptr<FFT<4, 2>> Make(typename FFT<4, 2>::Tensor &, Index const);
 template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::Tensor &, Index const);
 
 } // namespace FFT

@@ -81,6 +81,7 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
   case Info::Type::ThreeD:
     return Point3{p(0) * diameter, p(1) * diameter, p(2) * diameter};
   case Info::Type::ThreeDStack:
+  case Info::Type::TwoD:
     return Point3{p(0) * diameter, p(1) * diameter, p(2) - (info_.matrix[2] / 2)};
   }
   __builtin_unreachable(); // Because the GCC devs are very obtuse

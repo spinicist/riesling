@@ -56,9 +56,10 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   Index const gridSz = fft_size(info.matrix.maxCoeff() * os);
   Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
 
-  cartDims = info.type == Info::Type::ThreeD ? Sz3{gridSz, gridSz, gridSz} : Sz3{gridSz, gridSz, info.matrix[2]};
+  type = info.type;
+  cartDims = type == Info::Type::ThreeD ? Sz3{gridSz, gridSz, gridSz} : Sz3{gridSz, gridSz, info.matrix[2]};
   noncartDims = Sz2{info.read_points, info.spokes};
-  scale = sqrt(info.type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
+  scale = sqrt(type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
   frames = info.frames;
   frameWeights = Eigen::ArrayXf(frames);
 

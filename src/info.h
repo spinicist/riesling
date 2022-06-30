@@ -7,7 +7,8 @@ struct Info
   enum struct Type : Index
   {
     ThreeD = 1,
-    ThreeDStack = 2
+    ThreeDStack = 2,
+    TwoD = 3
   };
 
   Type type = Type::ThreeD;
