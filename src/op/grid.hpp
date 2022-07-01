@@ -43,7 +43,8 @@ struct Grid final : SizedGrid<IP, TP>
     Index const nC = cdims[0];
     Index const nB = cdims[1];
     auto const &map = this->mapping_;
-    auto const scale = map.scale;
+    bool const hasBasis = (basis_.size() > 0);
+    float const scale = map.scale * (hasBasis ? sqrt(basis_.dimension(0)) : 1.f);
 
     auto grid_task = [&](Index const ii) {
       auto const si = map.sortedIndices[ii];
@@ -55,7 +56,7 @@ struct Grid final : SizedGrid<IP, TP>
       Index const stX = c.x - ((IP - 1) / 2);
       Index const stY = c.y - ((IP - 1) / 2);
       Index const stZ = c.z - ((TP - 1) / 2);
-      Index const btp = basis_.size() ? n.spoke % basis_.dimension(0) : 0;
+      Index const btp = hasBasis ? n.spoke % basis_.dimension(0) : 0;
       Cx1 sum(nC);
       sum.setZero();
       for (Index iz = 0; iz < TP; iz++) {
@@ -65,7 +66,7 @@ struct Grid final : SizedGrid<IP, TP>
           for (Index ix = 0; ix < IP; ix++) {
             Index const iix = Reflect(stX + ix, cdims[2]);
             float const kval = k(ix, iy, iz) * scale;
-            if (basis_.size()) {
+            if (hasBasis) {
               for (Index ib = 0; ib < nB; ib++) {
                 float const bval = basis_(btp, ib) * kval;
                 for (Index ic = 0; ic < nC; ic++) {
@@ -95,28 +96,31 @@ struct Grid final : SizedGrid<IP, TP>
         FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
     }
     auto const &cdims = this->inputDimensions();
+    auto const &map = this->mapping_;
     Index const nC = cdims[0];
     Index const nB = cdims[1];
+    bool const hasBasis = (basis_.size() > 0);
+    float const scale = map.scale * (hasBasis ? sqrt(basis_.dimension(0)) : 1.f);
 
     std::mutex writeMutex;
     auto grid_task = [&](Index ibucket) {
-      auto const &bucket = this->mapping_.buckets[ibucket];
+      auto const &bucket = map.buckets[ibucket];
       auto const bSz = bucket.gridSize();
       Cx5 out(AddFront(bSz, nC, nB));
       out.setZero();
 
       for (auto ii = 0; ii < bucket.size(); ii++) {
         auto const si = bucket.indices[ii];
-        auto const c = this->mapping_.cart[si];
-        auto const n = this->mapping_.noncart[si];
-        auto const k = this->kernel_->k(this->mapping_.offset[si]);
-        auto const ifr = this->mapping_.frame[si];
-        auto const scale = this->mapping_.scale * (this->weightFrames_ ? this->mapping_.frameWeights[ifr] : 1.f);
+        auto const c = map.cart[si];
+        auto const n = map.noncart[si];
+        auto const k = this->kernel_->k(map.offset[si]);
+        auto const ifr = map.frame[si];
+        auto const frscale = scale * (this->weightFrames_ ? map.frameWeights[ifr] : 1.f);
 
         Index const stX = c.x - ((IP - 1) / 2) - bucket.minCorner[0];
         Index const stY = c.y - ((IP - 1) / 2) - bucket.minCorner[1];
         Index const stZ = c.z - ((TP - 1) / 2) - bucket.minCorner[2];
-        Index const btp = basis_.size() ? n.spoke % basis_.dimension(0) : 0;
+        Index const btp = hasBasis ? n.spoke % basis_.dimension(0) : 0;
         Cx1 const sample = noncart.chip(n.spoke, 2).chip(n.read, 1);
         for (Index iz = 0; iz < TP; iz++) {
           Index const iiz = stZ + iz;
@@ -124,8 +128,8 @@ struct Grid final : SizedGrid<IP, TP>
             Index const iiy = stY + iy;
             for (Index ix = 0; ix < IP; ix++) {
               Index const iix = stX + ix;
-              float const kval = k(ix, iy, iz) * scale;
-              if (basis_.size() > 0) {
+              float const kval = k(ix, iy, iz) * frscale;
+              if (hasBasis) {
                 for (Index ib = 0; ib < nB; ib++) {
                   float const bval = kval * basis_(btp, ib);
                   for (Index ic = 0; ic < nC; ic++) {
@@ -162,7 +166,7 @@ struct Grid final : SizedGrid<IP, TP>
     };
 
     this->ws_->setZero();
-    Threads::For(grid_task, this->mapping_.buckets.size(), "Grid Adjoint");
+    Threads::For(grid_task, map.buckets.size(), "Grid Adjoint");
     return *(this->ws_);
   }
 
