@@ -19,6 +19,7 @@ Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
   float const T2 = p(1);
+  float const B1v = p(2);
   Index const spg = seq.sps / seq.gps; // Spokes per group
 
   Eigen::ArrayXf dynamic(seq.sps * 2);
@@ -35,10 +36,10 @@ Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
 
-  float const cosa1 = cos(seq.alpha * M_PI / 180.f);
-  float const sina1 = sin(seq.alpha * M_PI / 180.f);
-  float const cosa2 = cos(seq.alpha * seq.ascale * M_PI / 180.f);
-  float const sina2 = sin(seq.alpha * seq.ascale * M_PI / 180.f);
+  float const cosa1 = cos(B1v * seq.alpha * M_PI / 180.f);
+  float const sina1 = sin(B1v * seq.alpha * M_PI / 180.f);
+  float const cosa2 = cos(B1v * seq.alpha * seq.ascale * M_PI / 180.f);
+  float const sina2 = sin(B1v * seq.alpha * seq.ascale * M_PI / 180.f);
 
   Eigen::Matrix2f A1, A2;
   A1 << cosa1, 0.f, 0.f, 1.f;

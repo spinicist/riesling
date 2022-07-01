@@ -22,15 +22,17 @@ Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
   Index const spg = seq.sps / seq.gps; // Spokes per group
   Eigen::ArrayXf dynamic(seq.sps);
 
-  Eigen::Matrix2f inv;
-  inv << -1.f, 0.f, 0.f, 1.f;
+
   float const R1 = 1.f / T1;
-  Eigen::Matrix2f E1, Eramp, Essi, Erec;
+  float const R2 = 1.f / T2;
+
+  Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
   float const e1 = exp(-R1 * seq.TR);
   float const eramp = exp(-R1 * seq.Tramp);
   float const essi = exp(-R1 * seq.Tssi);
   float const erec = exp(-R1 * seq.Trec);
   E1 << e1, 1 - e1, 0.f, 1.f;
+  E2 << exp(-R2 * seq.TE), 0.f, 0.f, 1.f;
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
@@ -41,9 +43,7 @@ Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
   Eigen::Matrix2f A;
   A << cosa, 0.f, 0.f, 1.f;
 
-  float const R2 = 1.f / T2;
-  Eigen::Matrix2f E2;
-  E2 << exp(-R2 * seq.TE), 0.f, 0.f, 1.f;
+
 
   // Get steady state after prep-pulse for first segment
   Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(spg) * Eramp).pow(seq.gps);
