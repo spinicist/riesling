@@ -17,7 +17,6 @@ int main_admm(args::Subparser &parser)
   ExtraOpts extra(parser);
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read basis from file", {"basis", 'b'});
 
   args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
   args::Flag use_lsmr(parser, "L", "Use LSMR instead of LSQR for inner loop", {"lsmr"});
@@ -44,7 +43,7 @@ int main_admm(args::Subparser &parser)
 
   auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, basisFile.Get());
+  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 

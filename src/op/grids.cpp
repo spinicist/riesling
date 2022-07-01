@@ -12,7 +12,7 @@ std::unique_ptr<GridBase> make_5_b(Kernel const *, Mapping const &, Index const 
 
 std::unique_ptr<GridBase> make_grid(Kernel const *k, Mapping const &m, Index const nC, std::string const &basisFile)
 {
-  if (basisFile.size()) {
+  if (!basisFile.empty()) {
     HD5::Reader basisReader(basisFile);
     R2 const b = basisReader.readTensor<R2>(HD5::Keys::Basis);
     switch (k->inPlane()) {
