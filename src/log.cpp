@@ -95,7 +95,7 @@ void Tick()
   if (progress) {
     progressAmount++;
     float const percent = (100.f * progressAmount) / progressTarget;
-    if (percent - progress->current() > 1.f) {
+    if ((percent - progress->current() > 1.f) && (percent <= 100.f)) {
       progress->set_progress(percent);
     }
   }

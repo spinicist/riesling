@@ -56,7 +56,7 @@ Eigen::ThreadPoolDevice GlobalDevice()
 
 void For(ForFunc f, Index const lo, Index const hi, std::string const &label)
 {
-  Log::StartProgress((hi - lo)/GlobalPool()->NumThreads(), label);
+  Log::StartProgress(std::ceil(float(hi - lo)/GlobalPool()->NumThreads()), label);
   if (GlobalPool()->NumThreads() == 1) {
     for (Index i = lo; i < hi; i++) {
       f(i);
