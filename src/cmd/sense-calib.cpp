@@ -33,7 +33,6 @@ int main_sense_calib(args::Subparser &parser)
 
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
-  writer.writeInfo(info);
   writer.writeTensor(sense, "sense");
 
   return EXIT_SUCCESS;

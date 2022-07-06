@@ -33,6 +33,7 @@ int main(int const argc, char const *const argv[])
   args::Command sdc(commands, "sdc", "Calculate Sample Density Compensation", &main_sdc);
   args::Command sense(commands, "sense", "Apply SENSE operation", &main_sense);
   args::Command sense_calib(commands, "sense-calib", "Create SENSE maps", &main_sense_calib);
+  args::Command sense_sim(commands, "sense-sim", "Simulate SENSE maps", &main_sense_sim);
   args::Command sim(commands, "sim", "Simulate a basis set", &main_sim);
   args::Command split(commands, "split", "Split data", &main_split);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);

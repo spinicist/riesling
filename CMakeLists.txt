@@ -118,7 +118,8 @@ add_executable(riesling
     src/cmd/rss.cpp
     src/cmd/sdc.cpp
     src/cmd/sense.cpp
-    src/cmd/sense_calib.cpp
+    src/cmd/sense-calib.cpp
+    src/cmd/sense-sim.cpp
     src/cmd/sim.cpp
     src/cmd/split.cpp
     src/cmd/tgv.cpp

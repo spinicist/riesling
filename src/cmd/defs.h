@@ -28,6 +28,7 @@ int main_rss(args::Subparser &parser);
 int main_sdc(args::Subparser &parser);
 int main_sense(args::Subparser &parser);
 int main_sense_calib(args::Subparser &parser);
+int main_sense_sim(args::Subparser &parser);
 int main_sim(args::Subparser &parser);
 int main_split(args::Subparser &parser);
 int main_tgv(args::Subparser &parser);

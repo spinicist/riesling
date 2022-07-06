@@ -15,144 +15,161 @@
 
 using namespace rl;
 
+Trajectory LoadTrajectory(std::string const &file)
+{
+  Log::Print(FMT_STRING("Reading external trajectory from {}"), file);
+  HD5::RieslingReader reader(file);
+  return reader.trajectory();
+}
+
+Trajectory CreateTrajectory(
+  Index const nC,
+  Index const matrix,
+  float const voxSz,
+  float const readOS,
+  Index const sps,
+  float const nex,
+  bool const phyllo,
+  float const lores,
+  Index const trim)
+{
+  // Follow the GE definition where factor of PI is ignored
+  Index const spokes = sps * std::ceil(nex * matrix * matrix / sps);
+  float const fov = matrix * voxSz;
+  Info info{
+    .channels = nC,
+    .samples = Index(readOS * matrix / 2),
+    .traces = spokes,
+    .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
+    .grid3D = true,
+    .fft3D = true,
+    .frames = 1,
+    .volumes = 1,
+    .voxel_size = Eigen::Array3f::Constant(fov / matrix),
+    .origin = Eigen::Array3f::Constant(-fov / 2.f),
+    .direction = Eigen::Matrix3f::Identity(),
+    .tr = 1.f};
+
+  Log::Print(FMT_STRING("Using {} hi-res spokes"), spokes);
+  auto points = phyllo ? Phyllotaxis(info.samples, info.traces, 7, sps, true)
+                       : ArchimedeanSpiral(info.samples, info.traces);
+
+  if (lores > 0) {
+    auto const loMat = matrix / lores;
+    auto const loSpokes = sps * std::ceil(nex * loMat * loMat / sps);
+    auto loPoints = ArchimedeanSpiral(info.samples, loSpokes);
+    loPoints = loPoints / loPoints.constant(lores);
+    points = Re3(points.concatenate(loPoints, 2));
+    info.traces += loSpokes;
+    Log::Print(FMT_STRING("Added {} lo-res spokes"), loSpokes);
+  }
+
+  if (trim > 0) {
+    info.samples -= trim;
+    points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, info.samples, info.traces}));
+  }
+
+  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix, info.voxel_size.transpose());
+  Log::Print(FMT_STRING("Samples: {} Traces: {}"), info.samples, info.traces);
+
+  return Trajectory(info, points);
+}
+
 int main_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Filename with basis", {'b', "basis"});
-  args::ValueFlag<float> osamp(parser, "OSAMP", "Grid oversampling factor (2)", {'s', "os"}, 2.f);
-  args::ValueFlag<Index> bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32);
-  args::ValueFlag<std::string> ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "KB3");
-  args::ValueFlag<float> fov(parser, "FOV", "Field of View in mm (default 256)", {'f', "fov"}, 240.f);
-  args::ValueFlag<Index> matrix(parser, "MATRIX", "Matrix size (default 128)", {'m', "matrix"}, 128);
-  args::Flag shepplogan(parser, "SHEPP-LOGAN", "3D Shepp-Logan phantom", {"shepp_logan"});
-  args::ValueFlag<float> phan_r(
-    parser, "RADIUS", "Radius of the spherical phantom in mm (default 90)", {"phan_rad"}, 90.f);
-  args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
-    parser, "X,Y,Z", "Center position of phantom (in mm)", {"center"}, Eigen::Vector3f::Zero());
-  args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_rot(
-    parser, "ax,ay,az", "Rotation of phantom (in deg)", {"rotation"}, Eigen::Vector3f::Zero());
-  args::ValueFlag<Index> coil_rings(parser, "COIL RINGS", "Number of rings in coil (default 1)", {"rings"}, 1);
-  args::ValueFlag<float> coil_r(parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
-  args::ValueFlag<float> read_samp(parser, "S", "Read-out oversampling (2)", {'r', "read"}, 2);
-  args::ValueFlag<Index> sps(parser, "S", "traces per segment", {"sps"}, 256);
-  args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
-  args::ValueFlag<Index> lores(parser, "L", "Add lo-res k-space scaled by L", {'l', "lores"}, 0);
-  args::ValueFlag<Index> blank(parser, "B", "Blank N samples for dead-time", {"blank"}, 0);
-  args::ValueFlag<Index> trim(parser, "T", "Trim N samples entirely", {"trim"}, 0);
+
+  args::ValueFlag<std::string> trajfile(parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
+
+  args::ValueFlag<float> voxSize(parser, "V", "Voxel size in mm (default 2)", {'f', "fov"}, 2.f);
+  args::ValueFlag<Index> matrix(parser, "M", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
-  args::ValueFlag<std::string> sense(parser, "S", "Read SENSE maps from file", {"sense"});
-  args::ValueFlag<std::vector<float>, VectorReader<float>> intFlag(
-    parser, "I", "Phantom intensities (default all 100)", {'i', "intensities"});
-  args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
-  args::Flag phyllo(parser, "P", "Use a phyllotaxis", {'p', "phyllo"});
+  args::ValueFlag<Index> frames(parser, "F", "Number of frames/basis images", {'f', "frames"}, 1);
+
+  args::ValueFlag<float> phan_r(parser, "R", "Radius phantom in mm (default 90)", {"phan_rad"}, 90.f);
+  args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
+    parser, "", "X,Y,Z position (in mm)", {"center"}, Eigen::Vector3f::Zero());
+  args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_rot(
+    parser, "", "ax,ay,sz rotation (in deg)", {"rotation"}, Eigen::Vector3f::Zero());
+
+  args::Flag phyllo(parser, "", "Use a phyllotaxis", {'p', "phyllo"});
   args::ValueFlag<Index> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
   args::ValueFlag<Index> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
   args::Flag gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
-  args::ValueFlag<std::string> trajfile(parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
-  args::ValueFlag<std::string> infofile(parser, "INFO FILE", "Input HD5 file for info", {"info"});
+
+  args::ValueFlag<float> readOS(parser, "S", "Read-out oversampling (2)", {'r', "read"}, 2);
+  args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
+  args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
+  args::ValueFlag<float> lores(parser, "L", "Add lo-res k-space scaled by L", {'l', "lores"}, 0);
+
+  args::ValueFlag<Index> trim(parser, "T", "Trim N samples", {"trim"}, 0);
+
+  args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
 
   ParseCommand(parser, iname);
 
-  Re3 points;
-  Info info;
-  if (trajfile) {
-    Log::Print(FMT_STRING("Reading external trajectory from {}"), trajfile.Get());
-    HD5::RieslingReader reader(trajfile.Get());
-    Trajectory const ext_traj = reader.trajectory();
-    info = ext_traj.info();
-    points = ext_traj.points().slice(Sz3{0, 0, info.traces}, Sz3{3, info.samples, info.traces});
-  } else {
-    // Follow the GE definition where factor of PI is ignored
-    auto const traces = sps.Get() * ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
-    info = Info{
-      .channels = nchan.Get(),
-      .samples = (Index)read_samp.Get() * matrix.Get() / 2,
-      .traces = traces,
-      .matrix = Eigen::DSizes<Index, 3>{matrix.Get(), matrix.Get(), matrix.Get()},
-      .grid3D = true,
-      .fft3D = true,
-      .frames = 1,
-      .volumes = 1,
-      .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
-      .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
-      .direction = Eigen::Matrix3f::Identity(),
-      .tr = 1.f};
-    Log::Print(FMT_STRING("Using {} hi-res traces"), info.traces);
-    if (phyllo) {
-      points = Phyllotaxis(info.samples, info.traces, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
-    } else {
-      points = ArchimedeanSpiral(info.samples, info.traces);
-    }
+  Trajectory const traj = trajfile ? LoadTrajectory(trajfile.Get())
+                                   : CreateTrajectory(
+                                       nchan.Get(),
+                                       matrix.Get(),
+                                       voxSize.Get(),
+                                       readOS.Get(),
+                                       sps.Get(),
+                                       nex.Get(),
+                                       phyllo,
+                                       lores.Get(),
+                                       trim.Get());
+  auto const &info = traj.info();
 
-    if (lores) {
-      auto const loMat = matrix.Get() / lores.Get();
-      auto const lotraces = sps.Get() * ((std::lrint(nex.Get() * loMat * loMat) + sps.Get() - 1) / sps.Get());
-      auto loPoints = ArchimedeanSpiral(info.samples, lotraces);
-      loPoints = loPoints / loPoints.constant(lores.Get());
-      points = Re3(loPoints.concatenate(points, 2));
-      info.traces += lotraces;
-      Log::Print(FMT_STRING("Added {} lo-res traces"), lotraces);
-    }
-  }
-  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix, info.voxel_size.transpose());
-  Log::Print(FMT_STRING("Read points: {} traces: {}"), info.samples, info.traces);
+  // Parameters for the 10 elipsoids in the 3D Shepp-Logan phantom from Cheng et al.
+  std::vector<Eigen::Vector3f> const centres{
+    {0, 0, 0},
+    {0, 0, 0},
+    {-0.22, 0, -0.25},
+    {0.22, 0, -0.25},
+    {0, 0.35, -0.25},
+    {0, 0.1, -0.25},
+    {-0.08, -0.65, -0.25},
+    {0.06, -0.65, -0.25},
+    {0.06, -0.105, 0.625},
+    {0, 0.1, 0.625}};
 
-  Trajectory traj(info, points);
-  Cx4 senseMaps =
-    sense ? SENSE::Interp(sense.Get(), info.matrix)
-          : birdcage(info.matrix, info.voxel_size, info.channels, coil_rings.Get(), coil_r.Get(), coil_r.Get());
-  info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
+  // Half-axes
+  std::vector<Eigen::Array3f> const ha{
+    {0.69, 0.92, 0.9},
+    {0.6624, 0.874, 0.88},
+    {0.41, 0.16, 0.21},
+    {0.31, 0.11, 0.22},
+    {0.21, 0.25, 0.5},
+    {0.046, 0.046, 0.046},
+    {0.046, 0.023, 0.02},
+    {0.046, 0.023, 0.02},
+    {0.056, 0.04, 0.1},
+    {0.056, 0.056, 0.1}};
 
-  auto const kernel = rl::make_kernel(ktype.Get(), info.grid3D, osamp.Get());
-  Mapping const mapping(traj, kernel.get(), osamp.Get(), bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, ReadBasis(basisFile));
-  ReconOp recon(gridder.get(), senseMaps);
-  auto const sz = recon.inputDimensions();
-  Cx4 phan(sz);
+  std::vector<float> const angles{0, 0, 3 * M_PI / 5, 2 * M_PI / 5, 0, 0, 0, M_PI / 2, M_PI / 2, 0};
+  std::vector<std::vector<float>> const intensities{
+    {100, -40, -10, -10, 10, 10, 5, 5, 10, -10},
+    {10, 2, -4, 1, -6, 2, 6, -5, 2, -3},
+    {1, -0.1, 0.1, 0.2, 0.5, -0.1, -0.2, 0.5, 0.1, 0.1},
+    {0.1, -0.02, 0.07, -0.05, -0.05, -0.08, 0.02, 0., 0, 0}};
 
-  std::vector<float> intensities = intFlag.Get();
-  if ((Index)intensities.size() == 0) {
-    intensities.resize(phan.dimension(0));
-    std::fill(intensities.begin(), intensities.end(), 100.f);
-  } else if ((Index)intensities.size() != phan.dimension(0)) {
-    Log::Fail(
-      "Number of intensities {} does not match phantom first dimension {}", intensities.size(), phan.dimension(0));
-  }
+  Cx4 phan(frames.Get(), matrix.Get(), matrix.Get(), matrix.Get());
   for (Index ii = 0; ii < phan.dimension(0); ii++) {
-    phan.chip<0>(ii) =
-      shepplogan
-        ? SheppLoganPhantom(info.matrix, info.voxel_size, phan_c.Get(), phan_rot.Get(), phan_r.Get(), intensities[ii])
-        : SphericalPhantom(info.matrix, info.voxel_size, phan_c.Get(), phan_r.Get(), intensities[ii]);
-  }
-  Log::Print(FMT_STRING("Sampling hi-res non-cartesian"));
-  Cx3 radial = info.noncartesianVolume();
-  radial = recon.A(phan);
-
-  if (snr) {
-    float avg = std::reduce(intensities.begin(), intensities.end()) / intensities.size();
-    float const level = avg / (info.channels * sqrt(snr.Get()));
-    Log::Print(FMT_STRING("Adding noise effective level {}"), level);
-    Cx3 noise(radial.dimensions());
-    noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
-    radial += noise * noise.constant(level);
-  }
-
-  if (trim) {
-    info.samples -= trim.Get();
-    points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.samples, info.traces}));
-    radial = Cx3(radial.slice(Sz3{0, trim.Get(), 0}, Sz3{info.channels, info.samples, info.traces}));
-    traj = Trajectory(info, points);
-  }
-
-  if (blank) {
-    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, blank.Get(), info.traces}).setZero();
-    traj = Trajectory(info, points);
+    phan.chip<0>(ii) = SheppLoganPhantom(
+      info.matrix,
+      info.voxel_size,
+      phan_c.Get(),
+      phan_rot.Get(),
+      phan_r.Get(),
+      centres,
+      ha,
+      angles,
+      intensities[ii % 4]);
   }
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeTrajectory(traj);
-  writer.writeTensor(
-    Cx4(radial.reshape(Sz4{info.channels, info.samples, info.traces, 1})), HD5::Keys::Noncartesian);
   writer.writeTensor(Cx5(phan.reshape(AddBack(phan.dimensions(), 1))), HD5::Keys::Image);
 
   return EXIT_SUCCESS;
