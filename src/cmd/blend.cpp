@@ -29,7 +29,7 @@ int main_blend(args::Subparser &parser)
   args::ValueFlag<std::string> oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(
     parser, "TP", "Timepoints within basis for combination", {"tp", 't'}, {0});
-  args::Flag eddy_rss(parser, "", "Produce an RSS image for eddy-current correction", {"eddy", 'e'});
+  args::ValueFlag<Index> keep(parser, "K", "Keep only N basis vectors", {"keep", 'k'}, 0);
 
   ParseCommand(parser);
 
@@ -37,8 +37,18 @@ int main_blend(args::Subparser &parser)
     throw args::Error("No input file specified");
   }
   HD5::RieslingReader input(iname.Get());
-  Cx5 const images = input.readTensor<Cx5>("image");
+  Cx5 images = input.readTensor<Cx5>("image");
   Sz5 const dims = images.dimensions();
+  if (keep) {
+    if (keep.Get() < 1 || keep.Get() > dims[0]) {
+      Log::Fail(FMT_STRING("Requested to keep {} basis vectors but only {} in file"), keep.Get(), dims[0]);
+    }
+    Log::Print(FMT_STRING("Keeping {} basis vectors"), keep.Get());
+    for (Index ik = keep.Get(); ik < dims[0]; ik++) {
+      images.chip(ik, 0).device(Threads::GlobalDevice()) = images.chip(ik, 0).constant(0.f);
+    }
+  }
+
   if (!iname) {
     throw args::Error("No basis file specified");
   }
