@@ -19,29 +19,27 @@ Eigen::ArrayXf T2FLAIR::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
   float const T2 = p(1);
-
-  Eigen::ArrayXf dynamic(seq.sps);
+  float const R1 = 1.f / T1;
+  float const R2 = 1.f / T2;
   Index const spg = seq.sps / seq.gps;
-
+  Eigen::ArrayXf dynamic(seq.sps);
+  
   Eigen::Matrix2f inv;
   inv << -1.f, 0.f, 0.f, 1.f;
-  float const R1 = 1.f / T1;
-  Eigen::Matrix2f E1, Eramp, Essi, Ei, Er, Erec;
+  
+  Eigen::Matrix2f E1, E2, Eramp, Essi, Ei, Er, Erec;
   float const e1 = exp(-R1 * seq.TR);
   float const eramp = exp(-R1 * seq.Tramp);
   float const essi = exp(-R1 * seq.Tssi);
   float const einv = exp(-R1 * seq.TI);
   float const erec = exp(-R1 * seq.Trec);
   E1 << e1, 1 - e1, 0.f, 1.f;
+  E2 << exp(-R2 * seq.TE), 0.f, 0.f, 1.f;
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
-  Ei << einv, 1 - einv, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
-
-  float const R2 = 1.f / T2;
-  Eigen::Matrix2f E2;
-  E2 << exp(-R2 * seq.TE), 0.f, 0.f, 1.f;
-
+  Ei << einv, 1 - einv, 0.f, 1.f;
+  
   float const cosa = cos(seq.alpha * M_PI / 180.f);
   float const sina = sin(seq.alpha * M_PI / 180.f);
 

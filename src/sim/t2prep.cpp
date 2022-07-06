@@ -19,12 +19,10 @@ Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
   float const T2 = p(1);
-  Index const spg = seq.sps / seq.gps; // Spokes per group
-  Eigen::ArrayXf dynamic(seq.sps);
-
-
   float const R1 = 1.f / T1;
   float const R2 = 1.f / T2;
+  Index const spg = seq.sps / seq.gps; // Spokes per group
+  Eigen::ArrayXf dynamic(seq.sps);
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
   float const e1 = exp(-R1 * seq.TR);
@@ -42,8 +40,6 @@ Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
 
   Eigen::Matrix2f A;
   A << cosa, 0.f, 0.f, 1.f;
-
-
 
   // Get steady state after prep-pulse for first segment
   Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(spg) * Eramp).pow(seq.gps);
