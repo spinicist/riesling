@@ -38,7 +38,7 @@ struct Grid final : SizedGrid<IP, TP>
       Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
     }
     Output noncart(this->outputDimensions());
-    noncart.setZero();
+    noncart.device(Threads::GlobalDevice()) = noncart.constant(0.f);
     auto const &cdims = this->inputDimensions();
     Index const nC = cdims[0];
     Index const nB = cdims[1];
@@ -165,7 +165,7 @@ struct Grid final : SizedGrid<IP, TP>
       }
     };
 
-    this->ws_->setZero();
+    this->ws_->device(Threads::GlobalDevice()) = this->ws_->constant(0.f);
     Threads::For(grid_task, map.buckets.size(), "Grid Adjoint");
     return *(this->ws_);
   }
