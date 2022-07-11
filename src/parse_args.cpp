@@ -1,5 +1,6 @@
 #include "parse_args.h"
 #include "io/hd5.hpp"
+#include "io/writer.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include <algorithm>
@@ -72,6 +73,7 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
+  , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep", 'k'})
 {
 }
 
@@ -141,6 +143,22 @@ OutName(std::string const &iName, std::string const &oName, std::string const &s
     oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
     suffix,
     extension);
+}
+
+void WriteOutput(
+  Cx5 const &img,
+  std::string const &iname,
+  std::string const &oname,
+  std::string const &suffix,
+  bool const keepTrajectory,
+  Trajectory const &traj)
+{
+  auto const fname = OutName(iname, oname, suffix, "h5");
+  HD5::Writer writer(fname);
+  writer.writeTensor(img, HD5::Keys::Image);
+  if (keepTrajectory) {
+    writer.writeTrajectory(traj);
+  }
 }
 
 Index ValOrLast(Index const val, Index const vols)

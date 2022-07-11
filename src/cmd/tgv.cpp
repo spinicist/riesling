@@ -45,10 +45,6 @@ int main_tgv(args::Subparser &parser)
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-  auto const fname = OutName(core.iname.Get(), core.oname.Get(), "tgv", "h5");
-  HD5::Writer writer(fname);
-  writer.writeTrajectory(traj);
-  writer.writeTensor(out, "image");
-
+  WriteOutput(out, core.iname.Get(), core.oname.Get(), parser.GetCommand().Name(), core.keepTrajectory, traj);
   return EXIT_SUCCESS;
 }

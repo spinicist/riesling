@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "types.h"
+#include "trajectory.h"
 
 extern args::Group global_group;
 extern args::HelpFlag help;
@@ -37,6 +38,14 @@ struct Sz3Reader
 std::string OutName(
   std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension = "h5");
 
+void WriteOutput(
+  Cx5 const &img,
+  std::string const &iname,
+  std::string const &oname,
+  std::string const &suffix,
+  bool const keepTrajectory,
+  Trajectory const &traj);
+
 // Helper function for getting a good volume to take SENSE maps from
 Index ValOrLast(Index const val, Index const last);
 
@@ -48,6 +57,7 @@ struct CoreOpts
   args::ValueFlag<float> osamp;
   args::ValueFlag<Index> bucketSize;
   args::ValueFlag<std::string> basisFile;
+  args::Flag keepTrajectory;
 };
 
 struct ExtraOpts

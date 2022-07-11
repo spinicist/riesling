@@ -89,10 +89,7 @@ int main_recon(args::Subparser &parser)
       out.chip<4>(iv) = cropped;
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-    auto const fname = OutName(core.iname.Get(), core.oname.Get(), "recon", "h5");
-    HD5::Writer writer(fname);
-    writer.writeTrajectory(traj);
-    writer.writeTensor(out, HD5::Keys::Image);
+    WriteOutput(out, core.iname.Get(), core.oname.Get(), parser.GetCommand().Name(), core.keepTrajectory, traj);
   }
 
   return EXIT_SUCCESS;
