@@ -36,8 +36,8 @@ int main_blend(args::Subparser &parser)
   if (!iname) {
     throw args::Error("No input file specified");
   }
-  HD5::RieslingReader input(iname.Get());
-  Cx5 images = input.readTensor<Cx5>("image");
+  HD5::Reader input(iname.Get());
+  Cx5 images = input.readTensor<Cx5>(HD5::Keys::Image);
   Sz5 const dims = images.dimensions();
   if (keep) {
     if (keep.Get() < 1 || keep.Get() > dims[0]) {
@@ -76,8 +76,8 @@ int main_blend(args::Subparser &parser)
 
   auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
   HD5::Writer writer(fname);
-  writer.writeTrajectory(input.trajectory());
-  writer.writeTensor(out, "image");
+  writer.writeInfo(input.readInfo());
+  writer.writeTensor(out, HD5::Keys::Image);
 
   return EXIT_SUCCESS;
 }
