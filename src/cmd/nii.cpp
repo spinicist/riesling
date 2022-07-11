@@ -17,8 +17,8 @@ int main_nii(args::Subparser &parser)
   if (!oname) {
     Log::Fail("No output name specified");
   }
-  HD5::RieslingReader input(iname.Get());
-  Info const info = input.trajectory().info();
+  HD5::Reader input(iname.Get());
+  Info const info = input.readInfo();
   Cx5 const image = input.readTensor<Cx5>(dset.Get());
   Sz5 const sz = image.dimensions();
 

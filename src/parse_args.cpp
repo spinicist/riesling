@@ -158,6 +158,8 @@ void WriteOutput(
   writer.writeTensor(img, HD5::Keys::Image);
   if (keepTrajectory) {
     writer.writeTrajectory(traj);
+  } else {
+    writer.writeInfo(traj.info());
   }
 }
 

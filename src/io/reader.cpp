@@ -228,17 +228,7 @@ template Eigen::MatrixXcf Reader::readMatrix<Eigen::MatrixXcf>(std::string const
 template Eigen::ArrayXf Reader::readMatrix<Eigen::ArrayXf>(std::string const &);
 template Eigen::ArrayXXf Reader::readMatrix<Eigen::ArrayXXf>(std::string const &);
 
-void Check(std::string const &name, Index const dval, Index const ival)
-{
-  if (dval != ival) {
-    Log::Fail(FMT_STRING("Number of {} in data {} does not match info {}"), name, dval, ival);
-  }
-}
-
-RieslingReader::RieslingReader(std::string const &fname)
-  : Reader(fname)
-  , currentNCVol_{-1}
-{
+Info Reader::readInfo() {
   // First get the Info struct
   hid_t const info_id = InfoType();
   hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
@@ -250,6 +240,21 @@ RieslingReader::RieslingReader(std::string const &fname)
   if (status != 0) {
     Log::Fail(FMT_STRING("Could not load info struct, code: {}"), status);
   }
+  return info;
+}
+
+void Check(std::string const &name, Index const dval, Index const ival)
+{
+  if (dval != ival) {
+    Log::Fail(FMT_STRING("Number of {} in data {} does not match info {}"), name, dval, ival);
+  }
+}
+
+RieslingReader::RieslingReader(std::string const &fname)
+  : Reader(fname)
+  , currentNCVol_{-1}
+{
+  auto const info = readInfo();
 
   R3 points(3, info.read_points, info.spokes);
   HD5::load_tensor(handle_, Keys::Trajectory, points);

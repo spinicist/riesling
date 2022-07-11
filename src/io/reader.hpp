@@ -26,6 +26,8 @@ struct Reader
   template <typename Derived>
   Derived readMatrix(std::string const &label);
 
+  Info readInfo(); // Read the info struct from a file
+
 protected:
   int64_t handle_;
 };
