@@ -42,7 +42,7 @@ struct Grid final : GridBase<Scalar>
   }
 
   Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, Index const nC, R2 const b)
-    : GridBase<Scalar>(mapping, nC, mapping.frames)
+    : GridBase<Scalar>(mapping, nC, b.dimension(1))
     , kernel{k}
     , basis{b}
   {
