@@ -26,6 +26,7 @@ inline auto SymOrtho(float const a, float const b)
 
 } // namespace
 
+namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
 
@@ -250,4 +251,5 @@ typename Op::Input lsmr(
   }
 
   return x;
+}
 }

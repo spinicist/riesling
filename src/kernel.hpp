@@ -4,6 +4,8 @@
 #include "log.h"
 #include "tensorOps.h"
 
+namespace rl {
+
 template <int IP, int TP>
 auto SizedKernel<IP, TP>::distSq(Point3 const p) const -> KTensor
 {
@@ -19,9 +21,7 @@ auto SizedKernel<IP, TP>::distSq(Point3 const p) const -> KTensor
     for (Index iz = 0; iz < TP; iz++) {
       for (Index iy = 0; iy < IP; iy++) {
         for (Index ix = 0; ix < IP; ix++) {
-          k(ix, iy, iz) =
-            (np - Point3((-IIP_2 + ix) / IP_2, (-IIP_2 + iy) / IP_2, (-ITP_2 + iz) / TP_2))
-              .squaredNorm();
+          k(ix, iy, iz) = (np - Point3((-IIP_2 + ix) / IP_2, (-IIP_2 + iy) / IP_2, (-ITP_2 + iz) / TP_2)).squaredNorm();
         }
       }
     }
@@ -71,8 +71,7 @@ struct KaiserBessel final : SizedKernel<IP, TP>
   {
     auto const z2 = this->distSq(p);
     return (z2 > 1.f).select(
-      z2.constant(0.f),
-      z2.constant(scale_) * (z2.constant(beta_) * (z2.constant(1.f) - z2).sqrt()).bessel_i0());
+      z2.constant(0.f), z2.constant(scale_) * (z2.constant(beta_) * (z2.constant(1.f) - z2).sqrt()).bessel_i0());
   }
 
 private:
@@ -97,8 +96,7 @@ struct FlatIron final : SizedKernel<IP, TP>
   {
     auto const z2 = this->distSq(p);
     return (z2 > 1.f).select(
-      z2.constant(0.f),
-      z2.constant(scale_) * ((z2.constant(1.f) - z2).sqrt() * z2.constant(beta_)).exp());
+      z2.constant(0.f), z2.constant(scale_) * ((z2.constant(1.f) - z2).sqrt() * z2.constant(beta_)).exp());
   }
 
 private:
@@ -116,8 +114,7 @@ struct PipeSDC final : SizedKernel<IP, TP>
   {
     valScale_ = 1.f;
     valScale_ = 1.f / Sum(k(Point3::Zero()));
-    Log::Debug(
-      FMT_STRING("Pipe/Zwart kernel <{},{}> β={}, scale={}"), IP, TP, distScale_, valScale_);
+    Log::Debug(FMT_STRING("Pipe/Zwart kernel <{},{}> β={}, scale={}"), IP, TP, distScale_, valScale_);
   }
 
   KTensor k(Point3 const p) const
@@ -167,3 +164,5 @@ struct PipeSDC final : SizedKernel<IP, TP>
 private:
   float distScale_, valScale_;
 };
+
+} // namespace rl

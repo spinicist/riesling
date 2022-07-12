@@ -2,6 +2,8 @@
 
 #include "tensorOps.h"
 
+namespace rl {
+
 Trajectory::Trajectory() {}
 
 Trajectory::Trajectory(Info const &info, R3 const &points)
@@ -135,4 +137,6 @@ std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index cons
     lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res spokes"), lores) : "");
   dsPoints = R3(dsPoints.slice(Sz3{0, minRead, 0}, Sz3{3, dsInfo.read_points, dsInfo.spokes}));
   return std::make_tuple(Trajectory(dsInfo, dsPoints, frames_), minRead);
+}
+
 }

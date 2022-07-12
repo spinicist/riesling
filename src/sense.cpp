@@ -7,6 +7,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
+namespace rl {
 namespace SENSE {
 
 Opts::Opts(args::Subparser &parser)
@@ -19,7 +20,13 @@ Opts::Opts(args::Subparser &parser)
 }
 
 Cx4 SelfCalibration(
-  Info const &info, GridBase *gridder, float const fov, float const res, float const λ, Index const frame, Cx3 const &data)
+  Info const &info,
+  GridBase<Cx> *gridder,
+  float const fov,
+  float const res,
+  float const λ,
+  Index const frame,
+  Cx3 const &data)
 {
   Log::Debug(FMT_STRING("*** Self-Calibrated SENSE ***"));
   Sz5 const dims = gridder->inputDimensions();
@@ -89,7 +96,7 @@ Cx4 Interp(std::string const &file, Eigen::Array3l const dims)
   return sense;
 }
 
-Cx4 Choose(Opts &opts, Info const &i, GridBase *g, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
+Cx4 Choose(Opts &opts, Info const &i, GridBase<Cx> *g, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
 {
   if (opts.file) {
     return Load(opts.file.Get(), i);
@@ -106,3 +113,4 @@ Cx4 Choose(Opts &opts, Info const &i, GridBase *g, float const fov, SDCOp *sdc, 
 }
 
 } // namespace SENSE
+} // namespace rl

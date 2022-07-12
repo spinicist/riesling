@@ -2,6 +2,8 @@
 
 #include "tensorOps.h"
 
+namespace rl {
+
 Index Compressor::out_channels() const
 {
   return psi.cols();
@@ -41,3 +43,4 @@ Cx4 Compressor::compress(Cx4 const &source)
   destmat.noalias() = psi.transpose() * sourcemat;
   return dest;
 }
+} // namespace rl

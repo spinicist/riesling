@@ -10,6 +10,8 @@ std::vector<Index> const dim1 = {1, 2, 0};
 std::vector<Index> const dim2 = {1, 0, 0};
 } // namespace
 
+namespace rl {
+
 Wavelets::Wavelets(Index const N, Index const L)
   : N_{N}
   , L_{L}
@@ -27,14 +29,7 @@ Wavelets::Wavelets(Index const N, Index const L)
     break;
   case 8:
     D_.setValues(
-      {0.32580343f,
-       1.01094572f,
-       0.89220014f,
-       -0.03957503f,
-       -0.26450717f,
-       0.0436163f,
-       0.0465036f,
-       -0.01498699f});
+      {0.32580343f, 1.01094572f, 0.89220014f, -0.03957503f, -0.26450717f, 0.0436163f, 0.0465036f, -0.01498699f});
     break;
   default:
     Log::Fail("Asked for co-efficients that have not been implemented");
@@ -134,8 +129,7 @@ void Wavelets::decode_dim(Cx3 &image, Index const dim, Index const level)
       for (Index ij = 0; ij < sz; ij++) {
         Cx1 temp(sz);
         temp.setZero();
-        Eigen::TensorRef<Cx1> line =
-          image.chip(ii, dim1.at(dim)).chip(ij, dim2.at(dim)).slice(start, end);
+        Eigen::TensorRef<Cx1> line = image.chip(ii, dim1.at(dim)).chip(ij, dim2.at(dim)).slice(start, end);
         for (Index it = 0; it < hsz; it++) {
           Index const temp_index = it * 2;
           Index const N_2 = N_ / 2;
@@ -164,3 +158,4 @@ void Wavelets::decode(Cx3 &image)
     }
   }
 }
+} // namespace rl

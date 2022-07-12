@@ -7,6 +7,7 @@
 
 #include "fftw3.h"
 
+namespace rl {
 namespace FFT {
 
 template <int TRank, int FRank>
@@ -180,3 +181,4 @@ private:
 };
 
 } // namespace FFT
+} // namespace rl

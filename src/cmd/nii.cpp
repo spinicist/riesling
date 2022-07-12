@@ -5,6 +5,8 @@
 #include "log.h"
 #include "parse_args.h"
 
+using namespace rl;
+
 int main_nii(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Input h5 file");

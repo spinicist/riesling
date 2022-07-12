@@ -2,11 +2,13 @@
 
 #include "io/hd5.hpp"
 #include "log.h"
-#include "op/grids.h"
+#include "op/gridBase.hpp"
 #include "parse_args.h"
 #include "sdc.h"
 #include "threads.h"
 #include <filesystem>
+
+using namespace rl;
 
 int main_grid(args::Subparser &parser)
 {
@@ -20,9 +22,9 @@ int main_grid(args::Subparser &parser)
   auto const traj = reader.trajectory();
   auto const info = traj.info();
 
-  auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
   Cx3 rad_ks = info.noncartesianVolume();
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "grid", "h5"));
   writer.writeTrajectory(traj);

@@ -2,6 +2,8 @@
 #include "../../src/tensorOps.h"
 #include <catch2/catch.hpp>
 
+using namespace rl;
+
 TEST_CASE("ops-sense")
 {
   Index const channels = 2, mapSz = 4;

@@ -3,6 +3,8 @@
 #include "../tensorOps.h"
 #include "operator.hpp"
 
+namespace rl {
+
 struct SenseOp final : Operator<4, 5>
 {
   SenseOp(Cx4 const &maps, Index const d0)
@@ -53,3 +55,4 @@ private:
   Eigen::IndexList<int, FixOne, int, int, int> resMaps;
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
 };
+} // namespace rl

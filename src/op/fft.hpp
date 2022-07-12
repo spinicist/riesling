@@ -5,6 +5,8 @@
 #include "../fft/fft.hpp"
 #include "../threads.h"
 
+namespace rl {
+
 template <int Rank, int FFTRank = 3>
 struct FFTOp final : Operator<Rank, Rank>
 {
@@ -119,3 +121,4 @@ private:
   std::unique_ptr<FFT::FFT<5, 3>> fft3_;
   std::unique_ptr<FFT::FFT<4, 2>> fft2_;
 };
+} // namespace rl

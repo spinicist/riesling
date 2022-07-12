@@ -13,6 +13,8 @@
 #include "types.h"
 #include <filesystem>
 
+using namespace rl;
+
 int main_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
@@ -100,9 +102,9 @@ int main_phantom(args::Subparser &parser)
           : birdcage(info.matrix, info.voxel_size, info.channels, coil_rings.Get(), coil_r.Get(), coil_r.Get());
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
 
-  auto const kernel = make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const kernel = rl::make_kernel(ktype.Get(), info.type, osamp.Get());
   Mapping const mapping(traj, kernel.get(), osamp.Get(), bucketSize.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, basisFile.Get());
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basisFile.Get());
   ReconOp recon(gridder.get(), senseMaps);
   auto const sz = recon.inputDimensions();
   Cx4 phan(sz);

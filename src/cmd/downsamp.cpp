@@ -5,6 +5,8 @@
 #include "parse_args.h"
 #include "tensorOps.h"
 
+using namespace rl;
+
 int main_downsamp(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");

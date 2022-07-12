@@ -2,17 +2,11 @@
 
 #include "../src/info.h"
 #include "../src/traj_spirals.h"
-#include "../src/op/grid-base.hpp"
+#include "../src/op/grid-internal.hpp"
 
 #include <catch2/catch.hpp>
 
-// Forward declarations
-std::unique_ptr<GridBase> make_1(Kernel const *, Mapping const &, Index const nC);
-std::unique_ptr<GridBase> make_1_b(Kernel const *, Mapping const &, Index const nC, R2 const &b);
-std::unique_ptr<GridBase> make_3(Kernel const *, Mapping const &, Index const nC);
-std::unique_ptr<GridBase> make_3_b(Kernel const *, Mapping const &, Index const nC, R2 const &b);
-std::unique_ptr<GridBase> make_5(Kernel const *, Mapping const &, Index const nC);
-std::unique_ptr<GridBase> make_5_b(Kernel const *, Mapping const &, Index const nC, R2 const &b);
+using namespace rl;
 
 Index const M = 128;
 Index const C = 8;
@@ -44,11 +38,11 @@ Mapping const m5(traj, kb5.get(), os, bucketSz);
 
 TEST_CASE("GridAdj")
 {
-  auto gridnn = make_1(nn.get(), m1, C);
-  auto gridkb3 = make_3(kb3.get(), m3, C);
-  auto gridkb5 = make_5(kb5.get(), m5, C);
-  auto gridfi3 = make_3(fi3.get(), m3, C);
-  auto gridfi5 = make_5(fi5.get(), m5, C);
+  auto gridnn = make_grid_internal<1, 1, Cx>(nn.get(), m1, C);
+  auto gridkb3 = make_grid_internal<3, 3, Cx>(kb3.get(), m3, C);
+  auto gridkb5 = make_grid_internal<5, 5, Cx>(kb5.get(), m5, C);
+  auto gridfi3 = make_grid_internal<3, 3, Cx>(fi3.get(), m3, C);
+  auto gridfi5 = make_grid_internal<5, 5, Cx>(fi5.get(), m5, C);
 
   Cx3 nc(gridnn->outputDimensions());
   nc.setRandom();
@@ -81,11 +75,11 @@ TEST_CASE("GridAdj")
 
 TEST_CASE("GridA")
 {
-  auto gridnn = make_1(nn.get(), m1, C);
-  auto gridkb3 = make_3(kb3.get(), m3, C);
-  auto gridkb5 = make_5(kb5.get(), m5, C);
-  auto gridfi3 = make_3(fi3.get(), m3, C);
-  auto gridfi5 = make_5(fi5.get(), m5, C);
+  auto gridnn = make_grid_internal<1, 1, Cx>(nn.get(), m1, C);
+  auto gridkb3 = make_grid_internal<3, 3, Cx>(kb3.get(), m3, C);
+  auto gridkb5 = make_grid_internal<5, 5, Cx>(kb5.get(), m5, C);
+  auto gridfi3 = make_grid_internal<3, 3, Cx>(fi3.get(), m3, C);
+  auto gridfi5 = make_grid_internal<5, 5, Cx>(fi5.get(), m5, C);
 
   Cx5 c(gridnn->inputDimensions());
 
@@ -121,11 +115,11 @@ TEST_CASE("GridBasisAdj")
   R2 basis(256, nB);
   basis.setConstant(1.f);
 
-  auto gridnn = make_1_b(nn.get(), m1, C, basis);
-  auto gridkb3 = make_3_b(kb3.get(), m3, C, basis);
-  auto gridkb5 = make_5_b(kb5.get(), m5, C, basis);
-  auto gridfi3 = make_3_b(fi3.get(), m3, C, basis);
-  auto gridfi5 = make_5_b(fi5.get(), m5, C, basis);
+  auto gridnn = make_grid_internal<1, 1, Cx>(nn.get(), m1, C, basis);
+  auto gridkb3 = make_grid_internal<3, 3, Cx>(kb3.get(), m3, C, basis);
+  auto gridkb5 = make_grid_internal<5, 5, Cx>(kb5.get(), m5, C, basis);
+  auto gridfi3 = make_grid_internal<3, 3, Cx>(fi3.get(), m3, C, basis);
+  auto gridfi5 = make_grid_internal<5, 5, Cx>(fi5.get(), m5, C, basis);
 
   Cx3 nc(gridnn->outputDimensions());
 
@@ -161,11 +155,11 @@ TEST_CASE("GridBasisA")
   R2 basis(256, nB);
   basis.setConstant(1.f);
 
-  auto gridnn = make_1_b(nn.get(), m1, C, basis);
-  auto gridkb3 = make_3_b(kb3.get(), m3, C, basis);
-  auto gridkb5 = make_5_b(kb5.get(), m5, C, basis);
-  auto gridfi3 = make_3_b(fi3.get(), m3, C, basis);
-  auto gridfi5 = make_5_b(fi5.get(), m5, C, basis);
+  auto gridnn = make_grid_internal<1, 1, Cx>(nn.get(), m1, C, basis);
+  auto gridkb3 = make_grid_internal<3, 3, Cx>(kb3.get(), m3, C, basis);
+  auto gridkb5 = make_grid_internal<5, 5, Cx>(kb5.get(), m5, C, basis);
+  auto gridfi3 = make_grid_internal<3, 3, Cx>(fi3.get(), m3, C, basis);
+  auto gridfi5 = make_grid_internal<5, 5, Cx>(fi5.get(), m5, C, basis);
 
   Cx5 c(gridnn->inputDimensions());
 

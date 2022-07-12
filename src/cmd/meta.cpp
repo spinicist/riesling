@@ -2,6 +2,8 @@
 #include "parse_args.h"
 #include "types.h"
 
+using namespace rl;
+
 int main_meta(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file to read meta-data from");

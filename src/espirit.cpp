@@ -3,10 +3,12 @@
 #include "algo/decomp.h"
 #include "cropper.h"
 #include "fft/fft.hpp"
-#include "op/grids.h"
+#include "op/gridBase.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include "vc.h"
+
+namespace rl {
 
 Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const gapRad)
 {
@@ -71,7 +73,7 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
 }
 
 Cx4 ESPIRIT(
-  GridBase *gridder, Cx3 const &data, Index const kRad, Index const calRad, Index const gap, float const thresh)
+  GridBase<Cx> *gridder, Cx3 const &data, Index const kRad, Index const calRad, Index const gap, float const thresh)
 {
   Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
@@ -138,3 +140,5 @@ Cx4 ESPIRIT(
   Log::Tensor(valsImage, "espirit-val");
   return grid;
 }
+
+} // namespace rl

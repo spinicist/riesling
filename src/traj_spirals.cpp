@@ -1,11 +1,11 @@
 #include "traj_spirals.h"
 #include "log.h"
 
+namespace rl {
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
  * vol. 32, no. 6, pp. 778–784, Dec. 1994, doi: 10.1002/mrm.1910320614.
  */
-
 R3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
 {
   R3 traj(3, nRead, nSpoke);
@@ -58,12 +58,10 @@ Index Fib(Index n)
   }
 }
 
-R3 Phyllotaxis(
-  Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
+R3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
 {
   if ((nSpokes % spi) != 0) {
-    Log::Fail(
-      FMT_STRING("Spokes per interleave {} is not a divisor of total spokes {}"), spi, nSpokes);
+    Log::Fail(FMT_STRING("Spokes per interleave {} is not a divisor of total spokes {}"), spi, nSpokes);
   }
   Index nInterleaves = nSpokes / spi;
   constexpr float phi_gold = 2.399963229728653;
@@ -104,8 +102,7 @@ R3 Phyllotaxis(
         rot(2, 0) = -sin(gm_theta);
         rot(2, 1) = 0;
         rot(2, 2) = cos(gm_theta);
-        endPoint =
-          rot.contract(endPoint, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()).eval();
+        endPoint = rot.contract(endPoint, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()).eval();
       }
       traj.chip((ii * spi) + is, 2) = endPoint.contract(read, empty);
     }
@@ -113,3 +110,4 @@ R3 Phyllotaxis(
   traj = traj * traj.constant(0.5); // Scale to -0.5 to 0.5
   return traj;
 }
+} // namespace rl

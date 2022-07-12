@@ -5,6 +5,8 @@
 #include "trajectory.h"
 #include "types.h"
 
+namespace rl {
+  
 struct CartesianIndex
 {
   int16_t x, y, z;
@@ -44,3 +46,5 @@ struct Mapping
   std::vector<Bucket> buckets;
   std::vector<int32_t> sortedIndices;
 };
+
+}

@@ -5,6 +5,7 @@
 #include "threads.h"
 #include "types.h"
 
+namespace rl {
 inline auto ForwardDiff(Cx4 const &a, Eigen::Index const d)
 {
   Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
@@ -230,4 +231,5 @@ Cx4 tgv(
     }
   };
   return u;
+}
 }

@@ -21,7 +21,7 @@ template <typename T>
 typename T::Scalar Sum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s;
-  s.device(Threads::GlobalDevice()) = a.sum();
+  s.device(rl::Threads::GlobalDevice()) = a.sum();
   return s();
 }
 
@@ -29,7 +29,7 @@ template <typename T>
 typename T::Scalar Mean(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s;
-  s.device(Threads::GlobalDevice()) = a.mean();
+  s.device(rl::Threads::GlobalDevice()) = a.mean();
   return s();
 }
 
@@ -37,7 +37,7 @@ template <typename T>
 typename T::Scalar Maximum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;
-  m.device(Threads::GlobalDevice()) = a.maximum();
+  m.device(rl::Threads::GlobalDevice()) = a.maximum();
   return m();
 }
 
@@ -45,7 +45,7 @@ template <typename T1, typename T2>
 typename T1::Scalar Dot(T1 const &a, T2 const &b)
 {
   Eigen::TensorFixedSize<typename T1::Scalar, Eigen::Sizes<>> d;
-  d.device(Threads::GlobalDevice()) = (a.conjugate() * b).sum();
+  d.device(rl::Threads::GlobalDevice()) = (a.conjugate() * b).sum();
   return d();
 }
 

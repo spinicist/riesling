@@ -2,6 +2,7 @@
 
 #include <filesystem>
 
+namespace rl {
 namespace HD5 {
 
 template <int ND>
@@ -228,7 +229,8 @@ template Eigen::MatrixXcf Reader::readMatrix<Eigen::MatrixXcf>(std::string const
 template Eigen::ArrayXf Reader::readMatrix<Eigen::ArrayXf>(std::string const &);
 template Eigen::ArrayXXf Reader::readMatrix<Eigen::ArrayXXf>(std::string const &);
 
-Info Reader::readInfo() {
+Info Reader::readInfo()
+{
   // First get the Info struct
   hid_t const info_id = InfoType();
   hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
@@ -323,3 +325,4 @@ Cx3 const &RieslingReader::noncartesian(Index const index)
 }
 
 } // namespace HD5
+} // namespace rl

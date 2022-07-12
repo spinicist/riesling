@@ -40,7 +40,6 @@ add_library(vineyard
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp
-    src/wavelets.cpp
     src/zin-grappa.cpp
     src/zin-slr.cpp
     src/algo/decomp.cpp
@@ -50,13 +49,12 @@ add_library(vineyard
     src/io/nifti.cpp
     src/io/reader.cpp
     src/io/writer.cpp
-    src/op/grids.cpp
-    src/op/grid1.cpp
-    src/op/grid-basis1.cpp
-    src/op/grid3.cpp
-    src/op/grid-basis3.cpp
-    src/op/grid5.cpp
-    src/op/grid-basis5.cpp
+    src/op/gridBase.cpp
+    src/op/grid11.cpp
+    src/op/grid31.cpp
+    src/op/grid33.cpp
+    src/op/grid51.cpp
+    src/op/grid55.cpp
     src/op/scaling.cpp
     src/op/sense.hpp
     src/precond/single.cpp

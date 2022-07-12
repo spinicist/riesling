@@ -5,6 +5,8 @@
 #include "op/sense.hpp"
 #include "parse_args.h"
 
+using namespace rl;
+
 int main_sense(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");

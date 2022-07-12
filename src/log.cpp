@@ -5,6 +5,7 @@
 #include "io/hd5.hpp"
 #include "tensorOps.h"
 
+namespace rl {
 namespace Log {
 
 Failure::Failure(std::string const &msg)
@@ -135,3 +136,4 @@ template void Tensor(Cx5 const &, std::string const &);
 template void Tensor(Cx6 const &, std::string const &);
 
 } // namespace Log
+} // namespace rl

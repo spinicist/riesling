@@ -4,6 +4,8 @@
 #include "../src/trajectory.h"
 #include <catch2/catch.hpp>
 
+using namespace rl;
+
 TEST_CASE("SDC")
 {
   Index const M = 32;
@@ -50,5 +52,4 @@ TEST_CASE("SDC")
     CHECK(sdc(26, 0) == Approx(0.8954f).margin(1.e-1f));
     CHECK(sdc(31, 0) == Approx(1.77723f).margin(1.e-4f));
   }
-
 }

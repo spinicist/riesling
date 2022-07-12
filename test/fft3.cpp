@@ -4,6 +4,8 @@
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
+using namespace rl;
+
 TEST_CASE("FFT3")
 {
   FFT::Start();

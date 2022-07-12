@@ -3,6 +3,8 @@
 #include "info.h"
 #include "log.h"
 
+namespace rl {
+
 /** Crop functions
  */
 template <typename T>
@@ -92,3 +94,5 @@ private:
   Sz3 sz_, st_;
   void calcStart(Sz3 const &fullSz);
 };
+
+} // namespace rl

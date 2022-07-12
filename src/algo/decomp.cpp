@@ -5,6 +5,8 @@
 #include <Eigen/Eigenvalues>
 #include <Eigen/SVD>
 
+namespace rl {
+
 PCAResult PCA(Eigen::Map<Eigen::MatrixXcf const> const &data, Index const nR, float const thresh)
 {
   auto const dm = data.colwise() - data.rowwise().mean();
@@ -47,3 +49,4 @@ SVD<Scalar>::SVD(Eigen::Ref<Matrix const> const &mat, bool const transpose, bool
 
 template struct SVD<float>;
 template struct SVD<Cx>;
+}

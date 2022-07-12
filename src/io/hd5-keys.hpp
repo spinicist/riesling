@@ -2,6 +2,7 @@
 
 #include <string>
 
+namespace rl {
 namespace HD5 {
 
 namespace Keys {
@@ -25,3 +26,4 @@ std::string const Trajectory = "trajectory";
 } // namespace Keys
 
 } // namespace HD5
+}

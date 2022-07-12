@@ -2,6 +2,7 @@
 
 #include "operator.hpp"
 
+namespace rl {
 struct Scaling final : Operator<4, 4>
 {
   Scaling(R1 const &scales, Sz3 const &dims);
@@ -17,3 +18,4 @@ private:
   R1 scales_;
   Sz3 sz_;
 };
+}

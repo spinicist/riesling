@@ -6,6 +6,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
+namespace rl {
 Cx6 ToKernels(Cx5 const &grid, Index const kW)
 {
   Index const nC = grid.dimension(0);
@@ -102,4 +103,5 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   Log::Tensor(channels, "zin-slr-b4-channels");
   Log::Tensor(outChannels, "zin-slr-after-channels");
   return outChannels;
+}
 }

@@ -3,7 +3,8 @@
 #include "../kernel.hpp"
 #include "../trajectory.h"
 #include "precond.hpp"
-struct GridBase; // Forward declare
+
+namespace rl {
 
 struct SingleChannel final : Precond<Cx3>
 {
@@ -14,3 +15,5 @@ struct SingleChannel final : Precond<Cx3>
 private:
   R3 pre_;
 };
+
+}

@@ -3,7 +3,7 @@
 #include "cropper.h"
 #include "io/hd5.hpp"
 #include "log.h"
-#include "op/grids.h"
+#include "op/gridBase.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.h"
 #include "sdc.h"
@@ -11,6 +11,8 @@
 #include "types.h"
 
 #include <Eigen/Eigenvalues>
+
+using namespace rl;
 
 int main_compress(args::Subparser &parser)
 {
@@ -65,13 +67,13 @@ int main_compress(args::Subparser &parser)
   } else if (rovir) {
 
     Index const nC = info.channels;
-    auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+    auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
     Index minRead = 0;
     if (res) {
       std::tie(traj, minRead) = traj.downsample(res.Get(), lores.Get(), true);
     }
     Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-    auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
+    auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
     auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
     auto const sz = LastN<3>(gridder->inputDimensions());
     NUFFTOp nufft(sz, gridder.get(), sdc.get());

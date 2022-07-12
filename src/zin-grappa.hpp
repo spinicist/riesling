@@ -4,6 +4,7 @@
 #include "log.h"
 #include "sense.h"
 
+namespace rl {
 /*!
  * ZTE Infilling From Autocallibration NeighbourhooD ELements
  */
@@ -33,3 +34,4 @@ Eigen::MatrixXcf GrabTargets(
   Index const s_read,
   Index const n_read,
   std::vector<Index> const &spokes);
+}

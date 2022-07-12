@@ -2,6 +2,8 @@
 #include "fft/fft.hpp"
 #include "log.h"
 
+using namespace rl;
+
 int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");

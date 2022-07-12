@@ -3,6 +3,8 @@
 #include <cfenv>
 #include <cmath>
 
+namespace rl {
+
 bool Bucket::empty() const
 {
   return indices.empty();
@@ -75,7 +77,10 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
       for (Index ix = 0; ix < nbX; ix++) {
         buckets.push_back(Bucket{
           Sz3{ix * bucketSz - (IP / 2), iy * bucketSz - (IP / 2), iz * bucketSz - (TP / 2)},
-          Sz3{std::min((ix + 1) * bucketSz, cartDims[0]) + (IP / 2), std::min((iy + 1) * bucketSz, cartDims[1]) + (IP / 2), std::min((iz + 1) * bucketSz, cartDims[2]) + (TP / 2)}});
+          Sz3{
+            std::min((ix + 1) * bucketSz, cartDims[0]) + (IP / 2),
+            std::min((iy + 1) * bucketSz, cartDims[1]) + (IP / 2),
+            std::min((iz + 1) * bucketSz, cartDims[2]) + (TP / 2)}});
       }
     }
   }
@@ -125,3 +130,5 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   frameWeights = frameWeights.maxCoeff() / frameWeights;
   Log::Print(FMT_STRING("Frame weights: {}"), frameWeights.transpose());
 }
+
+} // namespace rl

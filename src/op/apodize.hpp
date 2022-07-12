@@ -1,7 +1,8 @@
 #pragma once
 
-#include "grid-base.hpp"
-#include "operator.hpp"
+#include "gridBase.hpp"
+
+namespace rl {
 
 template <int Rank>
 struct ApodizeOp final : Operator<Rank, Rank>
@@ -13,7 +14,7 @@ struct ApodizeOp final : Operator<Rank, Rank>
   using OutputDims = typename Parent::OutputDims;
   static int const ImgRank = 3;
 
-  ApodizeOp(InputDims const &inSize, GridBase *gridder)
+  ApodizeOp(InputDims const &inSize, GridBase<Cx> *gridder)
   {
     std::copy_n(inSize.begin(), Rank, sz_.begin());
     for (Index ii = 0; ii < Rank - ImgRank; ii++) {
@@ -53,3 +54,5 @@ private:
   InputDims sz_, res_, brd_;
   Cx3 apo_;
 };
+
+} // namespace rl

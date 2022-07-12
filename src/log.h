@@ -7,7 +7,9 @@
 
 #include "types.h"
 
+namespace rl {
 namespace Log {
+
 enum struct Level
 {
   Testing = -1, // Suppress everything, even failures
@@ -62,3 +64,4 @@ template <typename Scalar, int ND>
 void Tensor(Eigen::Tensor<Scalar, ND> const &i, std::string const &name);
 
 } // namespace Log
+} // namespace rl

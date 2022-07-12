@@ -6,11 +6,13 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "mapping.h"
-#include "op/grids.h"
+#include "op/gridBase.hpp"
 #include "parse_args.h"
 #include "sdc.h"
 #include "sense.h"
 #include "tensorOps.h"
+
+using namespace rl;
 
 int main_espirit(args::Subparser &parser)
 {
@@ -31,11 +33,11 @@ int main_espirit(args::Subparser &parser)
   auto const traj = reader.trajectory();
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
-  auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
   auto gridder =
-    make_grid(kernel.get(), Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get()), info.channels);
+    make_grid<Cx>(kernel.get(), Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get()), info.channels);
   auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get());

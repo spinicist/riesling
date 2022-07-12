@@ -1,5 +1,7 @@
 #include "phantom_sphere.h"
 
+namespace rl {
+
 Cx3 SphericalPhantom(
   Eigen::Array3l const &matrix,
   Eigen::Array3f const &voxel_size,
@@ -31,3 +33,4 @@ Cx3 SphericalPhantom(
   }
   return phan;
 }
+} // namespace rl

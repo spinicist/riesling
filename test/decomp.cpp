@@ -3,6 +3,8 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
+using namespace rl;
+
 TEST_CASE("decomp")
 {
   Index const nvar = 64;

@@ -1,6 +1,8 @@
 #include "phantom_shepplogan.h"
 #include <stdio.h>
 
+namespace rl {
+
 /* Creates a 3D Shepp Logan using the method outlined in
  * Cheng, G. K., Sarlls, J. E., & Özarslan, E. (2007).
  * Three-dimensional analytical magnetic resonance imaging phantom in the Fourier domain.
@@ -104,3 +106,4 @@ Cx3 SheppLoganPhantom(
   Log::Tensor(phan, "phantom-shepplogan");
   return phan;
 }
+} // namespace rl

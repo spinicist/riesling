@@ -7,6 +7,8 @@
 
 #include <catch2/catch.hpp>
 
+using namespace rl;
+
 void Dummy(std::filesystem::path const &fname)
 {
   HD5::RieslingReader reader(fname);

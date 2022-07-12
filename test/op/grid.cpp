@@ -1,10 +1,12 @@
-#include "../../src/op/grids.h"
+#include "../../src/op/gridBase.hpp"
 #include "../../src/sdc.h"
 #include "../../src/tensorOps.h"
 #include "../../src/traj_spirals.h"
 #include "../../src/trajectory.h"
 
 #include <catch2/catch.hpp>
+
+using namespace rl;
 
 TEST_CASE("ops-grid")
 {
@@ -24,9 +26,9 @@ TEST_CASE("ops-grid")
     .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory const traj(info, points);
-  auto const nn = make_kernel("NN", info.type, os);
+  auto const nn = rl::make_kernel("NN", info.type, os);
   Mapping const mapping(traj, nn.get(), os);
-  auto grid = make_grid(nn.get(), mapping, 1);
+  auto grid = make_grid<Cx>(nn.get(), mapping, 1);
 
   SDCOp sdc(SDC::Pipe(traj, true, os), info.channels);
   auto const dims = grid->inputDimensions();

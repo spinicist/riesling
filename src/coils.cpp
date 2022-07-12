@@ -1,5 +1,7 @@
 #include "coils.h"
 
+namespace rl {
+
 Cx4 birdcage(
   Eigen::Array3l const &matrix,
   Eigen::Array3f const &voxel_size,
@@ -45,3 +47,4 @@ Cx4 birdcage(
   Log::Tensor(all, fmt::format(FMT_STRING("birdcage-{}"), channels));
   return all;
 }
+} // namespace rl

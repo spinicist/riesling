@@ -6,6 +6,7 @@
 #include "tensorOps.h"
 #include "threads.h"
 
+namespace rl {
 template <typename Op, typename LeftPrecond>
 typename Op::Input admm_lsmr(
   Index const outer_its,
@@ -241,3 +242,4 @@ typename Op::Input admm_cg(
   }
   return x;
 }
+} // namespace rl

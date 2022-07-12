@@ -13,6 +13,8 @@
 #include "sim/t2prep.hpp"
 #include "threads.h"
 
+using namespace rl;
+
 template <typename T>
 auto Simulate(rl::Settings const &s, Index const nsamp)
 {

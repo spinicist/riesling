@@ -8,6 +8,8 @@
 #include "threads.h"
 #include "zin-slr.hpp"
 
+using namespace rl;
+
 int main_reg(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");

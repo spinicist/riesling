@@ -3,6 +3,7 @@
 #include "log.h"
 #include "types.h"
 
+namespace rl {
 struct PCAResult
 {
   Eigen::MatrixXcf vecs;
@@ -23,3 +24,4 @@ struct SVD
 
 extern template struct SVD<float>;
 extern template struct SVD<Cx>;
+}

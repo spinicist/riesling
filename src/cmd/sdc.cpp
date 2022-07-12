@@ -5,6 +5,8 @@
 #include "parse_args.h"
 #include "sdc.h"
 
+using namespace rl;
+
 int main_sdc(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");

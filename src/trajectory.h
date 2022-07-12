@@ -5,6 +5,8 @@
 #include "types.h"
 #include "kernel.h"
 
+namespace rl {
+
 struct Trajectory
 {
   Trajectory();
@@ -23,3 +25,5 @@ private:
   R3 points_;
   I1 frames_;
 };
+
+}

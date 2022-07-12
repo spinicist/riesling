@@ -1,6 +1,7 @@
 #include "types.h"
 
 #include "algo/lsmr.hpp"
+#include "cropper.h"
 #include "log.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
@@ -9,6 +10,8 @@
 #include "sense.h"
 #include "tensorOps.h"
 #include "threads.h"
+
+using namespace rl;
 
 int main_lsmr(args::Subparser &parser)
 {
@@ -29,9 +32,9 @@ int main_lsmr(args::Subparser &parser)
   Trajectory const traj = reader.trajectory();
   Info const &info = traj.info();
 
-  auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
   std::unique_ptr<Precond<Cx3>> pre = precond.Get() ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);

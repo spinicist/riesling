@@ -2,6 +2,8 @@
 #include "../src/tensorOps.h"
 #include <catch2/catch.hpp>
 
+using namespace rl;
+
 TEST_CASE("kernels")
 {
   SECTION("NN")

@@ -6,6 +6,8 @@
 #include "parse_args.h"
 #include "threads.h"
 
+using namespace rl;
+
 int main_pad(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");

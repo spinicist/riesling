@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+namespace rl {
+
 struct Info
 {
   enum struct Type : Index
@@ -42,3 +44,5 @@ struct Info
     return R3(3, read_points, spokes);
   }
 };
+
+} // namespace rl

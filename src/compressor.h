@@ -3,6 +3,8 @@
 #include "log.h"
 #include "types.h"
 
+namespace rl {
+
 struct Compressor
 {
   Index out_channels() const;
@@ -12,3 +14,4 @@ struct Compressor
 
   Eigen::MatrixXcf psi;
 };
+}

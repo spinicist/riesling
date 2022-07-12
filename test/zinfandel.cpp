@@ -4,6 +4,8 @@
 #include <catch2/catch.hpp>
 #include <fmt/format.h>
 
+using namespace rl;
+
 TEST_CASE("zinfandel-data")
 {
   Index const n_readpoints = 16;

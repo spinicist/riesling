@@ -6,6 +6,8 @@
 #include "tensorOps.h"
 #include "threads.h"
 
+using namespace rl;
+
 int main_lookup(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");

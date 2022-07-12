@@ -7,6 +7,7 @@
 #include <Eigen/SVD>
 #include <complex>
 
+namespace rl {
 // Helper Functions
 Eigen::MatrixXcf GrabSources(
   Cx3 const &ks,
@@ -119,3 +120,4 @@ void zinGRAPPA(
     Threads::For(spoke_task, 0, ks.dimension(2), "Spokes");
   }
 }
+} // namespace rl

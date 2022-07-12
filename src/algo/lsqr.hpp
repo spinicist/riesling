@@ -6,6 +6,7 @@
 #include "threads.h"
 #include "types.h"
 
+namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
 
@@ -177,4 +178,5 @@ typename Op::Input lsqr(
   }
 
   return x;
+}
 }

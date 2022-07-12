@@ -2,6 +2,8 @@
 
 #include "operator.hpp"
 
+namespace rl {
+
 template <int Rank>
 struct PadOp final : Operator<Rank, Rank>
 {
@@ -59,3 +61,4 @@ private:
   InputDims input_, output_, left_, right_;
   Eigen::array<std::pair<Index, Index>, Rank> paddings_;
 };
+} // namespace rl

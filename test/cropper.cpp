@@ -2,6 +2,8 @@
 #include <catch2/catch.hpp>
 #include <fmt/ostream.h>
 
+using namespace rl;
+
 TEST_CASE("cropper")
 {
   Index const fullSz = 16;

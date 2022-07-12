@@ -14,12 +14,12 @@
  * Hence here we track the input/output ranks.
  */
 
-template <int InRank, int OutRank>
+template <int InRank, int OutRank, typename Scalar = Cx>
 struct Operator
 {
-  using Input = Eigen::Tensor<Cx, InRank>;
+  using Input = Eigen::Tensor<Scalar, InRank>;
   using InputDims = typename Input::Dimensions;
-  using Output = Eigen::Tensor<Cx, OutRank>;
+  using Output = Eigen::Tensor<Scalar, OutRank>;
   using OutputDims = typename Output::Dimensions;
 
   virtual OutputDims outputDimensions() const = 0;

@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+namespace rl {
+
 namespace HD5 {
 
 /*
@@ -50,3 +52,4 @@ private:
 };
 
 } // namespace HD5
+}

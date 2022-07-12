@@ -1,6 +1,7 @@
 #include "io/writer.hpp"
 #include "io/hd5-core.hpp"
 
+namespace rl {
 namespace HD5 {
 
 template <typename Scalar, int ND>
@@ -184,3 +185,4 @@ template void Writer::writeMatrix<Eigen::ArrayXf>(Eigen::DenseBase<Eigen::ArrayX
 template void Writer::writeMatrix<Eigen::ArrayXXf>(Eigen::DenseBase<Eigen::ArrayXXf> const &, std::string const &);
 
 } // namespace HD5
+} // namespace rl

@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+namespace rl {
 namespace HD5 {
 
 struct Writer
@@ -26,3 +27,4 @@ private:
 };
 
 } // namespace HD5
+} // namespace rl

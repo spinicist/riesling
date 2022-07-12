@@ -3,6 +3,8 @@
 #include "log.h"
 #include "types.h"
 
+namespace rl {
+
 struct Wavelets
 {
   Wavelets(Index const N, Index const levels);
@@ -21,3 +23,4 @@ private:
 
   R1 D_; // Coefficients
 };
+} // namespace rl

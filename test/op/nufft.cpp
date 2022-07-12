@@ -6,6 +6,8 @@
 
 #include <catch2/catch.hpp>
 
+using namespace rl;
+
 TEST_CASE("ops-nufft")
 {
   Index const M = 16;
@@ -24,9 +26,9 @@ TEST_CASE("ops-nufft")
     .direction = Eigen::Matrix3f::Identity()};
   auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
   Trajectory const traj(info, points);
-  auto const kernel = make_kernel("NN", info.type, os);
+  auto const kernel = rl::make_kernel("NN", info.type, os);
   Mapping const mapping(traj, kernel.get(), os, 32);
-  auto grid = make_grid(kernel.get(), mapping, info.channels);
+  auto grid = make_grid<Cx>(kernel.get(), mapping, info.channels);
   SDCOp sdc(SDC::Pipe(traj, true, os), info.channels);
   auto nufft = NUFFTOp(Sz3{M, M, M}, grid.get(), &sdc);
   nufft.calcToeplitz();

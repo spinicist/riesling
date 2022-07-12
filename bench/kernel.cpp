@@ -8,6 +8,8 @@
 
 using Point3 = Eigen::Matrix<float, 3, 1>;
 
+using namespace rl;
+
 template <int IP, int TP>
 Eigen::TensorFixedSize<float, Eigen::Sizes<IP, IP, TP>> DistSq(Point3 const p)
 {

@@ -2,12 +2,14 @@
 
 #include "io/hd5.hpp"
 #include "kernel.hpp"
-#include "op/grid.hpp"
+#include "mapping.h"
+#include "op/gridBase.hpp"
 #include "op/sdc.hpp"
 #include "tensorOps.h"
 #include "threads.h"
-#include "mapping.h"
 #include "trajectory.h"
+
+namespace rl {
 
 namespace SDC {
 
@@ -24,24 +26,24 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   // Reset to one channel
   info.channels = 1;
   Trajectory traj{info, inTraj.points(), inTraj.frames()};
-  Cx3 W(1, info.read_points, info.spokes);
-  Cx3 Wp(W.dimensions());
+  R3 W(1, info.read_points, info.spokes);
+  R3 Wp(W.dimensions());
 
   std::unique_ptr<Kernel> k; // Need to keep this alive until the end of the function
-  std::unique_ptr<GridBase> gridder;
+  std::unique_ptr<GridBase<float>> gridder;
   if (nn) {
     k = std::make_unique<NearestNeighbour>();
     auto const m = Mapping(traj, k.get(), os, 32);
-    gridder = std::make_unique<Grid<1, 1>>(dynamic_cast<SizedKernel<1, 1> const *>(k.get()), m, 1);
+    gridder = make_grid<float>(k.get(), m, 1);
   } else {
     if (info.type == Info::Type::ThreeD) {
       k = std::make_unique<PipeSDC<5, 5>>(os);
       auto const m = Mapping(traj, k.get(), os, 32);
-      gridder = std::make_unique<Grid<5, 5>>(dynamic_cast<SizedKernel<5, 5> const *>(k.get()), m, 1);
+      gridder = make_grid<float>(k.get(), m, 1);
     } else {
       k = std::make_unique<PipeSDC<5, 1>>(os);
       auto const m = Mapping(traj, k.get(), os, 32);
-      gridder = std::make_unique<Grid<5, 1>>(dynamic_cast<SizedKernel<5, 1> const *>(k.get()), m, 1);
+      gridder = make_grid<float>(k.get(), m, 1);
     }
   }
   gridder->doNotWeightFrames();
@@ -50,7 +52,7 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   for (Index ii = 0; ii < its; ii++) {
     Wp = gridder->A(gridder->Adj(W)); // Use the gridder's workspace
     Wp.device(Threads::GlobalDevice()) =
-      (Wp.real() > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
+      (Wp > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / Norm(W);
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 1e-7) {
@@ -61,7 +63,7 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
     }
   }
   Log::Print(FMT_STRING("SDC finished."));
-  return W.real().chip<0>(0);
+  return W.chip<0>(0);
 }
 
 R2 Radial2D(Trajectory const &traj)
@@ -189,3 +191,4 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os
 }
 
 } // namespace SDC
+} // namespace rl

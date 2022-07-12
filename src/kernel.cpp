@@ -4,6 +4,8 @@
 
 #include "log.h"
 
+namespace rl {
+
 std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, float const os)
 {
   if (k == "NN") {
@@ -36,3 +38,5 @@ std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, fl
     Log::Fail(FMT_STRING("Unknown kernel type: {}"), k);
   }
 }
+
+} // namespace rl

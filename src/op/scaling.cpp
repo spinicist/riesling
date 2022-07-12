@@ -3,6 +3,8 @@
 #include "../log.h"
 #include "../tensorOps.h"
 
+namespace rl {
+
 Scaling::Scaling(R1 const &scales, Sz3 const &sz)
   : sz_{sz}
 {
@@ -52,3 +54,4 @@ Cx4 Scaling::Inv(Cx4 const &in) const
   Log::Debug(FMT_STRING("SCALES Inverse Took {}"), Log::ToNow(start));
   return p;
 }
+} // namespace rl

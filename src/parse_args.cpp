@@ -9,6 +9,8 @@
 #include <fmt/format.h>
 #include <scn/scn.h>
 
+using namespace rl;
+
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
   {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Progress}, {3, Log::Level::Debug}};
@@ -151,7 +153,7 @@ void WriteOutput(
   std::string const &oname,
   std::string const &suffix,
   bool const keepTrajectory,
-  Trajectory const &traj)
+  rl::Trajectory const &traj)
 {
   auto const fname = OutName(iname, oname, suffix, "h5");
   HD5::Writer writer(fname);

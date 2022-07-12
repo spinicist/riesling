@@ -5,7 +5,7 @@
 #include "parse_args.h"
 #include "tensorOps.h"
 
-#include <numeric>
+using namespace rl;
 
 int main_split(args::Subparser &parser)
 {

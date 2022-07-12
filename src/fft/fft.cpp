@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+namespace rl {
 namespace FFT {
 
 std::filesystem::path WisdomPath()
@@ -71,8 +72,7 @@ Cx1 Phase(Index const sz)
 }
 
 template <int TRank, int FFTRank>
-std::unique_ptr<FFT<TRank, FFTRank>>
-Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const inThreads)
+std::unique_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const inThreads)
 {
   Index const nThreads = (inThreads > 0) ? inThreads : Threads::GlobalThreadCount();
   return std::make_unique<CPU<TRank, FFTRank>>(dims, nThreads);
@@ -86,8 +86,7 @@ template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorDims const &,
 template std::unique_ptr<FFT<3, 2>> Make(typename FFT<3, 2>::TensorDims const &, Index const);
 
 template <int TRank, int FFTRank>
-std::unique_ptr<FFT<TRank, FFTRank>>
-Make(typename FFT<TRank, FFTRank>::Tensor &ws, Index const inThreads)
+std::unique_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::Tensor &ws, Index const inThreads)
 {
   Index const nThreads = (inThreads > 0) ? inThreads : Threads::GlobalThreadCount();
   return std::make_unique<CPU<TRank, FFTRank>>(ws, nThreads);
@@ -97,3 +96,4 @@ template std::unique_ptr<FFT<4, 2>> Make(typename FFT<4, 2>::Tensor &, Index con
 template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::Tensor &, Index const);
 
 } // namespace FFT
+} // namespace rl

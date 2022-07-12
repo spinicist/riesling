@@ -3,6 +3,8 @@
 #include "../threads.h"
 #include "operator.hpp"
 
+namespace rl {
+
 struct SDCOp final : Operator<3, 3>
 {
   SDCOp(R2 const &dc, Index const nc)
@@ -46,3 +48,4 @@ private:
   Sz3 dims_;
   R2 dc_;
 };
+} // namespace rl

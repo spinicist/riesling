@@ -1,9 +1,13 @@
 #include "filter.h"
 
 #include "fft/fft.hpp"
+#include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
 
+#include <functional>
+
+namespace rl {
 inline float Tukey(float const &r, float const &sw, float const &ew, float const &eh)
 {
   if (r > ew) {
@@ -58,3 +62,5 @@ void KSTukey(float const &s, float const &e, float const &h, Cx4 &x)
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
   KSFilter(f, x);
 }
+
+} // namespace rl

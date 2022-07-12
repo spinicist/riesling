@@ -6,9 +6,11 @@
 #include "sdc.hpp"
 #include "sense.hpp"
 
+namespace rl {
+
 struct ReconRSSOp final : Operator<4, 3>
 {
-  ReconRSSOp(GridBase *gridder, Sz3 const &dims, SDCOp *sdc = nullptr)
+  ReconRSSOp(GridBase<Cx>*gridder, Sz3 const &dims, SDCOp *sdc = nullptr)
     : nufft_{dims, gridder, sdc}
   {
   }
@@ -38,3 +40,4 @@ struct ReconRSSOp final : Operator<4, 3>
 private:
   NUFFTOp nufft_;
 };
+}

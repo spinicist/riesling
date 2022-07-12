@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../types.h"
+
+namespace rl {
 namespace FFT {
 /* Templated wrapped around the fftw_plan_many_dft interface
  * Takes two template arguments - TensorRank and FFTRank. The last FFTRank dimensions will
@@ -33,3 +35,4 @@ std::unique_ptr<FFT<TRank, FFTRank>>
 Make(typename FFT<TRank, FFTRank>::Tensor &ws, Index const threads = 0);
 
 } // namespace FFT
+}

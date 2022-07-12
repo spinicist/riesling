@@ -12,6 +12,8 @@
 
 #include <variant>
 
+using namespace rl;
+
 int main_recon(args::Subparser &parser)
 {
   CoreOpts core(parser);
@@ -35,9 +37,9 @@ int main_recon(args::Subparser &parser)
   }
   Info const &info = traj.info();
 
-  auto const kernel = make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
 
   std::variant<nullptr_t, ReconOp, ReconRSSOp> recon = nullptr;

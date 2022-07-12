@@ -4,13 +4,14 @@
 
 #include "apodize.hpp"
 #include "fft.hpp"
-#include "grids.h"
+#include "gridBase.hpp"
 #include "pad.hpp"
 #include "sdc.hpp"
 
+namespace rl {
 struct NUFFTOp final : Operator<5, 3>
 {
-  NUFFTOp(Sz3 const imgDims, GridBase *g, SDCOp *sdc = nullptr)
+  NUFFTOp(Sz3 const imgDims, GridBase<Cx> *g, SDCOp *sdc = nullptr)
     : gridder_{g}
     , fft_{gridder_->workspace(), g->mapping().type != Info::Type::TwoD}
     , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}
@@ -94,10 +95,11 @@ struct NUFFTOp final : Operator<5, 3>
   };
 
 private:
-  GridBase *gridder_;
+  GridBase<Cx> *gridder_;
   FFTOp<5> fft_;
   PadOp<5> pad_;
   ApodizeOp<5> apo_;
   Cx5 tf_;
   SDCOp *sdc_;
 };
+} // namespace rieslin

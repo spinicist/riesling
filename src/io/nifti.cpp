@@ -2,6 +2,7 @@
 #include "nifti1_io.h"
 #include <fmt/ostream.h>
 
+namespace {
 template <typename T>
 struct nifti_traits;
 
@@ -30,9 +31,12 @@ struct nifti_traits<std::complex<float>>
     return 8;
   }
 };
+} // namespace
+
+namespace rl {
 
 template <typename T, int ND>
-void WriteNifti(Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname)
+void WriteNifti(rl::Info const &info, Eigen::Tensor<T, ND> const &img, std::string const &fname)
 {
   nifti_image *ptr = nifti_simple_init_nim();
   ptr->fname = nifti_makehdrname(fname.c_str(), NIFTI_FTYPE_NIFTI1_1, false, false);
@@ -105,7 +109,9 @@ void WriteNifti(Info const &info, Eigen::Tensor<T, ND> const &img, std::string c
   nifti_image_write(ptr);
 }
 
-template void WriteNifti(Info const &, Cx3 const &, std::string const &);
-template void WriteNifti(Info const &, Cx4 const &, std::string const &);
-template void WriteNifti(Info const &, R3 const &, std::string const &);
-template void WriteNifti(Info const &, R4 const &, std::string const &);
+template void WriteNifti(rl::Info const &, Cx3 const &, std::string const &);
+template void WriteNifti(rl::Info const &, Cx4 const &, std::string const &);
+template void WriteNifti(rl::Info const &, R3 const &, std::string const &);
+template void WriteNifti(rl::Info const &, R4 const &, std::string const &);
+
+} // namespace rl

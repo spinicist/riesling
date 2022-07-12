@@ -5,6 +5,8 @@
 #include "parse_args.h"
 #include "threads.h"
 
+using namespace rl;
+
 decltype(auto) Blend(Cx4 const &image, R1 const &b)
 {
   Index const x = image.dimension(1);

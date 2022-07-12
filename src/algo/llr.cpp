@@ -5,6 +5,7 @@
 #include "threads.h"
 #include <random>
 
+namespace rl {
 Index PatchClamp(Index const ii, Index const pSz, Index const dimSz)
 {
   Index const hSz = pSz / 2;
@@ -89,4 +90,5 @@ Cx4 llr_patch(Cx4 const &x, float const l, Index const p)
   // Threads::RangeFor(zTask, nP[2]);
   Log::Print(FMT_STRING("LLR Regularization took {}"), Log::ToNow(now));
   return lr;
+}
 }

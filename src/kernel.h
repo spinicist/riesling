@@ -3,6 +3,8 @@
 #include "info.h"
 #include <memory>
 
+namespace rl {
+
 struct Kernel
 {
   virtual ~Kernel(){};
@@ -45,3 +47,5 @@ private:
 };
 
 std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, float const os);
+
+} // namespace rl

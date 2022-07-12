@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+namespace rl {
 namespace HD5 {
 
 #include <hdf5.h>
@@ -33,3 +34,4 @@ std::string GetError();
 std::vector<std::string> List(Handle h);
 
 } // namespace HD5
+}

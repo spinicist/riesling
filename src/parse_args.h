@@ -44,7 +44,7 @@ void WriteOutput(
   std::string const &oname,
   std::string const &suffix,
   bool const keepTrajectory,
-  Trajectory const &traj);
+  rl::Trajectory const &traj);
 
 // Helper function for getting a good volume to take SENSE maps from
 Index ValOrLast(Index const val, Index const last);

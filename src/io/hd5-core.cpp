@@ -3,6 +3,7 @@
 #include "log.h"
 #include <filesystem>
 
+namespace rl {
 namespace HD5 {
 
 void Init()
@@ -160,10 +161,12 @@ herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata
   return 0;
 }
 
-std::vector<std::string> List(Handle h) {
+std::vector<std::string> List(Handle h)
+{
   std::vector<std::string> names;
   H5Literate(h, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
   return names;
 }
 
 } // namespace HD5
+} // namespace rl

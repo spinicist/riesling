@@ -6,6 +6,7 @@
 #include "threads.h"
 #include "types.h"
 
+namespace rl {
 /*
  * Wrapper for solving normal equations
  */
@@ -86,4 +87,5 @@ typename Op::Input cg(
     r_old = r_new;
   }
   return x;
+}
 }
