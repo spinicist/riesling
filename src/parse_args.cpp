@@ -141,9 +141,9 @@ std::string
 OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
 {
   return fmt::format(
-    FMT_STRING("{}-{}.{}"),
+    FMT_STRING("{}{}.{}"),
     oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
-    suffix,
+    suffix.empty() ? "" : fmt::format("-{}", suffix),
     extension);
 }
 
