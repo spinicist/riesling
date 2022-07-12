@@ -3,6 +3,7 @@
 #include "log.h"
 #include "mapping.h"
 #include "op/gridBase.hpp"
+#include "op/apodize.hpp"
 #include "threads.h"
 
 namespace rl {
@@ -11,9 +12,10 @@ SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k)
   : Precond{}
 {
   auto gridder = rl::make_grid<float>(k, Mapping(traj, k, 4.f, 32), 1);
+  ApodizeOp<5, float> apo(gridder->inputDimensions(), gridder.get());
   R3 W(AddFront(LastN<2>(gridder->outputDimensions()), 1));
   W.setConstant(1.f);
-  W = gridder->A(gridder->Adj(W));
+  W = gridder->A(apo.A(apo.Adj(gridder->Adj(W))));
   pre_ = (W > 0.f).select(W.inverse(), W.constant(0.f));
   Log::Debug("SINGLE-CHANNEL Created");
   Log::Tensor(pre_, "pre");
