@@ -64,45 +64,49 @@ struct Grid final : GridBase<Scalar>
     bool const hasBasis = (basis.size() > 0);
     float const scale = map.scale * (hasBasis ? sqrt(basis.dimension(0)) : 1.f);
 
-    auto grid_task = [&](Index const ii) {
-      auto const si = map.sortedIndices[ii];
-      auto const c = map.cart[si];
-      auto const n = map.noncart[si];
-      auto const ifr = map.frame[si];
-      auto const k = this->kernel->k(map.offset[si]);
+    auto grid_task = [&](Index const ibucket) {
+      auto const &bucket = map.buckets[ibucket];
 
-      Index const stX = c.x - ((IP - 1) / 2);
-      Index const stY = c.y - ((IP - 1) / 2);
-      Index const stZ = c.z - ((TP - 1) / 2);
-      Index const btp = hasBasis ? n.spoke % basis.dimension(0) : 0;
-      Eigen::Tensor<Scalar, 1> sum(nC);
-      sum.setZero();
-      for (Index iz = 0; iz < TP; iz++) {
-        Index const iiz = Reflect(stZ + iz, cdims[4]);
-        for (Index iy = 0; iy < IP; iy++) {
-          Index const iiy = Reflect(stY + iy, cdims[3]);
-          for (Index ix = 0; ix < IP; ix++) {
-            Index const iix = Reflect(stX + ix, cdims[2]);
-            float const kval = k(ix, iy, iz) * scale;
-            if (hasBasis) {
-              for (Index ib = 0; ib < nB; ib++) {
-                float const bval = basis(btp, ib) * kval;
-                for (Index ic = 0; ic < nC; ic++) {
-                  sum(ic) += cart(ic, ib, iix, iiy, iiz) * bval;
+      for (auto ii = 0; ii < bucket.size(); ii++) {
+        auto const si = bucket.indices[ii];
+        auto const c = map.cart[si];
+        auto const n = map.noncart[si];
+        auto const ifr = map.frame[si];
+        auto const k = this->kernel->k(map.offset[si]);
+
+        Index const stX = c.x - ((IP - 1) / 2);
+        Index const stY = c.y - ((IP - 1) / 2);
+        Index const stZ = c.z - ((TP - 1) / 2);
+        Index const btp = hasBasis ? n.spoke % basis.dimension(0) : 0;
+        Eigen::Tensor<Scalar, 1> sum(nC);
+        sum.setZero();
+        for (Index iz = 0; iz < TP; iz++) {
+          Index const iiz = Reflect(stZ + iz, cdims[4]);
+          for (Index iy = 0; iy < IP; iy++) {
+            Index const iiy = Reflect(stY + iy, cdims[3]);
+            for (Index ix = 0; ix < IP; ix++) {
+              Index const iix = Reflect(stX + ix, cdims[2]);
+              float const kval = k(ix, iy, iz) * scale;
+              if (hasBasis) {
+                for (Index ib = 0; ib < nB; ib++) {
+                  float const bval = basis(btp, ib) * kval;
+                  for (Index ic = 0; ic < nC; ic++) {
+                    sum(ic) += cart(ic, ib, iix, iiy, iiz) * bval;
+                  }
                 }
-              }
-            } else {
-              for (Index ic = 0; ic < nC; ic++) {
-                sum(ic) += cart(ic, ifr, iix, iiy, iiz) * kval;
+              } else {
+                for (Index ic = 0; ic < nC; ic++) {
+                  sum(ic) += cart(ic, ifr, iix, iiy, iiz) * kval;
+                }
               }
             }
           }
         }
+        noncart.chip(n.spoke, 2).chip(n.read, 1) = sum;
       }
-      noncart.chip(n.spoke, 2).chip(n.read, 1) = sum;
     };
 
-    Threads::For(grid_task, map.cart.size(), "Grid Forward");
+    Threads::For(grid_task, map.buckets.size(), "Grid Forward");
     return noncart;
   }
 
