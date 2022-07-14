@@ -48,13 +48,22 @@ Eigen::ArrayXf T2FLAIR::simulate(Eigen::ArrayXf const &p) const
 
   // Get steady state before first read-out
   Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(spg) * Eramp).pow(seq.gps);
-  Eigen::Matrix2f const SS = Essi * E2 * Ei * inv * Erec * seg;
+  Eigen::Matrix2f const SS = Ei * inv * Erec * seg.pow(seq.gps - seq.gprep2) * Essi * E2 * seg.pow(seq.gprep2);
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic
   Index tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  for (Index ig = 0; ig < seq.gps; ig++) {
+  for (Index ig = 0; ig < seq.gprep2; ig++) {
+    Mz = Eramp * Mz;
+    for (Index ii = 0; ii < spg; ii++) {
+      dynamic(tp++) = Mz(0) * sina;
+      Mz = E1 * A * Mz;
+    }
+    Mz = Essi * Eramp * Mz;
+  }
+  Mz = Essi * E2 * Mz;
+  for (Index ig = 0; ig < (seq.gps - seq.gprep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < spg; ii++) {
       dynamic(tp++) = Mz(0) * sina;

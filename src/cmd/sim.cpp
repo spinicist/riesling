@@ -54,6 +54,7 @@ int main_sim(args::Subparser &parser)
   args::MapFlag<std::string, Sequence> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
   args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "spokes"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
+  args::ValueFlag<Index> gprep2(parser, "G", "Groups before prep 2", {"gprep2"}, 0);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
   args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
@@ -79,6 +80,7 @@ int main_sim(args::Subparser &parser)
   rl::Settings const settings{
     .sps = sps.Get(),
     .gps = gps.Get(),
+    .gprep2 = gprep2.Get(),
     .alpha = alpha.Get(),
     .ascale = ascale.Get(),
     .TR = TR.Get(),
