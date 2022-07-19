@@ -58,7 +58,7 @@ Apple Silicon (M1) is now supported.
 ### 0. Linux Dependencies
 Install the [Linux vcpkg dependencies](https://github.com/microsoft/vcpkg#installing-linux-developer-tools).
 These include `cmake`, `tar`, `curl`, `zip`, `unzip`, `pkg-config` \&
-`build-essentials`. You may be surprised by which distributions do not include
+`build-essential`. You may be surprised by which distributions do not include
 these by default.
 
 ### 1. Clone repository
@@ -69,7 +69,7 @@ $ git clone https://github.com/spinicist/riesling
 ### 2. Compile
 In the `riesling` folder execute
 ```
-$ ./bootstraph.sh
+$ ./bootstrap.sh
 ```
 
 ## Usage
