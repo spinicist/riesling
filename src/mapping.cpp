@@ -64,6 +64,7 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   scale = sqrt(type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
   frames = info.frames;
   frameWeights = Eigen::ArrayXf(frames);
+  frameWeights.setZero();
 
   Index const nbX = std::ceil(cartDims[0] / float(bucketSz));
   Index const nbY = std::ceil(cartDims[1] / float(bucketSz));
