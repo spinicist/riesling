@@ -1,6 +1,8 @@
 #include "io/writer.hpp"
 #include "io/hd5-core.hpp"
 
+#include <hdf5.h>
+
 namespace rl {
 namespace HD5 {
 

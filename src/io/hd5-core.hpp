@@ -8,8 +8,6 @@
 namespace rl {
 namespace HD5 {
 
-#include <hdf5.h>
-
 using Handle = int64_t;
 
 template <typename T>
@@ -18,10 +16,10 @@ struct type_tag
 };
 
 template <typename T>
-hid_t type_impl(type_tag<T>);
+Handle type_impl(type_tag<T>);
 
 template <typename T>
-hid_t type()
+Handle type()
 {
   return type_impl(type_tag<T>{});
 }

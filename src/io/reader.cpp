@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include <hdf5.h>
+
 namespace rl {
 namespace HD5 {
 
