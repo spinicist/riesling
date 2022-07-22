@@ -42,7 +42,7 @@ struct NearestNeighbour final : SizedKernel<1, 1>
 
   NearestNeighbour()
   {
-    Log::Debug("Nearest-neighbour kernel");
+    Log::Print("Nearest-neighbour kernel");
   }
 
   KTensor k(Point3 const offset) const
@@ -64,7 +64,7 @@ struct KaiserBessel final : SizedKernel<IP, TP>
     // Get the normalization factor
     scale_ = 1.f;
     scale_ = 1.f / Sum(k(Point3::Zero()));
-    Log::Debug(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={} "), IP, TP, beta_, scale_);
+    Log::Print(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={} "), IP, TP, beta_, scale_);
   }
 
   KTensor k(Point3 const p) const
@@ -89,7 +89,7 @@ struct FlatIron final : SizedKernel<IP, TP>
     // Get the normalization factor
     scale_ = 1.f;
     scale_ = 1.f / Sum(k(Point3::Zero()));
-    Log::Debug(FMT_STRING("Flat Iron kernel <{},{}> β={}, scale={}"), IP, TP, beta_, scale_);
+    Log::Print(FMT_STRING("Flat Iron kernel <{},{}> β={}, scale={}"), IP, TP, beta_, scale_);
   }
 
   KTensor k(Point3 const p) const
@@ -114,7 +114,7 @@ struct PipeSDC final : SizedKernel<IP, TP>
   {
     valScale_ = 1.f;
     valScale_ = 1.f / Sum(k(Point3::Zero()));
-    Log::Debug(FMT_STRING("Pipe/Zwart kernel <{},{}> β={}, scale={}"), IP, TP, distScale_, valScale_);
+    Log::Print(FMT_STRING("Pipe/Zwart kernel <{},{}> β={}, scale={}"), IP, TP, distScale_, valScale_);
   }
 
   KTensor k(Point3 const p) const
