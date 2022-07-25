@@ -16,7 +16,7 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<float> osamp(parser, "OS", "Oversampling when using pipenn", {'s', "os"}, 2.f);
   args::ValueFlag<Index> lores(parser, "L", "Number of lo-res spokes for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
-  args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max_its", 'n'}, 40);
+  args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, iname);
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();

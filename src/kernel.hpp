@@ -64,7 +64,7 @@ struct KaiserBessel final : SizedKernel<IP, TP>
     // Get the normalization factor
     scale_ = 1.f;
     scale_ = 1.f / Sum(k(Point3::Zero()));
-    Log::Print(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={} "), IP, TP, beta_, scale_);
+    Log::Print(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={}"), IP, TP, beta_, scale_);
   }
 
   KTensor k(Point3 const p) const
