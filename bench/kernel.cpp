@@ -75,17 +75,10 @@ Eigen::TensorFixedSize<float, Eigen::Sizes<IP, IP, TP>> Naive(Point3 const p)
 TEST_CASE("Kernels")
 {
   auto const z = Point3::Zero();
-  KaiserBessel<3, 3> kb(2.f);
-  FlatIron<3, 3> fi(2.f);
 
   BENCHMARK("Old")
   {
     DistSq<3, 3>(z);
-  };
-
-  BENCHMARK("Current")
-  {
-    kb.distSq(z);
   };
 
   BENCHMARK("Naive")
@@ -93,13 +86,4 @@ TEST_CASE("Kernels")
     Naive<3, 3>(z);
   };
 
-  BENCHMARK("KB")
-  {
-    kb.k(z);
-  };
-
-  BENCHMARK("FI")
-  {
-    fi.k(z);
-  };
 }

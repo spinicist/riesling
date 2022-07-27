@@ -6,7 +6,6 @@
 #include "op/gridBase.hpp"
 #include "tensorOps.h"
 #include "threads.h"
-#include "vc.h"
 
 namespace rl {
 

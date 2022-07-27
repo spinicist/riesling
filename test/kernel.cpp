@@ -1,69 +1,93 @@
-#include "../src/kernel.hpp"
-#include "../src/tensorOps.h"
+#include "../src/kernel-fi.hpp"
+#include "../src/kernel-kb.hpp"
+#include "../src/kernel-nn.hpp"
+#include "../src/types.h"
 #include <catch2/catch.hpp>
 
-using namespace rl;
-
-TEST_CASE("kernels")
+TEST_CASE("Kernels - NearestNeighbour", "[Kernel][NN]")
 {
-  SECTION("NN")
+  auto const nn = rl::NearestNeighbour();
+  auto const k = nn.k(rl::Point3{0.f, 0.f, 0.f});
+  CHECK(k(0, 0, 0) == Approx(1.f).margin(1.e-5));
+  CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+}
+
+TEMPLATE_TEST_CASE(
+  "Kernels 2D", "[Kernel][KB]", (rl::KaiserBessel<3, 1>), (rl::KaiserBessel<5, 1>), (rl::KaiserBessel<7, 1>))
+{
+  TestType kernel(2.f);
+
+  SECTION("Center")
   {
-    auto const nn = NearestNeighbour();
-    auto const k = nn.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(0, 0, 0) == Approx(1.f).margin(1.e-5));
+    auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
-  SECTION("KB31")
+  SECTION("Off-center")
   {
-    auto const kb = KaiserBessel<3, 1>(2.f);
-    auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 0) == Approx(0.50168f).margin(1.e-5));
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    auto const k2 = kernel.k(rl::Point3{-0.5f, 0.f, 0.f});
+    CHECK(Sum(k2) == Approx(1.f).margin(1.e-2));
+    CHECK(k2(kernel.inPlane() / 2 - 1, kernel.inPlane() / 2, 0) == k2(kernel.inPlane() / 2, kernel.inPlane() / 2, 0));
   }
-  SECTION("KB51")
+}
+
+TEMPLATE_TEST_CASE(
+  "Kernels 3D", "[Kernel][KB]", (rl::KaiserBessel<3, 3>), (rl::KaiserBessel<5, 5>), (rl::KaiserBessel<7, 7>))
+{
+  TestType kernel(2.f);
+
+  SECTION("Center")
   {
-    auto const kb = KaiserBessel<5, 1>(2.f);
-    auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 0) == Approx(0.04528f).margin(1.e-5));
+    auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
-  SECTION("FI31")
+  SECTION("Off-center")
   {
-    auto const fi = FlatIron<3, 1>(2.f);
-    auto const k = fi.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 0) == Approx(0.57973f).margin(1.e-5));
+    auto const k2 = kernel.k(rl::Point3{0.f, 0.f, -0.5f});
+    CHECK(Sum(k2) == Approx(1.f).margin(5.e-2));
+    CHECK(k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2 - 1) == k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2));
+  }
+}
+
+TEMPLATE_TEST_CASE(
+  "Kernels 2D", "[Kernel][FI]", (rl::FlatIron<3, 1>), (rl::FlatIron<5, 1>), (rl::FlatIron<7, 1>))
+{
+  TestType kernel(2.f);
+
+  SECTION("Center")
+  {
+    auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
-  SECTION("KB3")
+  SECTION("Off-center")
   {
-    auto const kb = KaiserBessel<3, 3>(2.f);
-    auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(1, 1, 1) == Approx(0.37933f).margin(1.e-5));
+    auto const k2 = kernel.k(rl::Point3{-0.5f, 0.f, 0.f});
+    CHECK(Sum(k2) == Approx(1.f).margin(5.e-2));
+    CHECK(k2(kernel.inPlane() / 2 - 1, kernel.inPlane() / 2, 0) == k2(kernel.inPlane() / 2, kernel.inPlane() / 2, 0));
+  }
+}
+
+TEMPLATE_TEST_CASE(
+  "Kernels 3D", "[Kernel][FI]", (rl::FlatIron<3, 3>), (rl::FlatIron<5, 5>), (rl::FlatIron<7, 7>))
+{
+  TestType kernel(2.f);
+
+  SECTION("Center")
+  {
+    auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
     CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
-  SECTION("KB5")
+  SECTION("Off-center")
   {
-    auto const kb = KaiserBessel<5, 5>(2.f);
-    auto const k = kb.k(Point3{0.f, 0.f, 0.f});
-    CHECK(k(2, 2, 2) == Approx(0.17432f).margin(1.e-5));
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
-  }
-
-  SECTION("Pipe51")
-  {
-    auto const pipe = PipeSDC<5, 1>(2.f);
-    auto const k = pipe.k(Point3{0.f, 0.f, 0.f});
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-3));
-  }
-
-  SECTION("Pipe55")
-  {
-    auto const pipe = PipeSDC<5, 5>(2.f);
-    auto const k = pipe.k(Point3{0.f, 0.f, 0.f});
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-3));
+    auto const k2 = kernel.k(rl::Point3{0.f, 0.f, -0.5f});
+    CHECK(Sum(k2) == Approx(1.f).margin(5.e-2));
+    CHECK(k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2 - 1) == k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2));
   }
 }

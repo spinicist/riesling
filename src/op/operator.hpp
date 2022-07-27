@@ -14,6 +14,8 @@
  * Hence here we track the input/output ranks.
  */
 
+namespace rl {
+
 template <int InRank, int OutRank, typename Scalar = Cx>
 struct Operator
 {
@@ -25,3 +27,5 @@ struct Operator
   virtual OutputDims outputDimensions() const = 0;
   virtual InputDims inputDimensions() const = 0;
 };
+
+} // namespace rl

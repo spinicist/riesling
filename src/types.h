@@ -16,6 +16,8 @@ using Array3l = Array<Index, 3, 1>;
 using ArrayXl = Array<Index, -1, 1>;
 } // namespace Eigen
 
+namespace rl {
+
 using FixZero = Eigen::type2index<0>; // Fix a dimension to zero in reshape/broadcast
 using FixOne = Eigen::type2index<1>;  // Fix a dimension to one in reshape/broadcast
 
@@ -114,3 +116,5 @@ Index Product(T const &indices)
 {
   return std::accumulate(indices.cbegin(), indices.cend(), 1, std::multiplies<Index>());
 }
+
+} // namespace rl

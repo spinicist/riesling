@@ -13,7 +13,7 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string> sdcType(
     parser, "SDC", "SDC type: 'pipe', 'pipenn' (default), 'radial'", {"sdc"}, "pipenn");
-  args::ValueFlag<float> osamp(parser, "OS", "Oversampling when using pipenn", {'s', "os"}, 2.f);
+  args::ValueFlag<float> osamp(parser, "OS", "Oversampling when using pipenn", {'s', "osamp"}, 2.f);
   args::ValueFlag<Index> lores(parser, "L", "Number of lo-res spokes for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
   args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);

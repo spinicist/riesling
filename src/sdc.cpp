@@ -29,26 +29,17 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   R3 W(1, info.read_points, info.spokes);
   R3 Wp(W.dimensions());
 
-  std::unique_ptr<Kernel> k; // Need to keep this alive until the end of the function
-  std::unique_ptr<GridBase<float>> gridder;
+  std::unique_ptr<Kernel> k;
   if (nn) {
-    k = std::make_unique<NearestNeighbour>();
-    auto const m = Mapping(traj, k.get(), os, 32);
-    gridder = make_grid<float>(k.get(), m, 1);
+    k = make_kernel("NN", info.type, os);
   } else {
-    if (info.type == Info::Type::ThreeD) {
-      k = std::make_unique<PipeSDC<5, 5>>(os);
-      auto const m = Mapping(traj, k.get(), os, 32);
-      gridder = make_grid<float>(k.get(), m, 1);
-    } else {
-      k = std::make_unique<PipeSDC<5, 1>>(os);
-      auto const m = Mapping(traj, k.get(), os, 32);
-      gridder = make_grid<float>(k.get(), m, 1);
-    }
+    k = make_kernel("FI7", info.type, os);
   }
+  auto const m = Mapping(traj, k.get(), os, 32);
+  auto gridder = make_grid<float>(k.get(), m, 1);
   gridder->doNotWeightFrames();
+  
   W.setConstant(1.f);
-
   for (Index ii = 0; ii < its; ii++) {
     Wp = gridder->A(gridder->Adj(W)); // Use the gridder's workspace
     Wp.device(Threads::GlobalDevice()) =
@@ -118,13 +109,10 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
   }
 
   auto spoke_sdc = [&](Index const &spoke, Index const N) -> R1 {
-    // Calculate the point spacing
-    float const k_delta = (traj.point(1, spoke, 1.f) - traj.point(0, spoke, 1.f)).norm();
-    float const V = (4.f / 3.f) * k_delta * M_PI / N; // Volume element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * info.matrix.maxCoeff() * info.matrix.maxCoeff()) / N;
     float const flat_start = info.read_points / sqrt(R);
-    float const flat_val = V * (3. * (flat_start * flat_start) + 1. / 4.);
+    float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);
     R1 sdc(info.read_points);
     for (Index ir = 0; ir < info.read_points; ir++) {
       float const rad = traj.point(ir, spoke, info.read_points).norm();
@@ -134,7 +122,7 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
       } else if (rad < flat_start) {
         sdc(ir) = merge * V * (3.f * (rad * rad) + 1.f / 4.f);
       } else {
-        sdc(ir) = merge * flat_val;
+        sdc(ir) = merge;
       }
     }
     return sdc;

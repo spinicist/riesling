@@ -1,7 +1,7 @@
 #pragma once
 
 #include "info.h"
-#include "kernel.h"
+#include "kernel.hpp"
 #include "trajectory.h"
 #include "types.h"
 

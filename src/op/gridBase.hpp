@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kernel.h"
+#include "kernel.hpp"
 #include "mapping.h"
 #include "operator.hpp"
 

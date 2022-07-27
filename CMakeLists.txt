@@ -5,9 +5,10 @@ include(BuildType)
 include(Version)
 
 # Deal with GCC 8 and std::filesystem
-add_link_options( "$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>" )
+add_link_options("$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>")
+
 # Thanks to Deniz Bahadir on the CMake Discourse
-link_libraries( "$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>" )
+link_libraries("$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>")
 
 find_package(Threads REQUIRED)
 find_package(args REQUIRED)
@@ -30,6 +31,9 @@ add_library(vineyard
     src/espirit.cpp
     src/filter.cpp
     src/kernel.cpp
+    src/kernel-fi.cpp
+    src/kernel-kb.cpp
+    src/kernel-nn.cpp
     src/log.cpp
     src/mapping.cpp
     src/phantom_sphere.cpp
@@ -55,6 +59,8 @@ add_library(vineyard
     src/op/grid33.cpp
     src/op/grid51.cpp
     src/op/grid55.cpp
+    src/op/grid71.cpp
+    src/op/grid77.cpp
     src/op/scaling.cpp
     src/op/sense.hpp
     src/precond/single.cpp
@@ -76,7 +82,12 @@ target_link_libraries(vineyard PUBLIC
     NIFTI::niftiio
     scn::scn
 )
-
+set_target_properties(vineyard PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+    CXX_VISIBILITY_PRESET hidden
+)
 # Main executable
 add_executable(riesling
     src/cmd/admm.cpp
@@ -113,15 +124,17 @@ add_executable(riesling
 target_link_libraries(riesling
     vineyard
 )
-set_target_properties(vineyard riesling PROPERTIES
+set_target_properties(riesling PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
+    CXX_VISIBILITY_PRESET hidden
 )
 install(TARGETS riesling RUNTIME DESTINATION bin)
 
 option(BUILD_TESTS "Build the tests" ON)
-if( ${BUILD_TESTS} )
+
+if(${BUILD_TESTS})
     add_executable(riesling-tests
         test/main.cpp
         test/cropper.cpp
@@ -142,15 +155,17 @@ if( ${BUILD_TESTS} )
         vineyard
         Catch2::Catch2
     )
-    set_target_properties(vineyard riesling-tests PROPERTIES
+    set_target_properties(riesling-tests PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
+        CXX_VISIBILITY_PRESET hidden
     )
 endif()
 
 option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
-if ( ${BUILD_BENCHMARKS} )
+
+if(${BUILD_BENCHMARKS})
     add_executable(riesling-bench
         bench/main.cpp
         bench/rss.cpp
@@ -162,40 +177,42 @@ if ( ${BUILD_BENCHMARKS} )
         vineyard
         Catch2::Catch2
     )
-    set_target_properties(vineyard riesling-bench PROPERTIES
+    set_target_properties(riesling-bench PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
+        CXX_VISIBILITY_PRESET hidden
     )
 endif()
 
 # Documentation, which is admittedly sparse
 option(BUILD_DOC "Build documentation" OFF)
 find_package(Doxygen)
-if (DOXYGEN_FOUND)
-    set( DOXYGEN_OUTPUT_DIRECTORY doc )
-    set( DOXYGEN_COLLABORATION_GRAPH YES )
-    set( DOXYGEN_EXTRACT_ALL YES )
-    set( DOXYGEN_CLASS_DIAGRAMS YES )
-    set( DOXYGEN_HIDE_UNDOC_RELATIONS NO )
-    set( DOXYGEN_HAVE_DOT YES )
 
-    set( DOXYGEN_CLASS_GRAPH YES )
-    set( DOXYGEN_CALL_GRAPH YES )
-    set( DOXYGEN_CALLER_GRAPH YES )
-    set( DOXYGEN_COLLABORATION_GRAPH YES )
-    set( DOXYGEN_BUILTIN_STL_SUPPORT YES )
-    set( DOXYGEN_EXTRACT_PRIVATE YES )
-    set( DOXYGEN_EXTRACT_PACKAGE YES )
-    set( DOXYGEN_EXTRACT_STATIC YES )
-    set( DOXYGEN_EXTRACT_LOCALMETHODS YES )
-    set( DOXYGEN_UML_LOOK YES )
-    set( DOXYGEN_UML_LIMIT_NUM_FIELDS 50 )
-    set( DOXYGEN_TEMPLATE_RELATIONS YES )
-    set( DOXYGEN_DOT_GRAPH_MAX_NODES 100 )
-    set( DOXYGEN_MAX_DOT_GRAPH_DEPTH 0 )
-    set( DOXYGEN_DOT_TRANSPARENT YES )
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_OUTPUT_DIRECTORY doc)
+    set(DOXYGEN_COLLABORATION_GRAPH YES)
+    set(DOXYGEN_EXTRACT_ALL YES)
+    set(DOXYGEN_CLASS_DIAGRAMS YES)
+    set(DOXYGEN_HIDE_UNDOC_RELATIONS NO)
+    set(DOXYGEN_HAVE_DOT YES)
+
+    set(DOXYGEN_CLASS_GRAPH YES)
+    set(DOXYGEN_CALL_GRAPH YES)
+    set(DOXYGEN_CALLER_GRAPH YES)
+    set(DOXYGEN_COLLABORATION_GRAPH YES)
+    set(DOXYGEN_BUILTIN_STL_SUPPORT YES)
+    set(DOXYGEN_EXTRACT_PRIVATE YES)
+    set(DOXYGEN_EXTRACT_PACKAGE YES)
+    set(DOXYGEN_EXTRACT_STATIC YES)
+    set(DOXYGEN_EXTRACT_LOCALMETHODS YES)
+    set(DOXYGEN_UML_LOOK YES)
+    set(DOXYGEN_UML_LIMIT_NUM_FIELDS 50)
+    set(DOXYGEN_TEMPLATE_RELATIONS YES)
+    set(DOXYGEN_DOT_GRAPH_MAX_NODES 100)
+    set(DOXYGEN_MAX_DOT_GRAPH_DEPTH 0)
+    set(DOXYGEN_DOT_TRANSPARENT YES)
     doxygen_add_docs(doc ${CMAKE_CURRENT_SOURCE_DIR}/src)
-else (DOXYGEN_FOUND)
+else(DOXYGEN_FOUND)
     message("Doxygen required to build the documentation")
-endif (DOXYGEN_FOUND)
+endif(DOXYGEN_FOUND)

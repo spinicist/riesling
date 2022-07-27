@@ -26,12 +26,12 @@ struct VectorReader
 
 struct Sz2Reader
 {
-  void operator()(std::string const &name, std::string const &value, Sz2 &x);
+  void operator()(std::string const &name, std::string const &value, rl::Sz2 &x);
 };
 
 struct Sz3Reader
 {
-  void operator()(std::string const &name, std::string const &value, Sz3 &x);
+  void operator()(std::string const &name, std::string const &value, rl::Sz3 &x);
 };
 
 // Helper function to generate a good output name
@@ -39,7 +39,7 @@ std::string OutName(
   std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension = "h5");
 
 void WriteOutput(
-  Cx5 const &img,
+  rl::Cx5 const &img,
   std::string const &iname,
   std::string const &oname,
   std::string const &suffix,

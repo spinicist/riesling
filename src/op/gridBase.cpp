@@ -23,15 +23,22 @@ make_grid(Kernel const *k, Mapping const &m, Index const nC, std::string const &
     case 3:
       if (k->throughPlane() == 1) {
         return make_grid_internal<3, 1, Scalar>(k, m, nC, b);
-      } else if (k->throughPlane() == 3) {
+      } else {
         return make_grid_internal<3, 3, Scalar>(k, m, nC, b);
       }
       break;
     case 5:
       if (k->throughPlane() == 1) {
         return make_grid_internal<5, 1, Scalar>(k, m, nC, b);
-      } else if (k->throughPlane() == 5) {
+      } else {
         return make_grid_internal<5, 5, Scalar>(k, m, nC, b);
+      }
+      break;
+    case 7:
+      if (k->throughPlane() == 1) {
+        return make_grid_internal<7, 1, Scalar>(k, m, nC, b);
+      } else {
+        return make_grid_internal<7, 7, Scalar>(k, m, nC, b);
       }
       break;
     }
@@ -42,15 +49,22 @@ make_grid(Kernel const *k, Mapping const &m, Index const nC, std::string const &
     case 3:
       if (k->throughPlane() == 1) {
         return make_grid_internal<3, 1, Scalar>(k, m, nC);
-      } else if (k->throughPlane() == 3) {
+      } else {
         return make_grid_internal<3, 3, Scalar>(k, m, nC);
       }
       break;
     case 5:
       if (k->throughPlane() == 1) {
         return make_grid_internal<5, 1, Scalar>(k, m, nC);
-      } else if (k->throughPlane() == 5) {
+      } else {
         return make_grid_internal<5, 5, Scalar>(k, m, nC);
+      }
+      break;
+    case 7:
+      if (k->throughPlane() == 1) {
+        return make_grid_internal<7, 1, Scalar>(k, m, nC);
+      } else {
+        return make_grid_internal<7, 7, Scalar>(k, m, nC);
       }
       break;
     }
