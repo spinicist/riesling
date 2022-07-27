@@ -86,7 +86,7 @@ struct Grid final : GridBase<Scalar>
             Index const iiy = Reflect(stY + iy, cdims[3]);
             for (Index ix = 0; ix < IP; ix++) {
               Index const iix = Reflect(stX + ix, cdims[2]);
-              float const kval = k(IP - 1 - ix, IP - 1 - iy, TP - 1 - iz) * scale;
+              float const kval = k(ix, iy, iz) * scale;
               if (hasBasis) {
                 for (Index ib = 0; ib < nB; ib++) {
                   float const bval = basis(btp, ib) * kval;
@@ -150,7 +150,7 @@ struct Grid final : GridBase<Scalar>
             Index const iiy = stY + iy;
             for (Index ix = 0; ix < IP; ix++) {
               Index const iix = stX + ix;
-              float const kval = k(ix, iy, iz) * frscale;
+              float const kval = k(IP - 1 - ix, IP - 1 - iy, TP - 1 - iz) * frscale;
               if (hasBasis) {
                 for (Index ib = 0; ib < nB; ib++) {
                   float const bval = kval * basis(btp, ib);
