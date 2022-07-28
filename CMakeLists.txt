@@ -53,6 +53,7 @@ add_library(vineyard
     src/io/nifti.cpp
     src/io/reader.cpp
     src/io/writer.cpp
+    src/op/apodize.cpp
     src/op/gridBase.cpp
     src/op/grid11.cpp
     src/op/grid31.cpp
@@ -61,8 +62,9 @@ add_library(vineyard
     src/op/grid55.cpp
     src/op/grid71.cpp
     src/op/grid77.cpp
-    src/op/scaling.cpp
+    src/op/nufft.cpp
     src/op/sense.hpp
+    src/precond/scaling.cpp
     src/precond/single.cpp
     src/sim/parameter.cpp
     src/sim/dwi.cpp

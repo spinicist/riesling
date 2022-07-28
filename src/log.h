@@ -7,6 +7,8 @@
 
 #include "types.h"
 
+#define LOG_DEBUG(msg, x) if (rl::Log::CurrentLevel() == rl::Log::Level::Debug) { rl::Log::Debug(msg, x); }
+
 namespace rl {
 namespace Log {
 

@@ -2,8 +2,9 @@
 
 #include "operator.hpp"
 
-#include "../fft/fft.hpp"
-#include "../threads.h"
+#include "fft/fft.hpp"
+#include "threads.h"
+#include "tensorOps.h"
 
 namespace rl {
 
@@ -54,7 +55,7 @@ struct FFTOp final : Operator<Rank, Rank>
   template <typename T>
   Tensor const &A(T const &x) const
   {
-    Log::Debug("Out-of-place Forward FFT Op");
+    LOG_DEBUG("Out-of-place Forward FFT Op. Norm {}", Norm(x));
     ws_->device(Threads::GlobalDevice()) = x;
     if (fft3_) {
       fft3_->forward(*ws_);
@@ -71,7 +72,7 @@ struct FFTOp final : Operator<Rank, Rank>
   template <typename T>
   Tensor &Adj(T const &x) const
   {
-    Log::Debug("Out-of-place Adjoint FFT Op");
+    LOG_DEBUG("Out-of-place Adjoint FFT Op. Norm {}", Norm(x));
     ws_->device(Threads::GlobalDevice()) = x;
     if (fft3_) {
       fft3_->reverse(*ws_);
@@ -87,7 +88,7 @@ struct FFTOp final : Operator<Rank, Rank>
 
   Tensor const &A(Tensor &x) const
   {
-    Log::Debug("In-place Forward FFT Op");
+    LOG_DEBUG("In-place Forward FFT Op. Norm {}", Norm(x));
     if (fft3_) {
       fft3_->forward(x);
     } else {
@@ -102,7 +103,7 @@ struct FFTOp final : Operator<Rank, Rank>
 
   Tensor &Adj(Tensor &x) const
   {
-    Log::Debug("In-place Adjoint FFT Op");
+    LOG_DEBUG("In-place Adjoint FFT Op. Norm {}", Norm(x));
     if (fft3_) {
       fft3_->reverse(x);
     } else {

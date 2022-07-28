@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "log.h"
+#include "precond/precond.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 #include "types.h"
@@ -10,10 +11,26 @@ namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
 
+namespace {
+
+template <typename T>
+float CheckedDot(T const &x1, T const &x2)
+{
+  Cx const dot = Dot(x1, x2);
+  constexpr float tol = 1.e-6f;
+  if (std::abs(dot.imag()) > std::abs(dot.real()) * tol) {
+    Log::Fail("Imaginary part of dot product {} exceeded {} times real part {}", dot.imag(), tol, dot.real());
+  } else {
+    return dot.real();
+  }
+}
+
+} // namespace
+
 /*
  * LSQR with arbitrary regularization, i.e. Solve (A'A + λI)x = A'b + c with warm start
  */
-template <typename Op, typename LeftPrecond>
+template <typename Op>
 typename Op::Input lsqr(
   Index const &max_its,
   Op &op,
@@ -22,7 +39,8 @@ typename Op::Input lsqr(
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
   float const λ = 0.f,
-  LeftPrecond const *M = nullptr, // Left preconditioner
+  Precond<typename Op::Output> const *M = nullptr,
+  Precond<typename Op::Input> const *N = nullptr,
   bool const debug = false,
   typename Op::Input const &x0 = typename Op::Input(),
   typename Op::Input const &xr = typename Op::Input())
@@ -36,7 +54,13 @@ typename Op::Input lsqr(
 
   // Workspace variables
   TO Mu(outDims), u(outDims);
-  TI x(inDims), v(inDims), w(inDims), ur;
+  TI x(inDims), Nv(inDims), v(inDims), w(inDims), ur;
+  Mu.setZero();
+  u.setZero();
+  x.setZero();
+  Nv.setZero();
+  v.setZero();
+  w.setZero();
 
   CheckDimsEqual(b.dimensions(), outDims);
   if (x0.size()) {
@@ -57,22 +81,24 @@ typename Op::Input lsqr(
     } else {
       ur.device(dev) = -x * x.constant(sqrt(λ));
     }
-    β = sqrt(std::real(Dot(u, Mu)) + Norm2(ur));
+    β = std::sqrt(CheckedDot(u, Mu) + Norm2(ur));
   } else {
-    β = sqrt(std::real(Dot(u, Mu)));
+    β = std::sqrt(CheckedDot(u, Mu));
   }
   float const normb = β; // For convergence tests
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
   if (λ > 0.f) {
     ur.device(dev) = ur / ur.constant(β);
-    v.device(dev) = op.Adj(u) + sqrt(λ) * ur;
+    Nv.device(dev) = op.Adj(u) + sqrt(λ) * ur;
   } else {
-    v.device(dev) = op.Adj(u);
+    Nv.device(dev) = op.Adj(u);
   }
-  float α = Norm(v);
+  v.device(dev) = N ? N->apply(Nv) : Nv;
+  float α = std::sqrt(CheckedDot(v, Nv));
+  Nv.device(dev) = Nv / Nv.constant(α);
   v.device(dev) = v / v.constant(α);
-  w.device(dev) = v;
+  w.device(dev) = v; // Test if this should be Nv
 
   float ρ̅ = α;
   float ɸ̅ = β;
@@ -93,21 +119,39 @@ typename Op::Input lsqr(
     // Bidiagonalization step
     Mu.device(dev) = op.A(v) - α * Mu;
     u.device(dev) = M ? M->apply(Mu) : Mu;
-    if (λ > 0.f) {
-      ur.device(dev) = (sqrt(λ) * v) - (α * ur);
-      β = sqrt(std::real(Dot(Mu, u)) + std::real(Dot(ur, ur)));
-    } else {
-      β = sqrt(std::real(Dot(Mu, u)));
+    if (debug) {
+      Log::Tensor(Mu, fmt::format("lsqr-Mu-{:02d}", ii));
+      Log::Tensor(u, fmt::format("lsqr-u-{:02d}", ii));
     }
+    fmt::print("Mu {} u {}\n", Norm(Mu), Norm(u));
+    if (λ > 0.f) {
+      ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
+      β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
+    } else {
+      β = std::sqrt(CheckedDot(Mu, u));
+    }
+
+    if (!std::isfinite(β)) {
+      Log::Fail("Invalid β value {}, aborting", β);
+    }
+
     Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);
+    fmt::print("β {} Mu {} u {}\n", β, Norm(Mu), Norm(u));
     if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
-      v.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * v);
+      Nv.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * Nv);
     } else {
-      v.device(dev) = op.Adj(u) - (β * v);
+      Nv.device(dev) = op.Adj(u) - (β * Nv);
     }
-    α = Norm(v);
+    v.device(dev) = N ? N->apply(Nv) : Nv;
+    α = std::sqrt(CheckedDot(v, Nv));
+
+    if (!std::isfinite(α)) {
+      Log::Fail("Invalid α value {}, aborting", α);
+    }
+
+    Nv.device(dev) = Nv / Nv.constant(α);
     v.device(dev) = v / v.constant(α);
 
     float const ρ = std::sqrt(ρ̅ * ρ̅ + β * β);
@@ -177,6 +221,6 @@ typename Op::Input lsqr(
     }
   }
 
-  return x;
+  return N ? N->inv(x) : x;
 }
-}
+} // namespace rl

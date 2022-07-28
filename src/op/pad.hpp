@@ -1,6 +1,8 @@
 #pragma once
 
 #include "operator.hpp"
+#include "log.h"
+#include "tensorOps.h"
 
 namespace rl {
 
@@ -48,12 +50,14 @@ struct PadOp final : Operator<Rank, Rank>
   template <typename T>
   auto A(T const &x) const
   {
+    LOG_DEBUG("Pad A Norm: {}", Norm(x));
     return x.pad(paddings_);
   }
 
   template <typename T>
   auto Adj(T const &x) const
   {
+    LOG_DEBUG("Pad Adj Norm: {}", Norm(x));
     return x.slice(left_, input_);
   }
 

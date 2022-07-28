@@ -5,6 +5,8 @@
 #include "gridBase.hpp"
 #include "threads.h"
 
+#include "tensorOps.h"
+
 #include <mutex>
 
 namespace {
@@ -206,8 +208,9 @@ struct Grid final : GridBase<Scalar>
     fft->reverse(temp);
     R3 a = Crop3(R3(temp.real()), sz);
     float const scale = sqrt(Product(gridSz));
-    Log::Print(FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
+    Log::Print(FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
+    a.device(Threads::GlobalDevice()) = a.inverse();
     Log::Tensor(a, "apo-final");
     return a;
   }

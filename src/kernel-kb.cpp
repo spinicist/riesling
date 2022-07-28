@@ -9,7 +9,7 @@ KaiserBessel<IP, TP>::KaiserBessel(float os)
   // Get the normalization factor
   scale_ = 1.f;
   scale_ = 1.f / Sum(k(Point3::Zero()));
-  Log::Debug(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={} "), IP, TP, beta_, scale_);
+  Log::Print(FMT_STRING("Kaiser-Bessel kernel <{},{}> β={} scale={} "), IP, TP, beta_, scale_);
 }
 
 template <int IP, int TP>

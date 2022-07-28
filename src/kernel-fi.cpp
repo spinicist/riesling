@@ -9,7 +9,7 @@ FlatIron<IP, TP>::FlatIron(float os)
   // Get the normalization factor
   scale_ = 1.f;
   scale_ = 1.f / Sum(k(Point3::Zero()));
-  Log::Debug(FMT_STRING("Flat Iron kernel <{},{}> β={}, scale={}"), IP, TP, beta_, scale_);
+  Log::Print(FMT_STRING("Flat Iron kernel <{},{}> β={}, scale={}"), IP, TP, beta_, scale_);
 }
 
 template <int IP, int TP>

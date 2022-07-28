@@ -5,7 +5,7 @@ namespace rl {
 
 NearestNeighbour::NearestNeighbour()
 {
-  Log::Debug("Nearest-neighbour kernel");
+  Log::Print("Nearest-neighbour kernel");
 }
 
 auto NearestNeighbour::k(Point3 const offset) const -> KTensor
@@ -15,4 +15,4 @@ auto NearestNeighbour::k(Point3 const offset) const -> KTensor
   return k;
 }
 
-} // namespace riesling
+} // namespace rl

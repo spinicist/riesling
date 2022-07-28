@@ -34,6 +34,14 @@ typename T::Scalar Mean(T const &a)
 }
 
 template <typename T>
+typename T::Scalar Minimum(T const &a)
+{
+  Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;
+  m.device(rl::Threads::GlobalDevice()) = a.minimum();
+  return m();
+}
+
+template <typename T>
 typename T::Scalar Maximum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;

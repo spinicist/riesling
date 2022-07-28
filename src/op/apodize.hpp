@@ -4,53 +4,20 @@
 
 namespace rl {
 
-template <int Rank, typename Scalar = Cx>
-struct ApodizeOp final : Operator<Rank, Rank>
+template<typename Scalar>
+struct ApodizeOp final : Operator<5, 5, Scalar>
 {
-  using Parent = Operator<Rank, Rank>;
+  using Parent = Operator<5, 5>;
   using Input = typename Parent::Input;
   using InputDims = typename Parent::InputDims;
   using Output = typename Parent::Output;
   using OutputDims = typename Parent::OutputDims;
-  static int const ImgRank = 3;
 
-  ApodizeOp(InputDims const &inSize, GridBase<Scalar> *gridder)
-  {
-    std::copy_n(inSize.begin(), Rank, sz_.begin());
-    for (Index ii = 0; ii < Rank - ImgRank; ii++) {
-      res_[ii] = 1;
-      brd_[ii] = sz_[ii];
-    }
-    for (Index ii = Rank - ImgRank; ii < Rank; ii++) {
-      res_[ii] = sz_[ii];
-      brd_[ii] = 1;
-    }
-    apo_ = gridder->apodization(LastN<ImgRank>(sz_));
-  }
-
-  InputDims inputDimensions() const
-  {
-    return sz_;
-  }
-
-  OutputDims outputDimensions() const
-  {
-    return sz_;
-  }
-
-  template <typename T>
-  auto A(T const &x) const
-  {
-    using TScalar = typename T::Scalar;
-    return x / apo_.reshape(res_).broadcast(brd_).template cast<TScalar>();
-  }
-
-  template <typename T>
-  auto Adj(T const &x) const
-  {
-    using TScalar = typename T::Scalar;
-    return x / apo_.reshape(res_).broadcast(brd_).template cast<TScalar>();
-  }
+  ApodizeOp(InputDims const &inSize, GridBase<Scalar> *gridder);
+  auto inputDimensions() const -> InputDims;
+  auto outputDimensions() const -> OutputDims;
+  auto A(Input const &x) const -> Output;
+  auto Adj(Output const &x) const -> Input;
 
 private:
   InputDims sz_, res_, brd_;

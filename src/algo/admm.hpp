@@ -109,7 +109,7 @@ typename Op::Input admm_lsqr(
 
   Log::Print(FMT_STRING("ADMM LSQR rho {}"), rho);
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, (ii == 1), x, (z - u));
+    x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, nullptr, (ii == 1), x, (z - u));
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);

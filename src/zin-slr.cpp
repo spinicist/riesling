@@ -91,7 +91,6 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   Index const nZero = (nC - wnThresh) * nK; // Window-Normalized
   Log::Print(FMT_STRING("Zeroing {} values check {} nK {}"), nZero, (nC - wnThresh), nK);
   auto lrVals = svd.vals;
-  fmt::print(FMT_STRING("{}\n"), svd.vals.transpose());
   lrVals.tail(nZero).setZero();
   kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, cropped);
