@@ -123,7 +123,6 @@ typename Op::Input lsqr(
       Log::Tensor(Mu, fmt::format("lsqr-Mu-{:02d}", ii));
       Log::Tensor(u, fmt::format("lsqr-u-{:02d}", ii));
     }
-    fmt::print("Mu {} u {}\n", Norm(Mu), Norm(u));
     if (λ > 0.f) {
       ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
       β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
@@ -137,7 +136,6 @@ typename Op::Input lsqr(
 
     Mu.device(dev) = Mu / Mu.constant(β);
     u.device(dev) = u / u.constant(β);
-    fmt::print("β {} Mu {} u {}\n", β, Norm(Mu), Norm(u));
     if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
       Nv.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * Nv);

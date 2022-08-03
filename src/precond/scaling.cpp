@@ -35,7 +35,6 @@ Cx4 Scaling::apply(Cx4 const &in) const
   Cx4 p(sz_);
   p.device(Threads::GlobalDevice()) =
     in / scales_.cast<Cx>().reshape(Sz4{sz_[0], 1, 1, 1}).broadcast(Sz4{1, sz_[1], sz_[2], sz_[3]});
-  fmt::print("sz {} dims {}\n", sz_, in.dimensions());
   Log::Debug(FMT_STRING("SCALING Took {}"), Log::ToNow(start));
   return p;
 }
