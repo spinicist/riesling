@@ -26,8 +26,9 @@ int main(int const argc, char const *const argv[])
   args::Command pad(commands, "pad", "Pad / crop an image", &main_pad);
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
-  args::Command recon(commands, "recon", "Basic non-iterative reconstruction", &main_recon);
+  args::Command recon(commands, "recon", "Reconstruction with SENSE maps", &main_recon);
   args::Command reg(commands, "reg", "Apply regularization to an image", &main_reg);
+  args::Command rss(commands, "rss", "Reconstruction with Root-Sum-Squares channel combination", &main_rss);
   args::Command sdc(commands, "sdc", "Calculate Sample Density Compensation", &main_sdc);
   args::Command sense(commands, "sense", "Apply SENSE operation", &main_sense);
   args::Command sense_calib(commands, "sense-calib", "Create SENSE maps", &main_sense_calib);
