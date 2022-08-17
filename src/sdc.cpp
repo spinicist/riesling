@@ -14,7 +14,7 @@ namespace rl {
 namespace SDC {
 
 Opts::Opts(args::Subparser &parser)
-  : type(parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipenn")
+  : type(parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipe")
   , pow(parser, "P", "SDC Power (default 1.0)", {"sdc-pow"}, 1.0f)
 {
 }
