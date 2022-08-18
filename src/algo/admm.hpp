@@ -13,9 +13,9 @@ typename Op::Input admm_lsmr(
   float rho,
   std::function<Cx4(Cx4 const &)> const &reg,
   Index const lsq_its,
-  Op const &op,
+  Op &op,
   typename Op::Output const &b,
-  LeftPrecond const *M = nullptr, // Left preconditioner
+  LeftPrecond *M = nullptr, // Left preconditioner
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
@@ -35,8 +35,9 @@ typename Op::Input admm_lsmr(
   u.setZero();
   xpu.setZero();
 
+  LSMR<Op> lsmr{op, M, lsq_its, atol, btol, ctol, rho, false};
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsmr(lsq_its, op, b, atol, btol, ctol, rho, M, x, (z - u), (ii == 2));
+    x = lsmr.run(b, x, (z - u));
 
     xpu.device(dev) = x + u;
     zold = z;

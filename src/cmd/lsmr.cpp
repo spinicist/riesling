@@ -40,7 +40,7 @@ int main_lsmr(args::Subparser &parser)
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, nullptr);
-
+  LSMR<ReconOp> lsmr{recon, pre.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), true};
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());
   Cx4 vol(sz);
@@ -51,7 +51,7 @@ int main_lsmr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsmr(its.Get(), recon, reader.noncartesian(iv), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), pre.get());
+    vol = lsmr.run(reader.noncartesian(iv));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
