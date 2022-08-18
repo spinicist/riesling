@@ -21,7 +21,6 @@ int main_lsqr(args::Subparser &parser)
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
-  args::ValueFlag<Index> readStart(parser, "N", "Read start", {"rs"}, 0);
   args::Flag lp(parser, "M", "Apply Ong's single-channel pre-conditioner", {"lpre"});
   args::Flag rp(parser, "N", "Apply right preconditioner (scales)", {"rpre"});
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
@@ -42,7 +41,7 @@ int main_lsqr(args::Subparser &parser)
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, nullptr);
 
-  std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
+  std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj, kernel.get(), core.basisFile.Get()) : nullptr;
   std::unique_ptr<Precond<Cx4>> N = nullptr;
   if (rp) {
     auto sgrid = make_grid<Cx>(kernel.get(), mapping, 1, core.basisFile.Get());

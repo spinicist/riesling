@@ -49,7 +49,7 @@ int main_admm(args::Subparser &parser)
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
-  std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
+  std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj, kernel.get(), core.basisFile.Get()) : nullptr;
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, λ.Get() / ρ.Get(), patchSize.Get()); };
