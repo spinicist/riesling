@@ -200,8 +200,10 @@ typename Op::Input admm_cg(
 
   // Augment system
   AugmentedOp<Op> augmented{op, rho};
+  ConjugateGradients<AugmentedOp<Op>> cg{augmented, lsq_its, lsq_thresh};
+
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = cg(lsq_its, lsq_thresh, augmented, x0 + x0.constant(rho) * (z - u), x);
+    x = cg.run(x0 + x0.constant(rho) * (z - u), x);
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);

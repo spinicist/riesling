@@ -39,6 +39,8 @@ int main_cg(args::Subparser &parser)
     recon.calcToeplitz();
   }
   NormalEqOp<ReconOp> normEqs{recon};
+  ConjugateGradients<NormalEqOp<ReconOp>> cg{normEqs, its.Get(), thr.Get()};
+
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());
   Cx4 vol(sz);
@@ -48,7 +50,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = cg(its.Get(), thr.Get(), normEqs, recon.Adj(reader.noncartesian(iv)));
+    vol = cg.run(recon.Adj(reader.noncartesian(iv)));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
