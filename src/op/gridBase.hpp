@@ -5,6 +5,7 @@
 #include "operator.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace rl {
 
@@ -64,6 +65,6 @@ protected:
 
 template <typename Scalar>
 std::unique_ptr<GridBase<Scalar>>
-make_grid(Kernel const *k, Mapping const &m, Index const nC, std::string const &basis = "");
+make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis = std::nullopt);
 
 } // namespace rl

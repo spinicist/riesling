@@ -7,11 +7,11 @@
 
 namespace rl {
 
-SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k, std::string const &basisFile)
+SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k, std::optional<R2> const &basis)
   : Precond{}
 {
   float const os = 4.f;
-  auto gridder = rl::make_grid<Cx>(k, Mapping(traj, k, os, 32), 1, basisFile);
+  auto gridder = rl::make_grid<Cx>(k, Mapping(traj, k, os, 32), 1, basis);
   // Crop out the janky corners
   Sz3 sz{traj.info().matrix[0], traj.info().matrix[1], traj.info().matrix[2]};
   NUFFTOp nufft(sz, gridder.get());

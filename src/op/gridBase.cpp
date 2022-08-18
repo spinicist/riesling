@@ -12,11 +12,10 @@ make_grid_internal(Kernel const *k, Mapping const &m, Index const nC, R2 const &
 
 template <typename Scalar>
 std::unique_ptr<GridBase<Scalar>>
-make_grid(Kernel const *k, Mapping const &m, Index const nC, std::string const &basisFile)
+make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis)
 {
-  if (!basisFile.empty()) {
-    HD5::Reader basisReader(basisFile);
-    R2 const b = basisReader.readTensor<R2>(HD5::Keys::Basis);
+  if (basis) {
+    auto &b = basis.value();
     switch (k->inPlane()) {
     case 1:
       return make_grid_internal<1, 1, Scalar>(k, m, nC, b);
@@ -73,8 +72,8 @@ make_grid(Kernel const *k, Mapping const &m, Index const nC, std::string const &
 }
 
 template std::unique_ptr<GridBase<float>>
-make_grid<float>(Kernel const *k, Mapping const &m, Index const nC, std::string const &basisFile);
+make_grid<float>(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis);
 template std::unique_ptr<GridBase<Cx>>
-make_grid<Cx>(Kernel const *k, Mapping const &m, Index const nC, std::string const &basisFile);
+make_grid<Cx>(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis);
 
 } // namespace rl

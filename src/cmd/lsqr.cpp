@@ -21,8 +21,7 @@ int main_lsqr(args::Subparser &parser)
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
-  args::Flag lp(parser, "M", "Apply Ong's single-channel pre-conditioner", {"lpre"});
-  args::Flag rp(parser, "N", "Apply right preconditioner (scales)", {"rpre"});
+  args::Flag lp(parser, "M", "Apply Ong's single-channel pre-conditioner", {"pre"});
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
@@ -36,23 +35,14 @@ int main_lsqr(args::Subparser &parser)
 
   auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto const basis = ReadBasis(core.basisFile);
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, nullptr);
 
-  std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj, kernel.get(), core.basisFile.Get()) : nullptr;
+  std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj, kernel.get(), basis) : nullptr;
   std::unique_ptr<Precond<Cx4>> N = nullptr;
-  if (rp) {
-    auto sgrid = make_grid<Cx>(kernel.get(), mapping, 1, core.basisFile.Get());
-    NUFFTOp snufft(LastN<3>(recon.inputDimensions()), sgrid.get());
-    Cx3 ones(sgrid->outputDimensions());
-    ones.setConstant(1.f);
-    auto const &imgs = snufft.Adj(ones);
-    R1 scales = (imgs.conjugate() * imgs).real().sum(Sz4{0, 2, 3, 4}).sqrt();
-    scales /= scales.constant(scales[0]);
-    N = std::make_unique<Scaling>(recon.inputDimensions(), scales);
-  }
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());

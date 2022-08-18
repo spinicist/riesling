@@ -2,6 +2,7 @@
 
 #include <args.hxx>
 #include <vector>
+#include <optional>
 
 #include "types.h"
 #include "trajectory.h"
@@ -33,6 +34,8 @@ struct Sz3Reader
 {
   void operator()(std::string const &name, std::string const &value, rl::Sz3 &x);
 };
+
+auto ReadBasis(args::ValueFlag<std::string> &basisFile) -> std::optional<rl::R2>;
 
 // Helper function to generate a good output name
 std::string OutName(

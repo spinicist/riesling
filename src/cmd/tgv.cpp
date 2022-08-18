@@ -30,7 +30,8 @@ int main_tgv(args::Subparser &parser)
   auto const &info = traj.info();
   auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto const basis = ReadBasis(core.basisFile);
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());

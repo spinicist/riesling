@@ -137,6 +137,16 @@ void ParseCommand(args::Subparser &parser)
   SetThreadCount();
 }
 
+auto ReadBasis(args::ValueFlag<std::string> &basisFile) -> std::optional<R2>
+{
+  if (basisFile) {
+    HD5::Reader basisReader(basisFile.Get());
+    return std::optional<R2>(basisReader.readTensor<R2>(HD5::Keys::Basis));
+  } else {
+    return std::nullopt;
+  }
+}
+
 std::string
 OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
 {

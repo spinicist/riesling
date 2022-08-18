@@ -33,7 +33,8 @@ int main_nufft(args::Subparser &parser)
   auto const info = traj.info();
   auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
   Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, core.basisFile.Get());
+  auto const basis = ReadBasis(core.basisFile);
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
   NUFFTOp nufft(LastN<3>(gridder->inputDimensions()), gridder.get());
   Cx6 channels(AddBack(nufft.inputDimensions(), info.volumes));
   Cx4 noncart(AddBack(nufft.outputDimensions(), info.volumes));

@@ -104,7 +104,7 @@ int main_phantom(args::Subparser &parser)
 
   auto const kernel = rl::make_kernel(ktype.Get(), info.type, osamp.Get());
   Mapping const mapping(traj, kernel.get(), osamp.Get(), bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basisFile.Get());
+  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, ReadBasis(basisFile));
   ReconOp recon(gridder.get(), senseMaps);
   auto const sz = recon.inputDimensions();
   Cx4 phan(sz);
