@@ -43,6 +43,7 @@ int main_lsqr(args::Subparser &parser)
 
   std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj, kernel.get(), basis) : nullptr;
   std::unique_ptr<Precond<Cx4>> N = nullptr;
+  LSQR<ReconOp> lsqr{recon, M.get(), N.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), true};
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());
@@ -54,17 +55,7 @@ int main_lsqr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr(
-      its.Get(),
-      recon,
-      reader.noncartesian(iv),
-      atol.Get(),
-      btol.Get(),
-      ctol.Get(),
-      damp.Get(),
-      M.get(),
-      N.get(),
-      true);
+    vol = lsqr.run(reader.noncartesian(iv));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

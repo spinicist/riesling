@@ -85,9 +85,9 @@ typename Op::Input admm_lsqr(
   float rho,
   std::function<typename Op::Input(typename Op::Input const &)> const &reg,
   Index const lsq_its,
-  Op const &op,
+  Op &op,
   typename Op::Output const &b,
-  LeftPrecond const *M = nullptr, // Left preconditioner
+  LeftPrecond *M = nullptr, // Left preconditioner
   float const atol = 1.e-6f,
   float const btol = 1.e-6f,
   float const ctol = 1.e-6f,
@@ -107,9 +107,10 @@ typename Op::Input admm_lsqr(
 
   float const sp = std::sqrt(float(Product(dims)));
 
+  LSQR<Op> lsqr{op, M, nullptr, lsq_its, atol, btol, ctol, rho, false};
   Log::Print(FMT_STRING("ADMM LSQR rho {}"), rho);
   for (Index ii = 0; ii < outer_its; ii++) {
-    x = lsqr(lsq_its, op, b, atol, btol, ctol, rho, M, nullptr, (ii == 1), x, (z - u));
+    x = lsqr.run(b, x, (z - u));
     xpu.device(dev) = x + u;
     zold = z;
     z = reg(xpu);

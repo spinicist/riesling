@@ -41,7 +41,7 @@ struct ConjugateGradients
   float resTol = 1.e-6f;
   bool debug = false;
 
-  Input run(typename Op::Input const &b, Input const &x0 = Input())
+  Input run(typename Op::Input const &b, Input const &x0 = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
