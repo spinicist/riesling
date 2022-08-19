@@ -34,7 +34,8 @@ enum struct Sequence
   T1T2 = 0,
   MPRAGE,
   DIR,
-  T2PREP,
+  T2Prep,
+  T2InvPrep,
   T2FLAIR,
   DWI
 };
@@ -43,7 +44,8 @@ std::unordered_map<std::string, Sequence> SequenceMap{
   {"T1T2Prep", Sequence::T1T2},
   {"MPRAGE", Sequence::MPRAGE},
   {"DIR", Sequence::DIR},
-  {"T2Prep", Sequence::T2PREP},
+  {"T2Prep", Sequence::T2Prep},
+  {"T2InvPrep", Sequence::T2InvPrep},
   {"T2FLAIR", Sequence::T2FLAIR},
   {"DWI", Sequence::DWI}};
 
@@ -102,8 +104,11 @@ int main_sim(args::Subparser &parser)
   case Sequence::T2FLAIR:
     std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get());
     break;
-  case Sequence::T2PREP:
+  case Sequence::T2Prep:
     std::tie(parameters, dynamics) = Simulate<rl::T2Prep>(settings, nsamp.Get());
+    break;
+  case Sequence::T2InvPrep:
+    std::tie(parameters, dynamics) = Simulate<rl::T2InvPrep>(settings, nsamp.Get());
     break;
   case Sequence::T1T2:
     std::tie(parameters, dynamics) = Simulate<rl::T1T2Prep>(settings, nsamp.Get());
