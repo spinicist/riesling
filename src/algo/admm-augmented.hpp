@@ -1,16 +1,39 @@
 #pragma once
 
+#include "cg.hpp"
 #include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
 
 namespace rl {
 
+template <typename Op>
+struct AugmentedOp
+{
+  using Input = typename Op::Input;
+  Op const &op;
+  float rho;
+
+  auto inputDimensions() const
+  {
+    return op.inputDimensions();
+  }
+
+  auto outputDimensions() const
+  {
+    return op.inputDimensions();
+  }
+
+  Input A(typename Op::Input const &x) const
+  {
+    return Input(op.AdjA(x) + rho * x);
+  }
+};
+
 template <typename Inner>
-struct ADMM
+struct AugmentedADMM
 {
   using Input = typename Inner::Input;
-  using Output = typename Inner::Output;
 
   Inner &inner;
   std::function<Input(Input const &)> const &reg;
@@ -19,23 +42,20 @@ struct ADMM
   float abstol = 1.e-3f;
   float reltol = 1.e-3f;
 
-  Input run(Output const &b) const
+  Input run(Input const &x0) const
   {
+    Log::Print(FMT_STRING("ADMM-CG rho {}"), rho);
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
     auto const dims = inner.op.inputDimensions();
-    Input u(dims), x(dims), z(dims), zold(dims), xpu(dims);
+    Index const N = Product(dims);
+    Input x(dims), z(dims), zold(dims), u(dims), xpu(dims);
     x.setZero();
     z.setZero();
-    zold.setZero();
     u.setZero();
     xpu.setZero();
-
-    float const sp = std::sqrt(float(Product(dims)));
-
-    Log::Print(FMT_STRING("ADMM rho {}"), rho);
     for (Index ii = 0; ii < iterLimit; ii++) {
-      x = inner.run(b, x, (z - u));
+      x = inner.run(x0 + x0.constant(rho) * (z - u), x);
       xpu.device(dev) = x + u;
       zold = z;
       z = reg(xpu);
@@ -44,15 +64,16 @@ struct ADMM
       float const norm_prim = Norm(x - z);
       float const norm_dual = Norm(-rho * (z - zold));
 
-      float const eps_prim = sp * abstol + reltol * std::max(Norm(x), Norm(z));
-      float const eps_dual = sp * abstol + reltol * rho * Norm(u);
+      float const eps_prim = sqrtf(N) * abstol + reltol * std::max(Norm(x), Norm(-z));
+      float const eps_dual = sqrtf(N) * abstol + reltol * rho * Norm(u);
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Tensor(xpu, fmt::format("admm-xpu-{:02d}", ii));
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
+
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
+        FMT_STRING("ADMM-CG {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
         ii,
         norm_prim,
         eps_prim,

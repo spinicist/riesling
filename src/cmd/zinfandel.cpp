@@ -1,4 +1,5 @@
 #include "algo/admm.hpp"
+#include "algo/lsqr.hpp"
 #include "io/hd5.hpp"
 #include "log.h"
 #include "op/nufft.hpp"
@@ -66,11 +67,12 @@ int main_zinfandel(args::Subparser &parser)
     auto reg = [&](Cx5 const &x) -> Cx5 { return zinSLR(x, nufftN.fft(), kSz.Get(), winSz.Get()); };
     Sz3 const st{0, 0, 0};
     Sz3 const sz{info.channels, gap.Get(), info.spokes};
+    LSQR<NUFFTOp> lsqr{nufftN, pre.get(), nullptr, iits.Get(), atol.Get(), btol.Get(), ctol.Get(), rho.Get(), false};
+    ADMM<LSQR<NUFFTOp>> admm{lsqr, reg, oits.Get(), rho.Get()};
     for (Index iv = 0; iv < info.volumes; iv++) {
       Cx3 const ks = reader.noncartesian(iv);
       Cx3 const dsKS = ks.slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.read_points, dsInfo.spokes});
-      Cx5 const img =
-        admm_lsqr(oits.Get(), rho.Get(), reg, iits.Get(), nufftN, dsKS, pre.get(), atol.Get(), btol.Get(), ctol.Get());
+      Cx5 const img = admm.run(dsKS);
       Cx3 const filled = nufft0.A(img);
       rad_ks.chip<3>(iv) = ks;
       rad_ks.chip<3>(iv).slice(st, sz) = filled.slice(st, sz);

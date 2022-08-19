@@ -1,7 +1,10 @@
 #include "types.h"
 
+#include "algo/admm-augmented.hpp"
 #include "algo/admm.hpp"
 #include "algo/llr.h"
+#include "algo/lsmr.hpp"
+#include "algo/lsqr.hpp"
 #include "cropper.h"
 #include "io/hd5.hpp"
 #include "log.h"
@@ -48,10 +51,8 @@ int main_admm(args::Subparser &parser)
   auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
-
-  std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj, kernel.get(), basis) : nullptr;
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
-
+  std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj, kernel.get(), basis) : nullptr;
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, λ.Get() / ρ.Get(), patchSize.Get()); };
 
   auto sz = recon.inputDimensions();
@@ -61,51 +62,27 @@ int main_admm(args::Subparser &parser)
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = Log::Now();
-  for (Index iv = 0; iv < info.volumes; iv++) {
-    auto const &vol_start = Log::Now();
-    if (use_cg) {
-      vol = admm_cg(
-        outer_its.Get(),
-        inner_its.Get(),
-        atol.Get(),
-        recon,
-        reg,
-        ρ.Get(),
-        reader.noncartesian(iv),
-        abstol.Get(),
-        reltol.Get());
-    } else if (use_lsmr) {
-      vol = admm_lsmr(
-        outer_its.Get(),
-        ρ.Get(),
-        reg,
-        inner_its.Get(),
-        recon,
-        reader.noncartesian(iv),
-        M.get(),
-        atol.Get(),
-        btol.Get(),
-        ctol.Get(),
-        abstol.Get(),
-        reltol.Get());
-    } else {
-      vol = admm_lsqr(
-        outer_its.Get(),
-        ρ.Get(),
-        reg,
-        inner_its.Get(),
-        recon,
-        reader.noncartesian(iv),
-        M.get(),
-        atol.Get(),
-        btol.Get(),
-        ctol.Get(),
-        abstol.Get(),
-        reltol.Get());
+
+  if (use_cg) {
+    AugmentedOp<ReconOp> augmented{recon, ρ.Get()};
+    ConjugateGradients<AugmentedOp<ReconOp>> cg{augmented, inner_its.Get(), atol.Get()};
+    AugmentedADMM<ConjugateGradients<AugmentedOp<ReconOp>>> admm{
+      cg, reg, outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
+    for (Index iv = 0; iv < info.volumes; iv++) {
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(recon.Adj(reader.noncartesian(iv))));
     }
-    cropped = out_cropper.crop4(vol);
-    out.chip<4>(iv) = cropped;
-    Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
+  } else if (use_lsmr) {
+    LSMR<ReconOp> lsmr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
+    ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
+    for (Index iv = 0; iv < info.volumes; iv++) {
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
+    }
+  } else {
+    LSQR<ReconOp> lsqr{recon, M.get(), nullptr, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
+    ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
+    for (Index iv = 0; iv < info.volumes; iv++) {
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
+    }
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, core.iname.Get(), core.oname.Get(), parser.GetCommand().Name(), core.keepTrajectory, traj);
