@@ -73,7 +73,7 @@ struct AugmentedADMM
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
 
       Log::Print(
-        FMT_STRING("ADMM-CG {:02d}: Primal Norm {} Primal Eps {} Dual Norm {} Dual Eps {}"),
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {}"),
         ii,
         norm_prim,
         eps_prim,

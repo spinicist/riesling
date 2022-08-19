@@ -32,12 +32,13 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
-  args::ValueFlag<Index> outer_its(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 8);
-  args::ValueFlag<float> abstol(parser, "ABS", "Outer absolute tolerance (1e-3)", {"abs-tol"}, 1.e-3f);
-  args::ValueFlag<float> reltol(parser, "REL", "Outer relative tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
-  args::ValueFlag<float> ρ(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 0.1f);
+  args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (8)", {"max-outer-its"}, 8);
+  args::ValueFlag<float> abstol(parser, "ABS", "ADMM absolute tolerance (1e-3)", {"abs-tol"}, 1.e-3f);
+  args::ValueFlag<float> reltol(parser, "REL", "ADMM relative tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
+  args::ValueFlag<float> ρ(parser, "ρ", "ADMM Langrangian ρ (default 0.1)", {"rho"}, 0.1f);
+  args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
 
-  args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
+  args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
 
   ParseCommand(parser, core.iname);
@@ -73,13 +74,13 @@ int main_admm(args::Subparser &parser)
     }
   } else if (use_lsmr) {
     LSMR<ReconOp> lsmr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
-    ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
+    ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < info.volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
     }
   } else {
     LSQR<ReconOp> lsqr{recon, M.get(), nullptr, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
-    ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
+    ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < info.volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
     }
