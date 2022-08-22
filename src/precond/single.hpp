@@ -10,7 +10,7 @@ namespace rl {
 
 struct SingleChannel final : Precond<Cx3>
 {
-  SingleChannel(Trajectory const &traj, Kernel const *k, std::optional<Re2> const &basis = std::nullopt);
+  SingleChannel(Trajectory const &traj, Kernel const *k);
   Cx3 apply(Cx3 const &in) const;
   Cx3 inv(Cx3 const &in) const;
 
