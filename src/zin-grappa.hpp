@@ -14,7 +14,7 @@ void zinGRAPPA(
   Index const n_spoke,
   Index const n_read,
   float const lambda,
-  R3 const &traj,
+  Re3 const &traj,
   Cx3 &ks);
 
 /*!

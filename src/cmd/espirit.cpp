@@ -2,7 +2,6 @@
 
 #include "cropper.h"
 #include "espirit.h"
-#include "filter.h"
 #include "io/hd5.hpp"
 #include "log.h"
 #include "mapping.h"

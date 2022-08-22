@@ -7,7 +7,7 @@ using namespace rl;
 TEST_CASE("cropper")
 {
   Index const fullSz = 16;
-  R3 grid(fullSz, fullSz, fullSz);
+  Re3 grid(fullSz, fullSz, fullSz);
   grid.setZero();
   grid(fullSz / 2, fullSz / 2, fullSz / 2) = 1.f;
 
@@ -15,7 +15,7 @@ TEST_CASE("cropper")
   {
     Index const small = 8;
     Cropper crop(Sz3{fullSz, fullSz, fullSz}, Sz3{small, small, small});
-    R3 const cropSmall = crop.crop3(grid);
+    Re3 const cropSmall = crop.crop3(grid);
 
     CHECK(cropSmall.dimension(0) == small);
     CHECK(cropSmall.dimension(1) == small);
@@ -29,7 +29,7 @@ TEST_CASE("cropper")
   {
     Index const small = 7;
     Cropper crop(Sz3{fullSz, fullSz, fullSz}, Sz3{small, small, small});
-    R3 const cropSmall = crop.crop3(grid);
+    Re3 const cropSmall = crop.crop3(grid);
 
     CHECK(cropSmall.dimension(0) == small);
     CHECK(cropSmall.dimension(1) == small);

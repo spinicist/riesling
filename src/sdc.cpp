@@ -19,15 +19,15 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its)
+Re2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its)
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
   auto info = inTraj.info();
   // Reset to one channel
   info.channels = 1;
   Trajectory traj{info, inTraj.points(), inTraj.frames()};
-  R3 W(1, info.read_points, info.spokes);
-  R3 Wp(W.dimensions());
+  Re3 W(1, info.read_points, info.spokes);
+  Re3 Wp(W.dimensions());
 
   std::unique_ptr<Kernel> k;
   if (nn) {
@@ -57,18 +57,18 @@ R2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its
   return W.chip<0>(0);
 }
 
-R2 Radial2D(Trajectory const &traj)
+Re2 Radial2D(Trajectory const &traj)
 {
   Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
   Info const &info = traj.info();
-  auto spoke_sdc = [&](Index const spoke, Index const N) -> R1 {
+  auto spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
     float const k_delta = (traj.point(1, spoke, 1.f) - traj.point(0, spoke, 1.f)).norm();
     float const V = 2.f * k_delta * M_PI / N; // Area element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * info.matrix.maxCoeff()) / N;
     float const flat_start = info.read_points / sqrt(R);
     float const flat_val = V * flat_start;
-    R1 sdc(info.read_points);
+    Re1 sdc(info.read_points);
     for (Index ir = 0; ir < info.read_points; ir++) {
       float const rad = traj.point(ir, spoke, info.read_points).norm();
       if (rad == 0.f) {
@@ -82,12 +82,12 @@ R2 Radial2D(Trajectory const &traj)
     return sdc;
   };
 
-  R1 const ss = spoke_sdc(0, info.spokes);
-  R2 sdc = ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes});
+  Re1 const ss = spoke_sdc(0, info.spokes);
+  Re2 sdc = ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes});
   return sdc;
 }
 
-R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
+Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 {
   Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
   auto const &info = traj.info();
@@ -108,12 +108,12 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
     mergeLo.head(gap) = 0.;          // Don't touch these points
   }
 
-  auto spoke_sdc = [&](Index const &spoke, Index const N) -> R1 {
+  auto spoke_sdc = [&](Index const &spoke, Index const N) -> Re1 {
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * info.matrix.maxCoeff() * info.matrix.maxCoeff()) / N;
     float const flat_start = info.read_points / sqrt(R);
     float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);
-    R1 sdc(info.read_points);
+    Re1 sdc(info.read_points);
     for (Index ir = 0; ir < info.read_points; ir++) {
       float const rad = traj.point(ir, spoke, info.read_points).norm();
       float const merge = (spoke < lores) ? mergeLo(ir) : mergeHi(ir);
@@ -128,19 +128,19 @@ R2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
     return sdc;
   };
 
-  R2 sdc(info.read_points, info.spokes);
+  Re2 sdc(info.read_points, info.spokes);
   if (lores) {
-    R1 const ss = spoke_sdc(0, lores);
+    Re1 const ss = spoke_sdc(0, lores);
     sdc.slice(Sz2{0, 0}, Sz2{info.read_points, lores}) = ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, lores});
   }
-  R1 const ss = spoke_sdc(lores, info.spokes - lores);
+  Re1 const ss = spoke_sdc(lores, info.spokes - lores);
   sdc.slice(Sz2{0, lores}, Sz2{info.read_points, info.spokes - lores}) =
     ss.reshape(Sz2{info.read_points, 1}).broadcast(Sz2{1, info.spokes - lores});
 
   return sdc;
 }
 
-R2 Radial(Trajectory const &traj, Index const lores, Index const gap)
+Re2 Radial(Trajectory const &traj, Index const lores, Index const gap)
 {
 
   if (traj.info().type == Info::Type::ThreeD) {
@@ -152,7 +152,7 @@ R2 Radial(Trajectory const &traj, Index const lores, Index const gap)
 
 std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os)
 {
-  R2 sdc(traj.info().read_points, traj.info().spokes);
+  Re2 sdc(traj.info().read_points, traj.info().spokes);
   auto const iname = opts.type.Get();
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
@@ -164,7 +164,7 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os
     sdc = Pipe(traj, true, os, 40);
   } else {
     HD5::Reader reader(iname);
-    sdc = reader.readTensor<R2>(HD5::Keys::SDC);
+    sdc = reader.readTensor<Re2>(HD5::Keys::SDC);
     auto const trajInfo = traj.info();
     if (sdc.dimension(0) != trajInfo.read_points || sdc.dimension(1) != trajInfo.spokes) {
       Log::Fail(

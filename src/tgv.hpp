@@ -95,7 +95,7 @@ inline void ProjectP(Cx5 &p, float const a, Eigen::ThreadPoolDevice &dev)
   res.set(3, p.dimension(3));
   Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, Eigen::type2index<3>> brd;
 
-  R4 normp(p.dimension(0), p.dimension(1), p.dimension(2), p.dimension(3));
+  Re4 normp(p.dimension(0), p.dimension(1), p.dimension(2), p.dimension(3));
   normp.device(dev) = (p * p.conjugate()).sum(Sz1{4}).real().sqrt() / a;
   normp.device(dev) = (normp > 1.f).select(normp, normp.constant(1.f));
   p.device(dev) = p / normp.reshape(res).broadcast(brd).cast<Cx>();
@@ -115,7 +115,7 @@ inline void ProjectQ(Cx5 &q, float const a, Eigen::ThreadPoolDevice &dev)
     qsqr.slice(Sz5{0, 0, 0, 0, 0}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
   auto const q2 =
     qsqr.slice(Sz5{0, 0, 0, 0, 3}, Sz5{q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3), 3});
-  R4 normq(q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3));
+  Re4 normq(q.dimension(0), q.dimension(1), q.dimension(2), q.dimension(3));
   normq.device(dev) = (q1.sum(Sz1{4}).real() + q2.sum(Sz1{4}).real() * 2.f).sqrt() / a;
   normq.device(dev) = (normq > 1.f).select(normq, normq.constant(1.f));
   q.device(dev) = q / normq.reshape(res).broadcast(brd).cast<Cx>();

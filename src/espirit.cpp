@@ -105,7 +105,7 @@ Cx4 ESPIRIT(
 
   Log::Print(FMT_STRING("Image space Eigenanalysis"));
   // Do this slice-by-slice
-  R3 valsImage(gridder->mapping().cartDims);
+  Re3 valsImage(gridder->mapping().cartDims);
   auto const hiSz = FirstN<3>(grid.dimensions());
   auto const hiFFT = FFT::Make<3, 2>(hiSz, 1);
   auto slice_task = [&grid, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const zz) {

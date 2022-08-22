@@ -21,7 +21,7 @@ struct ApodizeOp final : Operator<5, 5, Scalar>
 
 private:
   InputDims sz_, res_, brd_;
-  R3 apo_;
+  Re3 apo_;
 };
 
 } // namespace rl

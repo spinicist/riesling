@@ -64,8 +64,8 @@ struct Cropper
   Cx3 newImage() const;
   Cx4 newMultichannel(Index const nChan) const;
   Cx4 newSeries(Index const nVols) const;
-  R3 newRealImage() const;
-  R4 newRealSeries(Index const nVols) const;
+  Re3 newRealImage() const;
+  Re4 newRealSeries(Index const nVols) const;
 
   template <typename T>
   decltype(auto) crop3(T &&x) const

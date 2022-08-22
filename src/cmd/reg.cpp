@@ -3,7 +3,6 @@
 #include "algo/llr.h"
 #include "io/hd5.hpp"
 #include "log.h"
-#include "op/fft.hpp"
 #include "parse_args.h"
 #include "threads.h"
 #include "zin-slr.hpp"
@@ -25,10 +24,9 @@ int main_reg(args::Subparser &parser)
     throw args::Error("No input file specified");
   }
   HD5::Reader input(iname.Get());
-  auto const fname = OutName(iname.Get(), oname.Get(), "reg", "h5");
+  auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
-
   if (llr || llrPatch) {
     Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
     Cx5 output(images.dimensions());

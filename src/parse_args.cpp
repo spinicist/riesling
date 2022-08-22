@@ -137,11 +137,11 @@ void ParseCommand(args::Subparser &parser)
   SetThreadCount();
 }
 
-auto ReadBasis(args::ValueFlag<std::string> &basisFile) -> std::optional<R2>
+auto ReadBasis(args::ValueFlag<std::string> &basisFile) -> std::optional<Re2>
 {
   if (basisFile) {
     HD5::Reader basisReader(basisFile.Get());
-    return std::optional<R2>(basisReader.readTensor<R2>(HD5::Keys::Basis));
+    return std::optional<Re2>(basisReader.readTensor<Re2>(HD5::Keys::Basis));
   } else {
     return std::nullopt;
   }

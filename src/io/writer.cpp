@@ -165,10 +165,10 @@ void Writer::writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &
   HD5::store_tensor(handle_, label, t);
 }
 
-template void Writer::writeTensor<float, 2>(R2 const &, std::string const &);
-template void Writer::writeTensor<float, 3>(R3 const &, std::string const &);
-template void Writer::writeTensor<float, 4>(R4 const &, std::string const &);
-template void Writer::writeTensor<float, 5>(R5 const &, std::string const &);
+template void Writer::writeTensor<float, 2>(Re2 const &, std::string const &);
+template void Writer::writeTensor<float, 3>(Re3 const &, std::string const &);
+template void Writer::writeTensor<float, 4>(Re4 const &, std::string const &);
+template void Writer::writeTensor<float, 5>(Re5 const &, std::string const &);
 template void Writer::writeTensor<Cx, 3>(Cx3 const &, std::string const &);
 template void Writer::writeTensor<Cx, 4>(Cx4 const &, std::string const &);
 template void Writer::writeTensor<Cx, 5>(Cx5 const &, std::string const &);

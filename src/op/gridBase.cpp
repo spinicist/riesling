@@ -8,11 +8,11 @@ template <int IP, int TP, typename Scalar>
 std::unique_ptr<GridBase<Scalar>> make_grid_internal(Kernel const *k, Mapping const &m, Index const nC);
 template <int IP, int TP, typename Scalar>
 std::unique_ptr<GridBase<Scalar>>
-make_grid_internal(Kernel const *k, Mapping const &m, Index const nC, R2 const &basis);
+make_grid_internal(Kernel const *k, Mapping const &m, Index const nC, Re2 const &basis);
 
 template <typename Scalar>
 std::unique_ptr<GridBase<Scalar>>
-make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis)
+make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<Re2> const &basis)
 {
   if (basis) {
     auto &b = basis.value();
@@ -72,8 +72,8 @@ make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> c
 }
 
 template std::unique_ptr<GridBase<float>>
-make_grid<float>(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis);
+make_grid<float>(Kernel const *k, Mapping const &m, Index const nC, std::optional<Re2> const &basis);
 template std::unique_ptr<GridBase<Cx>>
-make_grid<Cx>(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis);
+make_grid<Cx>(Kernel const *k, Mapping const &m, Index const nC, std::optional<Re2> const &basis);
 
 } // namespace rl

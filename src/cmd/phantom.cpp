@@ -53,7 +53,7 @@ int main_phantom(args::Subparser &parser)
 
   ParseCommand(parser, iname);
 
-  R3 points;
+  Re3 points;
   Info info;
   if (trajfile) {
     Log::Print(FMT_STRING("Reading external trajectory from {}"), trajfile.Get());
@@ -88,7 +88,7 @@ int main_phantom(args::Subparser &parser)
       auto const loSpokes = sps.Get() * ((std::lrint(nex.Get() * loMat * loMat) + sps.Get() - 1) / sps.Get());
       auto loPoints = ArchimedeanSpiral(info.read_points, loSpokes);
       loPoints = loPoints / loPoints.constant(lores.Get());
-      points = R3(loPoints.concatenate(points, 2));
+      points = Re3(loPoints.concatenate(points, 2));
       info.spokes += loSpokes;
       Log::Print(FMT_STRING("Added {} lo-res spokes"), loSpokes);
     }
@@ -138,7 +138,7 @@ int main_phantom(args::Subparser &parser)
 
   if (trim) {
     info.read_points -= trim.Get();
-    points = R3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
+    points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
     radial = Cx3(radial.slice(Sz3{0, trim.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
     traj = Trajectory(info, points);
   }

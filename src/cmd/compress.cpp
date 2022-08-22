@@ -81,7 +81,7 @@ int main_compress(args::Subparser &parser)
       nufft.Adj(ks.slice(Sz3{0, minRead, 0}, Sz3{nC, traj.info().read_points, traj.info().spokes})).chip<1>(0);
 
     // Get the signal distribution for thresholding
-    R3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
+    Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
     Log::Tensor(rss, "rovir-rss");
     std::vector<float> percentiles(rss.size());
     std::copy_n(rss.data(), rss.size(), percentiles.begin());
@@ -97,7 +97,7 @@ int main_compress(args::Subparser &parser)
 
     // Set up the masks
 
-    R3 signalMask(sz), interMask(sz);
+    Re3 signalMask(sz), interMask(sz);
     interMask = ((rss > loVal) && (rss < hiVal)).cast<float>();
     signalMask.setZero();
     Cropper sigCrop(info, sz, fov.Get());

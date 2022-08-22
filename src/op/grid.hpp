@@ -34,7 +34,7 @@ struct Grid final : GridBase<Scalar>
   using FixThrough = Eigen::type2index<TP>;
 
   SizedKernel<IP, TP> const *kernel;
-  R2 basis;
+  Re2 basis;
 
   Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, Index const nC)
     : GridBase<Scalar>(mapping, nC, mapping.frames)
@@ -43,7 +43,7 @@ struct Grid final : GridBase<Scalar>
     Log::Debug(FMT_STRING("Grid<{},{}>, dims {}"), IP, TP, this->inputDimensions());
   }
 
-  Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, Index const nC, R2 const b)
+  Grid(SizedKernel<IP, TP> const *k, Mapping const &mapping, Index const nC, Re2 const b)
     : GridBase<Scalar>(mapping, nC, b.dimension(1))
     , kernel{k}
     , basis{b}
@@ -196,7 +196,7 @@ struct Grid final : GridBase<Scalar>
     return *(this->ws_);
   }
 
-  R3 apodization(Sz3 const sz) const
+  Re3 apodization(Sz3 const sz) const
   {
     auto gridSz = this->mapping().cartDims;
     Cx3 temp(gridSz);
@@ -206,7 +206,7 @@ struct Grid final : GridBase<Scalar>
     Crop3(temp, k.dimensions()) = k.template cast<Cx>();
     Log::Tensor(temp, "apo-kernel");
     fft->reverse(temp);
-    R3 a = Crop3(R3(temp.real()), sz);
+    Re3 a = Crop3(Re3(temp.real()), sz);
     float const scale = sqrt(Product(gridSz));
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
     Log::Print(FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);

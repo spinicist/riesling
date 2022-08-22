@@ -8,6 +8,7 @@ int main_cg(args::Subparser &parser);
 int main_compress(args::Subparser &parser);
 int main_downsamp(args::Subparser &parser);
 int main_espirit(args::Subparser &parser);
+int main_filter(args::Subparser &parser);
 int main_grid(args::Subparser &parser);
 int main_hdr(args::Subparser &parser);
 int main_h5(args::Subparser &parser);

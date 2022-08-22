@@ -39,7 +39,7 @@ int main_nii(args::Subparser &parser)
                        .reshape(Sz4{sz[1], sz[2], sz[3], szE * szV});
   auto const ofile = OutName(iname.Get(), oname.Get(), "", "nii");
   if (mag) {
-    WriteNifti(info, R4(output.abs()), ofile);
+    WriteNifti(info, Re4(output.abs()), ofile);
   } else {
     WriteNifti(info, output, ofile);
   }

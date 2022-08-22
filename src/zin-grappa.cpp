@@ -73,10 +73,10 @@ Eigen::MatrixXcf CalcWeights(Eigen::MatrixXcf const &src, Eigen::MatrixXcf const
   }
 }
 
-std::vector<Index> FindClosest(R3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_spokes)
+std::vector<Index> FindClosest(Re3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_spokes)
 {
   std::vector<Index> spokes(n_spoke);
-  R1 const end_is = traj.chip(tgt, 2).chip(traj.dimension(1) - 1, 1);
+  Re1 const end_is = traj.chip(tgt, 2).chip(traj.dimension(1) - 1, 1);
   std::partial_sort(
     all_spokes.begin(), all_spokes.begin() + n_spoke, all_spokes.end(), [&traj, end_is](Index const a, Index const b) {
       auto const &end_a = traj.chip(a, 2).chip(traj.dimension(1) - 1, 1);
@@ -94,7 +94,7 @@ void zinGRAPPA(
   Index const n_spoke,
   Index const n_read1,
   float const lambda,
-  R3 const &traj,
+  Re3 const &traj,
   Cx3 &ks)
 {
   Index const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
@@ -105,7 +105,7 @@ void zinGRAPPA(
     auto spoke_task = [&](Index const is) {
       std::vector<Index> all_spokes(ks.dimension(2)); // Need a thread-local copy of the indices
       std::iota(all_spokes.begin(), all_spokes.end(), 0L);
-      float const scale = R0(ks.chip(is, 2).abs().maximum())();
+      float const scale = Re0(ks.chip(is, 2).abs().maximum())();
       auto const spokes = FindClosest(traj, is, n_spoke, all_spokes);
       auto const calS = GrabSources(ks, scale, n_src, ig + 1, n_read, spokes);
       auto const calT = GrabTargets(ks, scale, ig, n_read, spokes);

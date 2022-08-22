@@ -112,7 +112,7 @@ TEST_CASE("GridA")
 TEST_CASE("GridBasisAdj")
 {
   Index const nB = 4;
-  R2 basis(256, nB);
+  Re2 basis(256, nB);
   basis.setConstant(1.f);
 
   auto gridnn = make_grid_internal<1, 1, Cx>(nn.get(), m1, C, basis);
@@ -152,7 +152,7 @@ TEST_CASE("GridBasisAdj")
 TEST_CASE("GridBasisA")
 {
   Index const nB = 4;
-  R2 basis(256, nB);
+  Re2 basis(256, nB);
   basis.setConstant(1.f);
 
   auto gridnn = make_grid_internal<1, 1, Cx>(nn.get(), m1, C, basis);

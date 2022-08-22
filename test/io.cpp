@@ -85,7 +85,7 @@ TEST_CASE("io")
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
       writer.writeTrajectory(traj);
-      writer.writeTensor(R4(refData.real()), HD5::Keys::Noncartesian);
+      writer.writeTensor(Re4(refData.real()), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
     HD5::RieslingReader reader(fname);

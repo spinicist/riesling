@@ -16,8 +16,8 @@ struct Opts
   args::ValueFlag<float> pow;
 };
 
-R2 Pipe(Trajectory const &traj, bool const nn, float const os, Index const max_its = 40);
-R2 Radial(Trajectory const &traj, Index const lores, Index const gap);
+Re2 Pipe(Trajectory const &traj, bool const nn, float const os, Index const max_its = 40);
+Re2 Radial(Trajectory const &traj, Index const lores, Index const gap);
 std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &t, float const os);
 
 } // namespace SDC

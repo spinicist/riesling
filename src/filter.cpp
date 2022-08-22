@@ -1,6 +1,5 @@
-#include "filter.h"
+#include "filter.hpp"
 
-#include "fft/fft.hpp"
 #include "log.h"
 #include "tensorOps.h"
 #include "threads.h"
@@ -44,16 +43,6 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
     }
   };
   Threads::For(task, sz, "Filtering");
-}
-
-void ImageTukey(float const &s, float const &e, float const &h, Cx3 &x)
-{
-  Log::Print(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
-  auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  auto const fft = FFT::Make<3, 3>(x.dimensions());
-  fft->forward(x);
-  KSFilter(f, x);
-  fft->reverse(x);
 }
 
 void KSTukey(float const &s, float const &e, float const &h, Cx4 &x)

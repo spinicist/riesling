@@ -21,6 +21,6 @@ private:
   void decode_dim(Cx3 &image, Index const dim, Index const level);
   Index const N_, L_;
 
-  R1 D_; // Coefficients
+  Re1 D_; // Coefficients
 };
 } // namespace rl

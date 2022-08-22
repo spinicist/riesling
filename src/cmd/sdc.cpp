@@ -21,7 +21,7 @@ int main_sdc(args::Subparser &parser)
   HD5::RieslingReader reader(iname.Get());
   auto const traj = reader.trajectory();
 
-  R2 dc;
+  Re2 dc;
   if (sdcType.Get() == "pipe") {
     dc = SDC::Pipe(traj, false, 2.1f, its.Get());
   } else if (sdcType.Get() == "pipenn") {

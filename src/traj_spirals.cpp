@@ -6,17 +6,17 @@ namespace rl {
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
  * vol. 32, no. 6, pp. 778–784, Dec. 1994, doi: 10.1002/mrm.1910320614.
  */
-R3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
+Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
 {
-  R3 traj(3, nRead, nSpoke);
-  R1 read(nRead);
+  Re3 traj(3, nRead, nSpoke);
+  Re1 read(nRead);
   for (Index ir = 0; ir < nRead; ir++) {
     read(ir) = (float)(ir) / nRead;
   }
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
   Point3 point;
-  Eigen::TensorMap<R1> endPoint(point.data(), Sz1{3});
+  Eigen::TensorMap<Re1> endPoint(point.data(), Sz1{3});
 
   // Slightly annoying as can't initialize a 1D Tensor with {} notation yet
   point = {0.f, 0.f, 1.f};
@@ -58,7 +58,7 @@ Index Fib(Index n)
   }
 }
 
-R3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
+Re3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
 {
   if ((nSpokes % spi) != 0) {
     Log::Fail(FMT_STRING("Spokes per interleave {} is not a divisor of total spokes {}"), spi, nSpokes);
@@ -70,15 +70,15 @@ R3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, I
 
   float dphi = phi_gold * Fib(smoothness);
 
-  R1 read(nRead);
+  Re1 read(nRead);
   for (Index ir = 0; ir < nRead; ir++) {
     read(ir) = (float)(ir) / nRead;
   }
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
 
-  R3 traj(3, nRead, nSpokes);
-  R1 endPoint(3);
+  Re3 traj(3, nRead, nSpokes);
+  Re1 endPoint(3);
   for (Index ii = 0; ii < nInterleaves; ii++) {
     float const z_ii = (ii * 2.) / (nSpokes - 1);
     float const phi_ii = (ii * phi_gold);
@@ -92,7 +92,7 @@ R3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, I
       if (gm) {
         float const gm_phi = 2 * M_PI * ii * phi_gm2;
         float const gm_theta = acos(fmod(ii * phi_gm1, 1.0) * 2.f - 1.f);
-        R2 rot(3, 3);
+        Re2 rot(3, 3);
         rot(0, 0) = cos(gm_theta) * cos(gm_phi);
         rot(0, 1) = -sin(gm_phi);
         rot(0, 2) = cos(gm_phi) * sin(gm_theta);

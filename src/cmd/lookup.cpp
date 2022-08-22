@@ -25,12 +25,12 @@ int main_lookup(args::Subparser &parser)
     throw args::Error("No basis file specified");
   }
   HD5::Reader dfile(dname.Get());
-  R2 const basis = dfile.readTensor<R2>(HD5::Keys::Basis);
-  R2 const dictionary = dfile.readTensor<R2>(HD5::Keys::Dictionary);
-  R2 const parameters = dfile.readTensor<R2>(HD5::Keys::Parameters);
-  R1 const norm = dfile.readTensor<R1>(HD5::Keys::Norm);
+  Re2 const basis = dfile.readTensor<Re2>(HD5::Keys::Basis);
+  Re2 const dictionary = dfile.readTensor<Re2>(HD5::Keys::Dictionary);
+  Re2 const parameters = dfile.readTensor<Re2>(HD5::Keys::Parameters);
+  Re1 const norm = dfile.readTensor<Re1>(HD5::Keys::Norm);
 
-  R5 out_pars(
+  Re5 out_pars(
     parameters.dimension(0), images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   out_pars.setZero();
   Cx5 pd(1, images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
@@ -53,7 +53,7 @@ int main_lookup(args::Subparser &parser)
           float bestAbsCorr = 0;
 
           for (Index in = 0; in < N; in++) {
-            R1 const atom = dictionary.chip<0>(in);
+            Re1 const atom = dictionary.chip<0>(in);
             Cx const corr = Dot(atom.cast<Cx>(), x);
             if (std::abs(corr) > bestAbsCorr) {
               bestAbsCorr = std::abs(corr);

@@ -28,7 +28,7 @@ struct GridBase : Operator<5, 3, Scalar>
   virtual ~GridBase(){};
   virtual Output A(Input const &cart) const = 0;
   virtual Input &Adj(Output const &noncart) const = 0;
-  virtual R3 apodization(Sz3 const sz) const = 0;
+  virtual Re3 apodization(Sz3 const sz) const = 0;
 
   Sz3 outputDimensions() const override
   {
@@ -65,6 +65,6 @@ protected:
 
 template <typename Scalar>
 std::unique_ptr<GridBase<Scalar>>
-make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<R2> const &basis = std::nullopt);
+make_grid(Kernel const *k, Mapping const &m, Index const nC, std::optional<Re2> const &basis = std::nullopt);
 
 } // namespace rl

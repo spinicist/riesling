@@ -45,7 +45,7 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   Index const nX = grid.dimension(2) - kX + 1;
   Index const nY = grid.dimension(3) - kY + 1;
   Index const nZ = grid.dimension(4) - kZ + 1;
-  R3 count(LastN<3>(grid.dimensions()));
+  Re3 count(LastN<3>(grid.dimensions()));
   count.setZero();
   grid.setZero();
   Index ik = 0;

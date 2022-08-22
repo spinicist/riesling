@@ -6,7 +6,7 @@ namespace rl {
 
 Trajectory::Trajectory() {}
 
-Trajectory::Trajectory(Info const &info, R3 const &points)
+Trajectory::Trajectory(Info const &info, Re3 const &points)
   : info_{info}
   , points_{points}
 
@@ -16,7 +16,7 @@ Trajectory::Trajectory(Info const &info, R3 const &points)
   init();
 }
 
-Trajectory::Trajectory(Info const &info, R3 const &points, I1 const &fr)
+Trajectory::Trajectory(Info const &info, Re3 const &points, I1 const &fr)
   : info_{info}
   , points_{points}
   , frames_{fr}
@@ -61,7 +61,7 @@ Info const &Trajectory::info() const
   return info_;
 }
 
-R3 const &Trajectory::points() const
+Re3 const &Trajectory::points() const
 {
   return points_;
 }
@@ -78,7 +78,7 @@ Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const ra
 
   // Convention is to store the points between -0.5 and 0.5, so we need a factor of 2 here
   float const diameter = 2.f * rad_hi;
-  R1 const p = points_.chip(spoke, 2).chip(read, 1);
+  Re1 const p = points_.chip(spoke, 2).chip(read, 1);
   switch (info_.type) {
   case Info::Type::ThreeD:
     return Point3{p(0) * diameter, p(1) * diameter, p(2) * diameter};
@@ -110,10 +110,10 @@ std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index cons
   }
   Index const sz = (info_.type == Info::Type::ThreeD) ? 3 : 2; // Need this for slicing below
   Index minRead = info_.read_points, maxRead = 0;
-  R3 dsPoints(points_.dimensions());
+  Re3 dsPoints(points_.dimensions());
   for (Index is = 0; is < info_.spokes; is++) {
     for (Index ir = 0; ir < info_.read_points; ir++) {
-      R1 p = points_.chip<2>(is).chip<1>(ir);
+      Re1 p = points_.chip<2>(is).chip<1>(ir);
       p.slice(Sz1{0}, Sz1{sz}) *= p.slice(Sz1{0}, Sz1{sz}).constant(scale);
       if (Norm(p.slice(Sz1{0}, Sz1{sz})) <= 0.5f) {
         dsPoints.chip<2>(is).chip<1>(ir) = p;
@@ -135,7 +135,7 @@ std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index cons
     minRead,
     maxRead,
     lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res spokes"), lores) : "");
-  dsPoints = R3(dsPoints.slice(Sz3{0, minRead, 0}, Sz3{3, dsInfo.read_points, dsInfo.spokes}));
+  dsPoints = Re3(dsPoints.slice(Sz3{0, minRead, 0}, Sz3{3, dsInfo.read_points, dsInfo.spokes}));
   return std::make_tuple(Trajectory(dsInfo, dsPoints, frames_), minRead);
 }
 

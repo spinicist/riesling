@@ -202,8 +202,8 @@ T Reader::readTensor(std::string const &label)
   return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
 }
 
-template R1 Reader::readTensor<R1>(std::string const &);
-template R2 Reader::readTensor<R2>(std::string const &);
+template Re1 Reader::readTensor<Re1>(std::string const &);
+template Re2 Reader::readTensor<Re2>(std::string const &);
 template Cx3 Reader::readTensor<Cx3>(std::string const &);
 template Cx4 Reader::readTensor<Cx4>(std::string const &);
 template Cx5 Reader::readTensor<Cx5>(std::string const &);
@@ -260,7 +260,7 @@ RieslingReader::RieslingReader(std::string const &fname)
 {
   auto const info = readInfo();
 
-  R3 points(3, info.read_points, info.spokes);
+  Re3 points(3, info.read_points, info.spokes);
   HD5::load_tensor(handle_, Keys::Trajectory, points);
   if (HD5::Exists(handle_, "frames")) {
     I1 frames(info.spokes);

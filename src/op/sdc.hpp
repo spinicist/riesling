@@ -7,7 +7,7 @@ namespace rl {
 
 struct SDCOp final : Operator<3, 3>
 {
-  SDCOp(R2 const &dc, Index const nc)
+  SDCOp(Re2 const &dc, Index const nc)
     : dims_{AddFront(dc.dimensions(), nc)}
     , dc_{dc}
   {
@@ -46,6 +46,6 @@ struct SDCOp final : Operator<3, 3>
 
 private:
   Sz3 dims_;
-  R2 dc_;
+  Re2 dc_;
 };
 } // namespace rl

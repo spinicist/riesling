@@ -7,13 +7,13 @@ namespace rl {
 
 Scaling::Scaling(Sz4 const &sz)
   : sz_{sz}
-  , scales_{R1(sz_[0])}
+  , scales_{Re1(sz_[0])}
 {
   scales_.setConstant(1.f);
   Log::Print(FMT_STRING("SCALING Created with weights: {}"), Transpose(scales_));
 }
 
-Scaling::Scaling(Sz4 const &sz, R1 const &scales)
+Scaling::Scaling(Sz4 const &sz, Re1 const &scales)
   : sz_{sz}
   , scales_{scales}
 {
@@ -21,7 +21,7 @@ Scaling::Scaling(Sz4 const &sz, R1 const &scales)
   Log::Print(FMT_STRING("SCALING Created with weights: {}"), Transpose(scales_));
 }
 
-void Scaling::setScales(R1 const &scales)
+void Scaling::setScales(Re1 const &scales)
 {
   assert(scales.dimension(0) != sz_[0]);
   Log::Print(FMT_STRING("Set scaling to: {}"), Transpose(scales_));

@@ -27,7 +27,7 @@ TEST_CASE("SDC")
 
   SECTION("Pipe-NN")
   {
-    R2 sdc = SDC::Pipe(traj, true, 2.1f);
+    Re2 sdc = SDC::Pipe(traj, true, 2.1f);
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes);
     // Central points should be very small
@@ -41,7 +41,7 @@ TEST_CASE("SDC")
 
   SECTION("Pipe")
   {
-    R2 sdc = SDC::Pipe(traj, false, 2.1f);
+    Re2 sdc = SDC::Pipe(traj, false, 2.1f);
     CHECK(sdc.dimension(0) == info.read_points);
     CHECK(sdc.dimension(1) == info.spokes);
     // Central points should be very small

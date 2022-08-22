@@ -76,14 +76,14 @@ Cx4 Cropper::newSeries(Index const vols) const
   return Cx4(sz_[0], sz_[1], sz_[2], vols);
 }
 
-R3 Cropper::newRealImage() const
+Re3 Cropper::newRealImage() const
 {
-  return R3(sz_[0], sz_[1], sz_[2]);
+  return Re3(sz_[0], sz_[1], sz_[2]);
 }
 
-R4 Cropper::newRealSeries(Index const vols) const
+Re4 Cropper::newRealSeries(Index const vols) const
 {
-  return R4(sz_[0], sz_[1], sz_[2], vols);
+  return Re4(sz_[0], sz_[1], sz_[2], vols);
 }
 
 } // namespace rl

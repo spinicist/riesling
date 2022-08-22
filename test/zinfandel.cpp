@@ -63,10 +63,10 @@ TEST_CASE("zinfandel-algo")
       }
     }
   }
-  R3 traj(3, n_read, n_spoke);
+  Re3 traj(3, n_read, n_spoke);
   traj.setZero();
   for (auto is = 0; is < n_spoke; is++) {
-    R1 endPoint(3);
+    Re1 endPoint(3);
     endPoint(0) = 0.f;
     endPoint(1) = cos(is * M_PI / n_spoke);
     endPoint(2) = sin(is * M_PI / n_spoke);

@@ -39,9 +39,9 @@ struct Info
     return temp;
   }
 
-  inline R3 trajectory() const
+  inline Re3 trajectory() const
   {
-    return R3(3, read_points, spokes);
+    return Re3(3, read_points, spokes);
   }
 };
 

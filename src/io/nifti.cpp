@@ -111,7 +111,7 @@ void WriteNifti(rl::Info const &info, Eigen::Tensor<T, ND> const &img, std::stri
 
 template void WriteNifti(rl::Info const &, Cx3 const &, std::string const &);
 template void WriteNifti(rl::Info const &, Cx4 const &, std::string const &);
-template void WriteNifti(rl::Info const &, R3 const &, std::string const &);
-template void WriteNifti(rl::Info const &, R4 const &, std::string const &);
+template void WriteNifti(rl::Info const &, Re3 const &, std::string const &);
+template void WriteNifti(rl::Info const &, Re4 const &, std::string const &);
 
 } // namespace rl

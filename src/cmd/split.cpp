@@ -43,8 +43,8 @@ int main_split(args::Subparser &parser)
     Log::Print(FMT_STRING("Trimming {} points"), trim.Get());
     auto info = traj.info();
     info.read_points = info.read_points - trim.Get();
-    R3 points = traj.points();
-    points = R3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
+    Re3 points = traj.points();
+    points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
     traj = Trajectory(info, points, traj.frames());
     ks = Cx4(ks.slice(Sz4{0, trim.Get(), 0, 0}, Sz4{info.channels, info.read_points, info.spokes, info.volumes}));
   }
@@ -76,7 +76,7 @@ int main_split(args::Subparser &parser)
     info.spokes = spokesHi;
     I1 const hi_frames(traj.frames().slice(Sz1{atEnd ? 0 : spokesLo}, Sz1{spokesHi}));
     traj = Trajectory(
-      info, R3(traj.points().slice(Sz3{0, 0, atEnd ? 0 : spokesLo}, Sz3{3, info.read_points, spokesHi})), hi_frames);
+      info, Re3(traj.points().slice(Sz3{0, 0, atEnd ? 0 : spokesLo}, Sz3{3, info.read_points, spokesHi})), hi_frames);
     ks =
       Cx4(ks.slice(Sz4{0, 0, atEnd ? 0 : spokesLo, 0}, Sz4{info.channels, info.read_points, spokesHi, info.volumes}));
 

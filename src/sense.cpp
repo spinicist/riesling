@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "fft/fft.hpp"
-#include "filter.h"
+#include "filter.hpp"
 #include "io/hd5.hpp"
 #include "tensorOps.h"
 #include "threads.h"

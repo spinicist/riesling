@@ -1,7 +1,6 @@
 #include "types.h"
 
 #include "cropper.h"
-#include "filter.h"
 #include "log.h"
 #include "op/recon.hpp"
 #include "parse_args.h"
