@@ -57,9 +57,9 @@ struct ADMM
       }
       float const mu = 10.f;
       if (pNorm > mu * dNorm) {
-        Log::Print(FMT_STRING("Primal norm is outside limit {}, consider changing ρ"), mu * dNorm);
+        Log::Print(FMT_STRING("Primal norm is outside limit {}, consider increasing ρ"), mu * dNorm);
       } else if (dNorm > mu * pNorm) {
-        Log::Print(FMT_STRING("Dual norm is outside limit {}, consider changing ρ"), mu * pNorm);
+        Log::Print(FMT_STRING("Dual norm is outside limit {}, consider decreasing ρ"), mu * pNorm);
       }
     }
     return x;

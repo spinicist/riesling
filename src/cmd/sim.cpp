@@ -54,7 +54,7 @@ int main_sim(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::MapFlag<std::string, Sequence> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
-  args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "spokes"}, 128);
+  args::ValueFlag<Index> spg(parser, "SPG", "Spokes per group", {'s', "spg"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
   args::ValueFlag<Index> gprep2(parser, "G", "Groups before prep 2", {"gprep2"}, 0);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
@@ -80,7 +80,7 @@ int main_sim(args::Subparser &parser)
   }
 
   rl::Settings const settings{
-    .sps = sps.Get(),
+    .spg = spg.Get(),
     .gps = gps.Get(),
     .gprep2 = gprep2.Get(),
     .alpha = alpha.Get(),
@@ -135,8 +135,7 @@ int main_sim(args::Subparser &parser)
   // Scale and flip the basis vectors to always have a positive first element for stability
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
   flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
-  Eigen::MatrixXf basis = svd.V.leftCols(nRetain).array().rowwise() * flip.transpose();
-
+  Eigen::MatrixXf basis = svd.V.leftCols(nRetain).array();
   if (varimax) {
     Log::Print("SIM Applying varimax rotation");
     float gamma = 1.0f;

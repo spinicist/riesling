@@ -6,7 +6,7 @@ namespace rl {
 
 Index T1T2Prep::length() const
 {
-  return 2 * seq.sps;
+  return 2 * seq.spg * seq.gps;
 }
 
 Eigen::ArrayXXf T1T2Prep::parameters(Index const nsamp) const
@@ -20,9 +20,8 @@ Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
   float const T1 = p(0);
   float const T2 = p(1);
   float const B1v = p(2);
-  Index const spg = seq.sps / seq.gps; // Spokes per group
 
-  Eigen::ArrayXf dynamic(seq.sps * 2);
+  Eigen::ArrayXf dynamic(seq.spg * seq.gps * 2);
 
   // Set up matrices
   Eigen::Matrix2f inv;
@@ -50,8 +49,8 @@ Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
   E2 << exp(-R2 * seq.TE), 0.f, 0.f, 1.f;
 
   // Get steady state after prep-pulse for first segment
-  Eigen::Matrix2f const grp1 = (Essi * Eramp * (E1 * A1).pow(spg) * Eramp);
-  Eigen::Matrix2f const grp2 = (Essi * Eramp * (E1 * A2).pow(spg) * Eramp);
+  Eigen::Matrix2f const grp1 = (Essi * Eramp * (E1 * A1).pow(seq.spg) * Eramp);
+  Eigen::Matrix2f const grp2 = (Essi * Eramp * (E1 * A2).pow(seq.spg) * Eramp);
   Eigen::Matrix2f const seg = (grp2 * grp1).pow(seq.gps / 2);
   Eigen::Matrix2f const SS = Essi * inv * E2 * seg * Essi * E2 * seg;
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
@@ -61,14 +60,14 @@ Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
   Eigen::Vector2f Mz{m_ss, 1.f};
   for (Index ig = 0; ig < (seq.gps / 2); ig++) {
     Mz = Eramp * Mz;
-    for (Index ii = 0; ii < spg; ii++) {
+    for (Index ii = 0; ii < seq.spg; ii++) {
       dynamic(tp++) = Mz(0) * sina1;
       Mz = E1 * A1 * Mz;
     }
     Mz = Essi * Eramp * Mz;
 
     Mz = Eramp * Mz;
-    for (Index ii = 0; ii < spg; ii++) {
+    for (Index ii = 0; ii < seq.spg; ii++) {
       dynamic(tp++) = Mz(0) * sina2;
       Mz = E1 * A2 * Mz;
     }
@@ -77,20 +76,20 @@ Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
   Mz = E2 * Mz;
   for (Index ig = 0; ig < (seq.gps / 2); ig++) {
     Mz = Eramp * Mz;
-    for (Index ii = 0; ii < spg; ii++) {
+    for (Index ii = 0; ii < seq.spg; ii++) {
       dynamic(tp++) = Mz(0) * sina1;
       Mz = E1 * A1 * Mz;
     }
     Mz = Essi * Eramp * Mz;
 
     Mz = Eramp * Mz;
-    for (Index ii = 0; ii < spg; ii++) {
+    for (Index ii = 0; ii < seq.spg; ii++) {
       dynamic(tp++) = Mz(0) * sina2;
       Mz = E1 * A2 * Mz;
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != (seq.sps * 2)) {
+  if (tp != (seq.spg * seq.gps * 2)) {
     Log::Fail("Programmer error");
   }
   return dynamic;

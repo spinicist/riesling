@@ -6,7 +6,7 @@ namespace rl {
 
 Index DWI::length() const
 {
-  return 4 * seq.sps;
+  return 4 * seq.spg * seq.gps;
 }
 
 Eigen::ArrayXXf DWI::parameters(Index const nsamp) const
@@ -23,8 +23,7 @@ Eigen::ArrayXXf DWI::parameters(Index const nsamp) const
 
 Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
 {
-  Index const spg = seq.sps / seq.gps; // Spokes per group
-  Eigen::ArrayXf dynamic(4 * seq.sps);
+  Eigen::ArrayXf dynamic(4 * seq.spg * seq.gps);
   float const T1 = p(0);
   float const T2 = p(1);
   float const D = p(2);
@@ -56,7 +55,7 @@ Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
   preps[3] << beta * cos(gamma), 0.f, 0.f, 1.f;
 
   // Get steady state after prep-pulse for first segment
-  Eigen::Matrix2f const seg = Erec * (Essi * Eramp * (E1 * A).pow(spg) * Eramp).pow(seq.gps);
+  Eigen::Matrix2f const seg = Erec * (Essi * Eramp * (E1 * A).pow(seq.spg) * Eramp).pow(seq.gps);
   Eigen::Matrix2f SS = Eigen::Matrix2f::Identity();
   for (int ii = 0; ii < 4; ii++) {
     SS = preps[ii] * seg * SS;
@@ -69,7 +68,7 @@ Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
   for (int ip = 0; ip < 4; ip++) {
     for (Index ig = 0; ig < seq.gps; ig++) {
       Mz = Eramp * Mz;
-      for (Index ii = 0; ii < spg; ii++) {
+      for (Index ii = 0; ii < seq.spg; ii++) {
         dynamic(tp++) = Mz(0) * sina;
         Mz = E1 * A * Mz;
       }
@@ -78,7 +77,7 @@ Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
     Mz = preps[ip] * Mz;
   }
 
-  if (tp != (4 * seq.sps)) {
+  if (tp != (4 * seq.spg * seq.gps)) {
     Log::Fail("Programmer error");
   }
 

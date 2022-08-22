@@ -6,7 +6,7 @@ namespace rl {
 
 Index MPRAGE::length() const
 {
-  return seq.sps;
+  return seq.spg * seq.gps;
 }
 
 Eigen::ArrayXXf MPRAGE::parameters(Index const nsamp) const
@@ -18,8 +18,7 @@ Eigen::ArrayXXf MPRAGE::parameters(Index const nsamp) const
 Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
-  Index const spg = seq.sps / seq.gps; // Spokes per group
-  Eigen::ArrayXf dynamic(seq.sps);
+  Eigen::ArrayXf dynamic(seq.spg * seq.gps);
 
   Eigen::Matrix2f inv;
   inv << -1.f, 0.f, 0.f, 1.f;
@@ -44,7 +43,7 @@ Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const
   A << cosa, 0.f, 0.f, 1.f;
 
   // Get steady state after prep-pulse for first segment
-  Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(spg) * Eramp).pow(seq.gps);
+  Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(seq.spg) * Eramp).pow(seq.gps);
   Eigen::Matrix2f const SS = Einv * inv * Erec * seg;
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
@@ -53,13 +52,13 @@ Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const
   Eigen::Vector2f Mz{m_ss, 1.f};
   for (Index ig = 0; ig < seq.gps; ig++) {
     Mz = Eramp * Mz;
-    for (Index ii = 0; ii < spg; ii++) {
+    for (Index ii = 0; ii < seq.spg; ii++) {
       dynamic(tp++) = Mz(0) * sina;
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != seq.sps) {
+  if (tp != seq.spg * seq.gps) {
     Log::Fail("Programmer error");
   }
   return dynamic;
