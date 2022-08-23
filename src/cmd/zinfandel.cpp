@@ -63,7 +63,7 @@ int main_zinfandel(args::Subparser &parser)
     auto gridN = make_grid<Cx>(kernel.get(), mapN, info.channels);
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
-    auto const pre = std::make_unique<SingleChannel>(dsTraj, kernel.get());
+    auto const pre = std::make_unique<SingleChannel>(dsTraj);
     auto reg = [&](Cx5 const &x) -> Cx5 { return zinSLR(x, nufftN.fft(), kSz.Get(), winSz.Get()); };
     Sz3 const st{0, 0, 0};
     Sz3 const sz{info.channels, gap.Get(), info.spokes};

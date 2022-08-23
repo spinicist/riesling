@@ -39,7 +39,7 @@ int main_cg(args::Subparser &parser)
     recon.calcToeplitz();
   }
   NormalEqOp<ReconOp> normEqs{recon};
-  ConjugateGradients<NormalEqOp<ReconOp>> cg{normEqs, its.Get(), thr.Get()};
+  ConjugateGradients<NormalEqOp<ReconOp>> cg{normEqs, its.Get(), thr.Get(), true};
 
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());

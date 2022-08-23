@@ -41,7 +41,7 @@ int main_lsqr(args::Subparser &parser)
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, nullptr);
 
-  std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj, kernel.get()) : nullptr;
+  std::unique_ptr<Precond<Cx3>> M = lp ? std::make_unique<SingleChannel>(traj) : nullptr;
   std::unique_ptr<Precond<Cx4>> N = nullptr;
   LSQR<ReconOp> lsqr{recon, M.get(), N.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), true};
 

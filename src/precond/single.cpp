@@ -7,20 +7,27 @@
 
 namespace rl {
 
-SingleChannel::SingleChannel(Trajectory const &traj, Kernel const *k)
+/*
+ * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
+ * (without SENSE maps)
+ */
+SingleChannel::SingleChannel(Trajectory const &traj)
   : Precond{}
 {
-  float const os = 2.1f;
-  auto gridder = rl::make_grid<Cx>(k, Mapping(traj, k, os, 32), 1);
+  Index const imScale = 2;
+  float const osamp = imScale * 1.25;
+  auto k = make_kernel("FI7", traj.info().type, osamp);
+  auto gridder = rl::make_grid<Cx>(k.get(), Mapping(traj, k.get(), osamp, 32), 1);
   gridder->doNotWeightFrames();
-  // Crop out the janky corners
-  Sz3 sz{traj.info().matrix[0], traj.info().matrix[1], traj.info().matrix[2]};
+  // Keep more than usual otherwise funky numerical issues
+  Sz3 sz{traj.info().matrix[0]*imScale, traj.info().matrix[1]*imScale, traj.info().matrix[2]*imScale};
   NUFFTOp nufft(sz, gridder.get());
   Cx3 W(gridder->outputDimensions());
   pre_.resize(gridder->outputDimensions());
   W.setConstant(Cx(1.f, 0.f));
   W = nufft.A(nufft.Adj(W));
-  pre_.device(Threads::GlobalDevice()) = (W.abs() > 0.f).select(W.abs().inverse(), pre_.constant(1.f));
+  float const λ = 1.e-12f; // Regularise the division
+  pre_.device(Threads::GlobalDevice()) = (W.inverse().abs() + pre_.constant(λ)) / (pre_.constant(1.f + λ));
   Log::Tensor(pre_, "single-pre");
 }
 

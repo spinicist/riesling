@@ -103,10 +103,9 @@ struct LSMR
     if (debug) {
       Log::Tensor(v, "lsmr-v-init");
       Log::Tensor(x, "lsmr-x-init");
-      Log::Tensor(ur, "lsmr-ur-init");
     }
 
-    Log::Print(FMT_STRING("LSMR    |r| {:5.3E} α {:5.3E} β {:5.3E}"), normb, α, β);
+    Log::Print(FMT_STRING("LSMR    α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
 
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
@@ -151,11 +150,8 @@ struct LSMR
       h.device(dev) = v - (θnew / ρ) * h;
 
       if (debug) {
-        Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
         Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
-        Log::Tensor(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
-        Log::Tensor(h, fmt::format(FMT_STRING("lsmr-h-{:02d}"), ii));
-        Log::Tensor(ur, fmt::format(FMT_STRING("lsmr-ur-{:02d}"), ii));
+        Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
       }
       // Estimate of ||r||.
       // Apply rotation P{k-1}.
@@ -195,12 +191,12 @@ struct LSMR
       float const normx = Norm(x);
 
       Log::Print(
-        FMT_STRING("LSMR {:02d} |r| {:5.3E} α {:5.3E} β {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
+        FMT_STRING("LSMR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
                    "{:5.3E} |x| {:5.3E}"),
         ii,
-        normr,
         α,
         β,
+        normr,
         normar,
         normA,
         condA,
