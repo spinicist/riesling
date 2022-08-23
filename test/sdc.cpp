@@ -6,7 +6,7 @@
 
 using namespace rl;
 
-TEST_CASE("SDC")
+TEST_CASE("SDC","[sdc]")
 {
   Index const M = 32;
   float const os = 2.f;

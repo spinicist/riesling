@@ -37,7 +37,6 @@ struct Mapping
   Sz3 cartDims;
   int8_t frames;
   Eigen::ArrayXf frameWeights;
-  float scale; // Overall scaling from oversampling
 
   std::vector<CartesianIndex> cart;
   std::vector<NoncartesianIndex> noncart;

@@ -30,11 +30,12 @@ inline decltype(auto) nearby(T &&x)
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
 inline Index fft_size(float const x)
 {
-  if (x > 8.f) {
-    return (std::lrint(x) + 7L) & ~7L;
-  } else {
-    return (Index)std::ceil(x);
-  }
+  return std::ceil(x);
+  // if (x > 8.f) {
+  //   return (std::lrint(x) + 7L) & ~7L;
+  // } else {
+  //   return (Index)std::ceil(x);
+  // }
 }
 
 // Helper function to sort the cartesian indices
@@ -56,12 +57,12 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
 {
   Info const &info = traj.info();
   Index const gridSz = fft_size(info.matrix.maxCoeff() * os);
+  // fmt::print("os {} maxCoeff {} mult {} result {}\n", os, info.matrix.maxCoeff(), info.matrix.maxCoeff() * os, gridSz);
   Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
 
   type = info.type;
   cartDims = type == Info::Type::ThreeD ? Sz3{gridSz, gridSz, gridSz} : Sz3{gridSz, gridSz, info.matrix[2]};
   noncartDims = Sz2{info.read_points, info.spokes};
-  scale = sqrt(type == Info::Type::ThreeD ? pow(os, 3) : pow(os, 2));
   frames = info.frames;
   frameWeights = Eigen::ArrayXf(frames);
   frameWeights.setZero();

@@ -16,8 +16,8 @@ template <int IP, int TP>
 auto KaiserBessel<IP, TP>::k(Point3 const p) const -> KTensor
 {
   auto const z2 = this->distSq(p);
-  return (z2 > 1.f).select(
-    z2.constant(0.f), z2.constant(scale_) * (z2.constant(beta_) * (z2.constant(1.f) - z2).sqrt()).bessel_i0());
+  return (z2.sqrt() < 1.f).select(
+    z2.constant(scale_) * (z2.constant(beta_) * (z2.constant(1.f) - z2).sqrt()).bessel_i0(), z2.constant(0.f));
 }
 
 template struct KaiserBessel<3, 1>;

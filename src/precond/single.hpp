@@ -14,7 +14,6 @@ struct SingleChannel final : Precond<Cx3>
   Cx3 apply(Cx3 const &in) const;
   Cx3 inv(Cx3 const &in) const;
 
-private:
   Re3 pre_;
 };
 

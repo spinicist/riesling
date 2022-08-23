@@ -64,7 +64,7 @@ struct Grid final : GridBase<Scalar>
     Index const nB = cdims[1];
     auto const &map = this->mapping_;
     bool const hasBasis = (basis.size() > 0);
-    float const scale = map.scale * (hasBasis ? sqrt(basis.dimension(0)) : 1.f);
+    float const scale = hasBasis ? sqrt(basis.dimension(0)) : 1.f;
 
     auto grid_task = [&](Index const ibucket) {
       auto const &bucket = map.buckets[ibucket];
@@ -124,7 +124,7 @@ struct Grid final : GridBase<Scalar>
     Index const nC = cdims[0];
     Index const nB = cdims[1];
     bool const hasBasis = (basis.size() > 0);
-    float const scale = map.scale * (hasBasis ? sqrt(basis.dimension(0)) : 1.f);
+    float const scale = hasBasis ? sqrt(basis.dimension(0)) : 1.f;
 
     std::mutex writeMutex;
     auto grid_task = [&](Index ibucket) {
@@ -207,7 +207,7 @@ struct Grid final : GridBase<Scalar>
     Log::Tensor(temp, "apo-kernel");
     fft->reverse(temp);
     Re3 a = Crop3(Re3(temp.real()), sz);
-    float const scale = sqrt(Product(gridSz));
+    float const scale = std::sqrt(Product(sz));
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
     Log::Print(FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
     a.device(Threads::GlobalDevice()) = a.inverse();

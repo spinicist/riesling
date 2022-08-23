@@ -138,6 +138,7 @@ void Tensor(Eigen::Tensor<Scalar, ND> const &img, std::string const &nameIn)
   }
 }
 
+template void Tensor(Re2 const &, std::string const &);
 template void Tensor(Re3 const &, std::string const &);
 template void Tensor(Cx3 const &, std::string const &);
 template void Tensor(Cx4 const &, std::string const &);

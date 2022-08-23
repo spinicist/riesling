@@ -9,7 +9,7 @@ TEST_CASE("Kernels - NearestNeighbour", "[Kernel][NN]")
   auto const nn = rl::NearestNeighbour();
   auto const k = nn.k(rl::Point3{0.f, 0.f, 0.f});
   CHECK(k(0, 0, 0) == Approx(1.f).margin(1.e-5));
-  CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+  CHECK(Norm(k) == Approx(1.f).margin(1.e-9));
 }
 
 TEMPLATE_TEST_CASE(
@@ -20,7 +20,7 @@ TEMPLATE_TEST_CASE(
   SECTION("Center")
   {
     auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(Norm(k) == Approx(1.f).margin(1.e-9));
     CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
@@ -40,14 +40,14 @@ TEMPLATE_TEST_CASE(
   SECTION("Center")
   {
     auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(Norm(k) == Approx(1.f).margin(1.e-9));
     CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
   SECTION("Off-center")
   {
     auto const k2 = kernel.k(rl::Point3{0.f, 0.f, -0.5f});
-    CHECK(Sum(k2) == Approx(1.f).margin(5.e-2));
+    CHECK(Norm(k2) == Approx(1.f).margin(5.e-2));
     CHECK(k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2 - 1) == k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2));
   }
 }
@@ -60,14 +60,14 @@ TEMPLATE_TEST_CASE(
   SECTION("Center")
   {
     auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(Norm(k) == Approx(1.f).margin(1.e-9));
     CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
   SECTION("Off-center")
   {
     auto const k2 = kernel.k(rl::Point3{-0.5f, 0.f, 0.f});
-    CHECK(Sum(k2) == Approx(1.f).margin(5.e-2));
+    CHECK(Norm(k2) == Approx(1.f).margin(5.e-2));
     CHECK(k2(kernel.inPlane() / 2 - 1, kernel.inPlane() / 2, 0) == k2(kernel.inPlane() / 2, kernel.inPlane() / 2, 0));
   }
 }
@@ -80,14 +80,14 @@ TEMPLATE_TEST_CASE(
   SECTION("Center")
   {
     auto const k = kernel.k(rl::Point3{0.f, 0.f, 0.f});
-    CHECK(Sum(k) == Approx(1.f).margin(1.e-9));
+    CHECK(Norm(k) == Approx(1.f).margin(1.e-9));
     CHECK(k(0, kernel.inPlane() / 2, 0) == k(kernel.inPlane() / 2, 0, 0));
   }
 
   SECTION("Off-center")
   {
     auto const k2 = kernel.k(rl::Point3{0.f, 0.f, -0.5f});
-    CHECK(Sum(k2) == Approx(1.f).margin(5.e-2));
+    CHECK(Norm(k2) == Approx(1.f).margin(5.e-2));
     CHECK(k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2 - 1) == k2(0, kernel.inPlane() / 2, kernel.inPlane() / 2));
   }
 }

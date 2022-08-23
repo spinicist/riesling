@@ -67,7 +67,7 @@ struct LSQR
       } else {
         ur.device(dev) = -x * x.constant(sqrt(λ));
       }
-      β = std::sqrt(CheckedDot(u, Mu) + Norm2(ur));
+      β = std::sqrt(CheckedDot(u, Mu) + CheckedDot(ur, ur));
     } else {
       β = std::sqrt(CheckedDot(u, Mu));
     }
@@ -92,11 +92,8 @@ struct LSQR
     float normA = 0;
 
     if (debug) {
-      Log::Tensor(v, "lsqr-v-init");
       Log::Tensor(x, "lsqr-x-init");
-      if (ur.size()) {
-        Log::Tensor(ur, "lsqr-ur-init");
-      }
+      Log::Tensor(v, "lsqr-v-init");
     }
 
     Log::Print(FMT_STRING("LSQR    α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
@@ -105,21 +102,12 @@ struct LSQR
       // Bidiagonalization step
       Mu.device(dev) = op.A(v) - α * Mu;
       u.device(dev) = M ? M->apply(Mu) : Mu;
-      if (debug) {
-        Log::Tensor(Mu, fmt::format("lsqr-Mu-{:02d}", ii));
-        Log::Tensor(u, fmt::format("lsqr-u-{:02d}", ii));
-      }
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
         β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
       } else {
         β = std::sqrt(CheckedDot(Mu, u));
       }
-
-      if (!std::isfinite(β)) {
-        Log::Fail("Invalid β value {}, aborting", β);
-      }
-
       Mu.device(dev) = Mu / Mu.constant(β);
       u.device(dev) = u / u.constant(β);
       if (λ > 0.f) {
@@ -130,10 +118,6 @@ struct LSQR
       }
       v.device(dev) = N ? N->apply(Nv) : Nv;
       α = std::sqrt(CheckedDot(v, Nv));
-
-      if (!std::isfinite(α)) {
-        Log::Fail("Invalid α value {}, aborting", α);
-      }
 
       Nv.device(dev) = Nv / Nv.constant(α);
       v.device(dev) = v / v.constant(α);
@@ -152,10 +136,6 @@ struct LSQR
       if (debug) {
         Log::Tensor(x, fmt::format(FMT_STRING("lsqr-x-{:02d}"), ii));
         Log::Tensor(v, fmt::format(FMT_STRING("lsqr-v-{:02d}"), ii));
-        Log::Tensor(w, fmt::format(FMT_STRING("lsqr-w-{:02d}"), ii));
-        if (ur.size()) {
-          Log::Tensor(ur, fmt::format(FMT_STRING("lsqr-ur-{:02d}"), ii));
-        }
       }
 
       // Estimate norms

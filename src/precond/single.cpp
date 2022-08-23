@@ -15,20 +15,34 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   : Precond{}
 {
   Index const imScale = 2;
-  float const osamp = imScale * 1.25;
-  auto k = make_kernel("FI7", traj.info().type, osamp);
-  auto gridder = rl::make_grid<Cx>(k.get(), Mapping(traj, k.get(), osamp, 32), 1);
+  float const osamp = 1.25;
+  // Do NOT increase this beyond a width 3 kernel.
+  // I do not fully understand why but increasing it leads to numerical issues,
+  // which I assume might be solved by further oversampling but do not have the 
+  // time or memory to investigate further
+  auto k = make_kernel("FI5", traj.info().type, osamp);
+  auto gridder = rl::make_grid<Cx>(k.get(), Mapping(traj, k.get(), osamp*imScale, 32), 1);
   gridder->doNotWeightFrames();
   // Keep more than usual otherwise funky numerical issues
-  Sz3 sz{traj.info().matrix[0]*imScale, traj.info().matrix[1]*imScale, traj.info().matrix[2]*imScale};
+  Sz3 sz = LastN<3>(gridder->inputDimensions());
+  // Sz3 sz{traj.info().matrix[0]*imScale, traj.info().matrix[1]*imScale, traj.info().matrix[2]*imScale};
   NUFFTOp nufft(sz, gridder.get());
   Cx3 W(gridder->outputDimensions());
   pre_.resize(gridder->outputDimensions());
   W.setConstant(Cx(1.f, 0.f));
   W = nufft.A(nufft.Adj(W));
-  float const λ = 1.e-12f; // Regularise the division
-  pre_.device(Threads::GlobalDevice()) = (W.inverse().abs() + pre_.constant(λ)) / (pre_.constant(1.f + λ));
-  Log::Tensor(pre_, "single-pre");
+  Log::Tensor(W, "single-W");
+  float const scale = 1.f; //std::pow(Product(LastN<3>(sz)), 1.5f) / traj.info().matrix.prod();
+  pre_.device(Threads::GlobalDevice()) = W.cast<Cxd>().abs().cast<float>() * scale;
+  Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre-inv");
+  pre_.device(Threads::GlobalDevice()) = (pre_ > 0.f).select(pre_.inverse(), pre_.constant(1.f));
+  Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre");
+  float const norm = Norm(pre_);
+  if (!std::isfinite(norm)) {
+    Log::Fail("Single-channel pre-conditioner norm was not finite ({})", norm);
+  } else {
+    Log::Print("Single-channel pre-conditioner, norm {}", norm);
+  }
 }
 
 Cx3 SingleChannel::apply(Cx3 const &in) const
@@ -39,6 +53,8 @@ Cx3 SingleChannel::apply(Cx3 const &in) const
   Cx3 p(in.dimensions());
   p.device(Threads::GlobalDevice()) = in * pre_.broadcast(Sz3{nC, 1, 1}).cast<Cx>();
   Log::Debug(FMT_STRING("SINGLE-CHANNEL Took {}"), Log::ToNow(start));
+  LOG_DEBUG("In norm {}", Norm(in));
+  LOG_DEBUG("Out norm {}", Norm(p));
   return p;
 }
 

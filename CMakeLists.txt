@@ -91,6 +91,7 @@ set_target_properties(vineyard PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_VISIBILITY_PRESET hidden
 )
+
 # Main executable
 add_executable(riesling
     src/cmd/admm.cpp
@@ -147,6 +148,7 @@ if(${BUILD_TESTS})
         test/fft3.cpp
         test/io.cpp
         test/kernel.cpp
+        test/nufft.cpp
         test/parameters.cpp
         test/sdc.cpp
         test/zinfandel.cpp

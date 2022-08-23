@@ -61,7 +61,7 @@ struct LSMR
       } else {
         ur.device(dev) = -x * x.constant(sqrt(λ));
       }
-      β = sqrt(std::real(CheckedDot(u, Mu)) + Norm2(ur));
+      β = sqrt(std::real(CheckedDot(u, Mu)) + CheckedDot(ur, ur));
     } else {
       β = sqrt(std::real(CheckedDot(u, Mu)));
     }
@@ -73,7 +73,7 @@ struct LSMR
     } else {
       v.device(dev) = op.Adj(u);
     }
-    float α = Norm(v);
+    float α = std::sqrt(CheckedDot(v, v));
     v.device(dev) = v / v.constant(α);
     h.device(dev) = v;
     h̅.setZero();
@@ -113,9 +113,9 @@ struct LSMR
       u.device(dev) = M ? M->apply(Mu) : Mu;
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * v) - (α * ur);
-        β = sqrt(std::real(CheckedDot(Mu, u)) + std::real(CheckedDot(ur, ur)));
+        β = sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
       } else {
-        β = sqrt(std::real(CheckedDot(Mu, u)));
+        β = sqrt(CheckedDot(Mu, u));
       }
       Mu.device(dev) = Mu / Mu.constant(β);
       u.device(dev) = u / u.constant(β);
@@ -125,7 +125,7 @@ struct LSMR
       } else {
         v.device(dev) = op.Adj(u) - (β * v);
       }
-      α = Norm(v);
+      α = std::sqrt(CheckedDot(v, v));
       v.device(dev) = v / v.constant(α);
 
       // Construct rotation

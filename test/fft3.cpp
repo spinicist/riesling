@@ -6,7 +6,7 @@
 
 using namespace rl;
 
-TEST_CASE("FFT3")
+TEST_CASE("FFT3","[FFT]")
 {
   FFT::Start();
 

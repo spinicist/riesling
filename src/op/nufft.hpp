@@ -28,6 +28,7 @@ private:
   ApodizeOp<Cx> apo_;
   Cx5 tf_;
   SDCOp *sdc_;
+  float scale_;
 };
 
 } // namespace rl

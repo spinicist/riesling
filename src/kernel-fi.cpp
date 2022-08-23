@@ -8,7 +8,7 @@ FlatIron<IP, TP>::FlatIron(float os)
 {
   // Get the normalization factor
   scale_ = 1.f;
-  scale_ = 1.f / Sum(k(Point3::Zero()));
+  scale_ = 1.f / Norm(k(Point3::Zero()));
   Log::Print(FMT_STRING("Flat Iron kernel <{},{}> β={}, scale={}"), IP, TP, beta_, scale_);
 }
 
@@ -16,8 +16,8 @@ template <int IP, int TP>
 auto FlatIron<IP, TP>::k(Point3 const p) const -> KTensor
 {
   auto const z2 = this->distSq(p);
-  return (z2 > 1.f).select(
-    z2.constant(0.f), z2.constant(scale_) * ((z2.constant(1.f) - z2).sqrt() * z2.constant(beta_)).exp());
+  return (z2.sqrt() < 1.f).select(
+    z2.constant(scale_) * (((z2.constant(1.f) - z2).sqrt() - 1.f) * z2.constant(beta_)).exp(), z2.constant(0.f));
 }
 
 template struct FlatIron<3, 1>;

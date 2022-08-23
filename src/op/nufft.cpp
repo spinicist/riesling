@@ -9,7 +9,14 @@ NUFFTOp::NUFFTOp(Sz3 const imgDims, GridBase<Cx> *g, SDCOp *sdc)
   , apo_{pad_.inputDimensions(), g}
   , sdc_{sdc}
 {
-  Log::Debug("NUFFT Input Dims {} Output Dims {}", inputDimensions(), outputDimensions());
+  scale_ = 1.f;//std::sqrtf(float(Product(LastN<3>(gridder_->inputDimensions()))) / Product(LastN<3>(apo_.inputDimensions())));
+
+  Log::Debug(
+    "NUFFT Input Dims {} Output Dims {} Grid Dims {} Scale {}",
+    inputDimensions(),
+    outputDimensions(),
+    gridder_->inputDimensions(),
+    scale_);
 }
 
 auto NUFFTOp::inputDimensions() const -> InputDims
@@ -17,7 +24,7 @@ auto NUFFTOp::inputDimensions() const -> InputDims
   return apo_.inputDimensions();
 }
 
-auto NUFFTOp::outputDimensions() const->OutputDims
+auto NUFFTOp::outputDimensions() const -> OutputDims
 {
   return gridder_->outputDimensions();
 }
@@ -39,10 +46,11 @@ void NUFFTOp::calcToeplitz()
 
 auto NUFFTOp::A(Input const &x) const -> Output
 {
+  assert(x.dimensions() == inputDimensions());
   LOG_DEBUG("Starting NUFFT forward. Norm {}", Norm(x));
   auto const &start = Log::Now();
   Output result(outputDimensions());
-  result.device(Threads::GlobalDevice()) = gridder_->A(fft_.A(pad_.A(apo_.A(x))));
+  result.device(Threads::GlobalDevice()) = gridder_->A(fft_.A(pad_.A(apo_.A(x * x.constant(scale_)))));
   Log::Debug("Finished NUFFT forward: {}", Log::ToNow(start));
   LOG_DEBUG("Norm {}", Norm(result));
   return result;
@@ -50,6 +58,7 @@ auto NUFFTOp::A(Input const &x) const -> Output
 
 auto NUFFTOp::Adj(Output const &x) const -> Input
 {
+  assert(x.dimensions() == outputDimensions());
   LOG_DEBUG("Starting NUFFT adjoint. Norm {}", Norm(x));
   auto const start = Log::Now();
   Input result(inputDimensions());
@@ -58,6 +67,7 @@ auto NUFFTOp::Adj(Output const &x) const -> Input
   } else {
     result.device(Threads::GlobalDevice()) = apo_.Adj(pad_.Adj(fft_.Adj(gridder_->Adj(x))));
   }
+  result.device(Threads::GlobalDevice()) = result * result.constant(scale_);
   Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
   LOG_DEBUG("Norm {}", Norm(result));
   return result;

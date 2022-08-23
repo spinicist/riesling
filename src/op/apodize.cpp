@@ -37,7 +37,7 @@ auto ApodizeOp<Scalar>::A(Input const &x) const -> Output
 {
   Output result(outputDimensions());
   result.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
-  Log::Tensor(result, "apo-fwd");
+  Log::Debug("Apodize Forward Norm {} -> {}", Norm(x), Norm(result));
   return result;
 }
 
@@ -46,7 +46,7 @@ auto ApodizeOp<Scalar>::Adj(Output const &x) const -> Input
 {
   Input result(inputDimensions());
   result.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
-  Log::Tensor(result, "apo-adj");
+  Log::Debug("Apodize Adjoint Norm {} -> {}", Norm(x), Norm(result));
   return result;
 }
 
