@@ -1,5 +1,6 @@
 #include "traj_spirals.h"
 #include "log.h"
+#include "tensorOps.h"
 
 namespace rl {
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for
@@ -15,30 +16,37 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
   }
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
-  Point3 point;
-  Eigen::TensorMap<Re1> endPoint(point.data(), Sz1{3});
+  Re1 endPoint(Sz1{3});
 
   // Slightly annoying as can't initialize a 1D Tensor with {} notation yet
-  point = {0.f, 0.f, 1.f};
+  endPoint(0) = 0.f;
+  endPoint(1) = 0.f;
+  endPoint(2) = 1.f;
   traj.chip(0, 2) = endPoint.contract(read, empty);
   Index const half = nSpoke / 2;
-  point = {1.f, 0.f, 0.f};
+  endPoint(0) = 1.f;
+  endPoint(1) = 0.f;
+  endPoint(2) = 0.f;
   traj.chip(half, 2) = endPoint.contract(read, empty);
 
-  float const d_t = 1.f / half;         // Change in theta
-  float const c2 = nSpoke * 4.f * M_PI; // The velocity squared
-  float t = 0.f;
-  float phi = 0.f;
+  double const d_t = 1. / half;         // Change in theta
+  double const c2 = nSpoke * 4. * M_PI; // The velocity squared
+  double t = 0.;
+  double phi = 0.;
   for (Index is = 1; is < half; is++) {
     t += d_t;
-    float const cos_t2 = t * t;
-    float const sin_t2 = 1 - cos_t2;
-    float const sin_t = sqrt(sin_t2);
-    float const d_phi = 0.5f * d_t * sqrt((1.f / sin_t2) * (c2 - (1.f / sin_t2)));
+    double const cos_t2 = t * t;
+    double const sin_t2 = 1. - cos_t2;
+    double const sin_t = sqrt(sin_t2);
+    double const d_phi = 0.5 * d_t * std::sqrt((1. / sin_t2) * (c2 - (1. / sin_t2)));
     phi += d_phi;
-    point = {cos(phi) * sin_t, sin(phi) * sin_t, t};
+    endPoint(0) = std::cos(phi) * sin_t;
+    endPoint(1) = std::sin(phi) * sin_t;
+    endPoint(2) = t;
     traj.chip(half - is, 2) = endPoint.contract(read, empty);
-    point = {cos(phi) * sin_t, -sin(phi) * sin_t, -t};
+    endPoint(0) = std::cos(phi) * sin_t;
+    endPoint(1) = -std::sin(phi) * sin_t;
+    endPoint(2) = -t;
     traj.chip(half + is, 2) = endPoint.contract(read, empty);
   }
   // Trajectory is stored between -0.5 and 0.5, so scale
