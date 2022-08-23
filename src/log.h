@@ -17,8 +17,7 @@ enum struct Level
   Testing = -1, // Suppress everything, even failures
   None = 0,
   Info = 1,
-  Progress = 2,
-  Debug = 3
+  Debug = 2
 };
 
 class Failure : public std::runtime_error

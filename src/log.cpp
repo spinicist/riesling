@@ -5,6 +5,9 @@
 #include "io/hd5.hpp"
 #include "tensorOps.h"
 
+#include <unistd.h>
+#include <stdio.h>
+
 namespace rl {
 namespace Log {
 
@@ -16,6 +19,7 @@ Failure::Failure(std::string const &msg)
 namespace {
 Level log_level = Level::None;
 std::unique_ptr<HD5::Writer> debug_file = nullptr;
+bool isTTY = false;
 std::unique_ptr<indicators::ProgressBar> progress = nullptr;
 Index progressTarget;
 std::atomic<Index> progressAmount;
@@ -29,6 +33,11 @@ Level CurrentLevel()
 void SetLevel(Level const l)
 {
   log_level = l;
+  if (isatty(fileno(stdin))) {
+    isTTY = true;
+  } else {
+    isTTY = false;
+  }
 }
 
 void SetDebugFile(std::string const &fname)
@@ -70,7 +79,7 @@ void lfail(fmt::string_view fstr, fmt::format_args args)
 
 void StartProgress(Index const amount, std::string const &text)
 {
-  if (log_level >= Level::Progress) {
+  if ((log_level >= Level::Info) && isTTY) {
     progress = std::make_unique<indicators::ProgressBar>(
       indicators::option::BarWidth{80},
       indicators::option::PrefixText{text},
