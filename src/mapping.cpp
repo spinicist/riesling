@@ -91,11 +91,11 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   float const maxRad = (gridSz / 2) - 1.f;
   Size3 const center(cartDims[0] / 2, cartDims[1] / 2, cartDims[2] / 2);
   int32_t index = 0;
+  Index NaNs = 0;
   for (int32_t is = 0; is < info.spokes; is++) {
     auto const fr = traj.frames()(is);
     if ((fr >= 0) && (fr < info.frames)) {
       for (int16_t ir = read0; ir < info.read_points; ir++) {
-        NoncartesianIndex const nc{.spoke = is, .read = ir};
         Point3 const xyz = traj.point(ir, is, maxRad);
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           Point3 const gp = nearby(xyz);
@@ -104,7 +104,7 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
 
           cart.push_back(CartesianIndex{ijk(0), ijk(1), ijk(2)});
           offset.push_back(off);
-          noncart.push_back(nc);
+          noncart.push_back(NoncartesianIndex{.spoke = is, .read = ir});
           frame.push_back(fr);
 
           // Calculate bucket
@@ -115,11 +115,13 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
           buckets[ib].indices.push_back(index);
           frameWeights[fr] += 1;
           index++;
+        } else {
+          NaNs++;
         }
       }
     }
   }
-
+  Log::Print("Ignored {} non-finite trajectory points", NaNs);
   Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
 
   Log::Print("Removed {} empty buckets, {} remaining", eraseCount, buckets.size());
