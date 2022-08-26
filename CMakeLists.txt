@@ -148,7 +148,6 @@ if(${BUILD_TESTS})
         test/fft3.cpp
         test/io.cpp
         test/kernel.cpp
-        test/nufft.cpp
         test/parameters.cpp
         test/sdc.cpp
         test/zinfandel.cpp

@@ -25,12 +25,12 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<Index> channels(parser, "C", "Retain N channels (8)", {"channels"}, 8);
   args::ValueFlag<float> energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
   args::ValueFlag<Index> refVol(parser, "V", "Use this volume (default last)", {"vol"});
-  args::ValueFlag<Index> lores(parser, "L", "Number of lores spokes", {"lores"}, 0);
+  args::ValueFlag<Index> lores(parser, "L", "Number of lores traces", {"lores"}, 0);
 
   // PCA Options
   args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Read Points (start, size)", {"pca-read"}, Sz2{0, 16});
-  args::ValueFlag<Sz3, Sz3Reader> pcaSpokes(
-    parser, "R", "PCA Spokes (start, size, stride)", {"pca-spokes"}, Sz3{0, 1024, 4});
+  args::ValueFlag<Sz3, Sz3Reader> pcatraces(
+    parser, "R", "PCA traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
 
   ROVIROpts rovirOpts(parser);
 
@@ -44,15 +44,15 @@ int main_compress(args::Subparser &parser)
   Eigen::MatrixXcf psi;
   if (pca) {
     Sz2 const read = pcaRead.Get();
-    Sz3 const spokes = pcaSpokes.Get();
-    Index const maxRead = info.read_points - read[0];
+    Sz3 const traces = pcatraces.Get();
+    Index const maxRead = info.samples - read[0];
     Index const nread = (read[1] > maxRead) ? maxRead : read[1];
-    if (spokes[0] + spokes[1] > info.spokes) {
-      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), spokes[0] + spokes[1], info.spokes);
+    if (traces[0] + traces[1] > info.traces) {
+      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), traces[0] + traces[1], info.traces);
     }
-    Log::Print(FMT_STRING("Using {} read points, {} spokes, {} stride"), nread, spokes[1], spokes[2]);
+    Log::Print(FMT_STRING("Using {} read points, {} traces, {} stride"), nread, traces[1], traces[2]);
     Cx3 const ref =
-      ks.slice(Sz3{0, read[0], spokes[0]}, Sz3{info.channels, read[1], spokes[1]}).stride(Sz3{1, 1, spokes[2]});
+      ks.slice(Sz3{0, read[0], traces[0]}, Sz3{info.channels, read[1], traces[1]}).stride(Sz3{1, 1, traces[2]});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), channels.Get(), energy.Get());
     psi = pc.vecs;

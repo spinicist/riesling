@@ -56,13 +56,12 @@ std::vector<int32_t> sort(std::vector<CartesianIndex> const &cart)
 Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index const bucketSz, Index const read0)
 {
   Info const &info = traj.info();
-  Index const gridSz = fft_size(info.matrix.maxCoeff() * os);
-  // fmt::print("os {} maxCoeff {} mult {} result {}\n", os, info.matrix.maxCoeff(), info.matrix.maxCoeff() * os, gridSz);
+  Index const gridSz = fft_size(*std::max_element(info.matrix.begin(), info.matrix.end()) * os);
   Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
 
-  type = info.type;
-  cartDims = type == Info::Type::ThreeD ? Sz3{gridSz, gridSz, gridSz} : Sz3{gridSz, gridSz, info.matrix[2]};
-  noncartDims = Sz2{info.read_points, info.spokes};
+  fft3D = info.fft3D;
+  cartDims = info.grid3D ? Sz3{gridSz, gridSz, gridSz} : Sz3{gridSz, gridSz, info.matrix[2]};
+  noncartDims = Sz2{info.samples, info.traces};
   frames = info.frames;
   frameWeights = Eigen::ArrayXf(frames);
   frameWeights.setZero();
@@ -93,10 +92,10 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   Size3 const center(cartDims[0] / 2, cartDims[1] / 2, cartDims[2] / 2);
   int32_t index = 0;
   Index NaNs = 0;
-  for (int32_t is = 0; is < info.spokes; is++) {
+  for (int32_t is = 0; is < info.traces; is++) {
     auto const fr = traj.frames()(is);
     if ((fr >= 0) && (fr < info.frames)) {
-      for (int16_t ir = read0; ir < info.read_points; ir++) {
+      for (int16_t ir = read0; ir < info.samples; ir++) {
         Point3 const xyz = traj.point(ir, is, maxRad);
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           Point3 const gp = nearby(xyz);

@@ -34,7 +34,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<Index> coil_rings(parser, "COIL RINGS", "Number of rings in coil (default 1)", {"rings"}, 1);
   args::ValueFlag<float> coil_r(parser, "COIL RADIUS", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
   args::ValueFlag<float> read_samp(parser, "S", "Read-out oversampling (2)", {'r', "read"}, 2);
-  args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
+  args::ValueFlag<Index> sps(parser, "S", "traces per segment", {"sps"}, 256);
   args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
   args::ValueFlag<Index> lores(parser, "L", "Add lo-res k-space scaled by L", {'l', "lores"}, 0);
   args::ValueFlag<Index> blank(parser, "B", "Blank N samples for dead-time", {"blank"}, 0);
@@ -60,41 +60,42 @@ int main_phantom(args::Subparser &parser)
     HD5::RieslingReader reader(trajfile.Get());
     Trajectory const ext_traj = reader.trajectory();
     info = ext_traj.info();
-    points = ext_traj.points().slice(Sz3{0, 0, info.spokes}, Sz3{3, info.read_points, info.spokes});
+    points = ext_traj.points().slice(Sz3{0, 0, info.traces}, Sz3{3, info.samples, info.traces});
   } else {
     // Follow the GE definition where factor of PI is ignored
-    auto const spokes = sps.Get() * ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
+    auto const traces = sps.Get() * ((std::lrint(nex.Get() * matrix.Get() * matrix.Get()) + sps.Get() - 1) / sps.Get());
     info = Info{
-      .type = Info::Type::ThreeD,
-      .matrix = Eigen::Array3l::Constant(matrix.Get()),
       .channels = nchan.Get(),
-      .read_points = (Index)read_samp.Get() * matrix.Get() / 2,
-      .spokes = spokes,
-      .volumes = 1,
+      .samples = (Index)read_samp.Get() * matrix.Get() / 2,
+      .traces = traces,
+      .matrix = Eigen::DSizes<Index, 3>{matrix.Get(), matrix.Get(), matrix.Get()},
+      .grid3D = true,
+      .fft3D = true,
       .frames = 1,
-      .tr = 1.f,
+      .volumes = 1,
       .voxel_size = Eigen::Array3f::Constant(fov.Get() / matrix.Get()),
       .origin = Eigen::Array3f::Constant(-fov.Get() / 2.f),
-      .direction = Eigen::Matrix3f::Identity()};
-    Log::Print(FMT_STRING("Using {} hi-res spokes"), info.spokes);
+      .direction = Eigen::Matrix3f::Identity(),
+      .tr = 1.f};
+    Log::Print(FMT_STRING("Using {} hi-res traces"), info.traces);
     if (phyllo) {
-      points = Phyllotaxis(info.read_points, info.spokes, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
+      points = Phyllotaxis(info.samples, info.traces, smoothness.Get(), sps.Get() * spi.Get(), gmeans);
     } else {
-      points = ArchimedeanSpiral(info.read_points, info.spokes);
+      points = ArchimedeanSpiral(info.samples, info.traces);
     }
 
     if (lores) {
       auto const loMat = matrix.Get() / lores.Get();
-      auto const loSpokes = sps.Get() * ((std::lrint(nex.Get() * loMat * loMat) + sps.Get() - 1) / sps.Get());
-      auto loPoints = ArchimedeanSpiral(info.read_points, loSpokes);
+      auto const lotraces = sps.Get() * ((std::lrint(nex.Get() * loMat * loMat) + sps.Get() - 1) / sps.Get());
+      auto loPoints = ArchimedeanSpiral(info.samples, lotraces);
       loPoints = loPoints / loPoints.constant(lores.Get());
       points = Re3(loPoints.concatenate(points, 2));
-      info.spokes += loSpokes;
-      Log::Print(FMT_STRING("Added {} lo-res spokes"), loSpokes);
+      info.traces += lotraces;
+      Log::Print(FMT_STRING("Added {} lo-res traces"), lotraces);
     }
   }
-  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix.transpose(), info.voxel_size.transpose());
-  Log::Print(FMT_STRING("Read points: {} Spokes: {}"), info.read_points, info.spokes);
+  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix, info.voxel_size.transpose());
+  Log::Print(FMT_STRING("Read points: {} traces: {}"), info.samples, info.traces);
 
   Trajectory traj(info, points);
   Cx4 senseMaps =
@@ -102,7 +103,7 @@ int main_phantom(args::Subparser &parser)
           : birdcage(info.matrix, info.voxel_size, info.channels, coil_rings.Get(), coil_r.Get(), coil_r.Get());
   info.channels = senseMaps.dimension(0); // InterpSENSE may have changed this
 
-  auto const kernel = rl::make_kernel(ktype.Get(), info.type, osamp.Get());
+  auto const kernel = rl::make_kernel(ktype.Get(), info.grid3D, osamp.Get());
   Mapping const mapping(traj, kernel.get(), osamp.Get(), bucketSize.Get());
   auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, ReadBasis(basisFile));
   ReconOp recon(gridder.get(), senseMaps);
@@ -137,21 +138,21 @@ int main_phantom(args::Subparser &parser)
   }
 
   if (trim) {
-    info.read_points -= trim.Get();
-    points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.read_points, info.spokes}));
-    radial = Cx3(radial.slice(Sz3{0, trim.Get(), 0}, Sz3{info.channels, info.read_points, info.spokes}));
+    info.samples -= trim.Get();
+    points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, info.samples, info.traces}));
+    radial = Cx3(radial.slice(Sz3{0, trim.Get(), 0}, Sz3{info.channels, info.samples, info.traces}));
     traj = Trajectory(info, points);
   }
 
   if (blank) {
-    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, blank.Get(), info.spokes}).setZero();
+    radial.slice(Sz3{0, 0, 0}, Sz3{info.channels, blank.Get(), info.traces}).setZero();
     traj = Trajectory(info, points);
   }
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeTrajectory(traj);
   writer.writeTensor(
-    Cx4(radial.reshape(Sz4{info.channels, info.read_points, info.spokes, 1})), HD5::Keys::Noncartesian);
+    Cx4(radial.reshape(Sz4{info.channels, info.samples, info.traces, 1})), HD5::Keys::Noncartesian);
   writer.writeTensor(Cx5(phan.reshape(AddBack(phan.dimensions(), 1))), HD5::Keys::Image);
 
   return EXIT_SUCCESS;

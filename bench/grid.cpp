@@ -1,8 +1,8 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
 #include "../src/info.h"
-#include "../src/traj_spirals.h"
 #include "../src/op/grid-internal.hpp"
+#include "../src/traj_spirals.h"
 
 #include <catch2/catch.hpp>
 
@@ -10,27 +10,16 @@ using namespace rl;
 
 Index const M = 128;
 Index const C = 8;
-Info const info{
-  .type = Info::Type::ThreeD,
-  .matrix = Eigen::Array3l::Constant(M),
-  .channels = C,
-  .read_points = M / 2,
-  .spokes = M * M,
-  .volumes = 1,
-  .frames = 1,
-  .tr = 1.f,
-  .voxel_size = Eigen::Array3f::Constant(1.f),
-  .origin = Eigen::Array3f::Constant(0.f),
-  .direction = Eigen::Matrix3f::Identity()};
-auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
+Info const info{.channels = C, .samples = M / 2, .traces = Index(M * M), .matrix = Sz3{M, M, M}};
+auto const points = ArchimedeanSpiral(info.samples, info.traces);
 Trajectory traj(info, points);
 float const os = 2.f;
 Index const bucketSz = 32;
-auto const nn = make_kernel("NN", info.type, os);
-auto const kb3 = make_kernel("KB3", info.type, os);
-auto const kb5 = make_kernel("KB5", info.type, os);
-auto const fi3 = make_kernel("FI3", info.type, os);
-auto const fi5 = make_kernel("FI5", info.type, os);
+auto const nn = make_kernel("NN", true, os);
+auto const kb3 = make_kernel("KB3", true, os);
+auto const kb5 = make_kernel("KB5", true, os);
+auto const fi3 = make_kernel("FI3", true, os);
+auto const fi5 = make_kernel("FI5", true, os);
 
 Mapping const m1(traj, nn.get(), os, bucketSz);
 Mapping const m3(traj, kb3.get(), os, bucketSz);

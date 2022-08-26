@@ -6,30 +6,19 @@
 
 using namespace rl;
 
-TEST_CASE("SDC","[sdc]")
+TEST_CASE("SDC", "[sdc]")
 {
   Index const M = 32;
   float const os = 2.f;
-  Info const info{
-    .type = Info::Type::ThreeD,
-    .matrix = Eigen::Array3l::Constant(M),
-    .channels = 1,
-    .read_points = Index(os * M / 2),
-    .spokes = Index(M * M / 4),
-    .volumes = 1,
-    .frames = 1,
-    .tr = 1.f,
-    .voxel_size = Eigen::Array3f::Constant(1.f),
-    .origin = Eigen::Array3f::Constant(0.f),
-    .direction = Eigen::Matrix3f::Identity()};
-  auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
+  Info const info{.channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .matrix = Sz3{M, M, M}};
+  auto const points = ArchimedeanSpiral(info.samples, info.traces);
   Trajectory const traj(info, points);
 
   SECTION("Pipe-NN")
   {
     Re2 sdc = SDC::Pipe(traj, true, 2.1f);
-    CHECK(sdc.dimension(0) == info.read_points);
-    CHECK(sdc.dimension(1) == info.spokes);
+    CHECK(sdc.dimension(0) == info.samples);
+    CHECK(sdc.dimension(1) == info.traces);
     // Central points should be very small
     CHECK(sdc(0, 0) == Approx(0.00042f).margin(1.e-4f));
     CHECK(sdc(1, 0) == Approx(0.00568f).margin(1.e-4f));
@@ -42,8 +31,8 @@ TEST_CASE("SDC","[sdc]")
   SECTION("Pipe")
   {
     Re2 sdc = SDC::Pipe(traj, false, 2.1f);
-    CHECK(sdc.dimension(0) == info.read_points);
-    CHECK(sdc.dimension(1) == info.spokes);
+    CHECK(sdc.dimension(0) == info.samples);
+    CHECK(sdc.dimension(1) == info.traces);
     // Central points should be very small
     CHECK(sdc(0, 0) == Approx(0.00122f).margin(1.e-4f));
     CHECK(sdc(1, 0) == Approx(0.00472f).margin(1.e-4f));

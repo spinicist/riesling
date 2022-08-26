@@ -66,12 +66,12 @@ Index Fib(Index n)
   }
 }
 
-Re3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, Index const spi, bool const gm)
+Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, Index const spi, bool const gm)
 {
-  if ((nSpokes % spi) != 0) {
-    Log::Fail(FMT_STRING("Spokes per interleave {} is not a divisor of total spokes {}"), spi, nSpokes);
+  if ((ntraces % spi) != 0) {
+    Log::Fail(FMT_STRING("traces per interleave {} is not a divisor of total traces {}"), spi, ntraces);
   }
-  Index nInterleaves = nSpokes / spi;
+  Index nInterleaves = ntraces / spi;
   constexpr float phi_gold = 2.399963229728653;
   constexpr float phi_gm1 = 0.465571231876768;
   constexpr float phi_gm2 = 0.682327803828019;
@@ -85,13 +85,13 @@ Re3 Phyllotaxis(Index const nRead, Index const nSpokes, Index const smoothness, 
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
 
-  Re3 traj(3, nRead, nSpokes);
+  Re3 traj(3, nRead, ntraces);
   Re1 endPoint(3);
   for (Index ii = 0; ii < nInterleaves; ii++) {
-    float const z_ii = (ii * 2.) / (nSpokes - 1);
+    float const z_ii = (ii * 2.) / (ntraces - 1);
     float const phi_ii = (ii * phi_gold);
     for (Index is = 0; is < spi; is++) {
-      float const z = (1 - (2. * nInterleaves * is) / (nSpokes - 1.)) - z_ii;
+      float const z = (1 - (2. * nInterleaves * is) / (ntraces - 1.)) - z_ii;
       float const theta = acos(z);
       float const phi = (is * dphi) + phi_ii;
       endPoint(0) = sin(theta) * cos(phi);

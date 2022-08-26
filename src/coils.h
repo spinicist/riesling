@@ -9,7 +9,7 @@ namespace rl {
  * http://web.eecs.umich.edu/~fessler/code/
  */
 Cx4 birdcage(
-  Eigen::Array3l const &matrix,
+  Sz3 const &matrix,
   Eigen::Array3f const &voxel_size,
   Index const channels,
   Index const nrings,

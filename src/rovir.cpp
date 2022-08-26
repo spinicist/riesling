@@ -24,18 +24,18 @@ auto ROVIR(
   Trajectory const &inTraj,
   float const energy,
   Index const channels,
-  Index const loresSpokes,
+  Index const lorestraces,
   Cx3 const &data) -> Eigen::MatrixXcf
 {
   Index minRead = 0;
   Trajectory traj = inTraj;
   if (opts.res) {
-    std::tie(traj, minRead) = inTraj.downsample(opts.res.Get(), loresSpokes, true);
+    std::tie(traj, minRead) = inTraj.downsample(opts.res.Get(), lorestraces, true);
   }
   auto const &info = traj.info();
   Index const nC = info.channels;
   float const osamp = 3.f;
-  auto const kernel = rl::make_kernel("FI3", info.type, osamp);
+  auto const kernel = rl::make_kernel("FI3", info.grid3D, osamp);
 
   Mapping const mapping(traj, kernel.get(), osamp, 32);
   auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels);
@@ -43,7 +43,7 @@ auto ROVIR(
   auto const sz = LastN<3>(gridder->inputDimensions());
   NUFFTOp nufft(sz, gridder.get(), &sdc);
   Cx4 const channelImages =
-    nufft.Adj(data.slice(Sz3{0, minRead, 0}, Sz3{nC, info.read_points, info.spokes})).chip<1>(0);
+    nufft.Adj(data.slice(Sz3{0, minRead, 0}, Sz3{nC, info.samples, info.traces})).chip<1>(0);
 
   // Get the signal distribution for thresholding
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection

@@ -11,29 +11,20 @@ int main_hdr(args::Subparser &parser)
   HD5::RieslingReader reader(iname.Get());
   auto const &info = reader.trajectory().info();
 
-  std::string type;
-  switch (info.type) {
-    case Info::Type::ThreeD: type = "3D"; break;
-    case Info::Type::ThreeDStack: type = "3D Stack"; break;
-    case Info::Type::TwoD: type = "2D"; break;
-    default:
-      Log::Fail("Unknown type code {}", (Index)info.type);
-  }
-
   fmt::print(
-    FMT_STRING("Type: {}\n"
+    FMT_STRING("Channels: {} Samples: {} Traces: {}\n"
                "Matrix: {}\n"
-               "Channels: {} Read points: {} Spokes: {}\n"
-               "Volumes: {} Frames: {}\n"
+               "3D Gridding: {} 3D FFT: {}\n"
+               "Frames: {} Volumes: {}\n"
                "Voxel-size: {}\t TR: {}\t Origin: {}\n"
                "Direction:\n{}\n"),
-    type,
-    info.matrix.transpose(),
     info.channels,
-    info.read_points,
-    info.spokes,
-    info.volumes,
+    info.samples,
+    info.traces,
+    info.matrix,
+    info.grid3D, info.fft3D,
     info.frames,
+    info.volumes,
     info.voxel_size.transpose(),
     info.tr,
     info.origin.transpose(),

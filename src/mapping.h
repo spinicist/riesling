@@ -32,7 +32,7 @@ struct Mapping
 {
   Mapping(Trajectory const &t, Kernel const *k, float const osamp, Index const bucketSize = 32, Index const read0 = 0);
 
-  Info::Type type;
+  bool fft3D;
   Sz2 noncartDims;
   Sz3 cartDims;
   int8_t frames;

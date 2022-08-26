@@ -54,7 +54,7 @@ int main_sim(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::MapFlag<std::string, Sequence> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
-  args::ValueFlag<Index> spg(parser, "SPG", "Spokes per group", {'s', "spg"}, 128);
+  args::ValueFlag<Index> spg(parser, "SPG", "traces per group", {'s', "spg"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
   args::ValueFlag<Index> gprep2(parser, "G", "Groups before prep 2", {"gprep2"}, 0);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);

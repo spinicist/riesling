@@ -3,7 +3,7 @@
 namespace rl {
 
 Cx3 SphericalPhantom(
-  Eigen::Array3l const &matrix,
+  Sz3 const &matrix,
   Eigen::Array3f const &voxel_size,
   Eigen::Vector3f const &c,
   float const r,

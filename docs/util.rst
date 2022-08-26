@@ -65,7 +65,7 @@ The desired meta-data will be written to stdout, one field per line.
 
 None!
 
-The valid header info fields are ``matrix``, ``channels``, ``read_points``, ``spokes``, ``volumes`` & ``frames``.
+The valid header info fields are ``matrix``, ``channels``, ``samples``, ``traces``, ``volumes`` & ``frames``.
 
 nii
 ---
@@ -253,7 +253,7 @@ An implementation of `Uecker, M. et al. ESPIRiT-an eigenvalue approach to autoca
 
 * ``--read-start=R``
 
-    Index to start taking samples on spokes (to avoid dead-time gap)
+    Index to start taking samples on traces (to avoid dead-time gap)
 
 * ``--krad=R``
 
@@ -325,7 +325,7 @@ Reduce the channel count using a coil-compression method.
 
     Take the samples for PCA from `ST` to `ST + SZ` along the read direction.
 
-* ``--pca-spokes=ST,SZ,STRIDE``
+* ``--pca-traces=ST,SZ,STRIDE``
 
     Take the samples for PCA from `ST` to `ST + SZ` every `STRIDE` along the spoke direction.
 
@@ -362,7 +362,7 @@ Remove non-Cartesian samples and trajectory points in order to reconstruct a low
 
     Take the samples for PCA from `ST` to `ST + SZ` along the read direction.
 
-* ``--pca-spokes=ST,SZ,STRIDE``
+* ``--pca-traces=ST,SZ,STRIDE``
 
     Take the samples for PCA from `ST` to `ST + SZ` every `STRIDE` along the spoke direction.
 
@@ -384,20 +384,20 @@ Depends on arguments, but may result in ``file-lores.h5``, ``file-hires.h5`` or 
 
 * ``--lores=N``
 
-    Split out the first N spokes assuming that they are a low-resolution k-space.
+    Split out the first N traces assuming that they are a low-resolution k-space.
 
 * ``--stride=S``
 
-    Keep only one out of every S spokes for further processing (applied after ``--lores``)
+    Keep only one out of every S traces for further processing (applied after ``--lores``)
 
 * ``--size=N``
 
-    Keep only the first N spokes for further processing (applied after ``--lores`` and ``--stride``)
+    Keep only the first N traces for further processing (applied after ``--lores`` and ``--stride``)
 
 * ``--sps=N``
 
-    Split the hi-res k-space data into multiple files, each containing N spokes. If N does not divide the number of spokes in the file exactly, the last file will contain the remainder.
+    Split the hi-res k-space data into multiple files, each containing N traces. If N does not divide the number of traces in the file exactly, the last file will contain the remainder.
 
 * ``--frames=F``, ``--spf=N``
 
-    Add a ``frames`` object to the output header with F frames, each containing N spokes. These will be repeated to match the number of spokes in the file.
+    Add a ``frames`` object to the output header with F frames, each containing N traces. These will be repeated to match the number of traces in the file.

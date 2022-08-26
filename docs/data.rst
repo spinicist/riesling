@@ -3,7 +3,7 @@ Data Format
 
 RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input, intermediate and output data. A command is provided to convert the ``.h5`` format to NiFTI (``.nii``).
 
-RIESLING mandates that the non-cartesian data is stored in "spokes", which could equally be called frames or traces. Here we will treat the data as being stored in `S` spokes, with `N` data-points per spoke, and `C` k-space channels. In RIESLING a "frame" is a collection of spokes that should be reconstructed together - e.g. from a particular echo or position in the cardiac cycle.
+RIESLING mandates that the non-cartesian data is stored in "traces", which could equally be called frames or traces. Here we will treat the data as being stored in `S` traces, with `N` data-points per spoke, and `C` k-space channels. In RIESLING a "frame" is a collection of traces that should be reconstructed together - e.g. from a particular echo or position in the cardiac cycle.
 
 **Important** HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then the order of the dimensions given below should be reversed.
 
@@ -26,8 +26,8 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
     long matrix[3];
 
     long channels;
-    long read_points;
-    long spokes;
+    long samples;
+    long traces;
 
     long volumes;
     long frames;
@@ -41,8 +41,8 @@ To be considered valid RIESLING input, the HDF5 file must contain the header inf
 * ``type`` defines the kind of acquisition. Currently two values are supported - 1 means the acquisition is fully 3D, while 2 means the acquisition is a 3D stack-of-stars or stack-of-spirals type acquisition, with cartesian phase-encoding blips for the third axis.
 * ``matrix`` defines the nominal matrix size for the scan - i.e. it determines the matrix size of the final reconstructed image (unless the `--fov` option is used).
 * ``channels`` defines the number of k-space channels / coil-elements.
-* ``read_points`` sets the number of data-points in the readout direction, i.e. how many readout points per spoke.
-* ``spokes`` sets the number of spokes in the non-cartesian k-space acquisition.
+* ``samples`` sets the number of data-points in the readout direction, i.e. how many readout points per spoke.
+* ``traces`` sets the number of traces in the non-cartesian k-space acquisition.
 * ``volumes`` indicates how many volumes or time-points were acquired in the acquisition.
 * ``frames`` specifies how many separate frames (or echoes) were acquired per volume.
 
@@ -61,14 +61,14 @@ The non-cartesian data must be stored in a complex-valued float-precision datase
 Trajectory
 ----------
 
-The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``S,N,3``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial spokes the k-space locations go between 0 and 0.5, and for diameter spokes between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
+The trajectory should be stored as a float array in a dataset with the name ``trajectory`` with dimensions ``S,N,3``. The 3 co-ordinates correspond to the x, y & z locations within the k-space volume. For a full 3D acquisition these should be scaled such that the nominal edge of k-space in each direction is 0.5. Hence, for radial traces the k-space locations go between 0 and 0.5, and for diameter traces between -0.5 and 0.5. For a 3D stack trajectory, the z co-ordinate should be the slice/stack position.
 
 The trajectory is assumed to repeat for each volume.
 
 Frames
 ------
 
-If the trajectory (and corresponding data) contains multiple frames, e.g. temporal points, echoes or respiratory phases, which logically form separate images, then an additional dataset should be added to the input H5 file called ``frames``. This should be a zero-based integer valued, one-dimensional array with the number of entries equal to the number of spokes specified in the ``info`` structure. Each entry specifies the frame that each spoke should be allocated to.
+If the trajectory (and corresponding data) contains multiple frames, e.g. temporal points, echoes or respiratory phases, which logically form separate images, then an additional dataset should be added to the input H5 file called ``frames``. This should be a zero-based integer valued, one-dimensional array with the number of entries equal to the number of traces specified in the ``info`` structure. Each entry specifies the frame that each spoke should be allocated to.
 
 The key difference between a frame and a volume is that all frames will have the NuFFT applied simultaneously, i.e. they will be gridded and Fourier Transformed together, whereas volumes will be reconstructed completely separately.
 

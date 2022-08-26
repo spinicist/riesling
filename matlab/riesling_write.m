@@ -3,8 +3,8 @@ function [] = riesling_write(fname, data, traj, info,varargin)
 %
 % Input:
 %   - fname: output filename
-%   - data: Complex kspace data [nrcv, npoints, nspokes, nvol]
-%   - traj: Trajectory [3, npoints, nspokes]
+%   - data: Complex kspace data [nrcv, npoints, ntraces, nvol]
+%   - traj: Trajectory [3, npoints, ntraces]
 %   - info: Info struct
 %
 % Inspired by: https://stackoverflow.com/questions/46203309/write-complex-numbers-in-an-hdf5-dataset-with-matlab

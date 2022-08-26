@@ -55,17 +55,18 @@ hid_t InfoType()
   hsize_t sz9[1] = {9};
   hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
   herr_t status;
-  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
-  status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
-  status = H5Tinsert(info_id, "read_points", HOFFSET(Info, read_points), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "spokes", HOFFSET(Info, spokes), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "type", HOFFSET(Info, type), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "samples", HOFFSET(Info, samples), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "traces", HOFFSET(Info, traces), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
+  status = H5Tinsert(info_id, "grid3D", HOFFSET(Info, grid3D), H5T_NATIVE_HBOOL);
+  status = H5Tinsert(info_id, "fft3D", HOFFSET(Info, fft3D), H5T_NATIVE_HBOOL);
   status = H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
+  status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
+  status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
   status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
   status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
+  status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
   if (status) {
     Log::Fail(FMT_STRING("Could not create Info struct type in HDF5, code: {}"), status);
   }
@@ -77,17 +78,18 @@ void CheckInfoType(hid_t handle)
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   // Also use vector instead of array so I don't forget to change the size if the members change
   std::vector<std::string> const names{
-    "matrix",
-    "voxel_size",
-    "read_points",
-    "spokes",
     "channels",
-    "type",
-    "volumes",
+    "samples",
+    "traces",
+    "matrix",
+    "grid3D",
+    "fft3D",
     "frames",
-    "tr",
+    "volumes",
+    "voxel_size",
     "origin",
-    "direction"};
+    "direction",
+    "tr"};
 
   if (handle < 0) {
     Log::Fail("Info struct does not exist");

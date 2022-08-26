@@ -21,7 +21,7 @@ int main_zinfandel(args::Subparser &parser)
 
   args::Flag grappa(parser, "", "Use projection GRAPPA", {"grappa"});
   args::ValueFlag<Index> gSrc(parser, "S", "GRAPPA sources (default 4)", {"grappa-src"}, 4);
-  args::ValueFlag<Index> gSpokes(parser, "S", "GRAPPA calibration spokes (default 4)", {"spokes"}, 4);
+  args::ValueFlag<Index> gtraces(parser, "S", "GRAPPA calibration traces (default 4)", {"traces"}, 4);
   args::ValueFlag<Index> gRead(parser, "R", "GRAPPA calibration read samples (default 8)", {"read"}, 8);
   args::ValueFlag<float> gλ(parser, "L", "Tikhonov regularization (default 0)", {"lamda"}, 0.f);
 
@@ -49,12 +49,12 @@ int main_zinfandel(args::Subparser &parser)
   if (grappa) {
     for (Index iv = 0; iv < info.volumes; iv++) {
       Cx3 vol = reader.noncartesian(iv);
-      zinGRAPPA(gap.Get(), gSrc.Get(), gSpokes.Get(), gRead.Get(), gλ.Get(), traj.points(), vol);
+      zinGRAPPA(gap.Get(), gSrc.Get(), gtraces.Get(), gRead.Get(), gλ.Get(), traj.points(), vol);
       rad_ks.chip<3>(iv) = vol;
     }
   } else {
     // Use SLR
-    auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+    auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
     auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
     auto const dsInfo = dsTraj.info();
     auto const map0 = Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get(), 0);
@@ -66,12 +66,12 @@ int main_zinfandel(args::Subparser &parser)
     auto const pre = std::make_unique<SingleChannel>(dsTraj);
     auto reg = [&](Cx5 const &x) -> Cx5 { return zinSLR(x, nufftN.fft(), kSz.Get(), winSz.Get()); };
     Sz3 const st{0, 0, 0};
-    Sz3 const sz{info.channels, gap.Get(), info.spokes};
+    Sz3 const sz{info.channels, gap.Get(), info.traces};
     LSQR<NUFFTOp> lsqr{nufftN, pre.get(), nullptr, iits.Get(), atol.Get(), btol.Get(), ctol.Get(), rho.Get(), false};
     ADMM<LSQR<NUFFTOp>> admm{lsqr, reg, oits.Get(), rho.Get()};
     for (Index iv = 0; iv < info.volumes; iv++) {
       Cx3 const ks = reader.noncartesian(iv);
-      Cx3 const dsKS = ks.slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.read_points, dsInfo.spokes});
+      Cx3 const dsKS = ks.slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.samples, dsInfo.traces});
       Cx5 const img = admm.run(dsKS);
       Cx3 const filled = nufft0.A(img);
       rad_ks.chip<3>(iv) = ks;

@@ -22,7 +22,7 @@ struct Opts
 Cx4 SelfCalibration(
   Info const &i, GridBase<Cx> *g, float const fov, float const res, float const λ, Index const frame, Cx3 const &data);
 Cx4 Load(std::string const &calFile);                              //! Loads a set of SENSE maps from a file
-Cx4 Interp(std::string const &calFile, Eigen::Array3l const dims); //! Interpolate with FFT
+Cx4 Interp(std::string const &calFile, Sz3 const dims); //! Interpolate with FFT
 
 //! Convenience function called from recon commands to get SENSE maps
 Cx4 Choose(Opts &opts, Info const &i, GridBase<Cx> *g, float const fov, SDCOp *sdc, HD5::RieslingReader &reader);

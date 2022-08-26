@@ -15,16 +15,16 @@ Eigen::MatrixXcf GrabSources(
   Index const n_src,
   Index const s_read,
   Index const n_read,
-  std::vector<Index> const &spokes)
+  std::vector<Index> const &traces)
 {
   assert((s_read + n_read + n_src) < ks.dimension(1));
   Index const n_chan = ks.dimension(0);
-  Index const n_spoke = spokes.size();
+  Index const n_spoke = traces.size();
   Eigen::MatrixXcf S(n_chan * n_src, n_read * n_spoke);
   S.setZero();
   for (Index i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
     Index const col_spoke = i_spoke * n_read;
-    Index const ind_spoke = spokes[i_spoke];
+    Index const ind_spoke = traces[i_spoke];
     assert(ind_spoke < ks.dimension(2));
     for (Index i_read = 0; i_read < n_read; i_read++) {
       Index const col = col_spoke + i_read;
@@ -41,15 +41,15 @@ Eigen::MatrixXcf GrabSources(
 }
 
 Eigen::MatrixXcf
-GrabTargets(Cx3 const &ks, float const scale, Index const s_read, Index const n_read, std::vector<Index> const &spokes)
+GrabTargets(Cx3 const &ks, float const scale, Index const s_read, Index const n_read, std::vector<Index> const &traces)
 {
   Index const n_chan = ks.dimension(0);
-  Index const n_spoke = spokes.size();
+  Index const n_spoke = traces.size();
   Eigen::MatrixXcf T(n_chan, n_read * n_spoke);
   T.setZero();
   for (Index i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
     Index const col_spoke = i_spoke * n_read;
-    Index const ind_spoke = spokes[i_spoke];
+    Index const ind_spoke = traces[i_spoke];
     for (Index i_read = 0; i_read < n_read; i_read++) {
       Index const col = col_spoke + i_read;
       for (Index i_coil = 0; i_coil < n_chan; i_coil++) {
@@ -73,18 +73,18 @@ Eigen::MatrixXcf CalcWeights(Eigen::MatrixXcf const &src, Eigen::MatrixXcf const
   }
 }
 
-std::vector<Index> FindClosest(Re3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_spokes)
+std::vector<Index> FindClosest(Re3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_traces)
 {
-  std::vector<Index> spokes(n_spoke);
+  std::vector<Index> traces(n_spoke);
   Re1 const end_is = traj.chip(tgt, 2).chip(traj.dimension(1) - 1, 1);
   std::partial_sort(
-    all_spokes.begin(), all_spokes.begin() + n_spoke, all_spokes.end(), [&traj, end_is](Index const a, Index const b) {
+    all_traces.begin(), all_traces.begin() + n_spoke, all_traces.end(), [&traj, end_is](Index const a, Index const b) {
       auto const &end_a = traj.chip(a, 2).chip(traj.dimension(1) - 1, 1);
       auto const &end_b = traj.chip(b, 2).chip(traj.dimension(1) - 1, 1);
       return Norm(end_a - end_is) < Norm(end_b - end_is);
     });
-  std::copy_n(all_spokes.begin(), n_spoke, spokes.begin());
-  return spokes;
+  std::copy_n(all_traces.begin(), n_spoke, traces.begin());
+  return traces;
 }
 
 // Actual calculation
@@ -99,16 +99,16 @@ void zinGRAPPA(
 {
   Index const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
 
-  Log::Print(FMT_STRING("ZINFANDEL Gap {} Sources {} Cal Spokes/Read {}/{} "), gap_sz, n_src, n_spoke, n_read);
+  Log::Print(FMT_STRING("ZINFANDEL Gap {} Sources {} Cal traces/Read {}/{} "), gap_sz, n_src, n_spoke, n_read);
 
   for (Index ig = gap_sz; ig > 0; ig--) {
     auto spoke_task = [&](Index const is) {
-      std::vector<Index> all_spokes(ks.dimension(2)); // Need a thread-local copy of the indices
-      std::iota(all_spokes.begin(), all_spokes.end(), 0L);
+      std::vector<Index> all_traces(ks.dimension(2)); // Need a thread-local copy of the indices
+      std::iota(all_traces.begin(), all_traces.end(), 0L);
       float const scale = Re0(ks.chip(is, 2).abs().maximum())();
-      auto const spokes = FindClosest(traj, is, n_spoke, all_spokes);
-      auto const calS = GrabSources(ks, scale, n_src, ig + 1, n_read, spokes);
-      auto const calT = GrabTargets(ks, scale, ig, n_read, spokes);
+      auto const traces = FindClosest(traj, is, n_spoke, all_traces);
+      auto const calS = GrabSources(ks, scale, n_src, ig + 1, n_read, traces);
+      auto const calT = GrabTargets(ks, scale, ig, n_read, traces);
       auto const W = CalcWeights(calS, calT, lambda);
       auto const S = GrabSources(ks, scale, n_src, ig, 1, {is});
       auto const T = W * S;
@@ -117,7 +117,7 @@ void zinGRAPPA(
       }
     };
     Log::Print(FMT_STRING("Gap index {}"), ig);
-    Threads::For(spoke_task, 0, ks.dimension(2), "Spokes");
+    Threads::For(spoke_task, 0, ks.dimension(2), "traces");
   }
 }
 } // namespace rl

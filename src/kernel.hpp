@@ -32,6 +32,6 @@ private:
   Eigen::TensorFixedSize<float, Eigen::Sizes<IP>> indIP, indTP;
 };
 
-std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, float const os);
+std::unique_ptr<Kernel> make_kernel(std::string const &k, bool const is3D, float const os);
 
 } // namespace rl

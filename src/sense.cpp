@@ -75,16 +75,15 @@ Cx4 Load(std::string const &calFile, Info const &i)
   return maps;
 }
 
-Cx4 Interp(std::string const &file, Eigen::Array3l const dims)
+Cx4 Interp(std::string const &file, Sz3 const size2)
 {
   HD5::Reader senseReader(file);
   Cx4 disk_sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
-  Log::Print(FMT_STRING("Interpolating SENSE maps to dimensions {}"), dims.transpose());
+  Log::Print(FMT_STRING("Interpolating SENSE maps to dimensions {}"), size2);
   auto const fft1 = FFT::Make<4, 3>(disk_sense.dimensions());
   fft1->forward(disk_sense);
   Sz3 size1{disk_sense.dimension(1), disk_sense.dimension(2), disk_sense.dimension(3)};
-  Sz3 size2{dims[0], dims[1], dims[2]};
-  Cx4 sense(disk_sense.dimension(0), dims[0], dims[1], dims[2]);
+  Cx4 sense(disk_sense.dimension(0), size2[0], size2[1], size2[2]);
   auto const fft2 = FFT::Make<4, 3>(sense.dimensions());
   sense.setZero();
   if (size1[0] < size2[0]) {

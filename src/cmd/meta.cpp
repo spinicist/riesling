@@ -16,16 +16,16 @@ int main_meta(args::Subparser &parser)
 
   for (auto const &k : keys.Get()) {
     if (k == "matrix") {
-      fmt::print("{}\n", info.matrix.transpose());
+      fmt::print("{}\n", info.matrix);
       continue;
     } else if (k == "channels") {
       fmt::print("{}\n", info.channels);
       continue;
-    } else if (k == "read_points") {
-      fmt::print("{}\n", info.read_points);
+    } else if (k == "samples") {
+      fmt::print("{}\n", info.samples);
       continue;
-    } else if (k == "spokes") {
-      fmt::print("{}\n", info.spokes);
+    } else if (k == "traces") {
+      fmt::print("{}\n", info.traces);
       continue;
     } else if (k == "volumes") {
       fmt::print("{}\n", info.volumes);

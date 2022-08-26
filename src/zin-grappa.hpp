@@ -26,12 +26,12 @@ Eigen::MatrixXcf GrabSources(
   Index const n_src,
   Index const s_read,
   Index const n_read,
-  std::vector<Index> const &spokes);
+  std::vector<Index> const &traces);
 
 Eigen::MatrixXcf GrabTargets(
   Cx3 const &ks,
   float const scale,
   Index const s_read,
   Index const n_read,
-  std::vector<Index> const &spokes);
+  std::vector<Index> const &traces);
 }

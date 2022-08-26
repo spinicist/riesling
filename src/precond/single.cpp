@@ -20,7 +20,7 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   // I do not fully understand why but increasing it leads to numerical issues,
   // which I assume might be solved by further oversampling but do not have the 
   // time or memory to investigate further
-  auto k = make_kernel("FI5", traj.info().type, osamp);
+  auto k = make_kernel("FI5", traj.info().grid3D, osamp);
   auto gridder = rl::make_grid<Cx>(k.get(), Mapping(traj, k.get(), osamp*imScale, 32), 1);
   gridder->doNotWeightFrames();
   // Keep more than usual otherwise funky numerical issues

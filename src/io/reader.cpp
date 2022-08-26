@@ -260,10 +260,10 @@ RieslingReader::RieslingReader(std::string const &fname)
 {
   auto const info = readInfo();
 
-  Re3 points(3, info.read_points, info.spokes);
+  Re3 points(3, info.samples, info.traces);
   HD5::load_tensor(handle_, Keys::Trajectory, points);
   if (HD5::Exists(handle_, "frames")) {
-    I1 frames(info.spokes);
+    I1 frames(info.traces);
     HD5::load_tensor(handle_, "frames", frames);
     Log::Debug(FMT_STRING("Read frames successfully"));
     traj_ = Trajectory(info, points, frames);
@@ -276,8 +276,8 @@ RieslingReader::RieslingReader(std::string const &fname)
   if (Exists(handle_, Keys::Noncartesian)) {
     auto const dims = HD5::get_dims<4>(handle_, Keys::Noncartesian);
     Check("channels", dims[0], info.channels);
-    Check("read-points", dims[1], info.read_points);
-    Check("spokes", dims[2], info.spokes);
+    Check("read-points", dims[1], info.samples);
+    Check("traces", dims[2], info.traces);
     Check("volumes", dims[3], info.volumes);
   }
 }
@@ -318,7 +318,7 @@ Cx3 const &RieslingReader::noncartesian(Index const index)
   } else {
     Log::Print(FMT_STRING("Reading non-cartesian volume {}"), index);
     if (nc_.size() == 0) {
-      nc_.resize(Sz3{traj_.info().channels, traj_.info().read_points, traj_.info().spokes});
+      nc_.resize(Sz3{traj_.info().channels, traj_.info().samples, traj_.info().traces});
     }
     HD5::load_tensor_slab(handle_, Keys::Noncartesian, index, nc_);
     currentNCVol_ = index;

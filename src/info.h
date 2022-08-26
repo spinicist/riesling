@@ -6,42 +6,36 @@ namespace rl {
 
 struct Info
 {
-  enum struct Type : Index
-  {
-    ThreeD = 1,
-    ThreeDStack = 2,
-    TwoD = 3
-  };
-
-  Type type = Type::ThreeD;
-  Eigen::Array3l matrix;
   Index channels;
-  Index read_points;
-  Index spokes;
-  Index volumes = 1;
+  Index samples;
+  Index traces;
+  Eigen::DSizes<Index, 3> matrix;
+  bool grid3D = true;
+  bool fft3D = true;
   Index frames = 1;
-  float tr = 1.f;
+  Index volumes = 1;
   Eigen::Array3f voxel_size = Eigen::Vector3f::Ones();
   Eigen::Vector3f origin = Eigen::Vector3f::Zero();
   Eigen::Matrix3f direction = Eigen::Matrix3f::Identity();
+  float tr = 1.f;
 
   inline Cx3 noncartesianVolume() const
   {
-    Cx3 temp(channels, read_points, spokes);
+    Cx3 temp(channels, samples, traces);
     temp.setZero();
     return temp;
   }
 
   inline Cx4 noncartesianSeries() const
   {
-    Cx4 temp(channels, read_points, spokes, volumes);
+    Cx4 temp(channels, samples, traces, volumes);
     temp.setZero();
     return temp;
   }
 
   inline Re3 trajectory() const
   {
-    return Re3(3, read_points, spokes);
+    return Re3(3, samples, traces);
   }
 };
 

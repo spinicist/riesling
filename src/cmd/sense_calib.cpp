@@ -24,7 +24,7 @@ int main_sense_calib(args::Subparser &parser)
   HD5::RieslingReader reader(core.iname.Get());
   auto const traj = reader.trajectory();
   auto const &info = traj.info();
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, ReadBasis(core.basisFile));
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());

@@ -15,10 +15,10 @@ system('riesling phantom --shepp_logan sl-phantom -v');
 [kspace, traj, info] = riesling_read('sl-phantom.h5');
 
 % Size of datastructures
-% kspace: [nrcv, npoints, nspokes, nvol]
-% traj: [3, npoints, nspokes]
+% kspace: [nrcv, npoints, ntraces, nvol]
+% traj: [3, npoints, ntraces]
 
-[nrcv, npoints, nspokes] = size(kspace);
+[nrcv, npoints, ntraces] = size(kspace);
 
 disp('Information in info structure')
 disp(info)
@@ -28,9 +28,9 @@ figure()
 labels = ["Gx","Gy","Gz"];
 for i=1:3
    subplot(3,1,i);
-   plot(1:nspokes,squeeze(traj(i,end,:)));
+   plot(1:ntraces,squeeze(traj(i,end,:)));
    xlabel('Spoke number'); ylabel(labels{i});
-   axis([1,nspokes,-1,1]);
+   axis([1,ntraces,-1,1]);
    grid on
 end
 
@@ -50,7 +50,7 @@ traj_us = traj(:,:,1:2:end);
 
 % We also need to modify the infor structure
 info_us = info;
-info_us.spokes = size(kspace_us, 3);
+info_us.traces = size(kspace_us, 3);
 
 % Now we write the data back to a new file
 riesling_write('sl-phantom-us.h5', kspace_us, traj_us, info_us);

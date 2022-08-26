@@ -32,7 +32,7 @@ int main_lsmr(args::Subparser &parser)
   Trajectory const traj = reader.trajectory();
   Info const &info = traj.info();
 
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
   Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);

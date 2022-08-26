@@ -19,21 +19,10 @@ TEST_CASE("io")
   Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
   float const os = 2.f;
-  Info const info{
-    .type = Info::Type::ThreeD,
-    .matrix = Eigen::Array3l::Constant(M),
-    .channels = 1,
-    .read_points = Index(os * M / 2),
-    .spokes = Index(M * M),
-    .volumes = 2,
-    .frames = 1,
-    .tr = 1.f,
-    .voxel_size = Eigen::Array3f::Constant(1.f),
-    .origin = Eigen::Array3f::Constant(0.f),
-    .direction = Eigen::Matrix3f::Identity()};
-  auto const points = ArchimedeanSpiral(info.read_points, info.spokes);
+  Info const info{.channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .matrix = Sz3{M, M, M}};
+  auto const points = ArchimedeanSpiral(info.samples, info.traces);
   Trajectory const traj(info, points);
-  Cx4 refData(info.channels, info.read_points, info.spokes, info.volumes);
+  Cx4 refData(info.channels, info.samples, info.traces, info.volumes);
   refData.setConstant(1.f);
 
   SECTION("Basic")
@@ -51,8 +40,8 @@ TEST_CASE("io")
 
     auto const checkInfo = reader.trajectory().info();
     CHECK(checkInfo.channels == info.channels);
-    CHECK(checkInfo.read_points == info.read_points);
-    CHECK(checkInfo.spokes == info.spokes);
+    CHECK(checkInfo.samples == info.samples);
+    CHECK(checkInfo.traces == info.traces);
     CHECK(checkInfo.volumes == info.volumes);
 
     CHECK_NOTHROW(reader.noncartesian(0));
@@ -71,7 +60,7 @@ TEST_CASE("io")
       HD5::Writer writer(fname);
       writer.writeTrajectory(traj);
       writer.writeTensor(
-        Cx4(refData.reshape(Sz4{info.volumes, info.read_points, info.spokes, info.channels})), HD5::Keys::Noncartesian);
+        Cx4(refData.reshape(Sz4{info.volumes, info.samples, info.traces, info.channels})), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
     CHECK_THROWS_AS(Dummy(fname), Log::Failure);

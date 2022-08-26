@@ -20,7 +20,7 @@ int main_espirit(args::Subparser &parser)
   args::ValueFlag<Index> volume(parser, "VOL", "Take SENSE maps from this volume (default last)", {"sense-vol"}, -1);
   args::ValueFlag<float> res(parser, "R", "Resolution for initial gridding (default 12 mm)", {"sense-res", 'r'}, 12.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
-  args::ValueFlag<Index> lores(parser, "L", "Lo-res spokes", {"lores"}, 0);
+  args::ValueFlag<Index> lores(parser, "L", "Lo-res traces", {"lores"}, 0);
   args::ValueFlag<Index> readStart(parser, "R", "Reference region start (0)", {"read-start"}, 0);
   args::ValueFlag<Index> kRad(parser, "RAD", "Kernel radius (default 4)", {"krad", 'k'}, 4);
   args::ValueFlag<Index> calRad(parser, "RAD", "Additional calibration radius (default 1)", {"calRad", 'c'}, 1);
@@ -32,7 +32,7 @@ int main_espirit(args::Subparser &parser)
   auto const traj = reader.trajectory();
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.type, core.osamp.Get());
+  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
   auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
   auto gridder =
@@ -41,7 +41,7 @@ int main_espirit(args::Subparser &parser)
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, gridder->mapping().cartDims, fov.Get());
   auto const ks = reader.noncartesian(ValOrLast(volume.Get(), info.volumes))
-                    .slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.read_points, dsInfo.spokes});
+                    .slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.samples, dsInfo.traces});
   Cx4 sense =
     cropper.crop4(ESPIRIT(gridder.get(), sdc->Adj(ks), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
 

@@ -72,42 +72,42 @@ template struct SizedKernel<5, 5>;
 template struct SizedKernel<7, 1>;
 template struct SizedKernel<7, 7>;
 
-std::unique_ptr<Kernel> make_kernel(std::string const &k, Info::Type const t, float const os)
+std::unique_ptr<Kernel> make_kernel(std::string const &k, bool const is3D, float const os)
 {
   if (k == "NN") {
     return std::make_unique<NearestNeighbour>();
   } else if (k == "KB3") {
-    if (t == Info::Type::ThreeD) {
+    if (is3D) {
       return std::make_unique<KaiserBessel<3, 3>>(os);
     } else {
       return std::make_unique<KaiserBessel<3, 1>>(os);
     }
   } else if (k == "KB5") {
-    if (t == Info::Type::ThreeD) {
+    if (is3D) {
       return std::make_unique<KaiserBessel<5, 5>>(os);
     } else {
       return std::make_unique<KaiserBessel<5, 1>>(os);
     }
   } else if (k == "KB7") {
-    if (t == Info::Type::ThreeD) {
+    if (is3D) {
       return std::make_unique<KaiserBessel<7, 7>>(os);
     } else {
       return std::make_unique<KaiserBessel<7, 1>>(os);
     }
   } else if (k == "FI3") {
-    if (t == Info::Type::ThreeD) {
+    if (is3D) {
       return std::make_unique<FlatIron<3, 3>>(os);
     } else {
       return std::make_unique<FlatIron<3, 1>>(os);
     }
   } else if (k == "FI5") {
-    if (t == Info::Type::ThreeD) {
+    if (is3D) {
       return std::make_unique<FlatIron<5, 5>>(os);
     } else {
       return std::make_unique<FlatIron<5, 1>>(os);
     }
   } else if (k == "FI7") {
-    if (t == Info::Type::ThreeD) {
+    if (is3D) {
       return std::make_unique<FlatIron<7, 7>>(os);
     } else {
       return std::make_unique<FlatIron<7, 1>>(os);

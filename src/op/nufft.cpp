@@ -4,7 +4,7 @@ namespace rl {
 
 NUFFTOp::NUFFTOp(Sz3 const imgDims, GridBase<Cx> *g, SDCOp *sdc)
   : gridder_{g}
-  , fft_{gridder_->workspace(), g->mapping().type != Info::Type::TwoD}
+  , fft_{gridder_->workspace(), g->mapping().fft3D}
   , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}
   , apo_{pad_.inputDimensions(), g}
   , sdc_{sdc}
