@@ -6,10 +6,11 @@ namespace rl {
 
 struct Info
 {
+  Eigen::DSizes<Index, 3> matrix;
   Index channels;
   Index samples;
   Index traces;
-  Eigen::DSizes<Index, 3> matrix;
+  Index slabs = 1;
   bool grid3D = true;
   bool fft3D = true;
   Index frames = 1;

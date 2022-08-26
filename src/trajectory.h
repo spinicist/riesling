@@ -15,7 +15,7 @@ struct Trajectory
   Info const &info() const;
   Re3 const &points() const;
   I1 const &frames() const;
-  Point3 point(int16_t const read, int32_t const spoke, float const nomRad) const;
+  Re1 point(int16_t const read, int32_t const spoke) const;
   std::tuple<Trajectory, Index> downsample(float const res, Index const lores, bool const shrink) const;
 
 private:

@@ -12,7 +12,7 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
   Re3 traj(3, nRead, nSpoke);
   Re1 read(nRead);
   for (Index ir = 0; ir < nRead; ir++) {
-    read(ir) = (float)(ir) / nRead;
+    read(ir) = (float)(ir) / (nRead - 1);
   }
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
@@ -50,7 +50,7 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
     traj.chip(half + is, 2) = endPoint.contract(read, empty);
   }
   // Trajectory is stored between -0.5 and 0.5, so scale
-  return 0.5 * traj;
+  return 0.5f * traj;
 }
 
 Index Fib(Index n)

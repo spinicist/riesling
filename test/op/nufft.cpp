@@ -19,18 +19,16 @@ TEST_CASE("NUFFT", "[nufft]")
     Trajectory const traj(info, points);
 
     float const osamp = GENERATE(2.7f);
-    auto const kernel = rl::make_kernel("FI5", true, osamp);
-    Mapping const mapping(traj, kernel.get(), osamp);
-    auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels);
+    auto gridder = make_grid<Cx>(traj, "FI5", osamp, info.channels);
     NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
 
     Cx3 ks(nufft.outputDimensions());
     Cx5 img(nufft.inputDimensions());
     ks.setConstant(1.f);
     // ks(0,1,0) = 1.f;
-    img = nufft.Adj(ks);
+    img = nufft.adjoint(ks);
     CHECK(Norm(img) == Approx(std::sqrt(ks.size())).margin(5.e-2f));
-    ks = nufft.A(img);
+    ks = nufft.forward(img);
     CHECK(Norm(ks) == Approx(std::sqrt(ks.size())).margin(5.e-2f));
   }
 }

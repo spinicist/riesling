@@ -24,9 +24,9 @@ struct AugmentedOp
     return op.inputDimensions();
   }
 
-  Input A(typename Op::Input const &x) const
+  Input forward(typename Op::Input const &x) const
   {
-    return Input(op.AdjA(x) + rho * x);
+    return Input(op.adjfwd(x) + rho * x);
   }
 };
 

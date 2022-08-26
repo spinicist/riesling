@@ -26,9 +26,9 @@ struct NormalEqOp
     return op.inputDimensions();
   }
 
-  Input A(typename Op::Input const &x) const
+  Input forward(typename Op::Input const &x) const
   {
-    return Input(op.AdjA(x));
+    return Input(op.adjfwd(x));
   }
 };
 
@@ -52,7 +52,7 @@ struct ConjugateGradients
     if (x0.size()) {
       CheckDimsEqual(dims, x0.dimensions());
       Log::Print("Warm-start CG");
-      r.device(dev) = b - op.A(x0);
+      r.device(dev) = b - op.forward(x0);
       x.device(dev) = x0;
     } else {
       r.device(dev) = b;
@@ -63,7 +63,7 @@ struct ConjugateGradients
     float const thresh = resTol * sqrt(r_old);
     Log::Print(FMT_STRING("CG    |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
     for (Index icg = 0; icg < iterLimit; icg++) {
-      q = op.A(p);
+      q = op.forward(p);
       float const alpha = r_old / Dot(p, q).real();
       x.device(dev) = x + p * p.constant(alpha);
       if (debug) {

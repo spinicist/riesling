@@ -46,7 +46,7 @@ struct LSMR
     if (x0.size()) {
       CheckDimsEqual(x0.dimensions(), inDims);
       x.device(dev) = x0;
-      Mu.device(dev) = b - op.A(x);
+      Mu.device(dev) = b - op.forward(x);
     } else {
       x.setZero();
       Mu.device(dev) = b;
@@ -69,9 +69,9 @@ struct LSMR
     u.device(dev) = u / u.constant(β);
     if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
-      v.device(dev) = op.Adj(u) + sqrt(λ) * ur;
+      v.device(dev) = op.adjoint(u) + sqrt(λ) * ur;
     } else {
-      v.device(dev) = op.Adj(u);
+      v.device(dev) = op.adjoint(u);
     }
     float α = std::sqrt(CheckedDot(v, v));
     v.device(dev) = v / v.constant(α);
@@ -109,7 +109,7 @@ struct LSMR
 
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
-      Mu.device(dev) = op.A(v) - α * Mu;
+      Mu.device(dev) = op.forward(v) - α * Mu;
       u.device(dev) = M ? M->apply(Mu) : Mu;
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * v) - (α * ur);
@@ -121,9 +121,9 @@ struct LSMR
       u.device(dev) = u / u.constant(β);
       if (λ > 0.f) {
         ur.device(dev) = ur / ur.constant(β);
-        v.device(dev) = op.Adj(u) + (sqrt(λ) * ur) - (β * v);
+        v.device(dev) = op.adjoint(u) + (sqrt(λ) * ur) - (β * v);
       } else {
-        v.device(dev) = op.Adj(u) - (β * v);
+        v.device(dev) = op.adjoint(u) - (β * v);
       }
       α = std::sqrt(CheckedDot(v, v));
       v.device(dev) = v / v.constant(α);

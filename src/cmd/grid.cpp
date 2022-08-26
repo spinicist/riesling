@@ -22,23 +22,21 @@ int main_grid(args::Subparser &parser)
   auto const traj = reader.trajectory();
   auto const info = traj.info();
 
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   Cx3 rad_ks = info.noncartesianVolume();
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "grid", "h5"));
   writer.writeTrajectory(traj);
   auto const start = Log::Now();
   if (fwd) {
-    rad_ks = gridder->A(reader.readTensor<Cx5>(HD5::Keys::Cartesian));
+    rad_ks = gridder->forward(reader.readTensor<Cx5>(HD5::Keys::Cartesian));
     writer.writeTensor(
       Cx4(rad_ks.reshape(Sz4{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1})),
       HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
     auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-    writer.writeTensor(gridder->Adj(sdc->Adj(reader.noncartesian(0))), HD5::Keys::Cartesian);
+    writer.writeTensor(gridder->adjoint(sdc->adjoint(reader.noncartesian(0))), HD5::Keys::Cartesian);
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }
 

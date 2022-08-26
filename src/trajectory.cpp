@@ -71,20 +71,13 @@ I1 const &Trajectory::frames() const
   return frames_;
 }
 
-Point3 Trajectory::point(int16_t const read, int32_t const spoke, float const rad_hi) const
+Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
 {
   assert(read < info_.samples);
   assert(spoke < info_.traces);
 
-  // Convention is to store the points between -0.5 and 0.5, so we need a factor of 2 here
-  float const diameter = 2.f * rad_hi;
   Re1 const p = points_.chip(spoke, 2).chip(read, 1);
-  if (info_.grid3D) {
-    return Point3{p(0) * diameter, p(1) * diameter, p(2) * diameter};
-  } else {
-    return Point3{p(0) * diameter, p(1) * diameter, p(2) - (info_.matrix[2] / 2)};
-  }
-  __builtin_unreachable(); // Because the GCC devs are very obtuse
+  return p;
 }
 
 std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index const lores, bool const shrink) const

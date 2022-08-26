@@ -55,10 +55,11 @@ hid_t InfoType()
   hsize_t sz9[1] = {9};
   hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
   herr_t status;
+  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
   status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "samples", HOFFSET(Info, samples), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "traces", HOFFSET(Info, traces), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
+  status = H5Tinsert(info_id, "slabs", HOFFSET(Info, slabs), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "grid3D", HOFFSET(Info, grid3D), H5T_NATIVE_HBOOL);
   status = H5Tinsert(info_id, "fft3D", HOFFSET(Info, fft3D), H5T_NATIVE_HBOOL);
   status = H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG);
@@ -78,10 +79,11 @@ void CheckInfoType(hid_t handle)
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   // Also use vector instead of array so I don't forget to change the size if the members change
   std::vector<std::string> const names{
+    "matrix",
     "channels",
     "samples",
     "traces",
-    "matrix",
+    "slabs",
     "grid3D",
     "fft3D",
     "frames",

@@ -14,26 +14,33 @@ namespace rl {
 SingleChannel::SingleChannel(Trajectory const &traj)
   : Precond{}
 {
-  Index const imScale = 2;
+  Info const info = traj.info();
+  Info newInfo = info;
+  std::transform(
+    newInfo.matrix.begin(), newInfo.matrix.end(), newInfo.matrix.begin(), [](Index const i) { return i * 2; });
+  Trajectory newTraj(newInfo, traj.points(), traj.frames());
   float const osamp = 1.25;
-  // Do NOT increase this beyond a width 3 kernel.
-  // I do not fully understand why but increasing it leads to numerical issues,
-  // which I assume might be solved by further oversampling but do not have the 
-  // time or memory to investigate further
-  auto k = make_kernel("FI5", traj.info().grid3D, osamp);
-  auto gridder = rl::make_grid<Cx>(k.get(), Mapping(traj, k.get(), osamp*imScale, 32), 1);
+  auto gridder = rl::make_grid<Cx>(newTraj, "FI3", osamp, 1);
   gridder->doNotWeightFrames();
   // Keep more than usual otherwise funky numerical issues
-  Sz3 sz = LastN<3>(gridder->inputDimensions());
-  // Sz3 sz{traj.info().matrix[0]*imScale, traj.info().matrix[1]*imScale, traj.info().matrix[2]*imScale};
-  NUFFTOp nufft(sz, gridder.get());
+  // Sz3 sz = LastN<3>(gridder->inputDimensions());
+  NUFFTOp nufft(newInfo.matrix, gridder.get());
   Cx3 W(gridder->outputDimensions());
   pre_.resize(gridder->outputDimensions());
   W.setConstant(Cx(1.f, 0.f));
-  W = nufft.A(nufft.Adj(W));
+  Cx5 const psf = nufft.adjoint(W);
+
+  Cx5 ones(AddFront(info.matrix, 1, 1));
+  ones.setConstant(1.f);
+  PadOp<5> padX(ones.dimensions(), psf.dimensions());
+  FFTOp<5> fftX(psf.dimensions());
+  
+  Cx5 xcorr = fftX.adjoint(fftX.forward(padX.forward(ones)).abs().square().cast<Cx>());
+  Log::Tensor(xcorr, "single-xcorr");
+  W = nufft.forward(psf * xcorr);
   Log::Tensor(W, "single-W");
-  float const scale = 1.f; //std::pow(Product(LastN<3>(sz)), 1.5f) / traj.info().matrix.prod();
-  pre_.device(Threads::GlobalDevice()) = W.cast<Cxd>().abs().cast<float>() * scale;
+  float const scale = 1.f; // std::pow(Product(LastN<3>(sz)), 1.5f) / traj.info().matrix.prod();
+  pre_.device(Threads::GlobalDevice()) = W.abs() * scale;
   Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre-inv");
   pre_.device(Threads::GlobalDevice()) = (pre_ > 0.f).select(pre_.inverse(), pre_.constant(1.f));
   Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre");

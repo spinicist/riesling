@@ -26,11 +26,11 @@ struct ReconRSSOp final : Operator<4, 3>
   }
 
   template <typename T>
-  auto Adj(T const &x) const
+  auto adjoint(T const &x) const
   {
     Log::Debug("Starting ReconRSSOp adjoint. Norm {}", Norm(x));
     auto const start = Log::Now();
-    Cx5 const channels = nufft_.Adj(x);
+    Cx5 const channels = nufft_.adjoint(x);
     Cx4 y(inputDimensions());
     y.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
     Log::Debug("Finished ReconOp adjoint. Norm {}. Took {}", Norm(y), Log::ToNow(start));

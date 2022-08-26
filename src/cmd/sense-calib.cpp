@@ -24,11 +24,10 @@ int main_sense_calib(args::Subparser &parser)
   HD5::RieslingReader reader(core.iname.Get());
   auto const traj = reader.trajectory();
   auto const &info = traj.info();
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, ReadBasis(core.basisFile));
+  auto const basis = ReadBasis(core.basisFile);
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
-  Cx3 const data = sdc->Adj(reader.noncartesian(ValOrLast(volume.Get(), info.volumes)));
+  Cx3 const data = sdc->adjoint(reader.noncartesian(ValOrLast(volume.Get(), info.volumes)));
   Cx4 sense = SENSE::SelfCalibration(info, gridder.get(), fov.Get(), res.Get(), λ.Get(), frame.Get(), data);
 
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "sense", "h5");

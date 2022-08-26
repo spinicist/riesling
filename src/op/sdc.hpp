@@ -28,7 +28,7 @@ struct SDCOp final : Operator<3, 3>
     return dims_;
   }
 
-  Cx3 Adj(Cx3 const &in) const
+  Cx3 adjoint(Cx3 const &in) const
   {
     if (dc_.size()) {
       auto const start = Log::Now();

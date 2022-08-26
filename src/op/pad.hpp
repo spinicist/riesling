@@ -47,19 +47,21 @@ struct PadOp final : Operator<Rank, Rank>
     return output_;
   }
 
-  Output A(Input const &x) const
+  Output forward(Input const &x) const
   {
     Output result(outputDimensions());
     result.device(Threads::GlobalDevice()) = x.pad(paddings_);
-    Log::Debug("Padding Forward Norm {} -> {}", Norm(x), Norm(result));
+    Log::Tensor(result, "pad-fwd");
+    Log::Debug("Padding Forward Norm {} -> {} Dims {} -> {}", Norm(x), Norm(result), x.dimensions(), result.dimensions());
     return x.pad(paddings_);
   }
 
-  Input Adj(Output const &x) const
+  Input adjoint(Output const &x) const
   {
     Input result(inputDimensions());
     result.device(Threads::GlobalDevice()) = x.slice(left_, input_);
-    Log::Debug("Padding Adjoint Norm {} -> {}", Norm(x), Norm(result));
+    Log::Tensor(result, "pad-adj");
+    Log::Debug("Padding Adjoint Norm {} -> {} Dims {} {}", Norm(x), Norm(result), x.dimensions(), result.dimensions());
     return x.slice(left_, input_);
   }
 

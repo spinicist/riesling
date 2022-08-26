@@ -17,7 +17,6 @@ int main_traj(args::Subparser &parser)
   CoreOpts core(parser);
   SDC::Opts sdcOpts(parser);
 
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   args::Flag savePSF(parser, "PSF", "Write out Point-Spread-Function", {"psf", 'p'});
 
   ParseCommand(parser, core.iname);
@@ -28,14 +27,12 @@ int main_traj(args::Subparser &parser)
   auto info = inTraj.info();
   info.channels = 1;
   Trajectory traj(info, inTraj.points(), inTraj.frames());
-
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, ReadBasis(core.basisFile));
+  auto const basis = ReadBasis(core.basisFile);
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx3 rad_ks(1, info.samples, info.traces);
   rad_ks.setConstant(1.0f);
-  Cx4 out = gridder->Adj(sdc->Adj(rad_ks)).chip<0>(0);
+  Cx4 out = gridder->adjoint(sdc->adjoint(rad_ks)).chip<0>(0);
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "traj", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(

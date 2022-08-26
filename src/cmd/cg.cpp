@@ -27,10 +27,8 @@ int main_cg(args::Subparser &parser)
   HD5::RieslingReader reader(core.iname.Get());
   auto const &traj = reader.trajectory();
   Info const &info = traj.info();
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
 
@@ -50,7 +48,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = cg.run(recon.Adj(reader.noncartesian(iv)));
+    vol = cg.run(recon.adjoint(reader.noncartesian(iv)));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

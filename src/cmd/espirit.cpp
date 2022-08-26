@@ -32,18 +32,17 @@ int main_espirit(args::Subparser &parser)
   auto const traj = reader.trajectory();
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
   auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
   auto gridder =
-    make_grid<Cx>(kernel.get(), Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get()), info.channels);
+    make_grid<Cx>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
   auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
-  Cropper cropper(info, gridder->mapping().cartDims, fov.Get());
+  Cropper cropper(info, LastN<3>(gridder->inputDimensions()), fov.Get());
   auto const ks = reader.noncartesian(ValOrLast(volume.Get(), info.volumes))
                     .slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.samples, dsInfo.traces});
   Cx4 sense =
-    cropper.crop4(ESPIRIT(gridder.get(), sdc->Adj(ks), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
+    cropper.crop4(ESPIRIT(gridder.get(), sdc->adjoint(ks), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
 
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "espirit", "h5");
   HD5::Writer writer(fname);

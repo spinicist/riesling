@@ -28,11 +28,11 @@ int main_pad(args::Subparser &parser)
     auto const start = Log::Now();
     if (fwd) {
       PadOp<6> pad(inDims, outDims);
-      outImages = pad.A(inImages);
+      outImages = pad.forward(inImages);
       Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     } else {
       PadOp<6> pad(outDims, inDims);
-      outImages = pad.Adj(inImages);
+      outImages = pad.adjoint(inImages);
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     }
     writer.writeTensor(outImages, HD5::Keys::Channels);
@@ -44,11 +44,11 @@ int main_pad(args::Subparser &parser)
     auto const start = Log::Now();
     if (fwd) {
       PadOp<5> pad(inDims, outDims);
-      outImages = pad.A(inImages);
+      outImages = pad.forward(inImages);
       Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     } else {
       PadOp<5> pad(outDims, inDims);
-      outImages = pad.Adj(inImages);
+      outImages = pad.adjoint(inImages);
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     }
     writer.writeTensor(outImages, HD5::Keys::Image);

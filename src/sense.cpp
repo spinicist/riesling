@@ -41,7 +41,7 @@ Cx4 SelfCalibration(
   if (frame >= info.frames) {
     Log::Fail("Specified SENSE frame {} is greater than number of frames in data {}", frame, info.frames);
   }
-  grid = gridder->Adj(data).chip<1>(frame);
+  grid = gridder->adjoint(data).chip<1>(frame);
   float const end_rad = info.voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
   Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);
@@ -107,7 +107,7 @@ Cx4 Choose(Opts &opts, Info const &i, GridBase<Cx> *g, float const fov, SDCOp *s
       opts.res.Get(),
       opts.λ.Get(),
       opts.frame.Get(),
-      sdc->Adj(reader.noncartesian(ValOrLast(opts.volume.Get(), reader.trajectory().info().volumes))));
+      sdc->adjoint(reader.noncartesian(ValOrLast(opts.volume.Get(), reader.trajectory().info().volumes))));
   }
 }
 

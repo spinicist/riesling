@@ -77,7 +77,7 @@ Cx4 ESPIRIT(
   Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   Log::Print(FMT_STRING("Calculating k-space kernels"));
-  Cx4 grid = gridder->Adj(data).chip<1>(0);
+  Cx4 grid = gridder->adjoint(data).chip<1>(0);
 
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh);
@@ -105,7 +105,7 @@ Cx4 ESPIRIT(
 
   Log::Print(FMT_STRING("Image space Eigenanalysis"));
   // Do this slice-by-slice
-  Re3 valsImage(gridder->mapping().cartDims);
+  Re3 valsImage(LastN<3>(gridder->inputDimensions()));
   auto const hiSz = FirstN<3>(grid.dimensions());
   auto const hiFFT = FFT::Make<3, 2>(hiSz, 1);
   auto slice_task = [&grid, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const zz) {

@@ -27,19 +27,17 @@ Re2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const it
   Re3 W(1, info.samples, info.traces);
   Re3 Wp(W.dimensions());
 
-  std::unique_ptr<Kernel> k;
+  std::unique_ptr<GridBase<float>> gridder;
   if (nn) {
-    k = make_kernel("NN", info.grid3D, os);
+    gridder = make_grid<float>(traj, "NN", os, 1);
   } else {
-    k = make_kernel("FI7", info.grid3D, os);
+    gridder = make_grid<float>(traj, "FI7", os, 1);
   }
-  auto const m = Mapping(traj, k.get(), os, 32);
-  auto gridder = make_grid<float>(k.get(), m, 1);
   gridder->doNotWeightFrames();
   
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {
-    Wp = gridder->A(gridder->Adj(W)); // Use the gridder's workspace
+    Wp = gridder->forward(gridder->adjoint(W)); // Use the gridder's workspace
     Wp.device(Threads::GlobalDevice()) =
       (Wp > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / Norm(W);
@@ -60,7 +58,7 @@ Re2 Radial2D(Trajectory const &traj)
   Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
   Info const &info = traj.info();
   auto spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
-    float const k_delta = (traj.point(1, spoke, 1.f) - traj.point(0, spoke, 1.f)).norm();
+    float const k_delta = Norm(traj.point(1, spoke) - traj.point(0, spoke));
     float const V = 2.f * k_delta * M_PI / N; // Area element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * *std::max_element(info.matrix.begin(), info.matrix.end())) / N;
@@ -68,7 +66,7 @@ Re2 Radial2D(Trajectory const &traj)
     float const flat_val = V * flat_start;
     Re1 sdc(info.samples);
     for (Index ir = 0; ir < info.samples; ir++) {
-      float const rad = traj.point(ir, spoke, info.samples).norm();
+      float const rad = info.samples * Norm(traj.point(ir, spoke));
       if (rad == 0.f) {
         sdc(ir) = V / 8.f;
       } else if (rad < flat_start) {
@@ -98,7 +96,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
   Eigen::ArrayXf mergeLo;
   if (lores) {
     float const scale =
-      traj.point(info.samples - 1, lores, 1.f).norm() / traj.point(info.samples - 1, 0, 1.f).norm();
+      Norm(traj.point(info.samples - 1, lores)) / Norm(traj.point(info.samples - 1, 0));
     mergeLo = ind / scale - (gap - 1);
     mergeLo = (mergeLo > 0).select(mergeLo, 0);
     mergeLo = (mergeLo < 1).select(mergeLo, 1);
@@ -114,7 +112,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
     float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);
     Re1 sdc(info.samples);
     for (Index ir = 0; ir < info.samples; ir++) {
-      float const rad = traj.point(ir, spoke, info.samples).norm();
+      float const rad = info.samples * Norm(traj.point(ir, spoke));
       float const merge = (spoke < lores) ? mergeLo(ir) : mergeHi(ir);
       if (rad == 0.f) {
         sdc(ir) = merge * V * 1.f / 8.f;

@@ -35,13 +35,13 @@ struct SenseOp final : Operator<4, 5>
   }
 
   template <typename T>
-  auto A(T const &x) const
+  auto forward(T const &x) const
   {
     return (x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps));
   }
 
   template <typename T>
-  auto Adj(T const &x) const
+  auto adjoint(T const &x) const
   {
     return ConjugateSum(x, maps_.reshape(resMaps).broadcast(brdMaps));
   }

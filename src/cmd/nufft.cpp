@@ -31,11 +31,9 @@ int main_nufft(args::Subparser &parser)
     traj = reader.trajectory();
   }
   auto const info = traj.info();
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(traj, kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
-  NUFFTOp nufft(LastN<3>(gridder->inputDimensions()), gridder.get());
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
+  NUFFTOp nufft(info.matrix, gridder.get());
   Cx6 channels(AddBack(nufft.inputDimensions(), info.volumes));
   Cx4 noncart(AddBack(nufft.outputDimensions(), info.volumes));
 
@@ -47,7 +45,7 @@ int main_nufft(args::Subparser &parser)
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     reader.readTensor(name, channels);
     for (auto ii = 0; ii < info.volumes; ii++) {
-      noncart.chip<3>(ii).device(Threads::GlobalDevice()) = nufft.A(channels.chip<5>(ii));
+      noncart.chip<3>(ii).device(Threads::GlobalDevice()) = nufft.forward(channels.chip<5>(ii));
     }
     writer.writeTensor(noncart, HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Forward NUFFT took {}"), Log::ToNow(start));
@@ -56,7 +54,7 @@ int main_nufft(args::Subparser &parser)
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
     reader.readTensor(name, noncart);
     for (auto ii = 0; ii < info.volumes; ii++) {
-      channels.chip<5>(ii).device(Threads::GlobalDevice()) = nufft.Adj(sdc->Adj(noncart.chip<3>(ii)));
+      channels.chip<5>(ii).device(Threads::GlobalDevice()) = nufft.adjoint(sdc->adjoint(noncart.chip<3>(ii)));
     }
     writer.writeTensor(channels, HD5::Keys::Channels);
     Log::Print(FMT_STRING("NUFFT Adjoint took {}"), Log::ToNow(start));

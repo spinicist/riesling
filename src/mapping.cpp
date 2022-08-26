@@ -3,21 +3,29 @@
 #include <cfenv>
 #include <cmath>
 
+#include "tensorOps.h"
+
 namespace rl {
 
-bool Bucket::empty() const
+template <size_t NDims>
+auto Mapping<NDims>::Bucket::empty() const -> bool
 {
   return indices.empty();
 };
 
-Index Bucket::size() const
+template <size_t NDims>
+auto Mapping<NDims>::Bucket::size() const -> Index
 {
   return indices.size();
 }
 
-Sz3 Bucket::gridSize() const
+template <size_t NDims>
+auto Mapping<NDims>::Bucket::gridSize() const -> Sz
 {
-  return Sz3{maxCorner[0] - minCorner[0], maxCorner[1] - minCorner[1], maxCorner[2] - minCorner[2]};
+  Sz sz;
+  std::transform(maxCorner.begin(), maxCorner.end(), minCorner.begin(), sz.begin(), std::minus());
+  return sz;
+  // return Sz3{maxCorner[0] - minCorner[0], maxCorner[1] - minCorner[1], maxCorner[2] - minCorner[2]};
 }
 
 // Helper function to convert a floating-point vector-like expression to integer values
@@ -39,7 +47,8 @@ inline Index fft_size(float const x)
 }
 
 // Helper function to sort the cartesian indices
-std::vector<int32_t> sort(std::vector<CartesianIndex> const &cart)
+template <size_t N>
+std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 {
   auto const start = Log::Now();
   std::vector<int32_t> sorted(cart.size());
@@ -47,41 +56,60 @@ std::vector<int32_t> sort(std::vector<CartesianIndex> const &cart)
   std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
     auto const &ac = cart[a];
     auto const &bc = cart[b];
-    return (ac.z < bc.z) || ((ac.z == bc.z) && ((ac.y < bc.y) || ((ac.y == bc.y) && (ac.x < bc.x))));
+    for (int ii = N - 1; ii >= 0; ii--) {
+      if (ac[ii] < bc[ii]) {
+        return true;
+      } else if (ac[ii] > bc[ii]) {
+        return false;
+      }
+    }
+    return false;
   });
   Log::Debug(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
   return sorted;
 }
 
-Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index const bucketSz, Index const read0)
+template <size_t NDims>
+Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, Index const bucketSz, Index const read0)
 {
   Info const &info = traj.info();
-  Index const gridSz = fft_size(*std::max_element(info.matrix.begin(), info.matrix.end()) * os);
+  Index const gridSz = fft_size(info.matrix[0] * os);
   Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
 
   fft3D = info.fft3D;
-  cartDims = info.grid3D ? Sz3{gridSz, gridSz, gridSz} : Sz3{gridSz, gridSz, info.matrix[2]};
+  std::fill(cartDims.begin(), cartDims.end(), gridSz);
+  if constexpr (NDims == 3) {
+    cartDims[2] /= info.slabs;
+  }
   noncartDims = Sz2{info.samples, info.traces};
   frames = info.frames;
   frameWeights = Eigen::ArrayXf(frames);
   frameWeights.setZero();
 
-  Index const nbX = std::ceil(cartDims[0] / float(bucketSz));
-  Index const nbY = std::ceil(cartDims[1] / float(bucketSz));
-  Index const nbZ = std::ceil(cartDims[2] / float(bucketSz));
-  Index const nB = nbX * nbY * nbZ;
-  buckets.reserve(nB);
-  Index const IP = k->inPlane();
-  Index const TP = k->throughPlane();
-  for (Index iz = 0; iz < nbZ; iz++) {
-    for (Index iy = 0; iy < nbY; iy++) {
-      for (Index ix = 0; ix < nbX; ix++) {
+  Index const nB = std::ceil(gridSz / float(bucketSz));
+  buckets.reserve(pow(nB, NDims));
+
+  if constexpr (NDims == 3) {
+    for (Index iz = 0; iz < nB; iz++) {
+      for (Index iy = 0; iy < nB; iy++) {
+        for (Index ix = 0; ix < nB; ix++) {
+          buckets.push_back(Bucket{
+            Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
+            Sz3{
+              std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
+              std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2),
+              std::min((iz + 1) * bucketSz, cartDims[2]) + (kW / 2)}});
+        }
+      }
+    }
+  } else {
+    for (Index iy = 0; iy < nB; iy++) {
+      for (Index ix = 0; ix < nB; ix++) {
         buckets.push_back(Bucket{
-          Sz3{ix * bucketSz - (IP / 2), iy * bucketSz - (IP / 2), iz * bucketSz - (TP / 2)},
-          Sz3{
-            std::min((ix + 1) * bucketSz, cartDims[0]) + (IP / 2),
-            std::min((iy + 1) * bucketSz, cartDims[1]) + (IP / 2),
-            std::min((iz + 1) * bucketSz, cartDims[2]) + (TP / 2)}});
+          Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
+          Sz2{
+            std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
+            std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
       }
     }
   }
@@ -89,29 +117,37 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   Log::Print("Calculating mapping");
   std::fesetround(FE_TONEAREST);
   float const maxRad = (gridSz / 2) - 1.f;
-  Size3 const center(cartDims[0] / 2, cartDims[1] / 2, cartDims[2] / 2);
+  Sz center;
+  std::transform(cartDims.begin(), cartDims.end(), center.begin(), [](Index const c) { return c / 2;});
   int32_t index = 0;
   Index NaNs = 0;
   for (int32_t is = 0; is < info.traces; is++) {
     auto const fr = traj.frames()(is);
     if ((fr >= 0) && (fr < info.frames)) {
       for (int16_t ir = read0; ir < info.samples; ir++) {
-        Point3 const xyz = traj.point(ir, is, maxRad);
+        Re1 const p = traj.point(ir, is);
+        Eigen::Array<float, NDims, 1> xyz;
+        xyz[0] = p[0] * maxRad * 2.f;
+        xyz[1] = p[1] * maxRad * 2.f;
+        if (NDims == 3) {
+          xyz[2] = p[2] * maxRad * 2.f / info.slabs;
+        }
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
-          Point3 const gp = nearby(xyz);
-          Size3 const ijk = center + Size3(gp.cast<int16_t>());
-          auto const off = xyz - gp.cast<float>().matrix();
-
-          cart.push_back(CartesianIndex{ijk(0), ijk(1), ijk(2)});
+          auto const gp = nearby(xyz);
+          auto const off = xyz - gp.template cast<float>();
+          std::array<int16_t, NDims> ijk;
+          std::transform(
+            center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const c, float const p) { return c + p; });
+          cart.push_back(ijk);
           offset.push_back(off);
-          noncart.push_back(NoncartesianIndex{.spoke = is, .read = ir});
+          noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
           frame.push_back(fr);
 
           // Calculate bucket
-          Index const ix = ijk[0] / bucketSz;
-          Index const iy = ijk[1] / bucketSz;
-          Index const iz = ijk[2] / bucketSz;
-          Index const ib = ix + nbX * (iy + (nbY * iz));
+          Index ib = 0;
+          for (int ii = NDims - 1; ii >= 0; ii--) {
+            ib = ib * nB + (ijk[ii] / bucketSz);
+          }
           buckets[ib].indices.push_back(index);
           frameWeights[fr] += 1;
           index++;
@@ -133,5 +169,8 @@ Mapping::Mapping(Trajectory const &traj, Kernel const *k, float const os, Index 
   frameWeights = frameWeights.maxCoeff() / frameWeights;
   Log::Print(FMT_STRING("Frame weights: {}"), frameWeights.transpose());
 }
+
+template struct Mapping<2>;
+template struct Mapping<3>;
 
 } // namespace rl

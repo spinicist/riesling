@@ -143,7 +143,7 @@ Cx4 tgv(
 
   // Primal variables
   Cx4 u(dims);                 // Main variable
-  u = op.Adj(ks_data);         // Get starting point
+  u = op.adjoint(ks_data);         // Get starting point
   float const scale = Norm(u); // Normalise regularisation factors
   Cx4 u_ = u;                  // Bar variable (is this the "dual"?)
   Cx4 u_old = u;               // From previous iteration
@@ -205,14 +205,14 @@ Cx4 tgv(
     ProjectQ(q, alpha0, dev);
 
     // Update r (in k-space)
-    ks_res = op.A(u_);
+    ks_res = op.forward(u_);
     ks_res.device(dev) = ks_res - ks_data;
     r.device(dev) = (r + tau_d * ks_res) / r.constant(1.f + tau_d); // Prox op
 
     // Update u
     u_old.device(dev) = u;
     Div(p, divp, dev);
-    v_decode = op.Adj(r);
+    v_decode = op.adjoint(r);
     u.device(dev) = u - tau_p * (divp + v_decode); // Paper says +tau, but code says -tau
     u_.device(dev) = 2.0 * u - u_old;
 

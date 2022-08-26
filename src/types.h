@@ -108,6 +108,8 @@ Eigen::DSizes<Index, N> MidN(T const &sz)
 }
 
 using Size3 = Eigen::Array<int16_t, 3, 1>;
+using Point1 = Eigen::Matrix<float, 1, 1>;
+using Point2 = Eigen::Matrix<float, 2, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
 
 template <typename T>

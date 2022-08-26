@@ -22,8 +22,8 @@ TEST_CASE("ops-sense")
     maps = maps / Tile(rss, channels);
 
     SenseOp sense(maps, 1);
-    y = sense.A(u);
-    x = sense.Adj(v);
+    y = sense.forward(u);
+    x = sense.adjoint(v);
 
     auto const yy = Dot(y, v);
     auto const xx = Dot(u, x);

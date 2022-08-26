@@ -34,6 +34,7 @@ add_library(vineyard
     src/kernel-fi.cpp
     src/kernel-kb.cpp
     src/kernel-nn.cpp
+    src/newkernel.cpp
     src/log.cpp
     src/mapping.cpp
     src/phantom_sphere.cpp
@@ -56,13 +57,13 @@ add_library(vineyard
     src/io/writer.cpp
     src/op/apodize.cpp
     src/op/gridBase.cpp
-    src/op/grid11.cpp
-    src/op/grid31.cpp
-    src/op/grid33.cpp
-    src/op/grid51.cpp
-    src/op/grid55.cpp
-    src/op/grid71.cpp
-    src/op/grid77.cpp
+    # src/op/grid11.cpp
+    # src/op/grid31.cpp
+    # src/op/grid33.cpp
+    # src/op/grid51.cpp
+    # src/op/grid55.cpp
+    # src/op/grid71.cpp
+    # src/op/grid77.cpp
     src/op/nufft.cpp
     src/op/sense.hpp
     src/precond/scaling.cpp

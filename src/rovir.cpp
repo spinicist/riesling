@@ -35,15 +35,12 @@ auto ROVIR(
   auto const &info = traj.info();
   Index const nC = info.channels;
   float const osamp = 3.f;
-  auto const kernel = rl::make_kernel("FI3", info.grid3D, osamp);
-
-  Mapping const mapping(traj, kernel.get(), osamp, 32);
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels);
+  auto gridder = make_grid<Cx>(traj, "FI3", osamp, info.channels);
   SDCOp sdc(SDC::Pipe(traj, true, osamp), nC);
   auto const sz = LastN<3>(gridder->inputDimensions());
   NUFFTOp nufft(sz, gridder.get(), &sdc);
   Cx4 const channelImages =
-    nufft.Adj(data.slice(Sz3{0, minRead, 0}, Sz3{nC, info.samples, info.traces})).chip<1>(0);
+    nufft.adjoint(data.slice(Sz3{0, minRead, 0}, Sz3{nC, info.samples, info.traces})).chip<1>(0);
 
   // Get the signal distribution for thresholding
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection

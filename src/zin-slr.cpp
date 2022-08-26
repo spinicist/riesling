@@ -72,7 +72,7 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
     Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), wnThresh, 0.f, nC);
   }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, wnThresh);
-  Cx5 grid = fft.A(channels);
+  Cx5 grid = fft.forward(channels);
   // Now crop out corners which will have zeros
   Index const w = std::floor(grid.dimension(2) / sqrt(3));
   Log::Print(FMT_STRING("Extract width {}"), w);
@@ -98,7 +98,7 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   Log::Tensor(cropped, "zin-slr-after-cropped");
   Log::Tensor(grid, "zin-slr-after-grid");
   Log::Tensor(kernels, "zin-slr-after-kernels");
-  Cx5 outChannels = fft.Adj(grid);
+  Cx5 outChannels = fft.adjoint(grid);
   Log::Tensor(channels, "zin-slr-b4-channels");
   Log::Tensor(outChannels, "zin-slr-after-channels");
   return outChannels;

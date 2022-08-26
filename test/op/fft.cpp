@@ -18,8 +18,8 @@ TEST_CASE("ops-fft")
     x.setRandom();
     y.setRandom();
 
-    xy = fft.A(x);
-    yx = fft.Adj(y);
+    xy = fft.forward(x);
+    yx = fft.adjoint(y);
 
     // Don't forget conjugate on second dot argument
     auto const xx = Dot(x, yx);

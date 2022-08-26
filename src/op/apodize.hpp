@@ -16,8 +16,8 @@ struct ApodizeOp final : Operator<5, 5, Scalar>
   ApodizeOp(InputDims const &inSize, GridBase<Scalar> *gridder);
   auto inputDimensions() const -> InputDims;
   auto outputDimensions() const -> OutputDims;
-  auto A(Input const &x) const -> Output;
-  auto Adj(Output const &x) const -> Input;
+  auto forward(Input const &x) const -> Output;
+  auto adjoint(Output const &x) const -> Input;
 
 private:
   InputDims sz_, res_, brd_;

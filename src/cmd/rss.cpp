@@ -22,10 +22,8 @@ int main_rss(args::Subparser &parser)
   HD5::RieslingReader reader(core.iname.Get());
   auto const traj = reader.trajectory();
   Info const &info = traj.info();
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
 
   ReconRSSOp recon(gridder.get(), LastN<3>(info.matrix), sdc.get());
@@ -36,7 +34,7 @@ int main_rss(args::Subparser &parser)
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < info.volumes; iv++) {
-    out.chip<4>(iv) = out_cropper.crop4(recon.Adj(reader.noncartesian(iv)));
+    out.chip<4>(iv) = out_cropper.crop4(recon.adjoint(reader.noncartesian(iv)));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, core.iname.Get(), core.oname.Get(), parser.GetCommand().Name(), core.keepTrajectory, traj);

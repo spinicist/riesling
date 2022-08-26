@@ -54,13 +54,12 @@ int main_zinfandel(args::Subparser &parser)
     }
   } else {
     // Use SLR
-    auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
     auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
     auto const dsInfo = dsTraj.info();
-    auto const map0 = Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get(), 0);
-    auto const mapN = Mapping(dsTraj, kernel.get(), core.osamp.Get(), core.bucketSize.Get(), gap.Get());
-    auto grid0 = make_grid<Cx>(kernel.get(), map0, info.channels);
-    auto gridN = make_grid<Cx>(kernel.get(), mapN, info.channels);
+    
+    auto grid0 = make_grid<Cx>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
+    auto gridN = make_grid<Cx>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
+
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
     auto const pre = std::make_unique<SingleChannel>(dsTraj);
@@ -73,7 +72,7 @@ int main_zinfandel(args::Subparser &parser)
       Cx3 const ks = reader.noncartesian(iv);
       Cx3 const dsKS = ks.slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.samples, dsInfo.traces});
       Cx5 const img = admm.run(dsKS);
-      Cx3 const filled = nufft0.A(img);
+      Cx3 const filled = nufft0.forward(img);
       rad_ks.chip<3>(iv) = ks;
       rad_ks.chip<3>(iv).slice(st, sz) = filled.slice(st, sz);
     }

@@ -9,15 +9,16 @@
 #include "sdc.hpp"
 
 namespace rl {
+
 struct NUFFTOp final : Operator<5, 3>
 {
   NUFFTOp(Sz3 const imgDims, GridBase<Cx> *g, SDCOp *sdc = nullptr);
 
   auto inputDimensions() const -> InputDims;
   auto outputDimensions() const -> OutputDims;
-  auto A(Input const &x) const -> Output;
-  auto Adj(Output const &x) const -> Input;
-  auto AdjA(Input const &x) const -> Input;
+  auto forward(Input const &x) const -> Output;
+  auto adjoint(Output const &x) const -> Input;
+  auto adjfwd(Input const &x) const -> Input;
   auto fft() const -> FFTOp<5> const &;
   void calcToeplitz();
 

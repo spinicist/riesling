@@ -33,11 +33,9 @@ int main_recon(args::Subparser &parser)
   }
   Info const &info = traj.info();
 
-  auto const kernel = rl::make_kernel(core.ktype.Get(), info.grid3D, core.osamp.Get());
-  Mapping const mapping(reader.trajectory(), kernel.get(), core.osamp.Get(), core.bucketSize.Get());
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(kernel.get(), mapping, info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
+  std::unique_ptr<SDCOp> const sdc = fwd ? nullptr : SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
@@ -55,7 +53,7 @@ int main_recon(args::Subparser &parser)
     for (Index iv = 0; iv < info.volumes; iv++) {
       padded.setZero();
       out_cropper.crop4(padded) = images.chip<4>(iv);
-      kspace.chip<3>(iv) = recon.A(padded);
+      kspace.chip<3>(iv) = recon.forward(padded);
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
     auto const fname = OutName(core.iname.Get(), core.oname.Get(), "recon", "h5");
@@ -68,7 +66,7 @@ int main_recon(args::Subparser &parser)
     Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
     auto const &all_start = Log::Now();
     for (Index iv = 0; iv < info.volumes; iv++) {
-      vol = recon.Adj(reader.noncartesian(iv));
+      vol = recon.adjoint(reader.noncartesian(iv));
       cropped = out_cropper.crop4(vol);
       out.chip<4>(iv) = cropped;
     }

@@ -22,15 +22,13 @@ TEST_CASE("Grid Basic", "[grid]")
     Trajectory const traj(info, points);
 
     float const osamp = GENERATE(2.f, 2.7f, 3.f);
-    auto const kernel = rl::make_kernel("FI5", info.grid3D, osamp);
-    Mapping const mapping(traj, kernel.get(), osamp);
-    auto grid = make_grid<Cx>(kernel.get(), mapping, info.channels);
+    auto grid = make_grid<Cx>(traj, "FI5", osamp, info.channels);
     Cx3 ks(grid->outputDimensions());
     Cx5 img(grid->inputDimensions());
     ks.setConstant(1.f);
-    img = grid->Adj(ks);
+    img = grid->adjoint(ks);
     CHECK(Norm(img) == Approx(std::sqrt(ks.size())).margin(5.e-2f));
-    ks = grid->A(img);
+    ks = grid->forward(img);
     CHECK(Norm(img) == Approx(std::sqrt(ks.size())).margin(5.e-2f));
   }
 }
