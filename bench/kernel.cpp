@@ -2,88 +2,85 @@
 
 #include <Eigen/Dense>
 #include <catch2/catch.hpp>
-#include <unsupported/Eigen/CXX11/Tensor>
 
-#include "../src/kernel.hpp"
-
-using Point3 = Eigen::Matrix<float, 3, 1>;
+#include "types.h"
+#include "kernel/rectilinear.hpp"
+#include "kernel/radial.hpp"
+#include "kernel/expsemi.hpp"
+#include "kernel/kaiser.hpp"
+#include "kernel/triangle.hpp"
+#include "kernel/nn.hpp"
 
 using namespace rl;
 
-template <int IP, int TP>
-Eigen::TensorFixedSize<float, Eigen::Sizes<IP, IP, TP>> DistSq(Point3 const p)
+TEMPLATE_TEST_CASE(
+  "Nearest Neighbour",
+  "[kernels]",
+  (rl::NearestNeighbour<1>),
+  (rl::NearestNeighbour<2>),
+  (rl::NearestNeighbour<3>))
 {
-  using KTensor = Eigen::TensorFixedSize<float, Eigen::Sizes<IP, IP, TP>>;
-  using KArray = Eigen::TensorFixedSize<float, Eigen::Sizes<IP>>;
-  using FixIn = Eigen::type2index<IP>;
-  KArray indices;
-  std::iota(indices.data(), indices.data() + IP, -IP / 2); // Note INTEGER division
-  KTensor k;
-  if constexpr (TP > 1) {
-    constexpr Eigen::IndexList<FixIn, FixOne, FixOne> rshX;
-    constexpr Eigen::IndexList<FixOne, FixIn, FixIn> brdX;
-    constexpr Eigen::IndexList<FixOne, FixIn, FixOne> rshY;
-    constexpr Eigen::IndexList<FixIn, FixOne, FixIn> brdY;
-    constexpr Eigen::IndexList<FixOne, FixOne, FixIn> rshZ;
-    constexpr Eigen::IndexList<FixIn, FixIn, FixOne> brdZ;
-    auto const kx = ((indices.constant(p[0]) - indices) / indices.constant(IP / 2.f))
-                      .square()
-                      .reshape(rshX)
-                      .broadcast(brdX);
-    auto const ky = ((indices.constant(p[1]) - indices) / indices.constant(IP / 2.f))
-                      .square()
-                      .reshape(rshY)
-                      .broadcast(brdY);
-    auto const kz = ((indices.constant(p[2]) - indices) / indices.constant(TP / 2.f))
-                      .square()
-                      .reshape(rshZ)
-                      .broadcast(brdZ);
-    k = kx + ky + kz;
-  } else {
-    constexpr Eigen::IndexList<FixIn, FixOne, FixOne> rshX;
-    constexpr Eigen::IndexList<FixOne, FixIn, FixOne> brdX;
-    constexpr Eigen::IndexList<FixOne, FixIn, FixOne> rshY;
-    constexpr Eigen::IndexList<FixIn, FixOne, FixOne> brdY;
-    auto const kx = ((indices.constant(p[0]) - indices) / indices.constant(IP / 2.f))
-                      .square()
-                      .reshape(rshX)
-                      .broadcast(brdX);
-    auto const ky = ((indices.constant(p[1]) - indices) / indices.constant(IP / 2.f))
-                      .square()
-                      .reshape(rshY)
-                      .broadcast(brdY);
-    k = kx + ky;
-  }
-  return k;
+  TestType k(2.f);
+  typename TestType::Point p;
+  p.setConstant(0.5f);
+  BENCHMARK("NN") {
+    k(p);
+  };
 }
 
-template <int IP, int TP>
-Eigen::TensorFixedSize<float, Eigen::Sizes<IP, IP, TP>> Naive(Point3 const p)
+TEMPLATE_TEST_CASE(
+  "1D Kernels",
+  "[kernels]",
+  (rl::Triangle<3>),
+  (rl::KaiserBessel<3>),
+  (rl::ExpSemi<3>))
 {
-  using KTensor = Eigen::TensorFixedSize<float, Eigen::Sizes<IP, IP, TP>>;
-  KTensor k;
-  for (Index iz = 0; iz < TP; iz++) {
-    for (Index iy = 0; iy < IP; iy++) {
-      for (Index ix = 0; ix < IP; ix++) {
-        k(ix, iy, iz) = ((p - Point3(ix, iy, iz)) / (IP / 2.f)).squaredNorm();
-      }
-    }
-  }
-  return k;
+  rl::Rectilinear<1, TestType> rect(2.f);
+  rl::Radial<1, TestType> rad(2.f);
+  typename rl::Radial<1, TestType>::Point p;
+  p.setConstant(0.5f);
+  BENCHMARK("Rectilinear") {
+    rect(p);
+  };
+  BENCHMARK("Radial") {
+    rad(p);
+  };
 }
 
-TEST_CASE("Kernels")
+TEMPLATE_TEST_CASE(
+  "2D Kernels",
+  "[kernels]",
+  (rl::Triangle<3>),
+  (rl::KaiserBessel<3>),
+  (rl::ExpSemi<3>))
 {
-  auto const z = Point3::Zero();
-
-  BENCHMARK("Old")
-  {
-    DistSq<3, 3>(z);
+  rl::Rectilinear<2, TestType> rect(2.f);
+  rl::Radial<2, TestType> rad(2.f);
+  typename rl::Radial<2, TestType>::Point p;
+  p.setConstant(0.5f);
+  BENCHMARK("Rectilinear") {
+    rect(p);
   };
-
-  BENCHMARK("Naive")
-  {
-    Naive<3, 3>(z);
+  BENCHMARK("Radial") {
+    rad(p);
   };
+}
 
+TEMPLATE_TEST_CASE(
+  "3D Kernels",
+  "[kernels]",
+  (rl::Triangle<3>),
+  (rl::KaiserBessel<3>),
+  (rl::ExpSemi<3>))
+{
+  rl::Rectilinear<3, TestType> rect(2.f);
+  rl::Radial<3, TestType> rad(2.f);
+  typename rl::Radial<3, TestType>::Point p;
+  p.setConstant(0.5f);
+  BENCHMARK("Rectilinear") {
+    rect(p);
+  };
+  BENCHMARK("Radial") {
+    rad(p);
+  };
 }

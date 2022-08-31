@@ -32,7 +32,7 @@ int main_nufft(args::Subparser &parser)
   }
   auto const info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
+  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   NUFFTOp nufft(info.matrix, gridder.get());
   Cx6 channels(AddBack(nufft.inputDimensions(), info.volumes));
   Cx4 noncart(AddBack(nufft.outputDimensions(), info.volumes));

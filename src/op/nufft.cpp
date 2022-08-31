@@ -2,7 +2,7 @@
 
 namespace rl {
 
-NUFFTOp::NUFFTOp(Sz3 const imgDims, GridBase<Cx> *g, SDCOp *sdc)
+NUFFTOp::NUFFTOp(Sz3 const imgDims, GridBase<Cx, 3> *g, SDCOp *sdc)
   : gridder_{g}
   , fft_{gridder_->workspace(), true}
   , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}

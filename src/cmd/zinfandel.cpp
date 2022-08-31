@@ -57,8 +57,8 @@ int main_zinfandel(args::Subparser &parser)
     auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
     auto const dsInfo = dsTraj.info();
     
-    auto grid0 = make_grid<Cx>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
-    auto gridN = make_grid<Cx>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
+    auto grid0 = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
+    auto gridN = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
 
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());

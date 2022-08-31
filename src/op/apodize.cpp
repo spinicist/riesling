@@ -5,7 +5,7 @@
 namespace rl {
 
 template<typename Scalar>
-ApodizeOp<Scalar>::ApodizeOp(InputDims const &inSize, GridBase<Scalar> *gridder)
+ApodizeOp<Scalar>::ApodizeOp(InputDims const &inSize, GridBase<Scalar, 3> *gridder)
 {
   std::copy_n(inSize.begin(), 5, sz_.begin());
   for (Index ii = 0; ii < 2; ii++) {

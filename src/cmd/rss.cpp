@@ -23,7 +23,7 @@ int main_rss(args::Subparser &parser)
   auto const traj = reader.trajectory();
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
+  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
 
   ReconRSSOp recon(gridder.get(), LastN<3>(info.matrix), sdc.get());

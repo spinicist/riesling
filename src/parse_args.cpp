@@ -71,7 +71,7 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
 CoreOpts::CoreOpts(args::Subparser &parser)
   : iname(parser, "F", "Input HD5 file")
   , oname(parser, "O", "Override output name", {'o', "out"})
-  , ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "FI3")
+  , ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "ES3")
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})

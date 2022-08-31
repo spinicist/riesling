@@ -12,7 +12,7 @@ namespace rl {
 
 struct NUFFTOp final : Operator<5, 3>
 {
-  NUFFTOp(Sz3 const imgDims, GridBase<Cx> *g, SDCOp *sdc = nullptr);
+  NUFFTOp(Sz3 const imgDims, GridBase<Cx, 3> *g, SDCOp *sdc = nullptr);
 
   auto inputDimensions() const -> InputDims;
   auto outputDimensions() const -> OutputDims;
@@ -23,7 +23,7 @@ struct NUFFTOp final : Operator<5, 3>
   void calcToeplitz();
 
 private:
-  GridBase<Cx> *gridder_;
+  GridBase<Cx, 3> *gridder_;
   FFTOp<5> fft_;
   PadOp<5> pad_;
   ApodizeOp<Cx> apo_;

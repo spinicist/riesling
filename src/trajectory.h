@@ -3,7 +3,6 @@
 #include "info.h"
 #include "log.h"
 #include "types.h"
-#include "kernel.hpp"
 
 namespace rl {
 

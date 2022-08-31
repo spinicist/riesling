@@ -1,7 +1,6 @@
 #include "sdc.h"
 
 #include "io/hd5.hpp"
-#include "kernel.hpp"
 #include "mapping.h"
 #include "op/gridBase.hpp"
 #include "op/sdc.hpp"
@@ -27,17 +26,16 @@ Re2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const it
   Re3 W(1, info.samples, info.traces);
   Re3 Wp(W.dimensions());
 
-  std::unique_ptr<GridBase<float>> gridder;
+  std::unique_ptr<GridBase<float, 3>> gridder;
   if (nn) {
-    gridder = make_grid<float>(traj, "NN", os, 1);
+    gridder = make_grid<float, 3>(traj, "NN", os, 1);
   } else {
-    gridder = make_grid<float>(traj, "FI7", os, 1);
+    gridder = make_grid<float, 3>(traj, "ES7", os, 1);
   }
-  gridder->doNotWeightFrames();
-  
+
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {
-    Wp = gridder->forward(gridder->adjoint(W)); // Use the gridder's workspace
+    Wp = gridder->forward(gridder->adjoint(W));
     Wp.device(Threads::GlobalDevice()) =
       (Wp > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / Norm(W);
@@ -46,7 +44,7 @@ Re2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const it
       Log::Print(FMT_STRING("SDC converged, delta was {}"), delta);
       break;
     } else {
-      Log::Print(FMT_STRING("SDC Delta {}"), delta);
+      Log::Print(FMT_STRING("SDC Step {}/{} Delta {}"), ii, its, delta);
     }
   }
   Log::Print(FMT_STRING("SDC finished."));
@@ -95,8 +93,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 
   Eigen::ArrayXf mergeLo;
   if (lores) {
-    float const scale =
-      Norm(traj.point(info.samples - 1, lores)) / Norm(traj.point(info.samples - 1, 0));
+    float const scale = Norm(traj.point(info.samples - 1, lores)) / Norm(traj.point(info.samples - 1, 0));
     mergeLo = ind / scale - (gap - 1);
     mergeLo = (mergeLo > 0).select(mergeLo, 0);
     mergeLo = (mergeLo < 1).select(mergeLo, 1);
@@ -108,7 +105,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     auto const mm = *std::max_element(info.matrix.begin(), info.matrix.end());
     float const R = (M_PI * mm * mm) / N;
-    float const flat_start = info.samples / sqrt(R);
+    float const flat_start = info.samples / R;
     float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);
     Re1 sdc(info.samples);
     for (Index ir = 0; ir < info.samples; ir++) {

@@ -35,7 +35,7 @@ auto ROVIR(
   auto const &info = traj.info();
   Index const nC = info.channels;
   float const osamp = 3.f;
-  auto gridder = make_grid<Cx>(traj, "FI3", osamp, info.channels);
+  auto gridder = make_grid<Cx, 3>(traj, "ES3", osamp, info.channels);
   SDCOp sdc(SDC::Pipe(traj, true, osamp), nC);
   auto const sz = LastN<3>(gridder->inputDimensions());
   NUFFTOp nufft(sz, gridder.get(), &sdc);

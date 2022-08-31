@@ -183,7 +183,7 @@ Performs the gridding step using the trajectory information only, i.e. grids a s
 
 * ``--kernel=K``
 
-    Gridding kernel. Valid options are ``NN`` (Nearest-Neighbour), ``KB3`` & ``KB5`` (Kaiser-Bessel width 3 or 5) and ``FI3`` & ``FI5`` (Flat-Iron width 3 or 5)
+    Gridding kernel. Valid options are ``NN`` (Nearest-Neighbour), ``KB3`` & ``KB5`` (Kaiser-Bessel width 3 or 5) and ``ES3`` & ``ES5`` (Flat-Iron width 3 or 5)
 
 * ``--psf``
 

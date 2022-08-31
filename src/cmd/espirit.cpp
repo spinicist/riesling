@@ -35,7 +35,7 @@ int main_espirit(args::Subparser &parser)
   auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
   auto gridder =
-    make_grid<Cx>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
+    make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
   auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, LastN<3>(gridder->inputDimensions()), fov.Get());

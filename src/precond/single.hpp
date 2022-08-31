@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../kernel.hpp"
 #include "../trajectory.h"
 #include "precond.hpp"
 

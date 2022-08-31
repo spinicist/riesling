@@ -1,36 +1,33 @@
 #include "../src/op/nufft.hpp"
 #include "../src/precond/single.hpp"
-#include <catch2/catch.hpp>
-
 #include "log.h"
+#include <catch2/catch.hpp>
 using namespace rl;
 
 TEST_CASE("NUFFT", "[nufft]")
 {
-  SECTION("Oversamp")
-  {
-    Log::SetLevel(Log::Level::Debug);
-    Index const M = GENERATE(7, 15, 31);
-    Info const info{.channels = 1, .samples = 3, .traces = 1, .matrix = Sz3{M, M, M}};
-    Re3 points(3, 3, 1);
-    points.setZero();
-    points(0, 0, 0) = -0.4f;
-    points(0, 2, 0) = 0.4f;
-    Trajectory const traj(info, points);
+  Log::SetLevel(Log::Level::Testing);
+  Index const M = GENERATE(7, 15, 16);
+  Info const info{.channels = 1, .samples = 3, .traces = 1, .matrix = Sz3{M, M, M}};
+  Re3 points(3, 3, 1);
+  points.setZero();
+  points(0, 0, 0) = -0.4f;
+  points(1, 0, 0) = -0.4f;
+  points(0, 2, 0) = 0.4f;
+  points(1, 2, 0) = 0.4f;
+  Trajectory const traj(info, points);
 
-    float const osamp = GENERATE(2.7f);
-    auto gridder = make_grid<Cx>(traj, "FI5", osamp, info.channels);
-    NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
-
-    Cx3 ks(nufft.outputDimensions());
-    Cx5 img(nufft.inputDimensions());
-    ks.setConstant(1.f);
-    // ks(0,1,0) = 1.f;
-    img = nufft.adjoint(ks);
-    CHECK(Norm(img) == Approx(std::sqrt(ks.size())).margin(5.e-2f));
-    ks = nufft.forward(img);
-    CHECK(Norm(ks) == Approx(std::sqrt(ks.size())).margin(5.e-2f));
-  }
+  float const osamp = GENERATE(2.f, 2.7f, 3.f);
+  std::string const ktype = GENERATE("ES7");
+  auto gridder = make_grid<Cx, 3>(traj, ktype, osamp, info.channels);
+  NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
+  Cx3 ks(nufft.outputDimensions());
+  Cx5 img(nufft.inputDimensions());
+  ks.setConstant(1.f);
+  img = nufft.adjoint(ks);
+  CHECK(Norm(img) == Approx(Norm(ks)).margin(5.e-2f));
+  ks = nufft.forward(img);
+  CHECK(Norm(ks) == Approx(Norm(ks)).margin(5.e-2f));
 }
 
 TEST_CASE("Preconditioner", "[precond]")

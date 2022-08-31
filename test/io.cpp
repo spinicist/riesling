@@ -14,12 +14,12 @@ void Dummy(std::filesystem::path const &fname)
   HD5::RieslingReader reader(fname);
 }
 
-TEST_CASE("io")
+TEST_CASE("IO", "[io]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
   float const os = 2.f;
-  Info const info{.channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .matrix = Sz3{M, M, M}};
+  Info const info{.channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .matrix = Sz3{M, M, M}, .volumes = 2};
   auto const points = ArchimedeanSpiral(info.samples, info.traces);
   Trajectory const traj(info, points);
   Cx4 refData(info.channels, info.samples, info.traces, info.volumes);
@@ -60,7 +60,7 @@ TEST_CASE("io")
       HD5::Writer writer(fname);
       writer.writeTrajectory(traj);
       writer.writeTensor(
-        Cx4(refData.reshape(Sz4{info.volumes, info.samples, info.traces, info.channels})), HD5::Keys::Noncartesian);
+        Cx4(info.channels + 1, info.samples, info.traces, info.volumes), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
     CHECK_THROWS_AS(Dummy(fname), Log::Failure);

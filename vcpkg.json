@@ -21,6 +21,7 @@
         },
         "indicators",
         "nifticlib",
+        "range-v3",
         "scnlib"
     ]
 }

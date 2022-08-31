@@ -21,7 +21,7 @@ Opts::Opts(args::Subparser &parser)
 
 Cx4 SelfCalibration(
   Info const &info,
-  GridBase<Cx> *gridder,
+  GridBase<Cx, 3> *gridder,
   float const fov,
   float const res,
   float const λ,
@@ -95,14 +95,21 @@ Cx4 Interp(std::string const &file, Sz3 const size2)
   return sense;
 }
 
-Cx4 Choose(Opts &opts, Info const &i, GridBase<Cx> *g, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
+Cx4 Choose(
+  Opts &opts, Info const &info, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
 {
-  if (opts.file) {
-    return Load(opts.file.Get(), i);
+  if (gridder->inputDimensions()[0] == 1) { // Only one channel, return all ones
+    Sz5 const dims = gridder->inputDimensions();
+    Cropper crop(info, LastN<3>(dims), fov);
+    Cx4 channels(crop.dims(dims[0]));
+    channels.setConstant(1.);
+    return channels;
+  } else if (opts.file) {
+    return Load(opts.file.Get(), info);
   } else {
     return SelfCalibration(
-      i,
-      g,
+      info,
+      gridder,
       fov,
       opts.res.Get(),
       opts.λ.Get(),

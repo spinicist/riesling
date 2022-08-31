@@ -18,6 +18,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
+find_package(range-v3 CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
 
 # Ensure this is always defined across all .cpp files
@@ -30,11 +31,6 @@ add_library(vineyard
     src/cropper.cpp
     src/espirit.cpp
     src/filter.cpp
-    src/kernel.cpp
-    src/kernel-fi.cpp
-    src/kernel-kb.cpp
-    src/kernel-nn.cpp
-    src/newkernel.cpp
     src/log.cpp
     src/mapping.cpp
     src/phantom_sphere.cpp
@@ -57,13 +53,10 @@ add_library(vineyard
     src/io/writer.cpp
     src/op/apodize.cpp
     src/op/gridBase.cpp
-    # src/op/grid11.cpp
-    # src/op/grid31.cpp
-    # src/op/grid33.cpp
-    # src/op/grid51.cpp
-    # src/op/grid55.cpp
-    # src/op/grid71.cpp
-    # src/op/grid77.cpp
+    src/op/grid-kb-radial.cpp
+    src/op/grid-kb-rect.cpp
+    src/op/grid-es-radial.cpp
+    src/op/grid-es-rect.cpp
     src/op/nufft.cpp
     src/op/sense.hpp
     src/precond/scaling.cpp
@@ -84,6 +77,7 @@ target_link_libraries(vineyard PUBLIC
     FFTW3::fftw3f
     hdf5::hdf5-static
     NIFTI::niftiio
+    range-v3
     scn::scn
 )
 set_target_properties(vineyard PROPERTIES

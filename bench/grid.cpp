@@ -18,30 +18,30 @@ float const os = 2.f;
 
 TEST_CASE("Grid")
 {
-  auto gridfi3 = make_grid<Cx>(traj, "FI3", os, C);
-  auto gridfi5 = make_grid<Cx>(traj, "FI5", os, C);
+  auto gridfi3 = make_grid<Cx, 3>(traj, "ES3", os, C);
+  auto gridfi5 = make_grid<Cx, 3>(traj, "ES5", os, C);
 
   Cx5 c(gridfi3->inputDimensions());
   Cx3 nc(gridfi3->outputDimensions());
 
   nc.setRandom();
 
-  BENCHMARK("FI3 Noncartesian->Cartesian")
+  BENCHMARK("ES3 Noncartesian->Cartesian")
   {
     gridfi3->adjoint(nc);
   };
 
-  BENCHMARK("FI5 Noncartesian->Cartesian")
+  BENCHMARK("ES5 Noncartesian->Cartesian")
   {
     gridfi5->adjoint(nc);
   };
 
-  BENCHMARK("FI3 Cartesian->Noncartesian")
+  BENCHMARK("ES3 Cartesian->Noncartesian")
   {
     gridfi3->forward(c);
   };
 
-  BENCHMARK("FI5 Cartesian->Noncartesian")
+  BENCHMARK("ES5 Cartesian->Noncartesian")
   {
     gridfi5->forward(c);
   };
@@ -53,28 +53,28 @@ TEST_CASE("GridBasisAdj")
   Re2 basis(256, nB);
   basis.setConstant(1.f);
 
-  auto gridfi3 = make_grid<Cx>(traj, "FI3", os, C, basis);
-  auto gridfi5 = make_grid<Cx>(traj, "FI5", os, C, basis);
+  auto gridfi3 = make_grid<Cx, 3>(traj, "ES3", os, C, basis);
+  auto gridfi5 = make_grid<Cx, 3>(traj, "ES5", os, C, basis);
 
   Cx5 c(gridfi3->inputDimensions());
   Cx3 nc(gridfi3->outputDimensions());
 
-  BENCHMARK("FI3 Noncartesian->Cartesian")
+  BENCHMARK("ES3 Noncartesian->Cartesian")
   {
     gridfi3->adjoint(nc);
   };
 
-  BENCHMARK("FI5 Noncartesian->Cartesian")
+  BENCHMARK("ES5 Noncartesian->Cartesian")
   {
     gridfi5->adjoint(nc);
   };
 
-  BENCHMARK("FI3 Cartesian->Noncartesian")
+  BENCHMARK("ES3 Cartesian->Noncartesian")
   {
     gridfi3->forward(c);
   };
 
-  BENCHMARK("FI5 Cartesian->Noncartesian")
+  BENCHMARK("ES5 Cartesian->Noncartesian")
   {
     gridfi5->forward(c);
   };

@@ -10,7 +10,7 @@ namespace rl {
 
 struct ReconRSSOp final : Operator<4, 3>
 {
-  ReconRSSOp(GridBase<Cx>*gridder, Sz3 const &dims, SDCOp *sdc = nullptr)
+  ReconRSSOp(GridBase<Cx, 3>*gridder, Sz3 const &dims, SDCOp *sdc = nullptr)
     : nufft_{dims, gridder, sdc}
   {
   }

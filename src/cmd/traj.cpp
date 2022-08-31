@@ -28,7 +28,7 @@ int main_traj(args::Subparser &parser)
   info.channels = 1;
   Trajectory traj(info, inTraj.points(), inTraj.frames());
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
+  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
   Cx3 rad_ks(1, info.samples, info.traces);
   rad_ks.setConstant(1.0f);

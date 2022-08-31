@@ -20,7 +20,7 @@ SingleChannel::SingleChannel(Trajectory const &traj)
     newInfo.matrix.begin(), newInfo.matrix.end(), newInfo.matrix.begin(), [](Index const i) { return i * 2; });
   Trajectory newTraj(newInfo, traj.points(), traj.frames());
   float const osamp = 1.25;
-  auto gridder = rl::make_grid<Cx>(newTraj, "FI3", osamp, 1);
+  auto gridder = rl::make_grid<Cx, 3>(newTraj, "ES3", osamp, 1);
   gridder->doNotWeightFrames();
   // Keep more than usual otherwise funky numerical issues
   // Sz3 sz = LastN<3>(gridder->inputDimensions());

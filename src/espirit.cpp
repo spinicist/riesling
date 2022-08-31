@@ -72,7 +72,7 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
 }
 
 Cx4 ESPIRIT(
-  GridBase<Cx> *gridder, Cx3 const &data, Index const kRad, Index const calRad, Index const gap, float const thresh)
+  GridBase<Cx, 3> *gridder, Cx3 const &data, Index const kRad, Index const calRad, Index const gap, float const thresh)
 {
   Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 

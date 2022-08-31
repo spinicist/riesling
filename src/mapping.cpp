@@ -2,6 +2,8 @@
 
 #include <cfenv>
 #include <cmath>
+#include <range/v3/range.hpp>
+#include <range/v3/view.hpp>
 
 #include "tensorOps.h"
 
@@ -118,7 +120,7 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
   std::fesetround(FE_TONEAREST);
   float const maxRad = (gridSz / 2) - 1.f;
   Sz center;
-  std::transform(cartDims.begin(), cartDims.end(), center.begin(), [](Index const c) { return c / 2;});
+  std::transform(cartDims.begin(), cartDims.end(), center.begin(), [](Index const c) { return c / 2; });
   int32_t index = 0;
   Index NaNs = 0;
   for (int32_t is = 0; is < info.traces; is++) {
@@ -158,9 +160,22 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
     }
   }
   Log::Print("Ignored {} non-finite trajectory points", NaNs);
-  Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
 
-  Log::Print("Removed {} empty buckets, {} remaining", eraseCount, buckets.size());
+  Index const sizeLimit = 8192;
+  std::vector<Bucket> chunked;
+  for (auto &bucket : buckets) {
+    if (bucket.size() > sizeLimit) {
+      for (auto const indexChunk : ranges::views::chunk(bucket.indices, sizeLimit)) {
+        chunked.push_back(Bucket{.minCorner = bucket.minCorner, .maxCorner = bucket.maxCorner, .indices = indexChunk | ranges::to<std::vector<int32_t>>()});
+      }
+      bucket.indices.clear();
+    }
+  }
+
+  Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
+  Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
+  buckets.insert(buckets.end(), chunked.begin(), chunked.end());
+
   Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L, [](Index sum, Bucket const &b) {
                return b.indices.size() + sum;
              }));

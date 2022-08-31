@@ -13,7 +13,7 @@ struct ApodizeOp final : Operator<5, 5, Scalar>
   using Output = typename Parent::Output;
   using OutputDims = typename Parent::OutputDims;
 
-  ApodizeOp(InputDims const &inSize, GridBase<Scalar> *gridder);
+  ApodizeOp(InputDims const &inSize, GridBase<Scalar, 3> *gridder);
   auto inputDimensions() const -> InputDims;
   auto outputDimensions() const -> OutputDims;
   auto forward(Input const &x) const -> Output;

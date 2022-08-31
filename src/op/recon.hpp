@@ -10,7 +10,7 @@ namespace rl {
 
 struct ReconOp final : Operator<4, 3>
 {
-  ReconOp(GridBase<Cx>*gridder, Cx4 const &maps, SDCOp *sdc = nullptr)
+  ReconOp(GridBase<Cx, 3>*gridder, Cx4 const &maps, SDCOp *sdc = nullptr)
     : nufft_{LastN<3>(maps.dimensions()), gridder, sdc}
     , sense_{maps, gridder->inputDimensions()[1]}
   {
