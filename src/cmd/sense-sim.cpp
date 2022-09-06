@@ -18,7 +18,7 @@ int main_sense_sim(args::Subparser &parser)
 
   args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
   args::ValueFlag<Index> coil_rings(parser, "R", "Number of rings in coil (default 1)", {"rings"}, 1);
-  args::ValueFlag<float> coil_r(parser, "R", "Radius of the coil in mm (default 150)", {"coil_rad"}, 150.f);
+  args::ValueFlag<float> coil_r(parser, "R", "Radius of the coil in mm (default 192.f)", {"coil-radius"}, 192.f);
 
   ParseCommand(parser, iname);
 
