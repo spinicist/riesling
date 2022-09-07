@@ -2,9 +2,11 @@
 #include "../src/log.h"
 #include "../src/traj_spirals.h"
 #include "../src/trajectory.h"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 using namespace rl;
+using namespace Catch;
 
 TEST_CASE("SDC", "[sdc]")
 {

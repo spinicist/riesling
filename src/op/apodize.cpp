@@ -17,7 +17,7 @@ ApodizeOp<Scalar>::ApodizeOp(InputDims const &inSize, GridBase<Scalar, 3> *gridd
     brd_[ii] = 1;
   }
   apo_ = gridder->apodization(LastN<3>(sz_));
-  Log::Debug(FMT_STRING("Apodize Op. Res {} Brd {} Norm {} Max {}"), res_, brd_, Norm(apo_), Maximum(apo_));
+  Log::Debug(FMT_STRING("Apodize Op. Norm {} Max {}"), Norm(apo_), Maximum(apo_));
 }
 
 template<typename Scalar>

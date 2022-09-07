@@ -1,10 +1,12 @@
 #include "../src/log.h"
 #include "../src/tensorOps.h"
 #include "../src/zin-grappa.hpp"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 #include <fmt/format.h>
 
 using namespace rl;
+using namespace Catch;
 
 TEST_CASE("zinfandel-data")
 {

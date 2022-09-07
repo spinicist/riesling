@@ -4,7 +4,9 @@
 #include "../src/traj_spirals.h"
 #include "../src/op/gridBase.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/benchmark/catch_benchmark_all.hpp>
+
 
 using namespace rl;
 

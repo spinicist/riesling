@@ -59,7 +59,6 @@ add_library(vineyard
     src/op/grid-es-rect.cpp
     src/op/nufft.cpp
     src/op/sense.hpp
-    src/precond/scaling.cpp
     src/precond/single.cpp
     src/sim/parameter.cpp
     src/sim/dwi.cpp
@@ -138,7 +137,6 @@ option(BUILD_TESTS "Build the tests" ON)
 
 if(${BUILD_TESTS})
     add_executable(riesling-tests
-        test/main.cpp
         test/cropper.cpp
         test/decomp.cpp
         test/fft3.cpp
@@ -155,7 +153,7 @@ if(${BUILD_TESTS})
     )
     target_link_libraries(riesling-tests PUBLIC
         vineyard
-        Catch2::Catch2
+        Catch2::Catch2WithMain
     )
     set_target_properties(riesling-tests PROPERTIES
         CXX_STANDARD 20
@@ -169,7 +167,6 @@ option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 
 if(${BUILD_BENCHMARKS})
     add_executable(riesling-bench
-        bench/main.cpp
         bench/rss.cpp
         bench/grid.cpp
         bench/dot.cpp
@@ -177,7 +174,7 @@ if(${BUILD_BENCHMARKS})
     )
     target_link_libraries(riesling-bench PUBLIC
         vineyard
-        Catch2::Catch2
+        Catch2::Catch2WithMain
     )
     set_target_properties(riesling-bench PROPERTIES
         CXX_STANDARD 20

@@ -12,7 +12,7 @@ void store_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<S
   // Check for sane dimensions
   for (Index ii = 0; ii < ND; ii++) {
     if (data.dimension(ii) == 0) {
-      Log::Fail(FMT_STRING("Tensor {} had a zero dimension. Dims: {}"), name, data.dimensions());
+      Log::Fail(FMT_STRING("Tensor {} had a zero dimension. Dims: {}"), name, fmt::streamed(data.dimensions()));
     }
   }
 

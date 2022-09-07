@@ -104,12 +104,6 @@ auto ROVIR(
   cholB.matrixL().solveInPlace<Eigen::OnTheLeft>(C);
   cholB.matrixU().solveInPlace<Eigen::OnTheRight>(C);
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcf> eig(C);
-  Log::Debug(FMT_STRING("A\n{}"), A);
-  Log::Debug(FMT_STRING("B\n{}"), B);
-  Log::Debug(FMT_STRING("C\n{}"), C);
-  Log::Debug(FMT_STRING("eVals {}"), eig.eigenvalues().transpose());
-  Log::Debug(FMT_STRING("eVecs\n{}"), eig.eigenvectors());
-  Log::Debug(FMT_STRING("check\n{}"), eig.eigenvectors().colwise().norm());
 
   Eigen::ArrayXf vals = eig.eigenvalues().reverse().array().abs();
   Eigen::ArrayXf cumsum(vals.rows());

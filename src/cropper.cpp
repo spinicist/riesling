@@ -21,7 +21,7 @@ Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent)
     st_[2] = 0;
     sz_[2] = info.matrix[2];
   }
-  Log::Debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Debug(FMT_STRING("Cropper start {} size {}"), fmt::streamed(st_), fmt::streamed(sz_));
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)
@@ -30,14 +30,14 @@ Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)
   sz_[1] = cropSz[1];
   sz_[2] = cropSz[2];
   calcStart(fullSz);
-  Log::Debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Debug(FMT_STRING("Cropper start {} size {}"), fmt::streamed(st_), fmt::streamed(sz_));
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Sz3 const &cropSz)
 {
   sz_ = cropSz;
   calcStart(fullSz);
-  Log::Debug(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Debug(FMT_STRING("Cropper start {} size {}"), fmt::streamed(st_), fmt::streamed(sz_));
 }
 
 void Cropper::calcStart(Sz3 const &fullSz)

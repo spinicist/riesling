@@ -182,7 +182,7 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
   sortedIndices = sort(cart);
 
   frameWeights = frameWeights.maxCoeff() / frameWeights;
-  Log::Print(FMT_STRING("Frame weights: {}"), frameWeights.transpose());
+  Log::Print(FMT_STRING("Frame weights: {}"), fmt::streamed(frameWeights.transpose()));
 }
 
 template struct Mapping<2>;

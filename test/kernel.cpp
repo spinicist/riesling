@@ -1,12 +1,16 @@
 #include "kernel/expsemi.hpp"
 #include "kernel/kaiser.hpp"
 #include "kernel/nn.hpp"
-#include "kernel/triangle.hpp"
-#include "kernel/rectilinear.hpp"
 #include "kernel/radial.hpp"
-#include <catch2/catch.hpp>
+#include "kernel/rectilinear.hpp"
+#include "kernel/triangle.hpp"
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_template_test_macros.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "log.h"
+
+using namespace Catch;
 
 TEMPLATE_TEST_CASE(
   "1D Kernels",

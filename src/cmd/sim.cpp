@@ -131,7 +131,7 @@ int main_sim(args::Subparser &parser)
   } else {
     nRetain = (cumsum < thresh.Get()).count();
   }
-  Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
+  Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, fmt::streamed(cumsum.head(nRetain).transpose()));
   // Scale and flip the basis vectors to always have a positive first element for stability
   Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
   flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);

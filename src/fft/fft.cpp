@@ -28,9 +28,9 @@ void Start()
   fftwf_set_timelimit(60.0);
   auto const wp = WisdomPath();
   if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
-    Log::Print(FMT_STRING("Read wisdom successfully from {}"), wp);
+    Log::Print(FMT_STRING("Read wisdom successfully from {}"), wp.string());
   } else {
-    Log::Print(FMT_STRING("Could not read wisdom from {}, continuing"), wp);
+    Log::Print(FMT_STRING("Could not read wisdom from {}, continuing"), wp.string());
   }
 }
 
@@ -38,9 +38,9 @@ void End()
 {
   auto const &wp = WisdomPath();
   if (fftwf_export_wisdom_to_filename(wp.string().c_str())) {
-    Log::Print(FMT_STRING("Saved wisdom to {}"), wp);
+    Log::Print(FMT_STRING("Saved wisdom to {}"), wp.string());
   } else {
-    Log::Print(FMT_STRING("Failed to save wisdom to {}"), wp);
+    Log::Print(FMT_STRING("Failed to save wisdom to {}"), wp.string());
   }
   // Causes use after free errors if this is called before fftw_plan_destroy in the
   // destructors. We don't stop and re-start FFTW threads so calling this is not essential

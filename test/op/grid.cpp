@@ -1,9 +1,12 @@
 #include "../../src/op/gridBase.hpp"
 #include "log.h"
 #include "tensorOps.h"
-#include <catch2/catch.hpp>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
 using namespace rl;
+using namespace Catch;
 
 TEST_CASE("Grid Basic", "[grid]")
 {
@@ -26,7 +29,7 @@ TEST_CASE("Grid Basic", "[grid]")
   ks.setConstant(1.f);
   img = grid->adjoint(ks);
   INFO("M " << M << " OS " << osamp << " " << ktype);
-  INFO(img.chip(0,1).chip(0,0));
+  INFO(img.chip(0, 1).chip(0, 0));
   CHECK(Norm(img) == Approx(Norm(ks)).margin(1e-2f));
   ks = grid->forward(img);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(1e-2f));

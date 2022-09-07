@@ -1,9 +1,11 @@
 #include "../../src/op/fft.hpp"
 #include "../../src/tensorOps.h"
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 #include <fmt/ostream.h>
 
 using namespace rl;
+using namespace Catch;
 
 TEST_CASE("ops-fft")
 {

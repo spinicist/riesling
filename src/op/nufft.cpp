@@ -13,9 +13,9 @@ NUFFTOp::NUFFTOp(Sz3 const imgDims, GridBase<Cx, 3> *g, SDCOp *sdc)
 
   Log::Debug(
     "NUFFT Input Dims {} Output Dims {} Grid Dims {} Scale {}",
-    inputDimensions(),
-    outputDimensions(),
-    gridder_->inputDimensions(),
+    fmt::streamed(inputDimensions()),
+    fmt::streamed(outputDimensions()),
+    fmt::streamed(gridder_->inputDimensions()),
     scale_);
 }
 

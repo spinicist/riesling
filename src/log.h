@@ -40,19 +40,19 @@ __attribute__((noreturn)) void lfail(fmt::string_view fstr, fmt::format_args arg
 template <typename S, typename... Args>
 inline void Print(const S &fmt_str, const Args &...args)
 {
-  lprint(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
+  lprint(fmt_str, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 inline void Debug(const S &fmt_str, const Args &...args)
 {
-  ldebug(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
+  ldebug(fmt_str, fmt::make_format_args(args...));
 }
 
 template <typename S, typename... Args>
 __attribute__((noreturn)) inline void Fail(const S &fmt_str, const Args &...args)
 {
-  lfail(fmt_str, fmt::make_args_checked<Args...>(fmt_str, args...));
+  lfail(fmt_str, fmt::make_format_args(args...));
 }
 
 void StartProgress(Index const counst, std::string const &label);
