@@ -1,12 +1,12 @@
 #pragma once
 
-#include "operator.hpp"
 #include "log.h"
+#include "operator.hpp"
 #include "tensorOps.h"
 
 namespace rl {
 
-template <int Rank>
+template <int Rank, int ImgRank = 3>
 struct PadOp final : Operator<Rank, Rank>
 {
   using Parent = Operator<Rank, Rank>;
@@ -15,17 +15,20 @@ struct PadOp final : Operator<Rank, Rank>
   using Output = typename Parent::Output;
   using OutputDims = typename Parent::OutputDims;
 
-  PadOp(InputDims const &inSize, OutputDims const &outSize)
+  PadOp(InputDims const &inSize, Eigen::DSizes<Index, ImgRank> const &padSize)
   {
-    for (Index ii = 0; ii < Rank; ii++) {
-      if (outSize[ii] < inSize[ii]) {
-        Log::Fail(FMT_STRING("Padding dim {}={} < input dim {}"), ii, outSize[ii], inSize[ii]);
-      }
+    int constexpr ImgStart = Rank - ImgRank;
+    for (Index ii = 0; ii < ImgStart; ii++) {
       input_[ii] = inSize[ii];
-      output_[ii] = outSize[ii];
+      output_[ii] = inSize[ii];
     }
-    std::copy_n(inSize.begin(), Rank, input_.begin());
-    std::copy_n(outSize.begin(), Rank, output_.begin());
+    for (Index ii = 0; ii < ImgRank; ii++) {
+      if (padSize[ii] < inSize[ii + ImgStart]) {
+        Log::Fail(FMT_STRING("Padding dim {}={} < input dim {}"), ii, padSize[ii], inSize[ii + ImgStart]);
+      }
+      input_[ii + ImgStart] = inSize[ii + ImgStart];
+      output_[ii + ImgStart] = padSize[ii];
+    }
     std::transform(output_.begin(), output_.end(), input_.begin(), left_.begin(), [](Index big, Index small) {
       return (big - small + 1) / 2;
     });
@@ -35,6 +38,11 @@ struct PadOp final : Operator<Rank, Rank>
     std::transform(left_.begin(), left_.end(), right_.begin(), paddings_.begin(), [](Index left, Index right) {
       return std::make_pair(left, right);
     });
+
+    Log::Print(
+      "PadOp {}->{}",
+      fmt::streamed(LastN<ImgRank>(input_)),
+      fmt::streamed(LastN<ImgRank>(output_)));
   }
 
   InputDims inputDimensions() const
@@ -52,8 +60,8 @@ struct PadOp final : Operator<Rank, Rank>
     Output result(outputDimensions());
     result.device(Threads::GlobalDevice()) = x.pad(paddings_);
     Log::Tensor(result, "pad-fwd");
-    Log::Debug("Padding Forward Norm {} -> {}", Norm(x), Norm(result));
-    return x.pad(paddings_);
+    Log::Debug("Padding Forward Norm {}->{}", Norm(x), Norm(result));
+    return result;
   }
 
   Input adjoint(Output const &x) const
@@ -61,12 +69,13 @@ struct PadOp final : Operator<Rank, Rank>
     Input result(inputDimensions());
     result.device(Threads::GlobalDevice()) = x.slice(left_, input_);
     Log::Tensor(result, "pad-adj");
-    Log::Debug("Padding Adjoint Norm {}", Norm(x), Norm(result));
-    return x.slice(left_, input_);
+    Log::Debug(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(x), Norm(result));
+    return result;
   }
 
 private:
   InputDims input_, output_, left_, right_;
   Eigen::array<std::pair<Index, Index>, Rank> paddings_;
+  float scale_;
 };
 } // namespace rl

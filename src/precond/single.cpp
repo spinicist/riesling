@@ -20,7 +20,7 @@ SingleChannel::SingleChannel(Trajectory const &traj)
     newInfo.matrix.begin(), newInfo.matrix.end(), newInfo.matrix.begin(), [](Index const i) { return i * 2; });
   Trajectory newTraj(newInfo, traj.points(), traj.frames());
   float const osamp = 1.25;
-  auto gridder = rl::make_grid<Cx, 3>(newTraj, "ES3", osamp, 1);
+  auto gridder = rl::make_grid<Cx, 3>(newTraj, "ES5", osamp, 1);
   gridder->doNotWeightFrames();
   // Keep more than usual otherwise funky numerical issues
   // Sz3 sz = LastN<3>(gridder->inputDimensions());
@@ -32,15 +32,15 @@ SingleChannel::SingleChannel(Trajectory const &traj)
 
   Cx5 ones(AddFront(info.matrix, 1, 1));
   ones.setConstant(1.f);
-  PadOp<5> padX(ones.dimensions(), psf.dimensions());
+  // I do not understand this scaling factor but it's in Frank's code and works
+  float const scale = std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Norm2(ones);
+  PadOp<5> padX(ones.dimensions(), LastN<3>(psf.dimensions()));
   FFTOp<5> fftX(psf.dimensions());
-  
+
   Cx5 xcorr = fftX.adjoint(fftX.forward(padX.forward(ones)).abs().square().cast<Cx>());
+  Log::Debug("Norm W {} Norm PSF {} Norm xcorr {}", Norm(W), Norm(psf), Norm(xcorr));
   Log::Tensor(xcorr, "single-xcorr");
-  W = nufft.forward(psf * xcorr);
-  Log::Tensor(W, "single-W");
-  float const scale = 1.f; // std::pow(Product(LastN<3>(sz)), 1.5f) / traj.info().matrix.prod();
-  pre_.device(Threads::GlobalDevice()) = W.abs() * scale;
+  pre_.device(Threads::GlobalDevice()) = nufft.forward(psf * xcorr).abs() * pre_.constant(scale);
   Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre-inv");
   pre_.device(Threads::GlobalDevice()) = (pre_ > 0.f).select(pre_.inverse(), pre_.constant(1.f));
   Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre");

@@ -143,6 +143,7 @@ if(${BUILD_TESTS})
         test/io.cpp
         test/kernel.cpp
         test/parameters.cpp
+        test/precond.cpp
         test/sdc.cpp
         test/zinfandel.cpp
         test/op/fft.cpp

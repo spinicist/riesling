@@ -55,7 +55,6 @@ struct FFTOp final : Operator<Rank, Rank>
   template <typename T>
   Tensor const &forward(T const &x) const
   {
-    LOG_DEBUG("Out-of-place Forward FFT Op. Norm {}", Norm(x));
     ws_->device(Threads::GlobalDevice()) = x;
     if (fft3_) {
       fft3_->forward(*ws_);
@@ -66,6 +65,7 @@ struct FFTOp final : Operator<Rank, Rank>
         ws_->chip(iz, 4) = chip;
       }
     }
+    Log::Debug("FFT Forward (Out-of-place) Norm {}->{}", Norm(x), Norm(*ws_));
     Log::Tensor(*ws_, "fft-forward");
     return *ws_;
   }
@@ -73,7 +73,6 @@ struct FFTOp final : Operator<Rank, Rank>
   template <typename T>
   Tensor &adjoint(T const &x) const
   {
-    LOG_DEBUG("Out-of-place Adjoint FFT Op. Norm {}", Norm(x));
     ws_->device(Threads::GlobalDevice()) = x;
     if (fft3_) {
       fft3_->reverse(*ws_);
@@ -84,13 +83,14 @@ struct FFTOp final : Operator<Rank, Rank>
         ws_->chip(iz, 4) = chip;
       }
     }
+    Log::Debug("FFT Adjoint (Out-of-place) Norm {}->{}", Norm(x), Norm(*ws_));
     Log::Tensor(*ws_, "fft-adjoint");
     return *ws_;
   }
 
   Tensor const &forward(Tensor &x) const
   {
-    LOG_DEBUG("In-place Forward FFT Op. Norm {}", Norm(x));
+    float const inNorm = Norm(x);
     if (fft3_) {
       fft3_->forward(x);
     } else {
@@ -100,13 +100,14 @@ struct FFTOp final : Operator<Rank, Rank>
         x.chip(iz, 4) = chip;
       }
     }
+    Log::Debug("FFT Forward (In-place) Norm {}->{}", inNorm, Norm(x));
     Log::Tensor(x, "fft-forward");
     return x;
   }
 
   Tensor &adjoint(Tensor &x) const
   {
-    LOG_DEBUG("In-place Adjoint FFT Op. Norm {}", Norm(x));
+    float inNorm = Norm(x);
     if (fft3_) {
       fft3_->reverse(x);
     } else {
@@ -116,6 +117,7 @@ struct FFTOp final : Operator<Rank, Rank>
         x.chip(iz, 4) = chip;
       }
     }
+    Log::Debug("FFT Adjoint (In-place) Norm {}->{}", inNorm, Norm(x));
     Log::Tensor(x, "fft-adjoint");
     return x;
   }

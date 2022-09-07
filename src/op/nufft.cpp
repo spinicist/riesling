@@ -5,7 +5,7 @@ namespace rl {
 NUFFTOp::NUFFTOp(Sz3 const imgDims, GridBase<Cx, 3> *g, SDCOp *sdc)
   : gridder_{g}
   , fft_{gridder_->workspace(), true}
-  , pad_{Sz5{g->inputDimensions()[0], g->inputDimensions()[1], imgDims[0], imgDims[1], imgDims[2]}, g->inputDimensions()}
+  , pad_{AddFront(imgDims, g->inputDimensions()[0], g->inputDimensions()[1]), LastN<3>(g->inputDimensions())}
   , apo_{pad_.inputDimensions(), g}
   , sdc_{sdc}
 {
@@ -47,12 +47,10 @@ void NUFFTOp::calcToeplitz()
 auto NUFFTOp::forward(Input const &x) const -> Output
 {
   assert(x.dimensions() == inputDimensions());
-  LOG_DEBUG("Starting NUFFT forward. Norm {}", Norm(x));
   auto const &start = Log::Now();
   Output result(outputDimensions());
   result.device(Threads::GlobalDevice()) = gridder_->forward(fft_.forward(pad_.forward(apo_.forward(x * x.constant(scale_)))));
-  Log::Debug("Finished NUFFT forward: {}", Log::ToNow(start));
-  LOG_DEBUG("Norm {}", Norm(result));
+  Log::Debug("NUFFT Forward. Norm {}->{}. Time {}", Norm(x), Norm(result), Log::ToNow(start));
   return result;
 }
 
@@ -68,7 +66,7 @@ auto NUFFTOp::adjoint(Output const &x) const -> Input
     result.device(Threads::GlobalDevice()) = apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint(x))));
   }
   result.device(Threads::GlobalDevice()) = result * result.constant(scale_);
-  Log::Debug("Finished NUFFT adjoint: {}", Log::ToNow(start));
+  Log::Debug("NUFFT Adjoint. Norm {}->{}. Time {}", Norm(x), Norm(result), Log::ToNow(start));
   LOG_DEBUG("Norm {}", Norm(result));
   return result;
 }
