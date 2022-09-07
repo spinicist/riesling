@@ -81,7 +81,7 @@ int main_phantom(args::Subparser &parser)
 
   args::ValueFlag<std::string> trajfile(parser, "TRAJ FILE", "Input HD5 file for trajectory", {"traj"});
 
-  args::ValueFlag<float> voxSize(parser, "V", "Voxel size in mm (default 2)", {'f', "fov"}, 2.f);
+  args::ValueFlag<float> voxSize(parser, "V", "Voxel size in mm (default 2)", {'v', "vox-size"}, 2.f);
   args::ValueFlag<Index> matrix(parser, "M", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
   args::ValueFlag<Index> frames(parser, "F", "Number of frames/basis images", {'f', "frames"}, 1);
