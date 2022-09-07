@@ -15,12 +15,12 @@ jobs:
         config:
         - {
           name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
-          os: ubuntu-18.04,
-          cc: "gcc-10", cxx: "g++-10"
+          os: ubuntu-22.04,
+          cc: "gcc-11", cxx: "g++-11"
         }
         - {
           name: "macOS", artifact: "riesling-macos.tar.gz",
-          os: macos-11,
+          os: macos-12,
           cc: "clang", cxx: "clang++"
         }
 

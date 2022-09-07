@@ -13,7 +13,7 @@ template <size_t NDims>
 auto Mapping<NDims>::Bucket::empty() const -> bool
 {
   return indices.empty();
-};
+}
 
 template <size_t NDims>
 auto Mapping<NDims>::Bucket::size() const -> Index
@@ -139,7 +139,7 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
           auto const off = xyz - gp.template cast<float>();
           std::array<int16_t, NDims> ijk;
           std::transform(
-            center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const c, float const p) { return c + p; });
+            center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) { return f1 + f2; });
           cart.push_back(ijk);
           offset.push_back(off);
           noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});

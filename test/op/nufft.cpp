@@ -27,13 +27,13 @@ TEST_CASE("NUFFT", "[nufft]")
   img = nufft.adjoint(ks);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(5.e-2f));
   ks = nufft.forward(img);
-  CHECK(Norm(ks) == Approx(Norm(ks)).margin(5.e-2f));
+  CHECK(Norm(ks) == Approx(Norm(img)).margin(5.e-2f));
 }
 
 TEST_CASE("Preconditioner", "[precond]")
 {
   // Log::SetLevel(Log::Level::Debug);
-  Index const M = 15;
+  Index const M = 7;
   Info const info{.channels = 1, .samples = 3, .traces = 1, .matrix = Sz3{M, M, M}};
   Re3 points(3, 3, 1);
   points.setZero();
@@ -41,6 +41,7 @@ TEST_CASE("Preconditioner", "[precond]")
   points(0, 2, 0) = 0.25f;
   Trajectory const traj(info, points);
   SingleChannel sc(traj);
-
-  fmt::print("sc\n{}\n", sc.pre_);
+  CHECK(sc.pre_(0, 0, 0) == Approx(1.f).margin(1.e-6f));
+  CHECK(sc.pre_(0, 1, 0) == Approx(1.f).margin(1.e-6f));
+  CHECK(sc.pre_(0, 2, 0) == Approx(1.f).margin(1.e-6f));
 }
