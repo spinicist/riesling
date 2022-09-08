@@ -21,7 +21,7 @@ TEST_CASE("IO", "[io]")
   Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
   float const os = 2.f;
-  Info const info{.channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .matrix = Sz3{M, M, M}, .volumes = 2};
+  Info const info{.matrix = Sz3{M, M, M}, .channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .volumes = 2};
   auto const points = ArchimedeanSpiral(info.samples, info.traces);
   Trajectory const traj(info, points);
   Cx4 refData(info.channels, info.samples, info.traces, info.volumes);

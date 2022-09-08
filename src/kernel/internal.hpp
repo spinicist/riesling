@@ -4,16 +4,19 @@
 
 namespace rl {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-value"
 template <size_t ND, size_t W>
 struct KernelTypes
 {
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<W>>;
   // Welcome to C++. Declares a TensorFixedSize<float, Eigen::Sizes<W, W, ...>>
   using Tensor = decltype([]<std::size_t... Is>(std::index_sequence<Is...>) {
-    return std::declval<Eigen::TensorFixedSize<float, Eigen::Sizes<(Is, W)...>>>();
-  }(std::make_index_sequence<ND>()));
+    return std::type_identity<Eigen::TensorFixedSize<float, Eigen::Sizes<(Is, W)...>>>();
+  }(std::make_index_sequence<ND>()))::type;
   using Point = Eigen::Matrix<float, ND, 1>;
 };
+#pragma GCC diagnostic pop
 
 template <size_t W>
 inline constexpr auto Centers()

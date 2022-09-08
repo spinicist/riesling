@@ -22,7 +22,7 @@ struct Triangle
   inline auto operator()(T const &z) const
   {
     return (z > 1.f).select(z.constant(0.f), z.constant(1.f) - z);
-  };
+  }
 };
 
 } // namespace rl

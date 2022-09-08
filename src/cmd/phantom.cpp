@@ -37,10 +37,10 @@ Trajectory CreateTrajectory(
   Index const spokes = sps * std::ceil(nex * matrix * matrix / sps);
   float const fov = matrix * voxSz;
   Info info{
+    .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
     .channels = nC,
     .samples = Index(readOS * matrix / 2),
     .traces = spokes,
-    .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
     .grid3D = true,
     .fft3D = true,
     .frames = 1,

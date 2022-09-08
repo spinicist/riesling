@@ -24,7 +24,7 @@ struct ExpSemi
   {
     return (z > 1.f).select(
       z.constant(0.f), (z.constant(beta) * ((z.constant(1.f) - z.square()).sqrt() - z.constant(1.f))).exp());
-  };
+  }
 };
 
 } // namespace rl

@@ -29,7 +29,7 @@ template <typename Scalar, typename Kernel>
 struct Grid final : GridBase<Scalar, Kernel::NDim>
 {
   static constexpr size_t NDim = Kernel::NDim;
-  static constexpr size_t kW = Kernel::PadWidth;
+  static constexpr Index kW = Kernel::PadWidth;
   using typename GridBase<Scalar, NDim>::Input;
   using InputDims = typename Input::Dimensions;
   using typename GridBase<Scalar, NDim>::Output;

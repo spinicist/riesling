@@ -11,7 +11,7 @@ TEST_CASE("Preconditioner", "[precond]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(31, 32);
-  Info const info{.channels = 1, .samples = 3, .traces = 1, .matrix = Sz3{M, M, M}};
+  Info const info{.matrix = Sz3{M, M, M}, .channels = 1, .samples = 3, .traces = 1};
   Re3 points(3, 3, 1);
   points.setZero();
   points(0, 0, 0) = -0.25f;
