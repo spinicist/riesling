@@ -12,17 +12,16 @@ int main_hdr(args::Subparser &parser)
   auto const &info = reader.trajectory().info();
 
   fmt::print(
-    FMT_STRING("Channels: {} Samples: {} Traces: {}\n"
+    FMT_STRING("Channels: {} Samples: {} Traces: {} Slabs: {}\n"
                "Matrix: {}\n"
-               "3D Gridding: {} 3D FFT: {}\n"
                "Frames: {} Volumes: {}\n"
                "Voxel-size: {}\t TR: {}\t Origin: {}\n"
                "Direction:\n{}\n"),
     info.channels,
     info.samples,
     info.traces,
+    info.slabs,
     info.matrix,
-    info.grid3D, info.fft3D,
     info.frames,
     info.volumes,
     info.voxel_size.transpose(),

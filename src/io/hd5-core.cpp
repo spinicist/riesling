@@ -60,8 +60,6 @@ hid_t InfoType()
   status = H5Tinsert(info_id, "samples", HOFFSET(Info, samples), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "traces", HOFFSET(Info, traces), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "slabs", HOFFSET(Info, slabs), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "grid3D", HOFFSET(Info, grid3D), H5T_NATIVE_HBOOL);
-  status = H5Tinsert(info_id, "fft3D", HOFFSET(Info, fft3D), H5T_NATIVE_HBOOL);
   status = H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
   status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
@@ -84,8 +82,6 @@ void CheckInfoType(hid_t handle)
     "samples",
     "traces",
     "slabs",
-    "grid3D",
-    "fft3D",
     "frames",
     "volumes",
     "voxel_size",

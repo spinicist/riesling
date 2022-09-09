@@ -17,7 +17,7 @@ Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent)
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
   calcStart(fullSz);
-  if (!info.grid3D) {
+  if (!info.grid3D()) {
     st_[2] = 0;
     sz_[2] = info.matrix[2];
   }

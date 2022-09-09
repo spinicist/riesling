@@ -78,7 +78,6 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
   Index const gridSz = fft_size(info.matrix[0] * os);
   Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
 
-  fft3D = info.fft3D;
   std::fill(cartDims.begin(), cartDims.end(), gridSz);
   if constexpr (NDims == 3) {
     cartDims[2] /= info.slabs;
@@ -173,8 +172,8 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
   }
 
   Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
-  Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
   buckets.insert(buckets.end(), chunked.begin(), chunked.end());
+  Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
 
   Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L, [](Index sum, Bucket const &b) {
                return b.indices.size() + sum;

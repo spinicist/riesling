@@ -137,7 +137,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 Re2 Radial(Trajectory const &traj, Index const lores, Index const gap)
 {
 
-  if (traj.info().grid3D) {
+  if (traj.info().grid3D()) {
     return Radial3D(traj, lores, gap);
   } else {
     return Radial2D(traj);

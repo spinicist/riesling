@@ -11,14 +11,16 @@ struct Info
   Index samples;
   Index traces;
   Index slabs = 1;
-  bool grid3D = true;
-  bool fft3D = true;
   Index frames = 1;
   Index volumes = 1;
   Eigen::Array3f voxel_size = Eigen::Vector3f::Ones();
   Eigen::Vector3f origin = Eigen::Vector3f::Zero();
   Eigen::Matrix3f direction = Eigen::Matrix3f::Identity();
   float tr = 1.f;
+
+  bool grid3D() const {
+    return (slabs != matrix[2]);
+  }
 
   inline Cx3 noncartesianVolume() const
   {

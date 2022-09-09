@@ -40,7 +40,7 @@ void Trajectory::init()
     Log::Fail("Maximum frame {} exceeds number of frames in header {}", Maximum(frames_), info_.frames);
   }
 
-  if (info_.grid3D) {
+  if (info_.grid3D()) {
     float const maxCoord = Maximum(points_.abs());
     if (maxCoord > 0.5f) {
       Log::Fail(FMT_STRING("Maximum trajectory co-ordinate {} exceeded 0.5"), maxCoord);
@@ -95,12 +95,12 @@ std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index cons
       info_.matrix.begin(), info_.matrix.end(), dsInfo.matrix.begin(), [dsamp](Index const i) { return (i / dsamp); });
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
     dsInfo.voxel_size = info_.voxel_size * scale;
-    if (!dsInfo.grid3D) {
+    if (!dsInfo.grid3D()) {
       dsInfo.matrix[2] = info_.matrix[2];
       dsInfo.voxel_size[2] = info_.voxel_size[2];
     }
   }
-  Index const sz = info_.grid3D ? 3 : 2; // Need this for slicing below
+  Index const sz = info_.grid3D() ? 3 : 2; // Need this for slicing below
   Index minRead = info_.samples, maxRead = 0;
   Re3 dsPoints(points_.dimensions());
   for (Index is = 0; is < info_.traces; is++) {

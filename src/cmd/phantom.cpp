@@ -41,8 +41,6 @@ Trajectory CreateTrajectory(
     .channels = nC,
     .samples = Index(readOS * matrix / 2),
     .traces = spokes,
-    .grid3D = true,
-    .fft3D = true,
     .frames = 1,
     .volumes = 1,
     .voxel_size = Eigen::Array3f::Constant(fov / matrix),
