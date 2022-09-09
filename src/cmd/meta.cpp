@@ -16,7 +16,7 @@ int main_meta(args::Subparser &parser)
 
   for (auto const &k : keys.Get()) {
     if (k == "matrix") {
-      fmt::print("{}\n", fmt::streamed(info.matrix));
+      fmt::print("{}\n", info.matrix);
       continue;
     } else if (k == "channels") {
       fmt::print("{}\n", info.channels);

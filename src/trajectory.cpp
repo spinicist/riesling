@@ -122,8 +122,8 @@ std::tuple<Trajectory, Index> Trajectory::downsample(float const res, Index cons
   Log::Print(
     FMT_STRING("Downsampled by {}, new voxel-size {} matrix {}, read-points {}-{}{}"),
     scale,
-    fmt::streamed(dsInfo.voxel_size.transpose()),
-    fmt::streamed(dsInfo.matrix),
+    dsInfo.voxel_size.transpose(),
+    dsInfo.matrix,
     minRead,
     maxRead,
     lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res traces"), lores) : "");

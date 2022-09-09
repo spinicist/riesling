@@ -41,8 +41,8 @@ struct PadOp final : Operator<Rank, Rank>
 
     Log::Print(
       "PadOp {}->{}",
-      fmt::streamed(LastN<ImgRank>(input_)),
-      fmt::streamed(LastN<ImgRank>(output_)));
+      LastN<ImgRank>(input_),
+      LastN<ImgRank>(output_));
   }
 
   InputDims inputDimensions() const

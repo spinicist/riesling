@@ -17,7 +17,8 @@
         },
         {
             "name": "hdf5",
-            "features": ["zlib"]
+            "default-features": false,
+            "features": ["threadsafe", "zlib"]
         },
         "indicators",
         "nifticlib",

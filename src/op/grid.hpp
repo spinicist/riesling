@@ -52,7 +52,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
   {
     static_assert(NDim < 4);
     ws_ = std::make_shared<Input>(inputDimensions());
-    Log::Debug(FMT_STRING("Grid Dims {}"), fmt::streamed(this->inputDimensions()));
+    Log::Debug(FMT_STRING("Grid Dims {}"), this->inputDimensions());
   }
 
   Sz3 outputDimensions() const
@@ -73,7 +73,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
   Output forward(Input const &cart) const
   {
     if (cart.dimensions() != this->inputDimensions()) {
-      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), fmt::streamed(cart.dimensions()), fmt::streamed(this->inputDimensions()));
+      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
     }
     Output noncart(this->outputDimensions());
     Log::Debug("Zeroing grid output");
@@ -147,7 +147,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     Log::Debug("Grid Adjoint");
     if (noncart.dimensions() != this->outputDimensions()) {
       Log::Fail(
-        FMT_STRING("Noncartesian k-space dims {} did not match {}"), fmt::streamed(noncart.dimensions()), fmt::streamed(this->outputDimensions()));
+        FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
     }
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : 1;

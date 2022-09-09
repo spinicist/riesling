@@ -69,7 +69,7 @@ Trajectory CreateTrajectory(
     points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, info.samples, info.traces}));
   }
 
-  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), fmt::streamed(info.matrix), fmt::streamed(info.voxel_size.transpose()));
+  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix, info.voxel_size.transpose());
   Log::Print(FMT_STRING("Samples: {} Traces: {}"), info.samples, info.traces);
 
   return Trajectory(info, points);

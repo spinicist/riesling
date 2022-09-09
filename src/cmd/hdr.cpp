@@ -21,14 +21,14 @@ int main_hdr(args::Subparser &parser)
     info.channels,
     info.samples,
     info.traces,
-    fmt::streamed(info.matrix),
+    info.matrix,
     info.grid3D, info.fft3D,
     info.frames,
     info.volumes,
-    fmt::streamed(info.voxel_size.transpose()),
+    info.voxel_size.transpose(),
     info.tr,
-    fmt::streamed(info.origin.transpose()),
-    fmt::streamed(info.direction));
+    info.origin.transpose(),
+    info.direction);
   auto const &meta = reader.readMeta();
   if (meta.size() > 0) {
     fmt::print("Meta data:\n");
