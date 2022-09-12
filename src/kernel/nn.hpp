@@ -1,20 +1,19 @@
 #pragma once
 
-#include "internal.hpp"
-#include "tensorOps.h"
+#include "kernel.hpp"
 
 namespace rl {
 
 template <size_t N>
-struct NearestNeighbour
+struct NearestNeighbour final : Kernel<N, 1>
 {
   static constexpr size_t NDim = N;
   static constexpr size_t Width = 1;
   static constexpr size_t PadWidth = 1;
   static constexpr float HalfWidth = 1;
-  using Tensor = typename KernelTypes<NDim, PadWidth>::Tensor;
-  using Point = typename KernelTypes<NDim, PadWidth>::Point;
-  using Pos = typename KernelTypes<NDim, PadWidth>::OneD;
+  using Tensor = typename Kernel<NDim, PadWidth>::Tensor;
+  using Point = typename Kernel<NDim, PadWidth>::Point;
+  using Pos = typename Kernel<NDim, PadWidth>::OneD;
 
   NearestNeighbour(float const)
   {
