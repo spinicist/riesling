@@ -1,12 +1,12 @@
 #include "sdc.h"
 
 #include "io/hd5.hpp"
-#include "mapping.h"
+#include "mapping.hpp"
 #include "op/gridBase.hpp"
 #include "op/sdc.hpp"
 #include "tensorOps.h"
 #include "threads.h"
-#include "trajectory.h"
+#include "trajectory.hpp"
 
 namespace rl {
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "operator.hpp"
-#include "trajectory.h"
+#include "trajectory.hpp"
 
 #include <memory>
 #include <optional>

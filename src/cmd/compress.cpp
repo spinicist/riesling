@@ -2,7 +2,7 @@
 #include "compressor.h"
 #include "io/hd5.hpp"
 #include "log.h"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "rovir.hpp"
 #include "tensorOps.h"
 #include "types.h"

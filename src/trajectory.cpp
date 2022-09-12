@@ -1,4 +1,4 @@
-#include "trajectory.h"
+#include "trajectory.hpp"
 
 #include "tensorOps.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "parse_args.h"
-#include "trajectory.h"
+#include "parse_args.hpp"
+#include "trajectory.hpp"
 #include "types.h"
 
 namespace rl {

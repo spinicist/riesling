@@ -1,5 +1,5 @@
 #include "hd5-core.hpp"
-#include "info.h"
+#include "info.hpp"
 #include "log.h"
 #include <filesystem>
 

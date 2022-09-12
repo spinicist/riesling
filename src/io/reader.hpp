@@ -2,8 +2,8 @@
 
 #include "io/hd5-core.hpp"
 
-#include "info.h"
-#include "trajectory.h"
+#include "info.hpp"
+#include "trajectory.hpp"
 
 #include <map>
 #include <string>

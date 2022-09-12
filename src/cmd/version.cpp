@@ -1,6 +1,6 @@
 #include "version.h"
 #include "log.h"
-#include "parse_args.h"
+#include "parse_args.hpp"
 
 int main_version(args::Subparser &parser)
 {

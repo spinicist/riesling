@@ -3,7 +3,7 @@
 #include "cropper.h"
 #include "fft/fft.hpp"
 #include "gridBase.hpp"
-#include "mapping.h"
+#include "mapping.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 

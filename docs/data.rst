@@ -17,7 +17,7 @@ In addition, the header ``info`` and ``trajectory`` are required at all steps. B
 Header
 ------
 
-To be considered valid RIESLING input, the HDF5 file must contain the header information datastructure, stored as a compound data-type in a dataset with the name ``info``. We reserve the right to change these fields of the header structure between versions of RIESLING. For the canonical definition of the header, see ``src/info.h``. A pseudo-code version of the header is given here for clarity:
+To be considered valid RIESLING input, the HDF5 file must contain the header information datastructure, stored as a compound data-type in a dataset with the name ``info``. We reserve the right to change these fields of the header structure between versions of RIESLING. For the canonical definition of the header, see ``src/info.hpp``. A pseudo-code version of the header is given here for clarity:
 
 .. code-block:: c
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "info.h"
+#include "info.hpp"
 
 namespace rl {
 Re3 ArchimedeanSpiral(Index const read, Index const traces);

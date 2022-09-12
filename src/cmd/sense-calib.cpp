@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "op/gridBase.hpp"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "sdc.h"
 #include "sense.h"
 

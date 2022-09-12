@@ -1,7 +1,7 @@
 #include "single.hpp"
 
 #include "log.h"
-#include "mapping.h"
+#include "mapping.hpp"
 #include "op/nufft.hpp"
 #include "threads.h"
 

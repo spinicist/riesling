@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "op/sense.hpp"
-#include "parse_args.h"
+#include "parse_args.hpp"
 
 using namespace rl;
 

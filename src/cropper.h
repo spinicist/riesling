@@ -1,6 +1,6 @@
 #pragma once
 
-#include "info.h"
+#include "info.hpp"
 #include "log.h"
 
 namespace rl {

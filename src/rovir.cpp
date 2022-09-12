@@ -2,7 +2,7 @@
 
 #include "algo/decomp.h"
 #include "cropper.h"
-#include "mapping.h"
+#include "mapping.hpp"
 #include "op/gridBase.hpp"
 #include "op/nufft.hpp"
 #include "sdc.h"

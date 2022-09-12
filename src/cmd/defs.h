@@ -1,6 +1,6 @@
 #pragma once
 
-#include "parse_args.h"
+#include "parse_args.hpp"
 
 int main_admm(args::Subparser &parser);
 int main_blend(args::Subparser &parser);

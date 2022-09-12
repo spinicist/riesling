@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "op/recon.hpp"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
 #include "sense.h"

@@ -4,8 +4,8 @@
 #include "log.h"
 #include "op/gridBase.hpp"
 #include "op/sdc.hpp"
-#include "parse_args.h"
-#include "trajectory.h"
+#include "parse_args.hpp"
+#include "trajectory.hpp"
 
 namespace rl {
 namespace SENSE {

@@ -3,7 +3,7 @@
 #include "algo/decomp.h"
 #include "io/hd5.hpp"
 #include "log.h"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "sim/dir.hpp"
 #include "sim/dwi.hpp"
 #include "sim/mprage.hpp"

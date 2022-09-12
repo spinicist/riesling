@@ -1,4 +1,4 @@
-#include "mapping.h"
+#include "mapping.hpp"
 
 #include <cfenv>
 #include <cmath>

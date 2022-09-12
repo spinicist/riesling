@@ -5,7 +5,7 @@
 #include <optional>
 
 #include "types.h"
-#include "trajectory.h"
+#include "trajectory.hpp"
 
 extern args::Group global_group;
 extern args::HelpFlag help;

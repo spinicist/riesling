@@ -1,6 +1,6 @@
 #include "zin-grappa.hpp"
 
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "tensorOps.h"
 #include "threads.h"
 

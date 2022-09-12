@@ -1,7 +1,7 @@
 #pragma once
 
 #include "io/hd5-core.hpp"
-#include "trajectory.h"
+#include "trajectory.hpp"
 #include <map>
 #include <string>
 

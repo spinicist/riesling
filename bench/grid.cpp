@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
-#include "../src/info.h"
+#include "../src/info.hpp"
 #include "../src/traj_spirals.h"
 #include "../src/op/gridBase.hpp"
 

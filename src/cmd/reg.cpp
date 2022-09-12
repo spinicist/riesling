@@ -3,7 +3,7 @@
 #include "algo/llr.h"
 #include "io/hd5.hpp"
 #include "log.h"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "threads.h"
 #include "zin-slr.hpp"
 

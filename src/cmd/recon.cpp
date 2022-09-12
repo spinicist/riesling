@@ -4,7 +4,7 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "op/recon.hpp"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "sdc.h"
 #include "sense.h"
 #include "tensorOps.h"

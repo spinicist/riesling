@@ -1,5 +1,5 @@
 #include "io/hd5.hpp"
-#include "parse_args.h"
+#include "parse_args.hpp"
 #include "types.h"
 
 using namespace rl;
