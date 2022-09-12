@@ -14,7 +14,7 @@
 using namespace rl;
 
 TEMPLATE_TEST_CASE(
-  "Nearest Neighbour", "[kernels]", (rl::NearestNeighbour<1>), (rl::NearestNeighbour<2>), (rl::NearestNeighbour<3>))
+  "Nearest Neighbour", "[NN]", (rl::NearestNeighbour<1>), (rl::NearestNeighbour<2>), (rl::NearestNeighbour<3>))
 {
   TestType k(2.f);
   typename TestType::Point p;
@@ -25,50 +25,19 @@ TEMPLATE_TEST_CASE(
   };
 }
 
-TEMPLATE_TEST_CASE("1D Kernels", "[kernels]", (rl::Triangle<3>), (rl::KaiserBessel<3>), (rl::ExpSemi<3>))
+TEST_CASE(
+  "Kernels", "[kernels]")
 {
-  rl::Rectilinear<1, TestType> rect(2.f);
-  rl::Radial<1, TestType> rad(2.f);
-  typename rl::Radial<1, TestType>::Point p;
+  rl::Radial<3, rl::KaiserBessel<7>> kb(2.f);
+  rl::Radial<3, rl::ExpSemi<7>> es(2.f);
+  typename rl::Radial<3, rl::KaiserBessel<7>>::Point p;
   p.setConstant(0.5f);
-  BENCHMARK("Rectilinear")
+  BENCHMARK("KB")
   {
-    rect(p);
+    kb(p);
   };
-  BENCHMARK("Radial")
+  BENCHMARK("ES")
   {
-    rad(p);
-  };
-}
-
-TEMPLATE_TEST_CASE("2D Kernels", "[kernels]", (rl::Triangle<3>), (rl::KaiserBessel<3>), (rl::ExpSemi<3>))
-{
-  rl::Rectilinear<2, TestType> rect(2.f);
-  rl::Radial<2, TestType> rad(2.f);
-  typename rl::Radial<2, TestType>::Point p;
-  p.setConstant(0.5f);
-  BENCHMARK("Rectilinear")
-  {
-    rect(p);
-  };
-  BENCHMARK("Radial")
-  {
-    rad(p);
-  };
-}
-
-TEMPLATE_TEST_CASE("3D Kernels", "[kernels]", (rl::Triangle<3>), (rl::KaiserBessel<3>), (rl::ExpSemi<3>))
-{
-  rl::Rectilinear<3, TestType> rect(2.f);
-  rl::Radial<3, TestType> rad(2.f);
-  typename rl::Radial<3, TestType>::Point p;
-  p.setConstant(0.5f);
-  BENCHMARK("Rectilinear")
-  {
-    rect(p);
-  };
-  BENCHMARK("Radial")
-  {
-    rad(p);
+    es(p);
   };
 }
