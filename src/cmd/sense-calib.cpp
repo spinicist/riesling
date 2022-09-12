@@ -26,7 +26,7 @@ int main_sense_calib(args::Subparser &parser)
   auto const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
   Cx3 const data = sdc->adjoint(reader.noncartesian(ValOrLast(volume.Get(), info.volumes)));
   Cx4 sense = SENSE::SelfCalibration(info, gridder.get(), fov.Get(), res.Get(), λ.Get(), frame.Get(), data);
 

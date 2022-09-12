@@ -2,7 +2,7 @@
 
 #include "log.h"
 #include "operator.hpp"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 

@@ -1,6 +1,6 @@
 #include "trajectory.hpp"
 
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 

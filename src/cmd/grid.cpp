@@ -5,7 +5,7 @@
 #include "op/gridBase.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"
-#include "threads.h"
+#include "threads.hpp"
 #include <filesystem>
 
 using namespace rl;
@@ -35,7 +35,7 @@ int main_grid(args::Subparser &parser)
       HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
-    auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+    auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
     writer.writeTensor(gridder->adjoint(sdc->adjoint(reader.noncartesian(0))), HD5::Keys::Cartesian);
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }

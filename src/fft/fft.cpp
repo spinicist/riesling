@@ -3,8 +3,8 @@
 #include "cpu.hpp"
 
 #include "../log.h"
-#include "../tensorOps.h"
-#include "../threads.h"
+#include "../tensorOps.hpp"
+#include "../threads.hpp"
 #include "fftw3.h"
 #include <filesystem>
 #include <pwd.h>

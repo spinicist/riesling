@@ -6,8 +6,8 @@
 #include "parse_args.hpp"
 #include "sdc.h"
 #include "sense.h"
-#include "tensorOps.h"
-#include "tgv.hpp"
+#include "tensorOps.hpp"
+#include "algo/tgv.hpp"
 
 using namespace rl;
 
@@ -29,7 +29,7 @@ int main_tgv(args::Subparser &parser)
   auto const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
 

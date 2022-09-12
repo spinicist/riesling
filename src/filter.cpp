@@ -1,8 +1,8 @@
 #include "filter.hpp"
 
 #include "log.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 #include <functional>
 

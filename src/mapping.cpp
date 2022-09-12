@@ -5,7 +5,7 @@
 #include <range/v3/range.hpp>
 #include <range/v3/view.hpp>
 
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 
@@ -72,7 +72,13 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 }
 
 template <size_t NDims>
-Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, Index const bucketSz, Index const read0)
+Mapping<NDims>::Mapping(
+  Trajectory const &traj,
+  Index const kW,
+  float const os,
+  Index const bucketSz,
+  Index const splitSize,
+  Index const read0)
 {
   Info const &info = traj.info();
   Index const gridSz = fft_size(info.matrix[0] * os);
@@ -137,8 +143,9 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();
           std::array<int16_t, NDims> ijk;
-          std::transform(
-            center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) { return f1 + f2; });
+          std::transform(center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) {
+            return f1 + f2;
+          });
           cart.push_back(ijk);
           offset.push_back(off);
           noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
@@ -160,12 +167,14 @@ Mapping<NDims>::Mapping(Trajectory const &traj, Index const kW, float const os, 
   }
   Log::Print("Ignored {} non-finite trajectory points", NaNs);
 
-  Index const sizeLimit = 8192;
   std::vector<Bucket> chunked;
   for (auto &bucket : buckets) {
-    if (bucket.size() > sizeLimit) {
-      for (auto const indexChunk : ranges::views::chunk(bucket.indices, sizeLimit)) {
-        chunked.push_back(Bucket{.minCorner = bucket.minCorner, .maxCorner = bucket.maxCorner, .indices = indexChunk | ranges::to<std::vector<int32_t>>()});
+    if (bucket.size() > splitSize) {
+      for (auto const indexChunk : ranges::views::chunk(bucket.indices, splitSize)) {
+        chunked.push_back(Bucket{
+          .minCorner = bucket.minCorner,
+          .maxCorner = bucket.maxCorner,
+          .indices = indexChunk | ranges::to<std::vector<int32_t>>()});
       }
       bucket.indices.clear();
     }

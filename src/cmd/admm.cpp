@@ -48,7 +48,7 @@ int main_admm(args::Subparser &parser)
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj) : nullptr;

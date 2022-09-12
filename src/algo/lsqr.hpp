@@ -3,8 +3,8 @@
 #include "common.hpp"
 #include "log.h"
 #include "precond/precond.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include "types.h"
 #include "util.hpp"
 

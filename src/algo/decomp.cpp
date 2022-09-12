@@ -1,6 +1,6 @@
 #include "decomp.h"
 #include "log.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 #include <Eigen/Eigenvalues>
 #include <Eigen/SVD>

@@ -26,6 +26,18 @@ struct Operator
 
   virtual OutputDims outputDimensions() const = 0;
   virtual InputDims inputDimensions() const = 0;
+
+  void checkInput(InputDims const inD) const {
+    if (inD != inputDimensions()) {
+      Log::Fail("Input Dimensions {} did not match {}", inD, inputDimensions());
+    }
+  }
+
+  void checkOutput(OutputDims const oD) const {
+    if (oD != outputDimensions()) {
+      Log::Fail("Output Dimensions {} did not match {}", oD, outputDimensions());
+    }
+  }
 };
 
 } // namespace rl

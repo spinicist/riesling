@@ -1,6 +1,6 @@
 #include "traj_spirals.h"
 #include "log.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 /* This implements the Archimedean spiral described in S. T. S. Wong and M. S. Roos, ‘A strategy for

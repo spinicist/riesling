@@ -9,7 +9,7 @@
 #include "parse_args.hpp"
 #include "sdc.h"
 #include "sense.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 using namespace rl;
 
@@ -36,7 +36,7 @@ int main_espirit(args::Subparser &parser)
   auto const dsInfo = dsTraj.info();
   auto gridder =
     make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
-  auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.ktype.Get(), core.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(info, LastN<3>(gridder->inputDimensions()), fov.Get());
   auto const ks = reader.noncartesian(ValOrLast(volume.Get(), info.volumes))

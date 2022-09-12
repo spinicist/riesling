@@ -1,8 +1,8 @@
 #include "parse_args.hpp"
 #include "io/hd5.hpp"
 #include "io/writer.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>

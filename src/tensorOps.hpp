@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-#include "threads.h"
+#include "threads.hpp"
 
 // Tensor operations
 template <typename T>

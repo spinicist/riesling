@@ -3,7 +3,7 @@
 #include "fmt/chrono.h"
 #include "indicators/progress_bar.hpp"
 #include "io/hd5.hpp"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 #include <unistd.h>
 #include <stdio.h>

@@ -1,8 +1,8 @@
 #include "llr.h"
 
 #include "decomp.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include <random>
 
 namespace rl {

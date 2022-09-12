@@ -1,8 +1,8 @@
 #pragma once
 
 #include "log.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include "types.h"
 
 namespace rl {

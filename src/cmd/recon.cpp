@@ -7,7 +7,7 @@
 #include "parse_args.hpp"
 #include "sdc.h"
 #include "sense.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 using namespace rl;
 
@@ -35,7 +35,7 @@ int main_recon(args::Subparser &parser)
 
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  std::unique_ptr<SDCOp> const sdc = fwd ? nullptr : SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  std::unique_ptr<SDCOp> const sdc = fwd ? nullptr : SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
 

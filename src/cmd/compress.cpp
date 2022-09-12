@@ -4,7 +4,7 @@
 #include "log.h"
 #include "parse_args.hpp"
 #include "rovir.hpp"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 #include "types.h"
 
 #include <Eigen/Eigenvalues>

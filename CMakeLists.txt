@@ -58,7 +58,8 @@ add_library(vineyard
     src/op/grid-es-radial.cpp
     src/op/grid-es-rect.cpp
     src/op/nufft.cpp
-    src/op/sense.hpp
+    src/op/sdc.cpp
+    src/op/sense.cpp
     src/precond/single.cpp
     src/sim/parameter.cpp
     src/sim/dwi.cpp

@@ -1,5 +1,5 @@
 #include "wavelets.h"
-#include "threads.h"
+#include "threads.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <vector>

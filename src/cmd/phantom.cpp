@@ -7,8 +7,8 @@
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
 #include "sense.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include "traj_spirals.h"
 #include "types.h"
 #include <filesystem>

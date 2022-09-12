@@ -4,8 +4,8 @@
 #include "fft/fft.hpp"
 #include "gridBase.hpp"
 #include "mapping.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 #include <mutex>
 
@@ -51,8 +51,8 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     , outputDims_{AddFront(mapping.noncartDims, nC)}
   {
     static_assert(NDim < 4);
-    ws_ = std::make_shared<Input>(inputDimensions());
     Log::Debug(FMT_STRING("Grid Dims {}"), this->inputDimensions());
+    ws_ = std::make_shared<Input>(inputDimensions());
   }
 
   Sz3 outputDimensions() const

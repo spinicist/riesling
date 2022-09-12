@@ -4,6 +4,7 @@
 #include "log.h"
 #include "op/sense.hpp"
 #include "parse_args.hpp"
+#include "threads.hpp"
 
 using namespace rl;
 

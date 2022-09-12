@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "fft_plan.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 #include <Eigen/SVD>
 

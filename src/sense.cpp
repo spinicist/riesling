@@ -4,8 +4,8 @@
 #include "fft/fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 namespace rl {
 namespace SENSE {

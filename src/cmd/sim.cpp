@@ -11,7 +11,7 @@
 #include "sim/t1t2.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
-#include "threads.h"
+#include "threads.hpp"
 
 using namespace rl;
 

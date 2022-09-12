@@ -3,8 +3,8 @@
 #include "operator.hpp"
 
 #include "fft/fft.hpp"
-#include "threads.h"
-#include "tensorOps.h"
+#include "threads.hpp"
+#include "tensorOps.hpp"
 
 namespace rl {
 

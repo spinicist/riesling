@@ -6,7 +6,7 @@
 #include "op/gridBase.hpp"
 #include "op/nufft.hpp"
 #include "sdc.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 
@@ -36,7 +36,7 @@ auto ROVIR(
   Index const nC = info.channels;
   float const osamp = 3.f;
   auto gridder = make_grid<Cx, 3>(traj, "ES3", osamp, info.channels);
-  SDCOp sdc(SDC::Pipe(traj, true, osamp), nC);
+  SDCOp sdc(SDC::Pipe(traj, "ES5", 2.1f), nC);
   auto const sz = LastN<3>(gridder->inputDimensions());
   NUFFTOp nufft(sz, gridder.get(), &sdc);
   Cx4 const channelImages =

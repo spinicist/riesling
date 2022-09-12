@@ -1,5 +1,5 @@
 #include "algo/decomp.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <fmt/ostream.h>

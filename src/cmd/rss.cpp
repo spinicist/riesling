@@ -6,7 +6,7 @@
 #include "op/recon-rss.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 using namespace rl;
 
@@ -24,7 +24,7 @@ int main_rss(args::Subparser &parser)
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
 
   ReconRSSOp recon(gridder.get(), LastN<3>(info.matrix), sdc.get());
   Sz4 sz = recon.inputDimensions();

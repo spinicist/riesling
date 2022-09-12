@@ -1,6 +1,6 @@
 #include "compressor.h"
 
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 

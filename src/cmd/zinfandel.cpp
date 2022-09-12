@@ -5,7 +5,7 @@
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
 #include "precond/single.hpp"
-#include "threads.h"
+#include "threads.hpp"
 #include "types.h"
 #include "zin-grappa.hpp"
 #include "zin-slr.hpp"

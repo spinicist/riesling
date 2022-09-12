@@ -1,5 +1,5 @@
 #include "../../src/op/pad.hpp"
-#include "../../src/tensorOps.h"
+#include "../../src/tensorOps.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <fmt/ostream.h>

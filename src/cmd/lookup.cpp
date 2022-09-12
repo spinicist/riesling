@@ -3,8 +3,8 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "parse_args.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 using namespace rl;
 

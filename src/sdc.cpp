@@ -4,8 +4,8 @@
 #include "mapping.hpp"
 #include "op/gridBase.hpp"
 #include "op/sdc.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include "trajectory.hpp"
 
 namespace rl {
@@ -15,23 +15,18 @@ namespace SDC {
 Opts::Opts(args::Subparser &parser)
   : type(parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipe")
   , pow(parser, "P", "SDC Power (default 1.0)", {"sdc-pow"}, 1.0f)
+  , maxIterations(parser, "I", "SDC Max iterations (40)", {"sdc-its"}, 40)
 {
 }
 
-Re2 Pipe(Trajectory const &inTraj, bool const nn, float const os, Index const its)
+Re2 Pipe(Trajectory const &inTraj, std::string const &ktype, float const os, Index const its)
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
   auto info = inTraj.info();
   Trajectory traj{info, inTraj.points(), inTraj.frames()};
   Re3 W(1, info.samples, info.traces);
   Re3 Wp(W.dimensions());
-
-  std::unique_ptr<GridBase<float, 3>> gridder;
-  if (nn) {
-    gridder = make_grid<float, 3>(traj, "NN", os, 1);
-  } else {
-    gridder = make_grid<float, 3>(traj, "ES7", os, 1);
-  }
+  std::unique_ptr<GridBase<float, 3>> gridder = make_grid<float, 3>(traj, ktype, os, 1);
 
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {
@@ -144,7 +139,7 @@ Re2 Radial(Trajectory const &traj, Index const lores, Index const gap)
   }
 }
 
-std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os)
+std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, std::string const &ktype, float const os)
 {
   Re2 sdc(traj.info().samples, traj.info().traces);
   auto const iname = opts.type.Get();
@@ -153,9 +148,7 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, float const os
     auto const info = traj.info();
     return std::make_unique<SDCOp>(Sz2{info.samples, info.traces}, info.channels);
   } else if (iname == "pipe") {
-    sdc = Pipe(traj, false, 2.1f, 40);
-  } else if (iname == "pipenn") {
-    sdc = Pipe(traj, true, os, 40);
+    sdc = Pipe(traj, ktype, os, opts.maxIterations.Get());
   } else {
     HD5::Reader reader(iname);
     sdc = reader.readTensor<Re2>(HD5::Keys::SDC);

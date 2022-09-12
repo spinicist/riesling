@@ -4,7 +4,7 @@
 #include "io/hd5.hpp"
 #include "log.h"
 #include "parse_args.hpp"
-#include "threads.h"
+#include "threads.hpp"
 #include "zin-slr.hpp"
 
 using namespace rl;

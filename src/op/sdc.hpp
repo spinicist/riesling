@@ -1,51 +1,22 @@
 #pragma once
 
-#include "../threads.h"
 #include "operator.hpp"
 
 namespace rl {
 
 struct SDCOp final : Operator<3, 3>
 {
-  SDCOp(Re2 const &dc, Index const nc)
-    : dims_{AddFront(dc.dimensions(), nc)}
-    , dc_{dc}
-  {
-  }
+  SDCOp(Re2 const &dc, Index const nc);
+  SDCOp(Sz2 const &dims, Index const nc);
 
-  SDCOp(Sz2 const &dims, Index const nc)
-    : dims_{AddFront(dims, nc)}
-  {
-  }
+  InputDims inputDimensions() const;
+  OutputDims outputDimensions() const;
 
-  InputDims inputDimensions() const
-  {
-    return dims_;
-  }
-
-  OutputDims outputDimensions() const
-  {
-    return dims_;
-  }
-
-  Cx3 adjoint(Cx3 const &in) const
-  {
-    if (dc_.size()) {
-      auto const start = Log::Now();
-      auto const dims = in.dimensions();
-      Cx3 p(dims);
-      p.device(Threads::GlobalDevice()) =
-        in * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims[0], 1, 1});
-      Log::Debug(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
-      return p;
-    } else {
-      Log::Debug(FMT_STRING("No SDC"));
-      return in;
-    }
-  }
+  auto adjoint(Cx3 const &x) const -> Input;
 
 private:
   Sz3 dims_;
   Re2 dc_;
 };
+
 } // namespace rl

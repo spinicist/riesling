@@ -3,7 +3,7 @@
 #include "log.h"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
-#include "threads.h"
+#include "threads.hpp"
 
 namespace rl {
 

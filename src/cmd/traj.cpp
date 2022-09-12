@@ -6,8 +6,8 @@
 #include "op/gridBase.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 #include <complex>
 
 using namespace rl;
@@ -29,7 +29,7 @@ int main_traj(args::Subparser &parser)
   Trajectory traj(info, inTraj.points(), inTraj.frames());
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
   Cx3 rad_ks(1, info.samples, info.traces);
   rad_ks.setConstant(1.0f);
   Cx4 out = gridder->adjoint(sdc->adjoint(rad_ks)).chip<0>(0);

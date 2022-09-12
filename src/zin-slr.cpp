@@ -3,8 +3,8 @@
 #include "algo/decomp.h"
 #include "cropper.h"
 #include "log.h"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 namespace rl {
 Cx6 ToKernels(Cx5 const &grid, Index const kW)

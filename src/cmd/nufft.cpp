@@ -5,7 +5,7 @@
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"
-#include "threads.h"
+#include "threads.hpp"
 
 using namespace rl;
 
@@ -50,7 +50,7 @@ int main_nufft(args::Subparser &parser)
     writer.writeTensor(noncart, HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Forward NUFFT took {}"), Log::ToNow(start));
   } else {
-    auto const sdc = SDC::Choose(sdcOpts, traj, core.osamp.Get());
+    auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
     reader.readTensor(name, noncart);
     for (auto ii = 0; ii < info.volumes; ii++) {

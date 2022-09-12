@@ -4,8 +4,8 @@
 #include "cropper.h"
 #include "fft/fft.hpp"
 #include "op/gridBase.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 namespace rl {
 

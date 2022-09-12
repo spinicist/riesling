@@ -1,6 +1,6 @@
 #include "apodize.hpp"
 #include "log.h"
-#include "tensorOps.h"
+#include "tensorOps.hpp"
 
 namespace rl {
 

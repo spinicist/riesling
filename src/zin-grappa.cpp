@@ -1,8 +1,8 @@
 #include "zin-grappa.hpp"
 
 #include "parse_args.hpp"
-#include "tensorOps.h"
-#include "threads.h"
+#include "tensorOps.hpp"
+#include "threads.hpp"
 
 #include <Eigen/SVD>
 #include <complex>
