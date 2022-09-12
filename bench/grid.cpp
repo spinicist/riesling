@@ -1,16 +1,15 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
 #include "../src/info.hpp"
-#include "../src/traj_spirals.h"
 #include "../src/op/gridBase.hpp"
+#include "../src/traj_spirals.h"
 
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark_all.hpp>
-
+#include <catch2/catch_test_macros.hpp>
 
 using namespace rl;
 
-Index const M = 128;
+Index const M = 64;
 Index const C = 8;
 Info const info{.channels = C, .samples = M / 2, .traces = Index(M * M), .matrix = Sz3{M, M, M}};
 auto const points = ArchimedeanSpiral(info.samples, info.traces);
@@ -20,6 +19,7 @@ float const os = 2.f;
 
 TEST_CASE("Grid")
 {
+  Log::SetLevel(Log::Level::Testing);
   auto gridfi3 = make_grid<Cx, 3>(traj, "ES3", os, C);
   auto gridfi5 = make_grid<Cx, 3>(traj, "ES5", os, C);
 

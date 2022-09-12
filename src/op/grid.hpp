@@ -103,39 +103,62 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
           Index const ii1 = Wrap(c[NDim - 1] - kW_2 + i1, cdims[NDim - 1]);
           if constexpr (NDim == 1) {
             float const kval = k(i1) * scale;
-            for (Index ib = 0; ib < nB; ib++) {
-              float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
-              sum += cart.chip(ii1, 2).chip(ib + ifr, 1) * sum.constant(bval);
+            if (basis) {
+              for (Index ib = 0; ib < nB; ib++) {
+                float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
+                for (Index ic = 0; ic < nC; ic++) {
+                  noncart(ic, n.sample, n.trace) += cart(ic, ib, ii1) * bval;
+                }
+              }
+            } else {
+              for (Index ic = 0; ic < nC; ic++) {
+                noncart(ic, n.sample, n.trace) += cart(ic, ifr, ii1) * kval;
+              }
             }
           } else {
             for (Index i2 = 0; i2 < kW; i2++) {
               Index const ii2 = Wrap(c[NDim - 2] - kW_2 + i2, cdims[NDim - 2]);
               if constexpr (NDim == 2) {
                 float const kval = k(i2, i1) * scale;
-                for (Index ib = 0; ib < nB; ib++) {
-                  float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
-                  sum += cart.chip(ii1, 3).chip(ii2, 2).chip(ib, 1) * sum.constant(bval);
+                if (basis) {
+                  for (Index ib = 0; ib < nB; ib++) {
+                    float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
+                    for (Index ic = 0; ic < nC; ic++) {
+                      noncart(ic, n.sample, n.trace) += cart(ic, ib, ii2, ii1) * bval;
+                    }
+                  }
+                } else {
+                  for (Index ic = 0; ic < nC; ic++) {
+                    noncart(ic, n.sample, n.trace) += cart(ic, ifr, ii2, ii1) * kval;
+                  }
                 }
               } else {
                 for (Index i3 = 0; i3 < kW; i3++) {
                   Index const ii3 = Wrap(c[NDim - 3] - kW_2 + i3, cdims[NDim - 3]);
                   float const kval = k(i3, i2, i1) * scale;
-                  for (Index ib = 0; ib < nB; ib++) {
-                    float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
-                    sum += cart.chip(ii1, 4).chip(ii2, 3).chip(ii3, 2).chip(ib, 1) * sum.constant(bval);
+                  if (basis) {
+                    for (Index ib = 0; ib < nB; ib++) {
+                      float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
+                      for (Index ic = 0; ic < nC; ic++) {
+                        noncart(ic, n.sample, n.trace) += cart(ic, ib, ii3, ii2, ii1) * bval;
+                      }
+                    }
+                  } else {
+                    for (Index ic = 0; ic < nC; ic++) {
+                      noncart(ic, n.sample, n.trace) += cart(ic, ifr, ii3, ii2, ii1) * kval;
+                    }
                   }
                 }
               }
             }
           }
         }
-
-        if (B0((sum.abs() < sum.abs().constant(std::numeric_limits<float>::infinity())).all())()) {
-          noncart.chip(n.trace, 2).chip(n.sample, 1) = sum;
-        } else {
-          Log::Fail("Non-finite values at sample {} trace {}", n.sample, n.trace);
-        }
       }
+
+      // if (!B0((noncart(ic, n.sample, n.trace).abs() < noncart(ic, n.sample,
+      // n.trace).abs().constant(std::numeric_limits<float>::infinity())).all())()) {
+      //   Log::Fail("Non-finite values at sample {} trace {}", n.sample, n.trace);
+      // }
     };
 
     Threads::For(grid_task, map.buckets.size(), "Grid Forward");
@@ -149,10 +172,10 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
       Log::Fail(
         FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
     }
-    Index const nC = this->inputDimensions()[0];
-    Index const nB = basis ? this->inputDimensions()[1] : 1;
-    float const scale = basis ? sqrt(basis.value().dimension(0)) : 1.f;
     auto const &map = this->mapping;
+    Index const nC = this->inputDimensions()[0];
+    Index const nB = basis ? this->inputDimensions()[1] : map.frames;
+    float const scale = basis ? sqrt(basis.value().dimension(0)) : 1.f;
     auto const &cdims = map.cartDims;
 
     std::mutex writeMutex;
@@ -172,31 +195,54 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 
         Index constexpr hW = kW / 2;
         Index const btp = basis ? n.trace % basis.value().dimension(0) : 0;
-        auto const sample = noncart.chip(n.trace, 2).chip(n.sample, 1);
         for (Index i1 = 0; i1 < kW; i1++) {
           Index const ii1 = i1 + c[NDim - 1] - hW - bucket.minCorner[NDim - 1];
           if constexpr (NDim == 1) {
             float const kval = k(i1) * frscale;
-            for (Index ib = 0; ib < nB; ib++) {
-              bGrid.chip(ii1, 2).chip(ib + ifr, 1) +=
-                sample * sample.constant(basis ? kval * basis.value()(btp, ib) : kval);
+            if (basis) {
+              for (Index ib = 0; ib < nB; ib++) {
+                float const bval = kval * basis.value()(btp, ib);
+                for (Index ic = 0; ic < nC; ic++) {
+                  bGrid(ic, ib, ii1) += noncart(ic, n.sample, n.trace) * bval;
+                }
+              }
+            } else {
+              for (Index ic = 0; ic < nC; ic++) {
+                bGrid(ic, ifr, ii1) += noncart(ic, n.sample, n.trace) * kval;
+              }
             }
           } else {
             for (Index i2 = 0; i2 < kW; i2++) {
               Index const ii2 = i2 + c[NDim - 2] - hW - bucket.minCorner[NDim - 2];
               if constexpr (NDim == 2) {
                 float const kval = k(i2, i1) * frscale;
-                for (Index ib = 0; ib < nB; ib++) {
-                  bGrid.chip(ii1, 3).chip(ii2, 2).chip(ib + ifr, 1) +=
-                    sample * sample.constant(basis ? kval * basis.value()(btp, ib) : kval);
+                if (basis) {
+                  for (Index ib = 0; ib < nB; ib++) {
+                    float const bval = kval * basis.value()(btp, ib);
+                    for (Index ic = 0; ic < nC; ic++) {
+                      bGrid(ic, ib, ii2, ii1) += noncart(ic, n.sample, n.trace) * bval;
+                    }
+                  }
+                } else {
+                  for (Index ic = 0; ic < nC; ic++) {
+                    bGrid(ic, ifr, ii2, ii1) += noncart(ic, n.sample, n.trace) * kval;
+                  }
                 }
               } else {
                 for (Index i3 = 0; i3 < kW; i3++) {
                   Index const ii3 = i3 + c[NDim - 3] - hW - bucket.minCorner[NDim - 3];
                   float const kval = k(i3, i2, i1) * frscale;
-                  for (Index ib = 0; ib < nB; ib++) {
-                    bGrid.chip(ii1, 4).chip(ii2, 3).chip(ii3, 2).chip(ib + ifr, 1) +=
-                      sample * sample.constant(basis ? kval * basis.value()(btp, ib) : kval);
+                  if (basis) {
+                    for (Index ib = 0; ib < nB; ib++) {
+                      float const bval = kval * basis.value()(btp, ib);
+                      for (Index ic = 0; ic < nC; ic++) {
+                        bGrid(ic, ib, ii3, ii2, ii1) += noncart(ic, n.sample, n.trace) * bval;
+                      }
+                    }
+                  } else {
+                    for (Index ic = 0; ic < nC; ic++) {
+                      bGrid(ic, ifr, ii3, ii2, ii1) += noncart(ic, n.sample, n.trace) * kval;
+                    }
                   }
                 }
               }
@@ -210,16 +256,28 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
         for (Index i1 = 0; i1 < bSz[NDim - 1]; i1++) {
           Index const ii1 = Wrap(bucket.minCorner[NDim - 1] + i1, cdims[NDim - 1]);
           if constexpr (NDim == 1) {
-            this->ws_->chip(ii1, 2) += bGrid.chip(i1, 2);
+            for (Index ib = 0; ib < nB; ib++) {
+              for (Index ic = 0; ic < nC; ic++) {
+                ws_->operator()(ic, ib, ii1) += bGrid(ic, ib, i1);
+              }
+            }
           } else {
             for (Index i2 = 0; i2 < bSz[NDim - 2]; i2++) {
               Index const ii2 = Wrap(bucket.minCorner[NDim - 2] + i2, cdims[NDim - 2]);
               if constexpr (NDim == 2) {
-                this->ws_->chip(ii1, 3).chip(ii2, 2) += bGrid.chip(i1, 3).chip(i2, 2);
+                for (Index ib = 0; ib < nB; ib++) {
+                  for (Index ic = 0; ic < nC; ic++) {
+                    ws_->operator()(ic, ib, ii2, ii1) += bGrid(ic, ib, i2, i1);
+                  }
+                }
               } else {
                 for (Index i3 = 0; i3 < bSz[NDim - 3]; i3++) {
                   Index const ii3 = Wrap(bucket.minCorner[NDim - 3] + i3, cdims[NDim - 3]);
-                  this->ws_->chip(ii1, 4).chip(ii2, 3).chip(ii3, 2) += bGrid.chip(i1, 4).chip(i2, 3).chip(i3, 2);
+                  for (Index ib = 0; ib < nB; ib++) {
+                    for (Index ic = 0; ic < nC; ic++) {
+                      ws_->operator()(ic, ib, ii3, ii2, ii1) += bGrid(ic, ib, i3, i2, i1);
+                    }
+                  }
                 }
               }
             }
