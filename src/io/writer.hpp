@@ -1,5 +1,6 @@
 #pragma once
 
+#include "io/hd5-core.hpp"
 #include "trajectory.h"
 #include <map>
 #include <string>
@@ -23,7 +24,7 @@ struct Writer
   bool exists(std::string const &name) const;
 
 private:
-  int64_t handle_;
+  Handle handle_;
 };
 
 } // namespace HD5

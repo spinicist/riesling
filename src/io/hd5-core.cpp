@@ -46,6 +46,12 @@ std::string GetError()
   return error_string;
 }
 
+void CheckedCall(herr_t status, std::string const &msg) {
+  if (status) {
+    Log::Fail(FMT_STRING("HD5 Error {}. Status {}. Error:{}\n"), msg, status, GetError());
+  }
+}
+
 hid_t InfoType()
 {
   hid_t info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
@@ -54,21 +60,17 @@ hid_t InfoType()
   hid_t float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
   hsize_t sz9[1] = {9};
   hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
-  herr_t status;
-  status = H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id);
-  status = H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "samples", HOFFSET(Info, samples), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "traces", HOFFSET(Info, traces), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "slabs", HOFFSET(Info, slabs), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG);
-  status = H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id);
-  status = H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id);
-  status = H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id);
-  status = H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT);
-  if (status) {
-    Log::Fail(FMT_STRING("Could not create Info struct type in HDF5, code: {}"), status);
-  }
+  CheckedCall(H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id), "inserting matrix field");
+  CheckedCall(H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG), "inserting channels field");
+  CheckedCall(H5Tinsert(info_id, "samples", HOFFSET(Info, samples), H5T_NATIVE_LONG), "inserting samples field");
+  CheckedCall(H5Tinsert(info_id, "traces", HOFFSET(Info, traces), H5T_NATIVE_LONG), "inserting traces field");
+  CheckedCall(H5Tinsert(info_id, "slabs", HOFFSET(Info, slabs), H5T_NATIVE_LONG), "inserting slabs field");
+  CheckedCall(H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG), "inserting frames field");
+  CheckedCall(H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG), "inserting volumes field");
+  CheckedCall(H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id), "inserting voxel size field");
+  CheckedCall(H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id), "inserting oring field");
+  CheckedCall(H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id), "inserting direction field");
+  CheckedCall(H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT), "inserting tr field");
   return info_id;
 }
 
@@ -147,12 +149,8 @@ hid_t type_impl(type_tag<std::complex<float>>)
 
   hid_t scalar_id = type_impl(type_tag<float>{});
   hid_t complex_id = H5Tcreate(H5T_COMPOUND, sizeof(complex_t));
-  herr_t status;
-  status = H5Tinsert(complex_id, "r", HOFFSET(complex_t, r), scalar_id);
-  status = H5Tinsert(complex_id, "i", HOFFSET(complex_t, i), scalar_id);
-  if (status) {
-    throw std::runtime_error("Exception occurred creating complex datatype " + std::to_string(status));
-  }
+  CheckedCall(H5Tinsert(complex_id, "r", HOFFSET(complex_t, r), scalar_id), "inserting real field");
+  CheckedCall(H5Tinsert(complex_id, "i", HOFFSET(complex_t, i), scalar_id), "inserting imaginary field");
   return complex_id;
 }
 

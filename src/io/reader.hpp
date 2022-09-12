@@ -33,7 +33,7 @@ struct Reader
   Info readInfo(); // Read the info struct from a file
 
 protected:
-  int64_t handle_;
+  Handle handle_;
 };
 
 /*
