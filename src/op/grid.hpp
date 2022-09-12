@@ -47,7 +47,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     , kernel{osamp}
     , mapping{traj, Kernel::PadWidth, osamp}
     , basis{b}
-    , inputDims_{AddFront(mapping.cartDims, nC, basis ? basis.value().dimension(0) : mapping.frames)}
+    , inputDims_{AddFront(mapping.cartDims, nC, basis ? basis.value().dimension(1) : mapping.frames)}
     , outputDims_{AddFront(mapping.noncartDims, nC)}
   {
     static_assert(NDim < 4);
