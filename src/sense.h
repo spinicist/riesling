@@ -1,7 +1,7 @@
 #pragma once
 
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "op/gridBase.hpp"
 #include "op/sdc.hpp"
 #include "parse_args.hpp"

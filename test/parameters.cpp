@@ -1,4 +1,4 @@
-#include "log.h"
+#include "log.hpp"
 #include "sim/parameter.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>

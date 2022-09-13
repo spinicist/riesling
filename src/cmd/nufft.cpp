@@ -1,7 +1,7 @@
 #include "types.h"
 
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"

@@ -2,7 +2,7 @@
 
 #include "fft.hpp"
 
-#include "../log.h"
+#include "../log.hpp"
 #include "../tensorOps.hpp"
 
 #include "fftw3.h"
@@ -79,7 +79,7 @@ struct CPU final : FFT<TRank, FRank>
       Log::Fail(FMT_STRING("Could not create reverse FFT Planned"));
     }
 
-    Log::Debug(FMT_STRING("FFT planning took {}"), Log::ToNow(start));
+    Log::Print<Log::Level::High>(FMT_STRING("FFT planning took {}"), Log::ToNow(start));
   }
 
   ~CPU()
@@ -93,13 +93,10 @@ struct CPU final : FFT<TRank, FRank>
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
     }
-    Log::Debug(FMT_STRING("Forward FFT"));
-    auto const start = Log::Now();
     applyPhase(x, 1.f, true);
     auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
     fftwf_execute_dft(forward_plan_, ptr, ptr);
     applyPhase(x, scale_, true);
-    Log::Debug(FMT_STRING("Forward FFT: {}"), Log::ToNow(start));
   }
 
   void reverse(Tensor &x) const //!< K-space to image space
@@ -107,13 +104,10 @@ struct CPU final : FFT<TRank, FRank>
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
     }
-    Log::Debug(FMT_STRING("Reverse FFT"));
-    auto start = Log::Now();
     applyPhase(x, scale_, false);
     auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
     fftwf_execute_dft(reverse_plan_, ptr, ptr);
     applyPhase(x, 1.f, false);
-    Log::Debug(FMT_STRING("Reverse FFT: {}"), Log::ToNow(start));
   }
 
 private:
@@ -152,7 +146,6 @@ private:
 
   void applyPhase(Tensor &x, float const scale, bool const fwd) const
   {
-    auto start = Log::Now();
     Sz2 rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
     auto const rbPhase = phase_.reshape(rshP).broadcast(brdP);
     auto xr = x.reshape(rshX);
@@ -169,7 +162,6 @@ private:
         xr = xr * rbPhase.constant(scale) / rbPhase;
       }
     }
-    Log::Debug(FMT_STRING("FFT phase correction: {}"), Log::ToNow(start));
   }
 
   TensorDims dims_;

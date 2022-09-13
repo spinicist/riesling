@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "precond/precond.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"

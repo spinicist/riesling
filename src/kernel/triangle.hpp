@@ -15,7 +15,6 @@ struct Triangle
 
   Triangle(float const osamp)
   {
-    // Log::Debug("Flat-Iron Kernel W={} β={}", W, beta);
   }
 
   template <typename T>

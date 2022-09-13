@@ -1,7 +1,7 @@
 
 #include "coils.h"
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "parse_args.hpp"
 #include "sense.h"
 #include "types.h"

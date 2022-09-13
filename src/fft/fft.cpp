@@ -2,7 +2,7 @@
 
 #include "cpu.hpp"
 
-#include "../log.h"
+#include "../log.hpp"
 #include "../tensorOps.hpp"
 #include "../threads.hpp"
 #include "fftw3.h"
@@ -50,7 +50,7 @@ void End()
 void SetTimelimit(double time)
 {
   fftwf_set_timelimit(time);
-  Log::Debug(FMT_STRING("Set FFT planning timelimit to {} seconds"), time);
+  Log::Print<Log::Level::High>(FMT_STRING("Set FFT planning timelimit to {} seconds"), time);
 }
 
 /*
@@ -67,7 +67,6 @@ Cx1 Phase(Index const sz)
   auto const s = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
   Cxd1 const ph = ((s - s.floor()) * s.constant(2. * M_PI)).cast<Cxd>();
   Cx1 const factors = (ph * ph.constant(Cxd{0., 1.})).exp().cast<Cx>();
-  Log::Debug(FMT_STRING("Calculated FFT Phase factors length {}"), sz);
   return factors;
 }
 

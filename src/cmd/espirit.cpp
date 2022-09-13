@@ -3,7 +3,7 @@
 #include "cropper.h"
 #include "espirit.h"
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "mapping.hpp"
 #include "op/gridBase.hpp"
 #include "parse_args.hpp"

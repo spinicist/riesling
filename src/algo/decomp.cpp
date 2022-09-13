@@ -1,5 +1,5 @@
 #include "decomp.h"
-#include "log.h"
+#include "log.hpp"
 #include "tensorOps.hpp"
 
 #include <Eigen/Eigenvalues>

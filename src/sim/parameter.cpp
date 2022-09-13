@@ -1,6 +1,6 @@
 #include "parameter.hpp"
 
-#include "../log.h"
+#include "../log.hpp"
 #include <random>
 
 namespace rl {

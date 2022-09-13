@@ -13,7 +13,7 @@ using namespace rl;
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-  {0, Log::Level::None}, {1, Log::Level::Info}, {2, Log::Level::Debug}};
+  {0, Log::Level::None}, {1, Log::Level::Low}, {2, Log::Level::High}, {3, Log::Level::Debug}};
 }
 
 void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
@@ -97,7 +97,7 @@ void SetLogging(std::string const &name)
   if (verbosity) {
     Log::SetLevel(verbosity.Get());
   } else if (verbose) {
-    Log::SetLevel(Log::Level::Info);
+    Log::SetLevel(Log::Level::Low);
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
     Log::SetLevel(levelMap.at(std::atoi(env_p)));
   }

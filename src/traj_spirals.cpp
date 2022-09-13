@@ -1,5 +1,5 @@
 #include "traj_spirals.h"
-#include "log.h"
+#include "log.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {

@@ -2,7 +2,7 @@
 
 #include "filter.hpp"
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "op/fft.hpp"
 #include "parse_args.hpp"
 #include "threads.hpp"

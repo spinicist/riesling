@@ -34,10 +34,10 @@ auto SDCOp::adjoint(Output const &x) const -> Input
     Cx3 p(dims);
     p.device(Threads::GlobalDevice()) =
       x * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims[0], 1, 1});
-    Log::Debug(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
+    LOG_DEBUG(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
     return p;
   } else {
-    Log::Debug(FMT_STRING("No SDC"));
+    Log::Print<Log::Level::High>(FMT_STRING("No SDC"));
     return x;
   }
 }

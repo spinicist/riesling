@@ -28,7 +28,7 @@ Cx4 SelfCalibration(
   Index const frame,
   Cx3 const &data)
 {
-  Log::Debug(FMT_STRING("*** Self-Calibrated SENSE ***"));
+  Log::Print(FMT_STRING("SENSE Self-Calibration Starting"));
   Sz5 const dims = gridder->inputDimensions();
   Cropper crop(info, LastN<3>(dims), fov);
   Cx4 channels(crop.dims(dims[0]));
@@ -44,7 +44,7 @@ Cx4 SelfCalibration(
   grid = gridder->adjoint(data).chip<1>(frame);
   float const end_rad = info.voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
-  Log::Print(FMT_STRING("SENSE res {} filter {}-{}"), res, start_rad, end_rad);
+  Log::Print<Log::Level::High>(FMT_STRING("SENSE resultion {} filter indices {}-{}"), res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid);
   auto const fft = FFT::Make<4, 3>(grid.dimensions());
   fft->reverse(grid);
@@ -56,12 +56,9 @@ Cx4 SelfCalibration(
     Log::Print(FMT_STRING("Regularization lambda {}"), λ);
     rss.device(Threads::GlobalDevice()) = rss + rss.constant(λ);
   }
-  Log::Tensor(rss, "sense-rss");
-  Log::Tensor(channels, "sense-channels");
-  Log::Print(FMT_STRING("Normalizing channel images"));
+  Log::Print<Log::Level::High>(FMT_STRING("Normalizing channel images"));
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
-  Log::Tensor(channels, "sense-maps");
-  Log::Print(FMT_STRING("Finished SENSE maps"));
+  Log::Print(FMT_STRING("SENSE Self-Calibration finished"));
   return channels;
 }
 

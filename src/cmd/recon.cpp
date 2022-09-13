@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"
@@ -44,7 +44,6 @@ int main_recon(args::Subparser &parser)
   Sz3 const outSz = out_cropper.size();
 
   if (fwd) {
-    Log::Debug(FMT_STRING("Starting forward reconstruction op"));
     auto const &all_start = Log::Now();
     Cx5 images(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
     reader.readTensor(HD5::Keys::Image, images);

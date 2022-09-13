@@ -1,6 +1,6 @@
 #pragma once
 
-#include "log.h"
+#include "log.hpp"
 #include "parameter.hpp"
 #include "settings.hpp"
 #include "types.h"

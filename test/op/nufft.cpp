@@ -1,6 +1,6 @@
 #include "../src/op/nufft.hpp"
 #include "../src/precond/single.hpp"
-#include "log.h"
+#include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>

@@ -51,7 +51,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     , outputDims_{AddFront(mapping.noncartDims, nC)}
   {
     static_assert(NDim < 4);
-    Log::Debug(FMT_STRING("Grid Dims {}"), this->inputDimensions());
+    Log::Print<Log::Level::High>(FMT_STRING("Grid Dims {}"), this->inputDimensions());
     ws_ = std::make_shared<Input>(inputDimensions());
   }
 
@@ -76,7 +76,6 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
       Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
     }
     Output noncart(this->outputDimensions());
-    Log::Debug("Zeroing grid output");
     noncart.device(Threads::GlobalDevice()) = noncart.constant(0.f);
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : 1;
@@ -167,7 +166,6 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 
   Input &adjoint(Output const &noncart) const
   {
-    Log::Debug("Grid Adjoint");
     if (noncart.dimensions() != this->outputDimensions()) {
       Log::Fail(
         FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
@@ -286,10 +284,8 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
       }
     };
 
-    Log::Debug("Zeroing workspace");
     this->ws_->device(Threads::GlobalDevice()) = this->ws_->constant(0.f);
     Threads::For(grid_task, map.buckets.size(), "Grid Adjoint");
-    Log::Debug("Grid Adjoint finished");
     Log::Tensor(*(this->ws_), "grid-adjoint");
     return *(this->ws_);
   }

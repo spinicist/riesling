@@ -56,7 +56,7 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   if (ret_value < 0) {
     Log::Fail(FMT_STRING("Error reading tensor tensor {}, code: {}"), name, ret_value);
   } else {
-    Log::Debug(FMT_STRING("Read dataset: {}"), name);
+    Log::Print<Log::Level::High>(FMT_STRING("Read dataset: {}"), name);
   }
 }
 
@@ -113,7 +113,7 @@ void load_tensor_slab(
   if (status < 0) {
     Log::Fail(FMT_STRING("Tensor {}: Error reading slab {}. HD5 Message: {}"), name, index, HD5::GetError());
   } else {
-    Log::Debug(FMT_STRING("Read slab {} from tensor {}"), index, name);
+    Log::Print<Log::Level::High>(FMT_STRING("Read slab {} from tensor {}"), index, name);
   }
 }
 
@@ -140,7 +140,7 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   if (ret_value < 0) {
     Log::Fail(FMT_STRING("Error reading tensor {}, code: {}"), name, ret_value);
   } else {
-    Log::Debug(FMT_STRING("Read tensor {}"), name);
+    Log::Print<Log::Level::High>(FMT_STRING("Read tensor {}"), name);
   }
   return tensor;
 }
@@ -166,7 +166,7 @@ Derived load_matrix(Handle const &parent, std::string const &name)
   if (ret_value < 0) {
     Log::Fail(FMT_STRING("Error reading matrix {}, code: {}"), name, ret_value);
   } else {
-    Log::Debug(FMT_STRING("Read matrix {}"), name);
+    Log::Print<Log::Level::High>(FMT_STRING("Read matrix {}"), name);
   }
   return matrix;
 }
@@ -182,13 +182,13 @@ Reader::Reader(std::string const &fname)
     Log::Fail(FMT_STRING("Failed to open {}"), fname);
   }
   Log::Print(FMT_STRING("Opened file to read: {}"), fname);
-  Log::Debug(FMT_STRING("Handle: {}"), handle_);
+  Log::Print<Log::Level::High>(FMT_STRING("Handle: {}"), handle_);
 }
 
 Reader::~Reader()
 {
   H5Fclose(handle_);
-  Log::Debug(FMT_STRING("Closed handle: {}"), handle_);
+  Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
 }
 
 std::vector<std::string> Reader::list()
@@ -265,10 +265,10 @@ RieslingReader::RieslingReader(std::string const &fname)
   if (HD5::Exists(handle_, "frames")) {
     I1 frames(info.traces);
     HD5::load_tensor(handle_, "frames", frames);
-    Log::Debug(FMT_STRING("Read frames successfully"));
+    Log::Print<Log::Level::High>(FMT_STRING("Read frames successfully"));
     traj_ = Trajectory(info, points, frames);
   } else {
-    Log::Debug(FMT_STRING("No frames information in file"));
+    Log::Print<Log::Level::High>(FMT_STRING("No frames information in file"));
     traj_ = Trajectory(info, points);
   }
 
@@ -286,7 +286,7 @@ std::map<std::string, float> RieslingReader::readMeta() const
 {
   auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
-    Log::Debug(FMT_STRING("No meta-data found in file handle {}"), handle_);
+    Log::Print<Log::Level::High>(FMT_STRING("No meta-data found in file handle {}"), handle_);
     return {};
   }
   auto const names = HD5::List(meta_group);

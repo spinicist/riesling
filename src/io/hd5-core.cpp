@@ -1,6 +1,6 @@
 #include "hd5-core.hpp"
 #include "info.hpp"
-#include "log.h"
+#include "log.hpp"
 #include <filesystem>
 
 #include <hdf5.h>
@@ -23,9 +23,9 @@ void Init()
       Log::Fail(FMT_STRING("Could not initialise HDF5, code: {}"), err);
     }
     NeedsInit = false;
-    Log::Debug(FMT_STRING("Initialised HDF5"));
+    Log::Print<Log::Level::High>(FMT_STRING("Initialised HDF5"));
   } else {
-    Log::Debug(FMT_STRING("HDF5 already initialised"));
+    Log::Print<Log::Level::High>(FMT_STRING("HDF5 already initialised"));
   }
 }
 

@@ -1,5 +1,5 @@
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "tensorOps.hpp"
 #include "traj_spirals.h"
 

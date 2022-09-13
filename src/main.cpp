@@ -1,6 +1,6 @@
 #include "cmd/defs.h"
 #include "fft/fft.hpp"
-#include "log.h"
+#include "log.hpp"
 
 using namespace rl;
 

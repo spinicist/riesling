@@ -1,5 +1,5 @@
 #include "../../src/op/gridBase.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "tensorOps.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

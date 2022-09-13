@@ -2,7 +2,7 @@
 
 #include "cropper.h"
 #include "io/hd5.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "op/recon-rss.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"

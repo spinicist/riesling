@@ -1,4 +1,4 @@
-#include "../src/log.h"
+#include "../src/log.hpp"
 #include "../src/tensorOps.hpp"
 #include "../src/zin-grappa.hpp"
 #include <catch2/catch_test_macros.hpp>

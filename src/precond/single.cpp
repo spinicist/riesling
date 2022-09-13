@@ -1,6 +1,6 @@
 #include "single.hpp"
 
-#include "log.h"
+#include "log.hpp"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
 #include "threads.hpp"
@@ -14,6 +14,7 @@ namespace rl {
 SingleChannel::SingleChannel(Trajectory const &traj)
   : Precond{}
 {
+  Log::Print<Log::Level::High>("Single Channel Pre-conditioner start");
   Info const info = traj.info();
   Info newInfo = info;
   std::transform(
@@ -38,17 +39,14 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   FFTOp<5> fftX(psf.dimensions());
 
   Cx5 xcorr = fftX.adjoint(fftX.forward(padX.forward(ones)).abs().square().cast<Cx>());
-  Log::Debug("Norm W {} Norm PSF {} Norm xcorr {}", Norm(W), Norm(psf), Norm(xcorr));
-  Log::Tensor(xcorr, "single-xcorr");
   pre_.device(Threads::GlobalDevice()) = nufft.forward(psf * xcorr).abs() * pre_.constant(scale);
-  Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre-inv");
   pre_.device(Threads::GlobalDevice()) = (pre_ > 0.f).select(pre_.inverse(), pre_.constant(1.f));
   Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre");
   float const norm = Norm(pre_);
   if (!std::isfinite(norm)) {
     Log::Fail("Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
-    Log::Print("Single-channel pre-conditioner, norm {}", norm);
+    Log::Print("Single-channel pre-conditioner finished, norm {}", norm);
   }
 }
 
@@ -59,19 +57,7 @@ Cx3 SingleChannel::apply(Cx3 const &in) const
   Index const nC = in.dimension(0);
   Cx3 p(in.dimensions());
   p.device(Threads::GlobalDevice()) = in * pre_.broadcast(Sz3{nC, 1, 1}).cast<Cx>();
-  Log::Debug(FMT_STRING("SINGLE-CHANNEL Took {}"), Log::ToNow(start));
-  LOG_DEBUG("In norm {}", Norm(in));
-  LOG_DEBUG("Out norm {}", Norm(p));
-  return p;
-}
-
-Cx3 SingleChannel::inv(Cx3 const &in) const
-{
-  auto const start = Log::Now();
-  Index const nC = in.dimension(0);
-  Cx3 p(in.dimensions());
-  p.device(Threads::GlobalDevice()) = in * pre_.broadcast(Sz3{nC, 1, 1}).cast<Cx>();
-  Log::Debug(FMT_STRING("SINGLE-CHANNEL Inverse Took {}"), Log::ToNow(start));
+  LOG_DEBUG(FMT_STRING("Single-channel preconditioner Norm {}->{}. Took {}"), Norm(in), Norm(p), Log::ToNow(start));
   return p;
 }
 

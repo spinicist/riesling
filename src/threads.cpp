@@ -10,7 +10,7 @@
  */
 
 #include "threads.hpp"
-#include "log.h"
+#include "log.hpp"
 
 // Need to define EIGEN_USE_THREADS before including these. This is done in CMakeLists.txt
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -27,7 +27,7 @@ Eigen::ThreadPool *GlobalPool()
 {
   if (gp == nullptr) {
     auto const nt = std::thread::hardware_concurrency();
-    Log::Debug(FMT_STRING("Creating default thread pool with {} threads"), nt);
+    Log::Print<Log::Level::High>(FMT_STRING("Creating default thread pool with {} threads"), nt);
     gp = new Eigen::ThreadPool(nt);
   }
   return gp;
@@ -41,7 +41,7 @@ void SetGlobalThreadCount(Index nt)
   if (nt < 1) {
     nt = std::thread::hardware_concurrency();
   }
-  Log::Debug(FMT_STRING("Creating new thread pool with {} threads"), nt);
+  Log::Print<Log::Level::High>(FMT_STRING("Creating thread pool with {} threads"), nt);
   gp = new Eigen::ThreadPool(nt);
 }
 

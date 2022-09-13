@@ -1,6 +1,6 @@
 #pragma once
 
-#include "log.h"
+#include "log.hpp"
 #include "op/sdc.hpp"
 #include "parse_args.hpp"
 #include "trajectory.hpp"

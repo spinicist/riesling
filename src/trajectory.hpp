@@ -1,7 +1,7 @@
 #pragma once
 
 #include "info.hpp"
-#include "log.h"
+#include "log.hpp"
 #include "types.h"
 
 namespace rl {

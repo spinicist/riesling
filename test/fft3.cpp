@@ -1,5 +1,5 @@
 #include "../src/fft/fft.hpp"
-#include "../src/log.h"
+#include "../src/log.hpp"
 #include "../src/tensorOps.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>

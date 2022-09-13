@@ -67,7 +67,7 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
     }
     return false;
   });
-  Log::Debug(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
+  Log::Print<Log::Level::High>(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
   return sorted;
 }
 

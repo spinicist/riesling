@@ -1,6 +1,6 @@
 #include "filter.hpp"
 
-#include "log.h"
+#include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 

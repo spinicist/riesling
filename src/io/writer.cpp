@@ -53,7 +53,7 @@ void store_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<S
   if (status) {
     Log::Fail(FMT_STRING("Writing Tensor {}: Error {}"), name, HD5::GetError());
   } else {
-    Log::Debug(FMT_STRING("Wrote tensor: {}"), name);
+    Log::Print<Log::Level::High>(FMT_STRING("Wrote tensor: {}"), name);
   }
 }
 
@@ -86,7 +86,7 @@ void store_matrix(Handle const &parent, std::string const &name, Eigen::DenseBas
   if (status) {
     Log::Fail(FMT_STRING("Could not write matrix {} into handle {}, code: {}"), name, parent, status);
   } else {
-    Log::Debug(FMT_STRING("Wrote matrix: {}"), name);
+    Log::Print<Log::Level::High>(FMT_STRING("Wrote matrix: {}"), name);
   }
 }
 
@@ -98,14 +98,14 @@ Writer::Writer(std::string const &fname)
     Log::Fail(FMT_STRING("Could not open file {} for writing"), fname);
   } else {
     Log::Print(FMT_STRING("Opened file to write: {}"), fname);
-    Log::Debug(FMT_STRING("Handle: {}"), handle_);
+    Log::Print<Log::Level::High>(FMT_STRING("Handle: {}"), handle_);
   }
 }
 
 Writer::~Writer()
 {
   H5Fclose(handle_);
-  Log::Debug(FMT_STRING("Closed handle: {}"), handle_);
+  Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
 }
 
 void Writer::writeInfo(Info const &info)
@@ -124,7 +124,7 @@ void Writer::writeInfo(Info const &info)
   if (status != 0) {
     Log::Fail(FMT_STRING("Could not write info struct in file {}, code: {}"), handle_, status);
   }
-  Log::Debug(FMT_STRING("Wrote info struct"));
+  Log::Print<Log::Level::High>(FMT_STRING("Wrote info struct"));
 }
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)

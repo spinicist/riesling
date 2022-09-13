@@ -1,7 +1,7 @@
 #include "types.h"
 
 #include "cropper.h"
-#include "log.h"
+#include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "sdc.h"

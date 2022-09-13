@@ -55,6 +55,7 @@ struct FFTOp final : Operator<Rank, Rank>
   template <typename T>
   Tensor const &forward(T const &x) const
   {
+    auto const start = Log::Now();
     ws_->device(Threads::GlobalDevice()) = x;
     if (fft3_) {
       fft3_->forward(*ws_);
@@ -65,14 +66,14 @@ struct FFTOp final : Operator<Rank, Rank>
         ws_->chip(iz, 4) = chip;
       }
     }
-    Log::Debug("FFT Forward (Out-of-place) Norm {}->{}", Norm(x), Norm(*ws_));
-    Log::Tensor(*ws_, "fft-forward");
+    LOG_DEBUG("FFT Forward (Out-of-place) Norm {}->{} Took {}", Norm(x), Norm(*ws_), Log::ToNow(start));
     return *ws_;
   }
 
   template <typename T>
   Tensor &adjoint(T const &x) const
   {
+    auto start = Log::Now();
     ws_->device(Threads::GlobalDevice()) = x;
     if (fft3_) {
       fft3_->reverse(*ws_);
@@ -83,13 +84,13 @@ struct FFTOp final : Operator<Rank, Rank>
         ws_->chip(iz, 4) = chip;
       }
     }
-    Log::Debug("FFT Adjoint (Out-of-place) Norm {}->{}", Norm(x), Norm(*ws_));
-    Log::Tensor(*ws_, "fft-adjoint");
+    LOG_DEBUG("FFT Adjoint (Out-of-place) Norm {}->{} Took {}", Norm(x), Norm(*ws_), Log::ToNow(start));
     return *ws_;
   }
 
   Tensor const &forward(Tensor &x) const
   {
+    auto const start = Log::Now();
     float const inNorm = Norm(x);
     if (fft3_) {
       fft3_->forward(x);
@@ -100,13 +101,13 @@ struct FFTOp final : Operator<Rank, Rank>
         x.chip(iz, 4) = chip;
       }
     }
-    Log::Debug("FFT Forward (In-place) Norm {}->{}", inNorm, Norm(x));
-    Log::Tensor(x, "fft-forward");
+    LOG_DEBUG("FFT Forward (In-place) Norm {}->{}", inNorm, Norm(x), Log::ToNow(start));
     return x;
   }
 
   Tensor &adjoint(Tensor &x) const
   {
+    auto const start = Log::Now();
     float inNorm = Norm(x);
     if (fft3_) {
       fft3_->reverse(x);
@@ -117,8 +118,7 @@ struct FFTOp final : Operator<Rank, Rank>
         x.chip(iz, 4) = chip;
       }
     }
-    Log::Debug("FFT Adjoint (In-place) Norm {}->{}", inNorm, Norm(x));
-    Log::Tensor(x, "fft-adjoint");
+    LOG_DEBUG("FFT Adjoint (In-place) Norm {}->{} Took {}", inNorm, Norm(x), Log::ToNow(start));
     return x;
   }
 

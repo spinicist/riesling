@@ -1,12 +1,12 @@
-#include "log.h"
+#include "log.hpp"
 
 #include "fmt/chrono.h"
-#include "indicators/progress_bar.hpp"
 #include "io/hd5.hpp"
 #include "tensorOps.hpp"
 
-#include <unistd.h>
+#include <mutex>
 #include <stdio.h>
+#include <unistd.h>
 
 namespace rl {
 namespace Log {
@@ -20,9 +20,9 @@ namespace {
 Level log_level = Level::None;
 std::unique_ptr<HD5::Writer> debug_file = nullptr;
 bool isTTY = false;
-std::unique_ptr<indicators::ProgressBar> progress = nullptr;
-Index progressTarget;
-std::atomic<Index> progressAmount;
+Index progressTarget = -1, progressCurrent = 0, progressNext = 0;
+std::mutex progressMutex;
+std::string progressMessage;
 } // namespace
 
 Level CurrentLevel()
@@ -51,62 +51,45 @@ void End()
   log_level = Level::None;
 }
 
-void lprint(fmt::string_view fstr, fmt::format_args args)
-{
-  if (log_level >= Level::Info) {
-    auto const t = std::chrono::system_clock::now();
-    fmt::print(stderr, FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
-  }
-}
-
-void ldebug(fmt::string_view fstr, fmt::format_args args)
-{
-  if (log_level >= Level::Debug) {
-    auto const t = std::chrono::system_clock::now();
-    fmt::print(stderr, FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
-  }
-}
-
-void lfail(fmt::string_view fstr, fmt::format_args args)
+auto TheTime() -> std::string
 {
   auto const t = std::chrono::system_clock::now();
-  auto const msg = fmt::format(FMT_STRING("[{:%H:%M:%S}] {}\n"), fmt::localtime(t), fmt::vformat(fstr, args));
-  if (log_level > Level::Testing) {
-    fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), msg);
-  }
-  throw Failure(msg);
+  return fmt::format(FMT_STRING("[{:%H:%M:%S}]"), fmt::localtime(t));
 }
 
 void StartProgress(Index const amount, std::string const &text)
 {
-  if ((log_level >= Level::Info) && isTTY) {
-    progress = std::make_unique<indicators::ProgressBar>(
-      indicators::option::BarWidth{80},
-      indicators::option::PrefixText{text},
-      indicators::option::ShowElapsedTime{true},
-      indicators::option::ShowRemainingTime{true});
-    progressTarget = amount - 1;
-    progressAmount = 0;
+  if (CurrentLevel() >= Level::High) {
+    progressMessage = text;
+    fmt::print(stderr, FMT_STRING("{} Starting {}\n"), TheTime(), progressMessage);
+  }
+  if (isTTY && CurrentLevel() >= Level::Low) {
+    progressTarget = amount;
+    progressCurrent = 0;
+    progressNext = std::floor(progressTarget / 100.f);
   }
 }
 
 void StopProgress()
 {
-  if (progress) {
-    if (!progress->is_completed()) {
-      progress->mark_as_completed();
-    }
-    progress = nullptr;
+  if (isTTY && CurrentLevel() >= Level::Low) {
+    progressTarget = -1;
+    fmt::print(stderr, "\r");
+  }
+  if (CurrentLevel() >= Level::High) {
+    fmt::print(stderr, FMT_STRING("{} Finished {}\n"), TheTime(), progressMessage);
   }
 }
 
 void Tick()
 {
-  if (progress) {
-    progressAmount++;
-    float const percent = (100.f * progressAmount) / progressTarget;
-    if ((percent - progress->current() > 1.f) && (percent <= 100.f)) {
-      progress->set_progress(percent);
+  if (isTTY && (progressTarget > 0)) {
+    std::scoped_lock lock(progressMutex);
+    progressCurrent++;
+    if (progressCurrent > progressNext) {
+      float const percent = (100.f * progressCurrent) / progressTarget;
+      fmt::print(stderr, FMT_STRING("\r{:02.0f}%"), percent);
+      progressNext += std::floor(progressTarget / 100.f);
     }
   }
 }

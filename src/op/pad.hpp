@@ -1,6 +1,6 @@
 #pragma once
 
-#include "log.h"
+#include "log.hpp"
 #include "operator.hpp"
 #include "tensorOps.hpp"
 
@@ -60,7 +60,7 @@ struct PadOp final : Operator<Rank, Rank>
     Output result(outputDimensions());
     result.device(Threads::GlobalDevice()) = x.pad(paddings_);
     Log::Tensor(result, "pad-fwd");
-    Log::Debug("Padding Forward Norm {}->{}", Norm(x), Norm(result));
+    LOG_DEBUG(FMT_STRING("Padding Forward Norm {}->{}"), Norm(x), Norm(result));
     return result;
   }
 
@@ -69,7 +69,7 @@ struct PadOp final : Operator<Rank, Rank>
     Input result(inputDimensions());
     result.device(Threads::GlobalDevice()) = x.slice(left_, input_);
     Log::Tensor(result, "pad-adj");
-    Log::Debug(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(x), Norm(result));
+    LOG_DEBUG(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(x), Norm(result));
     return result;
   }
 
