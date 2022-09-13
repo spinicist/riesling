@@ -136,7 +136,6 @@ Cx4 ESPIRIT(
   Threads::For(slice_task, mix_kernels.dimension(3), "Covariance");
 
   Log::Print(FMT_STRING("Finished ESPIRIT"));
-  Log::Tensor(valsImage, "espirit-val");
   return grid;
 }
 

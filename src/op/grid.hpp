@@ -286,7 +286,6 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 
     this->ws_->device(Threads::GlobalDevice()) = this->ws_->constant(0.f);
     Threads::For(grid_task, map.buckets.size(), "Grid Adjoint");
-    Log::Tensor(*(this->ws_), "grid-adjoint");
     return *(this->ws_);
   }
 
@@ -297,14 +296,12 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     temp.setZero();
     auto const k = kernel(Kernel::Point::Zero());
     Crop3(temp, k.dimensions()) = k.template cast<Cx>();
-    Log::Tensor(temp, "apo-kernel");
     fft->reverse(temp);
     Re3 a = Crop3(Re3(temp.real()), sz);
     float const scale = std::sqrt(Product(sz));
     a.device(Threads::GlobalDevice()) = a * a.constant(scale);
     Log::Print(FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
     a.device(Threads::GlobalDevice()) = a.inverse();
-    Log::Tensor(a, "apo-final");
     return a;
   }
 };

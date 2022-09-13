@@ -59,7 +59,6 @@ struct PadOp final : Operator<Rank, Rank>
   {
     Output result(outputDimensions());
     result.device(Threads::GlobalDevice()) = x.pad(paddings_);
-    Log::Tensor(result, "pad-fwd");
     LOG_DEBUG(FMT_STRING("Padding Forward Norm {}->{}"), Norm(x), Norm(result));
     return result;
   }
@@ -68,7 +67,6 @@ struct PadOp final : Operator<Rank, Rank>
   {
     Input result(inputDimensions());
     result.device(Threads::GlobalDevice()) = x.slice(left_, input_);
-    Log::Tensor(result, "pad-adj");
     LOG_DEBUG(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(x), Norm(result));
     return result;
   }

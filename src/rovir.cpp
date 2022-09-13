@@ -44,7 +44,6 @@ auto ROVIR(
 
   // Get the signal distribution for thresholding
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
-  Log::Tensor(rss, "rovir-rss");
   std::vector<float> percentiles(rss.size());
   std::copy_n(rss.data(), rss.size(), percentiles.begin());
   std::sort(percentiles.begin(), percentiles.end());
@@ -66,9 +65,6 @@ auto ROVIR(
   sigCrop.crop3(signalMask) = sigCrop.crop3(interMask);
   Cropper intCrop(info, sz, opts.fov.Get() + opts.gap.Get());
   intCrop.crop3(interMask).setZero();
-
-  Log::Tensor(signalMask, "rovir-signalmask");
-  Log::Tensor(interMask, "rovir-interferencemask");
 
   // Copy to A & B matrices
   Index const nSig = Sum(signalMask);

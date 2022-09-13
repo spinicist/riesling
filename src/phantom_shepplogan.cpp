@@ -74,8 +74,6 @@ Cx3 SheppLoganPhantom(
       }
     }
   }
-
-  Log::Tensor(phan, "phantom-shepplogan");
   return phan;
 }
 } // namespace rl

@@ -68,7 +68,6 @@ struct AugmentedADMM
       float const eps_dual = sqrtf(N) * abstol + reltol * rho * Norm(u);
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
-      Log::Tensor(xpu, fmt::format("admm-xpu-{:02d}", ii));
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
 

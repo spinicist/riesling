@@ -44,7 +44,6 @@ Cx4 birdcage(
       }
     }
   }
-  Log::Tensor(all, fmt::format(FMT_STRING("birdcage-{}"), channels));
   return all;
 }
 } // namespace rl

@@ -37,7 +37,6 @@ void NUFFTOp::calcToeplitz()
   } else {
     tf_ = gridder_->adjoint(gridder_->forward(tf_));
   }
-  Log::Tensor(Cx4(tf_.reshape(LastN<4>(dims))), "nufft-tf");
 }
 
 auto NUFFTOp::forward(Input const &x) const -> Output
