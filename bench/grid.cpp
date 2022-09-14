@@ -11,8 +11,10 @@ using namespace rl;
 
 Index const M = 64;
 Index const C = 8;
-Info const info{.channels = C, .samples = M / 2, .traces = Index(M * M), .matrix = Sz3{M, M, M}};
-auto const points = ArchimedeanSpiral(info.samples, info.traces);
+Index const samples = M / 2;
+Index const traces = M * M;
+Info const info{.matrix = Sz3{M, M, M}};
+auto const points = ArchimedeanSpiral(samples, traces);
 Trajectory traj(info, points);
 float const os = 2.f;
 // Index const bucketSz = 32;

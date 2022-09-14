@@ -7,6 +7,18 @@
 namespace rl {
 namespace HD5 {
 
+Index getRank(Handle const &parent, std::string const &name)
+{
+  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) {
+    Log::Fail(FMT_STRING("Could not open tensor {}"), name);
+  }
+
+  hid_t ds = H5Dget_space(dset);
+  int const ndims = H5Sget_simple_extent_ndims(ds);
+  return ndims;
+}
+
 template <int ND>
 Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
 {
@@ -191,10 +203,28 @@ Reader::~Reader()
   Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
 }
 
-std::vector<std::string> Reader::list()
+auto Reader::list() -> std::vector<std::string>
 {
   return HD5::List(handle_);
 }
+
+auto Reader::rank(std::string const &label) -> Index
+{
+  return getRank(handle_, label);
+}
+
+template <int Rank>
+auto Reader::dimensions(std::string const &label) -> Eigen::DSizes<Index, Rank>
+{
+  return get_dims<Rank>(handle_, label);
+}
+
+template auto Reader::dimensions<1>(std::string const &) -> Eigen::DSizes<Index, 1>;
+template auto Reader::dimensions<2>(std::string const &) -> Eigen::DSizes<Index, 2>;
+template auto Reader::dimensions<3>(std::string const &) -> Eigen::DSizes<Index, 3>;
+template auto Reader::dimensions<4>(std::string const &) -> Eigen::DSizes<Index, 4>;
+template auto Reader::dimensions<5>(std::string const &) -> Eigen::DSizes<Index, 5>;
+template auto Reader::dimensions<6>(std::string const &) -> Eigen::DSizes<Index, 6>;
 
 template <typename T>
 T Reader::readTensor(std::string const &label)
@@ -260,25 +290,14 @@ RieslingReader::RieslingReader(std::string const &fname)
 {
   auto const info = readInfo();
 
-  Re3 points(3, info.samples, info.traces);
-  HD5::load_tensor(handle_, Keys::Trajectory, points);
-  if (HD5::Exists(handle_, "frames")) {
-    I1 frames(info.traces);
-    HD5::load_tensor(handle_, "frames", frames);
-    Log::Print<Log::Level::High>(FMT_STRING("Read frames successfully"));
+  auto points = readTensor<Re3>(Keys::Trajectory);
+  if (HD5::Exists(handle_, Keys::Frames)) {
+    auto frames = readTensor<I1>(Keys::Frames);
+    Log::Print<Log::Level::Debug>(FMT_STRING("Read frames {}"), frames.dimensions());
     traj_ = Trajectory(info, points, frames);
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("No frames information in file"));
+    Log::Print<Log::Level::Debug>(FMT_STRING("No frames information in file"));
     traj_ = Trajectory(info, points);
-  }
-
-  // For non-cartesian, check dimension sizes
-  if (Exists(handle_, Keys::Noncartesian)) {
-    auto const dims = HD5::get_dims<4>(handle_, Keys::Noncartesian);
-    Check("channels", dims[0], info.channels);
-    Check("read-points", dims[1], info.samples);
-    Check("traces", dims[2], info.traces);
-    Check("volumes", dims[3], info.volumes);
   }
 }
 
@@ -318,7 +337,7 @@ Cx3 const &RieslingReader::noncartesian(Index const index)
   } else {
     Log::Print(FMT_STRING("Reading non-cartesian volume {}"), index);
     if (nc_.size() == 0) {
-      nc_.resize(Sz3{traj_.info().channels, traj_.info().samples, traj_.info().traces});
+      nc_.resize(FirstN<3>(get_dims<4>(handle_, Keys::Noncartesian)));
     }
     HD5::load_tensor_slab(handle_, Keys::Noncartesian, index, nc_);
     currentNCVol_ = index;

@@ -5,7 +5,7 @@
 #include "mapping.hpp"
 #include "op/gridBase.hpp"
 #include "op/nufft.hpp"
-#include "sdc.h"
+#include "sdc.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {
@@ -25,22 +25,24 @@ auto ROVIR(
   float const energy,
   Index const channels,
   Index const lorestraces,
-  Cx3 const &data) -> Eigen::MatrixXcf
+  Cx3 const &inData) -> Eigen::MatrixXcf
 {
-  Index minRead = 0;
   Trajectory traj = inTraj;
+  Cx3 data;
   if (opts.res) {
-    std::tie(traj, minRead) = inTraj.downsample(opts.res.Get(), lorestraces, true);
+    std::tie(traj, data) = inTraj.downsample(inData, opts.res.Get(), lorestraces, true);
+  } else {
+    data = inData;
   }
   auto const &info = traj.info();
-  Index const nC = info.channels;
+  Index const nC = data.dimension(0);
   float const osamp = 3.f;
-  auto gridder = make_grid<Cx, 3>(traj, "ES3", osamp, info.channels);
+  auto gridder = make_grid<Cx, 3>(traj, "ES3", osamp, nC);
   SDCOp sdc(SDC::Pipe(traj, "ES5", 2.1f), nC);
   auto const sz = LastN<3>(gridder->inputDimensions());
   NUFFTOp nufft(sz, gridder.get(), &sdc);
   Cx4 const channelImages =
-    nufft.adjoint(data.slice(Sz3{0, minRead, 0}, Sz3{nC, info.samples, info.traces})).chip<1>(0);
+    nufft.adjoint(data).chip<1>(0);
 
   // Get the signal distribution for thresholding
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection
@@ -61,9 +63,9 @@ auto ROVIR(
   Re3 signalMask(sz), interMask(sz);
   interMask = ((rss > loVal) && (rss < hiVal)).cast<float>();
   signalMask.setZero();
-  Cropper sigCrop(info, sz, opts.fov.Get());
+  Cropper sigCrop(info.matrix, sz, info.voxel_size, opts.fov.Get());
   sigCrop.crop3(signalMask) = sigCrop.crop3(interMask);
-  Cropper intCrop(info, sz, opts.fov.Get() + opts.gap.Get());
+  Cropper intCrop(info.matrix, sz, info.voxel_size, opts.fov.Get() + opts.gap.Get());
   intCrop.crop3(interMask).setZero();
 
   // Copy to A & B matrices

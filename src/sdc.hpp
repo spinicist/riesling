@@ -19,7 +19,8 @@ struct Opts
 
 Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const max_its = 40);
 Re2 Radial(Trajectory const &traj, Index const lores, Index const gap);
-std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &t, std::string const &ktype, float const os);
+std::unique_ptr<SDCOp>
+Choose(Opts &opts, Trajectory const &t, Index const channels, std::string const &ktype, float const os);
 
 } // namespace SDC
 } // namespace rl

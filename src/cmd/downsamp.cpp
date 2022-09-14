@@ -18,14 +18,11 @@ int main_downsamp(args::Subparser &parser)
 
   HD5::RieslingReader reader(iname.Get());
   auto traj = reader.trajectory();
-  auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), !noShrink);
-  auto const dsInfo = dsTraj.info();
-  Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian)
-             .slice(Sz4{0, minRead, 0, 0}, Sz4{dsInfo.channels, dsInfo.samples, dsInfo.traces, dsInfo.volumes});
-
+  Cx4 ks1 = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
+  auto const [dsTraj, ks2] = traj.downsample(ks1, res.Get(), lores.Get(), !noShrink);
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "downsamp"));
   writer.writeTrajectory(dsTraj);
-  writer.writeTensor(ks, HD5::Keys::Noncartesian);
+  writer.writeTensor(ks2, HD5::Keys::Noncartesian);
 
   return EXIT_SUCCESS;
 }

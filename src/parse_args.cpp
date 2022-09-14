@@ -174,12 +174,3 @@ void WriteOutput(
     writer.writeInfo(traj.info());
   }
 }
-
-Index ValOrLast(Index const val, Index const vols)
-{
-  if (val < 0) {
-    return vols - 1;
-  } else {
-    return std::min(val, vols - 1);
-  }
-}

@@ -151,7 +151,7 @@ void Writer::writeTrajectory(Trajectory const &t)
 {
   writeInfo(t.info());
   HD5::store_tensor(handle_, Keys::Trajectory, t.points());
-  HD5::store_tensor(handle_, "frames", t.frames());
+  HD5::store_tensor(handle_, Keys::Frames, t.frames());
 }
 
 bool Writer::exists(std::string const &name) const

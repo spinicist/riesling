@@ -12,26 +12,20 @@ int main_meta(args::Subparser &parser)
   ParseCommand(parser, iname);
   HD5::RieslingReader reader(iname.Get());
   auto const &meta = reader.readMeta();
-  auto const info = reader.trajectory().info();
+  auto const traj = reader.trajectory();
 
   for (auto const &k : keys.Get()) {
     if (k == "matrix") {
-      fmt::print("{}\n", info.matrix);
-      continue;
-    } else if (k == "channels") {
-      fmt::print("{}\n", info.channels);
+      fmt::print("{}\n", traj.info().matrix);
       continue;
     } else if (k == "samples") {
-      fmt::print("{}\n", info.samples);
+      fmt::print("{}\n", traj.nSamples());
       continue;
     } else if (k == "traces") {
-      fmt::print("{}\n", info.traces);
-      continue;
-    } else if (k == "volumes") {
-      fmt::print("{}\n", info.volumes);
+      fmt::print("{}\n", traj.nTraces());
       continue;
     } else if (k == "frames") {
-      fmt::print("{}\n", info.frames);
+      fmt::print("{}\n", traj.nFrames());
       continue;
     }
 

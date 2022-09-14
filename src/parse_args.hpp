@@ -49,9 +49,6 @@ void WriteOutput(
   bool const keepTrajectory,
   rl::Trajectory const &traj);
 
-// Helper function for getting a good volume to take SENSE maps from
-Index ValOrLast(Index const val, Index const last);
-
 struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);

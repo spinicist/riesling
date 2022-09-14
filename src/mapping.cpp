@@ -85,11 +85,8 @@ Mapping<NDims>::Mapping(
   Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
 
   std::fill(cartDims.begin(), cartDims.end(), gridSz);
-  if constexpr (NDims == 3) {
-    cartDims[2] /= info.slabs;
-  }
-  noncartDims = Sz2{info.samples, info.traces};
-  frames = info.frames;
+  noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
+  frames = traj.nFrames();
   frameWeights = Eigen::ArrayXf(frames);
   frameWeights.setZero();
 
@@ -128,17 +125,15 @@ Mapping<NDims>::Mapping(
   std::transform(cartDims.begin(), cartDims.end(), center.begin(), [](Index const c) { return c / 2; });
   int32_t index = 0;
   Index NaNs = 0;
-  for (int32_t is = 0; is < info.traces; is++) {
-    auto const fr = traj.frames()(is);
-    if ((fr >= 0) && (fr < info.frames)) {
-      for (int16_t ir = read0; ir < info.samples; ir++) {
+  for (int32_t is = 0; is < traj.nTraces(); is++) {
+    auto const fr = traj.frame(is);
+    if ((fr >= 0) && (fr < frames)) {
+      for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
         Re1 const p = traj.point(ir, is);
         Eigen::Array<float, NDims, 1> xyz;
         xyz[0] = p[0] * maxRad * 2.f;
         xyz[1] = p[1] * maxRad * 2.f;
-        if (NDims == 3) {
-          xyz[2] = p[2] * maxRad * 2.f / info.slabs;
-        }
+        xyz[2] = p[2] * maxRad * 2.f;
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();

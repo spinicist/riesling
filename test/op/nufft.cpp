@@ -12,7 +12,7 @@ TEST_CASE("NUFFT", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(7, 15, 16);
-  Info const info{.matrix = Sz3{M, M, M}, .channels = 1, .samples = 3, .traces = 1};
+  Info const info{.matrix = Sz3{M, M, M}};
   Re3 points(3, 3, 1);
   points.setZero();
   points(0, 0, 0) = -0.4f;
@@ -23,7 +23,7 @@ TEST_CASE("NUFFT", "[nufft]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto gridder = make_grid<Cx, 3>(traj, ktype, osamp, info.channels);
+  auto gridder = make_grid<Cx, 3>(traj, ktype, osamp, 1);
   NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
   Cx3 ks(nufft.outputDimensions());
   Cx5 img(nufft.inputDimensions());

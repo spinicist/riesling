@@ -12,7 +12,7 @@ namespace SENSE {
 
 Opts::Opts(args::Subparser &parser)
   : file(parser, "F", "Read SENSE maps from .h5", {"sense", 's'})
-  , volume(parser, "V", "SENSE calibration volume (last)", {"sense-vol"}, -1)
+  , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , frame(parser, "F", "SENSE calibration frame (first)", {"sense-frame"}, 0)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, 12.f)
   , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
@@ -20,7 +20,7 @@ Opts::Opts(args::Subparser &parser)
 }
 
 Cx4 SelfCalibration(
-  Info const &info,
+  Trajectory const &traj,
   GridBase<Cx, 3> *gridder,
   float const fov,
   float const res,
@@ -30,7 +30,7 @@ Cx4 SelfCalibration(
 {
   Log::Print(FMT_STRING("SENSE Self-Calibration Starting"));
   Sz5 const dims = gridder->inputDimensions();
-  Cropper crop(info, LastN<3>(dims), fov);
+  Cropper crop(traj.info().matrix, LastN<3>(dims), traj.info().voxel_size, fov);
   Cx4 channels(crop.dims(dims[0]));
   if (dims[0] == 1) { // Only one channel, return all ones
     channels.setConstant(1.);
@@ -38,11 +38,11 @@ Cx4 SelfCalibration(
   }
 
   Cx4 grid(dims[0], dims[2], dims[3], dims[4]);
-  if (frame >= info.frames) {
-    Log::Fail("Specified SENSE frame {} is greater than number of frames in data {}", frame, info.frames);
+  if (frame >= traj.nFrames()) {
+    Log::Fail("Specified SENSE frame {} is greater than number of frames in data {}", frame, traj.nFrames());
   }
   grid = gridder->adjoint(data).chip<1>(frame);
-  float const end_rad = info.voxel_size.minCoeff() / res;
+  float const end_rad = traj.info().voxel_size.minCoeff() / res;
   float const start_rad = 0.5 * end_rad;
   Log::Print<Log::Level::High>(FMT_STRING("SENSE resultion {} filter indices {}-{}"), res, start_rad, end_rad);
   KSTukey(start_rad, end_rad, 0.f, grid);
@@ -60,16 +60,6 @@ Cx4 SelfCalibration(
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
   Log::Print(FMT_STRING("SENSE Self-Calibration finished"));
   return channels;
-}
-
-Cx4 Load(std::string const &calFile, Info const &i)
-{
-  HD5::Reader senseReader(calFile);
-  auto const maps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
-  if (maps.dimension(0) != i.channels) {
-    Log::Fail("SENSE maps had {} channels, should be {}", maps.dimension(0), i.channels);
-  }
-  return maps;
 }
 
 Cx4 Interp(std::string const &file, Sz3 const size2)
@@ -93,25 +83,26 @@ Cx4 Interp(std::string const &file, Sz3 const size2)
 }
 
 Cx4 Choose(
-  Opts &opts, Info const &info, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
+  Opts &opts, Trajectory const &traj, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
 {
   if (gridder->inputDimensions()[0] == 1) { // Only one channel, return all ones
     Sz5 const dims = gridder->inputDimensions();
-    Cropper crop(info, LastN<3>(dims), fov);
+    Cropper crop(traj.info().matrix, LastN<3>(dims), traj.info().voxel_size, fov);
     Cx4 channels(crop.dims(dims[0]));
     channels.setConstant(1.);
     return channels;
   } else if (opts.file) {
-    return Load(opts.file.Get(), info);
+    HD5::Reader senseReader(opts.file.Get());
+    return senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
   } else {
     return SelfCalibration(
-      info,
+      traj,
       gridder,
       fov,
       opts.res.Get(),
       opts.λ.Get(),
       opts.frame.Get(),
-      sdc->adjoint(reader.noncartesian(ValOrLast(opts.volume.Get(), reader.trajectory().info().volumes))));
+      sdc->adjoint(reader.noncartesian(opts.volume.Get())));
   }
 }
 

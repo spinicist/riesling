@@ -61,12 +61,6 @@ hid_t InfoType()
   hsize_t sz9[1] = {9};
   hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
   CheckedCall(H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id), "inserting matrix field");
-  CheckedCall(H5Tinsert(info_id, "channels", HOFFSET(Info, channels), H5T_NATIVE_LONG), "inserting channels field");
-  CheckedCall(H5Tinsert(info_id, "samples", HOFFSET(Info, samples), H5T_NATIVE_LONG), "inserting samples field");
-  CheckedCall(H5Tinsert(info_id, "traces", HOFFSET(Info, traces), H5T_NATIVE_LONG), "inserting traces field");
-  CheckedCall(H5Tinsert(info_id, "slabs", HOFFSET(Info, slabs), H5T_NATIVE_LONG), "inserting slabs field");
-  CheckedCall(H5Tinsert(info_id, "frames", HOFFSET(Info, frames), H5T_NATIVE_LONG), "inserting frames field");
-  CheckedCall(H5Tinsert(info_id, "volumes", HOFFSET(Info, volumes), H5T_NATIVE_LONG), "inserting volumes field");
   CheckedCall(H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id), "inserting voxel size field");
   CheckedCall(H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id), "inserting oring field");
   CheckedCall(H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id), "inserting direction field");
@@ -80,12 +74,6 @@ void CheckInfoType(hid_t handle)
   // Also use vector instead of array so I don't forget to change the size if the members change
   std::vector<std::string> const names{
     "matrix",
-    "channels",
-    "samples",
-    "traces",
-    "slabs",
-    "frames",
-    "volumes",
     "voxel_size",
     "origin",
     "direction",

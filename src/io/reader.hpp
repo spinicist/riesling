@@ -21,7 +21,9 @@ struct Reader
   Reader(std::string const &fname);
   ~Reader();
 
-  std::vector<std::string> list(); // List all datasets
+  auto list() -> std::vector<std::string>; // List all datasets
+  auto rank(std::string const &label) -> Index; // Determine rank of a dataset
+  template <int Rank> auto dimensions(std::string const &label) -> Eigen::DSizes<Index, Rank>; // Get Tensor dimensions
 
   template <typename T>
   T readTensor(std::string const &label);

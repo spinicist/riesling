@@ -12,7 +12,7 @@ TEST_CASE("Grid Basic", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(7, 15, 16, 31, 32);
-  Info const info{.matrix = Sz3{M, M, 1}, .channels = 1, .samples = 3, .traces = 1};
+  Info const info{.matrix = Sz3{M, M, 1}};
   Re3 points(3, 3, 1);
   points.setZero();
   points(0, 0, 0) = -0.4f;
@@ -23,7 +23,7 @@ TEST_CASE("Grid Basic", "[grid]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto grid = make_grid<float, 2>(traj, ktype, osamp, info.channels);
+  auto grid = make_grid<float, 2>(traj, ktype, osamp, 1);
   Re3 ks(grid->outputDimensions());
   Re4 img(grid->inputDimensions());
   ks.setConstant(1.f);

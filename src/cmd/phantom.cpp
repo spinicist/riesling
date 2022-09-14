@@ -38,37 +38,32 @@ Trajectory CreateTrajectory(
   float const fov = matrix * voxSz;
   Info info{
     .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
-    .channels = nC,
-    .samples = Index(readOS * matrix / 2),
-    .traces = spokes,
-    .frames = 1,
-    .volumes = 1,
     .voxel_size = Eigen::Array3f::Constant(fov / matrix),
     .origin = Eigen::Array3f::Constant(-fov / 2.f),
     .direction = Eigen::Matrix3f::Identity(),
     .tr = 1.f};
 
+  Index const samples = Index(readOS * matrix / 2);
+
   Log::Print(FMT_STRING("Using {} hi-res spokes"), spokes);
-  auto points = phyllo ? Phyllotaxis(info.samples, info.traces, 7, sps, true)
-                       : ArchimedeanSpiral(info.samples, info.traces);
+  auto points = phyllo ? Phyllotaxis(samples, spokes, 7, sps, true)
+                       : ArchimedeanSpiral(samples, spokes);
 
   if (lores > 0) {
     auto const loMat = matrix / lores;
     auto const loSpokes = sps * std::ceil(nex * loMat * loMat / sps);
-    auto loPoints = ArchimedeanSpiral(info.samples, loSpokes);
+    auto loPoints = ArchimedeanSpiral(samples, loSpokes);
     loPoints = loPoints / loPoints.constant(lores);
     points = Re3(points.concatenate(loPoints, 2));
-    info.traces += loSpokes;
     Log::Print(FMT_STRING("Added {} lo-res spokes"), loSpokes);
   }
 
   if (trim > 0) {
-    info.samples -= trim;
-    points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, info.samples, info.traces}));
+    points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, samples - trim, spokes}));
   }
 
   Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix, info.voxel_size.transpose());
-  Log::Print(FMT_STRING("Samples: {} Traces: {}"), info.samples, info.traces);
+  Log::Print(FMT_STRING("Samples: {} Traces: {}"), samples, spokes);
 
   return Trajectory(info, points);
 }

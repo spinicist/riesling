@@ -7,7 +7,7 @@
 #include "mapping.hpp"
 #include "op/gridBase.hpp"
 #include "parse_args.hpp"
-#include "sdc.h"
+#include "sdc.hpp"
 #include "sense.h"
 #include "tensorOps.hpp"
 
@@ -17,7 +17,7 @@ int main_espirit(args::Subparser &parser)
 {
   CoreOpts core(parser);
   SDC::Opts sdcOpts(parser);
-  args::ValueFlag<Index> volume(parser, "VOL", "Take SENSE maps from this volume (default last)", {"sense-vol"}, -1);
+  args::ValueFlag<Index> volume(parser, "VOL", "Take SENSE maps from this volume (default first)", {"sense-vol"}, 0);
   args::ValueFlag<float> res(parser, "R", "Resolution for initial gridding (default 12 mm)", {"sense-res", 'r'}, 12.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);
   args::ValueFlag<Index> lores(parser, "L", "Lo-res traces", {"lores"}, 0);
@@ -30,17 +30,15 @@ int main_espirit(args::Subparser &parser)
 
   HD5::RieslingReader reader(core.iname.Get());
   auto const traj = reader.trajectory();
+  auto const ks1 = reader.noncartesian(volume.Get());
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
-  auto const [dsTraj, minRead] = traj.downsample(res.Get(), lores.Get(), false);
+  auto const [dsTraj, ks] = traj.downsample(ks1, res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
-  auto gridder =
-    make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
-  auto const sdc = SDC::Choose(sdcOpts, dsTraj, core.ktype.Get(), core.osamp.Get());
+  auto gridder = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), ks.dimension(0));
+  auto const sdc = SDC::Choose(sdcOpts, dsTraj, ks1.dimension(0), core.ktype.Get(), core.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
-  Cropper cropper(info, LastN<3>(gridder->inputDimensions()), fov.Get());
-  auto const ks = reader.noncartesian(ValOrLast(volume.Get(), info.volumes))
-                    .slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.samples, dsInfo.traces});
+  Cropper cropper(traj.info().matrix, LastN<3>(gridder->inputDimensions()), traj.info().voxel_size, fov.Get());
   Cx4 sense =
     cropper.crop4(ESPIRIT(gridder.get(), sdc->adjoint(ks), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
 

@@ -28,7 +28,7 @@ struct GridBase : Operator<NDim + 2, 3, Scalar>
   virtual typename Input::Dimensions inputDimensions() const = 0;
   virtual std::shared_ptr<Input> workspace() const = 0;
 
-  void doNotWeightFrames()
+  void doNotWeightnFrames()
   {
     weightFrames_ = false;
   }

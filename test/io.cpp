@@ -21,10 +21,11 @@ TEST_CASE("IO", "[io]")
   Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
   float const os = 2.f;
-  Info const info{.matrix = Sz3{M, M, M}, .channels = 1, .samples = Index(os * M / 2), .traces = Index(M * M), .volumes = 2};
-  auto const points = ArchimedeanSpiral(info.samples, info.traces);
+  Info const info{.matrix = Sz3{M, M, M}};
+  Index const channels = 1, samples = 32, traces = 64, volumes = 2;
+  auto const points = ArchimedeanSpiral(samples, traces);
   Trajectory const traj(info, points);
-  Cx4 refData(info.channels, info.samples, info.traces, info.volumes);
+  Cx4 refData(channels, samples, traces, volumes);
   refData.setConstant(1.f);
 
   SECTION("Basic")
@@ -40,32 +41,15 @@ TEST_CASE("IO", "[io]")
     REQUIRE_NOTHROW(HD5::RieslingReader(fname));
     HD5::RieslingReader reader(fname);
 
-    auto const checkInfo = reader.trajectory().info();
-    CHECK(checkInfo.channels == info.channels);
-    CHECK(checkInfo.samples == info.samples);
-    CHECK(checkInfo.traces == info.traces);
-    CHECK(checkInfo.volumes == info.volumes);
+    auto const check = reader.trajectory();
+    CHECK(traj.nSamples() == samples);
+    CHECK(traj.nTraces() == traces);
 
     CHECK_NOTHROW(reader.noncartesian(0));
     auto const check0 = reader.noncartesian(0);
     CHECK(Norm(check0 - refData.chip<3>(0)) == Approx(0.f).margin(1.e-9));
     auto const check1 = reader.noncartesian(1);
     CHECK(Norm(check1 - refData.chip<3>(1)) == Approx(0.f).margin(1.e-9));
-    std::filesystem::remove(fname);
-  }
-
-  SECTION("Bad-Dimensions")
-  {
-    std::filesystem::path const fname("test-dims.h5");
-
-    { // Use destructor to ensure it is written
-      HD5::Writer writer(fname);
-      writer.writeTrajectory(traj);
-      writer.writeTensor(
-        Cx4(info.channels + 1, info.samples, info.traces, info.volumes), HD5::Keys::Noncartesian);
-    }
-    CHECK(std::filesystem::exists(fname));
-    CHECK_THROWS_AS(Dummy(fname), Log::Failure);
     std::filesystem::remove(fname);
   }
 

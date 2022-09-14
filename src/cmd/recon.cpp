@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
-#include "sdc.h"
+#include "sdc.hpp"
 #include "sense.h"
 #include "tensorOps.hpp"
 
@@ -32,24 +32,27 @@ int main_recon(args::Subparser &parser)
     traj = reader.trajectory();
   }
   Info const &info = traj.info();
-
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  std::unique_ptr<SDCOp> const sdc = fwd ? nullptr : SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
-  ReconOp recon(gridder.get(), senseMaps, sdc.get());
 
-  Sz4 const sz = recon.inputDimensions();
-  Cropper out_cropper(info, LastN<3>(recon.inputDimensions()), extra.out_fov.Get());
-  Sz3 const outSz = out_cropper.size();
+  Index volumes = fwd ? reader.dimensions<5>(HD5::Keys::Image)[4] : reader.dimensions<4>(HD5::Keys::Noncartesian)[3];
 
   if (fwd) {
+    if (!senseOpts.file) {
+      Log::Fail("Must specify SENSE maps for forward recon");
+    }
+    HD5::Reader senseReader(senseOpts.file.Get());
+    Cx4 senseMaps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
+    Index channels = senseMaps.dimension(0);
+    auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), channels, basis);
+    ReconOp recon(gridder.get(), senseMaps);
+    Sz4 const sz = recon.inputDimensions();
+    Cropper out_cropper(info.matrix, LastN<3>(recon.inputDimensions()), info.voxel_size, extra.out_fov.Get());
+
     auto const &all_start = Log::Now();
-    Cx5 images(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
-    reader.readTensor(HD5::Keys::Image, images);
+    auto const images = reader.readTensor<Cx5>(HD5::Keys::Image);
     Cx4 padded(sz);
-    Cx4 kspace(info.channels, info.samples, info.traces, info.volumes);
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    Cx4 kspace(channels, traj.nSamples(), traj.nTraces(), volumes);
+    for (Index iv = 0; iv < volumes; iv++) {
       padded.setZero();
       out_cropper.crop4(padded) = images.chip<4>(iv);
       kspace.chip<3>(iv) = recon.forward(padded);
@@ -60,11 +63,20 @@ int main_recon(args::Subparser &parser)
     writer.writeTrajectory(traj);
     writer.writeTensor(kspace, HD5::Keys::Noncartesian);
   } else {
+    Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];
+    auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), channels, basis);
+    std::unique_ptr<SDCOp> const sdc =
+      fwd ? nullptr : SDC::Choose(sdcOpts, traj, channels, core.ktype.Get(), core.osamp.Get());
+    Cx4 senseMaps = SENSE::Choose(senseOpts, traj, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
+    ReconOp recon(gridder.get(), senseMaps, sdc.get());
+    Sz4 const sz = recon.inputDimensions();
+    Cropper out_cropper(info.matrix, LastN<3>(recon.inputDimensions()), info.voxel_size, extra.out_fov.Get());
+    Sz3 const outSz = out_cropper.size();
     Cx4 vol(sz);
     Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
-    Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
+    Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
     auto const &all_start = Log::Now();
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    for (Index iv = 0; iv < volumes; iv++) {
       vol = recon.adjoint(reader.noncartesian(iv));
       cropped = out_cropper.crop4(vol);
       out.chip<4>(iv) = cropped;

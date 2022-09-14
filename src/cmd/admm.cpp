@@ -11,7 +11,7 @@
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precond/single.hpp"
-#include "sdc.h"
+#include "sdc.hpp"
 #include "sense.h"
 
 using namespace rl;
@@ -44,21 +44,23 @@ int main_admm(args::Subparser &parser)
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
-  Trajectory const traj = reader.trajectory();
+  auto const traj = reader.trajectory();
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(senseOpts, info, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
+  Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];
+  Index const volumes = reader.dimensions<4>(HD5::Keys::Noncartesian)[3];
+  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), channels, basis);
+  auto const sdc = SDC::Choose(sdcOpts, traj, channels, core.ktype.Get(), core.osamp.Get());
+  Cx4 senseMaps = SENSE::Choose(senseOpts, traj, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   std::unique_ptr<Precond<Cx3>> M = precond ? std::make_unique<SingleChannel>(traj) : nullptr;
   auto reg = [&](Cx4 const &x) -> Cx4 { return llr_sliding(x, λ.Get(), patchSize.Get()); };
   auto sz = recon.inputDimensions();
-  Cropper out_cropper(info, LastN<3>(sz), extra.out_fov.Get());
+  Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, extra.out_fov.Get());
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
-  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], info.volumes);
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
 
   if (use_cg) {
@@ -66,19 +68,19 @@ int main_admm(args::Subparser &parser)
     ConjugateGradients<AugmentedOp<ReconOp>> cg{augmented, inner_its.Get(), atol.Get()};
     AugmentedADMM<ConjugateGradients<AugmentedOp<ReconOp>>> admm{
       cg, reg, outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(recon.adjoint(reader.noncartesian(iv))));
     }
   } else if (use_lsmr) {
     LSMR<ReconOp> lsmr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
     ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
     }
   } else {
     LSQR<ReconOp> lsqr{recon, M.get(), nullptr, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
     ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
     }
   }

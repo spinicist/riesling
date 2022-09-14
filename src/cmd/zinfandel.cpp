@@ -44,33 +44,33 @@ int main_zinfandel(args::Subparser &parser)
   auto info = traj.info();
   auto out_info = info;
 
-  Cx4 rad_ks = info.noncartesianSeries();
-
+  Cx4 rad_ks(reader.dimensions<4>(HD5::Keys::Noncartesian));
+  Index const channels = rad_ks.dimension(0);
+  Index const volumes = rad_ks.dimension(3);
   if (grappa) {
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    for (Index iv = 0; iv < volumes; iv++) {
       Cx3 vol = reader.noncartesian(iv);
       zinGRAPPA(gap.Get(), gSrc.Get(), gtraces.Get(), gRead.Get(), gλ.Get(), traj.points(), vol);
       rad_ks.chip<3>(iv) = vol;
     }
   } else {
     // Use SLR
-    auto const [dsTraj, minRead] = traj.downsample(res.Get(), 0, true);
-    auto const dsInfo = dsTraj.info();
+    auto const [dsTraj, s1, dsSamp] = traj.downsample(res.Get(), 0, true);
     
-    auto grid0 = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
-    auto gridN = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), info.channels);
+    auto grid0 = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), channels);
+    auto gridN = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), channels);
 
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
     auto const pre = std::make_unique<SingleChannel>(dsTraj);
     auto reg = [&](Cx5 const &x) -> Cx5 { return zinSLR(x, nufftN.fft(), kSz.Get(), winSz.Get()); };
     Sz3 const st{0, 0, 0};
-    Sz3 const sz{info.channels, gap.Get(), info.traces};
+    Sz3 const sz{channels, gap.Get(), dsTraj.nTraces()};
     LSQR<NUFFTOp> lsqr{nufftN, pre.get(), nullptr, iits.Get(), atol.Get(), btol.Get(), ctol.Get(), rho.Get(), false};
     ADMM<LSQR<NUFFTOp>> admm{lsqr, reg, oits.Get(), rho.Get()};
-    for (Index iv = 0; iv < info.volumes; iv++) {
+    for (Index iv = 0; iv < volumes; iv++) {
       Cx3 const ks = reader.noncartesian(iv);
-      Cx3 const dsKS = ks.slice(Sz3{0, minRead, 0}, Sz3{dsInfo.channels, dsInfo.samples, dsInfo.traces});
+      Cx3 const dsKS = ks.slice(Sz3{0, s1, 0}, Sz3{channels, dsSamp, dsTraj.nTraces()});
       Cx5 const img = admm.run(dsKS);
       Cx3 const filled = nufft0.forward(img);
       rad_ks.chip<3>(iv) = ks;

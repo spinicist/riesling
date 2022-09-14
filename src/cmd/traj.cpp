@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/gridBase.hpp"
 #include "parse_args.hpp"
-#include "sdc.h"
+#include "sdc.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include <complex>
@@ -22,15 +22,11 @@ int main_traj(args::Subparser &parser)
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
-  auto const inTraj = reader.trajectory();
-  // Ensure only one channel for sanity
-  auto info = inTraj.info();
-  info.channels = 1;
-  Trajectory traj(info, inTraj.points(), inTraj.frames());
+  auto const traj = reader.trajectory();
   auto const basis = ReadBasis(core.basisFile);
-  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), info.channels, basis);
-  auto const sdc = SDC::Choose(sdcOpts, traj, core.ktype.Get(), core.osamp.Get());
-  Cx3 rad_ks(1, info.samples, info.traces);
+  auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), 1, basis);
+  auto const sdc = SDC::Choose(sdcOpts, traj, 1, core.ktype.Get(), core.osamp.Get());
+  Cx3 rad_ks(1, traj.nSamples(), traj.nTraces());
   rad_ks.setConstant(1.0f);
   Cx4 out = gridder->adjoint(sdc->adjoint(rad_ks)).chip<0>(0);
   auto const fname = OutName(core.iname.Get(), core.oname.Get(), "traj", "h5");

@@ -2,25 +2,21 @@
 
 namespace rl {
 
-Cropper::Cropper(Info const &info, Sz3 const &fullSz, float const extent)
+Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelSz, float const extent)
 {
   if (extent < 0.f) {
     std::transform(
-      info.matrix.begin(), info.matrix.end(), fullSz.begin(), sz_.begin(), [](Index const a, Index const b) {
+      matrix.begin(), matrix.end(), fullSz.begin(), sz_.begin(), [](Index const a, Index const b) {
         return std::min(a, b);
       });
   } else {
     Eigen::Array3l full;
     std::copy_n(&fullSz[0], 3, full.begin());
     // Ensure even, no bigger than the grid
-    Eigen::Array3l crop = (((extent / info.voxel_size) / 2).floor() * 2).cast<Index>().min(full);
+    Eigen::Array3l crop = (((extent / voxelSz) / 2).floor() * 2).cast<Index>().min(full);
     std::copy_n(crop.begin(), 3, sz_.begin());
   }
   calcStart(fullSz);
-  if (!info.grid3D()) {
-    st_[2] = 0;
-    sz_[2] = info.matrix[2];
-  }
   Log::Print<Log::Level::High>(FMT_STRING("Cropper start {} size {}"), st_, sz_);
 }
 

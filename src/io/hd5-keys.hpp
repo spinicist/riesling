@@ -12,6 +12,7 @@ std::string const Channels = "channels";
 std::string const CompressionMatrix = "ccmat";
 std::string const Dictionary = "dictionary";
 std::string const Dynamics = "dynamics";
+std::string const Frames = "frames";
 std::string const Image = "image";
 std::string const Info = "info";
 std::string const Meta = "meta";

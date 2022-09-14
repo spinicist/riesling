@@ -34,7 +34,6 @@ struct Mapping
     Index const splitSize = 8192,
     Index const read0 = 0);
 
-  bool fft3D;
   Sz2 noncartDims;
   Sz cartDims;
   int8_t frames;
