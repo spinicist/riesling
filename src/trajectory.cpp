@@ -11,8 +11,6 @@ Trajectory::Trajectory(Info const &info, Re3 const &points)
   , points_{points}
 
 {
-  frames_ = I1(nTraces());
-  frames_.setZero();
   init();
 }
 
@@ -27,7 +25,7 @@ Trajectory::Trajectory(Info const &info, Re3 const &points, I1 const &fr)
 
 void Trajectory::init()
 {
-  if (nTraces() != frames_.dimension(0)) {
+  if (frames_.size() && nTraces() != frames_.dimension(0)) {
     Log::Fail("Mismatch between number of traces {} and frames array {}", nTraces(), frames_.dimension(0));
   }
   float const maxCoord = Maximum(points_.abs());
@@ -63,7 +61,11 @@ Re3 const &Trajectory::points() const
 }
 
 Index Trajectory::frame(Index const i) const {
-  return frames_(i);
+  if (frames_.size()) {
+    return frames_(i);
+  } else {
+    return 0;
+  }
 }
 
 I1 const &Trajectory::frames() const

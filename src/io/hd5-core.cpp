@@ -153,6 +153,13 @@ std::vector<std::string> List(Handle h)
 {
   std::vector<std::string> names;
   H5Literate(h, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
+
+  std::erase_if(names, [h](std::string const &name) {
+    H5O_info_t info;
+    H5Oget_info_by_name(h, name.c_str(), &info, H5O_INFO_BASIC, H5P_DEFAULT);
+    return info.type != H5O_TYPE_DATASET;
+  });
+
   return names;
 }
 
