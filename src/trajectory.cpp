@@ -47,7 +47,11 @@ auto Trajectory::nTraces() const -> Index
 
 auto Trajectory::nFrames() const -> Index
 {
-  return Maximum(frames_) + 1;
+  if (frames_.size()) {
+    return Maximum(frames_) + 1;
+  } else {
+    return 1;
+  }
 }
 
 Info const &Trajectory::info() const

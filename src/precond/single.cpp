@@ -19,7 +19,7 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   Info newInfo = info;
   std::transform(
     newInfo.matrix.begin(), newInfo.matrix.end(), newInfo.matrix.begin(), [](Index const i) { return i * 2; });
-  Trajectory newTraj(newInfo, traj.points(), traj.nFrames());
+  Trajectory newTraj(newInfo, traj.points(), traj.frames());
   float const osamp = 1.25;
   auto gridder = rl::make_grid<Cx, 3>(newTraj, "ES5", osamp, 1);
   gridder->doNotWeightnFrames();
