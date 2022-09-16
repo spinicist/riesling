@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sense.h"
-#include "types.h"
+#include "types.hpp"
 #include <filesystem>
 
 using namespace rl;

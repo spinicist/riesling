@@ -4,7 +4,7 @@
 #include <vector>
 #include <optional>
 
-#include "types.h"
+#include "types.hpp"
 #include "trajectory.hpp"
 
 extern args::Group global_group;

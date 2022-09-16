@@ -1,4 +1,4 @@
-#include "types.h"
+#include "types.hpp"
 
 #include "algo/decomp.h"
 #include "io/hd5.hpp"

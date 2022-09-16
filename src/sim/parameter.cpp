@@ -5,8 +5,8 @@
 
 namespace rl {
 
-Parameter const T1wm{0.8, 0.25, 0.5, 2.0}, T1gm{1.2, 0.25, 0.5, 2.0}, T1csf{3.5, 0.5, 2.5, 4.5};
-Parameter const T2wm{0.05, 0.025, 0.01, 0.25}, T2gm{0.075, 0.025, 0.01, 0.25},
+Parameter const T1wm{1.0, 0.15, 0.1, 2.0}, T1gm{1.5, 0.25, 0.1, 2.0}, T1csf{3.5, 0.5, 1., 6.};
+Parameter const T2wm{0.06, 0.025, 0.01, 0.25}, T2gm{0.09, 0.025, 0.01, 0.25},
   T2csf{1.5, 0.5, 0.5, 2.5};
 Parameter const B1{1.0, 0.5, 0.5, 1.5};
 

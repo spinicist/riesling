@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.hpp"
-#include "types.h"
+#include "types.hpp"
 
 namespace rl {
 Cx4 llr_sliding(Cx4 const &x, float const l, Index const kSz);

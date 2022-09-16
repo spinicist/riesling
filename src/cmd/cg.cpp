@@ -1,4 +1,4 @@
-#include "types.h"
+#include "types.hpp"
 
 #include "algo/cg.hpp"
 #include "cropper.h"

@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "parameter.hpp"
 #include "settings.hpp"
-#include "types.h"
+#include "types.hpp"
 
 namespace rl {
 

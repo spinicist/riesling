@@ -5,7 +5,7 @@
 #include "parse_args.hpp"
 #include "rovir.hpp"
 #include "tensorOps.hpp"
-#include "types.h"
+#include "types.hpp"
 
 #include <Eigen/Eigenvalues>
 

@@ -51,12 +51,14 @@ using Cx6 = Eigen::Tensor<Cx, 6>;
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
 // Useful shorthands
-using Sz1 = Cx1::Dimensions;
-using Sz2 = Cx2::Dimensions;
-using Sz3 = Cx3::Dimensions;
-using Sz4 = Cx4::Dimensions;
-using Sz5 = Cx5::Dimensions;
-using Sz6 = Cx6::Dimensions;
+template<Index Rank>
+using Sz = typename Eigen::DSizes<Index, Rank>;
+using Sz1 = Sz<1>;
+using Sz2 = Sz<2>;
+using Sz3 = Sz<3>;
+using Sz4 = Sz<4>;
+using Sz5 = Sz<5>;
+using Sz6 = Sz<6>;
 
 template <typename T, int N, typename... Args>
 decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)

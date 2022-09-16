@@ -6,7 +6,7 @@
 #include "parse_args.hpp"
 #include "precond/single.hpp"
 #include "threads.hpp"
-#include "types.h"
+#include "types.hpp"
 #include "zin-grappa.hpp"
 #include "zin-slr.hpp"
 #include <filesystem>

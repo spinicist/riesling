@@ -2,7 +2,7 @@
 
 #include "info.hpp"
 #include "log.hpp"
-#include "types.h"
+#include "types.hpp"
 #include <math.h>
 
 namespace rl {

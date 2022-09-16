@@ -4,7 +4,7 @@
 #include "op/sdc.hpp"
 #include "parse_args.hpp"
 #include "trajectory.hpp"
-#include "types.h"
+#include "types.hpp"
 
 namespace rl {
 

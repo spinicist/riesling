@@ -1,4 +1,4 @@
-#include "types.h"
+#include "types.hpp"
 
 #include "algo/admm-augmented.hpp"
 #include "algo/admm.hpp"

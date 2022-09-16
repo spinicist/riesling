@@ -9,7 +9,7 @@
 #include "kernel/radial.hpp"
 #include "kernel/rectilinear.hpp"
 #include "kernel/triangle.hpp"
-#include "types.h"
+#include "types.hpp"
 
 using namespace rl;
 

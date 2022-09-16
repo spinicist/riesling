@@ -2,7 +2,7 @@
 
 #include "info.hpp"
 #include "trajectory.hpp"
-#include "types.h"
+#include "types.hpp"
 
 namespace rl {
 
@@ -12,18 +12,17 @@ struct NoncartesianIndex
   int16_t sample;
 };
 
-template <size_t NDims>
+template <size_t Rank>
 struct Mapping
 {
-  using Sz = Eigen::DSizes<Index, NDims>;
   struct Bucket
   {
-    Sz minCorner, maxCorner;
+    Sz<Rank> minCorner, maxCorner;
     std::vector<int32_t> indices;
 
     auto empty() const -> bool;
     auto size() const -> Index;
-    auto gridSize() const -> Sz;
+    auto gridSize() const -> Sz<Rank>;
   };
 
   Mapping(
@@ -35,14 +34,14 @@ struct Mapping
     Index const read0 = 0);
 
   Sz2 noncartDims;
-  Sz cartDims;
+  Sz<Rank> cartDims;
   int8_t frames;
   Eigen::ArrayXf frameWeights;
 
-  std::vector<std::array<int16_t, NDims>> cart;
+  std::vector<std::array<int16_t, Rank>> cart;
   std::vector<NoncartesianIndex> noncart;
   std::vector<int8_t> frame;
-  std::vector<Eigen::Array<float, NDims, 1>> offset;
+  std::vector<Eigen::Array<float, Rank, 1>> offset;
   std::vector<Bucket> buckets;
   std::vector<int32_t> sortedIndices;
 };

@@ -1,6 +1,6 @@
 #include "io/hd5.hpp"
 #include "parse_args.hpp"
-#include "types.h"
+#include "types.hpp"
 
 using namespace rl;
 

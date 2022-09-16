@@ -9,22 +9,22 @@
 
 namespace rl {
 
-template <size_t NDims>
-auto Mapping<NDims>::Bucket::empty() const -> bool
+template <size_t Rank>
+auto Mapping<Rank>::Bucket::empty() const -> bool
 {
   return indices.empty();
 }
 
-template <size_t NDims>
-auto Mapping<NDims>::Bucket::size() const -> Index
+template <size_t Rank>
+auto Mapping<Rank>::Bucket::size() const -> Index
 {
   return indices.size();
 }
 
-template <size_t NDims>
-auto Mapping<NDims>::Bucket::gridSize() const -> Sz
+template <size_t Rank>
+auto Mapping<Rank>::Bucket::gridSize() const -> Sz<Rank>
 {
-  Sz sz;
+  Sz<Rank> sz;
   std::transform(maxCorner.begin(), maxCorner.end(), minCorner.begin(), sz.begin(), std::minus());
   return sz;
   // return Sz3{maxCorner[0] - minCorner[0], maxCorner[1] - minCorner[1], maxCorner[2] - minCorner[2]};
@@ -71,8 +71,8 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
   return sorted;
 }
 
-template <size_t NDims>
-Mapping<NDims>::Mapping(
+template <size_t Rank>
+Mapping<Rank>::Mapping(
   Trajectory const &traj,
   Index const kW,
   float const os,
@@ -91,9 +91,9 @@ Mapping<NDims>::Mapping(
   frameWeights.setZero();
 
   Index const nB = std::ceil(gridSz / float(bucketSz));
-  buckets.reserve(pow(nB, NDims));
+  buckets.reserve(pow(nB, Rank));
 
-  if constexpr (NDims == 3) {
+  if constexpr (Rank == 3) {
     for (Index iz = 0; iz < nB; iz++) {
       for (Index iy = 0; iy < nB; iy++) {
         for (Index ix = 0; ix < nB; ix++) {
@@ -121,7 +121,7 @@ Mapping<NDims>::Mapping(
   Log::Print("Calculating mapping");
   std::fesetround(FE_TONEAREST);
   float const maxRad = (gridSz / 2) - 1.f;
-  Sz center;
+  Sz<Rank> center;
   std::transform(cartDims.begin(), cartDims.end(), center.begin(), [](Index const c) { return c / 2; });
   int32_t index = 0;
   Index NaNs = 0;
@@ -130,14 +130,14 @@ Mapping<NDims>::Mapping(
     if ((fr >= 0) && (fr < frames)) {
       for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
         Re1 const p = traj.point(ir, is);
-        Eigen::Array<float, NDims, 1> xyz;
+        Eigen::Array<float, Rank, 1> xyz;
         xyz[0] = p[0] * maxRad * 2.f;
         xyz[1] = p[1] * maxRad * 2.f;
         xyz[2] = p[2] * maxRad * 2.f;
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();
-          std::array<int16_t, NDims> ijk;
+          std::array<int16_t, Rank> ijk;
           std::transform(center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) {
             return f1 + f2;
           });
@@ -148,7 +148,7 @@ Mapping<NDims>::Mapping(
 
           // Calculate bucket
           Index ib = 0;
-          for (int ii = NDims - 1; ii >= 0; ii--) {
+          for (int ii = Rank - 1; ii >= 0; ii--) {
             ib = ib * nB + (ijk[ii] / bucketSz);
           }
           buckets[ib].indices.push_back(index);

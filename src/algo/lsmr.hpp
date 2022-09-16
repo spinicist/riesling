@@ -5,7 +5,7 @@
 #include "precond/precond.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include "types.h"
+#include "types.hpp"
 #include "util.hpp"
 
 namespace rl {

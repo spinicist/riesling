@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../log.hpp"
-#include "../types.h"
+#include "types.hpp"
 
 /* Linear Operator
  *

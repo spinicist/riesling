@@ -1,4 +1,4 @@
-#include "types.h"
+#include "types.hpp"
 
 #include "fft/fft.hpp"
 #include "io/hd5.hpp"

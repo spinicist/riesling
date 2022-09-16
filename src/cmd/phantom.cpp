@@ -10,7 +10,7 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "traj_spirals.h"
-#include "types.h"
+#include "types.hpp"
 #include <filesystem>
 
 using namespace rl;

@@ -5,7 +5,7 @@
 #include <fmt/color.h>
 #include <fmt/ostream.h>
 
-#include "types.h"
+#include "types.hpp"
 
 #define LOG_DEBUG(...)                                                                                                 \
   if (rl::Log::CurrentLevel() == rl::Log::Level::High) {                                                               \

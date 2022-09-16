@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include "types.h"
+#include "types.hpp"
 
 namespace rl {
 /*
