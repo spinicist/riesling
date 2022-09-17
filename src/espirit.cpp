@@ -1,6 +1,6 @@
 #include "espirit.h"
 
-#include "algo/decomp.h"
+#include "algo/decomp.hpp"
 #include "cropper.h"
 #include "fft/fft.hpp"
 #include "op/gridBase.hpp"

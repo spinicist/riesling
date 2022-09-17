@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 #include "log.hpp"
-#include "precond/precond.hpp"
+#include "func/functor.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
@@ -22,8 +22,7 @@ struct LSQR
   using Output = typename Op::Output;
 
   Op &op;
-  Precond<Output> *M = nullptr; // Left pre-conditioner
-  Precond<Input> *N = nullptr;  // Right pre-conditioner
+  Functor<Output> *M = nullptr; // Left pre-conditioner
   Index iterLimit;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
@@ -57,7 +56,7 @@ struct LSQR
       x.setZero();
       Mu.device(dev) = b;
     }
-    u.device(dev) = M ? M->apply(Mu) : Mu;
+    u.device(dev) = M ? (*M)(Mu) : Mu;
     float β;
     if (λ > 0) {
       ur.resize(inDims);
@@ -80,7 +79,7 @@ struct LSQR
     } else {
       Nv.device(dev) = op.adjoint(u);
     }
-    v.device(dev) = N ? N->apply(Nv) : Nv;
+    v.device(dev) = Nv;
     float α = std::sqrt(CheckedDot(v, Nv));
     Nv.device(dev) = Nv / Nv.constant(α);
     v.device(dev) = v / v.constant(α);
@@ -101,7 +100,7 @@ struct LSQR
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
       Mu.device(dev) = op.forward(v) - α * Mu;
-      u.device(dev) = M ? M->apply(Mu) : Mu;
+      u.device(dev) = M ? (*M)(Mu) : Mu;
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
         β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
@@ -116,7 +115,7 @@ struct LSQR
       } else {
         Nv.device(dev) = op.adjoint(u) - (β * Nv);
       }
-      v.device(dev) = N ? N->apply(Nv) : Nv;
+      v.device(dev) = Nv;
       α = std::sqrt(CheckedDot(v, Nv));
 
       Nv.device(dev) = Nv / Nv.constant(α);
@@ -185,7 +184,7 @@ struct LSQR
       }
     }
 
-    return N ? N->inv(x) : x;
+    return x;
   }
 };
 

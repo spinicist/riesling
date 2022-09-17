@@ -1,4 +1,4 @@
-#include "decomp.h"
+#include "decomp.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 

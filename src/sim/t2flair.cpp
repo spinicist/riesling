@@ -11,7 +11,7 @@ Index T2FLAIR::length() const
 
 Eigen::ArrayXXf T2FLAIR::parameters(Index const nsamp) const
 {
-  Tissues tissues({Tissue{{T1wm, T2wm}}, Tissue{{T1gm, T2gm}}, Tissue{{T1csf, T2csf}}});
+  Tissues tissues({Tissue{{T1wm, T2wm, B1}}, Tissue{{T1gm, T2gm, B1}}, Tissue{{T1csf, T2csf, B1}}});
   return tissues.values(nsamp);
 }
 
@@ -32,8 +32,9 @@ Eigen::ArrayXf T2FLAIR::simulate(Eigen::ArrayXf const &p) const
   float const essi = exp(-R1 * seq.Tssi);
   float const einv = exp(-R1 * seq.TI);
   float const erec = exp(-R1 * seq.Trec);
+  float const e2 = exp(-R2 * seq.TE);
   E1 << e1, 1 - e1, 0.f, 1.f;
-  E2 << exp(-R2 * seq.TE), 0.f, 0.f, 1.f;
+  E2 << e2, 0.f, 0.f, 1.f;
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
@@ -47,7 +48,7 @@ Eigen::ArrayXf T2FLAIR::simulate(Eigen::ArrayXf const &p) const
 
   // Get steady state before first read-out
   Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(seq.spg) * Eramp);
-  Eigen::Matrix2f const SS = Ei * inv * Erec * grp.pow(seq.gps - seq.gprep2) * Essi * E2 * grp.pow(seq.gprep2);
+  Eigen::Matrix2f const SS = Ei * inv * Erec * grp.pow(seq.gps - seq.gprep2) * Essi * Essi * E2 * grp.pow(seq.gprep2);
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic
@@ -61,7 +62,7 @@ Eigen::ArrayXf T2FLAIR::simulate(Eigen::ArrayXf const &p) const
     }
     Mz = Essi * Eramp * Mz;
   }
-  Mz = Essi * E2 * Mz;
+  Mz = Essi * Essi * E2 * Mz;
   for (Index ig = 0; ig < (seq.gps - seq.gprep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < seq.spg; ii++) {

@@ -1,6 +1,6 @@
 #include "types.hpp"
 
-#include "algo/decomp.h"
+#include "algo/decomp.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
@@ -133,8 +133,8 @@ int main_sim(args::Subparser &parser)
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
   // Scale and flip the basis vectors to always have a positive first element for stability
-  Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
-  flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
+  // Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
+  // flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
   Eigen::MatrixXf basis = svd.V.leftCols(nRetain).array();
   if (varimax) {
     Log::Print("SIM Applying varimax rotation");

@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 #include "log.hpp"
-#include "precond/precond.hpp"
+#include "func/functor.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
@@ -22,7 +22,7 @@ struct LSMR
   using Output = typename Op::Output;
 
   Op &op;
-  Precond<Output> *M = nullptr; // Left pre-conditioner
+  Functor<Output> *M = nullptr; // Left pre-conditioner
   Index iterLimit;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
@@ -51,7 +51,7 @@ struct LSMR
       x.setZero();
       Mu.device(dev) = b;
     }
-    u.device(dev) = M ? M->apply(Mu) : Mu;
+    u.device(dev) = M ? (*M)(Mu) : Mu;
     float β;
     if (λ > 0.f) {
       ur.resize(inDims);
@@ -110,7 +110,7 @@ struct LSMR
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
       Mu.device(dev) = op.forward(v) - α * Mu;
-      u.device(dev) = M ? M->apply(Mu) : Mu;
+      u.device(dev) = M ? (*M)(Mu) : Mu;
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * v) - (α * ur);
         β = sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));

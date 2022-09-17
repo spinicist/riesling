@@ -1,6 +1,6 @@
 #include "rovir.hpp"
 
-#include "algo/decomp.h"
+#include "algo/decomp.hpp"
 #include "cropper.h"
 #include "mapping.hpp"
 #include "op/gridBase.hpp"

@@ -1,5 +1,5 @@
 #include "../src/op/nufft.hpp"
-#include "../src/precond/single.hpp"
+#include "../src/func/pre-kspace.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

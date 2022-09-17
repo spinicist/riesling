@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cg.hpp"
+#include "func/functor.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -36,7 +37,7 @@ struct AugmentedADMM
   using Input = typename Inner::Input;
 
   Inner &inner;
-  std::function<Input(Input const &)> const &reg;
+  Functor<Input> *reg;
   Index iterLimit;
   float rho = 0.1;
   float abstol = 1.e-3f;
@@ -58,7 +59,7 @@ struct AugmentedADMM
       x = inner.run(x0 + x0.constant(rho) * (z - u), x);
       xpu.device(dev) = x + u;
       zold = z;
-      z = reg(xpu);
+      z = (*reg)(xpu);
       u.device(dev) = xpu - z;
 
       float const norm_prim = Norm(x - z);
@@ -72,12 +73,7 @@ struct AugmentedADMM
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
 
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {}"),
-        ii,
-        norm_prim,
-        eps_prim,
-        norm_dual,
-        eps_dual);
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {}"), ii, norm_prim, eps_prim, norm_dual, eps_dual);
       if ((norm_prim < eps_prim) && (norm_dual < eps_dual)) {
         break;
       }

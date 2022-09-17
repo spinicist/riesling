@@ -3,6 +3,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
+#include "func/functor.hpp"
 
 namespace rl {
 
@@ -13,7 +14,7 @@ struct ADMM
   using Output = typename Inner::Output;
 
   Inner &inner;
-  std::function<Input(Input const &)> const &reg;
+  Functor<Input> *reg;
   Index iterLimit;
   float ρ = 0.1; // Langrangian
   float α = 1.f; // Over-relaxation
@@ -39,7 +40,7 @@ struct ADMM
       x = inner.run(b, x, (z - u));
       xpu.device(dev) = x * x.constant(α) + z * z.constant(1 - α) + u;
       zold = z;
-      z = reg(xpu);
+      z = (*reg)(xpu);
       u.device(dev) = xpu - z;
 
       float const pNorm = Norm(x - z);

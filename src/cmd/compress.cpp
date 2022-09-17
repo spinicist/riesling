@@ -1,4 +1,4 @@
-#include "algo/decomp.h"
+#include "algo/decomp.hpp"
 #include "compressor.h"
 #include "io/hd5.hpp"
 #include "log.hpp"

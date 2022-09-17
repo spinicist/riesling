@@ -1,14 +1,14 @@
 #include "algo/admm.hpp"
 #include "algo/lsqr.hpp"
+#include "func/pre-kspace.hpp"
+#include "func/slr.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
-#include "precond/single.hpp"
 #include "threads.hpp"
 #include "types.hpp"
 #include "zin-grappa.hpp"
-#include "zin-slr.hpp"
 #include <filesystem>
 
 using namespace rl;
@@ -56,18 +56,18 @@ int main_zinfandel(args::Subparser &parser)
   } else {
     // Use SLR
     auto const [dsTraj, s1, dsSamp] = traj.downsample(res.Get(), 0, true);
-    
+
     auto grid0 = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), channels);
     auto gridN = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), channels);
 
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
-    auto const pre = std::make_unique<SingleChannel>(dsTraj);
-    auto reg = [&](Cx5 const &x) -> Cx5 { return zinSLR(x, nufftN.fft(), kSz.Get(), winSz.Get()); };
+    auto const pre = std::make_unique<KSpaceSingle>(dsTraj);
+    SLR reg{nufftN.fft(), kSz.Get(), winSz.Get()};
     Sz3 const st{0, 0, 0};
     Sz3 const sz{channels, gap.Get(), dsTraj.nTraces()};
-    LSQR<NUFFTOp> lsqr{nufftN, pre.get(), nullptr, iits.Get(), atol.Get(), btol.Get(), ctol.Get(), rho.Get(), false};
-    ADMM<LSQR<NUFFTOp>> admm{lsqr, reg, oits.Get(), rho.Get()};
+    LSQR<NUFFTOp> lsqr{nufftN, pre.get(), iits.Get(), atol.Get(), btol.Get(), ctol.Get(), rho.Get(), false};
+    ADMM<LSQR<NUFFTOp>> admm{lsqr, &reg, oits.Get(), rho.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       Cx3 const ks = reader.noncartesian(iv);
       Cx3 const dsKS = ks.slice(Sz3{0, s1, 0}, Sz3{channels, dsSamp, dsTraj.nTraces()});

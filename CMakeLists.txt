@@ -43,10 +43,12 @@ add_library(vineyard
     src/trajectory.cpp
     src/traj_spirals.cpp
     src/zin-grappa.cpp
-    src/zin-slr.cpp
     src/algo/decomp.cpp
-    src/algo/llr.cpp
     src/fft/fft.cpp
+    src/func/dict.cpp
+    src/func/llr.cpp
+    src/func/pre-kspace.cpp
+    src/func/slr.cpp
     src/io/hd5-core.cpp
     src/io/nifti.cpp
     src/io/reader.cpp
@@ -60,7 +62,6 @@ add_library(vineyard
     src/op/nufft.cpp
     src/op/sdc.cpp
     src/op/sense.cpp
-    src/precond/single.cpp
     src/sim/parameter.cpp
     src/sim/dwi.cpp
     src/sim/mprage.cpp

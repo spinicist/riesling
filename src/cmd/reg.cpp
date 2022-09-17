@@ -1,11 +1,13 @@
 #include "types.hpp"
 
-#include "algo/llr.h"
+#include "func/dict.hpp"
+#include "func/llr.hpp"
+#include "func/slr.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "threads.hpp"
-#include "zin-slr.hpp"
+
 
 using namespace rl;
 
@@ -18,6 +20,7 @@ int main_reg(args::Subparser &parser)
   args::Flag slr(parser, "", "Apply Structured Low Rank to channel images", {"slr"});
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
+  args::ValueFlag<std::string> dictPath(parser, "D", "Apply dictionary projection", {"dict"});
   ParseCommand(parser);
 
   if (!iname) {
@@ -27,23 +30,30 @@ int main_reg(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
-  if (llr || llrPatch) {
+  if (dictPath) {
+    HD5::Reader dictReader(dictPath.Get());
+    DictionaryProjection dict{dictReader.readTensor<Re2>(HD5::Keys::Dictionary)};
     Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
     Cx5 output(images.dimensions());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      if (llr) {
-        output.chip<4>(iv) = llr_sliding(images.chip<4>(iv), λ.Get(), patchSize.Get());
-      } else if (llrPatch.Get()) {
-        output.chip<4>(iv) = llr_patch(images.chip<4>(iv), λ.Get(), patchSize.Get());
-      }
+      output.chip<4>(iv) = dict(images.chip<4>(iv));
+    }
+    writer.writeTensor(output, HD5::Keys::Image);
+  } else if (llr || llrPatch) {
+    Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
+    Cx5 output(images.dimensions());
+    LLR reg{λ.Get(), patchSize.Get(), !llrPatch};
+    for (Index iv = 0; iv < images.dimension(4); iv++) {
+      output.chip<4>(iv) = reg(images.chip<4>(iv));
     }
     writer.writeTensor(output, HD5::Keys::Image);
   } else if (slr) {
     Cx6 const channels = input.readTensor<Cx6>(HD5::Keys::Channels);
     Cx6 output(channels.dimensions());
     FFTOp<5> fft(FirstN<5>(channels.dimensions()));
+    SLR reg{fft, patchSize.Get(), λ.Get()};
     for (Index iv = 0; iv < channels.dimension(5); iv++) {
-      output.chip<5>(iv) = zinSLR(channels.chip<5>(iv), fft, patchSize.Get(), λ.Get());
+      output.chip<5>(iv) = reg(channels.chip<5>(iv));
     }
     writer.writeTensor(output, HD5::Keys::Channels);
   } else {

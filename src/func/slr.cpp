@@ -1,6 +1,6 @@
-#include "zin-slr.hpp"
+#include "slr.hpp"
 
-#include "algo/decomp.h"
+#include "algo/decomp.hpp"
 #include "cropper.h"
 #include "log.hpp"
 #include "tensorOps.hpp"
@@ -62,16 +62,24 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
 }
 
-Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float const wnThresh)
+SLR::SLR(FFTOp<5> const &f, Index const k, float const t)
+  : Functor<Cx5>()
+  , fft{f}
+  , kSz{k}
+  , thresh{t}
+{
+}
+
+auto SLR::operator()(Cx5 const &channels) const -> Cx5
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {
     Log::Fail(FMT_STRING("SLR kernel size less than 3 not supported"));
   }
-  if (wnThresh < 0.f || wnThresh >= nC) {
-    Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), wnThresh, 0.f, nC);
+  if (thresh < 0.f || thresh >= nC) {
+    Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), thresh, 0.f, nC);
   }
-  Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, wnThresh);
+  Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, thresh);
   Cx5 grid = fft.forward(channels);
   // Now crop out corners which will have zeros
   Index const w = std::floor(grid.dimension(2) / sqrt(3));
@@ -88,8 +96,8 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   }
   auto const svd = SVD<Cx>(kMat, true, true);
   Index const nK = kernels.dimension(1) * kernels.dimension(2) * kernels.dimension(3) * kernels.dimension(4);
-  Index const nZero = (nC - wnThresh) * nK; // Window-Normalized
-  Log::Print(FMT_STRING("Zeroing {} values check {} nK {}"), nZero, (nC - wnThresh), nK);
+  Index const nZero = (nC - thresh) * nK; // Window-Normalized
+  Log::Print(FMT_STRING("Zeroing {} values check {} nK {}"), nZero, (nC - thresh), nK);
   auto lrVals = svd.vals;
   lrVals.tail(nZero).setZero();
   kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();
@@ -103,4 +111,4 @@ Cx5 zinSLR(Cx5 const &channels, FFTOp<5> const &fft, Index const kSz, float cons
   Log::Tensor(outChannels, "zin-slr-after-channels");
   return outChannels;
 }
-}
+} // namespace rl

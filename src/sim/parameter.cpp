@@ -5,10 +5,10 @@
 
 namespace rl {
 
-Parameter const T1wm{1.0, 0.15, 0.1, 2.0}, T1gm{1.5, 0.25, 0.1, 2.0}, T1csf{3.5, 0.5, 1., 6.};
-Parameter const T2wm{0.06, 0.025, 0.01, 0.25}, T2gm{0.09, 0.025, 0.01, 0.25},
-  T2csf{1.5, 0.5, 0.5, 2.5};
-Parameter const B1{1.0, 0.5, 0.5, 1.5};
+Parameter const T1wm{1.0, 0.15, 0.5, 2.0, true}, T1gm{1.5, 0.25, 0.5, 3.5, true}, T1csf{3.5, 0.5, 2., 6., true};
+Parameter const T2wm{0.08, 0.03, 0.01, 0.2, true}, T2gm{0.12, 0.05, 0.01, 1, true},
+  T2csf{1.5, 0.5, 1, 2};
+Parameter const B1{1.0, 0.5, 0.25, 1.5, true};
 
 Tissue::Tissue(std::vector<Parameter> const pars)
   : means_(pars.size())

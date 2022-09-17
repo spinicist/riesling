@@ -1,4 +1,4 @@
-#include "single.hpp"
+#include "pre-kspace.hpp"
 
 #include "log.hpp"
 #include "mapping.hpp"
@@ -11,8 +11,8 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-SingleChannel::SingleChannel(Trajectory const &traj)
-  : Precond{}
+KSpaceSingle::KSpaceSingle(Trajectory const &traj)
+  : Functor<Cx3>()
 {
   Log::Print<Log::Level::High>("Single Channel Pre-conditioner start");
   Info const info = traj.info();
@@ -27,7 +27,7 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   // Sz3 sz = LastN<3>(gridder->inputDimensions());
   NUFFTOp nufft(newInfo.matrix, gridder.get());
   Cx3 W(gridder->outputDimensions());
-  pre_.resize(gridder->outputDimensions());
+  weights.resize(gridder->outputDimensions());
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft.adjoint(W);
 
@@ -39,10 +39,10 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   FFTOp<5> fftX(psf.dimensions());
 
   Cx5 xcorr = fftX.adjoint(fftX.forward(padX.forward(ones)).abs().square().cast<Cx>());
-  pre_.device(Threads::GlobalDevice()) = nufft.forward(psf * xcorr).abs() * pre_.constant(scale);
-  pre_.device(Threads::GlobalDevice()) = (pre_ > 0.f).select(pre_.inverse(), pre_.constant(1.f));
-  Log::Tensor(Re2(pre_.chip(0, 0)), "single-pre");
-  float const norm = Norm(pre_);
+  weights.device(Threads::GlobalDevice()) = nufft.forward(psf * xcorr).abs() * weights.constant(scale);
+  weights.device(Threads::GlobalDevice()) = (weights > 0.f).select(weights.inverse(), weights.constant(1.f));
+  Log::Tensor(Re2(weights.chip(0, 0)), "single-pre");
+  float const norm = Norm(weights);
   if (!std::isfinite(norm)) {
     Log::Fail("Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
@@ -50,13 +50,13 @@ SingleChannel::SingleChannel(Trajectory const &traj)
   }
 }
 
-Cx3 SingleChannel::apply(Cx3 const &in) const
+auto KSpaceSingle::operator()(Cx3 const &in) const -> Cx3
 {
-  assert(LastN<2>(in.dimensions()) == LastN<2>(pre_.dimensions()));
+  assert(LastN<2>(in.dimensions()) == LastN<2>(weights.dimensions()));
   auto const start = Log::Now();
   Index const nC = in.dimension(0);
   Cx3 p(in.dimensions());
-  p.device(Threads::GlobalDevice()) = in * pre_.broadcast(Sz3{nC, 1, 1}).cast<Cx>();
+  p.device(Threads::GlobalDevice()) = in * weights.broadcast(Sz3{nC, 1, 1}).cast<Cx>();
   LOG_DEBUG(FMT_STRING("Single-channel preconditioner Norm {}->{}. Took {}"), Norm(in), Norm(p), Log::ToNow(start));
   return p;
 }

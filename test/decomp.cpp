@@ -1,4 +1,4 @@
-#include "algo/decomp.h"
+#include "algo/decomp.hpp"
 #include "tensorOps.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
