@@ -163,7 +163,7 @@ int main_sim(args::Subparser &parser)
   Log::Print("Computing dictionary");
   Eigen::ArrayXXf dict = dynamics.matrix() * basis;
   Eigen::ArrayXf const norm = dict.rowwise().norm();
-  dict.rowwise().normalize();
+  dict = dict.colwise() / norm;
 
   HD5::Writer writer(oname.Get());
   writer.writeMatrix(basis, HD5::Keys::Basis);

@@ -8,7 +8,6 @@
 #include "parse_args.hpp"
 #include "threads.hpp"
 
-
 using namespace rl;
 
 int main_reg(args::Subparser &parser)
@@ -32,7 +31,7 @@ int main_reg(args::Subparser &parser)
   writer.writeInfo(input.readInfo());
   if (dictPath) {
     HD5::Reader dictReader(dictPath.Get());
-    DictionaryProjection dict{dictReader.readTensor<Re2>(HD5::Keys::Dictionary)};
+    TreeProjection dict{dictReader.readTensor<Re2>(HD5::Keys::Dictionary)};
     Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
     Cx5 output(images.dimensions());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
