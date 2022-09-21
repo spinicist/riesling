@@ -6,8 +6,8 @@ namespace rl {
 
 struct LLR final : Functor<Cx4>
 {
-  float λ;
   Index patchSize;
+  float λ;
   bool sliding;
   LLR(float, Index, bool);
 

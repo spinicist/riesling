@@ -8,7 +8,7 @@
 namespace rl {
 Index PatchClamp(Index const ii, Index const patchSize, Index const dimSz)
 {
-  Index const hSz = patchSize / 2;
+  Index const hSz = (patchSize + 1) / 2;
   if (ii < hSz) {
     return ii;
   } else if (ii > (dimSz - hSz)) {
@@ -20,8 +20,8 @@ Index PatchClamp(Index const ii, Index const patchSize, Index const dimSz)
 
 LLR::LLR(float l, Index p, bool s)
   : Functor<Cx4>()
-  , λ{l}
   , patchSize{p}
+  , λ{l * std::sqrtf(p)}
   , sliding{s}
 {
 }
@@ -45,9 +45,9 @@ auto LLR::applySliding(Cx4 const &img) const -> Cx4
   auto zTask = [&](Index const iz) {
     for (Index iy = 0; iy < img.dimension(2); iy++) {
       for (Index ix = 0; ix < img.dimension(1); ix++) {
-        Index const stx = std::min(std::max(0L, ix - patchSize / 2), img.dimension(1) - patchSize);
-        Index const sty = std::min(std::max(0L, iy - patchSize / 2), img.dimension(2) - patchSize);
-        Index const stz = std::min(std::max(0L, iz - patchSize / 2), img.dimension(3) - patchSize);
+        Index const stx = std::min(std::max(0L, ix - (patchSize + 1) / 2), img.dimension(1) - patchSize);
+        Index const sty = std::min(std::max(0L, iy - (patchSize + 1) / 2), img.dimension(2) - patchSize);
+        Index const stz = std::min(std::max(0L, iz - (patchSize + 1) / 2), img.dimension(3) - patchSize);
         Cx4 patchTensor = img.slice(Sz4{0, stx, sty, stz}, Sz4{K, patchSize, patchSize, patchSize});
         auto patch = CollapseToMatrix(patchTensor);
         auto const svd = SVD<Cx>(patch, true, false);
@@ -55,14 +55,18 @@ auto LLR::applySliding(Cx4 const &img) const -> Cx4
         Eigen::VectorXf s = svd.vals * (svd.vals.abs() - λ) / svd.vals.abs();
         s = (s.array() > λ).select(s, 0.f);
         patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-        lr.chip<3>(iz).chip<2>(iy).chip<1>(ix) = patchTensor.chip<3>(PatchClamp(iz, patchSize, img.dimension(3)))
-                                                   .chip<2>(PatchClamp(iy, patchSize, img.dimension(2)))
-                                                   .chip<1>(PatchClamp(ix, patchSize, img.dimension(1)));
+        for (Index ii = 0; ii < K; ii++) {
+          lr(ii, ix, iy, iz) = patchTensor(ii, PatchClamp(ix, patchSize, img.dimension(1)), PatchClamp(iy, patchSize, img.dimension(2)), PatchClamp(iz, patchSize, img.dimension(3)));
+        }
+        // lr(0, ix, iy, iz) = PatchClamp(ix, patchSize, img.dimension(1));
+        // lr(1, ix, iy, iz) = PatchClamp(iy, patchSize, img.dimension(2));
+        // lr(2, ix, iy, iz) = PatchClamp(iz, patchSize, img.dimension(3));
+        // lr(3, ix, iy, iz) = 0.f;
       }
     }
   };
   auto const now = Log::Now();
-  Threads::For(zTask, 0, img.dimension(3), "LLR");
+  Threads::For(zTask, img.dimension(3), "LLR");
   Log::Print(FMT_STRING("LLR Regularization took {}"), Log::ToNow(now));
   return lr;
 }
