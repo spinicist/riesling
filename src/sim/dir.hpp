@@ -2,14 +2,13 @@
 
 #include "log.hpp"
 #include "parameter.hpp"
-#include "settings.hpp"
+#include "sequence.hpp"
 #include "types.hpp"
 
 namespace rl {
 
-struct DIR
+struct DIR final : Sequence
 {
-  Settings seq;
   DIR(Settings const s);
 
   Index length() const;

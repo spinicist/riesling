@@ -5,9 +5,9 @@
 
 namespace rl {
 
-Parameter const T1wm{1.0, 0.15, 0.5, 2.0, true}, T1gm{1.5, 0.25, 0.5, 3.5, true}, T1csf{3.5, 0.5, 2., 6., true};
-Parameter const T2wm{0.08, 0.03, 0.01, 0.2, true}, T2gm{0.12, 0.05, 0.01, 1, true},
-  T2csf{1.5, 0.5, 1, 2};
+Parameter const T1wm{1.0, 0.15, 0.4, 2.4, true}, T1gm{3.0, 0.25, 1.5, 3.5, true}, T1csf{3.5, 0.5, 3., 6., true};
+Parameter const T2wm{0.08, 0.03, 0.001, 0.3, true}, T2gm{0.12, 0.05, 0.3, 1.0, true},
+  T2csf{1.5, 0.5, 1, 2, true};
 Parameter const B1{1.0, 0.5, 0.25, 1.5, true};
 
 Tissue::Tissue(std::vector<Parameter> const pars)

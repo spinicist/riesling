@@ -59,7 +59,7 @@ int main_admm(args::Subparser &parser)
   std::unique_ptr<Functor<Cx4>> reg;
   if (dictReg) {
     HD5::Reader dict(core.basisFile.Get());
-    reg = std::make_unique<DictionaryProjection>(dict.readTensor<Re2>(HD5::Keys::Dictionary));
+    reg = std::make_unique<BallTreeDictionary>(dict.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary));
   } else {
     reg = std::make_unique<LLR>(λ.Get(), patchSize.Get(), true);
   };

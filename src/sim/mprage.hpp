@@ -2,14 +2,14 @@
 
 #include "log.hpp"
 #include "parameter.hpp"
-#include "settings.hpp"
+#include "sequence.hpp"
 #include "types.hpp"
 
 namespace rl {
 
-struct MPRAGE
+struct MPRAGE final : Sequence
 {
-  Settings seq;
+  MPRAGE(Settings const &s);
 
   Index length() const;
   Eigen::ArrayXXf parameters(Index const nsamp) const;

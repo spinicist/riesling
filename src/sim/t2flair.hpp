@@ -1,19 +1,17 @@
 #pragma once
 
-#include "log.hpp"
-#include "parameter.hpp"
-#include "settings.hpp"
+#include "sequence.hpp"
 #include "types.hpp"
 
 namespace rl {
 
-struct T2FLAIR
+struct T2FLAIR final : Sequence
 {
-  Settings seq;
+  T2FLAIR(Settings const &s);
 
-  Index length() const;
-  Eigen::ArrayXXf parameters(Index const nsamp) const;
-  Eigen::ArrayXf simulate(Eigen::ArrayXf const &p) const;
+  auto length() const -> Index;
+  auto parameters(Index const nsamp) const -> Eigen::ArrayXXf;
+  auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
 };
 
 } // namespace rl

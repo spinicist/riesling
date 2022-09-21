@@ -141,6 +141,7 @@ if(${BUILD_TESTS})
     add_executable(riesling-tests
         test/cropper.cpp
         test/decomp.cpp
+        test/dict.cpp
         test/fft3.cpp
         test/io.cpp
         test/kernel.cpp
@@ -170,10 +171,11 @@ option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 
 if(${BUILD_BENCHMARKS})
     add_executable(riesling-bench
-        bench/rss.cpp
-        bench/grid.cpp
+        bench/dict.cpp
         bench/dot.cpp
+        bench/grid.cpp
         bench/kernel.cpp
+        bench/rss.cpp
     )
     target_link_libraries(riesling-bench PUBLIC
         vineyard

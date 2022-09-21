@@ -21,15 +21,15 @@ auto Simulate(rl::Settings const &s, Index const nsamp)
   T simulator{s};
 
   Eigen::ArrayXXf parameters = simulator.parameters(nsamp);
-  Eigen::ArrayXXf dynamics(parameters.cols(), simulator.length());
+  Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
   auto const start = Log::Now();
-  auto task = [&](Index const ii) { dynamics.row(ii) = simulator.simulate(parameters.col(ii)); };
+  auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
   Log::Print(FMT_STRING("Simulation took {}"), Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
 }
 
-enum struct Sequence
+enum struct Sequences
 {
   T1T2 = 0,
   MPRAGE,
@@ -40,20 +40,20 @@ enum struct Sequence
   DWI
 };
 
-std::unordered_map<std::string, Sequence> SequenceMap{
-  {"T1T2Prep", Sequence::T1T2},
-  {"MPRAGE", Sequence::MPRAGE},
-  {"DIR", Sequence::DIR},
-  {"T2Prep", Sequence::T2Prep},
-  {"T2InvPrep", Sequence::T2InvPrep},
-  {"T2FLAIR", Sequence::T2FLAIR},
-  {"DWI", Sequence::DWI}};
+std::unordered_map<std::string, Sequences> SequenceMap{
+  {"T1T2Prep", Sequences::T1T2},
+  {"MPRAGE", Sequences::MPRAGE},
+  {"DIR", Sequences::DIR},
+  {"T2Prep", Sequences::T2Prep},
+  {"T2InvPrep", Sequences::T2InvPrep},
+  {"T2FLAIR", Sequences::T2FLAIR},
+  {"DWI", Sequences::DWI}};
 
 int main_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::MapFlag<std::string, Sequence> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
+  args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
   args::ValueFlag<Index> spg(parser, "SPG", "traces per group", {'s', "spg"}, 128);
   args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
   args::ValueFlag<Index> gprep2(parser, "G", "Groups before prep 2", {"gprep2"}, 0);
@@ -63,7 +63,6 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.01f);
   args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.012f);
   args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.45f);
-  args::ValueFlag<float> TI2(parser, "TI2", "2nd Inversion time for DIR", {"ti2"}, 0.45f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
   args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
@@ -89,38 +88,37 @@ int main_sim(args::Subparser &parser)
     .Tramp = Tramp.Get(),
     .Tssi = Tssi.Get(),
     .TI = TI.Get(),
-    .TI2 = TI2.Get(),
     .Trec = Trec.Get(),
     .TE = te.Get(),
     .bval = bval.Get()};
 
   Eigen::ArrayXXf parameters, dynamics;
   switch (seq.Get()) {
-  case Sequence::MPRAGE:
+  case Sequences::MPRAGE:
     std::tie(parameters, dynamics) = Simulate<rl::MPRAGE>(settings, nsamp.Get());
     break;
-  case Sequence::DIR:
+  case Sequences::DIR:
     std::tie(parameters, dynamics) = Simulate<rl::DIR>(settings, nsamp.Get());
-  case Sequence::T2FLAIR:
+  case Sequences::T2FLAIR:
     std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get());
     break;
-  case Sequence::T2Prep:
+  case Sequences::T2Prep:
     std::tie(parameters, dynamics) = Simulate<rl::T2Prep>(settings, nsamp.Get());
     break;
-  case Sequence::T2InvPrep:
+  case Sequences::T2InvPrep:
     std::tie(parameters, dynamics) = Simulate<rl::T2InvPrep>(settings, nsamp.Get());
     break;
-  case Sequence::T1T2:
+  case Sequences::T1T2:
     std::tie(parameters, dynamics) = Simulate<rl::T1T2Prep>(settings, nsamp.Get());
     break;
-  case Sequence::DWI:
+  case Sequences::DWI:
     std::tie(parameters, dynamics) = Simulate<rl::DWI>(settings, nsamp.Get());
     break;
   }
 
-  // Calculate SVD - observations are in rows
+  // Calculate SVD - observations are in cols
   auto const svd =
-    SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics, false, true);
+    SVD<float>(subsamp ? dynamics(Eigen::seq(0, Eigen::last, subsamp.Get()), Eigen::all) : dynamics, true, true);
   Eigen::ArrayXf const vals = svd.vals.square();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
@@ -161,9 +159,9 @@ int main_sim(args::Subparser &parser)
 
   Eigen::ArrayXf const scales = svd.vals.head(nRetain) / svd.vals(0);
   Log::Print("Computing dictionary");
-  Eigen::ArrayXXf dict = dynamics.matrix() * basis;
-  Eigen::ArrayXf const norm = dict.rowwise().norm();
-  dict = dict.colwise() / norm;
+  Eigen::MatrixXf dict = basis.transpose() * dynamics.matrix();
+  Eigen::ArrayXf const norm = dict.colwise().norm();
+  dict = dict.array().rowwise() / norm.transpose();
 
   HD5::Writer writer(oname.Get());
   writer.writeMatrix(basis, HD5::Keys::Basis);

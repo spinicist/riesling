@@ -2,27 +2,27 @@
 
 #include "log.hpp"
 #include "parameter.hpp"
-#include "settings.hpp"
+#include "sequence.hpp"
 #include "types.hpp"
 
 namespace rl {
 
-struct T2Prep
+struct T2Prep final : Sequence
 {
-  Settings seq;
+  T2Prep(Settings const &s);
 
-  Index length() const;
-  Eigen::ArrayXXf parameters(Index const nsamp) const;
-  Eigen::ArrayXf simulate(Eigen::ArrayXf const &p) const;
+  auto length() const -> Index;
+  auto parameters(Index const nsamp) const -> Eigen::ArrayXXf;
+  auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
 };
 
-struct T2InvPrep
+struct T2InvPrep final : Sequence
 {
-  Settings seq;
+  T2InvPrep(Settings const &s);
 
-  Index length() const;
-  Eigen::ArrayXXf parameters(Index const nsamp) const;
-  Eigen::ArrayXf simulate(Eigen::ArrayXf const &p) const;
+  auto length() const -> Index;
+  auto parameters(Index const nsamp) const -> Eigen::ArrayXXf;
+  auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
 };
 
 } // namespace rl

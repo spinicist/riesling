@@ -19,7 +19,8 @@ int main_reg(args::Subparser &parser)
   args::Flag slr(parser, "", "Apply Structured Low Rank to channel images", {"slr"});
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
-  args::ValueFlag<std::string> dictPath(parser, "D", "Apply dictionary projection", {"dict"});
+  args::ValueFlag<std::string> brute(parser, "D", "Brute-force dictionary projection", {"brute"});
+  args::ValueFlag<std::string> ball(parser, "D", "Ball-tree dictionary projection", {"ball"});
   ParseCommand(parser);
 
   if (!iname) {
@@ -29,9 +30,20 @@ int main_reg(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
-  if (dictPath) {
-    HD5::Reader dictReader(dictPath.Get());
-    TreeProjection dict{dictReader.readTensor<Re2>(HD5::Keys::Dictionary)};
+  if (brute) {
+    Log::Print("Brute-force dictionary");
+    HD5::Reader dictReader(brute.Get());
+    BruteForceDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
+    Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
+    Cx5 output(images.dimensions());
+    for (Index iv = 0; iv < images.dimension(4); iv++) {
+      output.chip<4>(iv) = dict(images.chip<4>(iv));
+    }
+    writer.writeTensor(output, HD5::Keys::Image);
+  } else if (ball) {
+    Log::Print("Ball-tree dictionary");
+    HD5::Reader dictReader(ball.Get());
+    BallTreeDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
     Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
     Cx5 output(images.dimensions());
     for (Index iv = 0; iv < images.dimension(4); iv++) {

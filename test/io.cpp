@@ -20,7 +20,6 @@ TEST_CASE("IO", "[io]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
-  float const os = 2.f;
   Info const info{.matrix = Sz3{M, M, M}};
   Index const channels = 1, samples = 32, traces = 64, volumes = 2;
   auto const points = ArchimedeanSpiral(samples, traces);
