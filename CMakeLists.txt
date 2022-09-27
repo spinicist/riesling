@@ -26,6 +26,7 @@ add_definitions(-DEIGEN_USE_THREADS)
 
 # Common library between tests and main executable
 add_library(vineyard
+    src/basis.cpp
     src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp

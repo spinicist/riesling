@@ -2,6 +2,7 @@
 
 #include "func/dict.hpp"
 #include "algo/decomp.hpp"
+#include "basis.hpp"
 #include "sim/t2flair.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -37,27 +38,20 @@ TEST_CASE("Dictionaries", "[dict]")
     dynamics.col(ii) = simulator.simulate(parameters.col(ii));
   }
 
-  // Calculate SVD - observations are in columns so transpose
-  auto const svd = rl::SVD<float>(dynamics, true, false);
-  Index const nRetain = 3;
-  Eigen::MatrixXf basis = svd.V.leftCols(nRetain).array();
-  Eigen::ArrayXf const scales = svd.vals.head(nRetain) / svd.vals(0);
-  Eigen::MatrixXf dict = basis.transpose() * dynamics.matrix();
-  Eigen::ArrayXf const norm = dict.colwise().norm();
-  dict = dict.array().rowwise() / norm.transpose();
+  rl::Basis basis(parameters, dynamics, 0.f, 3, false);
 
   // Should get back exact matches within precision
   SECTION("Brute-Force Lookup")
   {
-    rl::BruteForceDictionary brute(dict);
-    CHECK((dict.col(0) - brute.project(dict.col(0))).norm() == Approx(0.f).margin(1.e-6f));
-    CHECK((dict.col(nsamp / 2) - brute.project(dict.col(nsamp / 2))).norm() == Approx(0.f).margin(1.e-6f));
+    rl::BruteForceDictionary brute(basis.dict);
+    CHECK((basis.dict.col(0) - brute.project(basis.dict.col(0))).norm() == Approx(0.f).margin(1.e-6f));
+    CHECK((basis.dict.col(nsamp / 2) - brute.project(basis.dict.col(nsamp / 2))).norm() == Approx(0.f).margin(1.e-6f));
   };
 
   SECTION("Ball-Tree Lookup")
   {
-    rl::BallTreeDictionary ball(dict);
-    CHECK((dict.col(0) - ball.project(dict.col(0))).norm() == Approx(0.f).margin(1.e-6f));
-    CHECK((dict.col(nsamp / 2) - ball.project(dict.col(nsamp / 2))).norm() == Approx(0.f).margin(1.e-6f));
+    rl::BallTreeDictionary ball(basis.dict);
+    CHECK((basis.dict.col(0) - ball.project(basis.dict.col(0))).norm() == Approx(0.f).margin(1.e-6f));
+  CHECK((basis.dict.col(nsamp / 2) - ball.project(basis.dict.col(nsamp / 2))).norm() == Approx(0.f).margin(1.e-6f));
   };
 }

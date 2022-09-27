@@ -1,9 +1,9 @@
 #pragma once
 
-// #if __INTELLISENSE__
-// #undef __ARM_NEON
-// #undef __ARM_NEON__
-// #endif
+#if __INTELLISENSE__
+#undef __ARM_NEON
+#undef __ARM_NEON__
+#endif
 
 #ifdef DEBUG
 #define EIGEN_INITIALIZE_MATRICES_BY_NAN
