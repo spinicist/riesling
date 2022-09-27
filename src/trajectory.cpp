@@ -99,7 +99,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
     dsInfo.voxel_size = info_.voxel_size * scale;
   }
-  Index minRead = nSamples(), maxRead = 0;
+  Index minSamp = nSamples(), maxSamp = 0;
   Re3 dsPoints(points_.dimensions());
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {
@@ -107,26 +107,26 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
       p *= p.constant(scale);
       if (Norm(p) <= 0.5f) {
         dsPoints.chip<2>(it).chip<1>(is) = p;
-        if (it >= lores) { // Ignore lo-res traces for this calculation
-          minRead = std::min(minRead, is);
-          maxRead = std::max(maxRead, is);
-        }
       } else {
+        if (it >= lores) { // Ignore lo-res traces for this calculation
+          minSamp = std::min(minSamp, is);
+          maxSamp = std::max(maxSamp, is);
+        }
         dsPoints.chip<2>(it).chip<1>(is).setConstant(std::numeric_limits<float>::quiet_NaN());
       }
     }
   }
-  Index const dsSamples = 1 + maxRead - minRead;
+  Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print(
     FMT_STRING("Downsampled by {}, new voxel-size {} matrix {}, read-points {}-{}{}"),
     scale,
     dsInfo.voxel_size.transpose(),
     dsInfo.matrix,
-    minRead,
-    maxRead,
+    minSamp,
+    maxSamp,
     lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res traces"), lores) : "");
-  dsPoints = Re3(dsPoints.slice(Sz3{0, minRead, 0}, Sz3{3, dsSamples, nTraces()}));
-  return std::make_tuple(Trajectory(dsInfo, dsPoints, frames_), minRead, dsSamples);
+  dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{3, dsSamples, nTraces()}));
+  return std::make_tuple(Trajectory(dsInfo, dsPoints, frames_), minSamp, dsSamples);
 }
 
 auto Trajectory::downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink) const
