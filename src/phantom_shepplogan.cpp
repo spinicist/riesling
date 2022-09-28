@@ -22,6 +22,10 @@ Cx3 SheppLoganPhantom(
   std::vector<float> const &angles,
   std::vector<float> const &intensities)
 {
+  if (!(centres.size() == ha.size() && centres.size() == angles.size() && centres.size() == intensities.size())) {
+    Log::Fail("Shepp Logan property lengths did not match");
+  }
+
   Log::Print(FMT_STRING("Drawing 3D Shepp Logan Phantom"));
   Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();

@@ -77,7 +77,7 @@ int main_phantom(args::Subparser &parser)
   args::ValueFlag<float> voxSize(parser, "V", "Voxel size in mm (default 2)", {'v', "vox-size"}, 2.f);
   args::ValueFlag<Index> matrix(parser, "M", "Matrix size (default 128)", {'m', "matrix"}, 128);
   args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
-  args::ValueFlag<Index> frames(parser, "F", "Number of frames/basis images", {'f', "frames"}, 1);
+  args::ValueFlag<std::string> basisFile(parser, "B", "Read basis from file", {"basis", 'b'});
 
   args::ValueFlag<float> phan_r(parser, "R", "Radius phantom in mm (default 90)", {"phan_rad"}, 90.f);
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> phan_c(
@@ -141,15 +141,20 @@ int main_phantom(args::Subparser &parser)
     {0.056, 0.056, 0.1}};
 
   std::vector<float> const angles{0, 0, 3 * M_PI / 5, 2 * M_PI / 5, 0, 0, 0, M_PI / 2, M_PI / 2, 0};
-  std::vector<std::vector<float>> const intensities{
-    {100, -40, -10, -10, 10, 10, 5, 5, 10, -10},
-    {10, 2, -4, 1, -6, 2, 6, -5, 2, -3},
-    {1, -0.1, 0.1, 0.2, 0.5, -0.1, -0.2, 0.5, 0.1, 0.1},
-    {0.1, -0.02, 0.07, -0.05, -0.05, -0.08, 0.02, 0., 0, 0}};
 
-  Cx4 phan(frames.Get(), matrix.Get(), matrix.Get(), matrix.Get());
-  for (Index ii = 0; ii < phan.dimension(0); ii++) {
-    phan.chip<0>(ii) = SheppLoganPhantom(
+  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
+  writer.writeTrajectory(traj);
+
+  if (basisFile) {
+      HD5::Reader basisReader(basisFile.Get());
+      auto const basis = basisReader.readTensor<Re2>(HD5::Keys::Basis);
+      auto const dynamics = basisReader.readTensor<Re2>(HD5::Keys::Dynamics);
+      std::vector<float> intensities;
+      for (Index ii = 0; ii < 10; ii++) {
+        intensities.push_back(ii * dynamics.dimension(1) / 10.f);
+      }
+
+    auto const shepp = SheppLoganPhantom(
       info.matrix,
       info.voxel_size,
       phan_c.Get(),
@@ -158,12 +163,26 @@ int main_phantom(args::Subparser &parser)
       centres,
       ha,
       angles,
-      intensities[ii % 4]);
-  }
+      intensities);
 
-  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
-  writer.writeTrajectory(traj);
-  writer.writeTensor(Cx5(phan.reshape(AddBack(phan.dimensions(), 1))), HD5::Keys::Image);
+    Cx5 phantom(AddFront(AddBack(shepp.dimensions(), 1), basis.dimension(0)));
+    
+
+
+  } else {
+  std::vector<float> const intensities{100, -40, -10, -10, 10, 10, 5, 5, 10, -10};
+  auto const shepp = SheppLoganPhantom(
+    info.matrix,
+    info.voxel_size,
+    phan_c.Get(),
+    phan_rot.Get(),
+    phan_r.Get(),
+    centres,
+    ha,
+    angles,
+    intensities);
+    writer.writeTensor(Cx5(shepp.reshape(AddFront(AddBack(shepp.dimensions(), 1), 1))), HD5::Keys::Image);
+  }
 
   return EXIT_SUCCESS;
 }

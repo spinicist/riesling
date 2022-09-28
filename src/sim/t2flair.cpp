@@ -56,7 +56,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 
   // Get steady state before first read-out
   Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(settings.spg) * Eramp);
-  Eigen::Matrix2f const SS = Ei * inv * Erec * grp.pow(settings.gps - settings.gprep2) * Essi * E2 * grp.pow(settings.gprep2);
+  Eigen::Matrix2f const SS = Essi * E2 * inv * grp.pow(settings.gps - settings.gprep2) * Essi * E2 * grp.pow(settings.gprep2);
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic
@@ -70,7 +70,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
     }
     Mz = Essi * Eramp * Mz;
   }
-  Mz = Essi * E2 * Mz;
+  Mz = Essi * Erec * E2 * Mz;
   for (Index ig = 0; ig < (settings.gps - settings.gprep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spg; ii++) {
