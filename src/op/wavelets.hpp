@@ -13,6 +13,7 @@ struct Wavelets final : Operator<4, 4>
   auto forward(Input const &x) const -> Output;
   auto adjoint(Output const &x) const -> Input;
 
+  static auto PaddedDimensions(Sz4 const dims, Index const levels) -> Sz4;
 private:
   void encode_dim(Input &image, Index const dim, Index const level) const;
   void decode_dim(Output &image, Index const dim, Index const level) const;

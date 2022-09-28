@@ -8,6 +8,7 @@
 #include "func/dict.hpp"
 #include "func/llr.hpp"
 #include "func/pre-kspace.hpp"
+#include "func/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
@@ -43,6 +44,10 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"patch-size"}, 4);
   args::Flag dictReg(parser, "D", "Use dictionary projection as regularizer", {"dict"});
 
+  args::ValueFlag<float> wavelets(parser, "W", "Wavelet denoising threshold", {"wavelets"});
+  args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
+  args::ValueFlag<Index> levels(parser, "L", "Wavelet levels", {"levels", 'l'}, 4);
+
   ParseCommand(parser, core.iname);
 
   HD5::RieslingReader reader(core.iname.Get());
@@ -57,7 +62,9 @@ int main_admm(args::Subparser &parser)
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   std::unique_ptr<Functor<Cx3>> M = precond ? std::make_unique<KSpaceSingle>(traj) : nullptr;
   std::unique_ptr<Functor<Cx4>> reg;
-  if (dictReg) {
+  if (wavelets) {
+    reg = std::make_unique<ThresholdWavelets>(recon.inputDimensions(), width.Get(), levels.Get(), wavelets.Get());
+  } else if (dictReg) {
     HD5::Reader dict(core.basisFile.Get());
     reg = std::make_unique<BallTreeDictionary>(dict.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary));
   } else {

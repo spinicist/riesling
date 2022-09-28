@@ -47,9 +47,12 @@ add_library(vineyard
     src/algo/decomp.cpp
     src/fft/fft.cpp
     src/func/dict.cpp
+    src/func/diffs.cpp
     src/func/llr.cpp
     src/func/pre-kspace.cpp
     src/func/slr.cpp
+    src/func/thresh.cpp
+    src/func/thresh-wavelets.cpp
     src/io/hd5-core.cpp
     src/io/nifti.cpp
     src/io/reader.cpp
