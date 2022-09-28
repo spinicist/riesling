@@ -19,7 +19,7 @@ Trajectory traj(info, points);
 float const os = 2.f;
 // Index const bucketSz = 32;
 
-TEST_CASE("Grid")
+TEST_CASE("Grid", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
   auto gridfi3 = make_grid<Cx, 3>(traj, "ES3", os, C);
@@ -51,7 +51,7 @@ TEST_CASE("Grid")
   };
 }
 
-TEST_CASE("GridBasisAdj")
+TEST_CASE("GridBasis", "[grid]")
 {
   Index const nB = 4;
   Re2 basis(256, nB);

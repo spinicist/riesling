@@ -180,6 +180,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     auto grid_task = [&](Index ibucket) {
       auto const &bucket = map.buckets[ibucket];
       auto const bSz = bucket.gridSize();
+      Eigen::Tensor<Scalar, 2> bSample(nC, nB);
       Input bGrid(AddFront(bSz, nC, nB));
       bGrid.setZero();
 
@@ -192,21 +193,36 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
         auto const frscale = scale * (this->weightFrames_ ? map.frameWeights[ifr] : 1.f);
 
         Index constexpr hW = kW / 2;
-        Index const btp = basis ? n.trace % basis.value().dimension(0) : 0;
-        for (Index i1 = 0; i1 < kW; i1++) {
-          Index const ii1 = i1 + c[NDim - 1] - hW - bucket.minCorner[NDim - 1];
-          if constexpr (NDim == 1) {
-            float const kval = k(i1) * frscale;
-            if (basis) {
-              for (Index ib = 0; ib < nB; ib++) {
-                float const bval = kval * basis.value()(btp, ib);
-                for (Index ic = 0; ic < nC; ic++) {
-                  bGrid(ic, ib, ii1) += noncart(ic, n.sample, n.trace) * bval;
-                }
+
+        if (basis) {
+          Index const btp = basis ? n.trace % basis.value().dimension(0) : 0;
+          for (Index ib = 0; ib < nB; ib++) {
+            float const bval = basis.value()(btp, ib);
+            for (Index ic = 0; ic < nC; ic++) {
+              bSample(ic, ib) = noncart(ic, n.sample, n.trace) * bval;
+            }
+          }
+        } else {
+          for (Index ib = 0; ib < nB; ib++) {
+            if (ib == ifr) {
+              for (Index ic = 0; ic < nC; ic++) {
+                bSample(ic, ib) = noncart(ic, n.sample, n.trace) * frscale;
               }
             } else {
               for (Index ic = 0; ic < nC; ic++) {
-                bGrid(ic, ifr, ii1) += noncart(ic, n.sample, n.trace) * kval;
+                bSample(ic, ib) = Scalar(0.f);
+              }
+            }
+          }
+        }
+
+        for (Index i1 = 0; i1 < kW; i1++) {
+          Index const ii1 = i1 + c[NDim - 1] - hW - bucket.minCorner[NDim - 1];
+          if constexpr (NDim == 1) {
+            float const kval = k(i1);
+            for (Index ib = 0; ib < nB; ib++) {
+              for (Index ic = 0; ic < nC; ic++) {
+                bGrid(ic, ib, ii1) += bSample(ic, ib) * kval;
               }
             }
           } else {
@@ -214,32 +230,18 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
               Index const ii2 = i2 + c[NDim - 2] - hW - bucket.minCorner[NDim - 2];
               if constexpr (NDim == 2) {
                 float const kval = k(i2, i1) * frscale;
-                if (basis) {
-                  for (Index ib = 0; ib < nB; ib++) {
-                    float const bval = kval * basis.value()(btp, ib);
-                    for (Index ic = 0; ic < nC; ic++) {
-                      bGrid(ic, ib, ii2, ii1) += noncart(ic, n.sample, n.trace) * bval;
-                    }
-                  }
-                } else {
+                for (Index ib = 0; ib < nB; ib++) {
                   for (Index ic = 0; ic < nC; ic++) {
-                    bGrid(ic, ifr, ii2, ii1) += noncart(ic, n.sample, n.trace) * kval;
+                    bGrid(ic, ib, ii2, ii1) += bSample(ic, ib) * kval;
                   }
                 }
               } else {
                 for (Index i3 = 0; i3 < kW; i3++) {
                   Index const ii3 = i3 + c[NDim - 3] - hW - bucket.minCorner[NDim - 3];
                   float const kval = k(i3, i2, i1) * frscale;
-                  if (basis) {
-                    for (Index ib = 0; ib < nB; ib++) {
-                      float const bval = kval * basis.value()(btp, ib);
-                      for (Index ic = 0; ic < nC; ic++) {
-                        bGrid(ic, ib, ii3, ii2, ii1) += noncart(ic, n.sample, n.trace) * bval;
-                      }
-                    }
-                  } else {
+                  for (Index ib = 0; ib < nB; ib++) {
                     for (Index ic = 0; ic < nC; ic++) {
-                      bGrid(ic, ifr, ii3, ii2, ii1) += noncart(ic, n.sample, n.trace) * kval;
+                      bGrid(ic, ib, ii3, ii2, ii1) += bSample(ic, ib) * kval;
                     }
                   }
                 }
