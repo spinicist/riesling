@@ -63,6 +63,7 @@ add_library(vineyard
     src/op/nufft.cpp
     src/op/sdc.cpp
     src/op/sense.cpp
+    src/op/wavelets.cpp
     src/sim/parameter.cpp
     src/sim/dwi.cpp
     src/sim/mprage.cpp
@@ -122,6 +123,7 @@ add_executable(riesling
     src/cmd/tgv.cpp
     src/cmd/traj.cpp
     src/cmd/version.cpp
+    src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp
     src/main.cpp
 )

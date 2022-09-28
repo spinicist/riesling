@@ -5,13 +5,26 @@
 namespace rl {
 
 template <size_t ND, size_t W>
+struct KernelSizes {
+};
+
+template <size_t W> struct KernelSizes<1, W> {
+  using Type = Eigen::Sizes<W>;
+};
+
+template <size_t W> struct KernelSizes<2, W> {
+  using Type = Eigen::Sizes<W, W>;
+};
+
+template <size_t W> struct KernelSizes<3, W> {
+  using Type = Eigen::Sizes<W, W, W>;
+};
+
+template <size_t ND, size_t W>
 struct Kernel
 {
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<W>>;
-  // Welcome to C++. Declares a TensorFixedSize<float, Eigen::Sizes<W, W, ...>>
-  using Tensor = typename decltype([]<std::size_t... Is>(std::index_sequence<Is...>) {
-    return std::type_identity<Eigen::TensorFixedSize<float, Eigen::Sizes<(Is, W)...>>>();
-  }(std::make_index_sequence<ND>()))::type;
+  using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<ND, W>::Type>;
   using Point = Eigen::Matrix<float, ND, 1>;
 
   OneD centers;

@@ -34,4 +34,5 @@ int main_split(args::Subparser &parser);
 int main_tgv(args::Subparser &parser);
 int main_traj(args::Subparser &parser);
 int main_version(args::Subparser &parser);
+int main_wavelets(args::Subparser &parser);
 int main_zinfandel(args::Subparser &parser);
