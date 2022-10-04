@@ -36,8 +36,8 @@ int main_compress(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  Cx3 const ks = reader.noncartesian(refVol.Get());
+  HD5::Reader reader(core.iname.Get());
+  Cx3 const ks = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, refVol.Get());
   Index const channels = ks.dimension(0);
   Index const samples = ks.dimension(1);
   Index const traces = ks.dimension(2);
@@ -57,7 +57,7 @@ int main_compress(args::Subparser &parser)
     auto const pc = PCA(CollapseToConstMatrix(ref), nRetain.Get(), energy.Get());
     psi = pc.vecs;
   } else if (rovir) {
-    psi = ROVIR(rovirOpts, reader.trajectory(), energy.Get(), nRetain.Get(), lores.Get(), ks);
+    psi = ROVIR(rovirOpts, Trajectory(reader), energy.Get(), nRetain.Get(), lores.Get(), ks);
   } else if (ccFile) {
     HD5::Reader matFile(ccFile.Get());
     psi = matFile.readMatrix<Eigen::MatrixXcf>(HD5::Keys::CompressionMatrix);
@@ -68,13 +68,13 @@ int main_compress(args::Subparser &parser)
   Cx4 all_ks(reader.dimensions<4>(HD5::Keys::Noncartesian));
   Index const volumes = all_ks.dimension(3);
   for (Index iv = 0; iv < volumes; iv++) {
-    all_ks.chip<3>(iv) = reader.noncartesian(iv);
+    all_ks.chip<3>(iv) = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv);
   }
   Cx4 out_ks(AddFront(LastN<3>(all_ks.dimensions()), compressor.out_channels()));
   compressor.compress(all_ks, out_ks);
 
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "compressed"));
-  writer.writeTrajectory(reader.trajectory());
+  writer.writeTrajectory(Trajectory(reader));
   writer.writeTensor(out_ks, HD5::Keys::Noncartesian);
 
   if (save) {

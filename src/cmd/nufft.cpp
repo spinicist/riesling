@@ -19,16 +19,16 @@ int main_nufft(args::Subparser &parser)
   args::ValueFlag<std::string> dset(parser, "D", "Dataset name (channels/noncartesian)", {'d', "dset"});
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
+  HD5::Reader reader(core.iname.Get());
   Trajectory traj;
   if (trajFile) {
     if (!fwd) {
       Log::Fail("Specifying a trajectory file in the adjoint direction is not supported");
     }
-    HD5::RieslingReader trajReader(trajFile.Get());
-    traj = trajReader.trajectory();
+    HD5::Reader trajReader(trajFile.Get());
+    traj = Trajectory(trajReader);
   } else {
-    traj = reader.trajectory();
+    traj = Trajectory(reader);
   }
   auto const info = traj.info();
   auto const basis = ReadBasis(core.basisFile);

@@ -16,8 +16,8 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
   args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, core.iname);
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {

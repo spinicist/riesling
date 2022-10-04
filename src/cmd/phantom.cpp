@@ -18,8 +18,8 @@ using namespace rl;
 Trajectory LoadTrajectory(std::string const &file)
 {
   Log::Print(FMT_STRING("Reading external trajectory from {}"), file);
-  HD5::RieslingReader reader(file);
-  return reader.trajectory();
+  HD5::Reader reader(file);
+  return Trajectory(reader);
 }
 
 Trajectory CreateTrajectory(

@@ -24,8 +24,8 @@ int main_tgv(args::Subparser &parser)
   args::ValueFlag<float> step_size(parser, "STEP SIZE", "Inverse of step size (default 8)", {"step"}, 8.f);
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];
@@ -43,7 +43,7 @@ int main_tgv(args::Subparser &parser)
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
     out.chip<4>(iv) = out_cropper.crop4(
-      tgv(its.Get(), thr.Get(), alpha.Get(), reduce.Get(), step_size.Get(), recon, reader.noncartesian(iv)));
+      tgv(its.Get(), thr.Get(), alpha.Get(), reduce.Get(), step_size.Get(), recon, reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv)));
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

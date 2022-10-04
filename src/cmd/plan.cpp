@@ -17,8 +17,8 @@ int main_plan(args::Subparser &parser)
   ParseCommand(parser, core.iname);
 
   FFT::SetTimelimit(timelimit.Get());
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   auto const info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), channels.Get(), basis);

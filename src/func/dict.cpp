@@ -103,7 +103,7 @@ TreeNode::TreeNode(std::vector<Eigen::VectorXf> &points)
       right = std::make_unique<TreeNode>(rightPoints);
     } else {
       // Maths broke
-      fmt::print("Maths broke\n");
+      // fmt::print("Maths broke\n");
     }
   }
 }

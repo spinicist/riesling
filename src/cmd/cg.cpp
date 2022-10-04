@@ -24,8 +24,8 @@ int main_cg(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const &traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   Info const &info = traj.info();
   Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];
   Index const volumes = reader.dimensions<4>(HD5::Keys::Noncartesian)[3];
@@ -50,7 +50,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = cg.run(recon.adjoint(reader.noncartesian(iv)));
+    vol = cg.run(recon.adjoint(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv)));
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

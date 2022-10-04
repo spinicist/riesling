@@ -21,9 +21,9 @@ int main_sense_calib(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
-  Cx3 const data = reader.noncartesian(volume.Get());
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
+  Cx3 const data = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, volume.Get());
   Index const channels = data.dimension(0);
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), channels, basis);

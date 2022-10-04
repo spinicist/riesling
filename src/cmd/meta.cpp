@@ -10,9 +10,9 @@ int main_meta(args::Subparser &parser)
   args::PositionalList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed");
 
   ParseCommand(parser, iname);
-  HD5::RieslingReader reader(iname.Get());
+  HD5::Reader reader(iname.Get());
   auto const &meta = reader.readMeta();
-  auto const traj = reader.trajectory();
+  Trajectory traj(reader);
 
   for (auto const &k : keys.Get()) {
     if (k == "matrix") {

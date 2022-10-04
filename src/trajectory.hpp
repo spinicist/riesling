@@ -3,6 +3,7 @@
 #include "info.hpp"
 #include "log.hpp"
 #include "types.hpp"
+#include "io/reader.hpp"
 
 namespace rl {
 
@@ -11,6 +12,8 @@ struct Trajectory
   Trajectory();
   Trajectory(Info const &info, Re3 const &points);
   Trajectory(Info const &info, Re3 const &points, I1 const &frames);
+  Trajectory(HD5::Reader const &reader);
+
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
   auto nFrames() const -> Index;

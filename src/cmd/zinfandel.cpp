@@ -39,8 +39,8 @@ int main_zinfandel(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   auto info = traj.info();
   auto out_info = info;
 
@@ -49,7 +49,7 @@ int main_zinfandel(args::Subparser &parser)
   Index const volumes = rad_ks.dimension(3);
   if (grappa) {
     for (Index iv = 0; iv < volumes; iv++) {
-      Cx3 vol = reader.noncartesian(iv);
+      Cx3 vol = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv);
       zinGRAPPA(gap.Get(), gSrc.Get(), gtraces.Get(), gRead.Get(), λ.Get(), traj.points(), vol);
       rad_ks.chip<3>(iv) = vol;
     }
@@ -69,7 +69,7 @@ int main_zinfandel(args::Subparser &parser)
     LSQR<NUFFTOp> lsqr{nufftN, pre.get(), iits.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
     ADMM<LSQR<NUFFTOp>> admm{lsqr, &reg, oits.Get(), winSz.Get(), ρ.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      Cx3 const ks = reader.noncartesian(iv);
+      Cx3 const ks = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv);
       Cx3 const dsKS = ks.slice(Sz3{0, s1, 0}, Sz3{channels, dsSamp, dsTraj.nTraces()});
       Cx5 const img = admm.run(dsKS);
       Cx3 const filled = nufft0.forward(img);

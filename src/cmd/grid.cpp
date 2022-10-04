@@ -18,8 +18,8 @@ int main_grid(args::Subparser &parser)
   args::Flag bucket(parser, "", "Use bucket gridder", {"bucket"});
 
   ParseCommand(parser, core.iname);
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   auto const info = traj.info();
 
   auto const basis = ReadBasis(core.basisFile);
@@ -36,7 +36,7 @@ int main_grid(args::Subparser &parser)
       HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
   } else {
-    auto const noncart = reader.noncartesian(0);
+    auto const noncart = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0);
     Index const channels = noncart.dimension(0);
     auto const sdc = SDC::Choose(sdcOpts, traj, channels, core.ktype.Get(), core.osamp.Get());
     auto const gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), channels, basis);

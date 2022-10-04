@@ -28,9 +28,9 @@ int main_espirit(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
-  auto const ks1 = reader.noncartesian(volume.Get());
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
+  auto const ks1 = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, volume.Get());
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto const [dsTraj, ks] = traj.downsample(ks1, res.Get(), lores.Get(), false);

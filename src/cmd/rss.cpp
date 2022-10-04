@@ -19,8 +19,8 @@ int main_rss(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];
@@ -35,7 +35,7 @@ int main_rss(args::Subparser &parser)
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
-    out.chip<4>(iv) = out_cropper.crop4(recon.adjoint(reader.noncartesian(iv)));
+    out.chip<4>(iv) = out_cropper.crop4(recon.adjoint(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv)));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, core.iname.Get(), core.oname.Get(), parser.GetCommand().Name(), core.keepTrajectory, traj);

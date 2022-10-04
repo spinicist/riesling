@@ -16,7 +16,7 @@ int main_sense(args::Subparser &parser)
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string> dset(parser, "D", "Dataset name (image/channels)", {'d', "dset"});
   ParseCommand(parser, iname);
-  HD5::RieslingReader ireader(iname.Get());
+  HD5::Reader ireader(iname.Get());
   if (!sname) {
     Log::Fail(FMT_STRING("No input SENSE map file specified"));
   }
@@ -24,7 +24,7 @@ int main_sense(args::Subparser &parser)
   auto const maps = sreader.readTensor<Cx4>(HD5::Keys::SENSE);
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sense"));
-  writer.writeTrajectory(ireader.trajectory());
+  writer.writeTrajectory(Trajectory(ireader));
 
   auto const start = Log::Now();
   if (fwd) {

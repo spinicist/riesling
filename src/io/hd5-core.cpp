@@ -84,10 +84,7 @@ void CheckInfoType(hid_t handle)
   }
   auto const dtype = H5Dget_type(handle);
   size_t n_members = H5Tget_nmembers(dtype);
-  if (n_members < names.size()) {
-    Log::Fail(FMT_STRING("Header info had {} members, should be {}"), n_members, names.size());
-  }
-  // Re-ordered fields are okay. Missing is not
+  // Re-ordered and extra fields are okay. Missing is not
   for (auto const &check_name : names) {
     bool found = false;
     for (size_t ii = 0; ii < n_members; ii++) {

@@ -13,7 +13,7 @@ using namespace Catch;
 
 void Dummy(std::filesystem::path const &fname)
 {
-  HD5::RieslingReader reader(fname);
+  HD5::Reader reader(fname);
 }
 
 TEST_CASE("IO", "[io]")
@@ -37,17 +37,17 @@ TEST_CASE("IO", "[io]")
     }
     CHECK(std::filesystem::exists(fname));
 
-    REQUIRE_NOTHROW(HD5::RieslingReader(fname));
-    HD5::RieslingReader reader(fname);
+    REQUIRE_NOTHROW(HD5::Reader(fname));
+    HD5::Reader reader(fname);
 
-    auto const check = reader.trajectory();
+    Trajectory check(reader);
     CHECK(traj.nSamples() == samples);
     CHECK(traj.nTraces() == traces);
 
-    CHECK_NOTHROW(reader.noncartesian(0));
-    auto const check0 = reader.noncartesian(0);
+    CHECK_NOTHROW(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0));
+    auto const check0 = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0);
     CHECK(Norm(check0 - refData.chip<3>(0)) == Approx(0.f).margin(1.e-9));
-    auto const check1 = reader.noncartesian(1);
+    auto const check1 = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 1);
     CHECK(Norm(check1 - refData.chip<3>(1)) == Approx(0.f).margin(1.e-9));
     std::filesystem::remove(fname);
   }
@@ -62,8 +62,8 @@ TEST_CASE("IO", "[io]")
       writer.writeTensor(Re4(refData.real()), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
-    HD5::RieslingReader reader(fname);
-    CHECK_THROWS_AS(reader.noncartesian(0), Log::Failure);
+    HD5::Reader reader(fname);
+    CHECK_THROWS_AS(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0), Log::Failure);
     std::filesystem::remove(fname);
   }
 }

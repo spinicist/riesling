@@ -16,8 +16,8 @@ int main_downsamp(args::Subparser &parser)
   args::Flag noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
   ParseCommand(parser, iname);
 
-  HD5::RieslingReader reader(iname.Get());
-  auto traj = reader.trajectory();
+  HD5::Reader reader(iname.Get());
+  Trajectory traj(reader);
   Cx4 ks1 = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
   auto const [dsTraj, ks2] = traj.downsample(ks1, res.Get(), lores.Get(), !noShrink);
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "downsamp"));

@@ -104,7 +104,6 @@ add_executable(riesling
     src/cmd/filter.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
-    src/cmd/hdr.cpp
     src/cmd/lookup.cpp
     src/cmd/lsmr.cpp
     src/cmd/lsqr.cpp
@@ -147,7 +146,7 @@ if(${BUILD_TESTS})
     add_executable(riesling-tests
         test/cropper.cpp
         test/decomp.cpp
-        test/dict.cpp
+        # test/dict.cpp
         test/fft3.cpp
         test/io.cpp
         test/kernel.cpp
@@ -177,7 +176,7 @@ option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 
 if(${BUILD_BENCHMARKS})
     add_executable(riesling-bench
-        bench/dict.cpp
+        # bench/dict.cpp
         bench/dot.cpp
         bench/grid.cpp
         bench/kernel.cpp

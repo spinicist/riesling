@@ -52,6 +52,6 @@ TEST_CASE("Dictionaries", "[dict]")
   {
     rl::BallTreeDictionary ball(basis.dict);
     CHECK((basis.dict.col(0) - ball.project(basis.dict.col(0))).norm() == Approx(0.f).margin(1.e-6f));
-  CHECK((basis.dict.col(nsamp / 2) - ball.project(basis.dict.col(nsamp / 2))).norm() == Approx(0.f).margin(1.e-6f));
+    CHECK((basis.dict.col(nsamp / 2) - ball.project(basis.dict.col(nsamp / 2))).norm() == Approx(0.f).margin(1.e-6f));
   };
 }

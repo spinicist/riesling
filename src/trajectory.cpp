@@ -23,6 +23,15 @@ Trajectory::Trajectory(Info const &info, Re3 const &points, I1 const &fr)
   init();
 }
 
+Trajectory::Trajectory(HD5::Reader const &reader)
+  : info_{reader.readInfo()}
+  , points_{reader.readTensor<Re3>(HD5::Keys::Trajectory)}
+{
+  if (reader.exists(HD5::Keys::Frames)) {
+    frames_ = reader.readTensor<I1>(HD5::Keys::Frames);
+  }
+}
+
 void Trajectory::init()
 {
   if (frames_.size() && nTraces() != frames_.dimension(0)) {
@@ -64,7 +73,8 @@ Re3 const &Trajectory::points() const
   return points_;
 }
 
-Index Trajectory::frame(Index const i) const {
+Index Trajectory::frame(Index const i) const
+{
   if (frames_.size()) {
     return frames_(i);
   } else {
@@ -83,7 +93,8 @@ Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
   return p;
 }
 
-auto Trajectory::downsample(float const res, Index const lores, bool const shrink) const -> std::tuple<Trajectory, Index, Index>
+auto Trajectory::downsample(float const res, Index const lores, bool const shrink) const
+  -> std::tuple<Trajectory, Index, Index>
 {
   float const dsamp = res / info_.voxel_size.minCoeff();
   if (dsamp < 1.f) {

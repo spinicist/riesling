@@ -24,7 +24,7 @@ Cx4 SelfCalibration(
 Cx4 Interp(std::string const &calFile, Sz3 const dims); //! Interpolate with FFT
 
 //! Convenience function called from recon commands to get SENSE maps
-Cx4 Choose(Opts &opts, Trajectory const &t, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::RieslingReader &reader);
+Cx4 Choose(Opts &opts, Trajectory const &t, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::Reader &reader);
 
 } // namespace SENSE
 } // namespace rl

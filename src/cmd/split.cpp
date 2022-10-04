@@ -24,8 +24,8 @@ int main_split(args::Subparser &parser)
 
   ParseCommand(parser, iname);
 
-  HD5::RieslingReader reader(iname.Get());
-  auto traj = reader.trajectory();
+  HD5::Reader reader(iname.Get());
+  Trajectory traj(reader);
   Cx4 ks = reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
   Index const channels = ks.dimension(0);
   Index volumes = ks.dimension(3);

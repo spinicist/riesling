@@ -28,8 +28,8 @@ int main_lsqr(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];
@@ -51,7 +51,7 @@ int main_lsqr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr.run(reader.noncartesian(iv), λ.Get());
+    vol = lsqr.run(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv), λ.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

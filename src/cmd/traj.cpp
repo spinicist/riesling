@@ -21,8 +21,8 @@ int main_traj(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
-  auto const traj = reader.trajectory();
+  HD5::Reader reader(core.iname.Get());
+  Trajectory traj(reader);
   auto const basis = ReadBasis(core.basisFile);
   auto gridder = make_grid<Cx, 3>(traj, core.ktype.Get(), core.osamp.Get(), 1, basis);
   auto const sdc = SDC::Choose(sdcOpts, traj, 1, core.ktype.Get(), core.osamp.Get());

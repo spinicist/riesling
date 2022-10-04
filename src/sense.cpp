@@ -83,7 +83,7 @@ Cx4 Interp(std::string const &file, Sz3 const size2)
 }
 
 Cx4 Choose(
-  Opts &opts, Trajectory const &traj, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::RieslingReader &reader)
+  Opts &opts, Trajectory const &traj, GridBase<Cx, 3> *gridder, float const fov, SDCOp *sdc, HD5::Reader &reader)
 {
   if (gridder->inputDimensions()[0] == 1) { // Only one channel, return all ones
     Sz5 const dims = gridder->inputDimensions();
@@ -102,7 +102,7 @@ Cx4 Choose(
       opts.res.Get(),
       opts.λ.Get(),
       opts.frame.Get(),
-      sdc->adjoint(reader.noncartesian(opts.volume.Get())));
+      sdc->adjoint(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, opts.volume.Get())));
   }
 }
 

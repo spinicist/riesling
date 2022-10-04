@@ -23,13 +23,13 @@ int main_recon(args::Subparser &parser)
 
   ParseCommand(parser, core.iname);
 
-  HD5::RieslingReader reader(core.iname.Get());
+  HD5::Reader reader(core.iname.Get());
   Trajectory traj;
   if (trajName) {
-    HD5::RieslingReader trajReader(trajName.Get());
-    traj = trajReader.trajectory();
+    HD5::Reader trajReader(trajName.Get());
+    traj = Trajectory(trajReader);
   } else {
-    traj = reader.trajectory();
+    traj = Trajectory(reader);
   }
   Info const &info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
@@ -77,7 +77,7 @@ int main_recon(args::Subparser &parser)
     Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
     auto const &all_start = Log::Now();
     for (Index iv = 0; iv < volumes; iv++) {
-      vol = recon.adjoint(reader.noncartesian(iv));
+      vol = recon.adjoint(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv));
       cropped = out_cropper.crop4(vol);
       out.chip<4>(iv) = cropped;
     }

@@ -18,7 +18,7 @@ int main_lookup(args::Subparser &parser)
   if (!iname) {
     throw args::Error("No input file specified");
   }
-  HD5::RieslingReader input(iname.Get());
+  HD5::Reader input(iname.Get());
   Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
 
   if (!dname) {
@@ -71,7 +71,7 @@ int main_lookup(args::Subparser &parser)
 
   auto const fname = OutName(iname.Get(), oname.Get(), "lookup", "h5");
   HD5::Writer writer(fname);
-  writer.writeTrajectory(input.trajectory());
+  writer.writeTrajectory(Trajectory(input));
   writer.writeTensor(out_pars, HD5::Keys::Parameters);
   writer.writeTensor(pd, HD5::Keys::ProtonDensity);
 

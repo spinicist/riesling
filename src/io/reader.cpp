@@ -1,7 +1,7 @@
 #include "io/reader.hpp"
 
+#include "log.hpp"
 #include <filesystem>
-
 #include <hdf5.h>
 
 namespace rl {
@@ -203,65 +203,68 @@ Reader::~Reader()
   Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
 }
 
-auto Reader::list() -> std::vector<std::string>
+auto Reader::list() const -> std::vector<std::string>
 {
   return HD5::List(handle_);
 }
 
-auto Reader::rank(std::string const &label) -> Index
+auto Reader::rank(std::string const &label) const -> Index
 {
   return getRank(handle_, label);
 }
 
 template <int Rank>
-auto Reader::dimensions(std::string const &label) -> Eigen::DSizes<Index, Rank>
+auto Reader::dimensions(std::string const &label) const -> Eigen::DSizes<Index, Rank>
 {
   return get_dims<Rank>(handle_, label);
 }
 
-template auto Reader::dimensions<1>(std::string const &) -> Eigen::DSizes<Index, 1>;
-template auto Reader::dimensions<2>(std::string const &) -> Eigen::DSizes<Index, 2>;
-template auto Reader::dimensions<3>(std::string const &) -> Eigen::DSizes<Index, 3>;
-template auto Reader::dimensions<4>(std::string const &) -> Eigen::DSizes<Index, 4>;
-template auto Reader::dimensions<5>(std::string const &) -> Eigen::DSizes<Index, 5>;
-template auto Reader::dimensions<6>(std::string const &) -> Eigen::DSizes<Index, 6>;
+template auto Reader::dimensions<1>(std::string const &) const -> Eigen::DSizes<Index, 1>;
+template auto Reader::dimensions<2>(std::string const &) const -> Eigen::DSizes<Index, 2>;
+template auto Reader::dimensions<3>(std::string const &) const -> Eigen::DSizes<Index, 3>;
+template auto Reader::dimensions<4>(std::string const &) const -> Eigen::DSizes<Index, 4>;
+template auto Reader::dimensions<5>(std::string const &) const -> Eigen::DSizes<Index, 5>;
+template auto Reader::dimensions<6>(std::string const &) const -> Eigen::DSizes<Index, 6>;
 
 template <typename T>
-T Reader::readTensor(std::string const &label)
+auto Reader::readTensor(std::string const &label) const -> T
 {
   return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
 }
 
-template Re1 Reader::readTensor<Re1>(std::string const &);
-template Re2 Reader::readTensor<Re2>(std::string const &);
-template Cx3 Reader::readTensor<Cx3>(std::string const &);
-template Cx4 Reader::readTensor<Cx4>(std::string const &);
-template Cx5 Reader::readTensor<Cx5>(std::string const &);
-template Cx6 Reader::readTensor<Cx6>(std::string const &);
+template auto Reader::readTensor<I1>(std::string const &) const -> I1;
+template auto Reader::readTensor<Re1>(std::string const &) const -> Re1;
+template auto Reader::readTensor<Re2>(std::string const &) const -> Re2;
+template auto Reader::readTensor<Re3>(std::string const &) const -> Re3;
+template auto Reader::readTensor<Cx3>(std::string const &) const -> Cx3;
+template auto Reader::readTensor<Cx4>(std::string const &) const -> Cx4;
+template auto Reader::readTensor<Cx5>(std::string const &) const -> Cx5;
+template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 
 template <typename T>
-void Reader::readTensor(std::string const &label, T &tensor)
+auto Reader::readSlab(std::string const &label, Index const ind) const -> T
 {
-  HD5::load_tensor(handle_, label, tensor);
+  constexpr Index ND = T::NumDimensions;
+  T result(FirstN<ND>(dimensions<ND + 1>(label)));
+  HD5::load_tensor_slab(handle_, label, ind, result);
+  return result;
 }
 
-template void Reader::readTensor<Cx4>(std::string const &, Cx4 &);
-template void Reader::readTensor<Cx5>(std::string const &, Cx5 &);
-template void Reader::readTensor<Cx6>(std::string const &, Cx6 &);
+template auto Reader::readSlab<Cx3>(std::string const &, Index const) const -> Cx3;
 
 template <typename Derived>
-Derived Reader::readMatrix(std::string const &label)
+auto Reader::readMatrix(std::string const &label) const -> Derived
 {
   return HD5::load_matrix<Derived>(handle_, label);
 }
 
-template Eigen::MatrixXf Reader::readMatrix<Eigen::MatrixXf>(std::string const &);
-template Eigen::MatrixXcf Reader::readMatrix<Eigen::MatrixXcf>(std::string const &);
+template auto Reader::readMatrix<Eigen::MatrixXf>(std::string const &) const -> Eigen::MatrixXf;
+template auto Reader::readMatrix<Eigen::MatrixXcf>(std::string const &) const -> Eigen::MatrixXcf;
 
-template Eigen::ArrayXf Reader::readMatrix<Eigen::ArrayXf>(std::string const &);
-template Eigen::ArrayXXf Reader::readMatrix<Eigen::ArrayXXf>(std::string const &);
+template auto Reader::readMatrix<Eigen::ArrayXf>(std::string const &) const -> Eigen::ArrayXf;
+template auto Reader::readMatrix<Eigen::ArrayXXf>(std::string const &) const -> Eigen::ArrayXXf;
 
-Info Reader::readInfo()
+auto Reader::readInfo() const -> Info
 {
   // First get the Info struct
   hid_t const info_id = InfoType();
@@ -277,31 +280,12 @@ Info Reader::readInfo()
   return info;
 }
 
-void Check(std::string const &name, Index const dval, Index const ival)
+auto Reader::exists(std::string const &label) const -> bool
 {
-  if (dval != ival) {
-    Log::Fail(FMT_STRING("Number of {} in data {} does not match info {}"), name, dval, ival);
-  }
+  return HD5::Exists(handle_, label);
 }
 
-RieslingReader::RieslingReader(std::string const &fname)
-  : Reader(fname)
-  , currentNCVol_{-1}
-{
-  auto const info = readInfo();
-
-  auto points = readTensor<Re3>(Keys::Trajectory);
-  if (HD5::Exists(handle_, Keys::Frames)) {
-    auto frames = readTensor<I1>(Keys::Frames);
-    Log::Print<Log::Level::Debug>(FMT_STRING("Read frames {}"), frames.dimensions());
-    traj_ = Trajectory(info, points, frames);
-  } else {
-    Log::Print<Log::Level::Debug>(FMT_STRING("No frames information in file"));
-    traj_ = Trajectory(info, points);
-  }
-}
-
-std::map<std::string, float> RieslingReader::readMeta() const
+auto Reader::readMeta() const -> std::map<std::string, float>
 {
   auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
@@ -323,26 +307,6 @@ std::map<std::string, float> RieslingReader::readMeta() const
     Log::Fail(FMT_STRING("Could not load meta-data, code: {}"), status);
   }
   return meta;
-}
-
-Trajectory const &RieslingReader::trajectory() const
-{
-  return traj_;
-}
-
-Cx3 const &RieslingReader::noncartesian(Index const index)
-{
-  if (index == currentNCVol_) {
-    Log::Print(FMT_STRING("Using cached non-cartesion volume {}"), index);
-  } else {
-    Log::Print(FMT_STRING("Reading non-cartesian volume {}"), index);
-    if (nc_.size() == 0) {
-      nc_.resize(FirstN<3>(get_dims<4>(handle_, Keys::Noncartesian)));
-    }
-    HD5::load_tensor_slab(handle_, Keys::Noncartesian, index, nc_);
-    currentNCVol_ = index;
-  }
-  return nc_;
 }
 
 } // namespace HD5
