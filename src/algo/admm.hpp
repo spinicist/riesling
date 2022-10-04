@@ -1,9 +1,9 @@
 #pragma once
 
+#include "func/functor.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include "func/functor.hpp"
 
 namespace rl {
 
@@ -33,9 +33,8 @@ struct ADMM
     u.setZero();
     xpu.setZero();
 
-    float const sp = std::sqrt(float(Product(dims)));
-
     Log::Print(FMT_STRING("ADMM ρ {}"), ρ);
+    float const absThresh = abstol * std::sqrt(float(Product(dims)));
     for (Index ii = 0; ii < iterLimit; ii++) {
       x = inner.run(b, x, (z - u));
       xpu.device(dev) = x * x.constant(α) + z * z.constant(1 - α) + u;
@@ -46,13 +45,26 @@ struct ADMM
       float const pNorm = Norm(x - z);
       float const dNorm = Norm(-ρ * (z - zold));
 
-      float const pEps = sp * abstol + reltol * std::max(Norm(x), Norm(z));
-      float const dEps = sp * abstol + reltol * ρ * Norm(u);
+      float const normx = Norm(x);
+      float const normz = Norm(z);
+      float const normu = Norm(u);
+
+      float const pEps = absThresh + reltol * std::max(normx, normz);
+      float const dEps = absThresh + reltol * ρ * normu;
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
-      Log::Print(FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {}"), ii, pNorm, pEps, dNorm, dEps);
+      Log::Print(
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |u| {} |x| {} |z| {}"),
+        ii,
+        pNorm,
+        pEps,
+        dNorm,
+        dEps,
+        normu,
+        normx,
+        normz);
       if ((pNorm < pEps) && (dNorm < dEps)) {
         break;
       }

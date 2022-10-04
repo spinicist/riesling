@@ -30,7 +30,7 @@ struct Mapping
     Index const kW,
     float const osamp,
     Index const bucketSize = 32,
-    Index const splitSize = 8192,
+    Index const splitSize = 16384,
     Index const read0 = 0);
 
   Sz2 noncartDims;

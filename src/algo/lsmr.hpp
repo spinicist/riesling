@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common.hpp"
-#include "log.hpp"
 #include "func/functor.hpp"
+#include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
@@ -30,7 +30,7 @@ struct LSMR
   float const λ = 0.f;
   bool const debug = false;
 
-  Input run(typename Op::Output const &b, Input const &x0 = Input(), Input const &xr = Input()) const
+  Input run(typename Op::Output const &b, Input const &x0 = Input(), Input const &cc = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
@@ -55,9 +55,9 @@ struct LSMR
     float β;
     if (λ > 0.f) {
       ur.resize(inDims);
-      if (xr.size()) {
-        CheckDimsEqual(xr.dimensions(), inDims);
-        ur.device(dev) = xr * xr.constant(sqrt(λ)) - x * x.constant(sqrt(λ));
+      if (cc.size()) {
+        CheckDimsEqual(cc.dimensions(), inDims);
+        ur.device(dev) = (cc - x) * x.constant(sqrt(λ));
       } else {
         ur.device(dev) = -x * x.constant(sqrt(λ));
       }
@@ -93,6 +93,7 @@ struct LSMR
     float τ̃old = 0;
     float θ̃ = 0;
     float ζ = 0;
+    float d = 0;
 
     // Initialize variables for estimation of ||A|| and cond(A)
     float normA2 = α * α;
@@ -128,10 +129,10 @@ struct LSMR
       α = std::sqrt(CheckedDot(v, v));
       v.device(dev) = v / v.constant(α);
 
-      // Construct rotation
+      auto [ĉ, ŝ, α̂] = SymOrtho(α̅, λ);
       float ρold = ρ;
       float c, s;
-      std::tie(c, s, ρ) = SymOrtho(α̅, β);
+      std::tie(c, s, ρ) = SymOrtho(α̂, β);
       float θnew = s * α;
       α̅ = c * α;
 
@@ -144,7 +145,7 @@ struct LSMR
       ζ = c̅ * ζ̅;
       ζ̅ = -s̅ * ζ̅;
 
-      // Update h, h̅h, x.
+      // Update h, h̅, x.
       h̅.device(dev) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
       x.device(dev) = x + (ζ / (ρ * ρ̅)) * h̅;
       h.device(dev) = v - (θnew / ρ) * h;
@@ -153,13 +154,13 @@ struct LSMR
         Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
         Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
       }
-      // Estimate of ||r||.
-      // Apply rotation P{k-1}.
-      float const β̂ = c * β̈;
-      β̈ = -s * β̈;
 
-      // Apply rotation Qtilde_{k-1}.
-      // β̇ = β̇_{k-1} here.
+      // Estimate of |r|.
+      float const β́ = ĉ * β̈;
+      float const β̆ = -ŝ * β̈;
+
+      float const β̂ = c * β́;
+      β̈ = -s * β́;
 
       float const θ̃old = θ̃;
       auto [c̃old, s̃old, ρ̃old] = SymOrtho(ρ̇old, θ̅);
@@ -167,13 +168,10 @@ struct LSMR
       ρ̇old = c̃old * ρ̅;
       β̇ = -s̃old * β̇ + c̃old * β̂;
 
-      // β̇   = β̇_k here.
-      // ρ̇old = ρ̇_k  here.
-
       τ̃old = (ζold - θ̃old * τ̃old) / ρ̃old;
       float const τ̇ = (ζ - θ̃ * τ̃old) / ρ̇old;
-      float const normr = std::sqrt(pow(β̇ - τ̇, 2.f) + β̈ * β̈);
-
+      d = d + β̆ * β̆;
+      float const normr = std::sqrt(d + std::pow(β̇ - τ̇, 2) + β̈ * β̈);
       // Estimate ||A||.
       normA2 += β * β;
       float const normA = std::sqrt(normA2);
@@ -191,7 +189,7 @@ struct LSMR
       float const normx = Norm(x);
 
       Log::Print(
-        FMT_STRING("LSMR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
+        FMT_STRING("LSMR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |A'r| {:5.3E} |A| {:5.3E} cond(A) "
                    "{:5.3E} |x| {:5.3E}"),
         ii,
         α,

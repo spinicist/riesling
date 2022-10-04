@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common.hpp"
-#include "log.hpp"
 #include "func/functor.hpp"
+#include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
@@ -87,8 +87,10 @@ struct LSQR
 
     float ρ̅ = α;
     float ɸ̅ = β;
-    float ddnorm = 0;
-    float normA = 0;
+    float xxnorm = 0.f, ddnorm = 0.f, res2 = 0.f, z = 0.f;
+    float normA = 0.f;
+    float cs2 = -1.f;
+    float sn2 = 0.f;
 
     if (debug) {
       Log::Tensor(x, "lsqr-x-init");
@@ -121,13 +123,18 @@ struct LSQR
       Nv.device(dev) = Nv / Nv.constant(α);
       v.device(dev) = v / v.constant(α);
 
-      float const ρ = std::sqrt(ρ̅ * ρ̅ + β * β);
-      float const cs = ρ̅ / ρ;
-      float const sn = β / ρ;
+      // Deal with regularization
+      auto const [cs1, sn1, ρ̅1] = SymOrtho(ρ̅, λ);
+      float const ψ = sn1 * ɸ̅;
+      ɸ̅ = cs1 * ɸ̅;
+
+      auto const [cs, sn, ρ] = SymOrtho(ρ̅1, β);
       float const θ = sn * α;
       ρ̅ = -cs * α;
       float const ɸ = cs * ɸ̅;
       ɸ̅ = sn * ɸ̅;
+      float const τ = sn * ɸ;
+
       ddnorm = ddnorm + Norm2(w) / (ρ * ρ);
       x.device(dev) = x + w * w.constant(ɸ / ρ);
       w.device(dev) = v - w * w.constant(θ / ρ);
@@ -138,14 +145,25 @@ struct LSQR
       }
 
       // Estimate norms
-      float const normx = Norm(x);
-      float const normr = ɸ̅;
-      float const normAr = ɸ̅ * α * std::abs(cs);
-      normA = std::sqrt(normA * normA + α * α + β * β);
+      float const δ = sn2 * ρ;
+      float const ɣbar = -cs2 * ρ;
+      float const rhs = ɸ - δ * z;
+      float const zbar = rhs / ɣbar;
+      float const normx = std::sqrt(xxnorm + zbar*zbar);
+      float ɣ;
+      std::tie(cs2, sn2, ɣ) = SymOrtho(ɣbar, θ);
+      z = rhs / ɣ;
+      xxnorm += z * z;
+
+      normA = std::sqrt(normA*normA + α*α + β*β + λ*λ);
       float const condA = normA * std::sqrt(ddnorm);
+      float const res1 = ɸ̅*ɸ̅;
+      res2 = res2 + ψ*ψ;
+      float const normr = std::sqrt(res1 + res2);
+      float const normAr = α * std::abs(τ);
 
       Log::Print(
-        FMT_STRING("LSQR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |Ar| {:5.3E} |A| {:5.3E} cond(A) "
+        FMT_STRING("LSQR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |A'r| {:5.3E} |A| {:5.3E} cond(A) "
                    "{:5.3E} |x| {:5.3E}"),
         ii,
         α,

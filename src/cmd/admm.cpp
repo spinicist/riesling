@@ -68,7 +68,7 @@ int main_admm(args::Subparser &parser)
     HD5::Reader dict(core.basisFile.Get());
     reg = std::make_unique<BallTreeDictionary>(dict.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary));
   } else {
-    reg = std::make_unique<LLR>(λ.Get(), patchSize.Get(), true);
+    reg = std::make_unique<LLR>(λ.Get() / ρ.Get(), patchSize.Get(), true);
   };
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, extra.out_fov.Get());
