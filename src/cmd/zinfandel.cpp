@@ -79,7 +79,7 @@ int main_zinfandel(args::Subparser &parser)
   }
 
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "zinfandel", "h5"));
-  writer.writeTrajectory(Trajectory(out_info, traj.points()));
+  Trajectory(out_info, traj.points()).write(writer);
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(rad_ks, HD5::Keys::Noncartesian);
   Log::Print(FMT_STRING("Finished"));

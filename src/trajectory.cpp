@@ -44,6 +44,15 @@ void Trajectory::init()
   Log::Print<Log::Level::Debug>(FMT_STRING("Trajectory size {},{},{}"), nSamples(), nTraces(), nFrames());
 }
 
+void Trajectory::write(HD5::Writer &writer) const
+{
+  writer.writeInfo(info_);
+  writer.writeTensor(points_, HD5::Keys::Trajectory);
+  if (frames_.size()) {
+    writer.writeTensor(frames_, HD5::Keys::Frames);
+  }
+}
+
 auto Trajectory::nSamples() const -> Index
 {
   return points_.dimension(1);

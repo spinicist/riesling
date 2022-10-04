@@ -2,6 +2,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "traj_spirals.h"
+#include "trajectory.hpp"
 
 #include <filesystem>
 
@@ -32,7 +33,7 @@ TEST_CASE("IO", "[io]")
     std::filesystem::path const fname("test.h5");
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
-      CHECK_NOTHROW(writer.writeTrajectory(traj));
+      CHECK_NOTHROW(traj.write(writer));
       CHECK_NOTHROW(writer.writeTensor(refData, HD5::Keys::Noncartesian));
     }
     CHECK(std::filesystem::exists(fname));
@@ -58,7 +59,7 @@ TEST_CASE("IO", "[io]")
 
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
-      writer.writeTrajectory(traj);
+      traj.write(writer);
       writer.writeTensor(Re4(refData.real()), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));

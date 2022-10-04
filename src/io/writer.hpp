@@ -1,7 +1,7 @@
 #pragma once
 
+#include "info.hpp"
 #include "io/hd5-core.hpp"
-#include "trajectory.hpp"
 #include <map>
 #include <string>
 
@@ -14,7 +14,6 @@ struct Writer
   ~Writer();
   void writeInfo(Info const &info);
   void writeMeta(std::map<std::string, float> const &meta);
-  void writeTrajectory(Trajectory const &traj);
 
   template <typename Scalar, int ND>
   void writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label);

@@ -33,7 +33,7 @@ int main_nufft(args::Subparser &parser)
   auto const info = traj.info();
   auto const basis = ReadBasis(core.basisFile);
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "nufft", "h5"));
-  writer.writeTrajectory(traj);
+  traj.write(writer);
 
   auto const start = Log::Now();
   if (fwd) {

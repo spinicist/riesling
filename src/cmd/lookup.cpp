@@ -71,7 +71,7 @@ int main_lookup(args::Subparser &parser)
 
   auto const fname = OutName(iname.Get(), oname.Get(), "lookup", "h5");
   HD5::Writer writer(fname);
-  writer.writeTrajectory(Trajectory(input));
+  Trajectory(input).write(writer);
   writer.writeTensor(out_pars, HD5::Keys::Parameters);
   writer.writeTensor(pd, HD5::Keys::ProtonDensity);
 

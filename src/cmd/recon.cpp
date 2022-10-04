@@ -60,7 +60,7 @@ int main_recon(args::Subparser &parser)
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
     auto const fname = OutName(core.iname.Get(), core.oname.Get(), "recon", "h5");
     HD5::Writer writer(fname);
-    writer.writeTrajectory(traj);
+    traj.write(writer);
     writer.writeTensor(kspace, HD5::Keys::Noncartesian);
   } else {
     Index const channels = reader.dimensions<4>(HD5::Keys::Noncartesian)[0];

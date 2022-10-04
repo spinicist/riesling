@@ -24,7 +24,7 @@ int main_sense(args::Subparser &parser)
   auto const maps = sreader.readTensor<Cx4>(HD5::Keys::SENSE);
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sense"));
-  writer.writeTrajectory(Trajectory(ireader));
+  Trajectory(ireader).write(writer);
 
   auto const start = Log::Now();
   if (fwd) {

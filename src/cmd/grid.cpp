@@ -25,7 +25,7 @@ int main_grid(args::Subparser &parser)
   auto const basis = ReadBasis(core.basisFile);
 
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "grid", "h5"));
-  writer.writeTrajectory(traj);
+  traj.write(writer);
   auto const start = Log::Now();
   if (fwd) {
     auto const cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);

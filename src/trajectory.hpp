@@ -1,9 +1,10 @@
 #pragma once
 
 #include "info.hpp"
+#include "io/reader.hpp"
+#include "io/writer.hpp"
 #include "log.hpp"
 #include "types.hpp"
-#include "io/reader.hpp"
 
 namespace rl {
 
@@ -12,7 +13,9 @@ struct Trajectory
   Trajectory();
   Trajectory(Info const &info, Re3 const &points);
   Trajectory(Info const &info, Re3 const &points, I1 const &frames);
+
   Trajectory(HD5::Reader const &reader);
+  void write(HD5::Writer &writer) const;
 
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
@@ -23,8 +26,10 @@ struct Trajectory
   auto frame(Index const trace) const -> Index;
   auto frames() const -> I1 const &;
   auto downsample(float const res, Index const lores, bool const shrink) const -> std::tuple<Trajectory, Index, Index>;
-  auto downsample(Cx3 const &ks, float const res, Index const lores, bool const shrink) const -> std::tuple<Trajectory, Cx3>;
-  auto downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink) const -> std::tuple<Trajectory, Cx4>;
+  auto downsample(Cx3 const &ks, float const res, Index const lores, bool const shrink) const
+    -> std::tuple<Trajectory, Cx3>;
+  auto downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink) const
+    -> std::tuple<Trajectory, Cx4>;
 
 private:
   void init();

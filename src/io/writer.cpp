@@ -1,6 +1,7 @@
 #include "io/writer.hpp"
-#include "io/hd5-core.hpp"
 
+#include "io/hd5-core.hpp"
+#include "log.hpp"
 #include <hdf5.h>
 
 namespace rl {
@@ -147,15 +148,6 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   }
 }
 
-void Writer::writeTrajectory(Trajectory const &t)
-{
-  writeInfo(t.info());
-  HD5::store_tensor(handle_, Keys::Trajectory, t.points());
-  if (t.frames().size()) {
-    HD5::store_tensor(handle_, Keys::Frames, t.frames());
-  }
-}
-
 bool Writer::exists(std::string const &name) const
 {
   return HD5::Exists(handle_, name);
@@ -167,6 +159,7 @@ void Writer::writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &
   HD5::store_tensor(handle_, label, t);
 }
 
+template void Writer::writeTensor<Index, 1>(I1 const &, std::string const &);
 template void Writer::writeTensor<float, 2>(Re2 const &, std::string const &);
 template void Writer::writeTensor<float, 3>(Re3 const &, std::string const &);
 template void Writer::writeTensor<float, 4>(Re4 const &, std::string const &);

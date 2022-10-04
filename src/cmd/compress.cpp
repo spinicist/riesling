@@ -74,7 +74,7 @@ int main_compress(args::Subparser &parser)
   compressor.compress(all_ks, out_ks);
 
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "compressed"));
-  writer.writeTrajectory(Trajectory(reader));
+  Trajectory(reader).write(writer);
   writer.writeTensor(out_ks, HD5::Keys::Noncartesian);
 
   if (save) {

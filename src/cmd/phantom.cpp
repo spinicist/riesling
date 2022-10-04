@@ -143,7 +143,7 @@ int main_phantom(args::Subparser &parser)
   std::vector<float> const angles{0, 0, 3 * M_PI / 5, 2 * M_PI / 5, 0, 0, 0, M_PI / 2, M_PI / 2, 0};
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
-  writer.writeTrajectory(traj);
+  traj.write(writer);
 
   if (basisFile) {
       HD5::Reader basisReader(basisFile.Get());

@@ -169,7 +169,7 @@ void WriteOutput(
   HD5::Writer writer(fname);
   writer.writeTensor(img, HD5::Keys::Image);
   if (keepTrajectory) {
-    writer.writeTrajectory(traj);
+    traj.write(writer);
   } else {
     writer.writeInfo(traj.info());
   }

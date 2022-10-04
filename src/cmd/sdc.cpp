@@ -30,7 +30,7 @@ int main_sdc(args::Subparser &parser)
     Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdcType.Get());
   }
   HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "sdc", "h5"));
-  writer.writeTrajectory(traj);
+  traj.write(writer);
   writer.writeTensor(dc, HD5::Keys::SDC);
   return EXIT_SUCCESS;
 }

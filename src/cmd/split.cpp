@@ -69,17 +69,15 @@ int main_split(args::Subparser &parser)
     Info lo_info = traj.info();
     Trajectory lo_traj(
       lo_info, traj.points().slice(Sz3{0, 0, atEnd ? tracesHi : 0}, Sz3{3, traj.nSamples(), tracesLo}), lo_frames);
-    Cx4 lo_ks = ks.slice(
-      Sz4{0, 0, atEnd ? tracesHi : 0, 0}, Sz4{channels, traj.nSamples(), tracesLo, volumes});
+    Cx4 lo_ks = ks.slice(Sz4{0, 0, atEnd ? tracesHi : 0, 0}, Sz4{channels, traj.nSamples(), tracesLo, volumes});
 
     I1 const hi_frames(traj.frames().slice(Sz1{atEnd ? 0 : tracesLo}, Sz1{tracesHi}));
     traj = Trajectory(
       info, Re3(traj.points().slice(Sz3{0, 0, atEnd ? 0 : tracesLo}, Sz3{3, traj.nSamples(), tracesHi})), hi_frames);
-    ks =
-      Cx4(ks.slice(Sz4{0, 0, atEnd ? 0 : tracesLo, 0}, Sz4{channels, traj.nSamples(), tracesHi, volumes}));
+    ks = Cx4(ks.slice(Sz4{0, 0, atEnd ? 0 : tracesLo, 0}, Sz4{channels, traj.nSamples(), tracesHi, volumes}));
 
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
-    writer.writeTrajectory(lo_traj);
+    lo_traj.write(writer);
     writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
   }
 
@@ -136,17 +134,16 @@ int main_split(args::Subparser &parser)
       int const idx0 = spoke_step * int_idx;
       int const n = ns + (int_idx == (num_int - 1) ? rem_traces : 0);
       HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format(FMT_STRING("hires-{:02d}"), int_idx)));
-      writer.writeTrajectory(Trajectory(
+      Trajectory(
         info,
         traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, traj.nSamples(), n}),
-        traj.frames().slice(Sz1{idx0}, Sz1{n})));
+        traj.frames().slice(Sz1{idx0}, Sz1{n})).write(writer);
       writer.writeTensor(
-        Cx4(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{channels, traj.nSamples(), n, volumes})),
-        HD5::Keys::Noncartesian);
+        Cx4(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{channels, traj.nSamples(), n, volumes})), HD5::Keys::Noncartesian);
     }
   } else {
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "hires"));
-    writer.writeTrajectory(traj);
+    traj.write(writer);
     writer.writeTensor(ks, HD5::Keys::Noncartesian);
   }
 
