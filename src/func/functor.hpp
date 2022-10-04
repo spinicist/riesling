@@ -11,3 +11,10 @@ struct Functor
   virtual auto operator()(T const &in) const -> T = 0;
   virtual ~Functor() {};
 };
+
+template <typename T>
+struct Prox
+{
+  virtual auto operator()(float const λ, T const &in) const -> T = 0;
+  virtual ~Prox() {};
+};

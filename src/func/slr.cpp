@@ -62,15 +62,14 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
 }
 
-SLR::SLR(FFTOp<5> const &f, Index const k, float const t)
-  : Functor<Cx5>()
+SLR::SLR(FFTOp<5> const &f, Index const k)
+  : Prox<Cx5>()
   , fft{f}
   , kSz{k}
-  , thresh{t}
 {
 }
 
-auto SLR::operator()(Cx5 const &channels) const -> Cx5
+auto SLR::operator()(float const thresh, Cx5 const &channels) const -> Cx5
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {

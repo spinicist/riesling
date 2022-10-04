@@ -14,8 +14,9 @@ struct ADMM
   using Output = typename Inner::Output;
 
   Inner &inner;
-  Functor<Input> *reg;
+  Prox<Input> *prox;
   Index iterLimit;
+  float λ = 0.;  // Proximal operator parameter
   float ρ = 0.1; // Langrangian
   float α = 1.f; // Over-relaxation
   float abstol = 1.e-3f;
@@ -27,23 +28,27 @@ struct ADMM
     // Allocate all memory
     auto const dims = inner.op.inputDimensions();
     Input u(dims), x(dims), z(dims), zold(dims), xpu(dims);
-    x.setZero();
-    z.setZero();
-    zold.setZero();
-    u.setZero();
-    xpu.setZero();
 
-    Log::Print(FMT_STRING("ADMM ρ {}"), ρ);
-    float const absThresh = abstol * std::sqrt(float(Product(dims)));
+    // Get initial values
+    x = inner.run(b);
+    z = (*prox)(λ / ρ, x);
+    u.device(dev) = x - z;
+
+    Log::Tensor(x, fmt::format("admm-x-{:02d}", 0));
+    Log::Tensor(z, fmt::format("admm-z-{:02d}", 0));
+    Log::Tensor(u, fmt::format("admm-u-{:02d}", 0));
+
+    float const absThresh = abstol * Norm(x);
+    Log::Print(FMT_STRING("ADMM ρ {} Abs Thresh {}"), ρ, absThresh);
     for (Index ii = 0; ii < iterLimit; ii++) {
-      x = inner.run(b, x, (z - u));
+      x = inner.run(b, ρ, x, (z - u));
       xpu.device(dev) = x * x.constant(α) + z * z.constant(1 - α) + u;
       zold = z;
-      z = (*reg)(xpu);
+      z = (*prox)(λ / ρ, xpu);
       u.device(dev) = xpu - z;
 
       float const pNorm = Norm(x - z);
-      float const dNorm = Norm(-ρ * (z - zold));
+      float const dNorm = ρ * Norm(z - zold);
 
       float const normx = Norm(x);
       float const normz = Norm(z);
@@ -52,19 +57,19 @@ struct ADMM
       float const pEps = absThresh + reltol * std::max(normx, normz);
       float const dEps = absThresh + reltol * ρ * normu;
 
-      Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
-      Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
-      Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
+      Log::Tensor(x, fmt::format("admm-x-{:02d}", ii + 1));
+      Log::Tensor(z, fmt::format("admm-z-{:02d}", ii + 1));
+      Log::Tensor(u, fmt::format("admm-u-{:02d}", ii + 1));
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |u| {} |x| {} |z| {}"),
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |z| {} |u| {}"),
         ii,
         pNorm,
         pEps,
         dNorm,
         dEps,
-        normu,
         normx,
-        normz);
+        normz,
+        normu);
       if ((pNorm < pEps) && (dNorm < dEps)) {
         break;
       }

@@ -41,12 +41,11 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
-  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"patch-size"}, 4);
-  args::Flag dictReg(parser, "D", "Use dictionary projection as regularizer", {"dict"});
 
-  args::ValueFlag<float> wavelets(parser, "W", "Wavelet denoising threshold", {"wavelets"});
+  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"patch-size"}, 4);
+
+  args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
-  args::ValueFlag<Index> levels(parser, "L", "Wavelet levels", {"levels", 'l'}, 4);
 
   ParseCommand(parser, core.iname);
 
@@ -61,14 +60,11 @@ int main_admm(args::Subparser &parser)
   Cx4 senseMaps = SENSE::Choose(senseOpts, traj, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, sdc.get());
   std::unique_ptr<Functor<Cx3>> M = precond ? std::make_unique<KSpaceSingle>(traj) : nullptr;
-  std::unique_ptr<Functor<Cx4>> reg;
+  std::unique_ptr<Prox<Cx4>> reg;
   if (wavelets) {
-    reg = std::make_unique<ThresholdWavelets>(recon.inputDimensions(), width.Get(), levels.Get(), wavelets.Get());
-  } else if (dictReg) {
-    HD5::Reader dict(core.basisFile.Get());
-    reg = std::make_unique<BallTreeDictionary>(dict.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary));
+    reg = std::make_unique<ThresholdWavelets>(recon.inputDimensions(), width.Get(), wavelets.Get());
   } else {
-    reg = std::make_unique<LLR>(λ.Get() / ρ.Get(), patchSize.Get(), true);
+    reg = std::make_unique<LLR>(patchSize.Get(), true);
   };
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, extra.out_fov.Get());
@@ -87,14 +83,14 @@ int main_admm(args::Subparser &parser)
       out.chip<4>(iv) = out_cropper.crop4(admm.run(recon.adjoint(reader.noncartesian(iv))));
     }
   } else if (use_lsmr) {
-    LSMR<ReconOp> lsmr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
-    ADMM<LSMR<ReconOp>> admm{lsmr, reg.get(), outer_its.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
+    LSMR<ReconOp> lsmr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+    ADMM<LSMR<ReconOp>> admm{lsmr, reg.get(), outer_its.Get(), λ.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
     }
   } else {
-    LSQR<ReconOp> lsqr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), ρ.Get(), false};
-    ADMM<LSQR<ReconOp>> admm{lsqr, reg.get(), outer_its.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
+    LSQR<ReconOp> lsqr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+    ADMM<LSQR<ReconOp>> admm{lsqr, reg.get(), outer_its.Get(), λ.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.noncartesian(iv)));
     }

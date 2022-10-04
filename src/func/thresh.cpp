@@ -2,13 +2,12 @@
 
 namespace rl {
 
-SoftThreshold::SoftThreshold(float l)
-  : Functor<Cx4>()
-  , λ{l}
+SoftThreshold::SoftThreshold()
+  : Prox<Cx4>()
 {
 }
 
-auto SoftThreshold::operator()(Cx4 const &x) const -> Cx4
+auto SoftThreshold::operator()(float const λ, Cx4 const &x) const -> Cx4
 {
   Cx4 s = x * (x.abs() - λ) / x.abs();
   s = (s.abs() > λ).select(s, s.constant(0.f));

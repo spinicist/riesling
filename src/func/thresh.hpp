@@ -4,10 +4,9 @@
 
 namespace rl {
 
-struct SoftThreshold final : Functor<Cx4> {
-    float λ;
-    SoftThreshold(float);
-    auto operator()(Cx4 const &) const -> Cx4;
+struct SoftThreshold final : Prox<Cx4> {
+    SoftThreshold();
+    auto operator()(float const λ, Cx4 const &) const -> Cx4;
 };
 
 } // namespace rl

@@ -23,14 +23,14 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<Index> gSrc(parser, "S", "GRAPPA sources (default 4)", {"grappa-src"}, 4);
   args::ValueFlag<Index> gtraces(parser, "S", "GRAPPA calibration traces (default 4)", {"traces"}, 4);
   args::ValueFlag<Index> gRead(parser, "R", "GRAPPA calibration read samples (default 8)", {"read"}, 8);
-  args::ValueFlag<float> gλ(parser, "L", "Tikhonov regularization (default 0)", {"lamda"}, 0.f);
+  args::ValueFlag<float> λ(parser, "L", "Tikhonov regularization (default 0)", {"lamda"}, 0.f);
 
   // SLR options
   args::ValueFlag<float> res(parser, "R", "Resolution for SLR (default 20mm)", {'r', "res"}, 20.f);
 
   args::ValueFlag<Index> iits(parser, "ITS", "Max inner iterations (4)", {"max-its"}, 4);
   args::ValueFlag<Index> oits(parser, "ITS", "Max outer iterations (8)", {"max-outer-its"}, 16);
-  args::ValueFlag<float> rho(parser, "R", "ADMM rho (default 0.1)", {"rho"}, 1.0f);
+  args::ValueFlag<float> ρ(parser, "R", "ADMM ρ (default 0.1)", {"ρ"}, 1.0f);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-4f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-4f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
@@ -50,7 +50,7 @@ int main_zinfandel(args::Subparser &parser)
   if (grappa) {
     for (Index iv = 0; iv < volumes; iv++) {
       Cx3 vol = reader.noncartesian(iv);
-      zinGRAPPA(gap.Get(), gSrc.Get(), gtraces.Get(), gRead.Get(), gλ.Get(), traj.points(), vol);
+      zinGRAPPA(gap.Get(), gSrc.Get(), gtraces.Get(), gRead.Get(), λ.Get(), traj.points(), vol);
       rad_ks.chip<3>(iv) = vol;
     }
   } else {
@@ -63,11 +63,11 @@ int main_zinfandel(args::Subparser &parser)
     NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
     NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
     auto const pre = std::make_unique<KSpaceSingle>(dsTraj);
-    SLR reg{nufftN.fft(), kSz.Get(), winSz.Get()};
+    SLR reg{nufftN.fft(), kSz.Get()};
     Sz3 const st{0, 0, 0};
     Sz3 const sz{channels, gap.Get(), dsTraj.nTraces()};
-    LSQR<NUFFTOp> lsqr{nufftN, pre.get(), iits.Get(), atol.Get(), btol.Get(), ctol.Get(), rho.Get(), false};
-    ADMM<LSQR<NUFFTOp>> admm{lsqr, &reg, oits.Get(), rho.Get()};
+    LSQR<NUFFTOp> lsqr{nufftN, pre.get(), iits.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+    ADMM<LSQR<NUFFTOp>> admm{lsqr, &reg, oits.Get(), winSz.Get(), ρ.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       Cx3 const ks = reader.noncartesian(iv);
       Cx3 const dsKS = ks.slice(Sz3{0, s1, 0}, Sz3{channels, dsSamp, dsTraj.nTraces()});

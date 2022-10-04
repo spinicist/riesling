@@ -24,7 +24,7 @@ int main_lsmr(args::Subparser &parser)
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
-  args::ValueFlag<float> damp(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f);
+  args::ValueFlag<float> λ(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f);
 
   ParseCommand(parser, core.iname);
 
@@ -39,7 +39,7 @@ int main_lsmr(args::Subparser &parser)
   Cx4 senseMaps = SENSE::Choose(senseOpts, traj, gridder.get(), extra.iter_fov.Get(), sdc.get(), reader);
   ReconOp recon(gridder.get(), senseMaps, nullptr);
   std::unique_ptr<Functor<Cx3>> M = pre ? std::make_unique<KSpaceSingle>(traj) : nullptr;
-  LSMR<ReconOp> lsmr{recon, M.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), damp.Get(), true};
+  LSMR<ReconOp> lsmr{recon, M.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, extra.out_fov.Get());
   Cx4 vol(sz);
@@ -50,7 +50,7 @@ int main_lsmr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsmr.run(reader.noncartesian(iv));
+    vol = lsmr.run(reader.noncartesian(iv), λ.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

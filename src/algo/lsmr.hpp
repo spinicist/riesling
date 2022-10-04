@@ -27,10 +27,9 @@ struct LSMR
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
-  float const λ = 0.f;
   bool const debug = false;
 
-  Input run(typename Op::Output const &b, Input const &x0 = Input(), Input const &cc = Input()) const
+  Input run(typename Op::Output const &b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory

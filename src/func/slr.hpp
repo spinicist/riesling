@@ -5,13 +5,12 @@
 
 namespace rl {
 
-struct SLR final : Functor<Cx5>
+struct SLR final : Prox<Cx5>
 {
-  SLR(FFTOp<5> const &fft, Index const kSz, float const thresh);
+  SLR(FFTOp<5> const &fft, Index const kSz);
   FFTOp<5> const &fft;
   Index kSz;
-  float thresh;
 
-  auto operator()(Cx5 const &) const -> Cx5;
+  auto operator()(float const thresh, Cx5 const &) const -> Cx5;
 };
 } // namespace rl

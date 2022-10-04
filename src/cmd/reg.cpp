@@ -23,7 +23,7 @@ int main_reg(args::Subparser &parser)
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
   args::ValueFlag<std::string> brute(parser, "D", "Brute-force dictionary projection", {"brute"});
   args::ValueFlag<std::string> ball(parser, "D", "Ball-tree dictionary projection", {"ball"});
-  args::ValueFlag<float> wavelets(parser, "W", "Wavelet denoising threshold", {"wavelets"});
+  args::Flag wavelets(parser, "W", "Wavelet denoising", {"wavelets"});
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
   args::ValueFlag<Index> levels(parser, "L", "Wavelet levels", {"levels", 'l'}, 4);
   ParseCommand(parser);
@@ -37,9 +37,9 @@ int main_reg(args::Subparser &parser)
 
   if (wavelets) {
     Sz4 dims = FirstN<4>(images.dimensions());
-    ThresholdWavelets tw(dims, width.Get(), levels.Get(), wavelets.Get());
+    ThresholdWavelets tw(dims, width.Get(), levels.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = tw(images.chip<4>(iv));
+      output.chip<4>(iv) = tw(λ.Get(), images.chip<4>(iv));
     }
   } else if (brute) {
     HD5::Reader dictReader(brute.Get());
@@ -54,9 +54,9 @@ int main_reg(args::Subparser &parser)
       output.chip<4>(iv) = dict(images.chip<4>(iv));
     }
   } else if (llr || llrPatch) {
-    LLR reg{λ.Get(), patchSize.Get(), !llrPatch};
+    LLR reg{patchSize.Get(), !llrPatch};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = reg(images.chip<4>(iv));
+      output.chip<4>(iv) = reg(λ.Get(), images.chip<4>(iv));
     }
   } else {
     throw args::Error("Must specify at least one regularization method");

@@ -37,51 +37,63 @@ struct AugmentedADMM
   using Input = typename Inner::Input;
 
   Inner &inner;
-  Functor<Input> *reg;
+  Prox<Input> *reg;
   Index iterLimit;
-  float rho = 0.1;
+  float λ = 0.;  // Proximal operator parameter
+  float ρ = 0.1; // Langrangian
   float abstol = 1.e-3f;
   float reltol = 1.e-3f;
 
   Input run(Input const &x0) const
   {
-    Log::Print(FMT_STRING("ADMM-CG rho {}"), rho);
+    Log::Print(FMT_STRING("ADMM-CG rho {}"), ρ);
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
     auto const dims = inner.op.inputDimensions();
-    Index const N = Product(dims);
     Input x(dims), z(dims), zold(dims), u(dims), xpu(dims);
     x.setZero();
     z.setZero();
     u.setZero();
     xpu.setZero();
+    float const absThresh = abstol * std::sqrt(float(Product(dims)));
     for (Index ii = 0; ii < iterLimit; ii++) {
-      x = inner.run(x0 + x0.constant(rho) * (z - u), x);
+      x = inner.run(x0 + x0.constant(ρ) * (z - u), x);
       xpu.device(dev) = x + u;
       zold = z;
-      z = (*reg)(xpu);
+      z = (*reg)(λ / ρ, xpu);
       u.device(dev) = xpu - z;
 
-      float const norm_prim = Norm(x - z);
-      float const norm_dual = Norm(-rho * (z - zold));
+      float const pNorm = Norm(x - z);
+      float const dNorm = ρ * Norm(z - zold);
 
-      float const eps_prim = sqrtf(N) * abstol + reltol * std::max(Norm(x), Norm(-z));
-      float const eps_dual = sqrtf(N) * abstol + reltol * rho * Norm(u);
+      float const normx = Norm(x);
+      float const normz = Norm(z);
+      float const normu = Norm(u);
+
+      float const pEps = absThresh + reltol * std::max(normx, normz);
+      float const dEps = absThresh + reltol * ρ * normu;
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
-
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {}"), ii, norm_prim, eps_prim, norm_dual, eps_dual);
-      if ((norm_prim < eps_prim) && (norm_dual < eps_dual)) {
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |u| {} |x| {} |z| {}"),
+        ii,
+        pNorm,
+        pEps,
+        dNorm,
+        dEps,
+        normu,
+        normx,
+        normz);
+      if ((pNorm < pEps) && (dNorm < dEps)) {
         break;
       }
       float const mu = 10.f;
-      if (norm_prim > mu * norm_dual) {
-        Log::Print(FMT_STRING("Primal norm is outside limit {}, consider increasing rho"), mu * norm_dual);
-      } else if (norm_dual > mu * norm_prim) {
-        Log::Print(FMT_STRING("Dual norm is outside limit {}, consider decreasing rho"), mu * norm_prim);
+      if (pNorm > mu * dNorm) {
+        Log::Print(FMT_STRING("Primal norm is outside limit {}, consider increasing ρ"), mu * dNorm);
+      } else if (dNorm > mu * pNorm) {
+        Log::Print(FMT_STRING("Dual norm is outside limit {}, consider decreasing ρ"), mu * pNorm);
       }
     }
     return x;

@@ -18,24 +18,23 @@ Index PatchClamp(Index const ii, Index const patchSize, Index const dimSz)
   }
 }
 
-LLR::LLR(float l, Index p, bool s)
-  : Functor<Cx4>()
+LLR::LLR(Index p, bool s)
+  : Prox<Cx4>()
   , patchSize{p}
-  , λ{l * std::sqrtf(p)}
   , sliding{s}
 {
 }
 
-auto LLR::operator()(Cx4 const &x) const -> Cx4
+auto LLR::operator()(float const λ, Cx4 const &x) const -> Cx4
 {
   if (sliding) {
-    return applySliding(x);
+    return applySliding(λ * std::sqrtf(patchSize), x);
   } else {
-    return applyFixed(x);
+    return applyFixed(λ * std::sqrtf(patchSize), x);
   }
 }
 
-auto LLR::applySliding(Cx4 const &img) const -> Cx4
+auto LLR::applySliding(float const λ, Cx4 const &img) const -> Cx4
 {
   Index const K = img.dimension(0);
   Log::Print(FMT_STRING("LLR regularization patch size {} lambda {}"), patchSize, λ);
@@ -71,7 +70,7 @@ auto LLR::applySliding(Cx4 const &img) const -> Cx4
   return lr;
 }
 
-auto LLR::applyFixed(Cx4 const &x) const -> Cx4
+auto LLR::applyFixed(float const λ, Cx4 const &x) const -> Cx4
 {
   std::array<Index, 3> nP, shift;
   std::random_device rd;

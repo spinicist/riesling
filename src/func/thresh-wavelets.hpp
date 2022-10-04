@@ -6,9 +6,9 @@
 
 namespace rl {
 
-struct ThresholdWavelets final : Functor<Cx4> {
-    ThresholdWavelets(Sz4 const dims, Index const width, Index const levels, float const λ);
-    auto operator()(Cx4 const &) const -> Cx4;
+struct ThresholdWavelets final : Prox<Cx4> {
+    ThresholdWavelets(Sz4 const dims, Index const width, Index const levels);
+    auto operator()(float const λ, Cx4 const &) const -> Cx4;
 
 private:
     PadOp<4> pad_;
