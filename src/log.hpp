@@ -38,16 +38,16 @@ void SetDebugFile(std::string const &fname);
 void End();
 auto TheTime() -> std::string;
 
-template <Log::Level level = Log::Level::Low, typename S, typename... Args>
-inline void Print(S const &fstr, Args &&...args)
+template <Log::Level level = Log::Level::Low, typename... Args>
+inline void Print(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   if (level <= CurrentLevel()) {
     fmt::print(stderr, FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
   }
 }
 
-template <typename S, typename... Args>
-__attribute__((noreturn)) inline void Fail(S const &fstr, Args &&...args)
+template <typename... Args>
+__attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   auto const msg =
     fmt::format(FMT_STRING("{} {}"), fmt::format("{}", TheTime()), fmt::format(fstr, std::forward<Args>(args)...));

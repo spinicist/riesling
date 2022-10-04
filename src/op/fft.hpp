@@ -84,7 +84,7 @@ struct FFTOp final : Operator<Rank, Rank>
         ws_->chip(iz, 4) = chip;
       }
     }
-    LOG_DEBUG("FFT Adjoint (Out-of-place) Norm {}->{} Took {}", Norm(x), Norm(*ws_), Log::ToNow(start));
+    LOG_DEBUG(FMT_STRING("FFT Adjoint (Out-of-place) Norm {}->{} Took {}"), Norm(x), Norm(*ws_), Log::ToNow(start));
     return *ws_;
   }
 
@@ -101,7 +101,7 @@ struct FFTOp final : Operator<Rank, Rank>
         x.chip(iz, 4) = chip;
       }
     }
-    LOG_DEBUG("FFT Forward (In-place) Norm {}->{}", inNorm, Norm(x), Log::ToNow(start));
+    LOG_DEBUG(FMT_STRING("FFT Forward (In-place) Norm {}->{}"), inNorm, Norm(x), Log::ToNow(start));
     return x;
   }
 

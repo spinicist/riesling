@@ -4,6 +4,7 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include <random>
+#include <cmath>
 
 namespace rl {
 Index PatchClamp(Index const ii, Index const patchSize, Index const dimSz)
@@ -28,9 +29,9 @@ LLR::LLR(Index p, bool s)
 auto LLR::operator()(float const λ, Cx4 const &x) const -> Cx4
 {
   if (sliding) {
-    return applySliding(λ * std::sqrtf(patchSize), x);
+    return applySliding(λ * std::sqrt(patchSize), x);
   } else {
-    return applyFixed(λ * std::sqrtf(patchSize), x);
+    return applyFixed(λ * std::sqrt(patchSize), x);
   }
 }
 
