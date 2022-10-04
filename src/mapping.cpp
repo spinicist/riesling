@@ -131,9 +131,9 @@ Mapping<Rank>::Mapping(
       for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
         Re1 const p = traj.point(ir, is);
         Eigen::Array<float, Rank, 1> xyz;
-        xyz[0] = p[0] * maxRad * 2.f;
-        xyz[1] = p[1] * maxRad * 2.f;
-        xyz[2] = p[2] * maxRad * 2.f;
+        for (Index ii = 0; ii < Rank; ii++) {
+          xyz[ii] = p[ii] * maxRad * 2.f;
+        }
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();

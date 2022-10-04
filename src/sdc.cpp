@@ -139,7 +139,6 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, Index const ch
   auto const iname = opts.type.Get();
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    auto const info = traj.info();
     return std::make_unique<SDCOp>(Sz2{traj.nSamples(), traj.nTraces()}, channels);
   } else if (iname == "pipe") {
     sdc = Pipe(traj, ktype, os, opts.maxIterations.Get());
