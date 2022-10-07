@@ -53,7 +53,7 @@ auto LLR::applySliding(float const λ, Cx4 const &img) const -> Cx4
         auto const svd = SVD<Cx>(patch, true, false);
         // Soft-threhold svals
         Eigen::VectorXf s = svd.vals * (svd.vals.abs() - λ) / svd.vals.abs();
-        s = (s.array() > λ).select(s, 0.f);
+        s = (svd.vals.array() > λ).select(s, 0.f);
         patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
         for (Index ii = 0; ii < K; ii++) {
           lr(ii, ix, iy, iz) = patchTensor(ii, PatchClamp(ix, patchSize, img.dimension(1)), PatchClamp(iy, patchSize, img.dimension(2)), PatchClamp(iz, patchSize, img.dimension(3)));

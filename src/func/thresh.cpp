@@ -10,7 +10,7 @@ SoftThreshold::SoftThreshold()
 auto SoftThreshold::operator()(float const λ, Cx4 const &x) const -> Cx4
 {
   Cx4 s = x * (x.abs() - λ) / x.abs();
-  s = (s.abs() > λ).select(s, s.constant(0.f));
+  s = (x.abs() > λ).select(s, s.constant(0.f));
   return s;
 }
 
