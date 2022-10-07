@@ -16,8 +16,7 @@ Index T2Prep::length() const
 
 Eigen::ArrayXXf T2Prep::parameters(Index const nsamp) const
 {
-  Tissues tissues({Tissue{{T1wm, T2wm}}, Tissue{{T1gm, T2gm}}, Tissue{{T1csf, T2csf}}});
-  return tissues.values(nsamp);
+  return Parameters::T1T2(nsamp);
 }
 
 Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
@@ -79,8 +78,7 @@ Index T2InvPrep::length() const
 
 Eigen::ArrayXXf T2InvPrep::parameters(Index const nsamp) const
 {
-  Tissues tissues({Tissue{{T1wm, T2wm}}, Tissue{{T1gm, T2gm}}, Tissue{{T1csf, T2csf}}});
-  return tissues.values(nsamp);
+  return Parameters::T1T2(nsamp);
 }
 
 Eigen::ArrayXf T2InvPrep::simulate(Eigen::ArrayXf const &p) const

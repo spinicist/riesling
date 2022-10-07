@@ -19,8 +19,7 @@ auto T2FLAIR::length() const -> Index
 
 auto T2FLAIR::parameters(Index const nsamp) const -> Eigen::ArrayXXf
 {
-  Tissues tissues({Tissue{{T1wm, T2wm, B1}}, Tissue{{T1gm, T2gm, B1}}, Tissue{{T1csf, T2csf, B1}}});
-  return tissues.values(nsamp);
+  return Parameters::T1T2(nsamp);
 }
 
 auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf

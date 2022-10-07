@@ -3,77 +3,38 @@
 #include "../log.hpp"
 #include <random>
 
-namespace rl {
+namespace rl::Parameters {
 
-Parameter const T1wm{1.0, 0.15, 0.4, 2.4, true}, T1gm{3.0, 0.25, 1.5, 3.5, true}, T1csf{3.5, 0.5, 3., 6., true};
-Parameter const T2wm{0.08, 0.03, 0.001, 0.3, true}, T2gm{0.12, 0.05, 0.3, 1.0, true},
-  T2csf{1.5, 0.5, 1, 2, true};
-Parameter const B1{1.0, 0.5, 0.25, 1.5, true};
-
-Tissue::Tissue(std::vector<Parameter> const pars)
-  : means_(pars.size())
-  , stds_(pars.size())
-  , los_(pars.size())
-  , his_(pars.size())
-  , uni_(pars.size())
+auto T1(Index const nS) -> Eigen::ArrayXXf
 {
-  for (size_t ii = 0; ii < pars.size(); ii++) {
-    means_[ii] = pars[ii].mean;
-    stds_[ii] = pars[ii].std;
-    los_[ii] = pars[ii].lo;
-    his_[ii] = pars[ii].hi;
-    uni_[ii] = pars[ii].uniform;
-  }
+  float const R1lo = 1.f / 0.25f;
+  float const R1hi = 1.f / 5.0f;
+  auto const R1s = Eigen::ArrayXf::LinSpaced(nS, R1lo, R1hi);
+  return 1.f / R1s.transpose();
 }
 
-Index Tissue::nP() const
+auto T1T2(Index const nS) -> Eigen::ArrayXXf
 {
-  return means_.size();
-}
-
-Eigen::ArrayXXf Tissue::values(Index const NV) const
-{
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  Eigen::ArrayXXf vals(means_.rows(), NV);
-  for (Index ii = 0; ii < means_.rows(); ii++) {
-    if (uni_[ii]) {
-      std::uniform_real_distribution<float> dis(los_[ii], his_[ii]);
-      vals.row(ii) = vals.row(ii).unaryExpr([&](float dummy) { return dis(gen); });
-    } else {
-      std::normal_distribution<float> dis(means_[ii], stds_[ii]);
-      vals.row(ii) = vals.row(ii).unaryExpr(
-        [&](float dummy) { return std::clamp(dis(gen), los_[ii], his_[ii]); });
+  float const R1lo = 1.f / 0.25f;
+  float const R1hi = 1.f / 5.0f;
+  float const R2lo = 1.f / 0.02f;
+  float const R2hi = 1.f / 2.f;
+  Index const nT = std::floor(std::sqrt(nS));
+  auto const R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
+  auto const R2s = Eigen::ArrayXf::LinSpaced(nT, R2lo, R2hi);
+  Index nAct = 0;
+  Eigen::ArrayXXf p(2, nS);
+  for (Index i1 = 0; i1 < nT; i1++) {
+    for (Index i2 = 0; i2 < nT; i2++) {
+      if (R2s(i2) > R1s(i1)) {
+        p(0, nAct) = 1.f / R1s(i1);
+        p(1, nAct) = 1.f / R2s(i2);
+        nAct++;
+      }
     }
   }
-  return vals;
-}
-
-Tissues::Tissues(std::vector<Tissue> const tissues)
-  : tissues_{tissues}
-{
-  for (size_t ii = 1; ii < tissues_.size(); ii++) {
-    if (tissues_[ii].nP() != tissues_[0].nP()) {
-      Log::Fail("Tissues had different numbers of parameters");
-    }
-  }
-  nP_ = tissues_[0].nP();
-}
-
-Index Tissues::nP() const
-{
-  return nP_;
-}
-
-Eigen::ArrayXXf Tissues::values(Index const nsamp) const
-{
-  Eigen::ArrayXXf parameters(nP_, tissues_.size() * nsamp);
-
-  for (size_t ii = 0; ii < tissues_.size(); ii++) {
-    parameters.middleCols(ii * nsamp, nsamp) = tissues_[ii].values(nsamp);
-  }
-
-  return parameters;
+  p.conservativeResize(2, nAct);
+  return p;
 }
 
 } // namespace rl

@@ -98,6 +98,7 @@ int main_sim(args::Subparser &parser)
     break;
   case Sequences::DIR:
     std::tie(parameters, dynamics) = Simulate<rl::DIR>(settings, nsamp.Get());
+    break;
   case Sequences::T2FLAIR:
     std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get());
     break;

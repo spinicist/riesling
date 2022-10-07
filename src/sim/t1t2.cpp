@@ -14,10 +14,39 @@ Index T1T2Prep::length() const
   return 2 * settings.spg * settings.gps;
 }
 
-Eigen::ArrayXXf T1T2Prep::parameters(Index const nsamp) const
+Eigen::ArrayXXf T1T2Prep::parameters(Index const nS) const
 {
-  Tissues tissues({Tissue{{T1wm, T2wm, B1}}, Tissue{{T1gm, T2gm, B1}}, Tissue{{T1csf, T2csf, B1}}});
-  return tissues.values(nsamp);
+  float const R1lo = 1.f / 0.25f;
+  float const R1hi = 1.f / 5.0f;
+  float const R2lo = 1.f / 0.02f;
+  float const R2hi = 1.f;
+  Index const nT = std::floor(std::pow(nS, 0.33f));
+  auto const R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
+  auto const R2s = Eigen::ArrayXf::LinSpaced(nT, R2lo, R2hi);
+  Index nAct = 0;
+  Eigen::ArrayXXf p(2, nS);
+  for (Index i1 = 0; i1 < nT; i1++) {
+    for (Index i2 = 0; i2 < nT; i2++) {
+      if (R2s(i2) > R1s(i1)) {
+        p(0, nAct) = 1.f / R1s(i1);
+        p(1, nAct) = 1.f / R2s(i2);
+        nAct++;
+      }
+    }
+  }
+  p.conservativeResize(2, nAct);
+  Eigen::ArrayXXf p2(3, nAct * nT);
+  auto const B1s = Eigen::ArrayXf::LinSpaced(nT, 0.5f, 1.5f);
+  Index ii = 0;
+  for (Index ib = 0; ib < nT; ib++) {
+    for (Index it = 0; it < nAct; it++) {
+      p(0, ii) = p(0, it);
+      p(1, ii) = p(1, it);
+      p(2, ii) = B1s(ib);
+      ii++;
+    }
+  }
+  return p2;
 }
 
 Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const

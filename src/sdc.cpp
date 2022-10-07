@@ -145,7 +145,6 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, Index const ch
   } else {
     HD5::Reader reader(iname);
     sdc = reader.readTensor<Re2>(HD5::Keys::SDC);
-    auto const trajInfo = traj.info();
     if (sdc.dimension(0) != traj.nSamples() || sdc.dimension(1) != traj.nTraces()) {
       Log::Fail(
         FMT_STRING("SDC dimensions on disk {}x{} did not match info {}x{}"),

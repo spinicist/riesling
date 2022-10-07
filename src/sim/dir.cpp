@@ -18,8 +18,7 @@ Index DIR::length() const
 
 Eigen::ArrayXXf DIR::parameters(Index const nsamp) const
 {
-  Tissues tissues({Tissue{{T1wm}}, Tissue{{T1gm}}, Tissue{{T1csf}}});
-  return tissues.values(nsamp);
+  return Parameters::T1(nsamp);
 }
 
 Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const

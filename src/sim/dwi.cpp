@@ -14,14 +14,43 @@ Index DWI::length() const
   return 4 * settings.spg * settings.gps;
 }
 
-Eigen::ArrayXXf DWI::parameters(Index const nsamp) const
+Eigen::ArrayXXf DWI::parameters(Index const nS) const
 {
-  Parameter gamma{0.f, 0.f, -M_PI, M_PI, true};
-  Parameter Dwm{750e-6f, 50e-6f, 500e-6f, 1000e-6f}, Dgm{850e-6f, 100e-6f, 600e-6f, 1100e-6f},
-    Dcsf{3200e-6f, 200e-6f, 2800e-6f, 3500e-6f};
-  Tissues tissues(
-    {Tissue{{T1wm, T2wm, Dwm, gamma}}, Tissue{{T1gm, T2gm, Dgm, gamma}}, Tissue{{T1csf, T2csf, Dcsf, gamma}}});
-  return tissues.values(nsamp);
+  float const R1lo = 1.f / 0.25f;
+  float const R1hi = 1.f / 5.0f;
+  float const R2lo = 1.f / 0.02f;
+  float const R2hi = 1.f;
+  Index const nT = std::floor(std::pow(nS, 0.25f));
+  auto const R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
+  auto const R2s = Eigen::ArrayXf::LinSpaced(nT, R2lo, R2hi);
+  Index nAct = 0;
+  Eigen::ArrayXXf p(2, nS);
+  for (Index i1 = 0; i1 < nT; i1++) {
+    for (Index i2 = 0; i2 < nT; i2++) {
+      if (R2s(i2) > R1s(i1)) {
+        p(0, nAct) = 1.f / R1s(i1);
+        p(1, nAct) = 1.f / R2s(i2);
+        nAct++;
+      }
+    }
+  }
+  p.conservativeResize(2, nAct);
+  Eigen::ArrayXXf p2(4, nAct * nT * nT);
+  auto const Ds = Eigen::ArrayXf::LinSpaced(nT, 50e-6f, 3500e-6f);
+  auto const gs = Eigen::ArrayXf::LinSpaced(nT, -M_PI, M_PI);
+  Index ii = 0;
+  for (Index iD = 0; iD < nT; iD++) {
+    for (Index ig = 0; ig < nT; ig++) {
+      for (Index it = 0; it < nAct; it++) {
+        p(0, ii) = p(0, it);
+        p(1, ii) = p(1, it);
+        p(2, ii) = Ds(iD);
+        p(3, ii) = gs(ig);
+        ii++;
+      }
+    }
+  }
+  return p2;
 }
 
 Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const

@@ -5,20 +5,16 @@
 
 using namespace Catch;
 
-TEST_CASE("parameters", "")
+TEST_CASE("Parameters", "[pars]")
 {
-  rl::Parameter A{10, 5.0, 5.0, 15.0};
-  rl::Parameter B{20, 5.0, 15.0, 25.0};
-  rl::Tissue T({A, B});
+  auto const t1 = rl::Parameters::T1(2048);
+  auto const t1t2 = rl::Parameters::T1T2(2048);
 
-  SECTION("Tissue")
+  SECTION("Basic")
   {
-    Eigen::ArrayXXf const p = T.values(32);
-    CHECK(p.rows() == 2);
-    CHECK(p.cols() == 32);
-    CHECK((p.row(0) >= 5.0).all());
-    CHECK((p.row(0) <= 15.0).all());
-    CHECK((p.row(1) >= 15.0).all());
-    CHECK((p.row(1) <= 25.0).all());
+    CHECK(t1.rows() == 1);
+    CHECK(t1t2.rows() == 2);
+    CHECK(t1.cols() == 2048);
+    CHECK(t1t2.cols() <= 2048);
   }
 }
