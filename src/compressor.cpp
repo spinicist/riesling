@@ -16,7 +16,7 @@ void Compressor::compress(Cx4 const &source, Cx4 &dest)
   assert(source.dimension(3) == dest.dimension(3));
   assert(source.dimension(0) == psi.rows());
   assert(dest.dimension(0) == psi.cols());
-  Log::Print(FMT_STRING("Applying coil compression"));
+  Log::Print(FMT_STRING("Compressing to {} channels"), psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
   auto destmat = CollapseToMatrix(dest);
   destmat.noalias() = psi.transpose() * sourcemat;
@@ -25,7 +25,7 @@ void Compressor::compress(Cx4 const &source, Cx4 &dest)
 Cx3 Compressor::compress(Cx3 const &source)
 {
   assert(source.dimension(0) == psi.rows());
-  Log::Print(FMT_STRING("Applying coil compression"));
+  Log::Print(FMT_STRING("Compressing to {} channels"), psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
   Cx3 dest(psi.cols(), source.dimension(1), source.dimension(2));
   auto destmat = CollapseToMatrix(dest);
@@ -36,7 +36,7 @@ Cx3 Compressor::compress(Cx3 const &source)
 Cx4 Compressor::compress(Cx4 const &source)
 {
   assert(source.dimension(0) == psi.rows());
-  Log::Print(FMT_STRING("Applying coil compression"));
+  Log::Print(FMT_STRING("Compressing to {} channels"), psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
   Cx4 dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3));
   auto destmat = CollapseToMatrix(dest);
