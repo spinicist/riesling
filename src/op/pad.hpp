@@ -14,6 +14,8 @@ struct PadOp final : Operator<Rank, Rank>
   using InputDims = typename Parent::InputDims;
   using Output = typename Parent::Output;
   using OutputDims = typename Parent::OutputDims;
+  mutable Input x_;
+  mutable Output y_;
 
   PadOp(InputDims const &inSize, Eigen::DSizes<Index, ImgRank> const &padSize)
   {
@@ -43,6 +45,8 @@ struct PadOp final : Operator<Rank, Rank>
       "PadOp {}->{}",
       LastN<ImgRank>(input_),
       LastN<ImgRank>(output_));
+    x_.resize(input_);
+    y_.resize(output_);
   }
 
   InputDims inputDimensions() const
@@ -55,20 +59,18 @@ struct PadOp final : Operator<Rank, Rank>
     return output_;
   }
 
-  Output forward(Input const &x) const
+  auto forward(Input const &x) const -> Output const &
   {
-    Output result(outputDimensions());
-    result.device(Threads::GlobalDevice()) = x.pad(paddings_);
-    LOG_DEBUG(FMT_STRING("Padding Forward Norm {}->{}"), Norm(x), Norm(result));
-    return result;
+    y_ = x.pad(paddings_);
+    LOG_DEBUG(FMT_STRING("Padding Forward Norm {}->{}"), Norm(x), Norm(y_));
+    return y_;
   }
 
-  Input adjoint(Output const &x) const
+  auto adjoint(Output const &y) const -> Input const &
   {
-    Input result(inputDimensions());
-    result.device(Threads::GlobalDevice()) = x.slice(left_, input_);
-    LOG_DEBUG(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(x), Norm(result));
-    return result;
+    x_ = y.slice(left_, input_);
+    LOG_DEBUG(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(y), Norm(x_));
+    return x_;
   }
 
 private:

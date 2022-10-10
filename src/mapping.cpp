@@ -82,13 +82,11 @@ Mapping<Rank>::Mapping(
 {
   Info const &info = traj.info();
   Index const gridSz = fft_size(info.matrix[0] * os);
-  Log::Print(FMT_STRING("Mapping to grid size {}"), gridSz);
+  Log::Print(FMT_STRING("{}D Mapping. Grid size {}"), traj.nDims(), gridSz);
 
   std::fill(cartDims.begin(), cartDims.end(), gridSz);
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
   frames = traj.nFrames();
-  frameWeights = Eigen::ArrayXf(frames);
-  frameWeights.setZero();
 
   Index const nB = std::ceil(gridSz / float(bucketSz));
   buckets.reserve(pow(nB, Rank));
@@ -152,7 +150,6 @@ Mapping<Rank>::Mapping(
             ib = ib * nB + (ijk[ii] / bucketSz);
           }
           buckets[ib].indices.push_back(index);
-          frameWeights[fr] += 1;
           index++;
         } else {
           NaNs++;
@@ -183,9 +180,6 @@ Mapping<Rank>::Mapping(
                return b.indices.size() + sum;
              }));
   sortedIndices = sort(cart);
-
-  frameWeights = frameWeights.maxCoeff() / frameWeights;
-  Log::Print(FMT_STRING("Frame weights: {}"), frameWeights.transpose());
 }
 
 template struct Mapping<2>;

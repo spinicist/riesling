@@ -2,7 +2,7 @@
 
 #include "info.hpp"
 #include "log.hpp"
-#include "sense.h"
+#include "sense.hpp"
 
 namespace rl {
 /*!

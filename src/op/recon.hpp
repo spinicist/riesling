@@ -8,60 +8,25 @@
 
 namespace rl {
 
-struct ReconOp final : Operator<4, 3>
+struct ReconOp final : Operator<4, 4>
 {
-  ReconOp(GridBase<Cx, 3>*gridder, Cx4 const &maps, SDCOp *sdc = nullptr)
-    : nufft_{LastN<3>(maps.dimensions()), gridder, sdc}
-    , sense_{maps, gridder->inputDimensions()[1]}
-  {
-  }
+  ReconOp(
+    Trajectory const &traj,
+    std::string const &ktype,
+    float const osamp,
+    Cx4 const &maps,
+    Operator<3, 3> *sdc,
+    std::optional<Re2> basis,
+    bool toeplitz = false);
 
-  InputDims inputDimensions() const
-  {
-    return sense_.inputDimensions();
-  }
-
-  OutputDims outputDimensions() const
-  {
-    return nufft_.outputDimensions();
-  }
-
-  void calcToeplitz()
-  {
-    nufft_.calcToeplitz();
-  }
-
-  template <typename T>
-  auto forward(T const &x) const
-  {
-    auto const start = Log::Now();
-    auto const y = nufft_.forward(sense_.forward(x));
-    LOG_DEBUG(FMT_STRING("Finished ReconOp forward. Norm {}->{}. Took {}"), Norm(x), Norm(y), Log::ToNow(start));
-    return y;
-  }
-
-  template <typename T>
-  auto adjoint(T const &x) const
-  {
-    auto const start = Log::Now();
-    Input y(inputDimensions());
-    y.device(Threads::GlobalDevice()) = sense_.adjoint(nufft_.adjoint(x));
-    LOG_DEBUG(FMT_STRING("Finished ReconOp adjoint. Norm {}->{}. Took {}."), Norm(x), Norm(y), Log::ToNow(start));
-    return y;
-  }
-
-  template <typename T>
-  Input adjfwd(T const &x) const
-  {
-    Input y(inputDimensions());
-    auto const start = Log::Now();
-    y.device(Threads::GlobalDevice()) = sense_.adjoint(nufft_.adjfwd(sense_.forward(x)));
-    LOG_DEBUG(FMT_STRING("Finished ReconOp adjoint*forward. Norm {}. Took {}"), Norm(x), Norm(y), Log::ToNow(start));
-    return y;
-  }
+  auto inputDimensions() const -> InputDims;
+  auto outputDimensions() const -> OutputDims;
+  auto forward(Input const &x) const -> Output const &;
+  auto adjoint(Output const &y) const -> Input const &;
+  auto adjfwd(Input const &x) const -> Input;
 
 private:
-  NUFFTOp nufft_;
+  std::unique_ptr<Operator<5, 4>> nufft_;
   SenseOp sense_;
 };
-}
+} // namespace rl

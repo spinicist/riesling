@@ -73,15 +73,10 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , oname(parser, "O", "Override output name", {'o', "out"})
   , ktype(parser, "K", "Choose kernel - NN, KB3, KB5", {'k', "kernel"}, "ES3")
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
+  , fov(parser, "FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
   , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep", 'k'})
-{
-}
-
-ExtraOpts::ExtraOpts(args::Subparser &parser)
-  : iter_fov(parser, "F", "Iterations FoV (default 256mm)", {"iter-fov"}, 256)
-  , out_fov(parser, "OUT FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
 {
 }
 

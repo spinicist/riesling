@@ -9,27 +9,28 @@ using namespace rl;
 
 int main_sdc(args::Subparser &parser)
 {
-  CoreOpts core(parser);
-  args::ValueFlag<std::string> sdcType(
-    parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
+  CoreOpts coreOpts(parser);
+  args::ValueFlag<std::string> sdcType(parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
   args::ValueFlag<Index> lores(parser, "L", "Number of lo-res traces for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
   args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
-  ParseCommand(parser, core.iname);
-  HD5::Reader reader(core.iname.Get());
+  ParseCommand(parser, coreOpts.iname);
+  HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {
-    dc = SDC::Pipe(traj, core.ktype.Get(), core.osamp.Get(), its.Get());
-  } else if (sdcType.Get() == "pipenn") {
-    dc = SDC::Pipe(traj, core.ktype.Get(), core.osamp.Get(), its.Get());
+    Log::Print(FMT_STRING("NUMBER OF DIMS {}"), traj.nDims());
+    switch (traj.nDims()) {
+    case 2: dc = SDC::Pipe<2>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;
+    case 3: dc = SDC::Pipe<3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;
+    }
   } else if (sdcType.Get() == "radial") {
     dc = SDC::Radial(traj, lores.Get(), gap.Get());
   } else {
     Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdcType.Get());
   }
-  HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "sdc", "h5"));
+  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sdc", "h5"));
   traj.write(writer);
   writer.writeTensor(dc, HD5::Keys::SDC);
   return EXIT_SUCCESS;

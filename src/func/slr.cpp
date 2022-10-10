@@ -62,7 +62,7 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
 }
 
-SLR::SLR(FFTOp<5> const &f, Index const k)
+SLR::SLR(FFTOp<5, 3> const &f, Index const k)
   : Prox<Cx5>()
   , fft{f}
   , kSz{k}

@@ -54,14 +54,8 @@ struct CoreOpts
   CoreOpts(args::Subparser &parser);
   args::Positional<std::string> iname;
   args::ValueFlag<std::string> oname, ktype;
-  args::ValueFlag<float> osamp;
+  args::ValueFlag<float> osamp, fov;
   args::ValueFlag<Index> bucketSize;
   args::ValueFlag<std::string> basisFile;
   args::Flag keepTrajectory;
-};
-
-struct ExtraOpts
-{
-  ExtraOpts(args::Subparser &parser);
-  args::ValueFlag<float> iter_fov, out_fov;
 };

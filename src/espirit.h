@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.hpp"
-#include "op/gridBase.hpp"
+#include "op/make_grid.hpp"
 
 namespace rl {
 

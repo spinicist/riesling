@@ -1,5 +1,5 @@
 #include "algo/decomp.hpp"
-#include "compressor.h"
+#include "compressor.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
@@ -13,7 +13,7 @@ using namespace rl;
 
 int main_compress(args::Subparser &parser)
 {
-  CoreOpts core(parser);
+  CoreOpts coreOpts(parser);
 
   // One of the following must be set
   args::Flag pca(parser, "V", "Calculate PCA compression", {"pca"});
@@ -28,16 +28,15 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<Index> lores(parser, "L", "Number of lores traces", {"lores"}, 0);
 
   // PCA Options
-  args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-read"}, Sz2{0, 16});
-  args::ValueFlag<Sz3, Sz3Reader> pcaTraces(
-    parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
-
+  args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
+  args::ValueFlag<Sz3, Sz3Reader> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
+  args::ValueFlag<Sz2, Sz2Reader> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
   ROVIROpts rovirOpts(parser);
 
-  ParseCommand(parser, core.iname);
+  ParseCommand(parser, coreOpts.iname);
 
-  HD5::Reader reader(core.iname.Get());
-  Cx3 const ks = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, refVol.Get());
+  HD5::Reader reader(coreOpts.iname.Get());
+  Cx4 const ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, refVol.Get());
   Index const channels = ks.dimension(0);
   Index const samples = ks.dimension(1);
   Index const traces = ks.dimension(2);
@@ -46,13 +45,13 @@ int main_compress(args::Subparser &parser)
     Index const maxRead = samples - pcaRead.Get()[0];
     Index const nread = (pcaRead.Get()[1] > maxRead) ? maxRead : pcaRead.Get()[1];
     if (pcaTraces.Get()[0] + pcaTraces.Get()[1] > traces) {
-      Log::Fail(
-        FMT_STRING("Requested end spoke {} is past end of file {}"), pcaTraces.Get()[0] + pcaTraces.Get()[1], traces);
+      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), pcaTraces.Get()[0] + pcaTraces.Get()[1], traces);
     }
     Log::Print(FMT_STRING("Using {} read points, {} traces, {} stride"), nread, pcaTraces.Get()[1], pcaTraces.Get()[2]);
-    Cx3 const ref =
-      ks.slice(Sz3{0, pcaRead.Get()[0], pcaTraces.Get()[0]}, Sz3{channels, pcaRead.Get()[1], pcaTraces.Get()[1]})
-        .stride(Sz3{1, 1, pcaTraces.Get()[2]});
+    Cx4 const ref = ks.slice(
+                        Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
+                        Sz4{channels, pcaRead.Get()[1], pcaTraces.Get()[1], pcaSlices.Get()[1]})
+                      .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
 
     auto const pc = PCA(CollapseToConstMatrix(ref), nRetain.Get(), energy.Get());
     psi = pc.vecs;
@@ -65,20 +64,18 @@ int main_compress(args::Subparser &parser)
     Log::Fail("Must specify PCA/ROVIR/load from file");
   }
   Compressor compressor{psi};
-  Cx4 all_ks(reader.dimensions<4>(HD5::Keys::Noncartesian));
-  Index const volumes = all_ks.dimension(3);
+  Cx5 all_ks(AddFront(LastN<4>(reader.dimensions<5>(HD5::Keys::Noncartesian)), psi.cols()));
+  Index const volumes = all_ks.dimension(4);
   for (Index iv = 0; iv < volumes; iv++) {
-    all_ks.chip<3>(iv) = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv);
+    all_ks.chip<4>(iv) = compressor.compress(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
   }
-  Cx4 out_ks(AddFront(LastN<3>(all_ks.dimensions()), compressor.out_channels()));
-  compressor.compress(all_ks, out_ks);
 
-  HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "compressed"));
+  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "compressed"));
   Trajectory(reader).write(writer);
-  writer.writeTensor(out_ks, HD5::Keys::Noncartesian);
+  writer.writeTensor(all_ks, HD5::Keys::Noncartesian);
 
   if (save) {
-    HD5::Writer matfile(OutName(core.iname.Get(), core.oname.Get(), "ccmat"));
+    HD5::Writer matfile(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "ccmat"));
     matfile.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
   }
   return EXIT_SUCCESS;

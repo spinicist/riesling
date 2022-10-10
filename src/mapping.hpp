@@ -36,7 +36,6 @@ struct Mapping
   Sz2 noncartDims;
   Sz<Rank> cartDims;
   int8_t frames;
-  Eigen::ArrayXf frameWeights;
 
   std::vector<std::array<int16_t, Rank>> cart;
   std::vector<NoncartesianIndex> noncart;

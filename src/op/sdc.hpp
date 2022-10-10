@@ -12,11 +12,13 @@ struct SDCOp final : Operator<3, 3>
   InputDims inputDimensions() const;
   OutputDims outputDimensions() const;
 
-  auto adjoint(Cx3 const &x) const -> Input;
+  auto forward(Cx3 const &x) const -> Output const &;
+  auto adjoint(Cx3 const &x) const -> Input const &;
 
 private:
   Sz3 dims_;
   Re2 dc_;
+  mutable Input ws_;
 };
 
 } // namespace rl

@@ -16,28 +16,24 @@
 
 namespace rl {
 
-template <int InRank, int OutRank, typename Scalar = Cx>
+template <size_t InRank, size_t OutRank, typename Scalar = Cx>
 struct Operator
 {
-  using Input = Eigen::Tensor<Scalar, InRank>;
+  static const size_t InputRank = InRank;
+  using Input = Eigen::Tensor<Scalar, InputRank>;
   using InputDims = typename Input::Dimensions;
-  using Output = Eigen::Tensor<Scalar, OutRank>;
+  static const size_t OutputRank = OutRank;
+  using Output = Eigen::Tensor<Scalar, OutputRank>;
   using OutputDims = typename Output::Dimensions;
+
+  virtual ~Operator() {};
 
   virtual OutputDims outputDimensions() const = 0;
   virtual InputDims inputDimensions() const = 0;
 
-  void checkInput(InputDims const inD) const {
-    if (inD != inputDimensions()) {
-      Log::Fail("Input Dimensions {} did not match {}", inD, inputDimensions());
-    }
-  }
-
-  void checkOutput(OutputDims const oD) const {
-    if (oD != outputDimensions()) {
-      Log::Fail("Output Dimensions {} did not match {}", oD, outputDimensions());
-    }
-  }
-};
+  virtual auto forward(Input const &x) const -> Output const & = 0;
+  virtual auto adjoint(Output const &y) const -> Input const & = 0;
+  virtual auto adjfwd(Input const &x) const -> Input { Log::Fail("AdjFwd Not implemented"); }
+}; // namespace rl
 
 } // namespace rl

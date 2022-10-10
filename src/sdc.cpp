@@ -2,7 +2,8 @@
 
 #include "io/hd5.hpp"
 #include "mapping.hpp"
-#include "op/gridBase.hpp"
+#include "op/make_grid.hpp"
+#include "op/identity.hpp"
 #include "op/sdc.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -13,19 +14,20 @@ namespace rl {
 namespace SDC {
 
 Opts::Opts(args::Subparser &parser)
-  : type(parser, "SDC", "SDC type: 'pipe', 'pipenn', 'none', or filename", {"sdc"}, "pipe")
+  : type(parser, "SDC", "SDC type: 'pipe', 'none', or filename", {"sdc"}, "pipe")
   , pow(parser, "P", "SDC Power (default 1.0)", {"sdc-pow"}, 1.0f)
   , maxIterations(parser, "I", "SDC Max iterations (40)", {"sdc-its"}, 40)
 {
 }
 
+template <int ND>
 Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const its)
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
   auto info = traj.info();
   Re3 W(1, traj.nSamples(), traj.nTraces());
   Re3 Wp(W.dimensions());
-  std::unique_ptr<GridBase<float, 3>> gridder = make_grid<float, 3>(traj, ktype, os, 1);
+  auto gridder = make_grid<float, ND>(traj, ktype, os, 1);
 
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {
@@ -133,15 +135,19 @@ Re2 Radial(Trajectory const &traj, Index const lores, Index const gap)
   return Radial3D(traj, lores, gap);
 }
 
-std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, Index const channels, std::string const &ktype, float const os)
+std::unique_ptr<Operator<3, 3>>
+make_sdc(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string const &ktype, float const os)
 {
   Re2 sdc(traj.nSamples(), traj.nTraces());
   auto const iname = opts.type.Get();
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::make_unique<SDCOp>(Sz2{traj.nSamples(), traj.nTraces()}, channels);
+    return std::make_unique<Identity<3>>(Sz3{traj.nSamples(), traj.nTraces(), nC});
   } else if (iname == "pipe") {
-    sdc = Pipe(traj, ktype, os, opts.maxIterations.Get());
+    switch (traj.nDims()) {
+    case 2: sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get()); break;
+    case 3: sdc = SDC::Pipe<3>(traj, ktype, os, opts.maxIterations.Get()); break;
+    }
   } else {
     HD5::Reader reader(iname);
     sdc = reader.readTensor<Re2>(HD5::Keys::SDC);
@@ -154,7 +160,7 @@ std::unique_ptr<SDCOp> Choose(Opts &opts, Trajectory const &traj, Index const ch
         traj.nTraces());
     }
   }
-  return std::make_unique<SDCOp>(sdc.pow(opts.pow.Get()), channels);
+  return std::make_unique<SDCOp>(sdc.pow(opts.pow.Get()), nC);
 }
 
 } // namespace SDC

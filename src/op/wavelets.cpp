@@ -33,7 +33,7 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
   : dims_{dims}
   , N_{N}
   , L_{L}
-
+  , ws_{dims_}
 {
   // Check image is adequately padded and bug out if not
   auto const padded = PaddedDimensions(dims_, L_);
@@ -120,15 +120,15 @@ void Wavelets::encode_dim(Output &image, Index const dim, Index const level) con
   Threads::For(encode_task, sz, fmt::format(FMT_STRING("Wavelets Encode Dimension {} Level {}"), dim, level));
 }
 
-auto Wavelets::forward(Input const &x) const -> Output
+auto Wavelets::forward(Input const &x) const -> Output const &
 {
-  Output y = x;
+  ws_ = x;
   for (Index il = 0; il < L_; il++) {
     for (Index dim = 0; dim < 3; dim++) {
-      encode_dim(y, dim, il);
+      encode_dim(ws_, dim, il);
     }
   }
-  return y;
+  return ws_;
 }
 
 void Wavelets::decode_dim(Input &image, Index const dim, Index const level) const
@@ -163,15 +163,15 @@ void Wavelets::decode_dim(Input &image, Index const dim, Index const level) cons
   Threads::For(decode_task, sz, fmt::format(FMT_STRING("Wavelets Decode Dimension {} Level {}"), dim, level));
 }
 
-auto Wavelets::adjoint(Output const &x) const -> Input
+auto Wavelets::adjoint(Output const &x) const -> Input const & 
 {
-  Input y = x;
+  ws_ = x;
   for (Index il = L_ - 1; il >= 0; il--) {
     for (Index dim = 0; dim < 3; dim++) {
-      decode_dim(y, dim, il);
+      decode_dim(ws_, dim, il);
     }
   }
-  return y;
+  return ws_;
 }
 
 } // namespace rl

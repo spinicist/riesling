@@ -3,7 +3,7 @@
 #include "algo/decomp.hpp"
 #include "cropper.h"
 #include "mapping.hpp"
-#include "op/gridBase.hpp"
+#include "op/make_grid.hpp"
 #include "op/nufft.hpp"
 #include "sdc.hpp"
 #include "tensorOps.hpp"
@@ -25,10 +25,10 @@ auto ROVIR(
   float const energy,
   Index const channels,
   Index const lorestraces,
-  Cx3 const &inData) -> Eigen::MatrixXcf
+  Cx4 const &inData) -> Eigen::MatrixXcf
 {
   Trajectory traj = inTraj;
-  Cx3 data;
+  Cx4 data;
   if (opts.res) {
     std::tie(traj, data) = inTraj.downsample(inData, opts.res.Get(), lorestraces, true);
   } else {
@@ -37,12 +37,11 @@ auto ROVIR(
   auto const &info = traj.info();
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
-  auto gridder = make_grid<Cx, 3>(traj, "ES3", osamp, nC);
-  SDCOp sdc(SDC::Pipe(traj, "ES5", 2.1f), nC);
-  auto const sz = LastN<3>(gridder->inputDimensions());
-  NUFFTOp nufft(sz, gridder.get(), &sdc);
+  SDCOp sdc(SDC::Pipe<3>(traj, "ES5", 2.1f), nC);
+  auto nufft = make_nufft(traj, "ES3", osamp, nC, &sdc);
+  auto const sz = LastN<3>(nufft->inputDimensions());
   Cx4 const channelImages =
-    nufft.adjoint(data).chip<1>(0);
+    nufft->adjoint(data).chip<1>(0);
 
   // Get the signal distribution for thresholding
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt(); // For ROI selection

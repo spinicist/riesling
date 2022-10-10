@@ -10,8 +10,8 @@ struct Wavelets final : Operator<4, 4>
 
   auto inputDimensions() const -> InputDims;
   auto outputDimensions() const -> OutputDims;
-  auto forward(Input const &x) const -> Output;
-  auto adjoint(Output const &x) const -> Input;
+  auto forward(Input const &x) const -> Output const &;
+  auto adjoint(Output const &x) const -> Input const &;
 
   static auto PaddedDimensions(Sz4 const dims, Index const levels) -> Sz4;
 private:
@@ -20,5 +20,6 @@ private:
   Sz4 dims_;
   Index N_, L_;
   Re1 D_; // Coefficients
+  mutable Input ws_;
 };
 } // namespace rl

@@ -15,7 +15,9 @@ using namespace rl;
 
 int main_zinfandel(args::Subparser &parser)
 {
-  CoreOpts core(parser);
+  CoreOpts coreOpts(parser);
+
+  args::Positional<std::string> fullTrajFile(parser, "F", "File containing full trajectory");
 
   args::ValueFlag<Index> gap(parser, "G", "Set gap value (default 2)", {'g', "gap"}, 2);
 
@@ -37,10 +39,12 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<float> winSz(parser, "T", "SLR normalized window size (default 1.5)", {"win-size"}, 0.1f);
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 4)", {"kernel-size"}, 4);
 
-  ParseCommand(parser, core.iname);
+  ParseCommand(parser, coreOpts.iname);
 
-  HD5::Reader reader(core.iname.Get());
+  HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
+  HD5::Reader fullTrajReader(fullTrajFile.Get());
+  Trajectory fullTraj(reader);
   auto info = traj.info();
   auto out_info = info;
 
@@ -49,7 +53,7 @@ int main_zinfandel(args::Subparser &parser)
   Index const volumes = rad_ks.dimension(3);
   if (grappa) {
     for (Index iv = 0; iv < volumes; iv++) {
-      Cx3 vol = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv);
+      Cx3 vol = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv);
       zinGRAPPA(gap.Get(), gSrc.Get(), gtraces.Get(), gRead.Get(), λ.Get(), traj.points(), vol);
       rad_ks.chip<3>(iv) = vol;
     }
@@ -57,19 +61,17 @@ int main_zinfandel(args::Subparser &parser)
     // Use SLR
     auto const [dsTraj, s1, dsSamp] = traj.downsample(res.Get(), 0, true);
 
-    auto grid0 = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), channels);
-    auto gridN = make_grid<Cx, 3>(dsTraj, core.ktype.Get(), core.osamp.Get(), channels);
+    auto nufft0 = make_nufft(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, nullptr, std::nullopt);
+    auto nufftN = make_nufft(fullTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, nullptr, std::nullopt);
 
-    NUFFTOp nufft0(LastN<3>(grid0->inputDimensions()), grid0.get());
-    NUFFTOp nufftN(LastN<3>(gridN->inputDimensions()), gridN.get());
-    auto const pre = std::make_unique<KSpaceSingle>(dsTraj);
+    std::unique_ptr<Functor<Cx4>> const pre = std::make_unique<KSpaceSingle>(dsTraj);
     SLR reg{nufftN.fft(), kSz.Get()};
     Sz3 const st{0, 0, 0};
     Sz3 const sz{channels, gap.Get(), dsTraj.nTraces()};
-    LSQR<NUFFTOp> lsqr{nufftN, pre.get(), iits.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
-    ADMM<LSQR<NUFFTOp>> admm{lsqr, &reg, oits.Get(), winSz.Get(), ρ.Get()};
+    LSQR<NUFFTOp<3>> lsqr{nufftN, pre.get(), iits.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+    ADMM<LSQR<NUFFTOp<3>>> admm{lsqr, &reg, oits.Get(), winSz.Get(), ρ.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      Cx3 const ks = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, iv);
+      Cx3 const ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv);
       Cx3 const dsKS = ks.slice(Sz3{0, s1, 0}, Sz3{channels, dsSamp, dsTraj.nTraces()});
       Cx5 const img = admm.run(dsKS);
       Cx3 const filled = nufft0.forward(img);
@@ -78,7 +80,7 @@ int main_zinfandel(args::Subparser &parser)
     }
   }
 
-  HD5::Writer writer(OutName(core.iname.Get(), core.oname.Get(), "zinfandel", "h5"));
+  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "zinfandel", "h5"));
   Trajectory(out_info, traj.points()).write(writer);
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(rad_ks, HD5::Keys::Noncartesian);

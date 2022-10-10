@@ -23,8 +23,7 @@ TEST_CASE("NUFFT", "[nufft]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto gridder = make_grid<Cx, 3>(traj, ktype, osamp, 1);
-  NUFFTOp nufft(LastN<3>(info.matrix), gridder.get());
+  NUFFTOp<3> nufft(traj, ktype, osamp, 1);
   Cx3 ks(nufft.outputDimensions());
   Cx5 img(nufft.inputDimensions());
   ks.setConstant(1.f);

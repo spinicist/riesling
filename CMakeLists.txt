@@ -58,12 +58,14 @@ add_library(vineyard
     src/io/reader.cpp
     src/io/writer.cpp
     src/op/apodize.cpp
-    src/op/gridBase.cpp
     src/op/grid-kb-radial.cpp
     src/op/grid-kb-rect.cpp
     src/op/grid-es-radial.cpp
     src/op/grid-es-rect.cpp
+    src/op/make_grid.cpp
     src/op/nufft.cpp
+    src/op/recon.cpp
+    src/op/recon-rss.cpp
     src/op/sdc.cpp
     src/op/sense.cpp
     src/op/wavelets.cpp
@@ -126,7 +128,7 @@ add_executable(riesling
     src/cmd/traj.cpp
     src/cmd/version.cpp
     src/cmd/wavelets.cpp
-    src/cmd/zinfandel.cpp
+    # src/cmd/zinfandel.cpp
     src/main.cpp
 )
 target_link_libraries(riesling

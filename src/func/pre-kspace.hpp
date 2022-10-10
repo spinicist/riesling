@@ -5,12 +5,12 @@
 
 namespace rl {
 
-struct KSpaceSingle final : Functor<Cx3>
+struct KSpaceSingle final : Functor<Cx4>
 {
   KSpaceSingle(Trajectory const &traj);
-  auto operator()(Cx3 const &in) const -> Cx3;
+  auto operator()(Cx4 const &in) const -> Cx4;
 
-  Re3 weights;
+  Re4 weights;
 };
 
 } // namespace rl

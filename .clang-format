@@ -20,7 +20,8 @@ BraceWrapping:
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
 AlwaysBreakTemplateDeclarations: true
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
 AlignAfterOpenBracket: AlwaysBreak
 BreakConstructorInitializers: BeforeComma
-ColumnLimit: 120
+ColumnLimit: 128

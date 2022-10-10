@@ -1,5 +1,7 @@
 #include "sdc.hpp"
+#include "../sdc.hpp"
 
+#include "identity.hpp"
 #include "threads.hpp"
 
 namespace rl {
@@ -7,39 +9,28 @@ namespace rl {
 SDCOp::SDCOp(Re2 const &dc, Index const nc)
   : dims_{AddFront(dc.dimensions(), nc)}
   , dc_{dc}
+  , ws_{dims_}
 {
 }
 
-SDCOp::SDCOp(Sz2 const &dims, Index const nc)
-  : dims_{AddFront(dims, nc)}
-{
+auto SDCOp::inputDimensions() const -> InputDims { return dims_; }
+
+auto SDCOp::outputDimensions() const -> OutputDims { return dims_; }
+
+auto SDCOp::forward(Input const &x) const -> Output const & {
+  ws_ = x;
+  return ws_;
 }
 
-auto SDCOp::inputDimensions() const -> InputDims
+auto SDCOp::adjoint(Output const &y) const -> Input const &
 {
-  return dims_;
-}
-
-auto SDCOp::outputDimensions() const -> OutputDims
-{
-  return dims_;
-}
-
-auto SDCOp::adjoint(Output const &x) const -> Input
-{
-  checkOutput(x.dimensions());
-  if (dc_.size()) {
-    auto const start = Log::Now();
-    auto const dims = x.dimensions();
-    Cx3 p(dims);
-    p.device(Threads::GlobalDevice()) =
-      x * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims[0], 1, 1});
-    LOG_DEBUG(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
-    return p;
-  } else {
-    Log::Print<Log::Level::High>(FMT_STRING("No SDC"));
-    return x;
-  }
+  assert(y.dimensions() == outputDimensions());
+  Log::Print<Log::Level::Debug>(FMT_STRING("SDC Adjoint"));
+  auto const start = Log::Now();
+  ws_ =
+    y * dc_.cast<Cx>().reshape(Sz3{1, dc_.dimension(0), dc_.dimension(1)}).broadcast(Sz3{dims_[0], 1, 1});
+  LOG_DEBUG(FMT_STRING("SDC Adjoint Took {}"), Log::ToNow(start));
+  return ws_;
 }
 
 } // namespace rl

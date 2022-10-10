@@ -22,6 +22,6 @@ auto ROVIR(
   float const energy,
   Index const channels,
   Index const lorestraces,
-  Cx3 const &data) -> Eigen::MatrixXcf;
+  Cx4 const &data) -> Eigen::MatrixXcf;
 
 } // namespace rl

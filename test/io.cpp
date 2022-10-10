@@ -22,10 +22,10 @@ TEST_CASE("IO", "[io]")
   Log::SetLevel(Log::Level::Testing);
   Index const M = 4;
   Info const info{.matrix = Sz3{M, M, M}};
-  Index const channels = 1, samples = 32, traces = 64, volumes = 2;
+  Index const channels = 1, samples = 32, traces = 64, slices = 1, volumes = 2;
   auto const points = ArchimedeanSpiral(samples, traces);
   Trajectory const traj(info, points);
-  Cx4 refData(channels, samples, traces, volumes);
+  Cx5 refData(channels, samples, traces, slices, volumes);
   refData.setConstant(1.f);
 
   SECTION("Basic")
@@ -45,10 +45,10 @@ TEST_CASE("IO", "[io]")
     CHECK(traj.nSamples() == samples);
     CHECK(traj.nTraces() == traces);
 
-    CHECK_NOTHROW(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0));
-    auto const check0 = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0);
+    CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 0));
+    auto const check0 = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 0);
     CHECK(Norm(check0 - refData.chip<3>(0)) == Approx(0.f).margin(1.e-9));
-    auto const check1 = reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 1);
+    auto const check1 = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 1);
     CHECK(Norm(check1 - refData.chip<3>(1)) == Approx(0.f).margin(1.e-9));
     std::filesystem::remove(fname);
   }
@@ -60,11 +60,11 @@ TEST_CASE("IO", "[io]")
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
       traj.write(writer);
-      writer.writeTensor(Re4(refData.real()), HD5::Keys::Noncartesian);
+      writer.writeTensor(Re5(refData.real()), HD5::Keys::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
     HD5::Reader reader(fname);
-    CHECK_THROWS_AS(reader.readSlab<Cx3>(HD5::Keys::Noncartesian, 0), Log::Failure);
+    CHECK_THROWS_AS(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 0), Log::Failure);
     std::filesystem::remove(fname);
   }
 }

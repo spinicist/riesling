@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
-#include "sense.h"
+#include "sense.hpp"
 #include "types.hpp"
 #include <filesystem>
 

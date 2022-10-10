@@ -8,35 +8,23 @@
 
 namespace rl {
 
-struct ReconRSSOp final : Operator<4, 3>
+struct ReconRSSOp final : Operator<4, 4>
 {
-  ReconRSSOp(GridBase<Cx, 3>*gridder, Sz3 const &dims, SDCOp *sdc = nullptr)
-    : nufft_{dims, gridder, sdc}
-  {
-  }
+  ReconRSSOp(
+    Trajectory const &traj,
+    std::string const &ktype,
+    float const osamp,
+    Index const nC,
+    Operator<3, 3> *sdc,
+    std::optional<Re2> basis);
 
-  InputDims inputDimensions() const
-  {
-    return LastN<4>(nufft_.inputDimensions());
-  }
-
-  OutputDims outputDimensions() const
-  {
-    return nufft_.outputDimensions();
-  }
-
-  template <typename T>
-  auto adjoint(T const &x) const
-  {
-    auto const start = Log::Now();
-    Cx5 const channels = nufft_.adjoint(x);
-    Cx4 y(inputDimensions());
-    y.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
-    LOG_DEBUG(FMT_STRING("Finished ReconOp adjoint. Norm {}->{}. Took {}"), Norm(x), Norm(y), Log::ToNow(start));
-    return y;
-  }
+  auto inputDimensions() const -> InputDims;
+  auto outputDimensions() const -> OutputDims;
+  auto forward(Input const &x) const -> Output const &;
+  auto adjoint(Output const &y) const -> Input const &;
 
 private:
-  NUFFTOp nufft_;
+  std::unique_ptr<Operator<5, 4>> nufft_;
+  mutable Input x_;
 };
-}
+} // namespace rl

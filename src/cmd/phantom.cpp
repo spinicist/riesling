@@ -6,7 +6,7 @@
 #include "parse_args.hpp"
 #include "phantom_shepplogan.h"
 #include "phantom_sphere.h"
-#include "sense.h"
+#include "sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "traj_spirals.h"

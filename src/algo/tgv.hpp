@@ -133,7 +133,7 @@ Cx4 tgv(
   float const reduction,
   float const step_size,
   Op &op,
-  Cx3 const &ks_data)
+  Cx4 const &ks_data)
 {
   auto dev = Threads::GlobalDevice();
 
@@ -171,9 +171,9 @@ Cx4 tgv(
   v_decode.setZero();
 
   // k-Space variables
-  Cx3 ks_res(ks_data.dimensions()); // Residual term in k-space
+  Cx4 ks_res(ks_data.dimensions()); // Residual term in k-space
   ks_res.setZero();
-  Cx3 r(ks_data.dimensions());
+  Cx4 r(ks_data.dimensions());
   r.setZero();
 
   float const alpha00 = scale * alpha;

@@ -30,7 +30,7 @@ Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
   hid_t ds = H5Dget_space(dset);
   int const ndims = H5Sget_simple_extent_ndims(ds);
   if (ndims != ND) {
-    Log::Fail(FMT_STRING("In tensor {}, number of dimensions {} does match on-disk number {}"), name, ndims, ND);
+    Log::Fail(FMT_STRING("Tensor {}: Requested rank {}, on-disk rank {}"), name, ND, ndims);
   }
   std::array<hsize_t, ND> hdims;
   H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
@@ -49,7 +49,7 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor {}: has rank {}, expected {}"), name, rank, ND);
+    Log::Fail(FMT_STRING("Tensor {}: Requested rank {}, on-disk rank {}"), name, ND, rank);
   }
 
   std::array<hsize_t, ND> dims;
@@ -251,6 +251,7 @@ auto Reader::readSlab(std::string const &label, Index const ind) const -> T
 }
 
 template auto Reader::readSlab<Cx3>(std::string const &, Index const) const -> Cx3;
+template auto Reader::readSlab<Cx4>(std::string const &, Index const) const -> Cx4;
 
 template <typename Derived>
 auto Reader::readMatrix(std::string const &label) const -> Derived

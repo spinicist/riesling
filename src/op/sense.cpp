@@ -8,6 +8,8 @@ SenseOp::SenseOp(Cx4 const &maps, Index const d0)
   : maps_{std::move(maps)}
   , inSz_{d0, maps_.dimension(1), maps_.dimension(2), maps_.dimension(3)}
   , outSz_{maps_.dimension(0), d0, maps_.dimension(1), maps_.dimension(2), maps_.dimension(3)}
+  , x_{inSz_}
+  , y_{outSz_}
 {
   resX.set(1, d0);
   resX.set(2, maps_.dimension(1));
@@ -32,14 +34,16 @@ auto SenseOp::outputDimensions() const -> OutputDims
   return outSz_;
 }
 
-auto SenseOp::forward(Input const &x) const -> Output
+auto SenseOp::forward(Input const &x) const -> Output const &
 {
-  return (x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps));
+  y_ = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
+  return y_;
 }
 
-auto SenseOp::adjoint(Output const &x) const -> Input
+auto SenseOp::adjoint(Output const &x) const -> Input const &
 {
-  return ConjugateSum(x, maps_.reshape(resMaps).broadcast(brdMaps));
+  x_ = ConjugateSum(x, maps_.reshape(resMaps).broadcast(brdMaps));
+  return x_;
 }
 
 } // namespace rl

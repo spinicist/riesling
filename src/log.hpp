@@ -7,9 +7,9 @@
 
 #include "types.hpp"
 
-#define LOG_DEBUG(...)                                                                                                 \
-  if (rl::Log::CurrentLevel() == rl::Log::Level::High) {                                                               \
-    rl::Log::Print<Log::Level::High>(__VA_ARGS__);                                                                     \
+#define LOG_DEBUG(...)                                                                                                         \
+  if (rl::Log::CurrentLevel() == rl::Log::Level::Debug) {                                                                      \
+    rl::Log::Print<Log::Level::High>(__VA_ARGS__);                                                                             \
   }
 
 namespace rl {

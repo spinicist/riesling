@@ -16,33 +16,14 @@ struct GridBase : Operator<NDim + 2, 3, Scalar>
   using typename Operator<NDim + 2, 3, Scalar>::Output;
 
   GridBase()
-    : weightFrames_{true}
   {
   }
 
   virtual ~GridBase(){};
-  virtual Output forward(Input const &cart) const = 0;
-  virtual Input &adjoint(Output const &noncart) const = 0;
-  virtual Re3 apodization(Sz3 const sz) const = 0;
+  virtual auto apodization(Sz<NDim> const sz) const -> Eigen::Tensor<float, NDim> = 0;
   virtual Sz3 outputDimensions() const = 0;
   virtual typename Input::Dimensions inputDimensions() const = 0;
   virtual std::shared_ptr<Input> workspace() const = 0;
-
-  void doNotWeightnFrames()
-  {
-    weightFrames_ = false;
-  }
-
-protected:
-  bool weightFrames_;
 };
-
-template <typename Scalar, size_t ND>
-std::unique_ptr<GridBase<Scalar, ND>> make_grid(
-  Trajectory const &trajectory,
-  std::string const kType,
-  float const os,
-  Index const nC,
-  std::optional<Re2> const &basis = std::nullopt);
 
 } // namespace rl

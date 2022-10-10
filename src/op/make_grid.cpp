@@ -1,4 +1,4 @@
-#include "gridBase.hpp"
+#include "make_grid.hpp"
 #include "grid.hpp"
 #include "io/reader.hpp"
 #include "kernel/nn.hpp"

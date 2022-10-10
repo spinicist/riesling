@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
 #include "../src/info.hpp"
-#include "../src/op/gridBase.hpp"
+#include "../src/op/make_grid.hpp"
 #include "../src/traj_spirals.h"
 
 #include <catch2/benchmark/catch_benchmark_all.hpp>

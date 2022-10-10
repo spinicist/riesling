@@ -4,31 +4,54 @@
 
 #include "apodize.hpp"
 #include "fft.hpp"
-#include "gridBase.hpp"
+#include "make_grid.hpp"
 #include "pad.hpp"
 #include "sdc.hpp"
 
 namespace rl {
 
-struct NUFFTOp final : Operator<5, 3>
+template <size_t NDim>
+struct NUFFTOp final : Operator<NDim + 2, 3>
 {
-  NUFFTOp(Sz3 const imgDims, GridBase<Cx, 3> *g, SDCOp *sdc = nullptr);
+  using Input = typename Operator<NDim + 2, 3>::Input;
+  using Output = typename Operator<NDim + 2, 3>::Output;
+  using InputDims = typename Operator<NDim + 2, 3>::InputDims;
+  using OutputDims = typename Operator<NDim + 2, 3>::OutputDims;
+
+  NUFFTOp(
+    Trajectory const &traj,
+    std::string const &ktype,
+    float const osamp,
+    Index const nC,
+    Operator<3, 3> *sdc = nullptr,
+    std::optional<Re2> basis = std::nullopt,
+    bool toeplitz = false);
 
   auto inputDimensions() const -> InputDims;
   auto outputDimensions() const -> OutputDims;
-  auto forward(Input const &x) const -> Output;
-  auto adjoint(Output const &x) const -> Input;
+  auto forward(Input const &x) const -> Output const &;
+  auto adjoint(Output const &x) const -> Input const &;
   auto adjfwd(Input const &x) const -> Input;
-  auto fft() const -> FFTOp<5> const &;
-  void calcToeplitz();
+  auto fft() const -> FFTOp<NDim + 2, NDim> const &;
 
 private:
-  GridBase<Cx, 3> *gridder_;
-  FFTOp<5> fft_;
-  PadOp<5> pad_;
-  ApodizeOp<Cx> apo_;
-  Cx5 tf_;
-  SDCOp *sdc_;
+  std::unique_ptr<GridBase<Cx, NDim>> gridder_;
+  FFTOp<NDim + 2, NDim> fft_;
+  PadOp<NDim + 2, NDim> pad_;
+  ApodizeOp<Cx, NDim> apo_;
+  Operator<3, 3> *sdc_;
+  using Transfer = Eigen::Tensor<Cx, NDim + 2>;
+  Transfer tf_;
+
 };
+
+std::unique_ptr<Operator<5, 4>> make_nufft(
+  Trajectory const &traj,
+  std::string const &ktype,
+  float const osamp,
+  Index const nC,
+  Operator<3, 3> *sdc = nullptr,
+  std::optional<Re2> basis = std::nullopt,
+  bool const toeplitz = false);
 
 } // namespace rl

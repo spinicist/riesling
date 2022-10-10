@@ -1,54 +1,56 @@
 #include "apodize.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
+#include "grid.hpp"
 
 namespace rl {
 
-template<typename Scalar>
-ApodizeOp<Scalar>::ApodizeOp(InputDims const &inSize, GridBase<Scalar, 3> *gridder)
+template<typename Scalar, size_t NDim>
+ApodizeOp<Scalar, NDim>::ApodizeOp(InputDims const &inSize, GridBase<Scalar, NDim> *gridder)
 {
-  std::copy_n(inSize.begin(), 5, sz_.begin());
+  std::copy_n(inSize.begin(), NDim + 2, sz_.begin());
   for (Index ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
     brd_[ii] = sz_[ii];
   }
-  for (Index ii = 2; ii < 5; ii++) {
+  for (Index ii = 2; ii < NDim + 2; ii++) {
     res_[ii] = sz_[ii];
     brd_[ii] = 1;
   }
-  apo_ = gridder->apodization(LastN<3>(sz_));
+  apo_ = gridder->apodization(LastN<NDim>(sz_));
+  x_.resize(inputDimensions());
+  y_.resize(outputDimensions());
 }
 
-template<typename Scalar>
-auto ApodizeOp<Scalar>::inputDimensions() const -> InputDims
+template<typename Scalar, size_t NDim>
+auto ApodizeOp<Scalar, NDim>::inputDimensions() const -> InputDims
 {
   return sz_;
 }
 
-template<typename Scalar>
-auto ApodizeOp<Scalar>::outputDimensions() const -> OutputDims
+template<typename Scalar, size_t NDim>
+auto ApodizeOp<Scalar, NDim>::outputDimensions() const -> OutputDims
 {
   return sz_;
 }
 
-template<typename Scalar>
-auto ApodizeOp<Scalar>::forward(Input const &x) const -> Output
+template<typename Scalar, size_t NDim>
+auto ApodizeOp<Scalar, NDim>::forward(Input const &x) const -> Output const &
 {
-  Output result(outputDimensions());
-  result.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
-  LOG_DEBUG("Apodize Forward Norm {}->{}", Norm(x), Norm(result));
-  return result;
+  y_ = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
+  LOG_DEBUG("Apodize Forward Norm {}->{}", Norm(x), Norm(y_));
+  return y_;
 }
 
-template<typename Scalar>
-auto ApodizeOp<Scalar>::adjoint(Output const &x) const -> Input
+template<typename Scalar, size_t NDim>
+auto ApodizeOp<Scalar, NDim>::adjoint(Output const &x) const -> Input const &
 {
-  Input result(inputDimensions());
-  result.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
-  LOG_DEBUG("Apodize Adjoint Norm {}->{}", Norm(x), Norm(result));
-  return result;
+  x_ = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
+  LOG_DEBUG("Apodize Adjoint Norm {}->{}", Norm(x), Norm(x_));
+  return x_;
 }
 
-template struct ApodizeOp<Cx>;
+template struct ApodizeOp<Cx, 2>;
+template struct ApodizeOp<Cx, 3>;
 
 } // namespace rl

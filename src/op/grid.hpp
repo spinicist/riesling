@@ -1,11 +1,11 @@
 #pragma once
 
-#include "cropper.h"
 #include "fft/fft.hpp"
 #include "gridBase.hpp"
 #include "mapping.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
+#include "pad.hpp"
 
 #include <mutex>
 
@@ -30,9 +30,10 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 {
   static constexpr size_t NDim = Kernel::NDim;
   static constexpr Index kW = Kernel::PadWidth;
-  using typename GridBase<Scalar, NDim>::Input;
-  using InputDims = typename Input::Dimensions;
-  using typename GridBase<Scalar, NDim>::Output;
+  using Parent = GridBase<Scalar, NDim>;
+  using typename Parent::Input;
+  using typename Parent::InputDims;
+  using typename Parent::Output;
 
   Kernel kernel;
   Mapping<NDim> mapping;
@@ -41,6 +42,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
   InputDims inputDims_;
   Sz3 outputDims_;
   std::shared_ptr<Input> ws_;
+  mutable Output out_;
 
   Grid(Trajectory const &traj, float const osamp, Index const nC, std::optional<Re2> const &b = std::nullopt)
     : GridBase<Scalar, NDim>()
@@ -49,10 +51,11 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     , basis{b}
     , inputDims_{AddFront(mapping.cartDims, nC, basis ? basis.value().dimension(1) : mapping.frames)}
     , outputDims_{AddFront(mapping.noncartDims, nC)}
+    , ws_{std::make_shared<Input>(inputDimensions())}
+    , out_{outputDimensions()}
   {
     static_assert(NDim < 4);
     Log::Print<Log::Level::High>(FMT_STRING("Grid Dims {}"), this->inputDimensions());
-    ws_ = std::make_shared<Input>(inputDimensions());
   }
 
   Sz3 outputDimensions() const
@@ -70,13 +73,12 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     return ws_;
   }
 
-  Output forward(Input const &cart) const
+  Output &forward(Input const &cart) const
   {
     if (cart.dimensions() != this->inputDimensions()) {
       Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
     }
-    Output noncart(this->outputDimensions());
-    noncart.device(Threads::GlobalDevice()) = noncart.constant(0.f);
+    out_.device(Threads::GlobalDevice()) = out_.constant(0.f);
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : 1;
     float const scale = basis ? sqrt(basis.value().dimension(0)) : 1.f;
@@ -106,12 +108,12 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
               for (Index ib = 0; ib < nB; ib++) {
                 float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
                 for (Index ic = 0; ic < nC; ic++) {
-                  noncart(ic, n.sample, n.trace) += cart(ic, ib, ii1) * bval;
+                  out_(ic, n.sample, n.trace) += cart(ic, ib, ii1) * bval;
                 }
               }
             } else {
               for (Index ic = 0; ic < nC; ic++) {
-                noncart(ic, n.sample, n.trace) += cart(ic, ifr, ii1) * kval;
+                out_(ic, n.sample, n.trace) += cart(ic, ifr, ii1) * kval;
               }
             }
           } else {
@@ -123,12 +125,12 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
                   for (Index ib = 0; ib < nB; ib++) {
                     float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
                     for (Index ic = 0; ic < nC; ic++) {
-                      noncart(ic, n.sample, n.trace) += cart(ic, ib, ii2, ii1) * bval;
+                      out_(ic, n.sample, n.trace) += cart(ic, ib, ii2, ii1) * bval;
                     }
                   }
                 } else {
                   for (Index ic = 0; ic < nC; ic++) {
-                    noncart(ic, n.sample, n.trace) += cart(ic, ifr, ii2, ii1) * kval;
+                    out_(ic, n.sample, n.trace) += cart(ic, ifr, ii2, ii1) * kval;
                   }
                 }
               } else {
@@ -139,12 +141,12 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
                     for (Index ib = 0; ib < nB; ib++) {
                       float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
                       for (Index ic = 0; ic < nC; ic++) {
-                        noncart(ic, n.sample, n.trace) += cart(ic, ib, ii3, ii2, ii1) * bval;
+                        out_(ic, n.sample, n.trace) += cart(ic, ib, ii3, ii2, ii1) * bval;
                       }
                     }
                   } else {
                     for (Index ic = 0; ic < nC; ic++) {
-                      noncart(ic, n.sample, n.trace) += cart(ic, ifr, ii3, ii2, ii1) * kval;
+                      out_(ic, n.sample, n.trace) += cart(ic, ifr, ii3, ii2, ii1) * kval;
                     }
                   }
                 }
@@ -161,7 +163,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     };
 
     Threads::For(grid_task, map.buckets.size(), "Grid Forward");
-    return noncart;
+    return out_;
   }
 
   Input &adjoint(Output const &noncart) const
@@ -190,7 +192,6 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
         auto const n = map.noncart[si];
         auto const k = this->kernel(map.offset[si]);
         auto const ifr = basis ? 0 : map.frame[si];
-        auto const frscale = scale * (this->weightFrames_ ? map.frameWeights[ifr] : 1.f);
 
         Index constexpr hW = kW / 2;
 
@@ -206,7 +207,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
           for (Index ib = 0; ib < nB; ib++) {
             if (ib == ifr) {
               for (Index ic = 0; ic < nC; ic++) {
-                bSample(ic, ib) = noncart(ic, n.sample, n.trace) * frscale;
+                bSample(ic, ib) = noncart(ic, n.sample, n.trace) * scale;
               }
             } else {
               for (Index ic = 0; ic < nC; ic++) {
@@ -229,7 +230,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
             for (Index i2 = 0; i2 < kW; i2++) {
               Index const ii2 = i2 + c[NDim - 2] - hW - bucket.minCorner[NDim - 2];
               if constexpr (NDim == 2) {
-                float const kval = k(i2, i1) * frscale;
+                float const kval = k(i2, i1) * scale;
                 for (Index ib = 0; ib < nB; ib++) {
                   for (Index ic = 0; ic < nC; ic++) {
                     bGrid(ic, ib, ii2, ii1) += bSample(ic, ib) * kval;
@@ -238,7 +239,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
               } else {
                 for (Index i3 = 0; i3 < kW; i3++) {
                   Index const ii3 = i3 + c[NDim - 3] - hW - bucket.minCorner[NDim - 3];
-                  float const kval = k(i3, i2, i1) * frscale;
+                  float const kval = k(i3, i2, i1) * scale;
                   for (Index ib = 0; ib < nB; ib++) {
                     for (Index ic = 0; ic < nC; ic++) {
                       bGrid(ic, ib, ii3, ii2, ii1) += bSample(ic, ib) * kval;
@@ -291,19 +292,20 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     return *(this->ws_);
   }
 
-  Re3 apodization(Sz3 const sz) const
+  auto apodization(Sz<NDim> const sz) const -> Eigen::Tensor<float, NDim>
   {
-    Cx3 temp(LastN<3>(inputDimensions()));
-    auto const fft = FFT::Make<3, 3>(temp);
+    Eigen::Tensor<Cx, NDim> temp(LastN<NDim>(inputDimensions()));
+    auto const fft = FFT::Make<NDim, NDim>(temp);
     temp.setZero();
     auto const k = kernel(Kernel::Point::Zero());
-    Crop3(temp, k.dimensions()) = k.template cast<Cx>();
+    PadOp<NDim, NDim> padK(k.dimensions(), temp.dimensions());
+    temp = padK.forward(k.template cast<Cx>());
     fft->reverse(temp);
-    Re3 a = Crop3(Re3(temp.real()), sz);
+    PadOp<NDim, NDim> padA(sz, temp.dimensions());
+    Eigen::Tensor<float, NDim> a = padA.adjoint(temp).real();
     float const scale = std::sqrt(Product(sz));
-    a.device(Threads::GlobalDevice()) = a * a.constant(scale);
-    Log::Print(FMT_STRING("Apodization size {} scale factor: {}"), fmt::join(a.dimensions(), ","), scale);
-    a.device(Threads::GlobalDevice()) = a.inverse();
+    a.device(Threads::GlobalDevice()) = (a * a.constant(scale)).inverse();
+    LOG_DEBUG("Apodization size {} Scale: {} Norm: {}", a.dimensions(), scale, Norm(a));
     return a;
   }
 };

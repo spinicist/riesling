@@ -11,8 +11,8 @@ struct SenseOp final : Operator<4, 5>
   InputDims inputDimensions() const;
   OutputDims outputDimensions() const;
 
-  auto forward(Input const &x) const -> Output;
-  auto adjoint(Output const &x) const -> Input;
+  auto forward(Input const &x) const -> Output const &;
+  auto adjoint(Output const &y) const -> Input const &;
 
 private:
   Cx4 maps_;
@@ -22,6 +22,8 @@ private:
   Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdX;
   Eigen::IndexList<int, FixOne, int, int, int> resMaps;
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
+  mutable Input x_;
+  mutable Output y_;
 };
 
 } // namespace rl

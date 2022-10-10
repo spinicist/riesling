@@ -3,7 +3,7 @@
 #include "algo/decomp.hpp"
 #include "cropper.h"
 #include "fft/fft.hpp"
-#include "op/gridBase.hpp"
+#include "op/make_grid.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 

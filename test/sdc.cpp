@@ -22,7 +22,7 @@ TEST_CASE("SDC", "[sdc]")
 
   SECTION("Pipe-NN")
   {
-    Re2 sdc = SDC::Pipe(traj, "NN", 2.f);
+    Re2 sdc = SDC::Pipe<3>(traj, "NN", 2.f);
     CHECK(sdc.dimension(0) == samples);
     CHECK(sdc.dimension(1) == traces);
     CHECK(sdc(0, 0) == Approx(1.f).margin(1.e-6f));
@@ -32,7 +32,7 @@ TEST_CASE("SDC", "[sdc]")
 
   SECTION("Pipe")
   {
-    Re2 sdc = SDC::Pipe(traj, "ES7", 2.1f);
+    Re2 sdc = SDC::Pipe<3>(traj, "ES7", 2.1f);
     CHECK(sdc.dimension(0) == samples);
     CHECK(sdc.dimension(1) == traces);
     CHECK(sdc(0, 0) == Approx(1.f).margin(1.e-6f));
