@@ -36,7 +36,7 @@ Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index
       (Wp > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / Norm(W);
     W.device(Threads::GlobalDevice()) = Wp;
-    if (delta < 1e-7) {
+    if (delta < 1e-6) {
       Log::Print(FMT_STRING("SDC converged, delta was {}"), delta);
       break;
     } else {

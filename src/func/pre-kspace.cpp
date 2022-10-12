@@ -23,7 +23,7 @@ KSpaceSingle::KSpaceSingle(Trajectory const &traj)
     });
   Trajectory newTraj(newInfo, traj.points(), traj.frames());
   float const osamp = 1.25;
-  auto nufft = make_nufft(newTraj, "ES5", osamp, 1);
+  auto nufft = make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix());
   Cx4 W(nufft->outputDimensions());
   weights.resize(nufft->outputDimensions());
   W.setConstant(Cx(1.f, 0.f));
@@ -33,7 +33,7 @@ KSpaceSingle::KSpaceSingle(Trajectory const &traj)
   ones.setConstant(1.f);
   // I do not understand this scaling factor but it's in Frank's code and works
   float const scale = std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Norm2(ones);
-  PadOp<5, 3> padX(ones.dimensions(), LastN<3>(psf.dimensions()));
+  PadOp<5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), Sz2{1, 1});
   FFTOp<5, 3> fftX(psf.dimensions());
 
   Cx5 xcorr = fftX.adjoint(fftX.forward(padX.forward(ones)).abs().square().cast<Cx>());

@@ -22,6 +22,7 @@ struct Trajectory
   auto nTraces() const -> Index;
   auto nFrames() const -> Index;
   auto info() const -> Info const &;
+  auto matrix(float const fov = -1.f) const -> Sz3;
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
   auto frame(Index const trace) const -> Index;

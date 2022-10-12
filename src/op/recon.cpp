@@ -11,7 +11,7 @@ ReconOp::ReconOp(
   std::optional<Re2> basis,
   bool const toeplitz)
   : Operator<4, 4>(),
-  nufft_{make_nufft(traj, ktype, osamp, maps.dimension(0), sdc, basis, toeplitz)}
+  nufft_{make_nufft(traj, ktype, osamp, maps.dimension(0), LastN<3>(maps.dimensions()), sdc, basis, toeplitz)}
   , sense_{maps, traj.nFrames()}
 {
 }

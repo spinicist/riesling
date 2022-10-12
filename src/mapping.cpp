@@ -40,12 +40,12 @@ inline decltype(auto) nearby(T &&x)
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
 inline Index fft_size(float const x)
 {
-  return std::ceil(x);
-  // if (x > 8.f) {
-  //   return (std::lrint(x) + 7L) & ~7L;
-  // } else {
-  //   return (Index)std::ceil(x);
-  // }
+  // return std::ceil(x);
+  if (x > 8.f) {
+    return (std::lrint(x) + 7L) & ~7L;
+  } else {
+    return (Index)std::ceil(x);
+  }
 }
 
 // Helper function to sort the cartesian indices
@@ -73,16 +73,13 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 
 template <size_t Rank>
 Mapping<Rank>::Mapping(
-  Trajectory const &traj,
-  Index const kW,
-  float const os,
-  Index const bucketSz,
-  Index const splitSize,
-  Index const read0)
+  Trajectory const &traj, Index const kW, float const nomOS, Index const bucketSz, Index const splitSize, Index const read0)
 {
   Info const &info = traj.info();
-  Index const gridSz = fft_size(info.matrix[0] * os);
-  Log::Print(FMT_STRING("{}D Mapping. Grid size {}"), traj.nDims(), gridSz);
+  Index const gridSz = fft_size(info.matrix[0] * nomOS);
+  osamp = float(gridSz) / info.matrix[0];
+  Log::Print(
+    FMT_STRING("{}D Mapping. Trajectory samples {} frames {} Grid {}"), traj.nDims(), traj.nSamples(), traj.nFrames(), gridSz);
 
   std::fill(cartDims.begin(), cartDims.end(), gridSz);
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
@@ -109,14 +106,11 @@ Mapping<Rank>::Mapping(
       for (Index ix = 0; ix < nB; ix++) {
         buckets.push_back(Bucket{
           Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
-          Sz2{
-            std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
-            std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
+          Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2), std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
       }
     }
   }
 
-  Log::Print("Calculating mapping");
   std::fesetround(FE_TONEAREST);
   float const maxRad = (gridSz / 2) - 1.f;
   Sz<Rank> center;
@@ -136,9 +130,8 @@ Mapping<Rank>::Mapping(
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();
           std::array<int16_t, Rank> ijk;
-          std::transform(center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) {
-            return f1 + f2;
-          });
+          std::transform(
+            center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) { return f1 + f2; });
           cart.push_back(ijk);
           offset.push_back(off);
           noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});

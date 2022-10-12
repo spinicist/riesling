@@ -38,7 +38,7 @@ auto ROVIR(
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
   SDCOp sdc(SDC::Pipe<3>(traj, "ES5", 2.1f), nC);
-  auto nufft = make_nufft(traj, "ES3", osamp, nC, &sdc);
+  auto nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(), &sdc);
   auto const sz = LastN<3>(nufft->inputDimensions());
   Cx4 const channelImages =
     nufft->adjoint(data).chip<1>(0);

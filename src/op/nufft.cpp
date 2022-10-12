@@ -11,20 +11,18 @@ NUFFTOp<NDim>::NUFFTOp(
   std::string const &ktype,
   float const osamp,
   Index const nC,
+  Sz<NDim> const matrix,
   Operator<3, 3> *sdc,
   std::optional<Re2> basis,
   bool toeplitz)
   : gridder_{make_grid<Cx, NDim>(traj, ktype, osamp * (toeplitz ? 2.f: 1.f), nC, basis)}
   , fft_{gridder_->workspace()}
-  , pad_{AddFront(FirstN<NDim>(traj.info().matrix), gridder_->inputDimensions()[0], gridder_->inputDimensions()[1]), LastN<NDim>(gridder_->inputDimensions())}
+  , pad_{matrix, LastN<NDim>(gridder_->inputDimensions()), FirstN<2>(gridder_->inputDimensions())}
   , apo_{pad_.inputDimensions(), gridder_.get()}
   , sdc_{sdc}
 {
   Log::Print<Log::Level::High>(
-    "NUFFT Input Dims {} Output Dims {} Grid Dims {}",
-    inputDimensions(),
-    outputDimensions(),
-    gridder_->inputDimensions());
+    "NUFFT Input Dims {} Output Dims {} Grid Dims {}", inputDimensions(), outputDimensions(), gridder_->inputDimensions());
   if (toeplitz) {
     Log::Print("Calculating Töplitz embedding");
     tf_.resize(inputDimensions());
@@ -95,17 +93,18 @@ std::unique_ptr<Operator<5, 4>> make_nufft(
   std::string const &ktype,
   float const osamp,
   Index const nC,
+  Sz3 const matrix,
   Operator<3, 3> *sdc,
   std::optional<Re2> basis,
   bool const toeplitz)
 {
   if (traj.nDims() == 2) {
     Log::Print<Log::Level::Debug>("Creating 2D Multi-slice NUFFT");
-    NUFFTOp<2> nufft2(traj, ktype, osamp, nC, sdc, basis, toeplitz);
+    NUFFTOp<2> nufft2(traj, ktype, osamp, nC, FirstN<2>(matrix), sdc, basis, toeplitz);
     return std::make_unique<LoopOp<NUFFTOp<2>>>(nufft2, traj.info().matrix[2]);
   } else {
     Log::Print<Log::Level::Debug>("Creating full 3D NUFFT");
-    NUFFTOp<3> nufft3(traj, ktype, osamp, nC, sdc, basis, toeplitz);
+    NUFFTOp<3> nufft3(traj, ktype, osamp, nC, matrix, sdc, basis, toeplitz);
     return std::make_unique<IncreaseOutputRank<NUFFTOp<3>>>(nufft3);
   }
 }

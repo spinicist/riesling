@@ -35,8 +35,8 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
   using typename Parent::InputDims;
   using typename Parent::Output;
 
-  Kernel kernel;
   Mapping<NDim> mapping;
+  Kernel kernel;
   std::optional<Re2> basis;
 
   InputDims inputDims_;
@@ -46,8 +46,8 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 
   Grid(Trajectory const &traj, float const osamp, Index const nC, std::optional<Re2> const &b = std::nullopt)
     : GridBase<Scalar, NDim>()
-    , kernel{osamp}
     , mapping{traj, Kernel::PadWidth, osamp}
+    , kernel{mapping.osamp}
     , basis{b}
     , inputDims_{AddFront(mapping.cartDims, nC, basis ? basis.value().dimension(1) : mapping.frames)}
     , outputDims_{AddFront(mapping.noncartDims, nC)}

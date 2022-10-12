@@ -17,47 +17,40 @@ struct PadOp final : Operator<Rank, Rank>
   mutable Input x_;
   mutable Output y_;
 
-  PadOp(InputDims const &inSize, Eigen::DSizes<Index, ImgRank> const &padSize)
+  PadOp(
+    Eigen::DSizes<Index, ImgRank> const &imgSize,
+    Eigen::DSizes<Index, ImgRank> const &padSize,
+    Eigen::DSizes<Index, Rank - ImgRank> const &otherSize = {})
   {
     int constexpr ImgStart = Rank - ImgRank;
     for (Index ii = 0; ii < ImgStart; ii++) {
-      input_[ii] = inSize[ii];
-      output_[ii] = inSize[ii];
+      input_[ii] = otherSize[ii];
+      output_[ii] = otherSize[ii];
     }
     for (Index ii = 0; ii < ImgRank; ii++) {
-      if (padSize[ii] < inSize[ii + ImgStart]) {
-        Log::Fail(FMT_STRING("Padding dim {}={} < input dim {}"), ii, padSize[ii], inSize[ii + ImgStart]);
+      if (padSize[ii] < imgSize[ii]) {
+        Log::Fail(FMT_STRING("Padding dim {}={} < input dim {}"), ii, padSize[ii], imgSize[ii]);
       }
-      input_[ii + ImgStart] = inSize[ii + ImgStart];
+      input_[ii + ImgStart] = imgSize[ii];
       output_[ii + ImgStart] = padSize[ii];
     }
     std::transform(output_.begin(), output_.end(), input_.begin(), left_.begin(), [](Index big, Index small) {
       return (big - small + 1) / 2;
     });
-    std::transform(output_.begin(), output_.end(), input_.begin(), right_.begin(), [](Index big, Index small) {
-      return (big - small) / 2;
-    });
+    std::transform(
+      output_.begin(), output_.end(), input_.begin(), right_.begin(), [](Index big, Index small) { return (big - small) / 2; });
     std::transform(left_.begin(), left_.end(), right_.begin(), paddings_.begin(), [](Index left, Index right) {
       return std::make_pair(left, right);
     });
 
-    Log::Print(
-      "PadOp {}->{}",
-      LastN<ImgRank>(input_),
-      LastN<ImgRank>(output_));
+    Log::Print("PadOp {}->{}", imgSize, padSize);
     x_.resize(input_);
     y_.resize(output_);
   }
 
-  InputDims inputDimensions() const
-  {
-    return input_;
-  }
+  InputDims inputDimensions() const { return input_; }
 
-  OutputDims outputDimensions() const
-  {
-    return output_;
-  }
+  OutputDims outputDimensions() const { return output_; }
 
   auto forward(Input const &x) const -> Output const &
   {

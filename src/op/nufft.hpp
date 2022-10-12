@@ -23,6 +23,7 @@ struct NUFFTOp final : Operator<NDim + 2, 3>
     std::string const &ktype,
     float const osamp,
     Index const nC,
+    Sz<NDim> const matrix,
     Operator<3, 3> *sdc = nullptr,
     std::optional<Re2> basis = std::nullopt,
     bool toeplitz = false);
@@ -50,6 +51,7 @@ std::unique_ptr<Operator<5, 4>> make_nufft(
   std::string const &ktype,
   float const osamp,
   Index const nC,
+  Sz3 const matrix,
   Operator<3, 3> *sdc = nullptr,
   std::optional<Re2> basis = std::nullopt,
   bool const toeplitz = false);

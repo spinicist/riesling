@@ -15,6 +15,7 @@ struct ReconRSSOp final : Operator<4, 4>
     std::string const &ktype,
     float const osamp,
     Index const nC,
+    Sz3 const matrix,
     Operator<3, 3> *sdc,
     std::optional<Re2> basis);
 

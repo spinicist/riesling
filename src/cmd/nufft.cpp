@@ -38,7 +38,7 @@ int main_nufft(args::Subparser &parser)
   if (fwd) {
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto const channels = reader.readTensor<Cx6>(name);
-    NUFFTOp<3> nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.dimension(0), nullptr, basis);
+    NUFFTOp<3> nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.dimension(0), traj.matrix(coreOpts.fov.Get()), nullptr, basis);
     Cx5 noncart(AddBack(nufft.outputDimensions(), 1, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft.forward(channels.chip<5>(ii));
@@ -51,7 +51,7 @@ int main_nufft(args::Subparser &parser)
     auto const channels = noncart.dimension(0);
     auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     auto gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, basis);
-    NUFFTOp<3> nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, sdc.get(), basis);
+    NUFFTOp<3> nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), sdc.get(), basis);
     Cx6 output(AddBack(nufft.inputDimensions(), noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
       output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft.adjoint(noncart.chip<4>(ii).chip<3>(0));

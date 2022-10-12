@@ -1,7 +1,7 @@
 #include "../../src/op/pad.hpp"
 #include "../../src/tensorOps.hpp"
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <fmt/ostream.h>
 
 using namespace rl;
@@ -14,8 +14,7 @@ TEST_CASE("ops-pad")
   SECTION("Dot Test")
   {
     Index const cropSz = 7;
-    Cx3 y(fullSz, fullSz, fullSz), yx(cropSz, cropSz, cropSz), x(cropSz, cropSz, cropSz),
-      xy(fullSz, fullSz, fullSz);
+    Cx3 y(fullSz, fullSz, fullSz), yx(cropSz, cropSz, cropSz), x(cropSz, cropSz, cropSz), xy(fullSz, fullSz, fullSz);
 
     x.setRandom();
     y.setRandom();

@@ -75,6 +75,20 @@ auto Trajectory::nFrames() const -> Index
 
 Info const &Trajectory::info() const { return info_; }
 
+auto Trajectory::matrix(float const fov) const -> Sz3 {
+  if (fov > 0) {
+    Eigen::Array3l bigMatrix = (((fov / info_.voxel_size) / 2.f).floor() * 2).cast<Index>();
+    Sz3 matrix;
+    for (Index ii = 0; ii < 3; ii++) {
+      matrix[ii] = bigMatrix[ii];
+    }
+    return matrix;
+  } else {
+    return info_.matrix;
+  }
+}
+
+
 Re3 const &Trajectory::points() const { return points_; }
 
 Index Trajectory::frame(Index const i) const

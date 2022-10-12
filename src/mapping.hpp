@@ -28,11 +28,12 @@ struct Mapping
   Mapping(
     Trajectory const &t,
     Index const kW,
-    float const osamp,
+    float const nomOSamp,
     Index const bucketSize = 32,
     Index const splitSize = 16384,
     Index const read0 = 0);
 
+  float osamp;
   Sz2 noncartDims;
   Sz<Rank> cartDims;
   int8_t frames;

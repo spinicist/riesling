@@ -7,10 +7,11 @@ ReconRSSOp::ReconRSSOp(
   std::string const &ktype,
   float const osamp,
   Index const nC,
+  Sz3 const matrix,
   Operator<3, 3> *sdc,
   std::optional<Re2> basis)
   : Operator<4, 4>()
-  , nufft_{make_nufft(traj, ktype, osamp, nC, sdc, basis)}
+  , nufft_{make_nufft(traj, ktype, osamp, nC, matrix, sdc, basis)}
   , x_{inputDimensions()}
 {
 }
