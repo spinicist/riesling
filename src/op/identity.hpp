@@ -5,7 +5,7 @@
 namespace rl {
 
 template <size_t Rank, typename Scalar = Cx>
-struct Identity final : Operator<Rank, Rank, Scalar>
+struct IdentityOp final : Operator<Rank, Rank, Scalar>
 {
   using Parent = Operator<Rank, Rank, Scalar>;
   static const size_t InputRank = Parent::InputRank;

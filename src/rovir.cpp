@@ -37,7 +37,7 @@ auto ROVIR(
   auto const &info = traj.info();
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
-  SDCOp sdc(SDC::Pipe<3>(traj, "ES5", 2.1f), nC);
+  auto sdc = BroadcastMultiply<Cx, 3>(SDC::Pipe<3>(traj, "ES5", 2.1f).cast<Cx>());
   auto nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(), &sdc);
   auto const sz = LastN<3>(nufft->inputDimensions());
   Cx4 const channelImages =

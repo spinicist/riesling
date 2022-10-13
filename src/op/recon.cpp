@@ -7,7 +7,7 @@ ReconOp::ReconOp(
   std::string const &ktype,
   float const osamp,
   Cx4 const &maps,
-  Operator<3, 3> *sdc,
+  Functor<Cx3> *sdc,
   std::optional<Re2> basis,
   bool const toeplitz)
   : Operator<4, 4>(),

@@ -19,6 +19,7 @@ std::string const Meta = "meta";
 std::string const Noncartesian = "noncartesian";
 std::string const Norm = "norm";
 std::string const Parameters = "parameters";
+std::string const Precond = "precond";
 std::string const ProtonDensity = "pd";
 std::string const SDC = "sdc";
 std::string const SENSE = "sense";

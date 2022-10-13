@@ -3,8 +3,8 @@
 #include "io/hd5.hpp"
 #include "mapping.hpp"
 #include "op/make_grid.hpp"
-#include "op/identity.hpp"
-#include "op/sdc.hpp"
+#include "func/functor.hpp"
+#include "func/multiply.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "trajectory.hpp"
@@ -135,14 +135,14 @@ Re2 Radial(Trajectory const &traj, Index const lores, Index const gap)
   return Radial3D(traj, lores, gap);
 }
 
-std::unique_ptr<Operator<3, 3>>
+std::unique_ptr<Functor<Cx3>>
 make_sdc(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string const &ktype, float const os)
 {
   Re2 sdc(traj.nSamples(), traj.nTraces());
   auto const iname = opts.type.Get();
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::make_unique<Identity<3>>(Sz3{traj.nSamples(), traj.nTraces(), nC});
+    return std::make_unique<Identity<Cx3>>();
   } else if (iname == "pipe") {
     switch (traj.nDims()) {
     case 2: sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get()); break;
@@ -160,7 +160,7 @@ make_sdc(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string co
         traj.nTraces());
     }
   }
-  return std::make_unique<SDCOp>(sdc.pow(opts.pow.Get()), nC);
+  return std::make_unique<BroadcastMultiply<Cx, 3>>(sdc.pow(opts.pow.Get()).cast<Cx>());
 }
 
 } // namespace SDC

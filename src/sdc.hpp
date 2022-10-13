@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.hpp"
-#include "op/sdc.hpp"
+#include "func/multiply.hpp"
 #include "parse_args.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
@@ -22,7 +22,7 @@ struct Opts
   args::ValueFlag<Index> maxIterations;
 };
 
-std::unique_ptr<Operator<3, 3>> make_sdc(Opts &opts, Trajectory const &t, Index const nC, std::string const &ktype, float const os);
+std::unique_ptr<Functor<Cx3>> make_sdc(Opts &opts, Trajectory const &t, Index const nC, std::string const &ktype, float const os);
 
 } // namespace SDC
 } // namespace rl

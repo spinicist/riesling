@@ -7,12 +7,12 @@
 #include "cropper.h"
 #include "func/dict.hpp"
 #include "func/llr.hpp"
-#include "func/pre-kspace.hpp"
 #include "func/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
+#include "precond.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 
@@ -27,7 +27,7 @@ int main_admm(args::Subparser &parser)
   args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
   args::Flag use_lsmr(parser, "L", "Use LSMR instead of LSQR for inner loop", {"lsmr"});
 
-  args::Flag precond(parser, "P", "Apply Ong's single-channel M-conditioner", {"pre"});
+  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "none");
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 8);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
@@ -57,7 +57,7 @@ int main_admm(args::Subparser &parser)
   auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
   ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis);
-  std::unique_ptr<Functor<Cx4>> M = precond ? std::make_unique<KSpaceSingle>(traj) : nullptr;
+  auto M = make_pre(pre.Get(), traj);
   std::unique_ptr<Prox<Cx4>> reg;
   if (wavelets) {
     reg = std::make_unique<ThresholdWavelets>(recon.inputDimensions(), width.Get(), wavelets.Get());

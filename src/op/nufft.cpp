@@ -12,10 +12,10 @@ NUFFTOp<NDim>::NUFFTOp(
   float const osamp,
   Index const nC,
   Sz<NDim> const matrix,
-  Operator<3, 3> *sdc,
+  Functor<Cx3> *sdc,
   std::optional<Re2> basis,
   bool toeplitz)
-  : gridder_{make_grid<Cx, NDim>(traj, ktype, osamp * (toeplitz ? 2.f: 1.f), nC, basis)}
+  : gridder_{make_grid<Cx, NDim>(traj, ktype, osamp * (toeplitz ? 2.f : 1.f), nC, basis)}
   , fft_{gridder_->workspace()}
   , pad_{matrix, LastN<NDim>(gridder_->inputDimensions()), FirstN<2>(gridder_->inputDimensions())}
   , apo_{pad_.inputDimensions(), gridder_.get()}
@@ -28,7 +28,7 @@ NUFFTOp<NDim>::NUFFTOp(
     tf_.resize(inputDimensions());
     tf_.setConstant(1.f);
     if (sdc_) {
-      tf_ = adjoint(sdc_->adjoint(forward(tf_)));
+      tf_ = adjoint((*sdc)(forward(tf_)));
     } else {
       tf_ = adjoint(forward(tf_));
     }
@@ -59,7 +59,7 @@ auto NUFFTOp<NDim>::adjoint(Output const &y) const -> Input const &
 {
   assert(y.dimensions() == outputDimensions());
   if (sdc_) {
-    return apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint(sdc_->adjoint(y)))));
+    return apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint((*sdc_)(y)))));
   } else {
     return apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint(y))));
   }
@@ -94,7 +94,7 @@ std::unique_ptr<Operator<5, 4>> make_nufft(
   float const osamp,
   Index const nC,
   Sz3 const matrix,
-  Operator<3, 3> *sdc,
+  Functor<Cx3> *sdc,
   std::optional<Re2> basis,
   bool const toeplitz)
 {

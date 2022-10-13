@@ -15,7 +15,7 @@ struct ReconOp final : Operator<4, 4>
     std::string const &ktype,
     float const osamp,
     Cx4 const &maps,
-    Operator<3, 3> *sdc,
+    Functor<Cx3> *sdc,
     std::optional<Re2> basis,
     bool toeplitz = false);
 

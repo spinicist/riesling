@@ -17,7 +17,7 @@ TotalDiff::TotalDiff()
   , y_{1}
   , z_{2} {};
 
-auto ForwardDiff::operator()(Cx4 const &a) const -> Cx4
+auto ForwardDiff::operator()(Cx4 const &a) const -> Cx4 const &
 {
   Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
   Sz4 const st1{0, 1, 1, 1};
@@ -30,7 +30,7 @@ auto ForwardDiff::operator()(Cx4 const &a) const -> Cx4
   return b;
 }
 
-auto BackwardDiff::operator()(Cx4 const &a) const -> Cx4
+auto BackwardDiff::operator()(Cx4 const &a) const -> Cx4 const &
 {
   Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
   Sz4 const st1{0, 1, 1, 1};
@@ -43,7 +43,7 @@ auto BackwardDiff::operator()(Cx4 const &a) const -> Cx4
   return b;
 }
 
-auto CentralDiff::operator()(Cx4 const &a) const -> Cx4
+auto CentralDiff::operator()(Cx4 const &a) const -> Cx4 const &
 {
   Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
   Sz4 const st1{0, 1, 1, 1};
@@ -58,7 +58,7 @@ auto CentralDiff::operator()(Cx4 const &a) const -> Cx4
   return b;
 }
 
-auto TotalDiff::operator()(Cx4 const &a) const -> Cx4
+auto TotalDiff::operator()(Cx4 const &a) const -> Cx4 const &
 {
   Cx4 b = x_(a) + y_(a) + z_(a);
   return b;

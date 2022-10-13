@@ -1,4 +1,4 @@
-#include "../src/func/pre-kspace.hpp"
+#include "../src/precond.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -17,8 +17,8 @@ TEST_CASE("Preconditioner", "[precond]")
   points(0, 0, 0) = -0.25f;
   points(0, 2, 0) = 0.25f;
   Trajectory const traj(info, points);
-  KSpaceSingle sc(traj);
-  CHECK(sc.weights(0, 0, 0, 0) == Approx(1.f).margin(1.e-1f));
-  CHECK(sc.weights(0, 1, 0, 0) == Approx(1.f).margin(1.e-1f));
-  CHECK(sc.weights(0, 2, 0, 0) == Approx(1.f).margin(1.e-1f));
+  Re2 sc = KSpaceSingle(traj);
+  CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
+  CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));
+  CHECK(sc(2, 0) == Approx(1.f).margin(1.e-1f));
 }

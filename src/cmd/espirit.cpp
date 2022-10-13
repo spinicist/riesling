@@ -40,7 +40,7 @@ int main_espirit(args::Subparser &parser)
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(traj.info().matrix, LastN<3>(gridder->inputDimensions()), traj.info().voxel_size, fov.Get());
   Cx4 sense =
-    cropper.crop4(ESPIRIT(gridder.get(), sdc->adjoint(ks.chip<3>(0)), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
+    cropper.crop4(ESPIRIT(gridder.get(), (*sdc)(ks.chip<3>(0)), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
 
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "espirit", "h5");
   HD5::Writer writer(fname);

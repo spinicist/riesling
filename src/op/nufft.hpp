@@ -6,7 +6,7 @@
 #include "fft.hpp"
 #include "make_grid.hpp"
 #include "pad.hpp"
-#include "sdc.hpp"
+#include "func/functor.hpp"
 
 namespace rl {
 
@@ -24,7 +24,7 @@ struct NUFFTOp final : Operator<NDim + 2, 3>
     float const osamp,
     Index const nC,
     Sz<NDim> const matrix,
-    Operator<3, 3> *sdc = nullptr,
+    Functor<Cx3> *sdc = nullptr,
     std::optional<Re2> basis = std::nullopt,
     bool toeplitz = false);
 
@@ -40,7 +40,7 @@ private:
   FFTOp<NDim + 2, NDim> fft_;
   PadOp<NDim + 2, NDim> pad_;
   ApodizeOp<Cx, NDim> apo_;
-  Operator<3, 3> *sdc_;
+  Functor<Cx3> *sdc_;
   using Transfer = Eigen::Tensor<Cx, NDim + 2>;
   Transfer tf_;
 
@@ -52,7 +52,7 @@ std::unique_ptr<Operator<5, 4>> make_nufft(
   float const osamp,
   Index const nC,
   Sz3 const matrix,
-  Operator<3, 3> *sdc = nullptr,
+  Functor<Cx3> *sdc = nullptr,
   std::optional<Re2> basis = std::nullopt,
   bool const toeplitz = false);
 

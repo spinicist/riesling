@@ -20,7 +20,6 @@ int main_rss(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
-  Info const &info = traj.info();
   auto const basis = ReadBasis(coreOpts.basisFile);
   Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   Index const volumes = reader.dimensions<5>(HD5::Keys::Noncartesian)[3];

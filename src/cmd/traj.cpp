@@ -28,7 +28,7 @@ int main_traj(args::Subparser &parser)
   auto const sdc = SDC::make_sdc(sdcOpts, traj, 1, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx3 rad_ks(1, traj.nSamples(), traj.nTraces());
   rad_ks.setConstant(1.0f);
-  Cx4 out = gridder->adjoint(sdc->adjoint(rad_ks)).chip<0>(0);
+  Cx4 out = gridder->adjoint((*sdc)(rad_ks)).chip<0>(0);
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "traj", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(

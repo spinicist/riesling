@@ -69,7 +69,7 @@ SLR::SLR(FFTOp<5, 3> const &f, Index const k)
 {
 }
 
-auto SLR::operator()(float const thresh, Cx5 const &channels) const -> Cx5
+auto SLR::operator()(float const thresh, Cx5 const &channels) const -> Cx5 const &
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {

@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
-#include "func/pre-kspace.hpp"
+#include "precond.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 #include "tensorOps.hpp"
@@ -19,7 +19,7 @@ int main_lsqr(args::Subparser &parser)
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
-  args::Flag pre(parser, "M", "Apply Ong's single-channel pre-conditioner", {"pre"});
+  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "none");
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
@@ -36,7 +36,7 @@ int main_lsqr(args::Subparser &parser)
   auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
   ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis);
-  std::unique_ptr<Functor<Cx4>> M = pre ? std::make_unique<KSpaceSingle>(traj) : nullptr;
+  auto M = make_pre(pre.Get(), traj);
   LSQR<ReconOp> lsqr{recon, M.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
 
   auto sz = recon.inputDimensions();

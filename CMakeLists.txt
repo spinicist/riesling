@@ -37,6 +37,7 @@ add_library(vineyard
     src/phantom_sphere.cpp
     src/phantom_shepplogan.cpp
     src/parse_args.cpp
+    src/precond.cpp
     src/rovir.cpp
     src/sdc.cpp
     src/sense.cpp
@@ -49,7 +50,6 @@ add_library(vineyard
     src/func/dict.cpp
     src/func/diffs.cpp
     src/func/llr.cpp
-    src/func/pre-kspace.cpp
     src/func/slr.cpp
     src/func/thresh.cpp
     src/func/thresh-wavelets.cpp
@@ -66,7 +66,6 @@ add_library(vineyard
     src/op/nufft.cpp
     src/op/recon.cpp
     src/op/recon-rss.cpp
-    src/op/sdc.cpp
     src/op/sense.cpp
     src/op/wavelets.cpp
     src/sim/parameter.cpp
@@ -115,6 +114,7 @@ add_executable(riesling
     src/cmd/pad.cpp
     src/cmd/phantom.cpp
     src/cmd/plan.cpp
+    src/cmd/precond.cpp
     src/cmd/recon.cpp
     src/cmd/reg.cpp
     src/cmd/rss.cpp

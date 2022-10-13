@@ -16,7 +16,7 @@ struct ReconRSSOp final : Operator<4, 4>
     float const osamp,
     Index const nC,
     Sz3 const matrix,
-    Operator<3, 3> *sdc,
+    Functor<Cx3> *sdc,
     std::optional<Re2> basis);
 
   auto inputDimensions() const -> InputDims;

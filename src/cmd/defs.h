@@ -21,6 +21,7 @@ int main_pad(args::Subparser &parser);
 int main_phantom(args::Subparser &parser);
 int main_phantom_basis(args::Subparser &parser);
 int main_plan(args::Subparser &parser);
+int main_precond(args::Subparser &parser);
 int main_recon(args::Subparser &parser);
 int main_reg(args::Subparser &parser);
 int main_rss(args::Subparser &parser);
