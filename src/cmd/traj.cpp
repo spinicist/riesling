@@ -23,7 +23,7 @@ int main_traj(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
-  auto const basis = ReadBasis(coreOpts.basisFile);
+  auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), 1, basis);
   auto const sdc = SDC::make_sdc(sdcOpts, traj, 1, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx3 rad_ks(1, traj.nSamples(), traj.nTraces());

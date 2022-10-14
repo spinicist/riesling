@@ -75,9 +75,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 
   Output &forward(Input const &cart) const
   {
-    if (cart.dimensions() != this->inputDimensions()) {
-      Log::Fail(FMT_STRING("Cartesian k-space dims {} did not match {}"), cart.dimensions(), this->inputDimensions());
-    }
+    this->checkForward(cart, "GridOp");
     out_.device(Threads::GlobalDevice()) = out_.constant(0.f);
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : 1;
@@ -168,10 +166,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
 
   Input &adjoint(Output const &noncart) const
   {
-    if (noncart.dimensions() != this->outputDimensions()) {
-      Log::Fail(
-        FMT_STRING("Noncartesian k-space dims {} did not match {}"), noncart.dimensions(), this->outputDimensions());
-    }
+    this->checkAdjoint(noncart, "GridOp");
     auto const &map = this->mapping;
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : map.frames;
@@ -303,7 +298,7 @@ struct Grid final : GridBase<Scalar, Kernel::NDim>
     fft->reverse(temp);
     PadOp<NDim, NDim> padA(sz, temp.dimensions());
     Eigen::Tensor<float, NDim> a = padA.adjoint(temp).real();
-    float const scale = std::sqrt(Product(sz));
+    float const scale = std::sqrt(Product(temp.dimensions()));
     a.device(Threads::GlobalDevice()) = (a * a.constant(scale)).inverse();
     LOG_DEBUG("Apodization size {} Scale: {} Norm: {}", a.dimensions(), scale, Norm(a));
     return a;

@@ -36,6 +36,7 @@ struct FFTOp final : Operator<Rank, Rank>
 
   auto forward(Input const &x) const -> Output const &
   {
+    this->checkForward(x, "FFTOp");
     auto const start = Log::Now();
     *ws_ = x;
     fft_->forward(*ws_);
@@ -45,6 +46,7 @@ struct FFTOp final : Operator<Rank, Rank>
 
   auto adjoint(Output const &x) const -> Input const &
   {
+    this->checkAdjoint(x, "FFTOp");
     auto start = Log::Now();
     *ws_ = x;
     fft_->reverse(*ws_);

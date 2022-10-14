@@ -36,12 +36,14 @@ auto SenseOp::outputDimensions() const -> OutputDims
 
 auto SenseOp::forward(Input const &x) const -> Output const &
 {
+  checkForward(x, "SENSEOp");
   y_ = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
   return y_;
 }
 
 auto SenseOp::adjoint(Output const &x) const -> Input const &
 {
+  checkAdjoint(x, "SENSEOp");
   x_ = ConjugateSum(x, maps_.reshape(resMaps).broadcast(brdMaps));
   return x_;
 }

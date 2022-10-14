@@ -10,11 +10,12 @@ struct LLR final : Prox<Cx4>
   bool sliding;
   LLR(Index, bool);
 
-  auto operator()(float const λ, Cx4 const &) const -> Cx4 const &;
+  auto operator()(float const λ, Cx4 const &) const -> Cx4;
 
 private:
   auto applySliding(float const λ, Cx4 const &) const -> Cx4;
   auto applyFixed(float const λ, Cx4 const &) const -> Cx4;
+  Cx4 y;
 };
 
 } // namespace rl

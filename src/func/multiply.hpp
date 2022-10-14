@@ -12,7 +12,7 @@ struct BroadcastMultiply final : Functor<Eigen::Tensor<Scalar, Rank>>
   Eigen::Tensor<Scalar, Rank - FrontRank - BackRank> a;
   mutable Eigen::Tensor<Scalar, Rank> y;
   BroadcastMultiply(Eigen::Tensor<Scalar, Rank - FrontRank - BackRank> const &ain) : Functor<Eigen::Tensor<Scalar, Rank>>(), a{ain} {}
-  auto operator()(Eigen::Tensor<Scalar, Rank> const &x) const -> Eigen::Tensor<Scalar, Rank> const &
+  auto operator()(Eigen::Tensor<Scalar, Rank> const &x) const -> Eigen::Tensor<Scalar, Rank>
   {
     assert(LastN<Rank - FrontRank - BackRank>(x.dimensions()) == a.dimensions());
     auto const start = Log::Now();

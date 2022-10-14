@@ -6,7 +6,7 @@
 namespace rl {
 
 struct LookupDictionary : Functor<Cx4> {
-  auto operator()(const Cx4 &) const -> Cx4 const &;
+  auto operator()(const Cx4 &) const -> Cx4;
   virtual auto project(Eigen::VectorXcf const &p) const -> Eigen::VectorXcf = 0;
 };
 

@@ -37,6 +37,7 @@ auto ApodizeOp<Scalar, NDim>::outputDimensions() const -> OutputDims
 template<typename Scalar, size_t NDim>
 auto ApodizeOp<Scalar, NDim>::forward(Input const &x) const -> Output const &
 {
+  this->checkForward(x, "ApodizeOp");
   y_ = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
   LOG_DEBUG("Apodize Forward Norm {}->{}", Norm(x), Norm(y_));
   return y_;
@@ -45,6 +46,7 @@ auto ApodizeOp<Scalar, NDim>::forward(Input const &x) const -> Output const &
 template<typename Scalar, size_t NDim>
 auto ApodizeOp<Scalar, NDim>::adjoint(Output const &x) const -> Input const &
 {
+  this->checkAdjoint(x, "ApodizeOp");
   x_ = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
   LOG_DEBUG("Apodize Adjoint Norm {}->{}", Norm(x), Norm(x_));
   return x_;

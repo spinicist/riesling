@@ -30,7 +30,7 @@ int main_nufft(args::Subparser &parser)
     traj = Trajectory(reader);
   }
   auto const info = traj.info();
-  auto const basis = ReadBasis(coreOpts.basisFile);
+  auto const basis = ReadBasis(coreOpts.basisFile.Get());
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "nufft", "h5"));
   traj.write(writer);
 

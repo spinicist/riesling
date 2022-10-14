@@ -8,7 +8,7 @@
 
 namespace rl {
 
-auto LookupDictionary::operator()(Cx4 const &x) const -> Cx4 const &
+auto LookupDictionary::operator()(Cx4 const &x) const -> Cx4
 {
   Log::Print("Dictionary projection. Dims {}", x.dimensions());
   Cx4 y(x.dimensions());

@@ -50,14 +50,14 @@ auto NUFFTOp<NDim>::outputDimensions() const -> OutputDims
 template <size_t NDim>
 auto NUFFTOp<NDim>::forward(Input const &x) const -> Output const &
 {
-  assert(x.dimensions() == inputDimensions());
+  this->checkForward(x, "NUFFTOp");
   return gridder_->forward(fft_.forward(pad_.forward(apo_.forward(x))));
 }
 
 template <size_t NDim>
 auto NUFFTOp<NDim>::adjoint(Output const &y) const -> Input const &
 {
-  assert(y.dimensions() == outputDimensions());
+  this->checkAdjoint(y, "NUFFTOp");
   if (sdc_) {
     return apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint((*sdc_)(y)))));
   } else {

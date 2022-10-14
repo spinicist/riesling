@@ -34,6 +34,19 @@ struct Operator
   virtual auto forward(Input const &x) const -> Output const & = 0;
   virtual auto adjoint(Output const &y) const -> Input const & = 0;
   virtual auto adjfwd(Input const &x) const -> Input { Log::Fail("AdjFwd Not implemented"); }
+
+  void checkForward(Input const &x, std::string const &name) const {
+    if (x.dimensions() != inputDimensions()) {
+      Log::Fail("{} forward dims were: {} expected: {}", name, x.dimensions(), inputDimensions());
+    }
+  }
+
+  void checkAdjoint(Output const &y, std::string const &name) const {
+    if (y.dimensions() != outputDimensions()) {
+      Log::Fail("{} adjoint dims were: {} expected: {}", name, y.dimensions(), outputDimensions());
+    }
+  }
+
 }; // namespace rl
 
 } // namespace rl

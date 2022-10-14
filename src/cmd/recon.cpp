@@ -31,7 +31,7 @@ int main_recon(args::Subparser &parser)
     traj = Trajectory(reader);
   }
   Info const &info = traj.info();
-  auto const basis = ReadBasis(coreOpts.basisFile);
+  auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   Index volumes = fwd ? reader.dimensions<5>(HD5::Keys::Image)[4] : reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
 

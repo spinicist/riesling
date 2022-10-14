@@ -12,7 +12,7 @@ ReconOp::ReconOp(
   bool const toeplitz)
   : Operator<4, 4>(),
   nufft_{make_nufft(traj, ktype, osamp, maps.dimension(0), LastN<3>(maps.dimensions()), sdc, basis, toeplitz)}
-  , sense_{maps, traj.nFrames()}
+  , sense_{maps, basis ? basis.value().dimension(1) : traj.nFrames()}
 {
 }
 

@@ -54,6 +54,7 @@ struct PadOp final : Operator<Rank, Rank>
 
   auto forward(Input const &x) const -> Output const &
   {
+    this->checkForward(x, "PadOp");
     y_ = x.pad(paddings_);
     LOG_DEBUG(FMT_STRING("Padding Forward Norm {}->{}"), Norm(x), Norm(y_));
     return y_;
@@ -61,6 +62,7 @@ struct PadOp final : Operator<Rank, Rank>
 
   auto adjoint(Output const &y) const -> Input const &
   {
+    this->checkAdjoint(y, "PadOp");
     x_ = y.slice(left_, input_);
     LOG_DEBUG(FMT_STRING("Padding Adjoint Norm {}->{}"), Norm(y), Norm(x_));
     return x_;

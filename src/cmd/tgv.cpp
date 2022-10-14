@@ -26,7 +26,7 @@ int main_tgv(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto const basis = ReadBasis(coreOpts.basisFile);
+  auto const basis = ReadBasis(coreOpts.basisFile.Get());
   Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   Index const volumes = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
   auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());

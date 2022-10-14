@@ -26,7 +26,7 @@ LLR::LLR(Index p, bool s)
 {
 }
 
-auto LLR::operator()(float const λ, Cx4 const &x) const -> Cx4 const &
+auto LLR::operator()(float const λ, Cx4 const &x) const -> Cx4
 {
   if (sliding) {
     return applySliding(λ * std::sqrt(patchSize), x);

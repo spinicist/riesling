@@ -122,6 +122,7 @@ void Wavelets::encode_dim(Output &image, Index const dim, Index const level) con
 
 auto Wavelets::forward(Input const &x) const -> Output const &
 {
+  checkForward(x, "WaveletsOp");
   ws_ = x;
   for (Index il = 0; il < L_; il++) {
     for (Index dim = 0; dim < 3; dim++) {
@@ -165,6 +166,7 @@ void Wavelets::decode_dim(Input &image, Index const dim, Index const level) cons
 
 auto Wavelets::adjoint(Output const &x) const -> Input const & 
 {
+  checkAdjoint(x, "WaveletsOp");
   ws_ = x;
   for (Index il = L_ - 1; il >= 0; il--) {
     for (Index dim = 0; dim < 3; dim++) {

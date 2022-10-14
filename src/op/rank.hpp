@@ -33,12 +33,14 @@ struct IncreaseOutputRank final : Operator<Op::InputRank, Op::OutputRank + 1>
 
   auto forward(Input const &x) const -> Output const &
   {
+    this->checkForward(x, "IncreaseRankOp");
     y_ = op_.forward(x).reshape(outputDimensions());
     return y_;
   }
 
   auto adjoint(Output const &y) const -> Input const &
   {
+    this->checkAdjoint(y, "IncreaseRankOp");
     return op_.adjoint(y.reshape(op_.outputDimensions()));
   }
 

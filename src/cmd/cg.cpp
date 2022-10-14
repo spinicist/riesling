@@ -28,7 +28,7 @@ int main_cg(args::Subparser &parser)
   Info const &info = traj.info();
   Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   Index const volumes = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
-  auto const basis = ReadBasis(coreOpts.basisFile);
+  auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
   ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis, toeplitz);

@@ -12,7 +12,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(Trajectory const &traj) -> Re2
+auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const basis) -> Re2
 {
   Log::Print<Log::Level::High>("Single Channel Pre-conditioner start");
   Info const info = traj.info();
@@ -21,16 +21,16 @@ auto KSpaceSingle(Trajectory const &traj) -> Re2
     newInfo.matrix.begin(), newInfo.matrix.begin() + traj.nDims(), newInfo.matrix.begin(), [](Index const i) { return i * 2; });
   Trajectory newTraj(newInfo, traj.points(), traj.frames());
   float const osamp = 1.25;
-  auto nufft = make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix());
+  auto nufft = make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix(), nullptr, basis);
   Cx4 W(nufft->outputDimensions());
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
   Log::Tensor(psf, "single-psf");
-  Cx5 ones(AddFront(info.matrix, 1, 1));
+  Cx5 ones(AddFront(info.matrix, psf.dimension(0), psf.dimension(1)));
   ones.setConstant(1.f);
   // I do not understand this scaling factor but it's in Frank's code and works
   float const scale = std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Norm2(ones);
-  PadOp<5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), Sz2{1, 1});
+  PadOp<5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   FFTOp<5, 3> fftX(psf.dimensions());
 
   Cx5 xcorr = fftX.adjoint(fftX.forward(padX.forward(ones)).abs().square().cast<Cx>());
