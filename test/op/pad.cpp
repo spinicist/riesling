@@ -7,7 +7,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("ops-pad")
+TEST_CASE("ops-pad", "[pad]")
 {
   Index const fullSz = 16;
 
@@ -19,7 +19,7 @@ TEST_CASE("ops-pad")
     x.setRandom();
     y.setRandom();
 
-    PadOp<3> crop(x.dimensions(), y.dimensions());
+    PadOp<Cx, 3> crop(x.dimensions(), y.dimensions());
     xy = crop.forward(x);
     yx = crop.adjoint(y);
 

@@ -22,7 +22,7 @@ struct ADMM
   float abstol = 1.e-3f;
   float reltol = 1.e-3f;
 
-  Input run(Output const &b) const
+  Input run(Eigen::TensorMap<Output const> b) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory

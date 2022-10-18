@@ -87,11 +87,25 @@ decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
   return out;
 }
 
+template <typename T, int N1, int N2>
+decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> const &b)
+{
+  T constexpr Total = N1 + N2;
+  Eigen::DSizes<T, Total> result;
+  for (Index ii = 0; ii < N1; ii++) {
+    result[ii] = a[ii];
+  }
+  for (Index ii = 0; ii < N2; ii++) {
+    result[ii + N1] = b[ii];
+  }
+  return result;
+}
+
 template <int N, typename T>
-Eigen::DSizes<Index, N> FirstN(T const &sz)
+Eigen::DSizes<typename T::value_type, N> FirstN(T const &sz)
 {
   assert(N <= sz.size());
-  Eigen::DSizes<Index, N> first;
+  Eigen::DSizes<typename T::value_type, N> first;
   std::copy_n(sz.begin(), N, first.begin());
   return first;
 }

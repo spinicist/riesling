@@ -1,5 +1,4 @@
 #include "../src/op/nufft.hpp"
-#include "../src/precond.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -23,7 +22,8 @@ TEST_CASE("NUFFT", "[nufft]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  NUFFTOp<3> nufft(traj, ktype, osamp, 1, traj.matrix());
+  auto grid = make_grid<Cx, 3>(traj, ktype, osamp, 1);
+  NUFFTOp<3> nufft(std::move(grid), traj.matrix());
   Cx3 ks(nufft.outputDimensions());
   Cx5 img(nufft.inputDimensions());
   ks.setConstant(1.f);

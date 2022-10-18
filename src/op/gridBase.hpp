@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator.hpp"
+#include "operator-alloc.hpp"
 #include "trajectory.hpp"
 
 #include <memory>
@@ -9,21 +9,18 @@
 namespace rl {
 
 // So we can template the kernel size and still stash pointers
-template <typename Scalar, size_t NDim>
-struct GridBase : Operator<NDim + 2, 3, Scalar>
+template <typename Scalar_, size_t NDim>
+struct GridBase : OperatorAlloc<Scalar_, NDim + 2, 3>
 {
-  using typename Operator<NDim + 2, 3, Scalar>::Input;
-  using typename Operator<NDim + 2, 3, Scalar>::Output;
+  OPALLOC_INHERIT(Scalar_, NDim + 2, 3)
 
-  GridBase()
+  GridBase(InputDims const xd, OutputDims const yd)
+    : Parent(fmt::format(FMT_STRING("{}D GridOp"), NDim), xd, yd)
   {
   }
-
   virtual ~GridBase(){};
+
   virtual auto apodization(Sz<NDim> const sz) const -> Eigen::Tensor<float, NDim> = 0;
-  virtual Sz3 outputDimensions() const = 0;
-  virtual typename Input::Dimensions inputDimensions() const = 0;
-  virtual std::shared_ptr<Input> workspace() const = 0;
 };
 
 } // namespace rl

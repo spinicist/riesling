@@ -29,7 +29,7 @@ struct LSMR
   float cTol = 1.e-6f;
   bool const debug = false;
 
-  Input run(typename Op::Output const &b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
+  Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
@@ -50,7 +50,11 @@ struct LSMR
       x.setZero();
       Mu.device(dev) = b;
     }
-    u.device(dev) = M ? (*M)(Mu) : Mu;
+    if (M) {
+      u.device(dev) = (*M)(Mu);
+    } else {
+      u.device(dev) = Mu;
+    }
     float β;
     if (λ > 0.f) {
       ur.resize(inDims);
@@ -110,7 +114,11 @@ struct LSMR
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
       Mu.device(dev) = op.forward(v) - α * Mu;
-      u.device(dev) = M ? (*M)(Mu) : Mu;
+      if (M) {
+        u.device(dev) = (*M)(Mu);
+      } else {
+        u.device(dev) = Mu;
+      }
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * v) - (α * ur);
         β = sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));

@@ -14,6 +14,7 @@ template <typename Op>
 struct NormalEqOp
 {
   using Input = typename Op::Input;
+  using InputMap = typename Op::InputMap;
   Op const &op;
 
   auto inputDimensions() const
@@ -26,9 +27,11 @@ struct NormalEqOp
     return op.inputDimensions();
   }
 
-  Input forward(typename Op::Input const &x) const
+  auto forward(Input const &x) const -> Input
   {
-    return Input(op.adjfwd(x));
+    Input xcopy = x;
+    xcopy = op.adjfwd(xcopy);
+    return xcopy;
   }
 };
 
@@ -36,12 +39,13 @@ template <typename Op>
 struct ConjugateGradients
 {
   using Input = typename Op::Input;
+  using InputMap = typename Op::InputMap;
   Op &op;
   Index iterLimit = 16;
   float resTol = 1.e-6f;
   bool debug = false;
 
-  Input run(typename Op::Input const &b, Input const &x0 = Input()) const
+  Input run(InputMap const b, Input const &x0 = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory

@@ -29,7 +29,7 @@ auto make_grid(
   -> std::unique_ptr<GridBase<Scalar, ND>>
 {
   if (kType == "NN") {
-    return std::make_unique<Grid<Scalar, NearestNeighbour<ND>>>(traj, osamp, nC, basis);
+    return std::make_unique<Grid<Scalar, NearestNeighbour<ND>>>(Mapping<ND>(traj, osamp, 1), nC, basis);
   } else if (kType.size() == 7 && kType.substr(0, 4) == "rect") {
     std::string const type = kType.substr(4, 2);
     size_t const W = std::stoi(kType.substr(6, 1));

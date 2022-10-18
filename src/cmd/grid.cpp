@@ -28,7 +28,7 @@ int main_grid(args::Subparser &parser)
   traj.write(writer);
   auto const start = Log::Now();
   if (fwd) {
-    auto const cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);
+    Cx5 cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);
     auto const gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), cart.dimension(0), basis);
     auto const rad_ks = gridder->forward(cart);
     writer.writeTensor(
@@ -38,9 +38,11 @@ int main_grid(args::Subparser &parser)
   } else {
     auto const noncart = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 0);
     Index const channels = noncart.dimension(0);
-    auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     auto const gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, basis);
-    writer.writeTensor(gridder->adjoint((*sdc)(noncart.chip<3>(0))), HD5::Keys::Cartesian);
+    auto const sdc = SDC::Choose(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+    Cx3 ks = (*sdc)(CChipMap(noncart, 0));
+    Cx5 cart = gridder->adjoint(ks);
+    writer.writeTensor(cart, HD5::Keys::Cartesian);
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }
 

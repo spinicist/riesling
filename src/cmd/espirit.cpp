@@ -36,11 +36,11 @@ int main_espirit(args::Subparser &parser)
   auto const [dsTraj, ks] = traj.downsample(ks1, res.Get(), lores.Get(), false);
   auto const dsInfo = dsTraj.info();
   auto gridder = make_grid<Cx, 3>(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), ks.dimension(0));
-  auto const sdc = SDC::make_sdc(sdcOpts, dsTraj, ks1.dimension(0), coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, dsTraj, ks1.dimension(0), coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
   Cropper cropper(traj.info().matrix, LastN<3>(gridder->inputDimensions()), traj.info().voxel_size, fov.Get());
   Cx4 sense =
-    cropper.crop4(ESPIRIT(gridder.get(), (*sdc)(ks.chip<3>(0)), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
+    cropper.crop4(ESPIRIT(gridder.get(), (*sdc)(CChipMap(ks, 0)), kRad.Get(), totalCalRad, readStart.Get(), thresh.Get()));
 
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "espirit", "h5");
   HD5::Writer writer(fname);

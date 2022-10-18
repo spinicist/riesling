@@ -26,7 +26,7 @@ LLR::LLR(Index p, bool s)
 {
 }
 
-auto LLR::operator()(float const λ, Cx4 const &x) const -> Cx4
+auto LLR::operator()(float const λ, Eigen::TensorMap<Cx4 const> x) const -> Eigen::TensorMap<Cx4>
 {
   if (sliding) {
     return applySliding(λ * std::sqrt(patchSize), x);
@@ -35,11 +35,11 @@ auto LLR::operator()(float const λ, Cx4 const &x) const -> Cx4
   }
 }
 
-auto LLR::applySliding(float const λ, Cx4 const &img) const -> Cx4
+auto LLR::applySliding(float const λ, Eigen::TensorMap<Cx4 const> img) const -> Eigen::TensorMap<Cx4>
 {
   Index const K = img.dimension(0);
   Log::Print(FMT_STRING("LLR regularization patch size {} lambda {}"), patchSize, λ);
-  Cx4 lr(img.dimensions());
+  static Cx4 lr(img.dimensions());
   lr.setZero();
 
   auto zTask = [&](Index const iz) {
@@ -71,7 +71,7 @@ auto LLR::applySliding(float const λ, Cx4 const &img) const -> Cx4
   return lr;
 }
 
-auto LLR::applyFixed(float const λ, Cx4 const &x) const -> Cx4
+auto LLR::applyFixed(float const λ, Eigen::TensorMap<Cx4 const> x) const -> Eigen::TensorMap<Cx4>
 {
   std::array<Index, 3> nP, shift;
   std::random_device rd;
@@ -87,7 +87,7 @@ auto LLR::applyFixed(float const λ, Cx4 const &x) const -> Cx4
   }
   Index const K = x.dimension(0);
   Index const p3 = patchSize * patchSize * patchSize;
-  Cx4 lr(x.dimensions());
+  static Cx4 lr(x.dimensions());
   lr.setZero();
   auto zTask = [&](Index const lo, Index const hi) {
     for (Index iz = lo; iz < hi; iz++) {

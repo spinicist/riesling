@@ -30,12 +30,7 @@ int main_lsqr(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
-  Index const volumes = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
-  auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
-  ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis);
+  auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto M = make_pre(pre.Get(), traj);
   LSQR<ReconOp> lsqr{recon, M.get(), its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
 
@@ -44,12 +39,14 @@ int main_lsqr(args::Subparser &parser)
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
+  Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
 
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsqr.run(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv), λ.Get());
+    vol = lsqr.run(CChipMap(allData, iv), λ.Get());
     cropped = out_cropper.crop4(vol);
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));

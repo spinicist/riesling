@@ -8,19 +8,13 @@
 template <typename T>
 struct Functor
 {
-  virtual auto operator()(T const &in) const -> T = 0;
+  virtual auto operator()(Eigen::TensorMap<T const> in) const -> Eigen::TensorMap<T> = 0;
   virtual ~Functor(){};
 };
 
 template <typename T>
 struct Prox
 {
-  virtual auto operator()(float const λ, T const &in) const -> T = 0;
+  virtual auto operator()(float const λ, Eigen::TensorMap<T const> in) const -> Eigen::TensorMap<T> = 0;
   virtual ~Prox(){};
-};
-
-template <typename T>
-struct Identity final : Functor<T>
-{
-  auto operator()(T const &x) const -> T { return x; }
 };

@@ -39,24 +39,24 @@ int main_reg(args::Subparser &parser)
     Sz4 dims = FirstN<4>(images.dimensions());
     ThresholdWavelets tw(dims, width.Get(), levels.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = tw(λ.Get(), images.chip<4>(iv));
+      output.chip<4>(iv) = tw(λ.Get(), CChipMap(images, iv));
     }
   } else if (brute) {
     HD5::Reader dictReader(brute.Get());
     BruteForceDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = dict(images.chip<4>(iv));
+      output.chip<4>(iv) = dict(CChipMap(images, iv));
     }
   } else if (ball) {
     HD5::Reader dictReader(ball.Get());
     BallTreeDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = dict(images.chip<4>(iv));
+      output.chip<4>(iv) = dict(CChipMap(images, iv));
     }
   } else if (llr || llrPatch) {
     LLR reg{patchSize.Get(), !llrPatch};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = reg(λ.Get(), images.chip<4>(iv));
+      output.chip<4>(iv) = reg(λ.Get(), CChipMap(images, iv));
     }
   } else {
     throw args::Error("Must specify at least one regularization method");

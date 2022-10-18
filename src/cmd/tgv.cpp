@@ -1,5 +1,6 @@
 #include "types.hpp"
 
+#include "algo/tgv.hpp"
 #include "cropper.h"
 #include "log.hpp"
 #include "op/recon.hpp"
@@ -7,7 +8,6 @@
 #include "sdc.hpp"
 #include "sense.hpp"
 #include "tensorOps.hpp"
-#include "algo/tgv.hpp"
 
 using namespace rl;
 
@@ -26,22 +26,24 @@ int main_tgv(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
-  Index const volumes = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
-  auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
-  ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis);
-
+  auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto sz = recon.inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
+  Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    out.chip<4>(iv) = out_cropper.crop4(
-      tgv(its.Get(), thr.Get(), alpha.Get(), reduce.Get(), step_size.Get(), recon, reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv)));
+    out.chip<4>(iv) = out_cropper.crop4(tgv(
+      its.Get(),
+      thr.Get(),
+      alpha.Get(),
+      reduce.Get(),
+      step_size.Get(),
+      recon,
+      CChipMap(allData, iv)));
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

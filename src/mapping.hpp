@@ -27,8 +27,8 @@ struct Mapping
 
   Mapping(
     Trajectory const &t,
-    Index const kW,
     float const nomOSamp,
+    Index const kW,
     Index const bucketSize = 32,
     Index const splitSize = 16384,
     Index const read0 = 0);

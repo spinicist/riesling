@@ -41,7 +41,7 @@ int main_recon(args::Subparser &parser)
     }
     HD5::Reader senseReader(senseOpts.file.Get());
     Cx4 senseMaps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
-    ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, nullptr, basis);
+    auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, senseReader);
     Sz4 const sz = recon.inputDimensions();
     Cropper out_cropper(info.matrix, LastN<3>(recon.inputDimensions()), info.voxel_size, senseOpts.fov.Get());
 
@@ -60,10 +60,7 @@ int main_recon(args::Subparser &parser)
     traj.write(writer);
     writer.writeTensor(kspace, HD5::Keys::Noncartesian);
   } else {
-    Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
-    auto sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-    Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
-    ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis);
+    auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
     Sz4 const sz = recon.inputDimensions();
     Cropper out_cropper(info.matrix, LastN<3>(recon.inputDimensions()), info.voxel_size, coreOpts.fov.Get());
     Sz3 const outSz = out_cropper.size();

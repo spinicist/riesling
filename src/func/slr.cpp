@@ -62,14 +62,14 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
 }
 
-SLR::SLR(FFTOp<5, 3> const &f, Index const k)
+SLR::SLR(FFTOp< 5, 3> const &f, Index const k)
   : Prox<Cx5>()
   , fft{f}
   , kSz{k}
 {
 }
 
-auto SLR::operator()(float const thresh, Cx5 const &channels) const -> Cx5
+auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) const -> Eigen::TensorMap<Cx5>
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {
@@ -79,7 +79,8 @@ auto SLR::operator()(float const thresh, Cx5 const &channels) const -> Cx5
     Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), thresh, 0.f, nC);
   }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, thresh);
-  Cx5 grid = fft.forward(channels);
+  static Cx5 grid = channels;
+  grid = fft.forward(grid);
   // Now crop out corners which will have zeros
   Index const w = std::floor(grid.dimension(2) / sqrt(3));
   Log::Print(FMT_STRING("Extract width {}"), w);
@@ -105,9 +106,8 @@ auto SLR::operator()(float const thresh, Cx5 const &channels) const -> Cx5
   Log::Tensor(cropped, "zin-slr-after-cropped");
   Log::Tensor(grid, "zin-slr-after-grid");
   Log::Tensor(kernels, "zin-slr-after-kernels");
-  Cx5 outChannels = fft.adjoint(grid);
-  Log::Tensor(channels, "zin-slr-b4-channels");
-  Log::Tensor(outChannels, "zin-slr-after-channels");
-  return outChannels;
+  grid = fft.adjoint(grid);
+  Log::Tensor(grid, "zin-slr-after-channels");
+  return grid;
 }
 } // namespace rl

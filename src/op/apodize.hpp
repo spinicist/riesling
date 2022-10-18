@@ -5,26 +5,17 @@
 
 namespace rl {
 
-template<typename Scalar, size_t NDim>
-struct ApodizeOp final : Operator<NDim + 2, NDim + 2, Scalar>
+template<typename Scalar_, size_t NDim>
+struct ApodizeOp final : Operator<Scalar_, NDim + 2, NDim + 2>
 {
-  using Parent = Operator<NDim + 2, NDim + 2>;
-  using Input = typename Parent::Input;
-  using InputDims = typename Parent::InputDims;
-  using Output = typename Parent::Output;
-  using OutputDims = typename Parent::OutputDims;
-  mutable Input x_;
-  mutable Output y_;
-
+  OP_INHERIT( Scalar_, NDim + 2, NDim + 2 )
   ApodizeOp(InputDims const &inSize, GridBase<Scalar, NDim> *gridder);
-  auto inputDimensions() const -> InputDims;
-  auto outputDimensions() const -> OutputDims;
-  auto forward(Input const &x) const -> Output const &;
-  auto adjoint(Output const &x) const -> Input const &;
+  OP_DECLARE()
 
 private:
-  InputDims sz_, res_, brd_;
+  InputDims res_, brd_;
   Eigen::Tensor<float, NDim> apo_;
+  void init(GridBase<Scalar, NDim> *gridder);
 };
 
 } // namespace rl

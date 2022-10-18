@@ -9,6 +9,8 @@
 
 #include "threads.hpp"
 
+namespace rl {
+
 // Tensor operations
 template <typename T>
 decltype(auto) Transpose(T const &a)
@@ -232,4 +234,34 @@ inline decltype(auto) CollapseToConstMatrix(T const &t)
       1,
       std::multiplies<Eigen::Index>()));
   return mapped;
+}
+
+template<typename T>
+inline auto ChipMap(T const &a, Index const index)
+{
+  constexpr auto LastDim = T::NumDimensions - 1;
+  using Scalar = typename T::Scalar;
+  using Tensor = Eigen::Tensor<Scalar, LastDim>;
+  assert(index < a.dimension(LastDim));
+  auto const chipDims = FirstN<LastDim>(a.dimensions());
+  return Eigen::TensorMap<Tensor>(a.data() + Product(chipDims)*index, chipDims);
+}
+
+template<typename T>
+inline auto CChipMap(T const &a, Index const index)
+{
+  constexpr auto LastDim = T::NumDimensions - 1;
+  using Scalar = typename T::Scalar;
+  using Tensor = Eigen::Tensor<Scalar, LastDim>;
+  assert(index < a.dimension(LastDim));
+  auto const chipDims = FirstN<LastDim>(a.dimensions());
+  return Eigen::TensorMap<Tensor const>(a.data() + Product(chipDims)*index, chipDims);
+}
+
+template<typename T>
+inline auto ConstMap(Eigen::TensorMap<T> x) {
+  Eigen::TensorMap<T const> cx(x.data(), x.dimensions());
+  return cx;
+}
+
 }

@@ -8,10 +8,10 @@ namespace rl {
 
 struct ThresholdWavelets final : Prox<Cx4> {
     ThresholdWavelets(Sz4 const dims, Index const width, Index const levels);
-    auto operator()(float const λ, Cx4 const &) const -> Cx4;
+    auto operator()(float const λ, Eigen::TensorMap<Cx4 const>) const -> Eigen::TensorMap<Cx4>;
 
 private:
-    PadOp<4> pad_;
+    PadOp<Cx, 4> pad_;
     Wavelets waves_;
     SoftThreshold thresh_;
 };

@@ -12,6 +12,7 @@ template <typename Op>
 struct AugmentedOp
 {
   using Input = typename Op::Input;
+  using InputMap = typename Op::InputMap;
   Op const &op;
   float rho;
 
@@ -25,9 +26,11 @@ struct AugmentedOp
     return op.inputDimensions();
   }
 
-  Input forward(typename Op::Input const &x) const
+  auto forward(Input const &x) const -> Input
   {
-    return Input(op.adjfwd(x) + rho * x);
+    Input xcopy = x;
+    xcopy = op.adjfwd(xcopy) + rho * x;
+    return xcopy;
   }
 };
 
@@ -57,7 +60,8 @@ struct AugmentedADMM
     xpu.setZero();
     float const absThresh = abstol * std::sqrt(float(Product(dims)));
     for (Index ii = 0; ii < iterLimit; ii++) {
-      x = inner.run(x0 + x0.constant(ρ) * (z - u), x);
+      Input temp = x0 + x0.constant(ρ) * (z - u);
+      x = inner.run(temp, x);
       xpu.device(dev) = x + u;
       zold = z;
       z = (*reg)(λ / ρ, xpu);

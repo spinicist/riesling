@@ -14,8 +14,8 @@ template <int TRank, int FRank>
 struct CPU final : FFT<TRank, FRank>
 {
   using Tensor = typename FFT<TRank, FRank>::Tensor;
-  using TensorDims = typename Tensor::Dimensions;
-
+  using TensorDims = typename FFT<TRank, FRank>::TensorDims;
+  using TensorMap = typename FFT<TRank, FRank>::TensorMap;
   /*! Will allocate a workspace during planning
    */
   CPU(TensorDims const &dims, Index const nThreads)
@@ -26,14 +26,14 @@ struct CPU final : FFT<TRank, FRank>
     plan(ws, nThreads);
   }
 
-  CPU(Tensor &ws, Index const nThreads)
+  CPU(TensorMap ws, Index const nThreads)
     : dims_(ws.dimensions())
     , threaded_{nThreads > 1}
   {
     plan(ws, nThreads);
   }
 
-  void plan(Tensor &ws, Index const nThreads)
+  void plan(TensorMap ws, Index const nThreads)
   {
     std::array<int, FRank> sz;
     N_ = 1;
@@ -88,7 +88,7 @@ struct CPU final : FFT<TRank, FRank>
     fftwf_destroy_plan(reverse_plan_);
   }
 
-  void forward(Tensor &x) const //!< Image space to k-space
+  void forward(TensorMap x) const //!< Image space to k-space
   {
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
@@ -99,7 +99,7 @@ struct CPU final : FFT<TRank, FRank>
     applyPhase(x, scale_, true);
   }
 
-  void reverse(Tensor &x) const //!< K-space to image space
+  void reverse(TensorMap x) const //!< K-space to image space
   {
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
@@ -144,7 +144,7 @@ private:
     }
   }
 
-  void applyPhase(Tensor &x, float const scale, bool const fwd) const
+  void applyPhase(TensorMap x, float const scale, bool const fwd) const
   {
     Sz2 rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
     auto const rbPhase = phase_.reshape(rshP).broadcast(brdP);

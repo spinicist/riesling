@@ -64,8 +64,8 @@ add_library(vineyard
     src/op/grid-es-rect.cpp
     src/op/make_grid.cpp
     src/op/nufft.cpp
+    src/op/pad.cpp
     src/op/recon.cpp
-    src/op/recon-rss.cpp
     src/op/sense.cpp
     src/op/wavelets.cpp
     src/sim/parameter.cpp
@@ -160,6 +160,7 @@ if(${BUILD_TESTS})
         test/op/grid.cpp
         test/op/nufft.cpp
         test/op/pad.cpp
+        test/op/recon.cpp
         test/op/sense.cpp
     )
     target_link_libraries(riesling-tests PUBLIC

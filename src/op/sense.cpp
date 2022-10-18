@@ -1,15 +1,15 @@
 #include "sense.hpp"
 
 #include "tensorOps.hpp"
+#include "threads.hpp"
 
 namespace rl {
 
 SenseOp::SenseOp(Cx4 const &maps, Index const d0)
-  : maps_{std::move(maps)}
-  , inSz_{d0, maps_.dimension(1), maps_.dimension(2), maps_.dimension(3)}
-  , outSz_{maps_.dimension(0), d0, maps_.dimension(1), maps_.dimension(2), maps_.dimension(3)}
-  , x_{inSz_}
-  , y_{outSz_}
+  : Parent("SENSEOp", AddFront(LastN<3>(maps.dimensions()), d0), AddFront(LastN<3>(maps.dimensions()), maps.dimension(0), d0))
+  , maps_{std::move(maps)}
+  , x_{inputDimensions()}
+  , y_{outputDimensions()}
 {
   resX.set(1, d0);
   resX.set(2, maps_.dimension(1));
@@ -24,28 +24,23 @@ SenseOp::SenseOp(Cx4 const &maps, Index const d0)
   brdMaps.set(1, d0);
 }
 
-auto SenseOp::inputDimensions() const -> InputDims
+auto SenseOp::forward(InputMap x) const -> OutputMap
 {
-  return inSz_;
-}
-
-auto SenseOp::outputDimensions() const -> OutputDims
-{
-  return outSz_;
-}
-
-auto SenseOp::forward(Input const &x) const -> Output const &
-{
-  checkForward(x, "SENSEOp");
-  y_ = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
+  auto const time = startForward(x);
+  y_.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
+  finishForward(y_, time);
   return y_;
 }
 
-auto SenseOp::adjoint(Output const &x) const -> Input const &
+auto SenseOp::adjoint(OutputMap y) const -> InputMap
 {
-  checkAdjoint(x, "SENSEOp");
-  x_ = ConjugateSum(x, maps_.reshape(resMaps).broadcast(brdMaps));
+  auto const time = startAdjoint(y);
+  x_.device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.reshape(resMaps).broadcast(brdMaps));
+  finishAdjoint(x_, time);
   return x_;
 }
+
+  auto SenseOp::nChannels() const -> Index { return outputDimensions()[0]; }
+  auto SenseOp::mapDimensions() const -> Sz3 { return LastN<3>(inputDimensions()); }
 
 } // namespace rl

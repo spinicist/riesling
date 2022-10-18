@@ -29,7 +29,7 @@ struct LSQR
   float cTol = 1.e-6f;
   bool const debug = false;
 
-  Input run(typename Op::Output const &b, float const λ = 0.f, Input const &x0 = Input(), Input const &xr = Input()) const
+  Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Input const &xr = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
@@ -55,7 +55,11 @@ struct LSQR
       x.setZero();
       Mu.device(dev) = b;
     }
-    u.device(dev) = M ? (*M)(Mu) : Mu;
+    if (M) {
+      u = (*M)(Mu);
+    } else {
+      u = Mu;
+    }
     float β;
     if (λ > 0) {
       ur.resize(inDims);
@@ -101,7 +105,11 @@ struct LSQR
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
       Mu.device(dev) = op.forward(v) - α * Mu;
-      u.device(dev) = M ? (*M)(Mu) : Mu;
+      if (M) {
+        u = (*M)(Mu);
+      } else {
+        u = Mu;
+      }
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
         β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
@@ -148,16 +156,16 @@ struct LSQR
       float const ɣbar = -cs2 * ρ;
       float const rhs = ɸ - δ * z;
       float const zbar = rhs / ɣbar;
-      float const normx = std::sqrt(xxnorm + zbar*zbar);
+      float const normx = std::sqrt(xxnorm + zbar * zbar);
       float ɣ;
       std::tie(cs2, sn2, ɣ) = SymOrtho(ɣbar, θ);
       z = rhs / ɣ;
       xxnorm += z * z;
 
-      normA = std::sqrt(normA*normA + α*α + β*β + λ*λ);
+      normA = std::sqrt(normA * normA + α * α + β * β + λ * λ);
       float const condA = normA * std::sqrt(ddnorm);
-      float const res1 = ɸ̅*ɸ̅;
-      res2 = res2 + ψ*ψ;
+      float const res1 = ɸ̅ * ɸ̅;
+      res2 = res2 + ψ * ψ;
       float const normr = std::sqrt(res1 + res2);
       float const normAr = α * std::abs(τ);
 

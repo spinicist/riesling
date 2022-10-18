@@ -37,24 +37,33 @@ int main_nufft(args::Subparser &parser)
   auto const start = Log::Now();
   if (fwd) {
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
-    auto const channels = reader.readTensor<Cx6>(name);
-    NUFFTOp<3> nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.dimension(0), traj.matrix(coreOpts.fov.Get()), nullptr, basis);
-    Cx5 noncart(AddBack(nufft.outputDimensions(), 1, channels.dimension(5)));
+    auto channels = reader.readTensor<Cx6>(name);
+    auto nufft = make_nufft(
+      traj,
+      coreOpts.ktype.Get(),
+      coreOpts.osamp.Get(),
+      channels.dimension(0),
+      traj.matrix(coreOpts.fov.Get()),
+      std::nullopt,
+      basis,
+      false);
+    Cx5 noncart(AddBack(nufft->outputDimensions(), channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft.forward(channels.chip<5>(ii));
+      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
     }
     writer.writeTensor(noncart, HD5::Keys::Noncartesian);
     Log::Print(FMT_STRING("Forward NUFFT took {}"), Log::ToNow(start));
   } else {
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
-    auto const noncart = reader.readTensor<Cx5>(name);
+    auto noncart = reader.readTensor<Cx5>(name);
     auto const channels = noncart.dimension(0);
-    auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-    auto gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, basis);
-    NUFFTOp<3> nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), sdc.get(), basis);
-    Cx6 output(AddBack(nufft.inputDimensions(), noncart.dimension(3)));
+    auto const sdc = SDC::Choose(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+    auto nufft = make_nufft(
+      traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), sdc, basis, false);
+
+    Cx6 output(AddBack(nufft->inputDimensions(), noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft.adjoint(noncart.chip<4>(ii).chip<3>(0));
+      output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft->adjoint(CChipMap(noncart, ii));
     }
     writer.writeTensor(output, HD5::Keys::Channels);
     Log::Print(FMT_STRING("NUFFT Adjoint took {}"), Log::ToNow(start));

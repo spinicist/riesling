@@ -8,10 +8,10 @@
 
 namespace rl {
 
-auto LookupDictionary::operator()(Cx4 const &x) const -> Cx4
+auto LookupDictionary::operator()(Eigen::TensorMap<Cx4 const>x) const -> Eigen::TensorMap<Cx4>
 {
   Log::Print("Dictionary projection. Dims {}", x.dimensions());
-  Cx4 y(x.dimensions());
+  static Cx4 y(x.dimensions());
   auto ztask = [&](Index const iz) {
     Eigen::VectorXcf pv(x.dimension(0));
     for (Index iy = 0; iy < x.dimension(2); iy++) {

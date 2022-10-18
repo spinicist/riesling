@@ -25,7 +25,7 @@ int main_traj(args::Subparser &parser)
   Trajectory traj(reader);
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), 1, basis);
-  auto const sdc = SDC::make_sdc(sdcOpts, traj, 1, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, traj, 1, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx3 rad_ks(1, traj.nSamples(), traj.nTraces());
   rad_ks.setConstant(1.0f);
   Cx4 out = gridder->adjoint((*sdc)(rad_ks)).chip<0>(0);

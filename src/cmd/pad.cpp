@@ -26,7 +26,7 @@ int main_pad(args::Subparser &parser)
     Sz6 inDims = inImages.dimensions();
     Cx6 outImages(Sz6{inDims[0], inDims[1], padDims.Get()[0], padDims.Get()[1], padDims.Get()[2], inDims[5]});
     auto const start = Log::Now();
-    PadOp<5> pad(LastN<3>(inDims), padDims.Get(), FirstN<2>(inDims));
+    PadOp<Cx, 5> pad(LastN<3>(inDims), padDims.Get(), FirstN<2>(inDims));
     if (fwd) {
       for (Index ii = 0; ii < inDims[5]; ii++) {
         outImages.chip(ii, 5) = pad.forward(inImages.chip(ii, 5));
@@ -47,15 +47,17 @@ int main_pad(args::Subparser &parser)
     Cx5 outImages(Sz5{nF, padDims.Get()[0], padDims.Get()[1], padDims.Get()[2], nV});
     auto const start = Log::Now();
     if (fwd) {
-      PadOp<4> pad(MidN<1, 3>(inDims), padDims.Get(), Sz1{nF});
+      PadOp<Cx, 4> pad(MidN<1, 3>(inDims), padDims.Get(), Sz1{nF});
       for (Index ii = 0; ii < inDims[4]; ii++) {
-        outImages.chip(ii, 4) = pad.forward(inImages.chip(ii, 4));
+        Cx4 img = inImages.chip(ii, 4);
+        outImages.chip(ii, 4) = pad.forward(img);
       }
       Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     } else {
-      PadOp<4> pad(padDims.Get(), MidN<1, 3>(inDims), Sz1{nF});
+      PadOp<Cx, 4> pad(padDims.Get(), MidN<1, 3>(inDims), Sz1{nF});
       for (Index ii = 0; ii < inDims[4]; ii++) {
-        outImages.chip(ii, 4) = pad.adjoint(inImages.chip(ii, 4));
+        Cx4 img = inImages.chip(ii, 4);
+        outImages.chip(ii, 4) = pad.adjoint(img);
       }
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     }

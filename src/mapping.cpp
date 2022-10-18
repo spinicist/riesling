@@ -73,7 +73,7 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 
 template <size_t Rank>
 Mapping<Rank>::Mapping(
-  Trajectory const &traj, Index const kW, float const nomOS, Index const bucketSz, Index const splitSize, Index const read0)
+  Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize, Index const read0)
 {
   Info const &info = traj.info();
   Index const gridSz = fft_size(info.matrix[0] * nomOS);

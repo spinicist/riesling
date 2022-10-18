@@ -30,7 +30,7 @@ auto Wavelets::PaddedDimensions(Sz4 const dims, Index const L) -> Sz4
 }
 
 Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
-  : dims_{dims}
+  : Parent("WaveletsOp", dims, dims)
   , N_{N}
   , L_{L}
   , ws_{dims_}
@@ -79,17 +79,7 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
 //   return {pad_dims, pads};
 // }
 
-auto Wavelets::inputDimensions() const -> InputDims
-{
-  return dims_;
-}
-
-auto Wavelets::outputDimensions() const -> OutputDims
-{
-  return dims_;
-}
-
-void Wavelets::encode_dim(Output &image, Index const dim, Index const level) const
+void Wavelets::encode_dim(OutputMap image, Index const dim, Index const level) const
 {
   Index const sz = image.dimension(dim + 1) / (1 << level);
   Index const hsz = sz / 2;
@@ -120,19 +110,20 @@ void Wavelets::encode_dim(Output &image, Index const dim, Index const level) con
   Threads::For(encode_task, sz, fmt::format(FMT_STRING("Wavelets Encode Dimension {} Level {}"), dim, level));
 }
 
-auto Wavelets::forward(Input const &x) const -> Output const &
+auto Wavelets::forward(InputMap x) const -> OutputMap
 {
-  checkForward(x, "WaveletsOp");
+  auto const time = startForward(x);
   ws_ = x;
   for (Index il = 0; il < L_; il++) {
     for (Index dim = 0; dim < 3; dim++) {
       encode_dim(ws_, dim, il);
     }
   }
+  finishAdjoint(x, time);
   return ws_;
 }
 
-void Wavelets::decode_dim(Input &image, Index const dim, Index const level) const
+void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) const
 {
   Index const sz = image.dimension(dim + 1) / (1 << level);
   Index const hsz = sz / 2;
@@ -164,15 +155,16 @@ void Wavelets::decode_dim(Input &image, Index const dim, Index const level) cons
   Threads::For(decode_task, sz, fmt::format(FMT_STRING("Wavelets Decode Dimension {} Level {}"), dim, level));
 }
 
-auto Wavelets::adjoint(Output const &x) const -> Input const & 
+auto Wavelets::adjoint(OutputMap x) const -> InputMap 
 {
-  checkAdjoint(x, "WaveletsOp");
+  auto const time = startAdjoint(x);
   ws_ = x;
   for (Index il = L_ - 1; il >= 0; il--) {
     for (Index dim = 0; dim < 3; dim++) {
       decode_dim(ws_, dim, il);
     }
   }
+  finishAdjoint(x, time);
   return ws_;
 }
 

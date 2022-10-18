@@ -51,12 +51,7 @@ int main_admm(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  Index const channels = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
-  Index const volumes = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
-  auto const sdc = SDC::make_sdc(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-  Cx4 senseMaps = SENSE::Choose(senseOpts, coreOpts, sdcOpts, traj, reader);
-  ReconOp recon(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), senseMaps, sdc.get(), basis);
+  auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto M = make_pre(pre.Get(), traj);
   std::unique_ptr<Prox<Cx4>> reg;
   if (wavelets) {
@@ -69,6 +64,8 @@ int main_admm(args::Subparser &parser)
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
+  Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
 
@@ -78,19 +75,19 @@ int main_admm(args::Subparser &parser)
     AugmentedADMM<ConjugateGradients<AugmentedOp<ReconOp>>> admm{
       cg, reg.get(), outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(recon.adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv))));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(recon.adjoint(CChipMap(allData, iv))));
     }
   } else if (use_lsmr) {
     LSMR<ReconOp> lsmr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
     ADMM<LSMR<ReconOp>> admm{lsmr, reg.get(), outer_its.Get(), λ.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv)));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv)));
     }
   } else {
     LSQR<ReconOp> lsqr{recon, M.get(), inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
     ADMM<LSQR<ReconOp>> admm{lsqr, reg.get(), outer_its.Get(), λ.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv)));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv)));
     }
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

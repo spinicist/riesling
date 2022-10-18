@@ -9,9 +9,9 @@ ThresholdWavelets::ThresholdWavelets(Sz4 const dims, Index const W, Index const 
 {
 }
 
-auto ThresholdWavelets::operator()(float const λ, Cx4 const &x) const -> Cx4
+auto ThresholdWavelets::operator()(float const λ, Eigen::TensorMap<Cx4 const>x) const -> Eigen::TensorMap<Cx4>
 {
-  return pad_.adjoint(waves_.adjoint(thresh_(λ, waves_.forward(pad_.forward(x)))));
+  return pad_.adjoint(waves_.adjoint(thresh_(λ, ConstMap(waves_.forward(pad_.forward(x))))));
 }
 
 } // namespace rl

@@ -5,66 +5,51 @@
 namespace rl {
 
 template <typename Op>
-struct LoopOp final : Operator<Op::InputRank + 1, Op::OutputRank + 1>
+struct LoopOp final : OperatorAlloc<typename Op::Scalar, Op::InputRank + 1, Op::OutputRank + 1>
 {
-  using Parent = Operator<Op::InputRank + 1, Op::OutputRank + 1>;
-  static const size_t InputRank = Parent::InputRank;
-  using InputDims = typename Parent::InputDims;
-  using Input = typename Parent::Input;
-  static const size_t OutputRank = Parent::OutputRank;
-  using OutputDims = typename Parent::OutputDims;
-  using Output = typename Parent::Output;
+  OPALLOC_INHERIT( typename Op::Scalar, Op::InputRank + 1, Op::OutputRank + 1 )
 
   LoopOp(Op &op, Index const N)
-    : op_{std::move(op)}
+    : Parent("LoopOp", AddBack(op.inputDimensions(), N), AddBack(op.outputDimensions(), N))
+    , op_{std::move(op)}
     , N_{N}
-    , x_{inputDimensions()}
-    , y_{outputDimensions()}
   {
   }
 
-  auto inputDimensions() const -> InputDims
+  auto forward(InputMap x) const -> OutputMap
   {
-    return AddBack(op_.inputDimensions(), N_);
-  }
-
-  auto outputDimensions() const -> OutputDims
-  {
-    return AddBack(op_.outputDimensions(), N_);
-  }
-
-  auto forward(Input const &x) const -> Output const &
-  {
+    auto const time = this->startForward(x);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Forward Iteration {}"), ii);
-      y_.chip(ii, OutputRank - 1) = op_.forward(x.chip(ii, InputRank - 1));
+      this->output().chip(ii, OutputRank - 1) = op_.forward(ChipMap(x, ii));
     }
-    return y_;
+    this->finishForward(this->output(), time);
+    return this->output();
   }
 
-  auto adjoint(Output const &y) const -> Input const &
+  auto adjoint(OutputMap y) const -> InputMap
   {
+    auto const time = this->startAdjoint(y);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint Iteration {}"), ii);
-      x_.chip(ii, InputRank - 1) = op_.adjoint(y.chip(ii, OutputRank - 1));
+      this->input().chip(ii, InputRank - 1) = op_.adjoint(ChipMap(y, ii));
     }
-    return x_;
+    this->finishAdjoint(this->input(), time);
+    return this->input();
   }
 
-  auto adjfwd(Input const &x) const -> Input
+  auto adjfwd(InputMap x) const -> InputMap
   {
     for (Index ii = 0; ii < N_; ii++) {
       Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint-Forward Iteration {}"), ii);
-      x_.chip(ii, InputRank - 1) = op_.adjfwd(x.chip(ii, InputRank - 1));
+      this->input().chip(ii, InputRank - 1) = op_.adjfwd(ChipMap(x, ii));
     }
-    return x_;
+    return this->input();
   }
 
 private:
   Op op_;
   Index N_;
-  mutable Input x_;
-  mutable Output y_;
 };
 
 }

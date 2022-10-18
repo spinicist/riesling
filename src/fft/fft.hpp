@@ -14,11 +14,12 @@ struct FFT
   static_assert(FFTRank <= TensorRank);
   using Tensor = Eigen::Tensor<Cx, TensorRank>;
   using TensorDims = typename Tensor::Dimensions;
+  using TensorMap = Eigen::TensorMap<Tensor>;
 
   virtual ~FFT() {}
 
-  virtual void forward(Tensor &x) const = 0; //!< Image space to k-space
-  virtual void reverse(Tensor &x) const = 0; //!< K-space to image space
+  virtual void forward(TensorMap x) const = 0; //!< Image space to k-space
+  virtual void reverse(TensorMap x) const = 0; //!< K-space to image space
 };
 
 void Start();
@@ -32,7 +33,7 @@ Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const threads =
 
 template <int TRank, int FFTRank>
 std::unique_ptr<FFT<TRank, FFTRank>>
-Make(typename FFT<TRank, FFTRank>::Tensor &ws, Index const threads = 0);
+Make(typename FFT<TRank, FFTRank>::TensorMap ws, Index const threads = 0);
 
 } // namespace FFT
 }

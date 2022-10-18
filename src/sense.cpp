@@ -25,8 +25,8 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, SDC::Opts &sdcOpts, Trajecto
   Log::Print(FMT_STRING("SENSE Self-Calibration Starting"));
   auto const nC = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false);
-  auto sdc = SDC::make_sdc(sdcOpts, traj, nC, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-  auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()), sdc.get());
+  auto sdc = SDC::Choose(sdcOpts, traj, nC, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()), sdc);
   Sz5 const dims = nufft->inputDimensions();
   Cropper crop(traj.info().matrix, LastN<3>(dims), traj.info().voxel_size, opts.fov.Get());
   Cx4 channels(crop.dims(dims[0]));
@@ -44,7 +44,7 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, SDC::Opts &sdcOpts, Trajecto
   }
 
   Cx4 const data = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, opts.volume.Get());
-  Cx4 const lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
+  Cx4 lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
   Cx5 const allChan = nufft->adjoint(lores);
   channels = crop.crop5(allChan).chip<1>(opts.frame.Get());
   Cx3 rss = crop.newImage();

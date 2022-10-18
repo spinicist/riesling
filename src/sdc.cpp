@@ -1,10 +1,10 @@
 #include "sdc.hpp"
 
+#include "func/functor.hpp"
+#include "func/multiply.hpp"
 #include "io/hd5.hpp"
 #include "mapping.hpp"
 #include "op/make_grid.hpp"
-#include "func/functor.hpp"
-#include "func/multiply.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "trajectory.hpp"
@@ -32,8 +32,7 @@ Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {
     Wp = gridder->forward(gridder->adjoint(W));
-    Wp.device(Threads::GlobalDevice()) =
-      (Wp > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
+    Wp.device(Threads::GlobalDevice()) = (Wp > 0.f).select(W / Wp, Wp.constant(0.f)).eval(); // Avoid divide by zero problems
     float const delta = Norm(Wp - W) / Norm(W);
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 1e-6) {
@@ -130,19 +129,16 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
   return sdc;
 }
 
-Re2 Radial(Trajectory const &traj, Index const lores, Index const gap)
-{
-  return Radial3D(traj, lores, gap);
-}
+Re2 Radial(Trajectory const &traj, Index const lores, Index const gap) { return Radial3D(traj, lores, gap); }
 
-std::unique_ptr<Functor<Cx3>>
-make_sdc(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string const &ktype, float const os)
+auto Choose(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string const &ktype, float const os)
+  -> std::optional<Functor>
 {
   Re2 sdc(traj.nSamples(), traj.nTraces());
   auto const iname = opts.type.Get();
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::make_unique<Identity<Cx3>>();
+    return std::nullopt;
   } else if (iname == "pipe") {
     switch (traj.nDims()) {
     case 2: sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get()); break;
@@ -160,7 +156,7 @@ make_sdc(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string co
         traj.nTraces());
     }
   }
-  return std::make_unique<BroadcastMultiply<Cx, 3>>(sdc.pow(opts.pow.Get()).cast<Cx>());
+  return std::optional<Functor>(sdc.pow(opts.pow.Get()).cast<Cx>());
 }
 
 } // namespace SDC

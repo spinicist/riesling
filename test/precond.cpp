@@ -10,7 +10,7 @@ using namespace Catch;
 TEST_CASE("Preconditioner", "[precond]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = GENERATE(31, 32);
+  Index const M = GENERATE(15, 16);
   Info const info{.matrix = Sz3{M, M, M}};
   Re3 points(3, 3, 1);
   points.setZero();

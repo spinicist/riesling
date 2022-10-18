@@ -11,6 +11,7 @@ using namespace Catch;
 TEST_CASE("Grid Basic", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
+  Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(7, 15, 16, 31, 32);
   Info const info{.matrix = Sz3{M, M, 1}};
   Re3 points(3, 3, 1);
