@@ -20,13 +20,14 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, SDC::Opts &sdcOpts, Trajectory const &inTraj, HD5::Reader &reader)
+Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Reader &reader)
 {
   Log::Print(FMT_STRING("SENSE Self-Calibration Starting"));
   auto const nC = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false);
-  auto sdc = SDC::Choose(sdcOpts, traj, nC, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-  auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()), sdc);
+  auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
+  auto sdc = std::make_shared<BroadcastMultiply<Cx, 3>>(sdcW.cast<Cx>());
+  auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()), std::nullopt, sdc);
   Sz5 const dims = nufft->inputDimensions();
   Cropper crop(traj.info().matrix, LastN<3>(dims), traj.info().voxel_size, opts.fov.Get());
   Cx4 channels(crop.dims(dims[0]));
@@ -55,6 +56,7 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, SDC::Opts &sdcOpts, Trajecto
   }
   Log::Print<Log::Level::High>(FMT_STRING("Normalizing channel images"));
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
+  Log::Tensor(channels, "sense");
   Log::Print(FMT_STRING("SENSE Self-Calibration finished"));
   return channels;
 }
@@ -79,13 +81,13 @@ Cx4 Interp(std::string const &file, Sz3 const size2)
   return sense;
 }
 
-Cx4 Choose(Opts &opts, CoreOpts &core, SDC::Opts &sdc, Trajectory const &traj, HD5::Reader &reader)
+Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, HD5::Reader &reader)
 {
   if (opts.file) {
     HD5::Reader senseReader(opts.file.Get());
     return senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
   } else {
-    return SelfCalibration(opts, core, sdc, traj, reader);
+    return SelfCalibration(opts, core, traj, reader);
   }
 }
 

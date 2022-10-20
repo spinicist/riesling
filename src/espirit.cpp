@@ -1,4 +1,4 @@
-#include "espirit.h"
+#include "espirit.hpp"
 
 #include "algo/decomp.hpp"
 #include "cropper.h"
@@ -71,14 +71,11 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
   return out;
 }
 
-Cx4 ESPIRIT(
-  GridBase<Cx, 3> *gridder, Cx3 data, Index const kRad, Index const calRad, Index const gap, float const thresh)
+Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outSz, Index const kRad, Index const calRad, Index const gap, float const thresh)
 {
   Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
 
   Log::Print(FMT_STRING("Calculating k-space kernels"));
-  Cx4 grid = gridder->adjoint(data).chip<1>(0);
-
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh);
   Index const retain = mini_kernels.dimension(4);
@@ -105,12 +102,13 @@ Cx4 ESPIRIT(
 
   Log::Print(FMT_STRING("Image space Eigenanalysis"));
   // Do this slice-by-slice
-  Re3 valsImage(LastN<3>(gridder->inputDimensions()));
+  Re3 valsImage(outSz);
+  Cx4 vecsImage(AddFront(outSz, grid.dimension(0)));
   auto const hiSz = FirstN<3>(grid.dimensions());
   auto const hiFFT = FFT::Make<3, 2>(hiSz, 1);
-  auto slice_task = [&grid, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const zz) {
+  auto slice_task = [&vecsImage, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const zz) {
     // Now do a lot of FFTs
-    Cx4 hi_kernels(grid.dimension(0), grid.dimension(1), grid.dimension(2), mix_kernels.dimension(4));
+    Cx4 hi_kernels(vecsImage.dimension(0), vecsImage.dimension(1), vecsImage.dimension(2), mix_kernels.dimension(4));
     Cx3 hi_slice(hiSz);
     for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
       Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
@@ -127,7 +125,7 @@ Cx4 ESPIRIT(
         auto const pcs = PCA(CollapseToConstMatrix(samples), 1);
         float const phase = std::arg(pcs.vecs(0, 0));
         for (Index ic = 0; ic < samples.dimension(0); ic++) {
-          grid(ic, xx, yy, zz) = std::conj(pcs.vecs(ic, 0) * std::polar(1.f, -phase));
+          vecsImage(ic, xx, yy, zz) = std::conj(pcs.vecs(ic, 0) * std::polar(1.f, -phase));
         }
         valsImage(xx, yy, zz) = pcs.vals[0];
       }
@@ -136,7 +134,7 @@ Cx4 ESPIRIT(
   Threads::For(slice_task, mix_kernels.dimension(3), "Covariance");
 
   Log::Print(FMT_STRING("Finished ESPIRIT"));
-  return grid;
+  return vecsImage;
 }
 
 } // namespace rl

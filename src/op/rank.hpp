@@ -9,9 +9,9 @@ struct IncreaseOutputRank final : Operator<typename Op::Scalar, Op::InputRank, O
 {
   OP_INHERIT(typename Op::Scalar, Op::InputRank, Op::OutputRank + 1)
 
-  IncreaseOutputRank(std::unique_ptr<Op> &&op)
+  IncreaseOutputRank(std::shared_ptr<Op> op)
     : Parent("IncreaseOutputRankOp", op->inputDimensions(), AddBack(op->outputDimensions(), 1))
-    , op_{std::move(op)}
+    , op_{op}
   {
   }
 
@@ -36,7 +36,7 @@ struct IncreaseOutputRank final : Operator<typename Op::Scalar, Op::InputRank, O
   auto adjfwd(InputMap x) const -> InputMap { return op_->adjfwd(x); }
 
 private:
-  std::unique_ptr<Op> op_;
+  std::shared_ptr<Op> op_;
 };
 
 } // namespace rl

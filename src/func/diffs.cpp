@@ -1,5 +1,7 @@
 #include "diffs.hpp"
 
+#include "threads.hpp"
+
 namespace rl {
 
 ForwardDiff::ForwardDiff(Index d)
@@ -11,54 +13,38 @@ BackwardDiff::BackwardDiff(Index d)
 CentralDiff::CentralDiff(Index d)
   : Functor<Cx4>()
   , dim{d} {};
-TotalDiff::TotalDiff()
-  : Functor<Cx4>()
-  , x_{0}
-  , y_{1}
-  , z_{2} {};
 
-auto ForwardDiff::operator()(Eigen::TensorMap<Cx4 const>a) const -> Eigen::TensorMap<Cx4>
+void ForwardDiff::operator()(Input x, Output y) const
 {
-  static Cx4 b(a.dimensions());
-  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  assert(x.dimensions() == y.dimensions());
+  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
   Sz4 const st1{0, 1, 1, 1};
   Sz4 fwd{0, 1, 1, 1};
   fwd[dim + 1] = 2;
-  b.setZero();
-  b.slice(st1, sz) = a.slice(fwd, sz) - a.slice(st1, sz);
-  return b;
+  y.setZero();
+  y.slice(st1, sz).device(Threads::GlobalDevice()) = x.slice(fwd, sz) - x.slice(st1, sz);
 }
 
-auto BackwardDiff::operator()(Eigen::TensorMap<Cx4 const>a) const -> Eigen::TensorMap<Cx4>
+void BackwardDiff::operator()(Input x, Output y) const
 {
-  static Cx4 b(a.dimensions());
-  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
   Sz4 const st1{0, 1, 1, 1};
   Sz4 bck{0, 1, 1, 1};
   bck[dim + 1] = 0;
-  b.setZero();
-  b.slice(st1, sz) = a.slice(st1, sz) - a.slice(bck, sz);
-  return b;
+  y.setZero();
+  y.slice(st1, sz).device(Threads::GlobalDevice()) = x.slice(st1, sz) - x.slice(bck, sz);
 }
 
-auto CentralDiff::operator()(Eigen::TensorMap<Cx4 const>a) const -> Eigen::TensorMap<Cx4>
+void CentralDiff::operator()(Input x, Output y) const
 {
-  static Cx4 b(a.dimensions());
-  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
+  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
   Sz4 const st1{0, 1, 1, 1};
   Sz4 fwd{0, 1, 1, 1};
   Sz4 bck{0, 1, 1, 1};
   fwd[dim + 1] = 2;
   bck[dim + 1] = 0;
-  b.setZero();
-  b.slice(st1, sz) = (a.slice(fwd, sz) - a.slice(bck, sz)) / a.slice(st1, sz).constant(2.f);
-  return b;
-}
-
-auto TotalDiff::operator()(Eigen::TensorMap<Cx4 const>a) const -> Eigen::TensorMap<Cx4>
-{
-  Cx4 b = x_(a) + y_(a) + z_(a);
-  return b;
+  y.setZero();
+  y.slice(st1, sz).device(Threads::GlobalDevice()) = (x.slice(fwd, sz) - x.slice(bck, sz)) / x.slice(st1, sz).constant(2.f);
 }
 
 } // namespace rl

@@ -237,7 +237,7 @@ inline decltype(auto) CollapseToConstMatrix(T const &t)
 }
 
 template<typename T>
-inline auto ChipMap(T const &a, Index const index)
+inline auto ChipMap(T &a, Index const index)
 {
   constexpr auto LastDim = T::NumDimensions - 1;
   using Scalar = typename T::Scalar;

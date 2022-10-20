@@ -18,7 +18,7 @@ Failure::Failure(std::string const &msg)
 
 namespace {
 Level log_level = Level::None;
-std::unique_ptr<HD5::Writer> debug_file = nullptr;
+std::shared_ptr<HD5::Writer> debug_file = nullptr;
 bool isTTY = false;
 Index progressTarget = -1, progressCurrent = 0, progressNext = 0;
 std::mutex progressMutex;
@@ -42,7 +42,7 @@ void SetLevel(Level const l)
 
 void SetDebugFile(std::string const &fname)
 {
-  debug_file = std::make_unique<HD5::Writer>(fname);
+  debug_file = std::make_shared<HD5::Writer>(fname);
 }
 
 void End()

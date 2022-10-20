@@ -71,31 +71,31 @@ Cx1 Phase(Index const sz)
 }
 
 template <int TRank, int FFTRank>
-std::unique_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const inThreads)
+std::shared_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const inThreads)
 {
   Index const nThreads = (inThreads > 0) ? inThreads : Threads::GlobalThreadCount();
-  return std::make_unique<CPU<TRank, FFTRank>>(dims, nThreads);
+  return std::make_shared<CPU<TRank, FFTRank>>(dims, nThreads);
 }
 
-template std::unique_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorDims const &, Index const);
-template std::unique_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorDims const &, Index const);
-template std::unique_ptr<FFT<4, 3>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
-template std::unique_ptr<FFT<4, 2>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
-template std::unique_ptr<FFT<4, 1>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
-template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorDims const &, Index const);
-template std::unique_ptr<FFT<3, 2>> Make(typename FFT<3, 2>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<4, 3>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<4, 2>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<4, 1>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<3, 2>> Make(typename FFT<3, 2>::TensorDims const &, Index const);
 
 template <int TRank, int FFTRank>
-std::unique_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorMap ws, Index const inThreads)
+std::shared_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorMap ws, Index const inThreads)
 {
   Index const nThreads = (inThreads > 0) ? inThreads : Threads::GlobalThreadCount();
-  return std::make_unique<CPU<TRank, FFTRank>>(ws, nThreads);
+  return std::make_shared<CPU<TRank, FFTRank>>(ws, nThreads);
 }
 
-template std::unique_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorMap, Index const);
-template std::unique_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorMap, Index const);
-template std::unique_ptr<FFT<4, 2>> Make(typename FFT<4, 2>::TensorMap, Index const);
-template std::unique_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorMap, Index const);
+template std::shared_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorMap, Index const);
+template std::shared_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorMap, Index const);
+template std::shared_ptr<FFT<4, 2>> Make(typename FFT<4, 2>::TensorMap, Index const);
+template std::shared_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorMap, Index const);
 
 } // namespace FFT
 } // namespace rl

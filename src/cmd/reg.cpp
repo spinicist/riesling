@@ -45,13 +45,13 @@ int main_reg(args::Subparser &parser)
     HD5::Reader dictReader(brute.Get());
     BruteForceDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = dict(CChipMap(images, iv));
+       dict(CChipMap(images, iv), ChipMap(output, iv));
     }
   } else if (ball) {
     HD5::Reader dictReader(ball.Get());
     BallTreeDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = dict(CChipMap(images, iv));
+      dict(CChipMap(images, iv), ChipMap(output, iv));
     }
   } else if (llr || llrPatch) {
     LLR reg{patchSize.Get(), !llrPatch};

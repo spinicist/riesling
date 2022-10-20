@@ -41,18 +41,18 @@ int main_recon(args::Subparser &parser)
     }
     HD5::Reader senseReader(senseOpts.file.Get());
     Cx4 senseMaps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
-    auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, senseReader);
-    Sz4 const sz = recon.inputDimensions();
-    Cropper out_cropper(info.matrix, LastN<3>(recon.inputDimensions()), info.voxel_size, senseOpts.fov.Get());
+    auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, senseReader);
+    Sz4 const sz = recon->inputDimensions();
+    Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, senseOpts.fov.Get());
 
     auto const &all_start = Log::Now();
     auto const images = reader.readTensor<Cx5>(HD5::Keys::Image);
     Cx4 padded(sz);
-    Cx5 kspace(AddBack(recon.outputDimensions(), volumes));
+    Cx5 kspace(AddBack(recon->outputDimensions(), volumes));
     for (Index iv = 0; iv < volumes; iv++) {
       padded.setZero();
       out_cropper.crop4(padded) = images.chip<4>(iv);
-      kspace.chip<4>(iv) = recon.forward(padded);
+      kspace.chip<4>(iv) = recon->forward(padded);
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
     auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "recon", "h5");
@@ -60,16 +60,16 @@ int main_recon(args::Subparser &parser)
     traj.write(writer);
     writer.writeTensor(kspace, HD5::Keys::Noncartesian);
   } else {
-    auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-    Sz4 const sz = recon.inputDimensions();
-    Cropper out_cropper(info.matrix, LastN<3>(recon.inputDimensions()), info.voxel_size, coreOpts.fov.Get());
+    auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+    Sz4 const sz = recon->inputDimensions();
+    Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
     Sz3 const outSz = out_cropper.size();
     Cx4 vol(sz);
     Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
     Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
     auto const &all_start = Log::Now();
     for (Index iv = 0; iv < volumes; iv++) {
-      vol = recon.adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
+      vol = recon->adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
       cropped = out_cropper.crop4(vol);
       out.chip<4>(iv) = cropped;
     }

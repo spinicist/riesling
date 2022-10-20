@@ -25,11 +25,11 @@ int main_cg(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto recon = Recon(coreOpts, sdcOpts, senseOpts, traj, toeplitz, reader);
-  NormalEqOp<ReconOp> normEqs{recon};
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, toeplitz, reader);
+  auto normEqs = make_normal<ReconOp>(recon);
   ConjugateGradients<NormalEqOp<ReconOp>> cg{normEqs, its.Get(), thr.Get(), true};
 
-  auto sz = recon.inputDimensions();
+  auto sz = recon->inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
@@ -39,7 +39,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    cropped = out_cropper.crop4(cg.run(recon.adjoint(CChipMap(allData, iv))));
+    cropped = out_cropper.crop4(cg.run(recon->adjoint(CChipMap(allData, iv))));
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }

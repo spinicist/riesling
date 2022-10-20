@@ -19,7 +19,7 @@ int main_sense_calib(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
-  Cx4 sense = SENSE::SelfCalibration(senseOpts, coreOpts, sdcOpts, traj, reader);
+  Cx4 sense = SENSE::SelfCalibration(senseOpts, coreOpts, traj, reader);
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(sense, "sense");

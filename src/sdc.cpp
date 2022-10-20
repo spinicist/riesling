@@ -21,7 +21,7 @@ Opts::Opts(args::Subparser &parser)
 }
 
 template <int ND>
-Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const its)
+auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const its, float const pow) -> Re2
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
   auto info = traj.info();
@@ -43,7 +43,7 @@ Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index
     }
   }
   Log::Print(FMT_STRING("SDC finished."));
-  return W.chip<0>(0);
+  return W.chip<0>(0).pow(pow);
 }
 
 Re2 Radial2D(Trajectory const &traj)
@@ -132,17 +132,18 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 Re2 Radial(Trajectory const &traj, Index const lores, Index const gap) { return Radial3D(traj, lores, gap); }
 
 auto Choose(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string const &ktype, float const os)
-  -> std::optional<Functor>
+  -> std::shared_ptr<Functor<Cx3>>
 {
   Re2 sdc(traj.nSamples(), traj.nTraces());
   auto const iname = opts.type.Get();
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::nullopt;
+    return std::make_shared<IdentityFunctor<Cx3>>();
   } else if (iname == "pipe") {
-    switch (traj.nDims()) {
-    case 2: sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get()); break;
-    case 3: sdc = SDC::Pipe<3>(traj, ktype, os, opts.maxIterations.Get()); break;
+    if (traj.nDims() == 2) {
+      sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get(), opts.pow.Get());
+    } else {
+      sdc = SDC::Pipe<3>(traj, ktype, os, opts.maxIterations.Get(), opts.pow.Get());
     }
   } else {
     HD5::Reader reader(iname);
@@ -156,7 +157,7 @@ auto Choose(SDC::Opts &opts, Trajectory const &traj, Index const nC, std::string
         traj.nTraces());
     }
   }
-  return std::optional<Functor>(sdc.pow(opts.pow.Get()).cast<Cx>());
+  return std::make_shared<BroadcastMultiply<Cx, 3>>(sdc.cast<Cx>(), "SDC");
 }
 
 } // namespace SDC

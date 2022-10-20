@@ -8,10 +8,10 @@
 
 namespace rl {
 
-auto LookupDictionary::operator()(Eigen::TensorMap<Cx4 const>x) const -> Eigen::TensorMap<Cx4>
+void LookupDictionary::operator()(Input x, Output y) const
 {
+  assert(x.dimensions() == y.dimensions());
   Log::Print("Dictionary projection. Dims {}", x.dimensions());
-  static Cx4 y(x.dimensions());
   auto ztask = [&](Index const iz) {
     Eigen::VectorXcf pv(x.dimension(0));
     for (Index iy = 0; iy < x.dimension(2); iy++) {
@@ -27,7 +27,6 @@ auto LookupDictionary::operator()(Eigen::TensorMap<Cx4 const>x) const -> Eigen::
     }
   };
   Threads::For(ztask, x.dimension(3), "Dictionary Projection");
-  return y;
 }
 
 BruteForceDictionary::BruteForceDictionary(Eigen::MatrixXf const &d)
@@ -48,7 +47,8 @@ auto BruteForceDictionary::project(Eigen::VectorXcf const &p) const -> Eigen::Ve
       bestIndex = ii;
     }
   }
-  // fmt::print(FMT_STRING("bestρ {} p {} d {} proj {}\n"), bestρ, p.transpose(), dictionary.col(bestIndex).transpose(), (dictionary.col(bestIndex) * bestρ).transpose());
+  // fmt::print(FMT_STRING("bestρ {} p {} d {} proj {}\n"), bestρ, p.transpose(), dictionary.col(bestIndex).transpose(),
+  // (dictionary.col(bestIndex) * bestρ).transpose());
   return dictionary.col(bestIndex) * bestρ;
 }
 
@@ -62,8 +62,8 @@ TreeNode::TreeNode(std::vector<Eigen::VectorXf> &points)
     std::vector<Eigen::VectorXf> leftPoints, rightPoints;
     leftPoints.push_back(points.front());
     rightPoints.push_back(points.back());
-    left = std::make_unique<TreeNode>(leftPoints);
-    right = std::make_unique<TreeNode>(rightPoints);
+    left = std::make_shared<TreeNode>(leftPoints);
+    right = std::make_shared<TreeNode>(rightPoints);
   } else {
     Eigen::VectorXf zero = Eigen::VectorXf::Zero(points.front().rows());
     centroid = std::accumulate(points.begin(), points.end(), zero);
@@ -99,8 +99,8 @@ TreeNode::TreeNode(std::vector<Eigen::VectorXf> &points)
     }
 
     if (leftPoints.size() && rightPoints.size()) {
-      left = std::make_unique<TreeNode>(leftPoints);
-      right = std::make_unique<TreeNode>(rightPoints);
+      left = std::make_shared<TreeNode>(leftPoints);
+      right = std::make_shared<TreeNode>(rightPoints);
     } else {
       // Maths broke
       // fmt::print("Maths broke\n");
@@ -135,7 +135,7 @@ BallTreeDictionary::BallTreeDictionary(Eigen::MatrixXf const &dict)
     points.push_back(temp.normalized());
   }
   Log::Print("Building Ball-Tree Dictionary rows {} entries {}", dict.rows(), dict.cols());
-  root = std::make_unique<TreeNode>(points);
+  root = std::make_shared<TreeNode>(points);
   Log::Print("Finished building tree");
 }
 

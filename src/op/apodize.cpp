@@ -6,15 +6,15 @@
 
 namespace rl {
 
-template <typename Scalar, size_t NDim>
-ApodizeOp<Scalar, NDim>::ApodizeOp(InputDims const &dims, GridBase<Scalar, NDim> *gridder)
+template <size_t NDim>
+ApodizeOp<NDim>::ApodizeOp(InputDims const &dims, GridBase<Scalar, NDim> *gridder)
   : Parent("ApodizeOp", dims, dims)
 {
   init(gridder);
 }
 
-template <typename Scalar, size_t NDim>
-void ApodizeOp<Scalar, NDim>::init(GridBase<Scalar, NDim> *gridder)
+template <size_t NDim>
+void ApodizeOp<NDim>::init(GridBase<Scalar, NDim> *gridder)
 {
   for (Index ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
@@ -24,28 +24,28 @@ void ApodizeOp<Scalar, NDim>::init(GridBase<Scalar, NDim> *gridder)
     res_[ii] = inputDimensions()[ii];
     brd_[ii] = 1;
   }
-  apo_ = gridder->apodization(LastN<NDim>(inputDimensions()));
+  apo_ = gridder->apodization(LastN<NDim>(inputDimensions())).template cast<Cx>();
 }
 
-template <typename Scalar, size_t NDim>
-auto ApodizeOp<Scalar, NDim>::forward(InputMap x) const -> OutputMap
+template <size_t NDim>
+auto ApodizeOp<NDim>::forward(InputMap x) const -> OutputMap
 {
   auto const time = this->startForward(x);
-  x.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
+  x.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(x, time);
   return x;
 }
 
-template <typename Scalar, size_t NDim>
-auto ApodizeOp<Scalar, NDim>::adjoint(OutputMap x) const -> InputMap
+template <size_t NDim>
+auto ApodizeOp<NDim>::adjoint(OutputMap x) const -> InputMap
 {
   auto const time = this->startAdjoint(x);
-  x.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_).template cast<Scalar>();
+  x.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(x, time);
   return x;
 }
 
-template struct ApodizeOp<Cx, 2>;
-template struct ApodizeOp<Cx, 3>;
+template struct ApodizeOp<2>;
+template struct ApodizeOp<3>;
 
 } // namespace rl

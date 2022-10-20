@@ -44,8 +44,8 @@ int main_nufft(args::Subparser &parser)
       coreOpts.osamp.Get(),
       channels.dimension(0),
       traj.matrix(coreOpts.fov.Get()),
-      std::nullopt,
       basis,
+      std::make_shared<IdentityFunctor<Cx3>>(),
       false);
     Cx5 noncart(AddBack(nufft->outputDimensions(), channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
@@ -59,7 +59,7 @@ int main_nufft(args::Subparser &parser)
     auto const channels = noncart.dimension(0);
     auto const sdc = SDC::Choose(sdcOpts, traj, channels, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     auto nufft = make_nufft(
-      traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), sdc, basis, false);
+      traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), basis, sdc, false);
 
     Cx6 output(AddBack(nufft->inputDimensions(), noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {

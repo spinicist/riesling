@@ -13,26 +13,32 @@ struct AugmentedOp
 {
   using Input = typename Op::Input;
   using InputMap = typename Op::InputMap;
-  Op const &op;
+  std::shared_ptr<Op> op;
   float rho;
 
-  auto inputDimensions() const
+  AugmentedOp(std::shared_ptr<Op> o, float const r)
+    : op{o}
+    , rho{r}
   {
-    return op.inputDimensions();
   }
 
-  auto outputDimensions() const
-  {
-    return op.inputDimensions();
-  }
+  auto inputDimensions() const { return op->inputDimensions(); }
+
+  auto outputDimensions() const { return op->inputDimensions(); }
 
   auto forward(Input const &x) const -> Input
   {
     Input xcopy = x;
-    xcopy = op.adjfwd(xcopy) + rho * x;
+    xcopy = op->adjfwd(xcopy) + rho * x;
     return xcopy;
   }
 };
+
+template <typename Op>
+auto make_augmented(std::shared_ptr<Op> op, float rho)
+{
+  return std::make_shared<AugmentedOp<Op>>(op, rho);
+}
 
 template <typename Inner>
 struct AugmentedADMM
@@ -52,7 +58,7 @@ struct AugmentedADMM
     Log::Print(FMT_STRING("ADMM-CG rho {}"), ρ);
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
-    auto const dims = inner.op.inputDimensions();
+    auto const dims = inner.op->inputDimensions();
     Input x(dims), z(dims), zold(dims), u(dims), xpu(dims);
     x.setZero();
     z.setZero();

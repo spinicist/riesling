@@ -61,10 +61,10 @@ int main_zinfandel(args::Subparser &parser)
     // Use SLR
     auto const [dsTraj, s1, dsSamp] = traj.downsample(res.Get(), 0, true);
 
-    auto nufft0 = make_nufft(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, nullptr, std::nullopt);
-    auto nufftN = make_nufft(fullTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, nullptr, std::nullopt);
+    auto nufft0 = make_nufft(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels);
+    auto nufftN = make_nufft(fullTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels);
 
-    std::unique_ptr<Functor<Cx4>> const pre = std::make_unique<KSpaceSingle>(dsTraj);
+    std::shared_ptr<Functor<Cx4>> const pre = std::make_shared<KSpaceSingle>(dsTraj);
     SLR reg{nufftN.fft(), kSz.Get()};
     Sz3 const st{0, 0, 0};
     Sz3 const sz{channels, gap.Get(), dsTraj.nTraces()};

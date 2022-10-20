@@ -11,8 +11,9 @@ namespace rl {
 namespace SDC {
 
 template <int ND>
-Re2 Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const max_its = 40);
-Re2 Radial(Trajectory const &traj, Index const lores, Index const gap);
+auto Pipe(Trajectory const &traj, std::string const &ktype = "ES3", float const os = 2.f, Index const max_its = 10, float const pow = 1.)
+  -> Re2;
+auto Radial(Trajectory const &traj, Index const lores, Index const gap) -> Re2;
 
 struct Opts
 {
@@ -22,10 +23,8 @@ struct Opts
   args::ValueFlag<Index> maxIterations;
 };
 
-using Functor = BroadcastMultiply<Cx, 3>;
-
 auto Choose(Opts &opts, Trajectory const &t, Index const nC, std::string const &ktype, float const os)
-  -> std::optional<Functor>;
+  -> std::shared_ptr<Functor<Cx3>>;
 
 } // namespace SDC
 } // namespace rl

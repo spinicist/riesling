@@ -3,21 +3,25 @@
 #include "functor.hpp"
 #include "threads.hpp"
 #include "tensorOps.hpp"
+#include "log.hpp"
 
 namespace rl {
 
 template <typename Scalar, int Rank, int FrontRank = 1, int BackRank = 0>
 struct BroadcastMultiply final : Functor<Eigen::Tensor<Scalar, Rank>>
 {
-  using FullTensor = Eigen::Tensor<Scalar, Rank>;
-  using ReducedTensor = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
-  ReducedTensor a;
+  using Parent = Functor<Eigen::Tensor<Scalar, Rank>>;
+  using typename Parent::Input;
+  using typename Parent::Output;
 
-  BroadcastMultiply(ReducedTensor const &ain) : Functor<FullTensor>(), a{ain} {}
-  auto operator()(Eigen::TensorMap<FullTensor const> x) const -> Eigen::TensorMap<FullTensor>
+  using Tensor = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
+  Tensor a;
+  std::string name;
+
+  BroadcastMultiply(Tensor const &ain, std::string const &n = "BroadcastMultiply") : Parent(), a{ain}, name{n} {}
+  void operator()(Input x, Output y) const
   {
-    assert(LastN<Rank - FrontRank - BackRank>(x.dimensions()) == a.dimensions());
-    static FullTensor y(x.dimensions());
+    assert(x.dimensions() == y.dimensions());
     Sz<Rank> res, brd;
     for (auto ii = 0; ii < FrontRank; ii++) {
       res[0] = 1;
@@ -31,8 +35,8 @@ struct BroadcastMultiply final : Functor<Eigen::Tensor<Scalar, Rank>>
       res[ii] = 1;
       brd[ii] = x.dimension(ii);
     }
+    Log::Print<Log::Level::Debug>(FMT_STRING("{} dims {}->{} res {} brd {}"), name, x.dimensions(), y.dimensions(), res, brd);
     y.device(Threads::GlobalDevice()) = x * a.reshape(res).broadcast(brd);
-    return y;
   }
 };
 

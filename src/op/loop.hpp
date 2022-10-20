@@ -11,7 +11,7 @@ struct LoopOp final : OperatorAlloc<typename Op::Scalar, Op::InputRank + 1, Op::
 
   LoopOp(Op &op, Index const N)
     : Parent("LoopOp", AddBack(op.inputDimensions(), N), AddBack(op.outputDimensions(), N))
-    , op_{std::move(op)}
+    , op_{op}
     , N_{N}
   {
   }

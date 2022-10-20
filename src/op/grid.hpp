@@ -38,8 +38,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
   std::optional<Re2> basis;
 
   Grid(Mapping<NDim> const m, Index const nC, std::optional<Re2> const &b = std::nullopt)
-    : GridBase<Scalar, NDim>(
-        AddFront(m.cartDims, nC, b ? b.value().dimension(1) : m.frames), AddFront(m.noncartDims, nC))
+    : GridBase<Scalar, NDim>(AddFront(m.cartDims, nC, b ? b.value().dimension(1) : m.frames), AddFront(m.noncartDims, nC))
     , mapping{m}
     , kernel{mapping.osamp}
     , basis{b}
@@ -54,7 +53,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     this->output().device(Threads::GlobalDevice()) = this->output().constant(0.f);
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : 1;
-    float const scale = basis ? sqrt(basis.value().dimension(0)) : 1.f;
+    float const scale = basis ? std::sqrt(basis.value().dimension(0)) : 1.f;
     auto const &map = this->mapping;
     auto const &cdims = map.cartDims;
 
@@ -146,7 +145,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     auto const &map = this->mapping;
     Index const nC = this->inputDimensions()[0];
     Index const nB = basis ? this->inputDimensions()[1] : map.frames;
-    float const scale = basis ? sqrt(basis.value().dimension(0)) : 1.f;
+    float const scale = basis ? std::sqrt(basis.value().dimension(0)) : 1.f;
     auto const &cdims = map.cartDims;
 
     std::mutex writeMutex;
@@ -274,7 +273,9 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     PadOp<Cx, NDim, NDim> padA(sz, temp.dimensions());
     Eigen::Tensor<float, NDim> a = padA.adjoint(temp).abs();
     a.device(Threads::GlobalDevice()) = a.inverse();
-    LOG_DEBUG("Apodization size {} Scale: {} Norm: {}", a.dimensions(), scale, Norm(a));
+    Sz<NDim> center;
+    std::transform(sz.begin(), sz.end(), center.begin(), [](Index i) { return i / 2; });
+    LOG_DEBUG("Apodization size {} Scale: {} Norm: {} Val: {}", a.dimensions(), scale, Norm(a), a(center));
     return a;
   }
 };

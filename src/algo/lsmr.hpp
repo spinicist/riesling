@@ -21,9 +21,9 @@ struct LSMR
   using Input = typename Op::Input;
   using Output = typename Op::Output;
 
-  Op &op;
-  Functor<Output> *M = nullptr; // Left pre-conditioner
-  Index iterLimit;
+  std::shared_ptr<Op> op;
+  std::shared_ptr<Functor<Output>> M = std::make_shared<IdentityFunctor<Output>>(); // Left pre-conditioner
+  Index iterLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
@@ -32,29 +32,24 @@ struct LSMR
   Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
   {
     auto dev = Threads::GlobalDevice();
-    // Allocate all memory
 
-    auto const inDims = op.inputDimensions();
-    auto const outDims = op.outputDimensions();
-
-    // Workspace variables
+    auto const inDims = op->inputDimensions();
+    auto const outDims = op->outputDimensions();
     Output Mu(outDims), u(outDims);
     Input v(inDims), h(inDims), h̅(inDims), x(inDims), ur;
 
     CheckDimsEqual(b.dimensions(), outDims);
     if (x0.size()) {
       CheckDimsEqual(x0.dimensions(), inDims);
+      Log::Print<Log::Level::Debug>(FMT_STRING("LSMR Warm-Start"));
       x.device(dev) = x0;
-      Mu.device(dev) = b - op.forward(x);
+      Mu.device(dev) = b - op->forward(x);
     } else {
+      Log::Print<Log::Level::Debug>(FMT_STRING("LSMR Start"));
       x.setZero();
       Mu.device(dev) = b;
     }
-    if (M) {
-      u.device(dev) = (*M)(Mu);
-    } else {
-      u.device(dev) = Mu;
-    }
+    (*M)(Mu, u);
     float β;
     if (λ > 0.f) {
       ur.resize(inDims);
@@ -72,9 +67,9 @@ struct LSMR
     u.device(dev) = u / u.constant(β);
     if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
-      v.device(dev) = op.adjoint(u) + sqrt(λ) * ur;
+      v.device(dev) = op->adjoint(u) + sqrt(λ) * ur;
     } else {
-      v.device(dev) = op.adjoint(u);
+      v.device(dev) = op->adjoint(u);
     }
     float α = std::sqrt(CheckedDot(v, v));
     v.device(dev) = v / v.constant(α);
@@ -109,16 +104,12 @@ struct LSMR
       Log::Tensor(x, "lsmr-x-init");
     }
 
-    Log::Print(FMT_STRING("LSMR    α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
+    Log::Print(FMT_STRING("LSMR    α {:5.3E} β {:5.3E} λ {}"), α, β, λ);
 
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
-      Mu.device(dev) = op.forward(v) - α * Mu;
-      if (M) {
-        u.device(dev) = (*M)(Mu);
-      } else {
-        u.device(dev) = Mu;
-      }
+      Mu.device(dev) = op->forward(v) - α * Mu;
+      (*M)(Mu, u);
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * v) - (α * ur);
         β = sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
@@ -129,9 +120,9 @@ struct LSMR
       u.device(dev) = u / u.constant(β);
       if (λ > 0.f) {
         ur.device(dev) = ur / ur.constant(β);
-        v.device(dev) = op.adjoint(u) + (sqrt(λ) * ur) - (β * v);
+        v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * v);
       } else {
-        v.device(dev) = op.adjoint(u) - (β * v);
+        v.device(dev) = op->adjoint(u) - (β * v);
       }
       α = std::sqrt(CheckedDot(v, v));
       v.device(dev) = v / v.constant(α);
@@ -156,11 +147,6 @@ struct LSMR
       h̅.device(dev) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
       x.device(dev) = x + (ζ / (ρ * ρ̅)) * h̅;
       h.device(dev) = v - (θnew / ρ) * h;
-
-      if (debug) {
-        Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
-        Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
-      }
 
       // Estimate of |r|.
       float const β́ = ĉ * β̈;
@@ -206,6 +192,13 @@ struct LSMR
         normA,
         condA,
         normx);
+
+      if (debug) {
+        Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
+        Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
+      }
+
+
 
       if (1.f + (1.f / condA) <= 1.f) {
         Log::Print(FMT_STRING("Cond(A) is very large"));

@@ -43,6 +43,6 @@ struct FFTOp final : Operator<Cx, Rank, Rank>
 
 private:
   InputDims dims_;
-  std::unique_ptr<FFT::FFT<Rank, FFTRank>> fft_;
+  std::shared_ptr<FFT::FFT<Rank, FFTRank>> fft_;
 };
 } // namespace rl

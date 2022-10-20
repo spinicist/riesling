@@ -6,7 +6,11 @@
 namespace rl {
 
 struct LookupDictionary : Functor<Cx4> {
-  auto operator()(Eigen::TensorMap<Cx4 const>) const -> Eigen::TensorMap<Cx4>;
+  using Parent = Functor<Cx4>;
+  using typename Parent::Input;
+  using typename Parent::Output;
+
+  void operator()(Input x, Output y) const;
   virtual auto project(Eigen::VectorXcf const &p) const -> Eigen::VectorXcf = 0;
 };
 
@@ -22,13 +26,13 @@ struct TreeNode {
   TreeNode(std::vector<Eigen::VectorXf> &points);
   auto find(Eigen::VectorXcf const &p) const -> Eigen::VectorXf;
   Eigen::VectorXf centroid;
-  std::unique_ptr<TreeNode> left = nullptr, right = nullptr;
+  std::shared_ptr<TreeNode> left = nullptr, right = nullptr;
 };
 
 struct BallTreeDictionary final : LookupDictionary
 {
   BallTreeDictionary(Eigen::MatrixXf const &d);
-  std::unique_ptr<TreeNode> root;
+  std::shared_ptr<TreeNode> root;
 
   auto project(Eigen::VectorXcf const &p) const -> Eigen::VectorXcf;
 };

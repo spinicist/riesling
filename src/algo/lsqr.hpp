@@ -21,8 +21,8 @@ struct LSQR
   using Input = typename Op::Input;
   using Output = typename Op::Output;
 
-  Op &op;
-  Functor<Output> *M = nullptr; // Left pre-conditioner
+  std::shared_ptr<Op> op;
+  std::shared_ptr<Functor<Output>> M = std::make_shared<IdentityFunctor<Output>>(); // Left pre-conditioner
   Index iterLimit;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
@@ -33,8 +33,8 @@ struct LSQR
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
-    auto const inDims = op.inputDimensions();
-    auto const outDims = op.outputDimensions();
+    auto const inDims = op->inputDimensions();
+    auto const outDims = op->outputDimensions();
 
     // Workspace variables
     Output Mu(outDims), u(outDims);
@@ -50,16 +50,13 @@ struct LSQR
     if (x0.size()) {
       CheckDimsEqual(x0.dimensions(), inDims);
       x.device(dev) = x0;
-      Mu.device(dev) = b - op.forward(x);
+      Mu.device(dev) = b - op->forward(x);
     } else {
       x.setZero();
       Mu.device(dev) = b;
     }
-    if (M) {
-      u = (*M)(Mu);
-    } else {
-      u = Mu;
-    }
+    (*M)(Mu, u);
+
     float β;
     if (λ > 0) {
       ur.resize(inDims);
@@ -78,9 +75,9 @@ struct LSQR
     u.device(dev) = u / u.constant(β);
     if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
-      Nv.device(dev) = op.adjoint(u) + sqrt(λ) * ur;
+      Nv.device(dev) = op->adjoint(u) + sqrt(λ) * ur;
     } else {
-      Nv.device(dev) = op.adjoint(u);
+      Nv.device(dev) = op->adjoint(u);
     }
     v.device(dev) = Nv;
     float α = std::sqrt(CheckedDot(v, Nv));
@@ -104,12 +101,8 @@ struct LSQR
 
     for (Index ii = 0; ii < iterLimit; ii++) {
       // Bidiagonalization step
-      Mu.device(dev) = op.forward(v) - α * Mu;
-      if (M) {
-        u = (*M)(Mu);
-      } else {
-        u = Mu;
-      }
+      Mu.device(dev) = op->forward(v) - α * Mu;
+      (*M)(Mu, u);
       if (λ > 0.f) {
         ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
         β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
@@ -120,9 +113,9 @@ struct LSQR
       u.device(dev) = u / u.constant(β);
       if (λ > 0.f) {
         ur.device(dev) = ur / ur.constant(β);
-        Nv.device(dev) = op.adjoint(u) + (sqrt(λ) * ur) - (β * Nv);
+        Nv.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * Nv);
       } else {
-        Nv.device(dev) = op.adjoint(u) - (β * Nv);
+        Nv.device(dev) = op->adjoint(u) - (β * Nv);
       }
       v.device(dev) = Nv;
       α = std::sqrt(CheckedDot(v, Nv));
