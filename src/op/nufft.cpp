@@ -11,7 +11,7 @@ NUFFTOp<NDim>::NUFFTOp(
   : Parent("NUFFTOp", Concatenate(FirstN<2>(gridder->inputDimensions()), matrix), gridder->outputDimensions())
   , gridder_{gridder}
   , fft_{gridder_->input()}
-  , pad_{gridder_->input(), matrix, LastN<NDim>(gridder_->inputDimensions()), FirstN<2>(gridder_->inputDimensions())}
+  , pad_{matrix, gridder_->input()}
   , apo_{pad_.inputDimensions(), gridder_.get()}
   , sdc_{sdc}
 {
@@ -72,6 +72,7 @@ auto NUFFTOp<NDim>::fft() const -> FFTOp<NDim + 2, NDim> const &
   return fft_;
 };
 
+template struct NUFFTOp<1>;
 template struct NUFFTOp<2>;
 template struct NUFFTOp<3>;
 
@@ -93,8 +94,7 @@ std::shared_ptr<Operator<Cx, 5, 4>> make_nufft(
   } else {
     Log::Print<Log::Level::Debug>("Creating full 3D NUFFT");
     auto grid = make_grid<Cx, 3>(traj, ktype, osamp * (toeplitz ? 2.f : 1.f), nC, basis);
-    return std::make_shared<IncreaseOutputRank<NUFFTOp<3>>>(
-      std::make_shared<NUFFTOp<3>>(grid, matrix, sdc, toeplitz));
+    return std::make_shared<IncreaseOutputRank<NUFFTOp<3>>>(std::make_shared<NUFFTOp<3>>(grid, matrix, sdc, toeplitz));
   }
 }
 

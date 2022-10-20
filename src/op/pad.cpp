@@ -8,17 +8,17 @@ template <typename Scalar_, int Rank, int ImgRank>
 PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, ImgDims const &padSize, OtherDims const &otherSize)
   : Parent(fmt::format(FMT_STRING("{}D PadOp"), ImgRank), Concatenate(otherSize, imgSize), Concatenate(otherSize, padSize))
 {
-  init(imgSize, padSize);
+  init();
 }
 
 template <typename Scalar_, int Rank, int ImgRank>
-PadOp<Scalar_, Rank, ImgRank>::PadOp(OutputMap y, ImgDims const &imgSize, ImgDims const &padSize, OtherDims const &otherSize)
-  : Parent(fmt::format(FMT_STRING("{}D PadOp"), ImgRank), Concatenate(otherSize, imgSize), y)
+PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, OutputMap y)
+  : Parent(
+      fmt::format(FMT_STRING("{}D PadOp"), ImgRank),
+      Concatenate(FirstN<Rank - ImgRank>(y.dimensions()), imgSize),
+      y.dimensions())
 {
-  if (outputDimensions() != Concatenate(otherSize, padSize)) {
-    Log::Fail(FMT_STRING("PadOp output storage dims were {} expected {}"), outputDimensions(), Concatenate(otherSize, padSize));
-  }
-  init(imgSize, padSize);
+  init();
 }
 
 template <typename Scalar_, int Rank, int ImgRank>
@@ -28,9 +28,8 @@ PadOp<Scalar_, Rank, ImgRank>::PadOp(InputMap x, OutputMap y)
   if ((Rank > ImgRank) && (FirstN<Rank - ImgRank>(inputDimensions()) != FirstN<Rank - ImgRank>(outputDimensions()))) {
     Log::Fail(FMT_STRING("PadOp input dims {} did not match {}"), inputDimensions(), outputDimensions());
   }
-  init(LastN<ImgRank>(inputDimensions()), LastN<ImgRank>(outputDimensions()));
+  init();
 }
-
 
 template <typename Scalar_, int Rank, int ImgRank>
 auto PadOp<Scalar_, Rank, ImgRank>::forward(InputMap x) const -> OutputMap
@@ -51,15 +50,15 @@ auto PadOp<Scalar_, Rank, ImgRank>::adjoint(OutputMap y) const -> InputMap
 }
 
 template <typename Scalar_, int Rank, int ImgRank>
-void PadOp<Scalar_, Rank, ImgRank>::init(ImgDims const &imgSize, ImgDims const &padSize)
+void PadOp<Scalar_, Rank, ImgRank>::init()
 {
-  for (Index ii = 0; ii < ImgRank; ii++) {
-    if (padSize[ii] < imgSize[ii]) {
-      Log::Fail(FMT_STRING("Padding dim {}={} < input dim {}"), ii, padSize[ii], imgSize[ii]);
-    }
-  }
   auto const in = inputDimensions();
   auto const out = outputDimensions();
+  for (Index ii = 0; ii < Rank; ii++) {
+    if (in[ii] > out[ii]) {
+      Log::Fail(FMT_STRING("Padding input dims {} larger than output dims {}"), in, out);
+    }
+  }
   std::transform(
     out.begin(), out.end(), in.begin(), left_.begin(), [](Index big, Index small) { return (big - small + 1) / 2; });
   std::transform(out.begin(), out.end(), in.begin(), right_.begin(), [](Index big, Index small) { return (big - small) / 2; });
@@ -68,6 +67,8 @@ void PadOp<Scalar_, Rank, ImgRank>::init(ImgDims const &imgSize, ImgDims const &
   });
 }
 
+template struct PadOp<Cx, 1, 1>;
+template struct PadOp<Cx, 3, 1>;
 template struct PadOp<Cx, 2, 2>;
 template struct PadOp<Cx, 4, 2>;
 template struct PadOp<Cx, 3, 3>;

@@ -101,7 +101,7 @@ decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> c
   return result;
 }
 
-template <int N, typename T>
+template <size_t N, typename T>
 Eigen::DSizes<typename T::value_type, N> FirstN(T const &sz)
 {
   assert(N <= sz.size());
@@ -110,7 +110,7 @@ Eigen::DSizes<typename T::value_type, N> FirstN(T const &sz)
   return first;
 }
 
-template <int N, typename T>
+template <size_t N, typename T>
 Eigen::DSizes<Index, N> LastN(T const &sz)
 {
   assert(N <= sz.size());
@@ -119,7 +119,7 @@ Eigen::DSizes<Index, N> LastN(T const &sz)
   return last;
 }
 
-template <int F, int N, typename T>
+template <size_t F, size_t N, typename T>
 Eigen::DSizes<Index, N> MidN(T const &sz)
 {
   assert(F + N <= sz.size());

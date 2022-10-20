@@ -38,14 +38,20 @@ inline decltype(auto) nearby(T &&x)
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
-inline Index fft_size(float const x)
+template <size_t Rank>
+Sz<Rank> fft_size(Sz<Rank> const x, float const os)
 {
   // return std::ceil(x);
-  if (x > 8.f) {
-    return (std::lrint(x) + 7L) & ~7L;
-  } else {
-    return (Index)std::ceil(x);
+  Sz<Rank> fsz;
+  for (auto ii = 0; ii < Rank; ii++) {
+    auto ox = x[ii] * os;
+    if (ox > 8.f) {
+      fsz[ii] = (std::lrint(ox) + 7L) & ~7L;
+    } else {
+      fsz[ii] = (Index)std::ceil(ox);
+    }
   }
+  return fsz;
 }
 
 // Helper function to sort the cartesian indices
@@ -76,22 +82,29 @@ Mapping<Rank>::Mapping(
   Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize, Index const read0)
 {
   Info const &info = traj.info();
-  Index const gridSz = fft_size(info.matrix[0] * nomOS);
-  osamp = float(gridSz) / info.matrix[0];
+  nomDims = FirstN<Rank>(info.matrix);
+  cartDims = fft_size<Rank>(FirstN<Rank>(info.matrix), nomOS);
+  osamp = nomOS;
   Log::Print(
-    FMT_STRING("{}D Mapping. Trajectory samples {} frames {} Grid {}"), traj.nDims(), traj.nSamples(), traj.nFrames(), gridSz);
+    FMT_STRING("{}D Mapping. Trajectory samples {} frames {} Grid {}"),
+    traj.nDims(),
+    traj.nSamples(),
+    traj.nFrames(),
+    cartDims);
 
-  std::fill(cartDims.begin(), cartDims.end(), gridSz);
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
   frames = traj.nFrames();
 
-  Index const nB = std::ceil(gridSz / float(bucketSz));
-  buckets.reserve(pow(nB, Rank));
+  Sz<Rank> nB;
+  for (auto ii = 0; ii < Rank; ii++) {
+    nB[ii] = std::ceil(cartDims[ii] / float(bucketSz));
+  }
+  buckets.reserve(Product(nB));
 
   if constexpr (Rank == 3) {
-    for (Index iz = 0; iz < nB; iz++) {
-      for (Index iy = 0; iy < nB; iy++) {
-        for (Index ix = 0; ix < nB; ix++) {
+    for (Index iz = 0; iz < nB[2]; iz++) {
+      for (Index iy = 0; iy < nB[1]; iy++) {
+        for (Index ix = 0; ix < nB[0]; ix++) {
           buckets.push_back(Bucket{
             Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
             Sz3{
@@ -101,20 +114,27 @@ Mapping<Rank>::Mapping(
         }
       }
     }
-  } else {
-    for (Index iy = 0; iy < nB; iy++) {
-      for (Index ix = 0; ix < nB; ix++) {
+  } else if constexpr (Rank == 2) {
+    for (Index iy = 0; iy < nB[1]; iy++) {
+      for (Index ix = 0; ix < nB[0]; ix++) {
         buckets.push_back(Bucket{
           Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
           Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2), std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
       }
     }
+  } else {
+    for (Index ix = 0; ix < nB[0]; ix++) {
+      buckets.push_back(Bucket{Sz1{ix * bucketSz - (kW / 2)}, Sz1{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2)}});
+    }
   }
 
   std::fesetround(FE_TONEAREST);
-  float const maxRad = (gridSz / 2) - 1.f;
   Sz<Rank> center;
-  std::transform(cartDims.begin(), cartDims.end(), center.begin(), [](Index const c) { return c / 2; });
+  std::array<float, Rank> scales;
+  for (auto ii = 0; ii < Rank; ii++) {
+    scales[ii] = (cartDims[ii] / float(info.matrix[ii])) * ((info.matrix[ii] - 1) / 2) * 2;
+    center[ii] = cartDims[ii] / 2;
+  }
   int32_t index = 0;
   Index NaNs = 0;
   for (int32_t is = 0; is < traj.nTraces(); is++) {
@@ -124,14 +144,15 @@ Mapping<Rank>::Mapping(
         Re1 const p = traj.point(ir, is);
         Eigen::Array<float, Rank, 1> xyz;
         for (Index ii = 0; ii < Rank; ii++) {
-          xyz[ii] = p[ii] * maxRad * 2.f;
+          xyz[ii] = p[ii] * scales[ii] + center[ii];
         }
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();
           std::array<int16_t, Rank> ijk;
-          std::transform(
-            center.begin(), center.end(), gp.begin(), ijk.begin(), [](float const f1, float const f2) { return f1 + f2; });
+          for (auto ii = 0; ii < Rank; ii++) {
+            ijk[ii] = gp[ii];
+          }
           cart.push_back(ijk);
           offset.push_back(off);
           noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
@@ -140,7 +161,7 @@ Mapping<Rank>::Mapping(
           // Calculate bucket
           Index ib = 0;
           for (int ii = Rank - 1; ii >= 0; ii--) {
-            ib = ib * nB + (ijk[ii] / bucketSz);
+            ib = ib * nB[ii] + (ijk[ii] / bucketSz);
           }
           buckets[ib].indices.push_back(index);
           index++;
@@ -175,6 +196,7 @@ Mapping<Rank>::Mapping(
   sortedIndices = sort(cart);
 }
 
+template struct Mapping<1>;
 template struct Mapping<2>;
 template struct Mapping<3>;
 

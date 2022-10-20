@@ -45,6 +45,7 @@ auto ApodizeOp<NDim>::adjoint(OutputMap x) const -> InputMap
   return x;
 }
 
+template struct ApodizeOp<1>;
 template struct ApodizeOp<2>;
 template struct ApodizeOp<3>;
 

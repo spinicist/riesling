@@ -14,9 +14,9 @@ namespace {
 inline Index Wrap(Index const ii, Index const sz)
 {
   if (ii < 0)
-    return sz + ii;
+    return -1;
   else if (ii >= sz)
-    return ii - sz;
+    return -1;
   else
     return ii;
 }
@@ -66,59 +66,61 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
         auto const n = map.noncart[si];
         auto const ifr = basis ? 0 : map.frame[si];
         auto const k = this->kernel(map.offset[si]);
-
         Index const kW_2 = ((kW - 1) / 2);
         Index const btp = basis ? n.trace % basis.value().dimension(0) : 0;
         Eigen::Tensor<Scalar, 1> sum(nC);
         sum.setZero();
 
         for (Index i1 = 0; i1 < kW; i1++) {
-          Index const ii1 = Wrap(c[NDim - 1] - kW_2 + i1, cdims[NDim - 1]);
-          if constexpr (NDim == 1) {
-            float const kval = k(i1) * scale;
-            if (basis) {
-              for (Index ib = 0; ib < nB; ib++) {
-                float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
-                for (Index ic = 0; ic < nC; ic++) {
-                  this->output()(ic, n.sample, n.trace) += x(ic, ib, ii1) * bval;
-                }
-              }
-            } else {
-              for (Index ic = 0; ic < nC; ic++) {
-                this->output()(ic, n.sample, n.trace) += x(ic, ifr, ii1) * kval;
-              }
-            }
-          } else {
-            for (Index i2 = 0; i2 < kW; i2++) {
-              Index const ii2 = Wrap(c[NDim - 2] - kW_2 + i2, cdims[NDim - 2]);
-              if constexpr (NDim == 2) {
-                float const kval = k(i2, i1) * scale;
-                if (basis) {
-                  for (Index ib = 0; ib < nB; ib++) {
-                    float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
-                    for (Index ic = 0; ic < nC; ic++) {
-                      this->output()(ic, n.sample, n.trace) += x(ic, ib, ii2, ii1) * bval;
-                    }
-                  }
-                } else {
+          if (Index const ii1 = Wrap(c[NDim - 1] - kW_2 + i1, cdims[NDim - 1]); ii1 > -1) {
+            if constexpr (NDim == 1) {
+              float const kval = k(i1) * scale;
+              if (basis) {
+                for (Index ib = 0; ib < nB; ib++) {
+                  float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
                   for (Index ic = 0; ic < nC; ic++) {
-                    this->output()(ic, n.sample, n.trace) += x(ic, ifr, ii2, ii1) * kval;
+                    this->output()(ic, n.sample, n.trace) += x(ic, ib, ii1) * bval;
                   }
                 }
               } else {
-                for (Index i3 = 0; i3 < kW; i3++) {
-                  Index const ii3 = Wrap(c[NDim - 3] - kW_2 + i3, cdims[NDim - 3]);
-                  float const kval = k(i3, i2, i1) * scale;
-                  if (basis) {
-                    for (Index ib = 0; ib < nB; ib++) {
-                      float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
+                for (Index ic = 0; ic < nC; ic++) {
+                  this->output()(ic, n.sample, n.trace) += x(ic, ifr, ii1) * kval;
+                }
+              }
+            } else {
+              for (Index i2 = 0; i2 < kW; i2++) {
+                if (Index const ii2 = Wrap(c[NDim - 2] - kW_2 + i2, cdims[NDim - 2]); ii2 > -1) {
+                  if constexpr (NDim == 2) {
+                    float const kval = k(i2, i1) * scale;
+                    if (basis) {
+                      for (Index ib = 0; ib < nB; ib++) {
+                        float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
+                        for (Index ic = 0; ic < nC; ic++) {
+                          this->output()(ic, n.sample, n.trace) += x(ic, ib, ii2, ii1) * bval;
+                        }
+                      }
+                    } else {
                       for (Index ic = 0; ic < nC; ic++) {
-                        this->output()(ic, n.sample, n.trace) += x(ic, ib, ii3, ii2, ii1) * bval;
+                        this->output()(ic, n.sample, n.trace) += x(ic, ifr, ii2, ii1) * kval;
                       }
                     }
                   } else {
-                    for (Index ic = 0; ic < nC; ic++) {
-                      this->output()(ic, n.sample, n.trace) += x(ic, ifr, ii3, ii2, ii1) * kval;
+                    for (Index i3 = 0; i3 < kW; i3++) {
+                      if (Index const ii3 = Wrap(c[NDim - 3] - kW_2 + i3, cdims[NDim - 3]); ii3 > -1) {
+                        float const kval = k(i3, i2, i1) * scale;
+                        if (basis) {
+                          for (Index ib = 0; ib < nB; ib++) {
+                            float const bval = kval * (basis ? basis.value()(btp, ib) : 1.f);
+                            for (Index ic = 0; ic < nC; ic++) {
+                              this->output()(ic, n.sample, n.trace) += x(ic, ib, ii3, ii2, ii1) * bval;
+                            }
+                          }
+                        } else {
+                          for (Index ic = 0; ic < nC; ic++) {
+                            this->output()(ic, n.sample, n.trace) += x(ic, ifr, ii3, ii2, ii1) * kval;
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -222,28 +224,31 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
       {
         std::scoped_lock lock(writeMutex);
         for (Index i1 = 0; i1 < bSz[NDim - 1]; i1++) {
-          Index const ii1 = Wrap(bucket.minCorner[NDim - 1] + i1, cdims[NDim - 1]);
-          if constexpr (NDim == 1) {
-            for (Index ib = 0; ib < nB; ib++) {
-              for (Index ic = 0; ic < nC; ic++) {
-                this->input()(ic, ib, ii1) += bGrid(ic, ib, i1);
-              }
-            }
-          } else {
-            for (Index i2 = 0; i2 < bSz[NDim - 2]; i2++) {
-              Index const ii2 = Wrap(bucket.minCorner[NDim - 2] + i2, cdims[NDim - 2]);
-              if constexpr (NDim == 2) {
-                for (Index ib = 0; ib < nB; ib++) {
-                  for (Index ic = 0; ic < nC; ic++) {
-                    this->input()(ic, ib, ii2, ii1) += bGrid(ic, ib, i2, i1);
-                  }
+          if (Index const ii1 = Wrap(bucket.minCorner[NDim - 1] + i1, cdims[NDim - 1]); ii1 > -1) {
+            if constexpr (NDim == 1) {
+              for (Index ib = 0; ib < nB; ib++) {
+                for (Index ic = 0; ic < nC; ic++) {
+                  this->input()(ic, ib, ii1) += bGrid(ic, ib, i1);
                 }
-              } else {
-                for (Index i3 = 0; i3 < bSz[NDim - 3]; i3++) {
-                  Index const ii3 = Wrap(bucket.minCorner[NDim - 3] + i3, cdims[NDim - 3]);
-                  for (Index ib = 0; ib < nB; ib++) {
-                    for (Index ic = 0; ic < nC; ic++) {
-                      this->input()(ic, ib, ii3, ii2, ii1) += bGrid(ic, ib, i3, i2, i1);
+              }
+            } else {
+              for (Index i2 = 0; i2 < bSz[NDim - 2]; i2++) {
+                if (Index const ii2 = Wrap(bucket.minCorner[NDim - 2] + i2, cdims[NDim - 2]); ii2 > -1) {
+                  if constexpr (NDim == 2) {
+                    for (Index ib = 0; ib < nB; ib++) {
+                      for (Index ic = 0; ic < nC; ic++) {
+                        this->input()(ic, ib, ii2, ii1) += bGrid(ic, ib, i2, i1);
+                      }
+                    }
+                  } else {
+                    for (Index i3 = 0; i3 < bSz[NDim - 3]; i3++) {
+                      if (Index const ii3 = Wrap(bucket.minCorner[NDim - 3] + i3, cdims[NDim - 3]); ii3 > -1) {
+                        for (Index ib = 0; ib < nB; ib++) {
+                          for (Index ic = 0; ic < nC; ic++) {
+                            this->input()(ic, ib, ii3, ii2, ii1) += bGrid(ic, ib, i3, i2, i1);
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -265,8 +270,11 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     Eigen::Tensor<Cx, NDim> temp(LastN<NDim>(this->inputDimensions()));
     auto const fft = FFT::Make<NDim, NDim>(temp);
     temp.setZero();
-    float const scale = std::sqrt(Product(sz));
-    Eigen::Tensor<Cx, NDim> k = kernel(Kernel::Point::Zero()).template cast<Cx>();
+    float const scale = std::sqrt(Product(mapping.nomDims));
+    Sz<NDim> kSt, kSz;
+    kSt.fill((Kernel::PadWidth - Kernel::Width) / 2);
+    kSz.fill(Kernel::Width);
+    Eigen::Tensor<Cx, NDim> k = kernel(Kernel::Point::Zero()).slice(kSt, kSz).template cast<Cx>();
     PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
     temp = padK.forward(k * k.constant(scale));
     fft->reverse(temp);

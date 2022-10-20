@@ -35,7 +35,7 @@ struct Mapping
 
   float osamp;
   Sz2 noncartDims;
-  Sz<Rank> cartDims;
+  Sz<Rank> cartDims, nomDims;
   int8_t frames;
 
   std::vector<std::array<int16_t, Rank>> cart;

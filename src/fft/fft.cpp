@@ -77,11 +77,13 @@ std::shared_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorDi
   return std::make_shared<CPU<TRank, FFTRank>>(dims, nThreads);
 }
 
+template std::shared_ptr<FFT<1, 1>> Make(typename FFT<1, 1>::TensorDims const &, Index const);
 template std::shared_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorDims const &, Index const);
 template std::shared_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorDims const &, Index const);
 template std::shared_ptr<FFT<4, 3>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
 template std::shared_ptr<FFT<4, 2>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
-template std::shared_ptr<FFT<4, 1>> Make(typename FFT<4, 3>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<3, 1>> Make(typename FFT<3, 1>::TensorDims const &, Index const);
+template std::shared_ptr<FFT<4, 1>> Make(typename FFT<4, 1>::TensorDims const &, Index const);
 template std::shared_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorDims const &, Index const);
 template std::shared_ptr<FFT<3, 2>> Make(typename FFT<3, 2>::TensorDims const &, Index const);
 
@@ -92,8 +94,10 @@ std::shared_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorMa
   return std::make_shared<CPU<TRank, FFTRank>>(ws, nThreads);
 }
 
+template std::shared_ptr<FFT<1, 1>> Make(typename FFT<1, 1>::TensorMap, Index const);
 template std::shared_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorMap, Index const);
 template std::shared_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorMap, Index const);
+template std::shared_ptr<FFT<3, 1>> Make(typename FFT<3, 1>::TensorMap, Index const);
 template std::shared_ptr<FFT<4, 2>> Make(typename FFT<4, 2>::TensorMap, Index const);
 template std::shared_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorMap, Index const);
 

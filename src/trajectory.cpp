@@ -35,8 +35,8 @@ Trajectory::Trajectory(HD5::Reader const &reader)
 
 void Trajectory::init()
 {
-  if (!(points_.dimension(0) == 2 || points_.dimension(0) == 3)) {
-    Log::Fail("Trajectory must be either 2D or 3D");
+  if (points_.dimension(0) < 1 || points_.dimension(0) > 3) {
+    Log::Fail(FMT_STRING("Trajectory has {} dimensions"), points_.dimension(0));
   }
 
   if (frames_.size() && nTraces() != frames_.dimension(0)) {

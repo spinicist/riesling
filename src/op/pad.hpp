@@ -16,7 +16,7 @@ struct PadOp final : OperatorAlloc<Scalar_, Rank, Rank>
 
   // Note how init works to get the input dimensions set up before allocating storage
   PadOp(ImgDims const &imgSize, ImgDims const &padSize, OtherDims const &otherSize = {});
-  PadOp(OutputMap yStorage, ImgDims const &imgSize, ImgDims const &padSize, OtherDims const &otherSize = {});
+  PadOp(ImgDims const &imgSize, OutputMap yStorage);
   PadOp(InputMap x, OutputMap y);
 
   OPALLOC_DECLARE()
@@ -26,6 +26,6 @@ private:
   Eigen::array<std::pair<Index, Index>, Rank> paddings_;
   float scale_;
 
-  void init(ImgDims const &imgSize, ImgDims const &padSize);
+  void init();
 };
 } // namespace rl
