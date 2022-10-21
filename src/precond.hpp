@@ -5,7 +5,7 @@
 
 namespace rl {
 
-auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const basis = std::nullopt) -> Re2;
+auto KSpaceSingle(Trajectory const &traj) -> Re2;
 
 std::shared_ptr<Functor<Cx4>> make_pre(std::string const &type, Trajectory const &traj);
 

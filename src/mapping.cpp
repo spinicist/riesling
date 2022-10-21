@@ -43,7 +43,7 @@ Sz<Rank> fft_size(Sz<Rank> const x, float const os)
 {
   // return std::ceil(x);
   Sz<Rank> fsz;
-  for (auto ii = 0; ii < Rank; ii++) {
+  for (size_t ii = 0; ii < Rank; ii++) {
     auto ox = x[ii] * os;
     if (ox > 8.f) {
       fsz[ii] = (std::lrint(ox) + 7L) & ~7L;
@@ -96,7 +96,7 @@ Mapping<Rank>::Mapping(
   frames = traj.nFrames();
 
   Sz<Rank> nB;
-  for (auto ii = 0; ii < Rank; ii++) {
+  for (size_t ii = 0; ii < Rank; ii++) {
     nB[ii] = std::ceil(cartDims[ii] / float(bucketSz));
   }
   buckets.reserve(Product(nB));
@@ -131,7 +131,7 @@ Mapping<Rank>::Mapping(
   std::fesetround(FE_TONEAREST);
   Sz<Rank> center;
   std::array<float, Rank> scales;
-  for (auto ii = 0; ii < Rank; ii++) {
+  for (size_t ii = 0; ii < Rank; ii++) {
     scales[ii] = (cartDims[ii] / float(info.matrix[ii])) * ((info.matrix[ii] - 1) / 2) * 2;
     center[ii] = cartDims[ii] / 2;
   }
@@ -143,14 +143,14 @@ Mapping<Rank>::Mapping(
       for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
         Re1 const p = traj.point(ir, is);
         Eigen::Array<float, Rank, 1> xyz;
-        for (Index ii = 0; ii < Rank; ii++) {
+        for (size_t ii = 0; ii < Rank; ii++) {
           xyz[ii] = p[ii] * scales[ii] + center[ii];
         }
         if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
           auto const gp = nearby(xyz);
           auto const off = xyz - gp.template cast<float>();
           std::array<int16_t, Rank> ijk;
-          for (auto ii = 0; ii < Rank; ii++) {
+          for (size_t ii = 0; ii < Rank; ii++) {
             ijk[ii] = gp[ii];
           }
           cart.push_back(ijk);

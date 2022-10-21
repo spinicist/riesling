@@ -24,7 +24,6 @@ template <int ND>
 auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const its, float const pow) -> Re2
 {
   Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
-  auto info = traj.info();
   Re3 W(1, traj.nSamples(), traj.nTraces());
   Re3 Wp(W.dimensions());
   auto gridder = make_grid<float, ND>(traj, ktype, os, 1);

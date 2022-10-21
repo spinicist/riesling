@@ -16,11 +16,11 @@ ApodizeOp<NDim>::ApodizeOp(InputDims const &dims, GridBase<Scalar, NDim> *gridde
 template <size_t NDim>
 void ApodizeOp<NDim>::init(GridBase<Scalar, NDim> *gridder)
 {
-  for (Index ii = 0; ii < 2; ii++) {
+  for (size_t ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
     brd_[ii] = inputDimensions()[ii];
   }
-  for (Index ii = 2; ii < NDim + 2; ii++) {
+  for (size_t ii = 2; ii < NDim + 2; ii++) {
     res_[ii] = inputDimensions()[ii];
     brd_[ii] = 1;
   }

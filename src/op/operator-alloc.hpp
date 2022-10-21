@@ -20,8 +20,8 @@ struct OperatorAlloc : Operator<Scalar_, InRank, OutRank>
 {
   OP_INHERIT(Scalar_, InRank, OutRank)
 
-  OperatorAlloc(std::string const &name, InputDims const xd, OutputDims const yd)
-    : Parent(name, xd, yd)
+  OperatorAlloc(std::string const &n, InputDims const xd, OutputDims const yd)
+    : Parent(n, xd, yd)
     , xStorage_{xd}
     , yStorage_{yd}
     , x_{xStorage_}
@@ -31,8 +31,8 @@ struct OperatorAlloc : Operator<Scalar_, InRank, OutRank>
     Log::Print<Log::Level::Debug>(FMT_STRING("{} allocated {:L} bytes"), this->name(), (x_.size() + y_.size()) * sizeof(Scalar));
   }
 
-  OperatorAlloc(std::string const &name, InputMap const xm, OutputDims const yd)
-    : Parent(name, xm.dimensions(), yd.dimensions())
+  OperatorAlloc(std::string const &n, InputMap const xm, OutputDims const yd)
+    : Parent(n, xm.dimensions(), yd.dimensions())
     , yStorage_{yd}
     , x_{xm}
     , y_{yStorage_}
@@ -41,8 +41,8 @@ struct OperatorAlloc : Operator<Scalar_, InRank, OutRank>
     Log::Print<Log::Level::Debug>(FMT_STRING("{} allocated {:L} bytes"), this->name(), y_.size() * sizeof(Scalar));
   }
 
-  OperatorAlloc(std::string const &name, InputDims const xd, OutputMap const ym)
-    : Parent(name, xd, ym.dimensions())
+  OperatorAlloc(std::string const &n, InputDims const xd, OutputMap const ym)
+    : Parent(n, xd, ym.dimensions())
     , xStorage_{xd}
     , x_{xStorage_}
     , y_{ym}
@@ -51,8 +51,8 @@ struct OperatorAlloc : Operator<Scalar_, InRank, OutRank>
     Log::Print<Log::Level::Debug>(FMT_STRING("{} allocated {:L} bytes"), this->name(), x_.size() * sizeof(Scalar));
   }
 
-  OperatorAlloc(std::string const &name, InputMap const xm, OutputMap const ym)
-    : Parent(name, xm.dimensions(), ym.dimensions())
+  OperatorAlloc(std::string const &n, InputMap const xm, OutputMap const ym)
+    : Parent(n, xm.dimensions(), ym.dimensions())
     , x_{xm}
     , y_{ym}
   {

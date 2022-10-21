@@ -34,7 +34,6 @@ int main_espirit(args::Subparser &parser)
   auto const &info = traj.info();
   Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
   auto [dsTraj, ks] = traj.downsample(ks1, res.Get(), lores.Get(), true);
-  auto const dsInfo = dsTraj.info();
   auto gridder = make_grid<Cx, 3>(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), ks.dimension(0));
   auto const sdc = SDC::Choose(sdcOpts, dsTraj, ks1.dimension(0), coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
