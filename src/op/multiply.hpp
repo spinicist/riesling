@@ -27,6 +27,7 @@ struct MultiplyOp final : Operator<typename Op1::Scalar, Op1::InputRank, Op2::Ou
   auto forward(InputMap x) const -> OutputMap { return op2_->forward(op1_->forward(x)); }
   auto adjoint(OutputMap x) const -> InputMap { return op1_->adjoint(op2_->adjoint(x)); }
   auto adjfwd(InputMap x) const -> InputMap { return op1_->adjoint(op2_->adjfwd(op1_->forward(x))); }
+  auto input() const -> InputMap { return op1_->input(); }
   using Parent::adjoint;
   using Parent::forward;
 

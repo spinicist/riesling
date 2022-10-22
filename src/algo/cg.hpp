@@ -29,11 +29,10 @@ struct NormalEqOp
     return op->inputDimensions();
   }
 
-  auto forward(Input const &x) const -> Input
+  auto forward(Input const &x) const -> InputMap
   {
-    Input xcopy = x;
-    xcopy = op->adjfwd(xcopy);
-    return xcopy;
+    op->input() = x;
+    return op->adjfwd(op->input());
   }
 };
 
@@ -78,8 +77,6 @@ struct ConjugateGradients
       float const alpha = r_old / Dot(p, q).real();
       x.device(dev) = x + p * p.constant(alpha);
       if (debug) {
-        Log::Tensor(p, fmt::format(FMT_STRING("cg-p-{:02}"), icg));
-        Log::Tensor(q, fmt::format(FMT_STRING("cg-q-{:02}"), icg));
         Log::Tensor(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
         Log::Tensor(r, fmt::format(FMT_STRING("cg-r-{:02}"), icg));
       }

@@ -53,17 +53,13 @@ auto NUFFTOp<NDim>::adjoint(OutputMap y) const -> InputMap
 template <size_t NDim>
 auto NUFFTOp<NDim>::adjfwd(InputMap x) const -> InputMap
 {
-  auto const start = Log::Now();
-  Input result(inputDimensions());
   if (tf_.size() == 0) {
-    result.device(Threads::GlobalDevice()) = adjoint(forward(x));
+    return adjoint(forward(x));
   } else {
     auto temp = fft_.forward(pad_.forward(x));
     temp *= tf_;
-    result.device(Threads::GlobalDevice()) = pad_.adjoint(fft_.adjoint(temp));
+    return pad_.adjoint(fft_.adjoint(temp));
   }
-  LOG_DEBUG("Finished NUFFT adjoint*forward. Norm {}->{}. Time {}", Norm(x), Norm(result), Log::ToNow(start));
-  return result;
 }
 
 template <size_t NDim>

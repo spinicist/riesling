@@ -8,8 +8,6 @@ namespace rl {
 SenseOp::SenseOp(Cx4 const &maps, Index const d0)
   : Parent("SENSEOp", AddFront(LastN<3>(maps.dimensions()), d0), AddFront(LastN<3>(maps.dimensions()), maps.dimension(0), d0))
   , maps_{std::move(maps)}
-  , x_{inputDimensions()}
-  , y_{outputDimensions()}
 {
   resX.set(1, d0);
   resX.set(2, maps_.dimension(1));
@@ -27,17 +25,17 @@ SenseOp::SenseOp(Cx4 const &maps, Index const d0)
 auto SenseOp::forward(InputMap x) const -> OutputMap
 {
   auto const time = startForward(x);
-  y_.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
-  finishForward(y_, time);
-  return y_;
+  output().device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
+  finishForward(output(), time);
+  return output();
 }
 
 auto SenseOp::adjoint(OutputMap y) const -> InputMap
 {
   auto const time = startAdjoint(y);
-  x_.device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.reshape(resMaps).broadcast(brdMaps));
-  finishAdjoint(x_, time);
-  return x_;
+  input().device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.reshape(resMaps).broadcast(brdMaps));
+  finishAdjoint(input(), time);
+  return input();
 }
 
   auto SenseOp::nChannels() const -> Index { return outputDimensions()[0]; }

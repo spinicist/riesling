@@ -18,8 +18,6 @@ private:
   Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdX;
   Eigen::IndexList<int, FixOne, int, int, int> resMaps;
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
-  mutable Input x_;
-  mutable Output y_;
 };
 
 } // namespace rl
