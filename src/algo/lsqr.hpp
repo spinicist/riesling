@@ -38,11 +38,10 @@ struct LSQR
 
     // Workspace variables
     Output Mu(outDims), u(outDims);
-    Input x(inDims), Nv(inDims), v(inDims), w(inDims), ur;
+    Input x(inDims), v(inDims), w(inDims), ur;
     Mu.setZero();
     u.setZero();
     x.setZero();
-    Nv.setZero();
     v.setZero();
     w.setZero();
 
@@ -75,15 +74,13 @@ struct LSQR
     u.device(dev) = u / u.constant(β);
     if (λ > 0.f) {
       ur.device(dev) = ur / ur.constant(β);
-      Nv.device(dev) = op->adjoint(u) + sqrt(λ) * ur;
+      v.device(dev) = op->adjoint(u) + sqrt(λ) * ur;
     } else {
-      Nv.device(dev) = op->adjoint(u);
+      v.device(dev) = op->adjoint(u);
     }
-    v.device(dev) = Nv;
-    float α = std::sqrt(CheckedDot(v, Nv));
-    Nv.device(dev) = Nv / Nv.constant(α);
+    float α = std::sqrt(CheckedDot(v, v));
     v.device(dev) = v / v.constant(α);
-    w.device(dev) = v; // Test if this should be Nv
+    w.device(dev) = v;
 
     float ρ̅ = α;
     float ɸ̅ = β;
@@ -104,7 +101,7 @@ struct LSQR
       Mu.device(dev) = op->forward(v) - α * Mu;
       (*M)(Mu, u);
       if (λ > 0.f) {
-        ur.device(dev) = (sqrt(λ) * Nv) - (α * ur);
+        ur.device(dev) = (sqrt(λ) * v) - (α * ur);
         β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
       } else {
         β = std::sqrt(CheckedDot(Mu, u));
@@ -113,27 +110,28 @@ struct LSQR
       u.device(dev) = u / u.constant(β);
       if (λ > 0.f) {
         ur.device(dev) = ur / ur.constant(β);
-        Nv.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * Nv);
+        v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * v);
       } else {
-        Nv.device(dev) = op->adjoint(u) - (β * Nv);
+        v.device(dev) = op->adjoint(u) - (β * v);
       }
-      v.device(dev) = Nv;
-      α = std::sqrt(CheckedDot(v, Nv));
-
-      Nv.device(dev) = Nv / Nv.constant(α);
+      α = std::sqrt(CheckedDot(v, v));
       v.device(dev) = v / v.constant(α);
 
       // Deal with regularization
-      auto const [cs1, sn1, ρ̅1] = SymOrtho(ρ̅, λ);
-      float const ψ = sn1 * ɸ̅;
-      ɸ̅ = cs1 * ɸ̅;
+      float const ρ̅1 = std::hypot(ρ̅, λ);
+      float const c1 = ρ̅ / ρ̅1;
+      float const s1 = λ / ρ̅1;
+      float const ψ = s1 * ɸ̅;
+      ɸ̅ = c1 * ɸ̅;
 
-      auto const [cs, sn, ρ] = SymOrtho(ρ̅1, β);
-      float const θ = sn * α;
-      ρ̅ = -cs * α;
-      float const ɸ = cs * ɸ̅;
-      ɸ̅ = sn * ɸ̅;
-      float const τ = sn * ɸ;
+      float const ρ = std::hypot(ρ̅1, β);
+      float const c = ρ̅ / ρ;
+      float const s = β / ρ;
+      float const θ = s * α;
+      ρ̅ = -c * α;
+      float const ɸ = c * ɸ̅;
+      ɸ̅ = s * ɸ̅;
+      float const τ = s * ɸ;
 
       ddnorm = ddnorm + Norm2(w) / (ρ * ρ);
       x.device(dev) = x + w * w.constant(ɸ / ρ);
