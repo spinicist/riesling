@@ -27,7 +27,7 @@ int main_filter(args::Subparser &parser)
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     Cx4 img = images.chip<4>(iv);
     fft->forward(img);
-    KSTukey(start.Get(), end.Get(), height.Get(), img);
+    CartesianTukey(start.Get(), end.Get(), height.Get(), img);
     fft->reverse(img);
     images.chip<4>(iv) = img;
   }

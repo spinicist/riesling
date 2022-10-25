@@ -44,6 +44,11 @@ typename T::Scalar Minimum(T const &a)
 }
 
 template <typename T>
+auto NoNaNs(T const &a) -> T {
+  return a.isfinite().select(a, a.constant(0.f));
+}
+
+template <typename T>
 typename T::Scalar Maximum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;

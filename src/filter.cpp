@@ -45,11 +45,25 @@ void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar
   Threads::For(task, sz, "Filtering");
 }
 
-void KSTukey(float const &s, float const &e, float const &h, Cx4 &x)
+void CartesianTukey(float const &s, float const &e, float const &h, Cx4 &x)
 {
   Log::Print(FMT_STRING("Applying Tukey filter width {}-{} height {}"), s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
   KSFilter(f, x);
+}
+
+void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const &coords, Cx4 &x)
+{
+  auto const nC = x.dimension(0);
+  auto const nS = x.dimension(1);
+  auto const nT = x.dimension(2);
+  auto const nSlice = x.dimension(3);
+  assert(coords.dimension(1) == nS);
+  assert(coords.dimension(2) == nT);
+  Log::Print<Log::Level::High>(FMT_STRING("Noncartesian Tukey start {} end {} height {}"), s, e, h);
+  auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
+  x.device(Threads::GlobalDevice()) =
+    x * coords.square().sum(Sz1{0}).sqrt().unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice});
 }
 
 } // namespace rl

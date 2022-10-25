@@ -6,6 +6,7 @@
 #include "sdc.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
+#include "filter.hpp"
 
 namespace rl {
 namespace SENSE {
@@ -46,6 +47,8 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD
 
   Cx4 const data = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, opts.volume.Get());
   Cx4 lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
+  auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
+NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   Cx5 const allChan = nufft->adjoint(lores);
   channels = crop.crop5(allChan).chip<1>(opts.frame.Get());
   Cx3 rss = crop.newImage();
