@@ -35,44 +35,11 @@ struct LSMR
 
     auto const inDims = op->inputDimensions();
     auto const outDims = op->outputDimensions();
+    CheckDimsEqual(b.dimensions(), outDims);
     Output Mu(outDims), u(outDims);
     Input v(inDims), h(inDims), h̅(inDims), x(inDims), ur;
-
-    CheckDimsEqual(b.dimensions(), outDims);
-    if (x0.size()) {
-      CheckDimsEqual(x0.dimensions(), inDims);
-      Log::Print<Log::Level::Debug>(FMT_STRING("LSMR Warm-Start"));
-      x.device(dev) = x0;
-      Mu.device(dev) = b - op->forward(x);
-    } else {
-      Log::Print<Log::Level::Debug>(FMT_STRING("LSMR Start"));
-      x.setZero();
-      Mu.device(dev) = b;
-    }
-    (*M)(Mu, u);
-    float β;
-    if (λ > 0.f) {
-      ur.resize(inDims);
-      if (cc.size()) {
-        CheckDimsEqual(cc.dimensions(), inDims);
-        ur.device(dev) = (cc - x) * x.constant(sqrt(λ));
-      } else {
-        ur.device(dev) = -x * x.constant(sqrt(λ));
-      }
-      β = sqrt(std::real(CheckedDot(u, Mu)) + CheckedDot(ur, ur));
-    } else {
-      β = sqrt(std::real(CheckedDot(u, Mu)));
-    }
-    Mu.device(dev) = Mu / Mu.constant(β);
-    u.device(dev) = u / u.constant(β);
-    if (λ > 0.f) {
-      ur.device(dev) = ur / ur.constant(β);
-      v.device(dev) = op->adjoint(u) + sqrt(λ) * ur;
-    } else {
-      v.device(dev) = op->adjoint(u);
-    }
-    float α = std::sqrt(CheckedDot(v, v));
-    v.device(dev) = v / v.constant(α);
+    float α = 0.f, β = 0.f;
+    BidiagInit(op, M, Mu, u, ur, v, α, β, λ, x, b, x0, cc, dev);
     h.device(dev) = v;
     h̅.setZero();
 
@@ -107,30 +74,12 @@ struct LSMR
     Log::Print(FMT_STRING("LSMR    α {:5.3E} β {:5.3E} λ {}"), α, β, λ);
 
     for (Index ii = 0; ii < iterLimit; ii++) {
-      // Bidiagonalization step
-      Mu.device(dev) = op->forward(v) - α * Mu;
-      (*M)(Mu, u);
-      if (λ > 0.f) {
-        ur.device(dev) = (sqrt(λ) * v) - (α * ur);
-        β = sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
-      } else {
-        β = sqrt(CheckedDot(Mu, u));
-      }
-      Mu.device(dev) = Mu / Mu.constant(β);
-      u.device(dev) = u / u.constant(β);
-      if (λ > 0.f) {
-        ur.device(dev) = ur / ur.constant(β);
-        v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * v);
-      } else {
-        v.device(dev) = op->adjoint(u) - (β * v);
-      }
-      α = std::sqrt(CheckedDot(v, v));
-      v.device(dev) = v / v.constant(α);
+      Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
 
-      auto [ĉ, ŝ, α̂] = SymOrtho(α̅, λ);
+      auto [ĉ, ŝ, α̂] = SymGivens(α̅, λ);
       float ρold = ρ;
       float c, s;
-      std::tie(c, s, ρ) = SymOrtho(α̂, β);
+      std::tie(c, s, ρ) = SymGivens(α̂, β);
       float θnew = s * α;
       α̅ = c * α;
 
@@ -139,7 +88,7 @@ struct LSMR
       float ζold = ζ;
       float θ̅ = s̅ * ρ;
       float ρtemp = c̅ * ρ;
-      std::tie(c̅, s̅, ρ̅) = SymOrtho(c̅ * ρ, θnew);
+      std::tie(c̅, s̅, ρ̅) = SymGivens(ρtemp, θnew);
       ζ = c̅ * ζ̅;
       ζ̅ = -s̅ * ζ̅;
 
@@ -156,7 +105,7 @@ struct LSMR
       β̈ = -s * β́;
 
       float const θ̃old = θ̃;
-      auto [c̃old, s̃old, ρ̃old] = SymOrtho(ρ̇old, θ̅);
+      auto [c̃old, s̃old, ρ̃old] = SymGivens(ρ̇old, θ̅);
       θ̃ = s̃old * ρ̅;
       ρ̇old = c̃old * ρ̅;
       β̇ = -s̃old * β̇ + c̃old * β̂;
@@ -195,10 +144,8 @@ struct LSMR
 
       if (debug) {
         Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
-        Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
+        Log::Tensor(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
       }
-
-
 
       if (1.f + (1.f / condA) <= 1.f) {
         Log::Print(FMT_STRING("Cond(A) is very large"));
