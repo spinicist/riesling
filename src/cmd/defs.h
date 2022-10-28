@@ -15,6 +15,7 @@ int main_lookup(args::Subparser &parser);
 int main_lsmr(args::Subparser &parser);
 int main_lsqr(args::Subparser &parser);
 int main_meta(args::Subparser &parser);
+int main_noisify(args::Subparser &parser);
 int main_nii(args::Subparser &parser);
 int main_nufft(args::Subparser &parser);
 int main_pad(args::Subparser &parser);

@@ -21,6 +21,7 @@ int main(int const argc, char const *const argv[])
   args::Command lsmr(commands, "lsmr", "Iterative recon with LSMR optimizer", &main_lsmr);
   args::Command lsqr(commands, "lsqr", "Iterative recon with LSQR optimizer", &main_lsqr);
   args::Command meta(commands, "meta", "Print meta-data entries", &main_meta);
+  args::Command noisify(commands, "noisify", "Add noise to dataset", &main_noisify);
   args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
   args::Command nufft(commands, "nufft", "Apply forward/reverse NUFFT", &main_nufft);
   args::Command pad(commands, "pad", "Pad / crop an image", &main_pad);

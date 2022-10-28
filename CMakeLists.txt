@@ -110,6 +110,7 @@ add_executable(riesling
     src/cmd/lsqr.cpp
     src/cmd/meta.cpp
     src/cmd/nii.cpp
+    src/cmd/noisify.cpp
     src/cmd/nufft.cpp
     src/cmd/pad.cpp
     src/cmd/phantom.cpp
