@@ -33,12 +33,11 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
   : Parent("WaveletsOp", dims, dims)
   , N_{N}
   , L_{L}
-  , ws_{dims_}
 {
   // Check image is adequately padded and bug out if not
-  auto const padded = PaddedDimensions(dims_, L_);
-  if (dims_ != padded) {
-    Log::Fail(FMT_STRING("Wavelets with {} levels had dimensions {}, required {}"), L_, dims_, padded);
+  auto const padded = PaddedDimensions(dims, L_);
+  if (dims != padded) {
+    Log::Fail(FMT_STRING("Wavelets with {} levels had dimensions {}, required {}"), L_, dims, padded);
   }
 
   // Daubechie's coeffs courtesy of Wikipedia
@@ -58,7 +57,6 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
     Log::Fail("Asked for co-efficients that have not been implemented");
   }
   D_ = D_ / static_cast<float>(M_SQRT2); // Get scaling correct
-  Log::Print(FMT_STRING("Wavelets: Dims {} N={} L={}"), dims_, N_, L_);
 }
 
 // std::tuple<Sz3, Sz3> Wavelets::pad_setup(Sz3 const &dims) const
@@ -84,11 +82,11 @@ void Wavelets::encode_dim(OutputMap image, Index const dim, Index const level) c
   Index const sz = image.dimension(dim + 1) / (1 << level);
   Index const hsz = sz / 2;
   Sz2 start{0, 0};
-  Sz2 end{dims_[0], sz};
+  Sz2 end{inputDimensions()[0], sz};
   Log::Print<Log::Level::Debug>(FMT_STRING("Wavelet encode level: {} dim {} sz {} hsz {}"), level, dim, sz, hsz);
 
-  auto encode_task = [&, sz, hsz, dim](Index const ii) {
-    Cx2 temp(dims_[0], sz);
+  auto encode_task = [&](Index const ii) {
+    Cx2 temp(end);
     for (Index ij = 0; ij < sz; ij++) {
       auto const line = image.chip(ii, dim1.at(dim) + 1).chip(ij, dim2.at(dim) + 1).slice(start, end);
       for (Index it = 0; it < hsz; it++) {
@@ -113,14 +111,13 @@ void Wavelets::encode_dim(OutputMap image, Index const dim, Index const level) c
 auto Wavelets::forward(InputMap x) const -> OutputMap
 {
   auto const time = startForward(x);
-  ws_ = x;
   for (Index il = 0; il < L_; il++) {
     for (Index dim = 0; dim < 3; dim++) {
-      encode_dim(ws_, dim, il);
+      encode_dim(x, dim, il);
     }
   }
   finishAdjoint(x, time);
-  return ws_;
+  return x;
 }
 
 void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) const
@@ -128,11 +125,11 @@ void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) co
   Index const sz = image.dimension(dim + 1) / (1 << level);
   Index const hsz = sz / 2;
   Sz2 start{0, 0};
-  Sz2 end{dims_[0], sz};
+  Sz2 end{inputDimensions()[0], sz};
   Log::Print<Log::Level::Debug>(FMT_STRING("Wavelet decode level: {} dim {} sz {} hsz {}"), level, dim, sz, hsz);
 
   auto decode_task = [&, sz, hsz, dim](Index const ii) {
-    Cx2 temp(dims_[0], sz);
+    Cx2 temp(end);
     for (Index ij = 0; ij < sz; ij++) {
       temp.setZero();
       auto const line = image.chip(ii, dim1.at(dim) + 1).chip(ij, dim2.at(dim) + 1).slice(start, end);
@@ -158,14 +155,13 @@ void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) co
 auto Wavelets::adjoint(OutputMap x) const -> InputMap 
 {
   auto const time = startAdjoint(x);
-  ws_ = x;
   for (Index il = L_ - 1; il >= 0; il--) {
     for (Index dim = 0; dim < 3; dim++) {
-      decode_dim(ws_, dim, il);
+      decode_dim(x, dim, il);
     }
   }
   finishAdjoint(x, time);
-  return ws_;
+  return x;
 }
 
 } // namespace rl
