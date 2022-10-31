@@ -101,6 +101,7 @@ add_executable(riesling
     src/cmd/cg.cpp
     src/cmd/compress.cpp
     src/cmd/downsamp.cpp
+    src/cmd/eig.cpp
     src/cmd/espirit.cpp
     src/cmd/filter.cpp
     src/cmd/grid.cpp

@@ -13,6 +13,7 @@ int main(int const argc, char const *const argv[])
   args::Command cg(commands, "cg", "cgSENSE/Iterative recon w/ Töplitz embedding", &main_cg);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command downsamp(commands, "downsamp", "Downsample dataset", &main_downsamp);
+  args::Command eig(commands, "eig", "Calculate largest eigenvalue / vector", &main_eig);
   args::Command espirit(commands, "espirit-calib", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command filter(commands, "filter", "Apply Tukey filter to image", &main_filter);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
