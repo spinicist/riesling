@@ -37,6 +37,8 @@ enum struct Sequences
   T2Prep,
   T2InvPrep,
   T2FLAIR,
+  MultiFLAIR,
+  MultiFLAIRInv,
   DWI
 };
 
@@ -47,6 +49,8 @@ std::unordered_map<std::string, Sequences> SequenceMap{
   {"T2Prep", Sequences::T2Prep},
   {"T2InvPrep", Sequences::T2InvPrep},
   {"T2FLAIR", Sequences::T2FLAIR},
+  {"MultiFLAIR", Sequences::MultiFLAIR},
+  {"MultiFLAIRInv", Sequences::MultiFLAIRInv},
   {"DWI", Sequences::DWI}};
 
 int main_sim(args::Subparser &parser)
@@ -60,9 +64,9 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
   args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
-  args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.01f);
-  args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.012f);
-  args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.45f);
+  args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.f);
+  args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.f);
+  args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
   args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
@@ -77,7 +81,7 @@ int main_sim(args::Subparser &parser)
     throw args::Error("No output filename specified");
   }
 
-  rl::Settings const settings{
+  rl::Settings settings{
     .spg = spg.Get(),
     .gps = gps.Get(),
     .gprep2 = gprep2.Get(),
@@ -89,7 +93,8 @@ int main_sim(args::Subparser &parser)
     .TI = TI.Get(),
     .Trec = Trec.Get(),
     .TE = te.Get(),
-    .bval = bval.Get()};
+    .bval = bval.Get(),
+    .inversion = false};
 
   Eigen::ArrayXXf parameters, dynamics;
   switch (seq.Get()) {
@@ -101,6 +106,13 @@ int main_sim(args::Subparser &parser)
     break;
   case Sequences::T2FLAIR:
     std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get());
+    break;
+  case Sequences::MultiFLAIR:
+    std::tie(parameters, dynamics) = Simulate<rl::MultiFLAIR>(settings, nsamp.Get());
+    break;
+  case Sequences::MultiFLAIRInv:
+    settings.inversion = true;
+    std::tie(parameters, dynamics) = Simulate<rl::MultiFLAIR>(settings, nsamp.Get());
     break;
   case Sequences::T2Prep:
     std::tie(parameters, dynamics) = Simulate<rl::T2Prep>(settings, nsamp.Get());

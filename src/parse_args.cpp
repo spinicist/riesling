@@ -137,8 +137,23 @@ auto ReadBasis(std::string const &basisFile) -> std::optional<Re2>
   if (basisFile.empty()) {
     return std::nullopt;
   } else {
-    HD5::Reader basisReader(basisFile);
-    return std::optional<Re2>(basisReader.readTensor<Re2>(HD5::Keys::Basis));
+    std::string fname;
+    Index which = -1;
+    auto result = scn::scan(basisFile, "{},{}", which, fname);
+    fmt::print(FMT_STRING("fname {} which {}\n"), which, fname);
+    if (!result) {
+      HD5::Reader basisReader(basisFile);
+      return std::optional<Re2>(basisReader.readTensor<Re2>(HD5::Keys::Basis));
+    } else {
+      HD5::Reader basisReader(fname);
+      auto const basis = basisReader.readTensor<Re2>(HD5::Keys::Basis);
+      if (which >= 0 && which < basis.dimension(1)) {
+        Re2 const b1 = basis.slice(Sz2{0, which}, Sz2{basis.dimension(0), 1});
+        return std::optional<Re2>(b1);
+      } else {
+        Log::Fail(FMT_STRING("Requested basis vector {} but only {} in file {}"), which, basis.dimension(1), fname);
+      }
+    }
   }
 }
 
