@@ -53,7 +53,6 @@ int main_admm(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto const sz = recon->inputDimensions();
-
   std::shared_ptr<Prox<Cx4>> reg;
   if (wavelets) {
     reg = std::make_shared<ThresholdWavelets>(sz, width.Get(), wavelets.Get());

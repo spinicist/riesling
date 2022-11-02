@@ -26,6 +26,7 @@ int main(int const argc, char const *const argv[])
   args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
   args::Command nufft(commands, "nufft", "Apply forward/reverse NUFFT", &main_nufft);
   args::Command pad(commands, "pad", "Pad / crop an image", &main_pad);
+  args::Command pdhg(commands, "pdhg", "Primal-Dual Hybrid Gradient", &main_pdhg);
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
   args::Command pre(commands, "precond", "Precompute preconditioning weights", &main_precond);

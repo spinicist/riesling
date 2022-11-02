@@ -6,7 +6,7 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
-#include "util.hpp"
+#include "bidiag.hpp"
 
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py

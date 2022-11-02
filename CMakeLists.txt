@@ -114,6 +114,7 @@ add_executable(riesling
     src/cmd/noisify.cpp
     src/cmd/nufft.cpp
     src/cmd/pad.cpp
+    src/cmd/pdhg.cpp
     src/cmd/phantom.cpp
     src/cmd/plan.cpp
     src/cmd/precond.cpp

@@ -3,8 +3,8 @@
 #include "algo/decomp.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include <random>
 #include <cmath>
+#include <random>
 
 namespace rl {
 Index PatchClamp(Index const ii, Index const patchSize, Index const dimSz)
@@ -52,16 +52,15 @@ auto LLR::applySliding(float const λ, Eigen::TensorMap<Cx4 const> img) const ->
         auto patch = CollapseToMatrix(patchTensor);
         auto const svd = SVD<Cx>(patch, true, false);
         // Soft-threhold svals
-        Eigen::VectorXf s = svd.vals * (svd.vals.abs() - λ) / svd.vals.abs();
-        s = (svd.vals.array() > λ).select(s, 0.f);
+        Eigen::VectorXf const s = (svd.vals.abs() > λ).select(svd.vals * (svd.vals.abs() - λ) / svd.vals.abs(), 0.f);
         patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
         for (Index ii = 0; ii < K; ii++) {
-          lr(ii, ix, iy, iz) = patchTensor(ii, PatchClamp(ix, patchSize, img.dimension(1)), PatchClamp(iy, patchSize, img.dimension(2)), PatchClamp(iz, patchSize, img.dimension(3)));
+          lr(ii, ix, iy, iz) = patchTensor(
+            ii,
+            PatchClamp(ix, patchSize, img.dimension(1)),
+            PatchClamp(iy, patchSize, img.dimension(2)),
+            PatchClamp(iz, patchSize, img.dimension(3)));
         }
-        // lr(0, ix, iy, iz) = PatchClamp(ix, patchSize, img.dimension(1));
-        // lr(1, ix, iy, iz) = PatchClamp(iy, patchSize, img.dimension(2));
-        // lr(2, ix, iy, iz) = PatchClamp(iz, patchSize, img.dimension(3));
-        // lr(3, ix, iy, iz) = 0.f;
       }
     }
   };
@@ -76,44 +75,33 @@ auto LLR::applyFixed(float const λ, Eigen::TensorMap<Cx4 const> x) const -> Eig
   std::array<Index, 3> nP, shift;
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> int_dist(0, patchSize - 1);
   for (Index ii = 0; ii < 3; ii++) {
-    if (x.dimension(ii + 1) % patchSize != 0) {
-      Log::Fail(
-        FMT_STRING("Patch size {} does not evenly divide {} (dimension {})"), patchSize, x.dimension(ii + 1), ii);
-    }
-    nP[ii] = (x.dimension(ii + 1) / patchSize) - 1;
+    auto const d = x.dimension(ii + 1);
+    nP[ii] = ((d - 1) / patchSize) - 1;
+    std::uniform_int_distribution<> int_dist(0, d - nP[ii] * patchSize);
     shift[ii] = int_dist(gen);
   }
   Index const K = x.dimension(0);
-  Index const p3 = patchSize * patchSize * patchSize;
   static Cx4 lr(x.dimensions());
   lr.setZero();
-  auto zTask = [&](Index const lo, Index const hi) {
-    for (Index iz = lo; iz < hi; iz++) {
-      for (Index iy = 0; iy < nP[1]; iy++) {
-        for (Index ix = 0; ix < nP[0]; ix++) {
-          Cx4 px = x.slice(
-            Sz4{0, ix * patchSize + shift[0], iy * patchSize + shift[1], iz * patchSize + shift[2]},
-            Sz4{K, patchSize, patchSize, patchSize});
-          Eigen::Map<Eigen::MatrixXcf> patch(px.data(), K, p3);
-          auto const svd = SVD<Cx>(patch, true, false);
-          // Soft-threhold svals
-          Eigen::ArrayXf s = svd.vals;
-          float const sl = s(0) * λ;
-          s = s * (s.abs() - sl) / s.abs();
-          s = (s > sl).select(s, 0.f);
-          patch.transpose() = svd.U * s.matrix().asDiagonal() * svd.V.adjoint();
-          lr.slice(
-            Sz4{0, ix * patchSize + shift[0], iy * patchSize + shift[1], iz * patchSize + shift[2]},
-            Sz4{K, patchSize, patchSize, patchSize}) = px;
-        }
+  auto zTask = [&](Index const iz) {
+    for (Index iy = 0; iy < nP[1]; iy++) {
+      for (Index ix = 0; ix < nP[0]; ix++) {
+        Index const stx = ix * patchSize + shift[0];
+        Index const sty = iy * patchSize + shift[1];
+        Index const stz = iz * patchSize + shift[2];
+        Cx4 patchTensor = x.slice(Sz4{0, stx, sty, stz}, Sz4{K, patchSize, patchSize, patchSize});
+        auto patch = CollapseToMatrix(patchTensor);
+        auto const svd = SVD<Cx>(patch, true, false);
+        // Soft-threhold svals
+        Eigen::VectorXf const s = (svd.vals.abs() > λ).select(svd.vals * (svd.vals.abs() - λ) / svd.vals.abs(), 0.f);
+        patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
+        lr.slice(Sz4{0, stx, sty, stz}, Sz4{K, patchSize, patchSize, patchSize}) = patchTensor;
       }
     }
   };
   auto const now = Log::Now();
-  zTask(0, nP[2]);
-  // Threads::RangeFor(zTask, nP[2]);
+  Threads::For(zTask, nP[2], "LLR");
   Log::Print(FMT_STRING("LLR Regularization took {}"), Log::ToNow(now));
   return lr;
 }

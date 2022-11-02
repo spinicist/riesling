@@ -20,6 +20,7 @@ int main_noisify(args::Subparser &parser);
 int main_nii(args::Subparser &parser);
 int main_nufft(args::Subparser &parser);
 int main_pad(args::Subparser &parser);
+int main_pdhg(args::Subparser &parser);
 int main_phantom(args::Subparser &parser);
 int main_phantom_basis(args::Subparser &parser);
 int main_plan(args::Subparser &parser);
