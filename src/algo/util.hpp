@@ -18,7 +18,7 @@ inline float CheckedDot(T const &x1, T const &x2)
   }
 }
 
-inline auto SymGivens(float const a, float const b)
+inline auto StableGivens(float const a, float const b)
 {
   float c, s, ρ;
   if (b == 0.f) {
@@ -81,21 +81,16 @@ inline void BidiagInit(
     Mu.device(dev) = b;
   }
   (*M)(Mu, u);
-  if (λ > 0.f) {
-    ur.resize(v.dimensions());
-    if (cc.size()) {
-      CheckDimsEqual(cc.dimensions(), v.dimensions());
-      ur.device(dev) = (cc - x) * x.constant(sqrt(λ));
-    } else {
-      ur.device(dev) = -x * x.constant(sqrt(λ));
-    }
+  if (ur.size()) {
+    CheckDimsEqual(cc.dimensions(), v.dimensions());
+    ur.device(dev) = (cc - x) * x.constant(sqrt(λ));
     β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
   }
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
-  if (λ > 0.f) {
+  if (ur.size()) {
     ur.device(dev) = ur / ur.constant(β);
     v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur);
   } else {
@@ -111,15 +106,15 @@ Bidiag(OpPtr op, PrePtr M, Output &Mu, Output &u, Input &ur, Input &v, float &α
 {
   Mu.device(dev) = op->forward(v) - α * Mu;
   (*M)(Mu, u);
-  if (λ > 0.f) {
-    ur.device(dev) = (sqrt(λ) * v) - (α * ur);
+  if (ur.size()) {
+    ur.device(dev) = (std::sqrt(λ) * v) - (α * ur);
     β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
   }
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
-  if (λ > 0.f) {
+  if (ur.size()) {
     ur.device(dev) = ur / ur.constant(β);
     v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * v);
   } else {

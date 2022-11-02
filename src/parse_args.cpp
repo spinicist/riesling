@@ -140,7 +140,6 @@ auto ReadBasis(std::string const &basisFile) -> std::optional<Re2>
     std::string fname;
     Index which = -1;
     auto result = scn::scan(basisFile, "{},{}", which, fname);
-    fmt::print(FMT_STRING("fname {} which {}\n"), which, fname);
     if (!result) {
       HD5::Reader basisReader(basisFile);
       return std::optional<Re2>(basisReader.readTensor<Re2>(HD5::Keys::Basis));

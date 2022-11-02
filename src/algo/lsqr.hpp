@@ -60,12 +60,17 @@ struct LSQR
     for (Index ii = 0; ii < iterLimit; ii++) {
       Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
 
-      // Deal with regularization
-      auto [c1, s1, ρ̅1] = SymGivens(ρ̅, λ);
-      float const ψ = s1 * ɸ̅;
-      ɸ̅ = c1 * ɸ̅;
-
-      auto [c, s, ρ] = SymGivens(ρ̅1, β);
+      float c, s, ρ;
+      float ψ = 0.f;
+      if (λ == 0.f || ur.size()) {
+        std::tie(c, s, ρ) = StableGivens(ρ̅, β);
+      } else {
+        // Deal with regularization
+        auto [c1, s1, ρ̅1] = StableGivens(ρ̅, λ);
+        ψ = s1 * ɸ̅;
+        ɸ̅ = c1 * ɸ̅;
+        std::tie(c, s, ρ) = StableGivens(ρ̅1, β);
+      }
       float const ɸ = c * ɸ̅;
       ɸ̅ = s * ɸ̅;
       float const τ = s * ɸ;
@@ -86,7 +91,7 @@ struct LSQR
       float const zbar = rhs / ɣ̅;
       float const normx = std::sqrt(xxnorm + zbar * zbar);
       float ɣ;
-      std::tie(cs2, sn2, ɣ) = SymGivens(ɣ̅, θ);
+      std::tie(cs2, sn2, ɣ) = StableGivens(ɣ̅, θ);
       z = rhs / ɣ;
       xxnorm += z * z;
       ddnorm = ddnorm + Norm2(w) / (ρ * ρ);

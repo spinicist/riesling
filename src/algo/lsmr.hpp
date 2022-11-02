@@ -37,7 +37,7 @@ struct LSMR
     auto const outDims = op->outputDimensions();
     CheckDimsEqual(b.dimensions(), outDims);
     Output Mu(outDims), u(outDims);
-    Input v(inDims), h(inDims), h̅(inDims), x(inDims), ur;
+    Input v(inDims), h(inDims), h̅(inDims), x(inDims), ur(cc.dimensions());
     float α = 0.f, β = 0.f;
     BidiagInit(op, M, Mu, u, ur, v, α, β, λ, x, b, x0, cc, dev);
     h.device(dev) = v;
@@ -76,10 +76,15 @@ struct LSMR
     for (Index ii = 0; ii < iterLimit; ii++) {
       Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
 
-      auto [ĉ, ŝ, α̂] = SymGivens(α̅, λ);
-      float ρold = ρ;
-      float c, s;
-      std::tie(c, s, ρ) = SymGivens(α̂, β);
+      float const ρold = ρ;
+      float c, s, ĉ = 1.f, ŝ = 0.f;
+      if (λ == 0.f || ur.size()) {
+        std::tie(c, s, ρ) = StableGivens(α̅, β);
+      } else {
+        float α̂;
+        std::tie(ĉ, ŝ, α̂) = StableGivens(α̅, λ);
+        std::tie(c, s, ρ) = StableGivens(α̂, β);
+      }
       float θnew = s * α;
       α̅ = c * α;
 
@@ -88,7 +93,7 @@ struct LSMR
       float ζold = ζ;
       float θ̅ = s̅ * ρ;
       float ρtemp = c̅ * ρ;
-      std::tie(c̅, s̅, ρ̅) = SymGivens(ρtemp, θnew);
+      std::tie(c̅, s̅, ρ̅) = StableGivens(ρtemp, θnew);
       ζ = c̅ * ζ̅;
       ζ̅ = -s̅ * ζ̅;
 
@@ -105,7 +110,7 @@ struct LSMR
       β̈ = -s * β́;
 
       float const θ̃old = θ̃;
-      auto [c̃old, s̃old, ρ̃old] = SymGivens(ρ̇old, θ̅);
+      auto [c̃old, s̃old, ρ̃old] = StableGivens(ρ̇old, θ̅);
       θ̃ = s̃old * ρ̅;
       ρ̇old = c̃old * ρ̅;
       β̇ = -s̃old * β̇ + c̃old * β̂;
