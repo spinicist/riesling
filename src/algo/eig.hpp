@@ -2,6 +2,7 @@
 
 #include "log.hpp"
 #include "tensorOps.hpp"
+#include <optional>
 
 namespace rl {
 
