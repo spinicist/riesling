@@ -22,7 +22,7 @@ auto PowerMethodForward(std::shared_ptr<Op> op, Index const iterLimit, std::opti
     if (P) {
       o *= *P;
     }
-    vec = op->adjoint(vec);
+    vec = op->adjoint(o);
     val = Norm(vec);
     vec /= vec.constant(val);
     Log::Print<Log::Level::High>(FMT_STRING("Iteration {} Eigenvalue {}"), ii, val);
@@ -36,7 +36,7 @@ auto PowerMethodAdjoint(std::shared_ptr<Op> op, Index const iterLimit, std::opti
 {
   using Input = typename Op::Input;
   using Output = typename Op::Output;
-  Log::Print("Power Method for AA'");
+  Log::Print("Power Method for adjoint system (AA')");
   Output vec(op->outputDimensions());
   vec.template setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
   float val = Norm(vec);

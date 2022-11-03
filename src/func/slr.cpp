@@ -69,7 +69,7 @@ SLR::SLR(FFTOp< 5, 3> const &f, Index const k)
 {
 }
 
-auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) const -> Eigen::TensorMap<Cx5>
+auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) const -> Cx5
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {
@@ -79,7 +79,7 @@ auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) c
     Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), thresh, 0.f, nC);
   }
   Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, thresh);
-  static Cx5 grid = channels;
+  Cx5 grid = channels;
   grid = fft.forward(grid);
   // Now crop out corners which will have zeros
   Index const w = std::floor(grid.dimension(2) / sqrt(3));

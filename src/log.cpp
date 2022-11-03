@@ -88,7 +88,7 @@ void Tick()
     progressCurrent++;
     if (progressCurrent > progressNext) {
       float const percent = (100.f * progressCurrent) / progressTarget;
-      fmt::print(stderr, FMT_STRING("\r{:02.0f}%"), percent);
+      fmt::print(stderr, FMT_STRING("\x1b[2K\r{:02.0f}%"), percent);
       progressNext += std::floor(progressTarget / 100.f);
     }
   }

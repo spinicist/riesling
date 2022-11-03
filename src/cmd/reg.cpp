@@ -23,9 +23,9 @@ int main_reg(args::Subparser &parser)
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
   args::ValueFlag<std::string> brute(parser, "D", "Brute-force dictionary projection", {"brute"});
   args::ValueFlag<std::string> ball(parser, "D", "Ball-tree dictionary projection", {"ball"});
-  args::Flag wavelets(parser, "W", "Wavelet denoising", {"wavelets"});
-  args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
-  args::ValueFlag<Index> levels(parser, "L", "Wavelet levels", {"levels", 'l'}, 4);
+  args::Flag wavelets(parser, "W", "Wavelets", {"wavelets", 'w'});
+  args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wave-levels"}, 4);
+  args::ValueFlag<Index> waveSize(parser, "W", "Wavelet size (4/6/8)", {"wave-size"}, 6);
   ParseCommand(parser);
 
   if (!iname) {
@@ -37,9 +37,9 @@ int main_reg(args::Subparser &parser)
 
   if (wavelets) {
     Sz4 dims = FirstN<4>(images.dimensions());
-    ThresholdWavelets tw(dims, width.Get(), levels.Get());
+    ThresholdWavelets tw(dims, λ.Get(), waveSize.Get(), waveLevels.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = tw(λ.Get(), CChipMap(images, iv));
+      output.chip<4>(iv) = tw(1.f, CChipMap(images, iv));
     }
   } else if (brute) {
     HD5::Reader dictReader(brute.Get());
@@ -54,7 +54,7 @@ int main_reg(args::Subparser &parser)
       dict(CChipMap(images, iv), ChipMap(output, iv));
     }
   } else if (llr || llrPatch) {
-    LLR reg{patchSize.Get(), !llrPatch};
+    LLR reg{patchSize.Get(), llrPatch};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       output.chip<4>(iv) = reg(λ.Get(), CChipMap(images, iv));
     }

@@ -7,13 +7,13 @@
 namespace rl {
 
 struct ThresholdWavelets final : Prox<Cx4> {
-    ThresholdWavelets(Sz4 const dims, Index const width, Index const levels);
-    auto operator()(float const λ, Eigen::TensorMap<Cx4 const>) const -> Eigen::TensorMap<Cx4>;
+    ThresholdWavelets(Sz4 const dims, float const λ, Index const width, Index const levels);
+    auto operator()(float const α, Eigen::TensorMap<Cx4 const>) const -> Cx4;
 
 private:
-    PadOp<Cx, 4> pad_;
     Wavelets waves_;
     SoftThreshold thresh_;
+    float λ_;
 };
 
 } // namespace rl

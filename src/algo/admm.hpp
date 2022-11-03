@@ -14,7 +14,7 @@ struct ADMM
   using Output = typename Inner::Output;
 
   Inner &inner;
-  std::shared_ptr<Prox<Input>> prox = std::make_shared<IdentityProx<Input>>();
+  std::shared_ptr<Prox<Input>> prox;
   Index iterLimit = 8;
   float λ = 0.;  // Proximal operator parameter
   float ρ = 0.1; // Langrangian

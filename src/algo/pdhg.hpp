@@ -17,8 +17,7 @@ struct PrimalDualHybridGradient
 
   std::shared_ptr<Op> op;
   Cx4 P;
-  std::shared_ptr<Prox<Input>> prox = std::make_shared<IdentityProx<Input>>();
-  float λ = 0.; // Proximal operator parameter
+  std::shared_ptr<Prox<Input>> prox;
   Index iterLimit = 8;
 
   Input run(Eigen::TensorMap<Output const> b, float τ = 1.f /* Primal step size */) const
@@ -36,16 +35,16 @@ struct PrimalDualHybridGradient
 
     float σ = 1.f;                       // Dual Step-size
     float const pmin = Minimum(P.abs()); // For updating θ
-    Log::Print(FMT_STRING("PDHG"), σ);
+    Log::Print(FMT_STRING("PDHG pmin {}"), pmin);
     for (Index ii = 0; ii < iterLimit; ii++) {
-      u.device(dev) = (u + u.constant(σ) * P * (op->forward(xbar) - b)) / (u.constant(1.f) + u.constant(σ) * P);
       xold.device(dev) = x;
+      u.device(dev) = (u + u.constant(σ) * P * (op->forward(x) - b)) / (u.constant(1.f) + u.constant(σ) * P);
       x.device(dev) = x - x.constant(τ) * op->adjoint(u);
-      x.device(dev) = (*prox)(λ, x);
+      x.device(dev) = (*prox)(τ, x);
+      float const θ = 1.f / std::sqrt(1.f + 2.f * pmin);
       xold.device(dev) = x - xold;
-      float const θ = 1.f / (1.f + 2.f * pmin);
       float const normr = Norm(xold / xold.constant(std::sqrt(τ)));
-      xbar.device(dev) = x + θ * (xold);
+      // xbar.device(dev) = x + θ * (xold);
 
       Log::Tensor(x, fmt::format("pdhg-x-{:02d}", ii));
       Log::Print(FMT_STRING("PDHG {:02d}: |r| {} σ {} τ {} θ {}"), ii, normr, σ, τ, θ);

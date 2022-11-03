@@ -11,6 +11,6 @@ struct SLR final : Prox<Cx5>
   FFTOp< 5, 3> const &fft;
   Index kSz;
 
-  auto operator()(float const thresh, Eigen::TensorMap<Cx5 const> x) const -> Eigen::TensorMap<Cx5>;
+  auto operator()(float const thresh, Eigen::TensorMap<Cx5 const> x) const -> Cx5;
 };
 } // namespace rl

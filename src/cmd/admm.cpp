@@ -55,7 +55,7 @@ int main_admm(args::Subparser &parser)
   auto const sz = recon->inputDimensions();
   std::shared_ptr<Prox<Cx4>> reg;
   if (wavelets) {
-    reg = std::make_shared<ThresholdWavelets>(sz, width.Get(), wavelets.Get());
+    reg = std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get());
   } else {
     reg = std::make_shared<LLR>(patchSize.Get(), true);
   };

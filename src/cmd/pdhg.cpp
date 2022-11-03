@@ -26,9 +26,11 @@ int main_pdhg(args::Subparser &parser)
   args::ValueFlag<float> τ(parser, "σ", "Dual step-size", {"tau"}, 1.f);
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
+  args::Flag llrPatch(parser, "S", "Use patch LLR", {"llr-patch"});
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"patch-size"}, 4);
-  args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
-  args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
+  args::Flag wavelets(parser, "W", "Wavelets", {"wavelets", 'w'});
+  args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wave-levels"}, 4);
+  args::ValueFlag<Index> waveSize(parser, "W", "Wavelet size (4/6/8)", {"wave-size"}, 6);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -40,15 +42,15 @@ int main_pdhg(args::Subparser &parser)
   
   std::shared_ptr<Prox<Cx4>> reg;
   if (wavelets) {
-    reg = std::make_shared<ThresholdWavelets>(sz, width.Get(), wavelets.Get());
+    reg = std::make_shared<ThresholdWavelets>(sz, λ.Get(), waveSize.Get(), waveLevels.Get());
   } else {
-    reg = std::make_shared<LLR>(patchSize.Get(), false);
+    reg = std::make_shared<LLR>(patchSize.Get(), llrPatch);
   };
 
   auto sc = KSpaceSingle(traj);
   auto const odims = recon->outputDimensions();
   Cx4 P = sc.reshape(Sz4{1, odims[1], odims[2], 1}).broadcast(Sz4{odims[0], 1, 1, odims[3]}).cast<Cx>();
-  PrimalDualHybridGradient<ReconOp> pdhg{recon, P, reg, λ.Get(), its.Get()};
+  PrimalDualHybridGradient<ReconOp> pdhg{recon, P, reg, its.Get()};
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Cx4 vol(sz);

@@ -21,23 +21,22 @@ int main_wavelets(args::Subparser &parser)
     throw args::Error("No input file specified");
   }
   HD5::Reader reader(iname.Get());
-  auto const input = reader.readTensor<Cx5>(HD5::Keys::Image);
+  auto images = reader.readTensor<Cx5>(HD5::Keys::Image);
 
-  Wavelets wavelets(FirstN<4>(input.dimensions()), width.Get(), levels.Get());
-  Cx5 output(input.dimensions());
+  Wavelets wavelets(FirstN<4>(images.dimensions()), width.Get(), levels.Get());
   auto const start = Log::Now();
-  for (Index iv = 0; iv < input.dimension(4); iv++) {
+  for (Index iv = 0; iv < images.dimension(4); iv++) {
     if (fwd) {
-      output.chip<4>(iv) = wavelets.forward(input.chip<4>(iv));
+      wavelets.forward(ChipMap(images, iv));
     } else {
-      output.chip<4>(iv) = wavelets.adjoint(input.chip<4>(iv));
+      wavelets.adjoint(ChipMap(images, iv));
     }
   }
   Log::Print(FMT_STRING("All volumes took {}"), Log::ToNow(start));
   auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(reader.readInfo());
-  writer.writeTensor(output, HD5::Keys::Image);
+  writer.writeTensor(images, HD5::Keys::Image);
 
   return EXIT_SUCCESS;
 }

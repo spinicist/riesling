@@ -12,11 +12,12 @@ struct Wavelets final : Operator<Cx, 4, 4>
 
   OP_DECLARE()
 
-  static auto PaddedDimensions(Sz4 const dims, Index const levels) -> Sz4;
+  static auto PaddedDimensions(Sz4 const dims) -> Sz4;
 private:
   void encode_dim(InputMap image, Index const dim, Index const level) const;
   void decode_dim(OutputMap image, Index const dim, Index const level) const;
-  Index N_, L_;
+  Index N_;
   Re1 D_; // Coefficients
+  Sz4 levels_;
 };
 } // namespace rl
