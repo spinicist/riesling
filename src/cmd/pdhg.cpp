@@ -26,8 +26,8 @@ int main_pdhg(args::Subparser &parser)
   args::ValueFlag<float> τ(parser, "σ", "Dual step-size", {"tau"}, 1.f);
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
-  args::Flag llrPatch(parser, "S", "Use patch LLR", {"llr-patch"});
-  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"patch-size"}, 4);
+  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
+  args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
   args::Flag wavelets(parser, "W", "Wavelets", {"wavelets", 'w'});
   args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wave-levels"}, 4);
   args::ValueFlag<Index> waveSize(parser, "W", "Wavelet size (4/6/8)", {"wave-size"}, 6);
@@ -44,7 +44,7 @@ int main_pdhg(args::Subparser &parser)
   if (wavelets) {
     reg = std::make_shared<ThresholdWavelets>(sz, λ.Get(), waveSize.Get(), waveLevels.Get());
   } else {
-    reg = std::make_shared<LLR>(patchSize.Get(), llrPatch);
+    reg = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get());
   };
 
   auto sc = KSpaceSingle(traj);

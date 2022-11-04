@@ -41,7 +41,8 @@ int main_admm(args::Subparser &parser)
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
 
-  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"patch-size"}, 4);
+  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
+  args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
 
   args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
@@ -57,9 +58,9 @@ int main_admm(args::Subparser &parser)
   if (wavelets) {
     reg = std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get());
   } else {
-    reg = std::make_shared<LLR>(patchSize.Get(), true);
+    reg = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get());
   };
-  
+
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();

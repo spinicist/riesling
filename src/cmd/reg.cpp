@@ -17,10 +17,10 @@ int main_reg(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::Flag llr(parser, "", "Apply sliding-window Locally Low-Rank reg", {"llr"});
-  args::Flag llrPatch(parser, "", "Apply patch-based Locally Low-Rank reg", {"llr-patch"});
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
-  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size (default 4)", {"patch-size"}, 4);
+  args::Flag llr(parser, "", "Apply sliding-window Locally Low-Rank reg", {"llr"});
+  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
+  args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
   args::ValueFlag<std::string> brute(parser, "D", "Brute-force dictionary projection", {"brute"});
   args::ValueFlag<std::string> ball(parser, "D", "Ball-tree dictionary projection", {"ball"});
   args::Flag wavelets(parser, "W", "Wavelets", {"wavelets", 'w'});
@@ -53,8 +53,8 @@ int main_reg(args::Subparser &parser)
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       dict(CChipMap(images, iv), ChipMap(output, iv));
     }
-  } else if (llr || llrPatch) {
-    LLR reg{patchSize.Get(), llrPatch};
+  } else if (llr) {
+    LLR reg(λ.Get(), patchSize.Get(), winSize.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       output.chip<4>(iv) = reg(λ.Get(), CChipMap(images, iv));
     }
