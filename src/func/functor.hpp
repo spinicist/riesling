@@ -28,3 +28,9 @@ struct Prox
   virtual auto operator()(float const λ, Eigen::TensorMap<T const> in) const -> T = 0;
   virtual ~Prox(){};
 };
+
+template <typename T>
+struct IdentityProx final : Prox<T>
+{
+  auto operator()(float const λ, Eigen::TensorMap<T const> in) const -> T { return in; }
+};

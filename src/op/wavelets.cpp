@@ -99,7 +99,7 @@ void Wavelets::encode_dim(OutputMap image, Index const dim, Index const level) c
 auto Wavelets::forward(InputMap x) const -> OutputMap
 {
   auto const time = startForward(x);
-  for (Index dim = 1; dim < 4; dim++) {
+  for (Index dim = 0; dim < 4; dim++) {
     for (Index il = 0; il < levels_[dim]; il++) {
       encode_dim(x, dim, il);
     }
@@ -153,7 +153,7 @@ void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) co
 auto Wavelets::adjoint(OutputMap x) const -> InputMap
 {
   auto const time = startAdjoint(x);
-  for (Index dim = 1; dim < 4; dim++) {
+  for (Index dim = 0; dim < 4; dim++) {
     for (Index il = levels_[dim] - 1; il >= 0; il--) {
       decode_dim(x, dim, il);
     }

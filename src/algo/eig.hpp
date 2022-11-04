@@ -36,12 +36,11 @@ auto PowerMethodAdjoint(std::shared_ptr<Op> op, Index const iterLimit, std::opti
 {
   using Input = typename Op::Input;
   using Output = typename Op::Output;
-  Log::Print("Power Method for adjoint system (AA')");
   Output vec(op->outputDimensions());
   vec.template setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
   float val = Norm(vec);
   vec /= vec.constant(val);
-
+  Log::Print(FMT_STRING("Power Method for adjoint system (AA')"));
   for (auto ii = 0; ii < iterLimit; ii++) {
     Input i = op->adjoint(vec);
     vec = op->forward(i);

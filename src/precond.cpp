@@ -41,7 +41,7 @@ auto KSpaceSingle(Trajectory const &traj) -> Re2
   if (!std::isfinite(norm)) {
     Log::Fail("Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
-    Log::Print("Single-channel pre-conditioner finished, norm {}", norm);
+    Log::Print("Single-channel pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights), Maximum(weights));
   }
   return weights;
 }

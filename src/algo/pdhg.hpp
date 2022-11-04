@@ -27,7 +27,7 @@ struct PrimalDualHybridGradient
     auto const inDims = op->inputDimensions();
     auto const outDims = op->outputDimensions();
     CheckDimsEqual(b.dimensions(), outDims);
-    Output u(outDims), utemp(outDims);
+    Output u(outDims);
     u.setZero();
     Input x(inDims), xbar(inDims), xold(inDims);
     xbar.setZero();
@@ -38,15 +38,16 @@ struct PrimalDualHybridGradient
     Log::Print(FMT_STRING("PDHG pmin {}"), pmin);
     for (Index ii = 0; ii < iterLimit; ii++) {
       xold.device(dev) = x;
-      u.device(dev) = (u + u.constant(σ) * P * (op->forward(x) - b)) / (u.constant(1.f) + u.constant(σ) * P);
+      u.device(dev) = (u + u.constant(σ) * P * (op->forward(xbar) - b)) / (u.constant(1.f) + u.constant(σ) * P);
       x.device(dev) = x - x.constant(τ) * op->adjoint(u);
       x.device(dev) = (*prox)(τ, x);
-      float const θ = 1.f / std::sqrt(1.f + 2.f * pmin);
+      float const θ = 1.f / (1.f + 2.f * σ * pmin);
       xold.device(dev) = x - xold;
       float const normr = Norm(xold / xold.constant(std::sqrt(τ)));
-      // xbar.device(dev) = x + θ * (xold);
+      xbar.device(dev) = x + θ * (xold);
 
       Log::Tensor(x, fmt::format("pdhg-x-{:02d}", ii));
+      // Log::Tensor(x, fmt::format("pdhg-u-{:02d}", ii));
       Log::Print(FMT_STRING("PDHG {:02d}: |r| {} σ {} τ {} θ {}"), ii, normr, σ, τ, θ);
       σ *= θ;
       τ /= θ;

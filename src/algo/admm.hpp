@@ -29,10 +29,10 @@ struct ADMM
     auto const dims = inner.op->inputDimensions();
     Input u(dims), x(dims), z(dims), zold(dims), xpu(dims);
 
-    // Get initial values
-    x = inner.run(b);
-    z = (*prox)(λ / ρ, x);
-    u.device(dev) = x - z;
+    // Set initial values
+    x.setZero();
+    z.setZero();
+    u.setZero();
 
     Log::Tensor(x, fmt::format("admm-x-{:02d}", 0));
     Log::Tensor(z, fmt::format("admm-z-{:02d}", 0));
