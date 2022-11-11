@@ -20,7 +20,6 @@ int main_sdc(args::Subparser &parser)
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {
-    Log::Print(FMT_STRING("NUMBER OF DIMS {}"), traj.nDims());
     switch (traj.nDims()) {
     case 2: dc = SDC::Pipe<2>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;
     case 3: dc = SDC::Pipe<3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;

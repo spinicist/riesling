@@ -1,10 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "log.hpp"
-#include "tensorOps.hpp"
 #include "threads.hpp"
-#include "types.hpp"
 
 namespace rl {
 /*
@@ -74,7 +71,7 @@ struct ConjugateGradients
     Log::Print(FMT_STRING("CG    |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
     for (Index icg = 0; icg < iterLimit; icg++) {
       q = op->forward(p);
-      float const alpha = r_old / Dot(p, q).real();
+      float const alpha = r_old / CheckedDot(p, q);
       x.device(dev) = x + p * p.constant(alpha);
       if (debug) {
         Log::Tensor(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
