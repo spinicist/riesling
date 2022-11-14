@@ -42,7 +42,7 @@ Trajectory::Trajectory(HD5::Reader const &reader, std::vector<Index> const &fram
   if (frames.size()) {
     frames_ = I1(ranges::accumulate(frames, 0L));
     Index index = 0;
-    for (Index ii = 0; ii < frames.size(); ii++) {
+    for (size_t ii = 0; ii < frames.size(); ii++) {
       for (Index ij = 0; ij < frames[ii]; ij++) {
         frames_[index++] = ii;
       }
@@ -60,8 +60,13 @@ void Trajectory::init()
     Log::Fail(FMT_STRING("Trajectory has {} dimensions"), points_.dimension(0));
   }
 
-  if (frames_.size() && nTraces() != frames_.dimension(0)) {
-    Log::Fail("Mismatch between number of traces {} and frames array {}", nTraces(), frames_.dimension(0));
+  if (frames_.size()) {
+    if (frames_.size() > nTraces()) {
+      Log::Fail("More frames {} than traces {}", frames_.size(), nTraces());
+    }
+    if (nFrames() > nTraces()) {
+        Log::Fail("Highest frame {} exceeds number of traces {}", nFrames(), nTraces());
+    }
   }
   float const maxCoord = Maximum(points_.abs());
   if (maxCoord > 0.5f) {
