@@ -15,6 +15,7 @@ struct Trajectory
   Trajectory(Info const &info, Re3 const &points, I1 const &frames);
 
   Trajectory(HD5::Reader const &reader);
+  Trajectory(HD5::Reader const &reader, std::vector<Index> const &frames);
   void write(HD5::Writer &writer) const;
 
   auto nDims() const -> Index;

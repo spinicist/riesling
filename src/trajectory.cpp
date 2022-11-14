@@ -2,6 +2,8 @@
 
 #include "tensorOps.hpp"
 
+#include <range/v3/numeric.hpp>
+
 namespace rl {
 
 Trajectory::Trajectory() {}
@@ -32,6 +34,25 @@ Trajectory::Trajectory(HD5::Reader const &reader)
   }
   init();
 }
+
+Trajectory::Trajectory(HD5::Reader const &reader, std::vector<Index> const &frames)
+  : info_{reader.readInfo()}
+  , points_{reader.readTensor<Re3>(HD5::Keys::Trajectory)}
+{
+  if (frames.size()) {
+    frames_ = I1(ranges::accumulate(frames, 0L));
+    Index index = 0;
+    for (Index ii = 0; ii < frames.size(); ii++) {
+      for (Index ij = 0; ij < frames[ii]; ij++) {
+        frames_[index++] = ii;
+      }
+    }
+  } else if (reader.exists(HD5::Keys::Frames)) {
+    frames_ = reader.readTensor<I1>(HD5::Keys::Frames);
+  }
+  init();
+}
+
 
 void Trajectory::init()
 {

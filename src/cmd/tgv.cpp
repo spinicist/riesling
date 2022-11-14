@@ -24,7 +24,7 @@ int main_tgv(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader, coreOpts.frames.Get());
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto sz = recon->inputDimensions();

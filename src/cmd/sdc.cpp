@@ -16,7 +16,7 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader, coreOpts.frames.Get());
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {

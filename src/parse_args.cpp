@@ -76,6 +76,7 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , fov(parser, "FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
+  , frames(parser, "F", "List number of traces per frame", {"frames", 'f'})
   , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep", 'k'})
 {
 }
