@@ -36,10 +36,7 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD
     channels.setConstant(1.);
     return channels;
   }
-  auto const nF = traj.nFrames();
-  if (opts.frame.Get() >= nF) {
-    Log::Fail("Specified SENSE frame {} is greater than number of frames in data {}", opts.frame.Get(), nF);
-  }
+
   auto const nV = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
   if (opts.volume.Get() >= nV) {
     Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);

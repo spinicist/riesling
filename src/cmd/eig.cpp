@@ -26,7 +26,7 @@ int main_eig(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader, coreOpts.frames.Get());
+  Trajectory traj(reader);
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
 
   std::optional<Cx4> P = std::nullopt;

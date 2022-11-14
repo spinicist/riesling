@@ -30,9 +30,6 @@ int main_meta(args::Subparser &parser)
       } else if (k == "traces") {
         fmt::print("{}\n", traj.nTraces());
         continue;
-      } else if (k == "frames") {
-        fmt::print("{}\n", traj.nFrames());
-        continue;
       }
 
       if (meta.size() > 0) {

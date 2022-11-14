@@ -57,6 +57,5 @@ struct CoreOpts
   args::ValueFlag<float> osamp, fov;
   args::ValueFlag<Index> bucketSize;
   args::ValueFlag<std::string> basisFile;
-  args::ValueFlag<std::vector<Index>, VectorReader<Index>> frames;
   args::Flag keepTrajectory;
 };

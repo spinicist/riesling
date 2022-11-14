@@ -15,13 +15,12 @@ int main_h5(args::Subparser &parser)
   if (info) {
     Trajectory traj(reader);
     fmt::print(
-      FMT_STRING("Trajectory Samples: {} Traces: {} Frames: {}\n"
+      FMT_STRING("Trajectory Samples: {} Traces: {}\n"
                  "Matrix: {}\n"
                  "Voxel-size: {}\t TR: {}\t Origin: {}\n"
                  "Direction:\n{}\n"),
       traj.nSamples(),
       traj.nTraces(),
-      traj.nFrames(),
       traj.info().matrix,
       traj.info().voxel_size.transpose(),
       traj.info().tr,

@@ -27,7 +27,6 @@ auto Mapping<Rank>::Bucket::gridSize() const -> Sz<Rank>
   Sz<Rank> sz;
   std::transform(maxCorner.begin(), maxCorner.end(), minCorner.begin(), sz.begin(), std::minus());
   return sz;
-  // return Sz3{maxCorner[0] - minCorner[0], maxCorner[1] - minCorner[1], maxCorner[2] - minCorner[2]};
 }
 
 // Helper function to convert a floating-point vector-like expression to integer values
@@ -85,15 +84,9 @@ Mapping<Rank>::Mapping(
   nomDims = FirstN<Rank>(info.matrix);
   cartDims = fft_size<Rank>(FirstN<Rank>(info.matrix), nomOS);
   osamp = nomOS;
-  Log::Print(
-    FMT_STRING("{}D Mapping. Trajectory samples {} frames {} Grid {}"),
-    traj.nDims(),
-    traj.nSamples(),
-    traj.nFrames(),
-    cartDims);
+  Log::Print(FMT_STRING("{}D Mapping. Trajectory samples {} Grid {}"), traj.nDims(), traj.nSamples(), cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
-  frames = traj.nFrames();
 
   Sz<Rank> nB;
   for (size_t ii = 0; ii < Rank; ii++) {
@@ -138,36 +131,32 @@ Mapping<Rank>::Mapping(
   int32_t index = 0;
   Index NaNs = 0;
   for (int32_t is = 0; is < traj.nTraces(); is++) {
-    auto const fr = traj.frame(is);
-    if ((fr >= 0) && (fr < frames)) {
-      for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
-        Re1 const p = traj.point(ir, is);
-        Eigen::Array<float, Rank, 1> xyz;
+    for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
+      Re1 const p = traj.point(ir, is);
+      Eigen::Array<float, Rank, 1> xyz;
+      for (size_t ii = 0; ii < Rank; ii++) {
+        xyz[ii] = p[ii] * scales[ii] + center[ii];
+      }
+      if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
+        auto const gp = nearby(xyz);
+        auto const off = xyz - gp.template cast<float>();
+        std::array<int16_t, Rank> ijk;
         for (size_t ii = 0; ii < Rank; ii++) {
-          xyz[ii] = p[ii] * scales[ii] + center[ii];
+          ijk[ii] = gp[ii];
         }
-        if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
-          auto const gp = nearby(xyz);
-          auto const off = xyz - gp.template cast<float>();
-          std::array<int16_t, Rank> ijk;
-          for (size_t ii = 0; ii < Rank; ii++) {
-            ijk[ii] = gp[ii];
-          }
-          cart.push_back(ijk);
-          offset.push_back(off);
-          noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
-          frame.push_back(fr);
+        cart.push_back(ijk);
+        offset.push_back(off);
+        noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
 
-          // Calculate bucket
-          Index ib = 0;
-          for (int ii = Rank - 1; ii >= 0; ii--) {
-            ib = ib * nB[ii] + (ijk[ii] / bucketSz);
-          }
-          buckets[ib].indices.push_back(index);
-          index++;
-        } else {
-          NaNs++;
+        // Calculate bucket
+        Index ib = 0;
+        for (int ii = Rank - 1; ii >= 0; ii--) {
+          ib = ib * nB[ii] + (ijk[ii] / bucketSz);
         }
+        buckets[ib].indices.push_back(index);
+        index++;
+      } else {
+        NaNs++;
       }
     }
   }

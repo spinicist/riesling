@@ -36,7 +36,7 @@ int main_split(args::Subparser &parser)
     }
     Log::Print("Selecting volume {}", vol.Get());
     volumes = 1;
-    traj = Trajectory(info, traj.points(), traj.nFrames());
+    traj = Trajectory(info, traj.points());
     ks = Cx4(ks.slice(Sz4{0, 0, 0, vol.Get()}, AddBack(FirstN<3>(ks.dimensions()), 1)));
   }
 
@@ -45,7 +45,7 @@ int main_split(args::Subparser &parser)
     auto info = traj.info();
     Re3 points = traj.points();
     points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, points.dimension(1) - trim.Get(), points.dimension(2)}));
-    traj = Trajectory(info, points, traj.nFrames());
+    traj = Trajectory(info, points);
     ks = Cx4(ks.slice(Sz4{0, trim.Get(), 0, 0}, Sz4{channels, points.dimension(1), ks.dimension(2), volumes}));
   }
 
@@ -63,17 +63,13 @@ int main_split(args::Subparser &parser)
     Index const tracesLo = std::abs(lores.Get());
     Index const tracesHi = traj.nTraces() - tracesLo;
     bool atEnd = (lores.Get() < 0);
-    I1 const lo_frames = traj.frames().slice(Sz1{atEnd ? tracesHi : 0}, Sz1{tracesLo});
     Log::Print(FMT_STRING("Extracting traces {}-{} as low-res"), atEnd ? tracesHi : 0, tracesLo);
 
     Info lo_info = traj.info();
-    Trajectory lo_traj(
-      lo_info, traj.points().slice(Sz3{0, 0, atEnd ? tracesHi : 0}, Sz3{3, traj.nSamples(), tracesLo}), lo_frames);
+    Trajectory lo_traj(lo_info, traj.points().slice(Sz3{0, 0, atEnd ? tracesHi : 0}, Sz3{3, traj.nSamples(), tracesLo}));
     Cx4 lo_ks = ks.slice(Sz4{0, 0, atEnd ? tracesHi : 0, 0}, Sz4{channels, traj.nSamples(), tracesLo, volumes});
 
-    I1 const hi_frames(traj.frames().slice(Sz1{atEnd ? 0 : tracesLo}, Sz1{tracesHi}));
-    traj = Trajectory(
-      info, Re3(traj.points().slice(Sz3{0, 0, atEnd ? 0 : tracesLo}, Sz3{3, traj.nSamples(), tracesHi})), hi_frames);
+    traj = Trajectory(info, Re3(traj.points().slice(Sz3{0, 0, atEnd ? 0 : tracesLo}, Sz3{3, traj.nSamples(), tracesHi})));
     ks = Cx4(ks.slice(Sz4{0, 0, atEnd ? 0 : tracesLo, 0}, Sz4{channels, traj.nSamples(), tracesHi, volumes}));
 
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
@@ -93,29 +89,18 @@ int main_split(args::Subparser &parser)
       spf.Get(),
       sps,
       segs);
-    I1 e(nF.Get());
-    std::iota(e.data(), e.data() + nF.Get(), 0);
-    I1 frames = e.reshape(Sz2{1, nF.Get()})
-                  .broadcast(Sz2{spf.Get(), 1})
-                  .reshape(Sz1{sps})
-                  .broadcast(Sz1{segs})
-                  .slice(Sz1{0}, Sz1{traj.nTraces()});
-    traj = Trajectory(traj.info(), traj.points(), frames);
+    traj = Trajectory(traj.info(), traj.points());
   }
 
   if (spoke_stride) {
     ks = Cx4(ks.stride(Sz4{1, 1, spoke_stride.Get(), 1}));
-    traj = Trajectory(
-      traj.info(), traj.points().stride(Sz3{1, 1, spoke_stride.Get()}), traj.frames().stride(Sz1{spoke_stride.Get()}));
+    traj = Trajectory(traj.info(), traj.points().stride(Sz3{1, 1, spoke_stride.Get()}));
   }
 
   if (spoke_size) {
     auto info = traj.info();
     ks = Cx4(ks.slice(Sz4{0, 0, 0, 0}, Sz4{channels, traj.nSamples(), traj.nTraces(), volumes}));
-    traj = Trajectory(
-      info,
-      traj.points().slice(Sz3{0, 0, 0}, Sz3{3, traj.nSamples(), traj.nTraces()}),
-      traj.frames().slice(Sz1{0}, Sz1{traj.nTraces()}));
+    traj = Trajectory(info, traj.points().slice(Sz3{0, 0, 0}, Sz3{3, traj.nSamples(), traj.nTraces()}));
   }
 
   if (spi) {
@@ -134,10 +119,7 @@ int main_split(args::Subparser &parser)
       int const idx0 = spoke_step * int_idx;
       int const n = ns + (int_idx == (num_int - 1) ? rem_traces : 0);
       HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format(FMT_STRING("hires-{:02d}"), int_idx)));
-      Trajectory(
-        info,
-        traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, traj.nSamples(), n}),
-        traj.frames().slice(Sz1{idx0}, Sz1{n})).write(writer);
+      Trajectory(info, traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, traj.nSamples(), n})).write(writer);
       writer.writeTensor(
         Cx4(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{channels, traj.nSamples(), n, volumes})), HD5::Keys::Noncartesian);
     }

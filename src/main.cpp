@@ -16,6 +16,7 @@ int main(int const argc, char const *const argv[])
   args::Command eig(commands, "eig", "Calculate largest eigenvalue / vector", &main_eig);
   args::Command espirit(commands, "espirit-calib", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command filter(commands, "filter", "Apply Tukey filter to image", &main_filter);
+  args::Command frames(commands, "frames", "Create a frame basis", &main_frames);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command h5(commands, "h5", "Probe an H5 file", &main_h5);
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);

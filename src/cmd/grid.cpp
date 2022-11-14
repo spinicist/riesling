@@ -19,7 +19,7 @@ int main_grid(args::Subparser &parser)
 
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader, coreOpts.frames.Get());
+  Trajectory traj(reader);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 

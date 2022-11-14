@@ -2,8 +2,6 @@
 
 #include "tensorOps.hpp"
 
-#include <range/v3/numeric.hpp>
-
 namespace rl {
 
 Trajectory::Trajectory() {}
@@ -16,43 +14,12 @@ Trajectory::Trajectory(Info const &info, Re3 const &points)
   init();
 }
 
-Trajectory::Trajectory(Info const &info, Re3 const &points, I1 const &fr)
-  : info_{info}
-  , points_{points}
-  , frames_{fr}
-
-{
-  init();
-}
-
 Trajectory::Trajectory(HD5::Reader const &reader)
   : info_{reader.readInfo()}
   , points_{reader.readTensor<Re3>(HD5::Keys::Trajectory)}
 {
-  if (reader.exists(HD5::Keys::Frames)) {
-    frames_ = reader.readTensor<I1>(HD5::Keys::Frames);
-  }
   init();
 }
-
-Trajectory::Trajectory(HD5::Reader const &reader, std::vector<Index> const &frames)
-  : info_{reader.readInfo()}
-  , points_{reader.readTensor<Re3>(HD5::Keys::Trajectory)}
-{
-  if (frames.size()) {
-    frames_ = I1(ranges::accumulate(frames, 0L));
-    Index index = 0;
-    for (size_t ii = 0; ii < frames.size(); ii++) {
-      for (Index ij = 0; ij < frames[ii]; ij++) {
-        frames_[index++] = ii;
-      }
-    }
-  } else if (reader.exists(HD5::Keys::Frames)) {
-    frames_ = reader.readTensor<I1>(HD5::Keys::Frames);
-  }
-  init();
-}
-
 
 void Trajectory::init()
 {
@@ -60,28 +27,17 @@ void Trajectory::init()
     Log::Fail(FMT_STRING("Trajectory has {} dimensions"), points_.dimension(0));
   }
 
-  if (frames_.size()) {
-    if (frames_.size() > nTraces()) {
-      Log::Fail("More frames {} than traces {}", frames_.size(), nTraces());
-    }
-    if (nFrames() > nTraces()) {
-        Log::Fail("Highest frame {} exceeds number of traces {}", nFrames(), nTraces());
-    }
-  }
   float const maxCoord = Maximum(points_.abs());
   if (maxCoord > 0.5f) {
     Log::Fail(FMT_STRING("Maximum trajectory co-ordinate {} exceeded 0.5"), maxCoord);
   }
-  Log::Print<Log::Level::Debug>(FMT_STRING("{}D Trajectory size {},{},{}"), nDims(), nSamples(), nTraces(), nFrames());
+  Log::Print<Log::Level::Debug>(FMT_STRING("{}D Trajectory size {},{}"), nDims(), nSamples(), nTraces());
 }
 
 void Trajectory::write(HD5::Writer &writer) const
 {
   writer.writeInfo(info_);
   writer.writeTensor(points_, HD5::Keys::Trajectory);
-  if (frames_.size()) {
-    writer.writeTensor(frames_, HD5::Keys::Frames);
-  }
 }
 
 auto Trajectory::nDims() const -> Index { return points_.dimension(0); }
@@ -89,15 +45,6 @@ auto Trajectory::nDims() const -> Index { return points_.dimension(0); }
 auto Trajectory::nSamples() const -> Index { return points_.dimension(1); }
 
 auto Trajectory::nTraces() const -> Index { return points_.dimension(2); }
-
-auto Trajectory::nFrames() const -> Index
-{
-  if (frames_.size()) {
-    return Maximum(frames_) + 1;
-  } else {
-    return 1;
-  }
-}
 
 Info const &Trajectory::info() const { return info_; }
 
@@ -117,17 +64,6 @@ auto Trajectory::matrix(float const fov) const -> Sz3 {
 
 
 Re3 const &Trajectory::points() const { return points_; }
-
-Index Trajectory::frame(Index const i) const
-{
-  if (frames_.size()) {
-    return frames_(i);
-  } else {
-    return 0;
-  }
-}
-
-I1 const &Trajectory::frames() const { return frames_; }
 
 Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
 {
@@ -180,7 +116,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
     lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res traces"), lores) : "");
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{nDims(), dsSamples, nTraces()}));
   Log::Print(FMT_STRING("Downsampled trajectory dims {}"), dsPoints.dimensions());
-  return std::make_tuple(Trajectory(dsInfo, dsPoints, frames_), minSamp, dsSamples);
+  return std::make_tuple(Trajectory(dsInfo, dsPoints), minSamp, dsSamples);
 }
 
 auto Trajectory::downsample(Cx5 const &ks, float const res, Index const lores, bool const shrink) const

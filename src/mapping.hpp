@@ -36,11 +36,9 @@ struct Mapping
   float osamp;
   Sz2 noncartDims;
   Sz<Rank> cartDims, nomDims;
-  int8_t frames;
 
   std::vector<std::array<int16_t, Rank>> cart;
   std::vector<NoncartesianIndex> noncart;
-  std::vector<int8_t> frame;
   std::vector<Eigen::Array<float, Rank, 1>> offset;
   std::vector<Bucket> buckets;
   std::vector<int32_t> sortedIndices;

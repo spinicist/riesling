@@ -104,6 +104,7 @@ add_executable(riesling
     src/cmd/eig.cpp
     src/cmd/espirit.cpp
     src/cmd/filter.cpp
+    src/cmd/frames.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
     src/cmd/lookup.cpp

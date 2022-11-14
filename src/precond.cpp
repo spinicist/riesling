@@ -19,7 +19,7 @@ auto KSpaceSingle(Trajectory const &traj) -> Re2
   Info newInfo = info;
   std::transform(
     newInfo.matrix.begin(), newInfo.matrix.begin() + traj.nDims(), newInfo.matrix.begin(), [](Index const i) { return i * 2; });
-  Trajectory newTraj(newInfo, traj.points(), traj.frames());
+  Trajectory newTraj(newInfo, traj.points());
   float const osamp = 1.25;
   auto nufft = make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix());
   Cx4 W(nufft->outputDimensions());

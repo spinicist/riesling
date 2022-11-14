@@ -17,7 +17,7 @@ auto make_recon(
 {
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto sense = std::make_shared<SenseOp>(
-    SENSE::Choose(senseOpts, coreOpts, traj, reader), basis ? basis.value().dimension(1) : traj.nFrames());
+    SENSE::Choose(senseOpts, coreOpts, traj, reader), basis ? basis.value().dimension(1) : 1);
   auto const sdc = SDC::Choose(sdcOpts, traj, sense->nChannels(), coreOpts.ktype.Get(), coreOpts.osamp.Get());
   auto nufft = make_nufft(
     traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), sense->nChannels(), sense->mapDimensions(), basis, sdc, toeplitz);
