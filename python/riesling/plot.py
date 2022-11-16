@@ -3,16 +3,17 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
+import matplotlib.patheffects as effects
 from matplotlib.collections import LineCollection
 import contextlib
 import cmasher
 import colorcet
 import warnings
 
-rc = {'figsize': 4, 'interpolation': 'none'}
-
-def style():
-    plt.rcParams['font.size'] = 16
+rc = {'figsize': 4,
+      'interpolation': 'none',
+      'fontsize':12,
+      'effects':([effects.Stroke(linewidth=2, foreground='black'), effects.Normal()])}
 
 def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
            other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
@@ -61,7 +62,7 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
             ax = _get_axes(all_ax, ir, ic)
             im = _draw(ax, _orient(np.squeeze(data[sl, :, :]), rotates, fliplr), component, clim, cmap)
     fig.tight_layout(pad=0)
-    _add_colorbar(cbar, component, fig, all_ax, im, clim, title)
+    _add_colorbar(cbar, component, fig, im, clim, title, ax=all_ax)
     plt.close()
     return fig
 
@@ -94,7 +95,8 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     for ii in range(n):
         imi = _draw(ax[0, ii], _orient(np.squeeze(data[ii, :, :]), rotates, fliplr), component, clim, cmap)
         if titles is not None:
-            ax[0, ii].text(0.1, 0.9, titles[ii], color='white', transform=ax[0, ii].transAxes, ha='left')
+            ax[0, ii].text(0.1, 0.9, titles[ii], color='white', transform=ax[0, ii].transAxes, ha='left',
+                           fontsize=rc['fontsize'], path_effects=rc['effects'])
         if ii > 0:
             imd = _draw(ax[1, ii], _orient(np.squeeze(diffs[ii-1, :, :]), rotates, fliplr), diff_component, difflim, diffmap)
         else:
@@ -102,7 +104,55 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
             ax[1, ii].axis('off')
     fig.subplots_adjust(wspace=0, hspace=0)
     _add_colorbar(cbar, component, fig, ax[0, :], imi, clim, title)
-    _add_colorbar(cbar, diff_component, fig, ax[1, :], imd, difflim, 'Difference (%)')
+    _add_colorbar(cbar, diff_component, fig, ax[1, :], imd, difflim, 'Diff (%)')
+    plt.close()
+    return fig
+
+def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
+         other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
+         component='mag', clim=None, cmap=None, cbar=True,
+         diff_component='real', difflim=None, diffmap=None, diffbar=True,
+         rotates=0, fliplr=False, title=None):
+
+    if len(dsets) == 1:
+        dsets = dsets * len(fnames)
+    if titles is not None and len(titles) != len(fnames):
+        raise('Number of titles and files did not match')
+
+    slice_dim, img_dims = _get_dims(axis, img_offset)
+    with contextlib.ExitStack() as stack:
+        files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
+        dsets = [f[dset] for f, dset in zip(files, dsets)]
+        slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
+        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices) for D in dsets]
+        data = np.concatenate(data)
+
+    n = data.shape[-3]
+    diffs = []
+    for ii in range(1, n):
+        diffs.append([])
+        for jj in range(ii):
+            diffs[ii - 1].append(100 * (data[ii, :, :] - data[jj, :, :]) / data[jj, :, :])
+
+    clim, cmap = _get_colors(clim, cmap, data, component)
+    difflim, diffmap = _get_colors(difflim, diffmap, diffs[0][0], diff_component)
+    fig, ax = plt.subplots(n, n, figsize=(rc['figsize']*n, rc['figsize']*n), facecolor='black')
+    for ii in range(n):
+        imi = _draw(ax[ii, ii], _orient(np.squeeze(data[ii, :, :]), rotates, fliplr), component, clim, cmap)
+        if titles is not None:
+            ax[ii, ii].text(0.5, 0.9, titles[ii], color='white', transform=ax[ii, ii].transAxes, ha='center',
+                            fontsize=rc['fontsize'], path_effects=rc['effects'])
+        for jj in range(ii):
+            imd = _draw(ax[jj, ii], _orient(np.squeeze(diffs[ii - 1][jj]), rotates, fliplr), diff_component, difflim, diffmap)
+        for jj in range(ii, n):
+            ax[jj, ii].set_facecolor('black')
+            ax[jj, ii].axis('off')
+    fig.subplots_adjust(wspace=0, hspace=0)
+
+    if cbar:
+        _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, 0])
+    if diffbar:
+        _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
     plt.close()
     return fig
 
@@ -120,7 +170,7 @@ def noncart(fname, dset='noncartesian', channels=slice(0), read_slice=slice(None
     for ii in range(n):
         ax = _get_axes(all_ax, 0, ii)
         im = _draw(ax, np.squeeze(data[ii, :, :]).T, component, clim, cmap)
-        _add_colorbar(cbar, component, fig, ax, im, clim, title)
+        _add_colorbar(cbar, component, fig, im, clim, title, ax)
     plt.close()
     return fig
 
@@ -236,29 +286,32 @@ def _get_colors(clim, cmap, img, component):
             raise(f'Unknown component {component}')
     return (clim, cmap)
 
-def _add_colorbar(cbar, component, fig, ax, im, clim, title):
+def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None):
     if not cbar:
         return
     if component == 'x':
-        _add_colorball(_first(ax), clim)
+        _add_colorball(clim, ax=ax, cax=cax)
         if title is not None:
             fig.suptitle(title, color='white')
     else:
-        cb = fig.colorbar(im, location='right', ax=ax, aspect=50, pad=0.01, shrink=0.8)
+        if cax is None:
+            cax = _first(ax).inset_axes(bounds=(0.1, 0.1, 0.8, 0.05), facecolor='black')
+        cb = fig.colorbar(im, cax=cax, orientation='horizontal')
         axes = cb.ax
         ticks = (clim[0], np.sum(clim)/2, clim[1])
         tick_fmt='{:.4g}'
         labels = (tick_fmt.format(clim[0]), title, tick_fmt.format(clim[1]))
         cb.set_ticks(ticks)
-        cb.set_ticklabels(labels)
-        rot=90
-        cb.ax.get_yticklabels()[0].set_va('bottom')
-        cb.ax.get_yticklabels()[1].set_va('center')
-        cb.ax.get_yticklabels()[2].set_va('top')
-        cb.ax.tick_params(labelrotation=rot, color='w', labelcolor='w')
+        cb.set_ticklabels(labels, fontsize=rc['fontsize'], path_effects=rc['effects'])
+        cb.ax.tick_params(axis='x', bottom=False, top=False)
+        cb.ax.get_xticklabels()[0].set_ha('left')
+        cb.ax.get_xticklabels()[1].set_ha('center')
+        cb.ax.get_xticklabels()[2].set_ha('right')
+        cb.ax.tick_params(color='w', labelcolor='w')
 
-def _add_colorball(ax, clim, tick_fmt='{:.1g}', cmap='cet_colorwheel'):
-    cbarax = ax.inset_axes(bounds=(0.01, 0.05, 0.4, 0.4), projection='polar', facecolor='black')
+def _add_colorball(clim, ax=None, cax=None, tick_fmt='{:.1g}', cmap='cet_colorwheel'):
+    if cax is None:
+        cax = _first(ax).inset_axes(bounds=(0.01, 0.05, 0.4, 0.4), projection='polar', facecolor='black')
     theta, rad = np.meshgrid(np.linspace(-np.pi, np.pi, 64), np.linspace(0, 1, 64))
     ones = np.ones_like(theta)
     norm = colors.Normalize(vmin=-np.pi, vmax=np.pi)
@@ -267,18 +320,19 @@ def _add_colorball(ax, clim, tick_fmt='{:.1g}', cmap='cet_colorwheel'):
     for ii in range(len(colorized)):
         for ij in range(3):
             colorized[ii][ij] = colorized[ii][ij] * rad.ravel()[ii]
-    quads = cbarax.pcolormesh(theta, rad, ones, shading='nearest', color=colorized)
-    cbarax.grid(visible=True, linewidth=2, color='white')
-    cbarax.tick_params(axis='x', colors='white')
-    cbarax.tick_params(axis='y', colors='white')
-    cbarax.spines[:].set_color('white')
-    cbarax.spines[:].set_linewidth(2)
-    cbarax.spines[:].set_visible(True)
-    cbarax.set_xticks([0, np.pi/2])
-    cbarax.set_xticklabels([tick_fmt.format(clim[1]), tick_fmt.format(clim[1]) + 'i'])
-    cbarax.xaxis.set_tick_params(pad=10)
-    cbarax.set_yticks([0, 1])
-    cbarax.set_yticklabels([])
+    quads = cax.pcolormesh(theta, rad, ones, shading='nearest', color=colorized)
+    cax.grid(visible=True, linewidth=2, color='white')
+    cax.tick_params(axis='x', colors='white')
+    cax.tick_params(axis='y', colors='white')
+    cax.spines[:].set_color('white')
+    cax.spines[:].set_linewidth(2)
+    cax.spines[:].set_visible(True)
+    cax.set_xticks([0, np.pi/2])
+    cax.set_xticklabels([tick_fmt.format(clim[1]), tick_fmt.format(clim[1]) + 'i'],
+                        fontsize=rc['fontsize'], path_effects=rc['effects'])
+    cax.xaxis.set_tick_params(pad=10)
+    cax.set_yticks([0, 1])
+    cax.set_yticklabels([])
 
 def _first(maybe_iterable):
     if hasattr(maybe_iterable, "__len__"):
