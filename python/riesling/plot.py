@@ -323,21 +323,23 @@ def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None):
             fig.suptitle(title, color='white')
     else:
         if cax is None:
-            cax = _first(ax).inset_axes(bounds=(0.1, 0.1, 0.8, 0.05), facecolor='black')
+            ax = _first(ax)
+            sz = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted()).size
+            height = 1.4 * rc['fontsize'] / (sz[1] * 72) # 72 points per inch
+            cax = _first(ax).inset_axes(bounds=(0.1, 0.05, 0.8, height), facecolor='black')
         cb = fig.colorbar(im, cax=cax, orientation='horizontal')
         axes = cb.ax
         ticks = (clim[0], np.sum(clim)/2, clim[1])
-        tick_fmt='{:.4g}'
-        labels = (tick_fmt.format(clim[0]), title, tick_fmt.format(clim[1]))
+        labels = (f' {clim[0]:2.1f}', title, f'{clim[1]:2.1f} ')
         cb.set_ticks(ticks)
         cb.set_ticklabels(labels, fontsize=rc['fontsize'], path_effects=rc['effects'])
         cb.ax.tick_params(axis='x', bottom=False, top=False)
         cb.ax.get_xticklabels()[0].set_ha('left')
         cb.ax.get_xticklabels()[1].set_ha('center')
         cb.ax.get_xticklabels()[2].set_ha('right')
-        cb.ax.tick_params(color='w', labelcolor='w')
+        cb.ax.tick_params(color='w', labelcolor='w', pad=-1.3*rc['fontsize'])
 
-def _add_colorball(clim, ax=None, cax=None, tick_fmt='{:.1g}', cmap='cet_colorwheel'):
+def _add_colorball(clim, ax=None, cax=None, cmap='cet_colorwheel'):
     if cax is None:
         cax = _first(ax).inset_axes(bounds=(0.01, 0.05, 0.4, 0.4), projection='polar', facecolor='black')
     theta, rad = np.meshgrid(np.linspace(-np.pi, np.pi, 64), np.linspace(0, 1, 64))
@@ -356,9 +358,11 @@ def _add_colorball(clim, ax=None, cax=None, tick_fmt='{:.1g}', cmap='cet_colorwh
     cax.spines[:].set_linewidth(2)
     cax.spines[:].set_visible(True)
     cax.set_xticks([0, np.pi/2])
-    cax.set_xticklabels([tick_fmt.format(clim[1]), tick_fmt.format(clim[1]) + 'i'],
+    cax.set_xticklabels([f'{clim[1]:2.1f}', f'{clim[1]:2.1f}' + 'i'],
                         fontsize=rc['fontsize'], path_effects=rc['effects'])
-    cax.xaxis.set_tick_params(pad=10)
+    cax.get_xticklabels()[0].set_ha('right')
+    cax.get_xticklabels()[1].set_va('top')
+    cax.xaxis.set_tick_params(pad=-1.4*rc['fontsize'])
     cax.set_yticks([0, 1])
     cax.set_yticklabels([])
 
