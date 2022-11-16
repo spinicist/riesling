@@ -48,7 +48,6 @@ struct AugmentedADMM
   Inner &inner;
   Prox<Input> *reg;
   Index iterLimit;
-  float λ = 0.;  // Proximal operator parameter
   float ρ = 0.1; // Langrangian
   float abstol = 1.e-3f;
   float reltol = 1.e-3f;
@@ -70,7 +69,7 @@ struct AugmentedADMM
       x = inner.run(temp, x);
       xpu.device(dev) = x + u;
       zold = z;
-      z = (*reg)(λ / ρ, xpu);
+      z = (*reg)(1.f / ρ, xpu);
       u.device(dev) = xpu - z;
 
       float const pNorm = Norm(x - z);

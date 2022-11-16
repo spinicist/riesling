@@ -17,7 +17,6 @@ struct ADMM
   Inner &inner;
   std::shared_ptr<Prox<Input>> prox;
   Index iterLimit = 8;
-  float λ = 0.;   // Proximal operator parameter
   float α = 1.f;  // Over-relaxation
   float μ = 10.f; // Primal-dual mismatch limit
   float τ = 2.f;  // Primal-dual mismatch rescale
@@ -43,7 +42,7 @@ struct ADMM
       x = inner.run(b, ρ, x, (z - u));
       xpu.device(dev) = x * x.constant(α) + z * z.constant(1 - α) + u;
       zold = z;
-      z = (*prox)(λ / ρ, xpu);
+      z = (*prox)(1.f / ρ, xpu);
       u.device(dev) = xpu - z;
 
       float const pNorm = Norm(x - z);
