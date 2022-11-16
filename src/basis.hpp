@@ -13,6 +13,7 @@ struct Basis
     Eigen::ArrayXXf const &dynamics,
     float const thresh,
     Index const nB,
+    bool const demean,
     bool const varimax);
   void write(HD5::Writer &writer);
 

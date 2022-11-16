@@ -9,12 +9,13 @@ Basis::Basis(
   Eigen::ArrayXXf const &dyn,
   float const thresh,
   Index const nBasis,
+  bool const demean,
   bool const varimax)
   : parameters{par}
   , dynamics{dyn}
 {
   // Calculate SVD - observations are in cols
-  auto const svd = SVD<float>(dynamics.colwise() - dynamics.rowwise().mean(), true, true);
+  auto const svd = SVD<float>(demean ? dynamics.colwise() - dynamics.rowwise().mean() : dynamics, true, true);
   Eigen::ArrayXf const vals = svd.vals.square();
   Eigen::ArrayXf cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());

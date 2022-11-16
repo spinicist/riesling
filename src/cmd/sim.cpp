@@ -75,6 +75,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
   args::ValueFlag<float> thresh(parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
+  args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag varimax(parser, "V", "Apply varimax rotation", {"varimax"});
 
   ParseCommand(parser);
@@ -130,7 +131,7 @@ int main_sim(args::Subparser &parser)
     break;
   }
 
-  Basis basis(parameters, dynamics, thresh.Get(), nBasis.Get(), varimax.Get());
+  Basis basis(parameters, dynamics, thresh.Get(), nBasis.Get(), dmean.Get(), varimax.Get());
   HD5::Writer writer(oname.Get());
   basis.write(writer);
 
