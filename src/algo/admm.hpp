@@ -17,12 +17,13 @@ struct ADMM
   std::shared_ptr<Prox<Input>> prox;
   Index iterLimit = 8;
   float λ = 0.;  // Proximal operator parameter
-  float ρ = 0.1; // Langrangian
   float α = 1.f; // Over-relaxation
+  float μ = 10.f; // Primal-dual mismatch limit
+  float τ = 2.f;  // Primal-dual mismatch rescale
   float abstol = 1.e-3f;
   float reltol = 1.e-3f;
 
-  Input run(Eigen::TensorMap<Output const> b) const
+  Input run(Eigen::TensorMap<Output const> b, float ρ) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
@@ -33,10 +34,6 @@ struct ADMM
     x.setZero();
     z.setZero();
     u.setZero();
-
-    Log::Tensor(x, fmt::format("admm-x-{:02d}", 0));
-    Log::Tensor(z, fmt::format("admm-z-{:02d}", 0));
-    Log::Tensor(u, fmt::format("admm-u-{:02d}", 0));
 
     float const absThresh = abstol * Norm(x);
     Log::Print(FMT_STRING("ADMM ρ {} Abs Thresh {}"), ρ, absThresh);
@@ -57,9 +54,9 @@ struct ADMM
       float const pEps = absThresh + reltol * std::max(normx, normz);
       float const dEps = absThresh + reltol * ρ * normu;
 
-      Log::Tensor(x, fmt::format("admm-x-{:02d}", ii + 1));
-      Log::Tensor(z, fmt::format("admm-z-{:02d}", ii + 1));
-      Log::Tensor(u, fmt::format("admm-u-{:02d}", ii + 1));
+      Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
+      Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
+      Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
       Log::Print(
         FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |z| {} |u| {}"),
         ii,
@@ -73,11 +70,12 @@ struct ADMM
       if ((pNorm < pEps) && (dNorm < dEps)) {
         break;
       }
-      float const mu = 10.f;
-      if (pNorm > mu * dNorm) {
-        Log::Print(FMT_STRING("Primal norm is outside limit {}, consider increasing ρ"), mu * dNorm);
-      } else if (dNorm > mu * pNorm) {
-        Log::Print(FMT_STRING("Dual norm is outside limit {}, consider decreasing ρ"), mu * pNorm);
+      if (pNorm > μ * dNorm) {
+        ρ *= τ;
+        Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {}"), μ * dNorm, ρ);
+      } else if (dNorm > μ * pNorm) {
+        ρ /= τ;
+        Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to "), μ * pNorm, ρ);
       }
     }
     return x;

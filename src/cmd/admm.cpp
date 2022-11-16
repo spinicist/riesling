@@ -25,7 +25,7 @@ int main_admm(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
 
   args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
-  args::Flag use_lsmr(parser, "L", "Use LSMR instead of LSQR for inner loop", {"lsmr"});
+  args::Flag use_lsqr(parser, "L", "Use LSQR instead of LSMR for inner loop", {"lsqr"});
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 8);
@@ -36,8 +36,10 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (8)", {"max-outer-its"}, 8);
   args::ValueFlag<float> abstol(parser, "ABS", "ADMM absolute tolerance (1e-3)", {"abs-tol"}, 1.e-3f);
   args::ValueFlag<float> reltol(parser, "REL", "ADMM relative tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
-  args::ValueFlag<float> ρ(parser, "ρ", "ADMM Langrangian ρ (default 0.1)", {"rho"}, 0.1f);
+  args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 0.1)", {"rho"}, 0.1f);
   args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
+  args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
+  args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
 
@@ -78,19 +80,19 @@ int main_admm(args::Subparser &parser)
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(recon->adjoint(CChipMap(allData, iv))));
     }
-  } else if (use_lsmr) {
+  } else if (use_lsqr) {
     auto M = make_pre(pre.Get(), traj);
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
-    ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), λ.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
+    LSQR<ReconOp> lsqr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+    ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), λ.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv)));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else {
     auto M = make_pre(pre.Get(), traj);
-    LSQR<ReconOp> lsqr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
-    ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), λ.Get(), ρ.Get(), α.Get(), abstol.Get(), reltol.Get()};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+    ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), λ.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv)));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
