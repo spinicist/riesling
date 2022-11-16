@@ -15,6 +15,34 @@ rc = {'figsize': 4,
       'fontsize':12,
       'effects':([effects.Stroke(linewidth=2, foreground='black'), effects.Normal()])}
 
+def planes(fname, dset='image',
+           other_dims=[], other_indices=[], img_offset=-1,
+           component='mag', clim=None, cmap=None, cbar=True,
+           rotates=(0, 0, 0), fliplr=False, title=None):
+
+    dim_x, img_x = _get_dims('x', img_offset)
+    dim_y, img_y = _get_dims('y', img_offset)
+    dim_z, img_z = _get_dims('z', img_offset)
+    with h5py.File(fname, 'r') as f:
+        D = f[dset]
+        index_x = int(np.floor(D.shape[dim_x] * 0.5))
+        index_y = int(np.floor(D.shape[dim_y] * 0.5))
+        index_z = int(np.floor(D.shape[dim_z] * 0.5))
+        data_x = _get_slices(D, dim_x, [index_x], img_x, (slice(None), slice(None)), other_dims, other_indices)
+        data_y = _get_slices(D, dim_y, [index_y], img_y, (slice(None), slice(None)), other_dims, other_indices)
+        data_z = _get_slices(D, dim_z, [index_z], img_z, (slice(None), slice(None)), other_dims, other_indices)
+
+    clim, cmap = _get_colors(clim, cmap, data_x, component)
+    fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
+
+    im_x = _draw(ax[0], _orient(np.squeeze(data_x), rotates[0], fliplr), component, clim, cmap)
+    im_y = _draw(ax[1], _orient(np.squeeze(data_y), rotates[1], fliplr), component, clim, cmap)
+    im_z = _draw(ax[2], _orient(np.squeeze(data_z), rotates[2], fliplr), component, clim, cmap)
+    fig.tight_layout(pad=0)
+    _add_colorbar(cbar, component, fig, im_x, clim, title, ax=ax[1])
+    plt.close()
+    return fig
+
 def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
            other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
            component='mag', clim=None, cmap=None, cbar=True,
@@ -38,7 +66,7 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
             ax = _get_axes(all_ax, ir, ic)
             im = _draw(ax, _orient(np.squeeze(data[sl, :, :]), rotates, fliplr), component, clim, cmap)
     fig.tight_layout(pad=0)
-    _add_colorbar(cbar, component, fig, all_ax, im, clim, title)
+    _add_colorbar(cbar, component, fig, im, clim, title, ax=all_ax)
     plt.close()
     return fig
 
@@ -233,11 +261,11 @@ def _get_dims(axis, offset):
         slice_dim = offset - 3
         img_dims = [offset - 2, offset - 1]
     elif axis == 'y':
-        slice_dim = offset - 2
-        img_dims = [offset - 1, offset - 3]
-    elif axis == 'x':
         slice_dim = offset - 1
         img_dims = [offset - 3, offset - 2]
+    elif axis == 'x':
+        slice_dim = offset - 2
+        img_dims = [offset - 1, offset - 3]
     return slice_dim, img_dims
 
 def _orient(img, rotates, fliplr):
