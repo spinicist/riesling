@@ -23,7 +23,7 @@ int main_pdhg(args::Subparser &parser)
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<Index> its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
-  args::ValueFlag<float> τ(parser, "σ", "Dual step-size", {"tau"}, 1.f);
+  args::ValueFlag<float> τ(parser, "τ", "Dual step-size (0.5)", {"tau"}, 0.5f);
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);

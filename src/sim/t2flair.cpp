@@ -132,7 +132,7 @@ auto MultiFLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   A << cosa, 0.f, 0.f, 1.f;
 
   // Get steady state before first read-out
-  Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(settings.spg) * Eramp);
+  Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(settings.spg) * E1.pow(settings.spoil) * Eramp);
   Eigen::Matrix2f SS = (grp * Essi * E2).pow(settings.gps - 1) * grp;
   if (settings.inversion) {
     SS = Einv * SS;
@@ -146,6 +146,9 @@ auto MultiFLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   Eigen::Vector2f Mz{m_ss, 1.f};
   for (Index ig = 0; ig < settings.gps; ig++) {
     Mz = Eramp * Mz;
+    for (Index ii = 0; ii < settings.spoil; ii++) {
+      Mz = E1 * Mz;
+    }
     for (Index ii = 0; ii < settings.spg; ii++) {
       dynamic(tp++) = Mz(0) * sina;
       Mz = E1 * A * Mz;

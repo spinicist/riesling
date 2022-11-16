@@ -65,6 +65,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
   args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.f);
+  args::ValueFlag<Index> spoil(parser, "N", "Spoil periods", {"spoil"}, 0);
   args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.f);
   args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
@@ -85,6 +86,7 @@ int main_sim(args::Subparser &parser)
     .spg = spg.Get(),
     .gps = gps.Get(),
     .gprep2 = gprep2.Get(),
+    .spoil = spoil.Get(),
     .alpha = alpha.Get(),
     .ascale = ascale.Get(),
     .TR = TR.Get(),
