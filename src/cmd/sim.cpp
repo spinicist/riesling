@@ -131,7 +131,7 @@ int main_sim(args::Subparser &parser)
     break;
   }
 
-  Basis basis(parameters, dynamics, thresh.Get(), nBasis.Get(), dmean.Get(), varimax.Get());
+  Basis basis(parameters, dynamics, thresh.Get(), nBasis.Get(), demean.Get(), varimax.Get());
   HD5::Writer writer(oname.Get());
   basis.write(writer);
 
