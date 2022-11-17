@@ -13,19 +13,18 @@ int main_h5(args::Subparser &parser)
   HD5::Reader reader(iname.Get());
 
   if (info) {
-    Trajectory traj(reader);
+    auto const i = reader.readInfo();
     fmt::print(
-      FMT_STRING("Trajectory Samples: {} Traces: {}\n"
-                 "Matrix: {}\n"
-                 "Voxel-size: {}\t TR: {}\t Origin: {}\n"
+      FMT_STRING("Matrix:     {}\n"
+                 "Voxel-size: {}\n"
+                 "TR:         {}\n"
+                 "Origin: {}\n"
                  "Direction:\n{}\n"),
-      traj.nSamples(),
-      traj.nTraces(),
-      traj.info().matrix,
-      traj.info().voxel_size.transpose(),
-      traj.info().tr,
-      traj.info().origin.transpose(),
-      traj.info().direction);
+      i.matrix,
+      i.voxel_size.transpose(),
+      i.tr,
+      i.origin.transpose(),
+      i.direction);
   } else if (dsets) {
     auto const datasets = reader.list();
     if (datasets.empty()) {
@@ -34,26 +33,13 @@ int main_h5(args::Subparser &parser)
     for (auto const &ds : datasets) {
       fmt::print("{} ", ds);
       switch (reader.rank(ds)) {
-      case 1:
-        fmt::print("{}\n", reader.dimensions<1>(ds));
-        break;
-      case 2:
-        fmt::print("{}\n", reader.dimensions<2>(ds));
-        break;
-      case 3:
-        fmt::print("{}\n", reader.dimensions<3>(ds));
-        break;
-      case 4:
-        fmt::print("{}\n", reader.dimensions<4>(ds));
-        break;
-      case 5:
-        fmt::print("{}\n", reader.dimensions<5>(ds));
-        break;
-      case 6:
-        fmt::print("{}\n", reader.dimensions<6>(ds));
-        break;
-      default:
-        fmt::print("rank is higher than 6\n");
+      case 1: fmt::print("{}\n", reader.dimensions<1>(ds)); break;
+      case 2: fmt::print("{}\n", reader.dimensions<2>(ds)); break;
+      case 3: fmt::print("{}\n", reader.dimensions<3>(ds)); break;
+      case 4: fmt::print("{}\n", reader.dimensions<4>(ds)); break;
+      case 5: fmt::print("{}\n", reader.dimensions<5>(ds)); break;
+      case 6: fmt::print("{}\n", reader.dimensions<6>(ds)); break;
+      default: fmt::print("rank is higher than 6\n");
       }
     }
   }
