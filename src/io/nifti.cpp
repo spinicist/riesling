@@ -61,10 +61,10 @@ void WriteNifti(rl::Info const &info, Eigen::Tensor<T, ND> const &img, std::stri
   ptr->qform_code = NIFTI_XFORM_SCANNER_ANAT;
   ptr->sform_code = NIFTI_XFORM_SCANNER_ANAT;
 
-  ptr->pixdim[1] = info.voxel_size[0];
-  ptr->pixdim[2] = info.voxel_size[1];
-  ptr->pixdim[3] = info.voxel_size[2];
-  ptr->pixdim[4] = info.tr;
+  ptr->pixdim[1] = ptr->dx = info.voxel_size[0];
+  ptr->pixdim[2] = ptr->dy = info.voxel_size[1];
+  ptr->pixdim[3] = ptr->dz = info.voxel_size[2];
+  ptr->pixdim[4] = ptr->dt = info.tr;
 
   mat44 matrix = nifti_make_orthog_mat44(
     info.direction(0, 0),
@@ -97,13 +97,14 @@ void WriteNifti(rl::Info const &info, Eigen::Tensor<T, ND> const &img, std::stri
   ptr->sto_xyz = matrix;
   for (auto ii = 0; ii < 3; ii++) {
     for (auto jj = 0; jj < 3; jj++) {
-      ptr->sto_xyz.m[ii][jj] = info.voxel_size(0) * ptr->sto_xyz.m[ii][jj];
+      ptr->sto_xyz.m[ii][jj] = info.voxel_size(ii) * ptr->sto_xyz.m[ii][jj];
     }
   }
   ptr->qto_ijk = nifti_mat44_inverse(ptr->qto_xyz);
   ptr->sto_ijk = nifti_mat44_inverse(ptr->sto_xyz);
   ptr->pixdim[0] = ptr->qfac;
-
+  ptr->qform_code = NIFTI_XFORM_SCANNER_ANAT;
+  ptr->sform_code = NIFTI_XFORM_SCANNER_ANAT;
   ptr->data = const_cast<T *>(img.data()); // To avoid copying the buffer
   Log::Print(FMT_STRING("Writing file: {}"), fname);
   nifti_image_write(ptr);
