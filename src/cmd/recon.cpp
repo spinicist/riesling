@@ -30,7 +30,6 @@ int main_recon(args::Subparser &parser)
   } else {
     traj = Trajectory(reader);
   }
-  Info const &info = traj.info();
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   Index volumes = fwd ? reader.dimensions<5>(HD5::Keys::Image)[4] : reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
@@ -43,7 +42,7 @@ int main_recon(args::Subparser &parser)
     Cx4 senseMaps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
     auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, senseReader);
     Sz4 const sz = recon->inputDimensions();
-    Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, senseOpts.fov.Get());
+    Sz4 const osz = AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]);
 
     auto const &all_start = Log::Now();
     auto const images = reader.readTensor<Cx5>(HD5::Keys::Image);
@@ -51,7 +50,7 @@ int main_recon(args::Subparser &parser)
     Cx5 kspace(AddBack(recon->outputDimensions(), volumes));
     for (Index iv = 0; iv < volumes; iv++) {
       padded.setZero();
-      out_cropper.crop4(padded) = images.chip<4>(iv);
+      Crop(padded, osz) = images.chip<4>(iv);
       kspace.chip<4>(iv) = recon->forward(padded);
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
@@ -62,16 +61,14 @@ int main_recon(args::Subparser &parser)
   } else {
     auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
     Sz4 const sz = recon->inputDimensions();
-    Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
-    Sz3 const outSz = out_cropper.size();
+    Sz4 const osz = AMin(AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]), sz);
     Cx4 vol(sz);
-    Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
-    Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
+    Cx5 out(AddBack(osz, volumes));
+    out.setZero();
     auto const &all_start = Log::Now();
     for (Index iv = 0; iv < volumes; iv++) {
       vol = recon->adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
-      cropped = out_cropper.crop4(vol);
-      out.chip<4>(iv) = cropped;
+      out.chip<4>(iv) = Crop(vol, osz);
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
     WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);

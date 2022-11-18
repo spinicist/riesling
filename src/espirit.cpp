@@ -113,7 +113,7 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outSz, Index const kRad, Index const calR
     for (Index kk = 0; kk < mix_kernels.dimension(4); kk++) {
       Cx3 const mix_kernel = mix_kernels.chip<4>(kk).chip<3>(zz);
       hi_slice.setZero();
-      CropLast2(hi_slice, mix_kernel.dimensions()) = mix_kernel;
+      Crop(hi_slice, mix_kernel.dimensions()) = mix_kernel;
       hiFFT->reverse(hi_slice);
       hi_kernels.chip<3>(kk) = hi_slice;
     }

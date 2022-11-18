@@ -8,10 +8,13 @@ namespace rl {
 template <size_t NDim>
 NUFFTOp<NDim>::NUFFTOp(
   std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<Functor<Cx3>> sdc, bool toeplitz)
-  : Parent("NUFFTOp", Concatenate(FirstN<2>(gridder->inputDimensions()), matrix), gridder->outputDimensions())
+  : Parent(
+      "NUFFTOp",
+      Concatenate(FirstN<2>(gridder->inputDimensions()), AMin(matrix, LastN<NDim>(gridder->inputDimensions()))),
+      gridder->outputDimensions())
   , gridder_{gridder}
   , fft_{gridder_->input()}
-  , pad_{matrix, gridder_->input()}
+  , pad_{AMin(matrix, LastN<NDim>(gridder->inputDimensions())), gridder_->input()}
   , apo_{pad_.inputDimensions(), gridder_.get()}
   , sdc_{sdc}
 {

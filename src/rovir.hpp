@@ -13,7 +13,7 @@ struct ROVIROpts
   args::ValueFlag<float> fov;
   args::ValueFlag<float> loThresh;
   args::ValueFlag<float> hiThresh;
-  args::ValueFlag<float> gap;
+  args::ValueFlag<Index> gap;
 };
 
 auto ROVIR(

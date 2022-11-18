@@ -70,7 +70,7 @@ int main_compress(args::Subparser &parser)
     all_ks.chip<4>(iv) = compressor.compress(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
   }
 
-  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "compressed"));
+  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name()));
   Trajectory(reader).write(writer);
   writer.writeTensor(all_ks, HD5::Keys::Noncartesian);
 

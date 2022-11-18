@@ -61,26 +61,6 @@ NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   return channels;
 }
 
-Cx4 Interp(std::string const &file, Sz3 const size2)
-{
-  HD5::Reader senseReader(file);
-  Cx4 disk_sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
-  Log::Print(FMT_STRING("Interpolating SENSE maps to dimensions {}"), size2);
-  auto const fft1 = FFT::Make<4, 3>(disk_sense.dimensions());
-  fft1->forward(disk_sense);
-  Sz3 size1{disk_sense.dimension(1), disk_sense.dimension(2), disk_sense.dimension(3)};
-  Cx4 sense(disk_sense.dimension(0), size2[0], size2[1], size2[2]);
-  auto const fft2 = FFT::Make<4, 3>(sense.dimensions());
-  sense.setZero();
-  if (size1[0] < size2[0]) {
-    Crop4(sense, size1) = disk_sense;
-  } else {
-    sense = Crop4(disk_sense, size2);
-  }
-  fft2->reverse(sense);
-  return sense;
-}
-
 Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, HD5::Reader &reader)
 {
   if (opts.file) {

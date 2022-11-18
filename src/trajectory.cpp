@@ -55,7 +55,7 @@ auto Trajectory::matrix(float const fov) const -> Sz3 {
     for (Index ii = 0; ii < 3; ii++) {
       matrix[ii] = bigMatrix[ii];
     }
-    Log::Print<Log::Level::Debug>(FMT_STRING("Requested FOV {} from matrix {}, calculated {}"), fov, info_.matrix, matrix);
+    Log::Print<Log::Level::High>(FMT_STRING("Requested FOV {} from matrix {}, calculated {}"), fov, info_.matrix, matrix);
     return matrix;
   } else {
     return info_.matrix;

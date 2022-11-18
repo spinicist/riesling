@@ -5,48 +5,14 @@
 
 namespace rl {
 
-/** Crop functions
- */
-template <typename T>
-decltype(auto) CropLast2(T &&x, Sz3 const &sz)
+template <typename T, int ND>
+decltype(auto) Crop(Eigen::Tensor<T, ND> &x, Sz<ND> const &sz)
 {
-  Sz3 const fullSz = x.dimensions();
-  Sz3 const st = Sz3{0, (fullSz[1] - (sz[1] - 1)) / 2, (fullSz[2] - (sz[2] - 1)) / 2};
-  return x.slice(st, sz);
-}
-
-template <typename T>
-decltype(auto) Crop3(T &&x, Sz3 const &sz)
-{
-  Sz3 const fullSz = x.dimensions();
-  Sz3 const st = Sz3{(fullSz[0] - (sz[0] - 1)) / 2, (fullSz[1] - (sz[1] - 1)) / 2, (fullSz[2] - (sz[2] - 1)) / 2};
-  return x.slice(st, Sz3{sz[0], sz[1], sz[2]});
-}
-
-template <typename T>
-decltype(auto) Crop4(T &&x, Sz3 const &sz)
-{
-  Sz4 const fullSz = x.dimensions();
-  Eigen::IndexList<Eigen::type2index<0>, int, int, int> st;
-  st.set(1, (fullSz[1] - (sz[0] - 1)) / 2);
-  st.set(2, (fullSz[2] - (sz[1] - 1)) / 2);
-  st.set(3, (fullSz[3] - (sz[2] - 1)) / 2);
-  return x.slice(st, Sz4{x.dimension(0), sz[0], sz[1], sz[2]});
-}
-
-template <typename T>
-decltype(auto) CropLast3(T &&x, Sz3 const &crop)
-{
-  auto xsz = x.dimensions();
-  decltype(xsz) st, sz;
-
-  Index const N = x.NumDimensions;
-  std::copy_n(xsz.begin(), N - 3, sz.begin());
-  std::copy_n(crop.begin(), 3, sz.end() - 3);
-
-  std::fill_n(st.begin(), N - 3, 0);
-  std::transform(
-    xsz.end() - 3, xsz.end(), crop.begin(), st.end() - 3, [](Index big, Index small) { return (big - small + 1) / 2; });
+  Sz<ND> const fullSz = x.dimensions();
+  Sz<ND> st;
+  for (Index ii = 0; ii < ND; ii++) {
+    st[ii] = (fullSz[ii] - (sz[ii] - 1)) / 2;
+  }
   return x.slice(st, sz);
 }
 

@@ -19,7 +19,6 @@ struct Opts
 
 //! Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
 Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Reader &reader);
-Cx4 Interp(std::string const &calFile, Sz3 const dims); //! Interpolate with FFT
 
 //! Convenience function called from recon commands to get SENSE maps
 Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &t, HD5::Reader &reader);

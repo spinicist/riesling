@@ -85,7 +85,8 @@ auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) c
   Index const w = std::floor(grid.dimension(2) / sqrt(3));
   Log::Print(FMT_STRING("Extract width {}"), w);
 
-  Cx5 cropped = CropLast3(grid, Sz3{w, w, w});
+  Sz5 const cropSz{grid.dimension(0), grid.dimension(1), w, w, w};
+  Cx5 cropped = Crop(grid, cropSz);
   Cx6 kernels = ToKernels(cropped, kSz);
   Log::Tensor(grid, "zin-slr-b4-grid");
   Log::Tensor(cropped, "zin-slr-b4-cropped");
@@ -102,7 +103,7 @@ auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) c
   lrVals.tail(nZero).setZero();
   kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, cropped);
-  CropLast3(grid, Sz3{w, w, w}) = cropped;
+  Crop(grid, cropSz) = cropped;
   Log::Tensor(cropped, "zin-slr-after-cropped");
   Log::Tensor(grid, "zin-slr-after-grid");
   Log::Tensor(kernels, "zin-slr-after-kernels");

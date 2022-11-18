@@ -88,7 +88,11 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
         for ic in range(cols):
             sl = (ir * cols) + ic
             ax = _get_axes(all_ax, ir, ic)
-            im = _draw(ax, _orient(np.squeeze(data[sl, :, :]), rotates, fliplr), component, clim, cmap)
+            if sl < n:
+                im = _draw(ax, _orient(np.squeeze(data[sl, :, :]), rotates, fliplr), component, clim, cmap)
+            else:
+                ax.axis('off')
+
     fig.tight_layout(pad=0)
     _add_colorbar(cbar, component, fig, im, clim, title, ax=all_ax)
     plt.close()
@@ -223,8 +227,8 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
     return fig
 
 def _get_slices(dset, slice_dim, slices, img_dims, img_slices, other_dims, other_indices):
-    if dset.ndim < 4:
-        raise Exception('Requires at least a 4D image')
+    if dset.ndim < 3:
+        raise Exception('Requires at least a 3D image')
 
     if len(other_indices) > (dset.ndim - 3):
         raise Exception('Too many other_indices')

@@ -19,22 +19,19 @@ int main_nufft(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj;
-  if (trajFile) {
-    if (!fwd) {
-      Log::Fail("Specifying a trajectory file in the adjoint direction is not supported");
-    }
-    HD5::Reader trajReader(trajFile.Get());
-    traj = Trajectory(trajReader);
-  } else {
-    traj = Trajectory(reader);
-  }
+
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "nufft", "h5"));
-  traj.write(writer);
 
   auto const start = Log::Now();
   if (fwd) {
+    Trajectory traj;
+    if (trajFile) {
+      HD5::Reader trajReader(trajFile.Get());
+      traj = Trajectory(trajReader);
+    } else {
+      traj = Trajectory(reader);
+    }
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto channels = reader.readTensor<Cx6>(name);
     auto nufft = make_nufft(
@@ -51,8 +48,10 @@ int main_nufft(args::Subparser &parser)
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
     }
     writer.writeTensor(noncart, HD5::Keys::Noncartesian);
+    traj.write(writer);
     Log::Print(FMT_STRING("Forward NUFFT took {}"), Log::ToNow(start));
   } else {
+    Trajectory traj(reader);
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
     auto noncart = reader.readTensor<Cx5>(name);
     auto const channels = noncart.dimension(0);

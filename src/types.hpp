@@ -139,4 +139,13 @@ Index Product(T const &indices)
   return std::accumulate(indices.cbegin(), indices.cend(), 1, std::multiplies<Index>());
 }
 
+template <typename T>
+T AMin(T const &a, T const &b) {
+  T m;
+  for (Index ii = 0; ii < a.size(); ii++) {
+    m[ii] = std::min(a[ii], b[ii]);
+  }
+  return m;
+}
+
 } // namespace rl
