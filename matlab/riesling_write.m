@@ -1,10 +1,10 @@
-function [] = riesling_write(fname, data, traj, info,varargin)
+function [] = riesling_write(fname, data, traj, info, varargin)
 % WRITE_RIESLING writes radial k-space data to riesling .h5 format
 %
 % Input:
 %   - fname: output filename
-%   - data: Complex kspace data [nrcv, npoints, ntraces, nvol]
-%   - traj: Trajectory [3, npoints, ntraces]
+%   - data: Complex kspace data [nchannels, nsamples, ntraces, nslab, nvol]
+%   - traj: Trajectory [3, nsamples, ntraces]
 %   - info: Info struct
 %
 % Inspired by: https://stackoverflow.com/questions/46203309/write-complex-numbers-in-an-hdf5-dataset-with-matlab
