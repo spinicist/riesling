@@ -88,7 +88,7 @@ std::shared_ptr<Operator<Cx, 5, 4>> make_nufft(
   if (traj.nDims() == 2) {
     Log::Print<Log::Level::Debug>("Creating 2D Multi-slice NUFFT");
     auto grid = make_grid<Cx, 2>(traj, ktype, osamp * (toeplitz ? 2.f : 1.f), nC, basis);
-    NUFFTOp<2> nufft2(grid, FirstN<2>(matrix), sdc, toeplitz);
+    auto nufft2 = std::make_shared<NUFFTOp<2>>(grid, FirstN<2>(matrix), sdc, toeplitz);
     return std::make_shared<LoopOp<NUFFTOp<2>>>(nufft2, traj.info().matrix[2]);
   } else {
     Log::Print<Log::Level::Debug>("Creating full 3D NUFFT");
