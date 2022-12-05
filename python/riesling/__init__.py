@@ -4,4 +4,4 @@ The riesling package. Everything important is in a submodule, but re-imported
 here for ease of use
 """
 
-from . import plot
+from . import plot, data

@@ -119,7 +119,8 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
         data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices) for D in dsets]
         data = np.concatenate(data)
-    diffs = np.diff(data, n=1, axis=0) / data[:-1, :, :]
+    ref = np.max(np.abs(data[:-1, :, :]))
+    diffs = np.diff(data, n=1, axis=0) * 100 / ref
     n = data.shape[-3]
     clim, cmap = _get_colors(clim, cmap, data, component)
     difflim, diffmap = _get_colors(difflim, diffmap, diffs, diff_component)
@@ -161,10 +162,11 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
 
     n = data.shape[-3]
     diffs = []
+    ref = np.max(np.abs(data[0, :, :]))
     for ii in range(1, n):
         diffs.append([])
         for jj in range(ii):
-            diffs[ii - 1].append(100 * (data[ii, :, :] - data[jj, :, :]) / data[jj, :, :])
+            diffs[ii - 1].append((data[ii, :, :] - data[jj, :, :]) * 100 / ref)
 
     clim, cmap = _get_colors(clim, cmap, data, component)
     difflim, diffmap = _get_colors(difflim, diffmap, diffs[0][0], diff_component)
@@ -226,7 +228,7 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
         plt.close()
     return fig
 
-def _get_slices(dset, slice_dim, slices, img_dims, img_slices, other_dims, other_indices):
+def _get_slices(dset, slice_dim, slices, img_dims, img_slices=(slice(None),slice(None)), other_dims=[], other_indices=[]):
     if dset.ndim < 3:
         raise Exception('Requires at least a 3D image')
 
@@ -272,7 +274,7 @@ def _get_dims(axis, offset):
         img_dims = [offset - 1, offset - 3]
     return slice_dim, img_dims
 
-def _orient(img, rotates, fliplr):
+def _orient(img, rotates, fliplr=False):
     if rotates > 0:
         img = np.rot90(img, rotates)
     if fliplr:

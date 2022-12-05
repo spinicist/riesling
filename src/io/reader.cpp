@@ -123,7 +123,7 @@ void load_tensor_slab(
 
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
-    Log::Fail(FMT_STRING("Tensor {}: Error reading slab {}. HD5 Message: {}"), name, index, HD5::GetError());
+    Log::Fail(FMT_STRING("Tensor {}: Error reading slab {}. HD5 Message: {}"), name, index, GetError());
   } else {
     Log::Print<Log::Level::High>(FMT_STRING("Read slab {} from tensor {}"), index, name);
   }
@@ -205,7 +205,7 @@ Reader::~Reader()
 
 auto Reader::list() const -> std::vector<std::string>
 {
-  return HD5::List(handle_);
+  return List(handle_);
 }
 
 auto Reader::rank(std::string const &label) const -> Index
@@ -229,7 +229,7 @@ template auto Reader::dimensions<6>(std::string const &) const -> Eigen::DSizes<
 template <typename T>
 auto Reader::readTensor(std::string const &label) const -> T
 {
-  return HD5::load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
+  return load_tensor<typename T::Scalar, T::NumDimensions>(handle_, label);
 }
 
 template auto Reader::readTensor<I1>(std::string const &) const -> I1;
@@ -246,7 +246,7 @@ auto Reader::readSlab(std::string const &label, Index const ind) const -> T
 {
   constexpr Index ND = T::NumDimensions;
   T result(FirstN<ND>(dimensions<ND + 1>(label)));
-  HD5::load_tensor_slab(handle_, label, ind, result);
+  load_tensor_slab(handle_, label, ind, result);
   return result;
 }
 
@@ -256,7 +256,7 @@ template auto Reader::readSlab<Cx4>(std::string const &, Index const) const -> C
 template <typename Derived>
 auto Reader::readMatrix(std::string const &label) const -> Derived
 {
-  return HD5::load_matrix<Derived>(handle_, label);
+  return load_matrix<Derived>(handle_, label);
 }
 
 template auto Reader::readMatrix<Eigen::MatrixXf>(std::string const &) const -> Eigen::MatrixXf;
@@ -273,17 +273,14 @@ auto Reader::readInfo() const -> Info
   CheckInfoType(dset);
   hid_t const space = H5Dget_space(dset);
   Info info;
-  herr_t status = H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info);
-  status = H5Dclose(dset);
-  if (status != 0) {
-    Log::Fail(FMT_STRING("Could not load info struct, code: {}"), status);
-  }
+  CheckedCall(H5Dread(dset, info_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &info), "Could not read info struct");
+  CheckedCall(H5Dclose(dset), "Could not close info dataset");
   return info;
 }
 
 auto Reader::exists(std::string const &label) const -> bool
 {
-  return HD5::Exists(handle_, label);
+  return Exists(handle_, label);
 }
 
 auto Reader::readMeta() const -> std::map<std::string, float>
@@ -293,7 +290,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
     Log::Print<Log::Level::High>(FMT_STRING("No meta-data found in file handle {}"), handle_);
     return {};
   }
-  auto const names = HD5::List(meta_group);
+  auto const names = List(meta_group);
   std::map<std::string, float> meta;
   herr_t status = 0;
   for (auto const &name : names) {

@@ -58,12 +58,12 @@ hid_t InfoType()
   hsize_t sz3[1] = {3};
   hid_t long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
   hid_t float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
-  hsize_t sz9[1] = {9};
-  hid_t float9_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz9);
+  hsize_t sz33[2] = {3,3};
+  hid_t float33_id = H5Tarray_create(H5T_NATIVE_FLOAT, 2, sz33);
   CheckedCall(H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id), "inserting matrix field");
   CheckedCall(H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id), "inserting voxel size field");
   CheckedCall(H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id), "inserting oring field");
-  CheckedCall(H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float9_id), "inserting direction field");
+  CheckedCall(H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float33_id), "inserting direction field");
   CheckedCall(H5Tinsert(info_id, "tr", HOFFSET(Info, tr), H5T_NATIVE_FLOAT), "inserting tr field");
   return info_id;
 }

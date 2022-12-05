@@ -28,6 +28,7 @@ void Init();
 Handle InfoType();
 void CheckInfoType(Handle h);
 bool Exists(Handle const h, std::string const name);
+void CheckedCall(int status, std::string const &msg);
 std::string GetError();
 std::vector<std::string> List(Handle h);
 
