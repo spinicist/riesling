@@ -68,7 +68,8 @@ struct ConjugateGradients
     p.device(dev) = r;
     float r_old = Norm2(r);
     float const thresh = resTol * sqrt(r_old);
-    Log::Print(FMT_STRING("CG    |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
+    Log::Print(FMT_STRING("CG |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
+    Log::Print(FMT_STRING("IT |r|       α         β         |x|"));
     for (Index icg = 0; icg < iterLimit; icg++) {
       q = op->forward(p);
       float const alpha = r_old / CheckedDot(p, q);
@@ -82,7 +83,7 @@ struct ConjugateGradients
       float const beta = r_new / r_old;
       p.device(dev) = r + p * p.constant(beta);
       float const nr = sqrt(r_new);
-      Log::Print(FMT_STRING("CG {:02d} |r| {:5.3E} ɑ {:5.3E} β {:5.3E} |x| {:5.3E}"), icg, nr, alpha, beta, Norm(x));
+      Log::Print(FMT_STRING("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E}"), icg, nr, alpha, beta, Norm(x));
       if (nr < thresh) {
         Log::Print(FMT_STRING("Reached convergence threshold"));
         break;

@@ -174,7 +174,7 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     for ii in range(n):
         imi = _draw(ax[ii, ii], _orient(np.squeeze(data[ii, :, :]), rotates, fliplr), component, clim, cmap)
         if titles is not None:
-            ax[ii, ii].text(0.5, 0.9, titles[ii], color='white', transform=ax[ii, ii].transAxes, ha='center',
+            ax[ii, ii].text(0.5, 0.05, titles[ii], color='white', transform=ax[ii, ii].transAxes, ha='center',
                             fontsize=rc['fontsize'], path_effects=rc['effects'])
         for jj in range(ii):
             imd = _draw(ax[jj, ii], _orient(np.squeeze(diffs[ii - 1][jj]), rotates, fliplr), diff_component, difflim, diffmap)
@@ -320,7 +320,7 @@ def _get_colors(clim, cmap, img, component):
             raise(f'Unknown component {component}')
     return (clim, cmap)
 
-def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None):
+def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos='bottom'):
     if not cbar:
         return
     if component == 'x':
@@ -332,7 +332,11 @@ def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None):
             ax = _first(ax)
             sz = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted()).size
             height = 1.4 * rc['fontsize'] / (sz[1] * 72) # 72 points per inch
-            cax = _first(ax).inset_axes(bounds=(0.1, 0.05, 0.8, height), facecolor='black')
+            if vpos == 'bottom':
+                vpos = 0.05
+            elif vpos == 'top':
+                vpos = 0.095 - height
+            cax = _first(ax).inset_axes(bounds=(0.1, vpos, 0.8, height), facecolor='black')
         cb = fig.colorbar(im, cax=cax, orientation='horizontal')
         axes = cb.ax
         ticks = (clim[0], np.sum(clim)/2, clim[1])

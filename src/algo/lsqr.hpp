@@ -55,8 +55,8 @@ struct LSQR
       Log::Tensor(v, "lsqr-v-init");
     }
 
-    Log::Print(FMT_STRING("LSQR    α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
-
+    Log::Print(FMT_STRING("LSQR α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
+    Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     for (Index ii = 0; ii < iterLimit; ii++) {
       Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
 
@@ -104,8 +104,7 @@ struct LSQR
       float const normAr = α * std::abs(τ);
 
       Log::Print(
-        FMT_STRING("LSQR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |A'r| {:5.3E} |A| {:5.3E} cond(A) "
-                   "{:5.3E} |x| {:5.3E}"),
+        FMT_STRING("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}"),
         ii,
         α,
         β,

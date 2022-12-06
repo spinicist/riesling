@@ -1,12 +1,12 @@
 #pragma once
 
+#include "bidiag.hpp"
 #include "common.hpp"
 #include "func/functor.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
-#include "bidiag.hpp"
 
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
@@ -71,8 +71,8 @@ struct LSMR
       Log::Tensor(x, "lsmr-x-init");
     }
 
-    Log::Print(FMT_STRING("LSMR    α {:5.3E} β {:5.3E} λ {}"), α, β, λ);
-
+    Log::Print(FMT_STRING("LSMR α {:5.3E} β {:5.3E} λ {}"), α, β, λ);
+    Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     for (Index ii = 0; ii < iterLimit; ii++) {
       Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
 
@@ -132,17 +132,16 @@ struct LSMR
       float const condA = std::max(maxρ̅, ρtemp) / std::min(minρ̅, ρtemp);
 
       // Convergence tests - go in pairs which check large/small values then the user tolerance
-      float const normar = abs(ζ̅);
+      float const normAr = abs(ζ̅);
       float const normx = Norm(x);
 
       Log::Print(
-        FMT_STRING("LSMR {:02d} α {:5.3E} β {:5.3E} |r| {:5.3E} |A'r| {:5.3E} |A| {:5.3E} cond(A) "
-                   "{:5.3E} |x| {:5.3E}"),
+        FMT_STRING("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}"),
         ii,
         α,
         β,
         normr,
-        normar,
+        normAr,
         normA,
         condA,
         normx);
@@ -161,12 +160,12 @@ struct LSMR
         break;
       }
 
-      if (1.f + (normar / (normA * normr)) <= 1.f) {
+      if (1.f + (normAr / (normA * normr)) <= 1.f) {
         Log::Print(FMT_STRING("Least-squares solution reached machine precision"));
         break;
       }
-      if ((normar / (normA * normr)) <= aTol) {
-        Log::Print(FMT_STRING("Least-squares = {:5.3E} < aTol = {:5.3E}"), normar / (normA * normr), aTol);
+      if ((normAr / (normA * normr)) <= aTol) {
+        Log::Print(FMT_STRING("Least-squares = {:5.3E} < aTol = {:5.3E}"), normAr / (normA * normr), aTol);
         break;
       }
 
