@@ -33,7 +33,9 @@ Level CurrentLevel()
 void SetLevel(Level const l)
 {
   log_level = l;
-  if (isatty(fileno(stdin))) {
+  if (char *const env_p = std::getenv("RL_NOT_TTY")) {
+    isTTY = false;
+  } else if (isatty(fileno(stdin))) {
     isTTY = true;
   } else {
     isTTY = false;
