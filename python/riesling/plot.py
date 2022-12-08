@@ -428,9 +428,9 @@ def _draw_x(ax, img, clim, cmap='cet_colorwheel'):
 
 def basis(path, sl_spoke=slice(None), b=slice(None)):
     with h5py.File(path, 'r') as f:
-        basis = f['basis'][b,sl_spoke]
+        basis = f['basis'][sl_spoke,b]
         fig, ax = plt.subplots(figsize=(16, 6))
-        ax.plot(basis.T)
+        ax.plot(basis)
         ax.legend([str(x) for x in range(basis.shape[1])])
         plt.close()
         return fig

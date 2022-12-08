@@ -62,7 +62,7 @@ Basis::Basis(
 
 void Basis::write(HD5::Writer &writer)
 {
-  writer.writeMatrix(basis, HD5::Keys::Basis);
+  writer.writeMatrix(Eigen::MatrixXf(basis.transpose()), HD5::Keys::Basis);
   writer.writeMatrix(dict, HD5::Keys::Dictionary);
   writer.writeMatrix(parameters, HD5::Keys::Parameters);
   writer.writeMatrix(norm, HD5::Keys::Norm);

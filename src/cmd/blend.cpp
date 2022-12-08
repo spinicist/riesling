@@ -31,7 +31,8 @@ int main_blend(args::Subparser &parser)
   args::ValueFlag<std::string> oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(
     parser, "TP", "Timepoints within basis for combination", {"tp", 't'}, {0});
-  args::ValueFlag<Index> keep(parser, "K", "Keep only N basis vectors", {"keep", 'k'}, 0);
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> keep(parser, "K", "Keep these basis vectors", {"keep", 'k'});
+  args::ValueFlag<Index> cycle(parser, "C", "Cycle length", {"cycle"}, -1);
 
   ParseCommand(parser);
 
@@ -41,38 +42,43 @@ int main_blend(args::Subparser &parser)
   HD5::Reader input(iname.Get());
   Cx5 images = input.readTensor<Cx5>(HD5::Keys::Image);
   Sz5 const dims = images.dimensions();
-  if (keep) {
-    if (keep.Get() < 1 || keep.Get() > dims[0]) {
-      Log::Fail(FMT_STRING("Requested to keep {} basis vectors but only {} in file"), keep.Get(), dims[0]);
-    }
-    Log::Print(FMT_STRING("Keeping {} basis vectors"), keep.Get());
-    for (Index ik = keep.Get(); ik < dims[0]; ik++) {
-      images.chip(ik, 0).device(Threads::GlobalDevice()) = images.chip(ik, 0).constant(0.f);
-    }
-  }
 
   if (!iname) {
     throw args::Error("No basis file specified");
   }
   HD5::Reader binput(bname.Get());
-  Re2 const basis = binput.readTensor<Re2>("basis");
+  Re2 basis = binput.readTensor<Re2>("basis");
 
-  if (basis.dimension(1) != images.dimension(0)) {
+  if (basis.dimension(0) != images.dimension(0)) {
     Log::Fail(FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
   }
+
+
+  if (keep) {
+    for (Index ib = 0; ib < basis.dimension(0); ib++) {
+      if (std::find(keep.Get().begin(), keep.Get().end(), ib) == keep.Get().end()) {
+        basis.chip(ib, 0).setZero();
+      }
+    }
+  }
+
 
   auto const &tps = tp.Get();
 
   Cx5 out(AddFront(LastN<4>(dims), (Index)tps.size()));
-  Re1 const scale = basis.chip<0>(0).constant(std::sqrt(basis.dimension(0)));
+  float const scale = std::sqrt(basis.dimension(1));
   for (size_t ii = 0; ii < tps.size(); ii++) {
-    if ((tps[ii] < 0) || (tps[ii] >= basis.dimension(0))) {
-      Log::Fail(FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(0));
+    Index itp = tps[ii];
+    if ((itp < 0) || (itp >= basis.dimension(1))) {
+      Log::Fail(FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(1));
     }
-    Log::Print(FMT_STRING("Blending timepoint {}"), tps[ii]);
-    Re1 const b = basis.chip<0>(tps[ii]) * scale;
-    for (Index iv = 0; iv < out.dimension(4); iv++) {
-      out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) = Blend(images.chip<4>(iv), b);
+    Log::Print(FMT_STRING("Blending timepoint {} cycle {}"), itp, cycle.Get());
+    while (itp >= tps[ii] && itp < basis.dimension(1)) {
+      Re1 const b = basis.chip<1>(itp) * scale;
+      for (Index iv = 0; iv < out.dimension(4); iv++) {
+        out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) += Blend(images.chip<4>(iv), b);
+      }
+      itp += cycle.Get();
     }
   }
 

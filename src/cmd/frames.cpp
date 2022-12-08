@@ -21,12 +21,12 @@ int main_frames(args::Subparser &parser)
 
   Index const nT = ranges::accumulate(frames.Get(), 0L);
   Index const nF = frames.Get().size();
-  rl::Re2 basis(nT, nF);
+  rl::Re2 basis(nF, nT);
   basis.setZero();
   Index index = 0;
   for (Index ifr = 0; ifr < nF; ifr++) {
     for (Index it = 0; it < frames.Get()[ifr]; it++) {
-      basis(index++, ifr) = 1. / std::sqrt(nT);
+      basis(ifr, index++) = 1. / std::sqrt(nT);
     }
   }
 

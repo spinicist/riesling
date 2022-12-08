@@ -14,7 +14,7 @@ namespace rl {
  */
 auto KSpaceSingle(Trajectory const &traj) -> Re2
 {
-  Log::Print<Log::Level::High>("Single Channel Pre-conditioner start");
+  Log::Print<Log::Level::High>("Ong's Single-channer preconditioner");
   Info const info = traj.info();
   Info newInfo = info;
   std::transform(
@@ -52,10 +52,8 @@ std::shared_ptr<Functor<Cx4>> make_pre(std::string const &type, Trajectory const
     Log::Print(FMT_STRING("Using no preconditioning"));
     return std::make_shared<IdentityFunctor<Cx4>>();
   } else if (type == "kspace") {
-    Log::Print(FMT_STRING("Using Ong's k-space preconditioner"));
     return std::make_shared<BroadcastMultiply<Cx, 4, 1, 1>>(KSpaceSingle(traj).cast<Cx>(), "KSpace Preconditioner");
   } else {
-    Log::Print(FMT_STRING("Using preconditioner from: {}"), type);
     HD5::Reader reader(type);
     Re2 pre = reader.readTensor<Re2>(HD5::Keys::Precond);
     if (pre.dimension(0) != traj.nSamples() || pre.dimension(1) != traj.nTraces()) {
