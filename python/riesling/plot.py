@@ -13,7 +13,7 @@ import warnings
 rc = {'figsize': 4,
       'interpolation': 'none',
       'fontsize':12,
-      'effects':([effects.Stroke(linewidth=2, foreground='black'), effects.Normal()])}
+      'effects':([effects.Stroke(linewidth=4, foreground='black'), effects.Normal()])}
 
 def planes(fname, dset='image',
            other_dims=[], other_indices=[], img_offset=-1,

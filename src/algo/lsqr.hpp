@@ -1,12 +1,13 @@
 #pragma once
 
+#include "bidiag.hpp"
 #include "common.hpp"
 #include "func/functor.hpp"
 #include "log.hpp"
+#include "signals.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "types.hpp"
-#include "bidiag.hpp"
 
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
@@ -57,6 +58,7 @@ struct LSQR
 
     Log::Print(FMT_STRING("LSQR α {:5.3E} β {:5.3E} λ {}{}"), α, β, λ, x0.size() ? " with initial guess" : "");
     Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
+    PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
       Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
 
@@ -140,8 +142,11 @@ struct LSQR
         Log::Print(FMT_STRING("Ax - b reached machine precision"));
         break;
       }
+      if (InterruptReceived()) {
+        break;
+      }
     }
-
+    PopInterrupt();
     return x;
   }
 };

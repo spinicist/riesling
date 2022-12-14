@@ -2,6 +2,7 @@
 
 #include "func/functor.hpp"
 #include "log.hpp"
+#include "signals.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
@@ -16,8 +17,8 @@ struct ADMM
   Inner &inner;
   std::shared_ptr<Prox<Input>> prox;
   Index iterLimit = 8;
-  float λ = 0.;  // Proximal operator parameter
-  float α = 1.f; // Over-relaxation
+  float λ = 0.;   // Proximal operator parameter
+  float α = 1.f;  // Over-relaxation
   float μ = 10.f; // Primal-dual mismatch limit
   float τ = 2.f;  // Primal-dual mismatch rescale
   float abstol = 1.e-3f;
@@ -37,6 +38,7 @@ struct ADMM
 
     float const absThresh = abstol * Norm(x);
     Log::Print(FMT_STRING("ADMM ρ {} Abs Thresh {}"), ρ, absThresh);
+    PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
       x = inner.run(b, ρ, x, (z - u));
       xpu.device(dev) = x * x.constant(α) + z * z.constant(1 - α) + u;
@@ -75,9 +77,13 @@ struct ADMM
         Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {}"), μ * dNorm, ρ);
       } else if (dNorm > μ * pNorm) {
         ρ /= τ;
-        Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to "), μ * pNorm, ρ);
+        Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to {}"), μ * pNorm, ρ);
+      }
+      if (InterruptReceived()) {
+        break;
       }
     }
+    PopInterrupt();
     return x;
   }
 };

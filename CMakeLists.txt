@@ -41,6 +41,7 @@ add_library(vineyard
     src/rovir.cpp
     src/sdc.cpp
     src/sense.cpp
+    src/signals.cpp
     src/threads.cpp
     src/trajectory.cpp
     src/traj_spirals.cpp

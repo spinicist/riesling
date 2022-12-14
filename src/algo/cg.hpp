@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "signals.hpp"
 #include "threads.hpp"
 
 namespace rl {
@@ -14,17 +15,14 @@ struct NormalEqOp
   using InputMap = typename Op::InputMap;
 
   std::shared_ptr<Op> op;
-  NormalEqOp(std::shared_ptr<Op> o) : op{o} {}
-
-  auto inputDimensions() const
+  NormalEqOp(std::shared_ptr<Op> o)
+    : op{o}
   {
-    return op->inputDimensions();
   }
 
-  auto outputDimensions() const
-  {
-    return op->inputDimensions();
-  }
+  auto inputDimensions() const { return op->inputDimensions(); }
+
+  auto outputDimensions() const { return op->inputDimensions(); }
 
   auto forward(Input const &x) const -> InputMap
   {
@@ -33,8 +31,9 @@ struct NormalEqOp
   }
 };
 
-template<typename Op>
-auto make_normal(std::shared_ptr<Op> op) {
+template <typename Op>
+auto make_normal(std::shared_ptr<Op> op)
+{
   return std::make_shared<NormalEqOp<Op>>(op);
 }
 
@@ -70,6 +69,7 @@ struct ConjugateGradients
     float const thresh = resTol * sqrt(r_old);
     Log::Print(FMT_STRING("CG |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
     Log::Print(FMT_STRING("IT |r|       α         β         |x|"));
+    PushInterrupt();
     for (Index icg = 0; icg < iterLimit; icg++) {
       q = op->forward(p);
       float const alpha = r_old / CheckedDot(p, q);
@@ -89,7 +89,11 @@ struct ConjugateGradients
         break;
       }
       r_old = r_new;
+      if (InterruptReceived()) {
+        break;
+      }
     }
+    PopInterrupt();
     return x;
   }
 };
