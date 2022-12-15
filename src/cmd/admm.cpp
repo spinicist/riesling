@@ -81,14 +81,14 @@ int main_admm(args::Subparser &parser)
       out.chip<4>(iv) = out_cropper.crop4(admm.run(recon->adjoint(CChipMap(allData, iv))));
     }
   } else if (use_lsqr) {
-    auto M = make_pre(pre.Get(), traj);
+    auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
     LSQR<ReconOp> lsqr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
     ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else {
-    auto M = make_pre(pre.Get(), traj);
+    auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
     LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
     ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {

@@ -31,7 +31,7 @@ int main_lsqr(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-  auto M = make_pre(pre.Get(), traj);
+  auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
   LSQR<ReconOp> lsqr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
 
   auto sz = recon->inputDimensions();

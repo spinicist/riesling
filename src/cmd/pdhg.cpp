@@ -47,7 +47,7 @@ int main_pdhg(args::Subparser &parser)
     reg = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get());
   };
 
-  auto sc = KSpaceSingle(traj);
+  auto sc = KSpaceSingle(traj, ReadBasis(coreOpts.basisFile.Get()));
   auto const odims = recon->outputDimensions();
   Cx4 P = sc.reshape(Sz4{1, odims[1], odims[2], 1}).broadcast(Sz4{odims[0], 1, 1, odims[3]}).cast<Cx>();
   PrimalDualHybridGradient<ReconOp> pdhg{recon, P, reg, its.Get()};

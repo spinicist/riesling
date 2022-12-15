@@ -31,7 +31,7 @@ int main_lsmr(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-  auto M = make_pre(pre.Get(), traj);
+  auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
   LSMR<ReconOp> lsmr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon->inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
