@@ -70,6 +70,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
+  args::ValueFlag<float> Tsat(parser, "TSAT", "Fat sat time", {"tsat"}, 0.f);
   args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
 
   args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
@@ -96,6 +97,7 @@ int main_sim(args::Subparser &parser)
     .TI = TI.Get(),
     .Trec = Trec.Get(),
     .TE = te.Get(),
+    .Tsat = Tsat.Get(),
     .bval = bval.Get(),
     .inversion = false};
 

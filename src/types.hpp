@@ -142,7 +142,7 @@ Index Product(T const &indices)
 template <typename T>
 T AMin(T const &a, T const &b) {
   T m;
-  for (Index ii = 0; ii < a.size(); ii++) {
+  for (size_t ii = 0; ii < a.size(); ii++) {
     m[ii] = std::min(a[ii], b[ii]);
   }
   return m;

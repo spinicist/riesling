@@ -2,6 +2,7 @@
 
 #include "func/functor.hpp"
 #include "trajectory.hpp"
+#include <optional>
 
 namespace rl {
 
