@@ -53,7 +53,7 @@ Basis::Basis(
     }
     basis = basis * R;
   }
-
+  basis *= std::sqrt(basis.rows());
   Log::Print("Computing dictionary");
   dict = basis.transpose() * dynamics.matrix();
   norm = dict.colwise().norm();

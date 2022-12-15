@@ -212,11 +212,14 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
     with h5py.File(filename) as f:
         data = np.array(f[dset][sl_spoke, sl_read]).T
         if log:
-            data = np.log(data)
+            data = np.log1p(data)
             if clim is None:
-                clim = (np.log(1E-10), np.max(data))
+                clim = (0, np.max(data))
         elif clim is None:
             clim = np.nanpercentile(np.abs(data), (2, 98))
+        ind = np.unravel_index(np.argmax(data, axis=None), data.shape)
+        d = data[ind[0], ind[1]]
+        print(ind, d, 1/np.expm1(d))
         fig, ax = plt.subplots(1, 1, figsize=(18, 6), facecolor='w')
         im = ax.imshow(data, interpolation='nearest',
                        cmap='cmr.ember', vmin=clim[0], vmax=clim[1])
@@ -301,6 +304,8 @@ def _get_colors(clim, cmap, img, component):
             clim = _symmetrize_real(np.nanpercentile(np.imag(img), (2, 98)))
         elif component == 'x':
             clim = np.nanpercentile(np.real(np.abs(img)), (2, 98))
+        elif component == 'xlog':
+            clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 98))
         else:
             raise(f'Unknown component {component}')
     if not cmap:
@@ -316,6 +321,8 @@ def _get_colors(clim, cmap, img, component):
             cmap = 'cet_colorwheel'
         elif component == 'x':
             cmap = 'cet_colorwheel'
+        elif component == 'xlog':
+            cmap = 'cet_colorwheel'
         else:
             raise(f'Unknown component {component}')
     return (clim, cmap)
@@ -323,7 +330,7 @@ def _get_colors(clim, cmap, img, component):
 def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos='bottom'):
     if not cbar:
         return
-    if component == 'x':
+    if component == 'x' or component == 'xlog':
         _add_colorball(clim, ax=ax, cax=cax)
         if title is not None:
             fig.suptitle(title, color='white')
@@ -397,6 +404,9 @@ def _draw(ax, data, component, clim, cmap):
     if component == 'x':
         _draw_x(ax, data, clim, cmap)
         return None
+    elif component == 'xlog':
+        _draw_x(ax, data, clim, cmap, True)
+        return None
     elif component == 'mag':
         img = np.abs(data)
     elif component == 'log':
@@ -414,8 +424,10 @@ def _draw(ax, data, component, clim, cmap):
     ax.axis('off')
     return im
 
-def _draw_x(ax, img, clim, cmap='cet_colorwheel'):
+def _draw_x(ax, img, clim, cmap='cet_colorwheel', log=False):
     mag = np.real(np.abs(img))
+    if log:
+        mag = np.log1p(mag);
     mag = np.clip((mag - clim[0]) / (clim[1] - clim[0]), 0, 1)
 
     norm = colors.Normalize(vmin=-np.pi, vmax=np.pi)
@@ -431,7 +443,12 @@ def basis(path, sl_spoke=slice(None), b=slice(None)):
         basis = f['basis'][sl_spoke,b]
         fig, ax = plt.subplots(figsize=(16, 6))
         ax.plot(basis)
-        ax.legend([str(x) for x in range(basis.shape[1])])
+        ax.plot(np.sum(basis, axis=1))
+        leg = [str(x) for x in range(basis.shape[1])]
+        leg.append('Sum')
+        ax.legend(leg)
+        ax.grid(True)
+        ax.autoscale(enable=True, tight=True)
         plt.close()
         return fig
 

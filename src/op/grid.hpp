@@ -56,7 +56,6 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     this->output().device(Threads::GlobalDevice()) = this->output().constant(0.f);
     Index const nC = this->inputDimensions()[0];
     Index const nB = this->inputDimensions()[1];
-    float const scale = std::sqrt(basis.dimension(1));
     auto const &map = this->mapping;
     auto const &cdims = map.cartDims;
 
@@ -76,7 +75,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
         for (Index i1 = 0; i1 < kW; i1++) {
           if (Index const ii1 = Wrap(c[NDim - 1] - kW_2 + i1, cdims[NDim - 1]); ii1 > -1) {
             if constexpr (NDim == 1) {
-              float const kval = k(i1) * scale;
+              float const kval = k(i1);
               for (Index ib = 0; ib < nB; ib++) {
                 float const bval = kval * basis(ib, btp);
                 for (Index ic = 0; ic < nC; ic++) {
@@ -87,7 +86,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
               for (Index i2 = 0; i2 < kW; i2++) {
                 if (Index const ii2 = Wrap(c[NDim - 2] - kW_2 + i2, cdims[NDim - 2]); ii2 > -1) {
                   if constexpr (NDim == 2) {
-                    float const kval = k(i2, i1) * scale;
+                    float const kval = k(i2, i1);
                     for (Index ib = 0; ib < nB; ib++) {
                       float const bval = kval * basis(ib, btp);
                       for (Index ic = 0; ic < nC; ic++) {
@@ -97,7 +96,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
                   } else {
                     for (Index i3 = 0; i3 < kW; i3++) {
                       if (Index const ii3 = Wrap(c[NDim - 3] - kW_2 + i3, cdims[NDim - 3]); ii3 > -1) {
-                        float const kval = k(i3, i2, i1) * scale;
+                        float const kval = k(i3, i2, i1);
                         for (Index ib = 0; ib < nB; ib++) {
                           float const bval = kval * basis(ib, btp);
                           for (Index ic = 0; ic < nC; ic++) {
@@ -126,7 +125,6 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     auto const &map = this->mapping;
     Index const nC = this->inputDimensions()[0];
     Index const nB = this->inputDimensions()[1];
-    float const scale = std::sqrt(basis.dimension(1));
     auto const &cdims = map.cartDims;
 
     std::mutex writeMutex;
@@ -163,7 +161,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
             for (Index i2 = 0; i2 < kW; i2++) {
               Index const ii2 = i2 + c[NDim - 2] - hW - bucket.minCorner[NDim - 2];
               if constexpr (NDim == 2) {
-                float const kval = k(i2, i1) * scale;
+                float const kval = k(i2, i1);
                 for (Index ib = 0; ib < nB; ib++) {
                   for (Index ic = 0; ic < nC; ic++) {
                     bGrid(ic, ib, ii2, ii1) += bSample(ic, ib) * kval;
@@ -172,7 +170,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
               } else {
                 for (Index i3 = 0; i3 < kW; i3++) {
                   Index const ii3 = i3 + c[NDim - 3] - hW - bucket.minCorner[NDim - 3];
-                  float const kval = k(i3, i2, i1) * scale;
+                  float const kval = k(i3, i2, i1);
                   for (Index ib = 0; ib < nB; ib++) {
                     for (Index ic = 0; ic < nC; ic++) {
                       bGrid(ic, ib, ii3, ii2, ii1) += bSample(ic, ib) * kval;

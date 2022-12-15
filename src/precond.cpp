@@ -12,7 +12,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis) -> Re2
+auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float const thresh) -> Re2
 {
   Log::Print<Log::Level::High>("Ong's Single-channer preconditioner");
   Info const info = traj.info();
@@ -27,15 +27,19 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis) -> Re
   Cx5 const psf = nufft->adjoint(W);
   Log::Tensor(psf, "single-psf");
   Cx5 ones(AddFront(info.matrix, psf.dimension(0), psf.dimension(1)));
-  ones.setConstant(std::sqrt(psf.dimension(1)));
-  // I do not understand this scaling factor but it's in Frank's code and works
-  float const scale = std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Product(ones.dimensions());
+  ones.setConstant(1./std::sqrt(psf.dimension(1)));
   PadOp<Cx, 5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   FFTOp<5, 3> fftX(psf.dimensions());
   Cx5 xcorr = fftX.forward(padX.forward(ones)).abs().square().cast<Cx>();
   xcorr = fftX.adjoint(xcorr);
-  Re2 weights = nufft->forward(xcorr * psf).abs().chip(0, 3).chip(0, 0);
-  weights.device(Threads::GlobalDevice()) = (weights > 0.f).select((weights * scale).inverse(), weights.constant(1.f));
+  xcorr = xcorr * psf;
+  Log::Tensor(Cx5(xcorr), "pre-img");
+  Re2 weights = nufft->forward(xcorr).abs().chip(0, 3).chip(0, 0);
+  // I do not understand this scaling factor but it's in Frank's code and works
+  float scale =
+    std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Product(LastN<3>(ones.dimensions()));
+  Log::Tensor(weights, "pre-weights");
+  weights.device(Threads::GlobalDevice()) = (weights > thresh).select((weights * scale).inverse(), weights.constant(1.f));
   Log::Tensor(weights, "precond");
   float const norm = Norm(weights);
   if (!std::isfinite(norm)) {
