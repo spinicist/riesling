@@ -43,21 +43,22 @@ inline auto Rotation(float const a, float const b)
   return std::make_tuple(c, s, ρ);
 }
 
-template <typename OpPtr, typename PrePtr, typename Input, typename Output, typename Device>
+template <typename OpPtr, typename PrePtr, typename RegPtr, typename Input, typename Output, typename Device>
 inline void BidiagInit(
   OpPtr op,
   PrePtr M,
   Output &Mu,
   Output &u,
-  Input &ur,
+  Input &uλ,
   Input &v,
   float &α,
   float &β,
   float const λ,
+  RegPtr opλ,
   Input &x,
   Eigen::TensorMap<Output const> const &b,
   Input const &x0,
-  Input const &cc,
+  Input const &bλ,
   Device &dev)
 {
   if (x0.size()) {
@@ -69,18 +70,18 @@ inline void BidiagInit(
     Mu.device(dev) = b;
   }
   (*M)(Mu, u);
-  if (ur.size()) {
-    CheckDimsEqual(cc.dimensions(), v.dimensions());
-    ur.device(dev) = (cc - x) * x.constant(sqrt(λ));
-    β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
+  if (uλ.size()) {
+    CheckDimsEqual(bλ.dimensions(), v.dimensions());
+    uλ.device(dev) = (bλ - opλ->forward(x)) * x.constant(sqrt(λ));
+    β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
   }
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
-  if (ur.size()) {
-    ur.device(dev) = ur / ur.constant(β);
-    v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur);
+  if (uλ.size()) {
+    uλ.device(dev) = uλ / uλ.constant(β);
+    v.device(dev) = op->adjoint(u) + (sqrt(λ) * opλ->adjoint(uλ));
   } else {
     v.device(dev) = op->adjoint(u);
   }
@@ -88,23 +89,23 @@ inline void BidiagInit(
   v.device(dev) = v / v.constant(α);
 }
 
-template <typename OpPtr, typename PrePtr, typename Input, typename Output, typename Device>
+template <typename OpPtr, typename PrePtr, typename RegPtr, typename Input, typename Output, typename Device>
 inline void
-Bidiag(OpPtr op, PrePtr M, Output &Mu, Output &u, Input &ur, Input &v, float &α, float &β, float const λ, Device &dev)
+Bidiag(OpPtr op, PrePtr M, Output &Mu, Output &u, Input &uλ, Input &v, float &α, float &β, float const λ, RegPtr opλ, Device &dev)
 {
   Mu.device(dev) = op->forward(v) - α * Mu;
   (*M)(Mu, u);
-  if (ur.size()) {
-    ur.device(dev) = (std::sqrt(λ) * v) - (α * ur);
-    β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(ur, ur));
+  if (uλ.size()) {
+    uλ.device(dev) = (std::sqrt(λ) * opλ->forward(v)) - (α * uλ);
+    β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
   }
   Mu.device(dev) = Mu / Mu.constant(β);
   u.device(dev) = u / u.constant(β);
-  if (ur.size()) {
-    ur.device(dev) = ur / ur.constant(β);
-    v.device(dev) = op->adjoint(u) + (sqrt(λ) * ur) - (β * v);
+  if (uλ.size()) {
+    uλ.device(dev) = uλ / uλ.constant(β);
+    v.device(dev) = op->adjoint(u) + (sqrt(λ) * opλ->adjoint(uλ)) - (β * v);
   } else {
     v.device(dev) = op->adjoint(u) - (β * v);
   }

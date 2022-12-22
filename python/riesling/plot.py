@@ -250,7 +250,9 @@ def _get_slices(dset, slice_dim, slices, img_dims, img_slices=(slice(None),slice
         all_slices[od] = slice(oi, oi+1)
     all_dims=(*other_dims, slice_dim, *img_dims)
 
+    print(dset.shape, all_slices)
     data = dset[tuple(all_slices)]
+    print(data.shape, all_dims)
     data = data.transpose(all_dims)
     data = data.reshape(data.shape[-3], data.shape[-2], data.shape[-1])
 

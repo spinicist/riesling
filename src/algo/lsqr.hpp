@@ -4,6 +4,7 @@
 #include "common.hpp"
 #include "func/functor.hpp"
 #include "log.hpp"
+#include "op/identity.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -21,6 +22,7 @@ struct LSQR
 {
   using Input = typename Op::Input;
   using Output = typename Op::Output;
+  using Opλ = Operator<typename Op::Scalar, Op::InputRank, Op::InputRank>;
 
   std::shared_ptr<Op> op;
   std::shared_ptr<Functor<Output>> M = std::make_shared<IdentityFunctor<Output>>(); // Left pre-conditioner
@@ -29,6 +31,7 @@ struct LSQR
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
   bool const debug = false;
+  std::shared_ptr<Opλ> opλ = std::make_shared<IdentityOp<typename Op::Scalar, Op::InputRank>>(op->inputDimensions());
 
   Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
   {
@@ -41,7 +44,7 @@ struct LSQR
     Output Mu(outDims), u(outDims);
     Input x(inDims), v(inDims), w(inDims), ur;
     float α = 0.f, β = 0.f;
-    BidiagInit(op, M, Mu, u, ur, v, α, β, λ, x, b, x0, cc, dev);
+    BidiagInit(op, M, Mu, u, ur, v, α, β, λ, opλ, x, b, x0, cc, dev);
     w.device(dev) = v;
 
     float ρ̅ = α;
@@ -60,7 +63,7 @@ struct LSQR
     Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
-      Bidiag(op, M, Mu, u, ur, v, α, β, λ, dev);
+      Bidiag(op, M, Mu, u, ur, v, α, β, λ, opλ, dev);
 
       float c, s, ρ;
       float ψ = 0.f;
