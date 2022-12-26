@@ -43,22 +43,22 @@ inline auto Rotation(float const a, float const b)
   return std::make_tuple(c, s, ρ);
 }
 
-template <typename OpPtr, typename PrePtr, typename RegPtr, typename Input, typename Output, typename Device>
+template <typename OpPtr, typename PrePtr, typename Reg, typename Input, typename Output, typename Device>
 inline void BidiagInit(
   OpPtr op,
   PrePtr M,
   Output &Mu,
   Output &u,
-  Input &uλ,
   Input &v,
   float &α,
   float &β,
   float const λ,
-  RegPtr opλ,
+  std::shared_ptr<Reg> opλ,
+  typename Reg::Output &uλ,
   Input &x,
   Eigen::TensorMap<Output const> const &b,
   Input const &x0,
-  Input const &bλ,
+  typename Reg::Output const &bλ,
   Device &dev)
 {
   if (x0.size()) {
@@ -71,8 +71,9 @@ inline void BidiagInit(
   }
   (*M)(Mu, u);
   if (uλ.size()) {
-    CheckDimsEqual(bλ.dimensions(), v.dimensions());
-    uλ.device(dev) = (bλ - opλ->forward(x)) * x.constant(sqrt(λ));
+    CheckDimsEqual(bλ.dimensions(), uλ.dimensions());
+    CheckDimsEqual(opλ->outputDimensions(), uλ.dimensions());
+    uλ.device(dev) = bλ - std::sqrt(λ) * opλ->forward(x);
     β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
@@ -81,7 +82,10 @@ inline void BidiagInit(
   u.device(dev) = u / u.constant(β);
   if (uλ.size()) {
     uλ.device(dev) = uλ / uλ.constant(β);
-    v.device(dev) = op->adjoint(u) + (sqrt(λ) * opλ->adjoint(uλ));
+    Input temp = std::sqrt(λ) * opλ->adjoint(uλ);
+    v.device(dev) = op->adjoint(u);
+    fmt::print("|v| {} |vλ| {}\n", Norm(v), Norm(temp));
+    v.device(dev) += temp;
   } else {
     v.device(dev) = op->adjoint(u);
   }
@@ -89,14 +93,25 @@ inline void BidiagInit(
   v.device(dev) = v / v.constant(α);
 }
 
-template <typename OpPtr, typename PrePtr, typename RegPtr, typename Input, typename Output, typename Device>
-inline void
-Bidiag(OpPtr op, PrePtr M, Output &Mu, Output &u, Input &uλ, Input &v, float &α, float &β, float const λ, RegPtr opλ, Device &dev)
+template <typename Op, typename Pre, typename Reg, typename Device>
+inline void Bidiag(
+  std::shared_ptr<Op> const op,
+  std::shared_ptr<Pre> const M,
+  typename Op::Output &Mu,
+  typename Op::Output &u,
+  typename Op::Input &v,
+  float &α,
+  float &β,
+  float const λ,
+  std::shared_ptr<Reg> const opλ,
+  typename Reg::Output &uλ,
+  Device &dev)
 {
   Mu.device(dev) = op->forward(v) - α * Mu;
   (*M)(Mu, u);
   if (uλ.size()) {
-    uλ.device(dev) = (std::sqrt(λ) * opλ->forward(v)) - (α * uλ);
+    typename Reg::Output temp = (std::sqrt(λ) * opλ->forward(v));
+    uλ.device(dev) = temp - (α * uλ);
     β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
@@ -105,7 +120,7 @@ Bidiag(OpPtr op, PrePtr M, Output &Mu, Output &u, Input &uλ, Input &v, float &�
   u.device(dev) = u / u.constant(β);
   if (uλ.size()) {
     uλ.device(dev) = uλ / uλ.constant(β);
-    v.device(dev) = op->adjoint(u) + (sqrt(λ) * opλ->adjoint(uλ)) - (β * v);
+    v.device(dev) = op->adjoint(u) + (std::sqrt(λ) * opλ->adjoint(uλ)) - (β * v);
   } else {
     v.device(dev) = op->adjoint(u) - (β * v);
   }

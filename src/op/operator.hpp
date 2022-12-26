@@ -17,7 +17,7 @@
 
 namespace rl {
 
-template <typename Scalar_, size_t InRank, size_t OutRank>
+template <typename Scalar_, size_t InRank, size_t OutRank = InRank>
 struct Operator
 {
   static const size_t InputRank = InRank;

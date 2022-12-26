@@ -17,12 +17,12 @@ namespace rl {
 /*
  * LSQR with arbitrary regularization, i.e. Solve (A'A + λI)x = A'b + c with warm start
  */
-template <typename Op>
+template <typename Op, typename Opλ = Operator<typename Op::Scalar, Op::InputRank, Op::InputRank>>
 struct LSQR
 {
   using Input = typename Op::Input;
   using Output = typename Op::Output;
-  using Opλ = Operator<typename Op::Scalar, Op::InputRank, Op::InputRank>;
+  using Outputλ = typename Opλ::Output;
 
   std::shared_ptr<Op> op;
   std::shared_ptr<Functor<Output>> M = std::make_shared<IdentityFunctor<Output>>(); // Left pre-conditioner
@@ -42,9 +42,10 @@ struct LSQR
 
     // Workspace variables
     Output Mu(outDims), u(outDims);
-    Input x(inDims), v(inDims), w(inDims), ur;
+    Input x(inDims), v(inDims), w(inDims);
+    Outputλ uλ;
     float α = 0.f, β = 0.f;
-    BidiagInit(op, M, Mu, u, ur, v, α, β, λ, opλ, x, b, x0, cc, dev);
+    BidiagInit(op, M, Mu, u, v, α, β, λ, opλ, uλ, x, b, x0, cc, dev);
     w.device(dev) = v;
 
     float ρ̅ = α;
@@ -63,11 +64,11 @@ struct LSQR
     Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
-      Bidiag(op, M, Mu, u, ur, v, α, β, λ, opλ, dev);
+      Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev);
 
       float c, s, ρ;
       float ψ = 0.f;
-      if (λ == 0.f || ur.size()) {
+      if (λ == 0.f || uλ.size()) {
         std::tie(c, s, ρ) = StableGivens(ρ̅, β);
       } else {
         // Deal with regularization

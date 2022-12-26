@@ -1,6 +1,7 @@
 #pragma once
 
 #include "func/functor.hpp"
+#include "op/operator.hpp"
 #include "log.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
@@ -8,14 +9,20 @@
 
 namespace rl {
 
-template <typename Inner>
+template<typename Op>
+struct Regularizer {
+  std::shared_ptr<Prox<typename Op::Output>> prox;
+  std::shared_ptr<Op> op;
+};
+
+template <typename Inner, typename RegOp>
 struct ADMM
 {
   using Input = typename Inner::Input;
   using Output = typename Inner::Output;
 
   Inner &inner;
-  std::shared_ptr<Prox<Input>> prox;
+  Regularizer<RegOp> reg;
   Index iterLimit = 8;
   float α = 1.f;  // Over-relaxation
   float μ = 10.f; // Primal-dual mismatch limit
@@ -27,8 +34,9 @@ struct ADMM
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
-    auto const dims = inner.op->inputDimensions();
-    Input u(dims), x(dims), z(dims), zold(dims), xpu(dims);
+    Input x(inner.op->inputDimensions());
+    auto const dims = reg.op->outputDimensions();
+    typename RegOp::Output u(dims), z(dims), zold(dims), Fx(dims), Fxpu(dims);
 
     // Set initial values
     x.setZero();
@@ -39,13 +47,19 @@ struct ADMM
     Log::Print(FMT_STRING("ADMM ρ {} Abs Thresh {}"), ρ, absThresh);
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
+      if (ii == 1) {
+        inner.debug = true;
+      } else {
+        inner.debug = false;
+      }
       x = inner.run(b, ρ, x, (z - u));
-      xpu.device(dev) = x * x.constant(α) + z * z.constant(1 - α) + u;
+      Fx = reg.op->forward(x);
+      Fxpu.device(dev) = Fx * Fx.constant(α) + z * z.constant(1.f - α) + u;
       zold = z;
-      z = (*prox)(1.f / ρ, xpu);
-      u.device(dev) = xpu - z;
+      z = (*reg.prox)(1.f / ρ, Fxpu);
+      u.device(dev) = Fxpu - z;
 
-      float const pNorm = Norm(x - z);
+      float const pNorm = Norm(Fx - z);
       float const dNorm = ρ * Norm(z - zold);
 
       float const normx = Norm(x);
@@ -57,6 +71,8 @@ struct ADMM
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
+      Log::Tensor(Fx, fmt::format("admm-Fx-{:02d}", ii));
+      Log::Tensor(Fxpu, fmt::format("admm-Fxpu-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
       Log::Print(
         FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |z| {} |u| {}"),

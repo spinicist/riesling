@@ -136,8 +136,8 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
             ax[1, ii].set_facecolor('black')
             ax[1, ii].axis('off')
     fig.subplots_adjust(wspace=0, hspace=0)
-    _add_colorbar(cbar, component, fig, ax[0, :], imi, clim, title)
-    _add_colorbar(cbar, diff_component, fig, ax[1, :], imd, difflim, 'Diff (%)')
+    _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, :])
+    _add_colorbar(cbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[1, :])
     plt.close()
     return fig
 
@@ -219,7 +219,6 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
             clim = np.nanpercentile(np.abs(data), (2, 98))
         ind = np.unravel_index(np.argmax(data, axis=None), data.shape)
         d = data[ind[0], ind[1]]
-        print(ind, d, 1/np.expm1(d))
         fig, ax = plt.subplots(1, 1, figsize=(18, 6), facecolor='w')
         im = ax.imshow(data, interpolation='nearest',
                        cmap='cmr.ember', vmin=clim[0], vmax=clim[1])
@@ -250,9 +249,7 @@ def _get_slices(dset, slice_dim, slices, img_dims, img_slices=(slice(None),slice
         all_slices[od] = slice(oi, oi+1)
     all_dims=(*other_dims, slice_dim, *img_dims)
 
-    print(dset.shape, all_slices)
     data = dset[tuple(all_slices)]
-    print(data.shape, all_dims)
     data = data.transpose(all_dims)
     data = data.reshape(data.shape[-3], data.shape[-2], data.shape[-1])
 
@@ -349,7 +346,7 @@ def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos
         cb = fig.colorbar(im, cax=cax, orientation='horizontal')
         axes = cb.ax
         ticks = (clim[0], np.sum(clim)/2, clim[1])
-        labels = (f' {clim[0]:2.1f}', title, f'{clim[1]:2.1f} ')
+        labels = (f' {clim[0]:2.1g}', title, f'{clim[1]:2.1g} ')
         cb.set_ticks(ticks)
         cb.set_ticklabels(labels, fontsize=rc['fontsize'], path_effects=rc['effects'])
         cb.ax.tick_params(axis='x', bottom=False, top=False)

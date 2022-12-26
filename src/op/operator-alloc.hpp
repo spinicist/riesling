@@ -74,8 +74,10 @@ struct OperatorAlloc : Operator<Scalar_, InRank, OutRank>
 private:
   Input xStorage_;
   Output yStorage_;
-  InputMap x_;
-  OutputMap y_;
+
+protected:
+  InputMap mutable x_;
+  OutputMap mutable y_;
 };
 
 #define OPALLOC_INHERIT(SCALAR, INRANK, OUTRANK)                                                                               \

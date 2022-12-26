@@ -17,12 +17,12 @@ namespace rl {
 /*
  * LSMR with arbitrary regularization, i.e. Solve (A'A + λI)x = A'b + c with warm start
  */
-template <typename Op>
+template <typename Op, typename Opλ = Operator<typename Op::Scalar, Op::InputRank, Op::InputRank>>
 struct LSMR
 {
   using Input = typename Op::Input;
   using Output = typename Op::Output;
-  using Opλ = Operator<typename Op::Scalar, Op::InputRank, Op::InputRank>;
+  using Outputλ = typename Opλ::Output;
 
   std::shared_ptr<Op> op;
   std::shared_ptr<Functor<Output>> M = std::make_shared<IdentityFunctor<Output>>(); // Left pre-conditioner
@@ -30,11 +30,10 @@ struct LSMR
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
-  bool const debug = false;
+  bool debug = false;
   std::shared_ptr<Opλ> opλ = std::make_shared<IdentityOp<typename Op::Scalar, Op::InputRank>>(op->inputDimensions());
 
-
-  Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
+  Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Outputλ const &b0 = Input()) const
   {
     auto dev = Threads::GlobalDevice();
 
@@ -42,9 +41,10 @@ struct LSMR
     auto const outDims = op->outputDimensions();
     CheckDimsEqual(b.dimensions(), outDims);
     Output Mu(outDims), u(outDims);
-    Input v(inDims), h(inDims), h̅(inDims), x(inDims), ur(cc.dimensions());
+    Input v(inDims), h(inDims), h̅(inDims), x(inDims);
+    Outputλ uλ(b0.dimensions());
     float α = 0.f, β = 0.f;
-    BidiagInit(op, M, Mu, u, ur, v, α, β, λ, opλ, x, b, x0, cc, dev);
+    BidiagInit(op, M, Mu, u, v, α, β, λ, opλ, uλ, x, b, x0, b0, dev);
     h.device(dev) = v;
     h̅.setZero();
 
@@ -80,11 +80,11 @@ struct LSMR
     Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
-      Bidiag(op, M, Mu, u, ur, v, α, β, λ, opλ, dev);
+      Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev);
 
       float const ρold = ρ;
       float c, s, ĉ = 1.f, ŝ = 0.f;
-      if (λ == 0.f || ur.size()) {
+      if (λ == 0.f || uλ.size()) {
         std::tie(c, s, ρ) = StableGivens(α̅, β);
       } else {
         float α̂;
@@ -154,7 +154,9 @@ struct LSMR
 
       if (debug) {
         Log::Tensor(x, fmt::format(FMT_STRING("lsmr-x-{:02d}"), ii));
+        Log::Tensor(v, fmt::format(FMT_STRING("lsmr-v-{:02d}"), ii));
         Log::Tensor(h̅, fmt::format(FMT_STRING("lsmr-hbar-{:02d}"), ii));
+        // Log::Tensor(uλ, fmt::format(FMT_STRING("lsmr-ul-{:02d}"), ii));
       }
 
       if (1.f + (1.f / condA) <= 1.f) {

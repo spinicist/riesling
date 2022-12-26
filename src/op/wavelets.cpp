@@ -36,7 +36,8 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
     Log::Fail(FMT_STRING("Wavelets had dimensions {}, required {}"), dims, padded);
   }
 
-  for (auto ii = 0; ii < 4; ii++) {
+  levels_[0] = 0;
+  for (auto ii = 1; ii < 4; ii++) {
     if (dims[ii] < (N - 1)) {
       levels_[ii] = 0;
     } else {

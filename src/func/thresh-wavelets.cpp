@@ -5,7 +5,7 @@ namespace rl {
 ThresholdWavelets::ThresholdWavelets(Sz4 const dims, float const λ, Index const W, Index const L)
   : Prox<Cx4>()
   , waves_{dims, W, L}
-  , λ_{λ}
+  , thresh_{λ}
 {
 }
 
@@ -13,7 +13,7 @@ auto ThresholdWavelets::operator()(float const α, Eigen::TensorMap<Cx4 const>x)
 {
   Cx4 temp = x;
   waves_.forward(temp);
-  temp = thresh_(λ_ * α, temp);
+  temp = thresh_(α, temp);
   waves_.adjoint(temp);
   return temp;
 }

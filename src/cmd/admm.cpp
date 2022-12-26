@@ -10,6 +10,7 @@
 #include "func/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
+#include "op/grad.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precond.hpp"
@@ -24,9 +25,6 @@ int main_admm(args::Subparser &parser)
   SDC::Opts sdcOpts(parser);
   SENSE::Opts senseOpts(parser);
 
-  args::Flag use_cg(parser, "C", "Use CG instead of LSQR for inner loop", {"cg"});
-  args::Flag use_lsqr(parser, "L", "Use LSQR instead of LSMR for inner loop", {"lsqr"});
-
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (4)", {"max-its"}, 4);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
@@ -36,7 +34,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (8)", {"max-outer-its"}, 8);
   args::ValueFlag<float> abstol(parser, "ABS", "ADMM absolute tolerance (1e-3)", {"abs-tol"}, 1.e-3f);
   args::ValueFlag<float> reltol(parser, "REL", "ADMM relative tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
-  args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 0.1)", {"rho"}, 0.1f);
+  args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 1)", {"rho"}, 1.f);
   args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
@@ -56,12 +54,6 @@ int main_admm(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto const sz = recon->inputDimensions();
-  std::shared_ptr<Prox<Cx4>> reg;
-  if (wavelets) {
-    reg = std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get());
-  } else {
-    reg = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get());
-  };
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Cx4 vol(sz);
@@ -70,31 +62,37 @@ int main_admm(args::Subparser &parser)
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-  auto const &all_start = Log::Now();
+  auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
 
-  if (use_cg) {
-    auto augmented = make_augmented(recon, ρ.Get());
-    ConjugateGradients<AugmentedOp<ReconOp>> cg{augmented, inner_its.Get(), atol.Get()};
-    AugmentedADMM<ConjugateGradients<AugmentedOp<ReconOp>>> admm{
-      cg, reg.get(), outer_its.Get(), ρ.Get(), abstol.Get(), reltol.Get()};
+  auto const &all_start = Log::Now();
+  if (wavelets) {
+    Regularizer<IdentityOp<Cx, 4>> reg{
+      .prox = std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get()),
+      .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(recon->adjoint(CChipMap(allData, iv))));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
-  } else if (use_lsqr) {
-    auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
-    LSQR<ReconOp> lsqr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
-    ADMM<LSQR<ReconOp>> admm{lsqr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+  } else if (patchSize) {
+    Regularizer<IdentityOp<Cx, 4>> reg{
+      .prox = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else {
-    auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
-    ADMM<LSMR<ReconOp>> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+    Regularizer<GradOp> reg{.prox = std::make_shared<SoftThreshold<Cx5>>(λ.Get()), .op = std::make_shared<GradOp>(sz)};
+    LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp, GradOp>, GradOp> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   }
+
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);
   return EXIT_SUCCESS;

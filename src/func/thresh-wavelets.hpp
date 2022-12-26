@@ -12,8 +12,7 @@ struct ThresholdWavelets final : Prox<Cx4> {
 
 private:
     Wavelets waves_;
-    SoftThreshold thresh_;
-    float λ_;
+    SoftThreshold<Cx4> thresh_;
 };
 
 } // namespace rl
