@@ -23,11 +23,17 @@ struct IdentityFunctor final : Functor<T>
 };
 
 template <typename T>
-struct Prox
+struct Functor1
 {
-  virtual auto operator()(float const λ, Eigen::TensorMap<T const> in) const -> T = 0;
-  virtual ~Prox(){};
+  using Input = Eigen::TensorMap<T const>;
+  using Output = T;
+
+  virtual auto operator()(float const λ, Input in) const -> T = 0;
+  virtual ~Functor1(){};
 };
+
+template<typename T>
+using Prox = Functor1<T>;
 
 template <typename T>
 struct IdentityProx final : Prox<T>

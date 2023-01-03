@@ -50,14 +50,14 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   return weights;
 }
 
-std::shared_ptr<Functor<Cx4>>
+std::shared_ptr<Functor1<Cx4>>
 make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
 {
   if (type == "" || type == "none") {
     Log::Print(FMT_STRING("Using no preconditioning"));
-    return std::make_shared<IdentityFunctor<Cx4>>();
+    return std::make_shared<IdentityProx<Cx4>>();
   } else if (type == "kspace") {
-    return std::make_shared<BroadcastMultiply<Cx, 4, 1, 1>>(
+    return std::make_shared<BroadcastPower<Cx, 4, 1, 1>>(
       KSpaceSingle(traj, basis, bias).cast<Cx>(), "KSpace Preconditioner");
   } else {
     HD5::Reader reader(type);
@@ -70,7 +70,7 @@ make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> con
         traj.nSamples(),
         traj.nTraces());
     }
-    return std::make_shared<BroadcastMultiply<Cx, 4, 1, 1>>(pre.cast<Cx>());
+    return std::make_shared<BroadcastPower<Cx, 4, 1, 1>>(pre.cast<Cx>());
   }
 }
 

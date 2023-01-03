@@ -25,12 +25,13 @@ struct LSQR
   using Outputλ = typename Opλ::Output;
 
   std::shared_ptr<Op> op;
-  std::shared_ptr<Functor<Output>> M = std::make_shared<IdentityFunctor<Output>>(); // Left pre-conditioner
+  std::shared_ptr<Functor1<Output>> M = std::make_shared<IdentityProx<Output>>(); // Left pre-conditioner
   Index iterLimit;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
-  bool const debug = false;
+  bool debug = false;
+  bool varPre = false;
   std::shared_ptr<Opλ> opλ = std::make_shared<IdentityOp<typename Op::Scalar, Op::InputRank>>(op->inputDimensions());
 
   Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Input const &cc = Input()) const
@@ -64,7 +65,7 @@ struct LSQR
     Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
-      Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev);
+      Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev, varPre ? 1.f - (ii / (ii - 1.f)) : 1.f);
 
       float c, s, ρ;
       float ψ = 0.f;
