@@ -18,16 +18,17 @@ Index DIR::length() const
 
 Eigen::ArrayXXf DIR::parameters(Index const nsamp) const
 {
-  return Parameters::T1(nsamp);
+  return Parameters::T1η(nsamp);
 }
 
 Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
+  float const η = p(1);
   Eigen::ArrayXf dynamic(settings.spg * settings.gps);
 
   Eigen::Matrix2f inv;
-  inv << -1.f, 0.f, 0.f, 1.f;
+  inv << -η, 0.f, 0.f, 1.f;
 
   float const R1 = 1.f / T1;
   Eigen::Matrix2f E1, Einv, Einv2, Eramp, Essi, Erec, Esat;

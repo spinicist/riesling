@@ -37,4 +37,26 @@ auto T1T2(Index const nS) -> Eigen::ArrayXXf
   return p;
 }
 
-} // namespace rl
+auto T1η(Index const nS) -> Eigen::ArrayXXf
+{
+  float const R1lo = 1.f / 0.25f;
+  float const R1hi = 1.f / 4.3f;
+  float const ηlo = 1.f / 0.9f;
+  float const ηhi = 1.f / 1.f;
+  Index const nT = std::floor(std::sqrt(nS));
+  auto const R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
+  auto const ηs = Eigen::ArrayXf::LinSpaced(nT, ηlo, ηhi);
+  Index nAct = 0;
+  Eigen::ArrayXXf p(2, nS);
+  for (Index i1 = 0; i1 < nT; i1++) {
+    for (Index iη = 0; iη < nT; iη++) {
+      p(0, nAct) = 1.f / R1s(i1);
+      p(1, nAct) = ηs(iη);
+      nAct++;
+    }
+  }
+  p.conservativeResize(2, nAct);
+  return p;
+}
+
+} // namespace rl::Parameters
