@@ -12,7 +12,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float const thresh) -> Re2
+auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float const bias) -> Re2
 {
   Log::Print<Log::Level::High>("Ong's Single-channer preconditioner");
   Info const info = traj.info();
@@ -27,7 +27,7 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   Cx5 const psf = nufft->adjoint(W);
   Log::Tensor(psf, "single-psf");
   Cx5 ones(AddFront(info.matrix, psf.dimension(0), psf.dimension(1)));
-  ones.setConstant(1./std::sqrt(psf.dimension(1)));
+  ones.setConstant(1. / std::sqrt(psf.dimension(1)));
   PadOp<Cx, 5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   FFTOp<5, 3> fftX(psf.dimensions());
   Cx5 xcorr = fftX.forward(padX.forward(ones)).abs().square().cast<Cx>();
@@ -39,24 +39,26 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   float scale =
     std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Product(LastN<3>(ones.dimensions()));
   Log::Tensor(weights, "pre-weights");
-  weights.device(Threads::GlobalDevice()) = (weights > thresh).select((weights * scale).inverse(), weights.constant(1.f));
+  weights.device(Threads::GlobalDevice()) = ((weights * scale) + bias).inverse();
   Log::Tensor(weights, "precond");
   float const norm = Norm(weights);
   if (!std::isfinite(norm)) {
-    Log::Fail("Single-channel pre-conditioner norm was not finite ({})", norm);
+    Log::Print("Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
     Log::Print("Single-channel pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights), Maximum(weights));
   }
   return weights;
 }
 
-std::shared_ptr<Functor<Cx4>> make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> const &basis)
+std::shared_ptr<Functor<Cx4>>
+make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
 {
   if (type == "" || type == "none") {
     Log::Print(FMT_STRING("Using no preconditioning"));
     return std::make_shared<IdentityFunctor<Cx4>>();
   } else if (type == "kspace") {
-    return std::make_shared<BroadcastMultiply<Cx, 4, 1, 1>>(KSpaceSingle(traj, basis).cast<Cx>(), "KSpace Preconditioner");
+    return std::make_shared<BroadcastMultiply<Cx, 4, 1, 1>>(
+      KSpaceSingle(traj, basis, bias).cast<Cx>(), "KSpace Preconditioner");
   } else {
     HD5::Reader reader(type);
     Re2 pre = reader.readTensor<Re2>(HD5::Keys::Precond);

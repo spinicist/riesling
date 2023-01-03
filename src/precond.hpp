@@ -6,8 +6,9 @@
 
 namespace rl {
 
-auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const & basis = std::nullopt, float const thresh = 0.f) -> Re2;
+auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis = std::nullopt, float const bias = 1.f) -> Re2;
 
-std::shared_ptr<Functor<Cx4>> make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> const &basis);
+std::shared_ptr<Functor<Cx4>>
+make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> const &basis, float const bias);
 
 } // namespace rl

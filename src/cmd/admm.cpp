@@ -26,6 +26,7 @@ int main_admm(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
+  args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"bias", 'b'}, 1.f);
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (4)", {"max-its"}, 4);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
@@ -39,7 +40,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
 
-  args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 0.1)", {"lambda"}, 0.1f);
+  args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 1)", {"lambda"}, 1.f);
 
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
   args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
@@ -62,7 +63,7 @@ int main_admm(args::Subparser &parser)
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-  auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()));
+  auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   auto const &all_start = Log::Now();
   if (wavelets) {
