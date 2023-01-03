@@ -28,10 +28,22 @@ Basis::Basis(
     nRetain = (cumsum < thresh).count();
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
-  // Scale and flip the basis vectors to always have a positive first element for stability
-  // Eigen::ArrayXf flip = Eigen::ArrayXf::Ones(nRetain);
-  // flip = (svd.V.leftCols(nRetain).row(0).transpose().array() < 0.f).select(-flip, flip);
-  basis = svd.V.leftCols(nRetain).array();
+
+  if (reorder) {
+    Index const nReorder = reorder->size();
+    if (nReorder < nRetain) {
+      Log::Fail("Basis and reordering size did not match");
+    }
+    Log::Print("Reordering basis");
+    Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(nReorder);
+    for (Index ii = 0; ii < nReorder; ii++) {
+      perm.indices()[ii] = reorder->at(ii);
+    }
+    basis = (svd.V.leftCols(nReorder) * perm).leftCols(nRetain);
+  } else {
+    basis = svd.V.leftCols(nRetain);
+  }
+  
   if (varimax) {
     Log::Print("SIM Applying varimax rotation");
     float gamma = 1.0f;
@@ -55,17 +67,7 @@ Basis::Basis(
     basis = basis * R;
   }
   basis *= std::sqrt(basis.rows());
-  if (reorder) {
-    if (reorder->size() != basis.cols()) {
-      Log::Fail("Basis and reordering size did not match");
-    }
-    Log::Print("Reordering basis");
-    Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(basis.cols());
-    for (Index ii = 0; ii < basis.cols(); ii++) {
-      perm.indices()[ii] = reorder->at(ii);
-    }
-    basis = basis * perm;
-  }
+
   Log::Print("Computing dictionary");
   dict = basis.transpose() * dynamics.matrix();
   norm = dict.colwise().norm();
