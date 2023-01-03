@@ -78,6 +78,8 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
   args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag varimax(parser, "V", "Apply varimax rotation", {"varimax"});
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> reorder(
+    parser, "R", "Reorder basis (don't use with thresholding)", {"reorder"}, {0});
 
   ParseCommand(parser);
   if (!oname) {
@@ -103,37 +105,28 @@ int main_sim(args::Subparser &parser)
 
   Eigen::ArrayXXf parameters, dynamics;
   switch (seq.Get()) {
-  case Sequences::MPRAGE:
-    std::tie(parameters, dynamics) = Simulate<rl::MPRAGE>(settings, nsamp.Get());
-    break;
-  case Sequences::DIR:
-    std::tie(parameters, dynamics) = Simulate<rl::DIR>(settings, nsamp.Get());
-    break;
-  case Sequences::T2FLAIR:
-    std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get());
-    break;
-  case Sequences::MultiFLAIR:
-    std::tie(parameters, dynamics) = Simulate<rl::MultiFLAIR>(settings, nsamp.Get());
-    break;
+  case Sequences::MPRAGE: std::tie(parameters, dynamics) = Simulate<rl::MPRAGE>(settings, nsamp.Get()); break;
+  case Sequences::DIR: std::tie(parameters, dynamics) = Simulate<rl::DIR>(settings, nsamp.Get()); break;
+  case Sequences::T2FLAIR: std::tie(parameters, dynamics) = Simulate<rl::T2FLAIR>(settings, nsamp.Get()); break;
+  case Sequences::MultiFLAIR: std::tie(parameters, dynamics) = Simulate<rl::MultiFLAIR>(settings, nsamp.Get()); break;
   case Sequences::MultiFLAIRInv:
     settings.inversion = true;
     std::tie(parameters, dynamics) = Simulate<rl::MultiFLAIR>(settings, nsamp.Get());
     break;
-  case Sequences::T2Prep:
-    std::tie(parameters, dynamics) = Simulate<rl::T2Prep>(settings, nsamp.Get());
-    break;
-  case Sequences::T2InvPrep:
-    std::tie(parameters, dynamics) = Simulate<rl::T2InvPrep>(settings, nsamp.Get());
-    break;
-  case Sequences::T1T2:
-    std::tie(parameters, dynamics) = Simulate<rl::T1T2Prep>(settings, nsamp.Get());
-    break;
-  case Sequences::DWI:
-    std::tie(parameters, dynamics) = Simulate<rl::DWI>(settings, nsamp.Get());
-    break;
+  case Sequences::T2Prep: std::tie(parameters, dynamics) = Simulate<rl::T2Prep>(settings, nsamp.Get()); break;
+  case Sequences::T2InvPrep: std::tie(parameters, dynamics) = Simulate<rl::T2InvPrep>(settings, nsamp.Get()); break;
+  case Sequences::T1T2: std::tie(parameters, dynamics) = Simulate<rl::T1T2Prep>(settings, nsamp.Get()); break;
+  case Sequences::DWI: std::tie(parameters, dynamics) = Simulate<rl::DWI>(settings, nsamp.Get()); break;
   }
 
-  Basis basis(parameters, dynamics, thresh.Get(), nBasis.Get(), demean.Get(), varimax.Get());
+  Basis basis(
+    parameters,
+    dynamics,
+    thresh.Get(),
+    nBasis.Get(),
+    demean.Get(),
+    varimax.Get(),
+    reorder ? std::optional<std::vector<Index>>(reorder.Get()) : std::nullopt);
   HD5::Writer writer(oname.Get());
   basis.write(writer);
 

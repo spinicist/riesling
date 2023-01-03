@@ -10,7 +10,8 @@ Basis::Basis(
   float const thresh,
   Index const nBasis,
   bool const demean,
-  bool const varimax)
+  bool const varimax,
+  std::optional<std::vector<Index>> const reorder)
   : parameters{par}
   , dynamics{dyn}
 {
@@ -43,8 +44,8 @@ Basis::Basis(
     for (Index ii = 0; ii < q; ii++) {
       float const d_old = d;
       Eigen::MatrixXf const λ = basis * R;
-      Eigen::MatrixXf const x = basis.transpose() * (λ.array().pow(3.f).matrix() -
-                                                     (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
+      Eigen::MatrixXf const x =
+        basis.transpose() * (λ.array().pow(3.f).matrix() - (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
       auto const svdv = SVD<float>(x);
       R = svdv.U * svdv.V.adjoint();
       d = svdv.vals.sum();
@@ -54,6 +55,17 @@ Basis::Basis(
     basis = basis * R;
   }
   basis *= std::sqrt(basis.rows());
+  if (reorder) {
+    if (reorder->size() != basis.cols()) {
+      Log::Fail("Basis and reordering size did not match");
+    }
+    Log::Print("Reordering basis");
+    Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(basis.cols());
+    for (Index ii = 0; ii < basis.cols(); ii++) {
+      perm.indices()[ii] = reorder->at(ii);
+    }
+    basis = basis * perm;
+  }
   Log::Print("Computing dictionary");
   dict = basis.transpose() * dynamics.matrix();
   norm = dict.colwise().norm();
