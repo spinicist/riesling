@@ -9,22 +9,18 @@ T2Prep::T2Prep(Settings const &s)
 {
 }
 
-Index T2Prep::length() const
+auto T2Prep::length() const -> Index { return settings.spg * settings.gps; }
+
+auto T2Prep::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
 {
-  return settings.spg * settings.gps;
+  return Parameters::T1T2B1(nsamp, lo, hi);
 }
 
-Eigen::ArrayXXf T2Prep::parameters(Index const nsamp) const
+auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
-  return Parameters::T1T2(nsamp);
-}
-
-Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
-{
-  float const T1 = p(0);
-  float const T2 = p(1);
-  float const R1 = 1.f / T1;
-  float const R2 = 1.f / T2;
+  float const R1 = 1.f / p(0);
+  float const R2 = 1.f / p(1);
+  float const B1 = p(2);
   Eigen::ArrayXf dynamic(settings.spg * settings.gps);
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
@@ -38,8 +34,8 @@ Eigen::ArrayXf T2Prep::simulate(Eigen::ArrayXf const &p) const
   Essi << essi, 1 - essi, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
 
-  float const cosa = cos(settings.alpha * M_PI / 180.f);
-  float const sina = sin(settings.alpha * M_PI / 180.f);
+  float const cosa = cos(B1 * settings.alpha * M_PI / 180.f);
+  float const sina = sin(B1 * settings.alpha * M_PI / 180.f);
 
   Eigen::Matrix2f A;
   A << cosa, 0.f, 0.f, 1.f;
@@ -71,22 +67,18 @@ T2InvPrep::T2InvPrep(Settings const &s)
 {
 }
 
-Index T2InvPrep::length() const
+auto T2InvPrep::length() const -> Index { return settings.spg * settings.gps; }
+
+auto T2InvPrep::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
 {
-  return settings.spg * settings.gps;
+  return Parameters::T1T2B1(nsamp, lo, hi);
 }
 
-Eigen::ArrayXXf T2InvPrep::parameters(Index const nsamp) const
+auto T2InvPrep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
-  return Parameters::T1T2(nsamp);
-}
-
-Eigen::ArrayXf T2InvPrep::simulate(Eigen::ArrayXf const &p) const
-{
-  float const T1 = p(0);
-  float const T2 = p(1);
-  float const R1 = 1.f / T1;
-  float const R2 = 1.f / T2;
+  float const R1 = 1.f / p(0);
+  float const R2 = 1.f / p(1);
+  float const B1 = p(2);
   Eigen::ArrayXf dynamic(settings.spg * settings.gps);
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
@@ -100,8 +92,8 @@ Eigen::ArrayXf T2InvPrep::simulate(Eigen::ArrayXf const &p) const
   Essi << essi, 1 - essi, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
 
-  float const cosa = cos(settings.alpha * M_PI / 180.f);
-  float const sina = sin(settings.alpha * M_PI / 180.f);
+  float const cosa = cos(B1 * settings.alpha * M_PI / 180.f);
+  float const sina = sin(B1 * settings.alpha * M_PI / 180.f);
 
   Eigen::Matrix2f A;
   A << cosa, 0.f, 0.f, 1.f;

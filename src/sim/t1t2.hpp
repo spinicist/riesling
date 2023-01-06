@@ -10,9 +10,10 @@ namespace rl {
 struct T1T2Prep final : Sequence
 {
   T1T2Prep(Settings const &s);
-  Index length() const;
-  Eigen::ArrayXXf parameters(Index const nsamp) const;
-  Eigen::ArrayXf simulate(Eigen::ArrayXf const &p) const;
+
+  auto length() const -> Index;
+  auto parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf;
+  auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
 };
 
 } // namespace rl

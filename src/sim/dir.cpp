@@ -11,20 +11,18 @@ DIR::DIR(Settings const s)
     "DIR simulation TI1 {} Trec {} ⍺ {} TR {} SPG {}", settings.TI, settings.Trec, settings.alpha, settings.TR, settings.spg);
 }
 
-Index DIR::length() const
-{
-  return settings.spg * settings.gps;
-}
+Index DIR::length() const { return settings.spg * settings.gps; }
 
-Eigen::ArrayXXf DIR::parameters(Index const nsamp) const
+Eigen::ArrayXXf DIR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const
 {
-  return Parameters::T1η(nsamp);
+  return Parameters::T1B1η(nsamp, lo, hi);
 }
 
 Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
-  float const η = p(1);
+  float const B1 = p(1);
+  float const η = p(2);
   Eigen::ArrayXf dynamic(settings.spg * settings.gps);
 
   Eigen::Matrix2f inv;
@@ -45,15 +43,16 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
   Erec << erec, 1.f - erec, 0.f, 1.f;
   Esat << esat, 1.f - esat, 0.f, 1.f;
 
-  float const cosa = cos(settings.alpha * M_PI / 180.f);
-  float const sina = sin(settings.alpha * M_PI / 180.f);
+  float const cosa = cos(B1 * settings.alpha * M_PI / 180.f);
+  float const sina = sin(B1 * settings.alpha * M_PI / 180.f);
 
   Eigen::Matrix2f A;
   A << cosa, 0.f, 0.f, 1.f;
 
   // Get steady state after prep-pulse for first segment
   Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(settings.spg) * Eramp * Esat);
-  Eigen::Matrix2f const SS = Einv * inv * Erec * grp.pow(settings.gps - settings.gprep2) * Einv * inv * grp.pow(settings.gprep2);
+  Eigen::Matrix2f const SS =
+    Einv * inv * Erec * grp.pow(settings.gps - settings.gprep2) * Einv * inv * grp.pow(settings.gprep2);
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic

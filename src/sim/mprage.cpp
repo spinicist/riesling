@@ -14,9 +14,9 @@ Index MPRAGE::length() const
   return settings.spg * settings.gps;
 }
 
-Eigen::ArrayXXf MPRAGE::parameters(Index const nsamp) const
+Eigen::ArrayXXf MPRAGE::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const
 {
-  return Parameters::T1(nsamp);
+  return Parameters::T1(nsamp, lo, hi);
 }
 
 Eigen::ArrayXf MPRAGE::simulate(Eigen::ArrayXf const &p) const

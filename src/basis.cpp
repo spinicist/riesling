@@ -11,7 +11,7 @@ Basis::Basis(
   Index const nBasis,
   bool const demean,
   bool const varimax,
-  std::optional<std::vector<Index>> const reorder)
+  std::vector<Index> const reorder)
   : parameters{par}
   , dynamics{dyn}
 {
@@ -29,15 +29,15 @@ Basis::Basis(
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
 
-  if (reorder) {
-    Index const nReorder = reorder->size();
+  if (reorder.size()) {
+    Index const nReorder = reorder.size();
     if (nReorder < nRetain) {
       Log::Fail("Basis and reordering size did not match");
     }
     Log::Print("Reordering basis");
     Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> perm(nReorder);
     for (Index ii = 0; ii < nReorder; ii++) {
-      perm.indices()[ii] = reorder->at(ii);
+      perm.indices()[ii] = reorder[ii];
     }
     basis = (svd.V.leftCols(nReorder) * perm).leftCols(nRetain);
   } else {

@@ -7,8 +7,8 @@ using namespace Catch;
 
 TEST_CASE("Parameters", "[pars]")
 {
-  auto const t1 = rl::Parameters::T1(2048);
-  auto const t1t2 = rl::Parameters::T1T2(2048);
+  auto const t1 = rl::Parameters::T1(2048, {0.5f}, {4.3f});
+  auto const t1t2 = rl::Parameters::T1T2B1(2048, {0.5f, 0.04f, 0.7f}, {4.3f, 2.f, 1.3f});
 
   SECTION("Basic")
   {

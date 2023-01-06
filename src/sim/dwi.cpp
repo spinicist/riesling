@@ -9,12 +9,12 @@ DWI::DWI(Settings const &s)
 {
 }
 
-Index DWI::length() const
+auto DWI::length() const -> Index
 {
   return 4 * settings.spg * settings.gps;
 }
 
-Eigen::ArrayXXf DWI::parameters(Index const nS) const
+auto DWI::parameters(Index const nS, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
 {
   float const R1lo = 1.f / 0.25f;
   float const R1hi = 1.f / 5.0f;
@@ -53,7 +53,7 @@ Eigen::ArrayXXf DWI::parameters(Index const nS) const
   return p2;
 }
 
-Eigen::ArrayXf DWI::simulate(Eigen::ArrayXf const &p) const
+auto DWI::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   Eigen::ArrayXf dynamic(4 * settings.spg * settings.gps);
   float const T1 = p(0);

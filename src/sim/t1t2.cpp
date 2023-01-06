@@ -9,12 +9,12 @@ T1T2Prep::T1T2Prep(Settings const &s)
 {
 }
 
-Index T1T2Prep::length() const
+auto T1T2Prep::length() const -> Index
 {
   return 2 * settings.spg * settings.gps;
 }
 
-Eigen::ArrayXXf T1T2Prep::parameters(Index const nS) const
+auto T1T2Prep::parameters(Index const nS, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
 {
   float const R1lo = 1.f / 0.25f;
   float const R1hi = 1.f / 5.0f;
@@ -49,7 +49,7 @@ Eigen::ArrayXXf T1T2Prep::parameters(Index const nS) const
   return p2;
 }
 
-Eigen::ArrayXf T1T2Prep::simulate(Eigen::ArrayXf const &p) const
+auto T1T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   float const T1 = p(0);
   float const T2 = p(1);
