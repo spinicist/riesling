@@ -26,7 +26,7 @@ int main_frames(args::Subparser &parser)
   Index index = 0;
   for (Index ifr = 0; ifr < nF; ifr++) {
     for (Index it = 0; it < frames.Get()[ifr]; it++) {
-      basis(ifr, index++) = 1. / std::sqrt(nT);
+      basis(ifr, index++) = 1.;
     }
   }
 
