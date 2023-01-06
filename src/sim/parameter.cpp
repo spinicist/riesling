@@ -78,7 +78,7 @@ auto T1B1η(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eig
   auto const ηs = Eigen::ArrayXf::LinSpaced(nT, ηlo, ηhi);
   auto const B1s = Eigen::ArrayXf::LinSpaced(nT, B1lo, B1hi);
   Index nAct = 0;
-  Eigen::ArrayXXf p(2, nS);
+  Eigen::ArrayXXf p(3, nS);
   for (Index iη = 0; iη < nT; iη++) {
     for (Index ib = 0; ib < nT; ib++) {
       for (Index i1 = 0; i1 < nT; i1++) {
