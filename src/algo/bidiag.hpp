@@ -84,7 +84,6 @@ inline void BidiagInit(
     uλ.device(dev) = uλ / uλ.constant(β);
     Input temp = std::sqrt(λ) * opλ->adjoint(uλ);
     v.device(dev) = op->adjoint(u);
-    fmt::print("|v| {} |vλ| {}\n", Norm(v), Norm(temp));
     v.device(dev) += temp;
   } else {
     v.device(dev) = op->adjoint(u);
