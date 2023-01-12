@@ -62,8 +62,8 @@ struct OperatorAlloc : Operator<Scalar_, InRank, OutRank>
 
   virtual ~OperatorAlloc(){};
 
-  auto input() const { return x_; }
-  auto output() const { return y_; }
+  auto &input() const { return x_; }
+  auto &output() const { return y_; }
 
   using Parent::adjoint;
   using Parent::forward;

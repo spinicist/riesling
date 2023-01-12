@@ -11,7 +11,7 @@
 
 namespace {
 
-inline Index Wrap(Index const ii, Index const sz)
+inline Index Crop(Index const ii, Index const sz)
 {
   if (ii < 0)
     return -1;
@@ -61,7 +61,8 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
 
     auto grid_task = [&](Index const ibucket) {
       auto const &bucket = map.buckets[ibucket];
-
+      Eigen::Tensor<Scalar, 1> sum(nC);
+      Re1 bEntry(nB);
       for (auto ii = 0; ii < bucket.size(); ii++) {
         auto const si = bucket.indices[ii];
         auto const c = map.cart[si];
@@ -69,36 +70,35 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
         auto const k = this->kernel(map.offset[si]);
         Index const kW_2 = ((kW - 1) / 2);
         Index const btp = n.trace % basis.dimension(1);
-        Eigen::Tensor<Scalar, 1> sum(nC);
+        bEntry = basis.chip<1>(btp);
         sum.setZero();
-
         for (Index i1 = 0; i1 < kW; i1++) {
-          if (Index const ii1 = Wrap(c[NDim - 1] - kW_2 + i1, cdims[NDim - 1]); ii1 > -1) {
+          if (Index const ii1 = Crop(c[NDim - 1] - kW_2 + i1, cdims[NDim - 1]); ii1 > -1) {
             if constexpr (NDim == 1) {
               float const kval = k(i1);
               for (Index ib = 0; ib < nB; ib++) {
-                float const bval = kval * basis(ib, btp);
+                float const bval = kval * bEntry(ib);
                 for (Index ic = 0; ic < nC; ic++) {
                   this->output()(ic, n.sample, n.trace) += x(ic, ib, ii1) * bval;
                 }
               }
             } else {
               for (Index i2 = 0; i2 < kW; i2++) {
-                if (Index const ii2 = Wrap(c[NDim - 2] - kW_2 + i2, cdims[NDim - 2]); ii2 > -1) {
+                if (Index const ii2 = Crop(c[NDim - 2] - kW_2 + i2, cdims[NDim - 2]); ii2 > -1) {
                   if constexpr (NDim == 2) {
                     float const kval = k(i2, i1);
                     for (Index ib = 0; ib < nB; ib++) {
-                      float const bval = kval * basis(ib, btp);
+                      float const bval = kval * bEntry(ib);
                       for (Index ic = 0; ic < nC; ic++) {
                         this->output()(ic, n.sample, n.trace) += x(ic, ib, ii2, ii1) * bval;
                       }
                     }
                   } else {
                     for (Index i3 = 0; i3 < kW; i3++) {
-                      if (Index const ii3 = Wrap(c[NDim - 3] - kW_2 + i3, cdims[NDim - 3]); ii3 > -1) {
+                      if (Index const ii3 = Crop(c[NDim - 3] - kW_2 + i3, cdims[NDim - 3]); ii3 > -1) {
                         float const kval = k(i3, i2, i1);
                         for (Index ib = 0; ib < nB; ib++) {
-                          float const bval = kval * basis(ib, btp);
+                          float const bval = kval * bEntry(ib);
                           for (Index ic = 0; ic < nC; ic++) {
                             this->output()(ic, n.sample, n.trace) += x(ic, ib, ii3, ii2, ii1) * bval;
                           }
@@ -186,7 +186,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
       {
         std::scoped_lock lock(writeMutex);
         for (Index i1 = 0; i1 < bSz[NDim - 1]; i1++) {
-          if (Index const ii1 = Wrap(bucket.minCorner[NDim - 1] + i1, cdims[NDim - 1]); ii1 > -1) {
+          if (Index const ii1 = Crop(bucket.minCorner[NDim - 1] + i1, cdims[NDim - 1]); ii1 > -1) {
             if constexpr (NDim == 1) {
               for (Index ib = 0; ib < nB; ib++) {
                 for (Index ic = 0; ic < nC; ic++) {
@@ -195,7 +195,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
               }
             } else {
               for (Index i2 = 0; i2 < bSz[NDim - 2]; i2++) {
-                if (Index const ii2 = Wrap(bucket.minCorner[NDim - 2] + i2, cdims[NDim - 2]); ii2 > -1) {
+                if (Index const ii2 = Crop(bucket.minCorner[NDim - 2] + i2, cdims[NDim - 2]); ii2 > -1) {
                   if constexpr (NDim == 2) {
                     for (Index ib = 0; ib < nB; ib++) {
                       for (Index ic = 0; ic < nC; ic++) {
@@ -204,7 +204,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
                     }
                   } else {
                     for (Index i3 = 0; i3 < bSz[NDim - 3]; i3++) {
-                      if (Index const ii3 = Wrap(bucket.minCorner[NDim - 3] + i3, cdims[NDim - 3]); ii3 > -1) {
+                      if (Index const ii3 = Crop(bucket.minCorner[NDim - 3] + i3, cdims[NDim - 3]); ii3 > -1) {
                         for (Index ib = 0; ib < nB; ib++) {
                           for (Index ic = 0; ic < nC; ic++) {
                             this->input()(ic, ib, ii3, ii2, ii1) += bGrid(ic, ib, i3, i2, i1);
