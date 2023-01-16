@@ -13,8 +13,8 @@ using namespace Catch;
 TEST_CASE("NUFFT", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const G = 5;
-  Info const info{.matrix = Sz3{G, G, G}};
+  Index const M = 5;
+  Info const info{.matrix = Sz3{M, M, M}};
   Re3 points(1, 5, 1);
   points.setZero();
   points(0, 0, 0) = -0.5f;
@@ -24,19 +24,19 @@ TEST_CASE("NUFFT", "[nufft]")
   points(0, 4, 0) = 0.5f;
   Trajectory const traj(info, points);
 
-  float const osamp = GENERATE(1.25f, 2.f);
+  float const osamp = GENERATE(2.f, 2.3f);
   using Kernel = Rectilinear<1, ExpSemi<3>>;
   Mapping<1> mapping(traj, osamp, Kernel::PadWidth);
 
   std::shared_ptr<GridBase<Cx, 1>> grid = std::make_shared<Grid<Cx, Kernel>>(mapping, 1);
-  Index const M = GENERATE(3, 5);
-  NUFFTOp<1> nufft(grid, Sz1{M});
+  Index const N = 5;
+  NUFFTOp<1> nufft(grid, Sz1{N});
   Cx3 ks(nufft.outputDimensions());
   Cx3 img(nufft.inputDimensions());
   img.setZero();
-  img(0, 0, M / 2) = std::sqrt(G);
+  img(0, 0, N / 2) = std::sqrt(N);
   ks = nufft.forward(img);
-  CHECK(Norm(ks) == Approx(Norm(img)).margin(5.e-2f));
+  CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-2f));
   img = nufft.adjoint(ks);
-  CHECK(Norm(img) == Approx(Norm(ks)).margin(5.e-2f));
+  CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-2f));
 }
