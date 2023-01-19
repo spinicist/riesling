@@ -19,11 +19,11 @@ if nargin > 4
     elseif strcmp(tensorName,'nufft-forward')
         Ndims = 3;
     else
-        Ndims = 4;
+        Ndims = 5;
     end
 else
     tensorName = 'noncartesian';
-    Ndims = 4;
+    Ndims = 5;
 end
 
 if isfile(fname)
