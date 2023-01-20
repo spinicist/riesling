@@ -19,11 +19,12 @@ function varargout = riesling_read(fname)
 file_info = h5info(fname);
 is_img_data = any(contains({file_info.Datasets.Name}, 'image'));
 is_sense_data = any(contains({file_info.Datasets.Name}, 'sense'));
+is_channels_data = any(contains({file_info.Datasets.Name}, 'channels'));
 is_nufft_reverse_data = any(contains({file_info.Datasets.Name}, 'nufft-backward'));
 is_nufft_forward_data = any(contains({file_info.Datasets.Name}, 'nufft-forward'));
 
-% read info 
-if ~is_sense_data
+% read info
+if ~is_sense_data && ~is_channels_data
     info = h5read(fname, '/info');
 end
 
@@ -47,6 +48,11 @@ elseif is_nufft_reverse_data
     varargout{2} = info;
 elseif is_sense_data
     data = h5read(fname, '/sense');
+    img = data.r + 1j*data.i;
+    
+    varargout{1} = img;
+elseif is_channels_data
+    data = h5read(fname, '/channels');
     img = data.r + 1j*data.i;
     
     varargout{1} = img;
