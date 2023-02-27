@@ -16,7 +16,7 @@ rc = {'figsize': 4,
       'effects':([effects.Stroke(linewidth=4, foreground='black'), effects.Normal()])}
 
 def planes(fname, dset='image',
-           other_dims=[], other_indices=[], img_offset=-1,
+           other_dims=None, other_indices=None, img_offset=-1,
            component='mag', clim=None, cmap=None, cbar=True,
            rotates=(0, 0, 0), fliplr=False, title=None):
 
@@ -28,9 +28,9 @@ def planes(fname, dset='image',
         index_x = int(np.floor(D.shape[dim_x] * 0.5))
         index_y = int(np.floor(D.shape[dim_y] * 0.5))
         index_z = int(np.floor(D.shape[dim_z] * 0.5))
-        data_x = _get_slices(D, dim_x, [index_x], img_x, (slice(None), slice(None)), other_dims, other_indices)
-        data_y = _get_slices(D, dim_y, [index_y], img_y, (slice(None), slice(None)), other_dims, other_indices)
-        data_z = _get_slices(D, dim_z, [index_z], img_z, (slice(None), slice(None)), other_dims, other_indices)
+        data_x = _get_slices(D, dim_x, [index_x], img_x, other_dims=other_dims, other_indices=other_indices)
+        data_y = _get_slices(D, dim_y, [index_y], img_y, other_dims=other_dims, other_indices=other_indices)
+        data_z = _get_slices(D, dim_z, [index_z], img_z, other_dims=other_dims, other_indices=other_indices)
 
     clim, cmap = _get_colors(clim, cmap, data_x, component)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
@@ -44,7 +44,7 @@ def planes(fname, dset='image',
     return fig
 
 def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
-           other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
+           other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
            component='mag', clim=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None):
 
@@ -70,8 +70,8 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
     plt.close()
     return fig
 
-def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_slice=slice(None),
-           other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
+def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_slice=None,
+           other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
            component='mag', clim=None, cmap=None, cbar=True, rows=1, rotates=0, fliplr=False, title=None):
 
     slice_dim, img_dims = _get_dims(axis, img_offset)
@@ -102,7 +102,7 @@ def sense(fname, **kwargs):
     return series(fname, dset='sense', component='x', **kwargs)
 
 def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
-         other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
+         other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
          component='mag', clim=None, cmap=None, cbar=True,
          diff_component='real', difflim=None, diffmap=None,
          rotates=0, fliplr=False, title=None):
@@ -142,7 +142,7 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     return fig
 
 def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
-         other_dims=[], other_indices=[], img_offset=-1, img_slices=(slice(None), slice(None)),
+         other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
          component='mag', clim=None, cmap=None, cbar=True,
          diff_component='real', difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None):
@@ -190,21 +190,24 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     plt.close()
     return fig
 
-def noncart(fname, dset='noncartesian', channels=slice(0), read_slice=slice(None), spoke_slice=slice(None),
-            slab=0, volume=0,
-            component='x', clim=None, cmap=None, cbar=True, title=None):
+def noncart(fname, dset='noncartesian', channels=slice(1), read_slice=slice(None), spoke_slice=slice(None),
+            slab=0, volume=0, rows=1, component='xlog', clim=None, cmap=None, cbar=True, title=None):
     with h5py.File(fname) as f:
         D = f[dset]
-        data = _get_slices(D, -1, channels, (-1, -2), (read_slice, spoke_slice), (-3, -4), (slab, volume))
-
-    n = data.shape[-3]
+        data = _get_slices(D, -1, channels, (-2, -3), (read_slice, spoke_slice), (-4, -5), (slab, volume))
+    n = data.shape[0]
     clim, cmap = _get_colors(clim, cmap, data, component)
-    fig, all_ax = plt.subplots(n, 1, figsize=(rc['figsize']*2, rc['figsize']*n))
 
-    for ii in range(n):
-        ax = _get_axes(all_ax, 0, ii)
-        im = _draw(ax, np.squeeze(data[ii, :, :]).T, component, clim, cmap)
-        _add_colorbar(cbar, component, fig, im, clim, title, ax)
+    cols = int(np.ceil(n / rows))
+    height = rc['figsize']*rows
+    width = rc['figsize']*cols*data.shape[2]/data.shape[1]
+    fig, all_ax = plt.subplots(rows, cols, figsize=(width, height), facecolor='black')
+    for ir in range(rows):
+        for ic in range(cols):
+            sl = (ir * cols) + ic
+            ax = _get_axes(all_ax, ir, ic)
+            im = _draw(ax, np.squeeze(data[sl, :, :]), component, clim, cmap)
+            _add_colorbar(cbar, component, fig, im, clim, title, ax)
     plt.close()
     return fig
 
@@ -230,16 +233,21 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
         plt.close()
     return fig
 
-def _get_slices(dset, slice_dim, slices, img_dims, img_slices=(slice(None),slice(None)), other_dims=[], other_indices=[]):
+def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=None, other_indices=None):
     if dset.ndim < 3:
         raise Exception('Requires at least a 3D image')
+    if img_slices is None:
+        img_slices = (slice(None), slice(None))
+    if other_dims is None:
+        other_dims = []
+    if other_indices is None:
+        other_indices = []
 
     if len(other_indices) > (dset.ndim - 3):
         raise Exception('Too many other_indices')
     elif len(other_indices) < (dset.ndim - 3):
         other_indices.extend([0,]*(dset.ndim - 3 - len(other_indices)))
         other_dims.extend([x for x in range(-dset.ndim, 0) if x not in list([*img_dims, *other_dims, slice_dim])])
-    
     all_slices = [slice(None),]*dset.ndim
     all_slices[img_dims[0]] = img_slices[0]
     all_slices[img_dims[1]] = img_slices[1]
