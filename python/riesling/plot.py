@@ -73,12 +73,21 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
 def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_slice=None,
            other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
            component='mag', clim=None, cmap=None, cbar=True, rows=1, rotates=0, fliplr=False, title=None):
-
     slice_dim, img_dims = _get_dims(axis, img_offset)
+    if series_slice is None:
+        series_slice = slice(None)
+    if other_dims is None:
+        other_dims = [slice_dim]
+    else:
+        other_dims = [slice_dim, *other_dims]
     with h5py.File(fname, 'r') as f:
         D = f[dset]
         slice_index = int(np.floor(D.shape[slice_dim] * slice_pos))
-        data = _get_slices(D, series_dim, series_slice, img_dims, img_slices, [slice_dim, *other_dims], [slice_index, *other_indices])
+        if other_indices is None:
+            other_indices = [slice_index]
+        else:
+            other_indices = [slice_index, *other_indices]
+        data = _get_slices(D, series_dim, series_slice, img_dims, img_slices, other_dims, other_indices)
 
     n = data.shape[-3]
     clim, cmap = _get_colors(clim, cmap, data, component)
