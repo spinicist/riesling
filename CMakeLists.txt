@@ -74,9 +74,9 @@ add_library(vineyard
     src/prox/thresh.cpp
     src/prox/thresh-wavelets.cpp
     src/sim/parameter.cpp
-    src/sim/dwi.cpp
-    src/sim/mprage.cpp
     src/sim/dir.cpp
+    src/sim/dwi.cpp
+    src/sim/ir.cpp
     src/sim/t2flair.cpp
     src/sim/t2prep.cpp
     src/sim/t1t2.cpp

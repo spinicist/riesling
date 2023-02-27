@@ -6,7 +6,7 @@
 #include "parse_args.hpp"
 #include "sim/dir.hpp"
 #include "sim/dwi.hpp"
-#include "sim/mprage.hpp"
+#include "sim/ir.hpp"
 #include "sim/parameter.hpp"
 #include "sim/t1t2.hpp"
 #include "sim/t2flair.hpp"
@@ -32,8 +32,10 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<float> lo, std::v
 enum struct Sequences
 {
   T1T2 = 0,
-  MPRAGE,
+  IR,
+  IR2,
   DIR,
+  DIR2,
   T2Prep,
   T2InvPrep,
   T2FLAIR,
@@ -42,8 +44,10 @@ enum struct Sequences
 
 std::unordered_map<std::string, Sequences> SequenceMap{
   {"T1T2Prep", Sequences::T1T2},
-  {"MPRAGE", Sequences::MPRAGE},
+  {"IR", Sequences::IR},
+  {"IR2", Sequences::IR2},
   {"DIR", Sequences::DIR},
+  {"DIR2", Sequences::DIR2},
   {"T2Prep", Sequences::T2Prep},
   {"T2InvPrep", Sequences::T2InvPrep},
   {"T2FLAIR", Sequences::T2FLAIR},
@@ -102,8 +106,10 @@ int main_sim(args::Subparser &parser)
 
   Eigen::ArrayXXf pars, dyns;
   switch (seq.Get()) {
-  case Sequences::MPRAGE: std::tie(pars, dyns) = Run<rl::MPRAGE>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::DIR2: std::tie(pars, dyns) = Run<rl::DIR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2InvPrep: std::tie(pars, dyns) = Run<rl::T2InvPrep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;

@@ -26,7 +26,7 @@ void CheckSizes(
 
 auto T1(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eigen::ArrayXXf
 {
-  CheckSizes(1, {0.5f}, {4.3f}, lo, hi);
+  CheckSizes(1, {0.35f}, {4.3f}, lo, hi);
   float const R1lo = 1.f / lo[0];
   float const R1hi = 1.f / hi[0];
   auto const R1s = Eigen::ArrayXf::LinSpaced(nS, R1lo, R1hi);
