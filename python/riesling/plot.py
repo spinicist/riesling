@@ -329,7 +329,7 @@ def _symmetrize_real(x):
 def _get_colors(clim, cmap, img, component):
     if not clim:
         if component == 'mag':
-            clim = np.nanpercentile(np.abs(img), (2, 98))
+            clim = np.nanpercentile(np.abs(img), (2, 99))
         elif component == 'log':
             clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 98))
         elif component == 'pha':
@@ -367,11 +367,12 @@ def _get_colors(clim, cmap, img, component):
 
 def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos='bottom'):
     if not cbar:
-        return
-    if component == 'x' or component == 'xlog':
+        if title is not None:
+            fig.text(0.5, 0.05, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
+    elif component == 'x' or component == 'xlog':
         _add_colorball(clim, ax=ax, cax=cax)
         if title is not None:
-            fig.suptitle(title, color='white')
+            fig.text(0.5, 0.05, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
     else:
         if cax is None:
             ax = _first(ax)
