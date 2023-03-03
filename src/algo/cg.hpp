@@ -13,6 +13,7 @@ struct NormalEqOp
 {
   using Input = typename Op::Input;
   using InputMap = typename Op::InputMap;
+  using CInputMap = typename Op::CInputMap;
 
   std::shared_ptr<Op> op;
   NormalEqOp(std::shared_ptr<Op> o)
@@ -42,12 +43,13 @@ struct ConjugateGradients
 {
   using Input = typename Op::Input;
   using InputMap = typename Op::InputMap;
+  using CInputMap = typename Op::CInputMap;
   std::shared_ptr<Op> op;
   Index iterLimit = 16;
   float resTol = 1.e-6f;
   bool debug = false;
 
-  Input run(InputMap const b, Input const &x0 = Input()) const
+  Input run(CInputMap const b, Input const &x0 = Input()) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory

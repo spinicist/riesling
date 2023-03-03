@@ -39,7 +39,7 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    cropped = out_cropper.crop4(cg.run(recon->adjoint(CChipMap(allData, iv))));
+    cropped = out_cropper.crop4(cg.run(recon->cadjoint(CChipMap(allData, iv))));
     out.chip<4>(iv) = cropped;
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }

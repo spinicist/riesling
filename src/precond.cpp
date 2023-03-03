@@ -30,7 +30,7 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   ones.setConstant(1. / std::sqrt(psf.dimension(1)));
   PadOp<Cx, 5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   FFTOp<5, 3> fftX(psf.dimensions());
-  Cx5 xcorr = fftX.forward(padX.forward(ones)).abs().square().cast<Cx>();
+  Cx5 xcorr = fftX.cforward(padX.cforward(ones)).abs().square().cast<Cx>();
   xcorr = fftX.adjoint(xcorr);
   xcorr = xcorr * psf;
   Log::Tensor(Cx5(xcorr), "pre-img");

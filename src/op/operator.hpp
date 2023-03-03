@@ -24,10 +24,12 @@ struct Operator
   using Scalar = Scalar_;
   using Input = Eigen::Tensor<Scalar, InputRank>;
   using InputMap = Eigen::TensorMap<Input>;
+  using CInputMap = Eigen::TensorMap<Input const>;
   using InputDims = typename Input::Dimensions;
   static const size_t OutputRank = OutRank;
   using Output = Eigen::Tensor<Scalar, OutputRank>;
   using OutputMap = Eigen::TensorMap<Output>;
+  using COutputMap = Eigen::TensorMap<Output const>;
   using OutputDims = typename Output::Dimensions;
 
   Operator(std::string const &name, InputDims const xd, OutputDims const yd)
@@ -52,13 +54,13 @@ struct Operator
   virtual auto adjoint(OutputMap y) const -> InputMap = 0;
   virtual auto adjfwd(InputMap x) const -> InputMap { Log::Fail("AdjFwd Not implemented"); }
 
-  auto forward(Input const &x) const -> OutputMap
+  virtual auto cforward(CInputMap x) const -> Output
   {
     Input xcopy = x;
     return this->forward(InputMap(xcopy));
   }
 
-  auto adjoint(Output const &y) const -> InputMap
+  virtual auto cadjoint(COutputMap y) const -> Input
   {
     Output ycopy = y;
     return this->adjoint(OutputMap(ycopy));

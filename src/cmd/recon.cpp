@@ -67,7 +67,7 @@ int main_recon(args::Subparser &parser)
     out.setZero();
     auto const &all_start = Log::Now();
     for (Index iv = 0; iv < volumes; iv++) {
-      vol = recon->adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
+      vol = recon->cadjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
       out.chip<4>(iv) = Crop(vol, osz);
     }
     Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

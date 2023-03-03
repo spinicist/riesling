@@ -50,7 +50,7 @@ int main_transform(args::Subparser &parser)
       Cx6 output(AddBack(dims, 3, input.dimension(4)));
       GradOp g(dims);
       for (Index iv = 0; iv < input.dimension(4); iv++) {
-        output.chip<5>(iv) = g.forward(input.chip<4>(iv));
+        output.chip<5>(iv) = g.cforward(CChipMap(input, iv));
       }
       writer.writeTensor(output, "grad");
     } else {
@@ -59,7 +59,7 @@ int main_transform(args::Subparser &parser)
       Cx5 output(AddBack(dims, input.dimension(5)));
       GradOp g(dims);
       for (Index iv = 0; iv < input.dimension(5); iv++) {
-        output.chip<4>(iv) = g.adjoint(input.chip<5>(iv));
+        output.chip<4>(iv) = g.cadjoint(CChipMap(input, iv));
       }
       writer.writeTensor(output, HD5::Keys::Image);
     }

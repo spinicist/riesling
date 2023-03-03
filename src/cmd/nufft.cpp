@@ -45,7 +45,7 @@ int main_nufft(args::Subparser &parser)
       false);
     Cx5 noncart(AddBack(nufft->outputDimensions(), channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
+      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->cforward(CChipMap(channels, ii));
     }
     writer.writeTensor(noncart, HD5::Keys::Noncartesian);
     traj.write(writer);
@@ -61,7 +61,7 @@ int main_nufft(args::Subparser &parser)
 
     Cx6 output(AddBack(nufft->inputDimensions(), noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft->adjoint(CChipMap(noncart, ii));
+      output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft->cadjoint(CChipMap(noncart, ii));
     }
     writer.writeTensor(output, HD5::Keys::Channels);
     Log::Print(FMT_STRING("NUFFT Adjoint took {}"), Log::ToNow(start));

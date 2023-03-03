@@ -50,7 +50,8 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
 
-  args::Flag entropy(parser, "E", "Maximum Entropy", {"maxent"});
+  args::Flag maxent(parser, "E", "Maximum Entropy", {"maxent"});
+  args::Flag nmrent(parser, "E", "NMR Entropy", {"nmrent"});
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -89,9 +90,18 @@ int main_admm(args::Subparser &parser)
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
-  } else if (entropy) {
+  } else if (maxent) {
     Regularizer<IdentityOp<Cx, 4>> reg{
-      .prox = std::make_shared<ProxEnt>(λ.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
+      .prox = std::make_shared<Entropy>(λ.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
+    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+    for (Index iv = 0; iv < volumes; iv++) {
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+    }
+  } else if (nmrent) {
+    Regularizer<IdentityOp<Cx, 4>> reg{
+      .prox = std::make_shared<NMREnt>(λ.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
     LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
     ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};

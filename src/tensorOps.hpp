@@ -269,4 +269,10 @@ inline auto ConstMap(Eigen::TensorMap<T> x) {
   return cx;
 }
 
+template<typename T>
+inline auto Map(T x) {
+  Eigen::TensorMap<T const> cx(x.data(), x.dimensions());
+  return cx;
+}
+
 }

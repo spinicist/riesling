@@ -45,7 +45,7 @@ int main_sense(args::Subparser &parser)
       maps.dimension(3),
       images.dimension(4));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
-      channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.forward(images.chip<4>(ii));
+      channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.cforward(CChipMap(images, ii));
     }
     Log::Print(FMT_STRING("SENSE took {}"), Log::ToNow(start));
     writer.writeTensor(channels, HD5::Keys::Channels);
@@ -65,7 +65,7 @@ int main_sense(args::Subparser &parser)
     SenseOp sense(maps, channels.dimension(1));
     Cx5 images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(channels.chip<5>(ii));
+      images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.cadjoint(CChipMap(channels, ii));
     }
     Log::Print(FMT_STRING("SENSE Adjoint took {}"), Log::ToNow(start));
     writer.writeTensor(images, HD5::Keys::Image);

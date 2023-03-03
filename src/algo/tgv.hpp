@@ -143,7 +143,7 @@ Cx4 tgv(
 
   // Primal variables
   Cx4 u(dims);                 // Main variable
-  u = op->adjoint(ks_data);     // Get starting point
+  u = op->cadjoint(ks_data);     // Get starting point
   float const scale = Norm(u); // Normalise regularisation factors
   Cx4 u_ = u;                  // Bar variable (is this the "dual"?)
   Cx4 u_old = u;               // From previous iteration

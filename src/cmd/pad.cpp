@@ -29,12 +29,12 @@ int main_pad(args::Subparser &parser)
     PadOp<Cx, 5> pad(LastN<3>(inDims), padDims.Get(), FirstN<2>(inDims));
     if (fwd) {
       for (Index ii = 0; ii < inDims[5]; ii++) {
-        outImages.chip(ii, 5) = pad.forward(inImages.chip(ii, 5));
+        outImages.chip(ii, 5) = pad.cforward(CChipMap(inImages, ii));
       }
       Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     } else {
       for (Index ii = 0; ii < inDims[5]; ii++) {
-        outImages.chip(ii, 5) = pad.adjoint(inImages.chip(ii, 5));
+        outImages.chip(ii, 5) = pad.cadjoint(CChipMap(inImages, ii));
       }
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     }

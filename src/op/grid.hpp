@@ -237,8 +237,9 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     kSt.fill((Kernel::PadWidth - Kernel::Width) / 2);
     kSz.fill(Kernel::Width);
     Eigen::Tensor<Cx, NDim> k = kernel(Kernel::Point::Zero()).slice(kSt, kSz).template cast<Cx>();
+    k = k * k.constant(scale);
     PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
-    temp = padK.forward(k * k.constant(scale));
+    temp = padK.cforward(k);
     fft->reverse(temp);
     PadOp<Cx, NDim, NDim> padA(sz, temp.dimensions());
     Eigen::Tensor<float, NDim> a = padA.adjoint(temp).abs();
