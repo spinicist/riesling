@@ -3,6 +3,7 @@
     "version-string": "1.0",
     "dependencies": [
         "args",
+        "boost-math",
         "catch2",
         "eigen3",
         "fmt",

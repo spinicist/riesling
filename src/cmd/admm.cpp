@@ -6,6 +6,7 @@
 #include "algo/lsqr.hpp"
 #include "cropper.h"
 #include "func/dict.hpp"
+#include "func/entropy.hpp"
 #include "func/llr.hpp"
 #include "func/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
@@ -49,6 +50,8 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
 
+  args::Flag entropy(parser, "E", "Maximum Entropy", {"maxent"});
+
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
@@ -80,6 +83,15 @@ int main_admm(args::Subparser &parser)
   } else if (patchSize) {
     Regularizer<IdentityOp<Cx, 4>> reg{
       .prox = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
+    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+    for (Index iv = 0; iv < volumes; iv++) {
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+    }
+  } else if (entropy) {
+    Regularizer<IdentityOp<Cx, 4>> reg{
+      .prox = std::make_shared<ProxEnt>(λ.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
     LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
     ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};

@@ -41,6 +41,7 @@ using Re4 = Eigen::Tensor<float, 4>;                       // 4D Real data
 using Re5 = Eigen::Tensor<float, 5>;                       // 5D Real data
 
 using Rd1 = Eigen::Tensor<double, 1>;
+using Rd4 = Eigen::Tensor<double, 4>;
 
 using Cx = std::complex<float>;
 using Cxd = std::complex<double>;
