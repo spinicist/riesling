@@ -12,7 +12,6 @@ link_libraries("$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VER
 
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
-find_package(Boost CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
@@ -83,7 +82,6 @@ add_library(vineyard
 target_include_directories(vineyard PUBLIC src)
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
-    Boost::boost
     Eigen3::Eigen
     fmt::fmt-header-only
     FFTW3::fftw3f
