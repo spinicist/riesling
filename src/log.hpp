@@ -46,6 +46,14 @@ inline void Print(fmt::format_string<Args...> const &fstr, Args &&...args)
   }
 }
 
+template <Log::Level level = Log::Level::Low, typename... Args>
+inline void Warn(fmt::format_string<Args...> const &fstr, Args &&...args)
+{
+  if (level <= CurrentLevel()) {
+    fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
+  }
+}
+
 template <typename... Args>
 __attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
 {

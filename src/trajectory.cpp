@@ -29,7 +29,7 @@ void Trajectory::init()
 
   float const maxCoord = Maximum(points_.abs());
   if (maxCoord > 0.5f) {
-    Log::Fail(FMT_STRING("Maximum trajectory co-ordinate {} exceeded 0.5"), maxCoord);
+    Log::Warn(FMT_STRING("Maximum trajectory co-ordinate {} > 0.5"), maxCoord);
   }
   Log::Print<Log::Level::Debug>(FMT_STRING("{}D Trajectory size {},{}"), nDims(), nSamples(), nTraces());
 }
