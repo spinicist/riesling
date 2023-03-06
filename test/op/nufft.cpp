@@ -35,8 +35,8 @@ TEST_CASE("NUFFT", "[nufft]")
   Cx3 img(nufft.inputDimensions());
   img.setZero();
   img(0, 0, N / 2) = std::sqrt(N);
-  ks = nufft.forward(img);
+  ks = nufft.cforward(img);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-2f));
-  img = nufft.adjoint(ks);
+  img = nufft.cadjoint(ks);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-2f));
 }
