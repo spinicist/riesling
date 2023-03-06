@@ -21,7 +21,7 @@ auto Entropy::operator()(float const α, Eigen::TensorMap<Cx4 const> v) const ->
       x.device(Threads::GlobalDevice()) = (x - (t/2.f) * (x.log() + 1.f)).cwiseMax(0.f);
   }
   Cx4 const s = v * (x / vabs).cast<Cx>();
-  Log::Print(FMT_STRING("Entropy α {} λ {} t {} |x| {} |s| {}"), α, λ_, t, Norm(x), Norm(s));
+  Log::Print(FMT_STRING("Entropy α {} λ {} t {} |v| {} |s| {}"), α, λ_, t, Norm(v), Norm(s));
   return s;
 }
 
@@ -43,7 +43,7 @@ auto NMREnt::operator()(float const α, Eigen::TensorMap<Cx4 const> v) const -> 
         (x - (t / 2.f) * ((x * (x / xx + 1.f)) / (x + xx) + (x + xx).log() - x / xx)).cwiseMax(0.f);
   }
   Cx4 const s = v * (x / vabs).cast<Cx>();
-  Log::Print(FMT_STRING("NMR Entropy α {} λ {} t {} |x| {} |s| {}"), α, λ_, t, Norm(x), Norm(s));
+  Log::Print(FMT_STRING("NMR Entropy α {} λ {} t {} |v| {} |s| {}"), α, λ_, t, Norm(v), Norm(s));
   return s;
 }
 
