@@ -2,9 +2,8 @@
 
 #include "algo/pdhg.hpp"
 #include "cropper.h"
-#include "func/dict.hpp"
-#include "func/llr.hpp"
-#include "func/thresh-wavelets.hpp"
+#include "prox/llr.hpp"
+#include "prox/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"

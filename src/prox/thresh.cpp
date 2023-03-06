@@ -10,7 +10,7 @@ SoftThreshold<T>::SoftThreshold(float const λ)
   : Prox<T>()
   , λ_{λ}
 {
-  Log::Print<Log::Level::High>(FMT_STRING("Soft Threshold Prox λ {}"), λ);
+  Log::Print(FMT_STRING("Soft Threshold Prox λ {}"), λ);
 }
 
 template<typename T>

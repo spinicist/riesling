@@ -1,6 +1,6 @@
 #pragma once
 
-#include "func/functor.hpp"
+#include "prox/prox.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"

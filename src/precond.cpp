@@ -55,7 +55,7 @@ make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> con
 {
   if (type == "" || type == "none") {
     Log::Print(FMT_STRING("Using no preconditioning"));
-    return std::make_shared<IdentityProx<Cx4>>();
+    return std::make_shared<Identity1<Cx4>>();
   } else if (type == "kspace") {
     return std::make_shared<BroadcastPower<Cx, 4, 1, 1>>(
       KSpaceSingle(traj, basis, bias).cast<Cx>(), "KSpace Preconditioner");

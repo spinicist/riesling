@@ -25,7 +25,7 @@ struct LSMR
   using Outputλ = typename Opλ::Output;
 
   std::shared_ptr<Op> op;
-  std::shared_ptr<Functor1<Output>> M = std::make_shared<IdentityProx<Output>>(); // Left pre-conditioner
+  std::shared_ptr<Functor1<Output>> M = std::make_shared<Identity1<Output>>(); // Left pre-conditioner
   Index iterLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;

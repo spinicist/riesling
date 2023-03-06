@@ -12,7 +12,7 @@ Entropy::Entropy(float const λ)
   : Prox<Cx4>()
   , λ_{λ}
 {
-  Log::Print<Log::Level::High>(FMT_STRING("MaxEnt Prox λ {}"), λ);
+  Log::Print(FMT_STRING("MaxEnt Prox λ {}"), λ);
 }
 
 auto Entropy::operator()(float const α, Eigen::TensorMap<Cx4 const> x) const -> Cx4
@@ -30,7 +30,7 @@ NMREnt::NMREnt(float const λ)
   : Prox<Cx4>()
   , λ_{λ}
 {
-  Log::Print<Log::Level::High>(FMT_STRING("NMR Entropy Prox λ {}"), λ);
+  Log::Print(FMT_STRING("NMR Entropy Prox λ {}"), λ);
 }
 
 float grad(float const z)

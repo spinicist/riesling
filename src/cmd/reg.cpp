@@ -1,9 +1,9 @@
 #include "types.hpp"
 
 #include "func/dict.hpp"
-#include "func/llr.hpp"
-#include "func/slr.hpp"
-#include "func/thresh-wavelets.hpp"
+#include "prox/llr.hpp"
+#include "prox/slr.hpp"
+#include "prox/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/pad.hpp"

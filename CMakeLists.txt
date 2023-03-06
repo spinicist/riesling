@@ -51,11 +51,6 @@ add_library(vineyard
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp
-    src/func/entropy.cpp
-    src/func/llr.cpp
-    src/func/slr.cpp
-    src/func/thresh.cpp
-    src/func/thresh-wavelets.cpp
     src/io/hd5-core.cpp
     src/io/nifti.cpp
     src/io/reader.cpp
@@ -72,6 +67,11 @@ add_library(vineyard
     src/op/recon.cpp
     src/op/sense.cpp
     src/op/wavelets.cpp
+    src/prox/entropy.cpp
+    src/prox/llr.cpp
+    src/prox/slr.cpp
+    src/prox/thresh.cpp
+    src/prox/thresh-wavelets.cpp
     src/sim/parameter.cpp
     src/sim/dwi.cpp
     src/sim/mprage.cpp

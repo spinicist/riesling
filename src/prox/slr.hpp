@@ -1,6 +1,6 @@
 #pragma once
 
-#include "functor.hpp"
+#include "prox.hpp"
 #include "op/fft.hpp"
 
 namespace rl {
