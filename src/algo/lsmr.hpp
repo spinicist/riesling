@@ -20,19 +20,20 @@ namespace rl {
 template <typename Op, typename Opλ = Operator<typename Op::Scalar, Op::InputRank, Op::InputRank>>
 struct LSMR
 {
+  using Scalar = typename Op::Scalar;
   using Input = typename Op::Input;
   using Output = typename Op::Output;
   using Outputλ = typename Opλ::Output;
+  using Pre = Operator<typename Op::Scalar, Op::OutputRank, Op::OutputRank>;
 
   std::shared_ptr<Op> op;
-  std::shared_ptr<Functor1<Output>> M = std::make_shared<Identity1<Output>>(); // Left pre-conditioner
+  std::shared_ptr<Pre> M = std::make_shared<Identity<Scalar, Op::OutputRank>>(op->outputDimensions()); // Left pre-conditioner
   Index iterLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
   bool debug = false;
-  bool varPre = false;
-  std::shared_ptr<Opλ> opλ = std::make_shared<IdentityOp<typename Op::Scalar, Op::InputRank>>(op->inputDimensions());
+  std::shared_ptr<Opλ> opλ = std::make_shared<Identity<Scalar, Op::InputRank>>(op->inputDimensions());
 
   Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Outputλ const &b0 = Input()) const
   {
@@ -81,7 +82,7 @@ struct LSMR
     Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
-      Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev, varPre ? 1.f - (ii / (iterLimit - 1.f)) : 1.f);
+      Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev);
 
       float const ρold = ρ;
       float c, s, ĉ = 1.f, ŝ = 0.f;

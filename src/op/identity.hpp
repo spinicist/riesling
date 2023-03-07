@@ -5,11 +5,11 @@
 namespace rl {
 
 template <typename Scalar_, size_t Rank>
-struct IdentityOp : Operator<Scalar_, Rank, Rank>
+struct Identity : Operator<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
-  IdentityOp(Sz<Rank> dims)
-    : Parent("IdentityOp", dims, dims)
+  Identity(Sz<Rank> dims)
+    : Parent("Identity", dims, dims)
   {
   }
 

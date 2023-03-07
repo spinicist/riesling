@@ -1,6 +1,6 @@
 #pragma once
 
-#include "func/multiply.hpp"
+#include "op/scale.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "trajectory.hpp"
@@ -23,8 +23,8 @@ struct Opts
   args::ValueFlag<Index> maxIterations;
 };
 
-auto Choose(Opts &opts, Trajectory const &t, Index const nC, std::string const &ktype, float const os)
-  -> std::shared_ptr<Functor<Cx3>>;
+auto Choose(Opts &opts, Index const nC, Trajectory const &t, std::string const &ktype, float const os)
+  -> std::shared_ptr<Operator<Cx, 3>>;
 
 } // namespace SDC
 } // namespace rl

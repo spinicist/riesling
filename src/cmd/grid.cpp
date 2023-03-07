@@ -38,11 +38,11 @@ int main_grid(args::Subparser &parser)
     Index const nC = noncart.dimension(0);
     Index const nS = noncart.dimension(3);
     auto const gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
-    auto const sdc = SDC::Choose(sdcOpts, traj, nC, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+    auto const sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     Cx6 cart(AddBack(gridder->inputDimensions(), nS));
     for (Index is = 0; is < nS; is++) {
       Cx3 slice = noncart.chip<3>(is);
-      (*sdc)(slice, slice);
+      slice = sdc->adjoint(slice);
       cart.chip<5>(is) = gridder->adjoint(slice);
     }
     writer.writeTensor(cart, HD5::Keys::Cartesian);

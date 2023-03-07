@@ -27,7 +27,6 @@ int main_admm(args::Subparser &parser)
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-  args::Flag preVar(parser, "VAR", "Variable preconditioning", {"pre-var"});
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (4)", {"max-its"}, 4);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
@@ -67,49 +66,49 @@ int main_admm(args::Subparser &parser)
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-  auto M = make_pre(pre.Get(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto M = make_pre(pre.Get(), recon->outputDimensions(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   auto const &all_start = Log::Now();
   if (wavelets) {
-    Regularizer<IdentityOp<Cx, 4>> reg{
+    Regularizer<Identity<Cx, 4>> reg{
       .prox = std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get()),
-      .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
-    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+      .op = std::make_shared<Identity<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else if (patchSize) {
-    Regularizer<IdentityOp<Cx, 4>> reg{
-      .prox = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
-    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+    Regularizer<Identity<Cx, 4>> reg{
+      .prox = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else if (maxent) {
-    Regularizer<IdentityOp<Cx, 4>> reg{
-      .prox = std::make_shared<Entropy>(λ.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
-    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+    Regularizer<Identity<Cx, 4>> reg{
+      .prox = std::make_shared<Entropy>(λ.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else if (nmrent) {
-    Regularizer<IdentityOp<Cx, 4>> reg{
-      .prox = std::make_shared<NMREnt>(λ.Get()), .op = std::make_shared<IdentityOp<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
-    ADMM<LSMR<ReconOp>, IdentityOp<Cx, 4>> admm{
+    Regularizer<Identity<Cx, 4>> reg{
+      .prox = std::make_shared<NMREnt>(λ.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
+    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
     }
   } else {
     Regularizer<GradOp> reg{.prox = std::make_shared<SoftThreshold<Cx5>>(λ.Get()), .op = std::make_shared<GradOp>(sz)};
-    LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, preVar, reg.op};
+    LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
     ADMM<LSMR<ReconOp, GradOp>, GradOp> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));

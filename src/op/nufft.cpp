@@ -7,7 +7,7 @@ namespace rl {
 
 template <size_t NDim>
 NUFFTOp<NDim>::NUFFTOp(
-  std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<Functor<Cx3>> sdc, bool toeplitz)
+  std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<Operator<Cx, 3>> sdc, bool toeplitz)
   : Parent(
       "NUFFTOp",
       Concatenate(FirstN<2>(gridder->inputDimensions()), AMin(matrix, LastN<NDim>(gridder->inputDimensions()))),
@@ -16,7 +16,7 @@ NUFFTOp<NDim>::NUFFTOp(
   , fft_{gridder_->input()}
   , pad_{AMin(matrix, LastN<NDim>(gridder->inputDimensions())), gridder_->input()}
   , apo_{pad_.inputDimensions(), gridder_.get()}
-  , sdc_{sdc}
+  , sdc_{sdc ? sdc : std::make_shared<Identity<Cx, 3>>(gridder_->outputDimensions())}
 {
   Log::Print<Log::Level::High>(
     "NUFFT Input Dims {} Output Dims {} Grid Dims {}", inputDimensions(), outputDimensions(), gridder_->inputDimensions());
@@ -24,13 +24,7 @@ NUFFTOp<NDim>::NUFFTOp(
     Log::Print("Calculating Töplitz embedding");
     tf_.resize(inputDimensions());
     tf_.setConstant(1.f);
-    if (sdc_) {
-      Output temp = forward(tf_);
-      (*sdc)(temp, temp);
-      tf_ = adjoint(temp);
-    } else {
-      tf_ = adjoint(forward(tf_));
-    }
+    tf_ = adjoint(sdc_->forward(forward(tf_)));
   }
 }
 
@@ -47,8 +41,7 @@ template <size_t NDim>
 auto NUFFTOp<NDim>::adjoint(OutputMap y) const -> InputMap
 {
   auto const time = this->startAdjoint(y);
-  (*sdc_)(ConstMap(y), y);
-  auto result = apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint(y))));
+  auto result = apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint(sdc_->adjoint(y)))));
   this->finishAdjoint(result, time);
   return result;
 }
@@ -82,7 +75,7 @@ std::shared_ptr<Operator<Cx, 5, 4>> make_nufft(
   Index const nC,
   Sz3 const matrix,
   std::optional<Re2> basis,
-  std::shared_ptr<Functor<Cx3>> sdc,
+  std::shared_ptr<Operator<Cx, 3>> sdc,
   bool const toeplitz)
 {
   if (traj.nDims() == 2) {

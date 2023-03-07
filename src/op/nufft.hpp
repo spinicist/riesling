@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator.hpp"
+#include "op/identity.hpp"
 
 #include "apodize.hpp"
 #include "fft.hpp"
@@ -18,7 +18,7 @@ struct NUFFTOp final : Operator<Cx, NDim + 2, 3>
   NUFFTOp(
     std::shared_ptr<GridBase<Cx, NDim>> gridder,
     Sz<NDim> const matrix,
-    std::shared_ptr<Functor<Cx3>> sdc = std::make_shared<IdentityFunctor<Cx3>>(),
+    std::shared_ptr<Operator<Cx, 3>> sdc = nullptr,
     bool toeplitz = false);
 
   OP_DECLARE()
@@ -31,7 +31,7 @@ private:
   FFTOp<NDim + 2, NDim> fft_;
   PadOp<Cx, NDim + 2, NDim> pad_;
   ApodizeOp<NDim> apo_;
-  std::shared_ptr<Functor<Cx3>> sdc_;
+  std::shared_ptr<Operator<Cx, 3>> sdc_;
   using Transfer = Eigen::Tensor<Cx, NDim + 2>;
   Transfer tf_;
 };
@@ -43,7 +43,7 @@ std::shared_ptr<Operator<Cx, 5, 4>> make_nufft(
   Index const nC,
   Sz3 const matrix,
   std::optional<Re2> basis = std::nullopt,
-  std::shared_ptr<Functor<Cx3>> sdc = std::make_shared<IdentityFunctor<Cx3>>(),
+  std::shared_ptr<Operator<Cx, 3>> sdc = nullptr,
   bool const toeplitz = false);
 
 } // namespace rl

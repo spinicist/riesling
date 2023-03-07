@@ -2,15 +2,15 @@
 
 #include "../sense.hpp"
 #include "io/reader.hpp"
-#include "multiply.hpp"
-#include "nufft.hpp"
+#include "op/compose.hpp"
+#include "op/nufft.hpp"
 #include "parse_args.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 
 namespace rl {
 
-using ReconOp = MultiplyOp<SenseOp, Operator<Cx, 5, 4>>;
+using ReconOp = Compose<SenseOp, Operator<Cx, 5, 4>>;
 
 auto make_recon(
   CoreOpts &coreOpts,

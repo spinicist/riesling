@@ -27,7 +27,7 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD
   auto const nC = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false);
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
-  auto sdc = std::make_shared<BroadcastMultiply<Cx, 3>>(sdcW.cast<Cx>());
+  auto sdc = std::make_shared<Scale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
   auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()), std::nullopt, sdc);
   Sz5 const dims = nufft->inputDimensions();
   Cropper crop(traj.info().matrix, LastN<3>(dims), traj.info().voxel_size, opts.fov.Get());

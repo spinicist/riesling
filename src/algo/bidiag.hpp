@@ -69,7 +69,7 @@ inline void BidiagInit(
     x.setZero();
     Mu.device(dev) = b;
   }
-  u = (*M)(1.f, Mu);
+  u = M->adjoint(Mu);
   if (uλ.size()) {
     CheckDimsEqual(bλ.dimensions(), uλ.dimensions());
     CheckDimsEqual(opλ->outputDimensions(), uλ.dimensions());
@@ -104,11 +104,10 @@ inline void Bidiag(
   float const λ,
   std::shared_ptr<Reg> const opλ,
   typename Reg::Output &uλ,
-  Device &dev,
-  float const p)
+  Device &dev)
 {
   Mu.device(dev) = op->forward(v) - α * Mu;
-  u = (*M)(p, Mu);
+  u = M->adjoint(Mu);
   if (uλ.size()) {
     typename Reg::Output temp = (std::sqrt(λ) * opλ->forward(v));
     uλ.device(dev) = temp - (α * uλ);

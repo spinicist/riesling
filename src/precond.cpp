@@ -1,9 +1,9 @@
 #include "precond.hpp"
 
-#include "func/multiply.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
+#include "op/scale.hpp"
 #include "threads.hpp"
 
 namespace rl {
@@ -50,15 +50,14 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   return weights;
 }
 
-std::shared_ptr<Functor1<Cx4>>
-make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
+std::shared_ptr<Operator<Cx, 4>>
+make_pre(std::string const &type, Sz4 const dims, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
 {
   if (type == "" || type == "none") {
     Log::Print(FMT_STRING("Using no preconditioning"));
-    return std::make_shared<Identity1<Cx4>>();
+    return std::make_shared<Identity<Cx, 4>>(dims);
   } else if (type == "kspace") {
-    return std::make_shared<BroadcastPower<Cx, 4, 1, 1>>(
-      KSpaceSingle(traj, basis, bias).cast<Cx>(), "KSpace Preconditioner");
+    return std::make_shared<Scale<Cx, 4, 1, 1>>(dims, KSpaceSingle(traj, basis, bias).cast<Cx>());
   } else {
     HD5::Reader reader(type);
     Re2 pre = reader.readTensor<Re2>(HD5::Keys::Precond);
@@ -70,7 +69,7 @@ make_pre(std::string const &type, Trajectory const &traj, std::optional<Re2> con
         traj.nSamples(),
         traj.nTraces());
     }
-    return std::make_shared<BroadcastPower<Cx, 4, 1, 1>>(pre.cast<Cx>());
+    return std::make_shared<Scale<Cx, 4, 1, 1>>(dims, pre.cast<Cx>());
   }
 }
 
