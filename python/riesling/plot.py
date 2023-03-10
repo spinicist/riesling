@@ -116,6 +116,8 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          diff_component='real', difflim=None, diffmap=None,
          rotates=0, fliplr=False, title=None):
 
+    if len(fnames) < 2:
+        raise('Must have more than 1 image to diff')
     if len(dsets) == 1:
         dsets = dsets * len(fnames)
     if titles is not None and len(titles) != len(fnames):
@@ -156,6 +158,8 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          diff_component='real', difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None):
 
+    if len(fnames) < 2:
+        raise('Must have more than 1 image to diff')
     if len(dsets) == 1:
         dsets = dsets * len(fnames)
     if titles is not None and len(titles) != len(fnames):
