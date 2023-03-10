@@ -43,8 +43,9 @@ struct ADMM
     z.setZero();
     u.setZero();
 
-    float const absThresh = abstol * Norm(x);
-    Log::Print(FMT_STRING("ADMM ρ {} Abs Thresh {}"), ρ, absThresh);
+    float const sqrtM = sqrt(Product(x.dimensions()));
+    float const sqrtN = sqrt(Product(u.dimensions()));
+    Log::Print(FMT_STRING("ADMM ρ {}"), ρ);
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
       if (ii == 1) {
@@ -63,11 +64,12 @@ struct ADMM
       float const dNorm = ρ * Norm(z - zold);
 
       float const normx = Norm(x);
+      float const normFx = Norm(Fx);
       float const normz = Norm(z);
       float const normu = Norm(u);
 
-      float const pEps = absThresh + reltol * std::max(normx, normz);
-      float const dEps = absThresh + reltol * ρ * normu;
+      float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
+      float const dEps = abstol * sqrtN + reltol * ρ * normu;
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
@@ -75,13 +77,14 @@ struct ADMM
       Log::Tensor(Fxpu, fmt::format("admm-Fxpu-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |z| {} |u| {}"),
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |Fx| {} |z| {} |u| {}"),
         ii,
         pNorm,
         pEps,
         dNorm,
         dEps,
         normx,
+        normFx,
         normz,
         normu);
       if ((pNorm < pEps) && (dNorm < dEps)) {
@@ -89,10 +92,12 @@ struct ADMM
       }
       if (pNorm > μ * dNorm) {
         ρ *= τ;
-        Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {}"), μ * dNorm, ρ);
+        u /= u.constant(τ);
+        Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {} |u| {}"), μ * dNorm, ρ, Norm(u));
       } else if (dNorm > μ * pNorm) {
         ρ /= τ;
-        Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to {}"), μ * pNorm, ρ);
+        u *= u.constant(τ);
+        Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to {} |u| {}"), μ * pNorm, ρ, Norm(u));
       }
       if (InterruptReceived()) {
         break;
