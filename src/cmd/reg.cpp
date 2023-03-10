@@ -26,6 +26,8 @@ int main_reg(args::Subparser &parser)
   args::Flag wavelets(parser, "W", "Wavelets", {"wavelets", 'w'});
   args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wave-levels"}, 4);
   args::ValueFlag<Index> waveSize(parser, "W", "Wavelet size (4/6/8)", {"wave-size"}, 6);
+  args::ValueFlag<float> l1(parser, "L1", "L1", {"l1"}, 1.f);
+
   ParseCommand(parser);
 
   if (!iname) {
@@ -57,6 +59,11 @@ int main_reg(args::Subparser &parser)
     LLR reg(λ.Get(), patchSize.Get(), winSize.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       output.chip<4>(iv) = reg(λ.Get(), CChipMap(images, iv));
+    }
+  } else if (l1) {
+    SoftThreshold<Cx4> thresh(λ.Get());
+    for (Index iv = 0; iv < images.dimension(4); iv++) {
+      output.chip<4>(iv) = thresh(l1.Get(), CChipMap(images, iv));
     }
   } else {
     throw args::Error("Must specify at least one regularization method");
