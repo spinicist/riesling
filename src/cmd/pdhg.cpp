@@ -2,13 +2,14 @@
 
 #include "algo/pdhg.hpp"
 #include "cropper.h"
-#include "prox/llr.hpp"
-#include "prox/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precond.hpp"
+#include "prox/llr.hpp"
+#include "prox/thresh-wavelets.hpp"
+#include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 
@@ -38,7 +39,7 @@ int main_pdhg(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto const sz = recon->inputDimensions();
-  
+
   std::shared_ptr<Prox<Cx4>> reg;
   if (wavelets) {
     reg = std::make_shared<ThresholdWavelets>(sz, λ.Get(), waveSize.Get(), waveLevels.Get());
@@ -52,16 +53,15 @@ int main_pdhg(args::Subparser &parser)
   PrimalDualHybridGradient<ReconOp> pdhg{recon, P, reg, its.Get()};
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
-  Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
-  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  float const scale = Scaling(coreOpts.scaling, recon, allData);
+  allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
-    out.chip<4>(iv) = out_cropper.crop4(pdhg.run(CChipMap(allData, iv), τ.Get()));
+    out.chip<4>(iv) = out_cropper.crop4(pdhg.run(CChipMap(allData, iv), τ.Get())) / out.chip<4>(iv).constant(scale);
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);

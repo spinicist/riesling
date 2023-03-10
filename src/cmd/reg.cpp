@@ -1,14 +1,15 @@
 #include "types.hpp"
 
 #include "func/dict.hpp"
-#include "prox/llr.hpp"
-#include "prox/slr.hpp"
-#include "prox/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/pad.hpp"
 #include "op/wavelets.hpp"
 #include "parse_args.hpp"
+#include "prox/entropy.hpp"
+#include "prox/llr.hpp"
+#include "prox/slr.hpp"
+#include "prox/thresh-wavelets.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -27,6 +28,8 @@ int main_reg(args::Subparser &parser)
   args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wave-levels"}, 4);
   args::ValueFlag<Index> waveSize(parser, "W", "Wavelet size (4/6/8)", {"wave-size"}, 6);
   args::ValueFlag<float> l1(parser, "L1", "L1", {"l1"}, 1.f);
+  args::ValueFlag<float> maxent(parser, "E", "Entropy", {"maxent"}, 1.f);
+  args::ValueFlag<float> nmrent(parser, "E", "Entropy", {"nmrent"}, 1.f);
 
   ParseCommand(parser);
 
@@ -47,7 +50,7 @@ int main_reg(args::Subparser &parser)
     HD5::Reader dictReader(brute.Get());
     BruteForceDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-       dict(CChipMap(images, iv), ChipMap(output, iv));
+      dict(CChipMap(images, iv), ChipMap(output, iv));
     }
   } else if (ball) {
     HD5::Reader dictReader(ball.Get());
@@ -64,6 +67,16 @@ int main_reg(args::Subparser &parser)
     SoftThreshold<Cx4> thresh(λ.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       output.chip<4>(iv) = thresh(l1.Get(), CChipMap(images, iv));
+    }
+  } else if (maxent) {
+    Entropy<Cx4> ent(λ.Get(), maxent.Get());
+    for (Index iv = 0; iv < images.dimension(4); iv++) {
+      output.chip<4>(iv) = ent(1.f, CChipMap(images, iv));
+    }
+  } else if (nmrent) {
+    NMREntropy ent(λ.Get(), nmrent.Get());
+    for (Index iv = 0; iv < images.dimension(4); iv++) {
+      output.chip<4>(iv) = ent(1.f, CChipMap(images, iv));
     }
   } else {
     throw args::Error("Must specify at least one regularization method");

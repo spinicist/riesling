@@ -5,15 +5,16 @@
 #include "algo/lsmr.hpp"
 #include "algo/lsqr.hpp"
 #include "cropper.h"
-#include "prox/entropy.hpp"
-#include "prox/llr.hpp"
-#include "prox/thresh-wavelets.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grad.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precond.hpp"
+#include "prox/entropy.hpp"
+#include "prox/llr.hpp"
+#include "prox/thresh-wavelets.hpp"
+#include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 
@@ -40,7 +41,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
 
-  args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 1)", {"lambda"}, 1.f);
+  args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 1e-3)", {"lambda"}, 1.e-3f);
 
   args::Flag l1(parser, "L1", "Simple L1 regularization", {"l1"});
 
@@ -60,17 +61,16 @@ int main_admm(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+  auto M = make_pre(pre.Get(), recon->outputDimensions(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   auto const sz = recon->inputDimensions();
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
-  Cx4 vol(sz);
   Sz3 outSz = out_cropper.size();
-  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  float const scale = Scaling(coreOpts.scaling, recon, allData);
+  allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-  auto M = make_pre(pre.Get(), recon->outputDimensions(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-
   auto const &all_start = Log::Now();
   if (wavelets) {
     Regularizer<Identity<Cx, 4>> reg{
@@ -80,7 +80,7 @@ int main_admm(args::Subparser &parser)
     ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   } else if (patchSize) {
     Regularizer<Identity<Cx, 4>> reg{
@@ -89,7 +89,7 @@ int main_admm(args::Subparser &parser)
     ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   } else if (maxent) {
     Regularizer<Identity<Cx, 4>> reg{
@@ -98,16 +98,16 @@ int main_admm(args::Subparser &parser)
     ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   } else if (nmrent) {
     Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<NMREnt>(λ.Get(), nmrent.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
+      .prox = std::make_shared<NMREntropy>(λ.Get(), nmrent.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
     LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
     ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   } else if (l1) {
     Regularizer<Identity<Cx, 4>> reg{
@@ -116,21 +116,21 @@ int main_admm(args::Subparser &parser)
     ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   } else if (tvent) {
     Regularizer<GradOp> reg{.prox = std::make_shared<Entropy<Cx5>>(λ.Get(), tvent.Get()), .op = std::make_shared<GradOp>(sz)};
     LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
     ADMM<LSMR<ReconOp, GradOp>, GradOp> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   } else {
     Regularizer<GradOp> reg{.prox = std::make_shared<SoftThreshold<Cx5>>(λ.Get()), .op = std::make_shared<GradOp>(sz)};
     LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
     ADMM<LSMR<ReconOp, GradOp>, GradOp> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get()));
+      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
   }
 

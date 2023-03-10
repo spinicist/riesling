@@ -39,6 +39,7 @@ add_library(vineyard
     src/parse_args.cpp
     src/precond.cpp
     src/rovir.cpp
+    src/scaling.cpp
     src/sdc.cpp
     src/sense.cpp
     src/signals.cpp

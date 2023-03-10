@@ -5,6 +5,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
+#include "scaling.hpp"
 #include "sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -32,15 +33,15 @@ int main_cg(args::Subparser &parser)
   auto sz = recon->inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
-  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  float const scale = Scaling(coreOpts.scaling, recon, allData);
+  allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    cropped = out_cropper.crop4(cg.run(recon->cadjoint(CChipMap(allData, iv))));
-    out.chip<4>(iv) = cropped;
+    out.chip<4>(iv) = out_cropper.crop4(cg.run(recon->cadjoint(CChipMap(allData, iv)))) / out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

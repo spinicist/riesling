@@ -1,10 +1,11 @@
 #include "sdc.hpp"
 
-#include "op/identity.hpp"
-#include "op/scale.hpp"
 #include "io/hd5.hpp"
+#include "log.hpp"
 #include "mapping.hpp"
+#include "op/identity.hpp"
 #include "op/make_grid.hpp"
+#include "op/scale.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "trajectory.hpp"
@@ -130,8 +131,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 
 Re2 Radial(Trajectory const &traj, Index const lores, Index const gap) { return Radial3D(traj, lores, gap); }
 
-auto 
-Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string const &ktype, float const os)
+auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string const &ktype, float const os)
   -> std::shared_ptr<Operator<Cx, 3>>
 {
   Re2 sdc(traj.nSamples(), traj.nTraces());

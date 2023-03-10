@@ -6,6 +6,7 @@
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precond.hpp"
+#include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense.hpp"
 #include "tensorOps.hpp"
@@ -36,22 +37,21 @@ int main_lsmr(args::Subparser &parser)
   LSMR<ReconOp> lsmr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon->inputDimensions();
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
-  Cx4 vol(sz);
-  Sz3 outSz = out_cropper.size();
-  Cx4 cropped(sz[0], outSz[0], outSz[1], outSz[2]);
+  Sz3 const outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  float const scale = Scaling(coreOpts.scaling, recon, allData);
+  allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    vol = lsmr.run(CChipMap(allData, iv), λ.Get());
-    cropped = out_cropper.crop4(vol);
-    out.chip<4>(iv) = cropped;
+    out.chip<4>(iv).device(Threads::GlobalDevice()) =
+      out_cropper.crop4(lsmr.run(CChipMap(allData, iv), λ.Get())) / out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+
   WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);
   return EXIT_SUCCESS;
 }

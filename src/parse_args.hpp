@@ -53,9 +53,8 @@ struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
   args::Positional<std::string> iname;
-  args::ValueFlag<std::string> oname, ktype;
+  args::ValueFlag<std::string> oname, basisFile, ktype, scaling;
   args::ValueFlag<float> osamp, fov;
   args::ValueFlag<Index> bucketSize;
-  args::ValueFlag<std::string> basisFile;
   args::Flag keepTrajectory;
 };

@@ -88,6 +88,7 @@ struct ADMM
         normz,
         normu);
       if ((pNorm < pEps) && (dNorm < dEps)) {
+        Log::Print("Primal and dual convergence achieved, stopping");
         break;
       }
       if (pNorm > μ * dNorm) {
