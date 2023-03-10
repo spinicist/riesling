@@ -64,16 +64,16 @@ inline void BidiagInit(
   if (x0.size()) {
     CheckDimsEqual(x0.dimensions(), v.dimensions());
     x.device(dev) = x0;
-    Mu.device(dev) = b - op->forward(x);
+    Mu.device(dev) = b - op->cforward(x);
   } else {
     x.setZero();
     Mu.device(dev) = b;
   }
-  u = M->adjoint(Mu);
+  u = M->cadjoint(Mu);
   if (uλ.size()) {
     CheckDimsEqual(bλ.dimensions(), uλ.dimensions());
     CheckDimsEqual(opλ->outputDimensions(), uλ.dimensions());
-    uλ.device(dev) = bλ - std::sqrt(λ) * opλ->forward(x);
+    uλ.device(dev) = std::sqrt(λ) * (bλ - opλ->cforward(x));
     β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
@@ -82,11 +82,9 @@ inline void BidiagInit(
   u.device(dev) = u / u.constant(β);
   if (uλ.size()) {
     uλ.device(dev) = uλ / uλ.constant(β);
-    Input temp = std::sqrt(λ) * opλ->adjoint(uλ);
-    v.device(dev) = op->adjoint(u);
-    v.device(dev) += temp;
+    v.device(dev) = op->cadjoint(u) + std::sqrt(λ) * opλ->cadjoint(uλ);
   } else {
-    v.device(dev) = op->adjoint(u);
+    v.device(dev) = op->cadjoint(u);
   }
   α = std::sqrt(CheckedDot(v, v));
   v.device(dev) = v / v.constant(α);
@@ -106,11 +104,10 @@ inline void Bidiag(
   typename Reg::Output &uλ,
   Device &dev)
 {
-  Mu.device(dev) = op->forward(v) - α * Mu;
-  u = M->adjoint(Mu);
+  Mu.device(dev) = op->cforward(v) - α * Mu;
+  u = M->cadjoint(Mu);
   if (uλ.size()) {
-    typename Reg::Output temp = (std::sqrt(λ) * opλ->forward(v));
-    uλ.device(dev) = temp - (α * uλ);
+    uλ.device(dev) = (std::sqrt(λ) * opλ->cforward(v)) - (α * uλ);
     β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
   } else {
     β = std::sqrt(CheckedDot(Mu, u));
@@ -119,9 +116,9 @@ inline void Bidiag(
   u.device(dev) = u / u.constant(β);
   if (uλ.size()) {
     uλ.device(dev) = uλ / uλ.constant(β);
-    v.device(dev) = op->adjoint(u) + (std::sqrt(λ) * opλ->adjoint(uλ)) - (β * v);
+    v.device(dev) = (op->cadjoint(u) + (std::sqrt(λ) * opλ->cadjoint(uλ))) - (β * v);
   } else {
-    v.device(dev) = op->adjoint(u) - (β * v);
+    v.device(dev) = op->cadjoint(u) - (β * v);
   }
   α = std::sqrt(CheckedDot(v, v));
   v.device(dev) = v / v.constant(α);
