@@ -38,7 +38,7 @@ NMREntropy::NMREntropy(float const λ, float const scale)
   , λ_{λ}
   , scale_{scale}
 {
-  Log::Print(FMT_STRING("NMR Entropy Prox λ {}"), λ);
+  Log::Print(FMT_STRING("NMR Entropy Prox λ {} scale {}"), λ_, scale_);
 }
 
 auto NMREntropy::operator()(float const α, Eigen::TensorMap<Cx4 const> v) const -> Cx4

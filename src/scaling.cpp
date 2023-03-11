@@ -1,7 +1,9 @@
 #include "scaling.hpp"
 
 #include "log.hpp"
+#include "tensorOps.hpp"
 #include <scn/scn.h>
+#include <algorithm>
 
 namespace rl {
 
@@ -9,15 +11,18 @@ auto Scaling(args::ValueFlag<std::string> &scale, std::shared_ptr<ReconOp> const
 {
   float val;
   if (scale.Get() == "auto") {
-    Log::Print(FMT_STRING("Automatic scaling."));
-    Cx4 const temp = recon->cadjoint(CChipMap(data, 0));
-    val = std::sqrt(temp.size()) / Norm(temp);
+    Re4 abs = (recon->cadjoint(CChipMap(data, 0))).abs();
+    auto vec = CollapseToVector(abs);
+    std::sort(vec.begin(), vec.end());
+    val = 1.f / vec[vec.size() * 0.9];
+    Log::Print(FMT_STRING("Automatic scaling {}"), val);
   } else {
-    if (!scn::scan(scale.Get(), "{}", val)) {
+    if (scn::scan(scale.Get(), "{}", val)) {
+        Log::Print(FMT_STRING("Scale: {}"), val);
+    } else {
       Log::Fail(FMT_STRING("Could not read number from scaling: "), scale.Get());
     }
   }
-  Log::Print(FMT_STRING("Scale: {}"), val);
   return val;
 }
 

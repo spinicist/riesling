@@ -27,8 +27,8 @@ struct ADMM
   float α = 1.f;  // Over-relaxation
   float μ = 10.f; // Primal-dual mismatch limit
   float τ = 2.f;  // Primal-dual mismatch rescale
-  float abstol = 1.e-3f;
-  float reltol = 1.e-3f;
+  float abstol = 1.e-4f;
+  float reltol = 1.e-4f;
 
   Input run(Eigen::TensorMap<Output const> b, float ρ) const
   {
@@ -45,7 +45,7 @@ struct ADMM
 
     float const sqrtM = sqrt(Product(x.dimensions()));
     float const sqrtN = sqrt(Product(u.dimensions()));
-    Log::Print(FMT_STRING("ADMM ρ {}"), ρ);
+    Log::Print(FMT_STRING("ADMM ρ {} Abs Tol {} Rel Tol {}"), ρ, abstol, reltol);
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
       if (ii == 1) {
