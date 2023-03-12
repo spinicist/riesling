@@ -58,6 +58,9 @@ def riesling_read(filename):
         data = xr.DataArray(data, dims = dims)
         data.attrs.update(meta)
         
+        if len(data.name) > 0 and data.name[0] == '/': # name can for unknown reason start with a /
+            data.name = data.name[1:] # remove / at beginning
+
         return data
 
 def write_noncartesian(fname, kspace, traj, matrix, voxel_size=[1,1,1], tr=1, origin=[0,0,0], direction=np.eye(3)):
