@@ -1,11 +1,20 @@
 import h5py
 import numpy as np
 
+INFO_STRUCTURE = ['matrix', 'tr', 'voxel_size', 'origin', 'direction']
+INFO_FORMAT = [('<i8', (3,)), '<f4', ('<f4', (3,)), ('<f4', (3,)), ('<f4', (3,3))]
+INFO_DTYPE = np.dtype({'names': INFO_STRUCTURE, 'formats': INFO_FORMAT})
+
 def _create_info(matrix, voxel_size, tr, origin, direction):
-    D = np.dtype({'names': ['matrix', 'tr', 'voxel_size', 'origin', 'direction'],
-                  'formats': [('<i8', (3,)), '<f4', ('<f4', (3,)), ('<f4', (3,)), ('<f4', (3,3))]})
-    info = np.array([(matrix, tr, voxel_size, origin, direction)], dtype=D)
+    info = np.array([(matrix, tr, voxel_size, origin, direction)], dtype=INFO_DTYPE)
     return info
+
+def _read_info(hdf5_dataset):
+    d = {}
+    info = np.array(hdf5_dataset, dtype=INFO_DTYPE)[0]
+    for key, item in zip(INFO_STRUCTURE, info):
+        d[key] = item
+    return d
 
 def write_noncartesian(fname, kspace, traj, matrix, voxel_size=[1,1,1], tr=1, origin=[0,0,0], direction=np.eye(3)):
     if kspace.ndim != 5:
