@@ -46,10 +46,10 @@ int main(int const argc, char const *const argv[])
   args::Command version(commands, "version", "Print version number", &main_version);
   // args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::GlobalOptions globals(parser, global_group);
-  FFT::Start();
+  FFT::Start(argv[0]);
   try {
     parser.ParseCLI(argc, argv);
-    FFT::End();
+    FFT::End(argv[0]);
     Log::End();
   } catch (args::Help &) {
     fmt::print(stderr, FMT_STRING("{}\n"), parser.Help());
@@ -59,7 +59,7 @@ int main(int const argc, char const *const argv[])
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), FMT_STRING("{}\n"), e.what());
     exit(EXIT_FAILURE);
   } catch (Log::Failure &f) {
-    FFT::End();
+    FFT::End(argv[0]);
     Log::End();
     exit(EXIT_FAILURE);
   }

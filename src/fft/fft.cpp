@@ -2,11 +2,12 @@
 
 #include "cpu.hpp"
 
-#include "../log.hpp"
-#include "../tensorOps.hpp"
-#include "../threads.hpp"
+#include "log.hpp"
+#include "tensorOps.hpp"
+#include "threads.hpp"
+#include "parse_args.hpp"
+
 #include "fftw3.h"
-#include <filesystem>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -14,33 +15,35 @@
 namespace rl {
 namespace FFT {
 
-std::filesystem::path WisdomPath()
+auto WisdomPath(std::string const &execname) -> std::string
 {
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
-  return std::filesystem::path(homedir) / ".riesling-wisdom";
+  char hostname[16];
+  gethostname(hostname, 16);
+  return fmt::format("{}/.{}-wisdom-{}", homedir, execname, hostname);
 }
 
-void Start()
+void Start(std::string const &execname)
 {
   fftwf_init_threads();
   fftwf_make_planner_thread_safe();
   fftwf_set_timelimit(60.0);
-  auto const wp = WisdomPath();
-  if (fftwf_import_wisdom_from_filename(WisdomPath().string().c_str())) {
-    Log::Print(FMT_STRING("Read wisdom successfully from {}"), wp.string());
+  auto const wp = WisdomPath(execname);
+  if (fftwf_import_wisdom_from_filename(wp.c_str())) {
+    Log::Print(FMT_STRING("Read wisdom successfully from {}"), wp);
   } else {
-    Log::Print(FMT_STRING("Could not read wisdom from {}, continuing"), wp.string());
+    Log::Print(FMT_STRING("Could not read wisdom from {}, continuing"), wp);
   }
 }
 
-void End()
+void End(std::string const &execname)
 {
-  auto const &wp = WisdomPath();
-  if (fftwf_export_wisdom_to_filename(wp.string().c_str())) {
-    Log::Print(FMT_STRING("Saved wisdom to {}"), wp.string());
+  auto const &wp = WisdomPath(execname);
+  if (fftwf_export_wisdom_to_filename(wp.c_str())) {
+    Log::Print(FMT_STRING("Saved wisdom to {}"), wp);
   } else {
-    Log::Print(FMT_STRING("Failed to save wisdom to {}"), wp.string());
+    Log::Print(FMT_STRING("Failed to save wisdom to {}"), wp);
   }
   // Causes use after free errors if this is called before fftw_plan_destroy in the
   // destructors. We don't stop and re-start FFTW threads so calling this is not essential
