@@ -17,7 +17,7 @@ def _read_info(hdf5_dataset):
         d[key] = item
     return d
 
-def riesling_read(filename):
+def read(filename):
     with h5py.File(filename) as f:
         # load meta data, everything that is not the actualy data (e.g. kspace/image) is 
         # considered meta data including trajectory and sampling density correction factors
