@@ -17,6 +17,65 @@ def _read_info(hdf5_dataset):
         d[key] = item
     return d
 
+def write(filename, data, data_type='noncartesian'):
+    # check for info header information
+    if not 'matrix' in data.attrs:
+        AssertionError('Data object must contain "matrix" attribute')
+    if not 'voxel_size' in data.attrs:
+        AssertionError('Data object must contain "voxel_size" attribute')
+    if not 'tr' in data.attrs:
+        AssertionError('Data object must contain "tr" attribute')
+    if not 'origin' in data.attrs:
+        AssertionError('Data object must contain "origin" attribute')
+    if not 'direction' in data.attrs:
+        AssertionError('Data object must contain "direction" attribute')
+
+    # check if additional information for the data types are present in th header
+    requires_traj = (data_type == 'noncartesian')
+    if requires_traj:
+        if not 'trajectory' in data.attrs:
+            AssertionError('Noncartesian data object must contain trajectory')
+
+        if data.attrs['trajectory'].ndim != 3:
+            AssertionError('Trajectory must be 3 dimensional (co-ords, samples, traces)')
+        if data.attrs['trajectory'].shape[2] > 3:
+            AssertionError('Trajectory cannot have more than 3 co-ordinates')
+        if np.max (data.attrs['trajectory']) > 0.5:
+            AssertionError('Trajectory cotained co-ordinates greater than 0.5')
+
+    with h5py.File(filename, 'w') as out_f:
+        # write info header
+        out_f.create_dataset('info', data=_create_info(
+            data.attrs['matrix'],
+            data.attrs['voxel_size'],
+            data.attrs['tr'],
+            data.attrs['origin'],
+            data.attrs['direction'])
+        )
+
+        # write additional information
+        if data_type == 'noncartesian':
+            out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression="gzip")
+            data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
+        elif data_type == 'cartesian' or data_type == 'channels':
+            data_dims = ['channel', 'image', 'x', 'y', 'z']
+        elif data_type == 'sense':
+            data_dims = ['channel', 'x', 'y', 'z']
+        elif data_type == 'image':
+            data_dims = ['image', 'x', 'y', 'z', 'volume']
+        else:
+            AssertionError(f'Unknown data type {data_type}')
+        data_dims.reverse() # invert dimension order to match numpy array shape
+
+        # transpose data to right dimensions
+        data = data.copy() # deep copy
+        data = data.transpose(*data_dims)
+
+        # write data
+        out_f.create_dataset(data_type, dtype='c8', data=data.data, chunks=np.shape(data.data), compression="gzip")
+        out_f.close()
+
+
 def read(filename):
     with h5py.File(filename) as f:
         # load meta data, everything that is not the actualy data (e.g. kspace/image) is 
