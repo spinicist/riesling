@@ -19,6 +19,7 @@ int main(int const argc, char const *const argv[])
   args::Command frames(commands, "frames", "Create a frame basis", &main_frames);
   args::Command grid(commands, "grid", "Grid from/to non-cartesian to/from cartesian", &main_grid);
   args::Command h5(commands, "h5", "Probe an H5 file", &main_h5);
+  args::Command lad(commands, "lad", "Least Absolute Deviations", &main_lad);
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
   args::Command lsmr(commands, "lsmr", "Iterative recon with LSMR optimizer", &main_lsmr);
   args::Command lsqr(commands, "lsqr", "Iterative recon with LSQR optimizer", &main_lsqr);

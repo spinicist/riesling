@@ -13,6 +13,7 @@ int main_frames(args::Subparser &parser);
 int main_filter(args::Subparser &parser);
 int main_grid(args::Subparser &parser);
 int main_h5(args::Subparser &parser);
+int main_lad(args::Subparser &parser);
 int main_lookup(args::Subparser &parser);
 int main_lsmr(args::Subparser &parser);
 int main_lsqr(args::Subparser &parser);

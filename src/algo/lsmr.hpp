@@ -35,7 +35,7 @@ struct LSMR
   bool debug = false;
   std::shared_ptr<Opλ> opλ = std::make_shared<Identity<Scalar, Op::InputRank>>(op->inputDimensions());
 
-  Input run(Eigen::TensorMap<Output const> b, float const λ = 0.f, Input const &x0 = Input(), Outputλ const &b0 = Input()) const
+  Input run(Eigen::TensorMap<Output const> const &b, float const λ = 0.f, Input const &x0 = Input(), Outputλ const &b0 = Input()) const
   {
     auto dev = Threads::GlobalDevice();
 
