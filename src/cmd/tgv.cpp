@@ -15,7 +15,7 @@ using namespace rl;
 int main_tgv(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<float> thr(parser, "TRESHOLD", "Threshold for termination (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "MAX ITS", "Maximum number of iterations (16)", {'i', "max-its"}, 16);

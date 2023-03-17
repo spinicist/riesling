@@ -15,7 +15,7 @@ using namespace rl;
 int main_cg(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
   SENSE::Opts senseOpts(parser);
   args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<float> thr(parser, "T", "Termination threshold (1e-10)", {"thresh"}, 1.e-10);

@@ -16,7 +16,7 @@ using namespace rl;
 int main_eig(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "none");
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::Flag adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});

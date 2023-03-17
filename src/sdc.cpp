@@ -14,8 +14,8 @@ namespace rl {
 
 namespace SDC {
 
-Opts::Opts(args::Subparser &parser)
-  : type(parser, "SDC", "SDC type: 'pipe', 'none', or filename", {"sdc"}, "pipe")
+Opts::Opts(args::Subparser &parser, std::string const &def)
+  : type(parser, "SDC", "SDC type: 'pipe', 'none', or filename", {"sdc"}, def)
   , pow(parser, "P", "SDC Power (default 1.0)", {"sdc-pow"}, 1.0f)
   , maxIterations(parser, "I", "SDC Max iterations (40)", {"sdc-its"}, 40)
 {

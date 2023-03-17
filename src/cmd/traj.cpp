@@ -15,7 +15,7 @@ using namespace rl;
 int main_traj(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
 
   args::Flag savePSF(parser, "PSF", "Write out Point-Spread-Function", {"psf", 'p'});
 

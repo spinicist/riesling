@@ -14,7 +14,7 @@ using namespace rl;
 int main_recon(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
   SENSE::Opts senseOpts(parser);
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string> trajName(parser, "T", "Override trajectory", {"traj"});

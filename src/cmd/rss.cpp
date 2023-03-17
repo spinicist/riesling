@@ -13,7 +13,7 @@ using namespace rl;
 int main_rss(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   ParseCommand(parser, coreOpts.iname);

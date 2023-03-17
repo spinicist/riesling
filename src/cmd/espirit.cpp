@@ -16,7 +16,7 @@ using namespace rl;
 int main_espirit(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
   args::ValueFlag<Index> volume(parser, "VOL", "Take SENSE maps from this volume (default first)", {"sense-vol"}, 0);
   args::ValueFlag<float> res(parser, "R", "Resolution for initial gridding (default 12 mm)", {"sense-res", 'r'}, 12.f);
   args::ValueFlag<float> fov(parser, "FOV", "FoV in mm (default header value)", {"fov"}, -1);

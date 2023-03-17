@@ -19,7 +19,7 @@ auto Radial(Trajectory const &traj, Index const lores, Index const gap) -> Re2;
 
 struct Opts
 {
-  Opts(args::Subparser &parser);
+  Opts(args::Subparser &parser, std::string const &def);
   args::ValueFlag<std::string> type;
   args::ValueFlag<float> pow;
   args::ValueFlag<Index> maxIterations;

@@ -13,7 +13,7 @@ int main_sense_calib(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
   SENSE::Opts senseOpts(parser);
-  SDC::Opts sdcOpts(parser);
+  SDC::Opts sdcOpts(parser, "pipe");
 
   ParseCommand(parser, coreOpts.iname);
 
