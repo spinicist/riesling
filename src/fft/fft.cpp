@@ -19,8 +19,8 @@ auto WisdomPath(std::string const &execname) -> std::string
 {
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
-  char hostname[16];
-  gethostname(hostname, 16);
+  char hostname[128];
+  gethostname(hostname, 127);
   return fmt::format("{}/.{}-wisdom-{}", homedir, execname, hostname);
 }
 

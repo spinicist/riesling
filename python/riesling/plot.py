@@ -326,6 +326,8 @@ def _get_colors(clim, cmap, img, component):
             clim = np.nanpercentile(np.real(np.abs(img)), (2, 98))
         elif component == 'xlog':
             clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 98))
+            if not clim.any():
+                clim = np.nanpercentile(np.log1p(np.abs(img)), (0, 100))
         else:
             raise(f'Unknown component {component}')
     if not cmap:
@@ -491,36 +493,36 @@ def dictionary(filename):
         plt.close()
         return fig
 
-def traj2d(filename, sl_read=slice(None), sl_spoke=slice(None), color='read', sps=None):
+def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None):
     with h5py.File(filename) as f:
         traj = np.array(f['trajectory'])
         fig, ax = plt.subplots(1, 1, figsize=(12, 4), facecolor='w')
         if color == 'read':
-            c = np.tile(np.arange(len(traj[0, sl_read, 0])), len(traj[sl_spoke, 0, 0]))
+            c = np.tile(np.arange(len(traj[0, read_slice, 0])), len(traj[sl_spoke, 0, 0]))
         elif color == 'seg':
             c = np.tile(np.repeat(np.arange(sps),
-                                  len(traj[0, sl_read, 0])),
-                        int(len(traj[sl_spoke, 0, 0])/sps))
+                                  len(traj[0, read_slice, 0])),
+                        int(len(traj[spoke_slice, 0, 0])/sps))
         else:
-            c = np.tile(np.arange(len(traj[sl_spoke, 0, 0])), (len(traj[0, sl_read, 0]), 1)).ravel(order='F')
+            c = np.tile(np.arange(len(traj[spoke_slice, 0, 0])), (len(traj[0, read_slice, 0]), 1)).ravel(order='F')
         ax.grid()
-        ax.scatter(traj[sl_spoke, sl_read, 0],
-                      traj[sl_spoke, sl_read, 1], c=c, s=0.5)
+        ax.scatter(traj[spoke_slice, read_slice, 0],
+                      traj[spoke_slice, read_slice, 1], c=c, s=0.5)
         ax.set_aspect('equal')
         fig.tight_layout()
         plt.close()
     return fig
 
-def traj3d(filename, sl_read=slice(None), sl_spoke=slice(None), color='read', sps=None, angles=[30,-60,0]):
+def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None, angles=[30,-60,0]):
     with h5py.File(filename) as ff:
-        traj = ff['trajectory'][sl_spoke, sl_read, :]
+        traj = ff['trajectory'][spoke_slice, read_slice, :]
         if color == 'read':
-            c = np.tile(np.arange(traj.shape[1], traj.shape[0]))
+            c = np.tile(np.arange(traj.shape[1]), (traj.shape[0]))
         elif color == 'seg':
             c = np.tile(np.repeat(np.arange(sps), traj.shape[1]), int(traj.shape[0]/sps))
         else:
             c = np.tile(np.arange(traj.shape[0]), (traj.shape[1], 1))
-        fig = plt.figure(figsize=(12,12))
+        fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(projection='3d')
 
         x, y, z = np.array([[-0.5,0,0],[0,-0.5,0],[0,0,-0.5]])
