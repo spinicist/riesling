@@ -3,23 +3,30 @@
     "version-string": "1.0",
     "dependencies": [
         "args",
-        "boost-math",
         "catch2",
         "eigen3",
         "fmt",
         {
             "name": "fftw3",
-            "features": ["threads", "avx2"],
+            "features": [
+                "threads",
+                "avx2"
+            ],
             "platform": "x64"
         },
         {
             "name": "fftw3",
-            "features": ["threads"]
+            "features": [
+                "threads"
+            ]
         },
         {
             "name": "hdf5",
             "default-features": false,
-            "features": ["threadsafe", "zlib"]
+            "features": [
+                "threadsafe",
+                "zlib"
+            ]
         },
         "nifticlib",
         "range-v3",
