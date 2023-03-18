@@ -1,9 +1,9 @@
 #pragma once
 
 #include "func/functor.hpp"
+#include "log.hpp"
 #include "op/operator.hpp"
 #include "prox/thresh.hpp"
-#include "log.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -31,7 +31,7 @@ struct LAD
     // Allocate all memory
     Input x(inner.op->inputDimensions());
     auto const odims = inner.op->outputDimensions();
-    Output u(odims), z(odims), zold(odims), Ax(odims);
+    Output u(odims), z(odims), zold(odims), Ax_sub_b(odims);
 
     // Set initial values
     x.setZero();
@@ -48,16 +48,17 @@ struct LAD
       } else {
         inner.debug = false;
       }
-      x = inner.run(Output(b + z - u), 0.f, x);
-      Ax = inner.op->cforward(x);
-      z = S(1.f/ρ, Output(Ax - b + u));
-      u.device(dev) = u + Ax - z - b;
+      x = inner.run(Output(b + z - u));
+      Ax_sub_b = inner.op->cforward(x) - b;
+      zold = z;
+      z = S(1.f / ρ, Output(Ax_sub_b + u));
+      u.device(dev) = u + Ax_sub_b - z;
 
-      float const pNorm = Norm(Ax - z);
+      float const pNorm = Norm(Ax_sub_b - z);
       float const dNorm = ρ * Norm(z - zold);
 
       float const normx = Norm(x);
-      float const normAx = Norm(Ax);
+      float const normAx_sub_b = Norm(Ax_sub_b);
       float const normz = Norm(z);
       float const normu = Norm(u);
 
@@ -66,14 +67,14 @@ struct LAD
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |Fx| {} |z| {} |u| {}"),
+        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |Ax - b| {} |z| {} |u| {}"),
         ii,
         pNorm,
         pEps,
         dNorm,
         dEps,
         normx,
-        normAx,
+        normAx_sub_b,
         normz,
         normu);
       if ((pNorm < pEps) && (dNorm < dEps)) {
@@ -82,11 +83,11 @@ struct LAD
       }
       if (pNorm > μ * dNorm) {
         ρ *= τ;
-        // u /= u.constant(τ);
+        u /= u.constant(τ);
         Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {} |u| {}"), μ * dNorm, ρ, Norm(u));
       } else if (dNorm > μ * pNorm) {
         ρ /= τ;
-        // u *= u.constant(τ);
+        u *= u.constant(τ);
         Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to {} |u| {}"), μ * pNorm, ρ, Norm(u));
       }
       if (InterruptReceived()) {
