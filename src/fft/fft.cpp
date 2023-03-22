@@ -11,6 +11,7 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <filesystem>
 
 namespace rl {
 namespace FFT {
@@ -21,7 +22,8 @@ auto WisdomPath(std::string const &execname) -> std::string
   const char *homedir = pw->pw_dir;
   char hostname[128];
   gethostname(hostname, 127);
-  return fmt::format("{}/.{}-wisdom-{}", homedir, execname, hostname);
+  std::filesystem::path execpath(execname);
+  return fmt::format("{}/.{}-wisdom-{}", homedir, execpath.filename().c_str(), hostname);
 }
 
 void Start(std::string const &execname)
