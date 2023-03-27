@@ -2,28 +2,31 @@
 
 #include "log.hpp"
 #include "tensorOps.hpp"
-#include <scn/scn.h>
 #include <algorithm>
+#include <scn/scn.h>
 
 namespace rl {
 
-auto Scaling(args::ValueFlag<std::string> &scale, std::shared_ptr<ReconOp> const &recon, Cx5 const &data) -> float
+auto Scaling(args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const recon, Cx4 const &data) -> float
 {
-  float val;
-  if (scale.Get() == "auto") {
-    Re4 abs = (recon->cadjoint(CChipMap(data, 0))).abs();
+  float scale;
+  if (type.Get() == "auto") {
+    Re4 abs = (recon->cadjoint(data)).abs();
     auto vec = CollapseToVector(abs);
     std::sort(vec.begin(), vec.end());
-    val = 1.f / vec[vec.size() * 0.9];
-    Log::Print(FMT_STRING("Automatic scaling {}"), val);
+    float const med = vec[vec.size() * 0.5];
+    float const max = vec[vec.size() - 1];
+    float const p90 = vec[vec.size() * 0.9];
+    scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
+    Log::Print(FMT_STRING("Automatic scaling={}. 50%/90%/100% {}/{}/{}."), scale, med, p90, max);
   } else {
-    if (scn::scan(scale.Get(), "{}", val)) {
-        Log::Print(FMT_STRING("Scale: {}"), val);
+    if (scn::scan(type.Get(), "{}", scale)) {
+      Log::Print(FMT_STRING("Scale: {}"), scale);
     } else {
-      Log::Fail(FMT_STRING("Could not read number from scaling: "), scale.Get());
+      Log::Fail(FMT_STRING("Could not read number from scaling: "), type.Get());
     }
   }
-  return val;
+  return scale;
 }
 
 } // namespace rl

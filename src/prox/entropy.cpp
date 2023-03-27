@@ -43,7 +43,7 @@ NMREntropy::NMREntropy(float const λ, float const scale)
 
 auto NMREntropy::operator()(float const α, Eigen::TensorMap<Cx4 const> v) const -> Cx4
 {
-  float const t = α * λ_;
+  float const t = α * λ_ * scale_;
   Re4 const vabs = v.abs() * scale_;
   Re4 x = vabs;
   for (int ii = 0; ii < 16; ii++) {
