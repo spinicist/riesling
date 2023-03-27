@@ -496,7 +496,6 @@ def dictionary(filename):
 def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None):
     with h5py.File(filename) as f:
         traj = np.array(f['trajectory'])
-        fig, ax = plt.subplots(1, 1, figsize=(12, 4), facecolor='w')
         if color == 'read':
             c = np.tile(np.arange(len(traj[0, read_slice, 0])), len(traj[sl_spoke, 0, 0]))
         elif color == 'seg':
@@ -505,10 +504,15 @@ def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
                         int(len(traj[spoke_slice, 0, 0])/sps))
         else:
             c = np.tile(np.arange(len(traj[spoke_slice, 0, 0])), (len(traj[0, read_slice, 0]), 1)).ravel(order='F')
-        ax.grid()
-        ax.scatter(traj[spoke_slice, read_slice, 0],
-                      traj[spoke_slice, read_slice, 1], c=c, s=0.5)
-        ax.set_aspect('equal')
+        fig, ax = plt.subplots(1, 3, figsize=(12, 4), facecolor='w')
+        for ii in range(3):
+            ax[ii].grid()
+            ax[ii].scatter(traj[spoke_slice, read_slice, ii % 3],
+                       traj[spoke_slice, read_slice, (ii + 1) % 3],
+                       c=c, cmap='cmr.ember', s=0.5)
+            ax[ii].set_aspect('equal')
+            ax[ii].set_xlim((-0.5,0.5))
+            ax[ii].set_ylim((-0.5,0.5))
         fig.tight_layout()
         plt.close()
     return fig
@@ -529,8 +533,10 @@ def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
         u, v, w = np.array([[1,0,0],[0,1,0],[0,0,1]])
         ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
         ax.scatter(traj[:, :, 0], traj[:, :, 1], traj[:, :, 2],
-                   c=c, s=3, cmap='cmr.lavender')
-
+                   c=c, s=3, cmap='cmr.ember')
+        ax.set_xlim((-0.5,0.5))
+        ax.set_ylim((-0.5,0.5))
+        ax.set_zlim((-0.5,0.5))
         ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='z')
         fig.tight_layout()
         plt.close()
