@@ -85,12 +85,12 @@ struct LSMR
       Bidiag(op, M, Mu, u, v, α, β, λ, opλ, uλ, dev);
 
       float const ρold = ρ;
-      float c, s, ĉ = 1.f, ŝ = 0.f;
+      float c, s, ĉ = 1.f, ŝ = 0.f;
       if (λ == 0.f || uλ.size()) {
         std::tie(c, s, ρ) = StableGivens(α̅, β);
       } else {
         float α̂;
-        std::tie(ĉ, ŝ, α̂) = StableGivens(α̅, λ);
+        std::tie(ĉ, ŝ, α̂) = StableGivens(α̅, λ);
         std::tie(c, s, ρ) = StableGivens(α̂, β);
       }
       float θnew = s * α;
@@ -111,8 +111,8 @@ struct LSMR
       h.device(dev) = v - (θnew / ρ) * h;
 
       // Estimate of |r|.
-      float const β́ = ĉ * β̈;
-      float const β̆ = -ŝ * β̈;
+      float const β́ = ĉ * β̈;
+      float const β̆ = -ŝ * β̈;
 
       float const β̂ = c * β́;
       β̈ = -s * β́;
