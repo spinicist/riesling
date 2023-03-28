@@ -204,10 +204,12 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     return fig
 
 def noncart(fname, dset='noncartesian', channels=slice(1), read_slice=slice(None), spoke_slice=slice(None),
-            slab=0, volume=0, rows=1, component='xlog', clim=None, cmap=None, cbar=True, title=None):
+            slab=0, volume=0, rows=1, component='xlog', clim=None, cmap=None, cbar=True, title=None, transpose=False):
     with h5py.File(fname) as f:
         D = f[dset]
         data = _get_slices(D, -1, channels, (-2, -3), (read_slice, spoke_slice), (-4, -5), (slab, volume))
+    if transpose:
+        data = np.transpose(data, axes=(0,2,1))
     n = data.shape[0]
     clim, cmap = _get_colors(clim, cmap, data, component)
 
@@ -380,7 +382,11 @@ def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos
 
 def _add_colorball(clim, ax=None, cax=None, cmap='cet_colorwheel'):
     if cax is None:
-        cax = _first(ax).inset_axes(bounds=(0.01, 0.05, 0.4, 0.4), projection='polar', facecolor='black')
+        ax = _first(ax)
+        sz = ax.get_window_extent().transformed(ax.figure.dpi_scale_trans.inverted()).size
+        w = 3 * 1.4 * rc['fontsize'] / (sz[0] * 72) # 72 points per inch
+        h = 3 * 1.4 * rc['fontsize'] / (sz[1] * 72) # 72 points per inch
+        cax = ax.inset_axes(bounds=(0.1*w, 0.1*h, h, h), projection='polar', facecolor='black')
     theta, rad = np.meshgrid(np.linspace(-np.pi, np.pi, 64), np.linspace(0, 1, 64))
     ones = np.ones_like(theta)
     norm = colors.Normalize(vmin=-np.pi, vmax=np.pi)
@@ -397,11 +403,11 @@ def _add_colorball(clim, ax=None, cax=None, cmap='cet_colorwheel'):
     cax.spines[:].set_linewidth(2)
     cax.spines[:].set_visible(True)
     cax.set_xticks([0, np.pi/2])
-    cax.set_xticklabels([f'{clim[1]:2.1f}', f'{clim[1]:2.1f}' + 'i'],
+    cax.set_xticklabels([f'{clim[1]:.0e}', f'{clim[1]:.0e}' + 'i'],
                         fontsize=rc['fontsize'], path_effects=rc['effects'])
-    cax.get_xticklabels()[0].set_ha('right')
-    cax.get_xticklabels()[1].set_va('top')
-    cax.xaxis.set_tick_params(pad=-1.4*rc['fontsize'])
+    cax.get_xticklabels()[0].set_ha('left')
+    cax.get_xticklabels()[1].set_va('bottom')
+    cax.xaxis.set_tick_params(pad=-0.5*rc['fontsize'])
     cax.set_yticks([0, 1])
     cax.set_yticklabels([])
 
@@ -497,18 +503,19 @@ def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
     with h5py.File(filename) as f:
         traj = np.array(f['trajectory'])
         if color == 'read':
-            c = np.tile(np.arange(len(traj[0, read_slice, 0])), len(traj[sl_spoke, 0, 0]))
+            c = np.tile(np.arange(len(traj[0, read_slice, 0])), len(traj[spoke_slice, 0, 0]))
         elif color == 'seg':
             c = np.tile(np.repeat(np.arange(sps),
                                   len(traj[0, read_slice, 0])),
                         int(len(traj[spoke_slice, 0, 0])/sps))
         else:
             c = np.tile(np.arange(len(traj[spoke_slice, 0, 0])), (len(traj[0, read_slice, 0]), 1)).ravel(order='F')
-        fig, ax = plt.subplots(1, 3, figsize=(12, 4), facecolor='w')
-        for ii in range(3):
+        nd = traj.shape[-1]
+        fig, ax = plt.subplots(1, nd, figsize=(12, 4), facecolor='w')
+        for ii in range(nd):
             ax[ii].grid()
-            ax[ii].scatter(traj[spoke_slice, read_slice, ii % 3],
-                       traj[spoke_slice, read_slice, (ii + 1) % 3],
+            ax[ii].scatter(traj[spoke_slice, read_slice, ii % nd],
+                       traj[spoke_slice, read_slice, (ii + 1) % nd],
                        c=c, cmap='cmr.ember', s=0.5)
             ax[ii].set_aspect('equal')
             ax[ii].set_xlim((-0.5,0.5))
