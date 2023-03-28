@@ -48,6 +48,7 @@ add_library(vineyard
     src/traj_spirals.cpp
     src/zin-grappa.cpp
     src/algo/decomp.cpp
+    src/algo/otsu.cpp
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp

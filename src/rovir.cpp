@@ -1,5 +1,6 @@
 #include "rovir.hpp"
 
+#include "algo/otsu.hpp"
 #include "algo/decomp.hpp"
 #include "cropper.h"
 #include "mapping.hpp"
@@ -42,48 +43,11 @@ auto ROVIR(
   auto const sz = LastN<3>(nufft->inputDimensions());
   Cx4 const channelImages = nufft->adjoint(data).chip<1>(0);
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
-
-  // Otsu's method
-  Index const n = rss.size();
-  Eigen::Map<Eigen::ArrayXf const> rssMap(rss.data(), n);
-  Index const nBins = 128;
-  float const maxVal = rssMap.maxCoeff();
-  Eigen::ArrayXf const thresholds = Eigen::ArrayXf::LinSpaced(nBins, 0.f, maxVal);
-
-  float bestSigma = std::numeric_limits<float>::infinity();
-  float bestThresh = 0.f;
-  for (Index ib = 0; ib < nBins; ib++) {
-    auto const mask = rssMap >= thresholds[ib];
-    Index const nAbove = mask.count();
-    if (nAbove == 0 or nAbove == n)
-      continue;
-    float const w1 = nAbove / float(n);
-    float const w0 = 1.f - w1;
-
-    Eigen::ArrayXf vals0(n - nAbove);
-    Eigen::ArrayXf vals1(nAbove);
-    Index ii0 = 0, ii1 = 0;
-    for (Index ii = 0; ii < n; ii++) {
-      if (mask[ii]) {
-        vals1[ii1++] = rssMap[ii];
-      } else {
-        vals0[ii0++] = rssMap[ii];
-      }
-    }
-
-    float const var0 = (vals0 - vals0.mean()).square().sum() / (n - nAbove - 1);
-    float const var1 = (vals1 - vals1.mean()).square().sum() / (nAbove - 1);
-
-    float const sigma = w0 * var0 + w1 * var1;
-    if (sigma < bestSigma) {
-      bestSigma = sigma;
-      bestThresh = thresholds[ib];
-    }
-  }
-  Log::Print(FMT_STRING("ROVIR signal threshold {}"), bestThresh);
+  auto thresh = Otsu(CollapseToArray(rss)).thresh;
+  Log::Print(FMT_STRING("ROVIR signal threshold {}"), thresh);
   Re3 signalMask(sz), interMask(sz);
   signalMask.setZero();
-  interMask = (rss > bestThresh).cast<float>();
+  interMask = (rss > thresh).cast<float>();
   Crop(signalMask, info.matrix) = Crop(interMask, info.matrix);
   Sz3 szGap{info.matrix[0] + opts.gap.Get(), info.matrix[1] + opts.gap.Get(), info.matrix[2] + opts.gap.Get()};
   Crop(interMask, szGap).setZero();
@@ -143,7 +107,7 @@ auto ROVIR(
   Eigen::MatrixXcf vecs = eig.eigenvectors().array().rowwise().reverse().leftCols(nRetain);
   cholB.matrixU().solveInPlace(vecs);
 
-  //Gram-Schmidt
+  // Gram-Schmidt
   vecs.col(0).normalize();
   for (Index ii = 1; ii < nRetain; ii++) {
     for (Index ij = 0; ij < ii; ij++) {
