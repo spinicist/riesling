@@ -18,7 +18,8 @@ rc = {'figsize': 4,
 def planes(fname, dset='image',
            other_dims=None, other_indices=None, img_offset=-1,
            component='mag', clim=None, cmap=None, cbar=True,
-           rotates=(0, 0, 0), fliplr=False, title=None):
+           rotates=(0, 0, 0), fliplr=False, title=None,
+           basis_file=None, basis_tp=0):
 
     dim_x, img_x = _get_dims('x', img_offset)
     dim_y, img_y = _get_dims('y', img_offset)
@@ -28,9 +29,9 @@ def planes(fname, dset='image',
         index_x = int(np.floor(D.shape[dim_x] * 0.5))
         index_y = int(np.floor(D.shape[dim_y] * 0.5))
         index_z = int(np.floor(D.shape[dim_z] * 0.5))
-        data_x = _get_slices(D, dim_x, [index_x], img_x, other_dims=other_dims, other_indices=other_indices)
-        data_y = _get_slices(D, dim_y, [index_y], img_y, other_dims=other_dims, other_indices=other_indices)
-        data_z = _get_slices(D, dim_z, [index_z], img_z, other_dims=other_dims, other_indices=other_indices)
+        data_x = _get_slices(D, dim_x, [index_x], img_x, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data_y = _get_slices(D, dim_y, [index_y], img_y, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data_z = _get_slices(D, dim_z, [index_z], img_z, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
     clim, cmap = _get_colors(clim, cmap, data_x, component)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
@@ -46,7 +47,8 @@ def planes(fname, dset='image',
 def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
            other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
            component='mag', clim=None, cmap=None, cbar=True,
-           rows=1, rotates=0, fliplr=False, title=None):
+           rows=1, rotates=0, fliplr=False, title=None,
+           basis_file=None, basis_tp=0):
 
     slice_dim, img_dims = _get_dims(axis, img_offset)
     with h5py.File(fname, 'r') as f:
@@ -54,7 +56,7 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
         maxn = D.shape[slice_dim]
         n = np.amin([n, maxn])
         slices = np.floor(np.linspace(start*maxn, stop*maxn, n, endpoint=True)).astype(int)
-        data = _get_slices(D, slice_dim, slices, img_dims, img_slices, other_dims, other_indices)
+        data = _get_slices(D, slice_dim, slices, img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
     clim, cmap = _get_colors(clim, cmap, data, component)
     cols = int(np.ceil(n / rows))
@@ -248,7 +250,8 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
         plt.close()
     return fig
 
-def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=None, other_indices=None):
+def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=None, other_indices=None,
+                basis_file=None, basis_tp=0):
     if dset.ndim < 3:
         raise Exception('Requires at least a 3D image')
     if img_slices is None:
@@ -257,12 +260,18 @@ def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=N
         other_dims = []
     if other_indices is None:
         other_indices = []
+    if basis_file is None:
+        basis_dim = 0
+    else:
+        with h5py.File(basis_file) as f:
+            basis = f['basis'][basis_tp, :]
+        basis_dim = -1
 
     if len(other_indices) > (dset.ndim - 3):
         raise Exception('Too many other_indices')
     elif len(other_indices) < (dset.ndim - 3):
         other_indices.extend([0,]*(dset.ndim - 3 - len(other_indices)))
-        other_dims.extend([x for x in range(-dset.ndim, 0) if x not in list([*img_dims, *other_dims, slice_dim])])
+        other_dims.extend([x for x in range(-dset.ndim, 0) if x not in list([*img_dims, *other_dims, slice_dim, basis_dim])])
     all_slices = [slice(None),]*dset.ndim
     all_slices[img_dims[0]] = img_slices[0]
     all_slices[img_dims[1]] = img_slices[1]
@@ -273,7 +282,12 @@ def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=N
     all_dims=(*other_dims, slice_dim, *img_dims)
 
     data = dset[tuple(all_slices)]
-    data = data.transpose(all_dims)
+    if basis_file:
+        data = np.dot(data, basis)
+        data = data.transpose([ii + 1 for ii in all_dims])
+    else:
+        data = data.transpose(all_dims)
+
     data = data.reshape(data.shape[-3], data.shape[-2], data.shape[-1])
 
     return data
