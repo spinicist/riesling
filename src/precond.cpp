@@ -27,7 +27,7 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   Cx5 const psf = nufft->adjoint(W);
   Log::Tensor(psf, "single-psf");
   Cx5 ones(AddFront(info.matrix, psf.dimension(0), psf.dimension(1)));
-  ones.setConstant(1. / std::sqrt(psf.dimension(1)));
+  ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
   PadOp<Cx, 5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   FFTOp<5, 3> fftX(psf.dimensions());
   Cx5 xcorr = fftX.cforward(padX.cforward(ones)).abs().square().cast<Cx>();
