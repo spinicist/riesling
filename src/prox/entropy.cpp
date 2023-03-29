@@ -51,9 +51,9 @@ auto NMREntropy::operator()(float const α, Eigen::TensorMap<Cx4 const> v) const
     auto const g = ((x * (x / xx + 1.f)) / (x + xx) + (x + xx).log() - x / xx) + (1.f / t) * (x - vabs);
     x.device(Threads::GlobalDevice()) = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
-  Cx4 const s = v * (x / vabs).cast<Cx>();
-  Log::Print(FMT_STRING("NMR Entropy α {} λ {} t {} |v| {} |s| {}"), α, λ_, t, Norm(v), Norm(s));
-  return s;
+  Cx4 const z = v * (x / vabs).cast<Cx>();
+  Log::Print(FMT_STRING("NMR Entropy α {} λ {} t {} |v| {} |z| {}"), α, λ_, t, Norm(v), Norm(z));
+  return z;
 }
 
 } // namespace rl

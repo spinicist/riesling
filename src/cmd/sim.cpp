@@ -75,7 +75,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> thresh(parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
   args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
-  args::Flag varimax(parser, "V", "Apply varimax rotation", {"varimax"});
+  args::Flag rotate(parser, "V", "Rotate basis", {"rotate"});
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> reorder(parser, "R", "Reorder basis before retention", {"reorder"});
 
   ParseCommand(parser);
@@ -111,7 +111,7 @@ int main_sim(args::Subparser &parser)
   case Sequences::DWI: std::tie(pars, dyns) = Run<rl::DWI>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
-  Basis basis(pars, dyns, thresh.Get(), nBasis.Get(), demean.Get(), varimax.Get(), reorder.Get());
+  Basis basis(pars, dyns, thresh.Get(), nBasis.Get(), demean.Get(), rotate, reorder.Get());
   HD5::Writer writer(oname.Get());
   basis.write(writer);
 

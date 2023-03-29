@@ -10,7 +10,7 @@ Basis::Basis(
   float const thresh,
   Index const nBasis,
   bool const demean,
-  bool const varimax,
+  bool const rotate,
   std::vector<Index> const reorder)
   : parameters{par}
   , dynamics{dyn}
@@ -44,28 +44,17 @@ Basis::Basis(
     basis = svd.V.leftCols(nRetain);
   }
   
-  if (varimax) {
-    Log::Print("SIM Applying varimax rotation");
-    float gamma = 1.0f;
-    float const tol = 1e-6f;
-    float q = 20;
-    Index const p = basis.rows();
-    Index const k = basis.cols();
-    Eigen::MatrixXf R = Eigen::MatrixXf::Identity(k, k);
-    float d = 0.f;
-    for (Index ii = 0; ii < q; ii++) {
-      float const d_old = d;
-      Eigen::MatrixXf const λ = basis * R;
-      Eigen::MatrixXf const x =
-        basis.transpose() * (λ.array().pow(3.f).matrix() - (λ * (λ.transpose() * λ).diagonal().asDiagonal()) * (gamma / p));
-      auto const svdv = SVD<float>(x);
-      R = svdv.U * svdv.V.adjoint();
-      d = svdv.vals.sum();
-      if (d_old != 0.f && (d / d_old) < 1 + tol)
-        break;
+  if (rotate) {
+    Log::Print("Bastardised Gram-Schmidt");
+    basis.col(0) = basis.rowwise().mean().normalized();
+    for (Index ii = 1; ii < basis.cols(); ii++) {
+      for (Index ij = 0; ij < ii; ij++) {
+        basis.col(ii) -= basis.col(ij).dot(basis.col(ii)) * basis.col(ij);
+      }
+      basis.col(ii).normalize();
     }
-    basis = basis * R;
   }
+
   basis *= std::sqrt(basis.rows());
 
   Log::Print("Computing dictionary");
