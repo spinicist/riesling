@@ -116,12 +116,17 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
          component='mag', clim=None, cmap=None, cbar=True,
          diff_component='real', difflim=None, diffmap=None,
-         rotates=0, fliplr=False, title=None):
+         rotates=0, fliplr=False, title=None,
+         basis_files=[None], basis_tps=[0]):
 
     if len(fnames) < 2:
         raise('Must have more than 1 image to diff')
     if len(dsets) == 1:
         dsets = dsets * len(fnames)
+    if len(basis_files) == 1:
+        basis_files = basis_files * len(fnames)
+    if len(basis_tps) == 1:
+        basis_tps = basis_tps * len(fnames)
     if titles is not None and len(titles) != len(fnames):
         raise('Number of titles and files did not match')
 
@@ -130,7 +135,7 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
         dsets = [f[dset] for f, dset in zip(files, dsets)]
         slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
-        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices) for D in dsets]
+        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
         data = np.concatenate(data)
     ref = np.max(np.abs(data[:-1, :, :]))
     diffs = np.diff(data, n=1, axis=0) * 100 / ref
@@ -158,12 +163,17 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
          component='mag', clim=None, cmap=None, cbar=True,
          diff_component='real', difflim=None, diffmap=None, diffbar=True,
-         rotates=0, fliplr=False, title=None):
+         rotates=0, fliplr=False, title=None,
+         basis_files=None, basis_tps=0):
 
     if len(fnames) < 2:
         raise('Must have more than 1 image to diff')
     if len(dsets) == 1:
         dsets = dsets * len(fnames)
+    if len(basis_files) == 1:
+        basis_files = basis_files * len(fnames)
+    if len(basis_tps) == 1:
+        basis_tps = basis_tps * len(fnames)
     if titles is not None and len(titles) != len(fnames):
         raise('Number of titles and files did not match')
 
@@ -172,7 +182,7 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
         dsets = [f[dset] for f, dset in zip(files, dsets)]
         slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
-        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices) for D in dsets]
+        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
         data = np.concatenate(data)
 
     n = data.shape[-3]
