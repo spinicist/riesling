@@ -6,12 +6,11 @@
 namespace rl {
 
 template <typename Tensor>
-Entropy<Tensor>::Entropy(float const λ, float const scale)
+Entropy<Tensor>::Entropy(float const λ)
   : Prox<Tensor>()
   , λ_{λ}
-  , scale_{scale}
 {
-  Log::Print(FMT_STRING("Entropy Prox λ {} scale {}"), λ, scale);
+  Log::Print(FMT_STRING("Entropy Prox λ {}"), λ);
 }
 
 template <typename Tensor>
@@ -19,7 +18,7 @@ auto Entropy<Tensor>::operator()(float const α, Eigen::TensorMap<Tensor const> 
 {
   using RealTensor = Eigen::Tensor<float, Tensor::NumDimensions>;
   float const t = α * λ_;
-  RealTensor const vabs = v.abs() * scale_;
+  RealTensor const vabs = v.abs();
   RealTensor x = vabs;
   for (int ii = 0; ii < 16; ii++) {
     auto const g = (x > 0.f).select((x.log() + 1.f) + (1.f / t) * (x - vabs), x.constant(0.f));
@@ -33,18 +32,17 @@ auto Entropy<Tensor>::operator()(float const α, Eigen::TensorMap<Tensor const> 
 template struct Entropy<Cx4>;
 template struct Entropy<Cx5>;
 
-NMREntropy::NMREntropy(float const λ, float const scale)
+NMREntropy::NMREntropy(float const λ)
   : Prox<Cx4>()
   , λ_{λ}
-  , scale_{scale}
 {
-  Log::Print(FMT_STRING("NMR Entropy Prox λ {} scale {}"), λ_, scale_);
+  Log::Print(FMT_STRING("NMR Entropy Prox λ {}"), λ_);
 }
 
 auto NMREntropy::operator()(float const α, Eigen::TensorMap<Cx4 const> v) const -> Cx4
 {
-  float const t = α * λ_ * scale_;
-  Re4 const vabs = v.abs() * scale_;
+  float const t = α * λ_;
+  Re4 const vabs = v.abs();
   Re4 x = vabs;
   for (int ii = 0; ii < 16; ii++) {
     auto const xx = (x.square() + 1.f).sqrt();

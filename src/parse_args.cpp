@@ -173,11 +173,13 @@ void WriteOutput(
   std::string const &oname,
   std::string const &suffix,
   bool const keepTrajectory,
-  rl::Trajectory const &traj)
+  rl::Trajectory const &traj,
+  std::map<std::string, float> const &meta)
 {
   auto const fname = OutName(iname, oname, suffix, "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(img, HD5::Keys::Image);
+  writer.writeMeta(meta);
   if (keepTrajectory) {
     traj.write(writer);
   } else {

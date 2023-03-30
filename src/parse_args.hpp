@@ -47,7 +47,8 @@ void WriteOutput(
   std::string const &oname,
   std::string const &suffix,
   bool const keepTrajectory,
-  rl::Trajectory const &traj);
+  rl::Trajectory const &traj,
+  std::map<std::string, float> const &meta = std::map<std::string, float>());
 
 struct CoreOpts
 {

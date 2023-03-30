@@ -69,12 +69,12 @@ int main_reg(args::Subparser &parser)
       output.chip<4>(iv) = thresh(l1.Get(), CChipMap(images, iv));
     }
   } else if (maxent) {
-    Entropy<Cx4> ent(λ.Get(), maxent.Get());
+    Entropy<Cx4> ent(λ.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       output.chip<4>(iv) = ent(1.f, CChipMap(images, iv));
     }
   } else if (nmrent) {
-    NMREntropy ent(λ.Get(), nmrent.Get());
+    NMREntropy ent(λ.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       output.chip<4>(iv) = ent(1.f, CChipMap(images, iv));
     }

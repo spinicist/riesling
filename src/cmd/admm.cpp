@@ -46,14 +46,13 @@ int main_admm(args::Subparser &parser)
   // Default is TV on spatial dimensions, i.e. classic compressed sensing
   args::Flag tv4(parser, "TV4", "TV on all 4 dimensions", {"tv4"});
   args::Flag l1(parser, "L1", "Simple L1 regularization", {"l1"});
+  args::Flag nmrent(parser, "E", "NMR Entropy", {"nmrent"});
 
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
   args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
 
   args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
-
-  args::ValueFlag<float> nmrent(parser, "E", "NMR Entropy (with scale)", {"nmrent"}, 1.f);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -71,6 +70,8 @@ int main_admm(args::Subparser &parser)
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
+  std::map<std::string, float> meta{{"scale", scale}, {"lambda", λ.Get()}, {"rho", ρ.Get()}};
+
   auto const &all_start = Log::Now();
   if (wavelets) {
     Regularizer<Identity<Cx, 4>> reg{
@@ -93,7 +94,7 @@ int main_admm(args::Subparser &parser)
     }
   } else if (nmrent) {
     Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<NMREntropy>(λ.Get(), nmrent.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
+      .prox = std::make_shared<NMREntropy>(λ.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
     LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
     ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
       lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
@@ -126,6 +127,6 @@ int main_admm(args::Subparser &parser)
   }
 
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-  WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);
+  WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj, meta);
   return EXIT_SUCCESS;
 }
