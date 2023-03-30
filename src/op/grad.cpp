@@ -6,23 +6,25 @@ namespace {
 template <typename T1, typename T2>
 inline void ForwardDiff(Eigen::Index const dim, Eigen::Index const ind, T1 const &a, T2 &b)
 {
-  Sz4 sz{a.dimension(0), a.dimension(1), a.dimension(2), a.dimension(3)};
-  Sz4 st{0, 0, 0, 0};
-  Sz4 fwd{0, 0, 0, 0};
+  auto sz = a.dimensions();
+  auto st = decltype(sz){};
+  auto fwd = decltype(sz){};
   fwd[dim] = 1;
   sz[dim] -= 1;
-  b.chip(ind, 4).slice(st, sz).device(Threads::GlobalDevice()) = a.slice(fwd, sz) - a.slice(st, sz);
+  auto const d = T2::NumDimensions - 1;
+  b.chip(ind, d).slice(st, sz).device(Threads::GlobalDevice()) = a.slice(fwd, sz) - a.slice(st, sz);
 }
 
 template <typename T1, typename T2>
 inline void BackwardDiff(Eigen::Index const dim, Eigen::Index const ind, T1 const &a, T2 &b)
 {
-  Sz4 sz{a.dimension(0), a.dimension(1), a.dimension(2), a.dimension(3)};
-  Sz4 st{0, 0, 0, 0};
-  Sz4 bck{0, 0, 0, 0};
+  auto sz = a.dimensions();
+  auto st = decltype(sz){};
+  auto bck = decltype(sz){};
   st[dim] = 1;
   sz[dim] -= 1;
-  b.slice(st, sz).device(Threads::GlobalDevice()) += a.chip(ind, 4).slice(bck, sz) - a.chip(ind, 4).slice(st, sz);
+  auto const d = T1::NumDimensions - 1;
+  b.slice(st, sz).device(Threads::GlobalDevice()) += a.chip(ind, d).slice(bck, sz) - a.chip(ind, d).slice(st, sz);
 }
 } // namespace
 
