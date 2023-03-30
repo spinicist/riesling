@@ -43,6 +43,8 @@ int main_admm(args::Subparser &parser)
 
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 1e-3)", {"lambda"}, 1.e-3f);
 
+  // Default is TV on spatial dimensions, i.e. classic compressed sensing
+  args::Flag tv4(parser, "TV4", "TV on all 4 dimensions", {"tv4"});
   args::Flag l1(parser, "L1", "Simple L1 regularization", {"l1"});
 
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
@@ -51,9 +53,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
 
-  args::ValueFlag<float> maxent(parser, "E", "Maximum Entropy (with scale)", {"maxent"}, 1.f);
   args::ValueFlag<float> nmrent(parser, "E", "NMR Entropy (with scale)", {"nmrent"}, 1.f);
-  args::ValueFlag<float> tvent(parser, "E", "TV+Entropy (with scale)", {"tvent"}, 1.f);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -91,15 +91,6 @@ int main_admm(args::Subparser &parser)
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
-  } else if (maxent) {
-    Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<Entropy<Cx4>>(λ.Get(), maxent.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
-      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
   } else if (nmrent) {
     Regularizer<Identity<Cx, 4>> reg{
       .prox = std::make_shared<NMREntropy>(λ.Get(), nmrent.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
@@ -118,10 +109,10 @@ int main_admm(args::Subparser &parser)
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
-  } else if (tvent) {
-    Regularizer<GradOp> reg{.prox = std::make_shared<Entropy<Cx5>>(λ.Get(), tvent.Get()), .op = std::make_shared<GradOp>(sz)};
-    LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp, GradOp>, GradOp> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+  } else if (tv4) {
+    Regularizer<Grad4Op> reg{.prox = std::make_shared<SoftThreshold<Cx5>>(λ.Get()), .op = std::make_shared<Grad4Op>(sz)};
+    LSMR<ReconOp, Grad4Op> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
+    ADMM<LSMR<ReconOp, Grad4Op>, Grad4Op> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
     for (Index iv = 0; iv < volumes; iv++) {
       out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
     }
