@@ -9,6 +9,7 @@ namespace rl {
 
 struct DWI final : Sequence
 {
+  static const Index nParameters = 4;
   DWI(Settings const &s);
 
   auto length() const -> Index;

@@ -16,11 +16,21 @@
 using namespace rl;
 
 template <typename T>
-auto Run(rl::Settings const &s, Index const nsamp, std::vector<float> lo, std::vector<float> hi)
+auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float>> los, std::vector<std::vector<float>> his)
 {
+  if (los.size() != his.size()) {
+    Log::Fail("Different number of parameter low bounds and high bounds");
+  }
+
   T simulator{s};
 
-  Eigen::ArrayXXf parameters = simulator.parameters(nsamp, lo, hi);
+  Eigen::ArrayXXf parameters(T::nParameters, nsamp * los.size());
+  Index totalP = 0;
+  for (Index ii = 0; ii < los.size(); ii++) {
+    parameters.middleRows(ii * nsamp, nsamp) = simulator.parameters(nsamp, los[ii], his[ii]);
+    totalP += parameters.cols();
+  }
+  parameters.conservativeResize(T::nParameters, totalP);
   Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
   auto const start = Log::Now();
   auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
@@ -73,8 +83,10 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<float> Tsat(parser, "TSAT", "Fat sat time", {"tsat"}, 0.f);
   args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
 
-  args::ValueFlag<std::vector<float>, VectorReader<float>> pLo(parser, "LO", "Low values for parameters", {"lo"});
-  args::ValueFlag<std::vector<float>, VectorReader<float>> pHi(parser, "HI", "High values for parameters", {"hi"});
+  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(
+    parser, "LO", "Low values for parameters", {"lo"});
+  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pHi(
+    parser, "HI", "High values for parameters", {"hi"});
   args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
   args::ValueFlag<float> thresh(parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);

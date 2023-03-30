@@ -9,6 +9,7 @@ namespace rl {
 
 struct T1T2Prep final : Sequence
 {
+  static const Index nParameters = 3;
   T1T2Prep(Settings const &s);
 
   auto length() const -> Index;
