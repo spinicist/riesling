@@ -17,9 +17,9 @@ template<typename T>
 auto SoftThreshold<T>::operator()(float const α, Eigen::TensorMap<T const> x) const -> T
 {
   float t = α * λ_;
-  T s = (x.abs() > t).select(x * (x.abs() - t) / x.abs(), x.constant(0.f));
-  Log::Print(FMT_STRING("Soft Threshold α {} λ {} t {} |x| {} |s| {}"), α, λ_, t, Norm(x), Norm(s));
-  return s;
+  T z = (x.abs() > t).select(x * (x.abs() - t) / x.abs(), x.constant(0.f));
+  Log::Print(FMT_STRING("Soft Threshold α {} λ {} t {} |x| {} |z| {}"), α, λ_, t, Norm(x), Norm(z));
+  return z;
 }
 
 template struct SoftThreshold<Cx4>;

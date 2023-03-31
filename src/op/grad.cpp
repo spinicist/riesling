@@ -18,7 +18,7 @@ inline void ForwardDiff(Eigen::Index const dim, Eigen::Index const ind, T1 const
 template <typename T1, typename T2>
 inline void BackwardDiff(Eigen::Index const dim, Eigen::Index const ind, T1 const &a, T2 &b)
 {
-  auto sz = a.dimensions();
+  auto sz = b.dimensions();
   auto st = decltype(sz){};
   auto bck = decltype(sz){};
   st[dim] = 1;

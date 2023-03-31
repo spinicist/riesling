@@ -25,7 +25,7 @@ auto Entropy<Tensor>::operator()(float const α, Eigen::TensorMap<Tensor const> 
     x.device(Threads::GlobalDevice()) = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   Tensor const s = (vabs > 0.f).select(v * (x / vabs).template cast<typename Tensor::Scalar>(), v.constant(0.f));
-  Log::Print(FMT_STRING("Entropy α {} λ {} t {} |v| {} |s| {}"), α, λ_, t, Norm(v), Norm(s));
+  Log::Print(FMT_STRING("Entropy α {} λ {} t {} |v| {} |z| {}"), α, λ_, t, Norm(v), Norm(s));
   return s;
 }
 

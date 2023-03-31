@@ -15,12 +15,12 @@ void CheckSizes(
   if (lo.size() == 0) {
     lo = defLo;
   } else if (lo.size() != N) {
-    Log::Fail(FMT_STRING("Low parameters must have {} value"), N);
+    Log::Fail(FMT_STRING("Low parameters must have {} values"), N);
   }
   if (hi.size() == 0) {
     hi = defHi;
   } else if (hi.size() != N) {
-    Log::Fail(FMT_STRING("High parameters must have {} value"), N);
+    Log::Fail(FMT_STRING("High parameters must have {} values"), N);
   }
 }
 
@@ -42,13 +42,13 @@ auto T1T2B1(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eig
   float const R2hi = 1.f / hi[1];
   float const B1lo = lo[2];
   float const B1hi = hi[2];
-  Index const nT = std::floor(std::pow(nS, 1. / 3.));
+  Index const nT = std::floor(std::pow(nS / 10, 1. / 2.));
   auto const R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
   auto const R2s = Eigen::ArrayXf::LinSpaced(nT, R2lo, R2hi);
-  auto const B1s = Eigen::ArrayXf::LinSpaced(nT, B1lo, B1hi);
+  auto const B1s = Eigen::ArrayXf::LinSpaced(10, B1lo, B1hi);
   Index nAct = 0;
   Eigen::ArrayXXf p(3, nS);
-  for (Index ib = 0; ib < nT; ib++) {
+  for (Index ib = 0; ib < 10; ib++) {
     for (Index i2 = 0; i2 < nT; i2++) {
       for (Index i1 = 0; i1 < nT; i1++) {
         if (R2s(i2) > R1s(i1)) {

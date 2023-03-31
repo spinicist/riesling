@@ -137,12 +137,14 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   auto const space = H5Screate_simple(1, dims, NULL);
   herr_t status;
   for (auto const &kvp : meta) {
+    Log::Print(FMT_STRING("Writing {}:{}"), kvp.first, kvp.second);
     hid_t const dset =
       H5Dcreate(m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(kvp.second));
     status = H5Dclose(dset);
   }
   status = H5Sclose(space);
+  status = H5Gclose(m_group);
   if (status != 0) {
     Log::Fail(FMT_STRING("Exception occured storing meta-data in file {}"), handle_);
   }

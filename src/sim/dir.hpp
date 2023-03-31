@@ -20,7 +20,7 @@ struct DIR final : Sequence
 
 struct DIR2 final : Sequence
 {
-  static const Index nParameters = 4;
+  static const Index nParameters = 3;
   DIR2(Settings const s);
 
   auto length() const -> Index;

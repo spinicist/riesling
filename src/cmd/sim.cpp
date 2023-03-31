@@ -23,18 +23,21 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
   }
 
   T simulator{s};
-
-  Eigen::ArrayXXf parameters(T::nParameters, nsamp * los.size());
+  Index const nP = T::nParameters;
+  Eigen::ArrayXXf parameters(nP, nsamp * los.size());
+  parameters.setZero();
   Index totalP = 0;
-  for (Index ii = 0; ii < los.size(); ii++) {
-    parameters.middleRows(ii * nsamp, nsamp) = simulator.parameters(nsamp, los[ii], his[ii]);
-    totalP += parameters.cols();
+  for (size_t ii = 0; ii < los.size(); ii++) {
+    Log::Print(FMT_STRING("Parameter set {}/{}. Low {} High {}"), ii+1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
+    auto p = simulator.parameters(nsamp, los[ii], his[ii]);
+    parameters.middleCols(totalP, p.cols()) = p;
+    totalP += p.cols();
   }
-  parameters.conservativeResize(T::nParameters, totalP);
-  Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
+  parameters.conservativeResize(nP, totalP);
+  Eigen::ArrayXXf dynamics(simulator.length(), totalP);
   auto const start = Log::Now();
   auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
-  Threads::For(task, parameters.cols(), "Simulation");
+  Threads::For(task, totalP, "Simulation");
   Log::Print(FMT_STRING("Simulation took {}"), Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
 }
