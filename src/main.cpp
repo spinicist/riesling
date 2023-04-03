@@ -23,7 +23,6 @@ int main(int const argc, char const *const argv[])
   args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
   args::Command lsmr(commands, "lsmr", "Recon with LSMR optimizer", &main_lsmr);
   args::Command lsqr(commands, "lsqr", "Recon with LSQR optimizer", &main_lsqr);
-  args::Command meta(commands, "meta", "Print meta-data entries", &main_meta);
   args::Command noisify(commands, "noisify", "Add noise to dataset", &main_noisify);
   args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
   args::Command nufft(commands, "nufft", "Apply forward/reverse NUFFT", &main_nufft);

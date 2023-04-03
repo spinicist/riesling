@@ -9,6 +9,7 @@ int main_h5(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file to dump info from");
   args::Flag info(parser, "INFO", "Print header information", {"info", 'i'});
   args::Flag dsets(parser, "DSETS", "List datasets and dimensions", {"dsets", 'd'});
+  args::ValueFlagList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed", {"meta", 'm'});
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
 
@@ -40,6 +41,15 @@ int main_h5(args::Subparser &parser)
       case 5: fmt::print("{}\n", reader.dimensions<5>(ds)); break;
       case 6: fmt::print("{}\n", reader.dimensions<6>(ds)); break;
       default: fmt::print("rank is higher than 6\n");
+      }
+    }
+  } else if (keys) {
+    auto const &meta = reader.readMeta();
+    for (auto const &k : keys.Get()) {
+      try {
+        fmt::print("{}\n", meta.at(k));
+      } catch (std::out_of_range const &) {
+        Log::Fail("Could not find key {}", k);
       }
     }
   }
