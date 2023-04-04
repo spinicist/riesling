@@ -79,12 +79,13 @@ RIESLING comes as a single executable file with multiple commands, similar to
 you run a RIESLING command without any additional parameter RIESLING will output
 all available options for the given command.
 
-RIESLING uses HDF5 (.h5) files but can also output NIFTI (.nii). To create an 
-example digital phantom, use `riesling phantom`. RIESLING will append suffixes 
+RIESLING uses HDF5 (.h5) files. The `nii` command will convert to Nifti. To 
+create an example digital phantom, use `riesling phantom`. RIESLING will append suffixes 
 to input filenames when writing outputs to indicate which command was executed.
 
-There are several reconstruction algorithms currently provided in RIESLING. 
-Simple non-iterative recon is available with (`riesling recon`).
+For simple non-iterative recon use `riesling recon`. For regularized leat-squares
+reconstruction use `riesling admm`. The default settings for this will use Total Variation
+regularization, i.e. compressed-sensing.
 
 A separate examples repository https://github.com/spinicist/riesling-examples
 contains Jupyter notebooks demonstrating most functionality. These can also be
