@@ -40,7 +40,7 @@ auto ROVIR(
   float const osamp = 3.f;
   auto sdc = std::make_shared<Scale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
   auto nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(opts.fov.Get()), std::nullopt, sdc);
-  auto const sz = LastN<3>(nufft->inputDimensions());
+  auto const sz = LastN<3>(nufft->ishape);
   Cx4 const channelImages = nufft->adjoint(data).chip<1>(0);
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
   auto thresh = Otsu(CollapseToArray(rss)).thresh;
@@ -51,9 +51,6 @@ auto ROVIR(
   Crop(signalMask, info.matrix) = Crop(interMask, info.matrix);
   Sz3 szGap{info.matrix[0] + opts.gap.Get(), info.matrix[1] + opts.gap.Get(), info.matrix[2] + opts.gap.Get()};
   Crop(interMask, szGap).setZero();
-  Log::Tensor(rss, "rovir-rss");
-  Log::Tensor(signalMask, "rovir-mask-signal");
-  Log::Tensor(interMask, "rovir-mask-inter");
   // Copy to A & B matrices
   Index const nSig = Sum(signalMask);
   Index const nInt = Sum(interMask);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator-alloc.hpp"
+#include "tensorop.hpp"
 #include "trajectory.hpp"
 
 #include <memory>
@@ -10,11 +10,11 @@ namespace rl {
 
 // So we can template the kernel size and still stash pointers
 template <typename Scalar_, size_t NDim>
-struct GridBase : OperatorAlloc<Scalar_, NDim + 2, 3>
+struct GridBase : TensorOperator<Scalar_, NDim + 2, 3>
 {
-  OPALLOC_INHERIT(Scalar_, NDim + 2, 3)
+  OP_INHERIT(Scalar_, NDim + 2, 3)
 
-  GridBase(InputDims const xd, OutputDims const yd)
+  GridBase(InDims const xd, OutDims const yd)
     : Parent(fmt::format(FMT_STRING("{}D GridOp"), NDim), xd, yd)
   {
   }

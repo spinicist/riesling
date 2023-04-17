@@ -22,7 +22,7 @@ int main_downsamp(args::Subparser &parser)
   auto const [dsTraj, ks2] = traj.downsample(ks1, res.Get(), lores.Get(), !noShrink);
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "downsamp"));
   dsTraj.write(writer);
-  writer.writeTensor(ks2, HD5::Keys::Noncartesian);
+  writer.writeTensor(HD5::Keys::Noncartesian, ks2.dimensions(), ks2.data());
 
   return EXIT_SUCCESS;
 }

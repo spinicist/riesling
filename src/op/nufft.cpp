@@ -7,75 +7,76 @@ namespace rl {
 
 template <size_t NDim>
 NUFFTOp<NDim>::NUFFTOp(
-  std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<Operator<Cx, 3>> sdc, bool toeplitz)
+  std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> sdc, bool toeplitz)
   : Parent(
       "NUFFTOp",
-      Concatenate(FirstN<2>(gridder->inputDimensions()), AMin(matrix, LastN<NDim>(gridder->inputDimensions()))),
-      gridder->outputDimensions())
-  , gridder_{gridder}
-  , fft_{gridder_->input()}
-  , pad_{AMin(matrix, LastN<NDim>(gridder->inputDimensions())), gridder_->input()}
-  , apo_{pad_.inputDimensions(), gridder_.get()}
-  , sdc_{sdc ? sdc : std::make_shared<Identity<Cx, 3>>(gridder_->outputDimensions())}
+      Concatenate(FirstN<2>(gridder->ishape), AMin(matrix, LastN<NDim>(gridder->ishape))),
+      gridder->oshape)
+  , gridder{gridder}
+  , workspace{gridder->ishape}
+  , fft{FFT::Make<NDim + 2, NDim>(workspace)}
+  , pad{AMin(matrix, LastN<NDim>(gridder->ishape)), gridder->ishape}
+  , apo{pad.ishape, gridder.get()}
+  , sdc{sdc ? sdc : std::make_shared<TensorIdentity<Cx, 3>>(gridder->oshape)}
 {
   Log::Print<Log::Level::High>(
-    "NUFFT Input Dims {} Output Dims {} Grid Dims {}", inputDimensions(), outputDimensions(), gridder_->inputDimensions());
+    "NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder->ishape);
   if (toeplitz) {
     Log::Print("Calculating Töplitz embedding");
-    tf_.resize(inputDimensions());
+    tf_.resize(ishape);
     tf_.setConstant(1.f);
-    tf_ = adjoint(sdc_->forward(forward(tf_)));
+    tf_ = adjoint(sdc->forward(forward(tf_)));
   }
 }
 
 template <size_t NDim>
-auto NUFFTOp<NDim>::forward(InputMap x) const -> OutputMap
+auto NUFFTOp<NDim>::forward(InTensor const &x) const -> OutTensor
 {
   auto const time = this->startForward(x);
-  auto result = gridder_->forward(fft_.forward(pad_.forward(apo_.forward(x))));
-  this->finishForward(result, time);
-  return result;
+  InMap wsm(workspace.data(), ishape);
+  pad.forward(apo.forward(x), wsm);
+  fft->forward(workspace);
+  auto y = gridder->forward(workspace);
+  this->finishForward(y, time);
+  return y;
 }
 
 template <size_t NDim>
-auto NUFFTOp<NDim>::adjoint(OutputMap y) const -> InputMap
+auto NUFFTOp<NDim>::adjoint(OutTensor const &y) const -> InTensor
 {
   auto const time = this->startAdjoint(y);
-  auto result = apo_.adjoint(pad_.adjoint(fft_.adjoint(gridder_->adjoint(sdc_->adjoint(y)))));
-  this->finishAdjoint(result, time);
-  return result;
+  InMap wsm(workspace.data(), ishape);
+  gridder->adjoint(sdc->adjoint(y), wsm);
+  fft->reverse(workspace);
+  auto x = apo.adjoint(pad.adjoint(workspace));
+  this->finishAdjoint(x, time);
+  return y;
 }
 
-template <size_t NDim>
-auto NUFFTOp<NDim>::adjfwd(InputMap x) const -> InputMap
-{
-  if (tf_.size() == 0) {
-    return adjoint(forward(x));
-  } else {
-    auto temp = fft_.forward(pad_.forward(x));
-    temp *= tf_;
-    return pad_.adjoint(fft_.adjoint(temp));
-  }
-}
-
-template <size_t NDim>
-auto NUFFTOp<NDim>::fft() const -> FFTOp<NDim + 2, NDim> const &
-{
-  return fft_;
-};
+// template <size_t NDim>
+// auto NUFFTOp<NDim>::adjfwd(InputMap x) const -> InputMap
+// {
+//   if (tf_.size() == 0) {
+//     return adjoint(forward(x));
+//   } else {
+//     auto temp = fft_.forward(pad_.forward(x));
+//     temp *= tf_;
+//     return pad_.adjoint(fft_.adjoint(temp));
+//   }
+// }
 
 template struct NUFFTOp<1>;
 template struct NUFFTOp<2>;
 template struct NUFFTOp<3>;
 
-std::shared_ptr<Operator<Cx, 5, 4>> make_nufft(
+std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(
   Trajectory const &traj,
   std::string const &ktype,
   float const osamp,
   Index const nC,
   Sz3 const matrix,
   std::optional<Re2> basis,
-  std::shared_ptr<Operator<Cx, 3>> sdc,
+  std::shared_ptr<TensorOperator<Cx, 3>> sdc,
   bool const toeplitz)
 {
   if (traj.nDims() == 2) {

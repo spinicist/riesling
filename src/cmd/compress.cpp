@@ -72,7 +72,7 @@ int main_compress(args::Subparser &parser)
 
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name()));
   Trajectory(reader).write(writer);
-  writer.writeTensor(all_ks, HD5::Keys::Noncartesian);
+  writer.writeTensor(HD5::Keys::Noncartesian, all_ks.dimensions(), all_ks.data());
 
   if (save) {
     HD5::Writer matfile(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "ccmat"));

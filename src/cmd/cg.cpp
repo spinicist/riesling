@@ -27,10 +27,10 @@ int main_cg(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, toeplitz, reader);
-  auto normEqs = make_normal<ReconOp>(recon);
-  ConjugateGradients<NormalEqOp<ReconOp>> cg{normEqs, its.Get(), thr.Get(), true};
+  auto normEqs = std::make_shared<NormalOp<Cx>>(recon);
+  ConjugateGradients cg{normEqs, its.Get(), thr.Get(), true};
 
-  auto sz = recon->inputDimensions();
+  auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
@@ -41,7 +41,8 @@ int main_cg(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    out.chip<4>(iv) = out_cropper.crop4(cg.run(recon->cadjoint(CChipMap(allData, iv)))) / out.chip<4>(iv).constant(scale);
+    auto b = recon->adjoint(CChipMap(allData, iv));
+    out.chip<4>(iv) = out_cropper.crop4(Tensorfy(cg.run(b.data()), sz)) / out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

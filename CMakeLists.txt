@@ -47,7 +47,12 @@ add_library(vineyard
     src/trajectory.cpp
     src/traj_spirals.cpp
     src/zin-grappa.cpp
+    # src/algo/admm.cpp
+    src/algo/cg.cpp
     src/algo/decomp.cpp
+    src/algo/eig.cpp
+    src/algo/lsmr.cpp
+    src/algo/lsqr.cpp
     src/algo/otsu.cpp
     src/fft/fft.cpp
     src/func/dict.cpp
@@ -70,7 +75,7 @@ add_library(vineyard
     src/op/wavelets.cpp
     src/prox/entropy.cpp
     src/prox/llr.cpp
-    src/prox/slr.cpp
+    # src/prox/slr.cpp
     src/prox/thresh.cpp
     src/prox/thresh-wavelets.cpp
     src/sim/parameter.cpp
@@ -101,7 +106,7 @@ set_target_properties(vineyard PROPERTIES
 
 # Main executable
 add_executable(riesling
-    src/cmd/admm.cpp
+    # src/cmd/admm.cpp
     src/cmd/blend.cpp
     src/cmd/cg.cpp
     src/cmd/compress.cpp
@@ -112,7 +117,7 @@ add_executable(riesling
     src/cmd/frames.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
-    src/cmd/lad.cpp
+    # src/cmd/lad.cpp
     src/cmd/lookup.cpp
     src/cmd/lsmr.cpp
     src/cmd/lsqr.cpp

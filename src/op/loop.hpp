@@ -5,47 +5,45 @@
 namespace rl {
 
 template <typename Op>
-struct LoopOp final : OperatorAlloc<typename Op::Scalar, Op::InputRank + 1, Op::OutputRank + 1>
+struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
-  OPALLOC_INHERIT( typename Op::Scalar, Op::InputRank + 1, Op::OutputRank + 1 )
+  OP_INHERIT( typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1 )
 
   LoopOp(std::shared_ptr<Op> op, Index const N)
-    : Parent("LoopOp", AddBack(op->inputDimensions(), N), AddBack(op->outputDimensions(), N))
+    : Parent("LoopOp", AddBack(op->ishape, N), AddBack(op->oshape, N))
     , op_{op}
     , N_{N}
   {
   }
 
-  auto forward(InputMap x) const -> OutputMap
+  void forward(InCMap const &x, OutMap &y) const
   {
     auto const time = this->startForward(x);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Forward Iteration {}"), ii);
-      this->output().chip(ii, OutputRank - 1) = op_->forward(ChipMap(x, ii));
+      y.template chip<OutRank - 1>(ii) = op_->forward(x.template chip<InRank - 1>(ii));
     }
-    this->finishForward(this->output(), time);
-    return this->output();
+    this->finishForward(y, time);
   }
 
-  auto adjoint(OutputMap y) const -> InputMap
+  void adjoint(OutCMap const &y, InMap &x) const
   {
     auto const time = this->startAdjoint(y);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint Iteration {}"), ii);
-      this->input().chip(ii, InputRank - 1) = op_->adjoint(ChipMap(y, ii));
+      x.template chip<InRank - 1>(ii) = op_->adjoint(y.template chip<InRank - 1>(ii));
     }
-    this->finishAdjoint(this->input(), time);
-    return this->input();
+    this->finishAdjoint(x, time);
   }
 
-  auto adjfwd(InputMap x) const -> InputMap
-  {
-    for (Index ii = 0; ii < N_; ii++) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint-Forward Iteration {}"), ii);
-      this->input().chip(ii, InputRank - 1) = op_->adjfwd(ChipMap(x, ii));
-    }
-    return this->input();
-  }
+  // auto adjfwd(InputMap x) const -> InputMap
+  // {
+  //   for (Index ii = 0; ii < N_; ii++) {
+  //     Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint-Forward Iteration {}"), ii);
+  //     this->input().chip(ii, InRank - 1) = op_->adjfwd(ChipMap(x, ii));
+  //   }
+  //   return this->input();
+  // }
 
 private:
   std::shared_ptr<Op> op_;

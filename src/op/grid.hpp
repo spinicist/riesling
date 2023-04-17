@@ -47,15 +47,15 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     if (!b) {
       basis.setConstant(1.f);
     }
-    Log::Print<Log::Level::High>(FMT_STRING("Grid Dims {}"), this->inputDimensions());
+    Log::Print<Log::Level::High>(FMT_STRING("Grid Dims {}"), this->ishape);
   }
 
-  auto forward(InputMap x) const -> OutputMap
+  void forward(InCMap const &x, OutMap &y) const
   {
     auto const time = this->startForward(x);
-    this->output().device(Threads::GlobalDevice()) = this->output().constant(0.f);
-    Index const nC = this->inputDimensions()[0];
-    Index const nB = this->inputDimensions()[1];
+    y.device(Threads::GlobalDevice()) = y.constant(0.f);
+    Index const nC = this->ishape[0];
+    Index const nB = this->ishape[1];
     auto const &map = this->mapping;
     auto const &cdims = map.cartDims;
 
@@ -79,7 +79,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
               for (Index ib = 0; ib < nB; ib++) {
                 float const bval = kval * bEntry(ib);
                 for (Index ic = 0; ic < nC; ic++) {
-                  this->output()(ic, n.sample, n.trace) += x(ic, ib, ii1) * bval;
+                  y(ic, n.sample, n.trace) += x(ic, ib, ii1) * bval;
                 }
               }
             } else {
@@ -90,7 +90,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
                     for (Index ib = 0; ib < nB; ib++) {
                       float const bval = kval * bEntry(ib);
                       for (Index ic = 0; ic < nC; ic++) {
-                        this->output()(ic, n.sample, n.trace) += x(ic, ib, ii2, ii1) * bval;
+                        y(ic, n.sample, n.trace) += x(ic, ib, ii2, ii1) * bval;
                       }
                     }
                   } else {
@@ -100,7 +100,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
                         for (Index ib = 0; ib < nB; ib++) {
                           float const bval = kval * bEntry(ib);
                           for (Index ic = 0; ic < nC; ic++) {
-                            this->output()(ic, n.sample, n.trace) += x(ic, ib, ii3, ii2, ii1) * bval;
+                            y(ic, n.sample, n.trace) += x(ic, ib, ii3, ii2, ii1) * bval;
                           }
                         }
                       }
@@ -115,16 +115,15 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     };
 
     Threads::For(grid_task, map.buckets.size(), "Grid Forward");
-    this->finishForward(this->output(), time);
-    return this->output();
+    this->finishForward(y, time);
   }
 
-  auto adjoint(OutputMap y) const -> InputMap
+  void adjoint(OutCMap const &y, InMap &x) const
   {
     auto const time = this->startAdjoint(y);
     auto const &map = this->mapping;
-    Index const nC = this->inputDimensions()[0];
-    Index const nB = this->inputDimensions()[1];
+    Index const nC = this->ishape[0];
+    Index const nB = this->ishape[1];
     auto const &cdims = map.cartDims;
 
     std::mutex writeMutex;
@@ -132,7 +131,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
       auto const &bucket = map.buckets[ibucket];
       auto const bSz = bucket.gridSize();
       Eigen::Tensor<Scalar, 2> bSample(nC, nB);
-      Input bGrid(AddFront(bSz, nC, nB));
+      InTensor bGrid(AddFront(bSz, nC, nB));
       bGrid.setZero();
       for (auto ii = 0; ii < bucket.size(); ii++) {
         auto const si = bucket.indices[ii];
@@ -190,7 +189,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
             if constexpr (NDim == 1) {
               for (Index ib = 0; ib < nB; ib++) {
                 for (Index ic = 0; ic < nC; ic++) {
-                  this->input()(ic, ib, ii1) += bGrid(ic, ib, i1);
+                  x(ic, ib, ii1) += bGrid(ic, ib, i1);
                 }
               }
             } else {
@@ -199,7 +198,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
                   if constexpr (NDim == 2) {
                     for (Index ib = 0; ib < nB; ib++) {
                       for (Index ic = 0; ic < nC; ic++) {
-                        this->input()(ic, ib, ii2, ii1) += bGrid(ic, ib, i2, i1);
+                        x(ic, ib, ii2, ii1) += bGrid(ic, ib, i2, i1);
                       }
                     }
                   } else {
@@ -207,7 +206,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
                       if (Index const ii3 = Crop(bucket.minCorner[NDim - 3] + i3, cdims[NDim - 3]); ii3 > -1) {
                         for (Index ib = 0; ib < nB; ib++) {
                           for (Index ic = 0; ic < nC; ic++) {
-                            this->input()(ic, ib, ii3, ii2, ii1) += bGrid(ic, ib, i3, i2, i1);
+                            x(ic, ib, ii3, ii2, ii1) += bGrid(ic, ib, i3, i2, i1);
                           }
                         }
                       }
@@ -221,15 +220,14 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
       }
     };
 
-    this->input().device(Threads::GlobalDevice()) = this->input().constant(0.f);
+    x.device(Threads::GlobalDevice()) = x.constant(0.f);
     Threads::For(grid_task, map.buckets.size(), "Grid Adjoint");
-    this->finishAdjoint(this->input(), time);
-    return this->input();
+    this->finishAdjoint(x, time);
   }
 
   auto apodization(Sz<NDim> const sz) const -> Eigen::Tensor<float, NDim>
   {
-    Eigen::Tensor<Cx, NDim> temp(LastN<NDim>(this->inputDimensions()));
+    Eigen::Tensor<Cx, NDim> temp(LastN<NDim>(this->ishape));
     auto const fft = FFT::Make<NDim, NDim>(temp);
     temp.setZero();
     float const scale = std::sqrt(Product(mapping.nomDims));
@@ -239,7 +237,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     Eigen::Tensor<Cx, NDim> k = kernel(Kernel::Point::Zero()).slice(kSt, kSz).template cast<Cx>();
     k = k * k.constant(scale);
     PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
-    temp = padK.cforward(k);
+    temp = padK.forward(k);
     fft->reverse(temp);
     PadOp<Cx, NDim, NDim> padA(sz, temp.dimensions());
     Eigen::Tensor<float, NDim> a = padA.adjoint(temp).abs();

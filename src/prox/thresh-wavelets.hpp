@@ -6,13 +6,13 @@
 
 namespace rl {
 
-struct ThresholdWavelets final : Prox<Cx4> {
-    ThresholdWavelets(Sz4 const dims, float const λ, Index const width, Index const levels);
-    auto operator()(float const α, Eigen::TensorMap<Cx4 const>) const -> Cx4;
+struct ThresholdWavelets final : Prox<Cx> {
+    ThresholdWavelets(float const λ, Sz4 const shape, Index const width, Index const levels);
+    void operator()(float const α, Vector const &x, Vector &z) const;
 
 private:
-    Wavelets waves_;
-    SoftThreshold<Cx4> thresh_;
+    std::shared_ptr<Op::Operator<Cx>> waves_;
+    SoftThreshold<4> thresh_;
 };
 
 } // namespace rl

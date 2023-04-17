@@ -59,9 +59,9 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
   D_ = D_ / static_cast<float>(M_SQRT2); // Get scaling correct
 }
 
-void Wavelets::encode_dim(OutputMap image, Index const dim, Index const level) const
+void Wavelets::encode_dim(InCMap const &x, OutMap &y, Index const dim, Index const level) const
 {
-  Index const sz = image.dimension(dim) / (1 << level);
+  Index const sz = y.dimension(dim) / (1 << level);
   Index const hsz = sz / 2;
   Index const N_2 = N_ / 2;
   Index const maxDim = 4;
@@ -72,46 +72,45 @@ void Wavelets::encode_dim(OutputMap image, Index const dim, Index const level) c
     Cx1 temp(sz);
     Sz4 ind;
     ind[otherDims[0]] = ik;
-    for (Index ij = 0; ij < image.dimension(otherDims[1]); ij++) {
+    for (Index ij = 0; ij < y.dimension(otherDims[1]); ij++) {
       ind[otherDims[1]] = ij;
-      for (Index ii = 0; ii < image.dimension(otherDims[2]); ii++) {
+      for (Index ii = 0; ii < y.dimension(otherDims[2]); ii++) {
         ind[otherDims[2]] = ii;
         temp.setZero();
         for (Index it = 0; it < hsz; it++) {
           Index f = 1;
           for (Index iw = 0; iw < N_; iw++) {
             ind[dim] = std::clamp(it * 2 - N_2, 0L, sz - 1);
-            temp(it) += image(ind) * Cx(D_(iw));
-            temp(it + hsz) += image(ind) * Cx(D_(N_ - 1 - iw) * f);
+            temp(it) += x(ind) * Cx(D_(iw));
+            temp(it + hsz) += x(ind) * Cx(D_(N_ - 1 - iw) * f);
             f *= -1;
           }
         }
         for (Index it = 0; it < sz; it++) {
           ind[dim] = it;
-          image(ind) = temp(it);
+          y(ind) = temp(it);
         }
       }
     }
   };
   Threads::For(
-    encode_task, image.dimension(otherDims[0]), fmt::format(FMT_STRING("Wavelets Encode Dimension {} Level {}"), dim, level));
+    encode_task, y.dimension(otherDims[0]), fmt::format(FMT_STRING("Wavelets Encode Dimension {} Level {}"), dim, level));
 }
 
-auto Wavelets::forward(InputMap x) const -> OutputMap
+void Wavelets::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x);
   for (Index dim = 0; dim < 4; dim++) {
     for (Index il = 0; il < levels_[dim]; il++) {
-      encode_dim(x, dim, il);
+      encode_dim(x, y, dim, il);
     }
   }
-  finishAdjoint(x, time);
-  return x;
+  finishAdjoint(y, time);
 }
 
-void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) const
+void Wavelets::decode_dim(OutCMap const &y, InMap &x, Index const dim, Index const level) const
 {
-  Index const sz = image.dimension(dim) / (1 << level);
+  Index const sz = y.dimension(dim) / (1 << level);
   Index const hsz = sz / 2;
   Index const maxDim = 4;
   std::array<Index, 3> otherDims{(dim + 1) % maxDim, (dim + 2) % maxDim, (dim + 3) % maxDim};
@@ -121,9 +120,9 @@ void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) co
     Cx1 temp(sz);
     Sz4 ind;
     ind[otherDims[0]] = ik;
-    for (Index ij = 0; ij < image.dimension(otherDims[1]); ij++) {
+    for (Index ij = 0; ij < y.dimension(otherDims[1]); ij++) {
       ind[otherDims[1]] = ij;
-      for (Index ii = 0; ii < image.dimension(otherDims[2]); ii++) {
+      for (Index ii = 0; ii < y.dimension(otherDims[2]); ii++) {
         ind[otherDims[2]] = ii;
         temp.setZero();
         for (Index it = 0; it < hsz; it++) {
@@ -131,36 +130,35 @@ void Wavelets::decode_dim(InputMap image, Index const dim, Index const level) co
           for (Index iw = 0; iw < N_2; iw++) {
             Index const line_index = std::clamp(it - iw + N_2, 0L, hsz - 1);
             ind[dim] = line_index;
-            temp(temp_index) += image(ind) * Cx(D_(iw * 2));
-            temp(temp_index + 1) += image(ind) * Cx(D_(iw * 2 + 1));
+            temp(temp_index) += y(ind) * Cx(D_(iw * 2));
+            temp(temp_index + 1) += y(ind) * Cx(D_(iw * 2 + 1));
             ind[dim] = line_index + hsz;
-            temp(temp_index) += image(ind) * Cx(D_((N_ - 1) - iw * 2));
-            temp(temp_index + 1) -= image(ind) * Cx(D_((N_ - 2) - iw * 2));
+            temp(temp_index) += y(ind) * Cx(D_((N_ - 1) - iw * 2));
+            temp(temp_index + 1) -= y(ind) * Cx(D_((N_ - 2) - iw * 2));
           }
         }
         for (Index it = 0; it < sz; it++) {
           ind[dim] = it;
-          image(ind) = temp(it);
+          x(ind) = temp(it);
         }
       }
     }
   };
   Threads::For(
     decode_task,
-    image.dimension(otherDims[0]),
-    fmt::format(FMT_STRING("Wavelets Decode Dimension {} Level {} {}"), dim, level, image.dimension(otherDims[0])));
+    y.dimension(otherDims[0]),
+    fmt::format(FMT_STRING("Wavelets Decode Dimension {} Level {}"), dim, level));
 }
 
-auto Wavelets::adjoint(OutputMap x) const -> InputMap
+void Wavelets::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = startAdjoint(x);
+  auto const time = startAdjoint(y);
   for (Index dim = 0; dim < 4; dim++) {
     for (Index il = levels_[dim] - 1; il >= 0; il--) {
-      decode_dim(x, dim, il);
+      decode_dim(y, x, dim, il);
     }
   }
   finishAdjoint(x, time);
-  return x;
 }
 
 } // namespace rl

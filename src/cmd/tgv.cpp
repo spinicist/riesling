@@ -28,7 +28,7 @@ int main_tgv(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-  auto sz = recon->inputDimensions();
+  auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);

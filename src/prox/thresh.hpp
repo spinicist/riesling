@@ -4,12 +4,12 @@
 
 namespace rl {
 
-template<typename Tensor = Cx4>
-struct SoftThreshold final : Prox<Tensor> {
-    SoftThreshold(float const λ);
-    auto operator()(float const α, Eigen::TensorMap<Tensor const>) const -> Tensor;
-private:
-    float λ_;
+template<int ND>
+struct SoftThreshold final : Prox<Cx> {
+    SoftThreshold(float const λ, Sz<ND> const dims);
+    void operator()(float const α, Vector const &x, Vector &z) const;
+    float λ;
+    Sz<ND> shape;
 };
 
 } // namespace rl

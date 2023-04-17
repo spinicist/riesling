@@ -2,20 +2,19 @@
 
 namespace rl {
 
-ThresholdWavelets::ThresholdWavelets(Sz4 const dims, float const λ, Index const W, Index const L)
-  : Prox<Cx4>()
-  , waves_{dims, W, L}
-  , thresh_{λ}
+ThresholdWavelets::ThresholdWavelets(float const λ, Sz4 const shape, Index const W, Index const L)
+  : Prox<Cx>()
+  , waves_{std::make_shared<Wavelets>(shape, W, L)}
+  , thresh_{λ, shape}
 {
 }
 
-auto ThresholdWavelets::operator()(float const α, Eigen::TensorMap<Cx4 const>x) const -> Cx4
+void ThresholdWavelets::operator()(float const α, Vector const &x, Vector &z) const
 {
-  Cx4 temp = x;
-  waves_.forward(temp);
-  temp = thresh_(α, temp);
-  waves_.adjoint(temp);
-  return temp;
+  z = x;
+  waves_->forward(z);
+  thresh_(α, z, z);
+  waves_->adjoint(z);
 }
 
 } // namespace rl

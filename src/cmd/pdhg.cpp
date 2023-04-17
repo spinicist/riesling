@@ -38,7 +38,7 @@ int main_pdhg(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-  auto const sz = recon->inputDimensions();
+  auto const sz = recon->ishape;
 
   std::shared_ptr<Prox<Cx4>> reg;
   if (wavelets) {
@@ -48,7 +48,7 @@ int main_pdhg(args::Subparser &parser)
   };
 
   auto sc = KSpaceSingle(traj, ReadBasis(coreOpts.basisFile.Get()));
-  auto const odims = recon->outputDimensions();
+  auto const odims = recon->oshape;
   Cx4 P = sc.reshape(Sz4{1, odims[1], odims[2], 1}).broadcast(Sz4{odims[0], 1, 1, odims[3]}).cast<Cx>();
   PrimalDualHybridGradient<ReconOp> pdhg{recon, P, reg, its.Get()};
 

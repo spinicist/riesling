@@ -36,11 +36,11 @@ int main_nufft(args::Subparser &parser)
     auto channels = reader.readTensor<Cx6>(name);
     auto nufft = make_nufft(
       traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.dimension(0), traj.matrix(coreOpts.fov.Get()), basis);
-    Cx5 noncart(AddBack(nufft->outputDimensions(), channels.dimension(5)));
+    Cx5 noncart(AddBack(nufft->oshape, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->cforward(CChipMap(channels, ii));
+      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
     }
-    writer.writeTensor(noncart, HD5::Keys::Noncartesian);
+    writer.writeTensor(HD5::Keys::Noncartesian, noncart.dimensions(), noncart.data());
     traj.write(writer);
     Log::Print(FMT_STRING("Forward NUFFT took {}"), Log::ToNow(start));
   } else {
@@ -52,7 +52,7 @@ int main_nufft(args::Subparser &parser)
     auto nufft = make_nufft(
       traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), basis, sdc, false);
 
-    Cx6 output(AddBack(nufft->inputDimensions(), noncart.dimension(3)));
+    Cx6 output(AddBack(nufft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
       output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft->cadjoint(CChipMap(noncart, ii));
     }

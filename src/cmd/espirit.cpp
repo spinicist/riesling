@@ -37,9 +37,9 @@ int main_espirit(args::Subparser &parser)
   auto gridder = make_grid<Cx, 3>(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), ks.dimension(0));
   auto const sdc = SDC::Choose(sdcOpts, ks.dimension(0), dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Index const totalCalRad = kRad.Get() + calRad.Get() + readStart.Get();
-  Cropper cropper(traj.info().matrix, LastN<3>(gridder->inputDimensions()), traj.info().voxel_size, fov.Get());
+  Cropper cropper(traj.info().matrix, LastN<3>(gridder->ishape), traj.info().voxel_size, fov.Get());
 
-  Cx4 grid(AddBack(gridder->outputDimensions(), ks.dimension(3)));
+  Cx4 grid(AddBack(gridder->oshape, ks.dimension(3)));
   for (Index is = 0; is < ks.dimension(3); is++) {
     Cx3 slice = ks.chip<3>(is);
     grid.chip<3>(is) = gridder->adjoint(sdc->adjoint(slice)).chip<1>(0);
@@ -50,7 +50,7 @@ int main_espirit(args::Subparser &parser)
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "espirit", "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(info);
-  writer.writeTensor(sense, HD5::Keys::SENSE);
+  writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data());
 
   return EXIT_SUCCESS;
 }

@@ -1,132 +1,180 @@
 #pragma once
 
-#include "../log.hpp"
-#include "tensorOps.hpp"
+#include "log.hpp"
 #include "types.hpp"
-
-/* Linear Operator
- *
- * This is my attempt at some kind of bastardized linear operator struct.
- * The key weirdness here is that the operators track the rank of their inputs/outputs. Technically
- * a linear operator should only be applied to vectors and matrices, but within this context all of
- * those vectors represent higher-rank tensors that are for the purposes of the operator treated as
- * a vector.
- *
- * Hence here we track the input/output ranks.
- */
 
 namespace rl {
 
-template <typename Scalar_, size_t InRank, size_t OutRank = InRank>
+namespace Op {
+
+template <typename Scalar_ = Cx>
 struct Operator
 {
-  static const size_t InputRank = InRank;
   using Scalar = Scalar_;
-  using Input = Eigen::Tensor<Scalar, InputRank>;
-  using InputMap = Eigen::TensorMap<Input>;
-  using CInputMap = Eigen::TensorMap<Input const>;
-  using InputDims = typename Input::Dimensions;
-  static const size_t OutputRank = OutRank;
-  using Output = Eigen::Tensor<Scalar, OutputRank>;
-  using OutputMap = Eigen::TensorMap<Output>;
-  using COutputMap = Eigen::TensorMap<Output const>;
-  using OutputDims = typename Output::Dimensions;
+  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
+  using Map = Eigen::Map<Vector>;
+  using CMap = Eigen::Map<Vector const>;
 
-  Operator(std::string const &name, InputDims const xd, OutputDims const yd)
-    : name_{name}
-    , xDims_{xd}
-    , yDims_{yd}
+  std::string name;
+
+  Operator(std::string const &n)
+    : name{n}
   {
-    Log::Print<Log::Level::Debug>(
-      FMT_STRING("{} created. Input dims {} Output dims {}"),
-      name_,
-      inputDimensions(),
-      outputDimensions());
   }
 
-  virtual ~Operator(){};
+  virtual auto rows() const -> Index = 0;
+  virtual auto cols() const -> Index = 0;
+  virtual void forward(CMap const &x, Map &y) const = 0;
+  virtual void adjoint(CMap const &x, Map &y) const = 0;
 
-  auto name() const { return name_; };
-  auto inputDimensions() const { return xDims_; };
-  auto outputDimensions() const { return yDims_; };
-
-  virtual auto forward(InputMap x) const -> OutputMap = 0;
-  virtual auto adjoint(OutputMap y) const -> InputMap = 0;
-  virtual auto adjfwd(InputMap x) const -> InputMap { Log::Fail("AdjFwd Not implemented"); }
-
-  virtual auto cforward(CInputMap x) const -> Output
+  auto forward(Vector const &x) const -> Vector
   {
-    Input xcopy = x;
-    return this->forward(InputMap(xcopy));
+    Vector y(this->rows());
+    Map ym(y.data(), y.size());
+    this->forward(CMap(x.data(), x.size()), ym);
+    return y;
   }
 
-  virtual auto cadjoint(COutputMap y) const -> Input
+  auto adjoint(Vector const &y) const -> Vector
   {
-    Output ycopy = y;
-    return this->adjoint(OutputMap(ycopy));
+    Vector x(this->cols());
+    Map xm(x.data(), x.size());
+    this->adjoint(CMap(y.data(), y.size()), xm);
+    return x;
+  }
+};
+
+template <typename Scalar = Cx>
+struct Identity final : Operator<Scalar>
+{
+  using typename Operator<Scalar>::Map;
+  using typename Operator<Scalar>::CMap;
+
+  Identity(Index const s)
+    : sz{s}
+  {
   }
 
-  auto startForward(InputMap x) const
+  auto rows() const -> Index { return sz; }
+  auto cols() const -> Index { return sz; }
+
+  void forward(CMap const &x, Map &y) const { y = x; }
+  void adjoint(CMap const &y, Map &x) const { x = y; }
+
+private:
+  Index sz;
+};
+
+template <typename Scalar = Cx>
+struct Scale final : Operator<Scalar>
+{
+  using typename Operator<Scalar>::Map;
+  using typename Operator<Scalar>::CMap;
+
+  Scale(Index const size, float const s)
+    : sz{size}, scale{s}
   {
-    if (x.dimensions() != inputDimensions()) {
-      Log::Fail("{} forward dims were: {} expected: {}", name_, x.dimensions(), inputDimensions());
+  }
+
+  auto rows() const -> Index { return sz; }
+  auto cols() const -> Index { return sz; }
+
+  void forward(CMap const &x, Map &y) const { y = x * scale; }
+  void adjoint(CMap const &y, Map &x) const { x = y * scale; }
+
+  Index sz;
+  float scale;
+};
+
+template <typename Scalar = Cx>
+struct Concat final : Operator<Scalar>
+{
+  using Op = Operator<Scalar>;
+  using typename Op::Vector;
+  using typename Op::Map;
+  using typename Op::CMap;
+
+  std::shared_ptr<Op> a, b;
+
+  Concat(std::shared_ptr<Op> a_, std::shared_ptr<Op> b_) :
+  a{a_}, b{b_} {
+  }
+
+  auto rows() const -> Index { return a->rows(); }
+  auto cols() const -> Index { return b->cols(); }
+
+  void forward(CMap const &x, Map &y) const {
+    if (a->cols() == b->rows()) {
+      a->forward(x, y);
+      b->forward(y, y);
+    } else {
+      Vector temp(a->cols());
+      a->forward(x, temp);
+      b->forward(temp, y);
     }
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} forward started. Norm {}"), name_, Norm(x));
-    }
-    return Log::Now();
   }
 
-  void finishForward(OutputMap y, Log::Time const start) const
+  void adjoint(CMap const &y, Map &x) const {
+    if (b->cols() == a->rows()) {
+      b->adjoint(y, x);
+      a->adjoint(x, x);
+    } else {
+      Vector temp(b->cols());
+      a->adjoint(y, temp);
+      b->adjoint(temp, x);
+    }
+  }
+};
+
+template <typename Scalar = Cx>
+struct VStack final : Operator<Scalar>
+{
+  using typename Operator<Scalar>::Vector;
+  using typename Operator<Scalar>::Map;
+  using typename Operator<Scalar>::CMap;
+
+  VStack(std::vector<std::shared_ptr<Operator<Scalar>>> const &o)
+    : Operator<Scalar>{"VStack"}
+    , ops{o}
   {
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} forward finished. Took {}. Norm {}."), name_, Log::ToNow(start), Norm(y));
+    for (auto ii = 1; ii < ops.size(); ii++) {
+      if (ops[ii]->cols() != ops[ii - 1]->cols()) {
+        Log::Fail("Operators had mismatched number of columns");
+      }
     }
   }
 
-  auto startAdjoint(OutputMap y) const
+  auto rows() const -> Index
   {
-    if (y.dimensions() != outputDimensions()) {
-      Log::Fail("{} adjoint dims were: {} expected: {}", name_, y.dimensions(), outputDimensions());
+    return std::accumulate(ops.begin(), ops.end(), 0, [](auto const &op, int a) { return a + op->rows(); });
+  }
+  auto cols() const -> Index { return ops.front()->cols(); }
+
+  void forward(CMap const &x, Map &y) const
+  {
+    Index ir = 0;
+    for (auto const &op : ops) {
+      op->forward(x, Map(y.data() + ir, op->rows()));
+      ir += op->rows();
     }
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} adjoint started. Norm {}"), name_, Norm(y));
-    }
-    return Log::Now();
   }
 
-  void finishAdjoint(InputMap x, Log::Time const start) const
+  void adjoint(CMap const &y, Map &x) const
   {
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} adjoint finished. Took {}. Norm {}"), name_, Log::ToNow(start), Norm(x));
+    Index ir = 0;
+    x.setConstant(0.f);
+    Vector xa(x.size());
+    for (auto const &op : ops) {
+      op->adjoint(Map(y.data() + ir, op->rows()), xa);
+      x += xa;
+      ir += op->rows();
     }
   }
 
 private:
-  std::string name_;
-  InputDims xDims_;
-  OutputDims yDims_;
+  std::vector<std::shared_ptr<Operator<Scalar>>> ops;
 };
 
-#define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
-  using Parent = Operator<SCALAR, INRANK, OUTRANK>;                                                                            \
-  using Scalar = typename Parent::Scalar;                                                                                      \
-  static const size_t InputRank = Parent::InputRank;                                                                           \
-  using Input = typename Parent::Input;                                                                                        \
-  using InputMap = typename Parent::InputMap;                                                                                  \
-  using InputDims = typename Parent::InputDims;                                                                                \
-  static const size_t OutputRank = Parent::OutputRank;                                                                         \
-  using Output = typename Parent::Output;                                                                                      \
-  using OutputMap = typename Parent::OutputMap;                                                                                \
-  using OutputDims = typename Parent::OutputDims;
-
-#define OP_DECLARE()                                                                                                           \
-  using Parent::name;                                                                                                          \
-  using Parent::inputDimensions;                                                                                               \
-  using Parent::outputDimensions;                                                                                              \
-  auto forward(InputMap x) const->OutputMap;                                                                                   \
-  auto adjoint(OutputMap x) const->InputMap;                                                                                   \
-  using Parent::forward;                                                                                                       \
-  using Parent::adjoint;
+}
 
 } // namespace rl

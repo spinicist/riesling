@@ -4,17 +4,16 @@
 
 namespace rl {
 
-template<typename Tensor>
-struct Entropy final : Prox<Tensor> {
+struct Entropy final : Prox<Cx> {
     Entropy(float const λ);
-    auto operator()(float const α, Eigen::TensorMap<Tensor const>) const -> Tensor;
+    void operator()(float const α, Vector const &x, Vector &z) const;
 private:
     float λ_;
 };
 
-struct NMREntropy final : Prox<Cx4> {
+struct NMREntropy final : Prox<Cx> {
     NMREntropy(float const λ);
-    auto operator()(float const α, Eigen::TensorMap<Cx4 const>) const -> Cx4;
+    void operator()(float const α, Vector const &x, Vector &z) const;
 private:
     float λ_;
 };

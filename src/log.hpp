@@ -72,7 +72,7 @@ Time Now();
 std::string ToNow(Time const t);
 
 template <typename Scalar, int ND>
-void Tensor(Eigen::Tensor<Scalar, ND> const &i, std::string const &name);
+void Tensor(std::string const &name, Sz<ND> const &shape, Scalar const *data);
 
 } // namespace Log
 } // namespace rl

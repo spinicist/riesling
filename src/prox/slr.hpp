@@ -1,16 +1,16 @@
 #pragma once
 
+#include "fft/fft.hpp"
 #include "prox.hpp"
-#include "op/fft.hpp"
 
 namespace rl {
 
 struct SLR final : Prox<Cx5>
 {
-  SLR(FFTOp< 5, 3> const &fft, Index const kSz);
-  FFTOp< 5, 3> const &fft;
+  SLR(std::shared_ptr<FFT::FFT<5, 3>> const &fft, Index const kSz);
+  std::shared_ptr<FFT::FFT<5, 3>> fft;
   Index kSz;
 
-  auto operator()(float const thresh, Eigen::TensorMap<Cx5 const> x) const -> Cx5;
+  void operator()(float const thresh, Vector const &x, Vector &z) const;
 };
 } // namespace rl

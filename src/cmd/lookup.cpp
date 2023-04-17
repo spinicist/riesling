@@ -30,8 +30,7 @@ int main_lookup(args::Subparser &parser)
   Re2 const parameters = dfile.readTensor<Re2>(HD5::Keys::Parameters);
   Re1 const norm = dfile.readTensor<Re1>(HD5::Keys::Norm);
 
-  Re5 out_pars(
-    parameters.dimension(0), images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
+  Re5 out_pars(parameters.dimension(0), images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   out_pars.setZero();
   Cx5 pd(1, images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   pd.setZero();
@@ -72,8 +71,8 @@ int main_lookup(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), "lookup", "h5");
   HD5::Writer writer(fname);
   Trajectory(input).write(writer);
-  writer.writeTensor(out_pars, HD5::Keys::Parameters);
-  writer.writeTensor(pd, HD5::Keys::ProtonDensity);
+  writer.writeTensor(HD5::Keys::Parameters, out_pars.dimensions(), out_pars.data());
+  writer.writeTensor(HD5::Keys::ProtonDensity, pd.dimensions(), pd.data());
 
   return EXIT_SUCCESS;
 }

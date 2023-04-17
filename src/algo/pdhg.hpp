@@ -24,8 +24,8 @@ struct PrimalDualHybridGradient
   {
     auto dev = Threads::GlobalDevice();
 
-    auto const inDims = op->inputDimensions();
-    auto const outDims = op->outputDimensions();
+    auto const inDims = op->ishape;
+    auto const outDims = op->oshape;
     CheckDimsEqual(b.dimensions(), outDims);
     Output u(outDims);
     u.setZero();

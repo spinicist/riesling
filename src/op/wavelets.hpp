@@ -1,10 +1,10 @@
 #pragma once
 
-#include "operator.hpp"
+#include "tensorop.hpp"
 
 namespace rl {
 
-struct Wavelets final : Operator<Cx, 4, 4>
+struct Wavelets final : TensorOperator<Cx, 4, 4>
 {
   OP_INHERIT( Cx, 4, 4 )
 
@@ -14,8 +14,8 @@ struct Wavelets final : Operator<Cx, 4, 4>
 
   static auto PaddedDimensions(Sz4 const dims) -> Sz4;
 private:
-  void encode_dim(InputMap image, Index const dim, Index const level) const;
-  void decode_dim(OutputMap image, Index const dim, Index const level) const;
+  void encode_dim(InCMap const &x, OutMap &y, Index const dim, Index const level) const;
+  void decode_dim(OutCMap const &y, InMap &x, Index const dim, Index const level) const;
   Index N_;
   Re1 D_; // Coefficients
   Sz4 levels_;

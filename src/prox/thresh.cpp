@@ -5,24 +5,24 @@
 
 namespace rl {
 
-template<typename T>
-SoftThreshold<T>::SoftThreshold(float const λ)
-  : Prox<T>()
-  , λ_{λ}
+template<int ND>
+SoftThreshold<ND>::SoftThreshold(float const λ_, Sz<ND> const s)
+  : Prox<Cx>()
+  , λ{λ_}
+  , shape{s}
 {
   Log::Print(FMT_STRING("Soft Threshold Prox λ {}"), λ);
 }
 
-template<typename T>
-auto SoftThreshold<T>::operator()(float const α, Eigen::TensorMap<T const> x) const -> T
+template<int ND>
+void SoftThreshold<ND>::operator()(float const α, Vector const &x, Vector &z) const
 {
-  float t = α * λ_;
-  T z = (x.abs() > t).select(x * (x.abs() - t) / x.abs(), x.constant(0.f));
-  Log::Print(FMT_STRING("Soft Threshold α {} λ {} t {} |x| {} |z| {}"), α, λ_, t, Norm(x), Norm(z));
-  return z;
+  float t = α * λ;
+  z = x.cwiseAbs().cwiseTypedGreater(0.f).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
+  Log::Print(FMT_STRING("Soft Threshold α {} λ {} t {} |x| {} |z| {}"), α, λ, t, x.norm(), z.norm());
 }
 
-template struct SoftThreshold<Cx4>;
-template struct SoftThreshold<Cx5>;
+template struct SoftThreshold<4>;
+template struct SoftThreshold<5>;
 
 } // namespace rl

@@ -29,7 +29,7 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
   auto sdc = std::make_shared<Scale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
   auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()), std::nullopt, sdc);
-  Sz5 const dims = nufft->inputDimensions();
+  Sz5 const dims = nufft->ishape;
   Cropper crop(traj.info().matrix, LastN<3>(dims), traj.info().voxel_size, opts.fov.Get());
   Cx4 channels(crop.dims(dims[0]));
   if (dims[0] == 1) { // Only one channel, return all ones
@@ -56,7 +56,6 @@ NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   }
   Log::Print<Log::Level::High>(FMT_STRING("Normalizing channel images"));
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
-  Log::Tensor(channels, "sense");
   Log::Print(FMT_STRING("SENSE Self-Calibration finished"));
   return channels;
 }

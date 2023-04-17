@@ -3,7 +3,6 @@
 #include "algo/admm-augmented.hpp"
 #include "algo/admm.hpp"
 #include "algo/lsmr.hpp"
-#include "algo/lsqr.hpp"
 #include "cropper.h"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -60,71 +59,48 @@ int main_admm(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-  auto M = make_pre(pre.Get(), recon->outputDimensions(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  auto const sz = recon->inputDimensions();
+  auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto const sz = recon->ishape;
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  float const scale = Scaling(coreOpts.scaling, recon, M->cadjoint(CChipMap(allData, 0)));
+  float const scale = Scaling(coreOpts.scaling, recon, M->adjoint(CChipMap(allData, 0)));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   std::map<std::string, float> meta{{"scale", scale}, {"lambda", λ.Get()}, {"rho", ρ.Get()}};
 
-  auto const &all_start = Log::Now();
+  std::vector<std::shared_ptr<Operator<Cx>>> reg_ops;
+  std::vector<std::shared_ptr<Prox<Cx>>> prox;
   if (wavelets) {
-    Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get()),
-      .op = std::make_shared<Identity<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
-      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
+    prox.push_back(std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get()));
+    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (patchSize) {
-    Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
-      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
+    prox.push_back(std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get(), recon->ishape));
+    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (nmrent) {
-    Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<NMREntropy>(λ.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
-      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
+    prox.push_back(std::make_shared<NMREntropy>(λ.Get()));
+    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (l1) {
-    Regularizer<Identity<Cx, 4>> reg{
-      .prox = std::make_shared<SoftThreshold<Cx4>>(λ.Get()), .op = std::make_shared<Identity<Cx, 4>>(sz)};
-    LSMR<ReconOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp>, Identity<Cx, 4>> admm{
-      lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
+    prox.push_back(std::make_shared<SoftThreshold<4>>(λ.Get()));
+    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (tv4) {
-    Regularizer<Grad4Op> reg{.prox = std::make_shared<SoftThreshold<Cx5>>(λ.Get()), .op = std::make_shared<Grad4Op>(sz)};
-    LSMR<ReconOp, Grad4Op> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp, Grad4Op>, Grad4Op> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
+    prox.push_back(std::make_shared<SoftThreshold<5>>(λ.Get()));
+    reg_ops.push_back(std::make_shared<Grad4Op>(sz));
   } else {
-    Regularizer<GradOp> reg{.prox = std::make_shared<SoftThreshold<Cx5>>(λ.Get()), .op = std::make_shared<GradOp>(sz)};
-    LSMR<ReconOp, GradOp> lsmr{recon, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false, reg.op};
-    ADMM<LSMR<ReconOp, GradOp>, GradOp> admm{lsmr, reg, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
-    for (Index iv = 0; iv < volumes; iv++) {
-      out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
-    }
+    prox.push_back(std::make_shared<SoftThreshold<5>>(λ.Get()));
+    reg_ops.push_back(std::make_shared<GradOp>(sz));
   }
+
+  auto stacked = std::make_shared<VStack<Cx>>(reg_ops);
+  LSMR lsmr{stacked, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
+  ADMM admm{lsmr, reg_ops, prox, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+  for (Index iv = 0; iv < volumes; iv++) {
+    out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
+  }
+
+  auto const &all_start = Log::Now();
 
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
   WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj, meta);

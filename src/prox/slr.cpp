@@ -62,14 +62,14 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
 }
 
-SLR::SLR(FFTOp< 5, 3> const &f, Index const k)
+SLR::SLR(std::shared_ptr<FFT::FFT<5, 3>> const &f, Index const k)
   : Prox<Cx5>()
   , fft{f}
   , kSz{k}
 {
 }
 
-auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) const -> Cx5
+void SLR::operator()(float const thresh, Vector const& x, Vector &y) const
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {
@@ -88,9 +88,6 @@ auto SLR::operator()(float const thresh, Eigen::TensorMap<Cx5 const> channels) c
   Sz5 const cropSz{grid.dimension(0), grid.dimension(1), w, w, w};
   Cx5 cropped = Crop(grid, cropSz);
   Cx6 kernels = ToKernels(cropped, kSz);
-  Log::Tensor(grid, "zin-slr-b4-grid");
-  Log::Tensor(cropped, "zin-slr-b4-cropped");
-  Log::Tensor(kernels, "zin-slr-b4-kernels");
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   if (kMat.rows() > kMat.cols()) {
     Log::Fail(FMT_STRING("Insufficient kernels for SVD {}x{}"), kMat.rows(), kMat.cols());

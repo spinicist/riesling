@@ -137,7 +137,7 @@ Cx4 tgv(
 {
   auto dev = Threads::GlobalDevice();
 
-  auto const dims = op->inputDimensions();
+  auto const dims = op->ishape;
   Sz5 dims3{dims[0], dims[1], dims[2], dims[3], 3};
   Sz5 dims6{dims[0], dims[1], dims[2], dims[3], 6};
 

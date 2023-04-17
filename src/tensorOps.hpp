@@ -167,6 +167,11 @@ inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
   return a.reshape(rsh_a).broadcast(brd_a) + b.reshape(rsh_b).broadcast(brd_b) + c.reshape(rsh_c).broadcast(brd_c);
 }
 
+template <typename Scalar, int N>
+inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> &&x, Sz<N> const &shape) {
+  return Eigen::TensorMap<Eigen::Tensor<Scalar, N>>(x.data(), shape);
+}
+
 template <typename T>
 inline decltype(auto) CollapseToArray(T &t)
 {

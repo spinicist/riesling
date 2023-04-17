@@ -31,6 +31,6 @@ int main_sdc(args::Subparser &parser)
   }
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sdc", "h5"));
   traj.write(writer);
-  writer.writeTensor(dc, HD5::Keys::SDC);
+  writer.writeTensor(HD5::Keys::SDC, dc.dimensions(), dc.data());
   return EXIT_SUCCESS;
 }

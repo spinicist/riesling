@@ -16,7 +16,7 @@ struct Writer
   void writeMeta(std::map<std::string, float> const &meta);
 
   template <typename Scalar, int ND>
-  void writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label);
+  void writeTensor(std::string const &label, Sz<ND> const &shape, Scalar const *data);
   template <typename Derived>
   void writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label);
 

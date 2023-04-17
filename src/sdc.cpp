@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
-#include "op/identity.hpp"
+#include "op/tensorop.hpp"
 #include "op/make_grid.hpp"
 #include "op/scale.hpp"
 #include "tensorOps.hpp"
@@ -132,14 +132,14 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 Re2 Radial(Trajectory const &traj, Index const lores, Index const gap) { return Radial3D(traj, lores, gap); }
 
 auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string const &ktype, float const os)
-  -> std::shared_ptr<Operator<Cx, 3>>
+  -> std::shared_ptr<TensorOperator<Cx, 3>>
 {
   Re2 sdc(traj.nSamples(), traj.nTraces());
   auto const iname = opts.type.Get();
   Sz3 const dims{nC, traj.nSamples(), traj.nTraces()};
   if (iname == "" || iname == "none") {
     Log::Print(FMT_STRING("Using no density compensation"));
-    return std::make_shared<Identity<Cx, 3>>(dims);
+    return std::make_shared<TensorIdentity<Cx, 3>>(dims);
   } else if (iname == "pipe") {
     if (traj.nDims() == 2) {
       sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get(), opts.pow.Get());

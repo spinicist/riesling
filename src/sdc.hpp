@@ -26,7 +26,7 @@ struct Opts
 };
 
 auto Choose(Opts &opts, Index const nC, Trajectory const &t, std::string const &ktype, float const os)
-  -> std::shared_ptr<Operator<Cx, 3>>;
+  -> std::shared_ptr<TensorOperator<Cx, 3>>;
 
 } // namespace SDC
 } // namespace rl

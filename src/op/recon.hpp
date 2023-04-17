@@ -10,7 +10,7 @@
 
 namespace rl {
 
-using ReconOp = Compose<SenseOp, Operator<Cx, 5, 4>>;
+using ReconOp = Compose<SenseOp, TensorOperator<Cx, 5, 4>>;
 
 auto make_recon(
   CoreOpts &coreOpts,

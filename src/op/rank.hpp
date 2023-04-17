@@ -5,35 +5,33 @@
 namespace rl {
 
 template <typename Op>
-struct IncreaseOutputRank final : Operator<typename Op::Scalar, Op::InputRank, Op::OutputRank + 1>
+struct IncreaseOutputRank final : TensorOperator<typename Op::Scalar, Op::InRank, Op::OutRank + 1>
 {
-  OP_INHERIT(typename Op::Scalar, Op::InputRank, Op::OutputRank + 1)
+  OP_INHERIT(typename Op::Scalar, Op::InRank, Op::OutRank + 1)
 
   IncreaseOutputRank(std::shared_ptr<Op> op)
-    : Parent("IncreaseOutputRankOp", op->inputDimensions(), AddBack(op->outputDimensions(), 1))
+    : Parent("IncreaseOutputRankOp", op->ishape, AddBack(op->oshape, 1))
     , op_{op}
   {
   }
 
-  auto forward(InputMap x) const -> OutputMap
+  void forward(InCMap const &x, OutMap &y) const
   {
     auto const time = this->startForward(x);
-    auto y = op_->forward(x);
-    OutputMap y2(y.data(), this->outputDimensions());
-    this->finishForward(y2, time);
-    return y2;
+    typename Op::OutMap y2(y.data(), op_->oshape);
+    y2 = op_->forward(x);
+    this->finishForward(y, time);
   }
 
-  auto adjoint(OutputMap y) const -> InputMap
+  void adjoint(OutCMap const &y, InMap &x) const
   {
     auto const time = this->startAdjoint(y);
-    typename Op::OutputMap y2(y.data(), op_->outputDimensions());
-    auto x = op_->adjoint(y2);
+    typename Op::OutCMap y2(y.data(), op_->oshape);
+    x = op_->adjoint(y2);
     this->finishAdjoint(x, time);
-    return x;
   }
 
-  auto adjfwd(InputMap x) const -> InputMap { return op_->adjfwd(x); }
+  // auto adjfwd(InputMap x) const -> InputMap { return op_->adjfwd(x); }
 
 private:
   std::shared_ptr<Op> op_;

@@ -4,20 +4,19 @@
 
 namespace rl {
 
-template <typename T>
+template <typename Scalar = Cx>
 struct Prox
 {
-  using Input = Eigen::TensorMap<T const>;
-  using Output = T;
+  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
 
-  virtual auto operator()(float const λ, Input in) const -> T = 0;
+  virtual void operator()(float const λ, Vector const &x, Vector &z) const = 0;
+  virtual auto operator()(float const λ, Vector const &x) const -> Vector {
+    Vector z(x.size());
+    this->operator()(λ, x, z);
+    return z;
+  }
+  
   virtual ~Prox(){};
-};
-
-template <typename T>
-struct IdentityProx final : Prox<T>
-{
-  auto operator()(float const λ, Eigen::TensorMap<T const> in) const -> T { return in; }
 };
 
 }

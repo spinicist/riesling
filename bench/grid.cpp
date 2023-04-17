@@ -25,8 +25,8 @@ TEST_CASE("Grid", "[grid]")
   auto gridfi3 = make_grid<Cx, 3>(traj, "ES3", os, C);
   auto gridfi5 = make_grid<Cx, 3>(traj, "ES5", os, C);
 
-  Cx5 c(gridfi3->inputDimensions());
-  Cx3 nc(gridfi3->outputDimensions());
+  Cx5 c(gridfi3->ishape);
+  Cx3 nc(gridfi3->oshape);
 
   nc.setRandom();
 
@@ -60,8 +60,8 @@ TEST_CASE("GridBasis", "[grid]")
   auto gridfi3 = make_grid<Cx, 3>(traj, "ES3", os, C, basis);
   auto gridfi5 = make_grid<Cx, 3>(traj, "ES5", os, C, basis);
 
-  Cx5 c(gridfi3->inputDimensions());
-  Cx3 nc(gridfi3->outputDimensions());
+  Cx5 c(gridfi3->ishape);
+  Cx3 nc(gridfi3->oshape);
 
   BENCHMARK("ES3 Noncartesian->Cartesian")
   {

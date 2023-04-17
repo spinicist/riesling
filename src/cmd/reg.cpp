@@ -42,9 +42,9 @@ int main_reg(args::Subparser &parser)
 
   if (wavelets) {
     Sz4 dims = FirstN<4>(images.dimensions());
-    ThresholdWavelets tw(dims, λ.Get(), waveSize.Get(), waveLevels.Get());
+    ThresholdWavelets tw(λ.Get(), dims, waveSize.Get(), waveLevels.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = tw(1.f, CChipMap(images, iv));
+       tw(1.f, CChipMap(images, iv), ChipMap(output, iv));
     }
   } else if (brute) {
     HD5::Reader dictReader(brute.Get());

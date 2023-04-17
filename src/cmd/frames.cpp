@@ -31,7 +31,7 @@ int main_frames(args::Subparser &parser)
   }
 
   rl::HD5::Writer writer(oname.Get());
-  writer.writeTensor(basis, rl::HD5::Keys::Basis);
+  writer.writeTensor(rl::HD5::Keys::Basis, basis.dimensions(), basis.data());
 
   return EXIT_SUCCESS;
 }

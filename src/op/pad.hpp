@@ -1,28 +1,24 @@
 #pragma once
 
-#include "log.hpp"
-#include "operator-alloc.hpp"
-#include "tensorOps.hpp"
+#include "tensorop.hpp"
 
 namespace rl {
 
 template <typename Scalar_, int Rank, int ImgRank = 3>
-struct PadOp final : OperatorAlloc<Scalar_, Rank, Rank>
+struct PadOp final : TensorOperator<Scalar_, Rank, Rank>
 {
-  OPALLOC_INHERIT(Scalar_, Rank, Rank)
+  OP_INHERIT(Scalar_, Rank, Rank)
 
   using ImgDims = Eigen::DSizes<Index, ImgRank>;
   using OtherDims = Eigen::DSizes<Index, Rank - ImgRank>;
 
-  // Note how init works to get the input dimensions set up before allocating storage
-  PadOp(ImgDims const &imgSize, ImgDims const &padSize, OtherDims const &otherSize = {});
-  PadOp(ImgDims const &imgSize, OutputMap yStorage);
-  PadOp(InputMap x, OutputMap y);
+  PadOp(ImgDims const &imgShape, ImgDims const &padSize, OtherDims const &otherSize);
+  PadOp(ImgDims const &imgShape, OutDims oshape);
 
-  OPALLOC_DECLARE()
+  OP_DECLARE()
 
 private:
-  InputDims left_, right_;
+  InDims left_, right_;
   Eigen::array<std::pair<Index, Index>, Rank> paddings_;
   float scale_;
 

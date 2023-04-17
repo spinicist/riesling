@@ -29,16 +29,16 @@ int main_pad(args::Subparser &parser)
     PadOp<Cx, 5> pad(LastN<3>(inDims), padDims.Get(), FirstN<2>(inDims));
     if (fwd) {
       for (Index ii = 0; ii < inDims[5]; ii++) {
-        outImages.chip(ii, 5) = pad.cforward(CChipMap(inImages, ii));
+        outImages.chip(ii, 5) = pad.forward(CChipMap(inImages, ii));
       }
       Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
     } else {
       for (Index ii = 0; ii < inDims[5]; ii++) {
-        outImages.chip(ii, 5) = pad.cadjoint(CChipMap(inImages, ii));
+        outImages.chip(ii, 5) = pad.adjoint(CChipMap(inImages, ii));
       }
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     }
-    writer.writeTensor(outImages, HD5::Keys::Channels);
+    writer.writeTensor(HD5::Keys::Channels, outImages.dimensions(), outImages.data());
   } else {
     Cx5 inImages = reader.readTensor<Cx5>(HD5::Keys::Image);
     Sz5 inDims = inImages.dimensions();
@@ -61,7 +61,7 @@ int main_pad(args::Subparser &parser)
       }
       Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
     }
-    writer.writeTensor(outImages, HD5::Keys::Image);
+    writer.writeTensor(HD5::Keys::Image, outImages.dimensions(), outImages.data());
   }
   return EXIT_SUCCESS;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "op/operator.hpp"
 
 namespace rl {
 
@@ -43,85 +44,54 @@ inline auto Rotation(float const a, float const b)
   return std::make_tuple(c, s, ρ);
 }
 
-template <typename OpPtr, typename PrePtr, typename Reg, typename Input, typename Output, typename Device>
+template <typename Scalar>
 inline void BidiagInit(
-  OpPtr op,
-  PrePtr M,
-  Output &Mu,
-  Output &u,
-  Input &v,
+  std::shared_ptr<Op::Operator<Scalar>> op,
+  std::shared_ptr<Op::Operator<Scalar>> M,
+  Eigen::Vector<Scalar, Eigen::Dynamic> &Mu,
+  Eigen::Vector<Scalar, Eigen::Dynamic> &u,
+  Eigen::Vector<Scalar, Eigen::Dynamic> &v,
   float &α,
   float &β,
-  float const λ,
-  std::shared_ptr<Reg> opλ,
-  typename Reg::Output &uλ,
-  Input &x,
-  Eigen::TensorMap<Output const> const &b,
-  Input const &x0,
-  typename Reg::Output const &bλ,
-  Device &dev)
+  Eigen::Vector<Scalar, Eigen::Dynamic> &x,
+  Eigen::Map<Eigen::Vector<Scalar, Eigen::Dynamic>> const &b,
+  Scalar *x0)
 {
-  if (x0.size()) {
-    CheckDimsEqual(x0.dimensions(), v.dimensions());
-    x.device(dev) = x0;
-    Mu.device(dev) = b - op->cforward(x);
+  if (x0) {
+    Eigen::Map<Eigen::Vector<Scalar, Eigen::Dynamic> const> xx0(x0, op->cols());
+    x = xx0;
+    Mu = b - op->forward(x);
   } else {
     x.setZero();
-    Mu.device(dev) = b;
+    Mu = b;
   }
-  u = M->cadjoint(Mu);
-  if (uλ.size()) {
-    CheckDimsEqual(bλ.dimensions(), uλ.dimensions());
-    CheckDimsEqual(opλ->outputDimensions(), uλ.dimensions());
-    uλ.device(dev) = std::sqrt(λ) * (bλ - opλ->cforward(x));
-    β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
-  } else {
-    β = std::sqrt(CheckedDot(Mu, u));
-  }
-  Mu.device(dev) = Mu / Mu.constant(β);
-  u.device(dev) = u / u.constant(β);
-  if (uλ.size()) {
-    uλ.device(dev) = uλ / uλ.constant(β);
-    v.device(dev) = op->cadjoint(u) + std::sqrt(λ) * opλ->cadjoint(uλ);
-  } else {
-    v.device(dev) = op->cadjoint(u);
-  }
+  u = M->adjoint(Mu);
+  β = std::sqrt(CheckedDot(Mu, u));
+  Mu = Mu / β;
+  u = u / β;
+  v = op->adjoint(u);
   α = std::sqrt(CheckedDot(v, v));
-  v.device(dev) = v / v.constant(α);
+  v = v / α;
 }
 
-template <typename Op, typename Pre, typename Reg, typename Device>
+template <typename Scalar>
 inline void Bidiag(
-  std::shared_ptr<Op> const op,
-  std::shared_ptr<Pre> const M,
-  typename Op::Output &Mu,
-  typename Op::Output &u,
-  typename Op::Input &v,
+  std::shared_ptr<Op::Operator<Scalar>> const op,
+  std::shared_ptr<Op::Operator<Scalar>> const M,
+  Eigen::Vector<Scalar, Eigen::Dynamic> &Mu,
+  Eigen::Vector<Scalar, Eigen::Dynamic> &u,
+  Eigen::Vector<Scalar, Eigen::Dynamic> &v,
   float &α,
-  float &β,
-  float const λ,
-  std::shared_ptr<Reg> const opλ,
-  typename Reg::Output &uλ,
-  Device &dev)
+  float &β)
 {
-  Mu.device(dev) = op->cforward(v) - α * Mu;
-  u = M->cadjoint(Mu);
-  if (uλ.size()) {
-    uλ.device(dev) = (std::sqrt(λ) * opλ->cforward(v)) - (α * uλ);
-    β = std::sqrt(CheckedDot(Mu, u) + CheckedDot(uλ, uλ));
-  } else {
-    β = std::sqrt(CheckedDot(Mu, u));
-  }
-  Mu.device(dev) = Mu / Mu.constant(β);
-  u.device(dev) = u / u.constant(β);
-  if (uλ.size()) {
-    uλ.device(dev) = uλ / uλ.constant(β);
-    v.device(dev) = (op->cadjoint(u) + (std::sqrt(λ) * opλ->cadjoint(uλ))) - (β * v);
-  } else {
-    v.device(dev) = op->cadjoint(u) - (β * v);
-  }
+  Mu = op->forward(v) - α * Mu;
+  u = M->adjoint(Mu);
+  β = std::sqrt(CheckedDot(Mu, u));
+  Mu = Mu / β;
+  u = u / β;
+  v = op->adjoint(u) - (β * v);
   α = std::sqrt(CheckedDot(v, v));
-  v.device(dev) = v / v.constant(α);
+  v = v / α;
 }
 
 } // namespace

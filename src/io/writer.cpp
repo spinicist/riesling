@@ -8,22 +8,22 @@ namespace rl {
 namespace HD5 {
 
 template <typename Scalar, int ND>
-void store_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> const &data)
+void store_tensor(Handle const &parent, std::string const &name, Sz<ND> const &dims, Scalar const *data)
 {
   // Check for sane dimensions
   for (Index ii = 0; ii < ND; ii++) {
-    if (data.dimension(ii) == 0) {
-      Log::Fail(FMT_STRING("Tensor {} had a zero dimension. Dims: {}"), name, data.dimensions());
+    if (dims[ii] == 0) {
+      Log::Fail(FMT_STRING("Tensor {} had a zero dimension. Dims: {}"), name, dims);
     }
   }
 
   herr_t status;
   hsize_t ds_dims[ND], chunk_dims[ND];
   // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
-  std::copy_n(data.dimensions().rbegin(), ND, ds_dims);
+  std::copy_n(dims.rbegin(), ND, ds_dims);
   std::copy_n(ds_dims, ND, chunk_dims);
   // Try to stop chunk dimension going over 4 gig
-  Index sizeInBytes = Product(data.dimensions()) * sizeof(Scalar);
+  Index sizeInBytes = Product(dims) * sizeof(Scalar);
   Index dimToShrink = 0;
   while (sizeInBytes > (1L << 32L)) {
     if (chunk_dims[dimToShrink] > 1) {
@@ -44,10 +44,10 @@ void store_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<S
     Log::Fail(
       FMT_STRING("Could not create tensor {}. Dims {}. Error {}"),
       name,
-      fmt::join(data.dimensions(), ","),
+      fmt::join(dims, ","),
       HD5::GetError());
   }
-  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
+  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
   status = H5Pclose(plist);
   status = H5Sclose(space);
   status = H5Dclose(dset);
@@ -156,20 +156,20 @@ bool Writer::exists(std::string const &name) const
 }
 
 template <typename Scalar, int ND>
-void Writer::writeTensor(Eigen::Tensor<Scalar, ND> const &t, std::string const &label)
+void Writer::writeTensor(std::string const &label, Sz<ND> const &shape, Scalar const *data)
 {
-  HD5::store_tensor(handle_, label, t);
+  HD5::store_tensor(handle_, label, shape, data);
 }
 
-template void Writer::writeTensor<Index, 1>(I1 const &, std::string const &);
-template void Writer::writeTensor<float, 2>(Re2 const &, std::string const &);
-template void Writer::writeTensor<float, 3>(Re3 const &, std::string const &);
-template void Writer::writeTensor<float, 4>(Re4 const &, std::string const &);
-template void Writer::writeTensor<float, 5>(Re5 const &, std::string const &);
-template void Writer::writeTensor<Cx, 3>(Cx3 const &, std::string const &);
-template void Writer::writeTensor<Cx, 4>(Cx4 const &, std::string const &);
-template void Writer::writeTensor<Cx, 5>(Cx5 const &, std::string const &);
-template void Writer::writeTensor<Cx, 6>(Cx6 const &, std::string const &);
+template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *);
+template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, float const *);
+template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *);
+template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *);
+template void Writer::writeTensor<float, 5>(std::string const &, Sz<5> const &, float const *);
+template void Writer::writeTensor<Cx, 3>(std::string const &, Sz<3> const &, Cx const *);
+template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx const *);
+template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *);
+template void Writer::writeTensor<Cx, 6>(std::string const &, Sz<6> const &, Cx const *);
 
 template <typename Derived>
 void Writer::writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label)

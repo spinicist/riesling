@@ -24,7 +24,6 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
   Cx5 kernels(nchan, kW, kW, kW, nk);
 
   Index k = 0;
-  Index s = 0;
   Index const gapSt = (calRad - 1) - (gapRad - 1) - kRad;
   Index const gapEnd = (calRad - 1) + gapRad + kRad;
 
@@ -44,7 +43,6 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
       Index const st_y = st + iy;
       for (Index ix = 0; ix < calW; ix++) {
         if (gapRad && (ix >= gapSt && ix < gapEnd) && (iy >= gapSt && iy < gapEnd) && (iz >= gapSt && iz < gapEnd)) {
-          s++;
           continue;
         }
         Index const st_x = st + ix;
@@ -55,7 +53,6 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
       }
     }
   }
-  assert(s == nSkip);
   assert(k == nk);
   return kernels;
 }

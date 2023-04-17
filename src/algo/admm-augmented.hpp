@@ -22,9 +22,9 @@ struct AugmentedOp
   {
   }
 
-  auto inputDimensions() const { return op->inputDimensions(); }
+  auto inputDimensions() const { return op->ishape; }
 
-  auto outputDimensions() const { return op->inputDimensions(); }
+  auto outputDimensions() const { return op->ishape; }
 
   auto forward(Input const &x) const -> Input
   {
@@ -57,7 +57,7 @@ struct AugmentedADMM
     Log::Print(FMT_STRING("ADMM-CG rho {}"), ρ);
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
-    auto const dims = inner.op->inputDimensions();
+    auto const dims = inner.op->ishape;
     Input x(dims), z(dims), zold(dims), u(dims), xpu(dims);
     x.setZero();
     z.setZero();

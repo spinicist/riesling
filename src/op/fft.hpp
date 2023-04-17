@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator.hpp"
+#include "tensorop.hpp"
 
 #include "fft/fft.hpp"
 #include "tensorOps.hpp"
@@ -9,11 +9,11 @@
 namespace rl {
 
 template <int Rank, int FFTRank>
-struct FFTOp final : Operator<Cx, Rank, Rank>
+struct FFTOp final : TensorOperator<Cx, Rank, Rank>
 {
   OP_INHERIT(Cx, Rank, Rank)
 
-  FFTOp(InputDims const &dims)
+  FFTOp(InDims const &dims)
     : Parent("FFTOp", dims, dims)
     , fft_{FFT::Make<Rank, FFTRank>(dims)}
   {
@@ -25,24 +25,22 @@ struct FFTOp final : Operator<Cx, Rank, Rank>
   {
   }
 
-  auto forward(InputMap x) const -> OutputMap
+  void forward(InCMap &x, OutMap y) const
   {
     auto const time = this->startForward(x);
     fft_->forward(x);
-    this->finishForward(x, time);
-    return x;
+    this->finishForward(y, time);
   }
 
-  auto adjoint(OutputMap x) const -> InputMap
+  void adjoint(OutCMap &y, InMap x) const
   {
-    auto const time = this->startAdjoint(x);
-    fft_->reverse(x);
+    auto const time = this->startAdjoint(y);
+    fft_->reverse(y);
     this->finishAdjoint(x, time);
-    return x;
   }
 
 private:
-  InputDims dims_;
+  InDims dims_;
   std::shared_ptr<FFT::FFT<Rank, FFTRank>> fft_;
 };
 } // namespace rl

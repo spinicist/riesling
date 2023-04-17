@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "op/operator.hpp"
 #include "signals.hpp"
 #include "threads.hpp"
 
@@ -8,96 +9,51 @@ namespace rl {
 /*
  * Wrapper for solving normal equations
  */
-template <typename Op>
-struct NormalEqOp
+template <typename Scalar_ = Cx>
+struct NormalOp final : Op::template Operator<Scalar_>
 {
-  using Input = typename Op::Input;
-  using InputMap = typename Op::InputMap;
-  using CInputMap = typename Op::CInputMap;
+  using Scalar = Scalar_;
+  using Op = typename Op::Operator<Scalar>;
+  using Vector = typename Op::Vector;
+  using Map = typename Op::Map;
+  using CMap = typename Op::CMap;
 
   std::shared_ptr<Op> op;
-  NormalEqOp(std::shared_ptr<Op> o)
-    : op{o}
+  NormalOp(std::shared_ptr<Op> o)
+    : Op(fmt::format("{} Normal", o->name))
+    , op{o}
   {
   }
 
-  auto inputDimensions() const { return op->inputDimensions(); }
+  auto rows() const -> Index { return op->rows(); }
+  auto cols() const -> Index { return op->cols(); }
 
-  auto outputDimensions() const { return op->inputDimensions(); }
+  auto forward(Vector const &x) const -> Vector { return op->adjoint(op->foward(x)); }
+  auto adjoint(Vector const &y) const -> Vector { Log::Fail("Normal Operators do not have adjoints"); }
 
-  auto forward(Input const &x) const -> InputMap
+  void forward(CMap const &x, Map &y) const
   {
-    op->input() = x;
-    return op->adjfwd(op->input());
+    Vector temp(op->cols());
+    Map tm(temp.data(), temp.size());
+    CMap tcm(temp.data(), temp.size());
+    op->forward(x, tm);
+    op->adjoint(tcm, y);
   }
+  void adjoint(CMap const &x, Map &y) const { Log::Fail("Normal Operators do not have adjoints"); }
 };
 
-template <typename Op>
-auto make_normal(std::shared_ptr<Op> op)
-{
-  return std::make_shared<NormalEqOp<Op>>(op);
-}
-
-template <typename Op>
 struct ConjugateGradients
 {
-  using Input = typename Op::Input;
-  using InputMap = typename Op::InputMap;
-  using CInputMap = typename Op::CInputMap;
+  using Op = Op::Operator<Cx>;
+  using Vector = typename Op::Vector;
+  using Map = typename Op::Map;
+
   std::shared_ptr<Op> op;
   Index iterLimit = 16;
   float resTol = 1.e-6f;
   bool debug = false;
 
-  Input run(CInputMap const b, Input const &x0 = Input()) const
-  {
-    auto dev = Threads::GlobalDevice();
-    // Allocate all memory
-    CheckDimsEqual(op->outputDimensions(), b.dimensions());
-    auto const dims = op->inputDimensions();
-    Input q(dims), p(dims), r(dims), x(dims);
-    // If we have an initial guess, use it
-    if (x0.size()) {
-      CheckDimsEqual(dims, x0.dimensions());
-      Log::Print("Warm-start CG");
-      r.device(dev) = b - op->forward(x0);
-      x.device(dev) = x0;
-    } else {
-      r.device(dev) = b;
-      x.setZero();
-    }
-    p.device(dev) = r;
-    float r_old = Norm2(r);
-    float const thresh = resTol * sqrt(r_old);
-    Log::Print(FMT_STRING("CG |r| {:5.3E} threshold {:5.3E}"), sqrt(r_old), thresh);
-    Log::Print(FMT_STRING("IT |r|       α         β         |x|"));
-    PushInterrupt();
-    for (Index icg = 0; icg < iterLimit; icg++) {
-      q = op->forward(p);
-      float const alpha = r_old / CheckedDot(p, q);
-      x.device(dev) = x + p * p.constant(alpha);
-      if (debug) {
-        Log::Tensor(x, fmt::format(FMT_STRING("cg-x-{:02}"), icg));
-        Log::Tensor(r, fmt::format(FMT_STRING("cg-r-{:02}"), icg));
-      }
-      r.device(dev) = r - q * q.constant(alpha);
-      float const r_new = Norm2(r);
-      float const beta = r_new / r_old;
-      p.device(dev) = r + p * p.constant(beta);
-      float const nr = sqrt(r_new);
-      Log::Print(FMT_STRING("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E}"), icg, nr, alpha, beta, Norm(x));
-      if (nr < thresh) {
-        Log::Print(FMT_STRING("Reached convergence threshold"));
-        break;
-      }
-      r_old = r_new;
-      if (InterruptReceived()) {
-        break;
-      }
-    }
-    PopInterrupt();
-    return x;
-  }
+  auto run(Cx *bdata, Cx *x0 = nullptr) const -> Vector;
 };
 
 } // namespace rl

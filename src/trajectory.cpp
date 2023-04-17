@@ -37,7 +37,7 @@ void Trajectory::init()
 void Trajectory::write(HD5::Writer &writer) const
 {
   writer.writeInfo(info_);
-  writer.writeTensor(points_, HD5::Keys::Trajectory);
+  writer.writeTensor(HD5::Keys::Trajectory, points_.dimensions(), points_.data());
 }
 
 auto Trajectory::nDims() const -> Index { return points_.dimension(0); }

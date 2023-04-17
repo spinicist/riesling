@@ -20,6 +20,6 @@ int main_plan(args::Subparser &parser)
   Trajectory traj(reader);
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.Get(), basis);
-  auto const fftN = FFT::Make<5, 3>(gridder->inputDimensions());
+  auto const fftN = FFT::Make<5, 3>(gridder->ishape);
   return EXIT_SUCCESS;
 }

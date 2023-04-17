@@ -29,8 +29,8 @@ struct LAD
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
-    Input x(inner.op->inputDimensions());
-    auto const odims = inner.op->outputDimensions();
+    Input x(inner.op->ishape);
+    auto const odims = inner.op->oshape;
     Output u(odims), z(odims), zold(odims), Ax_sub_b(odims);
 
     // Set initial values

@@ -12,7 +12,7 @@ auto Scaling(args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const 
 {
   float scale;
   if (type.Get() == "bart") {
-    Re4 abs = (recon->cadjoint(data)).abs();
+    Re4 abs = (recon->adjoint(data)).abs();
     auto vec = CollapseToArray(abs);
     std::sort(vec.begin(), vec.end());
     float const med = vec[vec.size() * 0.5];
@@ -21,7 +21,7 @@ auto Scaling(args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const 
     scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
     Log::Print(FMT_STRING("Automatic scaling={}. 50% {} 90% {} 100% {}."), scale, med, p90, max);
   } else if (type.Get() == "otsu") {
-    Re4 const abs = (recon->cadjoint(data)).abs();
+    Re4 const abs = (recon->adjoint(data)).abs();
     auto const [thresh, count] = Otsu(CollapseToArray(abs));
     std::vector<float> vals(count);
     std::copy_if(abs.data(), abs.data() + abs.size(), vals.begin(), [thresh=thresh](float const f) { return f > thresh; });

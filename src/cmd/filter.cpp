@@ -3,7 +3,7 @@
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/fft.hpp"
+#include "fft/fft.hpp"
 #include "parse_args.hpp"
 #include "threads.hpp"
 
@@ -34,6 +34,6 @@ int main_filter(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(images, HD5::Keys::Image);
+  writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
   return EXIT_SUCCESS;
 }

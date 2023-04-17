@@ -19,16 +19,18 @@ Index PatchClamp(Index const ii, Index const patchSize, Index const dimSz)
   }
 }
 
-LLR::LLR(float const l, Index p, Index w)
-  : Prox<Cx4>()
+LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
+  : Prox<Cx>()
   , λ{l}
   , patchSize{p}
   , windowSize{w}
+  , shape{s}
 {
 }
 
-auto LLR::operator()(float const α, Eigen::TensorMap<Cx4 const> x) const -> Cx4
+void LLR::operator()(float const α, Vector const &xin, Vector &z) const
 {
+  Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
   Sz3 nP, shift;
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -42,7 +44,7 @@ auto LLR::operator()(float const α, Eigen::TensorMap<Cx4 const> x) const -> Cx4
   Sz4 const szP{K, patchSize, patchSize, patchSize};
   Sz4 const szW{K, windowSize, windowSize, windowSize};
   Index const inset = (patchSize - windowSize) / 2;
-  Cx4 lr = x;
+  Eigen::TensorMap<Cx4> lr(z.data(), shape);
   float const realλ = λ * α;
   Log::Print<Log::Level::High>(FMT_STRING("LLR λ {} Patch-size {} Window-size {}"), realλ, patchSize, windowSize);
   auto zTask = [&](Index const iz) {
@@ -67,7 +69,6 @@ auto LLR::operator()(float const α, Eigen::TensorMap<Cx4 const> x) const -> Cx4
     }
   };
   Threads::For(zTask, nP[2], "LLR");
-  return lr;
 }
 
 } // namespace rl

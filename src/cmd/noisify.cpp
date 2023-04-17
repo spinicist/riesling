@@ -25,7 +25,7 @@ int main_noisify(args::Subparser &parser)
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "noisy"));
   Trajectory(reader).write(writer);
-  writer.writeTensor(ks, dset.Get());
+  writer.writeTensor(dset.Get(), ks.dimensions(), ks.data());
 
   return EXIT_SUCCESS;
 }

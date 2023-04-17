@@ -4,13 +4,14 @@
 
 namespace rl {
 
-struct LLR final : Prox<Cx4>
+struct LLR final : Prox<Cx>
 {
   float λ;
   Index patchSize, windowSize;
-  LLR(float, Index, Index);
+  Sz4 shape;
+  LLR(float const, Index const, Index const, Sz4 const);
 
-  auto operator()(float const α, Eigen::TensorMap<Cx4 const> x) const -> Cx4;
+  void operator()(float const α, Vector const &x, Vector &z) const;
 };
 
 } // namespace rl

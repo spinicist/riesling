@@ -53,7 +53,6 @@ int main_blend(args::Subparser &parser)
     Log::Fail(FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
   }
 
-
   if (keep) {
     for (Index ib = 0; ib < basis.dimension(0); ib++) {
       if (std::find(keep.Get().begin(), keep.Get().end(), ib) == keep.Get().end()) {
@@ -61,7 +60,6 @@ int main_blend(args::Subparser &parser)
       }
     }
   }
-
 
   auto const &tps = tp.Get();
 
@@ -85,7 +83,7 @@ int main_blend(args::Subparser &parser)
   auto const fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(out, HD5::Keys::Image);
+  writer.writeTensor(HD5::Keys::Image, out.dimensions(), out.data());
 
   return EXIT_SUCCESS;
 }

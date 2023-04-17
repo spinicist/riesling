@@ -1,14 +1,14 @@
 #pragma once
 
-#include "operator-alloc.hpp"
+#include "tensorop.hpp"
 
 namespace rl {
 
-struct SenseOp final : OperatorAlloc<Cx, 4, 5>
+struct SenseOp final : TensorOperator<Cx, 4, 5>
 {
-  OPALLOC_INHERIT( Cx, 4, 5 )
+  OP_INHERIT( Cx, 4, 5 )
   SenseOp(Cx4 const &maps, Index const d0);
-  OPALLOC_DECLARE()
+  OP_DECLARE()
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
 

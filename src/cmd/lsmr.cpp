@@ -33,13 +33,13 @@ int main_lsmr(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-  auto M = make_pre(pre.Get(), recon->outputDimensions(), traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  LSMR<ReconOp> lsmr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
-  auto sz = recon->inputDimensions();
+  auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  LSMR lsmr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
+  auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 const outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  float const scale = Scaling(coreOpts.scaling, recon, M->cadjoint(CChipMap(allData, 0)));
+  float const scale = Scaling(coreOpts.scaling, recon, M->adjoint(CChipMap(allData, 0)));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
@@ -47,7 +47,8 @@ int main_lsmr(args::Subparser &parser)
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
     out.chip<4>(iv).device(Threads::GlobalDevice()) =
-      out_cropper.crop4(lsmr.run(CChipMap(allData, iv), λ.Get())) / out.chip<4>(iv).constant(scale);
+      out_cropper.crop4(Tensorfy(lsmr.run(&allData(0, 0, 0, 0, iv), λ.Get()), recon->ishape)) /
+      out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));

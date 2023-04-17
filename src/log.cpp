@@ -110,7 +110,7 @@ std::string ToNow(Log::Time const t1)
 }
 
 template <typename Scalar, int ND>
-void Tensor(Eigen::Tensor<Scalar, ND> const &img, std::string const &nameIn)
+void Tensor(std::string const &nameIn, Sz<ND> const &shape, Scalar const *data)
 {
   if (debug_file) {
     Index count = 0;
@@ -119,18 +119,18 @@ void Tensor(Eigen::Tensor<Scalar, ND> const &img, std::string const &nameIn)
       count++;
       name = fmt::format("{}-{}", nameIn, count);
     }
-    debug_file->writeTensor(img, name);
+    debug_file->writeTensor(name, shape, data);
   }
 }
 
-template void Tensor(Re2 const &, std::string const &);
-template void Tensor(Re4 const &, std::string const &);
-template void Tensor(Re3 const &, std::string const &);
-template void Tensor(Re5 const &, std::string const &);
-template void Tensor(Cx3 const &, std::string const &);
-template void Tensor(Cx4 const &, std::string const &);
-template void Tensor(Cx5 const &, std::string const &);
-template void Tensor(Cx6 const &, std::string const &);
+template void Tensor(std::string const &, Sz<2> const &shape, float const *data);
+template void Tensor(std::string const &, Sz<3> const &shape, float const *data);
+template void Tensor(std::string const &, Sz<4> const &shape, float const *data);
+template void Tensor(std::string const &, Sz<5> const &shape, float const *data);
+template void Tensor(std::string const &, Sz<3> const &shape, Cx const *data);
+template void Tensor(std::string const &, Sz<4> const &shape, Cx const *data);
+template void Tensor(std::string const &, Sz<5> const &shape, Cx const *data);
+template void Tensor(std::string const &, Sz<6> const &shape, Cx const *data);
 
 } // namespace Log
 } // namespace rl

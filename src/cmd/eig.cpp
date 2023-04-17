@@ -18,9 +18,10 @@ int main_eig(args::Subparser &parser)
   CoreOpts coreOpts(parser);
   SDC::Opts sdcOpts(parser, "none");
   SENSE::Opts senseOpts(parser);
-  args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::Flag adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
-  args::Flag pre(parser, "P", "Use k-space preconditioner", {"pre"});
+  args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
+  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
+  args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::Flag recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
   args::Flag savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
   ParseCommand(parser, coreOpts.iname);
@@ -28,27 +29,20 @@ int main_eig(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
-
-  std::optional<Cx4> P = std::nullopt;
-  if (pre) {
-    auto sc = KSpaceSingle(traj);
-    auto const odims = recon->outputDimensions();
-    P = std::make_optional<Cx4>(
-      Cx4(sc.reshape(Sz4{1, odims[1], odims[2], 1}).broadcast(Sz4{odims[0], 1, 1, odims[3]}).cast<Cx>()));
-  }
+  auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   if (adj) {
-    auto const [val, vec] = PowerMethodAdjoint(recon, its.Get(), P);
+    auto const [val, vec] = PowerMethodAdjoint(recon, M, its.Get());
     if (savevec) {
       HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "eig"));
-      writer.writeTensor(vec, "evec");
+      writer.writeTensor("evec", recon->ishape, vec.data());
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   } else {
-    auto const [val, vec] = PowerMethodForward(recon, its.Get(), P);
+    auto const [val, vec] = PowerMethodForward(recon, M, its.Get());
     if (savevec) {
       HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "eig"));
-      writer.writeTensor(vec, "evec");
+      writer.writeTensor("evec", recon->ishape, vec.data());
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   }

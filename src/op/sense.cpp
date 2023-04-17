@@ -22,23 +22,21 @@ SenseOp::SenseOp(Cx4 const &maps, Index const d0)
   brdMaps.set(1, d0);
 }
 
-auto SenseOp::forward(InputMap x) const -> OutputMap
+void SenseOp::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x);
-  output().device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
-  finishForward(output(), time);
-  return output();
+  y.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps);
+  finishForward(y, time);
 }
 
-auto SenseOp::adjoint(OutputMap y) const -> InputMap
+void SenseOp::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y);
-  input().device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.reshape(resMaps).broadcast(brdMaps));
-  finishAdjoint(input(), time);
-  return input();
+  x.device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.reshape(resMaps).broadcast(brdMaps));
+  finishAdjoint(x, time);
 }
 
-  auto SenseOp::nChannels() const -> Index { return outputDimensions()[0]; }
-  auto SenseOp::mapDimensions() const -> Sz3 { return LastN<3>(inputDimensions()); }
+  auto SenseOp::nChannels() const -> Index { return oshape[0]; }
+  auto SenseOp::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
 } // namespace rl

@@ -22,25 +22,23 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   Trajectory newTraj(newInfo, traj.points());
   float const osamp = 1.25;
   auto nufft = make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix(), basis);
-  Cx4 W(nufft->outputDimensions());
+  Cx4 W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
-  Log::Tensor(psf, "single-psf");
   Cx5 ones(AddFront(info.matrix, psf.dimension(0), psf.dimension(1)));
   ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
   PadOp<Cx, 5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
-  FFTOp<5, 3> fftX(psf.dimensions());
-  Cx5 xcorr = fftX.cforward(padX.cforward(ones)).abs().square().cast<Cx>();
-  xcorr = fftX.adjoint(xcorr);
+  auto fftX = FFT::Make<5, 3>(psf.dimensions());
+  Cx5 xcorr = padX.forward(ones);
+  fftX->forward(xcorr);
+  xcorr = xcorr * xcorr.conjugate();
+  fftX->reverse(xcorr);
   xcorr = xcorr * psf;
-  Log::Tensor(Cx5(xcorr), "pre-img");
   Re2 weights = nufft->forward(xcorr).abs().chip(0, 3).chip(0, 0);
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Product(LastN<3>(ones.dimensions()));
-  Log::Tensor(weights, "pre-weights");
   weights.device(Threads::GlobalDevice()) = ((weights * scale) + bias).inverse();
-  Log::Tensor(weights, "precond");
   float const norm = Norm(weights);
   if (!std::isfinite(norm)) {
     Log::Print("Single-channel pre-conditioner norm was not finite ({})", norm);
@@ -50,12 +48,12 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   return weights;
 }
 
-std::shared_ptr<Operator<Cx, 4>>
+std::shared_ptr<TensorOperator<Cx, 4>>
 make_pre(std::string const &type, Sz4 const dims, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
 {
   if (type == "" || type == "none") {
     Log::Print(FMT_STRING("Using no preconditioning"));
-    return std::make_shared<Identity<Cx, 4>>(dims);
+    return std::make_shared<TensorIdentity<Cx, 4>>(dims);
   } else if (type == "kspace") {
     return std::make_shared<Scale<Cx, 4, 1, 1>>(dims, KSpaceSingle(traj, basis, bias).cast<Cx>());
   } else {
