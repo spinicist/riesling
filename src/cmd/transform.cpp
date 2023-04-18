@@ -42,7 +42,7 @@ int main_transform(args::Subparser &parser)
         wav.adjoint(ChipMap(images, iv));
       }
     }
-    writer.writeTensor(images, HD5::Keys::Image);
+    writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
   } else if (grad) {
     if (fwd) {
       auto input = reader.readTensor<Cx5>(HD5::Keys::Image);
@@ -50,18 +50,18 @@ int main_transform(args::Subparser &parser)
       Cx6 output(AddBack(dims, 3, input.dimension(4)));
       GradOp g(dims);
       for (Index iv = 0; iv < input.dimension(4); iv++) {
-        output.chip<5>(iv) = g.cforward(CChipMap(input, iv));
+        output.chip<5>(iv) = g.forward(CChipMap(input, iv));
       }
-      writer.writeTensor(output, "grad");
+      writer.writeTensor("grad", output.dimensions(), output.data());
     } else {
       auto input = reader.readTensor<Cx6>("grad");
       Sz4 dims = FirstN<4>(input.dimensions());
       Cx5 output(AddBack(dims, input.dimension(5)));
       GradOp g(dims);
       for (Index iv = 0; iv < input.dimension(5); iv++) {
-        output.chip<4>(iv) = g.cadjoint(CChipMap(input, iv));
+        output.chip<4>(iv) = g.adjoint(CChipMap(input, iv));
       }
-      writer.writeTensor(output, HD5::Keys::Image);
+      writer.writeTensor(HD5::Keys::Image, output.dimensions(), output.data());
     }
   } else {
     Log::Fail("A transform option must be specified");

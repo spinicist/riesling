@@ -74,7 +74,7 @@ int main_split(args::Subparser &parser)
 
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "lores"));
     lo_traj.write(writer);
-    writer.writeTensor(lo_ks, HD5::Keys::Noncartesian);
+    writer.writeTensor(HD5::Keys::Noncartesian, lo_ks.dimensions(), lo_ks.data());
   }
 
   if (nF && spf) {
@@ -120,13 +120,13 @@ int main_split(args::Subparser &parser)
       int const n = ns + (int_idx == (num_int - 1) ? rem_traces : 0);
       HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format(FMT_STRING("hires-{:02d}"), int_idx)));
       Trajectory(info, traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, traj.nSamples(), n})).write(writer);
-      writer.writeTensor(
-        Cx4(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{channels, traj.nSamples(), n, volumes})), HD5::Keys::Noncartesian);
+      Cx4 interleave(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{channels, traj.nSamples(), n, volumes}));
+        writer.writeTensor(HD5::Keys::Noncartesian, interleave.dimensions(), interleave.data());
     }
   } else {
     HD5::Writer writer(OutName(iname.Get(), oname.Get(), "hires"));
     traj.write(writer);
-    writer.writeTensor(ks, HD5::Keys::Noncartesian);
+    writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data());
   }
 
   return EXIT_SUCCESS;

@@ -126,12 +126,12 @@ add_executable(riesling
     src/cmd/noisify.cpp
     src/cmd/nufft.cpp
     src/cmd/pad.cpp
-    src/cmd/pdhg.cpp
+    # src/cmd/pdhg.cpp
     src/cmd/phantom.cpp
     src/cmd/plan.cpp
     src/cmd/precond.cpp
     src/cmd/recon.cpp
-    src/cmd/reg.cpp
+    # src/cmd/reg.cpp
     src/cmd/rss.cpp
     src/cmd/sdc.cpp
     src/cmd/sense.cpp
@@ -139,7 +139,7 @@ add_executable(riesling
     src/cmd/sense-sim.cpp
     src/cmd/sim.cpp
     src/cmd/split.cpp
-    src/cmd/tgv.cpp
+    # src/cmd/tgv.cpp
     src/cmd/traj.cpp
     src/cmd/transform.cpp
     src/cmd/version.cpp

@@ -114,7 +114,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
       }
     };
 
-    Threads::For(grid_task, map.buckets.size(), "Grid Forward");
+    Threads::For(grid_task, map.buckets.size());
     this->finishForward(y, time);
   }
 
@@ -221,7 +221,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     };
 
     x.device(Threads::GlobalDevice()) = x.constant(0.f);
-    Threads::For(grid_task, map.buckets.size(), "Grid Adjoint");
+    Threads::For(grid_task, map.buckets.size());
     this->finishAdjoint(x, time);
   }
 

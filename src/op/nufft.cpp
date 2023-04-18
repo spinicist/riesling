@@ -26,34 +26,10 @@ NUFFTOp<NDim>::NUFFTOp(
 }
 
 template <size_t NDim>
-auto NUFFTOp<NDim>::forward(InTensor const &x) const -> OutTensor
-{
-  auto const time = this->startForward(x);
-  InMap wsm(workspace.data(), gridder->ishape);
-  pad.forward(apo.forward(x), wsm);
-  fft->forward(workspace);
-  auto y = gridder->forward(workspace);
-  this->finishForward(y, time);
-  return y;
-}
-
-template <size_t NDim>
-auto NUFFTOp<NDim>::adjoint(OutTensor const &y) const -> InTensor
-{
-  auto const time = this->startAdjoint(y);
-  InMap wsm(workspace.data(), ishape);
-  gridder->adjoint(sdc->adjoint(y), wsm);
-  fft->reverse(workspace);
-  auto x = apo.adjoint(pad.adjoint(workspace));
-  this->finishAdjoint(x, time);
-  return x;
-}
-
-template <size_t NDim>
 void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
-  InMap wsm(workspace.data(), ishape);
+  InMap wsm(workspace.data(), gridder->ishape);
   pad.forward(apo.forward(x), wsm);
   fft->forward(workspace);
   gridder->forward(workspace, y);
@@ -63,11 +39,12 @@ void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 template <size_t NDim>
 void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
-
   auto const time = this->startAdjoint(y);
-  InMap wsm(workspace.data(), ishape);
+  InMap wsm(workspace.data(), gridder->ishape);
   gridder->adjoint(sdc->adjoint(y), wsm);
+  Log::Tensor("nufft-grid", workspace.dimensions(), workspace.data());
   fft->reverse(workspace);
+  Log::Tensor("nufft-fft", workspace.dimensions(), workspace.data());
   apo.adjoint(pad.adjoint(workspace), x);
   this->finishAdjoint(x, time);
 }

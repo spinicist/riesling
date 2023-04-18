@@ -61,7 +61,7 @@ auto TheTime() -> std::string
 
 void StartProgress(Index const amount, std::string const &text)
 {
-  if (CurrentLevel() >= Level::High) {
+  if (text.size() && CurrentLevel() >= Level::High) {
     progressMessage = text;
     fmt::print(stderr, FMT_STRING("{} Starting {}\n"), TheTime(), progressMessage);
   }
@@ -78,7 +78,7 @@ void StopProgress()
     progressTarget = -1;
     fmt::print(stderr, "\r");
   }
-  if (CurrentLevel() >= Level::High) {
+  if (progressMessage.size() && CurrentLevel() >= Level::High) {
     fmt::print(stderr, FMT_STRING("{} Finished {}\n"), TheTime(), progressMessage);
   }
 }

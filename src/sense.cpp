@@ -1,12 +1,12 @@
 #include "sense.hpp"
 
 #include "cropper.h"
+#include "filter.hpp"
 #include "io/hd5.hpp"
 #include "op/nufft.hpp"
 #include "sdc.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include "filter.hpp"
 
 namespace rl {
 namespace SENSE {
@@ -45,10 +45,13 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD
   Cx4 const data = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, opts.volume.Get());
   Cx4 lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
-NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
+  NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
+  Log::Print("Calling Adjoint");
   Cx5 const allChan = nufft->adjoint(lores);
   channels = crop.crop5(allChan).chip<1>(opts.frame.Get());
+  Log::Tensor("sense-channels", channels.dimensions(), channels.data());
   Cx3 rss = crop.newImage();
+  Log::Tensor("sense-rss", rss.dimensions(), rss.data());
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
   if (opts.λ.Get() > 0.f) {
     Log::Print(FMT_STRING("Regularization lambda {}"), opts.λ.Get());
@@ -56,6 +59,7 @@ NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   }
   Log::Print<Log::Level::High>(FMT_STRING("Normalizing channel images"));
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
+  Log::Tensor("sense-final", channels.dimensions(), channels.data());
   Log::Print(FMT_STRING("SENSE Self-Calibration finished"));
   return channels;
 }

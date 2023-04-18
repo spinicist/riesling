@@ -32,13 +32,13 @@ int main_traj(args::Subparser &parser)
   Cx5 out = gridder->adjoint(rad_ks);
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "traj", "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(out, "traj-image");
+  writer.writeTensor("traj-image", out.dimensions(), out.data());
 
   if (savePSF) {
     Log::Print(FMT_STRING("Calculating PSF"));
     auto const fft = FFT::Make<5, 3>(out.dimensions());
     fft->reverse(out);
-    writer.writeTensor(out, "psf-image");
+    writer.writeTensor("psf-image", out.dimensions(), out.data());
   }
 
   return EXIT_SUCCESS;

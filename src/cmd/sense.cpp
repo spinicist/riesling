@@ -38,23 +38,17 @@ int main_sense(args::Subparser &parser)
     }
     SenseOp sense(maps, images.dimension(0));
     Cx6 channels(
-      maps.dimension(0),
-      images.dimension(0),
-      maps.dimension(1),
-      maps.dimension(2),
-      maps.dimension(3),
-      images.dimension(4));
+      maps.dimension(0), images.dimension(0), maps.dimension(1), maps.dimension(2), maps.dimension(3), images.dimension(4));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
-      channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.cforward(CChipMap(images, ii));
+      channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.forward(CChipMap(images, ii));
     }
     Log::Print(FMT_STRING("SENSE took {}"), Log::ToNow(start));
-    writer.writeTensor(channels, HD5::Keys::Channels);
+    writer.writeTensor(HD5::Keys::Channels, channels.dimensions(), channels.data());
   } else {
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto const channels = ireader.readTensor<Cx6>(name);
     if (channels.dimension(0) != maps.dimension(0)) {
-      Log::Fail(
-        FMT_STRING("Number of channels {} did not match SENSE maps {}"), channels.dimension(0), maps.dimension(0));
+      Log::Fail(FMT_STRING("Number of channels {} did not match SENSE maps {}"), channels.dimension(0), maps.dimension(0));
     }
     if (!std::equal(channels.dimensions().begin() + 2, channels.dimensions().end(), maps.dimensions().begin() + 1)) {
       Log::Fail(
@@ -65,10 +59,10 @@ int main_sense(args::Subparser &parser)
     SenseOp sense(maps, channels.dimension(1));
     Cx5 images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.cadjoint(CChipMap(channels, ii));
+      images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));
     }
     Log::Print(FMT_STRING("SENSE Adjoint took {}"), Log::ToNow(start));
-    writer.writeTensor(images, HD5::Keys::Image);
+    writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
   }
 
   return EXIT_SUCCESS;

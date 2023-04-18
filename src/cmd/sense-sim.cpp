@@ -32,7 +32,7 @@ int main_sense_sim(args::Subparser &parser)
 
   auto const fname = OutName("", iname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(sense, "sense");
+  writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data());
 
   return EXIT_SUCCESS;
 }

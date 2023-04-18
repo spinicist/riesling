@@ -27,7 +27,7 @@ TEST_CASE("Recon", "[recon]")
   auto nufft = make_nufft(traj, ktype, osamp, nC, traj.matrix());
 
   Cx4 senseMaps(AddFront(traj.matrix(), nC));
-  senseMaps.setConstant(std::sqrt(0.25f));
+  senseMaps.setConstant(std::sqrt(1./nC));
   auto sense = std::make_shared<SenseOp>(senseMaps, 1);
   Compose<SenseOp, TensorOperator<Cx, 5, 4>> recon(sense, nufft);
 

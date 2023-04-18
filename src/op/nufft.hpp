@@ -21,10 +21,7 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
     std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr,
     bool toeplitz = false);
 
-  auto forward(InTensor const &x) const -> OutTensor;
-  auto adjoint(OutTensor const &y) const -> InTensor;
-  void forward(InCMap const &x, OutMap &y) const;
-  void adjoint(OutCMap const &y, InMap &x) const;
+  OP_DECLARE()
 
   // auto adjfwd(InCMap x) const -> InputMap;
   // auto fft() const -> FFTOp<NDim + 2, NDim> const &;

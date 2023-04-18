@@ -181,7 +181,7 @@ int main_phantom(args::Subparser &parser)
     ha,
     angles,
     intensities);
-    writer.writeTensor(Cx5(shepp.reshape(AddFront(AddBack(shepp.dimensions(), 1), 1))), HD5::Keys::Image);
+    writer.writeTensor(HD5::Keys::Image, AddFront(AddBack(shepp.dimensions(), 1), 1), shepp.data());
   }
 
   return EXIT_SUCCESS;

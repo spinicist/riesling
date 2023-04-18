@@ -45,7 +45,7 @@ int main_grid(args::Subparser &parser)
       slice = sdc->adjoint(slice);
       cart.chip<5>(is) = gridder->adjoint(slice);
     }
-    writer.writeTensor(HD5::Keys::Cartesian, cart.dims(), cart.data());
+    writer.writeTensor(HD5::Keys::Cartesian, cart.dimensions(), cart.data());
     Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
   }
 

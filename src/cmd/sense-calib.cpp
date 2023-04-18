@@ -22,7 +22,7 @@ int main_sense_calib(args::Subparser &parser)
   Cx4 sense = SENSE::SelfCalibration(senseOpts, coreOpts, traj, reader);
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(sense, "sense");
+  writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data());
 
   return EXIT_SUCCESS;
 }
