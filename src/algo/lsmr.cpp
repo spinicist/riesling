@@ -12,8 +12,7 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
 {
   Index const rows = op->rows();
   Index const cols = op->cols();
-  Map const b(bdata, cols);
-
+  Map const b(bdata, rows);
   Vector Mu(rows), u(rows);
   Vector v(cols), h(cols), h̅(cols), x(cols);
 

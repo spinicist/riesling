@@ -37,8 +37,12 @@ struct TensorOperator : Op::Operator<Scalar_>
   virtual auto rows() const -> Index { return Product(oshape); }
   virtual auto cols() const -> Index { return Product(ishape); }
 
+  using Base::forward;
+  using Base::adjoint;
+
   void forward(typename Base::CMap const &x, typename Base::Map &y) const final
   {
+    Log::Print<Log::Level::Debug>("Tensor {} forward x {} y {}", this->name, x.rows(), y.rows());
     InCMap xm(x.data(), ishape);
     OutMap ym(y.data(), oshape);
     forward(xm, ym);
@@ -46,6 +50,7 @@ struct TensorOperator : Op::Operator<Scalar_>
 
   void adjoint(typename Base::CMap const &y, typename Base::Map &x) const final
   {
+    Log::Print<Log::Level::Debug>("Tensor {} adjoint y {} x {}", this->name, y.rows(), x.rows());
     OutCMap ym(y.data(), oshape);
     InMap xm(x.data(), ishape);
     adjoint(ym, xm);
@@ -53,6 +58,7 @@ struct TensorOperator : Op::Operator<Scalar_>
 
   virtual auto forward(InTensor const &x) const -> OutTensor
   {
+    Log::Print<Log::Level::Debug>("Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
     InCMap xm(x.data(), ishape);
     OutTensor y(oshape);
     OutMap ym(y.data(), oshape);
@@ -62,6 +68,7 @@ struct TensorOperator : Op::Operator<Scalar_>
 
   virtual auto adjoint(OutTensor const &y) const -> InTensor
   {
+    Log::Print<Log::Level::Debug>("Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
     OutCMap ym(y.data(), oshape);
     InTensor x(ishape);
     InMap xm(x.data(), ishape);
@@ -78,7 +85,7 @@ struct TensorOperator : Op::Operator<Scalar_>
       Log::Fail("{} forward dims were: {} expected: {}", this->name, x.dimensions(), ishape);
     }
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} forward started. Norm {}"), this->name, Norm(x));
+       Log::Print<Log::Level::Debug>(FMT_STRING("{} forward started. Dimensions {}->{}. Norm {}"), this->name, this->ishape, this->oshape, Norm(x));
     }
     return Log::Now();
   }
@@ -97,7 +104,7 @@ struct TensorOperator : Op::Operator<Scalar_>
       Log::Fail("{} adjoint dims were: {} expected: {}", this->name, y.dimensions(), oshape);
     }
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} adjoint started. Norm {}"), this->name, Norm(y));
+      Log::Print<Log::Level::Debug>(FMT_STRING("{} adjoint started. Dimensions {}->{}. Norm {}"), this->name, this->oshape, this->ishape, Norm(y));
     }
     return Log::Now();
   }

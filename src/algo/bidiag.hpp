@@ -65,11 +65,11 @@ inline void BidiagInit(
     x.setZero();
     Mu = b;
   }
-  u = M->adjoint(Mu);
+  M->adjoint(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
   Mu = Mu / β;
   u = u / β;
-  v = op->adjoint(u);
+  op->adjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
   v = v / α;
 }
@@ -85,7 +85,7 @@ inline void Bidiag(
   float &β)
 {
   Mu = op->forward(v) - α * Mu;
-  u = M->adjoint(Mu);
+  M->adjoint(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
   Mu = Mu / β;
   u = u / β;

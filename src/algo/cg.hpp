@@ -25,10 +25,11 @@ struct NormalOp final : Op::template Operator<Scalar_>
   {
   }
 
-  auto rows() const -> Index { return op->rows(); }
+  auto rows() const -> Index { return op->cols(); }
   auto cols() const -> Index { return op->cols(); }
 
-  auto forward(Vector const &x) const -> Vector { return op->adjoint(op->foward(x)); }
+  auto forward(Vector const &x) const -> Vector { 
+    return op->adjoint(op->forward(x)); }
   auto adjoint(Vector const &y) const -> Vector { Log::Fail("Normal Operators do not have adjoints"); }
 
   void forward(CMap const &x, Map &y) const
