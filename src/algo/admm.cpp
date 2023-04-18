@@ -1,20 +1,17 @@
-#pragma once
+#include "admm.hpp"
 
-#include "func/functor.hpp"
 #include "log.hpp"
-#include "op/operator.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
-#include "threads.hpp"
 
 namespace rl {
 
-auto ADMM::run(Cx *bdata, float ρ) const -> Vector;
+auto ADMM::run(Cx *bdata, float ρ) const -> Vector
 {
-  Map const b(bdata, lsq->cols);
+  Map const b(bdata, lsq->cols());
 
-  std::shared_ptr<Op> reg = std::make_shared<VStack>(reg_ops);
-  std::shared_ptr<Op> ρscale = std::make_shared<Scale>(reg->rows(), ρ);
+  std::shared_ptr<Op> reg = std::make_shared<LinOps::VStack>(reg_ops);
+  std::shared_ptr<Op> ρscale = std::make_shared<LinOps::Scale>(reg->rows(), ρ);
   std::shared_ptr<Op> ρReg = std::make_shared<Concatenate>(reg, ρscale);
   std::shared_ptr<Op> A = std::make_shared<VStack>({lsq, ρReg});
 

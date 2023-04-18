@@ -6,10 +6,10 @@
 namespace rl {
 
 template <typename Scalar_, size_t InRank_, size_t OutRank_ = InRank_>
-struct TensorOperator : Op::Operator<Scalar_>
+struct TensorOperator : LinOps::Op<Scalar_>
 {
   using Scalar = Scalar_;
-  using Base = Op::Operator<Scalar>;
+  using Base = LinOps::Op<Scalar>;
   static const size_t InRank = InRank_;
   using InTensor = Eigen::Tensor<Scalar, InRank>;
   using InMap = Eigen::TensorMap<InTensor>;
@@ -25,7 +25,7 @@ struct TensorOperator : Op::Operator<Scalar_>
   OutDims oshape;
 
   TensorOperator(std::string const &name, InDims const xd, OutDims const yd)
-    : Op::Operator<Scalar>{name}
+    : LinOps::Op<Scalar>{name}
     , ishape{xd}
     , oshape{yd}
   {

@@ -10,10 +10,10 @@ namespace rl {
  * Wrapper for solving normal equations
  */
 template <typename Scalar_ = Cx>
-struct NormalOp final : Op::template Operator<Scalar_>
+struct NormalOp final : LinOps::template Op<Scalar_>
 {
   using Scalar = Scalar_;
-  using Op = typename Op::Operator<Scalar>;
+  using Op = typename LinOps::Op<Scalar>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
@@ -45,7 +45,7 @@ struct NormalOp final : Op::template Operator<Scalar_>
 
 struct ConjugateGradients
 {
-  using Op = Op::Operator<Cx>;
+  using Op = LinOps::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
 

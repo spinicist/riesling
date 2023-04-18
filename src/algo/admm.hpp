@@ -1,28 +1,24 @@
 #pragma once
 
-#include "func/functor.hpp"
 #include "op/operator.hpp"
-#include "log.hpp"
-#include "signals.hpp"
-#include "tensorOps.hpp"
-#include "threads.hpp"
+#include "prox/prox.hpp"
 
 namespace rl {
 
 struct ADMM
 {
-  using Op = Operator<Cx>;
+  using Op = LinOps::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
 
-  std::shared_ptr<Op> lsq; // Operator for least-squares
+  std::shared_ptr<Op> lsq; // Op for least-squares
   std::shared_ptr<Op> M; // Left pre-conditioner
   Index lsqLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
 
-  std::vector<std::shared_ptr<Operator<Cx>>> reg_ops;
+  std::vector<std::shared_ptr<Op>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
   Index outterLimit = 8;
   float α = 1.f;  // Over-relaxation

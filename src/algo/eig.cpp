@@ -2,7 +2,7 @@
 
 namespace rl {
 
-auto PowerMethodForward(std::shared_ptr<Op::Operator<Cx>> op, std::shared_ptr<Op::Operator<Cx>> M, Index const iterLimit) -> PowerReturn
+auto PowerMethodForward(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinOps::Op<Cx>> M, Index const iterLimit) -> PowerReturn
 {
   Log::Print("Power Method for A'A");
   Eigen::VectorXcf vec = Eigen::VectorXcf::Random(op->rows());
@@ -18,7 +18,7 @@ auto PowerMethodForward(std::shared_ptr<Op::Operator<Cx>> op, std::shared_ptr<Op
   return {val, vec};
 }
 
-auto PowerMethodAdjoint(std::shared_ptr<Op::Operator<Cx>> op, std::shared_ptr<Op::Operator<Cx>> M, Index const iterLimit) -> PowerReturn
+auto PowerMethodAdjoint(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinOps::Op<Cx>> M, Index const iterLimit) -> PowerReturn
 {
   Eigen::VectorXcf vec = Eigen::VectorXcf::Random(op->cols());
   float val = vec.norm();

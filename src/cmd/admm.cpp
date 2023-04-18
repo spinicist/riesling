@@ -71,7 +71,7 @@ int main_admm(args::Subparser &parser)
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   std::map<std::string, float> meta{{"scale", scale}, {"lambda", λ.Get()}, {"rho", ρ.Get()}};
 
-  std::vector<std::shared_ptr<Operator<Cx>>> reg_ops;
+  std::vector<std::shared_ptr<Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
   if (wavelets) {
     prox.push_back(std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get()));

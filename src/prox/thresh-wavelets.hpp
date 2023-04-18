@@ -13,7 +13,7 @@ struct ThresholdWavelets final : Prox<Cx> {
     void apply(float const α, CMap const &x, Map &z) const;
 
 private:
-    std::shared_ptr<Op::Operator<Cx>> waves_;
+    std::shared_ptr<LinOps::Op<Cx>> waves_;
     SoftThreshold thresh_;
 };
 

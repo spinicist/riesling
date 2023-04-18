@@ -19,7 +19,7 @@ namespace rl {
  */
 struct LSMR
 {
-  using Op = Op::Operator<Cx>;
+  using Op = LinOps::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
 

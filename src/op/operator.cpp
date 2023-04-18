@@ -4,18 +4,18 @@
 
 namespace rl {
 
-namespace Op {
+namespace LinOps {
 
 template <typename S>
-Operator<S>::Operator(std::string const &n)
+Op<S>::Op(std::string const &n)
   : name{n}
 {
 }
 
 template <typename S>
-auto Operator<S>::forward(Vector const &x) const -> Vector
+auto Op<S>::forward(Vector const &x) const -> Vector
 {
-  Log::Print<Log::Level::Debug>("Operator {} forward x {} rows {} cols {}", name, x.rows(), rows(), cols());
+  Log::Print<Log::Level::Debug>("Op {} forward x {} rows {} cols {}", name, x.rows(), rows(), cols());
   Vector y(this->rows());
   Map ym(y.data(), y.size());
   this->forward(CMap(x.data(), x.size()), ym);
@@ -23,9 +23,9 @@ auto Operator<S>::forward(Vector const &x) const -> Vector
 }
 
 template <typename S>
-auto Operator<S>::adjoint(Vector const &y) const -> Vector
+auto Op<S>::adjoint(Vector const &y) const -> Vector
 {
-  Log::Print<Log::Level::Debug>("Operator {} adjoint y {} rows {} cols {}", name, y.rows(), rows(), cols());
+  Log::Print<Log::Level::Debug>("Op {} adjoint y {} rows {} cols {}", name, y.rows(), rows(), cols());
   Vector x(this->cols());
   Map xm(x.data(), x.size());
   this->adjoint(CMap(y.data(), y.size()), xm);
@@ -33,29 +33,29 @@ auto Operator<S>::adjoint(Vector const &y) const -> Vector
 }
 
 template <typename S>
-void Operator<S>::forward(Vector const &x, Vector &y) const
+void Op<S>::forward(Vector const &x, Vector &y) const
 {
-  Log::Print<Log::Level::Debug>("Operator {} forward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
+  Log::Print<Log::Level::Debug>("Op {} forward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
   CMap xm(x.data(), x.size());
   Map ym(y.data(), y.size());
   this->forward(xm, ym);
 }
 
 template <typename S>
-void Operator<S>::adjoint(Vector const &y, Vector &x) const
+void Op<S>::adjoint(Vector const &y, Vector &x) const
 {
-  Log::Print<Log::Level::Debug>("Operator {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
+  Log::Print<Log::Level::Debug>("Op {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
   CMap ym(y.data(), y.size());
   Map xm(x.data(), x.size());
   this->adjoint(ym, xm);
 }
 
-template struct Operator<float>;
-template struct Operator<Cx>;
+template struct Op<float>;
+template struct Op<Cx>;
 
 template <typename S>
 Identity<S>::Identity(Index const s)
-  : Operator<S>("Identity")
+  : Op<S>("Identity")
   , sz{s}
 {
 }
@@ -89,7 +89,7 @@ template struct Identity<Cx>;
 
 template <typename S>
 Scale<S>::Scale(Index const size, float const s)
-  : Operator<S>("Scale")
+  : Op<S>("Scale")
   , sz{size}
   , scale{s}
 {
@@ -121,8 +121,8 @@ template struct Scale<float>;
 template struct Scale<Cx>;
 
 template <typename S>
-Concat<S>::Concat(std::shared_ptr<Op> a_, std::shared_ptr<Op> b_)
-  : Operator<S>("Concat")
+Concat<S>::Concat(std::shared_ptr<Op<S>> a_, std::shared_ptr<Op<S>> b_)
+  : Op<S>("Concat")
   , a{a_}
   , b{b_}
 {
@@ -163,8 +163,8 @@ template struct Concat<float>;
 template struct Concat<Cx>;
 
 template <typename S>
-VStack<S>::VStack(std::vector<std::shared_ptr<Operator<S>>> const &o)
-  : Operator<S>{"VStack"}
+VStack<S>::VStack(std::vector<std::shared_ptr<Op<S>>> const &o)
+  : Op<S>{"VStack"}
   , ops{o}
 {
   for (auto ii = 1; ii < ops.size(); ii++) {

@@ -46,8 +46,8 @@ inline auto Rotation(float const a, float const b)
 
 template <typename Scalar>
 inline void BidiagInit(
-  std::shared_ptr<Op::Operator<Scalar>> op,
-  std::shared_ptr<Op::Operator<Scalar>> M,
+  std::shared_ptr<LinOps::Op<Scalar>> op,
+  std::shared_ptr<LinOps::Op<Scalar>> M,
   Eigen::Vector<Scalar, Eigen::Dynamic> &Mu,
   Eigen::Vector<Scalar, Eigen::Dynamic> &u,
   Eigen::Vector<Scalar, Eigen::Dynamic> &v,
@@ -76,8 +76,8 @@ inline void BidiagInit(
 
 template <typename Scalar>
 inline void Bidiag(
-  std::shared_ptr<Op::Operator<Scalar>> const op,
-  std::shared_ptr<Op::Operator<Scalar>> const M,
+  std::shared_ptr<LinOps::Op<Scalar>> const op,
+  std::shared_ptr<LinOps::Op<Scalar>> const M,
   Eigen::Vector<Scalar, Eigen::Dynamic> &Mu,
   Eigen::Vector<Scalar, Eigen::Dynamic> &u,
   Eigen::Vector<Scalar, Eigen::Dynamic> &v,
