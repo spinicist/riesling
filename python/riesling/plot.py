@@ -109,8 +109,8 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
     plt.close()
     return fig
 
-def sense(fname, **kwargs):
-    return series(fname, dset='sense', component='x', **kwargs)
+def sense(fname, dset='sense', **kwargs):
+    return series(fname, dset=dset, component='x', **kwargs)
 
 def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
@@ -356,6 +356,9 @@ def _get_colors(clim, cmap, img, component):
                 clim = np.nanpercentile(np.log1p(np.abs(img)), (0, 100))
         else:
             raise(f'Unknown component {component}')
+    if clim[0] == clim[1]:
+        print(f'Color limits were {clim}, expanding')
+        clim[1] = clim[0] + 1
     if not cmap:
         if component == 'mag':
             cmap = 'gray'
