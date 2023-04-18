@@ -8,10 +8,7 @@ namespace rl {
 template <size_t NDim>
 NUFFTOp<NDim>::NUFFTOp(
   std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> sdc, bool toeplitz)
-  : Parent(
-      "NUFFTOp",
-      Concatenate(FirstN<2>(gridder->ishape), AMin(matrix, LastN<NDim>(gridder->ishape))),
-      gridder->oshape)
+  : Parent("NUFFTOp", Concatenate(FirstN<2>(gridder->ishape), AMin(matrix, LastN<NDim>(gridder->ishape))), gridder->oshape)
   , gridder{gridder}
   , workspace{gridder->ishape}
   , fft{FFT::Make<NDim + 2, NDim>(workspace)}
@@ -19,8 +16,7 @@ NUFFTOp<NDim>::NUFFTOp(
   , apo{pad.ishape, gridder.get()}
   , sdc{sdc ? sdc : std::make_shared<TensorIdentity<Cx, 3>>(gridder->oshape)}
 {
-  Log::Print<Log::Level::High>(
-    "NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder->ishape);
+  Log::Print<Log::Level::High>("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder->ishape);
   if (toeplitz) {
     Log::Print("Calculating Töplitz embedding");
     tf_.resize(ishape);
@@ -33,7 +29,7 @@ template <size_t NDim>
 auto NUFFTOp<NDim>::forward(InTensor const &x) const -> OutTensor
 {
   auto const time = this->startForward(x);
-  InMap wsm(workspace.data(), ishape);
+  InMap wsm(workspace.data(), gridder->ishape);
   pad.forward(apo.forward(x), wsm);
   fft->forward(workspace);
   auto y = gridder->forward(workspace);
@@ -50,7 +46,30 @@ auto NUFFTOp<NDim>::adjoint(OutTensor const &y) const -> InTensor
   fft->reverse(workspace);
   auto x = apo.adjoint(pad.adjoint(workspace));
   this->finishAdjoint(x, time);
-  return y;
+  return x;
+}
+
+template <size_t NDim>
+void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
+{
+  auto const time = this->startForward(x);
+  InMap wsm(workspace.data(), ishape);
+  pad.forward(apo.forward(x), wsm);
+  fft->forward(workspace);
+  gridder->forward(workspace, y);
+  this->finishForward(y, time);
+}
+
+template <size_t NDim>
+void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
+{
+
+  auto const time = this->startAdjoint(y);
+  InMap wsm(workspace.data(), ishape);
+  gridder->adjoint(sdc->adjoint(y), wsm);
+  fft->reverse(workspace);
+  apo.adjoint(pad.adjoint(workspace), x);
+  this->finishAdjoint(x, time);
 }
 
 // template <size_t NDim>

@@ -19,23 +19,28 @@ struct FFTOp final : TensorOperator<Cx, Rank, Rank>
   {
   }
 
-  FFTOp(InputMap x)
+  FFTOp(InMap x)
     : Parent("FFTOp", x.dimensions(), x.dimensions())
     , fft_{FFT::Make<Rank, FFTRank>(x)}
   {
   }
 
-  void forward(InCMap &x, OutMap y) const
+  using Parent::adjoint;
+  using Parent::forward;
+
+  void forward(InCMap const &x, OutMap &y) const
   {
     auto const time = this->startForward(x);
-    fft_->forward(x);
+    y = x;
+    fft_->forward(y);
     this->finishForward(y, time);
   }
 
-  void adjoint(OutCMap &y, InMap x) const
+  void adjoint(OutCMap const &y, InMap &x) const
   {
     auto const time = this->startAdjoint(y);
-    fft_->reverse(y);
+    x = y;
+    fft_->reverse(x);
     this->finishAdjoint(x, time);
   }
 

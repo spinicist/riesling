@@ -1,7 +1,7 @@
 #include "../../src/op/fft.hpp"
 #include "../../src/tensorOps.hpp"
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <fmt/ostream.h>
 
 using namespace rl;
@@ -11,7 +11,7 @@ TEST_CASE("ops-fft")
 {
   Index const sz = 16;
   Sz5 const dims{sz, sz, sz, sz, sz};
-  FFTOp< 5, 3> fft(dims);
+  FFTOp<5, 3> fft(dims);
 
   SECTION("FFT-Dot")
   {

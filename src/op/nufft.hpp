@@ -23,6 +23,8 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
 
   auto forward(InTensor const &x) const -> OutTensor;
   auto adjoint(OutTensor const &y) const -> InTensor;
+  void forward(InCMap const &x, OutMap &y) const;
+  void adjoint(OutCMap const &y, InMap &x) const;
 
   // auto adjfwd(InCMap x) const -> InputMap;
   // auto fft() const -> FFTOp<NDim + 2, NDim> const &;

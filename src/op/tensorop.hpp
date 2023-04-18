@@ -69,8 +69,8 @@ struct TensorOperator : Op::Operator<Scalar_>
     return x;
   }
 
-  virtual void forward(InCMap const &x, OutMap &y) const;
-  virtual void adjoint(OutCMap const &y, InMap &x) const;
+  virtual void forward(InCMap const &x, OutMap &y) const = 0;
+  virtual void adjoint(OutCMap const &y, InMap &x) const = 0;
 
   auto startForward(InCMap const &x) const
   {

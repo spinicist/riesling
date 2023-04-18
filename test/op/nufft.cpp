@@ -31,12 +31,12 @@ TEST_CASE("NUFFT", "[nufft]")
   std::shared_ptr<GridBase<Cx, 1>> grid = std::make_shared<Grid<Cx, Kernel>>(mapping, 1);
   Index const N = 5;
   NUFFTOp<1> nufft(grid, Sz1{N});
-  Cx3 ks(nufft.outputDimensions());
-  Cx3 img(nufft.inputDimensions());
+  Cx3 ks(nufft.oshape);
+  Cx3 img(nufft.ishape);
   img.setZero();
   img(0, 0, N / 2) = std::sqrt(N);
-  ks = nufft.cforward(img);
+  ks = nufft.forward(img);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-2f));
-  img = nufft.cadjoint(ks);
+  img = nufft.adjoint(ks);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-2f));
 }

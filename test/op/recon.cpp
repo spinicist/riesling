@@ -29,10 +29,10 @@ TEST_CASE("Recon", "[recon]")
   Cx4 senseMaps(AddFront(traj.matrix(), nC));
   senseMaps.setConstant(std::sqrt(0.25f));
   auto sense = std::make_shared<SenseOp>(senseMaps, 1);
-  Compose<SenseOp, Operator<Cx, 5, 4>> recon(sense, nufft);
+  Compose<SenseOp, TensorOperator<Cx, 5, 4>> recon(sense, nufft);
 
-  Cx4 ks(recon.outputDimensions());
-  Cx4 img(recon.inputDimensions());
+  Cx4 ks(recon.oshape);
+  Cx4 img(recon.ishape);
   ks.setConstant(1.f);
   img = recon.adjoint(ks);
   // Super loose tolerance
