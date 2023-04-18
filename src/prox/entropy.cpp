@@ -12,7 +12,7 @@ Entropy::Entropy(float const λ)
   Log::Print(FMT_STRING("Entropy Prox λ {}"), λ);
 }
 
-void Entropy::operator()(float const α, Vector const &v, Vector &z) const
+void Entropy::apply(float const α, CMap const &v, Map &z) const
 {
   float const t = α * λ_;
   Eigen::ArrayXf const vabs = v.array().abs();
@@ -32,7 +32,7 @@ NMREntropy::NMREntropy(float const λ)
   Log::Print(FMT_STRING("NMR Entropy Prox λ {}"), λ_);
 }
 
-void NMREntropy::operator()(float const α, Vector const &v, Vector &z) const
+void NMREntropy::apply(float const α, CMap const &v, Map &z) const
 {
   float const t = α * λ_;
   Eigen::ArrayXf const vabs = v.array().abs();

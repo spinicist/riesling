@@ -5,15 +5,16 @@ namespace rl {
 ThresholdWavelets::ThresholdWavelets(float const λ, Sz4 const shape, Index const W, Index const L)
   : Prox<Cx>()
   , waves_{std::make_shared<Wavelets>(shape, W, L)}
-  , thresh_{λ, shape}
+  , thresh_{λ}
 {
 }
 
-void ThresholdWavelets::operator()(float const α, Vector const &x, Vector &z) const
+void ThresholdWavelets::apply(float const α, CMap const &x, Map &z) const
 {
   z = x;
   waves_->forward(z);
-  thresh_(α, z, z);
+  CMap zm(z.data(), z.size());
+  thresh_.apply(α, zm, z);
   waves_->adjoint(z);
 }
 

@@ -4,12 +4,12 @@
 
 namespace rl {
 
-template<int ND>
 struct SoftThreshold final : Prox<Cx> {
-    SoftThreshold(float const λ, Sz<ND> const dims);
-    void operator()(float const α, Vector const &x, Vector &z) const;
+    PROX_INHERIT(Cx)
     float λ;
-    Sz<ND> shape;
+
+    SoftThreshold(float const λ);
+    void apply(float const α, CMap const &x, Map &z) const;
 };
 
 } // namespace rl

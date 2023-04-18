@@ -131,8 +131,8 @@ add_executable(riesling
     src/cmd/phantom.cpp
     src/cmd/plan.cpp
     src/cmd/precond.cpp
+    src/cmd/prox.cpp
     src/cmd/recon.cpp
-    # src/cmd/reg.cpp
     src/cmd/rss.cpp
     src/cmd/sdc.cpp
     src/cmd/sense.cpp

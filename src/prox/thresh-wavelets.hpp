@@ -7,12 +7,14 @@
 namespace rl {
 
 struct ThresholdWavelets final : Prox<Cx> {
+    PROX_INHERIT(Cx)
+
     ThresholdWavelets(float const λ, Sz4 const shape, Index const width, Index const levels);
-    void operator()(float const α, Vector const &x, Vector &z) const;
+    void apply(float const α, CMap const &x, Map &z) const;
 
 private:
     std::shared_ptr<Op::Operator<Cx>> waves_;
-    SoftThreshold<4> thresh_;
+    SoftThreshold thresh_;
 };
 
 } // namespace rl

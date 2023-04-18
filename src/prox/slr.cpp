@@ -69,7 +69,7 @@ SLR::SLR(std::shared_ptr<FFT::FFT<5, 3>> const &f, Index const k)
 {
 }
 
-void SLR::operator()(float const thresh, Vector const& x, Vector &y) const
+void SLR::operator()(float const thresh, CMap const& x, Map &y) const
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {

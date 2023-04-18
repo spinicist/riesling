@@ -28,7 +28,7 @@ LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
 {
 }
 
-void LLR::operator()(float const α, Vector const &xin, Vector &z) const
+void LLR::apply(float const α, CMap const &xin, Map &z) const
 {
   Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
   Sz3 nP, shift;

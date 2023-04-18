@@ -32,8 +32,8 @@ int main(int const argc, char const *const argv[])
   args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
   args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
   args::Command pre(commands, "precond", "Precompute preconditioning weights", &main_precond);
+  args::Command prox(commands, "prox", "Apply proximal operator", &main_reg);
   args::Command recon(commands, "recon", "Recon with SENSE maps", &main_recon);
-  // args::Command reg(commands, "reg", "Apply regularization to an image", &main_reg);
   args::Command rss(commands, "rss", "Recon with Root-Sum-Squares", &main_rss);
   args::Command sdc(commands, "sdc", "Calculate Sample Density Compensation", &main_sdc);
   args::Command sense(commands, "sense", "Apply SENSE operation", &main_sense);

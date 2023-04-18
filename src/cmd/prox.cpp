@@ -8,7 +8,6 @@
 #include "parse_args.hpp"
 #include "prox/entropy.hpp"
 #include "prox/llr.hpp"
-#include "prox/slr.hpp"
 #include "prox/thresh-wavelets.hpp"
 #include "threads.hpp"
 
@@ -22,8 +21,6 @@ int main_reg(args::Subparser &parser)
   args::Flag llr(parser, "", "Apply sliding-window Locally Low-Rank reg", {"llr"});
   args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
   args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
-  args::ValueFlag<std::string> brute(parser, "D", "Brute-force dictionary projection", {"brute"});
-  args::ValueFlag<std::string> ball(parser, "D", "Ball-tree dictionary projection", {"ball"});
   args::Flag wavelets(parser, "W", "Wavelets", {"wavelets", 'w'});
   args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wave-levels"}, 4);
   args::ValueFlag<Index> waveSize(parser, "W", "Wavelet size (4/6/8)", {"wave-size"}, 6);
@@ -40,50 +37,34 @@ int main_reg(args::Subparser &parser)
   Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image);
   Cx5 output(images.dimensions());
 
+  using Map = Prox<Cx>::Map;
+  using CMap = Prox<Cx>::CMap;
+
+  Sz4 const dims = FirstN<4>(images.dimensions());
+  Index const nvox = Product(dims);
+  std::shared_ptr<Prox<Cx>> prox;
   if (wavelets) {
-    Sz4 dims = FirstN<4>(images.dimensions());
-    ThresholdWavelets tw(λ.Get(), dims, waveSize.Get(), waveLevels.Get());
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-       tw(1.f, CChipMap(images, iv), ChipMap(output, iv));
-    }
-  } else if (brute) {
-    HD5::Reader dictReader(brute.Get());
-    BruteForceDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-      dict(CChipMap(images, iv), ChipMap(output, iv));
-    }
-  } else if (ball) {
-    HD5::Reader dictReader(ball.Get());
-    BallTreeDictionary dict{dictReader.readMatrix<Eigen::MatrixXf>(HD5::Keys::Dictionary)};
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-      dict(CChipMap(images, iv), ChipMap(output, iv));
-    }
+    prox = std::make_shared<ThresholdWavelets>(λ.Get(), dims, waveSize.Get(), waveLevels.Get());
   } else if (llr) {
-    LLR reg(λ.Get(), patchSize.Get(), winSize.Get());
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = reg(λ.Get(), CChipMap(images, iv));
-    }
+    prox = std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get(), dims);
   } else if (l1) {
-    SoftThreshold<Cx4> thresh(λ.Get());
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = thresh(l1.Get(), CChipMap(images, iv));
-    }
+    prox = std::make_shared<SoftThreshold>(λ.Get());
   } else if (maxent) {
-    Entropy<Cx4> ent(λ.Get());
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = ent(1.f, CChipMap(images, iv));
-    }
+    prox = std::make_shared<Entropy>(λ.Get());
   } else if (nmrent) {
-    NMREntropy ent(λ.Get());
-    for (Index iv = 0; iv < images.dimension(4); iv++) {
-      output.chip<4>(iv) = ent(1.f, CChipMap(images, iv));
-    }
+    prox = std::make_shared<NMREntropy>(λ.Get());
   } else {
     throw args::Error("Must specify at least one regularization method");
   }
+  for (Index iv = 0; iv < images.dimension(4); iv++) {
+    CMap im(&images(0, 0, 0, 0, iv), nvox);
+    Map om(&output(0, 0, 0, 0, iv), nvox);
+    prox->apply(1.f, im, om);
+  }
+
   auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(output, HD5::Keys::Image);
+  writer.writeTensor(HD5::Keys::Image, output.dimensions(), output.data());
   return EXIT_SUCCESS;
 }

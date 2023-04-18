@@ -5,15 +5,17 @@
 namespace rl {
 
 struct Entropy final : Prox<Cx> {
+    PROX_INHERIT(Cx)
     Entropy(float const λ);
-    void operator()(float const α, Vector const &x, Vector &z) const;
+    void apply(float const α, CMap const &x, Map &z) const;
 private:
     float λ_;
 };
 
 struct NMREntropy final : Prox<Cx> {
+    PROX_INHERIT(Cx)
     NMREntropy(float const λ);
-    void operator()(float const α, Vector const &x, Vector &z) const;
+    void apply(float const α, CMap const &x, Map &z) const;
 private:
     float λ_;
 };
