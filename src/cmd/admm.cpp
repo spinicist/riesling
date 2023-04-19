@@ -1,6 +1,5 @@
 #include "types.hpp"
 
-#include "algo/admm-augmented.hpp"
 #include "algo/admm.hpp"
 #include "algo/lsmr.hpp"
 #include "cropper.h"
@@ -71,33 +70,46 @@ int main_admm(args::Subparser &parser)
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   std::map<std::string, float> meta{{"scale", scale}, {"lambda", λ.Get()}, {"rho", ρ.Get()}};
 
-  std::vector<std::shared_ptr<Op<Cx>>> reg_ops;
+  std::vector<std::shared_ptr<LinOps::Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
   if (wavelets) {
-    prox.push_back(std::make_shared<ThresholdWavelets>(sz, λ.Get(), width.Get(), wavelets.Get()));
+    prox.push_back(std::make_shared<ThresholdWavelets>(λ.Get(), sz, width.Get(), wavelets.Get()));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (patchSize) {
-    prox.push_back(std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get(), recon->ishape));
+    prox.push_back(std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get(), sz));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (nmrent) {
     prox.push_back(std::make_shared<NMREntropy>(λ.Get()));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (l1) {
-    prox.push_back(std::make_shared<SoftThreshold<4>>(λ.Get()));
+    prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
   } else if (tv4) {
-    prox.push_back(std::make_shared<SoftThreshold<5>>(λ.Get()));
+    prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
     reg_ops.push_back(std::make_shared<Grad4Op>(sz));
   } else {
-    prox.push_back(std::make_shared<SoftThreshold<5>>(λ.Get()));
+    prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
     reg_ops.push_back(std::make_shared<GradOp>(sz));
   }
 
-  auto stacked = std::make_shared<VStack<Cx>>(reg_ops);
-  LSMR lsmr{stacked, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), false};
-  ADMM admm{lsmr, reg_ops, prox, outer_its.Get(), α.Get(), μ.Get(), τ.Get(), abstol.Get(), reltol.Get()};
+  ADMM admm{
+    recon,
+    M,
+    inner_its.Get(),
+    atol.Get(),
+    btol.Get(),
+    ctol.Get(),
+    reg_ops,
+    prox,
+    outer_its.Get(),
+    α.Get(),
+    μ.Get(),
+    τ.Get(),
+    abstol.Get(),
+    reltol.Get()};
   for (Index iv = 0; iv < volumes; iv++) {
-    out.chip<4>(iv) = out_cropper.crop4(admm.run(CChipMap(allData, iv), ρ.Get())) / out.chip<4>(iv).constant(scale);
+    out.chip<4>(iv) =
+      out_cropper.crop4(Tensorfy(admm.run(&allData(0, 0, 0, 0, iv), ρ.Get()), sz)) / out.chip<4>(iv).constant(scale);
   }
 
   auto const &all_start = Log::Now();

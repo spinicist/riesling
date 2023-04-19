@@ -42,6 +42,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
 
   void forward(typename Base::CMap const &x, typename Base::Map &y) const final
   {
+    assert(x.rows() == this->cols());
+    assert(y.rows() == this->rows());
     Log::Print<Log::Level::Debug>("Tensor {} forward x {} y {}", this->name, x.rows(), y.rows());
     InCMap xm(x.data(), ishape);
     OutMap ym(y.data(), oshape);
@@ -50,6 +52,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
 
   void adjoint(typename Base::CMap const &y, typename Base::Map &x) const final
   {
+    assert(x.rows() == this->cols());
+    assert(y.rows() == this->rows());
     Log::Print<Log::Level::Debug>("Tensor {} adjoint y {} x {}", this->name, y.rows(), x.rows());
     OutCMap ym(y.data(), oshape);
     InMap xm(x.data(), ishape);

@@ -42,7 +42,6 @@ int main_cg(args::Subparser &parser)
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
     auto b = recon->adjoint(CChipMap(allData, iv));
-    fmt::print("b rows {}\n", b.size());
     out.chip<4>(iv) = out_cropper.crop4(Tensorfy(cg.run(b.data()), sz)) / out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }

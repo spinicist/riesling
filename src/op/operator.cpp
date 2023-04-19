@@ -16,6 +16,7 @@ template <typename S>
 auto Op<S>::forward(Vector const &x) const -> Vector
 {
   Log::Print<Log::Level::Debug>("Op {} forward x {} rows {} cols {}", name, x.rows(), rows(), cols());
+  assert(x.rows() == cols());
   Vector y(this->rows());
   Map ym(y.data(), y.size());
   this->forward(CMap(x.data(), x.size()), ym);
@@ -26,6 +27,7 @@ template <typename S>
 auto Op<S>::adjoint(Vector const &y) const -> Vector
 {
   Log::Print<Log::Level::Debug>("Op {} adjoint y {} rows {} cols {}", name, y.rows(), rows(), cols());
+  assert(y.rows() == rows());
   Vector x(this->cols());
   Map xm(x.data(), x.size());
   this->adjoint(CMap(y.data(), y.size()), xm);
@@ -36,6 +38,8 @@ template <typename S>
 void Op<S>::forward(Vector const &x, Vector &y) const
 {
   Log::Print<Log::Level::Debug>("Op {} forward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
   CMap xm(x.data(), x.size());
   Map ym(y.data(), y.size());
   this->forward(xm, ym);
@@ -45,6 +49,8 @@ template <typename S>
 void Op<S>::adjoint(Vector const &y, Vector &x) const
 {
   Log::Print<Log::Level::Debug>("Op {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
   CMap ym(y.data(), y.size());
   Map xm(x.data(), x.size());
   this->adjoint(ym, xm);
@@ -75,12 +81,14 @@ auto Identity<S>::cols() const -> Index
 template <typename S>
 void Identity<S>::forward(CMap const &x, Map &y) const
 {
+  assert(x.rows() == y.rows() && x.rows() == sz);
   y = x;
 }
 
 template <typename S>
 void Identity<S>::adjoint(CMap const &y, Map &x) const
 {
+  assert(x.rows() == y.rows() && x.rows() == sz);
   x = y;
 }
 
@@ -88,9 +96,9 @@ template struct Identity<float>;
 template struct Identity<Cx>;
 
 template <typename S>
-Scale<S>::Scale(Index const size, float const s)
+Scale<S>::Scale(std::shared_ptr<Op<S>> o, float const s)
   : Op<S>("Scale")
-  , sz{size}
+  , op{o}
   , scale{s}
 {
 }
@@ -98,23 +106,30 @@ Scale<S>::Scale(Index const size, float const s)
 template <typename S>
 auto Scale<S>::rows() const -> Index
 {
-  return sz;
+  return op->rows();
 }
 template <typename S>
 auto Scale<S>::cols() const -> Index
 {
-  return sz;
+  return op->cols();
 }
 
 template <typename S>
 void Scale<S>::forward(CMap const &x, Map &y) const
 {
-  y = x * scale;
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  op->forward(x, y);
+  y *= scale;
 }
+
 template <typename S>
 void Scale<S>::adjoint(CMap const &y, Map &x) const
 {
-  x = y * scale;
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  op->adjoint(y, x);
+  x *= scale;
 }
 
 template struct Scale<float>;
@@ -142,6 +157,8 @@ auto Concat<S>::cols() const -> Index
 template <typename S>
 void Concat<S>::forward(CMap const &x, Map &y) const
 {
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
   Vector temp(a->cols());
   Map tm(temp.data(), temp.size());
   CMap tcm(temp.data(), temp.size());
@@ -152,6 +169,8 @@ void Concat<S>::forward(CMap const &x, Map &y) const
 template <typename S>
 void Concat<S>::adjoint(CMap const &y, Map &x) const
 {
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
   Vector temp(b->cols());
   Map tm(temp.data(), temp.size());
   CMap tcm(temp.data(), temp.size());
@@ -167,9 +186,24 @@ VStack<S>::VStack(std::vector<std::shared_ptr<Op<S>>> const &o)
   : Op<S>{"VStack"}
   , ops{o}
 {
-  for (auto ii = 1; ii < ops.size(); ii++) {
-    if (ops[ii]->cols() != ops[ii - 1]->cols()) {
-      Log::Fail("Operators had mismatched number of columns");
+  check();
+}
+
+template <typename S>
+VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
+  : Op<S>{"VStack"}
+  , ops{op1, op2}
+{
+  check();
+}
+
+template <typename S>
+void VStack<S>::check()
+{
+  for (auto ii = 0; ii < ops.size() - 1; ii++) {
+    if (ops[ii]->cols() != ops[ii + 1]->cols()) {
+      Log::Fail(
+        "Operator {} had {} columns, {} had {}", ops[ii]->name, ops[ii]->cols(), ops[ii + 1]->name, ops[ii + 1]->cols());
     }
   }
 }
@@ -189,6 +223,8 @@ auto VStack<S>::cols() const -> Index
 template <typename S>
 void VStack<S>::forward(CMap const &x, Map &y) const
 {
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
   Index ir = 0;
   for (auto const &op : ops) {
     Map ym(y.data() + ir, op->rows());
@@ -200,21 +236,86 @@ void VStack<S>::forward(CMap const &x, Map &y) const
 template <typename S>
 void VStack<S>::adjoint(CMap const &y, Map &x) const
 {
-  Vector xt(x.size());
-  Map xtm(xt.data(), xt.size());
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  Vector xt(x.rows());
+  Map xtm(xt.data(), xt.rows());
   x.setConstant(0.f);
   Index ir = 0;
   for (auto const &op : ops) {
     CMap ym(y.data() + ir, op->rows());
+    ir += op->rows();
     op->adjoint(ym, xtm);
     x += xt;
-    ir += op->rows();
   }
 }
 
 template struct VStack<float>;
 template struct VStack<Cx>;
 
-} // namespace Op
+template <typename S>
+DStack<S>::DStack(std::vector<std::shared_ptr<Op<S>>> const &o)
+  : Op<S>{"DStack"}
+  , ops{o}
+{
+}
+
+template <typename S>
+DStack<S>::DStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
+  : Op<S>{"DStack"}
+  , ops{op1, op2}
+{
+}
+
+template <typename S>
+auto DStack<S>::rows() const -> Index
+{
+  return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->rows(); });
+}
+
+template <typename S>
+auto DStack<S>::cols() const -> Index
+{
+  return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->cols(); });
+}
+
+template <typename S>
+void DStack<S>::forward(CMap const &x, Map &y) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  Index ir = 0, ic = 0;
+  for (auto const &op : ops) {
+    CMap xm(x.data() + ic, op->cols());
+    Map ym(y.data() + ir, op->rows());
+    op->forward(xm, ym);
+    ir += op->rows();
+    ic += op->cols();
+  }
+  assert(ir = rows());
+  assert(ic = cols());
+}
+
+template <typename S>
+void DStack<S>::adjoint(CMap const &y, Map &x) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  Index ir = 0, ic = 0;
+  for (auto const &op : ops) {
+    Map xm(x.data() + ic, op->cols());
+    CMap ym(y.data() + ir, op->rows());
+    op->adjoint(ym, xm);
+    ir += op->rows();
+    ic += op->cols();
+  }
+  assert(ir = rows());
+  assert(ic = cols());
+}
+
+template struct DStack<float>;
+template struct DStack<Cx>;
+
+} // namespace LinOps
 
 } // namespace rl

@@ -3,6 +3,8 @@
 #include "log.hpp"
 #include "types.hpp"
 
+#include <initializer_list>
+
 namespace rl {
 
 namespace LinOps {
@@ -45,13 +47,14 @@ private:
   Index sz;
 };
 
+//! Scale the output of another Linear Operator
 template <typename Scalar = Cx>
 struct Scale final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
 
-  Scale(Index const size, float const s);
+  Scale(std::shared_ptr<Op<Scalar>> op, float const s);
 
   auto rows() const -> Index;
   auto cols() const -> Index;
@@ -59,10 +62,11 @@ struct Scale final : Op<Scalar>
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
 
-  Index sz;
+  std::shared_ptr<Op<Scalar>> op;
   float scale;
 };
 
+//! Concatenate operators, i.e. A * B
 template <typename Scalar = Cx>
 struct Concat final : Op<Scalar>
 {
@@ -81,6 +85,7 @@ struct Concat final : Op<Scalar>
   void adjoint(CMap const &y, Map &x) const;
 };
 
+//! Vertically stack operators, i.e. A = [B; C]
 template <typename Scalar = Cx>
 struct VStack final : Op<Scalar>
 {
@@ -89,7 +94,28 @@ struct VStack final : Op<Scalar>
   using typename Op<Scalar>::CMap;
 
   VStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
+  VStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
+  auto rows() const -> Index;
+  auto cols() const -> Index;
 
+  void forward(CMap const &x, Map &y) const;
+  void adjoint(CMap const &y, Map &x) const;
+
+private:
+  void check();
+  std::vector<std::shared_ptr<Op<Scalar>>> ops;
+};
+
+//! Diagonally stack operators, i.e. A = [B 0; 0 C]
+template <typename Scalar = Cx>
+struct DStack final : Op<Scalar>
+{
+  using typename Op<Scalar>::Vector;
+  using typename Op<Scalar>::Map;
+  using typename Op<Scalar>::CMap;
+
+  DStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
+  DStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
   auto rows() const -> Index;
   auto cols() const -> Index;
 

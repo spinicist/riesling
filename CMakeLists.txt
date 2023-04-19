@@ -47,7 +47,7 @@ add_library(vineyard
     src/trajectory.cpp
     src/traj_spirals.cpp
     src/zin-grappa.cpp
-    # src/algo/admm.cpp
+    src/algo/admm.cpp
     src/algo/cg.cpp
     src/algo/decomp.cpp
     src/algo/eig.cpp
@@ -107,7 +107,7 @@ set_target_properties(vineyard PROPERTIES
 
 # Main executable
 add_executable(riesling
-    # src/cmd/admm.cpp
+    src/cmd/admm.cpp
     src/cmd/blend.cpp
     src/cmd/cg.cpp
     src/cmd/compress.cpp

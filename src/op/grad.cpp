@@ -46,6 +46,7 @@ void GradOp::forward(InCMap const &x, OutMap &y) const
 void GradOp::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
+  x.setZero();
   BackwardDiff(1, 0, y, x);
   BackwardDiff(2, 1, y, x);
   BackwardDiff(3, 2, y, x);
@@ -70,6 +71,7 @@ void Grad4Op::forward(InCMap const &x, OutMap &y) const
 void Grad4Op::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
+  x.setZero();
   BackwardDiff(0, 0, y, x);
   BackwardDiff(1, 1, y, x);
   BackwardDiff(2, 2, y, x);

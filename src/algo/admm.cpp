@@ -1,6 +1,7 @@
 #include "admm.hpp"
 
 #include "log.hpp"
+#include "lsmr.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
 
@@ -8,79 +9,120 @@ namespace rl {
 
 auto ADMM::run(Cx *bdata, float ρ) const -> Vector
 {
-  Map const b(bdata, lsq->cols());
+  /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
+   * For the least squares part we are solving:
+  A'x = b'
+  [     A            [     b
+    √ρ_1 F_1           z_1 - u_1
+    √ρ_2 F_2     x =   z_2 - u_2
+      ...              ...
+    √ρ_n F_n ]         z_n - u_n ]
 
-  std::shared_ptr<Op> reg = std::make_shared<LinOps::VStack>(reg_ops);
-  std::shared_ptr<Op> ρscale = std::make_shared<LinOps::Scale>(reg->rows(), ρ);
-  std::shared_ptr<Op> ρReg = std::make_shared<Concatenate>(reg, ρscale);
-  std::shared_ptr<Op> A = std::make_shared<VStack>({lsq, ρReg});
+    Then for the regularizers, in turn we do:
 
-    Vector x(lsq->rows()), u()
+    z_i = prox_λ/ρ_i(F_i * x + u_i)
+    u_i = F_i * x + u_i - z_i
+    */
 
-   u(dims), z(dims), zold(dims), Fx(dims), Fxpu(dims);
+  Index const N = reg_ops.size();
+  std::vector<Vector> z(N), zold(N), u(N), Fx(N), Fxpu(N);
+  std::vector<std::shared_ptr<Op>> scaled_ops(N);
+  std::vector<float> ρs(N);
+  for (Index ir = 0; ir < N; ir++) {
+    z[ir].resize(reg_ops[ir]->rows());
+    z[ir].setZero();
+    zold[ir].resize(reg_ops[ir]->rows());
+    zold[ir].setZero();
+    u[ir].resize(reg_ops[ir]->rows());
+    u[ir].setZero();
+    Fx[ir].resize(reg_ops[ir]->rows());
+    Fx[ir].setZero();
+    Fxpu[ir].resize(reg_ops[ir]->rows());
+    Fxpu[ir].setZero();
+    ρs[ir] = ρ;
+    scaled_ops[ir] = std::make_shared<LinOps::Scale<Cx>>(reg_ops[ir], std::sqrt(ρs[ir]));
+  }
 
-  // Set initial values
+  std::shared_ptr<Op> reg = std::make_shared<LinOps::VStack<Cx>>(scaled_ops);
+  std::shared_ptr<Op> Aʹ = std::make_shared<LinOps::VStack<Cx>>(A, reg);
+  std::shared_ptr<Op> I = std::make_shared<LinOps::Identity<Cx>>(reg->rows());
+  std::shared_ptr<Op> Mʹ = std::make_shared<LinOps::DStack<Cx>>(M, I);
+
+  LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol, false};
+
+  Vector x(A->cols());
   x.setZero();
-  z.setZero();
-  u.setZero();
+  Map const b(bdata, A->rows());
 
-  float const sqrtM = std::sqrt(Product(x.dimensions()));
-  float const sqrtN = std::sqrt(Product(u.dimensions()));
-  Log::Print(FMT_STRING("ADMM ρ {} Abs Tol {} Rel Tol {}"), ρ, abstol, reltol);
+  Vector bʹ(Aʹ->rows());
+  bʹ.setZero();
+  bʹ.head(A->rows()) = b;
+
+  float const sqrtM = std::sqrt(x.rows());
+  float const sqrtN = std::sqrt(bʹ.rows());
+  Log::Print(FMT_STRING("ADMM Abs Tol {} Rel Tol {}"), abstol, reltol);
   PushInterrupt();
-  for (Index ii = 0; ii < iterLimit; ii++) {
-    if (ii == 1) {
-      inner.debug = true;
-    } else {
-      inner.debug = false;
+  for (Index io = 0; io < outerLimit; io++) {
+    Index start = A->rows();
+    for (Index ir = 0; ir < N; ir++) {
+      auto &ρr = ρs[ir];
+      Index rr = reg_ops[ir]->rows();
+      bʹ.segment(start, rr) = std::sqrt(ρr) * (z[ir] - u[ir]);
+      start += rr;
+      std::dynamic_pointer_cast<LinOps::Scale<Cx>>(scaled_ops[ir])->scale = std::sqrt(ρr);
     }
-    x = inner.run(b, ρ, x, (z - u));
-    Fx = reg.op->forward(x);
-    Fxpu.device(dev) = Fx * Fx.constant(α) + z * z.constant(1.f - α) + u;
-    zold = z;
-    (*reg.prox)(1.f / ρ, Fxpu, z);
-    u.device(dev) = Fxpu - z;
+    x = lsmr.run(bʹ.data());
+    float const normx = x.norm();
 
-    float const pNorm = Norm(Fx - z);
-    float const dNorm = ρ * Norm(z - zold);
+    bool converged = true;
+    break;
+    for (Index ir = 0; ir < N; ir++) {
+      auto &ρr = ρs[ir];
+      Fx[ir] = reg_ops[ir]->forward(x);
+      Fxpu[ir] = Fx[ir] * α + z[ir] * (1.f - α) + u[ir];
+      zold[ir] = z[ir];
+      prox[ir]->apply(1.f / ρr, Fxpu[ir], z[ir]);
+      u[ir] = Fxpu[ir] - z[ir];
 
-    float const normx = Norm(x);
-    float const normFx = Norm(Fx);
-    float const normz = Norm(z);
-    float const normu = Norm(u);
+      float const pNorm = (Fx[ir] - z[ir]).norm();
+      float const dNorm = ρr * (z[ir] - zold[ir]).norm();
 
-    float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
-    float const dEps = abstol * sqrtN + reltol * ρ * normu;
+      float const normFx = Fx[ir].norm();
+      float const normz = z[ir].norm();
+      float const normu = u[ir].norm();
 
-    Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
-    Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
-    Log::Tensor(Fx, fmt::format("admm-Fx-{:02d}", ii));
-    Log::Tensor(Fxpu, fmt::format("admm-Fxpu-{:02d}", ii));
-    Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
-    Log::Print(
-      FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |Fx| {} |z| {} |u| {}"),
-      ii,
-      pNorm,
-      pEps,
-      dNorm,
-      dEps,
-      normx,
-      normFx,
-      normz,
-      normu);
-    if ((pNorm < pEps) && (dNorm < dEps)) {
-      Log::Print("Primal and dual convergence achieved, stopping");
-      break;
+      float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
+      float const dEps = abstol * sqrtN + reltol * ρr * normu;
+
+      Log::Print(
+        FMT_STRING("ADMM Iter {:02d}:{:02d} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E} |Fx| {:5.3E} |z| "
+                   "{:5.3E} |u| {:5.3E}"),
+        io,
+        ir,
+        ρr,
+        pNorm,
+        pEps,
+        dNorm,
+        dEps,
+        normFx,
+        normz,
+        normu);
+
+      if ((pNorm > pEps) || (dNorm > dEps)) {
+        converged = false;
+      }
+      if (pNorm > μ * dNorm) {
+        ρr *= τ;
+        u[ir] /= τ;
+      } else if (dNorm > μ * pNorm) {
+        ρr /= τ;
+        u[ir] *= τ;
+      }
     }
-    if (pNorm > μ * dNorm) {
-      ρ *= τ;
-      u /= u.constant(τ);
-      Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {} |u| {}"), μ * dNorm, ρ, Norm(u));
-    } else if (dNorm > μ * pNorm) {
-      ρ /= τ;
-      u *= u.constant(τ);
-      Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to {} |u| {}"), μ * pNorm, ρ, Norm(u));
+    if (converged) {
+      Log::Print("All primal and dual tolerances achieved, stopping");
     }
+
     if (InterruptReceived()) {
       break;
     }
@@ -88,6 +130,5 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
   PopInterrupt();
   return x;
 }
-};
 
 } // namespace rl

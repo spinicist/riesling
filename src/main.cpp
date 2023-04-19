@@ -8,7 +8,7 @@ int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");
   args::Group commands(parser, "COMMANDS");
-  // args::Command admm(commands, "admm", "ADMM recon", &main_admm);
+  args::Command admm(commands, "admm", "ADMM recon", &main_admm);
   args::Command blend(commands, "blend", "Blend basis images", &main_blend);
   args::Command cg(commands, "cg", "Recon with Conjugate Gradients", &main_cg);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
