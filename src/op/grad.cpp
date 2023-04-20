@@ -21,7 +21,7 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
   auto bck = decltype(sz){};
   st[dim] = 1;
   sz[dim] -= 1;
-  b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(st, sz) - a.slice(bck, sz));
+  b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(bck, sz) - a.slice(st, sz));
 }
 } // namespace
 
@@ -37,8 +37,8 @@ void GradOp::forward(InCMap const &x, OutMap &y) const
   for (Index ii = 0; ii < 3; ii++) {
     ForwardDiff(x, y.chip<4>(ii), x.dimensions(), ii + 1);
   }
-  Log::Tensor("grad-fwd-x", x.dimensions(), x.data());
-  Log::Tensor("grad-fwd-y", y.dimensions(), y.data());
+  // Log::Tensor("grad-fwd-x", x.dimensions(), x.data());
+  // Log::Tensor("grad-fwd-y", y.dimensions(), y.data());
   this->finishForward(y, time);
 }
 
@@ -48,10 +48,10 @@ void GradOp::adjoint(OutCMap const &y, InMap &x) const
   x.setZero();
   for (Index ii = 0; ii < 3; ii++) {
     BackwardDiff(y.chip<4>(ii), x, x.dimensions(), ii + 1);
-    Log::Tensor(fmt::format("grad-adj-temp-{}", ii), x.dimensions(), x.data());
+    // Log::Tensor(fmt::format("grad-adj-temp-{}", ii), x.dimensions(), x.data());
   }
-  Log::Tensor("grad-adj-y", y.dimensions(), y.data());
-  Log::Tensor("grad-adj-x", x.dimensions(), x.data());
+  // Log::Tensor("grad-adj-y", y.dimensions(), y.data());
+  // Log::Tensor("grad-adj-x", x.dimensions(), x.data());
   this->finishAdjoint(x, time);
 }
 

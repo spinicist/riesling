@@ -15,7 +15,7 @@ SoftThreshold::SoftThreshold(float const λ_)
 void SoftThreshold::apply(float const α, CMap const &x, Map &z) const
 {
   float t = α * λ;
-  z = x.cwiseAbs().cwiseTypedGreater(0.f).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
+  z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
   Log::Print(FMT_STRING("Soft Threshold α {} λ {} t {} |x| {} |z| {}"), α, λ, t, x.norm(), z.norm());
 }
 

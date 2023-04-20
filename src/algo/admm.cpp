@@ -2,6 +2,7 @@
 
 #include "log.hpp"
 #include "lsmr.hpp"
+#include "op/tensorop.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
 
@@ -75,6 +76,10 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
     float const normx = x.norm();
 
     bool converged = true;
+    if (auto At = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 4>>(A)) {
+      Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-x"), io), At->ishape, x.data());
+    }
+
     for (Index ir = 0; ir < N; ir++) {
       auto &ρr = ρs[ir];
       Fx[ir] = reg_ops[ir]->forward(x);
@@ -82,6 +87,12 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       zold[ir] = z[ir];
       prox[ir]->apply(1.f / ρr, Fxpu[ir], z[ir]);
       u[ir] = Fxpu[ir] - z[ir];
+
+      if (auto t = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 5>>(reg_ops[ir])) {
+        Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-{:02}-Fx"), io, ir), t->oshape, Fx[ir].data());
+        Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-{:02}-z"), io, ir), t->oshape, z[ir].data());
+        Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-{:02}-u"), io, ir), t->oshape, u[ir].data());
+      }
 
       float const pNorm = (Fx[ir] - z[ir]).norm();
       float const dNorm = ρr * (z[ir] - zold[ir]).norm();
