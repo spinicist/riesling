@@ -1,4 +1,4 @@
-#include "phantom_sphere.h"
+#include "sphere.hpp"
 
 namespace rl {
 

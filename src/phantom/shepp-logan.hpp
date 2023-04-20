@@ -1,9 +1,6 @@
 #pragma once
 
-#include "info.hpp"
-#include "log.hpp"
 #include "types.hpp"
-#include <math.h>
 
 namespace rl {
 

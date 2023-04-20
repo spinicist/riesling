@@ -42,9 +42,7 @@ void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
   auto const time = this->startAdjoint(y);
   InMap wsm(workspace.data(), gridder->ishape);
   gridder->adjoint(sdc->adjoint(y), wsm);
-  Log::Tensor("nufft-grid", workspace.dimensions(), workspace.data());
   fft->reverse(workspace);
-  Log::Tensor("nufft-fft", workspace.dimensions(), workspace.data());
   apo.adjoint(pad.adjoint(workspace), x);
   this->finishAdjoint(x, time);
 }

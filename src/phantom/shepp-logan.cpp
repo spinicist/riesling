@@ -1,5 +1,6 @@
-#include "phantom_shepplogan.h"
-#include <stdio.h>
+#include "shepp-logan.hpp"
+
+#include "log.hpp"
 
 namespace rl {
 
