@@ -75,7 +75,6 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
     float const normx = x.norm();
 
     bool converged = true;
-    break;
     for (Index ir = 0; ir < N; ir++) {
       auto &ρr = ρs[ir];
       Fx[ir] = reg_ops[ir]->forward(x);

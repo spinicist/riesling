@@ -27,15 +27,12 @@ add_definitions(-DEIGEN_USE_THREADS)
 # Common library between tests and main executable
 add_library(vineyard
     src/basis.cpp
-    src/coils.cpp
     src/compressor.cpp
     src/cropper.cpp
     src/espirit.cpp
     src/filter.cpp
     src/log.cpp
     src/mapping.cpp
-    src/phantom_sphere.cpp
-    src/phantom_shepplogan.cpp
     src/parse_args.cpp
     src/precond.cpp
     src/rovir.cpp
@@ -74,6 +71,10 @@ add_library(vineyard
     src/op/recon.cpp
     src/op/sense.cpp
     src/op/wavelets.cpp
+    src/phantom/coils.cpp
+    src/phantom/gradcubes.cpp
+    src/phantom/sphere.cpp
+    src/phantom/shepp-logan.cpp
     src/prox/entropy.cpp
     src/prox/llr.cpp
     # src/prox/slr.cpp

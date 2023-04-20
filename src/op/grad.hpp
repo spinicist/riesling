@@ -18,11 +18,4 @@ struct GradVecOp final : TensorOperator<Cx, 5, 5>
   OP_DECLARE()
 };
 
-struct Grad4Op final : TensorOperator<Cx, 4, 5>
-{
-  OP_INHERIT(Cx, 4, 5)
-  Grad4Op(InDims const dims);
-  OP_DECLARE()
-};
-
 } // namespace rl

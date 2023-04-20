@@ -3,24 +3,25 @@
 namespace rl {
 
 namespace {
-inline auto ForwardDiff(Cx4 const &a, Eigen::Index const d)
+template<typename T1, typename T2>
+inline auto ForwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 {
-  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
-  Sz4 const st1{0, 1, 1, 1};
-  Sz4 fwd{0, 1, 1, 1};
-  fwd[d + 1] = 2;
-
-  return (a.slice(fwd, sz) - a.slice(st1, sz));
+  Sz4 sz = dims;
+  Sz4 st, fwd;
+  fwd[dim] = 1;
+  sz[dim] -= 1;
+  b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(fwd, sz) - a.slice(st, sz));
 }
 
-inline auto BackwardDiff(Cx4 const &a, Eigen::Index const d)
+template<typename T1, typename T2>
+inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 {
-  Sz4 const sz{a.dimension(0), a.dimension(1) - 2, a.dimension(2) - 2, a.dimension(3) - 2};
-  Sz4 const st1{0, 1, 1, 1};
-  Sz4 bck{0, 1, 1, 1};
-  bck[d + 1] = 0;
-
-  return (a.slice(st1, sz) - a.slice(bck, sz));
+  auto sz = dims;
+  auto st = decltype(sz){};
+  auto bck = decltype(sz){};
+  st[dim] = 1;
+  sz[dim] -= 1;
+  b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(st, sz) - a.slice(bck, sz));
 }
 } // namespace
 
@@ -32,51 +33,25 @@ GradOp::GradOp(InDims const dims)
 void GradOp::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
-
-  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
-  Sz4 const st1{0, 1, 1, 1};
-  auto dev = Threads::GlobalDevice();
-  y.chip<4>(0).slice(st1, sz).device(dev) = ForwardDiff(x, 0);
-  y.chip<4>(1).slice(st1, sz).device(dev) = ForwardDiff(x, 1);
-  y.chip<4>(2).slice(st1, sz).device(dev) = ForwardDiff(x, 2);
-
+  y.setZero();
+  for (Index ii = 0; ii < 3; ii++) {
+    ForwardDiff(x, y.chip<4>(ii), x.dimensions(), ii + 1);
+  }
+  Log::Tensor("grad-fwd-x", x.dimensions(), x.data());
+  Log::Tensor("grad-fwd-y", y.dimensions(), y.data());
   this->finishForward(y, time);
 }
 
 void GradOp::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
-  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
-  Sz4 const st1{0, 1, 1, 1};
   x.setZero();
-  x.slice(st1, sz).device(Threads::GlobalDevice()) =
-    BackwardDiff(y.chip<4>(0), 0) + BackwardDiff(y.chip<4>(1), 1) + BackwardDiff(y.chip<4>(2), 2);
-  this->finishAdjoint(x, time);
-}
-
-Grad4Op::Grad4Op(InDims const dims)
-  : Parent("Grad4Op", dims, AddBack(dims, 4))
-{
-}
-
-void Grad4Op::forward(InCMap const &x, OutMap &y) const
-{
-  auto const time = this->startForward(x);
-  // ForwardDiff(0, 0, x, y);
-  // ForwardDiff(1, 1, x, y);
-  // ForwardDiff(2, 2, x, y);
-  // ForwardDiff(3, 3, x, y);
-  this->finishForward(y, time);
-}
-
-void Grad4Op::adjoint(OutCMap const &y, InMap &x) const
-{
-  auto const time = this->startAdjoint(y);
-  // x.setZero();
-  // BackwardDiff(0, 0, y, x);
-  // BackwardDiff(1, 1, y, x);
-  // BackwardDiff(2, 2, y, x);
-  // BackwardDiff(3, 3, y, x);
+  for (Index ii = 0; ii < 3; ii++) {
+    BackwardDiff(y.chip<4>(ii), x, x.dimensions(), ii + 1);
+    Log::Tensor(fmt::format("grad-adj-temp-{}", ii), x.dimensions(), x.data());
+  }
+  Log::Tensor("grad-adj-y", y.dimensions(), y.data());
+  Log::Tensor("grad-adj-x", x.dimensions(), x.data());
   this->finishAdjoint(x, time);
 }
 
@@ -88,23 +63,22 @@ GradVecOp::GradVecOp(InDims const dims)
 void GradVecOp::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
+  Sz4 const sz = FirstN<4>(x.dimensions());
+  y.setZero();
+  for (Index ii = 0; ii < 3; ii++) {
+    BackwardDiff(x.chip<4>(ii), y.chip<4>(ii), sz, ii + 1);
+  }
 
-  auto dev = Threads::GlobalDevice();
-  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
-  Sz4 const st1{0, 1, 1, 1};
+  BackwardDiff(x.chip<4>(0), y.chip<4>(3), sz, 2);
+  BackwardDiff(x.chip<4>(1), y.chip<4>(3), sz, 1);
 
-  y.chip<4>(0).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(0), 0);
-  y.chip<4>(1).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(1), 1);
-  y.chip<4>(2).slice(st1, sz).device(dev) = BackwardDiff(x.chip<4>(2), 2);
+  BackwardDiff(x.chip<4>(0), y.chip<4>(4), sz, 3);
+  BackwardDiff(x.chip<4>(2), y.chip<4>(4), sz, 1);
 
-  y.chip<4>(3).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<4>(0), 1) + BackwardDiff(x.chip<4>(1), 0)) / y.chip<4>(3).slice(st1, sz).constant(2.f);
+  BackwardDiff(x.chip<4>(1), y.chip<4>(5), sz, 3);
+  BackwardDiff(x.chip<4>(2), y.chip<4>(5), sz, 2);
 
-  y.chip<4>(4).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<4>(0), 2) + BackwardDiff(x.chip<4>(2), 0)) / y.chip<4>(4).slice(st1, sz).constant(2.f);
-
-  y.chip<4>(5).slice(st1, sz).device(dev) =
-    (BackwardDiff(x.chip<4>(1), 2) + BackwardDiff(x.chip<4>(2), 1)) / y.chip<4>(5).slice(st1, sz).constant(2.f);
+  y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)) /=  y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)).constant(2.f);
 
   this->finishForward(y, time);
 }
@@ -112,17 +86,19 @@ void GradVecOp::forward(InCMap const &x, OutMap &y) const
 void GradVecOp::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
-  auto dev = Threads::GlobalDevice();
+  Sz4 const sz = FirstN<4>(x.dimensions());
   x.setZero();
+  for (Index ii = 0; ii < 3; ii++) {
+    ForwardDiff(y.chip<4>(ii), x.chip<4>(ii), sz, ii + 1);
+  }
+  ForwardDiff(y.chip<4>(3), x.chip<4>(0), sz, 2);
+  ForwardDiff(y.chip<4>(4), x.chip<4>(0), sz, 3);
 
-  Sz4 const sz{x.dimension(0), x.dimension(1) - 2, x.dimension(2) - 2, x.dimension(3) - 2};
-  Sz4 const st1{0, 1, 1, 1};
-  x.chip<4>(0).slice(st1, sz).device(dev) =
-    ForwardDiff(y.chip<4>(0), 0) + ForwardDiff(y.chip<4>(3), 1) + ForwardDiff(y.chip<4>(4), 2);
-  x.chip<4>(1).slice(st1, sz).device(dev) =
-    ForwardDiff(y.chip<4>(3), 0) + ForwardDiff(y.chip<4>(1), 1) + ForwardDiff(y.chip<4>(5), 2);
-  x.chip<4>(2).slice(st1, sz).device(dev) =
-    ForwardDiff(y.chip<4>(4), 0) + ForwardDiff(y.chip<4>(5), 1) + ForwardDiff(y.chip<4>(2), 2);
+  ForwardDiff(y.chip<4>(3), x.chip<4>(1), sz, 1);
+  ForwardDiff(y.chip<4>(5), x.chip<4>(1), sz, 3);
+
+  ForwardDiff(y.chip<4>(4), x.chip<4>(2), sz, 1);
+  ForwardDiff(y.chip<4>(5), x.chip<4>(2), sz, 2);
 
   this->finishAdjoint(x, time);
 }
