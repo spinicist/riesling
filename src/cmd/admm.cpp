@@ -42,7 +42,8 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 1e-3)", {"lambda"}, 1.e-3f);
 
   // Default is TV on spatial dimensions, i.e. classic compressed sensing
-  args::Flag tv4(parser, "TV4", "TV on all 4 dimensions", {"tv4"});
+  args::Flag tv(parser, "TV", "Total Variation", {"tv"});
+  args::Flag tgv(parser, "TGV", "Total Generalized Variation", {"tgv"});
   args::Flag l1(parser, "L1", "Simple L1 regularization", {"l1"});
   args::Flag nmrent(parser, "E", "NMR Entropy", {"nmrent"});
 
@@ -72,6 +73,8 @@ int main_admm(args::Subparser &parser)
 
   std::vector<std::shared_ptr<LinOps::Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
+  std::shared_ptr<LinOps::Op<Cx>> A, ext_x; // Need these for TGV, sigh
+  A = recon;
   if (wavelets) {
     prox.push_back(std::make_shared<ThresholdWavelets>(λ.Get(), sz, width.Get(), wavelets.Get()));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
@@ -84,16 +87,27 @@ int main_admm(args::Subparser &parser)
   } else if (l1) {
     prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
-  } else if (tv4) {
-    prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
-    reg_ops.push_back(std::make_shared<Grad4Op>(sz));
-  } else {
+  } else if (tv) {
     prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
     reg_ops.push_back(std::make_shared<GradOp>(sz));
+  } else if (tgv) {
+    auto grad_x = std::make_shared<GradOp>(sz);
+    ext_x = std::make_shared<LinOps::Extract<Cx>>(recon->cols() + grad_x->rows(), 0, recon->cols());
+    auto ext_v = std::make_shared<LinOps::Extract<Cx>>(recon->cols() + grad_x->rows(), recon->cols(), grad_x->rows());
+    auto op1 = std::make_shared<LinOps::Subtract<Cx>>(std::make_shared<LinOps::Multiply<Cx>>(grad_x, ext_x), ext_v);
+    auto prox1 = std::make_shared<SoftThreshold>(λ.Get());
+    auto grad_v = std::make_shared<GradVecOp>(grad_x->oshape);
+    auto op2 = std::make_shared<LinOps::Multiply<Cx>>(grad_v, ext_v);
+    auto prox2 = std::make_shared<SoftThreshold>(λ.Get());
+    prox = {prox1, prox2};
+    reg_ops = {op1, op2};
+    A = std::make_shared<LinOps::Multiply<Cx>>(recon, ext_x);
+  } else {
+    Log::Fail("Must specify at least one regularizer");
   }
 
   ADMM admm{
-    recon,
+    A,
     M,
     inner_its.Get(),
     atol.Get(),
@@ -108,8 +122,11 @@ int main_admm(args::Subparser &parser)
     abstol.Get(),
     reltol.Get()};
   for (Index iv = 0; iv < volumes; iv++) {
-    out.chip<4>(iv) =
-      out_cropper.crop4(Tensorfy(admm.run(&allData(0, 0, 0, 0, iv), ρ.Get()), sz)) / out.chip<4>(iv).constant(scale);
+    auto x = admm.run(&allData(0, 0, 0, 0, iv), ρ.Get());
+    if (ext_x) {
+      x = ext_x->forward(x);
+    }
+    out.chip<4>(iv) = out_cropper.crop4(Tensorfy(x, sz)) / out.chip<4>(iv).constant(scale);
   }
 
   auto const &all_start = Log::Now();

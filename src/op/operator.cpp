@@ -136,50 +136,51 @@ template struct Scale<float>;
 template struct Scale<Cx>;
 
 template <typename S>
-Concat<S>::Concat(std::shared_ptr<Op<S>> a_, std::shared_ptr<Op<S>> b_)
-  : Op<S>("Concat")
-  , a{a_}
-  , b{b_}
+Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)
+  : Op<S>("Multiply")
+  , A{AA}
+  , B{BB}
 {
+  assert(A->cols() == B->rows());
 }
 
 template <typename S>
-auto Concat<S>::rows() const -> Index
+auto Multiply<S>::rows() const -> Index
 {
-  return a->rows();
+  return A->rows();
 }
 template <typename S>
-auto Concat<S>::cols() const -> Index
+auto Multiply<S>::cols() const -> Index
 {
-  return b->cols();
+  return B->cols();
 }
 
 template <typename S>
-void Concat<S>::forward(CMap const &x, Map &y) const
+void Multiply<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  Vector temp(a->cols());
+  Vector temp(B->rows());
   Map tm(temp.data(), temp.size());
   CMap tcm(temp.data(), temp.size());
-  a->forward(x, tm);
-  b->forward(tcm, y);
+  B->forward(x, tm);
+  A->forward(tcm, y);
 }
 
 template <typename S>
-void Concat<S>::adjoint(CMap const &y, Map &x) const
+void Multiply<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  Vector temp(b->cols());
+  Vector temp(A->cols());
   Map tm(temp.data(), temp.size());
   CMap tcm(temp.data(), temp.size());
-  b->adjoint(y, tm);
-  a->adjoint(tcm, x);
+  A->adjoint(y, tm);
+  B->adjoint(tcm, x);
 }
 
-template struct Concat<float>;
-template struct Concat<Cx>;
+template struct Multiply<float>;
+template struct Multiply<Cx>;
 
 template <typename S>
 VStack<S>::VStack(std::vector<std::shared_ptr<Op<S>>> const &o)
@@ -201,10 +202,7 @@ template <typename S>
 void VStack<S>::check()
 {
   for (auto ii = 0; ii < ops.size() - 1; ii++) {
-    if (ops[ii]->cols() != ops[ii + 1]->cols()) {
-      Log::Fail(
-        "Operator {} had {} columns, {} had {}", ops[ii]->name, ops[ii]->cols(), ops[ii + 1]->name, ops[ii + 1]->cols());
-    }
+    assert(ops[ii]->cols() == ops[ii + 1]->cols());
   }
 }
 
@@ -315,6 +313,95 @@ void DStack<S>::adjoint(CMap const &y, Map &x) const
 
 template struct DStack<float>;
 template struct DStack<Cx>;
+
+template <typename S>
+Extract<S>::Extract(Index const cols, Index const st, Index const rows)
+  : Op<S>("Extract")
+  , r{rows}
+  , c{cols}
+  , start{st}
+{
+}
+
+template <typename S>
+auto Extract<S>::rows() const -> Index
+{
+  return r;
+}
+template <typename S>
+auto Extract<S>::cols() const -> Index
+{
+  return c;
+}
+
+template <typename S>
+void Extract<S>::forward(CMap const &x, Map &y) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  y = x.segment(start, r);
+}
+
+template <typename S>
+void Extract<S>::adjoint(CMap const &y, Map &x) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  x.segment(0, start).setZero();
+  x.segment(start, r) = y;
+  x.segment(start + r, c - (start + r)).setZero();
+}
+
+template struct Extract<float>;
+template struct Extract<Cx>;
+
+template <typename S>
+Subtract<S>::Subtract(std::shared_ptr<Op<S>> aa, std::shared_ptr<Op<S>> bb)
+  : Op<S>("Subtract")
+  , a{aa}
+  , b{bb}
+{
+  assert(a->rows() == b->rows());
+  assert(a->cols() == b->cols());
+}
+
+template <typename S>
+auto Subtract<S>::rows() const -> Index
+{
+  return a->rows();
+}
+template <typename S>
+auto Subtract<S>::cols() const -> Index
+{
+  return a->cols();
+}
+
+template <typename S>
+void Subtract<S>::forward(CMap const &x, Map &y) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  a->forward(x, y);
+  Vector temp(rows());
+  Map tm(temp.data(), temp.rows());
+  b->forward(x, tm);
+  y -= tm;
+}
+
+template <typename S>
+void Subtract<S>::adjoint(CMap const &y, Map &x) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  a->adjoint(y, x);
+  Vector temp(cols());
+  Map tm(temp.data(), temp.rows());
+  b->adjoint(y, tm);
+  x -= tm;
+}
+
+template struct Subtract<float>;
+template struct Subtract<Cx>;
 
 } // namespace LinOps
 

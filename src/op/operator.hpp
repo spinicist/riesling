@@ -66,17 +66,17 @@ struct Scale final : Op<Scalar>
   float scale;
 };
 
-//! Concatenate operators, i.e. A * B
+//! Multiply operators, i.e. y = A * B * x
 template <typename Scalar = Cx>
-struct Concat final : Op<Scalar>
+struct Multiply final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
 
-  std::shared_ptr<Op<Scalar>> a, b;
+  std::shared_ptr<Op<Scalar>> A, B;
 
-  Concat(std::shared_ptr<Op<Scalar>> a_, std::shared_ptr<Op<Scalar>> b_);
+  Multiply(std::shared_ptr<Op<Scalar>> A, std::shared_ptr<Op<Scalar>> B);
 
   auto rows() const -> Index;
   auto cols() const -> Index;
@@ -125,6 +125,43 @@ struct DStack final : Op<Scalar>
 private:
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
+
+template<typename Scalar = Cx>
+struct Extract final : Op<Scalar>
+{
+  using typename Op<Scalar>::Vector;
+  using typename Op<Scalar>::Map;
+  using typename Op<Scalar>::CMap;
+
+  Extract(Index const cols, Index const st, Index const rows);
+  auto rows() const -> Index;
+  auto cols() const -> Index;
+
+  void forward(CMap const &x, Map &y) const;
+  void adjoint(CMap const &y, Map &x) const;
+
+private:
+  Index r, c, start;
+};
+
+template<typename Scalar = Cx>
+struct Subtract final : Op<Scalar>
+{
+  using typename Op<Scalar>::Vector;
+  using typename Op<Scalar>::Map;
+  using typename Op<Scalar>::CMap;
+
+  Subtract(std::shared_ptr<Op<Scalar>> a, std::shared_ptr<Op<Scalar>> b);
+  auto rows() const -> Index;
+  auto cols() const -> Index;
+
+  void forward(CMap const &x, Map &y) const;
+  void adjoint(CMap const &y, Map &x) const;
+
+private:
+  std::shared_ptr<Op<Scalar>> a, b;
+};
+
 
 }
 

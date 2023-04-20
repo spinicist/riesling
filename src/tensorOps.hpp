@@ -168,8 +168,8 @@ inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> &&x, Sz<N> const &shape) {
-  return Eigen::TensorMap<Eigen::Tensor<Scalar, N>>(x.data(), shape);
+inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> const &x, Sz<N> const &shape) {
+  return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 
 template <typename T>
