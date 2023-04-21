@@ -10,7 +10,7 @@ namespace rl {
  * Wrapper for solving normal equations
  */
 template <typename Scalar_ = Cx>
-struct NormalOp final : LinOps::template Op<Scalar_>
+struct NormalOp final : LinOps::Op<Scalar_>
 {
   using Scalar = Scalar_;
   using Op = typename LinOps::Op<Scalar>;

@@ -24,12 +24,12 @@ struct TensorOperator : LinOps::Op<Scalar_>
   InDims ishape;
   OutDims oshape;
 
-  TensorOperator(std::string const &name, InDims const xd, OutDims const yd)
-    : LinOps::Op<Scalar>{name}
+  TensorOperator(std::string const &n, InDims const xd, OutDims const yd)
+    : LinOps::Op<Scalar>{n}
     , ishape{xd}
     , oshape{yd}
   {
-    Log::Print<Log::Level::Debug>(FMT_STRING("{} created. Input dims {} Output dims {}"), name, ishape, oshape);
+    Log::Print<Log::Level::Debug>(FMT_STRING("{} created. Input dims {} Output dims {}"), this->name, ishape, oshape);
   }
 
   virtual ~TensorOperator(){};
@@ -37,8 +37,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
   virtual auto rows() const -> Index { return Product(oshape); }
   virtual auto cols() const -> Index { return Product(ishape); }
 
-  using Base::forward;
   using Base::adjoint;
+  using Base::forward;
 
   void forward(typename Base::CMap const &x, typename Base::Map &y) const final
   {
@@ -62,7 +62,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
 
   virtual auto forward(InTensor const &x) const -> OutTensor
   {
-    Log::Print<Log::Level::Debug>("Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
+    Log::Print<Log::Level::Debug>(
+      "Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
     InCMap xm(x.data(), ishape);
     OutTensor y(oshape);
     OutMap ym(y.data(), oshape);
@@ -72,7 +73,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
 
   virtual auto adjoint(OutTensor const &y) const -> InTensor
   {
-    Log::Print<Log::Level::Debug>("Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
+    Log::Print<Log::Level::Debug>(
+      "Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
     OutCMap ym(y.data(), oshape);
     InTensor x(ishape);
     InMap xm(x.data(), ishape);
@@ -89,7 +91,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
       Log::Fail("{} forward dims were: {} expected: {}", this->name, x.dimensions(), ishape);
     }
     if (Log::CurrentLevel() == Log::Level::Debug) {
-       Log::Print<Log::Level::Debug>(FMT_STRING("{} forward started. Dimensions {}->{}. Norm {}"), this->name, this->ishape, this->oshape, Norm(x));
+      Log::Print<Log::Level::Debug>(
+        FMT_STRING("{} forward started. Dimensions {}->{}. Norm {}"), this->name, this->ishape, this->oshape, Norm(x));
     }
     return Log::Now();
   }
@@ -108,7 +111,8 @@ struct TensorOperator : LinOps::Op<Scalar_>
       Log::Fail("{} adjoint dims were: {} expected: {}", this->name, y.dimensions(), oshape);
     }
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("{} adjoint started. Dimensions {}->{}. Norm {}"), this->name, this->oshape, this->ishape, Norm(y));
+      Log::Print<Log::Level::Debug>(
+        FMT_STRING("{} adjoint started. Dimensions {}->{}. Norm {}"), this->name, this->oshape, this->ishape, Norm(y));
     }
     return Log::Now();
   }
