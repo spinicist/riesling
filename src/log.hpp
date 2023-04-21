@@ -1,5 +1,7 @@
 #pragma once
 
+#define FMT_DEPRECATED_OSTREAM
+
 #include <chrono>
 #include <exception>
 #include <fmt/color.h>
