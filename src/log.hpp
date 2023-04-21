@@ -37,14 +37,20 @@ using Time = std::chrono::high_resolution_clock::time_point;
 Level CurrentLevel();
 void SetLevel(Level const l);
 void SetDebugFile(std::string const &fname);
+void SaveEntry(std::string const &s);
+auto Saved() -> std::string const &;
 void End();
 auto TheTime() -> std::string;
 
 template <Log::Level level = Log::Level::Low, typename... Args>
 inline void Print(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
+  std::string entry = fmt::format(FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
+  if (level == Level::Low) {
+    SaveEntry(entry);
+  }
   if (level <= CurrentLevel()) {
-    fmt::print(stderr, FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
+    fmt::print(stderr, entry);
   }
 }
 

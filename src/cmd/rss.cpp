@@ -36,7 +36,7 @@ int main_rss(args::Subparser &parser)
     out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-  WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);
+  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
 
   return EXIT_SUCCESS;
 }

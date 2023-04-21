@@ -69,7 +69,6 @@ int main_admm(args::Subparser &parser)
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
-  std::map<std::string, float> meta{{"scale", scale}, {"lambda", λ.Get()}, {"rho", ρ.Get()}};
 
   std::vector<std::shared_ptr<LinOps::Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
@@ -132,6 +131,6 @@ int main_admm(args::Subparser &parser)
   auto const &all_start = Log::Now();
 
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-  WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj, meta);
+  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
   return EXIT_SUCCESS;
 }

@@ -168,21 +168,21 @@ OutName(std::string const &iName, std::string const &oName, std::string const &s
 }
 
 void WriteOutput(
-  Cx5 const &img,
-  std::string const &iname,
-  std::string const &oname,
+  CoreOpts &opts,
+  rl::Cx5 const &img,
   std::string const &suffix,
-  bool const keepTrajectory,
   rl::Trajectory const &traj,
+  std::string const &log,
   std::map<std::string, float> const &meta)
 {
-  auto const fname = OutName(iname, oname, suffix, "h5");
+  auto const fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(HD5::Keys::Image, img.dimensions(), img.data());
   writer.writeMeta(meta);
-  if (keepTrajectory) {
+  if (opts.keepTrajectory) {
     traj.write(writer);
   } else {
     writer.writeInfo(traj.info());
   }
+  writer.writeString("log", log);
 }

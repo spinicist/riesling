@@ -109,6 +109,21 @@ Writer::~Writer()
   Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
 }
 
+void Writer::writeString(std::string const &label, std::string const &string) {  herr_t status;
+  hsize_t dim[1] = {1};
+  auto const space = H5Screate_simple(1, dim, NULL);
+  hid_t const tid = H5Tcopy(H5T_C_S1);
+  H5Tset_size(tid, H5T_VARIABLE);
+  hid_t const dset = H5Dcreate(handle_, label.c_str(), tid, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  auto ptr = string.c_str();
+  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ptr);
+  status = H5Dclose(dset);
+  status = H5Sclose(space);
+  if (status) {
+    Log::Fail(FMT_STRING("Could not write string {} into handle {}, code: {}"), label, handle_, status);
+  }
+}
+
 void Writer::writeInfo(Info const &info)
 {
   hid_t info_id = InfoType();

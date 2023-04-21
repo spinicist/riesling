@@ -41,15 +41,6 @@ auto ReadBasis(std::string const &basisFile) -> std::optional<rl::Re2>;
 std::string OutName(
   std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension = "h5");
 
-void WriteOutput(
-  rl::Cx5 const &img,
-  std::string const &iname,
-  std::string const &oname,
-  std::string const &suffix,
-  bool const keepTrajectory,
-  rl::Trajectory const &traj,
-  std::map<std::string, float> const &meta = std::map<std::string, float>());
-
 struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
@@ -59,3 +50,12 @@ struct CoreOpts
   args::ValueFlag<Index> bucketSize;
   args::Flag keepTrajectory;
 };
+
+void WriteOutput(
+  CoreOpts &opts,
+  rl::Cx5 const &img,
+  std::string const &suffix,
+  rl::Trajectory const &traj,
+  std::string const &log,
+  std::map<std::string, float> const &meta = std::map<std::string, float>());
+
