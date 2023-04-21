@@ -7,7 +7,7 @@ namespace rl {
 template <typename Op>
 struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
-  OP_INHERIT( typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1 )
+  OP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
 
   LoopOp(std::shared_ptr<Op> op, Index const N)
     : Parent("LoopOp", AddBack(op->ishape, N), AddBack(op->oshape, N))
@@ -18,20 +18,26 @@ struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::Ou
 
   void forward(InCMap const &x, OutMap &y) const
   {
+    assert(x.dimensions() == this->ishape);
+    assert(y.dimensions() == this->oshape);
     auto const time = this->startForward(x);
     for (Index ii = 0; ii < N_; ii++) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Forward Iteration {}"), ii);
-      y.template chip<OutRank - 1>(ii) = op_->forward(x.template chip<InRank - 1>(ii));
+      typename Op::InCMap xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
+      typename Op::OutMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
+      op_->forward(xchip, ychip);
     }
     this->finishForward(y, time);
   }
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
+    assert(x.dimensions() == this->ishape);
+    assert(y.dimensions() == this->oshape);
     auto const time = this->startAdjoint(y);
     for (Index ii = 0; ii < N_; ii++) {
-      Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint Iteration {}"), ii);
-      x.template chip<InRank - 1>(ii) = op_->adjoint(y.template chip<InRank - 1>(ii));
+      typename Op::OutCMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
+      typename Op::InMap xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
+      op_->adjoint(ychip, xchip);
     }
     this->finishAdjoint(x, time);
   }
@@ -50,4 +56,4 @@ private:
   Index N_;
 };
 
-}
+} // namespace rl

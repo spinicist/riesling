@@ -47,12 +47,10 @@ int main_lsmr(args::Subparser &parser)
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
     out.chip<4>(iv).device(Threads::GlobalDevice()) =
-      out_cropper.crop4(Tensorfy(lsmr.run(&allData(0, 0, 0, 0, iv), λ.Get()), recon->ishape)) /
-      out.chip<4>(iv).constant(scale);
+      out_cropper.crop4(Tensorfy(lsmr.run(&allData(0, 0, 0, 0, iv), λ.Get()), recon->ishape)) / out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }
   Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
-
   WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
   return EXIT_SUCCESS;
 }

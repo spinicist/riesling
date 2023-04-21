@@ -35,10 +35,9 @@ int main_lsqr(args::Subparser &parser)
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   LSQR lsqr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
-
   auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
-  Sz3 outSz = out_cropper.size();
+  Sz3 const outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   float const scale = Scaling(coreOpts.scaling, recon, M->adjoint(CChipMap(allData, 0)));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
@@ -47,7 +46,7 @@ int main_lsqr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    out.chip<4>(iv) =
+    out.chip<4>(iv).device(Threads::GlobalDevice()) =
       out_cropper.crop4(Tensorfy(lsqr.run(&allData(0, 0, 0, 0, iv), λ.Get()), recon->ishape)) / out.chip<4>(iv).constant(scale);
     Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
   }

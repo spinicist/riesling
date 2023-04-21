@@ -3,11 +3,6 @@
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
-
-/*
- * LSMR with arbitrary regularization, i.e. Solve (A'A + λI)x = A'b + c with warm start
- */
-
 auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
 {
   Index const rows = op->rows();

@@ -3,16 +3,11 @@
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
-
-/*
- * LSQR with arbitrary regularization, i.e. Solve (A'A + λI)x = A'b + c with warm start
- */
 auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
 {
   Index const rows = op->rows();
   Index const cols = op->cols();
-  Map const b(bdata, cols);
-
+  Map const b(bdata, rows);
   Vector Mu(rows), u(rows);
   Vector x(cols), v(cols), w(cols);
 
