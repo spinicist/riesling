@@ -1,18 +1,22 @@
 #pragma once
 
+// Intellisense gives false positives with Eigen+ARM
 #if __INTELLISENSE__
 #undef __ARM_NEON
 #undef __ARM_NEON__
 #endif
 
+// This doesn't actually help with complex matrices as std::complex has no NaN
 #ifdef DEBUG
 #define EIGEN_INITIALIZE_MATRICES_BY_NAN
 #endif
+
 // Need to define EIGEN_USE_THREADS before including these. This is done in CMakeLists.txt
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include <complex>
+#include <cassert>
 
 using Index = Eigen::Index;
 

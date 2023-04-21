@@ -11,7 +11,6 @@ Index Compressor::out_channels() const
 
 Cx4 Compressor::compress(Cx4 const &source)
 {
-  assert(source.dimension(0) == psi.rows());
   Log::Print(FMT_STRING("Compressing to {} channels"), psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
   Cx4 dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3));
@@ -22,7 +21,6 @@ Cx4 Compressor::compress(Cx4 const &source)
 
 Cx5 Compressor::compress(Cx5 const &source)
 {
-  assert(source.dimension(0) == psi.rows());
   Log::Print(FMT_STRING("Compressing to {} channels"), psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
   Cx5 dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3), source.dimension(4));
