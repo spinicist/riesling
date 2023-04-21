@@ -22,7 +22,6 @@ Trajectory LoadTrajectory(std::string const &file)
 }
 
 Trajectory CreateTrajectory(
-  Index const nC,
   Index const matrix,
   float const voxSz,
   float const readOS,
@@ -74,7 +73,6 @@ int main_phantom(args::Subparser &parser)
 
   args::ValueFlag<float> voxSize(parser, "V", "Voxel size in mm (default 2)", {'v', "vox-size"}, 2.f);
   args::ValueFlag<Index> matrix(parser, "M", "Matrix size (default 128)", {'m', "matrix"}, 128);
-  args::ValueFlag<Index> nchan(parser, "C", "Number of channels (8)", {'c', "channels"}, 8);
   args::ValueFlag<float> size(parser, "SZ", "Phantom size/radius in mm (default 90)", {"size"}, 90.f);
 
   args::Flag gradCubes(parser, "", "Grad cubes phantom", {"gradcubes"});
@@ -96,9 +94,9 @@ int main_phantom(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   Trajectory const traj =
-    trajfile ? LoadTrajectory(trajfile.Get())
-             : CreateTrajectory(
-                 nchan.Get(), matrix.Get(), voxSize.Get(), readOS.Get(), sps.Get(), nex.Get(), phyllo, lores.Get(), trim.Get());
+    trajfile
+      ? LoadTrajectory(trajfile.Get())
+      : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), sps.Get(), nex.Get(), phyllo, lores.Get(), trim.Get());
   auto const &info = traj.info();
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
@@ -141,5 +139,4 @@ int main_phantom(args::Subparser &parser)
   }
   writer.writeTensor(HD5::Keys::Image, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data());
   return EXIT_SUCCESS;
-
 }

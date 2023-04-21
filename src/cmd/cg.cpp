@@ -17,7 +17,7 @@ int main_cg(args::Subparser &parser)
   CoreOpts coreOpts(parser);
   SDC::Opts sdcOpts(parser, "pipe");
   SENSE::Opts senseOpts(parser);
-  args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
+  // args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
   args::ValueFlag<float> thr(parser, "T", "Termination threshold (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {"max-its"}, 8);
 
@@ -26,7 +26,7 @@ int main_cg(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, toeplitz, reader);
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
   auto normEqs = std::make_shared<NormalOp<Cx>>(recon);
   ConjugateGradients cg{normEqs, its.Get(), thr.Get(), true};
 

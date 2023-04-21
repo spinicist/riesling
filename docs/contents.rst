@@ -5,7 +5,6 @@ Contents
    :maxdepth: 2
    
    intro
-   data
    util
    op
    recon

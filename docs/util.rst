@@ -5,7 +5,7 @@ RIESLING includes a number of utility commands. These can be broken down into ca
 
 *Basics*
 
-* `hdr`_
+* `h5`_
 * `meta`_
 * `nii`_
 * `phantom`_
@@ -17,9 +17,10 @@ RIESLING includes a number of utility commands. These can be broken down into ca
 * `sense-calib`_
 * `espirit-calib`_
 
-*Density Compensation*
+*Density Compensation / Preconditioning*
 
 * `sdc`_
+* `precond`_
 
 *Data manipulation*
 
@@ -27,24 +28,26 @@ RIESLING includes a number of utility commands. These can be broken down into ca
 * `downsamp`_
 * `split`_
 
-hdr
+h5
 ---
 
-Prints out the header information from a RIESLING ``.h5`` file.
+Prints out information from/about a RIESLING ``.h5`` file.
 
 *Usage*
 
 .. code-block:: bash
 
-    riesling hdr file.h5
-
-*Output*
-
-The entire header and meta-data will be written to stdout.
+    riesling h5 file.h5 --info
 
 *Important Options*
 
-None!
+* ``--info``
+
+    Prints the header information (matrix and voxel size, orientation information)
+
+* ``--dsets``
+
+    Lists the data-sets contained in the file and their dimensions.
 
 meta
 ----
@@ -64,8 +67,6 @@ The desired meta-data will be written to stdout, one field per line.
 *Important Options*
 
 None!
-
-The valid header info fields are ``matrix``, ``channels``, ``samples``, ``traces``, ``volumes`` & ``frames``.
 
 nii
 ---
@@ -101,7 +102,7 @@ A NIfTI image containing the desired images as separate volumes. The ``.nii`` ex
 phantom
 -------
 
-Create phantom data, both in image and k-space. Currently RIESLING uses a NUFFT to generate the k-space data and does not generate the phantom data directly in k-space.
+Create a phantom image. This can be sampled to k-space using ``riesling sense``.
 
 *Usage*
 
@@ -119,21 +120,9 @@ The specified file (above ``phantom.h5``) containing the phantom image, trajecto
 
     The matrix size (isotropic matrix assumed).
 
-* ``--shepp_logan``
+* ``--gradcubes``
 
-    Create a Shepp-Logan phantom instead of a boring sphere.
-
-* ``--channels=C``
-
-    Set the number of coil channels.
-
-* ``--rings=N``
-
-    Divide the channels into N rings.
-
-* ``--sense=file.h5``
-
-    Read SENSE maps from a file instead of creating bird-cage sensitivities.
+    The phantom will be cubes with gradients along the different dimensions instead of the default Shepp-Logan phantom.
 
 plan
 ----
@@ -218,7 +207,7 @@ This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrati
 
     Apply Tikohonov regularization. See `Ying, L. & Xu, D. On Tikhonov regularization for image reconstruction in parallel MRI. 4. <https://ieeexplore.ieee.org/document/1403345>`_.
 
-* ``--fov=F``
+* ``--sense-fov=F``
 
     Calculate the SENSE maps for this FOV. If you are using the maps for subsequent reconstruction, this must match the cropping FOV used during iterations. The default value is 256 mm, which matches the default iterations cropping FOV.
 
@@ -268,7 +257,7 @@ sdc
 
 Non-cartesian trajectories by definition have a non-uniform sample density in cartesian k-space - i.e. there are more samples points per unit volume in some parts of k-space than others. Because the gridding step is a simple convolution, this results in artefactually higher k-space intensities on the cartesian grid. For a non-iterative reconstruction this must be compensated by dividing samples in non-cartesian k-space by their sample density before gridding.
 
-In iterative reconstructions the situation is more complicated, because the forward gridding step does not require density compensation (because after the forward FFT samples are evenly spaced on the cartesian grid). The uneven density affects the condition number of the problem, and hence can lead to slow convergence, but does not fundamentally alter the solution. Hence density compensation is often ommitted in 2D non-cartesian reconstructions. However, in 3D convergence becomes problematic. Strictly speaking, density compensation cannot be inserted into the conjugate-gradients method that is implemented in ``riesling cg``. In practice it can be, and is implemented in RIESLING, but this leads to noise inflation (see `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`_). The correct method, implemented in ``riesling lsqr``, is pre-conditioning in k-space.
+In iterative reconstructions the situation is more complicated, because the forward gridding step does not require density compensation (because after the forward FFT samples are evenly spaced on the cartesian grid). The uneven density affects the condition number of the problem, and hence can lead to slow convergence, but does not fundamentally alter the solution. Hence density compensation is often ommitted in 2D non-cartesian reconstructions. However, in 3D convergence becomes problematic. Strictly speaking, density compensation cannot be inserted into the conjugate-gradients method that is implemented in ``riesling cg``. In practice it can be, and is implemented in RIESLING, but this leads to noise inflation (see `K. P. Pruessmann, M. Weiger, P. Börnert, and P. Boesiger, ‘Advances in sensitivity encoding with arbitrary k-space trajectories’, Magn. Reson. Med., vol. 46, no. 4, pp. 638–651, Oct. 2001 <http://doi.wiley.com/10.1002/mrm.1241>`_).
 
 The sample density is a property of the trajectory and not of the acquired k-space data. Calculating the Sample Density Compensation (SDC) can be time consuming for large trajectories, hence this command exists to pre-calculate it once for a particular trajectory and save it for future use. There are three different methods implemented which are detailed below.
 
@@ -291,6 +280,27 @@ The sample density is a property of the trajectory and not of the acquired k-spa
 * `--os=N`
 
     Oversampling factor when using ``pipenn``. Should match the oversampling for the final reconstruction.
+
+precond
+-------
+
+The ``lsqr``, ``lsmr`` and ``admm`` commands use preconditioning instead of SDC. The single-channel preconditioner implemented in ``riesling`` is a property only of the trajectory and hence can be re-used between reconstructions in the same way as SDC.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling precond file.h5 output.h5
+
+*Output*
+
+``output.h5`` containing the preconditioner.
+
+*Important Options*
+
+* ```--pre-bias=N``
+
+    In a sub-space reconstruction it is possible for the preconditioner calculation to contain divide-by-zero problems. This option adds a bias to the calculation to prevent this causing problems. The default value is 1.
 
 compress
 --------
