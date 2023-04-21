@@ -123,10 +123,14 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         raise('Must have more than 1 image to diff')
     if len(dsets) == 1:
         dsets = dsets * len(fnames)
-    if len(basis_files) == 1:
+    if basis_files and len(basis_files) == 1:
         basis_files = basis_files * len(fnames)
-    if len(basis_tps) == 1:
+    elif not basis_files:
+        basis_files = [None,] * len(fnames)
+    if basis_tps and len(basis_tps) == 1:
         basis_tps = basis_tps * len(fnames)
+    elif not basis_tps:
+        basis_tps = [None,] * len(fnames)
     if titles is not None and len(titles) != len(fnames):
         raise('Number of titles and files did not match')
 
@@ -170,10 +174,14 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         raise('Must have more than 1 image to diff')
     if len(dsets) == 1:
         dsets = dsets * len(fnames)
-    if len(basis_files) == 1:
+    if basis_files and len(basis_files) == 1:
         basis_files = basis_files * len(fnames)
-    if len(basis_tps) == 1:
+    elif not basis_files:
+        basis_files = [None,] * len(fnames)
+    if basis_tps and len(basis_tps) == 1:
         basis_tps = basis_tps * len(fnames)
+    elif not basis_tps:
+        basis_tps = [None,] * len(fnames)
     if titles is not None and len(titles) != len(fnames):
         raise('Number of titles and files did not match')
 
