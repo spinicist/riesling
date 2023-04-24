@@ -50,7 +50,7 @@ int main_blend(args::Subparser &parser)
   Re2 basis = binput.readTensor<Re2>("basis");
 
   if (basis.dimension(0) != images.dimension(0)) {
-    Log::Fail(FMT_STRING("Basis has {} vectors but image has {}"), basis.dimension(1), images.dimension(0));
+    Log::Fail("Basis has {} vectors but image has {}", basis.dimension(1), images.dimension(0));
   }
 
   if (keep) {
@@ -68,9 +68,9 @@ int main_blend(args::Subparser &parser)
   for (size_t ii = 0; ii < tps.size(); ii++) {
     Index itp = tps[ii];
     if ((itp < 0) || (itp >= basis.dimension(1))) {
-      Log::Fail(FMT_STRING("Requested timepoint {} exceeds basis length {}"), tps[ii], basis.dimension(1));
+      Log::Fail("Requested timepoint {} exceeds basis length {}", tps[ii], basis.dimension(1));
     }
-    Log::Print(FMT_STRING("Blending timepoint {} cycle {}"), itp, cycle.Get());
+    Log::Print("Blending timepoint {} cycle {}", itp, cycle.Get());
     while (itp >= tps[ii] && itp < basis.dimension(1)) {
       Re1 const b = basis.chip<1>(itp) * scale;
       for (Index iv = 0; iv < out.dimension(4); iv++) {

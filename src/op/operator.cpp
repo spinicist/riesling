@@ -201,7 +201,7 @@ VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
 template <typename S>
 void VStack<S>::check()
 {
-  for (auto ii = 0; ii < ops.size() - 1; ii++) {
+  for (size_t ii = 0; ii < ops.size() - 1; ii++) {
     assert(ops[ii]->cols() == ops[ii + 1]->cols());
   }
 }

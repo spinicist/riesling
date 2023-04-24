@@ -20,12 +20,12 @@ void Init()
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) {
-      Log::Fail(FMT_STRING("Could not initialise HDF5, code: {}"), err);
+      Log::Fail("Could not initialise HDF5, code: {}", err);
     }
     NeedsInit = false;
-    Log::Print<Log::Level::High>(FMT_STRING("Initialised HDF5"));
+    Log::Print<Log::Level::High>("Initialised HDF5");
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("HDF5 already initialised"));
+    Log::Print<Log::Level::High>("HDF5 already initialised");
   }
 }
 
@@ -34,7 +34,7 @@ herr_t ErrorWalker(unsigned n, const H5E_error2_t *err_desc, void *data)
 {
   std::string *str = (std::string *)data;
   if (n == 0) {
-    *str = fmt::format(FMT_STRING("{}\n"), err_desc->desc);
+    *str = fmt::format("{}\n", err_desc->desc);
   }
   return 0;
 }
@@ -48,7 +48,7 @@ std::string GetError()
 
 void CheckedCall(herr_t status, std::string const &msg) {
   if (status) {
-    Log::Fail(FMT_STRING("HD5 Error {}. Status {}. Error:{}\n"), msg, status, GetError());
+    Log::Fail("HD5 Error {}. Status {}. Error:{}\n", msg, status, GetError());
   }
 }
 
@@ -95,7 +95,7 @@ void CheckInfoType(hid_t handle)
       }
     }
     if (!found) {
-      Log::Fail(FMT_STRING("Field {} not found in header info"), check_name);
+      Log::Fail("Field {} not found in header info", check_name);
     }
   }
 }

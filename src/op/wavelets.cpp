@@ -33,7 +33,7 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
   // Check image is adequately padded and bug out if not
   auto const padded = PaddedDimensions(dims);
   if (dims != padded) {
-    Log::Fail(FMT_STRING("Wavelets had dimensions {}, required {}"), dims, padded);
+    Log::Fail("Wavelets had dimensions {}, required {}", dims, padded);
   }
 
   levels_[0] = 0;
@@ -45,7 +45,7 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
     }
   }
 
-  Log::Print<Log::Level::Debug>(FMT_STRING("Wavelet levels: {}"), levels_);
+  Log::Print<Log::Level::Debug>("Wavelet levels: {}", levels_);
   // Daubechie's coeffs courtesy of Wikipedia
   D_.resize(N);
   switch (N) {
@@ -94,7 +94,7 @@ void Wavelets::encode_dim(InCMap const &x, OutMap &y, Index const dim, Index con
     }
   };
   Threads::For(
-    encode_task, y.dimension(otherDims[0]), fmt::format(FMT_STRING("Wavelets Encode Dimension {} Level {}"), dim, level));
+    encode_task, y.dimension(otherDims[0]), fmt::format("Wavelets Encode Dimension {} Level {}", dim, level));
 }
 
 void Wavelets::forward(InCMap const &x, OutMap &y) const
@@ -147,7 +147,7 @@ void Wavelets::decode_dim(OutCMap const &y, InMap &x, Index const dim, Index con
   Threads::For(
     decode_task,
     y.dimension(otherDims[0]),
-    fmt::format(FMT_STRING("Wavelets Decode Dimension {} Level {}"), dim, level));
+    fmt::format("Wavelets Decode Dimension {} Level {}", dim, level));
 }
 
 void Wavelets::adjoint(OutCMap const &y, InMap &x) const

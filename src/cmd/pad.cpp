@@ -31,12 +31,12 @@ int main_pad(args::Subparser &parser)
       for (Index ii = 0; ii < inDims[5]; ii++) {
         outImages.chip(ii, 5) = pad.forward(CChipMap(inImages, ii));
       }
-      Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
+      Log::Print("Pad took {}", Log::ToNow(start));
     } else {
       for (Index ii = 0; ii < inDims[5]; ii++) {
         outImages.chip(ii, 5) = pad.adjoint(CChipMap(inImages, ii));
       }
-      Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
+      Log::Print("Pad Adjoint took {}", Log::ToNow(start));
     }
     writer.writeTensor(HD5::Keys::Channels, outImages.dimensions(), outImages.data());
   } else {
@@ -52,14 +52,14 @@ int main_pad(args::Subparser &parser)
         Cx4 img = inImages.chip(ii, 4);
         outImages.chip(ii, 4) = pad.forward(img);
       }
-      Log::Print(FMT_STRING("Pad took {}"), Log::ToNow(start));
+      Log::Print("Pad took {}", Log::ToNow(start));
     } else {
       PadOp<Cx, 4> pad(padDims.Get(), MidN<1, 3>(inDims), Sz1{nF});
       for (Index ii = 0; ii < inDims[4]; ii++) {
         Cx4 img = inImages.chip(ii, 4);
         outImages.chip(ii, 4) = pad.adjoint(img);
       }
-      Log::Print(FMT_STRING("Pad Adjoint took {}"), Log::ToNow(start));
+      Log::Print("Pad Adjoint took {}", Log::ToNow(start));
     }
     writer.writeTensor(HD5::Keys::Image, outImages.dimensions(), outImages.data());
   }

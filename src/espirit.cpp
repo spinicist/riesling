@@ -19,7 +19,7 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
   Index const nSkip = gapRad ? gapPlusKW * gapPlusKW * gapPlusKW : 0;
   Index const nk = calW * calW * calW - nSkip;
   if (nk < 1) {
-    Log::Fail(FMT_STRING("No kernels to Hankelfy"));
+    Log::Fail("No kernels to Hankelfy");
   }
   Cx5 kernels(nchan, kW, kW, kW, nk);
 
@@ -30,13 +30,13 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
   Index const st = gridHalf - (calRad - 1) - (kRad - 1);
   if (st < 0) {
     Log::Fail(
-      FMT_STRING("Grid size {} not large enough for calibration radius {} + kernel radius {}"),
+      "Grid size {} not large enough for calibration radius {} + kernel radius {}",
       grid.dimension(1),
       calRad,
       kRad);
   }
 
-  Log::Print(FMT_STRING("Hankel calibration rad {} kernel rad {} gap {}, {} kernels"), calRad, kRad, gapRad, nk);
+  Log::Print("Hankel calibration rad {} kernel rad {} gap {}, {} kernels", calRad, kRad, gapRad, nk);
   for (Index iz = 0; iz < calW; iz++) {
     Index const st_z = st + iz;
     for (Index iy = 0; iy < calW; iy++) {
@@ -62,7 +62,7 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
   auto const m = CollapseToMatrix<Cx5, 4>(mIn);
   auto const svd = SVD<Cx>(m, true, true);
   Index const nRetain = (svd.vals > (svd.vals.sum() * thresh)).count();
-  Log::Print(FMT_STRING("Retaining {} kernels"), nRetain);
+  Log::Print("Retaining {} kernels", nRetain);
   Cx5 out(mIn.dimension(0), mIn.dimension(1), mIn.dimension(2), mIn.dimension(3), nRetain);
   CollapseToMatrix<Cx5, 1>(out) = svd.V.leftCols(nRetain).conjugate();
   return out;
@@ -70,14 +70,14 @@ Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
 
 Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outSz, Index const kRad, Index const calRad, Index const gap, float const thresh)
 {
-  Log::Print(FMT_STRING("ESPIRIT Calibration Radius {} Kernel Radius {}"), calRad, kRad);
+  Log::Print("ESPIRIT Calibration Radius {} Kernel Radius {}", calRad, kRad);
 
-  Log::Print(FMT_STRING("Calculating k-space kernels"));
+  Log::Print("Calculating k-space kernels");
   Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);
   Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh);
   Index const retain = mini_kernels.dimension(4);
 
-  Log::Print(FMT_STRING("Upsample last dimension"));
+  Log::Print("Upsample last dimension");
   Cx4 mix_grid(mini_kernels.dimension(0), mini_kernels.dimension(1), mini_kernels.dimension(2), grid.dimension(3));
   auto const mix_fft = FFT::Make<4, 1>(mix_grid.dimensions());
   Cx5 mix_kernels(
@@ -97,7 +97,7 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outSz, Index const kRad, Index const calR
   }
   Log::StopProgress();
 
-  Log::Print(FMT_STRING("Image space Eigenanalysis"));
+  Log::Print("Image space Eigenanalysis");
   // Do this slice-by-slice
   Re3 valsImage(outSz);
   Cx4 vecsImage(AddFront(outSz, grid.dimension(0)));
@@ -130,7 +130,7 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outSz, Index const kRad, Index const calR
   };
   Threads::For(slice_task, mix_kernels.dimension(3), "Covariance");
 
-  Log::Print(FMT_STRING("Finished ESPIRIT"));
+  Log::Print("Finished ESPIRIT");
   return vecsImage;
 }
 

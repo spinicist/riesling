@@ -130,7 +130,7 @@ int main_admm(args::Subparser &parser)
 
   auto const &all_start = Log::Now();
 
-  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+  Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
   return EXIT_SUCCESS;
 }

@@ -43,9 +43,9 @@ int main_cg(args::Subparser &parser)
     auto const &vol_start = Log::Now();
     auto b = recon->adjoint(CChipMap(allData, iv));
     out.chip<4>(iv) = out_cropper.crop4(Tensorfy(cg.run(b.data()), sz)) / out.chip<4>(iv).constant(scale);
-    Log::Print(FMT_STRING("Volume {}: {}"), iv, Log::ToNow(vol_start));
+    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }
-  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+  Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
   return EXIT_SUCCESS;
 }

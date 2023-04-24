@@ -18,7 +18,7 @@ int main_sense(args::Subparser &parser)
   ParseCommand(parser, iname);
   HD5::Reader ireader(iname.Get());
   if (!sname) {
-    Log::Fail(FMT_STRING("No input SENSE map file specified"));
+    Log::Fail("No input SENSE map file specified");
   }
   HD5::Reader sreader(sname.Get());
   auto const maps = sreader.readTensor<Cx4>(HD5::Keys::SENSE);
@@ -32,7 +32,7 @@ int main_sense(args::Subparser &parser)
     auto const images = ireader.readTensor<Cx5>(name);
     if (!std::equal(images.dimensions().begin() + 1, images.dimensions().begin() + 4, maps.dimensions().begin() + 1)) {
       Log::Fail(
-        FMT_STRING("Image dimensions {} did not match SENSE maps {}"),
+        "Image dimensions {} did not match SENSE maps {}",
         fmt::join(images.dimensions(), ","),
         fmt::join(maps.dimensions(), ","));
     }
@@ -42,17 +42,17 @@ int main_sense(args::Subparser &parser)
     for (auto ii = 0; ii < images.dimension(4); ii++) {
       channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.forward(CChipMap(images, ii));
     }
-    Log::Print(FMT_STRING("SENSE took {}"), Log::ToNow(start));
+    Log::Print("SENSE took {}", Log::ToNow(start));
     writer.writeTensor(HD5::Keys::Channels, channels.dimensions(), channels.data());
   } else {
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto const channels = ireader.readTensor<Cx6>(name);
     if (channels.dimension(0) != maps.dimension(0)) {
-      Log::Fail(FMT_STRING("Number of channels {} did not match SENSE maps {}"), channels.dimension(0), maps.dimension(0));
+      Log::Fail("Number of channels {} did not match SENSE maps {}", channels.dimension(0), maps.dimension(0));
     }
     if (!std::equal(channels.dimensions().begin() + 2, channels.dimensions().end(), maps.dimensions().begin() + 1)) {
       Log::Fail(
-        FMT_STRING("Image dimensions {} did not match SENSE maps {}"),
+        "Image dimensions {} did not match SENSE maps {}",
         fmt::join(channels.dimensions(), ","),
         fmt::join(maps.dimensions(), ","));
     }
@@ -61,7 +61,7 @@ int main_sense(args::Subparser &parser)
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));
     }
-    Log::Print(FMT_STRING("SENSE Adjoint took {}"), Log::ToNow(start));
+    Log::Print("SENSE Adjoint took {}", Log::ToNow(start));
     writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
   }
 

@@ -13,7 +13,7 @@ void store_tensor(Handle const &parent, std::string const &name, Sz<ND> const &d
   // Check for sane dimensions
   for (Index ii = 0; ii < ND; ii++) {
     if (dims[ii] == 0) {
-      Log::Fail(FMT_STRING("Tensor {} had a zero dimension. Dims: {}"), name, dims);
+      Log::Fail("Tensor {} had a zero dimension. Dims: {}", name, dims);
     }
   }
 
@@ -42,7 +42,7 @@ void store_tensor(Handle const &parent, std::string const &name, Sz<ND> const &d
   hid_t const dset = H5Dcreate(parent, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   if (dset < 0) {
     Log::Fail(
-      FMT_STRING("Could not create tensor {}. Dims {}. Error {}"),
+      "Could not create tensor {}. Dims {}. Error {}",
       name,
       fmt::join(dims, ","),
       HD5::GetError());
@@ -52,9 +52,9 @@ void store_tensor(Handle const &parent, std::string const &name, Sz<ND> const &d
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    Log::Fail(FMT_STRING("Writing Tensor {}: Error {}"), name, HD5::GetError());
+    Log::Fail("Writing Tensor {}: Error {}", name, HD5::GetError());
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("Wrote tensor: {}"), name);
+    Log::Print<Log::Level::High>("Wrote tensor: {}", name);
   }
 }
 
@@ -85,9 +85,9 @@ void store_matrix(Handle const &parent, std::string const &name, Eigen::DenseBas
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    Log::Fail(FMT_STRING("Could not write matrix {} into handle {}, code: {}"), name, parent, status);
+    Log::Fail("Could not write matrix {} into handle {}, code: {}", name, parent, status);
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("Wrote matrix: {}"), name);
+    Log::Print<Log::Level::High>("Wrote matrix: {}", name);
   }
 }
 
@@ -96,17 +96,17 @@ Writer::Writer(std::string const &fname)
   Init();
   handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (handle_ < 0) {
-    Log::Fail(FMT_STRING("Could not open file {} for writing"), fname);
+    Log::Fail("Could not open file {} for writing", fname);
   } else {
-    Log::Print(FMT_STRING("Opened file to write: {}"), fname);
-    Log::Print<Log::Level::High>(FMT_STRING("Handle: {}"), handle_);
+    Log::Print("Opened file to write: {}", fname);
+    Log::Print<Log::Level::High>("Handle: {}", handle_);
   }
 }
 
 Writer::~Writer()
 {
   H5Fclose(handle_);
-  Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
+  Log::Print<Log::Level::High>("Closed handle: {}", handle_);
 }
 
 void Writer::writeString(std::string const &label, std::string const &string) {  herr_t status;
@@ -120,7 +120,7 @@ void Writer::writeString(std::string const &label, std::string const &string) { 
   status = H5Dclose(dset);
   status = H5Sclose(space);
   if (status) {
-    Log::Fail(FMT_STRING("Could not write string {} into handle {}, code: {}"), label, handle_, status);
+    Log::Fail("Could not write string {} into handle {}, code: {}", label, handle_, status);
   }
 }
 
@@ -131,28 +131,28 @@ void Writer::writeInfo(Info const &info)
   auto const space = H5Screate_simple(1, dims, NULL);
   hid_t const dset = H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not create info struct in file {}, code: {}"), handle_, dset);
+    Log::Fail("Could not create info struct in file {}, code: {}", handle_, dset);
   }
   herr_t status;
   status = H5Dwrite(dset, info_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &info);
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status != 0) {
-    Log::Fail(FMT_STRING("Could not write info struct in file {}, code: {}"), handle_, status);
+    Log::Fail("Could not write info struct in file {}, code: {}", handle_, status);
   }
-  Log::Print<Log::Level::High>(FMT_STRING("Wrote info struct"));
+  Log::Print<Log::Level::High>("Wrote info struct");
 }
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
-  Log::Print(FMT_STRING("Writing meta data"));
+  Log::Print("Writing meta data");
   auto m_group = H5Gcreate(handle_, Keys::Meta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
   herr_t status;
   for (auto const &kvp : meta) {
-    Log::Print(FMT_STRING("Writing {}:{}"), kvp.first, kvp.second);
+    Log::Print("Writing {}:{}", kvp.first, kvp.second);
     hid_t const dset =
       H5Dcreate(m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(kvp.second));
@@ -161,7 +161,7 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
   status = H5Sclose(space);
   status = H5Gclose(m_group);
   if (status != 0) {
-    Log::Fail(FMT_STRING("Exception occured storing meta-data in file {}"), handle_);
+    Log::Fail("Exception occured storing meta-data in file {}", handle_);
   }
 }
 

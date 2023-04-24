@@ -63,7 +63,7 @@ int main_pdhg(args::Subparser &parser)
   for (Index iv = 0; iv < volumes; iv++) {
     out.chip<4>(iv) = out_cropper.crop4(pdhg.run(CChipMap(allData, iv), τ.Get())) / out.chip<4>(iv).constant(scale);
   }
-  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+  Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);
   return EXIT_SUCCESS;
 }

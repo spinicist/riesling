@@ -22,8 +22,8 @@ auto ConjugateGradients::run(Cx *bdata, Cx *x0data) const -> Vector
   p = r;
   float r_old = r.squaredNorm();
   float const thresh = resTol * std::sqrt(r_old);
-  Log::Print(FMT_STRING("CG |r| {:5.3E} threshold {:5.3E}"), std::sqrt(r_old), thresh);
-  Log::Print(FMT_STRING("IT |r|       α         β         |x|"));
+  Log::Print("CG |r| {:5.3E} threshold {:5.3E}", std::sqrt(r_old), thresh);
+  Log::Print("IT |r|       α         β         |x|");
   PushInterrupt();
   for (Index icg = 0; icg < iterLimit; icg++) {
     q = op->forward(p);
@@ -31,8 +31,8 @@ auto ConjugateGradients::run(Cx *bdata, Cx *x0data) const -> Vector
     x = x + p * α;
     if (debug) {
         if (auto top = std::dynamic_pointer_cast<TensorOperator<Cx, 5, 4>>(op)) {
-            Log::Tensor(fmt::format(FMT_STRING("cg-x-{:02}"), icg), top->ishape, x.data());
-            Log::Tensor(fmt::format(FMT_STRING("cg-r-{:02}"), icg), top->ishape, r.data());
+            Log::Tensor(fmt::format("cg-x-{:02}", icg), top->ishape, x.data());
+            Log::Tensor(fmt::format("cg-r-{:02}", icg), top->ishape, r.data());
         }
     }
     r = r - q * α;
@@ -40,9 +40,9 @@ auto ConjugateGradients::run(Cx *bdata, Cx *x0data) const -> Vector
     float const β = r_new / r_old;
     p = r + p * β;
     float const nr = sqrt(r_new);
-    Log::Print(FMT_STRING("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E}"), icg, nr, α, β, x.norm());
+    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", icg, nr, α, β, x.norm());
     if (nr < thresh) {
-      Log::Print(FMT_STRING("Reached convergence threshold"));
+      Log::Print("Reached convergence threshold");
       break;
     }
     r_old = r_new;

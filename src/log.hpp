@@ -45,7 +45,7 @@ auto TheTime() -> std::string;
 template <Log::Level level = Log::Level::Low, typename... Args>
 inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
 {
-  std::string const entry = fmt::format(FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
+  std::string const entry = fmt::format("{} {}\n", TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
   if (level == Level::Low) {
     SaveEntry(entry);
   }
@@ -58,7 +58,7 @@ template <Log::Level level = Log::Level::Low, typename... Args>
 inline void Warn(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   if (level <= CurrentLevel()) {
-    fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
+    fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{} {}\n", TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
   }
 }
 
@@ -66,7 +66,7 @@ template <typename... Args>
 __attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   auto const msg =
-    fmt::format(FMT_STRING("{} {}"), fmt::format("{}", TheTime()), fmt::format(fstr, std::forward<Args>(args)...));
+    fmt::format("{} {}", fmt::format("{}", TheTime()), fmt::format(fstr, std::forward<Args>(args)...));
   if (CurrentLevel() > Level::Testing) {
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", msg);
   }

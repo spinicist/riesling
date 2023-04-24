@@ -7,7 +7,7 @@ Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelS
   if (extent < 0.f) {
     std::transform(
       matrix.begin(), matrix.end(), fullSz.begin(), sz_.begin(), [](Index const a, Index const b) { return std::min(a, b); });
-    Log::Print<Log::Level::High>(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+    Log::Print<Log::Level::High>("Cropper start {} size {}", st_, sz_);
   } else {
     Eigen::Array3l full;
     std::copy_n(&fullSz[0], 3, full.begin());
@@ -15,7 +15,7 @@ Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelS
     Eigen::Array3l crop = (((extent / voxelSz) / 2).floor() * 2).cast<Index>().min(full);
     std::copy_n(crop.begin(), 3, sz_.begin());
     Log::Print<Log::Level::High>(
-      FMT_STRING("Cropper start {} size {} full {} extent {} voxel-size {}"), st_, sz_, fullSz, extent, voxelSz.transpose());
+      "Cropper start {} size {} full {} extent {} voxel-size {}", st_, sz_, fullSz, extent, voxelSz.transpose());
   }
   calcStart(fullSz);
 }
@@ -26,14 +26,14 @@ Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)
   sz_[1] = cropSz[1];
   sz_[2] = cropSz[2];
   calcStart(fullSz);
-  Log::Print<Log::Level::High>(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Print<Log::Level::High>("Cropper start {} size {}", st_, sz_);
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Sz3 const &cropSz)
 {
   sz_ = cropSz;
   calcStart(fullSz);
-  Log::Print<Log::Level::High>(FMT_STRING("Cropper start {} size {}"), st_, sz_);
+  Log::Print<Log::Level::High>("Cropper start {} size {}", st_, sz_);
 }
 
 void Cropper::calcStart(Sz3 const &fullSz)

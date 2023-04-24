@@ -24,14 +24,14 @@ Trajectory::Trajectory(HD5::Reader const &reader)
 void Trajectory::init()
 {
   if (points_.dimension(0) < 1 || points_.dimension(0) > 3) {
-    Log::Fail(FMT_STRING("Trajectory has {} dimensions"), points_.dimension(0));
+    Log::Fail("Trajectory has {} dimensions", points_.dimension(0));
   }
 
   float const maxCoord = Maximum(points_.abs());
   if (maxCoord > 0.5f) {
-    Log::Warn(FMT_STRING("Maximum trajectory co-ordinate {} > 0.5"), maxCoord);
+    Log::Warn("Maximum trajectory co-ordinate {} > 0.5", maxCoord);
   }
-  Log::Print<Log::Level::Debug>(FMT_STRING("{}D Trajectory size {},{}"), nDims(), nSamples(), nTraces());
+  Log::Print<Log::Level::Debug>("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
 }
 
 void Trajectory::write(HD5::Writer &writer) const
@@ -55,7 +55,7 @@ auto Trajectory::matrix(float const fov) const -> Sz3 {
     for (Index ii = 0; ii < 3; ii++) {
       matrix[ii] = bigMatrix[ii];
     }
-    Log::Print<Log::Level::High>(FMT_STRING("Requested FOV {} from matrix {}, calculated {}"), fov, info_.matrix, matrix);
+    Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov, info_.matrix, matrix);
     return matrix;
   } else {
     return info_.matrix;
@@ -77,7 +77,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   float const dsamp = res / info_.voxel_size.minCoeff();
   if (dsamp < 1.f) {
     Log::Fail(
-      FMT_STRING("Downsample resolution {} is lower than input resolution {}"), res, info_.voxel_size.minCoeff());
+      "Downsample resolution {} is lower than input resolution {}", res, info_.voxel_size.minCoeff());
   }
   auto dsInfo = info_;
   float scale = 1.f;
@@ -106,16 +106,16 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   }
   Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print(
-    FMT_STRING("Downsample res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}"),
+    "Downsample res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}",
     res,
     dsamp,
     dsInfo.matrix,
     dsInfo.voxel_size.transpose(),
     minSamp,
     maxSamp,
-    lores > 0 ? fmt::format(FMT_STRING(", ignoring {} lo-res traces"), lores) : "");
+    lores > 0 ? fmt::format(", ignoring {} lo-res traces", lores) : "");
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{nDims(), dsSamples, nTraces()}));
-  Log::Print(FMT_STRING("Downsampled trajectory dims {}"), dsPoints.dimensions());
+  Log::Print("Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(Trajectory(dsInfo, dsPoints), minSamp, dsSamples);
 }
 

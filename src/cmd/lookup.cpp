@@ -37,12 +37,12 @@ int main_lookup(args::Subparser &parser)
 
   Index const N = dictionary.dimension(0);
   if (parameters.dimension(1) != N) {
-    Log::Fail(FMT_STRING("Dictionary has {} entries but parameters has {}"), N, parameters.dimension(1));
+    Log::Fail("Dictionary has {} entries but parameters has {}", N, parameters.dimension(1));
   }
-  Log::Print(FMT_STRING("Dictionary has {} entries"), N);
+  Log::Print("Dictionary has {} entries", N);
 
   for (Index iv = 0; iv < images.dimension(4); iv++) {
-    Log::Print(FMT_STRING("Processing volume {}"), iv);
+    Log::Print("Processing volume {}", iv);
     auto ztask = [&](Index const iz) {
       for (Index iy = 0; iy < images.dimension(2); iy++) {
         for (Index ix = 0; ix < images.dimension(1); ix++) {

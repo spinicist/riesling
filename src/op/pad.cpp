@@ -7,14 +7,14 @@ namespace rl {
 
 template <typename Scalar_, int Rank, int ImgRank>
 PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, ImgDims const &padSize, OtherDims const &otherSize)
-  : Parent(fmt::format(FMT_STRING("{}D PadOp"), ImgRank), Concatenate(otherSize, imgSize), Concatenate(otherSize, padSize))
+  : Parent(fmt::format("{}D PadOp", ImgRank), Concatenate(otherSize, imgSize), Concatenate(otherSize, padSize))
 {
   init();
 }
 
 template <typename Scalar_, int Rank, int ImgRank>
 PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, OutDims os)
-  : Parent(fmt::format(FMT_STRING("{}D PadOp"), ImgRank), Concatenate(FirstN<Rank - ImgRank>(os), imgSize), os)
+  : Parent(fmt::format("{}D PadOp", ImgRank), Concatenate(FirstN<Rank - ImgRank>(os), imgSize), os)
 {
   init();
 }
@@ -24,7 +24,7 @@ void PadOp<Scalar_, Rank, ImgRank>::init()
 {
   for (Index ii = 0; ii < Rank; ii++) {
     if (ishape[ii] > oshape[ii]) {
-      Log::Fail(FMT_STRING("Padding input dims {} larger than output dims {}"), ishape, oshape);
+      Log::Fail("Padding input dims {} larger than output dims {}", ishape, oshape);
     }
   }
   std::transform(

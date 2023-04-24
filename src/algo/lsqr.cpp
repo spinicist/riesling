@@ -22,7 +22,7 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   float cs2 = -1.f;
   float sn2 = 0.f;
 
-  Log::Print(FMT_STRING("LSQR α {:5.3E} β {:5.3E} λ {}"), α, β, λ);
+  Log::Print("LSQR α {:5.3E} β {:5.3E} λ {}", α, β, λ);
   Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
@@ -67,7 +67,7 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
     float const normAr = α * std::abs(τ);
 
     Log::Print(
-      FMT_STRING("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}"),
+      "{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}",
       ii,
       α,
       β,
@@ -78,29 +78,29 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
       normx);
 
     if (1.f + (1.f / condA) <= 1.f) {
-      Log::Print(FMT_STRING("Cond(A) is very large"));
+      Log::Print("Cond(A) is very large");
       break;
     }
     if ((1.f / condA) <= cTol) {
-      Log::Print(FMT_STRING("Cond(A) has exceeded limit"));
+      Log::Print("Cond(A) has exceeded limit");
       break;
     }
 
     if (1.f + (normAr / (normA * normr)) <= 1.f) {
-      Log::Print(FMT_STRING("Least-squares solution reached machine precision"));
+      Log::Print("Least-squares solution reached machine precision");
       break;
     }
     if ((normAr / (normA * normr)) <= aTol) {
-      Log::Print(FMT_STRING("Least-squares = {:5.3E} < {:5.3E}"), normAr / (normA * normr), aTol);
+      Log::Print("Least-squares = {:5.3E} < {:5.3E}", normAr / (normA * normr), aTol);
       break;
     }
 
     if (normr <= (bTol * normb + aTol * normA * normx)) {
-      Log::Print(FMT_STRING("Ax - b <= aTol, bTol"));
+      Log::Print("Ax - b <= aTol, bTol");
       break;
     }
     if ((1.f + normr / (normb + normA * normx)) <= 1.f) {
-      Log::Print(FMT_STRING("Ax - b reached machine precision"));
+      Log::Print("Ax - b reached machine precision");
       break;
     }
     if (InterruptReceived()) {

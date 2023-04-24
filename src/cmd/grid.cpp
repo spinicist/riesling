@@ -32,7 +32,7 @@ int main_grid(args::Subparser &parser)
     auto const rad_ks = gridder->forward(cart);
     writer.writeTensor(
       HD5::Keys::Noncartesian, Sz5{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1, 1}, rad_ks.data());
-    Log::Print(FMT_STRING("Wrote non-cartesian k-space. Took {}"), Log::ToNow(start));
+    Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
   } else {
     auto const noncart = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 0);
     Index const nC = noncart.dimension(0);
@@ -46,7 +46,7 @@ int main_grid(args::Subparser &parser)
       cart.chip<5>(is) = gridder->adjoint(slice);
     }
     writer.writeTensor(HD5::Keys::Cartesian, cart.dimensions(), cart.data());
-    Log::Print(FMT_STRING("Wrote cartesian k-space. Took {}"), Log::ToNow(start));
+    Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
   }
 
   return EXIT_SUCCESS;

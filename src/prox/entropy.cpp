@@ -9,7 +9,7 @@ Entropy::Entropy(float const λ)
   : Prox<Cx>()
   , λ_{λ}
 {
-  Log::Print(FMT_STRING("Entropy Prox λ {}"), λ);
+  Log::Print("Entropy Prox λ {}", λ);
 }
 
 void Entropy::apply(float const α, CMap const &v, Map &z) const
@@ -22,14 +22,14 @@ void Entropy::apply(float const α, CMap const &v, Map &z) const
     x = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   z = v.array() * (x / vabs);
-  Log::Print(FMT_STRING("Entropy α {} λ {} t {} |v| {} |z| {}"), α, λ_, t, v.norm(), z.norm());
+  Log::Print("Entropy α {} λ {} t {} |v| {} |z| {}", α, λ_, t, v.norm(), z.norm());
 }
 
 NMREntropy::NMREntropy(float const λ)
   : Prox<Cx>()
   , λ_{λ}
 {
-  Log::Print(FMT_STRING("NMR Entropy Prox λ {}"), λ_);
+  Log::Print("NMR Entropy Prox λ {}", λ_);
 }
 
 void NMREntropy::apply(float const α, CMap const &v, Map &z) const
@@ -43,7 +43,7 @@ void NMREntropy::apply(float const α, CMap const &v, Map &z) const
     x = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   z = v.array() * (x / vabs);
-  Log::Print(FMT_STRING("NMR Entropy α {} λ {} t {} |v| {} |z| {}"), α, λ_, t, v.norm(), z.norm());
+  Log::Print("NMR Entropy α {} λ {} t {} |v| {} |z| {}", α, λ_, t, v.norm(), z.norm());
 }
 
 } // namespace rl

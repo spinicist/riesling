@@ -31,7 +31,7 @@ struct Scale final : TensorOperator<Scalar_, Rank, Rank>
       res[ii] = 1;
       brd[ii] = dims[ii];
     }
-    Log::Print<Log::Level::Debug>(FMT_STRING("{} dims {}->{} res {} brd {}"), this->name, ain.dimensions(), dims, res, brd);
+    Log::Print<Log::Level::Debug>("{} dims {}->{} res {} brd {}", this->name, ain.dimensions(), dims, res, brd);
   }
 
   void forward(InCMap const &x, OutMap &y) const

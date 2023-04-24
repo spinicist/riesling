@@ -45,7 +45,7 @@ struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::Ou
   // auto adjfwd(InputMap x) const -> InputMap
   // {
   //   for (Index ii = 0; ii < N_; ii++) {
-  //     Log::Print<Log::Level::Debug>(FMT_STRING("LoopOp Adjoint-Forward Iteration {}"), ii);
+  //     Log::Print<Log::Level::Debug>("LoopOp Adjoint-Forward Iteration {}", ii);
   //     this->input().chip(ii, InRank - 1) = op_->adjfwd(ChipMap(x, ii));
   //   }
   //   return this->input();

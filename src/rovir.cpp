@@ -44,7 +44,7 @@ auto ROVIR(
   Cx4 const channelImages = nufft->adjoint(data).chip<1>(0);
   Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
   auto thresh = Otsu(CollapseToArray(rss)).thresh;
-  Log::Print(FMT_STRING("ROVIR signal threshold {}"), thresh);
+  Log::Print("ROVIR signal threshold {}", thresh);
   Re3 signalMask(sz), interMask(sz);
   signalMask.setZero();
   interMask = (rss > thresh).cast<float>();
@@ -54,7 +54,7 @@ auto ROVIR(
   // Copy to A & B matrices
   Index const nSig = Sum(signalMask);
   Index const nInt = Sum(interMask);
-  Log::Print(FMT_STRING("{} voxels in signal mask, {} in interference mask"), nSig, nInt);
+  Log::Print("{} voxels in signal mask, {} in interference mask", nSig, nInt);
 
   Eigen::MatrixXcf Ω = Eigen::MatrixXcf::Zero(nC, nSig);
   Eigen::MatrixXcf Γ = Eigen::MatrixXcf::Zero(nC, nInt);

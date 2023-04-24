@@ -21,7 +21,7 @@ void Vector3fReader::operator()(std::string const &name, std::string const &valu
   float x, y, z;
   auto result = scn::scan(value, "{},{},{}", x, y, z);
   if (!result) {
-    Log::Fail(FMT_STRING("Could not read vector for {} from value {} because {}"), name, value, result.error());
+    Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error());
   }
   v.x() = x;
   v.y() = y;
@@ -41,7 +41,7 @@ void VectorReader<T>::operator()(std::string const &name, std::string const &inp
       values.push_back(val);
     }
   } else {
-    Log::Fail(FMT_STRING("Could not read argument for {}"), name);
+    Log::Fail("Could not read argument for {}", name);
   }
 }
 
@@ -53,7 +53,7 @@ void Sz2Reader::operator()(std::string const &name, std::string const &value, Sz
   Index i, j;
   auto result = scn::scan(value, "{},{}", i, j);
   if (!result) {
-    Log::Fail(FMT_STRING("Could not read {} from '{}': {}"), name, value, result.error());
+    Log::Fail("Could not read {} from '{}': {}", name, value, result.error());
   }
   v = Sz2{i, j};
 }
@@ -63,7 +63,7 @@ void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz
   Index i, j, k;
   auto result = scn::scan(value, "{},{},{}", i, j, k);
   if (!result) {
-    Log::Fail(FMT_STRING("Could not read {} from '{}': {}"), name, value, result.error());
+    Log::Fail("Could not read {} from '{}': {}", name, value, result.error());
   }
   v = Sz3{i, j, k};
 }
@@ -99,7 +99,7 @@ void SetLogging(std::string const &name)
   }
 
   Log::Print("Welcome to RIESLING");
-  Log::Print(FMT_STRING("Command: {}"), name);
+  Log::Print("Command: {}", name);
 
   if (debug) {
     Log::SetDebugFile(debug.Get());
@@ -113,7 +113,7 @@ void SetThreadCount()
   } else if (char *const env_p = std::getenv("RL_THREADS")) {
     Threads::SetGlobalThreadCount(std::atoi(env_p));
   }
-  Log::Print(FMT_STRING("Using {} threads"), Threads::GlobalThreadCount());
+  Log::Print("Using {} threads", Threads::GlobalThreadCount());
 }
 
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
@@ -151,7 +151,7 @@ auto ReadBasis(std::string const &basisFile) -> std::optional<Re2>
         Re2 const b1 = basis.slice(Sz2{0, which}, Sz2{basis.dimension(0), 1});
         return std::optional<Re2>(b1);
       } else {
-        Log::Fail(FMT_STRING("Requested basis vector {} but only {} in file {}"), which, basis.dimension(1), fname);
+        Log::Fail("Requested basis vector {} but only {} in file {}", which, basis.dimension(1), fname);
       }
     }
   }
@@ -161,7 +161,7 @@ std::string
 OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
 {
   return fmt::format(
-    FMT_STRING("{}{}.{}"),
+    "{}{}.{}",
     oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
     suffix.empty() ? "" : fmt::format("-{}", suffix),
     extension);

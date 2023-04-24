@@ -16,7 +16,7 @@ using namespace rl;
 
 Trajectory LoadTrajectory(std::string const &file)
 {
-  Log::Print(FMT_STRING("Reading external trajectory from {}"), file);
+  Log::Print("Reading external trajectory from {}", file);
   HD5::Reader reader(file);
   return Trajectory(reader);
 }
@@ -43,7 +43,7 @@ Trajectory CreateTrajectory(
 
   Index const samples = Index(readOS * matrix / 2);
 
-  Log::Print(FMT_STRING("Using {} hi-res spokes"), spokes);
+  Log::Print("Using {} hi-res spokes", spokes);
   auto points = phyllo ? Phyllotaxis(samples, spokes, 7, sps, true) : ArchimedeanSpiral(samples, spokes);
 
   if (lores > 0) {
@@ -52,15 +52,15 @@ Trajectory CreateTrajectory(
     auto loPoints = ArchimedeanSpiral(samples, loSpokes);
     loPoints = loPoints / loPoints.constant(lores);
     points = Re3(points.concatenate(loPoints, 2));
-    Log::Print(FMT_STRING("Added {} lo-res spokes"), loSpokes);
+    Log::Print("Added {} lo-res spokes", loSpokes);
   }
 
   if (trim > 0) {
     points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, samples - trim, spokes}));
   }
 
-  Log::Print(FMT_STRING("Matrix Size: {} Voxel Size: {}"), info.matrix, info.voxel_size.transpose());
-  Log::Print(FMT_STRING("Samples: {} Traces: {}"), samples, spokes);
+  Log::Print("Matrix Size: {} Voxel Size: {}", info.matrix, info.voxel_size.transpose());
+  Log::Print("Samples: {} Traces: {}", samples, spokes);
 
   return Trajectory(info, points);
 }

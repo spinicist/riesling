@@ -29,7 +29,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
     , ishape{xd}
     , oshape{yd}
   {
-    Log::Print<Log::Level::Debug>(FMT_STRING("{} created. Input dims {} Output dims {}"), this->name, ishape, oshape);
+    Log::Print<Log::Level::Debug>("{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
   }
 
   virtual ~TensorOperator(){};
@@ -92,7 +92,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
     }
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
-        FMT_STRING("{} forward started. Dimensions {}->{}. Norm {}"), this->name, this->ishape, this->oshape, Norm(x));
+        "{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
     }
     return Log::Now();
   }
@@ -101,7 +101,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
   {
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
-        FMT_STRING("{} forward finished. Took {}. Norm {}."), this->name, Log::ToNow(start), Norm(y));
+        "{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
     }
   }
 
@@ -112,7 +112,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
     }
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
-        FMT_STRING("{} adjoint started. Dimensions {}->{}. Norm {}"), this->name, this->oshape, this->ishape, Norm(y));
+        "{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
     }
     return Log::Now();
   }
@@ -121,7 +121,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
   {
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
-        FMT_STRING("{} adjoint finished. Took {}. Norm {}"), this->name, Log::ToNow(start), Norm(x));
+        "{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
     }
   }
 };

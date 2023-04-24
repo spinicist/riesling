@@ -76,11 +76,11 @@ Eigen::MatrixXcf CalcWeights(Eigen::MatrixXcf const &src, Eigen::MatrixXcf const
 std::vector<Index> FindClosest(Re3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_traces)
 {
   std::vector<Index> traces(n_spoke);
-  Re1 const end_is = traj.chip(tgt, 2).chip(traj.dimension(1) - 1, 1);
+  Re1 const end_is = traj.chip<2>(tgt).chip<1>(traj.dimension(1) - 1);
   std::partial_sort(
     all_traces.begin(), all_traces.begin() + n_spoke, all_traces.end(), [&traj, end_is](Index const a, Index const b) {
-      auto const &end_a = traj.chip(a, 2).chip(traj.dimension(1) - 1, 1);
-      auto const &end_b = traj.chip(b, 2).chip(traj.dimension(1) - 1, 1);
+      auto const &end_a = traj.chip<2>(a).chip<1>(traj.dimension(1) - 1);
+      auto const &end_b = traj.chip<2>(b).chip<1>(traj.dimension(1) - 1);
       return Norm(end_a - end_is) < Norm(end_b - end_is);
     });
   std::copy_n(all_traces.begin(), n_spoke, traces.begin());
@@ -99,13 +99,13 @@ void zinGRAPPA(
 {
   Index const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
 
-  Log::Print(FMT_STRING("ZINFANDEL Gap {} Sources {} Cal traces/Read {}/{} "), gap_sz, n_src, n_spoke, n_read);
+  Log::Print("ZINFANDEL Gap {} Sources {} Cal traces/Read {}/{} ", gap_sz, n_src, n_spoke, n_read);
 
   for (Index ig = gap_sz; ig > 0; ig--) {
     auto spoke_task = [&](Index const is) {
       std::vector<Index> all_traces(ks.dimension(2)); // Need a thread-local copy of the indices
       std::iota(all_traces.begin(), all_traces.end(), 0L);
-      float const scale = Re0(ks.chip(is, 2).abs().maximum())();
+      float const scale = Re0(ks.chip<2>(is).abs().maximum())();
       auto const traces = FindClosest(traj, is, n_spoke, all_traces);
       auto const calS = GrabSources(ks, scale, n_src, ig + 1, n_read, traces);
       auto const calT = GrabTargets(ks, scale, ig, n_read, traces);
@@ -116,7 +116,7 @@ void zinGRAPPA(
         ks(icoil, ig - 1, is) = T(icoil) * scale;
       }
     };
-    Log::Print(FMT_STRING("Gap index {}"), ig);
+    Log::Print("Gap index {}", ig);
     Threads::For(spoke_task, 0, ks.dimension(2), "traces");
   }
 }

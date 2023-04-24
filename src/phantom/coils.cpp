@@ -10,11 +10,11 @@ Cx4 birdcage(
   float const coil_rad_mm, // Radius of the actual coil, i.e. where the channels should go
   float const sense_rad_mm)
 {
-  Log::Print(FMT_STRING("Constructing bird-cage sensitivities with {} channels in {} rings"), channels, nrings);
+  Log::Print("Constructing bird-cage sensitivities with {} channels in {} rings", channels, nrings);
   Cx4 all(channels, matrix[0], matrix[1], matrix[2]);
 
   if (channels < 1) {
-    Log::Fail(FMT_STRING("Must have at least one channel for birdcage sensitivities"));
+    Log::Fail("Must have at least one channel for birdcage sensitivities");
   } else if (channels == 1) {
     all.setConstant(1.f);
   } else {

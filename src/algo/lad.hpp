@@ -40,7 +40,7 @@ struct LAD
 
     float const sqrtM = sqrt(Product(x.dimensions()));
     float const sqrtN = sqrt(Product(u.dimensions()));
-    Log::Print(FMT_STRING("LAD ρ {} Abs Tol {} Rel Tol {}"), ρ, abstol, reltol);
+    Log::Print("LAD ρ {} Abs Tol {} Rel Tol {}", ρ, abstol, reltol);
     PushInterrupt();
     for (Index ii = 0; ii < iterLimit; ii++) {
       if (ii == 1) {
@@ -67,7 +67,7 @@ struct LAD
 
       Log::Tensor(x, fmt::format("admm-x-{:02d}", ii));
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |Ax - b| {} |z| {} |u| {}"),
+        "ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |x| {} |Ax - b| {} |z| {} |u| {}",
         ii,
         pNorm,
         pEps,
@@ -84,11 +84,11 @@ struct LAD
       if (pNorm > μ * dNorm) {
         ρ *= τ;
         u /= u.constant(τ);
-        Log::Print(FMT_STRING("Primal norm outside limit {}, rescaled ρ to {} |u| {}"), μ * dNorm, ρ, Norm(u));
+        Log::Print("Primal norm outside limit {}, rescaled ρ to {} |u| {}", μ * dNorm, ρ, Norm(u));
       } else if (dNorm > μ * pNorm) {
         ρ /= τ;
         u *= u.constant(τ);
-        Log::Print(FMT_STRING("Dual norm outside limit {}, rescaled ρ to {} |u| {}"), μ * pNorm, ρ, Norm(u));
+        Log::Print("Dual norm outside limit {}, rescaled ρ to {} |u| {}", μ * pNorm, ρ, Norm(u));
       }
       if (InterruptReceived()) {
         break;

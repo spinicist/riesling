@@ -45,9 +45,9 @@ int main_compress(args::Subparser &parser)
     Index const maxRead = samples - pcaRead.Get()[0];
     Index const nread = (pcaRead.Get()[1] > maxRead) ? maxRead : pcaRead.Get()[1];
     if (pcaTraces.Get()[0] + pcaTraces.Get()[1] > traces) {
-      Log::Fail(FMT_STRING("Requested end spoke {} is past end of file {}"), pcaTraces.Get()[0] + pcaTraces.Get()[1], traces);
+      Log::Fail("Requested end spoke {} is past end of file {}", pcaTraces.Get()[0] + pcaTraces.Get()[1], traces);
     }
-    Log::Print(FMT_STRING("Using {} read points, {} traces, {} stride"), nread, pcaTraces.Get()[1], pcaTraces.Get()[2]);
+    Log::Print("Using {} read points, {} traces, {} stride", nread, pcaTraces.Get()[1], pcaTraces.Get()[2]);
     Cx4 const ref = ks.slice(
                         Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
                         Sz4{channels, pcaRead.Get()[1], pcaTraces.Get()[1], pcaSlices.Get()[1]})

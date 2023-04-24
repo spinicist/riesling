@@ -47,7 +47,7 @@ auto BruteForceDictionary::project(Eigen::VectorXcf const &p) const -> Eigen::Ve
       bestIndex = ii;
     }
   }
-  // fmt::print(FMT_STRING("bestρ {} p {} d {} proj {}\n"), bestρ, p.transpose(), dictionary.col(bestIndex).transpose(),
+  // fmt::print("bestρ {} p {} d {} proj {}\n", bestρ, p.transpose(), dictionary.col(bestIndex).transpose(),
   // (dictionary.col(bestIndex) * bestρ).transpose());
   return dictionary.col(bestIndex) * bestρ;
 }

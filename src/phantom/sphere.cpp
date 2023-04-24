@@ -7,7 +7,7 @@ Cx3 SphericalPhantom(
 {
 
   // Draw a spherical phantom
-  Log::Print(FMT_STRING("Drawing sphere center {} radius {} mm intensity {}"), c.transpose(), r, i);
+  Log::Print("Drawing sphere center {} radius {} mm intensity {}", c.transpose(), r, i);
   Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();
   Index const cx = phan.dimension(0) / 2;

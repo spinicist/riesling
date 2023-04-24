@@ -18,7 +18,7 @@ struct Compose final : TensorOperator<typename Op1::Scalar, Op1::InRank, Op2::Ou
     , op2_{op2}
   {
     if (op1_->oshape != op2_->ishape) {
-      Log::Fail(FMT_STRING("{} op1 output: {} did not match op2 input: {}"), this->name, op1_->oshape, op2_->ishape);
+      Log::Fail("{} op1 output: {} did not match op2 input: {}", this->name, op1_->oshape, op2_->ishape);
     }
   }
 

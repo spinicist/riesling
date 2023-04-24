@@ -11,7 +11,7 @@ Index getRank(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not open tensor {}"), name);
+    Log::Fail("Could not open tensor {}", name);
   }
 
   hid_t ds = H5Dget_space(dset);
@@ -24,13 +24,13 @@ Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not open tensor {}"), name);
+    Log::Fail("Could not open tensor {}", name);
   }
 
   hid_t ds = H5Dget_space(dset);
   int const ndims = H5Sget_simple_extent_ndims(ds);
   if (ndims != ND) {
-    Log::Fail(FMT_STRING("Tensor {}: Requested rank {}, on-disk rank {}"), name, ND, ndims);
+    Log::Fail("Tensor {}: Requested rank {}, on-disk rank {}", name, ND, ndims);
   }
   std::array<hsize_t, ND> hdims;
   H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
@@ -44,12 +44,12 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not open tensor '{}'"), name);
+    Log::Fail("Could not open tensor '{}'", name);
   }
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor {}: Requested rank {}, on-disk rank {}"), name, ND, rank);
+    Log::Fail("Tensor {}: Requested rank {}, on-disk rank {}", name, ND, rank);
   }
 
   std::array<hsize_t, ND> dims;
@@ -58,7 +58,7 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   for (int ii = 0; ii < ND; ii++) {
     if ((Index)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
-        FMT_STRING("Tensor {}: expected dimensions were {}, but were {} on disk"),
+        "Tensor {}: expected dimensions were {}, but were {} on disk",
         name,
         fmt::join(tensor.dimensions(), ","),
         fmt::join(dims, ","));
@@ -66,9 +66,9 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
   }
   herr_t ret_value = H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
-    Log::Fail(FMT_STRING("Error reading tensor tensor {}, code: {}"), name, ret_value);
+    Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("Read dataset: {}"), name);
+    Log::Print<Log::Level::High>("Read dataset: {}", name);
   }
 }
 
@@ -79,12 +79,12 @@ void load_tensor_slab(
   int const ND = CD + 1;
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not open tensor '{}'"), name);
+    Log::Fail("Could not open tensor '{}'", name);
   }
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor {}: has rank {}, expected {}"), name, rank, ND);
+    Log::Fail("Tensor {}: has rank {}, expected {}", name, rank, ND);
   }
 
   std::array<hsize_t, ND> dims;
@@ -93,7 +93,7 @@ void load_tensor_slab(
   for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
     if ((Index)dims[ii] != tensor.dimension(ii)) {
       Log::Fail(
-        FMT_STRING("Tensor {}: expected dimensions were {}, but were {} on disk"),
+        "Tensor {}: expected dimensions were {}, but were {} on disk",
         name,
         fmt::join(tensor.dimensions(), ","),
         fmt::join(dims, ","));
@@ -123,9 +123,9 @@ void load_tensor_slab(
 
   status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
-    Log::Fail(FMT_STRING("Tensor {}: Error reading slab {}. HD5 Message: {}"), name, index, GetError());
+    Log::Fail("Tensor {}: Error reading slab {}. HD5 Message: {}", name, index, GetError());
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("Read slab {} from tensor {}"), index, name);
+    Log::Print<Log::Level::High>("Read slab {} from tensor {}", index, name);
   }
 }
 
@@ -134,12 +134,12 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not open tensor '{}'"), name);
+    Log::Fail("Could not open tensor '{}'", name);
   }
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank != ND) {
-    Log::Fail(FMT_STRING("Tensor {}: has rank {}, expected {}"), name, rank, ND);
+    Log::Fail("Tensor {}: has rank {}, expected {}", name, rank, ND);
   }
 
   std::array<hsize_t, ND> dims;
@@ -150,9 +150,9 @@ Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &n
   Eigen::Tensor<Scalar, ND> tensor(tDims);
   herr_t ret_value = H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
-    Log::Fail(FMT_STRING("Error reading tensor {}, code: {}"), name, ret_value);
+    Log::Fail("Error reading tensor {}, code: {}", name, ret_value);
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("Read tensor {}"), name);
+    Log::Print<Log::Level::High>("Read tensor {}", name);
   }
   return tensor;
 }
@@ -162,12 +162,12 @@ Derived load_matrix(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail(FMT_STRING("Could not open matrix '{}'"), name);
+    Log::Fail("Could not open matrix '{}'", name);
   }
   hid_t ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
   if (rank > 2) {
-    Log::Fail(FMT_STRING("Matrix {}: has rank {} on disk, must be 1 or 2"), name, rank);
+    Log::Fail("Matrix {}: has rank {} on disk, must be 1 or 2", name, rank);
   }
 
   std::array<hsize_t, 2> dims;
@@ -176,9 +176,9 @@ Derived load_matrix(Handle const &parent, std::string const &name)
   herr_t ret_value =
     H5Dread(dset, type<typename Derived::Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, matrix.data());
   if (ret_value < 0) {
-    Log::Fail(FMT_STRING("Error reading matrix {}, code: {}"), name, ret_value);
+    Log::Fail("Error reading matrix {}, code: {}", name, ret_value);
   } else {
-    Log::Print<Log::Level::High>(FMT_STRING("Read matrix {}"), name);
+    Log::Print<Log::Level::High>("Read matrix {}", name);
   }
   return matrix;
 }
@@ -186,21 +186,21 @@ Derived load_matrix(Handle const &parent, std::string const &name)
 Reader::Reader(std::string const &fname)
 {
   if (!std::filesystem::exists(fname)) {
-    Log::Fail(FMT_STRING("File does not exist: {}"), fname);
+    Log::Fail("File does not exist: {}", fname);
   }
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (handle_ < 0) {
-    Log::Fail(FMT_STRING("Failed to open {}"), fname);
+    Log::Fail("Failed to open {}", fname);
   }
-  Log::Print(FMT_STRING("Opened file to read: {}"), fname);
-  Log::Print<Log::Level::High>(FMT_STRING("Handle: {}"), handle_);
+  Log::Print("Opened file to read: {}", fname);
+  Log::Print<Log::Level::High>("Handle: {}", handle_);
 }
 
 Reader::~Reader()
 {
   H5Fclose(handle_);
-  Log::Print<Log::Level::High>(FMT_STRING("Closed handle: {}"), handle_);
+  Log::Print<Log::Level::High>("Closed handle: {}", handle_);
 }
 
 auto Reader::list() const -> std::vector<std::string>
@@ -287,7 +287,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
 {
   auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
-    Log::Print<Log::Level::High>(FMT_STRING("No meta-data found in file handle {}"), handle_);
+    Log::Print<Log::Level::High>("No meta-data found in file handle {}", handle_);
     return {};
   }
   auto const names = List(meta_group);
@@ -302,7 +302,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
   }
   status = H5Gclose(meta_group);
   if (status != 0) {
-    Log::Fail(FMT_STRING("Could not load meta-data, code: {}"), status);
+    Log::Fail("Could not load meta-data, code: {}", status);
   }
   return meta;
 }

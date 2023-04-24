@@ -72,7 +72,7 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
     }
     return false;
   });
-  Log::Print<Log::Level::High>(FMT_STRING("Grid co-ord sorting: {}"), Log::ToNow(start));
+  Log::Print<Log::Level::High>("Grid co-ord sorting: {}", Log::ToNow(start));
   return sorted;
 }
 
@@ -84,7 +84,7 @@ Mapping<Rank>::Mapping(
   nomDims = FirstN<Rank>(info.matrix);
   cartDims = fft_size<Rank>(FirstN<Rank>(info.matrix), nomOS);
   osamp = nomOS;
-  Log::Print(FMT_STRING("{}D Mapping. Trajectory samples {} Grid {}"), traj.nDims(), traj.nSamples(), cartDims);
+  Log::Print("{}D Mapping. Trajectory samples {} Grid {}", traj.nDims(), traj.nSamples(), cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
 

@@ -32,7 +32,7 @@ int main_espirit(args::Subparser &parser)
   Trajectory traj(reader);
   auto const ks1 = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, volume.Get());
   auto const &info = traj.info();
-  Log::Print(FMT_STRING("Cropping data to {} mm effective resolution"), res.Get());
+  Log::Print("Cropping data to {} mm effective resolution", res.Get());
   auto [dsTraj, ks] = traj.downsample(ks1, res.Get(), lores.Get(), true);
   auto gridder = make_grid<Cx, 3>(dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), ks.dimension(0));
   auto const sdc = SDC::Choose(sdcOpts, ks.dimension(0), dsTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get());

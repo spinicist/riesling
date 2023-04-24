@@ -16,9 +16,9 @@ Cx6 ToKernels(Cx5 const &grid, Index const kW)
   Index const nKz = grid.dimension(4) - kW + 1;
   Index const nK = nKx * nKy * nKz;
   if (nK < 1) {
-    Log::Fail(FMT_STRING("No kernels to Hankelfy"));
+    Log::Fail("No kernels to Hankelfy");
   }
-  Log::Print(FMT_STRING("Hankelfying {} kernels"), nK);
+  Log::Print("Hankelfying {} kernels", nK);
   Cx6 kernels(nC, nF, kW, kW, kW, nK);
   Index ik = 0;
   for (Index iz = 0; iz < nKx; iz++) {
@@ -49,7 +49,7 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   count.setZero();
   grid.setZero();
   Index ik = 0;
-  Log::Print(FMT_STRING("Unhankelfying {} kernels"), nK);
+  Log::Print("Unhankelfying {} kernels", nK);
   for (Index iz = 0; iz < nZ; iz++) {
     for (Index iy = 0; iy < nY; iy++) {
       for (Index ix = 0; ix < nX; ix++) {
@@ -73,29 +73,29 @@ void SLR::operator()(float const thresh, CMap const& x, Map &y) const
 {
   Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {
-    Log::Fail(FMT_STRING("SLR kernel size less than 3 not supported"));
+    Log::Fail("SLR kernel size less than 3 not supported");
   }
   if (thresh < 0.f || thresh >= nC) {
-    Log::Fail(FMT_STRING("SLR window threshold {} out of range {}-{}"), thresh, 0.f, nC);
+    Log::Fail("SLR window threshold {} out of range {}-{}", thresh, 0.f, nC);
   }
-  Log::Print(FMT_STRING("SLR regularization kernel size {} window-normalized thresh {}"), kSz, thresh);
+  Log::Print("SLR regularization kernel size {} window-normalized thresh {}", kSz, thresh);
   Cx5 grid = channels;
   grid = fft.forward(grid);
   // Now crop out corners which will have zeros
   Index const w = std::floor(grid.dimension(2) / sqrt(3));
-  Log::Print(FMT_STRING("Extract width {}"), w);
+  Log::Print("Extract width {}", w);
 
   Sz5 const cropSz{grid.dimension(0), grid.dimension(1), w, w, w};
   Cx5 cropped = Crop(grid, cropSz);
   Cx6 kernels = ToKernels(cropped, kSz);
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   if (kMat.rows() > kMat.cols()) {
-    Log::Fail(FMT_STRING("Insufficient kernels for SVD {}x{}"), kMat.rows(), kMat.cols());
+    Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols());
   }
   auto const svd = SVD<Cx>(kMat, true, true);
   Index const nK = kernels.dimension(1) * kernels.dimension(2) * kernels.dimension(3) * kernels.dimension(4);
   Index const nZero = (nC - thresh) * nK; // Window-Normalized
-  Log::Print(FMT_STRING("Zeroing {} values check {} nK {}"), nZero, (nC - thresh), nK);
+  Log::Print("Zeroing {} values check {} nK {}", nZero, (nC - thresh), nK);
   auto lrVals = svd.vals;
   lrVals.tail(nZero).setZero();
   kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();

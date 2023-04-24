@@ -52,7 +52,7 @@ std::shared_ptr<TensorOperator<Cx, 4>>
 make_pre(std::string const &type, Sz4 const dims, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
 {
   if (type == "" || type == "none") {
-    Log::Print(FMT_STRING("Using no preconditioning"));
+    Log::Print("Using no preconditioning");
     return std::make_shared<TensorIdentity<Cx, 4>>(dims);
   } else if (type == "kspace") {
     return std::make_shared<Scale<Cx, 4, 1, 1>>(dims, KSpaceSingle(traj, basis, bias).cast<Cx>());
@@ -61,7 +61,7 @@ make_pre(std::string const &type, Sz4 const dims, Trajectory const &traj, std::o
     Re2 pre = reader.readTensor<Re2>(HD5::Keys::Precond);
     if (pre.dimension(0) != traj.nSamples() || pre.dimension(1) != traj.nTraces()) {
       Log::Fail(
-        FMT_STRING("Preconditioner dimensions on disk {} did not match trajectory {}x{}"),
+        "Preconditioner dimensions on disk {} did not match trajectory {}x{}",
         pre.dimension(0),
         pre.dimension(1),
         traj.nSamples(),

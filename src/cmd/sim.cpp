@@ -28,7 +28,7 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
   parameters.setZero();
   Index totalP = 0;
   for (size_t ii = 0; ii < los.size(); ii++) {
-    Log::Print(FMT_STRING("Parameter set {}/{}. Low {} High {}"), ii+1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
+    Log::Print("Parameter set {}/{}. Low {} High {}", ii+1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
     auto p = simulator.parameters(nsamp, los[ii], his[ii]);
     parameters.middleCols(totalP, p.cols()) = p;
     totalP += p.cols();
@@ -38,7 +38,7 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
   auto const start = Log::Now();
   auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
   Threads::For(task, totalP, "Simulation");
-  Log::Print(FMT_STRING("Simulation took {}"), Log::ToNow(start));
+  Log::Print("Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
 }
 

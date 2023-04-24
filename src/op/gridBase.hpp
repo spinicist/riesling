@@ -15,7 +15,7 @@ struct GridBase : TensorOperator<Scalar_, NDim + 2, 3>
   OP_INHERIT(Scalar_, NDim + 2, 3)
 
   GridBase(InDims const xd, OutDims const yd)
-    : Parent(fmt::format(FMT_STRING("{}D GridOp"), NDim), xd, yd)
+    : Parent(fmt::format("{}D GridOp", NDim), xd, yd)
   {
   }
   virtual ~GridBase(){};

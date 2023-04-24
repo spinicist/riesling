@@ -19,7 +19,7 @@ auto Scaling(args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const 
     float const max = vec[vec.size() - 1];
     float const p90 = vec[vec.size() * 0.9];
     scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
-    Log::Print(FMT_STRING("Automatic scaling={}. 50% {} 90% {} 100% {}."), scale, med, p90, max);
+    Log::Print("Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
   } else if (type.Get() == "otsu") {
     Re4 const abs = (recon->adjoint(data)).abs();
     auto const [thresh, count] = Otsu(CollapseToArray(abs));
@@ -28,12 +28,12 @@ auto Scaling(args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const 
     std::sort(vals.begin(), vals.end());
     float const med = vals[count * 0.5];
     scale = 1.f / med;
-    Log::Print(FMT_STRING("Otsu + median scaling = {}"), scale);
+    Log::Print("Otsu + median scaling = {}", scale);
   } else {
     if (scn::scan(type.Get(), "{}", scale)) {
-      Log::Print(FMT_STRING("Scale: {}"), scale);
+      Log::Print("Scale: {}", scale);
     } else {
-      Log::Fail(FMT_STRING("Could not read number from scaling: "), type.Get());
+      Log::Fail("Could not read number from scaling: ", type.Get());
     }
   }
   return scale;

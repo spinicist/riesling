@@ -28,10 +28,10 @@ int main_nii(args::Subparser &parser)
   Index const stV = volArg ? 0 : volArg.Get();
 
   if (stE < 0 || stE >= image.dimension(0)) {
-    Log::Fail(FMT_STRING("Requested frame {} is out of range 0-{}"), stE, sz[0]);
+    Log::Fail("Requested frame {} is out of range 0-{}", stE, sz[0]);
   }
   if (stV < 0 || stE >= image.dimension(4)) {
-    Log::Fail(FMT_STRING("Requested frame {} is out of range 0-{}"), stE, sz[4]);
+    Log::Fail("Requested frame {} is out of range 0-{}", stE, sz[4]);
   }
 
   Cx4 const output = image.slice(Sz5{stE, 0, 0, 0, stV}, Sz5{szE, sz[1], sz[2], sz[3], szV})

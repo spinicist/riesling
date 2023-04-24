@@ -35,7 +35,7 @@ int main_rss(args::Subparser &parser)
     auto const channels = nufft->adjoint(CChipMap(allData, iv));
     out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
   }
-  Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+  Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
 
   return EXIT_SUCCESS;

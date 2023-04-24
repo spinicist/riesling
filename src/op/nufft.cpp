@@ -7,14 +7,14 @@ namespace rl {
 
 template <size_t NDim>
 NUFFTOp<NDim>::NUFFTOp(
-  std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> sdc, bool toeplitz)
-  : Parent("NUFFTOp", Concatenate(FirstN<2>(gridder->ishape), AMin(matrix, LastN<NDim>(gridder->ishape))), gridder->oshape)
-  , gridder{gridder}
+  std::shared_ptr<GridBase<Cx, NDim>> g, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> s, bool toeplitz)
+  : Parent("NUFFTOp", Concatenate(FirstN<2>(g->ishape), AMin(matrix, LastN<NDim>(g->ishape))), g->oshape)
+  , gridder{g}
   , workspace{gridder->ishape}
   , fft{FFT::Make<NDim + 2, NDim>(workspace)}
   , pad{AMin(matrix, LastN<NDim>(gridder->ishape)), gridder->ishape}
   , apo{pad.ishape, gridder.get()}
-  , sdc{sdc ? sdc : std::make_shared<TensorIdentity<Cx, 3>>(gridder->oshape)}
+  , sdc{s ? s : std::make_shared<TensorIdentity<Cx, 3>>(gridder->oshape)}
 {
   Log::Print<Log::Level::High>("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder->ishape);
   if (toeplitz) {

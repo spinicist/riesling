@@ -54,7 +54,7 @@ struct AugmentedADMM
 
   Input run(Input const &x0) const
   {
-    Log::Print(FMT_STRING("ADMM-CG rho {}"), ρ);
+    Log::Print("ADMM-CG rho {}", ρ);
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
     auto const dims = inner.op->ishape;
@@ -86,7 +86,7 @@ struct AugmentedADMM
       Log::Tensor(z, fmt::format("admm-z-{:02d}", ii));
       Log::Tensor(u, fmt::format("admm-u-{:02d}", ii));
       Log::Print(
-        FMT_STRING("ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |u| {} |x| {} |z| {}"),
+        "ADMM {:02d}: Primal || {} ε {} Dual || {} ε {} |u| {} |x| {} |z| {}",
         ii,
         pNorm,
         pEps,
@@ -100,9 +100,9 @@ struct AugmentedADMM
       }
       float const mu = 10.f;
       if (pNorm > mu * dNorm) {
-        Log::Print(FMT_STRING("Primal norm is outside limit {}, consider increasing ρ"), mu * dNorm);
+        Log::Print("Primal norm is outside limit {}, consider increasing ρ", mu * dNorm);
       } else if (dNorm > mu * pNorm) {
-        Log::Print(FMT_STRING("Dual norm is outside limit {}, consider decreasing ρ"), mu * pNorm);
+        Log::Print("Dual norm is outside limit {}, consider decreasing ρ", mu * pNorm);
       }
     }
     return x;

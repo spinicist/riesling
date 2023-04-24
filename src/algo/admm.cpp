@@ -61,7 +61,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
 
   float const sqrtM = std::sqrt(x.rows());
   float const sqrtN = std::sqrt(bʹ.rows());
-  Log::Print(FMT_STRING("ADMM Abs Tol {} Rel Tol {}"), abstol, reltol);
+  Log::Print("ADMM Abs Tol {} Rel Tol {}", abstol, reltol);
   PushInterrupt();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
@@ -77,7 +77,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
 
     bool converged = true;
     if (auto At = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 4>>(A)) {
-      Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-x"), io), At->ishape, x.data());
+      Log::Tensor(fmt::format("admm-{:02}-x", io), At->ishape, x.data());
     }
 
     for (Index ir = 0; ir < N; ir++) {
@@ -89,9 +89,9 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       u[ir] = Fxpu[ir] - z[ir];
 
       if (auto t = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 5>>(reg_ops[ir])) {
-        Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-{:02}-Fx"), io, ir), t->oshape, Fx[ir].data());
-        Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-{:02}-z"), io, ir), t->oshape, z[ir].data());
-        Log::Tensor(fmt::format(FMT_STRING("admm-{:02}-{:02}-u"), io, ir), t->oshape, u[ir].data());
+        Log::Tensor(fmt::format("admm-{:02}-{:02}-Fx", io, ir), t->oshape, Fx[ir].data());
+        Log::Tensor(fmt::format("admm-{:02}-{:02}-z", io, ir), t->oshape, z[ir].data());
+        Log::Tensor(fmt::format("admm-{:02}-{:02}-u", io, ir), t->oshape, u[ir].data());
       }
 
       float const pNorm = (Fx[ir] - z[ir]).norm();

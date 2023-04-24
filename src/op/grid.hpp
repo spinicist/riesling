@@ -47,7 +47,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     if (!b) {
       basis.setConstant(1.f);
     }
-    Log::Print<Log::Level::High>(FMT_STRING("Grid Dims {}"), this->ishape);
+    Log::Print<Log::Level::High>("Grid Dims {}", this->ishape);
   }
 
   void forward(InCMap const &x, OutMap &y) const

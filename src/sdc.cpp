@@ -24,7 +24,7 @@ Opts::Opts(args::Subparser &parser, std::string const &def)
 template <int ND>
 auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const its, float const pow) -> Re2
 {
-  Log::Print(FMT_STRING("Using Pipe/Zwart/Menon SDC..."));
+  Log::Print("Using Pipe/Zwart/Menon SDC...");
   Re3 W(1, traj.nSamples(), traj.nTraces());
   Re3 Wp(W.dimensions());
   auto gridder = make_grid<float, ND>(traj, ktype, os, 1);
@@ -36,19 +36,19 @@ auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Inde
     float const delta = Norm(Wp - W) / Norm(W);
     W.device(Threads::GlobalDevice()) = Wp;
     if (delta < 1e-6) {
-      Log::Print(FMT_STRING("SDC converged, delta was {}"), delta);
+      Log::Print("SDC converged, delta was {}", delta);
       break;
     } else {
-      Log::Print(FMT_STRING("SDC Step {}/{} Delta {}"), ii, its, delta);
+      Log::Print("SDC Step {}/{} Delta {}", ii, its, delta);
     }
   }
-  Log::Print(FMT_STRING("SDC finished."));
+  Log::Print("SDC finished.");
   return W.chip<0>(0).pow(pow);
 }
 
 Re2 Radial2D(Trajectory const &traj)
 {
-  Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
+  Log::Print("Calculating 2D radial analytic SDC");
   Info const &info = traj.info();
   auto spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
     float const k_delta = Norm(traj.point(1, spoke) - traj.point(0, spoke));
@@ -78,7 +78,7 @@ Re2 Radial2D(Trajectory const &traj)
 
 Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 {
-  Log::Print(FMT_STRING("Calculating 2D radial analytic SDC"));
+  Log::Print("Calculating 2D radial analytic SDC");
   auto const &info = traj.info();
 
   Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(traj.nSamples(), 0, traj.nSamples() - 1);
@@ -138,7 +138,7 @@ auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string
   auto const iname = opts.type.Get();
   Sz3 const dims{nC, traj.nSamples(), traj.nTraces()};
   if (iname == "" || iname == "none") {
-    Log::Print(FMT_STRING("Using no density compensation"));
+    Log::Print("Using no density compensation");
     return std::make_shared<TensorIdentity<Cx, 3>>(dims);
   } else if (iname == "pipe") {
     if (traj.nDims() == 2) {
@@ -151,7 +151,7 @@ auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string
     sdc = reader.readTensor<Re2>(HD5::Keys::SDC);
     if (sdc.dimension(0) != traj.nSamples() || sdc.dimension(1) != traj.nTraces()) {
       Log::Fail(
-        FMT_STRING("SDC dimensions on disk {}x{} did not match info {}x{}"),
+        "SDC dimensions on disk {}x{} did not match info {}x{}",
         sdc.dimension(0),
         sdc.dimension(1),
         traj.nSamples(),

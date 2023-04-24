@@ -106,7 +106,7 @@ void WriteNifti(rl::Info const &info, Eigen::Tensor<T, ND> const &img, std::stri
   ptr->qform_code = NIFTI_XFORM_SCANNER_ANAT;
   ptr->sform_code = NIFTI_XFORM_SCANNER_ANAT;
   ptr->data = const_cast<T *>(img.data()); // To avoid copying the buffer
-  Log::Print(FMT_STRING("Writing file: {}"), fname);
+  Log::Print("Writing file: {}", fname);
   nifti_image_write(ptr);
 }
 

@@ -35,7 +35,7 @@ struct PrimalDualHybridGradient
 
     float σ = 1.f;                       // Dual Step-size
     float const pmin = Minimum(P.abs()); // For updating θ
-    Log::Print(FMT_STRING("PDHG pmin {}"), pmin);
+    Log::Print("PDHG pmin {}", pmin);
     for (Index ii = 0; ii < iterLimit; ii++) {
       xold.device(dev) = x;
       u.device(dev) = (u + u.constant(σ) * P * (op->forward(xbar) - b)) / (u.constant(1.f) + u.constant(σ) * P);
@@ -47,7 +47,7 @@ struct PrimalDualHybridGradient
       xold.device(dev) = x - xold;
       float const normr = Norm(xold / xold.constant(std::sqrt(τ)));
       xbar.device(dev) = x + θ * (xold);
-      Log::Print(FMT_STRING("PDHG {:02d}: |r| {} σ {} τ {} θ {}"), ii, normr, σ, τ, θ);
+      Log::Print("PDHG {:02d}: |r| {} σ {} τ {} θ {}", ii, normr, σ, τ, θ);
       σ *= θ;
       τ /= θ;
     }

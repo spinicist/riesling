@@ -46,7 +46,7 @@ void LLR::apply(float const α, CMap const &xin, Map &z) const
   Index const inset = (patchSize - windowSize) / 2;
   Eigen::TensorMap<Cx4> lr(z.data(), shape);
   float const realλ = λ * α;
-  Log::Print<Log::Level::High>(FMT_STRING("LLR λ {} Patch-size {} Window-size {}"), realλ, patchSize, windowSize);
+  Log::Print<Log::Level::High>("LLR λ {} Patch-size {} Window-size {}", realλ, patchSize, windowSize);
   auto zTask = [&](Index const iz) {
     for (Index iy = 0; iy < nP[1]; iy++) {
       for (Index ix = 0; ix < nP[0]; ix++) {

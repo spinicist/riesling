@@ -53,7 +53,7 @@ int main_recon(args::Subparser &parser)
       Crop(padded, osz) = images.chip<4>(iv);
       kspace.chip<4>(iv) = recon->forward(padded);
     }
-    Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+    Log::Print("All Volumes: {}", Log::ToNow(all_start));
     auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "recon", "h5");
     HD5::Writer writer(fname);
     traj.write(writer);
@@ -70,7 +70,7 @@ int main_recon(args::Subparser &parser)
       vol = recon->adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
       out.chip<4>(iv) = Crop(vol, osz);
     }
-    Log::Print(FMT_STRING("All Volumes: {}"), Log::ToNow(all_start));
+    Log::Print("All Volumes: {}", Log::ToNow(all_start));
     WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
   }
 

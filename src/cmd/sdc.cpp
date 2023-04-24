@@ -27,7 +27,7 @@ int main_sdc(args::Subparser &parser)
   } else if (sdcType.Get() == "radial") {
     dc = SDC::Radial(traj, lores.Get(), gap.Get());
   } else {
-    Log::Fail(FMT_STRING("Uknown SDC method: {}"), sdcType.Get());
+    Log::Fail("Uknown SDC method: {}", sdcType.Get());
   }
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sdc", "h5"));
   traj.write(writer);

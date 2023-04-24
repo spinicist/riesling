@@ -27,7 +27,7 @@ Cx3 SheppLoganPhantom(
     Log::Fail("Shepp Logan property lengths did not match");
   }
 
-  Log::Print(FMT_STRING("Drawing 3D Shepp Logan Phantom"));
+  Log::Print("Drawing 3D Shepp Logan Phantom");
   Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();
 

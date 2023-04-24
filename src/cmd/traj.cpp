@@ -35,7 +35,7 @@ int main_traj(args::Subparser &parser)
   writer.writeTensor("traj-image", out.dimensions(), out.data());
 
   if (savePSF) {
-    Log::Print(FMT_STRING("Calculating PSF"));
+    Log::Print("Calculating PSF");
     auto const fft = FFT::Make<5, 3>(out.dimensions());
     fft->reverse(out);
     writer.writeTensor("psf-image", out.dimensions(), out.data());

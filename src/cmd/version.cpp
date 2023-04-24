@@ -5,6 +5,6 @@
 int main_version(args::Subparser &parser)
 {
   parser.Parse();
-  fmt::print(FMT_STRING("Version: {}\nCompile date: {}\n"), VERSION, DATETIME);
+  fmt::print("Version: {}\nCompile date: {}\n", VERSION, DATETIME);
   return EXIT_SUCCESS;
 }

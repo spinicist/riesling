@@ -65,14 +65,14 @@ void End()
 auto TheTime() -> std::string
 {
   auto const t = std::chrono::system_clock::now();
-  return fmt::format(FMT_STRING("[{:%H:%M:%S}]"), fmt::localtime(t));
+  return fmt::format("[{:%H:%M:%S}]", fmt::localtime(t));
 }
 
 void StartProgress(Index const amount, std::string const &text)
 {
   if (text.size() && CurrentLevel() >= Level::High) {
     progressMessage = text;
-    fmt::print(stderr, FMT_STRING("{} Starting {}\n"), TheTime(), progressMessage);
+    fmt::print(stderr, "{} Starting {}\n", TheTime(), progressMessage);
   }
   if (isTTY && CurrentLevel() >= Level::Low) {
     progressTarget = amount;
@@ -88,7 +88,7 @@ void StopProgress()
     fmt::print(stderr, "\r");
   }
   if (progressMessage.size() && CurrentLevel() >= Level::High) {
-    fmt::print(stderr, FMT_STRING("{} Finished {}\n"), TheTime(), progressMessage);
+    fmt::print(stderr, "{} Finished {}\n", TheTime(), progressMessage);
   }
 }
 
@@ -99,7 +99,7 @@ void Tick()
     progressCurrent++;
     if (progressCurrent > progressNext) {
       float const percent = (100.f * progressCurrent) / progressTarget;
-      fmt::print(stderr, FMT_STRING("\x1b[2K\r{:02.0f}%"), percent);
+      fmt::print(stderr, "\x1b[2K\r{:02.0f}%", percent);
       progressNext += std::floor(progressTarget / 100.f);
     }
   }
@@ -119,11 +119,11 @@ std::string ToNow(Log::Time const t1)
   auto const mins = diff % (60 * 60 * 1000) / (60 * 1000);
   auto const secs = diff % (60 * 1000) / 1000;
   if (hours > 0) {
-    return fmt::format(FMT_STRING("{} hours {} minutes {} seconds"), hours, mins, secs);
+    return fmt::format("{} hours {} minutes {} seconds", hours, mins, secs);
   } else if (mins > 0) {
-    return fmt::format(FMT_STRING("{} minutes {} seconds"), mins, secs);
+    return fmt::format("{} minutes {} seconds", mins, secs);
   } else {
-    return fmt::format(FMT_STRING("{} seconds"), secs);
+    return fmt::format("{} seconds", secs);
   }
 }
 

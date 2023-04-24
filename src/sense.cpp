@@ -23,7 +23,7 @@ Opts::Opts(args::Subparser &parser)
 
 Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Reader &reader)
 {
-  Log::Print(FMT_STRING("SENSE Self-Calibration Starting"));
+  Log::Print("SENSE Self-Calibration Starting");
   auto const nC = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false);
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
@@ -54,13 +54,13 @@ Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD
   Log::Tensor("sense-rss", rss.dimensions(), rss.data());
   rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
   if (opts.λ.Get() > 0.f) {
-    Log::Print(FMT_STRING("Regularization lambda {}"), opts.λ.Get());
+    Log::Print("Regularization lambda {}", opts.λ.Get());
     rss.device(Threads::GlobalDevice()) = rss + rss.constant(opts.λ.Get());
   }
-  Log::Print<Log::Level::High>(FMT_STRING("Normalizing channel images"));
+  Log::Print<Log::Level::High>("Normalizing channel images");
   channels.device(Threads::GlobalDevice()) = channels / TileToMatch(rss, channels.dimensions());
   Log::Tensor("sense-final", channels.dimensions(), channels.data());
-  Log::Print(FMT_STRING("SENSE Self-Calibration finished"));
+  Log::Print("SENSE Self-Calibration finished");
   return channels;
 }
 

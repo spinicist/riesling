@@ -84,6 +84,6 @@ int main_zinfandel(args::Subparser &parser)
   Trajectory(out_info, traj.points()).write(writer);
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(rad_ks, HD5::Keys::Noncartesian);
-  Log::Print(FMT_STRING("Finished"));
+  Log::Print("Finished");
   return EXIT_SUCCESS;
 }

@@ -60,7 +60,7 @@ struct CPU final : FFT<TRank, FRank>
     }
 
     auto ptr = reinterpret_cast<fftwf_complex *>(ws.data());
-    Log::Print(FMT_STRING("Planning {} {} FFTs with {} threads"), N_, fmt::join(sz, "x"), nThreads);
+    Log::Print("Planning {} {} FFTs with {} threads", N_, fmt::join(sz, "x"), nThreads);
 
     // FFTW is row-major. Reverse dims as per
     // http://www.fftw.org/fftw3_doc/Column_002dmajor-Format.html#Column_002dmajor-Format
@@ -73,13 +73,13 @@ struct CPU final : FFT<TRank, FRank>
       fftwf_plan_many_dft(FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
     if (forward_plan_ == NULL) {
-      Log::Fail(FMT_STRING("Could not create forward FFT Planned"));
+      Log::Fail("Could not create forward FFT Planned");
     }
     if (reverse_plan_ == NULL) {
-      Log::Fail(FMT_STRING("Could not create reverse FFT Planned"));
+      Log::Fail("Could not create reverse FFT Planned");
     }
 
-    Log::Print<Log::Level::High>(FMT_STRING("FFT planning took {}"), Log::ToNow(start));
+    Log::Print<Log::Level::High>("FFT planning took {}", Log::ToNow(start));
   }
 
   ~CPU()

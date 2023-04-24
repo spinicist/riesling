@@ -41,7 +41,7 @@ int main_split(args::Subparser &parser)
   }
 
   if (trim) {
-    Log::Print(FMT_STRING("Trimming {} points"), trim.Get());
+    Log::Print("Trimming {} points", trim.Get());
     auto info = traj.info();
     Re3 points = traj.points();
     points = Re3(points.slice(Sz3{0, trim.Get(), 0}, Sz3{3, points.dimension(1) - trim.Get(), points.dimension(2)}));
@@ -50,20 +50,20 @@ int main_split(args::Subparser &parser)
   }
 
   if (zero) {
-    Log::Print(FMT_STRING("Zeroing {} popints"), zero.Get());
+    Log::Print("Zeroing {} popints", zero.Get());
     ks.slice(Sz4{0, 0, 0, 0}, Sz4{ks.dimension(0), zero.Get(), ks.dimension(2), ks.dimension(3)}).setZero();
   }
 
   if (lores) {
     if (lores.Get() > traj.nTraces()) {
-      Log::Fail(FMT_STRING("Invalid number of low-res traces {}"), lores.Get());
+      Log::Fail("Invalid number of low-res traces {}", lores.Get());
     }
 
     auto info = traj.info();
     Index const tracesLo = std::abs(lores.Get());
     Index const tracesHi = traj.nTraces() - tracesLo;
     bool atEnd = (lores.Get() < 0);
-    Log::Print(FMT_STRING("Extracting traces {}-{} as low-res"), atEnd ? tracesHi : 0, tracesLo);
+    Log::Print("Extracting traces {}-{} as low-res", atEnd ? tracesHi : 0, tracesLo);
 
     Info lo_info = traj.info();
     Trajectory lo_traj(lo_info, traj.points().slice(Sz3{0, 0, atEnd ? tracesHi : 0}, Sz3{3, traj.nSamples(), tracesLo}));
@@ -80,11 +80,11 @@ int main_split(args::Subparser &parser)
   if (nF && spf) {
     Index const sps = spf.Get() * nF.Get();
     if (traj.nTraces() % spf != 0) {
-      Log::Fail(FMT_STRING("SPE {} does not divide traces {} cleanly"), sps, traj.nTraces());
+      Log::Fail("SPE {} does not divide traces {} cleanly", sps, traj.nTraces());
     }
     Index const segs = std::ceil(static_cast<float>(traj.nTraces()) / sps);
     Log::Print(
-      FMT_STRING("Adding info for {} frames with {} traces per frame, {} per segment, {} segments"),
+      "Adding info for {} frames with {} traces per frame, {} per segment, {} segments",
       nF.Get(),
       spf.Get(),
       sps,
@@ -109,16 +109,16 @@ int main_split(args::Subparser &parser)
     int const spoke_step = step ? step.Get() : ns;
     int const num_full_int = static_cast<int>(traj.nTraces() * 1.f / ns);
     int const num_int = static_cast<int>((num_full_int - 1) * ns * 1.f / spoke_step + 1);
-    Log::Print(FMT_STRING("Interleaves: {} traces per interleave: {} Step: {}"), num_int, ns, spoke_step);
+    Log::Print("Interleaves: {} traces per interleave: {} Step: {}", num_int, ns, spoke_step);
     int rem_traces = traj.nTraces() - num_full_int * ns;
     if (rem_traces > 0) {
-      Log::Print(FMT_STRING("Warning! Last interleave will have {} extra traces."), rem_traces);
+      Log::Print("Warning! Last interleave will have {} extra traces.", rem_traces);
     }
 
     for (int int_idx = 0; int_idx < num_int; int_idx++) {
       int const idx0 = spoke_step * int_idx;
       int const n = ns + (int_idx == (num_int - 1) ? rem_traces : 0);
-      HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format(FMT_STRING("hires-{:02d}"), int_idx)));
+      HD5::Writer writer(OutName(iname.Get(), oname.Get(), fmt::format("hires-{:02d}", int_idx)));
       Trajectory(info, traj.points().slice(Sz3{0, 0, idx0}, Sz3{3, traj.nSamples(), n})).write(writer);
       Cx4 interleave(ks.slice(Sz4{0, 0, idx0, 0}, Sz4{channels, traj.nSamples(), n, volumes}));
         writer.writeTensor(HD5::Keys::Noncartesian, interleave.dimensions(), interleave.data());

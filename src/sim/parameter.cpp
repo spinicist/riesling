@@ -15,12 +15,12 @@ void CheckSizes(
   if (lo.size() == 0) {
     lo = defLo;
   } else if (lo.size() != N) {
-    Log::Fail(FMT_STRING("Low parameters must have {} values"), N);
+    Log::Fail("Low parameters must have {} values", N);
   }
   if (hi.size() == 0) {
     hi = defHi;
   } else if (hi.size() != N) {
-    Log::Fail(FMT_STRING("High parameters must have {} values"), N);
+    Log::Fail("High parameters must have {} values", N);
   }
 }
 
