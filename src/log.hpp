@@ -43,14 +43,14 @@ void End();
 auto TheTime() -> std::string;
 
 template <Log::Level level = Log::Level::Low, typename... Args>
-inline void Print(fmt::format_string<Args...> const &fstr, Args &&...args)
+inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
 {
-  std::string entry = fmt::format(FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
+  std::string const entry = fmt::format(FMT_STRING("{} {}\n"), TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
   if (level == Level::Low) {
     SaveEntry(entry);
   }
   if (level <= CurrentLevel()) {
-    fmt::print(stderr, entry);
+    fmt::print(stderr, "{}", entry);
   }
 }
 

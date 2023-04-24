@@ -67,7 +67,7 @@ Re3 const &Trajectory::points() const { return points_; }
 
 Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
 {
-  Re1 const p = points_.chip(spoke, 2).chip(read, 1);
+  Re1 const p = points_.chip<2>(spoke).chip<1>(read);
   return p;
 }
 

@@ -115,7 +115,16 @@ std::string ToNow(Log::Time const t1)
   using ms = std::chrono::milliseconds;
   auto const t2 = std::chrono::high_resolution_clock::now();
   auto const diff = std::chrono::duration_cast<ms>(t2 - t1).count();
-  return fmt::format(FMT_STRING("{} ms"), diff);
+  auto const hours = diff / (60 * 60 * 1000);
+  auto const mins = diff % (60 * 60 * 1000) / (60 * 1000);
+  auto const secs = diff % (60 * 1000) / 1000;
+  if (hours > 0) {
+    return fmt::format(FMT_STRING("{} hours {} minutes {} seconds"), hours, mins, secs);
+  } else if (mins > 0) {
+    return fmt::format(FMT_STRING("{} minutes {} seconds"), mins, secs);
+  } else {
+    return fmt::format(FMT_STRING("{} seconds"), secs);
+  }
 }
 
 template <typename Scalar, int ND>
