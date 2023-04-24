@@ -114,8 +114,8 @@ def sense(fname, dset='sense', **kwargs):
 
 def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
-         component='mag', clim=None, cmap=None, cbar=True,
-         diff_component='real', difflim=None, diffmap=None,
+         component='mag', clim=None, cmap=None, cbar=False,
+         diff_component='real', difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None,
          basis_files=[None], basis_tps=[0]):
 
@@ -159,7 +159,7 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
             ax[1, ii].axis('off')
     fig.subplots_adjust(wspace=0, hspace=0)
     _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, :])
-    _add_colorbar(cbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[1, :])
+    _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[1, :])
     plt.close()
     return fig
 
@@ -215,11 +215,8 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
             ax[jj, ii].set_facecolor('black')
             ax[jj, ii].axis('off')
     fig.subplots_adjust(wspace=0, hspace=0)
-
-    if cbar:
-        _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, 0])
-    if diffbar:
-        _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
+    _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, 0])
+    _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
     plt.close()
     return fig
 
