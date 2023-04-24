@@ -47,7 +47,7 @@ Finally, basic non-iterative reconstructions are available with the `rss` and `s
 
     Read SENSE maps from the specified file. The dimensions of the SENSE maps must match the reconstruction grid size.
 
-* ``--sense-vol=V, --sense-frame=F, --sense-res=R, --sense-lambda=L, --sense-fov=F`
+* ``--sense-vol=V, --sense-frame=F, --sense-res=R, --sense-lambda=L, --sense-fov=F``
 
     If SENSE maps are not specified, the maps will be generated directly from the input data. See `[1] E. N. Yeh et al., ‘Inherently self-calibrating non-cartesian parallel imaging’, Magnetic Resonance in Medicine, vol. 54, no. 1, pp. 1–8, Jul. 2005, <http://doi.wiley.com/10.1002/mrm.20517>`_.
     Choose the volume, frame, effective resolution, regularization and field-of-view for generating SENSE maps. The field-of-view should be larger than the final field-of-view for numerical stability. See :doc:`util` for more information.

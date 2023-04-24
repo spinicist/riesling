@@ -25,11 +25,10 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
     u_i = F_i * x + u_i - z_i
     */
 
-  Index const N = reg_ops.size();
-  std::vector<Vector> z(N), zold(N), u(N), Fx(N), Fxpu(N);
-  std::vector<std::shared_ptr<Op>> scaled_ops(N);
-  std::vector<float> ρs(N);
-  for (Index ir = 0; ir < N; ir++) {
+  Index const R = reg_ops.size();
+  std::vector<Vector> z(R), zold(R), u(R), Fx(R), Fxpu(R);
+  std::vector<std::shared_ptr<Op>> scaled_ops(R);
+  for (Index ir = 0; ir < R; ir++) {
     z[ir].resize(reg_ops[ir]->rows());
     z[ir].setZero();
     zold[ir].resize(reg_ops[ir]->rows());
@@ -40,8 +39,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
     Fx[ir].setZero();
     Fxpu[ir].resize(reg_ops[ir]->rows());
     Fxpu[ir].setZero();
-    ρs[ir] = ρ;
-    scaled_ops[ir] = std::make_shared<LinOps::Scale<Cx>>(reg_ops[ir], std::sqrt(ρs[ir]));
+    scaled_ops[ir] = std::make_shared<LinOps::Scale<Cx>>(reg_ops[ir], std::sqrt(ρ));
   }
 
   std::shared_ptr<Op> reg = std::make_shared<LinOps::VStack<Cx>>(scaled_ops);
@@ -65,27 +63,24 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
   PushInterrupt();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
-    for (Index ir = 0; ir < N; ir++) {
-      auto &ρr = ρs[ir];
+    for (Index ir = 0; ir < R; ir++) {
       Index rr = reg_ops[ir]->rows();
-      bʹ.segment(start, rr) = std::sqrt(ρr) * (z[ir] - u[ir]);
+      bʹ.segment(start, rr) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
-      std::dynamic_pointer_cast<LinOps::Scale<Cx>>(scaled_ops[ir])->scale = std::sqrt(ρr);
+      std::dynamic_pointer_cast<LinOps::Scale<Cx>>(scaled_ops[ir])->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ.data());
-    float const normx = x.norm();
-
-    bool converged = true;
     if (auto At = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 4>>(A)) {
       Log::Tensor(fmt::format("admm-{:02}-x", io), At->ishape, x.data());
     }
 
-    for (Index ir = 0; ir < N; ir++) {
-      auto &ρr = ρs[ir];
+    float const normx = x.norm();
+    float pNorm = 0.f, dNorm = 0.f, normz = 0.f, normu = 0.f;
+    for (Index ir = 0; ir < R; ir++) {
       Fx[ir] = reg_ops[ir]->forward(x);
       Fxpu[ir] = Fx[ir] * α + z[ir] * (1.f - α) + u[ir];
       zold[ir] = z[ir];
-      prox[ir]->apply(1.f / ρr, Fxpu[ir], z[ir]);
+      prox[ir]->apply(1.f / ρ, Fxpu[ir], z[ir]);
       u[ir] = Fxpu[ir] - z[ir];
 
       if (auto t = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 5>>(reg_ops[ir])) {
@@ -94,45 +89,47 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
         Log::Tensor(fmt::format("admm-{:02}-{:02}-u", io, ir), t->oshape, u[ir].data());
       }
 
-      float const pNorm = (Fx[ir] - z[ir]).norm();
-      float const dNorm = ρr * (z[ir] - zold[ir]).norm();
+      pNorm += (Fx[ir] - z[ir]).squaredNorm();
+      dNorm += ρ * (z[ir] - zold[ir]).squaredNorm();
 
-      float const normFx = Fx[ir].norm();
-      float const normz = z[ir].norm();
-      float const normu = u[ir].norm();
-
-      float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
-      float const dEps = abstol * sqrtN + reltol * ρr * normu;
-
-      Log::Print(
-        FMT_STRING("ADMM Iter {:02d}:{:02d} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E} |Fx| {:5.3E} |z| "
-                   "{:5.3E} |u| {:5.3E}"),
-        io,
-        ir,
-        ρr,
-        pNorm,
-        pEps,
-        dNorm,
-        dEps,
-        normFx,
-        normz,
-        normu);
-
-      if ((pNorm > pEps) || (dNorm > dEps)) {
-        converged = false;
-      }
-      if (pNorm > μ * dNorm) {
-        ρr *= τ;
-        u[ir] /= τ;
-      } else if (dNorm > μ * pNorm) {
-        ρr /= τ;
-        u[ir] *= τ;
-      }
+      normz += z[ir].squaredNorm();
+      normu += u[ir].squaredNorm();
     }
-    if (converged) {
+    pNorm = std::sqrt(pNorm);
+    dNorm = std::sqrt(dNorm);
+    normz = std::sqrt(normz);
+    normu = std::sqrt(normu);
+    float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
+    float const dEps = abstol * sqrtN + reltol * std::sqrt(R) * ρ * normu;
+    Log::Print(
+      FMT_STRING("ADMM Iter {:02d} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E} |z| "
+                 "{:5.3E} |u| {:5.3E}"),
+      io,
+      ρ,
+      pNorm,
+      pEps,
+      dNorm,
+      dEps,
+      normz,
+      normu);
+
+    if ((pNorm < pEps) || (dNorm < dEps)) {
       Log::Print("All primal and dual tolerances achieved, stopping");
+      break;
     }
-
+    if (io > 1) { // z_0 is zero, so perfectly reasonable dual residuals can trigger this
+      if (pNorm > μ * dNorm) {
+        ρ *= τ;
+        for (Index ir = 0; ir < R; ir++) {
+          u[ir] /= τ;
+        }
+      } else if (dNorm > μ * pNorm) {
+        ρ /= τ;
+        for (Index ir = 0; ir < R; ir++) {
+          u[ir] *= τ;
+        }
+      }
+    }
     if (InterruptReceived()) {
       break;
     }
