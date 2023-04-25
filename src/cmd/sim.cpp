@@ -21,6 +21,9 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
   if (los.size() != his.size()) {
     Log::Fail("Different number of parameter low bounds and high bounds");
   }
+  if (los.size() == 0) {
+    Log::Fail("Must specify at least one set of tissue parameters");
+  }
 
   T simulator{s};
   Index const nP = T::nParameters;
