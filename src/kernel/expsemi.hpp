@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include "log.hpp"
 
 namespace rl {
 
@@ -17,6 +18,7 @@ struct ExpSemi
   ExpSemi(float const osamp)
     : beta{(float)M_PI * 0.98f * W * (1.f - 0.5f / osamp)}
   {
+    Log::Print("Exponential Semi-Circle kernel width {} β {}", W, beta);
   }
 
   template <typename T>

@@ -25,6 +25,7 @@ struct Rectilinear final : Kernel<N, Func::PadWidth>
   {
     static_assert(N < 4);
     scale = 1. / Norm((*this)(Point::Zero()));
+    Log::Print("Rectilinear, scale {}", scale);
   }
 
   auto operator()(Point const p) const -> Tensor

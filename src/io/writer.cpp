@@ -177,6 +177,7 @@ void Writer::writeTensor(std::string const &label, Sz<ND> const &shape, Scalar c
 }
 
 template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *);
+template void Writer::writeTensor<float, 1>(std::string const &, Sz<1> const &, float const *);
 template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, float const *);
 template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *);
 template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *);

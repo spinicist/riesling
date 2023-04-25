@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include "log.hpp"
 
 namespace rl {
 
@@ -15,6 +16,7 @@ struct KaiserBessel
   KaiserBessel(float const osamp)
     : beta{(float)M_PI * 2.34f * Width * osamp / 2.f}
   {
+    Log::Print("Kaiser-Bessel kernel width {} β {}", W, beta);
   }
 
   template <typename T>

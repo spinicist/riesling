@@ -18,6 +18,7 @@ struct NearestNeighbour final : Kernel<N, 1>
   NearestNeighbour(float const)
   {
     static_assert(N < 4);
+    Log::Print("Nearest-neighbour kernel");
   }
 
   auto operator()(Point const p) const -> Tensor
