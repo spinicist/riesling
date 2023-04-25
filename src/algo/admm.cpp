@@ -69,7 +69,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       start += rr;
       std::dynamic_pointer_cast<LinOps::Scale<Cx>>(scaled_ops[ir])->scale = std::sqrt(ρ);
     }
-    x = lsmr.run(bʹ.data());
+    x = lsmr.run(bʹ.data(), 0.f, x.data());
     if (auto At = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 4>>(A)) {
       Log::Tensor(fmt::format("admm-{:02}-x", io), At->ishape, x.data());
     }
