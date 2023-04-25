@@ -120,6 +120,7 @@ int main_admm(args::Subparser &parser)
     τ.Get(),
     abstol.Get(),
     reltol.Get()};
+  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto x = admm.run(&allData(0, 0, 0, 0, iv), ρ.Get());
     if (ext_x) {
@@ -127,9 +128,6 @@ int main_admm(args::Subparser &parser)
     }
     out.chip<4>(iv) = out_cropper.crop4(Tensorfy(x, sz)) / out.chip<4>(iv).constant(scale);
   }
-
-  auto const &all_start = Log::Now();
-
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
   return EXIT_SUCCESS;
