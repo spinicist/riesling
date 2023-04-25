@@ -113,7 +113,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       normz,
       normu);
 
-    if ((pNorm < pEps) || (dNorm < dEps)) {
+    if ((pNorm < pEps) && (dNorm < dEps)) {
       Log::Print("All primal and dual tolerances achieved, stopping");
       break;
     }
