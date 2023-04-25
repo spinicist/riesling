@@ -26,10 +26,7 @@ std::string progressMessage;
 std::string savedLog;
 } // namespace
 
-Level CurrentLevel()
-{
-  return log_level;
-}
+Level CurrentLevel() { return log_level; }
 
 void SetLevel(Level const l)
 {
@@ -43,18 +40,11 @@ void SetLevel(Level const l)
   }
 }
 
-void SetDebugFile(std::string const &fname)
-{
-  debug_file = std::make_shared<HD5::Writer>(fname);
-}
+void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
 
-void SaveEntry(std::string const &s) {
-  savedLog.append(s);
-}
+void SaveEntry(std::string const &s) { savedLog.append(s); }
 
-auto Saved() -> std::string const &{
-  return savedLog;
-}
+auto Saved() -> std::string const & { return savedLog; }
 
 void End()
 {
@@ -105,10 +95,7 @@ void Tick()
   }
 }
 
-Time Now()
-{
-  return std::chrono::high_resolution_clock::now();
-}
+Time Now() { return std::chrono::high_resolution_clock::now(); }
 
 std::string ToNow(Log::Time const t1)
 {
@@ -119,11 +106,12 @@ std::string ToNow(Log::Time const t1)
   auto const mins = diff % (60 * 60 * 1000) / (60 * 1000);
   auto const secs = diff % (60 * 1000) / 1000;
   if (hours > 0) {
-    return fmt::format("{} hours {} minutes {} seconds", hours, mins, secs);
+    return fmt::format(
+      "{} hour{} {} minute{} {} second{}", hours, hours > 1 ? "s" : "", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
   } else if (mins > 0) {
-    return fmt::format("{} minutes {} seconds", mins, secs);
+    return fmt::format("{} minute{} {} second{}", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
   } else {
-    return fmt::format("{} seconds", secs);
+    return fmt::format("{} second{}", secs, secs > 1 ? "s" : "");
   }
 }
 
@@ -141,6 +129,7 @@ void Tensor(std::string const &nameIn, Sz<ND> const &shape, Scalar const *data)
   }
 }
 
+template void Tensor(std::string const &, Sz<1> const &shape, float const *data);
 template void Tensor(std::string const &, Sz<2> const &shape, float const *data);
 template void Tensor(std::string const &, Sz<3> const &shape, float const *data);
 template void Tensor(std::string const &, Sz<4> const &shape, float const *data);
