@@ -24,7 +24,7 @@ struct LSQR
   using Map = typename Op::Map;
 
   std::shared_ptr<Op> op;
-  std::shared_ptr<Op> M; // Left pre-conditioner
+  std::shared_ptr<Op> M, N; // Pre-conditioners
   Index iterLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;

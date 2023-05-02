@@ -1,11 +1,12 @@
 #include "sense/rovir.hpp"
 
-#include "algo/otsu.hpp"
 #include "algo/decomp.hpp"
+#include "algo/otsu.hpp"
 #include "cropper.h"
 #include "mapping.hpp"
 #include "op/make_grid.hpp"
 #include "op/nufft.hpp"
+#include "op/tensorscale.hpp"
 #include "sdc.hpp"
 #include "tensorOps.hpp"
 
@@ -38,7 +39,7 @@ auto ROVIR(
   auto const &info = traj.info();
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
-  auto sdc = std::make_shared<Scale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
+  auto sdc = std::make_shared<TensorScale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
   auto nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(opts.fov.Get()), std::nullopt, sdc);
   auto const sz = LastN<3>(nufft->ishape);
   Cx4 const channelImages = nufft->adjoint(data).chip<1>(0);

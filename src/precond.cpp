@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
-#include "op/scale.hpp"
+#include "op/tensorscale.hpp"
 #include "threads.hpp"
 
 namespace rl {
@@ -55,7 +55,7 @@ make_pre(std::string const &type, Sz4 const dims, Trajectory const &traj, std::o
     Log::Print("Using no preconditioning");
     return std::make_shared<TensorIdentity<Cx, 4>>(dims);
   } else if (type == "kspace") {
-    return std::make_shared<Scale<Cx, 4, 1, 1>>(dims, KSpaceSingle(traj, basis, bias).cast<Cx>());
+    return std::make_shared<TensorScale<Cx, 4, 1, 1>>(dims, KSpaceSingle(traj, basis, bias).cast<Cx>());
   } else {
     HD5::Reader reader(type);
     Re2 pre = reader.readTensor<Re2>(HD5::Keys::Precond);
@@ -67,7 +67,7 @@ make_pre(std::string const &type, Sz4 const dims, Trajectory const &traj, std::o
         traj.nSamples(),
         traj.nTraces());
     }
-    return std::make_shared<Scale<Cx, 4, 1, 1>>(dims, pre.cast<Cx>());
+    return std::make_shared<TensorScale<Cx, 4, 1, 1>>(dims, pre.cast<Cx>());
   }
 }
 

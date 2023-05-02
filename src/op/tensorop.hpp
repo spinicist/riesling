@@ -39,6 +39,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
 
   using Base::adjoint;
   using Base::forward;
+  using Base::inverse;
 
   void forward(typename Base::CMap const &x, typename Base::Map &y) const final
   {
@@ -58,6 +59,16 @@ struct TensorOperator : LinOps::Op<Scalar_>
     OutCMap ym(y.data(), oshape);
     InMap xm(x.data(), ishape);
     adjoint(ym, xm);
+  }
+
+  void inverse(typename Base::CMap const &y, typename Base::Map &x) const final
+  {
+    assert(x.rows() == this->cols());
+    assert(y.rows() == this->rows());
+    Log::Print<Log::Level::Debug>("Tensor {} inverse y {} x {}", this->name, y.rows(), x.rows());
+    OutCMap ym(y.data(), oshape);
+    InMap xm(x.data(), ishape);
+    inverse(ym, xm);
   }
 
   virtual auto forward(InTensor const &x) const -> OutTensor
@@ -82,8 +93,22 @@ struct TensorOperator : LinOps::Op<Scalar_>
     return x;
   }
 
+  virtual auto inverse(OutTensor const &y) const -> InTensor
+  {
+    Log::Print<Log::Level::Debug>(
+      "Tensor {} inverse y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
+    OutCMap ym(y.data(), oshape);
+    InTensor x(ishape);
+    InMap xm(x.data(), ishape);
+    inverse(ym, xm);
+    return x;
+  }
+
   virtual void forward(InCMap const &x, OutMap &y) const = 0;
   virtual void adjoint(OutCMap const &y, InMap &x) const = 0;
+  virtual void inverse(OutCMap const &y, InMap &x) const {
+    Log::Fail("{} does not have an inverse", this->name);
+  }
 
   auto startForward(InCMap const &x) const
   {
@@ -122,6 +147,26 @@ struct TensorOperator : LinOps::Op<Scalar_>
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
         "{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
+    }
+  }
+
+  auto startInverse(OutCMap const &y) const
+  {
+    if (y.dimensions() != oshape) {
+      Log::Fail("{} inverse dims were: {} expected: {}", this->name, y.dimensions(), oshape);
+    }
+    if (Log::CurrentLevel() == Log::Level::Debug) {
+      Log::Print<Log::Level::Debug>(
+        "{} inverse started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
+    }
+    return Log::Now();
+  }
+
+  void finishInverse(InMap const &x, Log::Time const start) const
+  {
+    if (Log::CurrentLevel() == Log::Level::Debug) {
+      Log::Print<Log::Level::Debug>(
+        "{} inverse finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
     }
   }
 };
@@ -169,6 +214,13 @@ struct TensorIdentity : TensorOperator<Scalar_, Rank, Rank>
     auto const time = Parent::startAdjoint(y);
     x = y;
     Parent::finishAdjoint(x, time);
+  }
+
+  void inverse(OutCMap const &y, InMap &x) const
+  {
+    auto const time = Parent::startInverse(y);
+    x = y;
+    Parent::finishInverse(x, time);
   }
 };
 

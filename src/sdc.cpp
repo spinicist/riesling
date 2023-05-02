@@ -5,7 +5,7 @@
 #include "mapping.hpp"
 #include "op/tensorop.hpp"
 #include "op/make_grid.hpp"
-#include "op/scale.hpp"
+#include "op/tensorscale.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "trajectory.hpp"
@@ -158,7 +158,7 @@ auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string
         traj.nTraces());
     }
   }
-  return std::make_shared<Scale<Cx, 3>>(dims, sdc.cast<Cx>());
+  return std::make_shared<TensorScale<Cx, 3>>(dims, sdc.cast<Cx>());
 }
 
 } // namespace SDC

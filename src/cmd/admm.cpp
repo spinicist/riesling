@@ -60,6 +60,7 @@ int main_admm(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto N = std::make_shared<LinOps::Identity<Cx>>(recon->cols());
   auto const sz = recon->ishape;
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
@@ -108,6 +109,7 @@ int main_admm(args::Subparser &parser)
   ADMM admm{
     A,
     M,
+    N,
     inner_its.Get(),
     atol.Get(),
     btol.Get(),

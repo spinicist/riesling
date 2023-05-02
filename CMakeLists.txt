@@ -42,6 +42,7 @@ add_library(vineyard
     src/traj_spirals.cpp
     src/zin-grappa.cpp
     src/algo/admm.cpp
+    src/algo/bidiag.cpp
     src/algo/cg.cpp
     src/algo/decomp.cpp
     src/algo/eig.cpp

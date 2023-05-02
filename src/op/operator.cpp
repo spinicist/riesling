@@ -35,6 +35,17 @@ auto Op<S>::adjoint(Vector const &y) const -> Vector
 }
 
 template <typename S>
+auto Op<S>::inverse(Vector const &y) const -> Vector
+{
+  Log::Print<Log::Level::Debug>("Op {} inverse y {} rows {} cols {}", name, y.rows(), rows(), cols());
+  assert(y.rows() == rows());
+  Vector x(this->cols());
+  Map xm(x.data(), x.size());
+  this->inverse(CMap(y.data(), y.size()), xm);
+  return x;
+}
+
+template <typename S>
 void Op<S>::forward(Vector const &x, Vector &y) const
 {
   Log::Print<Log::Level::Debug>("Op {} forward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
@@ -46,6 +57,11 @@ void Op<S>::forward(Vector const &x, Vector &y) const
 }
 
 template <typename S>
+void Op<S>::inverse(CMap const &y, Map &x) const {
+  Log::Fail("{} does not have an inverse", this->name);
+}
+
+template <typename S>
 void Op<S>::adjoint(Vector const &y, Vector &x) const
 {
   Log::Print<Log::Level::Debug>("Op {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
@@ -54,6 +70,17 @@ void Op<S>::adjoint(Vector const &y, Vector &x) const
   CMap ym(y.data(), y.size());
   Map xm(x.data(), x.size());
   this->adjoint(ym, xm);
+}
+
+template <typename S>
+void Op<S>::inverse(Vector const &y, Vector &x) const
+{
+  Log::Print<Log::Level::Debug>("Op {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  CMap ym(y.data(), y.size());
+  Map xm(x.data(), x.size());
+  this->inverse(ym, xm);
 }
 
 template struct Op<float>;
@@ -87,6 +114,13 @@ void Identity<S>::forward(CMap const &x, Map &y) const
 
 template <typename S>
 void Identity<S>::adjoint(CMap const &y, Map &x) const
+{
+  assert(x.rows() == y.rows() && x.rows() == sz);
+  x = y;
+}
+
+template <typename S>
+void Identity<S>::inverse(CMap const &y, Map &x) const
 {
   assert(x.rows() == y.rows() && x.rows() == sz);
   x = y;
@@ -130,6 +164,15 @@ void Scale<S>::adjoint(CMap const &y, Map &x) const
   assert(y.rows() == rows());
   op->adjoint(y, x);
   x *= scale;
+}
+
+template <typename S>
+void Scale<S>::inverse(CMap const &y, Map &x) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  op->inverse(y, x);
+  x /= scale;
 }
 
 template struct Scale<float>;

@@ -9,10 +9,10 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   Index const cols = op->cols();
   Map const b(bdata, rows);
   Vector Mu(rows), u(rows);
-  Vector x(cols), v(cols), w(cols);
+  Vector x(cols), Nv(cols), v(cols), w(cols);
 
   float α = 0.f, β = 0.f;
-  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
+  BidiagInit(op, M, Mu, u, N, Nv, v, α, β, x, b, x0);
   w = v;
 
   float ρ̅ = α;
@@ -26,7 +26,7 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
-    Bidiag(op, M, Mu, u, v, α, β);
+    Bidiag(op, M, Mu, u, N, Nv, v, α, β);
 
     float c, s, ρ;
     float ψ = 0.f;

@@ -12,7 +12,7 @@ struct ADMM
   using Map = typename Op::Map;
 
   std::shared_ptr<Op> A; // Op for least-squares
-  std::shared_ptr<Op> M; // Left pre-conditioner
+  std::shared_ptr<Op> M, N; // Pre-conditioners
   Index lsqLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;

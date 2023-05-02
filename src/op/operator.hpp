@@ -23,11 +23,14 @@ struct Op
   virtual auto rows() const -> Index = 0;
   virtual auto cols() const -> Index = 0;
   virtual void forward(CMap const &x, Map &y) const = 0;
-  virtual void adjoint(CMap const &x, Map &y) const = 0;
+  virtual void adjoint(CMap const &y, Map &x) const = 0;
+  virtual void inverse(CMap const &y, Map &x) const;
   virtual auto forward(Vector const &x) const -> Vector;
   virtual auto adjoint(Vector const &y) const -> Vector;
+  virtual auto inverse(Vector const &y) const -> Vector;
   void forward(Vector const &x, Vector &y) const;
   void adjoint(Vector const &y, Vector &x) const;
+  void inverse(Vector const &y, Vector &x) const;
 };
 
 template <typename Scalar = Cx>
@@ -42,6 +45,7 @@ struct Identity final : Op<Scalar>
   auto cols() const -> Index;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
 
 private:
   Index sz;
@@ -61,6 +65,7 @@ struct Scale final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
 
   std::shared_ptr<Op<Scalar>> op;
   float scale;

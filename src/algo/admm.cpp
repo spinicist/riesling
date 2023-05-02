@@ -47,7 +47,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
   std::shared_ptr<Op> I = std::make_shared<LinOps::Identity<Cx>>(reg->rows());
   std::shared_ptr<Op> Mʹ = std::make_shared<LinOps::DStack<Cx>>(M, I);
 
-  LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol, false};
+  LSMR lsmr{Aʹ, Mʹ, N, lsqLimit, aTol, bTol, cTol, false};
 
   Vector x(A->cols());
   x.setZero();

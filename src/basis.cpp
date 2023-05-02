@@ -29,6 +29,10 @@ Basis::Basis(
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
 
+  Eigen::ArrayXf scales = svd.vals.sqrt().head(nRetain);
+  scales = scales / scales(0);
+  fmt::print("{}\n", fmt::join(scales, ","));
+
   if (reorder.size()) {
     Index const nReorder = reorder.size();
     if (nReorder < nRetain) {

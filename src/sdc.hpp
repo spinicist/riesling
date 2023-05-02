@@ -1,8 +1,8 @@
 #pragma once
 
-#include "op/scale.hpp"
 #include "parse_args.hpp"
 #include "trajectory.hpp"
+#include "op/tensorop.hpp"
 
 namespace rl {
 

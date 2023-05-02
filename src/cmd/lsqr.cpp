@@ -34,7 +34,8 @@ int main_lsqr(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  LSQR lsqr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
+  auto N = std::make_shared<LinOps::Identity<Cx>>(recon->cols());
+  LSQR lsqr{recon, M, N, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 const outSz = out_cropper.size();
