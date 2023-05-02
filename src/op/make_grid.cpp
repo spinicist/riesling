@@ -2,6 +2,8 @@
 #include "grid.hpp"
 #include "io/reader.hpp"
 #include "kernel/nn.hpp"
+#include "loop.hpp"
+#include "rank.hpp"
 
 namespace rl {
 
@@ -58,5 +60,22 @@ template std::shared_ptr<GridBase<Cx, 3>>
 make_grid<Cx, 3>(Trajectory const &, std::string const, float const, Index const, std::optional<Re2> const &);
 template std::shared_ptr<GridBase<float, 3>>
 make_grid<float, 3>(Trajectory const &, std::string const, float const, Index const, std::optional<Re2> const &);
+
+std::shared_ptr<TensorOperator<Cx, 5, 4>> make_3d_grid(
+  Trajectory const &traj,
+  std::string const kType,
+  float const os,
+  Index const nC,
+  std::optional<Re2> const &basis)
+{
+  if (traj.nDims() == 2) {
+    Log::Print<Log::Level::Debug>("Creating 2D Multi-slice Gridder");
+    auto grid = make_grid<Cx, 2>(traj, kType, os, nC, basis);
+    return std::make_shared<LoopOp<GridBase<Cx, 2>>>(grid, traj.info().matrix[2]);
+  } else {
+    Log::Print<Log::Level::Debug>("Creating 3D Gridder");
+    return std::make_shared<IncreaseOutputRank<GridBase<Cx, 3>>>(make_grid<Cx, 3>(traj, kType, os, nC, basis));
+  }
+}
 
 } // namespace rl

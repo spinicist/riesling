@@ -12,16 +12,15 @@ namespace SENSE {
 struct Opts
 {
   Opts(args::Subparser &parser);
-  args::ValueFlag<std::string> file;
+  args::ValueFlag<std::string> type;
   args::ValueFlag<Index> volume, frame;
   args::ValueFlag<float> res, λ, fov;
+  args::ValueFlag<Index> kRad, calRad, gap;
+  args::ValueFlag<float> threshold;
 };
 
-//! Calculates a set of SENSE maps from non-cartesian data, assuming an oversampled central region
-Cx4 SelfCalibration(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Reader &reader);
-
 //! Convenience function called from recon commands to get SENSE maps
-Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &t, HD5::Reader &reader);
+Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &t, std::optional<Re2> const &basis, HD5::Reader &reader);
 
 } // namespace SENSE
 } // namespace rl

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "../sense.hpp"
 #include "io/reader.hpp"
 #include "op/compose.hpp"
 #include "op/nufft.hpp"
+#include "op/sense.hpp"
 #include "parse_args.hpp"
 #include "sdc.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 
 namespace rl {
 
@@ -17,7 +17,6 @@ auto make_recon(
   SDC::Opts &sdcOpts,
   SENSE::Opts &senseOpts,
   Trajectory const &traj,
-  bool const toeplitz,
   HD5::Reader &reader) -> std::shared_ptr<ReconOp>;
 
 } // namespace rl

@@ -6,7 +6,7 @@
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "scaling.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
@@ -26,7 +26,7 @@ int main_cg(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto normEqs = std::make_shared<NormalOp<Cx>>(recon);
   ConjugateGradients cg{normEqs, its.Get(), thr.Get(), true};
 

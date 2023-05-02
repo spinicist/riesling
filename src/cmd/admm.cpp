@@ -14,7 +14,7 @@
 #include "prox/thresh-wavelets.hpp"
 #include "scaling.hpp"
 #include "sdc.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 
 using namespace rl;
 
@@ -58,7 +58,7 @@ int main_admm(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   auto const sz = recon->ishape;
 

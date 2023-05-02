@@ -5,7 +5,7 @@
 #include "parse_args.hpp"
 #include "phantom/gradcubes.hpp"
 #include "phantom/shepp-logan.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include "traj_spirals.h"

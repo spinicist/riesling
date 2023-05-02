@@ -4,7 +4,7 @@
 
 #include "nufft.hpp"
 #include "sdc.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 
 namespace rl {
 

@@ -18,8 +18,7 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
   NUFFTOp(
     std::shared_ptr<GridBase<Cx, NDim>> gridder,
     Sz<NDim> const matrix,
-    std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr,
-    bool toeplitz = false);
+    std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
 
   OP_DECLARE()
 
@@ -45,7 +44,6 @@ std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(
   Index const nC,
   Sz3 const matrix,
   std::optional<Re2> basis = std::nullopt,
-  std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr,
-  bool const toeplitz = false);
+  std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
 
 } // namespace rl

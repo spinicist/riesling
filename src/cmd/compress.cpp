@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
-#include "rovir.hpp"
+#include "sense/rovir.hpp"
 #include "tensorOps.hpp"
 #include "types.hpp"
 

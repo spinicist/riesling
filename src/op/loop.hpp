@@ -8,6 +8,8 @@ template <typename Op>
 struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
   OP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
+  using Parent::forward;
+  using Parent::adjoint;
 
   LoopOp(std::shared_ptr<Op> op, Index const N)
     : Parent("LoopOp", AddBack(op->ishape, N), AddBack(op->oshape, N))

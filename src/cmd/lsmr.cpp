@@ -8,7 +8,7 @@
 #include "precond.hpp"
 #include "scaling.hpp"
 #include "sdc.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
@@ -32,7 +32,7 @@ int main_lsmr(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   LSMR lsmr{recon, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon->ishape;

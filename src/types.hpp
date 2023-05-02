@@ -15,8 +15,8 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-#include <complex>
 #include <cassert>
+#include <complex>
 
 using Index = Eigen::Index;
 
@@ -61,7 +61,7 @@ using Cx6 = Eigen::Tensor<Cx, 6>;
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
 // Useful shorthands
-template<Index Rank>
+template <Index Rank>
 using Sz = typename Eigen::DSizes<Index, Rank>;
 using Sz1 = Sz<1>;
 using Sz2 = Sz<2>;
@@ -69,6 +69,11 @@ using Sz3 = Sz<3>;
 using Sz4 = Sz<4>;
 using Sz5 = Sz<5>;
 using Sz6 = Sz<6>;
+
+using Size3 = Eigen::Array<int16_t, 3, 1>;
+using Point1 = Eigen::Matrix<float, 1, 1>;
+using Point2 = Eigen::Matrix<float, 2, 1>;
+using Point3 = Eigen::Matrix<float, 3, 1>;
 
 template <typename T, int N, typename... Args>
 decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
@@ -107,7 +112,7 @@ decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> c
 }
 
 template <size_t N, typename T>
-Eigen::DSizes<typename T::value_type, N> FirstN(T const &sz)
+auto FirstN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(N <= sz.size());
   Eigen::DSizes<typename T::value_type, N> first;
@@ -116,7 +121,7 @@ Eigen::DSizes<typename T::value_type, N> FirstN(T const &sz)
 }
 
 template <size_t N, typename T>
-Eigen::DSizes<Index, N> LastN(T const &sz)
+auto LastN(T const &sz) -> Eigen::DSizes<Index, N>
 {
   assert(N <= sz.size());
   Eigen::DSizes<Index, N> last;
@@ -125,18 +130,13 @@ Eigen::DSizes<Index, N> LastN(T const &sz)
 }
 
 template <size_t F, size_t N, typename T>
-Eigen::DSizes<Index, N> MidN(T const &sz)
+auto MidN(T const &sz) -> Eigen::DSizes<Index, N>
 {
   assert(F + N <= sz.size());
   Eigen::DSizes<Index, N> out;
   std::copy_n(sz.begin() + F, N, out.begin());
   return out;
 }
-
-using Size3 = Eigen::Array<int16_t, 3, 1>;
-using Point1 = Eigen::Matrix<float, 1, 1>;
-using Point2 = Eigen::Matrix<float, 2, 1>;
-using Point3 = Eigen::Matrix<float, 3, 1>;
 
 template <typename T>
 Index Product(T const &indices)
@@ -145,12 +145,37 @@ Index Product(T const &indices)
 }
 
 template <typename T>
-T AMin(T const &a, T const &b) {
+T AMin(T const &a, T const &b)
+{
   T m;
   for (size_t ii = 0; ii < a.size(); ii++) {
     m[ii] = std::min(a[ii], b[ii]);
   }
   return m;
+}
+
+template <int N>
+auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> Eigen::DSizes<Index, N>
+{
+  Eigen::DSizes<Index, N> result;
+  std::transform(sz.begin(), sz.begin() + N, result.begin(), [a](Index const i) { return i + a; });
+  return result;
+}
+
+template <int N>
+auto Mul(Eigen::DSizes<Index, N> const &sz, Index const m) -> Eigen::DSizes<Index, N>
+{
+  Eigen::DSizes<Index, N> result;
+  std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return i * m; });
+  return result;
+}
+
+template <int N>
+auto Div(Eigen::DSizes<Index, N> const &sz, Index const d) -> Eigen::DSizes<Index, N>
+{
+  Eigen::DSizes<Index, N> result;
+  std::transform(sz.begin(), sz.begin() + N, result.begin(), [d](Index const i) { return i / d; });
+  return result;
 }
 
 } // namespace rl

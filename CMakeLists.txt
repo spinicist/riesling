@@ -29,16 +29,13 @@ add_library(vineyard
     src/basis.cpp
     src/compressor.cpp
     src/cropper.cpp
-    src/espirit.cpp
     src/filter.cpp
     src/log.cpp
     src/mapping.cpp
     src/parse_args.cpp
     src/precond.cpp
-    src/rovir.cpp
     src/scaling.cpp
     src/sdc.cpp
-    src/sense.cpp
     src/signals.cpp
     src/threads.cpp
     src/trajectory.cpp
@@ -80,6 +77,9 @@ add_library(vineyard
     # src/prox/slr.cpp
     src/prox/thresh.cpp
     src/prox/thresh-wavelets.cpp
+    src/sense/espirit.cpp
+    src/sense/rovir.cpp
+    src/sense/sense.cpp
     src/sim/parameter.cpp
     src/sim/dir.cpp
     src/sim/dwi.cpp

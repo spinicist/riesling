@@ -8,6 +8,8 @@ template <typename Op>
 struct IncreaseOutputRank final : TensorOperator<typename Op::Scalar, Op::InRank, Op::OutRank + 1>
 {
   OP_INHERIT(typename Op::Scalar, Op::InRank, Op::OutRank + 1)
+  using Parent::forward;
+  using Parent::adjoint;
 
   IncreaseOutputRank(std::shared_ptr<Op> op)
     : Parent("IncreaseOutputRankOp", op->ishape, AddBack(op->oshape, 1))

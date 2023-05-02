@@ -50,7 +50,7 @@ int main_nufft(args::Subparser &parser)
     auto const channels = noncart.dimension(0);
     auto const sdc = SDC::Choose(sdcOpts, channels, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     auto nufft = make_nufft(
-      traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), basis, sdc, false);
+      traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels, traj.matrix(coreOpts.fov.Get()), basis, sdc);
 
     Cx6 output(AddBack(nufft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {

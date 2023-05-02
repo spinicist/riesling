@@ -36,7 +36,7 @@ void SenseOp::adjoint(OutCMap const &y, InMap &x) const
   finishAdjoint(x, time);
 }
 
-  auto SenseOp::nChannels() const -> Index { return oshape[0]; }
-  auto SenseOp::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
+auto SenseOp::nChannels() const -> Index { return oshape[0]; }
+auto SenseOp::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
 } // namespace rl

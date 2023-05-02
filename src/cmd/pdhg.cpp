@@ -11,7 +11,7 @@
 #include "prox/thresh-wavelets.hpp"
 #include "scaling.hpp"
 #include "sdc.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 
 using namespace rl;
 
@@ -37,7 +37,7 @@ int main_pdhg(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   Info const &info = traj.info();
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto const sz = recon->ishape;
 
   std::shared_ptr<Prox<Cx4>> reg;

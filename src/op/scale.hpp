@@ -14,6 +14,8 @@ struct Scale final : TensorOperator<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
   using TScales = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
+  using Parent::forward;
+  using Parent::adjoint;
 
   Scale(InDims const dims, TScales const &ain)
     : Parent("Scale", dims, dims)

@@ -7,7 +7,7 @@
 #include "parse_args.hpp"
 #include "precond.hpp"
 #include "sdc.hpp"
-#include "sense.hpp"
+#include "sense/sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
@@ -28,7 +28,7 @@ int main_eig(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, false, reader);
+  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   if (adj) {
