@@ -35,22 +35,8 @@ int main_lsmr(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  std::shared_ptr<LinOps::Op<Cx>> N;
-  if (basisScales) {
-    Index const d = recon->ishape[0];
-    if (basisScales.Get().size() != d) {
-      Log::Fail("Basis scales had {} elements, expected {}", basisScales.Get().size(), d);
-    }
-    Log::Print("Basis scales: {}", fmt::join(basisScales.Get(), ","));
-    Cx1 scales(d);
-    for (Index ii = 0; ii < d; ii++) {
-      scales(ii) = basisScales.Get()[ii];
-    }
-    N = std::make_shared<TensorScale<Cx, 4, 0, 3>>(recon->ishape, scales);
-  } else {
-    N = std::make_shared<LinOps::Identity<Cx>>(recon->cols());
-  }
+  auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto N = make_scales_pre(basisScales.Get(), recon->ishape);
   LSMR lsmr{recon, M, N, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
@@ -63,9 +49,8 @@ int main_lsmr(args::Subparser &parser)
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
-    Cx4 vol = Tensorfy(N->inverse(lsmr.run(&allData(0, 0, 0, 0, iv), λ.Get())), recon->ishape);
     out.chip<4>(iv).device(Threads::GlobalDevice()) =
-      out_cropper.crop4(vol) / out.chip<4>(iv).constant(scale);
+      out_cropper.crop4(Tensorfy(lsmr.run(&allData(0, 0, 0, 0, iv), λ.Get()), recon->ishape)) / out.chip<4>(iv).constant(scale);
     Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));

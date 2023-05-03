@@ -41,7 +41,7 @@ int main_lad(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto M = make_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   auto const sz = recon->ishape;
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());

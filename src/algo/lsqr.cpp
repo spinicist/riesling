@@ -108,7 +108,8 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
     }
   }
   PopInterrupt();
-  return x;
+  N->inverse(x, v); // Re-use v for pedantry
+  return v;
 }
 
 } // namespace rl

@@ -1,7 +1,7 @@
 #pragma once
 #include "log.hpp"
-#include "tensorop.hpp"
 #include "tensorOps.hpp"
+#include "tensorop.hpp"
 
 namespace rl {
 
@@ -14,8 +14,8 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
   using TScales = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
-  using Parent::forward;
   using Parent::adjoint;
+  using Parent::forward;
 
   TensorScale(InDims const shape, TScales const &s)
     : Parent("Scale", shape, shape)
@@ -27,7 +27,7 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
     }
     for (auto ii = FrontRank; ii < Rank - BackRank; ii++) {
       if (shape[ii] != s.dimension(ii - FrontRank)) {
-        Log::Fail("Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank>(shape));
+        Log::Fail("Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
       }
       res[ii] = shape[ii];
       brd[ii] = 1;

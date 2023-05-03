@@ -29,7 +29,7 @@ Basis::Basis(
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
 
-  Eigen::ArrayXf scales = svd.vals.sqrt().head(nRetain);
+  Eigen::ArrayXf scales = svd.vals.head(nRetain);
   scales = scales / scales(0);
   fmt::print("{}\n", fmt::join(scales, ","));
 
