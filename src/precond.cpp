@@ -88,6 +88,7 @@ std::shared_ptr<TensorOperator<Cx, 4>> make_scales_pre(std::vector<float> const 
   } else {
     N = std::make_shared<TensorIdentity<Cx, 4>>(shape);
   }
+  return N;
 }
 
 } // namespace rl
