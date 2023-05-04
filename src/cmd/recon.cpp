@@ -36,7 +36,6 @@ int main_recon(args::Subparser &parser)
 
   if (fwd) {
     HD5::Reader senseReader(senseOpts.type.Get());
-    Cx4 senseMaps = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
     auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, senseReader);
     Sz4 const sz = recon->ishape;
     Sz4 const osz = AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]);

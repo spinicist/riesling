@@ -17,9 +17,9 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
   using Parent::adjoint;
   using Parent::forward;
 
-  TensorScale(InDims const shape, TScales const &s)
+  TensorScale(InDims const shape, TScales const &s, bool const inv = false)
     : Parent("Scale", shape, shape)
-    , scales{s}
+    , scales{s} , adjointIsInverse{inv}
   {
     for (auto ii = 0; ii < FrontRank; ii++) {
       res[0] = 1;
@@ -48,9 +48,13 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
-    auto const time = this->startAdjoint(y);
-    x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
-    this->finishAdjoint(x, time);
+    if (adjointIsInverse) {
+      inverse(y, x);
+    } else {
+      auto const time = this->startAdjoint(y);
+      x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
+      this->finishAdjoint(x, time);
+    }
   }
 
   void inverse(OutCMap const &y, InMap &x) const
@@ -62,6 +66,7 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
 
 private:
   TScales scales;
+  bool adjointIsInverse;
   Sz<Rank> res, brd;
 };
 

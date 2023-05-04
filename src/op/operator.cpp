@@ -354,6 +354,23 @@ void DStack<S>::adjoint(CMap const &y, Map &x) const
   assert(ic = cols());
 }
 
+template <typename S>
+void DStack<S>::inverse(CMap const &y, Map &x) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  Index ir = 0, ic = 0;
+  for (auto const &op : ops) {
+    Map xm(x.data() + ic, op->cols());
+    CMap ym(y.data() + ir, op->rows());
+    op->inverse(ym, xm);
+    ir += op->rows();
+    ic += op->cols();
+  }
+  assert(ir = rows());
+  assert(ic = cols());
+}
+
 template struct DStack<float>;
 template struct DStack<Cx>;
 

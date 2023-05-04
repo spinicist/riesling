@@ -24,7 +24,7 @@ struct LSMR
   using Map = typename Op::Map;
 
   std::shared_ptr<Op> op;
-  std::shared_ptr<Op> M, N; // Pre-conditioners
+  std::shared_ptr<Op> M; // Pre-conditioner
   Index iterLimit = 8;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;

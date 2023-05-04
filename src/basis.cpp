@@ -29,10 +29,6 @@ Basis::Basis(
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
 
-  Eigen::ArrayXf scales = svd.vals.head(nRetain);
-  scales = scales / scales(0);
-  fmt::print("{}\n", fmt::join(scales, ","));
-
   if (reorder.size()) {
     Index const nReorder = reorder.size();
     if (nReorder < nRetain) {
@@ -59,12 +55,16 @@ Basis::Basis(
     }
   }
 
-  basis *= std::sqrt(basis.rows());
-
   Log::Print("Computing dictionary");
+  basis *= std::sqrt(basis.rows());
   dict = basis.transpose() * dynamics.matrix();
+  Eigen::VectorXf scales = dict.rowwise().maxCoeff() - dict.rowwise().minCoeff();
+  scales = (scales / scales(0)).array().sqrt();
+  fmt::print("{}\n", fmt::join(scales, ","));
   norm = dict.colwise().norm();
   dict = dict.array().rowwise() / norm.transpose();
+
+
 }
 
 void Basis::write(HD5::Writer &writer)

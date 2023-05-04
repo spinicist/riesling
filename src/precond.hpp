@@ -11,6 +11,6 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis = std:
 std::shared_ptr<TensorOperator<Cx, 4>> make_kspace_pre(
   std::string const &type, Sz4 const dims, Trajectory const &traj, std::optional<Re2> const &basis, float const bias);
 
-std::shared_ptr<TensorOperator<Cx, 4>> make_scales_pre(std::vector<float> const &scales, Sz4 const shape);
+std::shared_ptr<LinOps::Op<Cx>> make_scales_pre(std::vector<float> const &scales, Sz4 const shape);
 
 } // namespace rl

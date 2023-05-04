@@ -36,7 +36,8 @@ int main_lsqr(args::Subparser &parser)
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   auto N = make_scales_pre(basisScales.Get(), recon->ishape);
-  LSQR lsqr{recon, M, N, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
+  auto A = std::make_shared<LinOps::Multiply<Cx>>(recon, N);
+  LSQR lsqr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
   auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 const outSz = out_cropper.size();
@@ -49,7 +50,8 @@ int main_lsqr(args::Subparser &parser)
   for (Index iv = 0; iv < volumes; iv++) {
     auto const &vol_start = Log::Now();
     out.chip<4>(iv).device(Threads::GlobalDevice()) =
-      out_cropper.crop4(Tensorfy(lsqr.run(&allData(0, 0, 0, 0, iv), λ.Get()), recon->ishape)) / out.chip<4>(iv).constant(scale);
+      out_cropper.crop4(Tensorfy(N->inverse(lsqr.run(&allData(0, 0, 0, 0, iv), λ.Get())), recon->ishape)) /
+      out.chip<4>(iv).constant(scale);
     Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));

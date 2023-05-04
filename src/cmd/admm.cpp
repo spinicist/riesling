@@ -62,6 +62,7 @@ int main_admm(args::Subparser &parser)
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   auto N = make_scales_pre(basisScales.Get(), recon->ishape);
+  auto A = std::make_shared<LinOps::Multiply<Cx>>(recon, N);
   auto const sz = recon->ishape;
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
@@ -74,8 +75,7 @@ int main_admm(args::Subparser &parser)
 
   std::vector<std::shared_ptr<LinOps::Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
-  std::shared_ptr<LinOps::Op<Cx>> A, ext_x; // Need these for TGV, sigh
-  A = recon;
+  std::shared_ptr<LinOps::Op<Cx>> ext_x; // Need for TGV, sigh
   if (wavelets) {
     prox.push_back(std::make_shared<ThresholdWavelets>(λ.Get(), sz, width.Get(), wavelets.Get()));
     reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
@@ -102,7 +102,7 @@ int main_admm(args::Subparser &parser)
     auto prox2 = std::make_shared<SoftThreshold>(λ.Get());
     prox = {prox1, prox2};
     reg_ops = {op1, op2};
-    A = std::make_shared<LinOps::Multiply<Cx>>(recon, ext_x);
+    A = std::make_shared<LinOps::Multiply<Cx>>(A, ext_x);
   } else {
     Log::Fail("Must specify at least one regularizer");
   }
@@ -110,7 +110,6 @@ int main_admm(args::Subparser &parser)
   ADMM admm{
     A,
     M,
-    N,
     inner_its.Get(),
     atol.Get(),
     btol.Get(),
@@ -129,6 +128,7 @@ int main_admm(args::Subparser &parser)
     if (ext_x) {
       x = ext_x->forward(x);
     }
+    x = N->forward(x);
     out.chip<4>(iv) = out_cropper.crop4(Tensorfy(x, sz)) / out.chip<4>(iv).constant(scale);
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));

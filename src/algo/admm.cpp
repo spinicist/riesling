@@ -14,14 +14,14 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
    * For the least squares part we are solving:
   A'x = b'
   [     A            [     b
-    √ρ_1 F_1           z_1 - u_1
-    √ρ_2 F_2     x =   z_2 - u_2
+    √ρ F_1             √ρ (z_1 - u_1)
+    √ρ F_2     x =     √ρ (z_2 - u_2)
       ...              ...
-    √ρ_n F_n ]         z_n - u_n ]
+    √ρ F_n ]           √ρ (z_n - u_n) ]
 
     Then for the regularizers, in turn we do:
 
-    z_i = prox_λ/ρ_i(F_i * x + u_i)
+    z_i = prox_λ/ρ(F_i * x + u_i)
     u_i = F_i * x + u_i - z_i
     */
 
@@ -47,7 +47,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
   std::shared_ptr<Op> I = std::make_shared<LinOps::Identity<Cx>>(reg->rows());
   std::shared_ptr<Op> Mʹ = std::make_shared<LinOps::DStack<Cx>>(M, I);
 
-  LSMR lsmr{Aʹ, Mʹ, N, lsqLimit, aTol, bTol, cTol, false};
+  LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol, false};
 
   Vector x(A->cols());
   x.setZero();

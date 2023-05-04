@@ -71,9 +71,9 @@ std::shared_ptr<TensorOperator<Cx, 4>> make_kspace_pre(
   }
 }
 
-std::shared_ptr<TensorOperator<Cx, 4>> make_scales_pre(std::vector<float> const &scales, Sz4 const shape)
+std::shared_ptr<LinOps::Op<Cx>> make_scales_pre(std::vector<float> const &scales, Sz4 const shape)
 {
-  std::shared_ptr<TensorOperator<Cx, 4>> N;
+  std::shared_ptr<LinOps::Op<Cx>> N;
   if (scales.size()) {
     Index const d = shape[0];
     if (scales.size() != (size_t)d) {
@@ -84,7 +84,7 @@ std::shared_ptr<TensorOperator<Cx, 4>> make_scales_pre(std::vector<float> const 
     for (Index ii = 0; ii < d; ii++) {
       s(ii) = scales[ii];
     }
-    N = std::make_shared<TensorScale<Cx, 4, 0, 3>>(shape, s);
+    N = std::make_shared<TensorScale<Cx, 4, 0, 3>>(shape, s, true);
   } else {
     N = std::make_shared<TensorIdentity<Cx, 4>>(shape);
   }

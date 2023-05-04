@@ -9,10 +9,10 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   Index const cols = op->cols();
   Map const b(bdata, rows);
   Vector Mu(rows), u(rows);
-  Vector Nv(cols), v(cols), h(cols), h̅(cols), x(cols);
+  Vector v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
-  BidiagInit(op, M, Mu, u, N, Nv, v, α, β, x, b, x0);
+  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
   h = v;
   h̅.setZero();
 
@@ -43,7 +43,7 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
-    Bidiag(op, M, Mu, u, N, Nv, v, α, β);
+    Bidiag(op, M, Mu, u, v, α, β);
 
     float const ρold = ρ;
     float c, s, ĉ = 1.f, ŝ = 0.f;
@@ -146,8 +146,7 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
     }
   }
   PopInterrupt();
-  N->inverse(x, v); // Re-use v for pedantry
-  return v;
+  return x;
 }
 
 } // namespace rl

@@ -44,8 +44,6 @@ void BidiagInit(
   std::shared_ptr<LinOps::Op<Cx>> M,
   Eigen::VectorXcf &Mu,
   Eigen::VectorXcf &u,
-  std::shared_ptr<LinOps::Op<Cx>> N,
-  Eigen::VectorXcf &Nv,
   Eigen::VectorXcf &v,
   float &α,
   float &β,
@@ -65,9 +63,8 @@ void BidiagInit(
   β = std::sqrt(CheckedDot(Mu, u));
   Mu = Mu / β;
   u = u / β;
-  op->adjoint(u, Nv);
-  N->adjoint(Nv, v);
-  α = std::sqrt(CheckedDot(Nv, v));
+  op->adjoint(u, v);
+  α = std::sqrt(CheckedDot(v, v));
   v = v / α;
 }
 
@@ -76,8 +73,6 @@ void Bidiag(
   std::shared_ptr<LinOps::Op<Cx>> const M,
   Eigen::VectorXcf &Mu,
   Eigen::VectorXcf &u,
-  std::shared_ptr<LinOps::Op<Cx>> N,
-  Eigen::VectorXcf &Nv,
   Eigen::VectorXcf &v,
   float &α,
   float &β)
@@ -87,9 +82,8 @@ void Bidiag(
   β = std::sqrt(CheckedDot(Mu, u));
   Mu = Mu / β;
   u = u / β;
-  Nv = op->adjoint(u) - (β * Nv);
-  N->adjoint(Nv, v);
-  α = std::sqrt(CheckedDot(Nv, v));
+  v = op->adjoint(u) - (β * v);
+  α = std::sqrt(CheckedDot(v, v));
   v = v / α;
 }
 

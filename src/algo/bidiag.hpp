@@ -13,8 +13,6 @@ void BidiagInit(
   std::shared_ptr<LinOps::Op<Cx>> M,
   Eigen::VectorXcf &Mu,
   Eigen::VectorXcf &u,
-  std::shared_ptr<LinOps::Op<Cx>> N,
-  Eigen::VectorXcf &Nv,
   Eigen::VectorXcf &v,
   float &α,
   float &β,
@@ -27,8 +25,6 @@ void Bidiag(
   std::shared_ptr<LinOps::Op<Cx>> const M,
   Eigen::VectorXcf &Mu,
   Eigen::VectorXcf &u,
-  std::shared_ptr<LinOps::Op<Cx>> N,
-  Eigen::VectorXcf &Nv,
   Eigen::VectorXcf &v,
   float &α,
   float &β);

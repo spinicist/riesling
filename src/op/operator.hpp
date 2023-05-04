@@ -126,6 +126,7 @@ struct DStack final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
 
 private:
   std::vector<std::shared_ptr<Op<Scalar>>> ops;

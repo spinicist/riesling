@@ -71,15 +71,8 @@ auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
 
 Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, std::optional<Re2> const &basis, HD5::Reader &reader)
 {
-  Index const nC = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
   Sz3 const shape = traj.matrix(opts.fov.Get());
-  if (nC == 1) {
-    // Only one channel, return all ones
-    Cx4 sense(AddFront(shape, nC));
-    sense.setConstant(1.);
-    return sense;
-  }
-
+  Log::Print("{}", opts.type.Get());
   if (opts.type.Get() == "auto") {
     Cx4 channels = LoresGrid(opts, core, traj, basis, reader);
     return UniformNoise(opts.λ, shape, channels);
@@ -89,9 +82,6 @@ Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, std::optional<Re2
   } else {
     HD5::Reader senseReader(opts.type.Get());
     Cx4 sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
-    if (sense.dimension(0) != nC) {
-      Log::Fail("Number of channels in SENSE maps {} does not match data {}", sense.dimension(0), nC);
-    }
     if (LastN<3>(sense.dimensions()) != shape) {
       Log::Fail("SENSE map spatial dimensions were {}, expected {}", LastN<3>(sense.dimensions()), shape);
     }
