@@ -3,6 +3,8 @@
 #include "algo/decomp.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
+#include "log.hpp"
+
 #include <cmath>
 #include <random>
 
@@ -28,28 +30,29 @@ LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
 {
 }
 
-void LLR::apply(float const α, CMap const &xin, Map &z) const
+void LLR::apply(float const α, CMap const &xin, Map &zin) const
 {
   Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
-  Sz3 nP, shift;
+  Sz3 nWindows, shift;
   std::random_device rd;
   std::mt19937 gen(rd());
   for (Index ii = 0; ii < 3; ii++) {
     auto const d = x.dimension(ii + 1);
-    nP[ii] = ((d - 1) / windowSize) - 1;
-    std::uniform_int_distribution<> int_dist(0, d - nP[ii] * windowSize);
+    nWindows[ii] = ((d - 1) / windowSize) - 1;
+    std::uniform_int_distribution<> int_dist(0, d - nWindows[ii] * windowSize);
     shift[ii] = int_dist(gen);
   }
   Index const K = x.dimension(0);
   Sz4 const szP{K, patchSize, patchSize, patchSize};
   Sz4 const szW{K, windowSize, windowSize, windowSize};
   Index const inset = (patchSize - windowSize) / 2;
-  Eigen::TensorMap<Cx4> lr(z.data(), shape);
+  Eigen::TensorMap<Cx4> z(zin.data(), shape);
+  z.setZero();
   float const realλ = λ * α;
   Log::Print<Log::Level::High>("LLR λ {} Patch-size {} Window-size {}", realλ, patchSize, windowSize);
   auto zTask = [&](Index const iz) {
-    for (Index iy = 0; iy < nP[1]; iy++) {
-      for (Index ix = 0; ix < nP[0]; ix++) {
+    for (Index iy = 0; iy < nWindows[1]; iy++) {
+      for (Index ix = 0; ix < nWindows[0]; ix++) {
         Sz3 ind{ix, iy, iz};
         Sz4 stP, stW, stW2;
         stP[0] = stW[0] = stW2[0] = 0;
@@ -64,11 +67,12 @@ void LLR::apply(float const α, CMap const &xin, Map &z) const
         // Soft-threhold svals
         Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
         patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-        lr.slice(stW, szW) = patchTensor.slice(stW2, szW);
+        z.slice(stW, szW) = patchTensor.slice(stW2, szW);
       }
     }
   };
-  Threads::For(zTask, nP[2], "LLR");
+  Threads::For(zTask, nWindows[2], "LLR");
+  Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
 }
 
 } // namespace rl
