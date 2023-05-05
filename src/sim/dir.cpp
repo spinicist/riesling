@@ -94,14 +94,15 @@ Index DIR2::length() const { return settings.spg * settings.gps; }
 
 Eigen::ArrayXXf DIR2::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const
 {
-  return Parameters::T1T2B1(nsamp, lo, hi);
+  return Parameters::T1T2PD(nsamp, lo, hi);
 }
 
 Eigen::ArrayXf DIR2::simulate(Eigen::ArrayXf const &p) const
 {
   float const T1 = p(0);
   float const T2 = p(1);
-  float const B1 = p(2);
+  float const PD = p(2);
+  float const B1 = 0.7;
   float const η = 1.0f;
   Eigen::ArrayXf dynamic(settings.spg * settings.gps);
 
@@ -141,6 +142,7 @@ Eigen::ArrayXf DIR2::simulate(Eigen::ArrayXf const &p) const
   // Now fill in dynamic
   Index tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
+  Mz *= PD;
   for (Index ig = 0; ig < settings.gprep2; ig++) {
     Mz = Esat * Mz;
     Mz = Eramp * Mz;

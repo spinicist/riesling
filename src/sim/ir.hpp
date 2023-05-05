@@ -9,7 +9,7 @@ namespace rl {
 
 struct IR final : Sequence
 {
-  static const Index nParameters = 2;
+  static const Index nParameters = 1;
   IR(Settings const &s);
 
   auto length() const -> Index;

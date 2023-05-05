@@ -73,7 +73,7 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
     return fig
 
 def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_slice=None,
-           other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
+           other_dims=None, other_indices=None, img_offset=-1, img_slices=None, scales=None,
            component='mag', clim=None, cmap=None, cbar=True, rows=1, rotates=0, fliplr=False, title=None):
     slice_dim, img_dims = _get_dims(axis, img_offset)
     if series_slice is None:
@@ -90,6 +90,9 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
         else:
             other_indices = [slice_index, *other_indices]
         data = _get_slices(D, series_dim, series_slice, img_dims, img_slices, other_dims, other_indices)
+
+    if scales is not None:
+        data = data * np.array(scales).reshape([data.shape[0], 1, 1])
 
     n = data.shape[-3]
     clim, cmap = _get_colors(clim, cmap, data, component)
@@ -350,13 +353,13 @@ def _get_colors(clim, cmap, img, component):
         elif component == 'pha':
             clim = (-np.pi, np.pi)
         elif component == 'real':
-            clim = _symmetrize_real(np.nanpercentile(np.real(img), (2, 98)))
+            clim = _symmetrize_real(np.nanpercentile(np.real(img), (2, 99)))
         elif component == 'imag':
-            clim = _symmetrize_real(np.nanpercentile(np.imag(img), (2, 98)))
+            clim = _symmetrize_real(np.nanpercentile(np.imag(img), (2, 99)))
         elif component == 'x':
-            clim = np.nanpercentile(np.real(np.abs(img)), (2, 98))
+            clim = np.nanpercentile(np.abs(img), (2, 99))
         elif component == 'xlog':
-            clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 98))
+            clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 99))
             if not clim.any():
                 clim = np.nanpercentile(np.log1p(np.abs(img)), (0, 100))
         else:
@@ -514,12 +517,14 @@ def basis(path, sl_spoke=slice(None), b=slice(None), show_sum=False):
         plt.close()
         return fig
 
-def dynamics(filename, sl=slice(None)):
+def dynamics(filename, sl=slice(None), vlines=None):
     with h5py.File(filename) as f:
         dyn = f['dynamics'][sl,:]
         fig, ax = plt.subplots(figsize=(16, 6))
         ax.plot(dyn.T)
         ax.grid('on')
+        if vlines:
+            [ax.axvline(x) for x in vlines]
         plt.close()
         return fig
 
