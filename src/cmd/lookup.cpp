@@ -35,7 +35,7 @@ int main_lookup(args::Subparser &parser)
   Cx5 pd(1, images.dimension(1), images.dimension(2), images.dimension(3), images.dimension(4));
   pd.setZero();
 
-  Index const N = dictionary.dimension(0);
+  Index const N = dictionary.dimension(1);
   if (parameters.dimension(1) != N) {
     Log::Fail("Dictionary has {} entries but parameters has {}", N, parameters.dimension(1));
   }
@@ -52,7 +52,7 @@ int main_lookup(args::Subparser &parser)
           float bestAbsCorr = 0;
 
           for (Index in = 0; in < N; in++) {
-            Re1 const atom = dictionary.chip<0>(in);
+            Re1 const atom = dictionary.chip<1>(in);
             Cx const corr = Dot(atom.cast<Cx>(), x);
             if (std::abs(corr) > bestAbsCorr) {
               bestAbsCorr = std::abs(corr);
@@ -70,7 +70,6 @@ int main_lookup(args::Subparser &parser)
 
   auto const fname = OutName(iname.Get(), oname.Get(), "lookup", "h5");
   HD5::Writer writer(fname);
-  Trajectory(input).write(writer);
   writer.writeTensor(HD5::Keys::Parameters, out_pars.dimensions(), out_pars.data());
   writer.writeTensor(HD5::Keys::ProtonDensity, pd.dimensions(), pd.data());
 
