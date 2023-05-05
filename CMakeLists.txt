@@ -162,6 +162,7 @@ option(BUILD_TESTS "Build the tests" ON)
 
 if(${BUILD_TESTS})
     add_executable(riesling-tests
+        test/algo.cpp
         test/cropper.cpp
         test/decomp.cpp
         # test/dict.cpp

@@ -28,7 +28,7 @@ int main_cg(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto normEqs = std::make_shared<NormalOp<Cx>>(recon);
-  ConjugateGradients cg{normEqs, its.Get(), thr.Get(), true};
+  ConjugateGradients<Cx> cg{normEqs, its.Get(), thr.Get(), true};
 
   auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());

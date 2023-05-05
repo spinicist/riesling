@@ -57,7 +57,8 @@ void Op<S>::forward(Vector const &x, Vector &y) const
 }
 
 template <typename S>
-void Op<S>::inverse(CMap const &y, Map &x) const {
+void Op<S>::inverse(CMap const &y, Map &x) const
+{
   Log::Fail("{} does not have an inverse", this->name);
 }
 
@@ -128,6 +129,49 @@ void Identity<S>::inverse(CMap const &y, Map &x) const
 
 template struct Identity<float>;
 template struct Identity<Cx>;
+
+template <typename S>
+MatMul<S>::MatMul(Matrix const m)
+  : Op<S>("MatMul")
+  , mat{m}
+{
+}
+
+template <typename S>
+auto MatMul<S>::rows() const -> Index
+{
+  return mat.rows();
+}
+
+template <typename S>
+auto MatMul<S>::cols() const -> Index
+{
+  return mat.cols();
+}
+
+template <typename S>
+void MatMul<S>::forward(CMap const &x, Map &y) const
+{
+  assert(x.rows() == y.rows() && x.rows() == sz);
+  y = mat * x;
+}
+
+template <typename S>
+void MatMul<S>::adjoint(CMap const &y, Map &x) const
+{
+  assert(x.rows() == y.rows() && x.rows() == sz);
+  x = mat.adjoint() * y;
+}
+
+template <typename S>
+void MatMul<S>::inverse(CMap const &y, Map &x) const
+{
+  assert(x.rows() == y.rows() && x.rows() == sz);
+  x = mat.inverse() * y;
+}
+
+template struct MatMul<float>;
+template struct MatMul<Cx>;
 
 template <typename S>
 Scale<S>::Scale(std::shared_ptr<Op<S>> o, float const s)

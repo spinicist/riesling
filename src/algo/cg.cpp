@@ -4,7 +4,8 @@
 
 namespace rl {
 
-auto ConjugateGradients::run(Cx *bdata, Cx *x0data) const -> Vector
+template<typename Scalar>
+auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vector
 {
   Index const rows = op->rows();
   Map const b(bdata, rows);
@@ -53,5 +54,8 @@ auto ConjugateGradients::run(Cx *bdata, Cx *x0data) const -> Vector
   PopInterrupt();
   return x;
 }
+
+template struct ConjugateGradients<float>;
+template struct ConjugateGradients<Cx>;
 
 } // namespace rl

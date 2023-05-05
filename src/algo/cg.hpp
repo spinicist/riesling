@@ -28,8 +28,7 @@ struct NormalOp final : LinOps::Op<Scalar_>
   auto rows() const -> Index { return op->cols(); }
   auto cols() const -> Index { return op->cols(); }
 
-  auto forward(Vector const &x) const -> Vector { 
-    return op->adjoint(op->forward(x)); }
+  auto forward(Vector const &x) const -> Vector { return op->adjoint(op->forward(x)); }
   auto adjoint(Vector const &y) const -> Vector { Log::Fail("Normal Operators do not have adjoints"); }
 
   void forward(CMap const &x, Map &y) const
@@ -43,9 +42,10 @@ struct NormalOp final : LinOps::Op<Scalar_>
   void adjoint(CMap const &x, Map &y) const { Log::Fail("Normal Operators do not have adjoints"); }
 };
 
+template <typename Scalar = Cx>
 struct ConjugateGradients
 {
-  using Op = LinOps::Op<Cx>;
+  using Op = LinOps::Op<Scalar>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
 
@@ -54,7 +54,7 @@ struct ConjugateGradients
   float resTol = 1.e-6f;
   bool debug = false;
 
-  auto run(Cx *bdata, Cx *x0 = nullptr) const -> Vector;
+  auto run(Scalar *bdata, Scalar *x0 = nullptr) const -> Vector;
 };
 
 } // namespace rl

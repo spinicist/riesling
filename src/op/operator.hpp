@@ -14,8 +14,8 @@ struct Op
 {
   using Scalar = Scalar_;
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = Eigen::Map<Vector>;
-  using CMap = Eigen::Map<Vector const>;
+  using Map = typename Vector::MapType;
+  using CMap = typename Vector::ConstMapType;
 
   std::string name;
   Op(std::string const &n);
@@ -49,6 +49,27 @@ struct Identity final : Op<Scalar>
 
 private:
   Index sz;
+};
+
+template <typename Scalar = Cx>
+struct MatMul final : Op<Scalar>
+{
+  using typename Op<Scalar>::Map;
+  using typename Op<Scalar>::CMap;
+  using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+
+  MatMul(Matrix const m);
+
+  auto rows() const -> Index;
+  auto cols() const -> Index;
+  using Op<Scalar>::forward;
+  using Op<Scalar>::adjoint;
+  void forward(CMap const &x, Map &y) const;
+  void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
+
+private:
+  Matrix mat;
 };
 
 //! Scale the output of another Linear Operator
@@ -132,7 +153,7 @@ private:
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
 
-template<typename Scalar = Cx>
+template <typename Scalar = Cx>
 struct Extract final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
@@ -150,7 +171,7 @@ private:
   Index r, c, start;
 };
 
-template<typename Scalar = Cx>
+template <typename Scalar = Cx>
 struct Subtract final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
@@ -168,7 +189,6 @@ private:
   std::shared_ptr<Op<Scalar>> a, b;
 };
 
-
-}
+} // namespace LinOps
 
 } // namespace rl
