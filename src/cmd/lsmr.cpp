@@ -38,7 +38,10 @@ int main_lsmr(args::Subparser &parser)
   auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
   auto N = make_scales_pre(basisScales.Get(), recon->ishape);
   auto A = std::make_shared<LinOps::Multiply<Cx>>(recon, N);
-  LSMR lsmr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
+  auto debug = [&recon](Index const i, LSMR::Vector const &x) {
+    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), recon->ishape, x.data());
+  };
+  LSMR lsmr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), debug};
   auto sz = recon->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 const outSz = out_cropper.size();

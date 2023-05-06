@@ -65,6 +65,10 @@ int main_admm(args::Subparser &parser)
   auto A = std::make_shared<LinOps::Multiply<Cx>>(recon, N);
   auto const sz = recon->ishape;
 
+  std::function<void(Index const iter, ADMM::Vector const &x)> debug_x = [sz](Index const ii, ADMM::Vector const &x) {
+    Log::Tensor(fmt::format("admm-x-{:02d}", ii), sz, x.data());
+  };
+
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
@@ -103,6 +107,10 @@ int main_admm(args::Subparser &parser)
     prox = {prox1, prox2};
     reg_ops = {op1, op2};
     A = std::make_shared<LinOps::Multiply<Cx>>(A, ext_x);
+    debug_x = [sz, grad_x](Index const ii, ADMM::Vector const &xv) {
+      Log::Tensor(fmt::format("admm-x-{:02d}", ii), sz, xv.data());
+      Log::Tensor(fmt::format("admm-v-{:02d}", ii), grad_x->oshape, xv.data() + Product(sz));
+    };
   } else {
     Log::Fail("Must specify at least one regularizer");
   }
@@ -121,7 +129,8 @@ int main_admm(args::Subparser &parser)
     μ.Get(),
     τ.Get(),
     abstol.Get(),
-    reltol.Get()};
+    reltol.Get(),
+    debug_x};
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto x = admm.run(&allData(0, 0, 0, 0, iv), ρ.Get());

@@ -27,6 +27,8 @@ struct ADMM
   float abstol = 1.e-4f;
   float reltol = 1.e-4f;
 
+  std::function<void (Index const iter, Vector const &x)> debug_x = nullptr;
+
   auto run(Cx *bdata, float ρ) const -> Vector;
 };
 

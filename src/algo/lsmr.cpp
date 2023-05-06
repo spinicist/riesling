@@ -115,6 +115,10 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
       condA,
       normx);
 
+    if (debug) {
+      debug(ii, x);
+    }
+
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("Cond(A) is very large");
       break;

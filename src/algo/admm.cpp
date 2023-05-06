@@ -47,7 +47,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
   std::shared_ptr<Op> I = std::make_shared<LinOps::Identity<Cx>>(reg->rows());
   std::shared_ptr<Op> Mʹ = std::make_shared<LinOps::DStack<Cx>>(M, I);
 
-  LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol, false};
+  LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol};
 
   Vector x(A->cols());
   x.setZero();
@@ -70,8 +70,8 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       std::dynamic_pointer_cast<LinOps::Scale<Cx>>(scaled_ops[ir])->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ.data(), 0.f, x.data());
-    if (auto At = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 4>>(A)) {
-      Log::Tensor(fmt::format("admm-{:02}-x", io), At->ishape, x.data());
+    if (debug_x) {
+      debug_x(io, x);
     }
 
     float const normx = x.norm();
@@ -82,12 +82,6 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       zold[ir] = z[ir];
       prox[ir]->apply(1.f / ρ, Fxpu[ir], z[ir]);
       u[ir] = Fxpu[ir] - z[ir];
-
-      if (auto t = std::dynamic_pointer_cast<TensorOperator<Cx, 4, 5>>(reg_ops[ir])) {
-        Log::Tensor(fmt::format("admm-{:02}-{:02}-Fx", io, ir), t->oshape, Fx[ir].data());
-        Log::Tensor(fmt::format("admm-{:02}-{:02}-z", io, ir), t->oshape, z[ir].data());
-        Log::Tensor(fmt::format("admm-{:02}-{:02}-u", io, ir), t->oshape, u[ir].data());
-      }
 
       pNorm += (Fx[ir] - z[ir]).squaredNorm();
       dNorm += ρ * (z[ir] - zold[ir]).squaredNorm();
