@@ -152,21 +152,21 @@ auto MatMul<S>::cols() const -> Index
 template <typename S>
 void MatMul<S>::forward(CMap const &x, Map &y) const
 {
-  assert(x.rows() == y.rows() && x.rows() == sz);
+  assert(x.rows() == mat.cols() && y.rows() == mat.rows());
   y = mat * x;
 }
 
 template <typename S>
 void MatMul<S>::adjoint(CMap const &y, Map &x) const
 {
-  assert(x.rows() == y.rows() && x.rows() == sz);
+  assert(x.rows() == mat.cols() && y.rows() == mat.rows());
   x = mat.adjoint() * y;
 }
 
 template <typename S>
 void MatMul<S>::inverse(CMap const &y, Map &x) const
 {
-  assert(x.rows() == y.rows() && x.rows() == sz);
+  assert(x.rows() == mat.cols() && y.rows() == mat.rows());
   x = mat.inverse() * y;
 }
 
