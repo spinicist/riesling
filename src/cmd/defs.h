@@ -3,6 +3,8 @@
 #include "parse_args.hpp"
 
 int main_admm(args::Subparser &parser);
+int main_basis_img(args::Subparser &parser);
+int main_basis_sim(args::Subparser &parser);
 int main_blend(args::Subparser &parser);
 int main_cg(args::Subparser &parser);
 int main_compress(args::Subparser &parser);
@@ -33,7 +35,6 @@ int main_sdc(args::Subparser &parser);
 int main_sense(args::Subparser &parser);
 int main_sense_calib(args::Subparser &parser);
 int main_sense_sim(args::Subparser &parser);
-int main_sim(args::Subparser &parser);
 int main_split(args::Subparser &parser);
 int main_tgv(args::Subparser &parser);
 int main_traj(args::Subparser &parser);

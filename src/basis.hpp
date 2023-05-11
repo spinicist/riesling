@@ -9,16 +9,15 @@ namespace rl {
 struct Basis
 {
   Basis(
-    Eigen::ArrayXXf const &parameters,
     Eigen::ArrayXXf const &dynamics,
     float const thresh,
     Index const nB,
     bool const demean,
-    bool const varimax,
-    std::vector<Index> const reorder);
+    bool const rotate,
+    bool const normalize);
   void write(HD5::Writer &writer);
 
-  Eigen::ArrayXXf parameters, dynamics;
+  Eigen::ArrayXXf dynamics;
   Eigen::MatrixXf basis, dict;
   Eigen::ArrayXf norm;
 };

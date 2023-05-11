@@ -9,6 +9,8 @@ int main(int const argc, char const *const argv[])
   args::ArgumentParser parser("RIESLING");
   args::Group commands(parser, "COMMANDS");
   args::Command admm(commands, "admm", "ADMM recon", &main_admm);
+  args::Command basis_img(commands, "basis-img", "Basis from image data", &main_basis_img);
+  args::Command basis_sim(commands, "basis-sim", "Basis from simulations", &main_basis_sim);
   args::Command blend(commands, "blend", "Blend basis images", &main_blend);
   args::Command cg(commands, "cg", "Recon with Conjugate Gradients", &main_cg);
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
@@ -38,11 +40,9 @@ int main(int const argc, char const *const argv[])
   args::Command sense(commands, "sense", "Apply SENSE operation", &main_sense);
   args::Command sense_calib(commands, "sense-calib", "Create SENSE maps", &main_sense_calib);
   args::Command sense_sim(commands, "sense-sim", "Simulate SENSE maps", &main_sense_sim);
-  args::Command sim(commands, "sim", "Simulate a basis set", &main_sim);
   args::Command split(commands, "split", "Split data", &main_split);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
   args::Command transform(commands, "transform", "Apply a transform (wavelets/TV)", &main_transform);
-  // args::Command tgv(commands, "tgv", "Iterative TGV regularised recon", &main_tgv);
   args::Command version(commands, "version", "Print version number", &main_version);
   // args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::GlobalOptions globals(parser, global_group);

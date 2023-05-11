@@ -69,7 +69,7 @@ std::unordered_map<std::string, Sequences> SequenceMap{
   {"T2FLAIR", Sequences::T2FLAIR},
   {"DWI", Sequences::DWI}};
 
-int main_sim(args::Subparser &parser)
+int main_basis_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
@@ -98,7 +98,7 @@ int main_sim(args::Subparser &parser)
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
   args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag rotate(parser, "V", "Rotate basis", {"rotate"});
-  args::ValueFlag<std::vector<Index>, VectorReader<Index>> reorder(parser, "R", "Reorder basis before retention", {"reorder"});
+  args::Flag normalize(parser, "N", "Normalize dynamics before SVD", {"normalize"});
 
   ParseCommand(parser);
   if (!oname) {
@@ -135,9 +135,9 @@ int main_sim(args::Subparser &parser)
   case Sequences::DWI: std::tie(pars, dyns) = Run<rl::DWI>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
-  Basis basis(pars, dyns, thresh.Get(), nBasis.Get(), demean.Get(), rotate, reorder.Get());
+  Basis basis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize);
   HD5::Writer writer(oname.Get());
   basis.write(writer);
-
+  writer.writeMatrix(pars, HD5::Keys::Parameters);
   return EXIT_SUCCESS;
 }

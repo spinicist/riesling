@@ -110,6 +110,8 @@ set_target_properties(vineyard PROPERTIES
 # Main executable
 add_executable(riesling
     src/cmd/admm.cpp
+    src/cmd/basis-img.cpp
+    src/cmd/basis-sim.cpp
     src/cmd/blend.cpp
     src/cmd/cg.cpp
     src/cmd/compress.cpp
@@ -139,7 +141,6 @@ add_executable(riesling
     src/cmd/sense.cpp
     src/cmd/sense-calib.cpp
     src/cmd/sense-sim.cpp
-    src/cmd/sim.cpp
     src/cmd/split.cpp
     src/cmd/traj.cpp
     src/cmd/transform.cpp

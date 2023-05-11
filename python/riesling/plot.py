@@ -339,9 +339,8 @@ def _orient(img, rotates, fliplr=False):
     return img
 
 def _symmetrize_real(x):
-    if x[0] < 0:
-        x[1] = np.amax([np.abs(x[0]), np.abs(x[1])])
-        x[0] = -x[1]
+    x[1] = np.amax([np.abs(x[0]), np.abs(x[1])])
+    x[0] = -x[1]
     return x
 
 def _get_colors(clim, cmap, img, component):
