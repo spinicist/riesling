@@ -104,6 +104,9 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
       }
     }
   }
+  if (minSamp > maxSamp) {
+    Log::Fail("No valid trajectory points remain after downsampling");
+  }
   Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print(
     "Downsample res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}",
