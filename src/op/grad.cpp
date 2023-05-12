@@ -25,8 +25,9 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 }
 } // namespace
 
-GradOp::GradOp(InDims const dims)
-  : Parent("GradOp", dims, AddBack(dims, 3))
+GradOp::GradOp(InDims const ishape, std::vector<Index> const &d)
+  : Parent("GradOp", ishape, AddBack(ishape, (Index)d.size())),
+  dims_{d}
 {
 }
 
@@ -34,11 +35,9 @@ void GradOp::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.setZero();
-  for (Index ii = 0; ii < 3; ii++) {
-    ForwardDiff(x, y.chip<4>(ii), x.dimensions(), ii + 1);
+  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+    ForwardDiff(x, y.chip<4>(ii), x.dimensions(), dims_[ii]);
   }
-  // Log::Tensor("grad-fwd-x", x.dimensions(), x.data());
-  // Log::Tensor("grad-fwd-y", y.dimensions(), y.data());
   this->finishForward(y, time);
 }
 
@@ -46,12 +45,9 @@ void GradOp::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   x.setZero();
-  for (Index ii = 0; ii < 3; ii++) {
-    BackwardDiff(y.chip<4>(ii), x, x.dimensions(), ii + 1);
-    // Log::Tensor(fmt::format("grad-adj-temp-{}", ii), x.dimensions(), x.data());
+  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+    BackwardDiff(y.chip<4>(ii), x, x.dimensions(), dims_[ii]);
   }
-  // Log::Tensor("grad-adj-y", y.dimensions(), y.data());
-  // Log::Tensor("grad-adj-x", x.dimensions(), x.data());
   this->finishAdjoint(x, time);
 }
 
