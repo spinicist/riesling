@@ -377,8 +377,8 @@ void DStack<S>::forward(CMap const &x, Map &y) const
     ir += op->rows();
     ic += op->cols();
   }
-  assert(ir = rows());
-  assert(ic = cols());
+  assert(ir == rows());
+  assert(ic == cols());
 }
 
 template <typename S>
@@ -394,8 +394,8 @@ void DStack<S>::adjoint(CMap const &y, Map &x) const
     ir += op->rows();
     ic += op->cols();
   }
-  assert(ir = rows());
-  assert(ic = cols());
+  assert(ir == rows());
+  assert(ic == cols());
 }
 
 template <typename S>
@@ -411,8 +411,8 @@ void DStack<S>::inverse(CMap const &y, Map &x) const
     ir += op->rows();
     ic += op->cols();
   }
-  assert(ir = rows());
-  assert(ic = cols());
+  assert(ir == rows());
+  assert(ic == cols());
 }
 
 template struct DStack<float>;
