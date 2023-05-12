@@ -31,7 +31,7 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
   parameters.setZero();
   Index totalP = 0;
   for (size_t ii = 0; ii < los.size(); ii++) {
-    Log::Print("Parameter set {}/{}. Low {} High {}", ii+1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
+    Log::Print("Parameter set {}/{}. Low {} High {}", ii + 1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
     auto p = simulator.parameters(nsamp, los[ii], his[ii]);
     parameters.middleCols(totalP, p.cols()) = p;
     totalP += p.cols();
@@ -135,9 +135,8 @@ int main_basis_sim(args::Subparser &parser)
   case Sequences::DWI: std::tie(pars, dyns) = Run<rl::DWI>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
-  Basis basis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize);
   HD5::Writer writer(oname.Get());
-  basis.write(writer);
+  Basis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize, writer);
   writer.writeMatrix(pars, HD5::Keys::Parameters);
   return EXIT_SUCCESS;
 }

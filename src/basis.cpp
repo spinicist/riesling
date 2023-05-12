@@ -4,14 +4,14 @@
 
 namespace rl {
 
-Basis::Basis(
-  Eigen::ArrayXXf const &dyn,
+void Basis(
+  Eigen::ArrayXXf const &dynamics,
   float const thresh,
   Index const nBasis,
   bool const demean,
   bool const rotate,
-  bool const normalize)
-  : dynamics{dyn}
+  bool const normalize,
+  HD5::Writer &writer)
 {
   // Calculate SVD - observations are in cols
   Eigen::ArrayXXf d = normalize ? dynamics.colwise().normalized() : dynamics;
@@ -31,7 +31,7 @@ Basis::Basis(
   }
   Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
 
-  basis = svd.V.leftCols(nRetain);  
+  Eigen::MatrixXf basis = svd.V.leftCols(nRetain);
   if (rotate) {
     Log::Print("Bastardised Gram-Schmidt");
     basis.col(0) = basis.rowwise().mean().normalized();
@@ -45,13 +45,10 @@ Basis::Basis(
 
   Log::Print("Computing dictionary");
   basis *= std::sqrt(basis.rows());
-  dict = basis.transpose() * dynamics.matrix();
-  norm = dict.colwise().norm();
+  Eigen::MatrixXf dict = basis.transpose() * dynamics.matrix();
+  Eigen::ArrayXf norm = dict.colwise().norm();
   dict = dict.array().rowwise() / norm.transpose();
-}
 
-void Basis::write(HD5::Writer &writer)
-{
   writer.writeMatrix(Eigen::MatrixXf(basis.transpose()), HD5::Keys::Basis);
   writer.writeMatrix(dict, HD5::Keys::Dictionary);
   writer.writeMatrix(norm, HD5::Keys::Norm);
