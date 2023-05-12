@@ -30,6 +30,7 @@ add_library(vineyard
     src/compressor.cpp
     src/cropper.cpp
     src/filter.cpp
+    src/interp.cpp
     src/log.cpp
     src/mapping.cpp
     src/parse_args.cpp

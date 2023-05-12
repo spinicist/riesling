@@ -2,10 +2,13 @@
 
 #include "algo/otsu.hpp"
 #include "basis.hpp"
+#include "interp.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "tensorOps.hpp"
+
+#include <unsupported/Eigen/Splines>
 
 using namespace rl;
 
@@ -16,6 +19,9 @@ int main_basis_img(args::Subparser &parser)
 
   args::ValueFlag<Index> ss(parser, "S", "Subsample image", {"subsamp"}, 1);
   args::ValueFlag<Index> spf(parser, "S", "Spokes per frame", {"spf"}, 1);
+  args::ValueFlag<Index> order(parser, "O", "Interpolation order", {"interp-order"}, 3);
+  args::Flag clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});
+  args::ValueFlag<Index> start2(parser, "S", "Second interp start", {"interp2"});
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 5);
   args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag rotate(parser, "V", "Rotate basis", {"rotate"});
@@ -37,13 +43,40 @@ int main_basis_img(args::Subparser &parser)
   Re3 const toMask = ref.chip<0>(0).abs();
   auto const toMaskMat = CollapseToArray(toMask);
   auto const [thresh, count] = Otsu(toMaskMat);
-  Index const fullN = shape[0] * spf.Get();
-  Eigen::MatrixXf dynamics(fullN, count);
+  Index const f = shape[0];
+  Index const s = shape[0] * spf.Get();
+  Eigen::MatrixXf dynamics(s, count);
   Index col = 0;
-  auto inds = Eigen::ArrayXi::LinSpaced(fullN, 0, shape[0] - 1);
+  Eigen::ArrayXi x1, x2, z1, z2;
+  Index f1, f2, s1, s2;
+  if (start2) {
+    f1 = start2.Get();
+    f2 = f - f1;
+    s1 = f1 * spf.Get();
+    s2 = f2 * spf.Get();
+    x1 = Eigen::ArrayXi::LinSpaced(f1, 0, s1 - 1) + spf.Get() / 2;
+    x2 = Eigen::ArrayXi::LinSpaced(f2, s1, s - 1) + spf.Get() / 2;
+    z1 = Eigen::ArrayXi::LinSpaced(s1, 0, s1 - 1);
+    z2 = Eigen::ArrayXi::LinSpaced(s2, s1, s - 1);
+  } else {
+    x1 = Eigen::ArrayXi::LinSpaced(f, 0, s - 1) + spf.Get() / 2;
+    z1 = Eigen::ArrayXi::LinSpaced(s, 0, s - 1);
+  }
   for (Index ii = 0; ii < realMat.cols(); ii++) {
     if (toMaskMat(ii) >= thresh) {
-      dynamics.col(col) = realMat.col(ii)(inds).transpose();
+      if (spf) {
+        if (start2) {
+          Interpolator interp1(x1, realMat.col(ii).head(f1), order.Get(), clamp);
+          Interpolator interp2(x2, realMat.col(ii).tail(f2), order.Get(), clamp);
+          dynamics.col(col).head(s1) = interp1(z1);
+          dynamics.col(col).tail(s2) = interp2(z2);
+        } else {
+          Interpolator interp(x1, realMat.col(ii), order.Get(), clamp);
+          dynamics.col(col) = interp(z1);
+        }
+      } else {
+        dynamics.col(col) = realMat.col(ii);
+      }
       col++;
     }
   }
