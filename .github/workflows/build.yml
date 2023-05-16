@@ -9,6 +9,8 @@ jobs:
   build:
     name: ${{matrix.config.name}}
     runs-on: ${{matrix.config.os}}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -67,7 +69,7 @@ jobs:
             ./riesling-tests
           fi
 
-      - name: Save release
+      - name: Tarball
         run: |
           cd ${{github.workspace}}
           mv ./build/riesling ./
@@ -81,83 +83,12 @@ jobs:
           fi
         shell: bash
 
-      - name: Upload
-        uses: actions/upload-artifact@v1
+      - name: Release
+        if: contains(github.ref, 'tags/v')
+        uses: ncipollo/release-action@v1
         with:
-          path: ${{github.workspace}}/${{matrix.config.artifact}}
-          name: ${{matrix.config.artifact}}
-
-  release:
-    if: contains(github.ref, 'tags/v')
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1.0.0
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      with:
-        tag_name: ${{github.ref}}
-        release_name: Release ${{github.ref}}
-        draft: true
-        prerelease: false
-    
-    - name: Store Release URL
-      run: |
-        echo "${{steps.create_release.outputs.upload_url}}" > ./upload_url
-    
-    - uses: actions/upload-artifact@v1
-      with:
-        path: ./upload_url
-        name: upload_url
-  
-  publish:
-    if: contains(github.ref, 'tags/v')
-    name: ${{matrix.config.name}}
-    runs-on: ${{matrix.config.os}}
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-        - {
-          name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
-          os: ubuntu-20.04
-        }
-        - {
-          name: "macOS", artifact: "riesling-macos.tar.gz",
-          os: macos-10.15
-        }
-    needs: release
-
-    steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v1
-      with:
-        name: ${{matrix.config.artifact}}
-        path: ./
-
-    - name: Download URL
-      uses: actions/download-artifact@v1
-      with:
-        name: upload_url
-        path: ./
-    
-    - name: Set Upload URL
-      id: set_upload_url
-      run: |
-        URL=`cat ./upload_url`
-        echo ${URL}
-        echo "::set-output name=upload_url::${URL}"
-
-    - name: Upload to Release
-      id: upload_to_release
-      uses: actions/upload-release-asset@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.set_upload_url.outputs.upload_url }}
-        asset_path: ./${{ matrix.config.artifact }}
-        asset_name: ${{ matrix.config.artifact }}
-        asset_content_type: application/gzip
+          allowUpdates: true
+          artifacts: ${{github.workspace}}/${{matrix.config.artifact}}
+          artifactErrorsFailBuild: true
+          bodyFile: CHANGES.md
+          draft: true
