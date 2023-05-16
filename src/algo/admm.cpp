@@ -78,7 +78,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
     float pNorm = 0.f, dNorm = 0.f, normz = 0.f, normu = 0.f;
     for (Index ir = 0; ir < R; ir++) {
       Fx[ir] = reg_ops[ir]->forward(x);
-      Fxpu[ir] = Fx[ir] * α + z[ir] * (1.f - α) + u[ir];
+      Fxpu[ir] = Fx[ir] * α - z[ir] * (α - 1.f) + u[ir];
       zold[ir] = z[ir];
       prox[ir]->apply(1.f / ρ, Fxpu[ir], z[ir]);
       u[ir] = Fxpu[ir] - z[ir];
@@ -111,7 +111,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
       Log::Print("All primal and dual tolerances achieved, stopping");
       break;
     }
-    if (io > 1) { // z_0 is zero, so perfectly reasonable dual residuals can trigger this
+    if (io > 0) { // z_0 is zero, so perfectly reasonable dual residuals can trigger this
       if (pNorm > μ * dNorm) {
         ρ *= τ;
         for (Index ir = 0; ir < R; ir++) {
