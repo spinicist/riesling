@@ -26,7 +26,6 @@ int main_admm(args::Subparser &parser)
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-  args::ValueFlag<std::vector<float>, VectorReader<float>> basisScales(parser, "S", "Basis scales", {"basis-scales"});
   args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
@@ -62,8 +61,7 @@ int main_admm(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  auto N = make_scales_pre(basisScales.Get(), recon->ishape);
-  auto A = std::make_shared<LinOps::Multiply<Cx>>(recon, N);
+  std::shared_ptr<LinOps::Op<Cx>> A = recon;
   auto const sz = recon->ishape;
 
   std::function<void(Index const iter, ADMM::Vector const &x)> debug_x = [sz](Index const ii, ADMM::Vector const &x) {
@@ -76,7 +74,10 @@ int main_admm(args::Subparser &parser)
   float const scale = Scaling(coreOpts.scaling, recon, M->adjoint(CChipMap(allData, 0)));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
-  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes), resid;
+  if (coreOpts.residImage) {
+    resid.resize(sz[0], outSz[0], outSz[1], outSz[2], volumes);
+  }
 
   std::vector<std::shared_ptr<LinOps::Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
@@ -144,14 +145,18 @@ int main_admm(args::Subparser &parser)
     debug_x};
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
-    auto x = admm.run(&allData(0, 0, 0, 0, iv), ρ.Get());
-    if (ext_x) {
-      x = ext_x->forward(x);
+    auto x = ext_x->forward(admm.run(&allData(0, 0, 0, 0, iv), ρ.Get()));
+    auto xm = Tensorfy(x, sz);
+    out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
+    if (coreOpts.residImage || coreOpts.residKSpace) {
+      allData.chip<4>(iv) -= recon->forward(xm);
     }
-    x = N->forward(x);
-    out.chip<4>(iv) = out_cropper.crop4(Tensorfy(x, sz)) / out.chip<4>(iv).constant(scale);
+    if (coreOpts.residImage) {
+      xm = recon->adjoint(allData.chip<4>(iv));
+      resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
+    }
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
+  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, allData);
   return EXIT_SUCCESS;
 }

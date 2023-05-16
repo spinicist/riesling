@@ -48,7 +48,7 @@ struct CoreOpts
   args::ValueFlag<std::string> oname, basisFile, ktype, scaling;
   args::ValueFlag<float> osamp, fov;
   args::ValueFlag<Index> bucketSize;
-  args::Flag keepTrajectory;
+  args::Flag residImage, residKSpace, keepTrajectory;
 };
 
 void WriteOutput(
@@ -57,5 +57,7 @@ void WriteOutput(
   std::string const &suffix,
   rl::Trajectory const &traj,
   std::string const &log,
+  rl::Cx5 const &residImage = rl::Cx5(),
+  rl::Cx5 const &residKSpace = rl::Cx5(),
   std::map<std::string, float> const &meta = std::map<std::string, float>());
 

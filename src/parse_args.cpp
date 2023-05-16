@@ -77,6 +77,8 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
   , fov(parser, "FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
+  , residImage(parser, "R", "Write residuals in image space", {"resid-image"})
+  , residKSpace(parser, "R", "Write residuals in k-space", {"resid-kspace"})
   , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep"})
 {
 }
@@ -173,6 +175,8 @@ void WriteOutput(
   std::string const &suffix,
   rl::Trajectory const &traj,
   std::string const &log,
+  rl::Cx5 const &residImage,
+  rl::Cx5 const &residKSpace,
   std::map<std::string, float> const &meta)
 {
   auto const fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
@@ -185,4 +189,10 @@ void WriteOutput(
     writer.writeInfo(traj.info());
   }
   writer.writeString("log", log);
+  if (opts.residImage) {
+    writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data());
+  }
+  if (opts.residKSpace) {
+    writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data());
+  }
 }

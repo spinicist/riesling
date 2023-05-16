@@ -37,15 +37,26 @@ int main_cg(args::Subparser &parser)
   float const scale = Scaling(coreOpts.scaling, recon, CChipMap(allData, 0));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
-  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
+  Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes), resid;
+  if (coreOpts.residImage) {
+    resid.resize(sz[0], outSz[0], outSz[1], outSz[2], volumes);
+  }
+
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
-    auto const &vol_start = Log::Now();
     auto b = recon->adjoint(CChipMap(allData, iv));
-    out.chip<4>(iv) = out_cropper.crop4(Tensorfy(cg.run(b.data()), sz)) / out.chip<4>(iv).constant(scale);
-    Log::Print("Volume {}: {}", iv, Log::ToNow(vol_start));
+    auto x = cg.run(b.data());
+    auto xm = Tensorfy(x, sz);
+    out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
+    if (coreOpts.residImage || coreOpts.residKSpace) {
+      allData.chip<4>(iv) -= recon->forward(xm);
+    }
+    if (coreOpts.residImage) {
+      xm = recon->adjoint(allData.chip<4>(iv));
+      resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
+    }
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
+  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, allData);
   return EXIT_SUCCESS;
 }

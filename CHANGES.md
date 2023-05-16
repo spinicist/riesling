@@ -3,6 +3,7 @@
 # v0.11
 
 - Fixed many bugs that crept into v0.10.
+- Functionality to write out residual k-space/images
 - Small but important tweaks to how the ADMM algorithm works including more sensible defaults.
 - Added a through-time TV regularizer option for ADMM.
 - Added a tool to calcuate a basis set from temporal images.
