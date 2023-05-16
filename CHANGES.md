@@ -1,5 +1,12 @@
 ## Changelog
 
+# v0.11
+
+- Fixed many bugs that crept into v0.10.
+- Small but important tweaks to how the ADMM algorithm works including more sensible defaults.
+- Added a through-time TV regularizer option for ADMM.
+- Added a tool to calcuate a basis set from temporal images.
+
 # v0.10
 
 - The `admm` command now supports TGV regularization. The separate `tgv` command, which used the form of PDHG in the original paper, has hence been retired. The `admm` version is superior as it properly supports preconditioning.
