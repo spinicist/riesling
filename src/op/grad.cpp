@@ -25,8 +25,8 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 }
 } // namespace
 
-GradOp::GradOp(InDims const ishape, std::vector<Index> const &d)
-  : Parent("GradOp", ishape, AddBack(ishape, (Index)d.size())),
+GradOp::GradOp(InDims const ish, std::vector<Index> const &d)
+  : Parent("GradOp", ish, AddBack(ish, (Index)d.size())),
   dims_{d}
 {
 }

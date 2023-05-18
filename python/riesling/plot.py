@@ -74,7 +74,8 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
 
 def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_slice=None,
            other_dims=None, other_indices=None, img_offset=-1, img_slices=None, scales=None,
-           component='mag', clim=None, cmap=None, cbar=True, rows=1, rotates=0, fliplr=False, title=None):
+           component='mag', clim=None, cmap=None, cbar=True, rows=1, rotates=0, fliplr=False, title=None,
+           basis_file=None, basis_tp=0):
     slice_dim, img_dims = _get_dims(axis, img_offset)
     if series_slice is None:
         series_slice = slice(None)
@@ -89,7 +90,7 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
             other_indices = [slice_index]
         else:
             other_indices = [slice_index, *other_indices]
-        data = _get_slices(D, series_dim, series_slice, img_dims, img_slices, other_dims, other_indices)
+        data = _get_slices(D, series_dim, series_slice, img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
     if scales is not None:
         data = data * np.array(scales).reshape([data.shape[0], 1, 1])
@@ -301,8 +302,9 @@ def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=N
 
     data = dset[tuple(all_slices)]
     if basis_file:
-        data = np.dot(data, basis)
-        data = data.transpose([ii + 1 for ii in all_dims])
+        data = np.dot(data, basis.T)
+        if not isinstance(basis_tp, int):
+            data = data.transpose(all_dims)
     else:
         data = data.transpose(all_dims)
 
@@ -447,6 +449,8 @@ def _add_colorball(clim, ax=None, cax=None, cmap='cet_colorwheel'):
     cax.set_yticklabels([])
 
 def _first(maybe_iterable):
+    """ Terrible hack to support the fact subplots can return an axis, an 
+        array of axes, or an array of an array of axes """
     if hasattr(maybe_iterable, "__len__"):
         while hasattr(maybe_iterable, "__len__"):
             maybe_iterable = maybe_iterable[0]

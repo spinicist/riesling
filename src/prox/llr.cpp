@@ -28,6 +28,7 @@ LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
   , windowSize{w}
   , shape{s}
 {
+  Log::Print("Locally Low-Rank λ {} Patch {} Window {}", λ, patchSize, windowSize);
 }
 
 void LLR::apply(float const α, CMap const &xin, Map &zin) const
@@ -49,7 +50,6 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
   Eigen::TensorMap<Cx4> z(zin.data(), shape);
   z.setZero();
   float const realλ = λ * α;
-  Log::Print<Log::Level::High>("LLR λ {} Patch-size {} Window-size {}", realλ, patchSize, windowSize);
   auto zTask = [&](Index const iz) {
     for (Index iy = 0; iy < nWindows[1]; iy++) {
       for (Index ix = 0; ix < nWindows[0]; ix++) {
