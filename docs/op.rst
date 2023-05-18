@@ -8,7 +8,7 @@ Note that all of these operators are defined with the forward, default, directio
 * `grid`_
 * `nufft`_
 * `pad`_
-* `reg`_
+* `prox`_
 * `sense`_
 
 grid
@@ -90,10 +90,10 @@ The second option ``X,Y,Z`` is a comma-delimited set of numbers indicating the r
 
     Changes the operation to work on 6D ``channels`` datasets. The extra dimension (channels) is also not affected.
 
-reg
+prox
 ---
 
-Applies regularization to an image. Useful to check what the impact of the regularizer during ``admm`` will be.
+Applies a proximal operator, i.e. regularization to an image. Useful to check what the impact of the regularizer during ``admm`` will be. See the ADMM documentation for how the regularizers work. Only the straightforward regularizers available in ``admm`` are available in ``prox``. For instance, TGV regularization is formalated as two simultaneous optimization problems and so cannot be applied to a standalone image.
 
 *Usage*
 
@@ -103,25 +103,8 @@ Applies regularization to an image. Useful to check what the impact of the regul
 
 *Output*
 
-``file-reg.h5`` containing the regularized ``image`` dataset.
+``file-prox.h5`` containing the regularized ``image`` dataset.
 
-*Important Options*
-
-* ``--llr``
-
-    Use Locally-Low-Rank regularization.
-
-* ``--lambda=F``
-
-    The regularization parameter.
-
-* ``--patch-size=N``
-
-    The patch-size to apply local regularizers on.
-
-* ``--slr``
-
-    Apply Structured Low-Rank regularization. Acts on a ``channels`` dataset, not ``image``.
 
 sense
 -----
