@@ -11,21 +11,22 @@ int main_frames(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::ValueFlag<std::vector<Index>, VectorReader<Index>> frames(
-    parser, "F", "List number of traces per frame", {"frames", 'f'});
+  args::ValueFlag<Index> tracesPerFrame(parser, "T", "Traces per frame", {"tpf"});
+  args::ValueFlag<Index> framesPerRep(parser, "T", "Frames per repitition", {"fpr"});
+  args::ValueFlag<Index> outputFrame(parser, "F", "Only output one frame", {"frame"});
 
   ParseCommand(parser);
   if (!oname) {
     throw args::Error("No output filename specified");
   }
 
-  Index const nT = ranges::accumulate(frames.Get(), 0L);
-  Index const nF = frames.Get().size();
+  Index const nT = tracesPerFrame.Get() * framesPerRep.Get();
+  Index const nF = outputFrame ? 1 : framesPerRep.Get();
+  Index index = outputFrame ? outputFrame.Get() * tracesPerFrame.Get() : 0;
   rl::Re2 basis(nF, nT);
   basis.setZero();
-  Index index = 0;
   for (Index ifr = 0; ifr < nF; ifr++) {
-    for (Index it = 0; it < frames.Get()[ifr]; it++) {
+    for (Index it = 0; it < tracesPerFrame.Get(); it++) {
       basis(ifr, index++) = 1.;
     }
   }
