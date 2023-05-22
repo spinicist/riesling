@@ -17,7 +17,7 @@ jobs:
         config:
         - {
           name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
-          os: ubuntu-20.04,
+          os: ubuntu-22.04,
           cc: "gcc-12", cxx: "g++-12"
         }
         - {
