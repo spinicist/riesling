@@ -20,7 +20,7 @@ int main_downsamp(args::Subparser &parser)
   Trajectory traj(reader);
   auto const ks1 = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   auto const [dsTraj, ks2] = traj.downsample(ks1, res.Get(), lores.Get(), !noShrink);
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "downsamp"));
+  HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
   dsTraj.write(writer);
   writer.writeTensor(HD5::Keys::Noncartesian, ks2.dimensions(), ks2.data());
 

@@ -40,7 +40,7 @@ int main(int const argc, char const *const argv[])
   args::Command sense(commands, "sense", "Apply SENSE operation", &main_sense);
   args::Command sense_calib(commands, "sense-calib", "Create SENSE maps", &main_sense_calib);
   args::Command sense_sim(commands, "sense-sim", "Simulate SENSE maps", &main_sense_sim);
-  args::Command split(commands, "split", "Split data", &main_split);
+  args::Command slice(commands, "slice", "Slice non-cartesian data", &main_slice);
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
   args::Command transform(commands, "transform", "Apply a transform (wavelets/TV)", &main_transform);
   args::Command version(commands, "version", "Print version number", &main_version);
