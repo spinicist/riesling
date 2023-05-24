@@ -39,20 +39,20 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
 
-  args::ValueFlag<float> λ(parser, "λ", "Regularization parameter (default 1e-3)", {"lambda"}, 1.e-3f);
-
   // Default is TV on spatial dimensions, i.e. classic compressed sensing
-  args::Flag tv(parser, "TV", "Total Variation", {"tv"});
+  args::ValueFlag<float> tv(parser, "TV", "Total Variation", {"tv"});
   args::ValueFlag<float> tvt(parser, "TVT", "Total Variation along time/frames/basis", {"tvt"});
-  args::Flag tgv(parser, "TGV", "Total Generalized Variation", {"tgv"});
-  args::Flag l1(parser, "L1", "Simple L1 regularization", {"l1"});
-  args::Flag nmrent(parser, "E", "NMR Entropy", {"nmrent"});
+  args::ValueFlag<float> tgv(parser, "TGV", "Total Generalized Variation", {"tgv"});
+  args::ValueFlag<float> l1(parser, "L1", "Simple L1 regularization", {"l1"});
+  args::ValueFlag<float> nmrent(parser, "E", "NMR Entropy", {"nmrent"});
 
-  args::ValueFlag<Index> patchSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
-  args::ValueFlag<Index> winSize(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
+  args::ValueFlag<float> llr(parser, "L", "LLR regularization", {"llr"});
+  args::ValueFlag<Index> llrPatch(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
+  args::ValueFlag<Index> llrWin(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
 
-  args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
-  args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
+  args::ValueFlag<Index> wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"});
+  args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wavelet-levels"}, 4);
+  args::ValueFlag<Index> waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -88,10 +88,10 @@ int main_admm(args::Subparser &parser)
     ext_x = std::make_shared<LinOps::Extract<Cx>>(recon->cols() + grad_x->rows(), 0, recon->cols());
     auto ext_v = std::make_shared<LinOps::Extract<Cx>>(recon->cols() + grad_x->rows(), recon->cols(), grad_x->rows());
     auto op1 = std::make_shared<LinOps::Subtract<Cx>>(std::make_shared<LinOps::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<SoftThreshold>(λ.Get());
+    auto prox1 = std::make_shared<SoftThreshold>(tgv.Get());
     auto grad_v = std::make_shared<GradVecOp>(grad_x->oshape);
     auto op2 = std::make_shared<LinOps::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<SoftThreshold>(λ.Get());
+    auto prox2 = std::make_shared<SoftThreshold>(tgv.Get());
     prox = {prox1, prox2};
     reg_ops = {op1, op2};
     A = std::make_shared<LinOps::Multiply<Cx>>(A, ext_x);
@@ -99,21 +99,31 @@ int main_admm(args::Subparser &parser)
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), sz, xv.data());
       Log::Tensor(fmt::format("admm-v-{:02d}", ii), grad_x->oshape, xv.data() + Product(sz));
     };
-  } else if (wavelets) {
-    prox.push_back(std::make_shared<ThresholdWavelets>(λ.Get(), sz, width.Get(), wavelets.Get()));
-    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
-  } else if (patchSize) {
-    prox.push_back(std::make_shared<LLR>(λ.Get(), patchSize.Get(), winSize.Get(), sz));
-    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
-  } else if (nmrent) {
-    prox.push_back(std::make_shared<NMREntropy>(λ.Get()));
-    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
-  } else if (l1) {
-    prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
-    reg_ops.push_back(std::make_shared<TensorIdentity<Cx, 4>>(sz));
-  } else if (tv) {
-    prox.push_back(std::make_shared<SoftThreshold>(λ.Get()));
-    reg_ops.push_back(std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3}));
+  }
+
+  if (wavelets) {
+    prox.push_back(std::make_shared<ThresholdWavelets>(wavelets.Get(), sz, waveWidth.Get(), waveLevels.Get()));
+    reg_ops.push_back(std::make_shared<LinOps::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
+  }
+
+  if (llr) {
+    prox.push_back(std::make_shared<LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), sz));
+    reg_ops.push_back(std::make_shared<LinOps::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
+  }
+
+  if (nmrent) {
+    prox.push_back(std::make_shared<NMREntropy>(nmrent.Get()));
+    reg_ops.push_back(std::make_shared<LinOps::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
+  }
+
+  if (l1) {
+    prox.push_back(std::make_shared<SoftThreshold>(l1.Get()));
+    reg_ops.push_back(std::make_shared<LinOps::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
+  }
+
+  if (tv) {
+    prox.push_back(std::make_shared<SoftThreshold>(tv.Get()));
+    reg_ops.push_back(std::make_shared<LinOps::Multiply<Cx>>(std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3}), ext_x));
   }
 
   if (tvt) {
@@ -124,8 +134,6 @@ int main_admm(args::Subparser &parser)
   if (prox.size() == 0) {
     Log::Fail("Must specify at least one regularizer");
   }
-
-
 
   ADMM admm{
     A,
