@@ -45,11 +45,11 @@ int main_slice(args::Subparser &parser)
   Index const sSt = slabStart.Get();
   Index const vSt = volStart.Get();
 
-  Index const cSz = channelSize ? channelSize.Get() : ks.dimension(0);
-  Index const rSz = readSize ? readSize.Get() : ks.dimension(1);
-  Index const tSz = traceSize ? traceSize.Get() : ks.dimension(2);
-  Index const sSz = slabSize ? slabSize.Get() : ks.dimension(3);
-  Index const vSz = volSize ? volSize.Get() : ks.dimension(4);
+  Index const cSz = channelSize ? channelSize.Get() : ks.dimension(0) - cSt;
+  Index const rSz = readSize ? readSize.Get() : ks.dimension(1) - rSt;
+  Index const tSz = traceSize ? traceSize.Get() : ks.dimension(2) - tSt;
+  Index const sSz = slabSize ? slabSize.Get() : ks.dimension(3) - sSt;
+  Index const vSz = volSize ? volSize.Get() : ks.dimension(4) - vSt;
 
   if (cSt + cSz > ks.dimension(0)) {
     Log::Fail("Last read point {} exceeded maximum {}", cSt + cSz, ks.dimension(0));
