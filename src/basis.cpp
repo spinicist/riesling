@@ -33,14 +33,32 @@ void Basis(
 
   Eigen::MatrixXf basis = svd.V.leftCols(nRetain);
   if (rotate) {
-    Log::Print("Bastardised Gram-Schmidt");
-    basis.col(0) = basis.rowwise().mean().normalized();
-    for (Index ii = 1; ii < basis.cols(); ii++) {
-      for (Index ij = 0; ij < ii; ij++) {
-        basis.col(ii) -= basis.col(ij).dot(basis.col(ii)) * basis.col(ij);
-      }
-      basis.col(ii).normalize();
+    // Amoeba Rotation
+    // http://stats.stackexchange.com/a/177555/87414
+    Eigen::ArrayXf v = vals.head(nRetain);
+    float const μ = v.mean();
+    Eigen::MatrixXf R = Eigen::MatrixXf::Identity(nRetain, nRetain);
+    for (Index ii = 0; ii < nRetain - 1; ii++) {
+      Index maxInd = 0, minInd = 0;
+      auto const maxVal = v.maxCoeff(&maxInd);
+      auto const minVal = v.minCoeff(&minInd);
+      float const w = (μ - minVal) / (maxVal - minVal);
+      float const cosθ = std::sqrt(w);
+      float const sinθ = std::sqrt(1.f - w);
+      Eigen::Matrix2f rot;
+      rot << cosθ, sinθ, //
+        -sinθ, cosθ;
+
+      R(Eigen::placeholders::all, std::vector<Index>{maxInd, minInd}) =
+        R(Eigen::placeholders::all, std::vector<Index>{maxInd, minInd}) * rot;
+      v(maxInd) = μ;
+      v(minInd) = maxVal + minVal - μ;
     }
+    Eigen::ArrayXf cumv(v.rows());
+    std::partial_sum(v.begin(), v.end(), cumv.begin());
+    cumv = 100.f * cumv / cumv.tail(1)[0];
+    Log::Print("Amoeba Rotation. New variances {}", cumv.transpose());
+    basis = basis * R;
   }
 
   Log::Print("Computing dictionary");
