@@ -74,7 +74,7 @@ float Norm2(T const &a)
 template <typename T>
 float Norm(T const &a)
 {
-  return sqrt(std::real(Dot(a, a)));
+  return std::sqrt(std::real(Dot(a, a)));
 }
 
 template <typename T>
@@ -169,6 +169,11 @@ inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
 
 template <typename Scalar, int N>
 inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> const &x, Sz<N> const &shape) {
+  return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
+}
+
+template <typename Scalar, int N>
+inline decltype(auto) Tensorfy(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const &x, Sz<N> const &shape) {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 

@@ -62,12 +62,12 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
           stW2[ii + 1] = stW[ii + 1] - stP[ii + 1];
         }
         Cx4 patchTensor = x.slice(stP, szP);
-        auto patch = CollapseToMatrix(patchTensor);
+        Eigen::MatrixXcf patch = CollapseToMatrix(patchTensor);
         auto const svd = SVD<Cx>(patch, true, false);
         // Soft-threhold svals
         Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
         patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-        z.slice(stW, szW) = patchTensor.slice(stW2, szW);
+        z.slice(stW, szW) = Tensorfy(patch, szP).slice(stW2, szW);
       }
     }
   };
