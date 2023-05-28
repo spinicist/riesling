@@ -212,7 +212,7 @@ Eigen::ArrayXXf Prep2::parameters(Index const nS, std::vector<float> lo, std::ve
       }
     }
   }
-  p.conservativeResize(3, nAct);
+  p.conservativeResize(4, nAct);
   return p;
 }
 
