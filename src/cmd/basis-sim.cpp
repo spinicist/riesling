@@ -52,6 +52,7 @@ enum struct Sequences
   IR2,
   DIR,
   DIR2,
+  Prep2,
   T2Prep,
   T2InvPrep,
   T2FLAIR,
@@ -64,6 +65,7 @@ std::unordered_map<std::string, Sequences> SequenceMap{
   {"IR2", Sequences::IR2},
   {"DIR", Sequences::DIR},
   {"DIR2", Sequences::DIR2},
+  {"Prep2", Sequences::Prep2},
   {"T2Prep", Sequences::T2Prep},
   {"T2InvPrep", Sequences::T2InvPrep},
   {"T2FLAIR", Sequences::T2FLAIR},
@@ -128,6 +130,7 @@ int main_basis_sim(args::Subparser &parser)
   case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::DIR2: std::tie(pars, dyns) = Run<rl::DIR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::Prep2: std::tie(pars, dyns) = Run<rl::Prep2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2InvPrep: std::tie(pars, dyns) = Run<rl::T2InvPrep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
