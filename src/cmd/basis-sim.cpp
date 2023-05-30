@@ -5,10 +5,8 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sim/dir.hpp"
-#include "sim/dwi.hpp"
 #include "sim/ir.hpp"
 #include "sim/parameter.hpp"
-#include "sim/t1t2.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
 #include "threads.hpp"
@@ -47,29 +45,14 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
 
 enum struct Sequences
 {
-  T1T2 = 0,
-  IR,
-  IR2,
+  IR = 0,
   DIR,
-  DIR2,
-  Prep2,
   T2Prep,
-  T2InvPrep,
   T2FLAIR,
-  DWI
 };
 
 std::unordered_map<std::string, Sequences> SequenceMap{
-  {"T1T2Prep", Sequences::T1T2},
-  {"IR", Sequences::IR},
-  {"IR2", Sequences::IR2},
-  {"DIR", Sequences::DIR},
-  {"DIR2", Sequences::DIR2},
-  {"Prep2", Sequences::Prep2},
-  {"T2Prep", Sequences::T2Prep},
-  {"T2InvPrep", Sequences::T2InvPrep},
-  {"T2FLAIR", Sequences::T2FLAIR},
-  {"DWI", Sequences::DWI}};
+  {"IR", Sequences::IR}, {"DIR", Sequences::DIR}, {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
 
 int main_basis_sim(args::Subparser &parser)
 {
@@ -108,10 +91,10 @@ int main_basis_sim(args::Subparser &parser)
   }
 
   rl::Settings settings{
-    .spg = spg.Get(),
-    .gps = gps.Get(),
-    .gprep2 = gprep2.Get(),
-    .spoil = spoil.Get(),
+    .spokesPerSeg = spg.Get(),
+    .segsPerPrep = gps.Get(),
+    .segsPrep2 = gprep2.Get(),
+    .spokesSpoil = spoil.Get(),
     .alpha = alpha.Get(),
     .ascale = ascale.Get(),
     .TR = TR.Get(),
@@ -120,22 +103,15 @@ int main_basis_sim(args::Subparser &parser)
     .TI = TI.Get(),
     .Trec = Trec.Get(),
     .TE = te.Get(),
-    .Tsat = Tsat.Get(),
     .bval = bval.Get(),
     .inversion = false};
 
   Eigen::ArrayXXf pars, dyns;
   switch (seq.Get()) {
   case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::DIR2: std::tie(pars, dyns) = Run<rl::DIR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::Prep2: std::tie(pars, dyns) = Run<rl::Prep2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::T2InvPrep: std::tie(pars, dyns) = Run<rl::T2InvPrep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::T1T2: std::tie(pars, dyns) = Run<rl::T1T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::DWI: std::tie(pars, dyns) = Run<rl::DWI>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
   HD5::Writer writer(oname.Get());

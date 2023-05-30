@@ -84,11 +84,9 @@ add_library(vineyard
     src/sense/sense.cpp
     src/sim/parameter.cpp
     src/sim/dir.cpp
-    src/sim/dwi.cpp
     src/sim/ir.cpp
     src/sim/t2flair.cpp
     src/sim/t2prep.cpp
-    src/sim/t1t2.cpp
 )
 target_include_directories(vineyard PUBLIC src)
 target_link_libraries(vineyard PUBLIC

@@ -6,8 +6,8 @@ namespace rl {
 
 struct Settings
 {
-  Index spg = 256, gps = 2, gprep2 = 0, spoil = 0;
-  float alpha = 1.f, ascale = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, TI = 0, Trec = 0, TE = 0, Tsat = 0, bval = 0;
+  Index spokesPerSeg = 256, segsPerPrep = 2, segsPrep2 = 0, spokesSpoil = 0;
+  float alpha = 1.f, ascale = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, TI = 0, Trec = 0, TE = 0, bval = 0;
   bool inversion;
 };
 
