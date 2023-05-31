@@ -63,7 +63,7 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
           Index const st = ind[ii] * windowSize + shift[ii];
           stW[ii + 1] = std::max(st, 0L);
           szW[ii + 1] = windowSize + std::min({st, 0L, d - stW[ii + 1] - windowSize});
-          if (szW[ii + 1] == 0) {
+          if (szW[ii + 1] < 1) {
             empty = true;
             break;
           }
@@ -79,7 +79,8 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
         // Soft-threhold svals
         Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
         patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-        z.slice(stW, szW) = Tensorfy(patch, szP).slice(stW2, szW);
+        patchTensor = Tensorfy(patch, szP);
+        z.slice(stW, szW) = patchTensor.slice(stW2, szW);
       }
     }
   };
