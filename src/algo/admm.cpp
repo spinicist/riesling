@@ -124,6 +124,12 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
         }
       }
     }
+    if (hogwild && !(io == 0) && !(io & (io - 1))) {
+      ρ *= 2.f;
+      for (Index ir = 0; ir < R; ir++) {
+        u[ir] /= 2.f;
+      }
+    }
     if (InterruptReceived()) {
       break;
     }

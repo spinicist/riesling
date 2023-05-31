@@ -38,6 +38,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
+  args::Flag hogwild(parser, "HW", "Use Hogwild scheme", {"hogwild"});
 
   // Default is TV on spatial dimensions, i.e. classic compressed sensing
   args::ValueFlag<float> tv(parser, "TV", "Total Variation", {"tv"});
@@ -150,6 +151,7 @@ int main_admm(args::Subparser &parser)
     τ.Get(),
     abstol.Get(),
     reltol.Get(),
+    hogwild,
     debug_x};
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {

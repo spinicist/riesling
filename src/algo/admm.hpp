@@ -26,6 +26,7 @@ struct ADMM
   float τ = 2.f;  // Primal-dual mismatch rescale
   float abstol = 1.e-4f;
   float reltol = 1.e-4f;
+  bool hogwild = false;
 
   std::function<void (Index const iter, Vector const &x)> debug_x = nullptr;
 
