@@ -14,7 +14,7 @@ T2FLAIR::T2FLAIR(Settings const &s)
 
 auto T2FLAIR::length() const -> Index
 {
-  return settings.spokesPerSeg * settings.segsPerPrep;
+  return settings.spokesPerSeg * settings.segsPerPrepKeep;
 }
 
 auto T2FLAIR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
@@ -70,7 +70,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
     Mz = Essi * Eramp * Mz;
   }
   Mz = Essi * Erec * E2 * Mz;
-  for (Index ig = 0; ig < (settings.segsPerPrep - settings.segsPrep2); ig++) {
+  for (Index ig = 0; ig < (settings.segsPerPrepKeep - settings.segsPrep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
@@ -81,7 +81,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsPerPrep) {
+  if (tp != settings.spokesPerSeg * settings.segsPerPrepKeep) {
     Log::Fail("Programmer error");
   }
   return dynamic;

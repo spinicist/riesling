@@ -59,9 +59,10 @@ int main_basis_sim(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
-  args::ValueFlag<Index> spg(parser, "SPG", "traces per group", {'s', "spg"}, 128);
-  args::ValueFlag<Index> gps(parser, "GPS", "Groups per segment", {'g', "gps"}, 1);
-  args::ValueFlag<Index> gprep2(parser, "G", "Groups before prep 2", {"gprep2"}, 0);
+  args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
+  args::ValueFlag<Index> spp(parser, "SPP", "Segments per prep", {'g', "spp"}, 1);
+  args::ValueFlag<Index> sppk(parser, "SPPK", "Segments per prep to keep", {'k', "sppk"}, 1);
+  args::ValueFlag<Index> sp2(parser, "G", "Segments before prep 2", {"sp2"}, 0);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
   args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
@@ -71,8 +72,6 @@ int main_basis_sim(args::Subparser &parser)
   args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
-  args::ValueFlag<float> Tsat(parser, "TSAT", "Fat sat time", {"tsat"}, 0.f);
-  args::ValueFlag<float> bval(parser, "b", "b value", {'b', "bval"}, 0.f);
 
   args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(
     parser, "LO", "Low values for parameters", {"lo"});
@@ -91,9 +90,10 @@ int main_basis_sim(args::Subparser &parser)
   }
 
   rl::Settings settings{
-    .spokesPerSeg = spg.Get(),
-    .segsPerPrep = gps.Get(),
-    .segsPrep2 = gprep2.Get(),
+    .spokesPerSeg = sps.Get(),
+    .segsPerPrep = spp.Get(),
+    .segsPerPrepKeep = sppk.Get(),
+    .segsPrep2 = sp2.Get(),
     .spokesSpoil = spoil.Get(),
     .alpha = alpha.Get(),
     .ascale = ascale.Get(),
@@ -102,9 +102,7 @@ int main_basis_sim(args::Subparser &parser)
     .Tssi = Tssi.Get(),
     .TI = TI.Get(),
     .Trec = Trec.Get(),
-    .TE = te.Get(),
-    .bval = bval.Get(),
-    .inversion = false};
+    .TE = te.Get()};
 
   Eigen::ArrayXXf pars, dyns;
   switch (seq.Get()) {

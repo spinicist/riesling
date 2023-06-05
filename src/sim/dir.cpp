@@ -17,7 +17,7 @@ DIR::DIR(Settings const s)
     settings.TE);
 }
 
-Index DIR::length() const { return settings.spokesPerSeg * settings.segsPerPrep; }
+Index DIR::length() const { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
 
 Eigen::ArrayXXf DIR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const
 {
@@ -32,7 +32,7 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
   Eigen::ArrayXf dynamic(length());
 
   Eigen::Matrix2f inv;
-  inv << -η, 0.f, 0.f, 1.f;
+  inv << -1, 0.f, 0.f, 1.f;
 
   float const R1 = 1.f / T1;
   float const R2 = 1.f / T2;
@@ -45,7 +45,7 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
   float const erec = exp(-R1 * settings.Trec);
   E1 << e1, 1.f - e1, 0.f, 1.f;
   Einv << einv, 1.f - einv, 0.f, 1.f;
-  E2 << -e2, 0.f, 0.f, 1.f;
+  E2 << -η * e2, 0.f, 0.f, 1.f;
   Eramp << eramp, 1.f - eramp, 0.f, 1.f;
   Essi << essi, 1.f - essi, 0.f, 1.f;
   Erec << erec, 1.f - erec, 0.f, 1.f;
@@ -76,7 +76,7 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
     Mz = Essi * Eramp * Mz;
   }
   Mz = E2 * Mz;
-  for (Index ig = 0; ig < settings.segsPerPrep - settings.segsPrep2; ig++) {
+  for (Index ig = 0; ig < settings.segsPerPrepKeep - settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
@@ -87,7 +87,7 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsPerPrep) {
+  if (tp != settings.spokesPerSeg * settings.segsPerPrepKeep) {
     Log::Fail("Programmer error");
   }
   return dynamic;
