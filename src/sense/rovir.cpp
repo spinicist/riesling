@@ -32,7 +32,7 @@ auto ROVIR(
   Trajectory traj = inTraj;
   Cx4 data;
   if (opts.res) {
-    std::tie(traj, data) = inTraj.downsample(inData, opts.res.Get(), lorestraces, true);
+    std::tie(traj, data) = inTraj.downsample(inData, opts.res.Get(), lorestraces, true, true);
   } else {
     data = inData;
   }

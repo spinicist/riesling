@@ -71,7 +71,7 @@ Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
   return p;
 }
 
-auto Trajectory::downsample(float const res, Index const lores, bool const shrink) const
+auto Trajectory::downsample(float const res, Index const lores, bool const shrink, bool const corners) const
   -> std::tuple<Trajectory, Index, Index>
 {
   float const dsamp = res / info_.voxel_size.minCoeff();
@@ -92,9 +92,9 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   Re3 dsPoints(points_.dimensions());
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {
-      Re1 p = points_.chip<2>(it).chip<1>(is);
-      if (Norm(p) <= 0.5f / dsamp) {
-        dsPoints.chip<2>(it).chip<1>(is) = p * scale;
+      Re1 p = points_.chip<2>(it).chip<1>(is) * scale;
+      if ((corners && B0((p.abs() <= 0.5f).all())()) || Norm(p) <= 0.5f) {
+        dsPoints.chip<2>(it).chip<1>(is) = p;
         if (it >= lores) { // Ignore lo-res traces for this calculation
           minSamp = std::min(minSamp, is);
           maxSamp = std::max(maxSamp, is);
@@ -122,19 +122,19 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   return std::make_tuple(Trajectory(dsInfo, dsPoints), minSamp, dsSamples);
 }
 
-auto Trajectory::downsample(Cx5 const &ks, float const res, Index const lores, bool const shrink) const
+auto Trajectory::downsample(Cx5 const &ks, float const res, Index const lores, bool const shrink, bool const corners) const
   -> std::tuple<Trajectory, Cx5>
 {
-  auto const [dsTraj, minSamp, nSamp] = downsample(res, lores, shrink);
+  auto const [dsTraj, minSamp, nSamp] = downsample(res, lores, shrink, corners);
   Cx5 dsKs =
     ks.slice(Sz5{0, minSamp, 0, 0, 0}, Sz5{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3), ks.dimension(4)});
   return std::make_tuple(dsTraj, dsKs);
 }
 
-auto Trajectory::downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink) const
+auto Trajectory::downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink, bool const corners) const
   -> std::tuple<Trajectory, Cx4>
 {
-  auto const [dsTraj, minSamp, nSamp] = downsample(res, lores, shrink);
+  auto const [dsTraj, minSamp, nSamp] = downsample(res, lores, shrink, corners);
   Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
   return std::make_tuple(dsTraj, dsKs);
 }

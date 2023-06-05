@@ -1,6 +1,6 @@
 #pragma once
 
-#include "op/tensorop.hpp"
+#include "op/tensorscale.hpp"
 #include "trajectory.hpp"
 #include <optional>
 

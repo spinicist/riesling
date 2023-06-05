@@ -23,10 +23,11 @@ struct Trajectory
   auto matrix(float const fov = -1.f) const -> Sz3;
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
-  auto downsample(float const res, Index const lores, bool const shrink) const -> std::tuple<Trajectory, Index, Index>;
-  auto downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink) const
+  auto downsample(float const res, Index const lores, bool const shrink, bool const corners) const
+    -> std::tuple<Trajectory, Index, Index>;
+  auto downsample(Cx4 const &ks, float const res, Index const lores, bool const shrink, bool const corners) const
     -> std::tuple<Trajectory, Cx4>;
-  auto downsample(Cx5 const &ks, float const res, Index const lores, bool const shrink) const
+  auto downsample(Cx5 const &ks, float const res, Index const lores, bool const shrink, bool const corners) const
     -> std::tuple<Trajectory, Cx5>;
 
 private:

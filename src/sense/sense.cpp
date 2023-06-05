@@ -40,7 +40,7 @@ auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, std::op
   Cx4 const data = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, opts.volume.Get());
   auto const nC = data.dimension(0);
 
-  auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false);
+  auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, true);
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
   auto sdc3 = std::make_shared<TensorScale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
   auto sdc = std::make_shared<LoopOp<TensorScale<Cx, 3>>>(sdc3, data.dimension(3));

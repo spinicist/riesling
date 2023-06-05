@@ -7,7 +7,7 @@
 #include "threads.hpp"
 
 namespace rl {
-Cx6 ToKernels(Cx5 const &grid, Index const kW)
+Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
 {
   Index const nC = grid.dimension(0);
   Index const nF = grid.dimension(1);
@@ -18,7 +18,7 @@ Cx6 ToKernels(Cx5 const &grid, Index const kW)
   if (nK < 1) {
     Log::Fail("No kernels to Hankelfy");
   }
-  Log::Print("Hankelfying {} kernels", nK);
+  Log::Print<Log::Level::Debug>("Hankelfying {} kernels", nK);
   Cx6 kernels(nC, nF, kW, kW, kW, nK);
   Index ik = 0;
   for (Index iz = 0; iz < nKx; iz++) {
@@ -34,7 +34,7 @@ Cx6 ToKernels(Cx5 const &grid, Index const kW)
   return kernels;
 }
 
-void FromKernels(Cx6 const &kernels, Cx5 &grid)
+void FromKernels(Cx6 const &kernels, Eigen::TensorMap<Cx5> &grid)
 {
   Index const kX = kernels.dimension(2);
   Index const kY = kernels.dimension(3);
@@ -49,7 +49,7 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   count.setZero();
   grid.setZero();
   Index ik = 0;
-  Log::Print("Unhankelfying {} kernels", nK);
+  Log::Print<Log::Level::Debug>("Unhankelfying {} kernels", nK);
   for (Index iz = 0; iz < nZ; iz++) {
     for (Index iy = 0; iy < nY; iy++) {
       for (Index ix = 0; ix < nX; ix++) {
@@ -62,50 +62,39 @@ void FromKernels(Cx6 const &kernels, Cx5 &grid)
   grid /= count.reshape(AddFront(count.dimensions(), 1, 1)).broadcast(Sz5{nC, nF, 1, 1, 1}).cast<Cx>();
 }
 
-SLR::SLR(std::shared_ptr<FFT::FFT<5, 3>> const &f, Index const k)
-  : Prox<Cx5>()
-  , fft{f}
+SLR::SLR(float const l, Index const k, Sz5 const sh)
+  : Prox<Cx>()
+  , λ{l}
   , kSz{k}
+  , shape{sh}
+  , fft{FFT::Make<5, 3>(shape)}
 {
-}
-
-void SLR::operator()(float const thresh, CMap const& x, Map &y) const
-{
-  Index const nC = channels.dimension(0); // Include frames here
   if (kSz < 3) {
     Log::Fail("SLR kernel size less than 3 not supported");
   }
-  if (thresh < 0.f || thresh >= nC) {
-    Log::Fail("SLR window threshold {} out of range {}-{}", thresh, 0.f, nC);
-  }
-  Log::Print("SLR regularization kernel size {} window-normalized thresh {}", kSz, thresh);
-  Cx5 grid = channels;
-  grid = fft.forward(grid);
-  // Now crop out corners which will have zeros
-  Index const w = std::floor(grid.dimension(2) / sqrt(3));
-  Log::Print("Extract width {}", w);
+  Log::Print("Structured Low-Rank λ {} Kernel-size {} Shape {}", λ, kSz, shape);
+}
 
-  Sz5 const cropSz{grid.dimension(0), grid.dimension(1), w, w, w};
-  Cx5 cropped = Crop(grid, cropSz);
-  Cx6 kernels = ToKernels(cropped, kSz);
+void SLR::apply(float const α, CMap const &xin, Map &zin) const
+{
+  Eigen::TensorMap<Cx5 const> x(xin.data(), shape);
+  float const thresh = λ * α;
+  Eigen::TensorMap<Cx5> z(zin.data(), shape);
+  z = x;
+  fft->forward(z);
+  Cx6 kernels = ToKernels(z, kSz);
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   if (kMat.rows() > kMat.cols()) {
     Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols());
   }
-  auto const svd = SVD<Cx>(kMat, true, true);
-  Index const nK = kernels.dimension(1) * kernels.dimension(2) * kernels.dimension(3) * kernels.dimension(4);
-  Index const nZero = (nC - thresh) * nK; // Window-Normalized
-  Log::Print("Zeroing {} values check {} nK {}", nZero, (nC - thresh), nK);
-  auto lrVals = svd.vals;
-  lrVals.tail(nZero).setZero();
-  kMat = (svd.U * lrVals.matrix().asDiagonal() * svd.V.adjoint()).transpose();
-  FromKernels(kernels, cropped);
-  Crop(grid, cropSz) = cropped;
-  Log::Tensor(cropped, "zin-slr-after-cropped");
-  Log::Tensor(grid, "zin-slr-after-grid");
-  Log::Tensor(kernels, "zin-slr-after-kernels");
-  grid = fft.adjoint(grid);
-  Log::Tensor(grid, "zin-slr-after-channels");
-  return grid;
+  auto const svd = SVD<Cx>(kMat, true, false);
+  Eigen::VectorXf const s = (svd.vals > thresh).select(svd.vals, 0.f);
+  kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
+  FromKernels(kernels, z);
+  fft->reverse(z);
+  Log::Tensor("slr-x", shape, x.data());
+  Log::Tensor("slr-z", shape, z.data());
+  Log::Print("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
 }
+
 } // namespace rl

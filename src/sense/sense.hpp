@@ -19,6 +19,9 @@ struct Opts
   args::ValueFlag<float> threshold;
 };
 
+// Normalizes by RSS with optional regularization
+auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4;
+
 //! Convenience function called from recon commands to get SENSE maps
 Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &t, std::optional<Re2> const &basis, HD5::Reader &reader);
 

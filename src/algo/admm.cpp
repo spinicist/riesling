@@ -8,7 +8,7 @@
 
 namespace rl {
 
-auto ADMM::run(Cx *bdata, float ρ) const -> Vector
+auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
    * For the least squares part we are solving:
@@ -51,7 +51,7 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
 
   Vector x(A->cols());
   x.setZero();
-  Map const b(bdata, A->rows());
+  CMap const b(bdata, A->rows());
 
   Vector bʹ(Aʹ->rows());
   bʹ.setZero();

@@ -25,6 +25,7 @@ void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
   auto const time = this->startForward(x);
   InMap wsm(workspace.data(), gridder->ishape);
   pad.forward(apo.forward(x), wsm);
+  Log::Tensor("nufft-fwd", pad.oshape, wsm.data());
   fft->forward(workspace);
   gridder->forward(workspace, y);
   this->finishForward(y, time);
@@ -37,6 +38,7 @@ void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
   InMap wsm(workspace.data(), gridder->ishape);
   gridder->adjoint(sdc->adjoint(y), wsm);
   fft->reverse(workspace);
+  Log::Tensor("nufft-adj", pad.oshape, wsm.data());
   apo.adjoint(pad.adjoint(workspace), x);
   this->finishAdjoint(x, time);
 }

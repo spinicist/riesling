@@ -10,6 +10,7 @@ struct ADMM
   using Op = LinOps::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
+  using CMap = typename Op::CMap;
 
   std::shared_ptr<Op> A; // Op for least-squares
   std::shared_ptr<Op> M; // Pre-conditioner
@@ -31,7 +32,7 @@ struct ADMM
   std::function<void(Index const, Vector const &)> debug_x = nullptr;
   std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = nullptr;
 
-  auto run(Cx *bdata, float ρ) const -> Vector;
+  auto run(Cx const *bdata, float ρ) const -> Vector;
 };
 
 } // namespace rl

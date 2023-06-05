@@ -70,15 +70,15 @@ add_library(vineyard
     src/op/recon.cpp
     src/op/sense.cpp
     src/op/wavelets.cpp
-    src/phantom/coils.cpp
     src/phantom/gradcubes.cpp
     src/phantom/sphere.cpp
     src/phantom/shepp-logan.cpp
     src/prox/entropy.cpp
     src/prox/llr.cpp
-    # src/prox/slr.cpp
+    src/prox/slr.cpp
     src/prox/thresh.cpp
     src/prox/thresh-wavelets.cpp
+    src/sense/coils.cpp
     src/sense/espirit.cpp
     src/sense/rovir.cpp
     src/sense/sense.cpp
@@ -116,7 +116,6 @@ add_executable(riesling
     src/cmd/compress.cpp
     src/cmd/downsamp.cpp
     src/cmd/eig.cpp
-    src/cmd/espirit.cpp
     src/cmd/filter.cpp
     src/cmd/frames.cpp
     src/cmd/grid.cpp
@@ -144,7 +143,7 @@ add_executable(riesling
     src/cmd/traj.cpp
     src/cmd/transform.cpp
     src/cmd/version.cpp
-    # src/cmd/zinfandel.cpp
+    src/cmd/zinfandel.cpp
     src/main.cpp
 )
 target_link_libraries(riesling

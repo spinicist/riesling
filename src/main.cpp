@@ -16,7 +16,6 @@ int main(int const argc, char const *const argv[])
   args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
   args::Command downsamp(commands, "downsamp", "Downsample dataset", &main_downsamp);
   args::Command eig(commands, "eig", "Calculate largest eigenvalue / vector", &main_eig);
-  args::Command espirit(commands, "espirit-calib", "Create SENSE maps with ESPIRiT", &main_espirit);
   args::Command filter(commands, "filter", "Apply Tukey filter to image", &main_filter);
   args::Command frames(commands, "frames", "Create a frame basis", &main_frames);
   args::Command grid(commands, "grid", "Grid from/to non/cartesian", &main_grid);
@@ -44,7 +43,7 @@ int main(int const argc, char const *const argv[])
   args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
   args::Command transform(commands, "transform", "Apply a transform (wavelets/TV)", &main_transform);
   args::Command version(commands, "version", "Print version number", &main_version);
-  // args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
+  args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
   args::GlobalOptions globals(parser, global_group);
   FFT::Start(argv[0]);
   try {
