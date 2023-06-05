@@ -28,7 +28,8 @@ struct ADMM
   float reltol = 1.e-4f;
   bool hogwild = false;
 
-  std::function<void (Index const iter, Vector const &x)> debug_x = nullptr;
+  std::function<void(Index const, Vector const &)> debug_x = nullptr;
+  std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = nullptr;
 
   auto run(Cx *bdata, float ρ) const -> Vector;
 };

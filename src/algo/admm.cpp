@@ -88,6 +88,10 @@ auto ADMM::run(Cx *bdata, float ρ) const -> Vector
 
       normz += z[ir].squaredNorm();
       normu += u[ir].squaredNorm();
+
+      if (debug_z) {
+        debug_z(io, ir, z[ir]);
+      }
     }
     pNorm = std::sqrt(pNorm);
     dNorm = std::sqrt(dNorm);

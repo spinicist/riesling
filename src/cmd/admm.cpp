@@ -65,10 +65,6 @@ int main_admm(args::Subparser &parser)
   std::shared_ptr<LinOps::Op<Cx>> A = recon;
   auto const sz = recon->ishape;
 
-  std::function<void(Index const iter, ADMM::Vector const &x)> debug_x = [sz](Index const ii, ADMM::Vector const &x) {
-    Log::Tensor(fmt::format("admm-x-{:02d}", ii), sz, x.data());
-  };
-
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
@@ -83,6 +79,9 @@ int main_admm(args::Subparser &parser)
   std::vector<std::shared_ptr<LinOps::Op<Cx>>> reg_ops;
   std::vector<std::shared_ptr<Prox<Cx>>> prox;
   std::shared_ptr<LinOps::Op<Cx>> ext_x = std::make_shared<TensorIdentity<Cx, 4>>(sz); // Need for TGV, sigh
+  std::function<void(Index const, ADMM::Vector const &)> debug_x = [sz](Index const ii, ADMM::Vector const &x) {
+    Log::Tensor(fmt::format("admm-x-{:02d}", ii), sz, x.data());
+  };
 
   if (tgv) {
     auto grad_x = std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3});
@@ -136,6 +135,10 @@ int main_admm(args::Subparser &parser)
     Log::Fail("Must specify at least one regularizer");
   }
 
+  std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &z) {
+    Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), std::dynamic_pointer_cast<TensorOperator<Cx, 4>>(reg_ops[ir])->oshape, z.data());
+  };
+
   ADMM admm{
     A,
     M,
@@ -152,7 +155,8 @@ int main_admm(args::Subparser &parser)
     abstol.Get(),
     reltol.Get(),
     hogwild,
-    debug_x};
+    debug_x,
+    debug_z};
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto x = ext_x->forward(admm.run(&allData(0, 0, 0, 0, iv), ρ.Get()));
