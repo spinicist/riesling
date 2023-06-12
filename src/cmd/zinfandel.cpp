@@ -84,8 +84,11 @@ int main_zinfandel(args::Subparser &parser)
     // auto M = std::make_shared<LinOps::Identity<Cx>>(Product(shape));
     auto id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
     auto slr = std::make_shared<SLR>(λ.Get(), kSz.Get(), shape);
-    std::function<void(Index const iter, ADMM::Vector const &x)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
+    std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
+    };
+    std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = [shape](Index const ii, Index const ir, ADMM::Vector const &z) {
+      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
     };
 
     ADMM admm{
@@ -104,7 +107,8 @@ int main_zinfandel(args::Subparser &parser)
       abstol.Get(),
       reltol.Get(),
       false,
-      debug_x};
+      debug_x,
+      debug_z};
 
     Trajectory gapTraj(traj.info(), newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}));
     auto B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());

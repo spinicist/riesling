@@ -135,9 +135,12 @@ int main_admm(args::Subparser &parser)
     Log::Fail("Must specify at least one regularizer");
   }
 
-  std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &z) {
-    Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), std::dynamic_pointer_cast<TensorOperator<Cx, 4>>(reg_ops[ir])->oshape, z.data());
-  };
+  std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z =
+    [&](Index const ii, Index const ir, ADMM::Vector const &z) {
+      if (auto p = std::dynamic_pointer_cast<TensorOperator<Cx, 4>>(reg_ops[ir])) {
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), p->oshape, z.data());
+      }
+    };
 
   ADMM admm{
     A,
