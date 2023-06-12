@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-int main_reg(args::Subparser &parser)
+int main_prox(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
   args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});

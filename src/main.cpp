@@ -1,6 +1,6 @@
-#include "cmd/defs.h"
 #include "fft/fft.hpp"
 #include "log.hpp"
+#include "parse_args.hpp"
 
 using namespace rl;
 
@@ -8,42 +8,47 @@ int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");
   args::Group commands(parser, "COMMANDS");
-  args::Command admm(commands, "admm", "ADMM recon", &main_admm);
-  args::Command basis_img(commands, "basis-img", "Basis from image data", &main_basis_img);
-  args::Command basis_sim(commands, "basis-sim", "Basis from simulations", &main_basis_sim);
-  args::Command blend(commands, "blend", "Blend basis images", &main_blend);
-  args::Command cg(commands, "cg", "Recon with Conjugate Gradients", &main_cg);
-  args::Command compress(commands, "compress", "Apply channel compression", &main_compress);
-  args::Command downsamp(commands, "downsamp", "Downsample dataset", &main_downsamp);
-  args::Command eig(commands, "eig", "Calculate largest eigenvalue / vector", &main_eig);
-  args::Command filter(commands, "filter", "Apply Tukey filter to image", &main_filter);
-  args::Command frames(commands, "frames", "Create a frame basis", &main_frames);
-  args::Command grid(commands, "grid", "Grid from/to non/cartesian", &main_grid);
-  args::Command h5(commands, "h5", "Probe an H5 file", &main_h5);
-  // args::Command lad(commands, "lad", "Least Absolute Deviations", &main_lad);
-  args::Command lookup(commands, "lookup", "Basis dictionary lookup", &main_lookup);
-  args::Command lsmr(commands, "lsmr", "Recon with LSMR optimizer", &main_lsmr);
-  args::Command lsqr(commands, "lsqr", "Recon with LSQR optimizer", &main_lsqr);
-  args::Command noisify(commands, "noisify", "Add noise to dataset", &main_noisify);
-  args::Command nii(commands, "nii", "Convert h5 to nifti", &main_nii);
-  args::Command nufft(commands, "nufft", "Apply forward/reverse NUFFT", &main_nufft);
-  args::Command pad(commands, "pad", "Pad/crop an image", &main_pad);
-  // args::Command pdhg(commands, "pdhg", "Primal-Dual Hybrid Gradient", &main_pdhg);
-  args::Command phantom(commands, "phantom", "Construct a digitial phantom", &main_phantom);
-  args::Command plan(commands, "plan", "Plan FFTs", &main_plan);
-  args::Command pre(commands, "precond", "Precompute preconditioning weights", &main_precond);
-  args::Command prox(commands, "prox", "Apply proximal operator", &main_reg);
-  args::Command recon(commands, "recon", "Recon with SENSE maps", &main_recon);
-  args::Command rss(commands, "rss", "Recon with Root-Sum-Squares", &main_rss);
-  args::Command sdc(commands, "sdc", "Calculate Sample Density Compensation", &main_sdc);
-  args::Command sense(commands, "sense", "Apply SENSE operation", &main_sense);
-  args::Command sense_calib(commands, "sense-calib", "Create SENSE maps", &main_sense_calib);
-  args::Command sense_sim(commands, "sense-sim", "Simulate SENSE maps", &main_sense_sim);
-  args::Command slice(commands, "slice", "Slice non-cartesian data", &main_slice);
-  args::Command traj(commands, "traj", "Write out the trajectory and PSF", &main_traj);
-  args::Command transform(commands, "transform", "Apply a transform (wavelets/TV)", &main_transform);
-  args::Command version(commands, "version", "Print version number", &main_version);
-  args::Command zinfandel(commands, "zinfandel", "ZINFANDEL k-space filling", &main_zinfandel);
+
+#define COMMAND(NM, CMD, DESC)                                                                                                 \
+  int main_##NM(args::Subparser &parser);                                                                                      \
+  args::Command NM(commands, CMD, DESC, &main_##NM);
+
+  COMMAND(admm, "admm", "ADMM recon");
+  COMMAND(basis_img, "basis-img", "Basis from image data");
+  COMMAND(basis_sim, "basis-sim", "Basis from simulations");
+  COMMAND(blend, "blend", "Blend basis images");
+  COMMAND(cg, "cg", "Recon with Conjugate Gradients");
+  COMMAND(compress, "compress", "Apply channel compression");
+  COMMAND(downsamp, "downsamp", "Downsample dataset");
+  COMMAND(eig, "eig", "Calculate largest eigenvalue / vector");
+  COMMAND(filter, "filter", "Apply Tukey filter to image");
+  COMMAND(frames, "frames", "Create a frame basis");
+  COMMAND(grid, "grid", "Grid from/to non/cartesian");
+  COMMAND(h5, "h5", "Probe an H5 file");
+  // COMMAND(lad, "lad", "Least Absolute Deviations");
+  COMMAND(lookup, "lookup", "Basis dictionary lookup");
+  COMMAND(lsmr, "lsmr", "Recon with LSMR optimizer");
+  COMMAND(lsqr, "lsqr", "Recon with LSQR optimizer");
+  COMMAND(noisify, "noisify", "Add noise to dataset");
+  COMMAND(nii, "nii", "Convert h5 to nifti");
+  COMMAND(nufft, "nufft", "Apply forward/reverse NUFFT");
+  COMMAND(pad, "pad", "Pad/crop an image");
+  // COMMAND(pdhg, "pdhg", "Primal-Dual Hybrid Gradient");
+  COMMAND(phantom, "phantom", "Construct a digitial phantom");
+  COMMAND(plan, "plan", "Plan FFTs");
+  COMMAND(precond, "precond", "Precompute preconditioning weights");
+  COMMAND(prox, "prox", "Apply proximal operator");
+  COMMAND(recon, "recon", "Recon with SENSE maps");
+  COMMAND(rss, "rss", "Recon with Root-Sum-Squares");
+  COMMAND(sdc, "sdc", "Calculate Sample Density Compensation");
+  COMMAND(sense, "sense", "Apply SENSE operation");
+  COMMAND(sense_calib, "sense-calib", "Create SENSE maps");
+  COMMAND(sense_sim, "sense-sim", "Simulate SENSE maps");
+  COMMAND(slice, "slice", "Slice non-cartesian data");
+  COMMAND(traj, "traj", "Write out the trajectory and PSF");
+  COMMAND(transform, "transform", "Apply a transform (wavelets/TV)");
+  COMMAND(version, "version", "Print version number");
+  COMMAND(zinfandel, "zinfandel", "ZINFANDEL k-space filling");
   args::GlobalOptions globals(parser, global_group);
   FFT::Start(argv[0]);
   try {
