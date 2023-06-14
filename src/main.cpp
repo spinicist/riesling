@@ -19,6 +19,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(blend, "blend", "Blend basis images");
   COMMAND(cg, "cg", "Recon with Conjugate Gradients");
   COMMAND(compress, "compress", "Apply channel compression");
+  COMMAND(denoise, "denoise", "Denoise reconstructed images");
   COMMAND(downsamp, "downsamp", "Downsample dataset");
   COMMAND(eig, "eig", "Calculate largest eigenvalue / vector");
   COMMAND(filter, "filter", "Apply Tukey filter to image");

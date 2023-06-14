@@ -34,6 +34,7 @@ add_library(vineyard
     src/log.cpp
     src/mapping.cpp
     src/parse_args.cpp
+    src/patches.cpp
     src/precond.cpp
     src/scaling.cpp
     src/sdc.cpp
@@ -114,6 +115,7 @@ add_executable(riesling
     src/cmd/blend.cpp
     src/cmd/cg.cpp
     src/cmd/compress.cpp
+    src/cmd/denoise.cpp
     src/cmd/downsamp.cpp
     src/cmd/eig.cpp
     src/cmd/filter.cpp

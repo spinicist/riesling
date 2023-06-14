@@ -258,10 +258,16 @@ inline auto ConstMap(Eigen::TensorMap<T> x)
 }
 
 template <typename T>
-inline auto Map(T x)
+inline auto ConstMap(T x)
 {
   Eigen::TensorMap<T const> cx(x.data(), x.dimensions());
   return cx;
+}
+
+template <typename T>
+inline auto Map(T x)
+{
+  return Eigen::TensorMap<T>(x.data(), x.dimensions());
 }
 
 } // namespace rl

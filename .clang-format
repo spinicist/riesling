@@ -21,7 +21,9 @@ BraceWrapping:
   SplitEmptyNamespace: true
 AlwaysBreakTemplateDeclarations: true
 AllowShortFunctionsOnASingleLine: All
+AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
 AlignAfterOpenBracket: AlwaysBreak
 BreakConstructorInitializers: BeforeComma
 ColumnLimit: 128
