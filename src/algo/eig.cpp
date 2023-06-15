@@ -2,14 +2,14 @@
 
 namespace rl {
 
-auto PowerMethodForward(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinOps::Op<Cx>> M, Index const iterLimit) -> PowerReturn
+auto PowerMethodForward(std::shared_ptr<LinOps::Op<Cx>> A, std::shared_ptr<LinOps::Op<Cx>> P, Index const iterLimit) -> PowerReturn
 {
   Log::Print("Power Method for A'A");
-  Eigen::VectorXcf vec = Eigen::VectorXcf::Random(op->rows());
+  Eigen::VectorXcf vec = Eigen::VectorXcf::Random(A->cols());
   float val = vec.norm();
   vec /= val;
   for (auto ii = 0; ii < iterLimit; ii++) {
-    vec = op->adjoint(M->adjoint(op->forward(vec)));
+    vec = A->adjoint(P->adjoint(A->forward(vec)));
     val = vec.norm();
     vec /= val;
     Log::Print<Log::Level::High>("Iteration {} Eigenvalue {}", ii, val);
@@ -18,14 +18,14 @@ auto PowerMethodForward(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinO
   return {val, vec};
 }
 
-auto PowerMethodAdjoint(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinOps::Op<Cx>> M, Index const iterLimit) -> PowerReturn
+auto PowerMethodAdjoint(std::shared_ptr<LinOps::Op<Cx>> A, std::shared_ptr<LinOps::Op<Cx>> P, Index const iterLimit) -> PowerReturn
 {
-  Eigen::VectorXcf vec = Eigen::VectorXcf::Random(op->cols());
+  Eigen::VectorXcf vec = Eigen::VectorXcf::Random(A->rows());
   float val = vec.norm();
   vec /= val;
   Log::Print("Power Method for adjoint system AA'");
   for (auto ii = 0; ii < iterLimit; ii++) {
-    vec = op->forward(op->adjoint(M->adjoint(vec)));
+    vec = P->adjoint(A->forward(A->adjoint(vec)));
     val = vec.norm();
     vec /= val;
     Log::Print<Log::Level::High>("Iteration {} Eigenvalue {}", ii, val);

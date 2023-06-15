@@ -28,21 +28,21 @@ int main_eig(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto A = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
+  auto P = make_kspace_pre(pre.Get(), A->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   if (adj) {
-    auto const [val, vec] = PowerMethodAdjoint(recon, M, its.Get());
+    auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());
     if (savevec) {
       HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "eig"));
-      writer.writeTensor("evec", recon->ishape, vec.data());
+      writer.writeTensor("evec", A->ishape, vec.data());
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   } else {
-    auto const [val, vec] = PowerMethodForward(recon, M, its.Get());
+    auto const [val, vec] = PowerMethodForward(A, P, its.Get());
     if (savevec) {
       HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "eig"));
-      writer.writeTensor("evec", recon->ishape, vec.data());
+      writer.writeTensor("evec", A->ishape, vec.data());
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   }
