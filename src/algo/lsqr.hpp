@@ -1,14 +1,7 @@
 #pragma once
 
-#include "bidiag.hpp"
-#include "common.hpp"
-#include "func/functor.hpp"
-#include "log.hpp"
 #include "op/operator.hpp"
-#include "signals.hpp"
-#include "tensorOps.hpp"
-#include "threads.hpp"
-#include "types.hpp"
+#include <functional>
 
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
@@ -29,7 +22,7 @@ struct LSQR
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
-  bool debug = false;
+  std::function<void (Index const iter, Vector const &)> debug = nullptr;
 
   auto run(Cx *bdata, float const λ = 0.f, Cx *x0 = nullptr) const -> Vector;
 };

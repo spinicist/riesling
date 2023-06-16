@@ -1,5 +1,10 @@
 #include "lsqr.hpp"
 
+#include "bidiag.hpp"
+#include "common.hpp"
+#include "log.hpp"
+#include "signals.hpp"
+
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
@@ -66,16 +71,9 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
     float const normr = std::sqrt(res1 + res2);
     float const normAr = α * std::abs(τ);
 
-    Log::Print(
-      "{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}",
-      ii,
-      α,
-      β,
-      normr,
-      normAr,
-      normA,
-      condA,
-      normx);
+    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, α, β, normr, normAr, normA, condA, normx);
+
+    if (debug) { debug(ii, x); }
 
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("Cond(A) is very large");
@@ -103,9 +101,7 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
       Log::Print("Ax - b reached machine precision");
       break;
     }
-    if (InterruptReceived()) {
-      break;
-    }
+    if (InterruptReceived()) { break; }
   }
   PopInterrupt();
   return x;

@@ -1,5 +1,10 @@
 #include "lsmr.hpp"
 
+#include "bidiag.hpp"
+#include "common.hpp"
+#include "log.hpp"
+#include "signals.hpp"
+
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
@@ -95,29 +100,16 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
 
     // Estimate cond(A).
     maxρ̅ = std::max(maxρ̅, ρ̅old);
-    if (ii > 1) {
-      minρ̅ = std::min(minρ̅, ρ̅old);
-    }
+    if (ii > 1) { minρ̅ = std::min(minρ̅, ρ̅old); }
     float const condA = std::max(maxρ̅, ρtemp) / std::min(minρ̅, ρtemp);
 
     // Convergence tests - go in pairs which check large/small values then the user tolerance
     float const normAr = abs(ζ̅);
     float const normx = x.norm();
 
-    Log::Print(
-      "{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}",
-      ii,
-      α,
-      β,
-      normr,
-      normAr,
-      normA,
-      condA,
-      normx);
+    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, α, β, normr, normAr, normA, condA, normx);
 
-    if (debug) {
-      debug(ii, x);
-    }
+    if (debug) { debug(ii, x); }
 
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("Cond(A) is very large");
@@ -145,9 +137,7 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
       Log::Print("Ax - b reached machine precision");
       break;
     }
-    if (InterruptReceived()) {
-      break;
-    }
+    if (InterruptReceived()) { break; }
   }
   PopInterrupt();
   return x;

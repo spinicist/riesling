@@ -34,7 +34,10 @@ int main_lsqr(args::Subparser &parser)
   Info const &info = traj.info();
   auto A = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_kspace_pre(pre.Get(), A->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  LSQR lsqr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), true};
+  auto debug = [&A](Index const i, LSQR::Vector const &x) {
+    Log::Tensor(fmt::format("lsqr-x-{:02d}", i), A->ishape, x.data());
+  };
+  LSQR lsqr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), debug};
   auto sz = A->ishape;
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 const outSz = out_cropper.size();
