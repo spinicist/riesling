@@ -10,6 +10,7 @@ struct OtsuReturn {
     Index countAbove;
 };
 
-auto Otsu(Eigen::Map<Eigen::ArrayXf const> const &x, Index const nBins = 128) -> OtsuReturn;
+auto Otsu(Eigen::ArrayXf const &x, Index const nBins = 128) -> OtsuReturn;
+auto Otsu(Eigen::ArrayXf::ConstMapType const &x, Index const nBins = 128) -> OtsuReturn;
 
 } // namespace rl

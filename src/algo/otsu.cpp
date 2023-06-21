@@ -2,7 +2,12 @@
 
 namespace rl {
 
-auto Otsu(Eigen::Map<Eigen::ArrayXf const> const &x, Index const nBins) -> OtsuReturn
+auto Otsu(Eigen::ArrayXf const &x, Index const nBins) -> OtsuReturn {
+  Eigen::ArrayXf::ConstMapType xm(x.data(), x.size());
+  return Otsu(xm, nBins);
+}
+
+auto Otsu(Eigen::ArrayXf::ConstMapType const &x, Index const nBins) -> OtsuReturn
 {
   Index const n = x.size();
   float const maxVal = x.maxCoeff();
