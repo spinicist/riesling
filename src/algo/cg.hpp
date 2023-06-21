@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common.hpp"
-#include "op/operator.hpp"
+#include "op/ops.hpp"
 #include "signals.hpp"
 #include "threads.hpp"
 
@@ -10,10 +10,10 @@ namespace rl {
  * Wrapper for solving normal equations
  */
 template <typename Scalar_ = Cx>
-struct NormalOp final : LinOps::Op<Scalar_>
+struct NormalOp final : Ops::Op<Scalar_>
 {
   using Scalar = Scalar_;
-  using Op = typename LinOps::Op<Scalar>;
+  using Op = typename Ops::Op<Scalar>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
@@ -45,7 +45,7 @@ struct NormalOp final : LinOps::Op<Scalar_>
 template <typename Scalar = Cx>
 struct ConjugateGradients
 {
-  using Op = LinOps::Op<Scalar>;
+  using Op = Ops::Op<Scalar>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
 

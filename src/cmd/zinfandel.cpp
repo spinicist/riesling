@@ -81,7 +81,7 @@ int main_zinfandel(args::Subparser &parser)
     auto A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());
     Sz5 const shape = A->ishape;
     auto M = std::make_shared<TensorScale<Cx, 4, 1, 1>>(A->oshape, KSpaceSingle(lores, std::nullopt, 1.f).cast<Cx>());
-    // auto M = std::make_shared<LinOps::Identity<Cx>>(Product(shape));
+    // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
     auto id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
     auto slr = std::make_shared<SLR>(λ.Get(), kSz.Get(), shape);
     std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {

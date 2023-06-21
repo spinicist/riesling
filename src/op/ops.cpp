@@ -1,10 +1,10 @@
-#include "operator.hpp"
+#include "ops.hpp"
 
 #include <numeric>
 
 namespace rl {
 
-namespace LinOps {
+namespace Ops {
 
 template <typename S>
 Op<S>::Op(std::string const &n)
@@ -144,48 +144,48 @@ template struct MatMul<float>;
 template struct MatMul<Cx>;
 
 template <typename S>
-Diag<S>::Diag(Index const sz1, float const s1)
-  : Op<S>("Diag")
-  , s{s1}
+DiagScale<S>::DiagScale(Index const sz1, float const s1)
+  : Op<S>("DiagScale")
+  , scale{s1}
   , sz{sz1}
 {
 }
 
 template <typename S>
-auto Diag<S>::rows() const -> Index
+auto DiagScale<S>::rows() const -> Index
 {
   return sz;
 }
 template <typename S>
-auto Diag<S>::cols() const -> Index
+auto DiagScale<S>::cols() const -> Index
 {
   return sz;
 }
 
 template <typename S>
-void Diag<S>::forward(CMap const &x, Map &y) const
+void DiagScale<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  y = x * s;
+  y = x * scale;
 }
 
 template <typename S>
-void Diag<S>::adjoint(CMap const &y, Map &x) const
+void DiagScale<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  x = y * s;
+  x = y * scale;
 }
 
 template <typename S>
-auto Diag<S>::inverse() const -> std::shared_ptr<Op<S>>
+auto DiagScale<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
-  return std::make_shared<Diag>(sz, 1.f / s);
+  return std::make_shared<DiagScale>(sz, 1.f / scale);
 }
 
-template struct Diag<float>;
-template struct Diag<Cx>;
+template struct DiagScale<float>;
+template struct DiagScale<Cx>;
 
 template <typename S>
 DiagBlock<S>::DiagBlock(Index const n, Vector const &v)
@@ -513,6 +513,6 @@ void Subtract<S>::adjoint(CMap const &y, Map &x) const
 template struct Subtract<float>;
 template struct Subtract<Cx>;
 
-} // namespace LinOps
+} // namespace Ops
 
 } // namespace rl

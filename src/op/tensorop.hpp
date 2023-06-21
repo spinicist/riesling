@@ -1,15 +1,15 @@
 #pragma once
 
-#include "operator.hpp"
+#include "ops.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {
 
 template <typename Scalar_, size_t InRank_, size_t OutRank_ = InRank_>
-struct TensorOperator : LinOps::Op<Scalar_>
+struct TensorOperator : Ops::Op<Scalar_>
 {
   using Scalar = Scalar_;
-  using Base = LinOps::Op<Scalar>;
+  using Base = Ops::Op<Scalar>;
   static const size_t InRank = InRank_;
   using InTensor = Eigen::Tensor<Scalar, InRank>;
   using InMap = Eigen::TensorMap<InTensor>;
@@ -25,7 +25,7 @@ struct TensorOperator : LinOps::Op<Scalar_>
   OutDims oshape;
 
   TensorOperator(std::string const &n, InDims const xd, OutDims const yd)
-    : LinOps::Op<Scalar>{n}
+    : Ops::Op<Scalar>{n}
     , ishape{xd}
     , oshape{yd}
   {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "operator.hpp"
+#include "ops.hpp"
 
 namespace rl {
 

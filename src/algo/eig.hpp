@@ -1,7 +1,7 @@
 #pragma once
 
 #include "log.hpp"
-#include "op/operator.hpp"
+#include "op/ops.hpp"
 #include <optional>
 
 namespace rl {
@@ -11,7 +11,7 @@ struct PowerReturn {
   Eigen::VectorXcf vec;
 };
 
-auto PowerMethodForward(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinOps::Op<Cx>> M, Index const iterLimit) -> PowerReturn;
-auto PowerMethodAdjoint(std::shared_ptr<LinOps::Op<Cx>> op, std::shared_ptr<LinOps::Op<Cx>> M, Index const iterLimit) -> PowerReturn;
+auto PowerMethodForward(std::shared_ptr<Ops::Op<Cx>> op, std::shared_ptr<Ops::Op<Cx>> M, Index const iterLimit) -> PowerReturn;
+auto PowerMethodAdjoint(std::shared_ptr<Ops::Op<Cx>> op, std::shared_ptr<Ops::Op<Cx>> M, Index const iterLimit) -> PowerReturn;
 
 } // namespace rl

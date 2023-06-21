@@ -2,7 +2,7 @@
 
 #include "func/functor.hpp"
 #include "log.hpp"
-#include "op/operator.hpp"
+#include "op/ops.hpp"
 #include "prox/thresh.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"

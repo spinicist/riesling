@@ -1,13 +1,13 @@
 #pragma once
 
-#include "op/operator.hpp"
+#include "op/ops.hpp"
 #include "prox/prox.hpp"
 
 namespace rl {
 
 struct ADMM
 {
-  using Op = LinOps::Op<Cx>;
+  using Op = Ops::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;

@@ -53,13 +53,13 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
       this->finishAdjoint(x, time);
   }
 
-  auto inverse() const -> std::shared_ptr<LinOps::Op<Cx>>
+  auto inverse() const -> std::shared_ptr<Ops::Op<Cx>>
   {
     TScales inv = 1.f / scales;
     return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, scales);
   }
 
-  auto operator+(Scalar const s) const -> std::shared_ptr<LinOps::Op<Cx>>
+  auto operator+(Scalar const s) const -> std::shared_ptr<Ops::Op<Cx>>
   {
     TScales p = scales + s;
     return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, p);

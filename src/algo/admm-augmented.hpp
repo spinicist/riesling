@@ -11,8 +11,8 @@ namespace rl {
 template <typename Op>
 struct AugmentedOp
 {
-  using Input = typename LinOps::Input;
-  using InputMap = typename LinOps::InputMap;
+  using Input = typename Ops::Input;
+  using InputMap = typename Ops::InputMap;
   std::shared_ptr<Op> op;
   float rho;
 

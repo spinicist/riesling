@@ -1,7 +1,7 @@
 #pragma once
 
 #include "trajectory.hpp"
-#include "operator.hpp"
+#include "ops.hpp"
 #include "gridBase.hpp"
 
 #include <memory>

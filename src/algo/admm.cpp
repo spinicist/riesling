@@ -27,8 +27,8 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 
   Index const R = reg_ops.size();
   std::vector<Vector> z(R), zold(R), u(R), Fx(R), Fxpu(R);
-  std::vector<std::shared_ptr<LinOps::Diag<Cx>>> ρdiags(R);
-  std::vector<std::shared_ptr<LinOps::Op<Cx>>> scaled_ops(R);
+  std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
+  std::vector<std::shared_ptr<Ops::Op<Cx>>> scaled_ops(R);
   for (Index ir = 0; ir < R; ir++) {
     Index const sz = reg_ops[ir]->rows();
     z[ir].resize(sz);
@@ -41,14 +41,14 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     Fx[ir].setZero();
     Fxpu[ir].resize(sz);
     Fxpu[ir].setZero();
-    ρdiags[ir] = std::make_shared<LinOps::Diag<Cx>>(sz, std::sqrt(ρ));
-    scaled_ops[ir] = std::make_shared<LinOps::Multiply<Cx>>(ρdiags[ir], reg_ops[ir]);
+    ρdiags[ir] = std::make_shared<Ops::DiagScale<Cx>>(sz, std::sqrt(ρ));
+    scaled_ops[ir] = std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], reg_ops[ir]);
   }
 
-  std::shared_ptr<Op> reg = std::make_shared<LinOps::VStack<Cx>>(scaled_ops);
-  std::shared_ptr<Op> Aʹ = std::make_shared<LinOps::VStack<Cx>>(A, reg);
-  std::shared_ptr<Op> I = std::make_shared<LinOps::Identity<Cx>>(reg->rows());
-  std::shared_ptr<Op> Mʹ = std::make_shared<LinOps::DStack<Cx>>(M, I);
+  std::shared_ptr<Op> reg = std::make_shared<Ops::VStack<Cx>>(scaled_ops);
+  std::shared_ptr<Op> Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg);
+  std::shared_ptr<Op> I = std::make_shared<Ops::Identity<Cx>>(reg->rows());
+  std::shared_ptr<Op> Mʹ = std::make_shared<Ops::DStack<Cx>>(M, I);
 
   LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol};
 
@@ -70,7 +70,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       Index rr = reg_ops[ir]->rows();
       bʹ.segment(start, rr) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
-      ρdiags[ir]->s = std::sqrt(ρ);
+      ρdiags[ir]->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ.data(), 0.f, x.data());
     if (debug_x) { debug_x(io, x); }

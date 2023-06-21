@@ -1,6 +1,6 @@
 #pragma once
 
-#include "op/operator.hpp"
+#include "op/ops.hpp"
 #include <functional>
 
 namespace rl {
@@ -12,7 +12,7 @@ namespace rl {
  */
 struct LSQR
 {
-  using Op = LinOps::Op<Cx>;
+  using Op = Ops::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
 

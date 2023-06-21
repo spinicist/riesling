@@ -66,7 +66,7 @@ add_library(vineyard
     src/op/grid-es-rect.cpp
     src/op/make_grid.cpp
     src/op/nufft.cpp
-    src/op/operator.cpp
+    src/op/ops.cpp
     src/op/pad.cpp
     src/op/recon.cpp
     src/op/sense.cpp

@@ -7,7 +7,7 @@
 
 namespace rl {
 
-namespace LinOps {
+namespace Ops {
 
 template <typename Scalar_ = Cx>
 struct Op
@@ -74,12 +74,12 @@ private:
 
 //! Scale the output of another Linear Operator
 template <typename Scalar = Cx>
-struct Diag final : Op<Scalar>
+struct DiagScale final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
 
-  Diag(Index const sz, float const s);
+  DiagScale(Index const sz, float const s);
 
   auto rows() const -> Index;
   auto cols() const -> Index;
@@ -88,7 +88,7 @@ struct Diag final : Op<Scalar>
   void adjoint(CMap const &, Map &) const;
 
   auto inverse() const -> std::shared_ptr<Op<Scalar>>;
-  float s;
+  float scale;
 
 private:
   Index sz;
@@ -214,6 +214,6 @@ private:
   std::shared_ptr<Op<Scalar>> a, b;
 };
 
-} // namespace LinOps
+} // namespace Ops
 
 } // namespace rl

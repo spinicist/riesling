@@ -1,5 +1,5 @@
 #include "../src/algo/cg.hpp"
-#include "../src/op/operator.hpp"
+#include "../src/op/ops.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -12,7 +12,7 @@ TEST_CASE("Algorithms", "[alg]")
   Index const N = 8;
   Eigen::MatrixXf Amat = Eigen::MatrixXf::Identity(N, N) + Eigen::MatrixXf::Ones(N, N);
   Amat.array() += 1.f;
-  auto A = std::make_shared<LinOps::MatMul<float>>(Amat);
+  auto A = std::make_shared<Ops::MatMul<float>>(Amat);
   Eigen::VectorXf const x = Eigen::ArrayXf::LinSpaced(N, 0, N - 1);
   auto y = A->forward(x);
 

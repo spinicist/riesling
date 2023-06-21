@@ -40,8 +40,8 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
 }
 
 void BidiagInit(
-  std::shared_ptr<LinOps::Op<Cx>> op,
-  std::shared_ptr<LinOps::Op<Cx>> M,
+  std::shared_ptr<Ops::Op<Cx>> op,
+  std::shared_ptr<Ops::Op<Cx>> M,
   Eigen::VectorXcf &Mu,
   Eigen::VectorXcf &u,
   Eigen::VectorXcf &v,
@@ -69,8 +69,8 @@ void BidiagInit(
 }
 
 void Bidiag(
-  std::shared_ptr<LinOps::Op<Cx>> const op,
-  std::shared_ptr<LinOps::Op<Cx>> const M,
+  std::shared_ptr<Ops::Op<Cx>> const op,
+  std::shared_ptr<Ops::Op<Cx>> const M,
   Eigen::VectorXcf &Mu,
   Eigen::VectorXcf &u,
   Eigen::VectorXcf &v,

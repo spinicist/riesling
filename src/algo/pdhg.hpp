@@ -11,9 +11,9 @@ namespace rl {
 template <typename Op>
 struct PrimalDualHybridGradient
 {
-  using Input = typename LinOps::Input;
-  using Output = typename LinOps::Output;
-  using Scalar = typename LinOps::Scalar;
+  using Input = typename Ops::Input;
+  using Output = typename Ops::Output;
+  using Scalar = typename Ops::Scalar;
 
   std::shared_ptr<Op> op;
   Cx4 P;
