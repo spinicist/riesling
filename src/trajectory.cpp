@@ -23,14 +23,10 @@ Trajectory::Trajectory(HD5::Reader const &reader)
 
 void Trajectory::init()
 {
-  if (points_.dimension(0) < 1 || points_.dimension(0) > 3) {
-    Log::Fail("Trajectory has {} dimensions", points_.dimension(0));
-  }
+  if (points_.dimension(0) < 1 || points_.dimension(0) > 3) { Log::Fail("Trajectory has {} dimensions", points_.dimension(0)); }
 
   float const maxCoord = Maximum(points_.abs());
-  if (maxCoord > 0.5f) {
-    Log::Warn("Maximum trajectory co-ordinate {} > 0.5", maxCoord);
-  }
+  if (maxCoord > 0.5f) { Log::Warn("Maximum trajectory co-ordinate {} > 0.5", maxCoord); }
   Log::Print<Log::Level::Debug>("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
 }
 
@@ -48,7 +44,8 @@ auto Trajectory::nTraces() const -> Index { return points_.dimension(2); }
 
 Info const &Trajectory::info() const { return info_; }
 
-auto Trajectory::matrix(float const fov) const -> Sz3 {
+auto Trajectory::matrix(float const fov) const -> Sz3
+{
   if (fov > 0) {
     Eigen::Array3l bigMatrix = (((fov / info_.voxel_size) / 2.f).floor() * 2).cast<Index>();
     Sz3 matrix;
@@ -62,7 +59,6 @@ auto Trajectory::matrix(float const fov) const -> Sz3 {
   }
 }
 
-
 Re3 const &Trajectory::points() const { return points_; }
 
 Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
@@ -74,27 +70,29 @@ Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
 auto Trajectory::downsample(float const res, Index const lores, bool const shrink, bool const corners) const
   -> std::tuple<Trajectory, Index, Index>
 {
-  float const dsamp = res / info_.voxel_size.minCoeff();
+  float dsamp = res / info_.voxel_size.minCoeff();
   if (dsamp < 1.f) {
-    Log::Fail(
-      "Downsample resolution {} is lower than input resolution {}", res, info_.voxel_size.minCoeff());
+    Log::Fail("Downsample resolution {} is lower than input resolution {}", res, info_.voxel_size.minCoeff());
   }
   auto dsInfo = info_;
   float scale = 1.f;
   if (shrink) {
     // Account for rounding
-    std::transform(
-      info_.matrix.begin(), info_.matrix.begin() + nDims(), dsInfo.matrix.begin(), [dsamp](Index const i) { return (i / dsamp); });
+    std::transform(info_.matrix.begin(), info_.matrix.begin() + nDims(), dsInfo.matrix.begin(), [dsamp](Index const i) {
+      return (i / dsamp);
+    });
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
+    dsamp = 1.f / scale;
     dsInfo.voxel_size = info_.voxel_size * scale;
   }
   Index minSamp = nSamples(), maxSamp = 0;
   Re3 dsPoints(points_.dimensions());
+  float const thresh = 0.5f / dsamp;
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {
-      Re1 p = points_.chip<2>(it).chip<1>(is) * scale;
-      if ((corners && B0((p.abs() <= 0.5f).all())()) || Norm(p) <= 0.5f) {
-        dsPoints.chip<2>(it).chip<1>(is) = p;
+      Re1 p = points_.chip<2>(it).chip<1>(is);
+      if ((corners && B0((p.abs() <= 0.5f).all())()) || Norm(p) <= thresh) {
+        dsPoints.chip<2>(it).chip<1>(is) = p * scale;
         if (it >= lores) { // Ignore lo-res traces for this calculation
           minSamp = std::min(minSamp, is);
           maxSamp = std::max(maxSamp, is);
@@ -104,9 +102,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
       }
     }
   }
-  if (minSamp > maxSamp) {
-    Log::Fail("No valid trajectory points remain after downsampling");
-  }
+  if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
   Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print(
     "Downsample res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}",
@@ -126,8 +122,7 @@ auto Trajectory::downsample(Cx5 const &ks, float const res, Index const lores, b
   -> std::tuple<Trajectory, Cx5>
 {
   auto const [dsTraj, minSamp, nSamp] = downsample(res, lores, shrink, corners);
-  Cx5 dsKs =
-    ks.slice(Sz5{0, minSamp, 0, 0, 0}, Sz5{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3), ks.dimension(4)});
+  Cx5 dsKs = ks.slice(Sz5{0, minSamp, 0, 0, 0}, Sz5{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3), ks.dimension(4)});
   return std::make_tuple(dsTraj, dsKs);
 }
 
