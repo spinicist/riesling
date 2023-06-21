@@ -91,7 +91,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {
       Re1 p = points_.chip<2>(it).chip<1>(is);
-      if ((corners && B0((p.abs() <= 0.5f).all())()) || Norm(p) <= thresh) {
+      if ((corners && B0((p.abs() <= thresh).all())()) || Norm(p) <= thresh) {
         dsPoints.chip<2>(it).chip<1>(is) = p * scale;
         if (it >= lores) { // Ignore lo-res traces for this calculation
           minSamp = std::min(minSamp, is);
