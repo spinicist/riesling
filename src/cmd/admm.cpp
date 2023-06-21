@@ -40,7 +40,6 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
   args::Flag hogwild(parser, "HW", "Use Hogwild scheme", {"hogwild"});
 
-  // Default is TV on spatial dimensions, i.e. classic compressed sensing
   args::ValueFlag<float> tv(parser, "TV", "Total Variation", {"tv"});
   args::ValueFlag<float> tvt(parser, "TVT", "Total Variation along time/frames/basis", {"tvt"});
   args::ValueFlag<float> tgv(parser, "TGV", "Total Generalized Variation", {"tgv"});

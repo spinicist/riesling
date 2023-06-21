@@ -71,24 +71,4 @@ std::shared_ptr<TensorOperator<Cx, 4>> make_kspace_pre(
   }
 }
 
-std::shared_ptr<LinOps::Op<Cx>> make_scales_pre(std::vector<float> const &scales, Sz4 const shape)
-{
-  std::shared_ptr<LinOps::Op<Cx>> N;
-  if (scales.size()) {
-    Index const d = shape[0];
-    if (scales.size() != (size_t)d) {
-      Log::Fail("Basis scales had {} elements, expected {}", scales.size(), d);
-    }
-    Log::Print("Basis scales: {}", fmt::join(scales, ","));
-    Cx1 s(d);
-    for (Index ii = 0; ii < d; ii++) {
-      s(ii) = scales[ii];
-    }
-    N = std::make_shared<TensorScale<Cx, 4, 0, 3>>(shape, s, true);
-  } else {
-    N = std::make_shared<TensorIdentity<Cx, 4>>(shape);
-  }
-  return N;
-}
-
 } // namespace rl

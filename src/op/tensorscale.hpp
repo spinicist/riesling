@@ -17,9 +17,9 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
   using Parent::adjoint;
   using Parent::forward;
 
-  TensorScale(InDims const shape, TScales const &s, bool const inv = false)
-    : Parent("Scale", shape, shape)
-    , scales{s} , adjointIsInverse{inv}
+  TensorScale(InDims const shape, TScales const &s)
+    : Parent("TensorDiag", shape, shape)
+    , scales{s}
   {
     for (auto ii = 0; ii < FrontRank; ii++) {
       res[0] = 1;
@@ -48,25 +48,25 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
-    if (adjointIsInverse) {
-      inverse(y, x);
-    } else {
       auto const time = this->startAdjoint(y);
       x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
       this->finishAdjoint(x, time);
-    }
   }
 
-  void inverse(OutCMap const &y, InMap &x) const
+  auto inverse() const -> std::shared_ptr<LinOps::Op<Cx>>
   {
-    auto const time = this->startInverse(y);
-    x.device(Threads::GlobalDevice()) = y / scales.reshape(res).broadcast(brd);
-    this->finishInverse(x, time);
+    TScales inv = 1.f / scales;
+    return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, scales);
+  }
+
+  auto operator+(Scalar const s) const -> std::shared_ptr<LinOps::Op<Cx>>
+  {
+    TScales p = scales + s;
+    return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, p);
   }
 
 private:
   TScales scales;
-  bool adjointIsInverse;
   Sz<Rank> res, brd;
 };
 

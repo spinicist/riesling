@@ -27,19 +27,22 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 
   Index const R = reg_ops.size();
   std::vector<Vector> z(R), zold(R), u(R), Fx(R), Fxpu(R);
-  std::vector<std::shared_ptr<Op>> scaled_ops(R);
+  std::vector<std::shared_ptr<LinOps::Diag<Cx>>> ρdiags(R);
+  std::vector<std::shared_ptr<LinOps::Op<Cx>>> scaled_ops(R);
   for (Index ir = 0; ir < R; ir++) {
-    z[ir].resize(reg_ops[ir]->rows());
+    Index const sz = reg_ops[ir]->rows();
+    z[ir].resize(sz);
     z[ir].setZero();
-    zold[ir].resize(reg_ops[ir]->rows());
+    zold[ir].resize(sz);
     zold[ir].setZero();
-    u[ir].resize(reg_ops[ir]->rows());
+    u[ir].resize(sz);
     u[ir].setZero();
-    Fx[ir].resize(reg_ops[ir]->rows());
+    Fx[ir].resize(sz);
     Fx[ir].setZero();
-    Fxpu[ir].resize(reg_ops[ir]->rows());
+    Fxpu[ir].resize(sz);
     Fxpu[ir].setZero();
-    scaled_ops[ir] = std::make_shared<LinOps::Scale<Cx>>(reg_ops[ir], std::sqrt(ρ));
+    ρdiags[ir] = std::make_shared<LinOps::Diag<Cx>>(sz, std::sqrt(ρ));
+    scaled_ops[ir] = std::make_shared<LinOps::Multiply<Cx>>(ρdiags[ir], reg_ops[ir]);
   }
 
   std::shared_ptr<Op> reg = std::make_shared<LinOps::VStack<Cx>>(scaled_ops);
@@ -67,12 +70,10 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       Index rr = reg_ops[ir]->rows();
       bʹ.segment(start, rr) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
-      std::dynamic_pointer_cast<LinOps::Scale<Cx>>(scaled_ops[ir])->scale = std::sqrt(ρ);
+      ρdiags[ir]->s = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ.data(), 0.f, x.data());
-    if (debug_x) {
-      debug_x(io, x);
-    }
+    if (debug_x) { debug_x(io, x); }
 
     float const normx = x.norm();
     float pNorm = 0.f, dNorm = 0.f, normz = 0.f, normu = 0.f;
@@ -89,9 +90,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       normz += z[ir].squaredNorm();
       normu += u[ir].squaredNorm();
 
-      if (debug_z) {
-        debug_z(io, ir, z[ir]);
-      }
+      if (debug_z) { debug_z(io, ir, z[ir]); }
     }
     pNorm = std::sqrt(pNorm);
     dNorm = std::sqrt(dNorm);
@@ -134,9 +133,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
         u[ir] /= 2.f;
       }
     }
-    if (InterruptReceived()) {
-      break;
-    }
+    if (InterruptReceived()) { break; }
   }
   PopInterrupt();
   return x;

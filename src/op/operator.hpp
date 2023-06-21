@@ -24,13 +24,15 @@ struct Op
   virtual auto cols() const -> Index = 0;
   virtual void forward(CMap const &x, Map &y) const = 0;
   virtual void adjoint(CMap const &y, Map &x) const = 0;
-  virtual void inverse(CMap const &y, Map &x) const;
+
   virtual auto forward(Vector const &x) const -> Vector;
   virtual auto adjoint(Vector const &y) const -> Vector;
-  virtual auto inverse(Vector const &y) const -> Vector;
+
   void forward(Vector const &x, Vector &y) const;
   void adjoint(Vector const &y, Vector &x) const;
-  void inverse(Vector const &y, Vector &x) const;
+
+  virtual auto inverse() const -> std::shared_ptr<Op<Scalar>>;
+  virtual auto operator+(Scalar const) const -> std::shared_ptr<Op<Scalar>>;
 };
 
 template <typename Scalar = Cx>
@@ -45,7 +47,6 @@ struct Identity final : Op<Scalar>
   auto cols() const -> Index;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
 
 private:
   Index sz;
@@ -66,7 +67,6 @@ struct MatMul final : Op<Scalar>
   using Op<Scalar>::adjoint;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
 
 private:
   Matrix mat;
@@ -74,22 +74,46 @@ private:
 
 //! Scale the output of another Linear Operator
 template <typename Scalar = Cx>
-struct Scale final : Op<Scalar>
+struct Diag final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
 
-  Scale(std::shared_ptr<Op<Scalar>> op, float const s);
+  Diag(Index const sz, float const s);
+
+  auto rows() const -> Index;
+  auto cols() const -> Index;
+
+  void forward(CMap const &, Map &) const;
+  void adjoint(CMap const &, Map &) const;
+
+  auto inverse() const -> std::shared_ptr<Op<Scalar>>;
+  float s;
+
+private:
+  Index sz;
+};
+
+template <typename Scalar = Cx>
+struct DiagBlock final : Op<Scalar>
+{
+  using typename Op<Scalar>::Map;
+  using typename Op<Scalar>::CMap;
+  using typename Op<Scalar>::Vector;
+
+  DiagBlock(Index const blocks, Vector const &s);
 
   auto rows() const -> Index;
   auto cols() const -> Index;
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
+  
+  std::shared_ptr<Op<Scalar>> inverse() const;
 
-  std::shared_ptr<Op<Scalar>> op;
-  float scale;
+private:
+  Index blocks;
+  Vector s;
 };
 
 //! Multiply operators, i.e. y = A * B * x
@@ -147,7 +171,8 @@ struct DStack final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
+
+  std::shared_ptr<Op<Scalar>> inverse() const;
 
 private:
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
