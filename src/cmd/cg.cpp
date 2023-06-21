@@ -34,8 +34,6 @@ int main_cg(args::Subparser &parser)
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  float const scale = Scaling(coreOpts.scaling, recon, CChipMap(allData, 0));
-  allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes), resid;
   if (coreOpts.residImage) {
@@ -47,13 +45,13 @@ int main_cg(args::Subparser &parser)
     auto b = recon->adjoint(CChipMap(allData, iv));
     auto x = cg.run(b.data());
     auto xm = Tensorfy(x, sz);
-    out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
+    out.chip<4>(iv) = out_cropper.crop4(xm);
     if (coreOpts.residImage || coreOpts.residKSpace) {
       allData.chip<4>(iv) -= recon->forward(xm);
     }
     if (coreOpts.residImage) {
       xm = recon->adjoint(allData.chip<4>(iv));
-      resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
+      resid.chip<4>(iv) = out_cropper.crop4(xm);
     }
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));

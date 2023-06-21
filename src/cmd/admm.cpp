@@ -60,14 +60,14 @@ int main_admm(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto M = make_kspace_pre(pre.Get(), recon->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
-  std::shared_ptr<Ops::Op<Cx>> A = recon;
+  std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   auto const sz = recon->ishape;
+  auto M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  float const scale = Scaling(coreOpts.scaling, recon, M->adjoint(CChipMap(allData, 0)));
+  float const scale = Scaling(coreOpts.scaling, recon, M, &allData(0, 0, 0, 0, 0));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes), resid;
@@ -84,8 +84,8 @@ int main_admm(args::Subparser &parser)
 
   if (tgv) {
     auto grad_x = std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3});
-    ext_x = std::make_shared<Ops::Extract<Cx>>(recon->cols() + grad_x->rows(), 0, recon->cols());
-    auto ext_v = std::make_shared<Ops::Extract<Cx>>(recon->cols() + grad_x->rows(), recon->cols(), grad_x->rows());
+    ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
+    auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
     auto prox1 = std::make_shared<SoftThreshold>(tgv.Get());
     auto grad_v = std::make_shared<GradVecOp>(grad_x->oshape);

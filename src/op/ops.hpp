@@ -95,13 +95,13 @@ private:
 };
 
 template <typename Scalar = Cx>
-struct DiagBlock final : Op<Scalar>
+struct DiagRep final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
   using typename Op<Scalar>::Vector;
 
-  DiagBlock(Index const blocks, Vector const &s);
+  DiagRep(Index const reps, Vector const &s);
 
   auto rows() const -> Index;
   auto cols() const -> Index;
@@ -112,7 +112,7 @@ struct DiagBlock final : Op<Scalar>
   std::shared_ptr<Op<Scalar>> inverse() const;
 
 private:
-  Index blocks;
+  Index reps;
   Vector s;
 };
 

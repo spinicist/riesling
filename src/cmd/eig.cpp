@@ -29,7 +29,7 @@ int main_eig(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   auto A = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto P = make_kspace_pre(pre.Get(), A->oshape, traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());

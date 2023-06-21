@@ -1,5 +1,6 @@
 #include "scaling.hpp"
 
+#include "algo/lsmr.hpp"
 #include "algo/otsu.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
@@ -8,23 +9,26 @@
 
 namespace rl {
 
-auto Scaling(args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const recon, Cx4 const &data) -> float
+auto Scaling(
+  args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const A, std::shared_ptr<Ops::Op<Cx>> const P, Cx *const b)
+  -> float
 {
   float scale;
   if (type.Get() == "bart") {
-    Re4 abs = (recon->adjoint(data)).abs();
-    auto vec = CollapseToArray(abs);
-    std::sort(vec.begin(), vec.end());
-    float const med = vec[vec.size() * 0.5];
-    float const max = vec[vec.size() - 1];
-    float const p90 = vec[vec.size() * 0.9];
+    LSMR lsmr{A, P, 2};
+    Eigen::ArrayXf x = lsmr.run(b).array().abs();
+    std::sort(x.begin(), x.end());
+    float const med = x[x.size() * 0.5];
+    float const max = x[x.size() - 1];
+    float const p90 = x[x.size() * 0.9];
     scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
     Log::Print("Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
   } else if (type.Get() == "otsu") {
-    Re4 const abs = (recon->adjoint(data)).abs();
-    auto const [thresh, count] = Otsu(CollapseToArray(abs));
+    LSMR lsmr{A, P, 2};
+    Eigen::ArrayXf const x = lsmr.run(b).array().abs();
+    auto const [thresh, count] = Otsu(x);
     std::vector<float> vals(count);
-    std::copy_if(abs.data(), abs.data() + abs.size(), vals.begin(), [thresh=thresh](float const f) { return f > thresh; });
+    std::copy_if(x.data(), x.data() + x.size(), vals.begin(), [thresh = thresh](float const f) { return f > thresh; });
     std::sort(vals.begin(), vals.end());
     float const med = vals[count * 0.5];
     scale = 1.f / med;

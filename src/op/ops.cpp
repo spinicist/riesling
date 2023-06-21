@@ -188,52 +188,48 @@ template struct DiagScale<float>;
 template struct DiagScale<Cx>;
 
 template <typename S>
-DiagBlock<S>::DiagBlock(Index const n, Vector const &v)
-  : Op<S>("DiagBlock")
-  , blocks{n}
+DiagRep<S>::DiagRep(Index const n, Vector const &v)
+  : Op<S>("DiagRep")
+  , reps{n}
   , s{v}
 {
 }
 
 template <typename S>
-auto DiagBlock<S>::rows() const -> Index
+auto DiagRep<S>::rows() const -> Index
 {
-  return s.rows() * blocks;
+  return s.rows() * reps;
 }
 template <typename S>
-auto DiagBlock<S>::cols() const -> Index
+auto DiagRep<S>::cols() const -> Index
 {
-  return s.rows() * blocks;
+  return s.rows() * reps;
 }
 
 template <typename S>
-void DiagBlock<S>::forward(CMap const &x, Map &y) const
+void DiagRep<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  for (Index ii = 0; ii < blocks; ii++) {
-    y.segment(ii * s.rows(), s.rows()) = x.segment(ii * s.rows(), s.rows()) * s;
-  }
+  y = x.array() * s.array().transpose().replicate(reps, 1).reshaped();
 }
 
 template <typename S>
-void DiagBlock<S>::adjoint(CMap const &y, Map &x) const
+void DiagRep<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  for (Index ii = 0; ii < blocks; ii++) {
-    x.segment(ii * s.rows(), s.rows()) = y.segment(ii * s.rows(), s.rows()) * s;
-  }
+  x = y.array() * s.array().transpose().replicate(reps, 1).reshaped();
 }
 
 template <typename S>
-auto DiagBlock<S>::inverse() const -> std::shared_ptr<Op<S>>
+auto DiagRep<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
-  return std::make_shared<DiagBlock>(blocks, 1.f / s.array());
+  return std::make_shared<DiagRep>(reps, 1.f / s.array());
 }
 
-template struct DiagBlock<float>;
-template struct DiagBlock<Cx>;
+template struct DiagRep<float>;
+template struct DiagRep<Cx>;
 
 template <typename S>
 Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)

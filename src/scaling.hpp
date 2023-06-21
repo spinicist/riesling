@@ -5,8 +5,8 @@
 
 namespace rl {
 
-auto Scaling(args::ValueFlag<std::string> &type,
-             std::shared_ptr<ReconOp> const recon,
-             Cx4 const &data) -> float;
+auto Scaling(
+  args::ValueFlag<std::string> &type, std::shared_ptr<ReconOp> const A, std::shared_ptr<Ops::Op<Cx>> const P, Cx *const b)
+  -> float;
 
 } // namespace rl

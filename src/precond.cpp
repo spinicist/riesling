@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
-#include "op/tensorscale.hpp"
+#include "op/ops.hpp"
 #include "threads.hpp"
 
 namespace rl {
@@ -48,26 +48,30 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis, float
   return weights;
 }
 
-std::shared_ptr<TensorOperator<Cx, 4>> make_kspace_pre(
-  std::string const &type, Sz4 const dims, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
+auto make_kspace_pre(
+  std::string const &type, Index const nC, Trajectory const &traj, std::optional<Re2> const &basis, float const bias)
+  -> std::shared_ptr<Ops::Op<Cx>>
 {
   if (type == "" || type == "none") {
     Log::Print("Using no preconditioning");
-    return std::make_shared<TensorIdentity<Cx, 4>>(dims);
+    return std::make_shared<Ops::Identity<Cx>>(nC * traj.nSamples() * traj.nTraces());
   } else if (type == "kspace") {
-    return std::make_shared<TensorScale<Cx, 4, 1, 1>>(dims, KSpaceSingle(traj, basis, bias).cast<Cx>());
+    Re2 const w = KSpaceSingle(traj, basis, bias);
+    Eigen::VectorXcf const wv = CollapseToArray(w);
+    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv.cast<Cx>());
   } else {
     HD5::Reader reader(type);
-    Re2 pre = reader.readTensor<Re2>(HD5::Keys::Precond);
-    if (pre.dimension(0) != traj.nSamples() || pre.dimension(1) != traj.nTraces()) {
+    Re2 w = reader.readTensor<Re2>(HD5::Keys::Precond);
+    if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
       Log::Fail(
         "Preconditioner dimensions on disk {} did not match trajectory {}x{}",
-        pre.dimension(0),
-        pre.dimension(1),
+        w.dimension(0),
+        w.dimension(1),
         traj.nSamples(),
         traj.nTraces());
     }
-    return std::make_shared<TensorScale<Cx, 4, 1, 1>>(dims, pre.cast<Cx>());
+    Eigen::VectorXcf const wv = CollapseToArray(w);
+    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv.cast<Cx>());
   }
 }
 
