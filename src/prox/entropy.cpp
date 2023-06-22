@@ -5,8 +5,8 @@
 
 namespace rl {
 
-Entropy::Entropy(float const λ)
-  : Prox<Cx>()
+Entropy::Entropy(float const λ, Index const sz)
+  : Prox<Cx>(sz)
   , λ_{λ}
 {
   Log::Print("Entropy Prox λ {}", λ);
@@ -25,8 +25,8 @@ void Entropy::apply(float const α, CMap const &v, Map &z) const
   Log::Print("Entropy α {} λ {} t {} |v| {} |z| {}", α, λ_, t, v.norm(), z.norm());
 }
 
-NMREntropy::NMREntropy(float const λ)
-  : Prox<Cx>()
+NMREntropy::NMREntropy(float const λ, Index const sz)
+  : Prox<Cx>(sz)
   , λ_{λ}
 {
   Log::Print("NMR Entropy Prox λ {}", λ_);

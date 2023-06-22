@@ -51,6 +51,7 @@ add_library(vineyard
     src/algo/lsmr.cpp
     src/algo/lsqr.cpp
     src/algo/otsu.cpp
+    src/algo/pdhg.cpp
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp
@@ -76,6 +77,7 @@ add_library(vineyard
     src/phantom/shepp-logan.cpp
     src/prox/entropy.cpp
     src/prox/llr.cpp
+    src/prox/prox.cpp
     src/prox/slr.cpp
     src/prox/thresh.cpp
     src/prox/thresh-wavelets.cpp
@@ -130,7 +132,7 @@ add_executable(riesling
     src/cmd/noisify.cpp
     src/cmd/nufft.cpp
     src/cmd/pad.cpp
-    # src/cmd/pdhg.cpp
+    src/cmd/pdhg.cpp
     src/cmd/phantom.cpp
     src/cmd/plan.cpp
     src/cmd/precond.cpp

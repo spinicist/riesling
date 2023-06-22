@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "op/ops.hpp"
 
 namespace rl {
 
@@ -11,26 +12,53 @@ struct Prox
   using Map = Eigen::Map<Vector>;
   using CMap = Eigen::Map<Vector const>;
 
-  void apply(float const α, Vector const &x, Vector &z) const
-  {
-    CMap xm(x.data(), x.size());
-    Map zm(z.data(), z.size());
-    this->apply(α, xm, zm);
-  }
-  auto apply(float const α, Vector const &x) const -> Vector
-  {
-    Vector z(x.size());
-    this->apply(α, x, z);
-    return z;
-  }
+  Prox(Index const sz);
+
+  void apply(float const α, Vector const &x, Vector &z) const;
+  auto apply(float const α, Vector const &x) const -> Vector;
+  virtual void apply(std::shared_ptr<Ops::Op<Scalar>> const α, CMap const &x, Map &z) const;
   virtual void apply(float const α, CMap const &x, Map &z) const = 0;
 
   virtual ~Prox(){};
+
+  Index sz;
 };
 
 #define PROX_INHERIT(Scalar)                                                                                                   \
   using Prox<Scalar>::Vector;                                                                                                  \
   using Prox<Scalar>::Map;                                                                                                     \
   using Prox<Scalar>::CMap;
+
+template <typename Scalar = Cx>
+struct ConjugateProx final : Prox<Scalar>
+{
+  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
+  using Map = Eigen::Map<Vector>;
+  using CMap = Eigen::Map<Vector const>;
+
+  ConjugateProx(std::shared_ptr<Prox<Scalar>> p);
+
+  void apply(float const α, CMap const &x, Map &z) const;
+
+private:
+  std::shared_ptr<Prox<Scalar>> p;
+};
+
+template <typename Scalar = Cx>
+struct StackProx final : Prox<Scalar>
+{
+  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
+  using Map = Eigen::Map<Vector>;
+  using CMap = Eigen::Map<Vector const>;
+
+  StackProx(std::shared_ptr<Prox<Scalar>> p1, std::shared_ptr<Prox<Scalar>> p2);
+
+  void apply(float const α, CMap const &x, Map &z) const;
+
+private:
+  std::shared_ptr<Prox<Scalar>> p1, p2;
+};
+
+
 
 } // namespace rl

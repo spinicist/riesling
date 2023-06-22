@@ -49,9 +49,9 @@ int main_prox(args::Subparser &parser)
   } else if (llr) {
     prox = std::make_shared<LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), dims);
   } else if (l1) {
-    prox = std::make_shared<SoftThreshold>(l1.Get());
+    prox = std::make_shared<SoftThreshold>(l1.Get(), nvox);
   } else if (nmrent) {
-    prox = std::make_shared<Entropy>(nmrent.Get());
+    prox = std::make_shared<Entropy>(nmrent.Get(), nvox);
   } else {
     throw args::Error("Must specify at least one regularization method");
   }

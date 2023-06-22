@@ -3,9 +3,9 @@
 namespace rl {
 
 ThresholdWavelets::ThresholdWavelets(float const λ, Sz4 const shape, Index const W, Index const L)
-  : Prox<Cx>()
+  : Prox<Cx>(Product(shape))
   , waves_{std::make_shared<Wavelets>(shape, W, L)}
-  , thresh_{λ}
+  , thresh_{λ, sz}
 {
 }
 

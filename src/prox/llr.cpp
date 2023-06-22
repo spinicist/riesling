@@ -8,7 +8,7 @@
 namespace rl {
 
 LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
-  : Prox<Cx>()
+  : Prox<Cx>(Product(s))
   , λ{l}
   , patchSize{p}
   , windowSize{w}

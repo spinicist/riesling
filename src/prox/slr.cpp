@@ -63,7 +63,7 @@ void FromKernels(Cx6 const &kernels, Eigen::TensorMap<Cx5> &grid)
 }
 
 SLR::SLR(float const l, Index const k, Sz5 const sh)
-  : Prox<Cx>()
+  : Prox<Cx>(Product(sh))
   , λ{l}
   , kSz{k}
   , shape{sh}

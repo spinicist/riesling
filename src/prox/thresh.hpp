@@ -8,7 +8,7 @@ struct SoftThreshold final : Prox<Cx> {
     PROX_INHERIT(Cx)
     float λ;
 
-    SoftThreshold(float const λ);
+    SoftThreshold(float const λ, Index const sz);
     void apply(float const α, CMap const &x, Map &z) const;
 };
 

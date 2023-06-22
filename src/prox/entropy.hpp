@@ -6,7 +6,7 @@ namespace rl {
 
 struct Entropy final : Prox<Cx> {
     PROX_INHERIT(Cx)
-    Entropy(float const λ);
+    Entropy(float const λ, Index const sz);
     void apply(float const α, CMap const &x, Map &z) const;
 private:
     float λ_;
@@ -14,7 +14,7 @@ private:
 
 struct NMREntropy final : Prox<Cx> {
     PROX_INHERIT(Cx)
-    NMREntropy(float const λ);
+    NMREntropy(float const λ, Index const sz);
     void apply(float const α, CMap const &x, Map &z) const;
 private:
     float λ_;
