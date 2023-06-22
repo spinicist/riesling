@@ -1,6 +1,6 @@
 #include "stack.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
 template <typename S>
 StackProx<S>::StackProx(std::vector<std::shared_ptr<Prox<S>>> const p)
@@ -44,4 +44,4 @@ void StackProx<S>::apply(std::shared_ptr<Ops::Op<S>> const αs1, CMap const &x, 
 template struct StackProx<float>;
 template struct StackProx<Cx>;
 
-} // namespace rl
+} // namespace rl::Prox

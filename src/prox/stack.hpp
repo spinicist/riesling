@@ -1,9 +1,9 @@
 #pragma once
 
-#include "prox.hpp"
 #include "op/ops.hpp"
+#include "prox.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
 template <typename Scalar = Cx>
 struct StackProx final : Prox<Scalar>
@@ -16,8 +16,9 @@ struct StackProx final : Prox<Scalar>
 
   void apply(float const α, CMap const &x, Map &z) const;
   void apply(std::shared_ptr<Ops::Op<Scalar>> const α, CMap const &x, Map &z) const;
+
 private:
   std::vector<std::shared_ptr<Prox<Scalar>>> proxs;
 };
 
-}
+} // namespace rl::Prox

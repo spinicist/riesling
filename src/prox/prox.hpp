@@ -1,9 +1,9 @@
 #pragma once
 
-#include "types.hpp"
 #include "op/ops.hpp"
+#include "types.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
 template <typename Scalar = Cx>
 struct Prox
@@ -44,4 +44,4 @@ private:
   std::shared_ptr<Prox<Scalar>> p;
 };
 
-} // namespace rl
+} // namespace rl::Prox

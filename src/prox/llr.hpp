@@ -2,7 +2,7 @@
 
 #include "prox.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
 /*
  * Locally Low-Rank Regularizer
@@ -21,4 +21,4 @@ struct LLR final : Prox<Cx>
   void apply(float const α, CMap const &x, Map &z) const;
 };
 
-} // namespace rl
+} // namespace rl::Prox

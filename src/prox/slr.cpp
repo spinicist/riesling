@@ -6,7 +6,8 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
-namespace rl {
+namespace rl::Prox {
+
 Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
 {
   Index const nC = grid.dimension(0);
@@ -15,9 +16,7 @@ Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
   Index const nKy = grid.dimension(3) - kW + 1;
   Index const nKz = grid.dimension(4) - kW + 1;
   Index const nK = nKx * nKy * nKz;
-  if (nK < 1) {
-    Log::Fail("No kernels to Hankelfy");
-  }
+  if (nK < 1) { Log::Fail("No kernels to Hankelfy"); }
   Log::Print<Log::Level::Debug>("Hankelfying {} kernels", nK);
   Cx6 kernels(nC, nF, kW, kW, kW, nK);
   Index ik = 0;
@@ -69,9 +68,7 @@ SLR::SLR(float const l, Index const k, Sz5 const sh)
   , shape{sh}
   , fft{FFT::Make<5, 3>(shape)}
 {
-  if (kSz < 3) {
-    Log::Fail("SLR kernel size less than 3 not supported");
-  }
+  if (kSz < 3) { Log::Fail("SLR kernel size less than 3 not supported"); }
   Log::Print("Structured Low-Rank λ {} Kernel-size {} Shape {}", λ, kSz, shape);
 }
 
@@ -84,9 +81,7 @@ void SLR::apply(float const α, CMap const &xin, Map &zin) const
   fft->forward(z);
   Cx6 kernels = ToKernels(z, kSz);
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
-  if (kMat.rows() > kMat.cols()) {
-    Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols());
-  }
+  if (kMat.rows() > kMat.cols()) { Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols()); }
   auto const svd = SVD<Cx>(kMat, true, false);
   Eigen::VectorXf const s = (svd.vals > thresh).select(svd.vals, 0.f);
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
@@ -97,4 +92,4 @@ void SLR::apply(float const α, CMap const &xin, Map &zin) const
   Log::Print("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
 }
 
-} // namespace rl
+} // namespace rl::Prox

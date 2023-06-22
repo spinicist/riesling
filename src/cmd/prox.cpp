@@ -38,20 +38,20 @@ int main_prox(args::Subparser &parser)
   Cx5 const images = input.readTensor<Cx5>(HD5::Keys::Image) * Cx(scale.Get());
   Cx5 output(images.dimensions());
 
-  using Map = Prox<Cx>::Map;
-  using CMap = Prox<Cx>::CMap;
+  using Map = Prox::Prox<Cx>::Map;
+  using CMap = Prox::Prox<Cx>::CMap;
 
   Sz4 const dims = FirstN<4>(images.dimensions());
   Index const nvox = Product(dims);
-  std::shared_ptr<Prox<Cx>> prox;
+  std::shared_ptr<Prox::Prox<Cx>> prox;
   if (wavelets) {
-    prox = std::make_shared<ThresholdWavelets>(wavelets.Get(), dims, waveWidth.Get(), waveLevels.Get());
+    prox = std::make_shared<Prox::ThresholdWavelets>(wavelets.Get(), dims, waveWidth.Get(), waveLevels.Get());
   } else if (llr) {
-    prox = std::make_shared<LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), dims);
+    prox = std::make_shared<Prox::LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), dims);
   } else if (l1) {
-    prox = std::make_shared<SoftThreshold>(l1.Get(), nvox);
+    prox = std::make_shared<Prox::SoftThreshold>(l1.Get(), nvox);
   } else if (nmrent) {
-    prox = std::make_shared<Entropy>(nmrent.Get(), nvox);
+    prox = std::make_shared<Prox::Entropy>(nmrent.Get(), nvox);
   } else {
     throw args::Error("Must specify at least one regularization method");
   }

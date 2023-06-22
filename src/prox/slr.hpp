@@ -3,7 +3,7 @@
 #include "fft/fft.hpp"
 #include "prox.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
 struct SLR final : Prox<Cx>
 {
@@ -17,4 +17,5 @@ private:
   Sz5 shape;
   std::shared_ptr<FFT::FFT<5, 3>> fft;
 };
-} // namespace rl
+
+} // namespace rl::Prox

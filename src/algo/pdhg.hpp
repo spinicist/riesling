@@ -13,7 +13,7 @@ struct PDHG
   using CMap = typename Op::CMap;
   
   std::shared_ptr<Op> A, P, G; // System, pre-conditioner, prox transform
-  std::shared_ptr<Prox<Cx>> prox;
+  std::shared_ptr<Prox::Prox<Cx>> prox;
   Index iterLimit = 8;
 
   auto run(Cx const *bdata, float τ = 1.f /* Primal step size */) const -> Vector;

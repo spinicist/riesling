@@ -76,7 +76,7 @@ int main_admm(args::Subparser &parser)
   }
 
   std::vector<std::shared_ptr<Ops::Op<Cx>>> reg_ops;
-  std::vector<std::shared_ptr<Prox<Cx>>> prox;
+  std::vector<std::shared_ptr<Prox::Prox<Cx>>> prox;
   std::shared_ptr<Ops::Op<Cx>> ext_x = std::make_shared<TensorIdentity<Cx, 4>>(sz); // Need for TGV, sigh
   std::function<void(Index const, ADMM::Vector const &)> debug_x = [sz](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), sz, x.data());
@@ -87,10 +87,10 @@ int main_admm(args::Subparser &parser)
     ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<SoftThreshold>(tgv.Get(), op1->rows());
+    auto prox1 = std::make_shared<Prox::SoftThreshold>(tgv.Get(), op1->rows());
     auto grad_v = std::make_shared<GradVecOp>(grad_x->oshape);
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<SoftThreshold>(tgv.Get(), op2->rows());
+    auto prox2 = std::make_shared<Prox::SoftThreshold>(tgv.Get(), op2->rows());
     prox = {prox1, prox2};
     reg_ops = {op1, op2};
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
@@ -102,32 +102,32 @@ int main_admm(args::Subparser &parser)
 
   if (wavelets) {
     reg_ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
-    prox.push_back(std::make_shared<ThresholdWavelets>(wavelets.Get(), sz, waveWidth.Get(), waveLevels.Get()));
+    prox.push_back(std::make_shared<Prox::ThresholdWavelets>(wavelets.Get(), sz, waveWidth.Get(), waveLevels.Get()));
   }
 
   if (llr) {
     reg_ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
-    prox.push_back(std::make_shared<LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), sz));
+    prox.push_back(std::make_shared<Prox::LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), sz));
   }
 
   if (nmrent) {
     reg_ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
-    prox.push_back(std::make_shared<NMREntropy>(nmrent.Get(), reg_ops.back()->rows()));
+    prox.push_back(std::make_shared<Prox::NMREntropy>(nmrent.Get(), reg_ops.back()->rows()));
   }
 
   if (l1) {
     reg_ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(sz), ext_x));
-    prox.push_back(std::make_shared<SoftThreshold>(l1.Get(), reg_ops.back()->rows()));
+    prox.push_back(std::make_shared<Prox::SoftThreshold>(l1.Get(), reg_ops.back()->rows()));
   }
 
   if (tv) {
     reg_ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3}), ext_x));
-    prox.push_back(std::make_shared<SoftThreshold>(tv.Get(), reg_ops.back()->rows()));
+    prox.push_back(std::make_shared<Prox::SoftThreshold>(tv.Get(), reg_ops.back()->rows()));
   }
 
   if (tvt) {
     reg_ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<GradOp>(sz, std::vector<Index>{0}), ext_x));
-    prox.push_back(std::make_shared<SoftThreshold>(tvt.Get(), reg_ops.back()->rows()));
+    prox.push_back(std::make_shared<Prox::SoftThreshold>(tvt.Get(), reg_ops.back()->rows()));
   }
 
   if (prox.size() == 0) {

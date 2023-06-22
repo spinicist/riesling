@@ -49,33 +49,33 @@ int main_pdhg(args::Subparser &parser)
   auto const sz = A->ishape;
   auto P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
-  std::shared_ptr<Prox<Cx>> prox;
+  std::shared_ptr<Prox::Prox<Cx>> prox;
   std::shared_ptr<Ops::Op<Cx>> G;
 
   float σ = 1.f;
   if (wavelets) {
     G = std::make_shared<TensorIdentity<Cx, 4>>(sz);
-    prox = std::make_shared<ThresholdWavelets>(wavelets.Get(), sz, waveWidth.Get(), waveLevels.Get());
+    prox = std::make_shared<Prox::ThresholdWavelets>(wavelets.Get(), sz, waveWidth.Get(), waveLevels.Get());
   } else if (llr) {
     G = std::make_shared<TensorIdentity<Cx, 4>>(sz);
-    prox = std::make_shared<LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), sz);
+    prox = std::make_shared<Prox::LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), sz);
   } else if (nmrent) {
     G = std::make_shared<TensorIdentity<Cx, 4>>(sz);
-    prox = std::make_shared<NMREntropy>(nmrent.Get(), G->rows());
+    prox = std::make_shared<Prox::NMREntropy>(nmrent.Get(), G->rows());
   } else if (l1) {
     G = std::make_shared<TensorIdentity<Cx, 4>>(sz);
     auto eigG = PowerMethod(G, 32);
-    prox = std::make_shared<SoftThreshold>(l1.Get(), G->rows());
+    prox = std::make_shared<Prox::SoftThreshold>(l1.Get(), G->rows());
   } else if (tv) {
     G = std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3});
     auto eigG = PowerMethod(G, 32);
     σ = 1.f / eigG.val;
-    prox = std::make_shared<SoftThreshold>(tv.Get(), G->rows());
+    prox = std::make_shared<Prox::SoftThreshold>(tv.Get(), G->rows());
   } else if (tvt) {
     G = std::make_shared<GradOp>(sz, std::vector<Index>{0});
     auto eigG = PowerMethod(G, 32);
     σ = 1.f / eigG.val;
-    prox = std::make_shared<SoftThreshold>(tvt.Get(), G->rows());
+    prox = std::make_shared<Prox::SoftThreshold>(tvt.Get(), G->rows());
   } else {
     Log::Fail("At least one regularizer must be specified");
   }

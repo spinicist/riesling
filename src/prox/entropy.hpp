@@ -2,22 +2,26 @@
 
 #include "prox.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
-struct Entropy final : Prox<Cx> {
-    PROX_INHERIT(Cx)
-    Entropy(float const λ, Index const sz);
-    void apply(float const α, CMap const &x, Map &z) const;
+struct Entropy final : Prox<Cx>
+{
+  PROX_INHERIT(Cx)
+  Entropy(float const λ, Index const sz);
+  void apply(float const α, CMap const &x, Map &z) const;
+
 private:
-    float λ_;
+  float λ_;
 };
 
-struct NMREntropy final : Prox<Cx> {
-    PROX_INHERIT(Cx)
-    NMREntropy(float const λ, Index const sz);
-    void apply(float const α, CMap const &x, Map &z) const;
+struct NMREntropy final : Prox<Cx>
+{
+  PROX_INHERIT(Cx)
+  NMREntropy(float const λ, Index const sz);
+  void apply(float const α, CMap const &x, Map &z) const;
+
 private:
-    float λ_;
+  float λ_;
 };
 
-} // namespace rl
+} // namespace rl::Prox

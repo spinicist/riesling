@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 
-namespace rl {
+namespace rl::Prox {
 
 SoftThreshold::SoftThreshold(float const λ_, Index const sz)
   : Prox<Cx>(sz)
