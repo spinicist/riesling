@@ -63,6 +63,12 @@ auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>
 }
 
 template <typename S>
+auto Op<S>::inverse(float const bias, float const scale) const -> std::shared_ptr<Op<S>>
+{
+  Log::Fail("Op {} does not have an inverse", name);
+}
+
+template <typename S>
 auto Op<S>::operator+(S const) const -> std::shared_ptr<Op<S>>
 {
   Log::Fail("Op {} does not have operator+", name);
@@ -196,6 +202,17 @@ DiagRep<S>::DiagRep(Index const n, Vector const &v)
 }
 
 template <typename S>
+DiagRep<S>::DiagRep(Index const n, Vector const &v, float const b, float const sc)
+  : Op<S>("DiagRep")
+  , reps{n}
+  , s{v}
+  , isInverse{true}
+  , bias{b}
+  , scale{sc}
+{
+}
+
+template <typename S>
 auto DiagRep<S>::rows() const -> Index
 {
   return s.rows() * reps;
@@ -211,7 +228,12 @@ void DiagRep<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  y = x.array() * s.array().transpose().replicate(reps, 1).reshaped();
+  auto rep = s.array().transpose().replicate(reps, 1).reshaped();
+  if (isInverse) {
+    y = x.array() / (bias + scale * rep);
+  } else {
+    y = x.array() * rep;
+  }
 }
 
 template <typename S>
@@ -219,13 +241,18 @@ void DiagRep<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  x = y.array() * s.array().transpose().replicate(reps, 1).reshaped();
+  auto rep = s.array().transpose().replicate(reps, 1).reshaped();
+  if (isInverse) {
+    x = y.array() / (bias + scale * rep);
+  } else {
+    x = y.array() * rep;
+  }
 }
 
 template <typename S>
-auto DiagRep<S>::inverse() const -> std::shared_ptr<Op<S>>
+auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>
 {
-  return std::make_shared<DiagRep>(reps, 1.f / s.array());
+  return std::make_shared<DiagRep>(reps, s.array(), b, sc);
 }
 
 template struct DiagRep<float>;

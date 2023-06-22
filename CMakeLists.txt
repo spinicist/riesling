@@ -76,6 +76,7 @@ add_library(vineyard
     src/phantom/sphere.cpp
     src/phantom/shepp-logan.cpp
     src/prox/entropy.cpp
+    src/prox/l2.cpp
     src/prox/llr.cpp
     src/prox/prox.cpp
     src/prox/slr.cpp

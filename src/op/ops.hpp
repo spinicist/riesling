@@ -32,6 +32,7 @@ struct Op
   void adjoint(Vector const &y, Vector &x) const;
 
   virtual auto inverse() const -> std::shared_ptr<Op<Scalar>>;
+  virtual auto inverse(float const bias, float const scale) const -> std::shared_ptr<Op<Scalar>>;
   virtual auto operator+(Scalar const) const -> std::shared_ptr<Op<Scalar>>;
 };
 
@@ -102,18 +103,21 @@ struct DiagRep final : Op<Scalar>
   using typename Op<Scalar>::Vector;
 
   DiagRep(Index const reps, Vector const &s);
+  DiagRep(Index const reps, Vector const &s, float const b, float const sc);
 
   auto rows() const -> Index;
   auto cols() const -> Index;
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
-  
-  std::shared_ptr<Op<Scalar>> inverse() const;
+
+  std::shared_ptr<Op<Scalar>> inverse(float const bias, float const scale) const;
 
 private:
   Index reps;
   Vector s;
+  bool isInverse = false;
+  float bias = 0.f, scale = 0.f;
 };
 
 //! Multiply operators, i.e. y = A * B * x
