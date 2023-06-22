@@ -44,21 +44,4 @@ private:
   std::shared_ptr<Prox<Scalar>> p;
 };
 
-template <typename Scalar = Cx>
-struct StackProx final : Prox<Scalar>
-{
-  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = Eigen::Map<Vector>;
-  using CMap = Eigen::Map<Vector const>;
-
-  StackProx(std::shared_ptr<Prox<Scalar>> p1, std::shared_ptr<Prox<Scalar>> p2);
-
-  void apply(float const α, CMap const &x, Map &z) const;
-
-private:
-  std::shared_ptr<Prox<Scalar>> p1, p2;
-};
-
-
-
 } // namespace rl

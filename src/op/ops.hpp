@@ -174,7 +174,6 @@ struct DStack final : Op<Scalar>
 
   std::shared_ptr<Op<Scalar>> inverse() const;
 
-private:
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
 

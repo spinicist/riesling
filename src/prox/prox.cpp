@@ -57,20 +57,4 @@ void ConjugateProx<S>::apply(float const α, CMap const &x, Map &z) const
 template struct ConjugateProx<float>;
 template struct ConjugateProx<Cx>;
 
-template <typename S>
-StackProx<S>::StackProx(std::shared_ptr<Prox<S>> pp1, std::shared_ptr<Prox<S>> pp2)
-  : Prox<S>(pp1->sz + pp2->sz)
-  , p1{pp1}
-  , p2{pp2}
-{
-}
-
-template <typename S>
-void StackProx<S>::apply(float const α, CMap const &x, Map &z) const
-{
-}
-
-template struct StackProx<float>;
-template struct StackProx<Cx>;
-
 } // namespace rl
