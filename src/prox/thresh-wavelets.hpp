@@ -4,7 +4,7 @@
 #include "op/wavelets.hpp"
 #include "thresh.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 struct ThresholdWavelets final : Prox<Cx>
 {
@@ -18,4 +18,4 @@ private:
   SoftThreshold thresh_;
 };
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

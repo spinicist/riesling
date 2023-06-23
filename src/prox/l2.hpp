@@ -3,7 +3,7 @@
 #include "prox.hpp"
 #include "op/ops.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 struct L2 final : Prox<Cx> {
     PROX_INHERIT(Cx)

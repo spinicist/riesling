@@ -5,7 +5,7 @@
 #include "patches.hpp"
 #include "tensorOps.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
   : Prox<Cx>(Product(s))
@@ -36,4 +36,4 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
   Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
 }
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

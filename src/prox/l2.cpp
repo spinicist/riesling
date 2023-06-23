@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 L2::L2(float const λ_, CMap const bias)
   : Prox<Cx>(bias.rows())
@@ -27,4 +27,4 @@ void L2::apply(std::shared_ptr<Ops::Op<Cx>> const α, CMap const &x, Map &z) con
   Log::Print("L2 λ {} |x| {} |y| {} |z| {}", λ, x.norm(), y.norm(), z.norm());
 }
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

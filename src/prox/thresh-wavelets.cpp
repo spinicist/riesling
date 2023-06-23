@@ -1,6 +1,6 @@
 #include "thresh-wavelets.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 ThresholdWavelets::ThresholdWavelets(float const λ, Sz4 const shape, Index const W, Index const L)
   : Prox<Cx>(Product(shape))
@@ -18,4 +18,4 @@ void ThresholdWavelets::apply(float const α, CMap const &x, Map &z) const
   waves_->adjoint(z);
 }
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

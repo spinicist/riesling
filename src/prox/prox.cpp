@@ -2,7 +2,7 @@
 
 #include "log.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 template <typename S>
 Prox<S>::Prox(Index const s)
@@ -88,4 +88,4 @@ void ConjugateProx<S>::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z
 template struct ConjugateProx<float>;
 template struct ConjugateProx<Cx>;
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

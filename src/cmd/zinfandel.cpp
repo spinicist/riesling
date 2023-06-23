@@ -84,7 +84,7 @@ int main_zinfandel(args::Subparser &parser)
     auto M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
     // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
     auto id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
-    auto slr = std::make_shared<Prox::SLR>(λ.Get(), kSz.Get(), shape);
+    auto slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
     std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
     };

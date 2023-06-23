@@ -3,7 +3,7 @@
 #include "op/ops.hpp"
 #include "types.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 template <typename Scalar = Cx>
 struct Prox
@@ -49,4 +49,4 @@ private:
   std::shared_ptr<Prox<Scalar>> p;
 };
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

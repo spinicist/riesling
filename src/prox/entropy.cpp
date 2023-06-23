@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 Entropy::Entropy(float const λ, Index const sz)
   : Prox<Cx>(sz)
@@ -46,4 +46,4 @@ void NMREntropy::apply(float const α, CMap const &v, Map &z) const
   Log::Print("NMR Entropy α {} λ {} t {} |v| {} |z| {}", α, λ_, t, v.norm(), z.norm());
 }
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

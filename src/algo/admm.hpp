@@ -20,7 +20,7 @@ struct ADMM
   float cTol = 1.e-6f;
 
   std::vector<std::shared_ptr<Op>> reg_ops;
-  std::vector<std::shared_ptr<Prox::Prox<Cx>>> prox;
+  std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
   Index outerLimit = 8;
   float α = 1.f;  // Over-relaxation
   float μ = 10.f; // Primal-dual mismatch limit

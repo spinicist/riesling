@@ -6,7 +6,7 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
 {
@@ -92,4 +92,4 @@ void SLR::apply(float const α, CMap const &xin, Map &zin) const
   Log::Print("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
 }
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

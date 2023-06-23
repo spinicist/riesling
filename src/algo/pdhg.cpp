@@ -9,18 +9,27 @@
 
 namespace rl {
 
-auto PDHG::run(Cx const *bdata, float eigG, float τ) const -> Vector
+auto PDHG::run(Cx const *bdata, float τ) const -> Vector
 {
+  Index const nR = G.size();
+  assert(prox.size() == nR);
+  assert(σG.size() == nR);
   CMap const b(bdata, A->rows());
-
   std::shared_ptr<Op> Aʹ = std::make_shared<Ops::VStack<Cx>>(A, G);
-  std::vector<std::shared_ptr<Prox::Prox<Cx>>> ps;
-  ps.push_back(std::make_shared<Prox::L2>(1.f, b));
-  ps.push_back(std::make_shared<Prox::ConjugateProx<Cx>>(prox));
-  Prox::StackProx proxS(ps);
+  std::shared_ptr<Prox> l2 = std::make_shared<Proxs::L2>(1.f, b);
+  std::vector<std::shared_ptr<Prox>> ps;
+  ps.push_back(l2);
+  for (Index ii = 0; ii < nR; ii++) {
+    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(prox[ii]));
+  }
+  Proxs::StackProx proxʹ(ps);
 
-  auto σG = std::make_shared<Ops::DiagScale<Cx>>(G->rows(), eigG);
-  std::shared_ptr<Ops::Op<Cx>> σ = std::make_shared<Ops::DStack<Cx>>(P, σG);
+  std::vector<std::shared_ptr<Op>> sG;
+  sG.push_back(P);
+  for (Index ii = 0; ii < nR; ii++) {
+    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(G[ii]->rows(), σG[ii]));
+  }
+  std::shared_ptr<Ops::Op<Cx>> σ = std::make_shared<Ops::DStack<Cx>>(sG);
 
   if (τ < 0.f) {
     auto eig = PowerMethodForward(Aʹ, σ, 32);
@@ -35,11 +44,11 @@ auto PDHG::run(Cx const *bdata, float eigG, float τ) const -> Vector
   xold.setZero();
   xdiff.setZero();
 
-  Log::Print("PDHG τ {}", τ);
+  Log::Print("PDHG τ {} σ {}", τ, fmt::join(σG, ","));
   for (Index ii = 0; ii < iterLimit; ii++) {
     xold = x;
     v = u + σ->forward(Aʹ->forward(x̅));
-    proxS.apply(σ, v, u);
+    proxʹ.apply(σ, v, u);
     x = x - τ * Aʹ->adjoint(u);
     xdiff = x - xold;
     x̅ = x + xdiff;

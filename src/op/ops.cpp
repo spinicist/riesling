@@ -322,6 +322,15 @@ VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
 }
 
 template <typename S>
+VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::vector<std::shared_ptr<Op<S>>> const &others)
+  : Op<S>{"VStack"}
+  , ops{op1}
+{
+  ops.insert(ops.end(), others.begin(), others.end());
+  check();
+}
+
+template <typename S>
 void VStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {

@@ -149,6 +149,7 @@ struct VStack final : Op<Scalar>
 
   VStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
   VStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
+  VStack(std::shared_ptr<Op<Scalar>> op1, std::vector<std::shared_ptr<Op<Scalar>>> const &others);
   auto rows() const -> Index;
   auto cols() const -> Index;
 

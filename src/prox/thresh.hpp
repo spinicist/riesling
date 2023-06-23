@@ -2,7 +2,7 @@
 
 #include "prox.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 struct SoftThreshold final : Prox<Cx> {
     PROX_INHERIT(Cx)

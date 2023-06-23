@@ -2,7 +2,7 @@
 
 #include "prox.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 struct Entropy final : Prox<Cx>
 {
@@ -24,4 +24,4 @@ private:
   float λ_;
 };
 
-} // namespace rl::Prox
+} // namespace rl::Proxs

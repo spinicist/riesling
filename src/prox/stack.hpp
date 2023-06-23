@@ -3,7 +3,7 @@
 #include "op/ops.hpp"
 #include "prox.hpp"
 
-namespace rl::Prox {
+namespace rl::Proxs {
 
 template <typename Scalar = Cx>
 struct StackProx final : Prox<Scalar>
@@ -13,6 +13,7 @@ struct StackProx final : Prox<Scalar>
   using CMap = Eigen::Map<Vector const>;
 
   StackProx(std::vector<std::shared_ptr<Prox<Scalar>>> p);
+  StackProx(std::shared_ptr<Prox<Scalar>> p1, std::vector<std::shared_ptr<Prox<Scalar>>> const p);
 
   using Prox<Scalar>::apply;
 
@@ -23,4 +24,4 @@ private:
   std::vector<std::shared_ptr<Prox<Scalar>>> proxs;
 };
 
-} // namespace rl::Prox
+} // namespace rl::Proxs
