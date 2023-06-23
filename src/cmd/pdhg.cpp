@@ -40,6 +40,8 @@ int main_pdhg(args::Subparser &parser)
   args::ValueFlag<Index> waveLevels(parser, "W", "Wavelet denoising levels", {"wavelet-levels"}, 4);
   args::ValueFlag<Index> waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6);
 
+  args::ValueFlag<float> σin(parser, "σ", "Pre-computed σ", {"sigma"});
+  args::ValueFlag<float> τin(parser, "τ", "Pre-computed τ", {"tau"}, -1.f);
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
@@ -52,7 +54,6 @@ int main_pdhg(args::Subparser &parser)
   std::shared_ptr<Prox::Prox<Cx>> prox;
   std::shared_ptr<Ops::Op<Cx>> G;
 
-  float σ = 1.f;
   if (wavelets) {
     G = std::make_shared<TensorIdentity<Cx, 4>>(sz);
     prox = std::make_shared<Prox::ThresholdWavelets>(wavelets.Get(), sz, waveWidth.Get(), waveLevels.Get());
@@ -64,23 +65,34 @@ int main_pdhg(args::Subparser &parser)
     prox = std::make_shared<Prox::NMREntropy>(nmrent.Get(), G->rows());
   } else if (l1) {
     G = std::make_shared<TensorIdentity<Cx, 4>>(sz);
-    auto eigG = PowerMethod(G, 32);
     prox = std::make_shared<Prox::SoftThreshold>(l1.Get(), G->rows());
   } else if (tv) {
     G = std::make_shared<GradOp>(sz, std::vector<Index>{1, 2, 3});
-    auto eigG = PowerMethod(G, 32);
-    σ = 1.f / eigG.val;
     prox = std::make_shared<Prox::SoftThreshold>(tv.Get(), G->rows());
   } else if (tvt) {
     G = std::make_shared<GradOp>(sz, std::vector<Index>{0});
-    auto eigG = PowerMethod(G, 32);
-    σ = 1.f / eigG.val;
     prox = std::make_shared<Prox::SoftThreshold>(tvt.Get(), G->rows());
   } else {
     Log::Fail("At least one regularizer must be specified");
   }
 
-  PDHG pdhg{A, P, G, prox, its.Get()};
+  float σ;
+  if (σin) {
+    σ = σin.Get();
+  } else {
+    auto eigG = PowerMethod(G, 32);
+    σ = 1.f / eigG.val;
+    Log::Print("σ {}", σ);
+  }
+
+  std::function<void(Index const, PDHG::Vector const &, PDHG::Vector const &, PDHG::Vector const &)> debug_x =
+    [sz](Index const ii, PDHG::Vector const &x, PDHG::Vector const &x̅, PDHG::Vector const &xdiff) {
+      Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), sz, x.data());
+      Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), sz, x̅.data());
+      Log::Tensor(fmt::format("pdhg-xdiff-{:02d}", ii), sz, xdiff.data());
+    };
+
+  PDHG pdhg{A, P, G, prox, its.Get(), debug_x};
   Cropper out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
@@ -90,7 +102,7 @@ int main_pdhg(args::Subparser &parser)
   Cx5 out(sz[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
-    auto x = pdhg.run(&allData(0, 0, 0, 0, iv), σ);
+    auto x = pdhg.run(&allData(0, 0, 0, 0, iv), σ, τin.Get());
     auto xm = Tensorfy(x, sz);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
   }

@@ -24,9 +24,8 @@ void StackProx<S>::apply(float const α, CMap const &x, Map &z) const
 template <typename S>
 void StackProx<S>::apply(std::shared_ptr<Ops::Op<S>> const αs1, CMap const &x, Map &z) const
 {
-  assert(α->ops.size() == proxs.size());
-
   if (auto const αs = std::dynamic_pointer_cast<Ops::DStack<S>>(αs1)) {
+    assert(αs->ops.size() == proxs.size());
     Index st = 0;
     for (Index ii = 0; ii < proxs.size(); ii++) {
       auto &p = proxs[ii];

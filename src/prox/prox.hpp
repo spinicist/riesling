@@ -11,13 +11,18 @@ struct Prox
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
   using Map = Eigen::Map<Vector>;
   using CMap = Eigen::Map<Vector const>;
+  using Op = Ops::Op<Scalar>;
 
   Prox(Index const sz);
 
-  void apply(float const α, Vector const &x, Vector &z) const;
   auto apply(float const α, Vector const &x) const -> Vector;
-  virtual void apply(std::shared_ptr<Ops::Op<Scalar>> const α, CMap const &x, Map &z) const;
+  auto apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector;
+
+  void apply(float const α, Vector const &x, Vector &z) const;
+  void apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const;
+
   virtual void apply(float const α, CMap const &x, Map &z) const = 0;
+  virtual void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
 
   virtual ~Prox(){};
 
@@ -25,20 +30,20 @@ struct Prox
 };
 
 #define PROX_INHERIT(Scalar)                                                                                                   \
-  using Prox<Scalar>::Vector;                                                                                                  \
-  using Prox<Scalar>::Map;                                                                                                     \
-  using Prox<Scalar>::CMap;
+  using Vector = typename Prox<Scalar>::Vector;                                                                                \
+  using Map = typename Prox<Scalar>::Map;                                                                                      \
+  using CMap = typename Prox<Scalar>::CMap;                                                                                    \
+  using Op = typename Prox<Scalar>::Op;
 
 template <typename Scalar = Cx>
 struct ConjugateProx final : Prox<Scalar>
 {
-  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = Eigen::Map<Vector>;
-  using CMap = Eigen::Map<Vector const>;
+  PROX_INHERIT(Scalar)
 
   ConjugateProx(std::shared_ptr<Prox<Scalar>> p);
 
   void apply(float const α, CMap const &x, Map &z) const;
+  void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
 
 private:
   std::shared_ptr<Prox<Scalar>> p;

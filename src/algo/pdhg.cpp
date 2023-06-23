@@ -1,35 +1,51 @@
 #include "pdhg.hpp"
 
+#include "algo/eig.hpp"
 #include "common.hpp"
 #include "log.hpp"
+#include "prox/l2.hpp"
+#include "prox/stack.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {
 
-auto PDHG::run(Cx const *bdata, float σ) const -> Vector
+auto PDHG::run(Cx const *bdata, float eigG, float τ) const -> Vector
 {
   CMap const b(bdata, A->rows());
-  Vector u(A->rows());
+
+  std::shared_ptr<Op> Aʹ = std::make_shared<Ops::VStack<Cx>>(A, G);
+  std::vector<std::shared_ptr<Prox::Prox<Cx>>> ps;
+  ps.push_back(std::make_shared<Prox::L2>(1.f, b));
+  ps.push_back(std::make_shared<Prox::ConjugateProx<Cx>>(prox));
+  Prox::StackProx proxS(ps);
+
+  auto σG = std::make_shared<Ops::DiagScale<Cx>>(G->rows(), eigG);
+  std::shared_ptr<Ops::Op<Cx>> σ = std::make_shared<Ops::DStack<Cx>>(P, σG);
+
+  if (τ < 0.f) {
+    auto eig = PowerMethodForward(Aʹ, σ, 32);
+    τ = 1.f / eig.val;
+  }
+
+  Vector u(Aʹ->rows()), v(Aʹ->rows());
   u.setZero();
-  Vector x(A->cols()), xbar(A->cols()), xold(A->cols()), xdiff(A->cols()), v(G->rows());
+  Vector x(Aʹ->cols()), x̅(Aʹ->cols()), xold(Aʹ->cols()), xdiff(Aʹ->cols());
   x.setZero();
-  xbar.setZero();
+  x̅.setZero();
   xold.setZero();
   xdiff.setZero();
-  v.setZero();
 
-  auto lhs = (*P + 1.f)->inverse();
-
-  Log::Print("PDHG σ {}", σ);
+  Log::Print("PDHG τ {}", τ);
   for (Index ii = 0; ii < iterLimit; ii++) {
     xold = x;
-    u = lhs->forward(u + P->forward(A->forward(xbar) - b));
-    v = prox->apply(1.f, v + σ * G->forward(xbar));
-    x = x - (A->adjoint(u) + G->adjoint(v));
+    v = u + σ->forward(Aʹ->forward(x̅));
+    proxS.apply(σ, v, u);
+    x = x - τ * Aʹ->adjoint(u);
     xdiff = x - xold;
-    xbar = x + xdiff;
-    float const normr = xdiff.norm() / std::sqrt(1.f);
+    x̅ = x + xdiff;
+    float const normr = xdiff.norm() / std::sqrt(τ);
     Log::Print("PDHG {:02d}: |r| {}", ii, normr);
+    if (debug) { debug(ii, x, x̅, xdiff); }
   }
   return x;
 }

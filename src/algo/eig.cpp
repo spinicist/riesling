@@ -28,7 +28,7 @@ auto PowerMethodForward(std::shared_ptr<Ops::Op<Cx>> A, std::shared_ptr<Ops::Op<
     vec = A->adjoint(P->adjoint(A->forward(vec)));
     val = vec.norm();
     vec /= val;
-    Log::Print<Log::Level::High>("Iteration {} Eigenvalue {}", ii, val);
+    Log::Print("Iteration {} Eigenvalue {}", ii, val);
   }
 
   return {val, vec};
@@ -44,7 +44,7 @@ auto PowerMethodAdjoint(std::shared_ptr<Ops::Op<Cx>> A, std::shared_ptr<Ops::Op<
     vec = P->adjoint(A->forward(A->adjoint(vec)));
     val = vec.norm();
     vec /= val;
-    Log::Print<Log::Level::High>("Iteration {} Eigenvalue {}", ii, val);
+    Log::Print("Iteration {} Eigenvalue {}", ii, val);
   }
 
   return {val, vec};
