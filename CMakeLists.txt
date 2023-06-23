@@ -36,6 +36,7 @@ add_library(vineyard
     src/parse_args.cpp
     src/patches.cpp
     src/precond.cpp
+    src/regularizers.cpp
     src/scaling.cpp
     src/sdc.cpp
     src/signals.cpp
