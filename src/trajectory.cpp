@@ -83,11 +83,11 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
     });
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
     dsamp = 1.f / scale;
-    dsInfo.voxel_size = info_.voxel_size * scale;
+    dsInfo.voxel_size = info_.voxel_size * dsamp;
   }
   Index minSamp = nSamples(), maxSamp = 0;
   Re3 dsPoints(points_.dimensions());
-  float const thresh = 0.5f / dsamp;
+  float const thresh = 0.5f * dsamp;
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {
       Re1 p = points_.chip<2>(it).chip<1>(is);
