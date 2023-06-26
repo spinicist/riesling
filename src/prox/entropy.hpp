@@ -11,7 +11,7 @@ struct Entropy final : Prox<Cx>
   void apply(float const α, CMap const &x, Map &z) const;
 
 private:
-  float λ_;
+  float λ;
 };
 
 struct NMREntropy final : Prox<Cx>
@@ -21,7 +21,7 @@ struct NMREntropy final : Prox<Cx>
   void apply(float const α, CMap const &x, Map &z) const;
 
 private:
-  float λ_;
+  float λ;
 };
 
 } // namespace rl::Proxs

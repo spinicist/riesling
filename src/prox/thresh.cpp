@@ -5,8 +5,8 @@
 
 namespace rl::Proxs {
 
-SoftThreshold::SoftThreshold(float const λ_, Index const sz)
-  : Prox<Cx>(sz)
+SoftThreshold::SoftThreshold(float const λ_, Index const sz_)
+  : Prox<Cx>(sz_)
   , λ{λ_}
 {
   Log::Print("Soft Threshold Prox λ {}", λ);

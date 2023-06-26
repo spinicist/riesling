@@ -447,7 +447,7 @@ template <typename S>
 auto DStack<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
   std::vector<std::shared_ptr<Op<S>>> inverses(ops.size());
-  for (Index ii = 0; ii < ops.size(); ii++) {
+  for (size_t ii = 0; ii < ops.size(); ii++) {
     inverses[ii] = ops[ii]->inverse();
   }
   return std::make_shared<DStack<S>>(inverses);

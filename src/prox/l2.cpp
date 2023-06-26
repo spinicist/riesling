@@ -6,10 +6,10 @@
 namespace rl::Proxs {
 
 template<typename S>
-L2<S>::L2(float const λ_, Index const sz)
-  : Prox<S>(sz)
+L2<S>::L2(float const λ_, Index const sz_)
+  : Prox<S>(sz_)
   , λ{λ_}
-  , y{nullptr, sz}
+  , y{nullptr, sz_}
 {
   Log::Print("L2 Prox λ {}", λ);
 }
