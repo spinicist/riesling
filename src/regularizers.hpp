@@ -19,7 +19,7 @@ struct RegOpts
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;
   args::ValueFlag<Index> llrWin;
-  args::Flag             llrShift;
+  args::Flag             llrShift, llrFFT;
 
   args::ValueFlag<Index> wavelets;
   args::ValueFlag<Index> waveLevels;

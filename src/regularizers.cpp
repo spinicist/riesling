@@ -2,6 +2,7 @@
 
 #include "algo/eig.hpp"
 #include "op/grad.hpp"
+#include "op/fft.hpp"
 #include "prox/entropy.hpp"
 #include "prox/llr.hpp"
 #include "prox/thresh-wavelets.hpp"
@@ -20,6 +21,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   , llrPatch(parser, "S", "Patch size for LLR (default 4)", {"llr-patch"}, 5)
   , llrWin(parser, "S", "Patch size for LLR (default 4)", {"llr-win"}, 3)
   , llrShift(parser, "S", "Enable random LLR shifting", {"llr-shift"})
+  , llrFFT(parser, "F", "Perform LLR in the Fourier domain", {"llr-fft"})
   ,
 
   wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"})
@@ -53,7 +55,11 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
   }
 
   if (opts.llr) {
-    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
+    if (opts.llrFFT) {
+      ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::FFTOp<4, 3>>(shape), ext_x));
+    } else {
+      ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
+    }
     prox.push_back(std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape));
   }
 

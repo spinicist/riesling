@@ -6,7 +6,7 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
-namespace rl {
+namespace rl::Ops {
 
 template <int Rank, int FFTRank>
 struct FFTOp final : TensorOperator<Cx, Rank, Rank>
