@@ -12,9 +12,12 @@ Options:
 git submodule update --init --recursive
 
 FLAGS="base"
-while getopts "f:h" opt; do
+PAR=""
+while getopts "f:hj:" opt; do
     case $opt in
         f) export FLAGS="$OPTARG";;
+        j) export VCPKG_MAX_CONCURRENCY=$OPTARG
+           PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
     esac
@@ -34,4 +37,4 @@ cmake -S ../ $GEN \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake" \
   -DFLAGS_FILE="${FLAGS}"
-cmake --build .
+cmake --build . $PAR
