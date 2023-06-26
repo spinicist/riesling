@@ -47,8 +47,10 @@ auto PDHG::run(Cx const *bdata, float τ) const -> Vector
   Log::Print("PDHG τ {} σ {}", τ, fmt::join(σG, ","));
   for (Index ii = 0; ii < iterLimit; ii++) {
     xold = x;
+    Log::Print<Log::Level::High>("PDHG updating dual");
     v = u + σ->forward(Aʹ->forward(x̅));
     proxʹ.apply(σ, v, u);
+    Log::Print<Log::Level::High>("PDHG updating primal");
     x = x - τ * Aʹ->adjoint(u);
     xdiff = x - xold;
     x̅ = x + xdiff;
