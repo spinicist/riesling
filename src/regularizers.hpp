@@ -32,6 +32,7 @@ struct Regularizers {
   std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
   std::shared_ptr<Ops::Op<Cx>> ext_x;
 
+  auto count() const -> Index;
   auto σ(std::vector<float> σin) const -> std::vector<float>;
 };
 

@@ -35,6 +35,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(nufft, "nufft", "Apply forward/reverse NUFFT");
   COMMAND(pad, "pad", "Pad/crop an image");
   COMMAND(pdhg, "pdhg", "Primal-Dual Hybrid Gradient");
+  COMMAND(pdhg_setup, "pdhg-setup", "Calculate PDHG step sizes");
   COMMAND(phantom, "phantom", "Construct a digitial phantom");
   COMMAND(plan, "plan", "Plan FFTs");
   COMMAND(precond, "precond", "Precompute preconditioning weights");

@@ -25,8 +25,8 @@ int main_pdhg(args::Subparser &parser)
   args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::ValueFlag<Index> its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
 
-  args::ValueFlag<std::vector<float>, VectorReader<float>> σin(parser, "σ", "Pre-computed σ values", {"sigma"});
-  args::ValueFlag<float> τin(parser, "τ", "Pre-computed τ", {"tau"}, -1.f);
+  args::ValueFlag<std::vector<float>, VectorReader<float>> σin(parser, "σ", "Pre-computed dual step sizes", {"sigma"});
+  args::ValueFlag<float> τin(parser, "τ", "Pre-computed primal step size", {"tau"}, -1.f);
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
@@ -46,7 +46,7 @@ int main_pdhg(args::Subparser &parser)
       Log::Tensor(fmt::format("pdhg-xdiff-{:02d}", ii), shape, xdiff.data());
     };
 
-  PDHG pdhg{A, P, reg.ops, reg.prox, reg.σ(σin.Get()), its.Get(), debug_x};
+  PDHG pdhg(A, P, reg, σin.Get(), τin.Get(), debug_x);
   Cropper out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
   Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
@@ -56,7 +56,7 @@ int main_pdhg(args::Subparser &parser)
   Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], volumes);
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
-    auto x = pdhg.run(&allData(0, 0, 0, 0, iv), τin.Get());
+    auto x = pdhg.run(&allData(0, 0, 0, 0, iv), its.Get());
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
   }

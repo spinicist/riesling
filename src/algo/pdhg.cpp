@@ -9,47 +9,67 @@
 
 namespace rl {
 
-auto PDHG::run(Cx const *bdata, float τ) const -> Vector
+PDHG::PDHG(
+  std::shared_ptr<Op> A,
+  std::shared_ptr<Op> P,
+  Regularizers const &reg,
+  std::vector<float> const &σin,
+  float const τin,
+  Callback const &cb)
 {
-  Index const nR = G.size();
-  assert(prox.size() == nR);
-  assert(σG.size() == nR);
-  CMap const b(bdata, A->rows());
-  std::shared_ptr<Op> Aʹ = std::make_shared<Ops::VStack<Cx>>(A, G);
-  std::shared_ptr<Prox> l2 = std::make_shared<Proxs::L2>(1.f, b);
+  Index const nR = reg.count();
+
+  Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg.ops);
+  l2 = std::make_shared<Proxs::L2<Cx>>(1.f, A->rows());
   std::vector<std::shared_ptr<Prox>> ps;
   ps.push_back(l2);
   for (Index ii = 0; ii < nR; ii++) {
-    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(prox[ii]));
+    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(reg.prox[ii]));
   }
-  Proxs::StackProx proxʹ(ps);
+  proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
 
+  σ = reg.σ(σin);
   std::vector<std::shared_ptr<Op>> sG;
   sG.push_back(P);
   for (Index ii = 0; ii < nR; ii++) {
-    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(G[ii]->rows(), σG[ii]));
+    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(reg.ops[ii]->rows(), σ[ii]));
   }
-  std::shared_ptr<Ops::Op<Cx>> σ = std::make_shared<Ops::DStack<Cx>>(sG);
+  σOp = std::make_shared<Ops::DStack<Cx>>(sG);
 
-  if (τ < 0.f) {
-    auto eig = PowerMethodForward(Aʹ, σ, 32);
+  if (τin < 0.f) {
+    auto eig = PowerMethodForward(Aʹ, σOp, 32);
     τ = 1.f / eig.val;
+  } else {
+    τ = τin;
   }
 
-  Vector u(Aʹ->rows()), v(Aʹ->rows());
+  u.resize(Aʹ->rows());
   u.setZero();
-  Vector x(Aʹ->cols()), x̅(Aʹ->cols()), xold(Aʹ->cols()), xdiff(Aʹ->cols());
+  v.resize(Aʹ->rows());
+  v.setZero();
+  
+  x.resize(Aʹ->cols());
   x.setZero();
+  x̅.resize(Aʹ->cols());
   x̅.setZero();
+  xold.resize(Aʹ->cols());
   xold.setZero();
+  xdiff.resize(Aʹ->cols());
   xdiff.setZero();
 
-  Log::Print("PDHG τ {} σ {}", τ, fmt::join(σG, ","));
+  debug = cb;
+
+  Log::Print("PDHG σ {} τ {}", fmt::join(σ, ","), τ);
+}
+
+auto PDHG::run(Cx const *bdata, Index const iterLimit) -> Vector
+{
+  l2->setBias(bdata);
   for (Index ii = 0; ii < iterLimit; ii++) {
     xold = x;
     Log::Print<Log::Level::High>("PDHG updating dual");
-    v = u + σ->forward(Aʹ->forward(x̅));
-    proxʹ.apply(σ, v, u);
+    v = u + σOp->forward(Aʹ->forward(x̅));
+    proxʹ->apply(σOp, v, u);
     Log::Print<Log::Level::High>("PDHG updating primal");
     x = x - τ * Aʹ->adjoint(u);
     xdiff = x - xold;

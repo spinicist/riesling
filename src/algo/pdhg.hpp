@@ -1,7 +1,10 @@
 #pragma once
 
 #include "op/ops.hpp"
+#include "prox/l2.hpp"
 #include "prox/prox.hpp"
+#include "prox/stack.hpp"
+#include "regularizers.hpp"
 
 namespace rl {
 
@@ -12,17 +15,28 @@ struct PDHG
   using Scalar = typename Op::Scalar;
   using Vector = typename Op::Vector;
   using CMap = typename Op::CMap;
+  using Callback = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
 
-  std::shared_ptr<Op> A, P; // System, preconditioner, prox transform
-  std::vector<std::shared_ptr<Op>> G; // Prox transforms
-  std::vector<std::shared_ptr<Prox>> prox;
-  std::vector<float> σG; // Step-size/precond for prox transforms
+  PDHG(
+    std::shared_ptr<Op> A,
+    std::shared_ptr<Op> P,
+    Regularizers const &reg,
+    std::vector<float> const &σ = std::vector<float>(),
+    float const τ = -1.f,
+    Callback const &cb = nullptr);
 
-  Index iterLimit = 8;
+  auto run(Cx const *bdata, Index const iterLimit) -> Vector;
 
-  std::function<void(Index const, Vector const &, Vector const &, Vector const &)> debug = nullptr;
+  std::vector<float> σ;
+  float τ;
 
-  auto run(Cx const *bdata, float τ) const -> Vector;
+private:
+  std::shared_ptr<Op> Aʹ;
+  std::shared_ptr<Proxs::L2<Cx>> l2;
+  std::shared_ptr<Proxs::StackProx<Cx>> proxʹ;
+  std::shared_ptr<Ops::Op<Cx>> σOp;
+  Vector x, x̅, xold, xdiff, u, v;
+  Callback debug = nullptr;
 };
 
 } // namespace rl

@@ -79,6 +79,8 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
   if (prox.size() == 0) { Log::Fail("Must specify at least one regularizer"); }
 }
 
+auto Regularizers::count() const -> Index { return ops.size(); }
+
 auto Regularizers::σ(std::vector<float> σin) const -> std::vector<float>
 {
   if (σin.size() == 0) {
