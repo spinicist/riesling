@@ -1,28 +1,40 @@
-#include "log.hpp"
 #include "patches.hpp"
+#include "log.hpp"
 #include "threads.hpp"
 
 namespace rl {
 
 void Patches(
-  Index const patchSize,
-  Index const windowSize,
-  PatchFunction const &apply,
+  Index const                        patchSize,
+  Index const                        windowSize,
+  bool const                         doShift,
+  PatchFunction const               &apply,
   Eigen::TensorMap<Cx4 const> const &x,
-  Eigen::TensorMap<Cx4> &y)
+  Eigen::TensorMap<Cx4>             &y)
 {
   Sz3 nWindows, shift;
-  std::random_device rd;
-  std::mt19937 gen(rd());
+
   for (Index ii = 0; ii < 3; ii++) {
     auto const d = x.dimension(ii + 1);
     nWindows[ii] = (d / windowSize) + 2;
-    std::uniform_int_distribution<> int_dist(0, windowSize - 1);
-    shift[ii] = int_dist(gen);
   }
+
+  if (doShift) {
+    std::random_device rd;
+    std::mt19937       gen(rd());
+    for (Index ii = 0; ii < 3; ii++) {
+      std::uniform_int_distribution<> int_dist(0, windowSize - 1);
+      shift[ii] = int_dist(gen);
+    }
+  } else {
+    for (Index ii = 0; ii < 3; ii++) {
+      shift[ii] = 0;
+    }
+  }
+
   Log::Print<Log::Level::Debug>("Windows {} Shifts {}", nWindows, shift);
   Index const K = x.dimension(0);
-  Sz4 const szP{K, patchSize, patchSize, patchSize};
+  Sz4 const   szP{K, patchSize, patchSize, patchSize};
   Index const inset = (patchSize - windowSize) / 2;
 
   auto zTask = [&](Index const iz) {
@@ -45,9 +57,7 @@ void Patches(
           stP[ii + 1] = std::clamp(st - inset, 0L, d - patchSize);
           stW2[ii + 1] = stW[ii + 1] - stP[ii + 1];
         }
-        if (empty) {
-          continue;
-        }
+        if (empty) { continue; }
         Cx4 xp = x.slice(stP, szP);
         Cx4 yp = apply(xp);
         y.slice(stW, szW) = yp.slice(stW2, szW);

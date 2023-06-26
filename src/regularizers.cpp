@@ -17,8 +17,9 @@ RegOpts::RegOpts(args::Subparser &parser)
   ,
 
   llr(parser, "L", "LLR regularization", {"llr"})
-  , llrPatch(parser, "shape", "Patch size for LLR (default 4)", {"llr-patch"}, 5)
-  , llrWin(parser, "shape", "Patch size for LLR (default 4)", {"llr-win"}, 3)
+  , llrPatch(parser, "S", "Patch size for LLR (default 4)", {"llr-patch"}, 5)
+  , llrWin(parser, "S", "Patch size for LLR (default 4)", {"llr-win"}, 3)
+  , llrShift(parser, "S", "Enable random LLR shifting", {"llr-shift"})
   ,
 
   wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"})
@@ -53,7 +54,7 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
 
   if (opts.llr) {
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
-    prox.push_back(std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), shape));
+    prox.push_back(std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape));
   }
 
   if (opts.nmrent) {

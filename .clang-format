@@ -25,5 +25,6 @@ AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveDeclarations: Consecutive
 BreakConstructorInitializers: BeforeComma
 ColumnLimit: 128

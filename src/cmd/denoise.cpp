@@ -47,7 +47,7 @@ int main_denoise(args::Subparser &parser)
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     img = images.chip<4>(iv);
     if (fft) { fft->forward(img); }
-    Patches(llrPatch.Get(), llrWin.Get(), hardLLR, ConstMap(img), outmap);
+    Patches(llrPatch.Get(), llrWin.Get(), false, hardLLR, ConstMap(img), outmap);
     if (fft) { fft->reverse(out); }
     images.chip<4>(iv) = out;
   }

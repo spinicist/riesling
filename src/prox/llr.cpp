@@ -7,12 +7,13 @@
 
 namespace rl::Proxs {
 
-LLR::LLR(float const l, Index const p, Index const w, Sz4 const s)
+LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 const s)
   : Prox<Cx>(Product(s))
   , λ{l}
   , patchSize{p}
   , windowSize{w}
   , shape{s}
+  , shift{doShift}
 {
   Log::Print("Locally Low-Rank λ {} Patch {} Window {}", λ, patchSize, windowSize);
 }
@@ -33,7 +34,7 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
     return yp;
   };
   Log::Print<Log::Level::High>("LLR α {} λ {} t {} starting", α, λ, realλ);
-  Patches(patchSize, windowSize, softLLR, x, z);
+  Patches(patchSize, windowSize, shift, softLLR, x, z);
   Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
 }
 
@@ -54,7 +55,7 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
       return yp;
     };
     Log::Print<Log::Level::High>("LLR α {} λ {} t {} starting", realα->scale, λ, realλ);
-    Patches(patchSize, windowSize, softLLR, x, z);
+    Patches(patchSize, windowSize, shift, softLLR, x, z);
     Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
   } else {
     Log::Fail("C++ is stupid");
