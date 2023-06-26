@@ -1,0 +1,7 @@
+[
+	{
+		"name": "vcpkg",
+		"toolchainFile": "cmake/toolchain.cmake",
+		"cmakeSettings": {}
+	}
+]
