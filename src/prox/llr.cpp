@@ -32,8 +32,33 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
     Cx4 yp = Tensorfy(patch, xp.dimensions());
     return yp;
   };
+  Log::Print<Log::Level::High>("LLR α {} λ {} t {} starting", α, λ, realλ);
   Patches(patchSize, windowSize, softLLR, x, z);
   Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
+}
+
+void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
+{
+  if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
+    Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
+    Eigen::TensorMap<Cx4> z(zin.data(), shape);
+    float const realλ = λ * realα->scale * std::sqrt(patchSize * patchSize * patchSize);
+
+    auto softLLR = [realλ](Cx4 const &xp) {
+      Eigen::MatrixXcf patch = CollapseToMatrix(xp);
+      auto const svd = SVD<Cx>(patch, true, false);
+      // Soft-threhold svals
+      Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
+      patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
+      Cx4 yp = Tensorfy(patch, xp.dimensions());
+      return yp;
+    };
+    Log::Print<Log::Level::High>("LLR α {} λ {} t {} starting", realα->scale, λ, realλ);
+    Patches(patchSize, windowSize, softLLR, x, z);
+    Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
+  } else {
+    Log::Fail("C++ is stupid");
+  }
 }
 
 } // namespace rl::Proxs
