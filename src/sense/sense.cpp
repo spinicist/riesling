@@ -75,7 +75,7 @@ Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, std::optional<Re2
   Log::Print("{}", opts.type.Get());
   if (opts.type.Get() == "auto") {
     Cx4 channels = LoresGrid(opts, core, traj, basis, reader);
-    return UniformNoise(opts.λ, shape, channels);
+    return UniformNoise(opts.λ.Get(), shape, channels);
   } else if (opts.type.Get() == "espirit") {
     auto grid = LoresGrid(opts, core, traj, basis, reader);
     return ESPIRIT(grid, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
