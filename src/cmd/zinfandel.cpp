@@ -80,7 +80,7 @@ int main_zinfandel(args::Subparser &parser)
     Log::Print("Extended {}", extended.matrix());
     auto A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());
     Sz5 const shape = A->ishape;
-    Re2 const w = KSpaceSingle(lores, std::nullopt, 1.f);
+    Re2 const w = KSpaceSingle(lores, std::nullopt);
     auto M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
     // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
     auto id = std::make_shared<TensorIdentity<Cx, 5>>(shape);

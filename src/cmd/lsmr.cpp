@@ -22,7 +22,6 @@ int main_lsmr(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
@@ -34,7 +33,7 @@ int main_lsmr(args::Subparser &parser)
   Trajectory traj(reader);
   Info const &info = traj.info();
   auto A = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto M = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto M = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
   auto debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data());
   };

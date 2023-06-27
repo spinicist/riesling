@@ -22,7 +22,6 @@ int main_pdhg(args::Subparser &parser)
   RegOpts regOpts(parser);
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::ValueFlag<Index> its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
 
   args::ValueFlag<std::vector<float>, VectorReader<float>> σin(parser, "σ", "Pre-computed dual step sizes", {"sigma"});
@@ -34,7 +33,7 @@ int main_pdhg(args::Subparser &parser)
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto const shape = recon->ishape;
-  auto P = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto P = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers reg(regOpts, shape, A);

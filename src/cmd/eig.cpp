@@ -21,7 +21,6 @@ int main_eig(args::Subparser &parser)
   args::Flag adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float> preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::Flag recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
   args::Flag savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
   ParseCommand(parser, coreOpts.iname);
@@ -29,7 +28,7 @@ int main_eig(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader);
   auto A = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
-  auto P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());
