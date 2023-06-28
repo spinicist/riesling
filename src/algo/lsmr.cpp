@@ -44,8 +44,8 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   float minρ̅ = std::numeric_limits<float>::max();
   float const normb = β;
 
-  Log::Print("LSMR α {:5.3E} β {:5.3E} λ {}", α, β, λ);
-  Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
+  Log::Print("LSMR λ {}", λ);
+  Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
@@ -107,7 +107,7 @@ auto LSMR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
     float const normAr = abs(ζ̅);
     float const normx = x.norm();
 
-    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, α, β, normr, normAr, normA, condA, normx);
+    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, normx, normr, normAr, normA, condA);
 
     if (debug) { debug(ii, x); }
 

@@ -6,9 +6,9 @@ using namespace rl;
 
 int main_h5(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file to dump info from");
-  args::Flag info(parser, "INFO", "Print header information", {"info", 'i'});
-  args::Flag dsets(parser, "DSETS", "List datasets and dimensions", {"dsets", 'd'});
+  args::Positional<std::string>    iname(parser, "FILE", "Input HD5 file to dump info from");
+  args::Flag                       info(parser, "INFO", "Print header information", {"info", 'i'});
+  args::Flag                       dsets(parser, "DSETS", "List datasets and dimensions", {"dsets", 'd'});
   args::ValueFlagList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed", {"meta", 'm'});
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
@@ -16,11 +16,11 @@ int main_h5(args::Subparser &parser)
   if (info) {
     auto const i = reader.readInfo();
     fmt::print(
-      FMT_STRING("Matrix:     {}\n"
-                 "Voxel-size: {}\n"
-                 "TR:         {}\n"
-                 "Origin: {}\n"
-                 "Direction:\n{}\n"),
+      "Matrix:     {}\n"
+      "Voxel-size: {}\n"
+      "TR:         {}\n"
+      "Origin: {}\n"
+      "Direction:\n{}\n",
       i.matrix,
       i.voxel_size.transpose(),
       i.tr,
@@ -28,9 +28,7 @@ int main_h5(args::Subparser &parser)
       i.direction);
   } else if (dsets) {
     auto const datasets = reader.list();
-    if (datasets.empty()) {
-      Log::Fail("No datasets found in {}", iname.Get());
-    }
+    if (datasets.empty()) { Log::Fail("No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
       fmt::print("{} ", ds);
       switch (reader.rank(ds)) {

@@ -36,7 +36,7 @@ int main_pdhg_setup(args::Subparser &parser)
 
   PDHG pdhg(A, P, reg);
 
-  fmt::print("{:.05f}\n{:.05f}", fmt::join(pdhg.σ, ","), pdhg.τ);
+  fmt::print("{:5.3E}\n{:5.3E}", fmt::join(pdhg.σ, ","), pdhg.τ);
 
   return EXIT_SUCCESS;
 }

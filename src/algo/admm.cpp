@@ -25,10 +25,10 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     u_i = F_i * x + u_i - z_i
     */
 
-  Index const R = reg_ops.size();
-  std::vector<Vector> z(R), zold(R), u(R), Fx(R), Fxpu(R);
+  Index const                                      R = reg_ops.size();
+  std::vector<Vector>                              z(R), zold(R), u(R), Fx(R), Fxpu(R);
   std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
-  std::vector<std::shared_ptr<Ops::Op<Cx>>> scaled_ops(R);
+  std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
   for (Index ir = 0; ir < R; ir++) {
     Index const sz = reg_ops[ir]->rows();
     z[ir].resize(sz);
@@ -76,7 +76,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     if (debug_x) { debug_x(io, x); }
 
     float const normx = x.norm();
-    float pNorm = 0.f, dNorm = 0.f, normz = 0.f, normu = 0.f;
+    float       pNorm = 0.f, dNorm = 0.f, normz = 0.f, normu = 0.f;
     for (Index ir = 0; ir < R; ir++) {
       Fx[ir] = reg_ops[ir]->forward(x);
       Fxpu[ir] = Fx[ir] * α - z[ir] * (α - 1.f) + u[ir];
@@ -99,16 +99,16 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
     float const dEps = abstol * sqrtN + reltol * std::sqrt(R) * ρ * normu;
     Log::Print(
-      FMT_STRING("ADMM Iter {:02d} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E} |z| "
-                 "{:5.3E} |u| {:5.3E}"),
+      "ADMM Iter {:02d} |x| {:5.3E} |z| {:5.3E} |u| {:5.3E} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E}",
       io,
+      normx,
+      normz,
+      normu,
       ρ,
       pNorm,
       pEps,
       dNorm,
-      dEps,
-      normz,
-      normu);
+      dEps);
 
     if ((pNorm < pEps) && (dNorm < dEps)) {
       Log::Print("All primal and dual tolerances achieved, stopping");

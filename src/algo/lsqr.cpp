@@ -27,8 +27,8 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
   float cs2 = -1.f;
   float sn2 = 0.f;
 
-  Log::Print("LSQR α {:5.3E} β {:5.3E} λ {}", α, β, λ);
-  Log::Print("IT α         β         |r|       |A'r|     |A|       cond(A)   |x|");
+  Log::Print("LSMR λ {}", λ);
+  Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
@@ -71,7 +71,7 @@ auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
     float const normr = std::sqrt(res1 + res2);
     float const normAr = α * std::abs(τ);
 
-    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, α, β, normr, normAr, normA, condA, normx);
+    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, normx, normr, normAr, normA, condA);
 
     if (debug) { debug(ii, x); }
 
