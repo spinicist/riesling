@@ -42,7 +42,7 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()));
-  auto const M = make_kspace_pre("kspace", nC, traj, IdBasis());
+  auto const M = make_kspace_pre("kspace", nC, traj, IdBasis(), 0.f);
   LSMR const lsmr{nufft, M, 4};
 
   Cx4 lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});

@@ -24,6 +24,7 @@ int main_admm(args::Subparser &parser)
   RegOpts     regOpts(parser);
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
+  args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::ValueFlag<Index>       inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
   args::ValueFlag<float>       atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
@@ -50,7 +51,7 @@ int main_admm(args::Subparser &parser)
   auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
   auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
-  auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
+  auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   Cropper     out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
   Sz3         outSz = out_cropper.size();

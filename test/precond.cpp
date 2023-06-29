@@ -19,7 +19,7 @@ TEST_CASE("Preconditioner", "[precond]")
   Trajectory const traj(info, points);
   Re2 basis(1, 1);
   basis.setConstant(1.f);
-  Re2 sc = KSpaceSingle(traj, basis);
+  Re2 sc = KSpaceSingle(traj, basis, 0.f);
   CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
   CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));
   CHECK(sc(2, 0) == Approx(1.f).margin(1.e-1f));
