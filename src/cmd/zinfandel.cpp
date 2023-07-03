@@ -44,7 +44,7 @@ int main_zinfandel(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
 
   // Extend trajectory
   Re3 newPoints(traj.nDims(), gap.Get() + traj.nSamples(), traj.nTraces());
@@ -126,7 +126,8 @@ int main_zinfandel(args::Subparser &parser)
 
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "zinfandel", "h5"));
   Log::Print("Extended {}", extended.matrix());
-  extended.write(writer);
+  writer.writeInfo(extended.info());
+  writer.writeTensor(HD5::Keys::Trajectory, extended.points().dimensions(), extended.points().data());
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(HD5::Keys::Noncartesian, out.dimensions(), out.data());
   Log::Print("Finished");

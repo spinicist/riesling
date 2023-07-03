@@ -16,7 +16,7 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {
@@ -30,7 +30,6 @@ int main_sdc(args::Subparser &parser)
     Log::Fail("Uknown SDC method: {}", sdcType.Get());
   }
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sdc", "h5"));
-  traj.write(writer);
   writer.writeTensor(HD5::Keys::SDC, dc.dimensions(), dc.data());
   return EXIT_SUCCESS;
 }

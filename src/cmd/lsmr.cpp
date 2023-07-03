@@ -30,7 +30,7 @@ int main_lsmr(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Info const &info = traj.info();
   auto A = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto M = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));

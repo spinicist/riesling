@@ -28,9 +28,9 @@ int main_nufft(args::Subparser &parser)
     Trajectory traj;
     if (trajFile) {
       HD5::Reader trajReader(trajFile.Get());
-      traj = Trajectory(trajReader);
+      traj = Trajectory(trajReader.readInfo(), trajReader.readTensor<Re3>(HD5::Keys::Trajectory));
     } else {
-      traj = Trajectory(reader);
+      traj = Trajectory(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
     }
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto channels = reader.readTensor<Cx6>(name);
@@ -41,10 +41,11 @@ int main_nufft(args::Subparser &parser)
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
     }
     writer.writeTensor(HD5::Keys::Noncartesian, noncart.dimensions(), noncart.data());
-    traj.write(writer);
+    writer.writeInfo(traj.info());
+    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
     Log::Print("Forward NUFFT took {}", Log::ToNow(start));
   } else {
-    Trajectory traj(reader);
+    Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
     auto noncart = reader.readTensor<Cx5>(name);
     auto const channels = noncart.dimension(0);

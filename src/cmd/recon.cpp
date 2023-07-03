@@ -26,9 +26,9 @@ int main_recon(args::Subparser &parser)
   Trajectory traj;
   if (trajName) {
     HD5::Reader trajReader(trajName.Get());
-    traj = Trajectory(trajReader);
+    traj = Trajectory(trajReader.readInfo(), trajReader.readTensor<Re3>(HD5::Keys::Trajectory));
   } else {
-    traj = Trajectory(reader);
+    traj = Trajectory(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   }
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
@@ -52,7 +52,8 @@ int main_recon(args::Subparser &parser)
     Log::Print("All Volumes: {}", Log::ToNow(all_start));
     auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "recon", "h5");
     HD5::Writer writer(fname);
-    traj.write(writer);
+    writer.writeInfo(traj.info());
+    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
     writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data());
   } else {
     auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);

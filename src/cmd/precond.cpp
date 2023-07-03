@@ -15,7 +15,8 @@ int main_precond(args::Subparser &parser)
   ParseCommand(parser, trajFile);
   HD5::Reader reader(trajFile.Get());
   HD5::Writer writer(preFile.Get());
-  auto M = KSpaceSingle(Trajectory(reader), ReadBasis(basisFile.Get()));
+  Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  auto M = KSpaceSingle(traj, ReadBasis(basisFile.Get()));
   writer.writeTensor(HD5::Keys::Precond, M.dimensions(), M.data());
   return EXIT_SUCCESS;
 }

@@ -33,7 +33,7 @@ TEST_CASE("IO", "[io]")
     std::filesystem::path const fname("test.h5");
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
-      CHECK_NOTHROW(traj.write(writer));
+      CHECK_NOTHROW(writer.writeInfo(traj.info()));
       CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Noncartesian, refData.dimensions(), refData.data()));
     }
     CHECK(std::filesystem::exists(fname));
@@ -41,7 +41,7 @@ TEST_CASE("IO", "[io]")
     REQUIRE_NOTHROW(HD5::Reader(fname));
     HD5::Reader reader(fname);
 
-    Trajectory check(reader);
+    Trajectory check(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
     CHECK(traj.nSamples() == samples);
     CHECK(traj.nTraces() == traces);
 
@@ -59,8 +59,9 @@ TEST_CASE("IO", "[io]")
 
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
-      traj.write(writer);
-      Re5 realData = refData.real();
+      Re5 const realData = refData.real();
+      writer.writeInfo(traj.info());
+      writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
       writer.writeTensor(HD5::Keys::Noncartesian, realData.dimensions(), realData.data());
     }
     CHECK(std::filesystem::exists(fname));

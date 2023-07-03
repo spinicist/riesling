@@ -23,8 +23,10 @@ int main_sense(args::Subparser &parser)
   HD5::Reader sreader(sname.Get());
   auto const maps = sreader.readTensor<Cx4>(HD5::Keys::SENSE);
 
+  Trajectory const traj(ireader.readInfo(), ireader.readTensor<Re3>(HD5::Keys::Trajectory));
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "sense"));
-  Trajectory(ireader).write(writer);
+  writer.writeInfo(traj.info());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
 
   auto const start = Log::Now();
   if (fwd) {

@@ -18,7 +18,7 @@ int main_sense_calib(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Cx4 sense = SENSE::Choose(senseOpts, coreOpts, traj, ReadBasis(coreOpts.basisFile.Get()), reader);
   auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);

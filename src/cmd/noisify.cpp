@@ -24,8 +24,10 @@ int main_noisify(args::Subparser &parser)
   ks += noise * noise.constant(σ.Get());
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "noisy"));
-  Trajectory(reader).write(writer);
+  writer.writeInfo(reader.readInfo());
   writer.writeTensor(dset.Get(), ks.dimensions(), ks.data());
+  Re3 const traj = reader.readTensor<Re3>(HD5::Keys::Trajectory);
+  writer.writeTensor(HD5::Keys::Trajectory, traj.dimensions(), traj.data());
 
   return EXIT_SUCCESS;
 }

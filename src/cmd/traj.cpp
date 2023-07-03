@@ -22,7 +22,7 @@ int main_traj(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), 1, basis);
   auto const sdc = SDC::Choose(sdcOpts, 1, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());

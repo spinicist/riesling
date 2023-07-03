@@ -18,7 +18,7 @@ Trajectory LoadTrajectory(std::string const &file)
 {
   Log::Print("Reading external trajectory from {}", file);
   HD5::Reader reader(file);
-  return Trajectory(reader);
+  return Trajectory(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
 }
 
 Trajectory CreateTrajectory(
@@ -100,7 +100,8 @@ int main_phantom(args::Subparser &parser)
   auto const &info = traj.info();
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
-  traj.write(writer);
+  writer.writeInfo(traj.info());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
 
   Cx3 phantom(info.matrix);
 

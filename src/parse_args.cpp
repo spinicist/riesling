@@ -19,10 +19,8 @@ std::unordered_map<int, Log::Level> levelMap{
 void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
   float x, y, z;
-  auto result = scn::scan(value, "{},{},{}", x, y, z);
-  if (!result) {
-    Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error());
-  }
+  auto  result = scn::scan(value, "{},{},{}", x, y, z);
+  if (!result) { Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error()); }
   v.x() = x;
   v.y() = y;
   v.z() = z;
@@ -31,7 +29,7 @@ void Vector3fReader::operator()(std::string const &name, std::string const &valu
 template <typename T>
 void VectorReader<T>::operator()(std::string const &name, std::string const &input, std::vector<T> &values)
 {
-  T val;
+  T    val;
   auto result = scn::scan(input, "{}", val);
   if (result) {
     // Values will have been default initialized. Reset
@@ -51,20 +49,16 @@ template struct VectorReader<Index>;
 void Sz2Reader::operator()(std::string const &name, std::string const &value, Sz2 &v)
 {
   Index i, j;
-  auto result = scn::scan(value, "{},{}", i, j);
-  if (!result) {
-    Log::Fail("Could not read {} from '{}': {}", name, value, result.error());
-  }
+  auto  result = scn::scan(value, "{},{}", i, j);
+  if (!result) { Log::Fail("Could not read {} from '{}': {}", name, value, result.error()); }
   v = Sz2{i, j};
 }
 
 void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz3 &v)
 {
   Index i, j, k;
-  auto result = scn::scan(value, "{},{},{}", i, j, k);
-  if (!result) {
-    Log::Fail("Could not read {} from '{}': {}", name, value, result.error());
-  }
+  auto  result = scn::scan(value, "{},{},{}", i, j, k);
+  if (!result) { Log::Fail("Could not read {} from '{}': {}", name, value, result.error()); }
   v = Sz3{i, j, k};
 }
 
@@ -83,12 +77,12 @@ CoreOpts::CoreOpts(args::Subparser &parser)
 {
 }
 
-args::Group global_group("GLOBAL OPTIONS");
-args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
-args::Flag verbose(global_group, "V", "Print logging messages to stdout", {'v', "verbose"});
+args::Group                    global_group("GLOBAL OPTIONS");
+args::HelpFlag                 help(global_group, "H", "Show this help message", {'h', "help"});
+args::Flag                     verbose(global_group, "V", "Print logging messages to stdout", {'v', "verbose"});
 args::MapFlag<int, Log::Level> verbosity(global_group, "V", "Talk more (values 0-3)", {"verbosity"}, levelMap);
-args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
-args::ValueFlag<Index> nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
+args::ValueFlag<std::string>   debug(global_group, "F", "Write debug images to file", {"debug"});
+args::ValueFlag<Index>         nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
 void SetLogging(std::string const &name)
 {
@@ -103,9 +97,7 @@ void SetLogging(std::string const &name)
   Log::Print("Welcome to RIESLING");
   Log::Print("Command: {}", name);
 
-  if (debug) {
-    Log::SetDebugFile(debug.Get());
-  }
+  if (debug) { Log::SetDebugFile(debug.Get()); }
 }
 
 void SetThreadCount()
@@ -123,9 +115,7 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
   parser.Parse();
   SetLogging(parser.GetCommand().Name());
   SetThreadCount();
-  if (!iname) {
-    throw args::Error("No input file specified");
-  }
+  if (!iname) { throw args::Error("No input file specified"); }
 }
 
 void ParseCommand(args::Subparser &parser)
@@ -141,14 +131,14 @@ auto ReadBasis(std::string const &basisFile) -> std::optional<Re2>
     return std::nullopt;
   } else {
     std::string fname;
-    Index which = -1;
-    auto result = scn::scan(basisFile, "{},{}", which, fname);
+    Index       which = -1;
+    auto        result = scn::scan(basisFile, "{},{}", which, fname);
     if (!result) {
       HD5::Reader basisReader(basisFile);
       return std::optional<Re2>(basisReader.readTensor<Re2>(HD5::Keys::Basis));
     } else {
       HD5::Reader basisReader(fname);
-      auto const basis = basisReader.readTensor<Re2>(HD5::Keys::Basis);
+      auto const  basis = basisReader.readTensor<Re2>(HD5::Keys::Basis);
       if (which >= 0 && which < basis.dimension(1)) {
         Re2 const b1 = basis.slice(Sz2{0, which}, Sz2{basis.dimension(0), 1});
         return std::optional<Re2>(b1);
@@ -159,8 +149,7 @@ auto ReadBasis(std::string const &basisFile) -> std::optional<Re2>
   }
 }
 
-std::string
-OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
+std::string OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
 {
   return fmt::format(
     "{}{}.{}",
@@ -170,29 +159,22 @@ OutName(std::string const &iName, std::string const &oName, std::string const &s
 }
 
 void WriteOutput(
-  CoreOpts &opts,
-  rl::Cx5 const &img,
-  std::string const &suffix,
-  rl::Trajectory const &traj,
-  std::string const &log,
-  rl::Cx5 const &residImage,
-  rl::Cx5 const &residKSpace,
+  CoreOpts                           &opts,
+  rl::Cx5 const                      &img,
+  std::string const                  &suffix,
+  rl::Trajectory const               &traj,
+  std::string const                  &log,
+  rl::Cx5 const                      &residImage,
+  rl::Cx5 const                      &residKSpace,
   std::map<std::string, float> const &meta)
 {
-  auto const fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
+  auto const  fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(HD5::Keys::Image, img.dimensions(), img.data());
   writer.writeMeta(meta);
-  if (opts.keepTrajectory) {
-    traj.write(writer);
-  } else {
-    writer.writeInfo(traj.info());
-  }
+  writer.writeInfo(traj.info());
+  if (opts.keepTrajectory) { writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data()); }
   writer.writeString("log", log);
-  if (opts.residImage) {
-    writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data());
-  }
-  if (opts.residKSpace) {
-    writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data());
-  }
+  if (opts.residImage) { writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data()); }
+  if (opts.residKSpace) { writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data()); }
 }

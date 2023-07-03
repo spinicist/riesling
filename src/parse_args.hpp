@@ -3,6 +3,7 @@
 #include <args.hxx>
 #include <vector>
 #include <optional>
+#include <map>
 
 #include "types.hpp"
 #include "trajectory.hpp"

@@ -29,7 +29,7 @@ int main_pdhg(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Info const &info = traj.info();
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto const shape = recon->ishape;

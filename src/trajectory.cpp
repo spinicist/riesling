@@ -9,31 +9,12 @@ Trajectory::Trajectory() {}
 Trajectory::Trajectory(Info const &info, Re3 const &points)
   : info_{info}
   , points_{points}
-
-{
-  init();
-}
-
-Trajectory::Trajectory(HD5::Reader const &reader)
-  : info_{reader.readInfo()}
-  , points_{reader.readTensor<Re3>(HD5::Keys::Trajectory)}
-{
-  init();
-}
-
-void Trajectory::init()
 {
   if (points_.dimension(0) < 1 || points_.dimension(0) > 3) { Log::Fail("Trajectory has {} dimensions", points_.dimension(0)); }
 
   float const maxCoord = Maximum(points_.abs());
   if (maxCoord > 0.5f) { Log::Warn("Maximum trajectory co-ordinate {} > 0.5", maxCoord); }
   Log::Print<Log::Level::Debug>("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
-}
-
-void Trajectory::write(HD5::Writer &writer) const
-{
-  writer.writeInfo(info_);
-  writer.writeTensor(HD5::Keys::Trajectory, points_.dimensions(), points_.data());
 }
 
 auto Trajectory::nDims() const -> Index { return points_.dimension(0); }
@@ -48,7 +29,7 @@ auto Trajectory::matrix(float const fov) const -> Sz3
 {
   if (fov > 0) {
     Eigen::Array3l bigMatrix = (((fov / info_.voxel_size) / 2.f).floor() * 2).cast<Index>();
-    Sz3 matrix;
+    Sz3            matrix;
     for (Index ii = 0; ii < 3; ii++) {
       matrix[ii] = bigMatrix[ii];
     }
@@ -74,7 +55,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   if (dsamp < 1.f) {
     Log::Fail("Downsample resolution {} is lower than input resolution {}", res, info_.voxel_size.minCoeff());
   }
-  auto dsInfo = info_;
+  auto  dsInfo = info_;
   float scale = 1.f;
   if (shrink) {
     // Account for rounding
@@ -85,8 +66,8 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
     dsamp = 1.f / scale;
     dsInfo.voxel_size = info_.voxel_size * dsamp;
   }
-  Index minSamp = nSamples(), maxSamp = 0;
-  Re3 dsPoints(points_.dimensions());
+  Index       minSamp = nSamples(), maxSamp = 0;
+  Re3         dsPoints(points_.dimensions());
   float const thresh = 0.5f * dsamp;
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {

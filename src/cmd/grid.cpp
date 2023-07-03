@@ -19,12 +19,13 @@ int main_grid(args::Subparser &parser)
 
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "grid", "h5"));
-  traj.write(writer);
+  writer.writeInfo(traj.info());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
   auto const start = Log::Now();
   if (fwd) {
     Cx5 cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);

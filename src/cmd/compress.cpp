@@ -36,6 +36,7 @@ int main_compress(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
+  Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Cx4 const ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, refVol.Get());
   Index const channels = ks.dimension(0);
   Index const samples = ks.dimension(1);
@@ -56,7 +57,7 @@ int main_compress(args::Subparser &parser)
     auto const pc = PCA(CollapseToConstMatrix(ref), nRetain.Get(), energy.Get());
     psi = pc.vecs;
   } else if (rovir) {
-    psi = ROVIR(rovirOpts, Trajectory(reader), energy.Get(), nRetain.Get(), lores.Get(), ks);
+    psi = ROVIR(rovirOpts, traj, energy.Get(), nRetain.Get(), lores.Get(), ks);
   } else if (ccFile) {
     HD5::Reader matFile(ccFile.Get());
     psi = matFile.readMatrix<Eigen::MatrixXcf>(HD5::Keys::CompressionMatrix);
@@ -71,7 +72,8 @@ int main_compress(args::Subparser &parser)
   }
 
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name()));
-  Trajectory(reader).write(writer);
+  writer.writeInfo(traj.info());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
   writer.writeTensor(HD5::Keys::Noncartesian, all_ks.dimensions(), all_ks.data());
 
   if (save) {

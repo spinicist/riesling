@@ -5,6 +5,7 @@
 #include "op/nufft.hpp"
 #include "op/ops.hpp"
 #include "threads.hpp"
+#include "io/reader.hpp"
 
 namespace rl {
 

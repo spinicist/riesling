@@ -1,8 +1,6 @@
 #pragma once
 
 #include "info.hpp"
-#include "io/reader.hpp"
-#include "io/writer.hpp"
 #include "log.hpp"
 #include "types.hpp"
 
@@ -12,9 +10,6 @@ struct Trajectory
 {
   Trajectory();
   Trajectory(Info const &info, Re3 const &points);
-
-  Trajectory(HD5::Reader const &reader);
-  void write(HD5::Writer &writer) const;
 
   auto nDims() const -> Index;
   auto nSamples() const -> Index;

@@ -26,7 +26,7 @@ int main_pdhg_setup(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader);
+  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
   auto const shape = recon->ishape;
   auto P = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
