@@ -23,8 +23,9 @@ TEST_CASE("Recon", "[recon]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto grid = make_grid<Cx, 3>(traj, ktype, osamp, nC);
-  auto nufft = make_nufft(traj, ktype, osamp, nC, traj.matrix());
+  Re2 basis(1, 1);
+  basis.setConstant(1.f);
+  auto nufft = make_nufft(traj, ktype, osamp, nC, traj.matrix(), basis);
 
   Cx4 senseMaps(AddFront(traj.matrix(), nC));
   senseMaps.setConstant(std::sqrt(1./nC));

@@ -78,9 +78,11 @@ int main_zinfandel(args::Subparser &parser)
     // Use SLR
     auto const [lores, lo, sz] = traj.downsample(12.f, 0, true, true);
     Log::Print("Extended {}", extended.matrix());
-    auto A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());
+    Re2 basis(1, 1);
+    basis.setConstant(1.f);
+    auto A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);
     Sz5 const shape = A->ishape;
-    Re2 const w = KSpaceSingle(lores, std::nullopt);
+    Re2 const w = KSpaceSingle(lores, basis);
     auto M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
     // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
     auto id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
@@ -112,7 +114,7 @@ int main_zinfandel(args::Subparser &parser)
       debug_z};
 
     Trajectory gapTraj(traj.info(), newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}));
-    auto B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());
+    auto B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);
 
     for (Index iv = 0; iv < nVol; iv++) {
         Cx4 d = data.chip<4>(iv).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nSlab});

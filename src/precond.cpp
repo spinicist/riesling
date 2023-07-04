@@ -13,7 +13,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis) -> Re2
+auto KSpaceSingle(Trajectory const &traj, Re2 const &basis) -> Re2
 {
   Log::Print<Log::Level::High>("Ong's Single-channer preconditioner");
   Info const info = traj.info();
@@ -56,7 +56,7 @@ auto KSpaceSingle(Trajectory const &traj, std::optional<Re2> const &basis) -> Re
 }
 
 auto make_kspace_pre(
-  std::string const &type, Index const nC, Trajectory const &traj, std::optional<Re2> const &basis)
+  std::string const &type, Index const nC, Trajectory const &traj, Re2 const &basis)
   -> std::shared_ptr<Ops::Op<Cx>>
 {
   if (type == "" || type == "none") {

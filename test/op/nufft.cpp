@@ -27,8 +27,9 @@ TEST_CASE("NUFFT", "[nufft]")
   float const osamp = GENERATE(2.f, 2.3f);
   using Kernel = Rectilinear<1, ExpSemi<3>>;
   Mapping<1> mapping(traj, osamp, Kernel::PadWidth);
-
-  std::shared_ptr<GridBase<Cx, 1>> grid = std::make_shared<Grid<Cx, Kernel>>(mapping, 1);
+  Re2 basis(1, 1);
+  basis.setConstant(1.f);
+  std::shared_ptr<GridBase<Cx, 1>> grid = std::make_shared<Grid<Cx, Kernel>>(mapping, 1, basis);
   Index const N = 5;
   NUFFTOp<1> nufft(grid, Sz1{N});
   Cx3 ks(nufft.oshape);

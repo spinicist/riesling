@@ -44,7 +44,9 @@ auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Re
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
   auto sdc3 = std::make_shared<TensorScale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
   auto sdc = std::make_shared<LoopOp<TensorScale<Cx, 3>>>(sdc3, data.dimension(3));
-  auto grid = make_3d_grid(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC);
+  Re2 basis(1, 1);
+  basis.setConstant(1.f);
+  auto grid = make_3d_grid(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
 
   Cx4 lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());

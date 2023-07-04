@@ -24,7 +24,9 @@ TEST_CASE("Grid Basic", "[grid]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto grid = make_grid<float, 2>(traj, ktype, osamp, 1);
+  Re2 basis(1, 1);
+  basis.setConstant(1.f);
+  auto grid = make_grid<float, 2>(traj, ktype, osamp, 1, basis);
   Re3 ks(grid->oshape);
   Re4 img(grid->ishape);
   ks.setConstant(1.f);

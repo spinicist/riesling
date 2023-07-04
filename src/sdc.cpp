@@ -27,7 +27,9 @@ auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Inde
   Log::Print("Using Pipe/Zwart/Menon SDC...");
   Re3 W(1, traj.nSamples(), traj.nTraces());
   Re3 Wp(W.dimensions());
-  auto gridder = make_grid<float, ND>(traj, ktype, os, 1);
+  Re2 basis(1, 1);
+  basis.setConstant(1.f);
+  auto gridder = make_grid<float, ND>(traj, ktype, os, 1, basis);
 
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {

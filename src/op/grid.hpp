@@ -37,16 +37,13 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
   Kernel kernel;
   Re2 basis;
 
-  Grid(Mapping<NDim> const m, Index const nC, std::optional<Re2> const &b = std::nullopt)
-    : GridBase<Scalar, NDim>(AddFront(m.cartDims, nC, b ? b.value().dimension(0) : 1), AddFront(m.noncartDims, nC))
+  Grid(Mapping<NDim> const m, Index const nC, Re2 const &b)
+    : GridBase<Scalar, NDim>(AddFront(m.cartDims, nC, b.dimension(0)), AddFront(m.noncartDims, nC))
     , mapping{m}
     , kernel{mapping.osamp}
-    , basis{b ? *b : Re2(1, 1)}
+    , basis{b}
   {
     static_assert(NDim < 4);
-    if (!b) {
-      basis.setConstant(1.f);
-    }
     Log::Print<Log::Level::High>("Grid Dims {}", this->ishape);
   }
 

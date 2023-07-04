@@ -53,7 +53,7 @@ std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(
   float const osamp,
   Index const nC,
   Sz3 const matrix,
-  std::optional<Re2> basis,
+  Re2 const &basis,
   std::shared_ptr<TensorOperator<Cx, 3>> sdc)
 {
   if (traj.nDims() == 2) {

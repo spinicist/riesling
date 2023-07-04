@@ -10,24 +10,24 @@ namespace rl {
 // Forward Declare
 template <typename Scalar, size_t ND>
 auto make_kb_radial(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, std::optional<Re2> const &basis)
+  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Scalar, ND>>;
 template <typename Scalar, size_t ND>
 auto make_es_radial(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, std::optional<Re2> const &basis)
+  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Scalar, ND>>;
 template <typename Scalar, size_t ND>
 auto make_kb_rect(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, std::optional<Re2> const &basis)
+  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Scalar, ND>>;
 template <typename Scalar, size_t ND>
 auto make_es_rect(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, std::optional<Re2> const &basis)
+  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Scalar, ND>>;
 
 template <typename Scalar, size_t ND>
 auto make_grid(
-  Trajectory const &traj, std::string const kType, float const osamp, Index const nC, std::optional<Re2> const &basis)
+  Trajectory const &traj, std::string const kType, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Scalar, ND>>
 {
   if (kType == "NN") {
@@ -53,20 +53,20 @@ auto make_grid(
 }
 
 template std::shared_ptr<GridBase<Cx, 2>>
-make_grid<Cx, 2>(Trajectory const &, std::string const, float const, Index const, std::optional<Re2> const &);
+make_grid<Cx, 2>(Trajectory const &, std::string const, float const, Index const, Re2 const &);
 template std::shared_ptr<GridBase<float, 2>>
-make_grid<float, 2>(Trajectory const &, std::string const, float const, Index const, std::optional<Re2> const &);
+make_grid<float, 2>(Trajectory const &, std::string const, float const, Index const, Re2 const &);
 template std::shared_ptr<GridBase<Cx, 3>>
-make_grid<Cx, 3>(Trajectory const &, std::string const, float const, Index const, std::optional<Re2> const &);
+make_grid<Cx, 3>(Trajectory const &, std::string const, float const, Index const, Re2 const &);
 template std::shared_ptr<GridBase<float, 3>>
-make_grid<float, 3>(Trajectory const &, std::string const, float const, Index const, std::optional<Re2> const &);
+make_grid<float, 3>(Trajectory const &, std::string const, float const, Index const, Re2 const &);
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_3d_grid(
   Trajectory const &traj,
   std::string const kType,
   float const os,
   Index const nC,
-  std::optional<Re2> const &basis)
+  Re2 const &basis)
 {
   if (traj.nDims() == 2) {
     Log::Print<Log::Level::Debug>("Creating 2D Multi-slice Gridder");

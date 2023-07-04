@@ -15,13 +15,13 @@ std::shared_ptr<GridBase<Scalar, ND>> make_grid(
   std::string const kType,
   float const os,
   Index const nC,
-  std::optional<Re2> const &basis = std::nullopt);
+  Re2 const &basis);
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_3d_grid(
   Trajectory const &trajectory,
   std::string const kType,
   float const os,
   Index const nC,
-  std::optional<Re2> const &basis = std::nullopt);
+  Re2 const &basis);
 
 } // namespace rl

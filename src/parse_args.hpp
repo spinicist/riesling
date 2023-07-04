@@ -36,7 +36,7 @@ struct Sz3Reader
   void operator()(std::string const &name, std::string const &value, rl::Sz3 &x);
 };
 
-auto ReadBasis(std::string const &basisFile) -> std::optional<rl::Re2>;
+auto ReadBasis(std::string const &basisFile) -> rl::Re2;
 
 // Helper function to generate a good output name
 std::string OutName(
