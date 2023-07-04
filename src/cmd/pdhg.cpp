@@ -31,7 +31,9 @@ int main_pdhg(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Info const &info = traj.info();
-  auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
+  auto const basis = ReadBasis(coreOpts.basisFile.Get());
+  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, reader), basis.dimension(0));
+  auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
   auto P = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
 

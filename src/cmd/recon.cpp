@@ -36,7 +36,9 @@ int main_recon(args::Subparser &parser)
 
   if (fwd) {
     HD5::Reader senseReader(senseOpts.type.Get());
-    auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, senseReader);
+    auto const basis = ReadBasis(coreOpts.basisFile.Get());
+    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, reader), basis.dimension(0));
+    auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
     Sz4 const sz = recon->ishape;
     Sz4 const osz = AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]);
 
@@ -56,7 +58,9 @@ int main_recon(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
     writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data());
   } else {
-    auto recon = make_recon(coreOpts, sdcOpts, senseOpts, traj, reader);
+    auto const basis = ReadBasis(coreOpts.basisFile.Get());
+    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, reader), basis.dimension(0));
+    auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
     Sz4 const sz = recon->ishape;
     Sz4 const osz = AMin(AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]), sz);
     Cx4 vol(sz);

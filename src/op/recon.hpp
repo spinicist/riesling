@@ -13,10 +13,7 @@ namespace rl {
 using ReconOp = Compose<SenseOp, TensorOperator<Cx, 5, 4>>;
 
 auto make_recon(
-  CoreOpts &coreOpts,
-  SDC::Opts &sdcOpts,
-  SENSE::Opts &senseOpts,
-  Trajectory const &traj,
-  HD5::Reader &reader) -> std::shared_ptr<ReconOp>;
+  CoreOpts &coreOpts, SDC::Opts &sdcOpts, Trajectory const &traj, std::shared_ptr<SenseOp> const &sense, Re2 const &basis)
+  -> std::shared_ptr<ReconOp>;
 
 } // namespace rl
