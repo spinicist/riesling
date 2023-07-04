@@ -34,6 +34,7 @@ TEST_CASE("IO", "[io]")
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
       CHECK_NOTHROW(writer.writeInfo(traj.info()));
+      CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data()));
       CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Noncartesian, refData.dimensions(), refData.data()));
     }
     CHECK(std::filesystem::exists(fname));
