@@ -29,7 +29,7 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, std::optional<Re2> const &basis, HD5::Reader &reader)
+auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Reader &reader)
   -> Cx4
 {
   Log::Print("SENSE Self-Calibration Starting");
@@ -44,7 +44,7 @@ auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, std::op
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
   auto sdc3 = std::make_shared<TensorScale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
   auto sdc = std::make_shared<LoopOp<TensorScale<Cx, 3>>>(sdc3, data.dimension(3));
-  auto grid = make_3d_grid(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
+  auto grid = make_3d_grid(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC);
 
   Cx4 lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
@@ -69,15 +69,15 @@ auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
   return cropped;
 }
 
-Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, std::optional<Re2> const &basis, HD5::Reader &reader)
+Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, HD5::Reader &reader)
 {
   Sz3 const shape = traj.matrix(opts.fov.Get());
   Log::Print("{}", opts.type.Get());
   if (opts.type.Get() == "auto") {
-    Cx4 channels = LoresGrid(opts, core, traj, basis, reader);
+    Cx4 channels = LoresGrid(opts, core, traj, reader);
     return UniformNoise(opts.λ.Get(), shape, channels);
   } else if (opts.type.Get() == "espirit") {
-    auto grid = LoresGrid(opts, core, traj, basis, reader);
+    auto grid = LoresGrid(opts, core, traj, reader);
     return ESPIRIT(grid, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
