@@ -64,7 +64,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
     });
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
     dsamp = 1.f / scale;
-    dsInfo.voxel_size = info_.voxel_size * dsamp;
+    dsInfo.voxel_size = info_.voxel_size * scale;
   }
   Index       minSamp = nSamples(), maxSamp = 0;
   Re3         dsPoints(points_.dimensions());
