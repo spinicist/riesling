@@ -51,16 +51,16 @@ Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
 auto Trajectory::downsample(float const res, Index const lores, bool const shrink, bool const corners) const
   -> std::tuple<Trajectory, Index, Index>
 {
-  float dsamp = res / info_.voxel_size.minCoeff();
-  if (dsamp < 1.f) {
-    Log::Fail("Downsample resolution {} is lower than input resolution {}", res, info_.voxel_size.minCoeff());
+  float dsamp = info_.voxel_size.minCoeff() / res;
+  if (dsamp > 1.f) {
+    Log::Fail("Downsample resolution {} is higher than input resolution {}", res, info_.voxel_size.minCoeff());
   }
   auto  dsInfo = info_;
   float scale = 1.f;
   if (shrink) {
     // Account for rounding
     std::transform(info_.matrix.begin(), info_.matrix.begin() + nDims(), dsInfo.matrix.begin(), [dsamp](Index const i) {
-      return (i / dsamp);
+      return (i * dsamp);
     });
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
     dsamp = 1.f / scale;
@@ -86,7 +86,7 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
   Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print(
-    "Downsample res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}",
+    "Target res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}",
     res,
     dsamp,
     dsInfo.matrix,
