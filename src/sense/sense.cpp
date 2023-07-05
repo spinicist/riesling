@@ -41,14 +41,15 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
-  auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(-1.f));
+  auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()));
   auto const M = make_kspace_pre("kspace", nC, traj, IdBasis());
   LSMR const lsmr{nufft, M, 4};
 
   Cx4 lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  auto const channels = Tensorfy(lsmr.run(lores.data()), nufft->ishape);
-  return channels.chip<1>(0);
+  Cx5 const all = Tensorfy(lsmr.run(lores.data()), nufft->ishape);
+  Cx4 const channels = all.chip<1>(0);
+  return channels;
 }
 
 auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
