@@ -8,11 +8,11 @@
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
-auto LSQR::run(Cx *bdata, float const λ, Cx *x0) const -> Vector
+auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
 {
   Index const rows = op->rows();
   Index const cols = op->cols();
-  Map const b(bdata, rows);
+  CMap const b(bdata, rows);
   Vector Mu(rows), u(rows);
   Vector x(cols), v(cols), w(cols);
 

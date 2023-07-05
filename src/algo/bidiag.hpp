@@ -17,7 +17,7 @@ void BidiagInit(
   float &α,
   float &β,
   Eigen::VectorXcf &x,
-  Eigen::Map<Eigen::VectorXcf> const &b,
+  Eigen::Map<Eigen::VectorXcf const> const &b,
   Cx *x0);
 
 void Bidiag(

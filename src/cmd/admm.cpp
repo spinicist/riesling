@@ -43,20 +43,22 @@ int main_admm(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Info const &info = traj.info();
+  auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Index const nV = noncart.dimension(4);
+
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, reader), basis.dimension(0));
+  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
   auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
   auto M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
 
   Cropper out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
   Sz3 outSz = out_cropper.size();
-  Cx5 allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  float const scale = Scaling(coreOpts.scaling, recon, M, &allData(0, 0, 0, 0, 0));
-  allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
-  Index const volumes = allData.dimension(4);
-  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], volumes), resid;
-  if (coreOpts.residImage) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], volumes); }
+  float const scale = Scaling(coreOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
+  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
+
+  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
+  if (coreOpts.residImage) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers reg(regOpts, shape, A);
@@ -91,17 +93,17 @@ int main_admm(args::Subparser &parser)
     debug_x,
     debug_z};
   auto const &all_start = Log::Now();
-  for (Index iv = 0; iv < volumes; iv++) {
-    auto x = reg.ext_x->forward(admm.run(&allData(0, 0, 0, 0, iv), ρ.Get()));
+  for (Index iv = 0; iv < nV; iv++) {
+    auto x = reg.ext_x->forward(admm.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
-    if (coreOpts.residImage || coreOpts.residKSpace) { allData.chip<4>(iv) -= recon->forward(xm); }
+    if (coreOpts.residImage || coreOpts.residKSpace) { noncart.chip<4>(iv) -= recon->forward(xm); }
     if (coreOpts.residImage) {
-      xm = recon->adjoint(allData.chip<4>(iv));
+      xm = recon->adjoint(noncart.chip<4>(iv));
       resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
     }
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, allData);
+  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, noncart);
   return EXIT_SUCCESS;
 }

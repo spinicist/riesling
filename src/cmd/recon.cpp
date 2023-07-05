@@ -36,8 +36,7 @@ int main_recon(args::Subparser &parser)
 
   if (fwd) {
     HD5::Reader senseReader(senseOpts.type.Get());
-    auto const basis = ReadBasis(coreOpts.basisFile.Get());
-    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, reader), basis.dimension(0));
+    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, Cx5()), basis.dimension(0));
     auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
     Sz4 const sz = recon->ishape;
     Sz4 const osz = AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]);
@@ -58,8 +57,8 @@ int main_recon(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
     writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data());
   } else {
-    auto const basis = ReadBasis(coreOpts.basisFile.Get());
-    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, reader), basis.dimension(0));
+    auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
     auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
     Sz4 const sz = recon->ishape;
     Sz4 const osz = AMin(AddFront(traj.matrix(coreOpts.fov.Get()), sz[0]), sz);
@@ -68,7 +67,7 @@ int main_recon(args::Subparser &parser)
     out.setZero();
     auto const &all_start = Log::Now();
     for (Index iv = 0; iv < volumes; iv++) {
-      vol = recon->adjoint(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));
+      vol = recon->adjoint(noncart.chip<4>(iv));
       out.chip<4>(iv) = Crop(vol, osz);
     }
     Log::Print("All Volumes: {}", Log::ToNow(all_start));

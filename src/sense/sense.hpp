@@ -23,7 +23,7 @@ struct Opts
 auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4;
 
 //! Convenience function called from recon commands to get SENSE maps
-Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &t, HD5::Reader &reader);
+Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &t, Cx5 const &noncart);
 
 } // namespace SENSE
 } // namespace rl

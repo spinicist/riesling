@@ -29,26 +29,27 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, HD5::Reader &reader)
+auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart)
   -> Cx4
 {
   Log::Print("SENSE Self-Calibration Starting");
-  auto const nV = reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
+  auto const nC = noncart.dimension(0);
+  auto const nT = noncart.dimension(2);
+  auto const nS = noncart.dimension(3);
+  auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
     Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);
   }
-  Cx4 const data = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, opts.volume.Get());
-  auto const nC = data.dimension(0);
-
+  
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, true);
   auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
   auto sdc3 = std::make_shared<TensorScale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
-  auto sdc = std::make_shared<LoopOp<TensorScale<Cx, 3>>>(sdc3, data.dimension(3));
+  auto sdc = std::make_shared<LoopOp<TensorScale<Cx, 3>>>(sdc3, nS);
   Re2 basis(1, 1);
   basis.setConstant(1.f);
   auto grid = make_3d_grid(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
 
-  Cx4 lores = data.slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, data.dimension(2), data.dimension(3)});
+  Cx4 lores = noncart.slice(Sz5{0, lo, 0, 0, opts.volume.Get()}, Sz5{nC, sz, nT, nS, 1});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   return grid->adjoint(sdc->adjoint(lores)).chip<1>(opts.frame.Get());
@@ -71,15 +72,15 @@ auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
   return cropped;
 }
 
-Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, HD5::Reader &reader)
+Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &noncart)
 {
   Sz3 const shape = traj.matrix(opts.fov.Get());
   Log::Print("{}", opts.type.Get());
   if (opts.type.Get() == "auto") {
-    Cx4 channels = LoresGrid(opts, core, traj, reader);
+    Cx4 channels = LoresGrid(opts, core, traj, noncart);
     return UniformNoise(opts.λ.Get(), shape, channels);
   } else if (opts.type.Get() == "espirit") {
-    auto grid = LoresGrid(opts, core, traj, reader);
+    auto grid = LoresGrid(opts, core, traj, noncart);
     return ESPIRIT(grid, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());

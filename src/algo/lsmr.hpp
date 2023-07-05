@@ -15,6 +15,7 @@ struct LSMR
   using Op = Ops::Op<Cx>;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
+  using CMap = typename Op::CMap;
 
   std::shared_ptr<Op> op;
   std::shared_ptr<Op> M; // Pre-conditioner
@@ -24,7 +25,7 @@ struct LSMR
   float cTol = 1.e-6f;
   std::function<void (Index const iter, Vector const &)> debug = nullptr;
 
-  auto run(Cx *bdata, float const λ = 0.f, Cx *x0 = nullptr) const -> Vector;
+  auto run(Cx const *bdata, float const λ = 0.f, Cx *x0 = nullptr) const -> Vector;
 };
 
 } // namespace rl
