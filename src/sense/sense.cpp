@@ -1,14 +1,13 @@
 #include "sense/sense.hpp"
 
+#include "algo/lsmr.hpp"
 #include "cropper.h"
 #include "espirit.hpp"
 #include "fft/fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
-#include "op/grid.hpp"
-#include "op/loop.hpp"
-#include "op/tensorscale.hpp"
-#include "sdc.hpp"
+#include "op/nufft.hpp"
+#include "precond.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
@@ -29,8 +28,7 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart)
-  -> Cx4
+auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart) -> Cx4
 {
   Log::Print("SENSE Self-Calibration Starting");
   auto const nC = noncart.dimension(0);
@@ -40,26 +38,21 @@ auto LoresGrid(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 con
   if (opts.volume.Get() >= nV) {
     Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);
   }
-  
-  auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, true);
-  auto sdcW = traj.nDims() == 2 ? SDC::Pipe<2>(traj) : SDC::Pipe<3>(traj);
-  auto sdc3 = std::make_shared<TensorScale<Cx, 3>>(Sz3{nC, traj.nSamples(), traj.nTraces()}, sdcW.cast<Cx>());
-  auto sdc = std::make_shared<LoopOp<TensorScale<Cx, 3>>>(sdc3, nS);
-  Re2 basis(1, 1);
-  basis.setConstant(1.f);
-  auto grid = make_3d_grid(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
 
-  Cx4 lores = noncart.slice(Sz5{0, lo, 0, 0, opts.volume.Get()}, Sz5{nC, sz, nT, nS, 1});
+  auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
+  auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(-1.f));
+  auto const M = make_kspace_pre("kspace", nC, traj, IdBasis());
+  LSMR const lsmr{nufft, M, 4};
+
+  Cx4 lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  return grid->adjoint(sdc->adjoint(lores)).chip<1>(opts.frame.Get());
+  auto const channels = Tensorfy(lsmr.run(lores.data()), nufft->ishape);
+  return channels.chip<1>(0);
 }
 
 auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
 {
-  // FFT and then crop
-  auto fft = FFT::Make<4, 3>(channels.dimensions());
-  fft->reverse(channels);
   Cx4 cropped = Crop(channels, AddFront(shape, channels.dimension(0)));
   Cx3 rss(LastN<3>(cropped.dimensions()));
   rss.device(Threads::GlobalDevice()) = ConjugateSum(cropped, cropped).sqrt();
@@ -75,16 +68,17 @@ auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
 Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &noncart)
 {
   Sz3 const shape = traj.matrix(opts.fov.Get());
-  Log::Print("{}", opts.type.Get());
   if (opts.type.Get() == "auto") {
-    Cx4 channels = LoresGrid(opts, core, traj, noncart);
+    Cx4 channels = LoresChannels(opts, core, traj, noncart);
     return UniformNoise(opts.λ.Get(), shape, channels);
   } else if (opts.type.Get() == "espirit") {
-    auto grid = LoresGrid(opts, core, traj, noncart);
-    return ESPIRIT(grid, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
+    auto channels = LoresChannels(opts, core, traj, noncart);
+    auto fft = FFT::Make<4, 3>(channels.dimensions());
+    fft->reverse(channels);
+    return ESPIRIT(channels, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
-    Cx4 sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
+    Cx4         sense = senseReader.readTensor<Cx4>(HD5::Keys::SENSE);
     if (LastN<3>(sense.dimensions()) != shape) {
       Log::Fail("SENSE map spatial dimensions were {}, expected {}", LastN<3>(sense.dimensions()), shape);
     }

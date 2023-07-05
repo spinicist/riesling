@@ -7,6 +7,12 @@
 
 namespace rl {
 
+auto IdBasis() -> Re2 {
+  Re2 id(1, 1);
+  id.setConstant(1.f);
+  return id;
+}
+
 // Forward Declare
 template <typename Scalar, size_t ND>
 auto make_kb_radial(
