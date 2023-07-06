@@ -15,7 +15,6 @@ int main_grid(args::Subparser &parser)
   CoreOpts coreOpts(parser);
   SDC::Opts sdcOpts(parser, "pipe");
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  args::Flag bucket(parser, "", "Use bucket gridder", {"bucket"});
 
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
