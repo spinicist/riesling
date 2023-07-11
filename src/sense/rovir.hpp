@@ -17,11 +17,7 @@ struct ROVIROpts
 };
 
 auto ROVIR(
-  ROVIROpts &opts,
-  Trajectory const &traj,
-  float const energy,
-  Index const channels,
-  Index const lorestraces,
-  Cx4 const &data) -> Eigen::MatrixXcf;
+  ROVIROpts &opts, Trajectory const &traj, float const energy, Index const channels, Index const lorestraces, Cx4 const &data)
+  -> Eigen::MatrixXcf;
 
 } // namespace rl

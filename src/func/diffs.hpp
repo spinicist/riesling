@@ -17,7 +17,7 @@ struct ForwardDiff final : Functor<Cx4>
 
 struct BackwardDiff final : Functor<Cx4>
 {
-    using Parent = Functor<Cx4>;
+  using Parent = Functor<Cx4>;
   using typename Parent::Input;
   using typename Parent::Output;
 

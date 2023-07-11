@@ -20,8 +20,7 @@ struct Sequence
   }
 
   virtual auto length() const -> Index = 0;
-  virtual auto parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const
-    -> Eigen::ArrayXXf = 0;
+  virtual auto parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf = 0;
   virtual auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf = 0;
 };
 

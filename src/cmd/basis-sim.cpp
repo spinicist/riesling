@@ -16,15 +16,11 @@ using namespace rl;
 template <typename T>
 auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float>> los, std::vector<std::vector<float>> his)
 {
-  if (los.size() != his.size()) {
-    Log::Fail("Different number of parameter low bounds and high bounds");
-  }
-  if (los.size() == 0) {
-    Log::Fail("Must specify at least one set of tissue parameters");
-  }
+  if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
+  if (los.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
 
-  T simulator{s};
-  Index const nP = T::nParameters;
+  T               simulator{s};
+  Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, nsamp * los.size());
   parameters.setZero();
   Index totalP = 0;
@@ -36,8 +32,8 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
   }
   parameters.conservativeResize(nP, totalP);
   Eigen::ArrayXXf dynamics(simulator.length(), totalP);
-  auto const start = Log::Now();
-  auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
+  auto const      start = Log::Now();
+  auto            task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
   Threads::For(task, totalP, "Simulation");
   Log::Print("Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
@@ -59,19 +55,19 @@ int main_basis_sim(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
-  args::ValueFlag<Index> sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
-  args::ValueFlag<Index> spp(parser, "SPP", "Segments per prep", {'g', "spp"}, 1);
-  args::ValueFlag<Index> sppk(parser, "SPPK", "Segments per prep to keep", {'k', "sppk"}, 1);
-  args::ValueFlag<Index> sp2(parser, "G", "Segments before prep 2", {"sp2"}, 0);
-  args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
-  args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
-  args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
-  args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.f);
-  args::ValueFlag<Index> spoil(parser, "N", "Spoil periods", {"spoil"}, 0);
-  args::ValueFlag<float> Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.f);
-  args::ValueFlag<float> TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
-  args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
-  args::ValueFlag<float> te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
+  args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
+  args::ValueFlag<Index>                spp(parser, "SPP", "Segments per prep", {'g', "spp"}, 1);
+  args::ValueFlag<Index>                sppk(parser, "SPPK", "Segments per prep to keep", {'k', "sppk"}, 1);
+  args::ValueFlag<Index>                sp2(parser, "G", "Segments before prep 2", {"sp2"}, 0);
+  args::ValueFlag<float>                alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
+  args::ValueFlag<float>                ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
+  args::ValueFlag<float>                TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
+  args::ValueFlag<float>                Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.f);
+  args::ValueFlag<Index>                spoil(parser, "N", "Spoil periods", {"spoil"}, 0);
+  args::ValueFlag<float>                Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.f);
+  args::ValueFlag<float>                TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
+  args::ValueFlag<float>                Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
+  args::ValueFlag<float>                te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
 
   args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(
     parser, "LO", "Low values for parameters", {"lo"});
@@ -80,14 +76,12 @@ int main_basis_sim(args::Subparser &parser)
   args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
   args::ValueFlag<float> thresh(parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
-  args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
-  args::Flag rotate(parser, "V", "Rotate basis", {"rotate"});
-  args::Flag normalize(parser, "N", "Normalize dynamics before SVD", {"normalize"});
+  args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
+  args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
+  args::Flag             normalize(parser, "N", "Normalize dynamics before SVD", {"normalize"});
 
   ParseCommand(parser);
-  if (!oname) {
-    throw args::Error("No output filename specified");
-  }
+  if (!oname) { throw args::Error("No output filename specified"); }
 
   rl::Settings settings{
     .spokesPerSeg = sps.Get(),

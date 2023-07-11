@@ -38,7 +38,7 @@ BruteForceDictionary::BruteForceDictionary(Eigen::MatrixXf const &d)
 
 auto BruteForceDictionary::project(Eigen::VectorXcf const &p) const -> Eigen::VectorXcf
 {
-  Cx bestρ{0.f, 0.f};
+  Cx    bestρ{0.f, 0.f};
   Index bestIndex = -1;
   for (Index ii = 0; ii < dictionary.cols(); ii++) {
     Cx const ρ = dictionary.col(ii).cast<Cx>().dot(p);
@@ -70,7 +70,7 @@ TreeNode::TreeNode(std::vector<Eigen::VectorXf> &points)
     centroid /= points.size();
 
     Eigen::VectorXf leftCenter(centroid.rows()), rightCenter(centroid.rows());
-    double worst = std::numeric_limits<double>::infinity();
+    double          worst = std::numeric_limits<double>::infinity();
     for (auto const &p : points) {
       double s = p.dot(centroid);
       if (s < worst) {
@@ -127,7 +127,7 @@ BallTreeDictionary::BallTreeDictionary(Eigen::MatrixXf const &dict)
   : LookupDictionary()
 {
   std::vector<Eigen::VectorXf> points;
-  Eigen::VectorXf temp(dict.rows());
+  Eigen::VectorXf              temp(dict.rows());
   for (Index ii = 0; ii < dict.cols(); ii++) {
     for (Index ij = 0; ij < dict.rows(); ij++) {
       temp(ij) = dict(ij, ii);

@@ -12,9 +12,9 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
 {
   Index const rows = op->rows();
   Index const cols = op->cols();
-  CMap const b(bdata, rows);
-  Vector Mu(rows), u(rows);
-  Vector v(cols), h(cols), h̅(cols), x(cols);
+  CMap const  b(bdata, rows);
+  Vector      Mu(rows), u(rows);
+  Vector      v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
@@ -39,9 +39,9 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   float d = 0;
 
   // Initialize variables for estimation of ||A|| and cond(A)
-  float normA2 = α * α;
-  float maxρ̅ = 0;
-  float minρ̅ = std::numeric_limits<float>::max();
+  float       normA2 = α * α;
+  float       maxρ̅ = 0;
+  float       minρ̅ = std::numeric_limits<float>::max();
   float const normb = β;
 
   Log::Print("LSMR λ {}", λ);
@@ -51,7 +51,7 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
     Bidiag(op, M, Mu, u, v, α, β);
 
     float const ρold = ρ;
-    float c, s, ĉ = 1.f, ŝ = 0.f;
+    float       c, s, ĉ = 1.f, ŝ = 0.f;
     if (λ == 0.f) {
       std::tie(c, s, ρ) = StableGivens(α̅, β);
     } else {

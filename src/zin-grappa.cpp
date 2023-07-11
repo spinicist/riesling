@@ -10,16 +10,11 @@
 namespace rl {
 // Helper Functions
 Eigen::MatrixXcf GrabSources(
-  Cx3 const &ks,
-  float const scale,
-  Index const n_src,
-  Index const s_read,
-  Index const n_read,
-  std::vector<Index> const &traces)
+  Cx3 const &ks, float const scale, Index const n_src, Index const s_read, Index const n_read, std::vector<Index> const &traces)
 {
   assert((s_read + n_read + n_src) < ks.dimension(1));
-  Index const n_chan = ks.dimension(0);
-  Index const n_spoke = traces.size();
+  Index const      n_chan = ks.dimension(0);
+  Index const      n_spoke = traces.size();
   Eigen::MatrixXcf S(n_chan * n_src, n_read * n_spoke);
   S.setZero();
   for (Index i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
@@ -43,8 +38,8 @@ Eigen::MatrixXcf GrabSources(
 Eigen::MatrixXcf
 GrabTargets(Cx3 const &ks, float const scale, Index const s_read, Index const n_read, std::vector<Index> const &traces)
 {
-  Index const n_chan = ks.dimension(0);
-  Index const n_spoke = traces.size();
+  Index const      n_chan = ks.dimension(0);
+  Index const      n_spoke = traces.size();
   Eigen::MatrixXcf T(n_chan, n_read * n_spoke);
   T.setZero();
   for (Index i_spoke = 0; i_spoke < n_spoke; i_spoke++) {
@@ -63,8 +58,8 @@ GrabTargets(Cx3 const &ks, float const scale, Index const s_read, Index const n_
 Eigen::MatrixXcf CalcWeights(Eigen::MatrixXcf const &src, Eigen::MatrixXcf const tgt, float const lambda)
 {
   if (lambda > 0.f) {
-    auto const reg = lambda * src.norm() * Eigen::MatrixXcf::Identity(src.rows(), src.rows());
-    auto const rhs = src * src.adjoint() + reg;
+    auto const       reg = lambda * src.norm() * Eigen::MatrixXcf::Identity(src.rows(), src.rows());
+    auto const       rhs = src * src.adjoint() + reg;
     Eigen::MatrixXcf pinv = rhs.completeOrthogonalDecomposition().pseudoInverse();
     return tgt * src.adjoint() * pinv;
   } else {
@@ -76,7 +71,7 @@ Eigen::MatrixXcf CalcWeights(Eigen::MatrixXcf const &src, Eigen::MatrixXcf const
 std::vector<Index> FindClosest(Re3 const &traj, Index const &tgt, Index const &n_spoke, std::vector<Index> &all_traces)
 {
   std::vector<Index> traces(n_spoke);
-  Re1 const end_is = traj.chip<2>(tgt).chip<1>(traj.dimension(1) - 1);
+  Re1 const          end_is = traj.chip<2>(tgt).chip<1>(traj.dimension(1) - 1);
   std::partial_sort(
     all_traces.begin(), all_traces.begin() + n_spoke, all_traces.end(), [&traj, end_is](Index const a, Index const b) {
       auto const &end_a = traj.chip<2>(a).chip<1>(traj.dimension(1) - 1);
@@ -89,13 +84,7 @@ std::vector<Index> FindClosest(Re3 const &traj, Index const &tgt, Index const &n
 
 // Actual calculation
 void zinGRAPPA(
-  Index const gap_sz,
-  Index const n_src,
-  Index const n_spoke,
-  Index const n_read1,
-  float const lambda,
-  Re3 const &traj,
-  Cx3 &ks)
+  Index const gap_sz, Index const n_src, Index const n_spoke, Index const n_read1, float const lambda, Re3 const &traj, Cx3 &ks)
 {
   Index const n_read = n_read1 < 1 ? ks.dimension(1) - (gap_sz + n_src) : n_read1;
 
@@ -106,12 +95,12 @@ void zinGRAPPA(
       std::vector<Index> all_traces(ks.dimension(2)); // Need a thread-local copy of the indices
       std::iota(all_traces.begin(), all_traces.end(), 0L);
       float const scale = Re0(ks.chip<2>(is).abs().maximum())();
-      auto const traces = FindClosest(traj, is, n_spoke, all_traces);
-      auto const calS = GrabSources(ks, scale, n_src, ig + 1, n_read, traces);
-      auto const calT = GrabTargets(ks, scale, ig, n_read, traces);
-      auto const W = CalcWeights(calS, calT, lambda);
-      auto const S = GrabSources(ks, scale, n_src, ig, 1, {is});
-      auto const T = W * S;
+      auto const  traces = FindClosest(traj, is, n_spoke, all_traces);
+      auto const  calS = GrabSources(ks, scale, n_src, ig + 1, n_read, traces);
+      auto const  calT = GrabTargets(ks, scale, ig, n_read, traces);
+      auto const  W = CalcWeights(calS, calT, lambda);
+      auto const  S = GrabSources(ks, scale, n_src, ig, 1, {is});
+      auto const  T = W * S;
       for (Index icoil = 0; icoil < ks.dimension(0); icoil++) {
         ks(icoil, ig - 1, is) = T(icoil) * scale;
       }

@@ -6,8 +6,9 @@
 
 namespace rl {
 
-struct PowerReturn {
-  float val;
+struct PowerReturn
+{
+  float            val;
   Eigen::VectorXcf vec;
 };
 

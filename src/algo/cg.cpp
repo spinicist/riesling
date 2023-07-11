@@ -4,12 +4,12 @@
 
 namespace rl {
 
-template<typename Scalar>
+template <typename Scalar>
 auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vector
 {
   Index const rows = op->rows();
-  Map const b(bdata, rows);
-  Vector q(rows), p(rows), r(rows), x(rows);
+  Map const   b(bdata, rows);
+  Vector      q(rows), p(rows), r(rows), x(rows);
   // If we have an initial guess, use it
   if (x0data) {
     Map const x0(x0data, rows);
@@ -21,7 +21,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
     x.setZero();
   }
   p = r;
-  float r_old = r.squaredNorm();
+  float       r_old = r.squaredNorm();
   float const thresh = resTol * std::sqrt(r_old);
   Log::Print("CG |r| {:5.3E} threshold {:5.3E}", std::sqrt(r_old), thresh);
   Log::Print("IT |r|       α         β         |x|");
@@ -31,10 +31,10 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
     float const α = r_old / CheckedDot(p, q);
     x = x + p * α;
     if (debug) {
-        if (auto top = std::dynamic_pointer_cast<TensorOperator<Cx, 5, 4>>(op)) {
-            Log::Tensor(fmt::format("cg-x-{:02}", icg), top->ishape, x.data());
-            Log::Tensor(fmt::format("cg-r-{:02}", icg), top->ishape, r.data());
-        }
+      if (auto top = std::dynamic_pointer_cast<TensorOperator<Cx, 5, 4>>(op)) {
+        Log::Tensor(fmt::format("cg-x-{:02}", icg), top->ishape, x.data());
+        Log::Tensor(fmt::format("cg-r-{:02}", icg), top->ishape, r.data());
+      }
     }
     r = r - q * α;
     float const r_new = r.squaredNorm();
@@ -47,9 +47,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
       break;
     }
     r_old = r_new;
-    if (InterruptReceived()) {
-      break;
-    }
+    if (InterruptReceived()) { break; }
   }
   PopInterrupt();
   return x;

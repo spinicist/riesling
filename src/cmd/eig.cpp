@@ -15,22 +15,22 @@ using namespace rl;
 
 int main_eig(args::Subparser &parser)
 {
-  CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser, "none");
-  SENSE::Opts senseOpts(parser);
-  args::Flag adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
-  args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
+  CoreOpts                     coreOpts(parser);
+  SDC::Opts                    sdcOpts(parser, "none");
+  SENSE::Opts                  senseOpts(parser);
+  args::Flag                   adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
+  args::ValueFlag<Index>       its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::Flag recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
-  args::Flag savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
+  args::Flag                   recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
+  args::Flag                   savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, Cx5()), basis.dimension(0));
-  auto const A = make_recon(coreOpts, sdcOpts, traj, sense, basis);
-  auto P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
+  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
+  auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, Cx5()), basis.dimension(0));
+  auto const  A = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+  auto        P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());

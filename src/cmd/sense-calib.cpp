@@ -11,17 +11,17 @@ using namespace rl;
 
 int main_sense_calib(args::Subparser &parser)
 {
-  CoreOpts coreOpts(parser);
+  CoreOpts    coreOpts(parser);
   SENSE::Opts senseOpts(parser);
-  SDC::Opts sdcOpts(parser, "pipe");
+  SDC::Opts   sdcOpts(parser, "pipe");
 
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  Cx4 sense = SENSE::Choose(senseOpts, coreOpts, traj, noncart);
-  auto const fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
+  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx4         sense = SENSE::Choose(senseOpts, coreOpts, traj, noncart);
+  auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data());
 

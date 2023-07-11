@@ -9,27 +9,15 @@ struct nifti_traits;
 template <>
 struct nifti_traits<float>
 {
-  constexpr static int dtype()
-  {
-    return NIFTI_TYPE_FLOAT32;
-  }
-  constexpr static int bytesper()
-  {
-    return 4;
-  }
+  constexpr static int dtype() { return NIFTI_TYPE_FLOAT32; }
+  constexpr static int bytesper() { return 4; }
 };
 
 template <>
 struct nifti_traits<std::complex<float>>
 {
-  constexpr static int dtype()
-  {
-    return NIFTI_TYPE_COMPLEX64;
-  }
-  constexpr static int bytesper()
-  {
-    return 8;
-  }
+  constexpr static int dtype() { return NIFTI_TYPE_COMPLEX64; }
+  constexpr static int bytesper() { return 8; }
 };
 } // namespace
 

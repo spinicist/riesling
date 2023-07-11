@@ -17,13 +17,13 @@ struct LSQR
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
 
-  std::shared_ptr<Op> op;
-  std::shared_ptr<Op> M; // Pre-conditioner
-  Index iterLimit = 8;
-  float aTol = 1.e-6f;
-  float bTol = 1.e-6f;
-  float cTol = 1.e-6f;
-  std::function<void (Index const iter, Vector const &)> debug = nullptr;
+  std::shared_ptr<Op>                                   op;
+  std::shared_ptr<Op>                                   M; // Pre-conditioner
+  Index                                                 iterLimit = 8;
+  float                                                 aTol = 1.e-6f;
+  float                                                 bTol = 1.e-6f;
+  float                                                 cTol = 1.e-6f;
+  std::function<void(Index const iter, Vector const &)> debug = nullptr;
 
   auto run(Cx const *bdata, float const λ = 0.f, Cx *x0 = nullptr) const -> Vector;
 };

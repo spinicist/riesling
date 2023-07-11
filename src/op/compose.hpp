@@ -31,9 +31,9 @@ struct Compose final : TensorOperator<typename Op1::Scalar, Op1::InRank, Op2::Ou
   void forward(InCMap const &x, OutMap &y) const
   {
     typename Op1::OutTensor temp(op1_->oshape);
-    typename Op1::OutMap tm(temp.data(), op1_->oshape);
-    typename Op1::OutCMap tcm(temp.data(), op1_->oshape);
-    auto const time = this->startForward(x);
+    typename Op1::OutMap    tm(temp.data(), op1_->oshape);
+    typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
+    auto const              time = this->startForward(x);
     op1_->forward(x, tm);
     op2_->forward(tcm, y);
     this->finishForward(y, time);
@@ -42,9 +42,9 @@ struct Compose final : TensorOperator<typename Op1::Scalar, Op1::InRank, Op2::Ou
   void adjoint(OutCMap const &y, InMap &x) const
   {
     typename Op1::OutTensor temp(op1_->oshape);
-    typename Op1::OutMap tm(temp.data(), op1_->oshape);
-    typename Op1::OutCMap tcm(temp.data(), op1_->oshape);
-    auto const time = this->startAdjoint(y);
+    typename Op1::OutMap    tm(temp.data(), op1_->oshape);
+    typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
+    auto const              time = this->startAdjoint(y);
     op2_->adjoint(y, tm);
     op1_->adjoint(tcm, x);
     this->finishAdjoint(x, time);

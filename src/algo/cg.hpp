@@ -34,8 +34,8 @@ struct NormalOp final : Ops::Op<Scalar_>
   void forward(CMap const &x, Map &y) const
   {
     Vector temp(op->cols());
-    Map tm(temp.data(), temp.size());
-    CMap tcm(temp.data(), temp.size());
+    Map    tm(temp.data(), temp.size());
+    CMap   tcm(temp.data(), temp.size());
     op->forward(x, tm);
     op->adjoint(tcm, y);
   }
@@ -50,9 +50,9 @@ struct ConjugateGradients
   using Map = typename Op::Map;
 
   std::shared_ptr<Op> op;
-  Index iterLimit = 16;
-  float resTol = 1.e-6f;
-  bool debug = false;
+  Index               iterLimit = 16;
+  float               resTol = 1.e-6f;
+  bool                debug = false;
 
   auto run(Scalar *bdata, Scalar *x0 = nullptr) const -> Vector;
 };

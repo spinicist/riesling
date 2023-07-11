@@ -5,7 +5,7 @@
 
 namespace rl::Proxs {
 
-template<typename S>
+template <typename S>
 L2<S>::L2(float const λ_, Index const sz_)
   : Prox<S>(sz_)
   , λ{λ_}
@@ -14,7 +14,7 @@ L2<S>::L2(float const λ_, Index const sz_)
   Log::Print("L2 Prox λ {}", λ);
 }
 
-template<typename S>
+template <typename S>
 L2<S>::L2(float const λ_, CMap const bias)
   : Prox<S>(bias.rows())
   , λ{λ_}
@@ -23,7 +23,7 @@ L2<S>::L2(float const λ_, CMap const bias)
   Log::Print("L2 Prox λ {}", λ);
 }
 
-template<typename S>
+template <typename S>
 void L2<S>::apply(float const α, CMap const &x, Map &z) const
 {
   float const t = α * λ;
@@ -36,7 +36,7 @@ void L2<S>::apply(float const α, CMap const &x, Map &z) const
   Log::Print("L2 α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.norm(), y.norm(), z.norm());
 }
 
-template<typename S>
+template <typename S>
 void L2<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) const
 {
   auto const div = α->inverse(1.f, λ);
@@ -49,8 +49,9 @@ void L2<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) c
   Log::Print("L2 λ {} |x| {} |y| {} |z| {}", λ, x.norm(), y.norm(), z.norm());
 }
 
-template<typename S>
-void L2<S>::setBias(S const *data) {
+template <typename S>
+void L2<S>::setBias(S const *data)
+{
   new (&this->y) CMap(data, this->sz);
 }
 

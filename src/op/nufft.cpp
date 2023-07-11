@@ -6,8 +6,7 @@
 namespace rl {
 
 template <size_t NDim>
-NUFFTOp<NDim>::NUFFTOp(
-  std::shared_ptr<GridBase<Cx, NDim>> g, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> s)
+NUFFTOp<NDim>::NUFFTOp(std::shared_ptr<GridBase<Cx, NDim>> g, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> s)
   : Parent("NUFFTOp", Concatenate(FirstN<2>(g->ishape), AMin(matrix, LastN<NDim>(g->ishape))), g->oshape)
   , gridder{g}
   , workspace{gridder->ishape}
@@ -23,7 +22,7 @@ template <size_t NDim>
 void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
-  InMap wsm(workspace.data(), gridder->ishape);
+  InMap      wsm(workspace.data(), gridder->ishape);
   pad.forward(apo.forward(x), wsm);
   // Log::Tensor("nufft-fwd", pad.oshape, wsm.data());
   fft->forward(workspace);
@@ -35,7 +34,7 @@ template <size_t NDim>
 void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
-  InMap wsm(workspace.data(), gridder->ishape);
+  InMap      wsm(workspace.data(), gridder->ishape);
   gridder->adjoint(sdc->adjoint(y), wsm);
   fft->reverse(workspace);
   // Log::Tensor("nufft-adj", pad.oshape, wsm.data());
@@ -48,12 +47,12 @@ template struct NUFFTOp<2>;
 template struct NUFFTOp<3>;
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(
-  Trajectory const &traj,
-  std::string const &ktype,
-  float const osamp,
-  Index const nC,
-  Sz3 const matrix,
-  Re2 const &basis,
+  Trajectory const                      &traj,
+  std::string const                     &ktype,
+  float const                            osamp,
+  Index const                            nC,
+  Sz3 const                              matrix,
+  Re2 const                             &basis,
   std::shared_ptr<TensorOperator<Cx, 3>> sdc)
 {
   if (traj.nDims() == 2) {

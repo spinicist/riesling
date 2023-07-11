@@ -19,9 +19,7 @@ void Init()
     // hid_t errorStack;
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
-    if (err < 0) {
-      Log::Fail("Could not initialise HDF5, code: {}", err);
-    }
+    if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
     Log::Print<Log::Level::High>("Initialised HDF5");
   } else {
@@ -33,9 +31,7 @@ void Init()
 herr_t ErrorWalker(unsigned n, const H5E_error2_t *err_desc, void *data)
 {
   std::string *str = (std::string *)data;
-  if (n == 0) {
-    *str = fmt::format("{}\n", err_desc->desc);
-  }
+  if (n == 0) { *str = fmt::format("{}\n", err_desc->desc); }
   return 0;
 }
 
@@ -46,20 +42,19 @@ std::string GetError()
   return error_string;
 }
 
-void CheckedCall(herr_t status, std::string const &msg) {
-  if (status) {
-    Log::Fail("HD5 Error {}. Status {}. Error:{}\n", msg, status, GetError());
-  }
+void CheckedCall(herr_t status, std::string const &msg)
+{
+  if (status) { Log::Fail("HD5 Error {}. Status {}. Error:{}\n", msg, status, GetError()); }
 }
 
 hid_t InfoType()
 {
-  hid_t info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
+  hid_t   info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
   hsize_t sz3[1] = {3};
-  hid_t long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
-  hid_t float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
-  hsize_t sz33[2] = {3,3};
-  hid_t float33_id = H5Tarray_create(H5T_NATIVE_FLOAT, 2, sz33);
+  hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
+  hid_t   float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
+  hsize_t sz33[2] = {3, 3};
+  hid_t   float33_id = H5Tarray_create(H5T_NATIVE_FLOAT, 2, sz33);
   CheckedCall(H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id), "inserting matrix field");
   CheckedCall(H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id), "inserting voxel size field");
   CheckedCall(H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id), "inserting oring field");
@@ -72,18 +67,11 @@ void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   // Also use vector instead of array so I don't forget to change the size if the members change
-  std::vector<std::string> const names{
-    "matrix",
-    "voxel_size",
-    "origin",
-    "direction",
-    "tr"};
+  std::vector<std::string> const names{"matrix", "voxel_size", "origin", "direction", "tr"};
 
-  if (handle < 0) {
-    Log::Fail("Info struct does not exist");
-  }
+  if (handle < 0) { Log::Fail("Info struct does not exist"); }
   auto const dtype = H5Dget_type(handle);
-  size_t n_members = H5Tget_nmembers(dtype);
+  size_t     n_members = H5Tget_nmembers(dtype);
   // Re-ordered and extra fields are okay. Missing is not
   for (auto const &check_name : names) {
     bool found = false;
@@ -94,16 +82,11 @@ void CheckInfoType(hid_t handle)
         break;
       }
     }
-    if (!found) {
-      Log::Fail("Field {} not found in header info", check_name);
-    }
+    if (!found) { Log::Fail("Field {} not found in header info", check_name); }
   }
 }
 
-bool Exists(hid_t const parent, std::string const name)
-{
-  return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0);
-}
+bool Exists(hid_t const parent, std::string const name) { return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0); }
 
 template <>
 hid_t type_impl(type_tag<Index>)

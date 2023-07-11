@@ -45,7 +45,7 @@ struct FFTOp final : TensorOperator<Cx, Rank, Rank>
   }
 
 private:
-  InDims dims_;
+  InDims                                   dims_;
   std::shared_ptr<FFT::FFT<Rank, FFTRank>> fft_;
 };
-} // namespace rl
+} // namespace rl::Ops

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cmath>
 #include "log.hpp"
+#include <cmath>
 
 namespace rl {
 
@@ -13,7 +13,7 @@ struct ExpSemi
 {
   static constexpr size_t Width = W;
   static constexpr size_t PadWidth = (((W + 1) / 2) * 2) + 1;
-  float const beta;
+  float const             beta;
 
   ExpSemi(float const osamp)
     : beta{(float)M_PI * 0.98f * W * (1.f - 0.5f / osamp)}

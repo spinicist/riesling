@@ -18,16 +18,16 @@ using namespace rl;
 
 int main_admm(args::Subparser &parser)
 {
-  CoreOpts coreOpts(parser);
-  SDC::Opts sdcOpts(parser, "none");
+  CoreOpts    coreOpts(parser);
+  SDC::Opts   sdcOpts(parser, "none");
   SENSE::Opts senseOpts(parser);
-  RegOpts regOpts(parser);
+  RegOpts     regOpts(parser);
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<Index> inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
-  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+  args::ValueFlag<Index>       inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
+  args::ValueFlag<float>       atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
+  args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
+  args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (30)", {"max-outer-its"}, 30);
   args::ValueFlag<float> abstol(parser, "ABS", "ADMM absolute tolerance (1e-4)", {"abs-tol"}, 1.e-4f);
@@ -36,24 +36,24 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
-  args::Flag hogwild(parser, "HW", "Use Hogwild scheme", {"hogwild"});
+  args::Flag             hogwild(parser, "HW", "Use Hogwild scheme", {"hogwild"});
 
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   Info const &info = traj.info();
-  auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
   auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
-  auto M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
+  auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()));
 
-  Cropper out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
-  Sz3 outSz = out_cropper.size();
+  Cropper     out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
+  Sz3         outSz = out_cropper.size();
   float const scale = Scaling(coreOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
 
@@ -61,7 +61,7 @@ int main_admm(args::Subparser &parser)
   if (coreOpts.residImage) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
-  Regularizers reg(regOpts, shape, A);
+  Regularizers                 reg(regOpts, shape, A);
 
   std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());

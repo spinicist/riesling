@@ -17,7 +17,7 @@ struct Mapping
 {
   struct Bucket
   {
-    Sz<Rank> minCorner, maxCorner;
+    Sz<Rank>             minCorner, maxCorner;
     std::vector<int32_t> indices;
 
     auto empty() const -> bool;
@@ -27,21 +27,21 @@ struct Mapping
 
   Mapping(
     Trajectory const &t,
-    float const nomOSamp,
-    Index const kW,
-    Index const bucketSize = 32,
-    Index const splitSize = 16384,
-    Index const read0 = 0);
+    float const       nomOSamp,
+    Index const       kW,
+    Index const       bucketSize = 32,
+    Index const       splitSize = 16384,
+    Index const       read0 = 0);
 
-  float osamp;
-  Sz2 noncartDims;
+  float    osamp;
+  Sz2      noncartDims;
   Sz<Rank> cartDims, nomDims;
 
-  std::vector<std::array<int16_t, Rank>> cart;
-  std::vector<NoncartesianIndex> noncart;
+  std::vector<std::array<int16_t, Rank>>    cart;
+  std::vector<NoncartesianIndex>            noncart;
   std::vector<Eigen::Array<float, Rank, 1>> offset;
-  std::vector<Bucket> buckets;
-  std::vector<int32_t> sortedIndices;
+  std::vector<Bucket>                       buckets;
+  std::vector<int32_t>                      sortedIndices;
 };
 
 } // namespace rl

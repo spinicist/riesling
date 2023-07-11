@@ -18,7 +18,7 @@ auto Op<S>::forward(Vector const &x) const -> Vector
   Log::Print<Log::Level::Debug>("Op {} forward x {} rows {} cols {}", name, x.rows(), rows(), cols());
   assert(x.rows() == cols());
   Vector y(this->rows());
-  Map ym(y.data(), y.size());
+  Map    ym(y.data(), y.size());
   this->forward(CMap(x.data(), x.size()), ym);
   return y;
 }
@@ -29,7 +29,7 @@ auto Op<S>::adjoint(Vector const &y) const -> Vector
   Log::Print<Log::Level::Debug>("Op {} adjoint y {} rows {} cols {}", name, y.rows(), rows(), cols());
   assert(y.rows() == rows());
   Vector x(this->cols());
-  Map xm(x.data(), x.size());
+  Map    xm(x.data(), x.size());
   this->adjoint(CMap(y.data(), y.size()), xm);
   return x;
 }
@@ -41,7 +41,7 @@ void Op<S>::forward(Vector const &x, Vector &y) const
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   CMap xm(x.data(), x.size());
-  Map ym(y.data(), y.size());
+  Map  ym(y.data(), y.size());
   this->forward(xm, ym);
 }
 
@@ -52,7 +52,7 @@ void Op<S>::adjoint(Vector const &y, Vector &x) const
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   CMap ym(y.data(), y.size());
-  Map xm(x.data(), x.size());
+  Map  xm(x.data(), x.size());
   this->adjoint(ym, xm);
 }
 
@@ -284,8 +284,8 @@ void Multiply<S>::forward(CMap const &x, Map &y) const
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   Vector temp(B->rows());
-  Map tm(temp.data(), temp.size());
-  CMap tcm(temp.data(), temp.size());
+  Map    tm(temp.data(), temp.size());
+  CMap   tcm(temp.data(), temp.size());
   B->forward(x, tm);
   A->forward(tcm, y);
 }
@@ -296,8 +296,8 @@ void Multiply<S>::adjoint(CMap const &y, Map &x) const
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   Vector temp(A->cols());
-  Map tm(temp.data(), temp.size());
-  CMap tcm(temp.data(), temp.size());
+  Map    tm(temp.data(), temp.size());
+  CMap   tcm(temp.data(), temp.size());
   A->adjoint(y, tm);
   B->adjoint(tcm, x);
 }
@@ -369,7 +369,7 @@ void VStack<S>::adjoint(CMap const &y, Map &x) const
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   Vector xt(x.rows());
-  Map xtm(xt.data(), xt.rows());
+  Map    xtm(xt.data(), xt.rows());
   x.setConstant(0.f);
   Index ir = 0;
   for (auto const &op : ops) {
@@ -417,7 +417,7 @@ void DStack<S>::forward(CMap const &x, Map &y) const
   Index ir = 0, ic = 0;
   for (auto const &op : ops) {
     CMap xm(x.data() + ic, op->cols());
-    Map ym(y.data() + ir, op->rows());
+    Map  ym(y.data() + ir, op->rows());
     op->forward(xm, ym);
     ir += op->rows();
     ic += op->cols();
@@ -433,7 +433,7 @@ void DStack<S>::adjoint(CMap const &y, Map &x) const
   assert(y.rows() == rows());
   Index ir = 0, ic = 0;
   for (auto const &op : ops) {
-    Map xm(x.data() + ic, op->cols());
+    Map  xm(x.data() + ic, op->cols());
     CMap ym(y.data() + ir, op->rows());
     op->adjoint(ym, xm);
     ir += op->rows();
@@ -525,7 +525,7 @@ void Subtract<S>::forward(CMap const &x, Map &y) const
   assert(y.rows() == rows());
   a->forward(x, y);
   Vector temp(rows());
-  Map tm(temp.data(), temp.rows());
+  Map    tm(temp.data(), temp.rows());
   b->forward(x, tm);
   y -= tm;
 }
@@ -537,7 +537,7 @@ void Subtract<S>::adjoint(CMap const &y, Map &x) const
   assert(y.rows() == rows());
   a->adjoint(y, x);
   Vector temp(cols());
-  Map tm(temp.data(), temp.rows());
+  Map    tm(temp.data(), temp.rows());
   b->adjoint(y, tm);
   x -= tm;
 }

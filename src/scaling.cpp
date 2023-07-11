@@ -15,7 +15,7 @@ auto Scaling(
 {
   float scale;
   if (type.Get() == "bart") {
-    LSMR lsmr{A, P, 2};
+    LSMR           lsmr{A, P, 2};
     Eigen::ArrayXf x = lsmr.run(b).array().abs();
     std::sort(x.begin(), x.end());
     float const med = x[x.size() * 0.5];
@@ -24,7 +24,7 @@ auto Scaling(
     scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
     Log::Print("Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
   } else if (type.Get() == "otsu") {
-    LSMR lsmr{A, P, 2};
+    LSMR                 lsmr{A, P, 2};
     Eigen::ArrayXf const x = lsmr.run(b).array().abs();
     auto const [thresh, count] = Otsu(x);
     std::vector<float> vals(count);

@@ -48,9 +48,9 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
-      auto const time = this->startAdjoint(y);
-      x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
-      this->finishAdjoint(x, time);
+    auto const time = this->startAdjoint(y);
+    x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
+    this->finishAdjoint(x, time);
   }
 
   auto inverse() const -> std::shared_ptr<Ops::Op<Cx>>
@@ -66,7 +66,7 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
   }
 
 private:
-  TScales scales;
+  TScales  scales;
   Sz<Rank> res, brd;
 };
 

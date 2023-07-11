@@ -5,18 +5,25 @@
 namespace rl {
 
 template <size_t ND, size_t W>
-struct KernelSizes {
+struct KernelSizes
+{
 };
 
-template <size_t W> struct KernelSizes<1, W> {
+template <size_t W>
+struct KernelSizes<1, W>
+{
   using Type = Eigen::Sizes<W>;
 };
 
-template <size_t W> struct KernelSizes<2, W> {
+template <size_t W>
+struct KernelSizes<2, W>
+{
   using Type = Eigen::Sizes<W, W>;
 };
 
-template <size_t W> struct KernelSizes<3, W> {
+template <size_t W>
+struct KernelSizes<3, W>
+{
   using Type = Eigen::Sizes<W, W, W>;
 };
 
@@ -29,7 +36,7 @@ struct Kernel
 
   OneD centers;
 
-  Kernel() 
+  Kernel()
   {
     Eigen::TensorFixedSize<float, Eigen::Sizes<W>> pos;
     for (size_t ii = 0; ii < W; ii++) {

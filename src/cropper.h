@@ -9,7 +9,7 @@ template <typename T, int ND>
 decltype(auto) Crop(Eigen::Tensor<T, ND> &x, Sz<ND> const &sz)
 {
   Sz<ND> const fullSz = x.dimensions();
-  Sz<ND> st;
+  Sz<ND>       st;
   for (Index ii = 0; ii < ND; ii++) {
     st[ii] = (fullSz[ii] - (sz[ii] - 1)) / 2;
   }
@@ -57,7 +57,7 @@ struct Cropper
   }
 
 private:
-  Sz3 sz_, st_;
+  Sz3  sz_, st_;
   void calcStart(Sz3 const &fullSz);
 };
 

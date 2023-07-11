@@ -3,15 +3,15 @@
 #include "cpu.hpp"
 
 #include "log.hpp"
+#include "parse_args.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include "parse_args.hpp"
 
 #include "fftw3.h"
+#include <filesystem>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <filesystem>
 
 namespace rl {
 namespace FFT {
@@ -19,8 +19,8 @@ namespace FFT {
 auto WisdomPath(std::string const &execname) -> std::string
 {
   struct passwd *pw = getpwuid(getuid());
-  const char *homedir = pw->pw_dir;
-  char hostname[128];
+  const char    *homedir = pw->pw_dir;
+  char           hostname[128];
   gethostname(hostname, 127);
   std::filesystem::path execpath(execname);
   return fmt::format("{}/.{}-wisdom-{}", homedir, execpath.filename().c_str(), hostname);
@@ -65,13 +65,13 @@ void SetTimelimit(double time)
  */
 Cx1 Phase(Index const sz)
 {
-  Index const c = sz / 2;
+  Index const  c = sz / 2;
   double const shift = (double)c / sz;
-  Rd1 ii(sz);
+  Rd1          ii(sz);
   std::iota(ii.data(), ii.data() + ii.size(), 0.);
   auto const s = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
   Cxd1 const ph = ((s - s.floor()) * s.constant(2. * M_PI)).cast<Cxd>();
-  Cx1 const factors = (ph * ph.constant(Cxd{0., 1.})).exp().cast<Cx>();
+  Cx1 const  factors = (ph * ph.constant(Cxd{0., 1.})).exp().cast<Cx>();
   return factors;
 }
 

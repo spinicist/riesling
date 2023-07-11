@@ -13,10 +13,10 @@ struct Opts
 {
   Opts(args::Subparser &parser);
   args::ValueFlag<std::string> type;
-  args::ValueFlag<Index> volume, frame;
-  args::ValueFlag<float> res, λ, fov;
-  args::ValueFlag<Index> kRad, calRad, gap;
-  args::ValueFlag<float> threshold;
+  args::ValueFlag<Index>       volume, frame;
+  args::ValueFlag<float>       res, λ, fov;
+  args::ValueFlag<Index>       kRad, calRad, gap;
+  args::ValueFlag<float>       threshold;
 };
 
 // Normalizes by RSS with optional regularization

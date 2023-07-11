@@ -7,10 +7,10 @@ using namespace rl;
 int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");
-  args::Group commands(parser, "COMMANDS");
+  args::Group          commands(parser, "COMMANDS");
 
 #define COMMAND(NM, CMD, DESC)                                                                                                 \
-  int main_##NM(args::Subparser &parser);                                                                                      \
+  int           main_##NM(args::Subparser &parser);                                                                            \
   args::Command NM(commands, CMD, DESC, &main_##NM);
 
   COMMAND(admm, "admm", "ADMM recon");

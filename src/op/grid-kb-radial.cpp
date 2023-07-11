@@ -26,17 +26,15 @@ auto make_kb_radial(Trajectory const &traj, size_t const W, float const osamp, I
   Log::Fail("Invalid kernel width {}", W);
 }
 
-template auto make_kb_radial<Cx, 2>(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
+template auto make_kb_radial<Cx, 2>(Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Cx, 2>>;
-template auto make_kb_radial<Cx, 3>(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
+template auto make_kb_radial<Cx, 3>(Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<Cx, 3>>;
-template auto make_kb_radial<float, 2>(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
+template auto
+make_kb_radial<float, 2>(Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<float, 2>>;
-template auto make_kb_radial<float, 3>(
-  Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
+template auto
+make_kb_radial<float, 3>(Trajectory const &traj, size_t const W, float const osamp, Index const nC, Re2 const &basis)
   -> std::shared_ptr<GridBase<float, 3>>;
 
 } // namespace rl

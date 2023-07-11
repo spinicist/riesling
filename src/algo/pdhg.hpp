@@ -18,25 +18,25 @@ struct PDHG
   using Callback = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
 
   PDHG(
-    std::shared_ptr<Op> A,
-    std::shared_ptr<Op> P,
-    Regularizers const &reg,
+    std::shared_ptr<Op>       A,
+    std::shared_ptr<Op>       P,
+    Regularizers const       &reg,
     std::vector<float> const &σ = std::vector<float>(),
-    float const τ = -1.f,
-    Callback const &cb = nullptr);
+    float const               τ = -1.f,
+    Callback const           &cb = nullptr);
 
   auto run(Cx const *bdata, Index const iterLimit) -> Vector;
 
   std::vector<float> σ;
-  float τ;
+  float              τ;
 
 private:
-  std::shared_ptr<Op> Aʹ;
-  std::shared_ptr<Proxs::L2<Cx>> l2;
+  std::shared_ptr<Op>                   Aʹ;
+  std::shared_ptr<Proxs::L2<Cx>>        l2;
   std::shared_ptr<Proxs::StackProx<Cx>> proxʹ;
-  std::shared_ptr<Ops::Op<Cx>> σOp;
-  Vector x, x̅, xold, xdiff, u, v;
-  Callback debug = nullptr;
+  std::shared_ptr<Ops::Op<Cx>>          σOp;
+  Vector                                x, x̅, xold, xdiff, u, v;
+  Callback                              debug = nullptr;
 };
 
 } // namespace rl

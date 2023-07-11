@@ -5,9 +5,10 @@
 
 namespace rl {
 
-struct OtsuReturn {
-    float thresh;
-    Index countAbove;
+struct OtsuReturn
+{
+  float thresh;
+  Index countAbove;
 };
 
 auto Otsu(Eigen::ArrayXf const &x, Index const nBins = 128) -> OtsuReturn;

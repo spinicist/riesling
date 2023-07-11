@@ -21,7 +21,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   using OutCMap = Eigen::TensorMap<OutTensor const>;
   using OutDims = typename OutTensor::Dimensions;
 
-  InDims ishape;
+  InDims  ishape;
   OutDims oshape;
 
   TensorOperator(std::string const &n, InDims const xd, OutDims const yd)
@@ -57,7 +57,7 @@ struct TensorOperator : Ops::Op<Scalar_>
     assert(y.rows() == this->rows());
     Log::Print<Log::Level::Debug>("Tensor {} adjoint y {} x {}", this->name, y.rows(), x.rows());
     OutCMap ym(y.data(), oshape);
-    InMap xm(x.data(), ishape);
+    InMap   xm(x.data(), ishape);
     adjoint(ym, xm);
   }
 
@@ -65,9 +65,9 @@ struct TensorOperator : Ops::Op<Scalar_>
   {
     Log::Print<Log::Level::Debug>(
       "Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
-    InCMap xm(x.data(), ishape);
+    InCMap    xm(x.data(), ishape);
     OutTensor y(oshape);
-    OutMap ym(y.data(), oshape);
+    OutMap    ym(y.data(), oshape);
     forward(xm, ym);
     return y;
   }
@@ -76,9 +76,9 @@ struct TensorOperator : Ops::Op<Scalar_>
   {
     Log::Print<Log::Level::Debug>(
       "Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
-    OutCMap ym(y.data(), oshape);
+    OutCMap  ym(y.data(), oshape);
     InTensor x(ishape);
-    InMap xm(x.data(), ishape);
+    InMap    xm(x.data(), ishape);
     adjoint(ym, xm);
     return x;
   }
@@ -88,9 +88,7 @@ struct TensorOperator : Ops::Op<Scalar_>
 
   auto startForward(InCMap const &x) const
   {
-    if (x.dimensions() != ishape) {
-      Log::Fail("{} forward dims were: {} expected: {}", this->name, x.dimensions(), ishape);
-    }
+    if (x.dimensions() != ishape) { Log::Fail("{} forward dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
         "{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
@@ -101,16 +99,13 @@ struct TensorOperator : Ops::Op<Scalar_>
   void finishForward(OutMap const &y, Log::Time const start) const
   {
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(
-        "{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
+      Log::Print<Log::Level::Debug>("{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
     }
   }
 
   auto startAdjoint(OutCMap const &y) const
   {
-    if (y.dimensions() != oshape) {
-      Log::Fail("{} adjoint dims were: {} expected: {}", this->name, y.dimensions(), oshape);
-    }
+    if (y.dimensions() != oshape) { Log::Fail("{} adjoint dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Print<Log::Level::Debug>(
         "{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
@@ -121,8 +116,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   void finishAdjoint(InMap const &x, Log::Time const start) const
   {
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(
-        "{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
+      Log::Print<Log::Level::Debug>("{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
     }
   }
 };
@@ -171,7 +165,6 @@ struct TensorIdentity : TensorOperator<Scalar_, Rank, Rank>
     x = y;
     Parent::finishAdjoint(x, time);
   }
-
 };
 
 } // namespace rl

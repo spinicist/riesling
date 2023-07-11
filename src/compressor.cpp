@@ -4,17 +4,14 @@
 
 namespace rl {
 
-Index Compressor::out_channels() const
-{
-  return psi.cols();
-}
+Index Compressor::out_channels() const { return psi.cols(); }
 
 Cx4 Compressor::compress(Cx4 const &source)
 {
   Log::Print("Compressing to {} channels", psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
-  Cx4 dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3));
-  auto destmat = CollapseToMatrix(dest);
+  Cx4        dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3));
+  auto       destmat = CollapseToMatrix(dest);
   destmat.noalias() = psi.transpose() * sourcemat;
   return dest;
 }
@@ -23,8 +20,8 @@ Cx5 Compressor::compress(Cx5 const &source)
 {
   Log::Print("Compressing to {} channels", psi.cols());
   auto const sourcemat = CollapseToConstMatrix(source);
-  Cx5 dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3), source.dimension(4));
-  auto destmat = CollapseToMatrix(dest);
+  Cx5        dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3), source.dimension(4));
+  auto       destmat = CollapseToMatrix(dest);
   destmat.noalias() = psi.transpose() * sourcemat;
   return dest;
 }

@@ -22,15 +22,15 @@ ROVIROpts::ROVIROpts(args::Subparser &parser)
 }
 
 auto ROVIR(
-  ROVIROpts &opts,
+  ROVIROpts        &opts,
   Trajectory const &inTraj,
-  float const energy,
-  Index const channels,
-  Index const lorestraces,
-  Cx4 const &inData) -> Eigen::MatrixXcf
+  float const       energy,
+  Index const       channels,
+  Index const       lorestraces,
+  Cx4 const        &inData) -> Eigen::MatrixXcf
 {
   Trajectory traj = inTraj;
-  Cx4 data;
+  Cx4        data;
   if (opts.res) {
     std::tie(traj, data) = inTraj.downsample(inData, opts.res.Get(), lorestraces, true, true);
   } else {
@@ -39,14 +39,14 @@ auto ROVIR(
   auto const &info = traj.info();
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
-  auto sdc = std::make_shared<TensorScale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
-  Re2 basis(1, 1);
+  auto        sdc = std::make_shared<TensorScale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
+  Re2         basis(1, 1);
   basis.setConstant(1.f);
-  auto nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(opts.fov.Get()), basis, sdc);
+  auto       nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(opts.fov.Get()), basis, sdc);
   auto const sz = LastN<3>(nufft->ishape);
-  Cx4 const channelImages = nufft->adjoint(data).chip<1>(0);
-  Re3 const rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
-  auto thresh = Otsu(CollapseToArray(rss)).thresh;
+  Cx4 const  channelImages = nufft->adjoint(data).chip<1>(0);
+  Re3 const  rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
+  auto       thresh = Otsu(CollapseToArray(rss)).thresh;
   Log::Print("ROVIR signal threshold {}", thresh);
   Re3 signalMask(sz), interMask(sz);
   signalMask.setZero();
@@ -61,7 +61,7 @@ auto ROVIR(
 
   Eigen::MatrixXcf Ω = Eigen::MatrixXcf::Zero(nC, nSig);
   Eigen::MatrixXcf Γ = Eigen::MatrixXcf::Zero(nC, nInt);
-  Index isig = 0, iint = 0;
+  Index            isig = 0, iint = 0;
   for (Index iz = 0; iz < rss.dimension(2); iz++) {
     for (Index iy = 0; iy < rss.dimension(1); iy++) {
       for (Index ix = 0; ix < rss.dimension(0); ix++) {
@@ -89,7 +89,7 @@ auto ROVIR(
   D = (B.diagonal().array().sqrt().inverse());
   B = D.asDiagonal() * B * D.asDiagonal();
   Eigen::LLT<Eigen::MatrixXcf> const cholB(B);
-  Eigen::MatrixXcf C = A.selfadjointView<Eigen::Lower>();
+  Eigen::MatrixXcf                   C = A.selfadjointView<Eigen::Lower>();
   cholB.matrixL().solveInPlace<Eigen::OnTheLeft>(C);
   cholB.matrixU().solveInPlace<Eigen::OnTheRight>(C);
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcf> eig(C);

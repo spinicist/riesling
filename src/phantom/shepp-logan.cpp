@@ -13,15 +13,15 @@ namespace rl {
  */
 
 Cx3 SheppLoganPhantom(
-  Sz3 const &matrix,
-  Eigen::Array3f const &voxel_size,
-  Eigen::Vector3f const &c,
-  Eigen::Vector3f const &imr,
-  float const rad,
+  Sz3 const                          &matrix,
+  Eigen::Array3f const               &voxel_size,
+  Eigen::Vector3f const              &c,
+  Eigen::Vector3f const              &imr,
+  float const                         rad,
   std::vector<Eigen::Vector3f> const &centres,
-  std::vector<Eigen::Array3f> const &ha,
-  std::vector<float> const &angles,
-  std::vector<float> const &intensities)
+  std::vector<Eigen::Array3f> const  &ha,
+  std::vector<float> const           &angles,
+  std::vector<float> const           &intensities)
 {
   if (!(centres.size() == ha.size() && centres.size() == angles.size() && centres.size() == intensities.size())) {
     Log::Fail("Shepp Logan property lengths did not match");
@@ -39,7 +39,7 @@ Cx3 SheppLoganPhantom(
   Eigen::Matrix3f yaw;
   Eigen::Matrix3f pitch;
   Eigen::Matrix3f roll;
-  float d2r = M_PI / 180.0;
+  float           d2r = M_PI / 180.0;
   roll << 1.f, 0.f, 0.f,                        //
     0.f, cos(imr[0] * d2r), -sin(imr[0] * d2r), //
     0.f, sin(imr[0] * d2r), cos(imr[0] * d2r);
@@ -57,8 +57,8 @@ Cx3 SheppLoganPhantom(
     for (Index iy = 0; iy < phan.dimension(1); iy++) {
       auto const py = (iy - cy) * voxel_size[1];
       for (Index ix = 0; ix < phan.dimension(0); ix++) {
-        auto const px = (ix - cx) * voxel_size[0];
-        Eigen::Vector3f p0{px, py, pz};
+        auto const            px = (ix - cx) * voxel_size[0];
+        Eigen::Vector3f       p0{px, py, pz};
         Eigen::Vector3f const p = yaw * pitch * roll * p0;
 
         // Normalize coordinates between -1 and 1
@@ -72,9 +72,7 @@ Cx3 SheppLoganPhantom(
             0.f, 0.f, 1.f;
 
           Eigen::Vector3f const pe = ((rot * (r - centres[ie])).array() / ha[ie]);
-          if (pe.norm() < 1.f) {
-            phan(ix, iy, iz) += intensities[ie];
-          }
+          if (pe.norm() < 1.f) { phan(ix, iy, iz) += intensities[ie]; }
         }
       }
     }

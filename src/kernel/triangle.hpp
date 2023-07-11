@@ -13,9 +13,7 @@ struct Triangle
   static constexpr size_t Width = W;
   static constexpr size_t PadWidth = W;
 
-  Triangle(float const osamp)
-  {
-  }
+  Triangle(float const osamp) {}
 
   template <typename T>
   inline auto operator()(T const &z) const

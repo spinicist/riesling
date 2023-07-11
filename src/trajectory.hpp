@@ -29,7 +29,7 @@ private:
   void init();
 
   Info info_;
-  Re3 points_;
+  Re3  points_;
 };
 
 } // namespace rl

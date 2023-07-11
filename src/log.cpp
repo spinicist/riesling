@@ -17,13 +17,13 @@ Failure::Failure(std::string const &msg)
 }
 
 namespace {
-Level log_level = Level::None;
+Level                        log_level = Level::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;
-bool isTTY = false;
-Index progressTarget = -1, progressCurrent = 0, progressNext = 0;
-std::mutex progressMutex;
-std::string progressMessage;
-std::string savedLog;
+bool                         isTTY = false;
+Index                        progressTarget = -1, progressCurrent = 0, progressNext = 0;
+std::mutex                   progressMutex;
+std::string                  progressMessage;
+std::string                  savedLog;
 } // namespace
 
 Level CurrentLevel() { return log_level; }
@@ -119,7 +119,7 @@ template <typename Scalar, int ND>
 void Tensor(std::string const &nameIn, Sz<ND> const &shape, Scalar const *data)
 {
   if (debug_file) {
-    Index count = 0;
+    Index       count = 0;
     std::string name = nameIn;
     while (debug_file->exists(name)) {
       count++;

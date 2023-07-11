@@ -1,11 +1,11 @@
 #include "precond.hpp"
 
+#include "io/reader.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
 #include "op/ops.hpp"
 #include "threads.hpp"
-#include "io/reader.hpp"
 
 namespace rl {
 
@@ -55,8 +55,7 @@ auto KSpaceSingle(Trajectory const &traj, Re2 const &basis) -> Re2
   return weights;
 }
 
-auto make_kspace_pre(
-  std::string const &type, Index const nC, Trajectory const &traj, Re2 const &basis)
+auto make_kspace_pre(std::string const &type, Index const nC, Trajectory const &traj, Re2 const &basis)
   -> std::shared_ptr<Ops::Op<Cx>>
 {
   if (type == "" || type == "none") {

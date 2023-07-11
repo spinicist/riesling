@@ -3,8 +3,8 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
-#include "op/tensorop.hpp"
 #include "op/make_grid.hpp"
+#include "op/tensorop.hpp"
 #include "op/tensorscale.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
@@ -52,14 +52,14 @@ Re2 Radial2D(Trajectory const &traj)
 {
   Log::Print("Calculating 2D radial analytic SDC");
   Info const &info = traj.info();
-  auto spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
+  auto        spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
     float const k_delta = Norm(traj.point(1, spoke) - traj.point(0, spoke));
     float const V = 2.f * k_delta * M_PI / N; // Area element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     float const R = (M_PI * *std::max_element(info.matrix.begin(), info.matrix.end())) / N;
     float const flat_start = traj.nSamples() / sqrt(R);
     float const flat_val = V * flat_start;
-    Re1 sdc(traj.nSamples());
+    Re1         sdc(traj.nSamples());
     for (Index ir = 0; ir < traj.nSamples(); ir++) {
       float const rad = traj.nSamples() * Norm(traj.point(ir, spoke));
       if (rad == 0.f) {
@@ -74,7 +74,7 @@ Re2 Radial2D(Trajectory const &traj)
   };
 
   Re1 const ss = spoke_sdc(0, traj.nTraces());
-  Re2 sdc = ss.reshape(Sz2{traj.nSamples(), 1}).broadcast(Sz2{1, traj.nTraces()});
+  Re2       sdc = ss.reshape(Sz2{traj.nSamples(), 1}).broadcast(Sz2{1, traj.nTraces()});
   return sdc;
 }
 
@@ -100,11 +100,11 @@ Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
 
   auto spoke_sdc = [&](Index const &spoke, Index const N) -> Re1 {
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
-    auto const mm = *std::max_element(info.matrix.begin(), info.matrix.end());
+    auto const  mm = *std::max_element(info.matrix.begin(), info.matrix.end());
     float const R = (M_PI * mm * mm) / N;
     float const flat_start = traj.nSamples() / R;
     float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);
-    Re1 sdc(traj.nSamples());
+    Re1         sdc(traj.nSamples());
     for (Index ir = 0; ir < traj.nSamples(); ir++) {
       float const rad = traj.nSamples() * Norm(traj.point(ir, spoke));
       float const merge = (spoke < lores) ? mergeLo(ir) : mergeHi(ir);
@@ -136,9 +136,9 @@ Re2 Radial(Trajectory const &traj, Index const lores, Index const gap) { return 
 auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string const &ktype, float const os)
   -> std::shared_ptr<TensorOperator<Cx, 3>>
 {
-  Re2 sdc(traj.nSamples(), traj.nTraces());
+  Re2        sdc(traj.nSamples(), traj.nTraces());
   auto const iname = opts.type.Get();
-  Sz3 const dims{nC, traj.nSamples(), traj.nTraces()};
+  Sz3 const  dims{nC, traj.nSamples(), traj.nTraces()};
   if (iname == "" || iname == "none") {
     Log::Print("Using no density compensation");
     return std::make_shared<TensorIdentity<Cx, 3>>(dims);

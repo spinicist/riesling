@@ -7,7 +7,7 @@
 namespace rl {
 
 namespace {
-int interruptLevel = 0;
+int  interruptLevel = 0;
 bool received = false;
 } // namespace
 
@@ -23,18 +23,14 @@ void Handler(int sig)
 
 void PushInterrupt()
 {
-  if (interruptLevel == 0) {
-    std::signal(SIGINT, Handler);
-  }
+  if (interruptLevel == 0) { std::signal(SIGINT, Handler); }
   interruptLevel++;
 }
 
 void PopInterrupt()
 {
   interruptLevel--;
-  if (interruptLevel == 0) {
-    std::signal(SIGINT, SIG_DFL);
-  }
+  if (interruptLevel == 0) { std::signal(SIGINT, SIG_DFL); }
 }
 
 bool InterruptReceived() { return received; }

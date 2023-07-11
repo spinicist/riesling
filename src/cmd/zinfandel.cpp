@@ -20,7 +20,7 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<Index> gap(parser, "G", "Set gap value (default 2)", {'g', "gap"}, 2);
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0)", {"lambda"}, 0.f);
 
-  args::Flag grappa(parser, "", "Use projection GRAPPA", {"grappa"});
+  args::Flag             grappa(parser, "", "Use projection GRAPPA", {"grappa"});
   args::ValueFlag<Index> gSrc(parser, "S", "GRAPPA sources (default 4)", {"grappa-src"}, 4);
   args::ValueFlag<Index> gtraces(parser, "S", "GRAPPA calibration traces (default 4)", {"traces"}, 4);
   args::ValueFlag<Index> gRead(parser, "R", "GRAPPA calibration read samples (default 8)", {"read"}, 8);
@@ -44,7 +44,7 @@ int main_zinfandel(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
 
   // Extend trajectory
   Re3 newPoints(traj.nDims(), gap.Get() + traj.nSamples(), traj.nTraces());
@@ -57,13 +57,13 @@ int main_zinfandel(args::Subparser &parser)
   }
   Trajectory extended(traj.info(), newPoints);
   Log::Print("Extended {}", extended.matrix());
-  Cx5 const data = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5 const   data = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   Index const nC = data.dimension(0);
   Index const nS = data.dimension(1);
   Index const nT = data.dimension(2);
   Index const nSlab = data.dimension(3);
   Index const nVol = data.dimension(4);
-  Cx5 out{nC, nS + gap.Get(), nT, nSlab, nVol};
+  Cx5         out{nC, nS + gap.Get(), nT, nSlab, nVol};
 
   if (grappa) {
     Cx3 vol{nC, nS + gap.Get(), nT};
@@ -80,19 +80,20 @@ int main_zinfandel(args::Subparser &parser)
     Log::Print("Extended {}", extended.matrix());
     Re2 basis(1, 1);
     basis.setConstant(1.f);
-    auto A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);
+    auto      A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);
     Sz5 const shape = A->ishape;
     Re2 const w = KSpaceSingle(lores, basis);
-    auto M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
+    auto      M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
     // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
-    auto id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
-    auto slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
+    auto                                                   id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
+    auto                                                   slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
     std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
     };
-    std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = [shape](Index const ii, Index const ir, ADMM::Vector const &z) {
-      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
-    };
+    std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z =
+      [shape](Index const ii, Index const ir, ADMM::Vector const &z) {
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+      };
 
     ADMM admm{
       A,
@@ -114,13 +115,13 @@ int main_zinfandel(args::Subparser &parser)
       debug_z};
 
     Trajectory gapTraj(traj.info(), newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}));
-    auto B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);
+    auto       B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);
 
     for (Index iv = 0; iv < nVol; iv++) {
-        Cx4 d = data.chip<4>(iv).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nSlab});
-        Cx5 images = Tensorfy(admm.run(d.data(), ρ.Get()), A->ishape);
-        Cx4 filled = B->forward(images);
-        out.chip<4>(iv).slice(Sz3{0, 0, 0}, Sz3{nC, gap.Get(), nT}) = filled;
+      Cx4 d = data.chip<4>(iv).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nSlab});
+      Cx5 images = Tensorfy(admm.run(d.data(), ρ.Get()), A->ishape);
+      Cx4 filled = B->forward(images);
+      out.chip<4>(iv).slice(Sz3{0, 0, 0}, Sz3{nC, gap.Get(), nT}) = filled;
     }
 
     out.slice(Sz5{0, gap.Get(), 0, 0, 0}, Sz5{nC, nS, nT, nSlab, nVol}) = data;

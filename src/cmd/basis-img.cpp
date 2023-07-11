@@ -17,35 +17,31 @@ int main_basis_img(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "INPUT", "Input image file");
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::Flag otsu(parser, "O", "Otsu mask", {"otsu"});
+  args::Flag                      otsu(parser, "O", "Otsu mask", {"otsu"});
   args::ValueFlag<Sz3, Sz3Reader> st(parser, "S", "ROI Start", {"roi-start"});
   args::ValueFlag<Sz3, Sz3Reader> sz(parser, "S", "ROI size", {"roi-size"});
-  args::ValueFlag<Index> spf(parser, "S", "Spokes per frame", {"spf"}, 1);
-  args::ValueFlag<Index> order(parser, "O", "Interpolation order", {"interp-order"}, 3);
-  args::Flag clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});
-  args::ValueFlag<Index> start2(parser, "S", "Second interp start", {"interp2"});
-  args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 5);
-  args::Flag demean(parser, "C", "Mean-center dynamics", {"demean"});
-  args::Flag rotate(parser, "V", "Rotate basis", {"rotate"});
-  args::Flag normalize(parser, "N", "Normalize before SVD", {"normalize"});
+  args::ValueFlag<Index>          spf(parser, "S", "Spokes per frame", {"spf"}, 1);
+  args::ValueFlag<Index>          order(parser, "O", "Interpolation order", {"interp-order"}, 3);
+  args::Flag                      clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});
+  args::ValueFlag<Index>          start2(parser, "S", "Second interp start", {"interp2"});
+  args::ValueFlag<Index>          nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 5);
+  args::Flag                      demean(parser, "C", "Mean-center dynamics", {"demean"});
+  args::Flag                      rotate(parser, "V", "Rotate basis", {"rotate"});
+  args::Flag                      normalize(parser, "N", "Normalize before SVD", {"normalize"});
   ParseCommand(parser, iname);
-  if (!oname) {
-    throw args::Error("No output filename specified");
-  }
+  if (!oname) { throw args::Error("No output filename specified"); }
 
   HD5::Reader reader(iname.Get());
-  Cx4 img = reader.readSlab<Cx4>(HD5::Keys::Image, 0);
-  if (st && sz) {
-    img = Cx4(img.slice(AddFront(st.Get(), 0), AddFront(sz.Get(), img.dimension(0))));
-  }
-  Sz4 const shape = img.dimensions();
-  Cx4 const ref = img.slice(Sz4{shape[0] - 1, 0, 0, 0}, AddFront(LastN<3>(shape), 1));
-  Re4 const real = (img / (ref / ref.abs()).broadcast(Sz4{shape[0], 1, 1, 1})).real();
+  Cx4         img = reader.readSlab<Cx4>(HD5::Keys::Image, 0);
+  if (st && sz) { img = Cx4(img.slice(AddFront(st.Get(), 0), AddFront(sz.Get(), img.dimension(0)))); }
+  Sz4 const  shape = img.dimensions();
+  Cx4 const  ref = img.slice(Sz4{shape[0] - 1, 0, 0, 0}, AddFront(LastN<3>(shape), 1));
+  Re4 const  real = (img / (ref / ref.abs()).broadcast(Sz4{shape[0], 1, 1, 1})).real();
   auto const realMat = CollapseToMatrix(real);
-  Re3 const toMask = ref.chip<0>(0).abs();
+  Re3 const  toMask = ref.chip<0>(0).abs();
   auto const toMaskMat = CollapseToArray(toMask);
-  float thresh;
-  Index count;
+  float      thresh;
+  Index      count;
   if (otsu) {
     auto o = Otsu(toMaskMat);
     thresh = o.thresh;
@@ -54,12 +50,12 @@ int main_basis_img(args::Subparser &parser)
     thresh = 0.f;
     count = Product(LastN<3>(shape));
   }
-  Index const f = shape[0];
-  Index const s = shape[0] * spf.Get();
+  Index const     f = shape[0];
+  Index const     s = shape[0] * spf.Get();
   Eigen::MatrixXf dynamics(s, count);
-  Index col = 0;
-  Eigen::ArrayXi x1, x2, z1, z2;
-  Index f1 = 0, f2 = 0, s1 = 0, s2 = 0;
+  Index           col = 0;
+  Eigen::ArrayXi  x1, x2, z1, z2;
+  Index           f1 = 0, f2 = 0, s1 = 0, s2 = 0;
   if (start2) {
     f1 = start2.Get();
     f2 = f - f1;

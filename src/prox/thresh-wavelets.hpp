@@ -15,7 +15,7 @@ struct ThresholdWavelets final : Prox<Cx>
 
 private:
   std::shared_ptr<Ops::Op<Cx>> waves_;
-  SoftThreshold thresh_;
+  SoftThreshold                thresh_;
 };
 
 } // namespace rl::Proxs

@@ -41,7 +41,7 @@ struct CPU final : FFT<TRank, FRank>
     // Process the two different kinds of dimensions - howmany / FFT
     {
       constexpr int FStart = TRank - FRank;
-      int ii = 0;
+      int           ii = 0;
       for (; ii < FStart; ii++) {
         N_ *= ws.dimension(ii);
       }
@@ -72,12 +72,8 @@ struct CPU final : FFT<TRank, FRank>
     reverse_plan_ =
       fftwf_plan_many_dft(FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_BACKWARD, FFTW_MEASURE);
 
-    if (forward_plan_ == NULL) {
-      Log::Fail("Could not create forward FFT Planned");
-    }
-    if (reverse_plan_ == NULL) {
-      Log::Fail("Could not create reverse FFT Planned");
-    }
+    if (forward_plan_ == NULL) { Log::Fail("Could not create forward FFT Planned"); }
+    if (reverse_plan_ == NULL) { Log::Fail("Could not create reverse FFT Planned"); }
 
     Log::Print<Log::Level::High>("FFT planning took {}", Log::ToNow(start));
   }
@@ -146,9 +142,9 @@ private:
 
   void applyPhase(TensorMap x, float const scale, bool const fwd) const
   {
-    Sz2 rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
+    Sz2        rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
     auto const rbPhase = phase_.reshape(rshP).broadcast(brdP);
-    auto xr = x.reshape(rshX);
+    auto       xr = x.reshape(rshX);
     if (threaded_) {
       if (fwd) {
         xr.device(Threads::GlobalDevice()) = xr * rbPhase.constant(scale) * rbPhase;
@@ -165,11 +161,11 @@ private:
   }
 
   TensorDims dims_;
-  Cx1 phase_;
+  Cx1        phase_;
   fftwf_plan forward_plan_, reverse_plan_;
-  float scale_;
-  Index N_, nVox_;
-  bool threaded_;
+  float      scale_;
+  Index      N_, nVox_;
+  bool       threaded_;
 };
 
 } // namespace FFT

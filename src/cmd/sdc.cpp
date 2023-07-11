@@ -9,14 +9,14 @@ using namespace rl;
 
 int main_sdc(args::Subparser &parser)
 {
-  CoreOpts coreOpts(parser);
+  CoreOpts                     coreOpts(parser);
   args::ValueFlag<std::string> sdcType(parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
-  args::ValueFlag<Index> lores(parser, "L", "Number of lo-res traces for radial", {'l', "lores"}, 0);
-  args::ValueFlag<Index> gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
-  args::ValueFlag<Index> its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
+  args::ValueFlag<Index>       lores(parser, "L", "Number of lo-res traces for radial", {'l', "lores"}, 0);
+  args::ValueFlag<Index>       gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
+  args::ValueFlag<Index>       its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {

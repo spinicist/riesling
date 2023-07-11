@@ -10,12 +10,12 @@
 namespace rl {
 
 PDHG::PDHG(
-  std::shared_ptr<Op> A,
-  std::shared_ptr<Op> P,
-  Regularizers const &reg,
+  std::shared_ptr<Op>       A,
+  std::shared_ptr<Op>       P,
+  Regularizers const       &reg,
   std::vector<float> const &σin,
-  float const τin,
-  Callback const &cb)
+  float const               τin,
+  Callback const           &cb)
 {
   Index const nR = reg.count();
 
@@ -47,7 +47,7 @@ PDHG::PDHG(
   u.setZero();
   v.resize(Aʹ->rows());
   v.setZero();
-  
+
   x.resize(Aʹ->cols());
   x.setZero();
   x̅.resize(Aʹ->cols());

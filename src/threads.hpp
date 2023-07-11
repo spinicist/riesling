@@ -12,8 +12,8 @@ namespace rl {
 
 namespace Threads {
 
-Index GlobalThreadCount();
-void SetGlobalThreadCount(Index n_threads);
+Index                   GlobalThreadCount();
+void                    SetGlobalThreadCount(Index n_threads);
 Eigen::ThreadPoolDevice GlobalDevice();
 
 using ForFunc = std::function<void(Index const index)>;

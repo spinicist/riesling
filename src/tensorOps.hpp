@@ -150,17 +150,17 @@ inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
 {
   using FixedOne = Eigen::type2index<1>;
   Eigen::IndexList<int, FixedOne, FixedOne> rsh_a;
-  Eigen::IndexList<FixedOne, int, int> brd_a;
+  Eigen::IndexList<FixedOne, int, int>      brd_a;
   rsh_a.set(0, a.size());
   brd_a.set(1, b.size());
   brd_a.set(2, c.size());
   Eigen::IndexList<FixedOne, int, FixedOne> rsh_b;
-  Eigen::IndexList<int, FixedOne, int> brd_b;
+  Eigen::IndexList<int, FixedOne, int>      brd_b;
   brd_b.set(0, a.size());
   rsh_b.set(1, b.size());
   brd_b.set(2, c.size());
   Eigen::IndexList<FixedOne, FixedOne, int> rsh_c;
-  Eigen::IndexList<int, int, FixedOne> brd_c;
+  Eigen::IndexList<int, int, FixedOne>      brd_c;
   brd_c.set(0, a.size());
   brd_c.set(1, b.size());
   rsh_c.set(2, c.size());
@@ -168,12 +168,14 @@ inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> const &x, Sz<N> const &shape) {
+inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> const &x, Sz<N> const &shape)
+{
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) Tensorfy(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const &x, Sz<N> const &shape) {
+inline decltype(auto) Tensorfy(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const &x, Sz<N> const &shape)
+{
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 

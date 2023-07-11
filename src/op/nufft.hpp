@@ -4,9 +4,9 @@
 
 #include "apodize.hpp"
 #include "fft/fft.hpp"
-#include "sdc.hpp"
 #include "make_grid.hpp"
 #include "pad.hpp"
+#include "sdc.hpp"
 
 namespace rl {
 
@@ -16,9 +16,7 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
   OP_INHERIT(Cx, NDim + 2, 3)
 
   NUFFTOp(
-    std::shared_ptr<GridBase<Cx, NDim>> gridder,
-    Sz<NDim> const matrix,
-    std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
+    std::shared_ptr<GridBase<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
 
   OP_DECLARE()
 
@@ -29,21 +27,22 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
   InTensor mutable workspace;
   std::shared_ptr<FFT::FFT<NDim + 2, NDim>> fft;
 
-  PadOp<Cx, NDim + 2, NDim> pad;
-  ApodizeOp<NDim> apo;
+  PadOp<Cx, NDim + 2, NDim>              pad;
+  ApodizeOp<NDim>                        apo;
   std::shared_ptr<TensorOperator<Cx, 3>> sdc;
+
 private:
   using Transfer = Eigen::Tensor<Cx, NDim + 2>;
   Transfer tf_;
 };
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(
-  Trajectory const &traj,
-  std::string const &ktype,
-  float const osamp,
-  Index const nC,
-  Sz3 const matrix,
-  Re2 const &basis = IdBasis(),
+  Trajectory const                      &traj,
+  std::string const                     &ktype,
+  float const                            osamp,
+  Index const                            nC,
+  Sz3 const                              matrix,
+  Re2 const                             &basis = IdBasis(),
   std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
 
 } // namespace rl

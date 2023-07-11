@@ -10,7 +10,7 @@ using namespace rl;
 int main_slice(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to slice");
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
 
   args::ValueFlag<Index> channelSize(parser, "T", "Number of channels to keep", {"channel-size"}, 0);
   args::ValueFlag<Index> channelStart(parser, "T", "Channel to start split", {"channel-start"}, 0);
@@ -36,9 +36,9 @@ int main_slice(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get());
-  Trajectory traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto info = traj.info();
-  Cx5 ks = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  auto        info = traj.info();
+  Cx5         ks = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
 
   Index const cSt = channelStart.Get();
   Index const rSt = readStart.Get();
@@ -52,33 +52,23 @@ int main_slice(args::Subparser &parser)
   Index const sSz = slabSize ? slabSize.Get() : ks.dimension(3) - sSt;
   Index const vSz = volSize ? volSize.Get() : ks.dimension(4) - vSt;
 
-  if (cSt + cSz > ks.dimension(0)) {
-    Log::Fail("Last read point {} exceeded maximum {}", cSt + cSz, ks.dimension(0));
-  }
-  if (rSt + rSz > ks.dimension(1)) {
-    Log::Fail("Last read point {} exceeded maximum {}", rSt + rSz, ks.dimension(1));
-  }
+  if (cSt + cSz > ks.dimension(0)) { Log::Fail("Last read point {} exceeded maximum {}", cSt + cSz, ks.dimension(0)); }
+  if (rSt + rSz > ks.dimension(1)) { Log::Fail("Last read point {} exceeded maximum {}", rSt + rSz, ks.dimension(1)); }
   if (traceSegment) {
     if (tSt + tSz > traceSegment.Get()) {
       Log::Fail("Last trace point {} exceeded segment size {}", tSt + tSz, traceSegment.Get());
     }
   } else {
-    if (tSt + tSz > ks.dimension(2)) {
-      Log::Fail("Last trace point {} exceeded maximum {}", tSt + tSz, ks.dimension(2));
-    }
+    if (tSt + tSz > ks.dimension(2)) { Log::Fail("Last trace point {} exceeded maximum {}", tSt + tSz, ks.dimension(2)); }
   }
-  if (sSt + sSz > ks.dimension(3)) {
-    Log::Fail("Last slab point {} exceeded maximum {}", sSt + sSz, ks.dimension(3));
-  }
-  if (vSt + vSz > ks.dimension(4)) {
-    Log::Fail("Last volume point {} exceeded maximum {}", vSt + vSz, ks.dimension(4));
-  }
+  if (sSt + sSz > ks.dimension(3)) { Log::Fail("Last slab point {} exceeded maximum {}", sSt + sSz, ks.dimension(3)); }
+  if (vSt + vSz > ks.dimension(4)) { Log::Fail("Last volume point {} exceeded maximum {}", vSt + vSz, ks.dimension(4)); }
 
   if (traceSegment) {
     Index const segSz = traceSegment.Get();
     Index const nSeg = ks.dimension(2) / segSz; // Will lose spare traces
-    Sz5 const shape5{ks.dimension(0), ks.dimension(1), tSz * nSeg, ks.dimension(3), ks.dimension(4)};
-    Sz6 const shape6{ks.dimension(0), ks.dimension(1), segSz, nSeg, ks.dimension(3), ks.dimension(4)};
+    Sz5 const   shape5{ks.dimension(0), ks.dimension(1), tSz * nSeg, ks.dimension(3), ks.dimension(4)};
+    Sz6 const   shape6{ks.dimension(0), ks.dimension(1), segSz, nSeg, ks.dimension(3), ks.dimension(4)};
     ks = Cx5(ks.reshape(shape6).slice(Sz6{cSt, rSt, tSt, 0, sSt, vSt}, Sz6{cSz, rSz, tSz, nSeg, sSz, vSz}).reshape(shape5));
     Sz3 const shape3{3, rSz, tSz * nSeg};
     Sz4 const shape4{3, rSz, segSz, nSeg};

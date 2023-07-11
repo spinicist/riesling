@@ -24,19 +24,14 @@ int main_sense_sim(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   Sz3 shape{matrix.Get(), matrix.Get(), matrix.Get()};
-  Cx4 sense = birdcage(
-    shape,
-    Eigen::Array3f::Constant(voxel_size.Get()),
-    nchan.Get(),
-    coil_rings.Get(),
-    coil_r.Get(),
-    coil_r.Get());
+  Cx4 sense =
+    birdcage(shape, Eigen::Array3f::Constant(voxel_size.Get()), nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get());
 
-  //Normalize
+  // Normalize
   Cx3 rss(shape);
   rss.device(Threads::GlobalDevice()) = ConjugateSum(sense, sense).sqrt();
   sense /= Tile(rss, nchan.Get());
-  auto const fname = OutName("", iname.Get(), "sense", "h5");
+  auto const  fname = OutName("", iname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data());
 

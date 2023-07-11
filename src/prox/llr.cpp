@@ -21,12 +21,12 @@ LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 co
 void LLR::apply(float const α, CMap const &xin, Map &zin) const
 {
   Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
-  Eigen::TensorMap<Cx4> z(zin.data(), shape);
-  float const realλ = λ * α * std::sqrt(patchSize * patchSize * patchSize);
+  Eigen::TensorMap<Cx4>       z(zin.data(), shape);
+  float const                 realλ = λ * α * std::sqrt(patchSize * patchSize * patchSize);
 
   auto softLLR = [realλ](Cx4 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-    auto const svd = SVD<Cx>(patch, true, false);
+    auto const       svd = SVD<Cx>(patch, true, false);
     // Soft-threhold svals
     Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
@@ -42,12 +42,12 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
 {
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
-    Eigen::TensorMap<Cx4> z(zin.data(), shape);
-    float const realλ = λ * realα->scale * std::sqrt(patchSize * patchSize * patchSize);
+    Eigen::TensorMap<Cx4>       z(zin.data(), shape);
+    float const                 realλ = λ * realα->scale * std::sqrt(patchSize * patchSize * patchSize);
 
     auto softLLR = [realλ](Cx4 const &xp) {
       Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-      auto const svd = SVD<Cx>(patch, true, false);
+      auto const       svd = SVD<Cx>(patch, true, false);
       // Soft-threhold svals
       Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
       patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cmath>
 #include "log.hpp"
+#include <cmath>
 
 namespace rl {
 
@@ -10,7 +10,7 @@ struct KaiserBessel
 {
   static constexpr size_t Width = W;
   static constexpr size_t PadWidth = (((W + 1) / 2) * 2) + 1;
-  float const beta;
+  float const             beta;
 
   // Use Fessler's approximate formula to avoid problems with apodization
   KaiserBessel(float const osamp)

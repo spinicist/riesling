@@ -2,30 +2,30 @@
 
 namespace rl {
 
-auto Otsu(Eigen::ArrayXf const &x, Index const nBins) -> OtsuReturn {
+auto Otsu(Eigen::ArrayXf const &x, Index const nBins) -> OtsuReturn
+{
   Eigen::ArrayXf::ConstMapType xm(x.data(), x.size());
   return Otsu(xm, nBins);
 }
 
 auto Otsu(Eigen::ArrayXf::ConstMapType const &x, Index const nBins) -> OtsuReturn
 {
-  Index const n = x.size();
-  float const maxVal = x.maxCoeff();
+  Index const          n = x.size();
+  float const          maxVal = x.maxCoeff();
   Eigen::ArrayXf const thresholds = Eigen::ArrayXf::LinSpaced(nBins, 0.f, maxVal);
 
   float bestSigma = std::numeric_limits<float>::infinity();
   float bestThresh = 0.f;
   Index bestAbove = 0;
   for (Index ib = 0; ib < nBins; ib++) {
-    auto const mask = x >= thresholds[ib];
+    auto const  mask = x >= thresholds[ib];
     Index const nAbove = mask.count();
-    if (nAbove == 0 or nAbove == n)
-      continue;
+    if (nAbove == 0 or nAbove == n) continue;
     float const w1 = nAbove / float(n);
     float const w0 = 1.f - w1;
 
     Eigen::ArrayXf vals0(n - nAbove), vals1(nAbove);
-    Index ii0 = 0, ii1 = 0;
+    Index          ii0 = 0, ii1 = 0;
     for (Index ii = 0; ii < n; ii++) {
       if (mask[ii]) {
         vals1[ii1++] = x[ii];

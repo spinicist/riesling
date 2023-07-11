@@ -12,7 +12,7 @@ using namespace rl;
 int main_transform(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Input image file");
-  args::ValueFlag<std::string> oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
 
   args::ValueFlag<Index> wavelets(parser, "W", "Wavelet denoising levels", {"wavelets"}, 4);
   args::ValueFlag<Index> width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
@@ -22,18 +22,16 @@ int main_transform(args::Subparser &parser)
   args::Flag fwd(parser, "F", "Apply forward operation", {"fwd"});
   ParseCommand(parser);
 
-  if (!iname) {
-    throw args::Error("No input file specified");
-  }
+  if (!iname) { throw args::Error("No input file specified"); }
 
   HD5::Reader reader(iname.Get());
-  auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
+  auto const  fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeInfo(reader.readInfo());
 
   if (wavelets) {
 
-    auto images = reader.readTensor<Cx5>(HD5::Keys::Image);
+    auto     images = reader.readTensor<Cx5>(HD5::Keys::Image);
     Wavelets wav(FirstN<4>(images.dimensions()), width.Get(), wavelets.Get());
     for (Index iv = 0; iv < images.dimension(4); iv++) {
       if (fwd) {
@@ -45,18 +43,18 @@ int main_transform(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
   } else if (grad) {
     if (fwd) {
-      auto input = reader.readTensor<Cx5>(HD5::Keys::Image);
-      Sz4 dims = FirstN<4>(input.dimensions());
-      Cx6 output(AddBack(dims, 3, input.dimension(4)));
+      auto   input = reader.readTensor<Cx5>(HD5::Keys::Image);
+      Sz4    dims = FirstN<4>(input.dimensions());
+      Cx6    output(AddBack(dims, 3, input.dimension(4)));
       GradOp g(dims, std::vector<Index>{1, 2, 3});
       for (Index iv = 0; iv < input.dimension(4); iv++) {
         output.chip<5>(iv) = g.forward(CChipMap(input, iv));
       }
       writer.writeTensor("grad", output.dimensions(), output.data());
     } else {
-      auto input = reader.readTensor<Cx6>("grad");
-      Sz4 dims = FirstN<4>(input.dimensions());
-      Cx5 output(AddBack(dims, input.dimension(5)));
+      auto   input = reader.readTensor<Cx6>("grad");
+      Sz4    dims = FirstN<4>(input.dimensions());
+      Cx5    output(AddBack(dims, input.dimension(5)));
       GradOp g(dims, std::vector<Index>{1, 2, 3});
       for (Index iv = 0; iv < input.dimension(5); iv++) {
         output.chip<4>(iv) = g.adjoint(CChipMap(input, iv));

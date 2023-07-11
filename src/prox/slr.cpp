@@ -18,7 +18,7 @@ Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
   Index const nK = nKx * nKy * nKz;
   if (nK < 1) { Log::Fail("No kernels to Hankelfy"); }
   Log::Print<Log::Level::Debug>("Hankelfying {} kernels", nK);
-  Cx6 kernels(nC, nF, kW, kW, kW, nK);
+  Cx6   kernels(nC, nF, kW, kW, kW, nK);
   Index ik = 0;
   for (Index iz = 0; iz < nKx; iz++) {
     for (Index iy = 0; iy < nKy; iy++) {
@@ -44,7 +44,7 @@ void FromKernels(Cx6 const &kernels, Eigen::TensorMap<Cx5> &grid)
   Index const nX = grid.dimension(2) - kX + 1;
   Index const nY = grid.dimension(3) - kY + 1;
   Index const nZ = grid.dimension(4) - kZ + 1;
-  Re3 count(LastN<3>(grid.dimensions()));
+  Re3         count(LastN<3>(grid.dimensions()));
   count.setZero();
   grid.setZero();
   Index ik = 0;
@@ -75,14 +75,14 @@ SLR::SLR(float const l, Index const k, Sz5 const sh)
 void SLR::apply(float const α, CMap const &xin, Map &zin) const
 {
   Eigen::TensorMap<Cx5 const> x(xin.data(), shape);
-  float const thresh = λ * α;
-  Eigen::TensorMap<Cx5> z(zin.data(), shape);
+  float const                 thresh = λ * α;
+  Eigen::TensorMap<Cx5>       z(zin.data(), shape);
   z = x;
   fft->forward(z);
-  Cx6 kernels = ToKernels(z, kSz);
+  Cx6  kernels = ToKernels(z, kSz);
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   if (kMat.rows() > kMat.cols()) { Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols()); }
-  auto const svd = SVD<Cx>(kMat, true, false);
+  auto const            svd = SVD<Cx>(kMat, true, false);
   Eigen::VectorXf const s = (svd.vals > thresh).select(svd.vals, 0.f);
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, z);

@@ -15,8 +15,8 @@ struct LLR final : Prox<Cx>
   PROX_INHERIT(Cx)
   float λ;
   Index patchSize, windowSize;
-  Sz4 shape;
-  bool shift;
+  Sz4   shape;
+  bool  shift;
   LLR(float const, Index const, Index const, bool const, Sz4 const);
 
   void apply(float const α, CMap const &x, Map &z) const;

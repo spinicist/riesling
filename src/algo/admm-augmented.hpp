@@ -1,8 +1,8 @@
 #pragma once
 
 #include "cg.hpp"
-#include "prox/prox.hpp"
 #include "log.hpp"
+#include "prox/prox.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
@@ -14,7 +14,7 @@ struct AugmentedOp
   using Input = typename Ops::Input;
   using InputMap = typename Ops::InputMap;
   std::shared_ptr<Op> op;
-  float rho;
+  float               rho;
 
   AugmentedOp(std::shared_ptr<Op> o, float const r)
     : op{o}
@@ -45,12 +45,12 @@ struct AugmentedADMM
 {
   using Input = typename Inner::Input;
 
-  Inner &inner;
+  Inner       &inner;
   Prox<Input> *reg;
-  Index iterLimit;
-  float ρ = 0.1; // Langrangian
-  float abstol = 1.e-3f;
-  float reltol = 1.e-3f;
+  Index        iterLimit;
+  float        ρ = 0.1; // Langrangian
+  float        abstol = 1.e-3f;
+  float        reltol = 1.e-3f;
 
   Input run(Input const &x0) const
   {
@@ -58,7 +58,7 @@ struct AugmentedADMM
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
     auto const dims = inner.op->ishape;
-    Input x(dims), z(dims), zold(dims), u(dims), xpu(dims);
+    Input      x(dims), z(dims), zold(dims), u(dims), xpu(dims);
     x.setZero();
     z.setZero();
     u.setZero();
@@ -95,9 +95,7 @@ struct AugmentedADMM
         normu,
         normx,
         normz);
-      if ((pNorm < pEps) && (dNorm < dEps)) {
-        break;
-      }
+      if ((pNorm < pEps) && (dNorm < dEps)) { break; }
       float const mu = 10.f;
       if (pNorm > mu * dNorm) {
         Log::Print("Primal norm is outside limit {}, consider increasing ρ", mu * dNorm);

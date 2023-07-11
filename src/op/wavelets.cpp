@@ -32,9 +32,7 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
 {
   // Check image is adequately padded and bug out if not
   auto const padded = PaddedDimensions(dims);
-  if (dims != padded) {
-    Log::Fail("Wavelets had dimensions {}, required {}", dims, padded);
-  }
+  if (dims != padded) { Log::Fail("Wavelets had dimensions {}, required {}", dims, padded); }
 
   levels_[0] = 0;
   for (auto ii = 1; ii < 4; ii++) {
@@ -61,10 +59,10 @@ Wavelets::Wavelets(Sz4 const dims, Index const N, Index const L)
 
 void Wavelets::encode_dim(InCMap const &x, OutMap &y, Index const dim, Index const level) const
 {
-  Index const sz = y.dimension(dim) / (1 << level);
-  Index const hsz = sz / 2;
-  Index const N_2 = N_ / 2;
-  Index const maxDim = 4;
+  Index const          sz = y.dimension(dim) / (1 << level);
+  Index const          hsz = sz / 2;
+  Index const          N_2 = N_ / 2;
+  Index const          maxDim = 4;
   std::array<Index, 3> otherDims{(dim + 1) % maxDim, (dim + 2) % maxDim, (dim + 3) % maxDim};
   std::sort(otherDims.begin(), otherDims.end(), std::greater{});
 
@@ -93,8 +91,7 @@ void Wavelets::encode_dim(InCMap const &x, OutMap &y, Index const dim, Index con
       }
     }
   };
-  Threads::For(
-    encode_task, y.dimension(otherDims[0]), fmt::format("Wavelets Encode Dimension {} Level {}", dim, level));
+  Threads::For(encode_task, y.dimension(otherDims[0]), fmt::format("Wavelets Encode Dimension {} Level {}", dim, level));
 }
 
 void Wavelets::forward(InCMap const &x, OutMap &y) const
@@ -110,13 +107,13 @@ void Wavelets::forward(InCMap const &x, OutMap &y) const
 
 void Wavelets::decode_dim(OutCMap const &y, InMap &x, Index const dim, Index const level) const
 {
-  Index const sz = y.dimension(dim) / (1 << level);
-  Index const hsz = sz / 2;
-  Index const maxDim = 4;
+  Index const          sz = y.dimension(dim) / (1 << level);
+  Index const          hsz = sz / 2;
+  Index const          maxDim = 4;
   std::array<Index, 3> otherDims{(dim + 1) % maxDim, (dim + 2) % maxDim, (dim + 3) % maxDim};
   std::sort(otherDims.begin(), otherDims.end(), std::greater{});
   Index const N_2 = N_ / 2;
-  auto decode_task = [&](Index const ik) {
+  auto        decode_task = [&](Index const ik) {
     Cx1 temp(sz);
     Sz4 ind;
     ind[otherDims[0]] = ik;
@@ -144,10 +141,7 @@ void Wavelets::decode_dim(OutCMap const &y, InMap &x, Index const dim, Index con
       }
     }
   };
-  Threads::For(
-    decode_task,
-    y.dimension(otherDims[0]),
-    fmt::format("Wavelets Decode Dimension {} Level {}", dim, level));
+  Threads::For(decode_task, y.dimension(otherDims[0]), fmt::format("Wavelets Decode Dimension {} Level {}", dim, level));
 }
 
 void Wavelets::adjoint(OutCMap const &y, InMap &x) const

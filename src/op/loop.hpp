@@ -8,8 +8,8 @@ template <typename Op>
 struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
   OP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
-  using Parent::forward;
   using Parent::adjoint;
+  using Parent::forward;
 
   LoopOp(std::shared_ptr<Op> op, Index const N)
     : Parent("LoopOp", AddBack(op->ishape, N), AddBack(op->oshape, N))
@@ -38,7 +38,7 @@ struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::Ou
     auto const time = this->startAdjoint(y);
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::OutCMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
-      typename Op::InMap xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
+      typename Op::InMap   xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
       op_->adjoint(ychip, xchip);
     }
     this->finishAdjoint(x, time);
@@ -55,7 +55,7 @@ struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::Ou
 
 private:
   std::shared_ptr<Op> op_;
-  Index N_;
+  Index               N_;
 };
 
 } // namespace rl

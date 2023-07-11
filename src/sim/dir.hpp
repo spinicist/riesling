@@ -27,5 +27,4 @@ struct Prep2 final : Sequence
   auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
 };
 
-
 } // namespace rl

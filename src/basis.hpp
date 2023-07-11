@@ -8,11 +8,11 @@ namespace rl {
 
 void Basis(
   Eigen::ArrayXXf const &dynamics,
-  float const thresh,
-  Index const nB,
-  bool const demean,
-  bool const rotate,
-  bool const normalize,
-  HD5::Writer &writer);
+  float const            thresh,
+  Index const            nB,
+  bool const             demean,
+  bool const             rotate,
+  bool const             normalize,
+  HD5::Writer           &writer);
 
 } // namespace rl

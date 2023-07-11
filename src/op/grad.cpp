@@ -3,7 +3,7 @@
 namespace rl {
 
 namespace {
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 inline auto ForwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 {
   Sz4 sz = dims;
@@ -13,7 +13,7 @@ inline auto ForwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
   b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(fwd, sz) - a.slice(st, sz));
 }
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 {
   auto sz = dims;
@@ -26,8 +26,8 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 } // namespace
 
 GradOp::GradOp(InDims const ish, std::vector<Index> const &d)
-  : Parent("GradOp", ish, AddBack(ish, (Index)d.size())),
-  dims_{d}
+  : Parent("GradOp", ish, AddBack(ish, (Index)d.size()))
+  , dims_{d}
 {
 }
 
@@ -59,7 +59,7 @@ GradVecOp::GradVecOp(InDims const dims)
 void GradVecOp::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
-  Sz4 const sz = FirstN<4>(x.dimensions());
+  Sz4 const  sz = FirstN<4>(x.dimensions());
   y.setZero();
   for (Index ii = 0; ii < 3; ii++) {
     BackwardDiff(x.chip<4>(ii), y.chip<4>(ii), sz, ii + 1);
@@ -74,7 +74,7 @@ void GradVecOp::forward(InCMap const &x, OutMap &y) const
   BackwardDiff(x.chip<4>(1), y.chip<4>(5), sz, 3);
   BackwardDiff(x.chip<4>(2), y.chip<4>(5), sz, 2);
 
-  y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)) /=  y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)).constant(2.f);
+  y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)) /= y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)).constant(2.f);
 
   this->finishForward(y, time);
 }
@@ -82,7 +82,7 @@ void GradVecOp::forward(InCMap const &x, OutMap &y) const
 void GradVecOp::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
-  Sz4 const sz = FirstN<4>(x.dimensions());
+  Sz4 const  sz = FirstN<4>(x.dimensions());
   x.setZero();
   for (Index ii = 0; ii < 3; ii++) {
     ForwardDiff(y.chip<4>(ii), x.chip<4>(ii), sz, ii + 1);

@@ -1,8 +1,8 @@
 #include "regularizers.hpp"
 
 #include "algo/eig.hpp"
-#include "op/grad.hpp"
 #include "op/fft.hpp"
+#include "op/grad.hpp"
 #include "prox/entropy.hpp"
 #include "prox/llr.hpp"
 #include "prox/thresh-wavelets.hpp"

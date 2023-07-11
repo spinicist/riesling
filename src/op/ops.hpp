@@ -88,7 +88,7 @@ struct DiagScale final : Op<Scalar>
   void forward(CMap const &, Map &) const;
   void adjoint(CMap const &, Map &) const;
 
-  auto inverse() const -> std::shared_ptr<Op<Scalar>>;
+  auto  inverse() const -> std::shared_ptr<Op<Scalar>>;
   float scale;
 
 private:
@@ -114,10 +114,10 @@ struct DiagRep final : Op<Scalar>
   std::shared_ptr<Op<Scalar>> inverse(float const bias, float const scale) const;
 
 private:
-  Index reps;
+  Index  reps;
   Vector s;
-  bool isInverse = false;
-  float bias = 0.f, scale = 0.f;
+  bool   isInverse = false;
+  float  bias = 0.f, scale = 0.f;
 };
 
 //! Multiply operators, i.e. y = A * B * x
@@ -157,7 +157,7 @@ struct VStack final : Op<Scalar>
   void adjoint(CMap const &y, Map &x) const;
 
 private:
-  void check();
+  void                                     check();
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
 

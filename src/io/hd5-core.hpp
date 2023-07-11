@@ -24,13 +24,13 @@ Handle type()
   return type_impl(type_tag<T>{});
 }
 
-void Init();
-Handle InfoType();
-void CheckInfoType(Handle h);
-bool Exists(Handle const h, std::string const name);
-void CheckedCall(int status, std::string const &msg);
-std::string GetError();
+void                     Init();
+Handle                   InfoType();
+void                     CheckInfoType(Handle h);
+bool                     Exists(Handle const h, std::string const name);
+void                     CheckedCall(int status, std::string const &msg);
+std::string              GetError();
 std::vector<std::string> List(Handle h);
 
 } // namespace HD5
-}
+} // namespace rl

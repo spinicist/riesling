@@ -27,19 +27,19 @@ Trajectory CreateTrajectory(
   float const readOS,
   Index const sps,
   float const nex,
-  bool const phyllo,
+  bool const  phyllo,
   float const lores,
   Index const trim)
 {
   // Follow the GE definition where factor of PI is ignored
   Index const spokes = sps * std::ceil(nex * matrix * matrix / sps);
   float const fov = matrix * voxSz;
-  Info info{
-    .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
-    .voxel_size = Eigen::Array3f::Constant(fov / matrix),
-    .origin = Eigen::Array3f::Constant(-fov / 2.f),
-    .direction = Eigen::Matrix3f::Identity(),
-    .tr = 1.f};
+  Info        info{
+           .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
+           .voxel_size = Eigen::Array3f::Constant(fov / matrix),
+           .origin = Eigen::Array3f::Constant(-fov / 2.f),
+           .direction = Eigen::Matrix3f::Identity(),
+           .tr = 1.f};
 
   Index const samples = Index(readOS * matrix / 2);
 
@@ -49,15 +49,13 @@ Trajectory CreateTrajectory(
   if (lores > 0) {
     auto const loMat = matrix / lores;
     auto const loSpokes = sps * std::ceil(nex * loMat * loMat / sps);
-    auto loPoints = ArchimedeanSpiral(samples, loSpokes);
+    auto       loPoints = ArchimedeanSpiral(samples, loSpokes);
     loPoints = loPoints / loPoints.constant(lores);
     points = Re3(points.concatenate(loPoints, 2));
     Log::Print("Added {} lo-res spokes", loSpokes);
   }
 
-  if (trim > 0) {
-    points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, samples - trim, spokes}));
-  }
+  if (trim > 0) { points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, samples - trim, spokes})); }
 
   Log::Print("Matrix Size: {} Voxel Size: {}", info.matrix, info.voxel_size.transpose());
   Log::Print("Samples: {} Traces: {}", samples, spokes);
@@ -77,10 +75,10 @@ int main_phantom(args::Subparser &parser)
 
   args::Flag gradCubes(parser, "", "Grad cubes phantom", {"gradcubes"});
 
-  args::Flag phyllo(parser, "", "Use a phyllotaxis", {'p', "phyllo"});
+  args::Flag             phyllo(parser, "", "Use a phyllotaxis", {'p', "phyllo"});
   args::ValueFlag<Index> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
   args::ValueFlag<Index> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
-  args::Flag gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
+  args::Flag             gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
 
   args::ValueFlag<float> readOS(parser, "S", "Read-out oversampling (2)", {'r', "read"}, 2);
   args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);

@@ -25,15 +25,13 @@ struct FFT
 void Start(std::string const &execname);
 void End(std::string const &execname);
 void SetTimelimit(double time);
-Cx1 Phase(Index const sz);
+Cx1  Phase(Index const sz);
 
 template <int TRank, int FFTRank>
-std::shared_ptr<FFT<TRank, FFTRank>>
-Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const threads = 0);
+std::shared_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorDims const &dims, Index const threads = 0);
 
 template <int TRank, int FFTRank>
-std::shared_ptr<FFT<TRank, FFTRank>>
-Make(typename FFT<TRank, FFTRank>::TensorMap ws, Index const threads = 0);
+std::shared_ptr<FFT<TRank, FFTRank>> Make(typename FFT<TRank, FFTRank>::TensorMap ws, Index const threads = 0);
 
 } // namespace FFT
-}
+} // namespace rl

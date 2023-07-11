@@ -11,12 +11,12 @@ struct Rectilinear final : Kernel<N, Func::PadWidth>
   static constexpr size_t NDim = N;
   static constexpr size_t Width = Func::Width;
   static constexpr size_t PadWidth = Func::PadWidth;
-  static constexpr float HalfWidth = Width / 2.f;
+  static constexpr float  HalfWidth = Width / 2.f;
   using Tensor = typename Kernel<NDim, PadWidth>::Tensor;
   using Point = typename Kernel<NDim, PadWidth>::Point;
   using Pos = typename Kernel<NDim, PadWidth>::OneD;
 
-  Func f;
+  Func  f;
   float scale;
 
   Rectilinear(float const osamp)

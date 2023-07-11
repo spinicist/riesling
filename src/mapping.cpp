@@ -57,7 +57,7 @@ Sz<Rank> fft_size(Sz<Rank> const x, float const os)
 template <size_t N>
 std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 {
-  auto const start = Log::Now();
+  auto const           start = Log::Now();
   std::vector<int32_t> sorted(cart.size());
   std::iota(sorted.begin(), sorted.end(), 0);
   std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
@@ -122,24 +122,24 @@ Mapping<Rank>::Mapping(
   }
 
   std::fesetround(FE_TONEAREST);
-  Sz<Rank> center;
+  Sz<Rank>                center;
   std::array<float, Rank> scales;
   for (size_t ii = 0; ii < Rank; ii++) {
     scales[ii] = (cartDims[ii] / float(info.matrix[ii])) * ((info.matrix[ii] - 1) / 2) * 2;
     center[ii] = cartDims[ii] / 2;
   }
   int32_t index = 0;
-  Index NaNs = 0;
+  Index   NaNs = 0;
   for (int32_t is = 0; is < traj.nTraces(); is++) {
     for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
-      Re1 const p = traj.point(ir, is);
+      Re1 const                    p = traj.point(ir, is);
       Eigen::Array<float, Rank, 1> xyz;
       for (size_t ii = 0; ii < Rank; ii++) {
         xyz[ii] = p[ii] * scales[ii] + center[ii];
       }
       if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
-        auto const gp = nearby(xyz);
-        auto const off = xyz - gp.template cast<float>();
+        auto const                gp = nearby(xyz);
+        auto const                off = xyz - gp.template cast<float>();
         std::array<int16_t, Rank> ijk;
         for (size_t ii = 0; ii < Rank; ii++) {
           ijk[ii] = gp[ii];

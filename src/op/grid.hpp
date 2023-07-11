@@ -29,13 +29,13 @@ template <typename Scalar_, typename Kernel>
 struct Grid final : GridBase<Scalar_, Kernel::NDim>
 {
   static constexpr size_t NDim = Kernel::NDim;
-  static constexpr Index kW = Kernel::PadWidth;
+  static constexpr Index  kW = Kernel::PadWidth;
 
   OP_INHERIT(Scalar_, NDim + 2, 3)
 
   Mapping<NDim> mapping;
-  Kernel kernel;
-  Re2 basis;
+  Kernel        kernel;
+  Re2           basis;
 
   Grid(Mapping<NDim> const m, Index const nC, Re2 const &b)
     : GridBase<Scalar, NDim>(AddFront(m.cartDims, nC, b.dimension(0)), AddFront(m.noncartDims, nC))
@@ -57,14 +57,14 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     auto const &cdims = map.cartDims;
 
     auto grid_task = [&](Index const ibucket) {
-      auto const &bucket = map.buckets[ibucket];
+      auto const              &bucket = map.buckets[ibucket];
       Eigen::Tensor<Scalar, 1> sum(nC);
-      Re1 bEntry(nB);
+      Re1                      bEntry(nB);
       for (auto ii = 0; ii < bucket.size(); ii++) {
-        auto const si = bucket.indices[ii];
-        auto const c = map.cart[si];
-        auto const n = map.noncart[si];
-        auto const k = this->kernel(map.offset[si]);
+        auto const  si = bucket.indices[ii];
+        auto const  c = map.cart[si];
+        auto const  n = map.noncart[si];
+        auto const  k = this->kernel(map.offset[si]);
         Index const kW_2 = ((kW - 1) / 2);
         Index const btp = n.trace % basis.dimension(1);
         bEntry = basis.chip<1>(btp);
@@ -117,18 +117,18 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
-    auto const time = this->startAdjoint(y);
+    auto const  time = this->startAdjoint(y);
     auto const &map = this->mapping;
     Index const nC = this->ishape[0];
     Index const nB = this->ishape[1];
     auto const &cdims = map.cartDims;
 
     std::mutex writeMutex;
-    auto grid_task = [&](Index ibucket) {
-      auto const &bucket = map.buckets[ibucket];
-      auto const bSz = bucket.gridSize();
+    auto       grid_task = [&](Index ibucket) {
+      auto const              &bucket = map.buckets[ibucket];
+      auto const               bSz = bucket.gridSize();
       Eigen::Tensor<Scalar, 2> bSample(nC, nB);
-      InTensor bGrid(AddFront(bSz, nC, nB));
+      InTensor                 bGrid(AddFront(bSz, nC, nB));
       bGrid.setZero();
       for (auto ii = 0; ii < bucket.size(); ii++) {
         auto const si = bucket.indices[ii];
@@ -225,10 +225,10 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
   auto apodization(Sz<NDim> const sz) const -> Eigen::Tensor<float, NDim>
   {
     Eigen::Tensor<Cx, NDim> temp(LastN<NDim>(this->ishape));
-    auto const fft = FFT::Make<NDim, NDim>(temp);
+    auto const              fft = FFT::Make<NDim, NDim>(temp);
     temp.setZero();
     float const scale = std::sqrt(Product(mapping.nomDims));
-    Sz<NDim> kSt, kSz;
+    Sz<NDim>    kSt, kSz;
     kSt.fill((Kernel::PadWidth - Kernel::Width) / 2);
     kSz.fill(Kernel::Width);
     Eigen::Tensor<Cx, NDim> k = kernel(Kernel::Point::Zero()).slice(kSt, kSz).template cast<Cx>();
@@ -236,7 +236,7 @@ struct Grid final : GridBase<Scalar_, Kernel::NDim>
     PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
     temp = padK.forward(k);
     fft->reverse(temp);
-    PadOp<Cx, NDim, NDim> padA(sz, temp.dimensions());
+    PadOp<Cx, NDim, NDim>      padA(sz, temp.dimensions());
     Eigen::Tensor<float, NDim> a = padA.adjoint(temp).abs();
     a.device(Threads::GlobalDevice()) = a.inverse();
     Sz<NDim> center;

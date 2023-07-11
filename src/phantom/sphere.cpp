@@ -19,11 +19,9 @@ Cx3 SphericalPhantom(
     for (Index iy = 0; iy < phan.dimension(1); iy++) {
       auto const py = (iy - cy) * voxel_size[1];
       for (Index ix = 0; ix < phan.dimension(0); ix++) {
-        auto const px = (ix - cx) * voxel_size[0];
+        auto const            px = (ix - cx) * voxel_size[0];
         Eigen::Vector3f const p{px, py, pz};
-        if ((p - c).norm() < r) {
-          phan(ix, iy, iz) = i;
-        }
+        if ((p - c).norm() < r) { phan(ix, iy, iz) = i; }
       }
     }
   }

@@ -10,7 +10,7 @@ struct NearestNeighbour final : Kernel<N, 1>
   static constexpr size_t NDim = N;
   static constexpr size_t Width = 1;
   static constexpr size_t PadWidth = 1;
-  static constexpr float HalfWidth = 1;
+  static constexpr float  HalfWidth = 1;
   using Tensor = typename Kernel<NDim, PadWidth>::Tensor;
   using Point = typename Kernel<NDim, PadWidth>::Point;
   using Pos = typename Kernel<NDim, PadWidth>::OneD;

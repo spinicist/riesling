@@ -16,12 +16,12 @@ int main_compress(args::Subparser &parser)
   CoreOpts coreOpts(parser);
 
   // One of the following must be set
-  args::Flag pca(parser, "V", "Calculate PCA compression", {"pca"});
-  args::Flag rovir(parser, "R", "Calculate ROVIR compression", {"rovir"});
+  args::Flag                   pca(parser, "V", "Calculate PCA compression", {"pca"});
+  args::Flag                   rovir(parser, "R", "Calculate ROVIR compression", {"rovir"});
   args::ValueFlag<std::string> ccFile(parser, "F", "Read compression matrix from file", {"cc-file"});
 
   // General options
-  args::Flag save(parser, "S", "Save compression matrix to .h5 file", {"save"});
+  args::Flag             save(parser, "S", "Save compression matrix to .h5 file", {"save"});
   args::ValueFlag<Index> nRetain(parser, "C", "Retain N channels (8)", {"channels"}, 8);
   args::ValueFlag<float> energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
   args::ValueFlag<Index> refVol(parser, "V", "Use this volume (default first)", {"vol"}, 0);
@@ -31,16 +31,16 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
   args::ValueFlag<Sz3, Sz3Reader> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
   args::ValueFlag<Sz2, Sz2Reader> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
-  ROVIROpts rovirOpts(parser);
+  ROVIROpts                       rovirOpts(parser);
 
   ParseCommand(parser, coreOpts.iname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader      reader(coreOpts.iname.Get());
   Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  Cx4 const ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, refVol.Get());
-  Index const channels = ks.dimension(0);
-  Index const samples = ks.dimension(1);
-  Index const traces = ks.dimension(2);
+  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, refVol.Get());
+  Index const      channels = ks.dimension(0);
+  Index const      samples = ks.dimension(1);
+  Index const      traces = ks.dimension(2);
   Eigen::MatrixXcf psi;
   if (pca) {
     Index const maxRead = samples - pcaRead.Get()[0];
@@ -64,8 +64,8 @@ int main_compress(args::Subparser &parser)
   } else {
     Log::Fail("Must specify PCA/ROVIR/load from file");
   }
-  Compressor compressor{psi};
-  Cx5 all_ks(AddFront(LastN<4>(reader.dimensions<5>(HD5::Keys::Noncartesian)), psi.cols()));
+  Compressor  compressor{psi};
+  Cx5         all_ks(AddFront(LastN<4>(reader.dimensions<5>(HD5::Keys::Noncartesian)), psi.cols()));
   Index const volumes = all_ks.dimension(4);
   for (Index iv = 0; iv < volumes; iv++) {
     all_ks.chip<4>(iv) = compressor.compress(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, iv));

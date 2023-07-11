@@ -23,9 +23,7 @@ template <typename Scalar_, int Rank, int ImgRank>
 void PadOp<Scalar_, Rank, ImgRank>::init()
 {
   for (Index ii = 0; ii < Rank; ii++) {
-    if (ishape[ii] > oshape[ii]) {
-      Log::Fail("Padding input dims {} larger than output dims {}", ishape, oshape);
-    }
+    if (ishape[ii] > oshape[ii]) { Log::Fail("Padding input dims {} larger than output dims {}", ishape, oshape); }
   }
   std::transform(
     oshape.begin(), oshape.end(), ishape.begin(), left_.begin(), [](Index big, Index small) { return (big - small + 1) / 2; });

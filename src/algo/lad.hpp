@@ -16,22 +16,22 @@ struct LAD
   using Input = typename Inner::Input;
   using Output = typename Inner::Output;
 
-  Inner &inner;
-  Index iterLimit = 8;
-  float α = 1.f;  // Over-relaxation
-  float μ = 10.f; // Primal-dual mismatch limit
-  float τ = 2.f;  // Primal-dual mismatch rescale
-  float abstol = 1.e-4f;
-  float reltol = 1.e-4f;
+  Inner               &inner;
+  Index                iterLimit = 8;
+  float                α = 1.f;  // Over-relaxation
+  float                μ = 10.f; // Primal-dual mismatch limit
+  float                τ = 2.f;  // Primal-dual mismatch rescale
+  float                abstol = 1.e-4f;
+  float                reltol = 1.e-4f;
   SoftThreshold<Input> S{1.f};
 
   Input run(Eigen::TensorMap<Output const> b, float ρ) const
   {
     auto dev = Threads::GlobalDevice();
     // Allocate all memory
-    Input x(inner.op->ishape);
+    Input      x(inner.op->ishape);
     auto const odims = inner.op->oshape;
-    Output u(odims), z(odims), zold(odims), Ax_sub_b(odims);
+    Output     u(odims), z(odims), zold(odims), Ax_sub_b(odims);
 
     // Set initial values
     x.setZero();
@@ -90,9 +90,7 @@ struct LAD
         u *= u.constant(τ);
         Log::Print("Dual norm outside limit {}, rescaled ρ to {} |u| {}", μ * pNorm, ρ, Norm(u));
       }
-      if (InterruptReceived()) {
-        break;
-      }
+      if (InterruptReceived()) { break; }
     }
     PopInterrupt();
     return x;

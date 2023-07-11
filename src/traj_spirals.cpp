@@ -16,7 +16,7 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
   }
   // Currently to do an outer product, you need to contract over empty indices
   Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
-  Re1 endPoint(Sz1{3});
+  Re1                                      endPoint(Sz1{3});
 
   // Slightly annoying as can't initialize a 1D Tensor with {} notation yet
   endPoint(0) = 0.f;
@@ -31,8 +31,8 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
 
   double const d_t = 1. / half;         // Change in theta
   double const c2 = nSpoke * 4. * M_PI; // The velocity squared
-  double t = 0.;
-  double phi = 0.;
+  double       t = 0.;
+  double       phi = 0.;
   for (Index is = 1; is < half; is++) {
     t += d_t;
     double const cos_t2 = t * t;
@@ -68,10 +68,8 @@ Index Fib(Index n)
 
 Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, Index const spi, bool const gm)
 {
-  if ((ntraces % spi) != 0) {
-    Log::Fail("traces per interleave {} is not a divisor of total traces {}", spi, ntraces);
-  }
-  Index nInterleaves = ntraces / spi;
+  if ((ntraces % spi) != 0) { Log::Fail("traces per interleave {} is not a divisor of total traces {}", spi, ntraces); }
+  Index           nInterleaves = ntraces / spi;
   constexpr float phi_gold = 2.399963229728653;
   constexpr float phi_gm1 = 0.465571231876768;
   constexpr float phi_gm2 = 0.682327803828019;
@@ -100,7 +98,7 @@ Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, 
       if (gm) {
         float const gm_phi = 2 * M_PI * ii * phi_gm2;
         float const gm_theta = acos(fmod(ii * phi_gm1, 1.0) * 2.f - 1.f);
-        Re2 rot(3, 3);
+        Re2         rot(3, 3);
         rot(0, 0) = cos(gm_theta) * cos(gm_phi);
         rot(0, 1) = -sin(gm_phi);
         rot(0, 2) = cos(gm_phi) * sin(gm_theta);

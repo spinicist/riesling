@@ -40,16 +40,16 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
 }
 
 void BidiagInit(
-  std::shared_ptr<Ops::Op<Cx>> op,
-  std::shared_ptr<Ops::Op<Cx>> M,
-  Eigen::VectorXcf &Mu,
-  Eigen::VectorXcf &u,
-  Eigen::VectorXcf &v,
-  float &α,
-  float &β,
-  Eigen::VectorXcf &x,
+  std::shared_ptr<Ops::Op<Cx>>              op,
+  std::shared_ptr<Ops::Op<Cx>>              M,
+  Eigen::VectorXcf                         &Mu,
+  Eigen::VectorXcf                         &u,
+  Eigen::VectorXcf                         &v,
+  float                                    &α,
+  float                                    &β,
+  Eigen::VectorXcf                         &x,
   Eigen::Map<Eigen::VectorXcf const> const &b,
-  Cx *x0)
+  Cx                                       *x0)
 {
   if (x0) {
     Eigen::Map<Eigen::VectorXcf const> xx0(x0, op->cols());
@@ -71,11 +71,11 @@ void BidiagInit(
 void Bidiag(
   std::shared_ptr<Ops::Op<Cx>> const op,
   std::shared_ptr<Ops::Op<Cx>> const M,
-  Eigen::VectorXcf &Mu,
-  Eigen::VectorXcf &u,
-  Eigen::VectorXcf &v,
-  float &α,
-  float &β)
+  Eigen::VectorXcf                  &Mu,
+  Eigen::VectorXcf                  &u,
+  Eigen::VectorXcf                  &v,
+  float                             &α,
+  float                             &β)
 {
   Mu = op->forward(v) - α * Mu;
   M->forward(Mu, u);

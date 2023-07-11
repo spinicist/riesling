@@ -18,17 +18,17 @@ auto T2Prep::parameters(Index const nsamp, std::vector<float> lo, std::vector<fl
 
 auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
-  float const R1 = 1.f / p(0);
-  float const R2 = 1.f / p(1);
-  float const PD = p(2);
-  float const B1 = 0.7;
+  float const    R1 = 1.f / p(0);
+  float const    R2 = 1.f / p(1);
+  float const    PD = p(2);
+  float const    B1 = 0.7;
   Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsPerPrep);
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
-  float const e1 = exp(-R1 * settings.TR);
-  float const eramp = exp(-R1 * settings.Tramp);
-  float const essi = exp(-R1 * settings.Tssi);
-  float const erec = exp(-R1 * settings.Trec);
+  float const     e1 = exp(-R1 * settings.TR);
+  float const     eramp = exp(-R1 * settings.Tramp);
+  float const     essi = exp(-R1 * settings.Tssi);
+  float const     erec = exp(-R1 * settings.Trec);
   E1 << e1, 1 - e1, 0.f, 1.f;
   E2 << exp(-R2 * settings.TE), 0.f, 0.f, 1.f;
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
@@ -42,12 +42,13 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   A << cosa, 0.f, 0.f, 1.f;
 
   // Get steady state after prep-pulse for first segment
-  Eigen::Matrix2f const seg = (Essi * Eramp * (E1 * A).pow(settings.spokesPerSeg + settings.spokesSpoil) * Eramp).pow(settings.segsPerPrep);
+  Eigen::Matrix2f const seg =
+    (Essi * Eramp * (E1 * A).pow(settings.spokesPerSeg + settings.spokesSpoil) * Eramp).pow(settings.segsPerPrep);
   Eigen::Matrix2f const SS = Essi * E2 * Erec * seg;
-  float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
+  float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic
-  Index tp = 0;
+  Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
   Mz *= PD;
   for (Index ig = 0; ig < settings.segsPerPrep; ig++) {
@@ -61,9 +62,7 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsPerPrep) {
-    Log::Fail("Programmer error");
-  }
+  if (tp != settings.spokesPerSeg * settings.segsPerPrep) { Log::Fail("Programmer error"); }
   return dynamic;
 }
 

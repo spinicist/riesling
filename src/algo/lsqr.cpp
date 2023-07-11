@@ -12,9 +12,9 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
 {
   Index const rows = op->rows();
   Index const cols = op->cols();
-  CMap const b(bdata, rows);
-  Vector Mu(rows), u(rows);
-  Vector x(cols), v(cols), w(cols);
+  CMap const  b(bdata, rows);
+  Vector      Mu(rows), u(rows);
+  Vector      x(cols), v(cols), w(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
@@ -58,7 +58,7 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
     float const rhs = ɸ - δ * z;
     float const zbar = rhs / ɣ̅;
     float const normx = std::sqrt(xxnorm + zbar * zbar);
-    float ɣ;
+    float       ɣ;
     std::tie(cs2, sn2, ɣ) = StableGivens(ɣ̅, θ);
     z = rhs / ɣ;
     xxnorm += z * z;

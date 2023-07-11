@@ -35,34 +35,22 @@ Eigen::ThreadPool *GlobalPool()
 
 void SetGlobalThreadCount(Index nt)
 {
-  if (gp) {
-    delete gp;
-  }
-  if (nt < 1) {
-    nt = std::thread::hardware_concurrency();
-  }
+  if (gp) { delete gp; }
+  if (nt < 1) { nt = std::thread::hardware_concurrency(); }
   Log::Print<Log::Level::High>("Creating thread pool with {} threads", nt);
   gp = new Eigen::ThreadPool(nt);
 }
 
-Index GlobalThreadCount()
-{
-  return GlobalPool()->NumThreads();
-}
+Index GlobalThreadCount() { return GlobalPool()->NumThreads(); }
 
-Eigen::ThreadPoolDevice GlobalDevice()
-{
-  return Eigen::ThreadPoolDevice(GlobalPool(), GlobalPool()->NumThreads());
-}
+Eigen::ThreadPoolDevice GlobalDevice() { return Eigen::ThreadPoolDevice(GlobalPool(), GlobalPool()->NumThreads()); }
 
 void For(ForFunc f, Index const lo, Index const hi, std::string const &label)
 {
   Index const ni = hi - lo;
   Index const nt = GlobalPool()->NumThreads();
-  if (ni == 0) {
-    return;
-  }
-  
+  if (ni == 0) { return; }
+
   Log::StartProgress(ni, label);
   if (nt == 1) {
     for (Index ii = lo; ii < hi; ii++) {
@@ -79,15 +67,11 @@ void For(ForFunc f, Index const lo, Index const hi, std::string const &label)
       });
     }
     barrier.Wait();
-
   }
   Log::StopProgress();
 }
 
-void For(ForFunc f, Index const n, std::string const &label)
-{
-  For(f, 0, n, label);
-}
+void For(ForFunc f, Index const n, std::string const &label) { For(f, 0, n, label); }
 
 } // namespace Threads
 } // namespace rl

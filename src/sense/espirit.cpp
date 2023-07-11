@@ -12,21 +12,19 @@ namespace SENSE {
 
 Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const gapRad)
 {
-  Sz4 const fullShape = grid.dimensions();
+  Sz4 const   fullShape = grid.dimensions();
   Index const nchan = fullShape[0];
-  Sz3 const halfShape = Div(LastN<3>(fullShape), 2);
+  Sz3 const   halfShape = Div(LastN<3>(fullShape), 2);
 
   Index const calW = (calRad * 2) - 1;
   Index const kW = (kRad * 2) - 1;
   Index const gapPlusKW = ((gapRad + kRad) * 2) - 1;
   Index const nSkip = gapRad ? gapPlusKW * gapPlusKW * gapPlusKW : 0;
   Index const nk = calW * calW * calW - nSkip;
-  if (nk < 1) {
-    Log::Fail("No kernels to Hankelfy");
-  }
+  if (nk < 1) { Log::Fail("No kernels to Hankelfy"); }
   Cx5 kernels(nchan, kW, kW, kW, nk);
 
-  Index k = 0;
+  Index       k = 0;
   Index const gapSt = (calRad - 1) - (gapRad - 1) - kRad;
   Index const gapEnd = (calRad - 1) + gapRad + kRad;
 
@@ -47,8 +45,8 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
           continue;
         }
         Index const st_x = st[0] + ix;
-        Sz4 sst{0, st_x, st_y, st_z};
-        Sz4 ssz{nchan, kW, kW, kW};
+        Sz4         sst{0, st_x, st_y, st_z};
+        Sz4         ssz{nchan, kW, kW, kW};
         kernels.chip<4>(k) = grid.slice(sst, ssz);
         k++;
       }
@@ -60,8 +58,8 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
 
 Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
 {
-  auto const m = CollapseToMatrix<Cx5, 4>(mIn);
-  auto const svd = SVD<Cx>(m, true, true);
+  auto const  m = CollapseToMatrix<Cx5, 4>(mIn);
+  auto const  svd = SVD<Cx>(m, true, true);
   Index const nRetain = (svd.vals > (svd.vals.sum() * thresh)).count();
   Log::Print("Retaining {} kernels", nRetain);
   Cx5 out(mIn.dimension(0), mIn.dimension(1), mIn.dimension(2), mIn.dimension(3), nRetain);
@@ -74,16 +72,16 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outShape, Index const kRad, Index const c
   Log::Print("ESPIRIT Calibration Radius {} Kernel Radius {}", calRad, kRad);
 
   Log::Print("Calculating k-space kernels");
-  Cx5 const all_kernels = ToKernels(grid, kRad, calRad, gap);
-  Cx5 const mini_kernels = LowRankKernels(all_kernels, thresh);
+  Cx5 const   all_kernels = ToKernels(grid, kRad, calRad, gap);
+  Cx5 const   mini_kernels = LowRankKernels(all_kernels, thresh);
   Index const retain = mini_kernels.dimension(4);
 
   Log::Print("Upsample last dimension");
-  Sz3 const inShape = LastN<3>(grid.dimensions());
+  Sz3 const   inShape = LastN<3>(grid.dimensions());
   Index const nC = grid.dimension(0);
-  Cx4 mix_grid(mini_kernels.dimension(0), mini_kernels.dimension(1), mini_kernels.dimension(2), inShape[2]);
-  auto const mix_fft = FFT::Make<4, 1>(mix_grid.dimensions());
-  Cx5 mix_kernels(mini_kernels.dimension(0), mini_kernels.dimension(1), mini_kernels.dimension(2), inShape[2], retain);
+  Cx4         mix_grid(mini_kernels.dimension(0), mini_kernels.dimension(1), mini_kernels.dimension(2), inShape[2]);
+  auto const  mix_fft = FFT::Make<4, 1>(mix_grid.dimensions());
+  Cx5         mix_kernels(mini_kernels.dimension(0), mini_kernels.dimension(1), mini_kernels.dimension(2), inShape[2], retain);
   mix_kernels.setZero();
   Cropper const lo_mix(
     Sz3{mix_grid.dimension(1), mix_grid.dimension(2), mix_grid.dimension(3)},
@@ -101,11 +99,11 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outShape, Index const kRad, Index const c
 
   Log::Print("Image space Eigenanalysis");
   // Do this slice-by-slice
-  Re3 valsImage(inShape);
-  Cx4 vecsImage(AddFront(inShape, nC));
+  Re3        valsImage(inShape);
+  Cx4        vecsImage(AddFront(inShape, nC));
   auto const hiSz = FirstN<3>(vecsImage.dimensions());
   auto const hiFFT = FFT::Make<3, 2>(hiSz, 1);
-  auto slice_task = [&vecsImage, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const zz) {
+  auto       slice_task = [&vecsImage, &valsImage, &mix_kernels, &hiSz, &hiFFT](Index const zz) {
     // Now do a lot of FFTs
     Cx4 hi_kernels(vecsImage.dimension(0), vecsImage.dimension(1), vecsImage.dimension(2), mix_kernels.dimension(4));
     Cx3 hi_slice(hiSz);
@@ -120,8 +118,8 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outShape, Index const kRad, Index const c
     // Now voxel-wise covariance
     for (Index yy = 0; yy < hi_slice.dimension(2); yy++) {
       for (Index xx = 0; xx < hi_slice.dimension(1); xx++) {
-        Cx2 const samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
-        auto const pcs = PCA(CollapseToConstMatrix(samples), 1);
+        Cx2 const   samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
+        auto const  pcs = PCA(CollapseToConstMatrix(samples), 1);
         float const phase = std::arg(pcs.vecs(0, 0));
         for (Index ic = 0; ic < samples.dimension(0); ic++) {
           vecsImage(ic, xx, yy, zz) = std::conj(pcs.vecs(ic, 0) * std::polar(1.f, -phase));
