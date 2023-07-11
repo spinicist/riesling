@@ -82,8 +82,8 @@ void SLR::apply(float const α, CMap const &xin, Map &zin) const
   Cx6  kernels = ToKernels(z, kSz);
   auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
   if (kMat.rows() > kMat.cols()) { Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols()); }
-  auto const            svd = SVD<Cx>(kMat, true, false);
-  Eigen::VectorXf const s = (svd.vals > thresh).select(svd.vals, 0.f);
+  auto const            svd = SVD<Cx>(kMat.transpose());
+  Eigen::VectorXf const s = (svd.S.array() > thresh).select(svd.S, 0.f);
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, z);
   fft->reverse(z);

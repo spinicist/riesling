@@ -1,4 +1,5 @@
 #include "algo/decomp.hpp"
+#include "algo/stats.hpp"
 #include "tensorOps.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
@@ -15,8 +16,9 @@ TEST_CASE("decomp")
   SECTION("PCA")
   {
     // Due to how channels are stored, we put each sample in a column instead of a row
-    Cx2 data(nvar, nsamp);
+    Eigen::MatrixXcf data(nvar, nsamp);
     data.setRandom();
-    PCA(CollapseToConstMatrix(data), 1);
+    auto cov = Covariance(data);
+    Eig<Cx> eig(cov);
   }
 }

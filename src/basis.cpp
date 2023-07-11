@@ -16,8 +16,8 @@ void Basis(
   // Calculate SVD - observations are in cols
   Eigen::ArrayXXf d = normalize ? dynamics.colwise().normalized() : dynamics;
   if (demean) { d = d.colwise() - d.rowwise().mean(); }
-  auto const           svd = SVD<float>(d, true, true);
-  Eigen::ArrayXf const vals = svd.vals.square();
+  auto const           svd = SVD<float>(d.transpose());
+  Eigen::ArrayXf const vals = svd.S.square();
   Eigen::ArrayXf       cumsum(vals.rows());
   std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
   cumsum = 100.f * cumsum / cumsum.tail(1)[0];

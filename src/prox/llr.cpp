@@ -26,9 +26,9 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
 
   auto softLLR = [realλ](Cx4 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-    auto const       svd = SVD<Cx>(patch, true, false);
+    auto const       svd = SVD<Cx>(patch.transpose());
     // Soft-threhold svals
-    Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
+    Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
     Cx4 yp = Tensorfy(patch, xp.dimensions());
     return yp;
@@ -47,9 +47,9 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
 
     auto softLLR = [realλ](Cx4 const &xp) {
       Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-      auto const       svd = SVD<Cx>(patch, true, false);
+      auto const       svd = SVD<Cx>(patch.transpose());
       // Soft-threhold svals
-      Eigen::VectorXf const s = (svd.vals.abs() > realλ).select(svd.vals * (svd.vals.abs() - realλ) / svd.vals.abs(), 0.f);
+      Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
       patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
       Cx4 yp = Tensorfy(patch, xp.dimensions());
       return yp;

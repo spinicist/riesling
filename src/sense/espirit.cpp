@@ -1,6 +1,7 @@
 #include "sense/espirit.hpp"
 
 #include "algo/decomp.hpp"
+#include "algo/stats.hpp"
 #include "cropper.h"
 #include "fft/fft.hpp"
 #include "op/make_grid.hpp"
@@ -59,8 +60,8 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
 Cx5 LowRankKernels(Cx5 const &mIn, float const thresh)
 {
   auto const  m = CollapseToMatrix<Cx5, 4>(mIn);
-  auto const  svd = SVD<Cx>(m, true, true);
-  Index const nRetain = (svd.vals > (svd.vals.sum() * thresh)).count();
+  auto const  svd = SVD<Cx>(m.transpose());
+  Index const nRetain = (svd.S.array() > (svd.S.sum() * thresh)).count();
   Log::Print("Retaining {} kernels", nRetain);
   Cx5 out(mIn.dimension(0), mIn.dimension(1), mIn.dimension(2), mIn.dimension(3), nRetain);
   CollapseToMatrix<Cx5, 4>(out) = svd.V.leftCols(nRetain).conjugate();
@@ -119,12 +120,13 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outShape, Index const kRad, Index const c
     for (Index yy = 0; yy < hi_slice.dimension(2); yy++) {
       for (Index xx = 0; xx < hi_slice.dimension(1); xx++) {
         Cx2 const   samples = hi_kernels.chip<2>(yy).template chip<1>(xx);
-        auto const  pcs = PCA(CollapseToConstMatrix(samples), 1);
-        float const phase = std::arg(pcs.vecs(0, 0));
+        auto const cov = Covariance(CollapseToConstMatrix(samples));
+        Eig<Cx> const eig(cov);
+        float const phase = std::arg(eig.P(0, 0));
         for (Index ic = 0; ic < samples.dimension(0); ic++) {
-          vecsImage(ic, xx, yy, zz) = std::conj(pcs.vecs(ic, 0) * std::polar(1.f, -phase));
+          vecsImage(ic, xx, yy, zz) = std::conj(eig.P(ic, 0) * std::polar(1.f, -phase));
         }
-        valsImage(xx, yy, zz) = pcs.vals[0];
+        valsImage(xx, yy, zz) = eig.V[0];
       }
     }
   };

@@ -33,9 +33,9 @@ int main_denoise(args::Subparser &parser)
 
   auto hardLLR = [λ = λ.Get()](Cx4 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-    auto const       svd = SVD<Cx>(patch, true, false);
+    auto const       svd = SVD<Cx>(patch.transpose());
     // Soft-threhold svals
-    Eigen::VectorXf const s = (svd.vals.abs() > λ).select(svd.vals, 0.f);
+    Eigen::VectorXf const s = (svd.S.array().abs() > λ).select(svd.S, 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
     Cx4 yp = Tensorfy(patch, xp.dimensions());
     return yp;

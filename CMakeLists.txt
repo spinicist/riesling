@@ -53,6 +53,7 @@ add_library(vineyard
     src/algo/lsqr.cpp
     src/algo/otsu.cpp
     src/algo/pdhg.cpp
+    src/algo/stats.cpp
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp

@@ -1,4 +1,5 @@
 #include "algo/decomp.hpp"
+#include "algo/stats.hpp"
 #include "compressor.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -53,9 +54,10 @@ int main_compress(args::Subparser &parser)
                         Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
                         Sz4{channels, pcaRead.Get()[1], pcaTraces.Get()[1], pcaSlices.Get()[1]})
                       .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
-
-    auto const pc = PCA(CollapseToConstMatrix(ref), nRetain.Get(), energy.Get());
-    psi = pc.vecs;
+    auto const cov = Covariance(CollapseToConstMatrix(ref));
+    auto const eig = Eig<Cx>(cov);
+    auto const nR = energy ? Threshold(eig.V, energy.Get()) : nRetain.Get();
+    psi = eig.P.leftCols(nR);
   } else if (rovir) {
     psi = ROVIR(rovirOpts, traj, energy.Get(), nRetain.Get(), lores.Get(), ks);
   } else if (ccFile) {
