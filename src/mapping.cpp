@@ -129,17 +129,18 @@ Mapping<Rank>::Mapping(
     center[ii] = cartDims[ii] / 2;
   }
   int32_t index = 0;
-  Index   NaNs = 0;
+  Index   invalids = 0;
   for (int32_t is = 0; is < traj.nTraces(); is++) {
     for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
-      Re1 const                    p = traj.point(ir, is);
-      Eigen::Array<float, Rank, 1> xyz;
-      for (size_t ii = 0; ii < Rank; ii++) {
-        xyz[ii] = p[ii] * scales[ii] + center[ii];
-      }
-      if (xyz.array().isFinite().all()) { // Allow for NaNs in trajectory for blanking
-        auto const                gp = nearby(xyz);
-        auto const                off = xyz - gp.template cast<float>();
+      Re1 const p = traj.point(ir, is);
+      if (B0((p.abs() <= 0.5f).all())()) {
+        Eigen::Array<float, Rank, 1> xyz;
+        for (size_t ii = 0; ii < Rank; ii++) {
+          xyz[ii] = p[ii] * scales[ii] + center[ii];
+        }
+        auto const gp = nearby(xyz);
+        auto const off = xyz - gp.template cast<float>();
+
         std::array<int16_t, Rank> ijk;
         for (size_t ii = 0; ii < Rank; ii++) {
           ijk[ii] = gp[ii];
@@ -156,11 +157,11 @@ Mapping<Rank>::Mapping(
         buckets[ib].indices.push_back(index);
         index++;
       } else {
-        NaNs++;
+        invalids++;
       }
     }
   }
-  Log::Print("Ignored {} non-finite trajectory points", NaNs);
+  Log::Print("Ignored {} invalid trajectory points", invalids);
 
   std::vector<Bucket> chunked;
   for (auto &bucket : buckets) {
@@ -178,7 +179,6 @@ Mapping<Rank>::Mapping(
   Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
   buckets.insert(buckets.end(), chunked.begin(), chunked.end());
   Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
-
   Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L, [](Index sum, Bucket const &b) {
                return b.indices.size() + sum;
              }));
