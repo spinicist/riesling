@@ -22,7 +22,7 @@ template <typename Scalar = Cx>
 struct SVD
 {
   using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
-  SVD<Cx>(Eigen::Ref<Matrix const> const &mat);
+  SVD(Eigen::Ref<Matrix const> const &mat);
   Matrix         U, V;
   Eigen::ArrayXf S;
 };
