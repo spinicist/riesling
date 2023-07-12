@@ -203,7 +203,7 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     for ii in range(1, n):
         diffs.append([])
         for jj in range(ii):
-            diffs[ii - 1].append((data[jj, :, :] - data[ii, :, :]) * 100 / ref)
+            diffs[ii - 1].append((data[ii, :, :] - data[jj, :, :]) * 100 / ref)
 
     clim, cmap = _get_colors(clim, cmap, data, component)
     difflim, diffmap = _get_colors(difflim, diffmap, diffs[0][0], diff_component)
