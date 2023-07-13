@@ -1,6 +1,7 @@
 #include "basis.hpp"
 
 #include "algo/decomp.hpp"
+#include "algo/stats.hpp"
 
 namespace rl {
 
@@ -16,24 +17,20 @@ void Basis(
   // Calculate SVD - observations are in cols
   Eigen::ArrayXXf d = normalize ? dynamics.colwise().normalized() : dynamics;
   if (demean) { d = d.colwise() - d.rowwise().mean(); }
-  auto const           svd = SVD<float>(d.transpose());
-  Eigen::ArrayXf const vals = svd.S.square();
-  Eigen::ArrayXf       cumsum(vals.rows());
-  std::partial_sum(vals.begin(), vals.end(), cumsum.begin());
-  cumsum = 100.f * cumsum / cumsum.tail(1)[0];
+  auto const svd = SVD<float>(d.transpose());
   Index nRetain = 0;
   if (nBasis) {
     nRetain = nBasis;
   } else {
-    nRetain = (cumsum < thresh).count();
+    nRetain = Threshold(svd.S.square(), thresh);
   }
-  Log::Print("Retaining {} basis vectors, cumulative energy: {}", nRetain, cumsum.head(nRetain).transpose());
+  Log::Print("Retaining {} basis vectors", nRetain);
 
   Eigen::MatrixXf basis = svd.V.leftCols(nRetain);
   if (rotate) {
     // Amoeba Rotation
     // http://stats.stackexchange.com/a/177555/87414
-    Eigen::ArrayXf  v = vals.head(nRetain);
+    Eigen::ArrayXf  v = svd.S.head(nRetain).square();
     float const     μ = v.mean();
     Eigen::MatrixXf R = Eigen::MatrixXf::Identity(nRetain, nRetain);
     for (Index ii = 0; ii < nRetain - 1; ii++) {

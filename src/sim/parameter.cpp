@@ -80,19 +80,20 @@ auto T1T2η(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eig
   auto const      R2s = Eigen::ArrayXf::LinSpaced(nT, R2lo, R2hi);
   auto const      ηs = Eigen::ArrayXf::LinSpaced(10, ηlo, ηhi);
   Eigen::ArrayXXf p(3, nTot);
-  Index           ii = 0;
+  Index           nAct = 0;
   for (Index i3 = 0; i3 < nη; i3++) {
     for (Index i2 = 0; i2 < nT; i2++) {
       for (Index i1 = 0; i1 < nT; i1++) {
         if (R2s(i2) > R1s(i1)) {
-          p(0, ii) = 1.f / R1s(i1);
-          p(1, ii) = 1.f / R2s(i2);
-          p(2, ii) = ηs(i3);
-          ii++;
+          p(0, nAct) = 1.f / R1s(i1);
+          p(1, nAct) = 1.f / R2s(i2);
+          p(2, nAct) = ηs(i3);
+          nAct++;
         }
       }
     }
   }
+  p.conservativeResize(3, nAct);
   return p;
 }
 

@@ -13,15 +13,15 @@ auto T2Prep::length() const -> Index { return settings.spokesPerSeg * settings.s
 
 auto T2Prep::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
 {
-  return Parameters::T1T2PD(nsamp, lo, hi);
+  return Parameters::T1T2η(nsamp, lo, hi);
 }
 
 auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   float const    R1 = 1.f / p(0);
   float const    R2 = 1.f / p(1);
-  float const    PD = p(2);
-  float const    B1 = 0.7;
+  float const    η = p(2);
+  float const    B1 = 1.f;
   Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsPerPrep);
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
@@ -30,7 +30,7 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   float const     essi = exp(-R1 * settings.Tssi);
   float const     erec = exp(-R1 * settings.Trec);
   E1 << e1, 1 - e1, 0.f, 1.f;
-  E2 << exp(-R2 * settings.TE), 0.f, 0.f, 1.f;
+  E2 << η*exp(-R2 * settings.TE), 0.f, 0.f, 1.f;
   Eramp << eramp, 1 - eramp, 0.f, 1.f;
   Essi << essi, 1 - essi, 0.f, 1.f;
   Erec << erec, 1 - erec, 0.f, 1.f;
@@ -50,7 +50,6 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  Mz *= PD;
   for (Index ig = 0; ig < settings.segsPerPrep; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
@@ -61,7 +60,11 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
+    if (!std::isfinite(dynamic(tp - 1))) {
+      Log::Fail("R1 {} R2 {} η {}", R1, R2, η);
+    }
   }
+
   if (tp != settings.spokesPerSeg * settings.segsPerPrep) { Log::Fail("Programmer error"); }
   return dynamic;
 }
