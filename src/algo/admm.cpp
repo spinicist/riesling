@@ -60,9 +60,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
   bʹ.setZero();
   bʹ.head(A->rows()) = b;
 
-  float const sqrtM = std::sqrt(x.rows());
-  float const sqrtN = std::sqrt(bʹ.rows());
-  Log::Print("ADMM Abs Tol {} Rel Tol {}", abstol, reltol);
+  Log::Print("ADMM Abs ε {}", ε);
   PushInterrupt();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
@@ -79,7 +77,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     float       pNorm = 0.f, dNorm = 0.f, normz = 0.f, normu = 0.f;
     for (Index ir = 0; ir < R; ir++) {
       Fx[ir] = reg_ops[ir]->forward(x);
-      Fxpu[ir] = Fx[ir] * α - z[ir] * (α - 1.f) + u[ir];
+      Fxpu[ir] = Fx[ir] + u[ir];
       zold[ir] = z[ir];
       prox[ir]->apply(1.f / ρ, Fxpu[ir], z[ir]);
       u[ir] = Fxpu[ir] - z[ir];
@@ -96,8 +94,8 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     dNorm = std::sqrt(dNorm);
     normz = std::sqrt(normz);
     normu = std::sqrt(normu);
-    float const pEps = abstol * sqrtM + reltol * std::max(normx, normz);
-    float const dEps = abstol * sqrtN + reltol * std::sqrt(R) * ρ * normu;
+    float const pEps = ε * std::max(normx, normz);
+    float const dEps = ε * ρ * normu;
     Log::Print(
       "ADMM Iter {:02d} |x| {:5.3E} |z| {:5.3E} |u| {:5.3E} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E}",
       io,
@@ -111,7 +109,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       dEps);
 
     if ((pNorm < pEps) && (dNorm < dEps)) {
-      Log::Print("All primal and dual tolerances achieved, stopping");
+      Log::Print("Primal and dual tolerances achieved, stopping");
       break;
     }
     if (io > 0) { // z_0 is zero, so perfectly reasonable dual residuals can trigger this

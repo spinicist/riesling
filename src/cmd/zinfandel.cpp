@@ -32,10 +32,8 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (30)", {"max-outer-its"}, 30);
-  args::ValueFlag<float> abstol(parser, "ABS", "ADMM absolute tolerance (1e-4)", {"abs-tol"}, 1.e-4f);
-  args::ValueFlag<float> reltol(parser, "REL", "ADMM relative tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
+  args::ValueFlag<float> ε(parser, "ABS", "ADMM tolerance (1e-4)", {"abs-tol"}, 1.e-4f);
   args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 1)", {"rho"}, 1.f);
-  args::ValueFlag<float> α(parser, "α", "ADMM relaxation α (default 1)", {"relax"}, 1.f);
   args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
 
@@ -105,11 +103,9 @@ int main_zinfandel(args::Subparser &parser)
       {id},
       {slr},
       outer_its.Get(),
-      α.Get(),
       μ.Get(),
       τ.Get(),
-      abstol.Get(),
-      reltol.Get(),
+      ε.Get(),
       false,
       debug_x,
       debug_z};
