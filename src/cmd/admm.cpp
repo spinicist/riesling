@@ -86,7 +86,6 @@ int main_admm(args::Subparser &parser)
     μ.Get(),
     τ.Get(),
     ε.Get(),
-    hogwild,
     debug_x,
     debug_z};
   auto const &all_start = Log::Now();

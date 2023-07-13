@@ -106,7 +106,6 @@ int main_zinfandel(args::Subparser &parser)
       μ.Get(),
       τ.Get(),
       ε.Get(),
-      false,
       debug_x,
       debug_z};
 
