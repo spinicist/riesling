@@ -26,7 +26,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     */
 
   Index const R = reg_ops.size();
-  std::vector<Vector> z(R), zprev(R), z0(R), Δz(R), u(R), u0(R), Δu(R), û(R), û0(R), Δû(R), Fx(R), Fx0(R), ΔFx(R), Fxpu(R);
+  std::vector<Vector> z(R), zprev(R), z0(R), Δz(R), u(R), u0(R), Δu(R), û(R), û0(R), Δû(R), Fx(R), Fx0(R), ΔFx(R), Fxpu(R);
   std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
   std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
   for (Index ir = 0; ir < R; ir++) {
@@ -45,12 +45,12 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     u0[ir].setZero();
     Δu[ir].resize(sz);
     Δu[ir].setZero();
-    û[ir].resize(sz);
-    û[ir].setZero();
-    û0[ir].resize(sz);
-    û0[ir].setZero();
-    Δû[ir].resize(sz);
-    Δû[ir].setZero();
+    û[ir].resize(sz);
+    û[ir].setZero();
+    û0[ir].resize(sz);
+    û0[ir].setZero();
+    Δû[ir].resize(sz);
+    Δû[ir].setZero();
     Fx[ir].resize(sz);
     Fx[ir].setZero();
     Fx0[ir].resize(sz);
@@ -132,38 +132,38 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     }
 
     if (io % 2 == 1) {
-      float Δû_dot_Δû = 0.f, ΔFx_dot_Δû = 0.f, ΔFx_dot_ΔFx = 0.f, Δu_dot_Δu = 0.f, Δz_dot_Δu = 0.f, Δz_dot_Δz = 0.f;
-      float normΔFx = 0.f, normΔû = 0.f, normΔz = 0.f, normΔu = 0.f;
+      float Δû_dot_Δû = 0.f, ΔFx_dot_Δû = 0.f, ΔFx_dot_ΔFx = 0.f, Δu_dot_Δu = 0.f, Δz_dot_Δu = 0.f, Δz_dot_Δz = 0.f;
+      float normΔFx = 0.f, normΔû = 0.f, normΔz = 0.f, normΔu = 0.f;
       for (Index ir = 0; ir < R; ir++) {
-        û[ir] = Fxpu[ir] - zprev[ir];
+        û[ir] = Fxpu[ir] - zprev[ir];
         Δu[ir] = u[ir] - u0[ir];
-        Δû[ir] = û[ir] - û0[ir];
+        Δû[ir] = û[ir] - û0[ir];
         ΔFx[ir] = Fx[ir] - Fx0[ir];
         Δz[ir] = z[ir] - z0[ir];
-        Δû_dot_Δû += std::real(Δû[ir].dot(Δû[ir]));
-        ΔFx_dot_Δû += std::real(ΔFx[ir].dot(Δû[ir]));
+        Δû_dot_Δû += std::real(Δû[ir].dot(Δû[ir]));
+        ΔFx_dot_Δû += std::real(ΔFx[ir].dot(Δû[ir]));
         ΔFx_dot_ΔFx += std::real(ΔFx[ir].dot(ΔFx[ir]));
         Δu_dot_Δu += std::real(Δu[ir].dot(Δu[ir]));
         Δz_dot_Δu += std::real(Δz[ir].dot(Δu[ir]));
         Δz_dot_Δz += std::real(Δz[ir].dot(Δz[ir]));
         normΔFx += ΔFx[ir].squaredNorm();
-        normΔû += Δû[ir].squaredNorm();
+        normΔû += Δû[ir].squaredNorm();
         normΔz += Δz[ir].squaredNorm();
         normΔu += Δu[ir].squaredNorm();
       }
       normΔFx = std::sqrt(normΔFx);
-      normΔû = std::sqrt(normΔû);
+      normΔû = std::sqrt(normΔû);
       normΔz = std::sqrt(normΔz);
       normΔu = std::sqrt(normΔu);
-      float const α̂sd = Δû_dot_Δû / ΔFx_dot_Δû;
-      float const α̂mg = ΔFx_dot_Δû / ΔFx_dot_ΔFx;
+      float const α̂sd = Δû_dot_Δû / ΔFx_dot_Δû;
+      float const α̂mg = ΔFx_dot_Δû / ΔFx_dot_ΔFx;
       float const β̂sd = Δu_dot_Δu / Δz_dot_Δu;
       float const β̂mg = Δz_dot_Δu / Δz_dot_Δz;
 
       float const α̂ = (2.f * α̂mg > α̂sd) ? α̂mg : α̂sd - α̂mg / 2.f;
       float const β̂ = (2.f * β̂mg > β̂sd) ? β̂mg : β̂sd - β̂mg / 2.f;
       float const εcor = 0.2f;
-      float const α̂cor = ΔFx_dot_Δû / (normΔFx * normΔû);
+      float const α̂cor = ΔFx_dot_Δû / (normΔFx * normΔû);
       float const β̂cor = Δz_dot_Δu / (normΔz * normΔu);
 
       float const ρold = ρ;
@@ -180,7 +180,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       for (Index ir = 0; ir < R; ir++) {
         u[ir] = u[ir] * τ;
         u0[ir] = u[ir];
-        û0[ir] = û[ir];
+        û0[ir] = û[ir];
         Fx0[ir] = Fx[ir];
         z0[ir] = z[ir];
       }
