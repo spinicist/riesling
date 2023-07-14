@@ -34,8 +34,6 @@ int main_zinfandel(args::Subparser &parser)
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (30)", {"max-outer-its"}, 30);
   args::ValueFlag<float> ε(parser, "ABS", "ADMM tolerance (1e-4)", {"abs-tol"}, 1.e-4f);
   args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 1)", {"rho"}, 1.f);
-  args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
-  args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
 
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 4)", {"kernel-size"}, 4);
 
@@ -103,8 +101,6 @@ int main_zinfandel(args::Subparser &parser)
       {id},
       {slr},
       outer_its.Get(),
-      μ.Get(),
-      τ.Get(),
       ε.Get(),
       debug_x,
       debug_z};

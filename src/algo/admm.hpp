@@ -22,8 +22,6 @@ struct ADMM
   std::vector<std::shared_ptr<Op>>              reg_ops;
   std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
   Index                                         outerLimit = 8;
-  float                                         μ = 10.f; // Primal-dual mismatch limit
-  float                                         τ = 2.f;  // Primal-dual mismatch rescale
   float                                         ε = 1.e-3f;
 
   std::function<void(Index const, Vector const &)>                    debug_x = nullptr;

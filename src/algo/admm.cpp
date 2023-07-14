@@ -166,6 +166,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       float const α̂cor = ΔFx_dot_Δû / (normΔFx * normΔû);
       float const β̂cor = Δz_dot_Δu / (normΔz * normΔu);
 
+      float const ρold = ρ;
       if (α̂cor > εcor && β̂cor > εcor) {
         ρ = std::sqrt(α̂ * β̂);
       } else if (α̂cor > εcor && β̂cor <= εcor) {
@@ -173,10 +174,11 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       } else if (α̂cor <= εcor && β̂cor > εcor) {
         ρ = β̂;
       }
+      float const τ = ρold / ρ;
       Log::Print("Update ρ {} α̂cor {} β̂cor {} α̂ {} β̂  {}", ρ, α̂cor, β̂cor, α̂, β̂);
-      // else ρ = ρ
 
       for (Index ir = 0; ir < R; ir++) {
+        u[ir] = u[ir] * τ;
         u0[ir] = u[ir];
         û0[ir] = û[ir];
         Fx0[ir] = Fx[ir];

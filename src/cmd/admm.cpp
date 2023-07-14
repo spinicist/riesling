@@ -33,8 +33,6 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (30)", {"max-outer-its"}, 30);
   args::ValueFlag<float> ε(parser, "ε", "ADMM convergence tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
   args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 1)", {"rho"}, 1.f);
-  args::ValueFlag<float> μ(parser, "μ", "ADMM primal-dual mismatch limit (10)", {"mu"}, 10.f);
-  args::ValueFlag<float> τ(parser, "τ", "ADMM primal-dual rescale (2)", {"tau"}, 2.f);
   args::Flag             hogwild(parser, "HW", "Use Hogwild scheme", {"hogwild"});
 
   ParseCommand(parser, coreOpts.iname);
@@ -83,8 +81,6 @@ int main_admm(args::Subparser &parser)
     reg.ops,
     reg.prox,
     outer_its.Get(),
-    μ.Get(),
-    τ.Get(),
     ε.Get(),
     debug_x,
     debug_z};
