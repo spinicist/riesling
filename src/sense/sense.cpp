@@ -30,7 +30,6 @@ Opts::Opts(args::Subparser &parser)
 
 auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart) -> Cx4
 {
-  Log::Print("SENSE Self-Calibration Starting");
   auto const nC = noncart.dimension(0);
   auto const nT = noncart.dimension(2);
   auto const nS = noncart.dimension(3);
@@ -40,14 +39,14 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
   }
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
-  auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()));
   auto const M = make_kspace_pre("kspace", nC, traj, IdBasis());
   LSMR const lsmr{nufft, M, 4};
 
-  Cx4 lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
+  Cx4        lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
+  auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const all = Tensorfy(lsmr.run(lores.data()), nufft->ishape);
+  Cx5 const all(Tensorfy(lsmr.run(lores.data()), nufft->ishape));
   Cx4 const channels = all.chip<1>(0);
   return channels;
 }
@@ -70,6 +69,7 @@ Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &noncar
 {
   Sz3 const shape = traj.matrix(opts.fov.Get());
   if (opts.type.Get() == "auto") {
+    Log::Print("SENSE Self-Calibration");
     Cx4 channels = LoresChannels(opts, core, traj, noncart);
     return UniformNoise(opts.λ.Get(), shape, channels);
   } else if (opts.type.Get() == "espirit") {
