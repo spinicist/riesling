@@ -29,9 +29,9 @@ def planes(fname, dset='image', slice_pos = 0.5,
         index_x = int(np.floor(D.shape[dim_x] * slice_pos))
         index_y = int(np.floor(D.shape[dim_y] * slice_pos))
         index_z = int(np.floor(D.shape[dim_z] * slice_pos))
-        data_x = _get_slices(D, dim_x, [index_x], img_x, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
-        data_y = _get_slices(D, dim_y, [index_y], img_y, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
-        data_z = _get_slices(D, dim_z, [index_z], img_z, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data_x = _get_slices(D, dim_x, [index_x], img_x, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data_y = _get_slices(D, dim_y, [index_y], img_y, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data_z = _get_slices(D, dim_z, [index_z], img_z, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
     clim, cmap = _get_colors(clim, cmap, data_x, component)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
@@ -51,14 +51,12 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
            basis_file=None, basis_tp=0):
 
     slice_dim, img_dims = _get_dims(axis, img_offset)
-    print(slice_dim, img_dims)
     with h5py.File(fname, 'r') as f:
         D = f[dset]
         maxn = D.shape[slice_dim]
         n = np.amin([n, maxn])
         slices = np.floor(np.linspace(start*maxn, stop*maxn, n, endpoint=True)).astype(int)
-        print(slices)
-        data = _get_slices(D, slice_dim, slices, img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data = _get_slices(D, slice_dim, slices, img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
     clim, cmap = _get_colors(clim, cmap, data, component)
     cols = int(np.ceil(n / rows))
@@ -92,7 +90,7 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
             other_indices = [slice_index]
         else:
             other_indices = [slice_index, *other_indices]
-        data = _get_slices(D, series_dim, series_slice, img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
+        data = _get_slices(D, series_dim, series_slice, img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
     if scales is not None:
         data = data * np.array(scales).reshape([data.shape[0], 1, 1])
@@ -121,7 +119,7 @@ def sense(fname, dset='sense', **kwargs):
 def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
          component='mag', clim=None, cmap=None, cbar=False,
-         diff_component='real', difflim=None, diffmap=None, diffbar=True,
+         difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None,
          basis_files=[None], basis_tps=[0]):
 
@@ -145,12 +143,20 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
         dsets = [f[dset] for f, dset in zip(files, dsets)]
         slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
-        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
+        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
         data = np.concatenate(data)
     ref = np.max(np.abs(data[:-1, :, :]))
     diffs = np.diff(data, n=1, axis=0) * 100 / ref
     n = data.shape[-3]
     clim, cmap = _get_colors(clim, cmap, data, component)
+    if component == 'x':
+        diff_component = 'x'
+    elif component == 'xlog':
+        diff_component = 'xlog'
+    elif component == 'pha':
+        diff_component = 'pha'
+    else:
+        diff_component = 'real'
     difflim, diffmap = _get_colors(difflim, diffmap, diffs, diff_component)
     fig, ax = plt.subplots(2, n, figsize=(rc['figsize']*n, rc['figsize']*2), facecolor='black')
     for ii in range(n):
@@ -172,7 +178,7 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
 def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
          component='mag', clim=None, cmap=None, cbar=True,
-         diff_component='real', difflim=None, diffmap=None, diffbar=True,
+         difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None,
          basis_files=None, basis_tps=0):
 
@@ -196,7 +202,7 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
         files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
         dsets = [f[dset] for f, dset in zip(files, dsets)]
         slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
-        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
+        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
         data = np.concatenate(data)
 
     n = data.shape[-3]
@@ -208,6 +214,14 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
             diffs[ii - 1].append((data[ii, :, :] - data[jj, :, :]) * 100 / ref)
 
     clim, cmap = _get_colors(clim, cmap, data, component)
+    if component == 'x':
+        diff_component = 'x'
+    elif component == 'xlog':
+        diff_component = 'xlog'
+    elif component == 'pha':
+        diff_component = 'pha'
+    else:
+        diff_component = 'real'
     difflim, diffmap = _get_colors(difflim, diffmap, diffs[0][0], diff_component)
     fig, ax = plt.subplots(n, n, figsize=(rc['figsize']*n, rc['figsize']*n), facecolor='black')
     for ii in range(n):
@@ -230,7 +244,7 @@ def noncart(fname, dset='noncartesian', channels=slice(1), read_slice=slice(None
             slab=0, volume=0, rows=1, component='xlog', clim=None, cmap=None, cbar=True, title=None, transpose=False):
     with h5py.File(fname) as f:
         D = f[dset]
-        data = _get_slices(D, -1, channels, (-2, -3), (read_slice, spoke_slice), (-4, -5), (slab, volume))
+        data = _get_slices(D, -1, channels, (-2, -3), (read_slice, spoke_slice), (-4, -5), component, (slab, volume))
     if transpose:
         data = np.transpose(data, axes=(0,2,1))
     n = data.shape[0]
@@ -271,7 +285,8 @@ def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(N
         plt.close()
     return fig
 
-def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=None, other_indices=None,
+def _get_slices(dset, slice_dim, slices, img_dims, component,
+                img_slices=None, other_dims=None, other_indices=None,
                 basis_file=None, basis_tp=0):
     if dset.ndim < 3:
         raise Exception('Requires at least a 3D image')
@@ -310,6 +325,25 @@ def _get_slices(dset, slice_dim, slices, img_dims, img_slices=None, other_dims=N
     else:
         data = data.transpose(all_dims)
     data = data.reshape(data.shape[-3], data.shape[-2], data.shape[-1])
+
+    if component == 'x':
+        pass
+    elif component == 'xlog':
+        pass
+    elif component == 'mag':
+        data = np.abs(data)
+    elif component == 'log':
+        data = np.log1p(np.abs(data))
+    elif component == 'pha':
+        data = np.angle(data)
+    elif component == 'real':
+        data = np.real(data)
+    elif component == 'imag':
+        data = np.imag(data)
+    else:
+        data = np.real(data)
+        warnings.warn('Unknown component, taking real')
+
     return data
 
 def _get_dims(axis, offset):
@@ -348,15 +382,15 @@ def _symmetrize_real(x):
 def _get_colors(clim, cmap, img, component):
     if not clim:
         if component == 'mag':
-            clim = np.nanpercentile(np.abs(img), (2, 99))
+            clim = np.nanpercentile(img, (2, 99))
         elif component == 'log':
-            clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 98))
+            clim = np.nanpercentile(img, (2, 98))
         elif component == 'pha':
             clim = (-np.pi, np.pi)
         elif component == 'real':
-            clim = _symmetrize_real(np.nanpercentile(np.real(img), (2, 99)))
+            clim = _symmetrize_real(np.nanpercentile(img, (2, 99)))
         elif component == 'imag':
-            clim = _symmetrize_real(np.nanpercentile(np.imag(img), (2, 99)))
+            clim = _symmetrize_real(np.nanpercentile(img, (2, 99)))
         elif component == 'x':
             clim = np.nanpercentile(np.abs(img), (2, 99))
         elif component == 'xlog':
@@ -467,29 +501,17 @@ def _get_axes(ax, ir, ic):
     else:
         return ax
 
-def _draw(ax, data, component, clim, cmap):
+def _draw(ax, img, component, clim, cmap):
     if component == 'x':
-        _draw_x(ax, data, clim, cmap)
+        _draw_x(ax, img, clim, cmap)
         return None
     elif component == 'xlog':
-        _draw_x(ax, data, clim, cmap, True)
+        _draw_x(ax, img, clim, cmap, True)
         return None
-    elif component == 'mag':
-        img = np.abs(data)
-    elif component == 'log':
-        img = np.log1p(np.abs(data))
-    elif component == 'pha':
-        img = np.angle(data)
-    elif component == 'real':
-        img = np.real(data)
-    elif component == 'imag':
-        img = np.imag(data)
     else:
-        img = np.real(data)
-        warnings.warn('Unknown component, taking real')
-    im = ax.imshow(img, cmap=cmap, interpolation=rc['interpolation'], vmin=clim[0], vmax=clim[1])
-    ax.axis('off')
-    return im
+        im = ax.imshow(img, cmap=cmap, interpolation=rc['interpolation'], vmin=clim[0], vmax=clim[1])
+        ax.axis('off')
+        return im
 
 def _draw_x(ax, img, clim, cmap='cet_colorwheel', log=False):
     mag = np.real(np.abs(img))
