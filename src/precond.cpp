@@ -59,7 +59,7 @@ auto make_kspace_pre(
   } else if (type == "kspace") {
     Re2 const w = KSpaceSingle(traj, basis, bias);
     Eigen::VectorXcf const wv = CollapseToArray(w);
-    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv.cast<Cx>());
+    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
   } else {
     HD5::Reader reader(type);
     Re2 w = reader.readTensor<Re2>(HD5::Keys::Precond);
@@ -72,7 +72,7 @@ auto make_kspace_pre(
         traj.nTraces());
     }
     Eigen::VectorXcf const wv = CollapseToArray(w);
-    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv.cast<Cx>());
+    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
   }
 }
 
