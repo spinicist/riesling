@@ -47,7 +47,7 @@ int main_admm(args::Subparser &parser)
   auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
   auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
-  auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, basis, preBias.Get());
 
   Cropper     out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
   Sz3         outSz = out_cropper.size();
@@ -60,30 +60,27 @@ int main_admm(args::Subparser &parser)
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);
 
-  std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
+  ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
 
-  std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z =
-    [&](Index const ii, Index const ir, ADMM::Vector const &z) {
-      if (auto p = std::dynamic_pointer_cast<TensorOperator<Cx, 4>>(reg.ops[ir])) {
-        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), p->oshape, z.data());
+  ADMM::DebugZ debug_z =
+    [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u, ADMM::Vector const &z) {
+      if (std::holds_alternative<Sz4>(reg.sizes[ir])) {
+        auto const shape = std::get<Sz4>(reg.sizes[ir]);
+        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+      } else if (std::holds_alternative<Sz5>(reg.sizes[ir])) {
+        auto const shape = std::get<Sz5>(reg.sizes[ir]);
+        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
       }
     };
 
   ADMM admm{
-    A,
-    M,
-    inner_its.Get(),
-    atol.Get(),
-    btol.Get(),
-    ctol.Get(),
-    reg.ops,
-    reg.prox,
-    outer_its.Get(),
-    ε.Get(),
-    debug_x,
-    debug_z};
+    A, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), reg.ops, reg.prox, outer_its.Get(), ε.Get(), debug_x, debug_z};
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < nV; iv++) {
     auto x = reg.ext_x->forward(admm.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));

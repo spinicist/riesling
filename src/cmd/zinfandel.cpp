@@ -83,11 +83,13 @@ int main_zinfandel(args::Subparser &parser)
     // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
     auto                                                   id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
     auto                                                   slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
-    std::function<void(Index const, ADMM::Vector const &)> debug_x = [shape](Index const ii, ADMM::Vector const &x) {
+    ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
     };
-    std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z =
-      [shape](Index const ii, Index const ir, ADMM::Vector const &z) {
+    ADMM::DebugZ debug_z =
+      [shape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u, ADMM::Vector const &z) {
+        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
         Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
       };
 

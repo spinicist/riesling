@@ -101,11 +101,10 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
       Fxpu[ir] = Fx[ir] + u[ir];
       zprev[ir] = z[ir];
       prox[ir]->apply(1.f / ρs[ir], Fxpu[ir], z[ir]);
-      float const normz = z[ir].norm();
-      if (debug_z) { debug_z(io, ir, z[ir]); }
       u[ir] = Fxpu[ir] - z[ir];
+      float const normz = z[ir].norm();
       float const normu = u[ir].norm();
-
+      if (debug_z) { debug_z(io, ir, Fx[ir], u[ir], z[ir]); }
       // Relative residuals as per Wohlberg 2017
       float const pRes = (Fx[ir] - z[ir]).norm() / std::max(normx, normz);
       float const dRes = (z[ir] - zprev[ir]).norm() / normu;

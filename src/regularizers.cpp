@@ -18,8 +18,8 @@ RegOpts::RegOpts(args::Subparser &parser)
   ,
 
   llr(parser, "L", "LLR regularization", {"llr"})
-  , llrPatch(parser, "S", "Patch size for LLR (default 4)", {"llr-patch"}, 5)
-  , llrWin(parser, "S", "Patch size for LLR (default 4)", {"llr-win"}, 3)
+  , llrPatch(parser, "S", "Patch size for LLR (default 5)", {"llr-patch"}, 5)
+  , llrWin(parser, "S", "Window size for LLR (default 3)", {"llr-win"}, 3)
   , llrShift(parser, "S", "Enable random LLR shifting", {"llr-shift"})
   , llrFFT(parser, "F", "Perform LLR in the Fourier domain", {"llr-fft"})
   ,
@@ -45,6 +45,7 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
     auto prox2 = std::make_shared<Proxs::SoftThreshold>(opts.tgv.Get(), op2->rows());
     prox = {prox1, prox2};
     ops = {op1, op2};
+    sizes = {grad_x->oshape, grad_v->oshape};
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
   }
 
@@ -52,6 +53,7 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
     prox.push_back(
       std::make_shared<Proxs::ThresholdWavelets>(opts.wavelets.Get(), shape, opts.waveWidth.Get(), opts.waveLevels.Get()));
+    sizes.push_back(shape);
   }
 
   if (opts.llr) {
@@ -61,26 +63,33 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
       ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
     }
     prox.push_back(std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape));
+    sizes.push_back(shape);
   }
 
   if (opts.nmrent) {
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
     prox.push_back(std::make_shared<Proxs::NMREntropy>(opts.nmrent.Get(), ops.back()->rows()));
+    sizes.push_back(shape);
   }
 
   if (opts.l1) {
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
     prox.push_back(std::make_shared<Proxs::SoftThreshold>(opts.l1.Get(), ops.back()->rows()));
+    sizes.push_back(shape);
   }
 
   if (opts.tv) {
-    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<GradOp>(shape, std::vector<Index>{1, 2, 3}), ext_x));
+    auto grad = std::make_shared<GradOp>(shape, std::vector<Index>{1, 2, 3});
+    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(grad, ext_x));
     prox.push_back(std::make_shared<Proxs::SoftThreshold>(opts.tv.Get(), ops.back()->rows()));
+    sizes.push_back(grad->oshape);
   }
 
   if (opts.tvt) {
-    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<GradOp>(shape, std::vector<Index>{0}), ext_x));
+    auto grad = std::make_shared<GradOp>(shape, std::vector<Index>{0});
+    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(grad, ext_x));
     prox.push_back(std::make_shared<Proxs::SoftThreshold>(opts.tvt.Get(), ops.back()->rows()));
+    sizes.push_back(grad->oshape);
   }
 
   if (prox.size() == 0) { Log::Fail("Must specify at least one regularizer"); }

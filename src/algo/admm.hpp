@@ -11,7 +11,8 @@ struct ADMM
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
-
+  using DebugX = std::function<void(Index const, Vector const &)>;
+  using DebugZ = std::function<void(Index const, Index const, Vector const &, Vector const &, Vector const &)>;
   std::shared_ptr<Op> A; // Op for least-squares
   std::shared_ptr<Op> M; // Pre-conditioner
   Index               lsqLimit = 8;
@@ -24,8 +25,8 @@ struct ADMM
   Index                                         outerLimit = 8;
   float                                         ε = 1.e-3f;
 
-  std::function<void(Index const, Vector const &)>                    debug_x = nullptr;
-  std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = nullptr;
+  DebugX debug_x = nullptr;
+  DebugZ debug_z = nullptr;
 
   auto run(Cx const *bdata, float const ρ) const -> Vector;
 };
