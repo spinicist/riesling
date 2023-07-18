@@ -27,7 +27,7 @@ struct ADMM
   std::function<void(Index const, Vector const &)>                    debug_x = nullptr;
   std::function<void(Index const, Index const, ADMM::Vector const &)> debug_z = nullptr;
 
-  auto run(Cx const *bdata, float ρ) const -> Vector;
+  auto run(Cx const *bdata, float const ρ) const -> Vector;
 };
 
 } // namespace rl
