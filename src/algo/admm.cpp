@@ -78,7 +78,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
   bʹ.setZero();
   bʹ.head(A->rows()) = b;
 
-  Log::Print("ADMM Abs ε {}", ε);
+  Log::Print("ADMM Start");
   PushInterrupt();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
@@ -101,32 +101,28 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       u[ir] = Fxpu[ir] - z[ir];
 
       pNorm += (Fx[ir] - z[ir]).squaredNorm();
-      dNorm += ρ * (z[ir] - zprev[ir]).squaredNorm();
+      dNorm += (z[ir] - zprev[ir]).squaredNorm();
 
       normz += z[ir].squaredNorm();
       normu += u[ir].squaredNorm();
 
       if (debug_z) { debug_z(io, ir, z[ir]); }
     }
-    pNorm = std::sqrt(pNorm);
-    dNorm = std::sqrt(dNorm);
-    normz = std::sqrt(normz);
-    normu = std::sqrt(normu);
-    float const pEps = ε * std::max(normx, normz);
-    float const dEps = ε * ρ * normu;
+    pNorm = std::sqrt(pNorm) / std::max(std::sqrt(normx), std::sqrt(normz));
+    dNorm = std::sqrt(dNorm) / std::sqrt(normu);
+
     Log::Print(
-      "ADMM Iter {:02d} |x| {:5.3E} |z| {:5.3E} |u| {:5.3E} ρ {} Primal || {:5.3E} ε {:5.3E} Dual || {:5.3E} ε {:5.3E}",
+      "ADMM Iter {:02d} |x| {:5.3E} |z| {:5.3E} |u| {:5.3E} ρ {} |Primal| {:5.3E} |Dual| {:5.3E} ε {:5.3E}",
       io,
       normx,
       normz,
       normu,
       ρ,
       pNorm,
-      pEps,
       dNorm,
-      dEps);
+      ε);
 
-    if ((pNorm < pEps) && (dNorm < dEps)) {
+    if ((pNorm < ε) && (dNorm < ε)) {
       Log::Print("Primal and dual tolerances achieved, stopping");
       break;
     }
