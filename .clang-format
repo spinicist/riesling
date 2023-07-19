@@ -2,7 +2,7 @@ BasedOnStyle: LLVM
 IndentWidth: 2
 ContinuationIndentWidth: 2
 ConstructorInitializerIndentWidth: 2
-BinPackArguments: false
+BinPackArguments: true
 BinPackParameters: false
 BreakBeforeBraces: Custom
 BraceWrapping:
@@ -24,7 +24,7 @@ AllowShortFunctionsOnASingleLine: All
 AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
-AlignAfterOpenBracket: AlwaysBreak
+AlignAfterOpenBracket: Align
 AlignConsecutiveDeclarations: Consecutive
 BreakConstructorInitializers: BeforeComma
 ColumnLimit: 128

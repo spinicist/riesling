@@ -107,7 +107,7 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
     float const normAr = abs(ζ̅);
     float const normx = x.norm();
 
-    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", ii, normx, normr, normAr, normA, condA);
+    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii, normx, normr, normAr, normA, condA);
 
     if (debug) { debug(ii, x); }
 
@@ -125,7 +125,7 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
       break;
     }
     if ((normAr / (normA * normr)) <= aTol) {
-      Log::Print("Least-squares = {:5.3E} < aTol = {:5.3E}", normAr / (normA * normr), aTol);
+      Log::Print("Least-squares = {:4.3E} < aTol = {:4.3E}", normAr / (normA * normr), aTol);
       break;
     }
 

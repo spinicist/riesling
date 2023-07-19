@@ -23,7 +23,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
   p = r;
   float       r_old = r.squaredNorm();
   float const thresh = resTol * std::sqrt(r_old);
-  Log::Print("CG |r| {:5.3E} threshold {:5.3E}", std::sqrt(r_old), thresh);
+  Log::Print("CG |r| {:4.3E} threshold {:4.3E}", std::sqrt(r_old), thresh);
   Log::Print("IT |r|       α         β         |x|");
   PushInterrupt();
   for (Index icg = 0; icg < iterLimit; icg++) {
@@ -41,7 +41,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
     float const β = r_new / r_old;
     p = r + p * β;
     float const nr = sqrt(r_new);
-    Log::Print("{:02d} {:5.3E} {:5.3E} {:5.3E} {:5.3E}", icg, nr, α, β, x.norm());
+    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, x.norm());
     if (nr < thresh) {
       Log::Print("Reached convergence threshold");
       break;

@@ -102,6 +102,7 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
       zprev[ir] = z[ir];
       prox[ir]->apply(1.f / ρs[ir], Fxpu[ir], z[ir]);
       u[ir] = Fxpu[ir] - z[ir];
+      float const normFx = Fx[ir].norm();
       float const normz = z[ir].norm();
       float const normu = u[ir].norm();
       if (debug_z) { debug_z(io, ir, Fx[ir], u[ir], z[ir]); }
@@ -109,8 +110,8 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
       float const pRes = (Fx[ir] - z[ir]).norm() / std::max(normx, normz);
       float const dRes = (z[ir] - zprev[ir]).norm() / normu;
 
-      Log::Print(
-        "Reg {:02d} ρ {:4.3E} |z| {:4.3E} |u| {:4.3E}  |Primal| {:4.3E} |Dual| {:4.3E}", ir, ρs[ir], normz, normu, pRes, dRes);
+      Log::Print("Reg {:02d} ρ {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |u| {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", //
+                 ir, ρs[ir], normFx, normz, normu, pRes, dRes);
       if ((pRes > ε) || (dRes > ε)) { converged = false; }
 
       if (io % 2 == 1) {
