@@ -21,9 +21,9 @@ int main_lsmr(args::Subparser &parser)
   SDC::Opts   sdcOpts(parser, "none");
   SENSE::Opts senseOpts(parser);
 
-  args::ValueFlag<Index>       its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
+  args::ValueFlag<Index>       its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::ValueFlag<float>       atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float>       btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
   args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);

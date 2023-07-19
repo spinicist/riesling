@@ -80,7 +80,7 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
   bʹ.setZero();
   bʹ.head(A->rows()) = b;
 
-  Log::Print("ADMM ε {:5.3E}", ε);
+  Log::Print("ADMM ε {:4.3E}", ε);
   PushInterrupt();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
@@ -92,7 +92,7 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
     }
     x = lsmr.run(bʹ.data(), 0.f, x.data());
     float const normx = x.norm();
-    Log::Print("ADMM Iter {:02d} |x| {:5.3E}", io, normx);
+    Log::Print("ADMM Iter {:02d} |x| {:4.3E}", io, normx);
     if (debug_x) { debug_x(io, x); }
 
     bool converged = true;
@@ -108,8 +108,10 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
       // Relative residuals as per Wohlberg 2017
       float const pRes = (Fx[ir] - z[ir]).norm() / std::max(normx, normz);
       float const dRes = (z[ir] - zprev[ir]).norm() / normu;
+
+      Log::Print(
+        "Reg {:02d} ρ {:4.3E} |z| {:4.3E} |u| {:4.3E}  |Primal| {:4.3E} |Dual| {:4.3E}", ir, ρs[ir], normz, normu, pRes, dRes);
       if ((pRes > ε) || (dRes > ε)) { converged = false; }
-      Log::Print("Reg {:02d} |z| {:5.3E} |u| {:5.3E} ρ {} |Primal| {:5.3E} |Dual| {:5.3E}", ir, normz, normu, ρs[ir], pRes, dRes);
 
       if (io % 2 == 1) {
         û[ir] = Fxpu[ir] - zprev[ir];
@@ -117,20 +119,12 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
         Δû[ir] = û[ir] - û0[ir];
         ΔFx[ir] = Fx[ir] - Fx0[ir];
         Δz[ir] = z[ir] - z0[ir];
-        Log::Print(
-          "Check {} {} {} {} {} {}",
-          Δû[ir].dot(Δû[ir]),
-          ΔFx[ir].dot(Δû[ir]),
-          ΔFx[ir].dot(ΔFx[ir]),
-          Δu[ir].dot(Δu[ir]),
-          Δz[ir].dot(Δu[ir]),
-          Δz[ir].dot(Δz[ir]));
-        Cx const Δû_dot_Δû = Δû[ir].dot(Δû[ir]);
-        Cx const ΔFx_dot_Δû = ΔFx[ir].dot(Δû[ir]);
-        Cx const ΔFx_dot_ΔFx = ΔFx[ir].dot(ΔFx[ir]);
-        Cx const Δu_dot_Δu = Δu[ir].dot(Δu[ir]);
-        Cx const Δz_dot_Δu = Δz[ir].dot(Δu[ir]);
-        Cx const Δz_dot_Δz = Δz[ir].dot(Δz[ir]);
+        Cx const    Δû_dot_Δû = Δû[ir].dot(Δû[ir]);
+        Cx const    ΔFx_dot_Δû = ΔFx[ir].dot(Δû[ir]);
+        Cx const    ΔFx_dot_ΔFx = ΔFx[ir].dot(ΔFx[ir]);
+        Cx const    Δu_dot_Δu = Δu[ir].dot(Δu[ir]);
+        Cx const    Δz_dot_Δu = Δz[ir].dot(Δu[ir]);
+        Cx const    Δz_dot_Δz = Δz[ir].dot(Δz[ir]);
         float const normΔFx = ΔFx[ir].norm();
         float const normΔû = Δû[ir].norm();
         float const normΔz = Δz[ir].norm();
@@ -157,7 +151,6 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
         float const τ = ρold / ρs[ir];
 
         if (τ != 1.f) {
-          Log::Print("Update ρ {} α̂cor {} β̂cor {} α̂ {} β̂  {}", ρs[ir], α̂cor, β̂cor, α̂, β̂);
           u[ir] = u[ir] * τ;
           u0[ir] = u[ir];
           û0[ir] = û[ir];

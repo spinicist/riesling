@@ -87,9 +87,7 @@ void SLR::apply(float const α, CMap const &xin, Map &zin) const
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, z);
   fft->reverse(z);
-  Log::Tensor("slr-x", shape, x.data());
-  Log::Tensor("slr-z", shape, z.data());
-  Log::Print("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
+  Log::Print<Log::Level::High>("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
 }
 
 } // namespace rl::Proxs

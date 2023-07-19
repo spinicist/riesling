@@ -33,9 +33,8 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
     Cx4 yp = Tensorfy(patch, xp.dimensions());
     return yp;
   };
-  Log::Print<Log::Level::High>("LLR α {} λ {} t {} starting", α, λ, realλ);
   Patches(patchSize, windowSize, shift, softLLR, x, z);
-  Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
+  Log::Print<Log::Level::High>("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
 }
 
 void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
@@ -54,9 +53,8 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
       Cx4 yp = Tensorfy(patch, xp.dimensions());
       return yp;
     };
-    Log::Print<Log::Level::High>("LLR α {} λ {} t {} starting", realα->scale, λ, realλ);
     Patches(patchSize, windowSize, shift, softLLR, x, z);
-    Log::Print("LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
+    Log::Print<Log::Level::High>("LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
   } else {
     Log::Fail("C++ is stupid");
   }

@@ -27,26 +27,24 @@ template <typename S>
 void L2<S>::apply(float const α, CMap const &x, Map &z) const
 {
   float const t = α * λ;
-  Log::Print<Log::Level::High>("L2 λ {} starting", λ);
   if (y.data()) {
     z = (x - t * y) / (1.f + t);
   } else {
     z = x / (1.f + t);
   }
-  Log::Print("L2 α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.norm(), y.norm(), z.norm());
+  Log::Print<Log::Level::High>("L2 α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.norm(), y.norm(), z.norm());
 }
 
 template <typename S>
 void L2<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) const
 {
   auto const div = α->inverse(1.f, λ);
-  Log::Print<Log::Level::High>("L2 λ {} starting", λ);
   if (y.data()) {
     z = div->forward(x - λ * α->forward(y));
   } else {
     z = div->forward(x);
   }
-  Log::Print("L2 λ {} |x| {} |y| {} |z| {}", λ, x.norm(), y.norm(), z.norm());
+  Log::Print<Log::Level::High>("L2 λ {} |x| {} |y| {} |z| {}", λ, x.norm(), y.norm(), z.norm());
 }
 
 template <typename S>
