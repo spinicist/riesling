@@ -30,10 +30,11 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
-  args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (30)", {"max-outer-its"}, 30);
-  args::ValueFlag<float> ε(parser, "ε", "ADMM convergence tolerance (1e-3)", {"rel-tol"}, 1.e-3f);
-  args::ValueFlag<float> ρ(parser, "ρ", "ADMM penalty parameter ρ (default 1)", {"rho"}, 1.f);
-  args::Flag             hogwild(parser, "HW", "Use Hogwild scheme", {"hogwild"});
+  args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (50)", {"max-outer-its"}, 50);
+  args::ValueFlag<float> ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f);
+  args::ValueFlag<float> ε(parser, "ε", "ADMM convergence tolerance (1e-2)", {"eps"}, 1.e-2f);
+  args::ValueFlag<float> μ(parser, "μ", "ADMM residual rescaling tolerance (default 1.2)", {"mu"}, 1.2f);
+  args::ValueFlag<float> τ(parser, "τ", "ADMM residual rescaling maximum (default 10)", {"tau"}, 10.f);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -64,23 +65,24 @@ int main_admm(args::Subparser &parser)
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
 
-  ADMM::DebugZ debug_z =
-    [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u, ADMM::Vector const &z) {
-      if (std::holds_alternative<Sz4>(reg.sizes[ir])) {
-        auto const shape = std::get<Sz4>(reg.sizes[ir]);
-        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
-        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
-      } else if (std::holds_alternative<Sz5>(reg.sizes[ir])) {
-        auto const shape = std::get<Sz5>(reg.sizes[ir]);
-        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
-        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
-      }
-    };
+  ADMM::DebugZ debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u,
+                             ADMM::Vector const &z) {
+    if (std::holds_alternative<Sz4>(reg.sizes[ir])) {
+      auto const shape = std::get<Sz4>(reg.sizes[ir]);
+      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
+      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+    } else if (std::holds_alternative<Sz5>(reg.sizes[ir])) {
+      auto const shape = std::get<Sz5>(reg.sizes[ir]);
+      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
+      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+    }
+  };
 
-  ADMM admm{
-    A, M, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), reg.ops, reg.prox, outer_its.Get(), ε.Get(), debug_x, debug_z};
+  ADMM admm{A,       M,       reg.ops, reg.prox, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
+            ε.Get(), μ.Get(), τ.Get(), debug_x,  debug_z};
+
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < nV; iv++) {
     auto x = reg.ext_x->forward(admm.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));

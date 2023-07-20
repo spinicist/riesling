@@ -81,31 +81,20 @@ int main_zinfandel(args::Subparser &parser)
     Re2 const w = KSpaceSingle(lores, basis, 1.f);
     auto      M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
     // auto M = std::make_shared<Ops::Identity<Cx>>(Product(shape));
-    auto                                                   id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
-    auto                                                   slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
+    auto         id = std::make_shared<TensorIdentity<Cx, 5>>(shape);
+    auto         slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
     ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
     };
-    ADMM::DebugZ debug_z =
-      [shape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u, ADMM::Vector const &z) {
-        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
-        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
-      };
+    ADMM::DebugZ debug_z = [shape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u,
+                                   ADMM::Vector const &z) {
+      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
+      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+    };
 
-    ADMM admm{
-      A,
-      M,
-      inner_its.Get(),
-      atol.Get(),
-      btol.Get(),
-      ctol.Get(),
-      {id},
-      {slr},
-      outer_its.Get(),
-      ε.Get(),
-      debug_x,
-      debug_z};
+    ADMM admm{A,       M,    {id}, {slr},   inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
+              ε.Get(), 1.2f, 10.f, debug_x, debug_z};
 
     Trajectory gapTraj(traj.info(), newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}));
     auto       B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix(), basis);

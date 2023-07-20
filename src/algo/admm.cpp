@@ -8,18 +8,6 @@
 
 namespace rl {
 
-namespace {
-auto CurveAdaptive(float const sd, float const mg) -> float
-{
-  if ((mg / sd) > 0.5f) {
-    return mg;
-  } else {
-    return sd - 0.5f * mg;
-  }
-}
-
-} // namespace
-
 auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
@@ -111,11 +99,9 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
                  ir, ρs[ir], normFx, normz, normu, pRes, dRes);
       if ((pRes > ε) || (dRes > ε)) { converged = false; }
 
-      float const τmax = 100.f;
-      float const ratio = std::sqrt(pRes / dRes / ε);
-      float const τ = (ratio < 1) ? std::max(1.f / τmax, 1.f / ratio) : std::min(τmax, ratio);
-      float const μ = 2.f;
-      if (io > 0) { // z_0 is zero, so perfectly reasonable dual residuals can trigger this
+      if (io > 0) {
+        float const ratio = std::sqrt(pRes / dRes);
+        float const τ = (ratio < 1.f) ? std::max(1.f / τmax, 1.f / ratio) : std::min(τmax, ratio);
         if (pRes > μ * dRes) {
           ρs[ir] *= τ;
           u[ir] /= τ;
@@ -124,56 +110,6 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
           u[ir] *= τ;
         }
       }
-
-      // if (io == 0) {
-      //   u0[ir] = u[ir];
-      //   û0[ir] = uprev + Fx - zprev;
-      //   z0[ir] = z[ir];
-      //   Fx0[ir] = Fx;
-      // }
-      // if (io % 2 == 1) {
-      //   Vector const û = uprev + Fx - zprev;
-      //   Vector const ΔFx = Fx - Fx0[ir];
-      //   Vector const Δz = z[ir] - z0[ir];
-      //   Vector const Δu = u[ir] - u0[ir];
-      //   Vector const Δû = û - û0[ir];
-      //   float const  normΔFx = ΔFx.norm();
-      //   float const  normΔz = Δz.norm();
-      //   float const  normΔû = Δû.norm();
-      //   float const  normΔu = Δu.norm();
-      //   float const  ΔFx_dot_Δû = ΔFx.dot(Δû).real();
-      //   float const  Δz_dot_Δu = Δz.dot(Δu).real();
-
-      //   float const α̂sd = (normΔû * normΔû) / ΔFx_dot_Δû;
-      //   float const α̂mg = ΔFx_dot_Δû / (normΔFx * normΔFx);
-      //   float const α̂ = CurveAdaptive(α̂sd, α̂mg);
-
-      //   float const β̂sd = (normΔu * normΔu) / Δz_dot_Δu;
-      //   float const β̂mg = Δz_dot_Δu / (normΔz * normΔz);
-      //   float const β̂ = CurveAdaptive(β̂sd, β̂mg);
-
-      //   float const εcor = 0.2f;
-      //   bool const  αflag = (ΔFx_dot_Δû > εcor * normΔFx * normΔû) ? true : false;
-      //   bool const  βflag = (normΔz > εcor * normΔz * normΔu) ? true : false;
-
-      //   // Update ρ
-      //   float const ρold = ρs[ir];
-      //   if (αflag && βflag) {
-      //     ρs[ir] = std::sqrt(α̂ * β̂);
-      //   } else if (αflag) {
-      //     ρs[ir] = α̂;
-      //   } else if (βflag) {
-      //     ρs[ir] = β̂;
-      //   }
-
-      //   // Update variables including rescaling anything to do with u
-      //   float const τ = ρold / ρs[ir];
-      //   u[ir] = u[ir] * τ;
-      //   Fx0[ir] = Fx;
-      //   z0[ir] = z[ir];
-      //   u0[ir] = u[ir];
-      //   û0[ir] = uprev * τ + Fx - zprev;
-      // }
     }
     if (converged) {
       Log::Print("All primal and dual tolerances achieved, stopping");

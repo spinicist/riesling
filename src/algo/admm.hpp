@@ -13,17 +13,22 @@ struct ADMM
   using CMap = typename Op::CMap;
   using DebugX = std::function<void(Index const, Vector const &)>;
   using DebugZ = std::function<void(Index const, Index const, Vector const &, Vector const &, Vector const &)>;
+
   std::shared_ptr<Op> A; // Op for least-squares
   std::shared_ptr<Op> M; // Pre-conditioner
-  Index               lsqLimit = 8;
-  float               aTol = 1.e-6f;
-  float               bTol = 1.e-6f;
-  float               cTol = 1.e-6f;
 
   std::vector<std::shared_ptr<Op>>              reg_ops;
   std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
-  Index                                         outerLimit = 8;
-  float                                         ε = 1.e-3f;
+
+  Index lsqLimit = 8;
+  float aTol = 1.e-6f;
+  float bTol = 1.e-6f;
+  float cTol = 1.e-6f;
+
+  Index outerLimit;
+  float ε;
+  float μ;
+  float τmax;
 
   DebugX debug_x = nullptr;
   DebugZ debug_z = nullptr;
