@@ -8,6 +8,18 @@
 
 namespace rl {
 
+namespace {
+auto CurveAdaptive(float const sd, float const mg) -> float
+{
+  if ((mg / sd) > 0.5f) {
+    return mg;
+  } else {
+    return sd - 0.5f * mg;
+  }
+}
+
+} // namespace
+
 auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
@@ -25,8 +37,8 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
     u_i = F_i * x + u_i - z_i
     */
 
-  Index const R = reg_ops.size();
-  std::vector<Vector> z(R), zprev(R), z0(R), Δz(R), u(R), u0(R), Δu(R), û(R), û0(R), Δû(R), Fx(R), Fx0(R), ΔFx(R), Fxpu(R);
+  Index const                                      R = reg_ops.size();
+  std::vector<Vector>                              Fx0(R), z(R), z0(R), u(R), u0(R), û0(R);
   std::vector<float>                               ρs(R);
   std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
   std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
@@ -34,32 +46,16 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
     Index const sz = reg_ops[ir]->rows();
     z[ir].resize(sz);
     z[ir].setZero();
-    zprev[ir].resize(sz);
-    zprev[ir].setZero();
     z0[ir].resize(sz);
     z0[ir].setZero();
-    Δz[ir].resize(sz);
-    Δz[ir].setZero();
     u[ir].resize(sz);
     u[ir].setZero();
     u0[ir].resize(sz);
     u0[ir].setZero();
-    Δu[ir].resize(sz);
-    Δu[ir].setZero();
-    û[ir].resize(sz);
-    û[ir].setZero();
     û0[ir].resize(sz);
     û0[ir].setZero();
-    Δû[ir].resize(sz);
-    Δû[ir].setZero();
-    Fx[ir].resize(sz);
-    Fx[ir].setZero();
     Fx0[ir].resize(sz);
     Fx0[ir].setZero();
-    ΔFx[ir].resize(sz);
-    ΔFx[ir].setZero();
-    Fxpu[ir].resize(sz);
-    Fxpu[ir].setZero();
     ρs[ir] = ρ;
     ρdiags[ir] = std::make_shared<Ops::DiagScale<Cx>>(sz, std::sqrt(ρs[ir]));
     scaled_ops[ir] = std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], reg_ops[ir]);
@@ -97,74 +93,92 @@ auto ADMM::run(Cx const *bdata, float const ρ) const -> Vector
 
     bool converged = true;
     for (Index ir = 0; ir < R; ir++) {
-      Fx[ir] = reg_ops[ir]->forward(x);
-      Fxpu[ir] = Fx[ir] + u[ir];
-      zprev[ir] = z[ir];
-      prox[ir]->apply(1.f / ρs[ir], Fxpu[ir], z[ir]);
-      u[ir] = Fxpu[ir] - z[ir];
-      float const normFx = Fx[ir].norm();
+      Vector const zprev = z[ir];
+      Vector const uprev = u[ir];
+      Vector const Fx = reg_ops[ir]->forward(x);
+      Vector const Fxpu = Fx + u[ir];
+      prox[ir]->apply(1.f / ρs[ir], Fxpu, z[ir]);
+      u[ir] = Fxpu - z[ir];
+      float const normFx = Fx.norm();
       float const normz = z[ir].norm();
-      float const normu = u[ir].norm();
-      if (debug_z) { debug_z(io, ir, Fx[ir], u[ir], z[ir]); }
+      float const normu = reg_ops[ir]->adjoint(u[ir]).norm();
+      if (debug_z) { debug_z(io, ir, Fx, u[ir], z[ir]); }
       // Relative residuals as per Wohlberg 2017
-      float const pRes = (Fx[ir] - z[ir]).norm() / std::max(normx, normz);
-      float const dRes = (z[ir] - zprev[ir]).norm() / normu;
+      float const pRes = (Fx - z[ir]).norm() / std::max(normFx, normz);
+      float const dRes = reg_ops[ir]->adjoint(z[ir] - zprev).norm() / normu;
 
       Log::Print("Reg {:02d} ρ {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |u| {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", //
                  ir, ρs[ir], normFx, normz, normu, pRes, dRes);
       if ((pRes > ε) || (dRes > ε)) { converged = false; }
 
-      if (io % 2 == 1) {
-        û[ir] = Fxpu[ir] - zprev[ir];
-        Δu[ir] = u[ir] - u0[ir];
-        Δû[ir] = û[ir] - û0[ir];
-        ΔFx[ir] = Fx[ir] - Fx0[ir];
-        Δz[ir] = z[ir] - z0[ir];
-        Cx const    Δû_dot_Δû = Δû[ir].dot(Δû[ir]);
-        Cx const    ΔFx_dot_Δû = ΔFx[ir].dot(Δû[ir]);
-        Cx const    ΔFx_dot_ΔFx = ΔFx[ir].dot(ΔFx[ir]);
-        Cx const    Δu_dot_Δu = Δu[ir].dot(Δu[ir]);
-        Cx const    Δz_dot_Δu = Δz[ir].dot(Δu[ir]);
-        Cx const    Δz_dot_Δz = Δz[ir].dot(Δz[ir]);
-        float const normΔFx = ΔFx[ir].norm();
-        float const normΔû = Δû[ir].norm();
-        float const normΔz = Δz[ir].norm();
-        float const normΔu = Δu[ir].norm();
-        float const α̂sd = std::abs(Δû_dot_Δû / ΔFx_dot_Δû);
-        float const α̂mg = std::abs(ΔFx_dot_Δû / ΔFx_dot_ΔFx);
-        float const β̂sd = std::abs(Δu_dot_Δu / Δz_dot_Δu);
-        float const β̂mg = std::abs(Δz_dot_Δu / Δz_dot_Δz);
-
-        float const α̂ = (2.f * α̂mg > α̂sd) ? α̂mg : α̂sd - α̂mg / 2.f;
-        float const β̂ = (2.f * β̂mg > β̂sd) ? β̂mg : β̂sd - β̂mg / 2.f;
-        float const εcor = 0.2f;
-        float const α̂cor = std::abs(ΔFx_dot_Δû) / (normΔFx * normΔû);
-        float const β̂cor = std::abs(Δz_dot_Δu) / (normΔz * normΔu);
-
-        float const ρold = ρs[ir];
-        if (α̂cor > εcor && β̂cor > εcor) {
-          ρs[ir] = std::sqrt(α̂ * β̂);
-        } else if (α̂cor > εcor && β̂cor <= εcor) {
-          ρs[ir] = α̂;
-        } else if (α̂cor <= εcor && β̂cor > εcor) {
-          ρs[ir] = β̂;
-        }
-        float const τ = ρold / ρs[ir];
-
-        if (τ != 1.f) {
-          u[ir] = u[ir] * τ;
-          u0[ir] = u[ir];
-          û0[ir] = û[ir];
-          Fx0[ir] = Fx[ir];
-          z0[ir] = z[ir];
+      float const τmax = 100.f;
+      float const ratio = std::sqrt(pRes / dRes / ε);
+      float const τ = (ratio < 1) ? std::max(1.f / τmax, 1.f / ratio) : std::min(τmax, ratio);
+      float const μ = 2.f;
+      if (io > 0) { // z_0 is zero, so perfectly reasonable dual residuals can trigger this
+        if (pRes > μ * dRes) {
+          ρs[ir] *= τ;
+          u[ir] /= τ;
+        } else if (dRes > μ * pRes) {
+          ρs[ir] /= τ;
+          u[ir] *= τ;
         }
       }
+
+      // if (io == 0) {
+      //   u0[ir] = u[ir];
+      //   û0[ir] = uprev + Fx - zprev;
+      //   z0[ir] = z[ir];
+      //   Fx0[ir] = Fx;
+      // }
+      // if (io % 2 == 1) {
+      //   Vector const û = uprev + Fx - zprev;
+      //   Vector const ΔFx = Fx - Fx0[ir];
+      //   Vector const Δz = z[ir] - z0[ir];
+      //   Vector const Δu = u[ir] - u0[ir];
+      //   Vector const Δû = û - û0[ir];
+      //   float const  normΔFx = ΔFx.norm();
+      //   float const  normΔz = Δz.norm();
+      //   float const  normΔû = Δû.norm();
+      //   float const  normΔu = Δu.norm();
+      //   float const  ΔFx_dot_Δû = ΔFx.dot(Δû).real();
+      //   float const  Δz_dot_Δu = Δz.dot(Δu).real();
+
+      //   float const α̂sd = (normΔû * normΔû) / ΔFx_dot_Δû;
+      //   float const α̂mg = ΔFx_dot_Δû / (normΔFx * normΔFx);
+      //   float const α̂ = CurveAdaptive(α̂sd, α̂mg);
+
+      //   float const β̂sd = (normΔu * normΔu) / Δz_dot_Δu;
+      //   float const β̂mg = Δz_dot_Δu / (normΔz * normΔz);
+      //   float const β̂ = CurveAdaptive(β̂sd, β̂mg);
+
+      //   float const εcor = 0.2f;
+      //   bool const  αflag = (ΔFx_dot_Δû > εcor * normΔFx * normΔû) ? true : false;
+      //   bool const  βflag = (normΔz > εcor * normΔz * normΔu) ? true : false;
+
+      //   // Update ρ
+      //   float const ρold = ρs[ir];
+      //   if (αflag && βflag) {
+      //     ρs[ir] = std::sqrt(α̂ * β̂);
+      //   } else if (αflag) {
+      //     ρs[ir] = α̂;
+      //   } else if (βflag) {
+      //     ρs[ir] = β̂;
+      //   }
+
+      //   // Update variables including rescaling anything to do with u
+      //   float const τ = ρold / ρs[ir];
+      //   u[ir] = u[ir] * τ;
+      //   Fx0[ir] = Fx;
+      //   z0[ir] = z[ir];
+      //   u0[ir] = u[ir];
+      //   û0[ir] = uprev * τ + Fx - zprev;
+      // }
     }
     if (converged) {
       Log::Print("All primal and dual tolerances achieved, stopping");
       break;
     }
-
     if (InterruptReceived()) { break; }
   }
   PopInterrupt();
