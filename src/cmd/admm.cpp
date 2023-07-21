@@ -8,7 +8,6 @@
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precond.hpp"
-
 #include "regularizers.hpp"
 #include "scaling.hpp"
 #include "sdc.hpp"
@@ -65,27 +64,27 @@ int main_admm(args::Subparser &parser)
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
 
-  ADMM::DebugZ debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u,
-                             ADMM::Vector const &z) {
+  ADMM::DebugZ debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
+                             ADMM::Vector const &u) {
     if (std::holds_alternative<Sz4>(reg.sizes[ir])) {
-      auto const shape = std::get<Sz4>(reg.sizes[ir]);
-      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
-      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+      auto const Fshape = std::get<Sz4>(reg.sizes[ir]);
+      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
+      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
+      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
     } else if (std::holds_alternative<Sz5>(reg.sizes[ir])) {
-      auto const shape = std::get<Sz5>(reg.sizes[ir]);
-      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
-      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+      auto const Fshape = std::get<Sz5>(reg.sizes[ir]);
+      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
+      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
+      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
     }
   };
 
-  ADMM admm{A,       M,       reg.ops, reg.prox, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
-            ε.Get(), μ.Get(), τ.Get(), debug_x,  debug_z};
+  ADMM opt{A,       M,       reg.ops, reg.prox, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
+           ε.Get(), μ.Get(), τ.Get(), debug_x,  debug_z};
 
   auto const &all_start = Log::Now();
   for (Index iv = 0; iv < nV; iv++) {
-    auto x = reg.ext_x->forward(admm.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
+    auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
     if (coreOpts.residImage || coreOpts.residKSpace) { noncart.chip<4>(iv) -= recon->forward(xm); }

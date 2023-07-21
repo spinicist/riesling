@@ -86,11 +86,11 @@ int main_zinfandel(args::Subparser &parser)
     ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
       Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
     };
-    ADMM::DebugZ debug_z = [shape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &u,
-                                   ADMM::Vector const &z) {
+    ADMM::DebugZ debug_z = [shape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
+                                   ADMM::Vector const &u) {
       Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
       Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
     };
 
     ADMM admm{A,       M,    {id}, {slr},   inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
