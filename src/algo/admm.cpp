@@ -75,9 +75,13 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       prox[ir]->apply(1.f / ρ, Fxpu, z[ir]);
       u[ir] = Fxpu - z[ir];
       if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-      normFx += Fx.squaredNorm();
-      normz += z[ir].squaredNorm();
-      normu += reg_ops[ir]->adjoint(u[ir]).squaredNorm();
+      float const nFx = Fx.squaredNorm();
+      float const nz = z[ir].squaredNorm();
+      float const nu = reg_ops[ir]->adjoint(u[ir]).squaredNorm();
+      Log::Print("Reg {:02d} |Fx| {} |z| {:4.3E} |F'u| {:4.3E}", ir, std::sqrt(nFx), std::sqrt(nz), std::sqrt(nu));
+      normFx += nFx;
+      normz += nz;
+      normu += nu;
       pRes += (Fx - z[ir]).squaredNorm();
       dRes += reg_ops[ir]->adjoint(z[ir] - zprev).squaredNorm();
     }
@@ -88,7 +92,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM Iter {:02d} |x| {:5.3E} |Fx| {} |z| {:5.3E} |u| {:5.3E} ρ {} |Primal| {:5.3E} |Dual| {:5.3E}", io, normx,
+    Log::Print("ADMM {:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", io, normx,
                normFx, normz, normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
