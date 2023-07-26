@@ -35,6 +35,7 @@ int main_grid(args::Subparser &parser)
     Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
   } else {
     auto const  noncart = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, 0);
+    traj.checkDims(FirstN<3>(noncart.dimensions()));
     Index const nC = noncart.dimension(0);
     Index const nS = noncart.dimension(3);
     auto const  gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);

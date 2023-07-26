@@ -54,6 +54,7 @@ int main_zinfandel(args::Subparser &parser)
   Trajectory extended(traj.info(), newPoints);
   Log::Print("Extended {}", extended.matrix());
   Cx5 const   data = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  traj.checkDims(FirstN<3>(data.dimensions()));
   Index const nC = data.dimension(0);
   Index const nS = data.dimension(1);
   Index const nT = data.dimension(2);

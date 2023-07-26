@@ -58,6 +58,7 @@ int main_recon(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data());
   } else {
     auto       noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+    traj.checkDims(FirstN<3>(noncart.dimensions()));
     auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
     auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
     Sz4 const  sz = recon->ishape;

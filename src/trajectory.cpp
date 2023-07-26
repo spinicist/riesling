@@ -23,6 +23,15 @@ auto Trajectory::nSamples() const -> Index { return points_.dimension(1); }
 
 auto Trajectory::nTraces() const -> Index { return points_.dimension(2); }
 
+void Trajectory::checkDims(Sz3 const dims) const {
+  if (dims[1] != nSamples()) {
+    Log::Fail("Number of samples in data {} does not match trajectory {}", dims[1], nSamples());
+  }
+  if (dims[2] != nTraces()) {
+    Log::Fail("Number of traces in data {} does not match trajectory {}",  dims[2], nTraces());
+  }
+}
+
 Info const &Trajectory::info() const { return info_; }
 
 auto Trajectory::matrix(float const fov) const -> Sz3

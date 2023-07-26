@@ -48,6 +48,7 @@ int main_nufft(args::Subparser &parser)
     Trajectory        traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
     std::string const name = dset ? dset.Get() : HD5::Keys::Noncartesian;
     auto              noncart = reader.readTensor<Cx5>(name);
+    traj.checkDims(FirstN<3>(noncart.dimensions()));
     auto const        channels = noncart.dimension(0);
     auto const        sdc = SDC::Choose(sdcOpts, channels, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     auto              nufft =

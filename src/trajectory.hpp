@@ -14,6 +14,7 @@ struct Trajectory
   auto nDims() const -> Index;
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
+  void checkDims(Sz3 const dims) const;
   auto info() const -> Info const &;
   auto matrix(float const fov = -1.f) const -> Sz3;
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
