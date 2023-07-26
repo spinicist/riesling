@@ -46,7 +46,7 @@ def planes(fname, dset='image', slice_pos = 0.5,
 
 def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
            other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
-           component='mag', clim=None, cmap=None, cbar=True,
+           component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None,
            basis_file=None, basis_tp=0):
 
@@ -58,7 +58,7 @@ def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
         slices = np.floor(np.linspace(start*maxn, stop*maxn, n, endpoint=True)).astype(int)
         data = _get_slices(D, slice_dim, slices, img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
-    clim, cmap = _get_colors(clim, cmap, data, component)
+    clim, cmap = _get_colors(clim, cmap, data, component, climp)
     cols = int(np.ceil(n / rows))
     fig, all_ax = plt.subplots(rows, cols, figsize=(rc['figsize']*cols, rc['figsize']*rows), facecolor='black')
 
@@ -244,7 +244,7 @@ def noncart(fname, dset='noncartesian', channels=slice(1), read_slice=slice(None
             slab=0, volume=0, rows=1, component='xlog', clim=None, cmap=None, cbar=True, title=None, transpose=False):
     with h5py.File(fname) as f:
         D = f[dset]
-        data = _get_slices(D, -1, channels, (-2, -3), (read_slice, spoke_slice), (-4, -5), component, (slab, volume))
+        data = _get_slices(D, -1, channels, (-2, -3), component, (read_slice, spoke_slice), (-4, -5), (slab, volume))
     if transpose:
         data = np.transpose(data, axes=(0,2,1))
     n = data.shape[0]
@@ -379,22 +379,24 @@ def _symmetrize_real(x):
     x[0] = -x[1]
     return x
 
-def _get_colors(clim, cmap, img, component):
+def _get_colors(clim, cmap, img, component, climp=None):
     if not clim:
+        if climp is None:
+            climp= (2, 99)
         if component == 'mag':
-            clim = np.nanpercentile(img, (2, 99))
+            clim = np.nanpercentile(img, climp)
         elif component == 'log':
-            clim = np.nanpercentile(img, (2, 98))
+            clim = np.nanpercentile(img, climp)
         elif component == 'pha':
             clim = (-np.pi, np.pi)
         elif component == 'real':
-            clim = _symmetrize_real(np.nanpercentile(img, (2, 99)))
+            clim = _symmetrize_real(np.nanpercentile(img, climp))
         elif component == 'imag':
-            clim = _symmetrize_real(np.nanpercentile(img, (2, 99)))
+            clim = _symmetrize_real(np.nanpercentile(img, climp))
         elif component == 'x':
-            clim = np.nanpercentile(np.abs(img), (2, 99))
+            clim = np.nanpercentile(np.abs(img), climp)
         elif component == 'xlog':
-            clim = np.nanpercentile(np.log1p(np.abs(img)), (2, 99))
+            clim = np.nanpercentile(np.log1p(np.abs(img)), climp)
             if not clim.any():
                 clim = np.nanpercentile(np.log1p(np.abs(img)), (0, 100))
         else:
