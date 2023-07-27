@@ -22,11 +22,54 @@ auto Mapping<Rank>::Bucket::size() const -> Index
 }
 
 template <size_t Rank>
-auto Mapping<Rank>::Bucket::gridSize() const -> Sz<Rank>
+auto Mapping<Rank>::Bucket::bucketSize() const -> Sz<Rank>
 {
   Sz<Rank> sz;
   std::transform(maxCorner.begin(), maxCorner.end(), minCorner.begin(), sz.begin(), std::minus());
   return sz;
+}
+
+template <size_t Rank>
+auto Mapping<Rank>::Bucket::bucketStart() const -> Sz<Rank>
+{
+  Sz<Rank> st;
+  for (Index ii = 0; ii < Rank; ii++) {
+    if (minCorner[ii] < 0) {
+      st[ii] = -minCorner[ii];
+    } else {
+      st[ii] = 0L;
+    }
+  }
+  return st;
+}
+
+template <size_t Rank>
+auto Mapping<Rank>::Bucket::gridStart() const -> Sz<Rank>
+{
+  Sz<Rank> st;
+  for (Index ii = 0; ii < Rank; ii++) {
+    if (minCorner[ii] < 0) {
+      st[ii] = 0L;
+    } else {
+      st[ii] = minCorner[ii];
+    }
+  }
+  return st;
+}
+
+template <size_t Rank>
+auto Mapping<Rank>::Bucket::sliceSize() const -> Sz<Rank>
+{
+  Sz<Rank> sl;
+  for (Index ii = 0; ii < Rank; ii++) {
+    if (maxCorner[ii] >= gridSize[ii]) {
+      sl[ii] = gridSize[ii] - minCorner[ii];
+    } else {
+      sl[ii] = maxCorner[ii] - minCorner[ii];
+    }
+    if (minCorner[ii] < 0) { sl[ii] += minCorner[ii]; }
+  }
+  return sl;
 }
 
 // Helper function to convert a floating-point vector-like expression to integer values
@@ -77,8 +120,7 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 }
 
 template <size_t Rank>
-Mapping<Rank>::Mapping(
-  Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize, Index const read0)
+Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize)
 {
   Info const &info = traj.info();
   nomDims = FirstN<Rank>(info.matrix);
@@ -98,26 +140,29 @@ Mapping<Rank>::Mapping(
     for (Index iz = 0; iz < nB[2]; iz++) {
       for (Index iy = 0; iy < nB[1]; iy++) {
         for (Index ix = 0; ix < nB[0]; ix++) {
-          buckets.push_back(Bucket{
-            Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
-            Sz3{
-              std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
-              std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2),
-              std::min((iz + 1) * bucketSz, cartDims[2]) + (kW / 2)}});
+          buckets.push_back(
+            Bucket{.gridSize = cartDims,
+                   .minCorner = Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
+                   .maxCorner = Sz3{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
+                                    std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2),
+                                    std::min((iz + 1) * bucketSz, cartDims[2]) + (kW / 2)}});
         }
       }
     }
   } else if constexpr (Rank == 2) {
     for (Index iy = 0; iy < nB[1]; iy++) {
       for (Index ix = 0; ix < nB[0]; ix++) {
-        buckets.push_back(Bucket{
-          Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
-          Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2), std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
+        buckets.push_back(Bucket{.gridSize = cartDims,
+                                 .minCorner = Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
+                                 .maxCorner = Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
+                                                  std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
       }
     }
   } else {
     for (Index ix = 0; ix < nB[0]; ix++) {
-      buckets.push_back(Bucket{Sz1{ix * bucketSz - (kW / 2)}, Sz1{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2)}});
+      buckets.push_back(Bucket{.gridSize = cartDims,
+                               .minCorner = Sz1{ix * bucketSz - (kW / 2)},
+                               .maxCorner = Sz1{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2)}});
     }
   }
 
@@ -131,7 +176,7 @@ Mapping<Rank>::Mapping(
   int32_t index = 0;
   Index   invalids = 0;
   for (int32_t is = 0; is < traj.nTraces(); is++) {
-    for (int16_t ir = read0; ir < traj.nSamples(); ir++) {
+    for (int16_t ir = 0; ir < traj.nSamples(); ir++) {
       Re1 const p = traj.point(ir, is);
       if (B0((p.abs() <= 0.5f).all())()) {
         Eigen::Array<float, Rank, 1> xyz;
@@ -167,10 +212,10 @@ Mapping<Rank>::Mapping(
   for (auto &bucket : buckets) {
     if (bucket.size() > splitSize) {
       for (auto const indexChunk : ranges::views::chunk(bucket.indices, splitSize)) {
-        chunked.push_back(Bucket{
-          .minCorner = bucket.minCorner,
-          .maxCorner = bucket.maxCorner,
-          .indices = indexChunk | ranges::to<std::vector<int32_t>>()});
+        chunked.push_back(Bucket{.gridSize = bucket.gridSize,
+                                 .minCorner = bucket.minCorner,
+                                 .maxCorner = bucket.maxCorner,
+                                 .indices = indexChunk | ranges::to<std::vector<int32_t>>()});
       }
       bucket.indices.clear();
     }
@@ -179,9 +224,8 @@ Mapping<Rank>::Mapping(
   Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
   buckets.insert(buckets.end(), chunked.begin(), chunked.end());
   Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
-  Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L, [](Index sum, Bucket const &b) {
-               return b.indices.size() + sum;
-             }));
+  Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L,
+                                                [](Index sum, Bucket const &b) { return b.indices.size() + sum; }));
   sortedIndices = sort(cart);
 }
 

@@ -3,7 +3,7 @@
 #include "fft/fft.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/make_grid.hpp"
+#include "op/grid.hpp"
 #include "parse_args.hpp"
 
 using namespace rl;
@@ -19,7 +19,7 @@ int main_plan(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  auto        gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.Get(), basis);
+  auto        gridder = Grid<Cx, 3>::Make(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), channels.Get(), basis);
   auto const  fftN = FFT::Make<5, 3>(gridder->ishape);
   return EXIT_SUCCESS;
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "log.hpp"
-#include "op/make_grid.hpp"
 
 namespace rl {
 namespace SENSE {

@@ -2,7 +2,6 @@
 
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/make_grid.hpp"
 #include "parse_args.hpp"
 #include "sdc.hpp"
 #include "sense/sense.hpp"

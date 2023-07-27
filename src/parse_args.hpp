@@ -48,7 +48,7 @@ struct CoreOpts
   args::Positional<std::string> iname;
   args::ValueFlag<std::string>  oname, basisFile, ktype, scaling;
   args::ValueFlag<float>        osamp, fov;
-  args::ValueFlag<Index>        bucketSize;
+  args::ValueFlag<Index>        bucketSize, splitSize;
   args::Flag                    residImage, residKSpace, keepTrajectory;
 };
 

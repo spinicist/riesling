@@ -1,4 +1,4 @@
-#include "../../src/op/make_grid.hpp"
+#include "../../src/op/grid.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include <catch2/catch_approx.hpp>
@@ -26,7 +26,7 @@ TEST_CASE("Grid Basic", "[grid]")
   std::string const ktype = GENERATE("ES7");
   Re2 basis(1, 1);
   basis.setConstant(1.f);
-  auto grid = make_grid<float, 2>(traj, ktype, osamp, 1, basis);
+  auto grid = Grid<float, 2>::Make(traj, ktype, osamp, 1, basis);
   Re3 ks(grid->oshape);
   Re4 img(grid->ishape);
   ks.setConstant(1.f);

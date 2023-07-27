@@ -1,21 +1,20 @@
 #pragma once
 
-#include "gridBase.hpp"
+#include "kernel/kernel.hpp"
 #include "tensorop.hpp"
 
 namespace rl {
 
-template <size_t NDim>
-struct ApodizeOp final : TensorOperator<Cx, NDim + 2, NDim + 2>
+template <typename Scalar_, size_t NDim>
+struct ApodizeOp final : TensorOperator<Scalar_, NDim + 2, NDim + 2>
 {
   OP_INHERIT(Cx, NDim + 2, NDim + 2)
-  ApodizeOp(InDims const &inSize, GridBase<Scalar, NDim> *gridder);
+  ApodizeOp(InDims const shape, Sz<NDim> const gshape, std::shared_ptr<Kernel<Scalar, NDim>> const &k);
   OP_DECLARE()
 
 private:
   InDims                  res_, brd_;
   Eigen::Tensor<Cx, NDim> apo_;
-  void                    init(GridBase<Scalar, NDim> *gridder);
 };
 
 } // namespace rl

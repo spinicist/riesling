@@ -74,6 +74,7 @@ void StartProgress(Index const amount, std::string const &text)
 void StopProgress()
 {
   if (isTTY && CurrentLevel() >= Level::Low) {
+    std::scoped_lock lock(progressMutex);
     progressTarget = -1;
     fmt::print(stderr, "\r");
   }

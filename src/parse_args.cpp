@@ -71,6 +71,7 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
   , fov(parser, "FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
+  , splitSize(parser, "S", "Bucket split size (16384)", {"bucket-split"}, 16384)
   , residImage(parser, "R", "Write residuals in image space", {"resid-image"})
   , residKSpace(parser, "R", "Write residuals in k-space", {"resid-kspace"})
   , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep"})
@@ -153,22 +154,18 @@ auto ReadBasis(std::string const &basisFile) -> Re2
 
 std::string OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
 {
-  return fmt::format(
-    "{}{}.{}",
-    oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
-    suffix.empty() ? "" : fmt::format("-{}", suffix),
-    extension);
+  return fmt::format("{}{}.{}", oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
+                     suffix.empty() ? "" : fmt::format("-{}", suffix), extension);
 }
 
-void WriteOutput(
-  CoreOpts                           &opts,
-  rl::Cx5 const                      &img,
-  std::string const                  &suffix,
-  rl::Trajectory const               &traj,
-  std::string const                  &log,
-  rl::Cx5 const                      &residImage,
-  rl::Cx5 const                      &residKSpace,
-  std::map<std::string, float> const &meta)
+void WriteOutput(CoreOpts                           &opts,
+                 rl::Cx5 const                      &img,
+                 std::string const                  &suffix,
+                 rl::Trajectory const               &traj,
+                 std::string const                  &log,
+                 rl::Cx5 const                      &residImage,
+                 rl::Cx5 const                      &residKSpace,
+                 std::map<std::string, float> const &meta)
 {
   auto const  fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
   HD5::Writer writer(fname);

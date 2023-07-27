@@ -1,20 +1,18 @@
 #include "apodize.hpp"
+#include "fft/fft.hpp"
 #include "grid.hpp"
 #include "log.hpp"
+#include "pad.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
 namespace rl {
 
-template <size_t NDim>
-ApodizeOp<NDim>::ApodizeOp(InDims const &dims, GridBase<Scalar, NDim> *gridder)
-  : Parent("ApodizeOp", dims, dims)
-{
-  init(gridder);
-}
-
-template <size_t NDim>
-void ApodizeOp<NDim>::init(GridBase<Scalar, NDim> *gridder)
+template <typename S, size_t NDim>
+ApodizeOp<S, NDim>::ApodizeOp(InDims const                                     ishape,
+                              Sz<NDim> const                                   gshape,
+                              std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
+  : Parent("ApodizeOp", ishape, ishape)
 {
   for (size_t ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
@@ -24,27 +22,41 @@ void ApodizeOp<NDim>::init(GridBase<Scalar, NDim> *gridder)
     res_[ii] = ishape[ii];
     brd_[ii] = 1;
   }
-  apo_ = gridder->apodization(LastN<NDim>(ishape)).template cast<Cx>();
+
+  auto const              shape = LastN<NDim>(this->ishape);
+  Eigen::Tensor<Cx, NDim> temp(gshape);
+  auto const              fft = FFT::Make<NDim, NDim>(temp);
+  temp.setZero();
+  Eigen::Tensor<Cx, NDim> k = kernel->at(Eigen::Matrix<float, NDim, 1>::Zero()).template cast<Cx>();
+  float const             scale = std::sqrt(Product(shape));
+  k = k * k.constant(scale);
+  PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
+  temp = padK.forward(k);
+  fft->reverse(temp);
+  PadOp<Cx, NDim, NDim> padA(shape, gshape);
+  apo_.resize(shape);
+  apo_.device(Threads::GlobalDevice()) = padA.adjoint(temp).abs().inverse().template cast<Cx>();
+  LOG_DEBUG("Apodization size {} Scale: {} Norm: {}", shape, scale, Norm(apo_));
 }
 
-template <size_t NDim>
-void ApodizeOp<NDim>::forward(InCMap const &x, OutMap &y) const
+template <typename S, size_t NDim>
+void ApodizeOp<S, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(y, time);
 }
 
-template <size_t NDim>
-void ApodizeOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
+template <typename S, size_t NDim>
+void ApodizeOp<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   x.device(Threads::GlobalDevice()) = y * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(x, time);
 }
 
-template struct ApodizeOp<1>;
-template struct ApodizeOp<2>;
-template struct ApodizeOp<3>;
+template struct ApodizeOp<Cx, 1>;
+template struct ApodizeOp<Cx, 2>;
+template struct ApodizeOp<Cx, 3>;
 
 } // namespace rl

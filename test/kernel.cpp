@@ -15,10 +15,10 @@ using namespace Catch;
 TEMPLATE_TEST_CASE(
   "1D Kernels",
   "[kernels]",
-  (rl::Radial<1, rl::KaiserBessel<3>>),
-  (rl::Radial<1, rl::KaiserBessel<5>>),
-  (rl::Rectilinear<1, rl::ExpSemi<3>>),
-  (rl::Rectilinear<1, rl::ExpSemi<5>>))
+  (rl::Radial<float, 1, rl::KaiserBessel<3>>),
+  (rl::Radial<float, 1, rl::KaiserBessel<5>>),
+  (rl::Rectilinear<float, 1, rl::ExpSemi<3>>),
+  (rl::Rectilinear<float, 1, rl::ExpSemi<5>>))
 {
   TestType kernel(2.f);
   typename TestType::Point p;

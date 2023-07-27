@@ -6,7 +6,6 @@
 #include "op/sense.hpp"
 #include "parse_args.hpp"
 #include "sdc.hpp"
-#include "sense/sense.hpp"
 
 namespace rl {
 

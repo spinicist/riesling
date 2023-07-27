@@ -4,47 +4,31 @@
 
 namespace rl {
 
-template <size_t ND, size_t W>
-struct KernelSizes
-{
-};
+auto Clip(Index const ii, Index const sz) -> Index;
+template <int N>
+auto Clip(Sz<N> const ind, Sz<N> const sz) -> Sz<N>;
 
-template <size_t W>
-struct KernelSizes<1, W>
-{
-  using Type = Eigen::Sizes<W>;
-};
-
-template <size_t W>
-struct KernelSizes<2, W>
-{
-  using Type = Eigen::Sizes<W, W>;
-};
-
-template <size_t W>
-struct KernelSizes<3, W>
-{
-  using Type = Eigen::Sizes<W, W, W>;
-};
-
-template <size_t ND, size_t W>
+template <typename Scalar, size_t ND>
 struct Kernel
 {
-  using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<W>>;
-  using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<ND, W>::Type>;
   using Point = Eigen::Matrix<float, ND, 1>;
+  virtual auto paddedWidth() const -> Index = 0;
+  virtual auto at(Point const p) const -> Eigen::Tensor<float, ND> = 0;
+  virtual void spread(std::array<int16_t, ND> const   c,
+                      Point const                     p,
+                      Sz<ND> const                    minCorner,
+                      Eigen::Tensor<float, 1> const  &b,
+                      Eigen::Tensor<Scalar, 1> const &y,
+                      Eigen::Tensor<Scalar, ND + 2>  &x) const = 0;
 
-  OneD centers;
-
-  Kernel()
-  {
-    Eigen::TensorFixedSize<float, Eigen::Sizes<W>> pos;
-    for (size_t ii = 0; ii < W; ii++) {
-      centers(ii) = ii + 0.5f - (W / 2.f);
-    }
-  }
-
-  virtual auto operator()(Point const p) const -> Tensor = 0;
+  virtual auto gather(std::array<int16_t, ND> const                                c,
+                      Point const                                                  p,
+                      Eigen::Tensor<float, 1> const                               &b,
+                      Sz<ND> const                                                 cdims,
+                      Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> = 0;
 };
+
+template <typename Scalar, size_t ND>
+auto make_kernel(std::string const &type, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>;
 
 } // namespace rl

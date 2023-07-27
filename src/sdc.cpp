@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
-#include "op/make_grid.hpp"
+#include "op/grid.hpp"
 #include "op/tensorop.hpp"
 #include "op/tensorscale.hpp"
 #include "tensorOps.hpp"
@@ -29,7 +29,7 @@ auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Inde
   Re3 Wp(W.dimensions());
   Re2 basis(1, 1);
   basis.setConstant(1.f);
-  auto gridder = make_grid<float, ND>(traj, ktype, os, 1, basis);
+  auto gridder = Grid<float, ND>::Make(traj, ktype, os, 1, basis);
 
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {

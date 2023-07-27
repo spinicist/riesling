@@ -3,7 +3,7 @@
 #include "fft/fft.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/make_grid.hpp"
+#include "op/grid.hpp"
 #include "parse_args.hpp"
 #include "sdc.hpp"
 #include "tensorOps.hpp"
@@ -24,7 +24,7 @@ int main_traj(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  auto        gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), 1, basis);
+  auto        gridder = Grid<Cx, 3>::Make(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), 1, basis);
   auto const  sdc = SDC::Choose(sdcOpts, 1, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   Cx3         rad_ks(1, traj.nSamples(), traj.nTraces());
   rad_ks.setConstant(1.0f);

@@ -61,13 +61,10 @@ add_library(vineyard
     src/io/nifti.cpp
     src/io/reader.cpp
     src/io/writer.cpp
+    src/kernel/kernel.cpp
     src/op/apodize.cpp
     src/op/grad.cpp
-    src/op/grid-kb-radial.cpp
-    src/op/grid-kb-rect.cpp
-    src/op/grid-es-radial.cpp
-    src/op/grid-es-rect.cpp
-    src/op/make_grid.cpp
+    src/op/grid.cpp
     src/op/nufft.cpp
     src/op/ops.cpp
     src/op/pad.cpp
@@ -213,6 +210,9 @@ if(${BUILD_BENCHMARKS})
     target_link_libraries(riesling-bench PUBLIC
         vineyard
         Catch2::Catch2WithMain
+    )
+    target_compile_definitions(riesling-bench PRIVATE
+    CATCH_CONFIG_CONSOLE_WIDTH=200
     )
     set_target_properties(riesling-bench PROPERTIES
         CXX_STANDARD 20

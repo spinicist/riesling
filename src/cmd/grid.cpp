@@ -2,7 +2,7 @@
 
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/make_grid.hpp"
+#include "op/grid.hpp"
 #include "parse_args.hpp"
 #include "sdc.hpp"
 #include "threads.hpp"
@@ -28,7 +28,7 @@ int main_grid(args::Subparser &parser)
   auto const start = Log::Now();
   if (fwd) {
     Cx5        cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);
-    auto const gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), cart.dimension(0), basis);
+    auto const gridder = Grid<Cx, 3>::Make(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), cart.dimension(0), basis);
     auto const rad_ks = gridder->forward(cart);
     writer.writeTensor(
       HD5::Keys::Noncartesian, Sz5{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1, 1}, rad_ks.data());
@@ -38,7 +38,7 @@ int main_grid(args::Subparser &parser)
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     Index const nC = noncart.dimension(0);
     Index const nS = noncart.dimension(3);
-    auto const  gridder = make_grid<Cx, 3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
+    auto const  gridder = Grid<Cx, 3>::Make(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
     auto const  sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
     Cx6         cart(AddBack(gridder->ishape, nS));
     for (Index is = 0; is < nS; is++) {

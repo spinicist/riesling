@@ -4,7 +4,6 @@
 #include "algo/otsu.hpp"
 #include "cropper.h"
 #include "mapping.hpp"
-#include "op/make_grid.hpp"
 #include "op/nufft.hpp"
 #include "op/tensorscale.hpp"
 #include "sdc.hpp"

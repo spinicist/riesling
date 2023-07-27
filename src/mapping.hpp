@@ -17,12 +17,15 @@ struct Mapping
 {
   struct Bucket
   {
-    Sz<Rank>             minCorner, maxCorner;
+    Sz<Rank>             gridSize, minCorner, maxCorner;
     std::vector<int32_t> indices;
 
     auto empty() const -> bool;
     auto size() const -> Index;
-    auto gridSize() const -> Sz<Rank>;
+    auto bucketSize() const -> Sz<Rank>;
+    auto bucketStart() const -> Sz<Rank>;
+    auto gridStart() const -> Sz<Rank>;
+    auto sliceSize() const -> Sz<Rank>;
   };
 
   Mapping(
@@ -30,8 +33,7 @@ struct Mapping
     float const       nomOSamp,
     Index const       kW,
     Index const       bucketSize = 32,
-    Index const       splitSize = 16384,
-    Index const       read0 = 0);
+    Index const       splitSize = 16384);
 
   float    osamp;
   Sz2      noncartDims;

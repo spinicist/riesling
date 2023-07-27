@@ -1,20 +1,20 @@
 #pragma once
 
-#include "kernel.hpp"
+#include "fixed.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {
 
-template <size_t N, typename Func>
-struct Radial final : Kernel<N, Func::PadWidth>
+template <typename Scalar, size_t N, typename Func>
+struct Radial final : FixedKernel<Scalar, N, Func::PadWidth>
 {
   static constexpr size_t NDim = N;
   static constexpr size_t Width = Func::Width;
   static constexpr size_t PadWidth = Func::PadWidth;
   static constexpr float  HalfWidth = Width / 2.f;
-  using Tensor = typename Kernel<NDim, PadWidth>::Tensor;
-  using Point = typename Kernel<NDim, PadWidth>::Point;
-  using Pos = typename Kernel<NDim, PadWidth>::OneD;
+  using Tensor = typename FixedKernel<Scalar, NDim, PadWidth>::Tensor;
+  using Point = typename FixedKernel<Scalar, NDim, PadWidth>::Point;
+  using Pos = typename FixedKernel<Scalar, NDim, PadWidth>::OneD;
 
   Func  f;
   float scale;
@@ -33,7 +33,7 @@ struct Radial final : Kernel<N, Func::PadWidth>
     Tensor    z;
     Pos const z1 = ((this->centers - p(N - 1)) / HalfWidth).square();
     if constexpr (N == 1) {
-      z = z1.sqrt();
+      z = z1;
     } else {
       Pos const z2 = ((this->centers - p(N - 2)) / HalfWidth).square();
       if constexpr (N == 2) {
