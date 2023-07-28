@@ -32,7 +32,8 @@ int main(int const argc, char const *const argv[])
   COMMAND(lsqr, "lsqr", "Recon with LSQR optimizer");
   COMMAND(noisify, "noisify", "Add noise to dataset");
   COMMAND(nii, "nii", "Convert h5 to nifti");
-  COMMAND(nufft, "nufft", "Apply forward/reverse NUFFT");
+  COMMAND(ndft, "ndft", "Apply forward/adjoint NDFT");
+  COMMAND(nufft, "nufft", "Apply forward/adjoint NUFFT");
   COMMAND(pad, "pad", "Pad/crop an image");
   COMMAND(pdhg, "pdhg", "Primal-Dual Hybrid Gradient");
   COMMAND(pdhg_setup, "pdhg-setup", "Calculate PDHG step sizes");

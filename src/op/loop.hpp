@@ -39,6 +39,7 @@ struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::Ou
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::OutCMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
       typename Op::InMap   xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
+      Log::Print<Log::Level::Debug>("Loop op {}/{}", ii, N_);
       op_->adjoint(ychip, xchip);
     }
     this->finishAdjoint(x, time);

@@ -6,7 +6,9 @@
 
 namespace rl {
 
-void Basis(
+auto IdBasis() -> Re2;
+
+void SaveBasis(
   Eigen::ArrayXXf const &dynamics,
   float const            thresh,
   Index const            nB,

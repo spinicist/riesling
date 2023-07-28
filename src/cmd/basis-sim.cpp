@@ -107,7 +107,7 @@ int main_basis_sim(args::Subparser &parser)
   }
 
   HD5::Writer writer(oname.Get());
-  Basis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize, writer);
+  SaveBasis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize, writer);
   writer.writeMatrix(pars, HD5::Keys::Parameters);
   return EXIT_SUCCESS;
 }

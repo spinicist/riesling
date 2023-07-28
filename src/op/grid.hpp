@@ -1,5 +1,6 @@
 #pragma once
 
+#include "basis.hpp"
 #include "kernel/kernel.hpp"
 #include "mapping.hpp"
 #include "tensorop.hpp"
@@ -8,8 +9,6 @@
 #include <mutex>
 
 namespace rl {
-
-auto IdBasis() -> Re2;
 
 template <typename Scalar_, size_t NDim>
 struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>

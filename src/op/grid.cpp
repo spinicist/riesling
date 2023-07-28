@@ -9,13 +9,6 @@
 
 namespace rl {
 
-auto IdBasis() -> Re2
-{
-  Re2 id(1, 1);
-  id.setConstant(1.f);
-  return id;
-}
-
 template <typename Scalar, size_t NDim>
 auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
                               std::string const ktype,

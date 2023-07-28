@@ -14,13 +14,8 @@ template <size_t NDim>
 struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
-
   NUFFTOp(std::shared_ptr<Grid<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
-
   OP_DECLARE()
-
-  // auto adjfwd(InCMap x) const -> InputMap;
-  // auto fft() const -> FFTOp<NDim + 2, NDim> const &;
 
   std::shared_ptr<Grid<Cx, NDim>> gridder;
   InTensor mutable workspace;
@@ -29,10 +24,6 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
   PadOp<Cx, NDim + 2, NDim>              pad;
   ApodizeOp<Cx, NDim>                    apo;
   std::shared_ptr<TensorOperator<Cx, 3>> sdc;
-
-private:
-  using Transfer = Eigen::Tensor<Cx, NDim + 2>;
-  Transfer tf_;
 };
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,

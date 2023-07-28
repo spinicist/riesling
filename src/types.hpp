@@ -78,7 +78,7 @@ using Point3 = Eigen::Matrix<float, 3, 1>;
 template <typename T, int N, typename... Args>
 decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
-  std::array<Index, sizeof...(Args)>        front = {{toAdd...}};
+  Eigen::DSizes<Index, sizeof...(Args)>     front{{toAdd...}};
   Eigen::DSizes<Index, sizeof...(Args) + N> out;
 
   std::copy_n(front.begin(), sizeof...(Args), out.begin());

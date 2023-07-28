@@ -65,6 +65,7 @@ add_library(vineyard
     src/op/apodize.cpp
     src/op/grad.cpp
     src/op/grid.cpp
+    src/op/ndft.cpp
     src/op/nufft.cpp
     src/op/ops.cpp
     src/op/pad.cpp
@@ -131,6 +132,7 @@ add_executable(riesling
     src/cmd/lsqr.cpp
     src/cmd/nii.cpp
     src/cmd/noisify.cpp
+    src/cmd/ndft.cpp
     src/cmd/nufft.cpp
     src/cmd/pad.cpp
     src/cmd/pdhg.cpp
@@ -180,6 +182,7 @@ if(${BUILD_TESTS})
         test/zinfandel.cpp
         test/op/fft.cpp
         test/op/grid.cpp
+        test/op/ndft.cpp
         test/op/nufft.cpp
         test/op/pad.cpp
         test/op/recon.cpp

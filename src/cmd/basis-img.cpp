@@ -88,6 +88,6 @@ int main_basis_img(args::Subparser &parser)
     }
   }
   HD5::Writer writer(oname.Get());
-  Basis(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize, writer);
+  SaveBasis(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize, writer);
   return EXIT_SUCCESS;
 }

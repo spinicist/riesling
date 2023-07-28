@@ -49,7 +49,7 @@ struct CoreOpts
   args::ValueFlag<std::string>  oname, basisFile, ktype, scaling;
   args::ValueFlag<float>        osamp, fov;
   args::ValueFlag<Index>        bucketSize, splitSize;
-  args::Flag                    residImage, residKSpace, keepTrajectory;
+  args::Flag                    ndft, residImage, residKSpace, keepTrajectory;
 };
 
 void WriteOutput(

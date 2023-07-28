@@ -23,13 +23,10 @@ auto Trajectory::nSamples() const -> Index { return points_.dimension(1); }
 
 auto Trajectory::nTraces() const -> Index { return points_.dimension(2); }
 
-void Trajectory::checkDims(Sz3 const dims) const {
-  if (dims[1] != nSamples()) {
-    Log::Fail("Number of samples in data {} does not match trajectory {}", dims[1], nSamples());
-  }
-  if (dims[2] != nTraces()) {
-    Log::Fail("Number of traces in data {} does not match trajectory {}",  dims[2], nTraces());
-  }
+void Trajectory::checkDims(Sz3 const dims) const
+{
+  if (dims[1] != nSamples()) { Log::Fail("Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
+  if (dims[2] != nTraces()) { Log::Fail("Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
 }
 
 Info const &Trajectory::info() const { return info_; }
@@ -38,8 +35,8 @@ auto Trajectory::matrix(float const fov) const -> Sz3
 {
   if (fov > 0) {
     Eigen::Array3l bigMatrix = (((fov / info_.voxel_size) / 2.f).floor() * 2).cast<Index>();
-    Sz3            matrix;
-    for (Index ii = 0; ii < 3; ii++) {
+    Sz3            matrix = info_.matrix;
+    for (Index ii = 0; ii < nDims(); ii++) {
       matrix[ii] = bigMatrix[ii];
     }
     Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov, info_.matrix, matrix);
@@ -68,9 +65,8 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   float scale = 1.f;
   if (shrink) {
     // Account for rounding
-    std::transform(info_.matrix.begin(), info_.matrix.begin() + nDims(), dsInfo.matrix.begin(), [dsamp](Index const i) {
-      return (i * dsamp);
-    });
+    std::transform(info_.matrix.begin(), info_.matrix.begin() + nDims(), dsInfo.matrix.begin(),
+                   [dsamp](Index const i) { return (i * dsamp); });
     scale = static_cast<float>(info_.matrix[0]) / dsInfo.matrix[0];
     dsamp = 1.f / scale;
     dsInfo.voxel_size = info_.voxel_size * scale;
@@ -94,15 +90,9 @@ auto Trajectory::downsample(float const res, Index const lores, bool const shrin
   }
   if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
   Index const dsSamples = maxSamp + 1 - minSamp;
-  Log::Print(
-    "Target res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}",
-    res,
-    dsamp,
-    dsInfo.matrix,
-    dsInfo.voxel_size.transpose(),
-    minSamp,
-    maxSamp,
-    lores > 0 ? fmt::format(", ignoring {} lo-res traces", lores) : "");
+  Log::Print("Target res {} mm, factor {}, matrix {}, voxel-size {} mm, read-points {}-{}{}", res, dsamp, dsInfo.matrix,
+             dsInfo.voxel_size.transpose(), minSamp, maxSamp,
+             lores > 0 ? fmt::format(", ignoring {} lo-res traces", lores) : "");
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{nDims(), dsSamples, nTraces()}));
   Log::Print("Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(Trajectory(dsInfo, dsPoints), minSamp, dsSamples);

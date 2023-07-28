@@ -5,7 +5,14 @@
 
 namespace rl {
 
-void Basis(
+auto IdBasis() -> Re2
+{
+  Re2 id(1, 1);
+  id.setConstant(1.f);
+  return id;
+}
+
+void SaveBasis(
   Eigen::ArrayXXf const &dynamics,
   float const            thresh,
   Index const            nBasis,

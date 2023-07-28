@@ -1,6 +1,7 @@
 #include "recon.hpp"
 
 #include "op/compose.hpp"
+#include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "sdc.hpp"
 #include "sense/sense.hpp"
@@ -14,10 +15,17 @@ auto make_recon(CoreOpts                       &coreOpts,
                 Re2 const                      &basis) -> std::shared_ptr<ReconOp>
 {
 
-  auto const sdc = SDC::Choose(sdcOpts, sense->nChannels(), traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-  auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), sense->nChannels(), sense->mapDimensions(), basis,
-                          sdc, coreOpts.bucketSize.Get(), coreOpts.splitSize.Get());
-  return std::make_shared<ReconOp>(sense, nufft);
+  Index const nC = sense->nChannels();
+  auto const  shape = sense->mapDimensions();
+  auto const  sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  if (coreOpts.ndft) {
+    auto ndft = make_ndft(traj.points(), nC, shape, basis, sdc);
+    return std::make_shared<ReconOp>(sense, ndft);
+  } else {
+    auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, shape, basis, sdc, coreOpts.bucketSize.Get(),
+                            coreOpts.splitSize.Get());
+    return std::make_shared<ReconOp>(sense, nufft);
+  }
 }
 
 } // namespace rl
