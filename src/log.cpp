@@ -111,8 +111,10 @@ std::string ToNow(Log::Time const t1)
       "{} hour{} {} minute{} {} second{}", hours, hours > 1 ? "s" : "", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
   } else if (mins > 0) {
     return fmt::format("{} minute{} {} second{}", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
-  } else {
+  } else if (secs > 0) {
     return fmt::format("{} second{}", secs, secs > 1 ? "s" : "");
+  } else {
+    return fmt::format("{} millisecond{}", diff, diff > 1 ? "s" : "");
   }
 }
 
