@@ -17,15 +17,20 @@ struct Radial final : FixedKernel<Scalar, N, Func::PadWidth>
   using Pos = typename FixedKernel<Scalar, NDim, PadWidth>::OneD;
 
   Func  f;
-  float scale;
+  float β, scale;
 
   Radial(float const osamp)
-    : f{osamp}
+    : β{f.β(osamp)}
     , scale{1.f}
   {
     static_assert(N < 4);
     scale = 1. / Norm((*this)(Point::Zero()));
     Log::Print("Radial, scale {}", scale);
+  }
+
+  void setOversampling(float const osamp) {
+    β = f.β(osamp);
+    scale = 1. / Norm((*this)(Point::Zero()));
   }
 
   auto operator()(Point const p) const -> Tensor
@@ -45,7 +50,7 @@ struct Radial final : FixedKernel<Scalar, N, Func::PadWidth>
             z1.reshape(Sz3{1, 1, PadWidth}).broadcast(Sz3{PadWidth, PadWidth, 1});
       }
     }
-    return f(z.sqrt()) * z.constant(scale);
+    return f(z.sqrt(), β) * z.constant(scale);
   }
 };
 

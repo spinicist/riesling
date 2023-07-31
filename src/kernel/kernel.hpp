@@ -4,15 +4,12 @@
 
 namespace rl {
 
-auto Clip(Index const ii, Index const sz) -> Index;
-template <int N>
-auto Clip(Sz<N> const ind, Sz<N> const sz) -> Sz<N>;
-
 template <typename Scalar, size_t ND>
 struct Kernel
 {
   using Point = Eigen::Matrix<float, ND, 1>;
   virtual auto paddedWidth() const -> Index = 0;
+  virtual void setOversampling(float const os) = 0;
   virtual auto at(Point const p) const -> Eigen::Tensor<float, ND> = 0;
   virtual void spread(std::array<int16_t, ND> const   c,
                       Point const                     p,
@@ -23,6 +20,7 @@ struct Kernel
 
   virtual auto gather(std::array<int16_t, ND> const                                c,
                       Point const                                                  p,
+                      Sz<ND> const                                                 minCorner,
                       Eigen::Tensor<float, 1> const                               &b,
                       Sz<ND> const                                                 cdims,
                       Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> = 0;

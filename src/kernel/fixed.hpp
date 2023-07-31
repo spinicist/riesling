@@ -45,9 +45,7 @@ struct FixedKernel : Kernel<Scalar, ND>
   }
 
   virtual auto paddedWidth() const -> Index final { return W; };
-  virtual auto at(Point const p) const -> Eigen::Tensor<float, ND> final {
-    return this->operator()(p);
-  }
+  virtual auto at(Point const p) const -> Eigen::Tensor<float, ND> final { return this->operator()(p); }
   virtual auto operator()(Point const p) const -> Tensor = 0;
   void         spread(std::array<int16_t, ND> const   c,
                       Point const                     p,
@@ -100,6 +98,7 @@ struct FixedKernel : Kernel<Scalar, ND>
 
   auto gather(std::array<int16_t, ND> const                                c,
               Point const                                                  p,
+              Sz<ND> const                                                 minCorner,
               Eigen::Tensor<float, 1> const                               &b,
               Sz<ND> const                                                 cdims,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> final
@@ -111,37 +110,34 @@ struct FixedKernel : Kernel<Scalar, ND>
     Eigen::Tensor<Scalar, 1> y(nC);
     y.setZero();
     for (Index i1 = 0; i1 < W; i1++) {
-      if (Index const ii1 = Clip(c[ND - 1] - W_2 + i1, cdims[ND - 1]); ii1 > -1) {
-        if constexpr (ND == 1) {
-          float const kval = k(i1);
-          for (Index ib = 0; ib < nB; ib++) {
-            float const bval = kval * b(ib);
-            for (Index ic = 0; ic < nC; ic++) {
-              y(ic) += x(ic, ib, ii1) * bval;
-            }
+      Index const ii1 = c[ND - 1] - minCorner[ND - 1] - W_2 + i1;
+      if constexpr (ND == 1) {
+        float const kval = k(i1);
+        for (Index ib = 0; ib < nB; ib++) {
+          float const bval = kval * b(ib);
+          for (Index ic = 0; ic < nC; ic++) {
+            y(ic) += x(ic, ib, ii1) * bval;
           }
-        } else {
-          for (Index i2 = 0; i2 < W; i2++) {
-            if (Index const ii2 = Clip(c[ND - 2] - W_2 + i2, cdims[ND - 2]); ii2 > -1) {
-              if constexpr (ND == 2) {
-                float const kval = k(i2, i1);
-                for (Index ib = 0; ib < nB; ib++) {
-                  float const bval = kval * b(ib);
-                  for (Index ic = 0; ic < nC; ic++) {
-                    y(ic) += x(ic, ib, ii2, ii1) * bval;
-                  }
-                }
-              } else {
-                for (Index i3 = 0; i3 < W; i3++) {
-                  if (Index const ii3 = Clip(c[ND - 3] - W_2 + i3, cdims[ND - 3]); ii3 > -1) {
-                    float const kval = k(i3, i2, i1);
-                    for (Index ib = 0; ib < nB; ib++) {
-                      float const bval = kval * b(ib);
-                      for (Index ic = 0; ic < nC; ic++) {
-                        y(ic) += x(ic, ib, ii3, ii2, ii1) * bval;
-                      }
-                    }
-                  }
+        }
+      } else {
+        for (Index i2 = 0; i2 < W; i2++) {
+          Index const ii2 = c[ND - 2] - minCorner[ND - 2] - W_2 + i2;
+          if constexpr (ND == 2) {
+            float const kval = k(i2, i1);
+            for (Index ib = 0; ib < nB; ib++) {
+              float const bval = kval * b(ib);
+              for (Index ic = 0; ic < nC; ic++) {
+                y(ic) += x(ic, ib, ii2, ii1) * bval;
+              }
+            }
+          } else {
+            for (Index i3 = 0; i3 < W; i3++) {
+              Index const ii3 = c[ND - 3] - minCorner[ND - 3] - W_2 + i3;
+              float const kval = k(i3, i2, i1);
+              for (Index ib = 0; ib < nB; ib++) {
+                float const bval = kval * b(ib);
+                for (Index ic = 0; ic < nC; ic++) {
+                  y(ic) += x(ic, ib, ii3, ii2, ii1) * bval;
                 }
               }
             }
@@ -152,6 +148,5 @@ struct FixedKernel : Kernel<Scalar, ND>
     return y;
   }
 };
-
 
 } // namespace rl

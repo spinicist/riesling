@@ -172,7 +172,6 @@ if(${BUILD_TESTS})
         test/algo.cpp
         test/cropper.cpp
         test/decomp.cpp
-        # test/dict.cpp
         test/fft3.cpp
         test/io.cpp
         test/kernel.cpp
@@ -204,7 +203,6 @@ option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 
 if(${BUILD_BENCHMARKS})
     add_executable(riesling-bench
-        # bench/dict.cpp
         bench/dot.cpp
         bench/grid.cpp
         bench/kernel.cpp

@@ -9,38 +9,34 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("NUFFT", "[nufft]")
+TEST_CASE("NUFFT", "[tform]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = 5;
+  Index const M = GENERATE(5, 6);
   Info const  info{.matrix = Sz3{M, M, M}};
-  Re3         points(1, 5, 1);
+  Re3         points(1, M, 1);
   points.setZero();
-  points(0, 0, 0) = -0.5f;
-  points(0, 1, 0) = -0.25f;
-  points(0, 2, 0) = 0.f;
-  points(0, 3, 0) = 0.25f;
-  points(0, 4, 0) = 0.5f;
+  for (Index ii = 0; ii < M; ii++) {
+    points(0, ii, 0) = -0.5f + ii / (float)M;
+  }
   Trajectory const traj(info, points);
-  float const osamp = GENERATE(2.f, 2.3f);
-  auto grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1);
-
-  Index const N = 5;
-  NUFFTOp<1>  nufft(grid, Sz1{N});
+  float const      osamp = GENERATE(2.f, 2.3f);
+  auto             grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1);
+  NUFFTOp<1>  nufft(grid, Sz1{M});
   Cx3         ks(nufft.oshape);
   Cx3         img(nufft.ishape);
   img.setZero();
-  img(0, 0, N / 2) = std::sqrt(N);
+  img(0, 0, M / 2) = std::sqrt(M);
   ks = nufft.forward(img);
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
-  CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-2f));
+  CHECK(Norm(ks) == Approx(Norm(img)).margin(1.e-2f));
   img = nufft.adjoint(ks);
   INFO("IMG\n" << img);
-  CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-2f));
+  CHECK(Norm(img) == Approx(Norm(ks)).margin(1.e-2f));
 }
 
-TEST_CASE("NUFFT Basis", "[nufft-basis]")
+TEST_CASE("NUFFT Basis", "[tform]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 5;
@@ -61,7 +57,7 @@ TEST_CASE("NUFFT Basis", "[nufft-basis]")
   }
 
   float const osamp = 2.f;
-  auto grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, basis);
+  auto        grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, basis);
 
   NUFFTOp<1> nufft(grid, Sz1{M});
   Cx3        ks(nufft.oshape);
@@ -70,6 +66,5 @@ TEST_CASE("NUFFT Basis", "[nufft-basis]")
   img.setZero();
   img = nufft.adjoint(ks);
   ks = nufft.forward(img);
-
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }

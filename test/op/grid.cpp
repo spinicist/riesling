@@ -32,8 +32,8 @@ TEST_CASE("Grid Basic", "[grid]")
   ks.setConstant(1.f);
   img = grid->adjoint(ks);
   INFO("M " << M << " OS " << osamp << " " << ktype);
-  INFO(img.chip(0, 1).chip(0, 0));
   CHECK(Norm(img) == Approx(Norm(ks)).margin(1e-2f));
   ks = grid->forward(img);
+  INFO(ks);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(1e-2f));
 }

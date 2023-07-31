@@ -41,7 +41,7 @@ int main_lsmr(args::Subparser &parser)
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
   auto const A = make_recon(coreOpts, sdcOpts, traj, sense, basis);
-  auto const M = make_kspace_pre(pre.Get(), A->oshape[0], traj, basis, preBias.Get());
+  auto const M = make_kspace_pre(pre.Get(), A->oshape[0], traj, basis, preBias.Get(), coreOpts.ndft.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data());
   };

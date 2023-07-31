@@ -18,12 +18,12 @@ struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
   OP_DECLARE()
 
 private:
-  Re3                                       traj;
-  Re2                                       basis;
-  std::shared_ptr<TensorOperator<Cx, 3>>    sdc;
-  float                                     scale;
-  std::vector<Eigen::DSizes<int16_t, NDim>> xind;
-  Eigen::Matrix<float, NDim, -1>            xc;
+  Eigen::Matrix<float, NDim, -1>         traj;
+  Eigen::ArrayXXcf                       basis;
+  std::shared_ptr<TensorOperator<Cx, 3>> sdc;
+  Index                                  N, nSamp, nTrace;
+  float                                  scale;
+  Eigen::Matrix<float, NDim, -1>         xc;
 };
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_ndft(Re3 const                             &traj,

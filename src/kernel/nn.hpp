@@ -27,6 +27,8 @@ struct NearestNeighbour final : FixedKernel<Scalar, N, 1>
     z.setConstant(1.f);
     return z;
   }
+
+  void setOversampling(float const) {}
 };
 
 } // namespace rl

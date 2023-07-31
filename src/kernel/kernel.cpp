@@ -9,32 +9,6 @@
 
 namespace rl {
 
-auto Clip(Index const ii, Index const sz) -> Index
-{
-  if (ii < 0)
-    return -1;
-  else if (ii >= sz)
-    return -1;
-  else
-    return ii;
-}
-
-template <int N>
-auto Clip(Sz<N> const ind, Sz<N> const sz) -> Sz<N>
-{
-  Sz<N> cropped;
-  for (Index ii = 0; ii < N; ii++)
-    if (ind[ii] < 0)
-      cropped[ii] = -1;
-    else if (ind[ii] >= sz)
-      cropped[ii] = -1;
-    else
-      cropped[ii] = ind[ii];
-  return cropped;
-}
-
-
-
 template <typename Scalar, size_t ND>
 auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>
 {

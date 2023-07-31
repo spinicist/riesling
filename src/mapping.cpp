@@ -119,13 +119,20 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
   return sorted;
 }
 
+inline auto Wrap(Index const index, Index const sz) -> Index
+{
+  Index const t = index + sz;
+  Index const w = t - sz * (t / sz);
+  return w;
+}
+
 template <size_t Rank>
 Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize)
 {
   Info const &info = traj.info();
   nomDims = FirstN<Rank>(info.matrix);
   cartDims = fft_size<Rank>(FirstN<Rank>(info.matrix), nomOS);
-  osamp = nomOS;
+  osamp = cartDims[0] / (float)info.matrix[0];
   Log::Print("{}D Mapping. Trajectory samples {} Grid {}", traj.nDims(), traj.nSamples(), cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
@@ -167,10 +174,9 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
   }
 
   std::fesetround(FE_TONEAREST);
-  Sz<Rank>                center;
-  std::array<float, Rank> scales;
+  Eigen::Array<float, Rank, 1> center, scales;
   for (size_t ii = 0; ii < Rank; ii++) {
-    scales[ii] = (cartDims[ii] / float(info.matrix[ii])) * ((info.matrix[ii] - 1) / 2) * 2;
+    scales[ii] = cartDims[ii];
     center[ii] = cartDims[ii] / 2;
   }
   int32_t index = 0;
@@ -178,32 +184,32 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
   for (int32_t is = 0; is < traj.nTraces(); is++) {
     for (int16_t ir = 0; ir < traj.nSamples(); ir++) {
       Re1 const p = traj.point(ir, is);
-      if (B0((p.abs() <= 0.5f).all())()) {
-        Eigen::Array<float, Rank, 1> xyz;
-        for (size_t ii = 0; ii < Rank; ii++) {
-          xyz[ii] = p[ii] * scales[ii] + center[ii];
-        }
-        auto const gp = nearby(xyz);
-        auto const off = xyz - gp.template cast<float>();
-
-        std::array<int16_t, Rank> ijk;
-        for (size_t ii = 0; ii < Rank; ii++) {
-          ijk[ii] = gp[ii];
-        }
-        cart.push_back(ijk);
-        offset.push_back(off);
-        noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
-
-        // Calculate bucket
-        Index ib = 0;
-        for (int ii = Rank - 1; ii >= 0; ii--) {
-          ib = ib * nB[ii] + (ijk[ii] / bucketSz);
-        }
-        buckets[ib].indices.push_back(index);
-        index++;
-      } else {
+      if (!B0(p.isfinite().all())()) {
         invalids++;
+        continue;
       }
+      Eigen::Array<float, Rank, 1> xyz;
+      for (size_t ii = 0; ii < Rank; ii++) {
+        xyz[ii] = p[ii] * scales[ii] + center[ii];
+      }
+      auto const gp = nearby(xyz);
+      auto const off = xyz - gp.template cast<float>();
+
+      std::array<int16_t, Rank> ijk;
+      for (size_t ii = 0; ii < Rank; ii++) {
+        ijk[ii] = Wrap(gp[ii], cartDims[ii]);
+      }
+      cart.push_back(ijk);
+      offset.push_back(off);
+      noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
+
+      // Calculate bucket
+      Index ib = 0;
+      for (int ii = Rank - 1; ii >= 0; ii--) {
+        ib = ib * nB[ii] + (ijk[ii] / bucketSz);
+      }
+      buckets[ib].indices.push_back(index);
+      index++;
     }
   }
   Log::Print("Ignored {} invalid trajectory points", invalids);

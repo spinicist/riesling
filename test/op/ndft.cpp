@@ -7,30 +7,21 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("NDFT", "[ndft]")
+TEST_CASE("NDFT", "[tform]")
 {
-  Log::SetLevel(Log::Level::Debug);
-  Index const M = 5;
-  Index const N = 6;
+  Log::SetLevel(Log::Level::Testing);
+  Threads::SetGlobalThreadCount(1);
+  Index const M = GENERATE(5, 6);
   Re3         points(1, M, 1);
   points.setZero();
-  points(0, 0, 0) = -0.5f;
-  points(0, 1, 0) = -0.25f;
-  points(0, 2, 0) = 0.f;
-  points(0, 3, 0) = 0.25f;
-  points(0, 4, 0) = 0.5f;
-  NDFTOp<1>   ndft(points, 1, Sz1{N});
+  for (Index ii = 0; ii < M; ii++) {
+    points(0, ii, 0) = -0.5f + ii / (float)M;
+  }
+  NDFTOp<1>   ndft(points, 1, Sz1{M});
   Cx3         ks(ndft.oshape);
   Cx3         img(ndft.ishape);
   img.setZero();
-  img(0, 0, 0) = 1.f;
-  img(0, 0, 1) = -1.f;
-  img(0, 0, 2) = 1.f;
-  img(0, 0, 3) = -1.f;
-  img(0, 0, 4) = 1.f;
-  img(0, 0, 5) = -1.f;
-
-  // img(0, 0, N / 2) = std::sqrt(N);
+  img(0, 0, M / 2) = std::sqrt(M);
   ks = ndft.forward(img);
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
@@ -40,7 +31,7 @@ TEST_CASE("NDFT", "[ndft]")
   CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-2f));
 }
 
-TEST_CASE("NDFT Basis", "[ndft]")
+TEST_CASE("NDFT Basis", "[tform]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 8;
@@ -56,7 +47,7 @@ TEST_CASE("NDFT Basis", "[ndft]")
       basis(ii, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
     }
   }
-  NDFTOp<1> ndft(points, 1, Sz1{N});
+  NDFTOp<1> ndft(points, 1, Sz1{N}, basis);
   Cx3       ks(ndft.oshape);
   ks.setConstant(1.f);
   Cx3 img(ndft.ishape);

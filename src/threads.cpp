@@ -51,24 +51,25 @@ void For(ForFunc f, Index const lo, Index const hi, std::string const &label)
   Index const nt = GlobalPool()->NumThreads();
   if (ni == 0) { return; }
 
-  Log::StartProgress(ni, label);
+  bool const report = label.size();
+  if (report) { Log::StartProgress(ni, label); }
   if (nt == 1) {
     for (Index ii = lo; ii < hi; ii++) {
       f(ii);
-      Log::Tick();
+      if (report) { Log::Tick(); }
     }
   } else {
     Eigen::Barrier barrier(static_cast<unsigned int>(ni));
     for (Index ii = lo; ii < hi; ii++) {
-      GlobalPool()->Schedule([&barrier, &f, ii] {
+      GlobalPool()->Schedule([&barrier, &f, ii, report] {
         f(ii);
         barrier.Notify();
-        Log::Tick();
+        if (report) { Log::Tick(); }
       });
     }
     barrier.Wait();
   }
-  Log::StopProgress();
+  if (report) { Log::StopProgress(); }
 }
 
 void For(ForFunc f, Index const n, std::string const &label) { For(f, 0, n, label); }

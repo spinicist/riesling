@@ -77,22 +77,6 @@ float Norm(T const &a)
   return std::sqrt(std::real(Dot(a, a)));
 }
 
-template <typename T>
-inline decltype(auto) Wrap(T const &index, Index const &sz)
-{
-  auto const t = index + sz;
-  auto const w = t - sz * (t / sz);
-  return w;
-}
-
-template <typename T1, typename T2>
-inline decltype(auto) Wrap(T1 const &index, T2 const &sz)
-{
-  auto const t = index + sz;
-  auto const w = t - sz * (t / sz);
-  return w;
-}
-
 template <typename T, typename U>
 inline decltype(auto) ConjugateSum(T &&x, U &&y)
 {

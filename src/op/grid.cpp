@@ -7,6 +7,13 @@
 
 #include <mutex>
 
+inline auto Wrap(Index const index, Index const sz) -> Index
+{
+  Index const t = index + sz;
+  Index const w = t - sz * (t / sz);
+  return w;
+}
+
 namespace rl {
 
 template <typename Scalar, size_t NDim>
@@ -39,19 +46,48 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
+  Index const nC = this->ishape[0];
   Index const nB = this->ishape[1];
   auto const &map = this->mapping;
 
   auto grid_task = [&](Index const ibucket) {
     auto const &bucket = map.buckets[ibucket];
-    Re1         bEntry(nB);
+
+    auto const bSz = AddFront(bucket.bucketSize(), nC, nB);
+    InTensor   bGrid(bSz);
+
+    auto const gSt = AddFront(bucket.minCorner, 0, 0); // Make this the same dims as bSz / ishape
+    for (Index i1 = 0; i1 < bSz[InRank - 1]; i1++) {
+      Index const w1 = Wrap(i1 + gSt[InRank - 1], ishape[InRank - 1]);
+      for (Index i2 = 0; i2 < bSz[InRank - 2]; i2++) {
+        Index const w2 = Wrap(i2 + gSt[InRank - 2], ishape[InRank - 2]);
+        for (Index i3 = 0; i3 < bSz[InRank - 3]; i3++) {
+          Index const w3 = Wrap(i3 + gSt[InRank - 3], ishape[InRank - 3]);
+          if constexpr (NDim == 1) {
+            bGrid(i3, i2, i1) = x(i3, i2, w1);
+          } else {
+            for (Index i4 = 0; i4 < bSz[InRank - 4]; i4++) {
+              if constexpr (NDim == 2) {
+                bGrid(i4, i3, i2, i1) = x(i4, i3, w2, w1);
+              } else {
+                for (Index i5 = 0; i5 < bSz[InRank - 5]; i5++) {
+                  bGrid(i5, i4, i3, i2, i1) = x(i5, i4, w3, w2, w1);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     for (auto ii = 0; ii < bucket.size(); ii++) {
       auto const  si = bucket.indices[ii];
       auto const  c = map.cart[si];
       auto const  n = map.noncart[si];
       auto const  o = map.offset[si];
       Index const btp = n.trace % basis.dimension(1);
-      y.template chip<2>(n.trace).template chip<1>(n.sample) = this->kernel->gather(c, o, basis.chip<1>(btp), map.cartDims, x);
+      y.template chip<2>(n.trace).template chip<1>(n.sample) =
+        this->kernel->gather(c, o, bucket.minCorner, basis.chip<1>(btp), map.cartDims, bGrid);
     }
   };
 
@@ -70,8 +106,8 @@ void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
   std::mutex writeMutex;
   auto       grid_task = [&](Index ibucket) {
     auto const &bucket = map.buckets[ibucket];
-    auto const  bSz = bucket.bucketSize();
-    InTensor    bGrid(AddFront(bSz, nC, nB));
+    auto const  bSz = AddFront(bucket.bucketSize(), nC, nB);
+    InTensor    bGrid(bSz);
     bGrid.setZero();
     for (auto ii = 0; ii < bucket.size(); ii++) {
       auto const               si = bucket.indices[ii];
@@ -85,22 +121,22 @@ void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 
     {
       std::scoped_lock lock(writeMutex);
-      auto const       sz = AddFront(bucket.sliceSize(), nC, nB);
-      auto const       bSt = bucket.bucketStart();
-      auto const       gSt = bucket.gridStart();
-
-      for (Index i1 = 0; i1 < sz[InRank - 1]; i1++) {
-        for (Index i2 = 0; i2 < sz[InRank - 2]; i2++) {
-          for (Index i3 = 0; i3 < sz[InRank - 3]; i3++) {
+      auto const       gSt = AddFront(bucket.minCorner, 0, 0); // Make this the same dims as bSz / ishape
+      for (Index i1 = 0; i1 < bSz[InRank - 1]; i1++) {
+        Index const w1 = Wrap(i1 + gSt[InRank - 1], ishape[InRank - 1]);
+        for (Index i2 = 0; i2 < bSz[InRank - 2]; i2++) {
+          Index const w2 = Wrap(i2 + gSt[InRank - 2], ishape[InRank - 2]);
+          for (Index i3 = 0; i3 < bSz[InRank - 3]; i3++) {
+            Index const w3 = Wrap(i3 + gSt[InRank - 3], ishape[InRank - 3]);
             if constexpr (NDim == 1) {
-              x(i3, i2, i1 + gSt[0]) += bGrid(i3, i2, i1 + bSt[0]);
+              x(i3, i2, w1) += bGrid(i3, i2, i1);
             } else {
-              for (Index i4 = 0; i4 < sz[InRank - 4]; i4++) {
+              for (Index i4 = 0; i4 < bSz[InRank - 4]; i4++) {
                 if constexpr (NDim == 2) {
-                  x(i4, i3, i2 + gSt[0], i1 + gSt[1]) += bGrid(i4, i3, i2 + bSt[0], i1 + bSt[1]);
+                  x(i4, i3, w2, w1) += bGrid(i4, i3, i2, i1);
                 } else {
-                  for (Index i5 = 0; i5 < sz[InRank - 5]; i5++) {
-                    x(i5, i4, i3 + gSt[0], i2 + gSt[1], i1 + gSt[2]) += bGrid(i5, i4, i3 + bSt[0], i2 + bSt[1], i1 + bSt[2]);
+                  for (Index i5 = 0; i5 < bSz[InRank - 5]; i5++) {
+                    x(i5, i4, w3, w2, w1) += bGrid(i5, i4, i3, i2, i1);
                   }
                 }
               }
