@@ -27,7 +27,7 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   float cs2 = -1.f;
   float sn2 = 0.f;
 
-  Log::Print("LSMR λ {}", λ);
+  Log::Print("LSQR λ {}", λ);
   Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {

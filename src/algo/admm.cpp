@@ -78,7 +78,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       float const nFx = Fx.squaredNorm();
       float const nz = z[ir].squaredNorm();
       float const nu = reg_ops[ir]->adjoint(u[ir]).squaredNorm();
-      Log::Print("Reg {:02d} |Fx| {} |z| {:4.3E} |F'u| {:4.3E}", ir, std::sqrt(nFx), std::sqrt(nz), std::sqrt(nu));
+      Log::Print("Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, std::sqrt(nFx), std::sqrt(nz), std::sqrt(nu));
       normFx += nFx;
       normz += nz;
       normu += nu;
