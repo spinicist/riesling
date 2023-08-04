@@ -4,12 +4,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 include(BuildType)
 include(Version)
 
-# Deal with GCC 8 and std::filesystem
-add_link_options("$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>")
-
-# Thanks to Deniz Bahadir on the CMake Discourse
-link_libraries("$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>")
-
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
