@@ -33,7 +33,7 @@ struct NormalOp final : Ops::Op<Scalar_>
 
   void forward(CMap const &x, Map &y) const
   {
-    Vector temp(op->cols());
+    Vector temp(op->rows());
     Map    tm(temp.data(), temp.size());
     CMap   tcm(temp.data(), temp.size());
     op->forward(x, tm);

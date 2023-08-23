@@ -8,6 +8,9 @@ template <typename Scalar>
 auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vector
 {
   Index const rows = op->rows();
+  if (rows != op->cols()) {
+    Log::Fail("CG op had {} rows and {} cols, should be square", rows, op->cols());
+  }
   Map const   b(bdata, rows);
   Vector      q(rows), p(rows), r(rows), x(rows);
   // If we have an initial guess, use it
@@ -27,7 +30,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
   Log::Print("IT |r|       α         β         |x|");
   PushInterrupt();
   for (Index icg = 0; icg < iterLimit; icg++) {
-    q = op->forward(p);
+    op->forward(p, q);
     float const α = r_old / CheckedDot(p, q);
     x = x + p * α;
     if (debug) {
