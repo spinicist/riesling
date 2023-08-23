@@ -10,6 +10,7 @@ namespace rl {
  */
 auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
 {
+  Log::Print("LSMR λ {}", λ);
   Index const rows = op->rows();
   Index const cols = op->cols();
   CMap const  b(bdata, rows);
@@ -44,8 +45,8 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   float       minρ̅ = std::numeric_limits<float>::max();
   float const normb = β;
 
-  Log::Print("LSMR λ {}", λ);
   Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
+  Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.norm(), normb, std::fabs(ζ̅));
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
@@ -107,10 +108,8 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
     float const normAr = abs(ζ̅);
     float const normx = x.norm();
 
-    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii, normx, normr, normAr, normA, condA);
-
+    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
     if (debug) { debug(ii, x); }
-
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("Cond(A) is very large");
       break;

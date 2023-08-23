@@ -54,18 +54,20 @@ void BidiagInit(
   if (x0) {
     Eigen::Map<Eigen::VectorXcf const> xx0(x0, op->cols());
     x = xx0;
-    Mu = b - op->forward(x);
+    // Reuse u to save space
+    op->forward(x, u);
+    Mu = b - u;
   } else {
     x.setZero();
     Mu = b;
   }
   M->forward(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
-  Mu = Mu / β;
-  u = u / β;
+  Mu /= β;
+  u /= β;
   op->adjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
-  v = v / α;
+  v /= α;
 }
 
 void Bidiag(
@@ -77,14 +79,16 @@ void Bidiag(
   float                             &α,
   float                             &β)
 {
-  Mu = op->forward(v) - α * Mu;
+  // Re-use u to save space
+  op->forward(v, u);
+  Mu = u - α * Mu;
   M->forward(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
-  Mu = Mu / β;
-  u = u / β;
+  Mu /= β;
+  u /= β;
   v = op->adjoint(u) - (β * v);
   α = std::sqrt(CheckedDot(v, v));
-  v = v / α;
+  v /= α;
 }
 
 } // namespace rl

@@ -10,6 +10,7 @@ namespace rl {
  */
 auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
 {
+  Log::Print("LSQR λ {}", λ);
   Index const rows = op->rows();
   Index const cols = op->cols();
   CMap const  b(bdata, rows);
@@ -27,8 +28,8 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   float cs2 = -1.f;
   float sn2 = 0.f;
 
-  Log::Print("LSQR λ {}", λ);
   Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
+  Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.norm(), β, std::fabs(α * β));
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
@@ -71,10 +72,8 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
     float const normr = std::sqrt(res1 + res2);
     float const normAr = α * std::abs(τ);
 
-    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii, normx, normr, normAr, normA, condA);
-
+    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
     if (debug) { debug(ii, x); }
-
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("Cond(A) is very large");
       break;
