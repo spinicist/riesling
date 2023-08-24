@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -eux
 
 USAGE="Usage: $0 [options]
 
@@ -13,9 +13,11 @@ git submodule update --init --recursive
 
 FLAGS="base"
 PAR=""
-while getopts "f:hj:" opt; do
+PREFIX=""
+while getopts "f:hi:j:" opt; do
     case $opt in
         f) export FLAGS="$OPTARG";;
+        i) export PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG";;
         j) export VCPKG_MAX_CONCURRENCY=$OPTARG
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
@@ -36,5 +38,10 @@ cd build
 cmake -S ../ $GEN \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake" \
-  -DFLAGS_FILE="${FLAGS}"
+  -DFLAGS_FILE="${FLAGS}" \
+  $PREFIX
 cmake --build . $PAR
+
+if [ -n "$PREFIX" ]; then
+  cmake --install .
+fi
