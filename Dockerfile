@@ -2,28 +2,20 @@ FROM debian:latest
 
 #### Dependencies ####
 RUN \
-  apt-get update \
-  && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    pkg-config \
-    software-properties-common \
-    git man unzip wget curl cmake \
-    ninja-build zip zlib1g zlib1g-dev autoconf autoconf-archive \
+  apt update \
+  && apt install -y --no-install-recommends \
+    ca-certificates curl gcc-12 \
   && rm -rf /var/lib/apt/lists/*
 
 #### BUILD ####
 WORKDIR /root
 RUN \
-  git clone https://github.com/spinicist/riesling.git \
-  && cd riesling \
-  && export VCPKG_FORCE_SYSTEM_BINARIES=0 \
-  && ./bootstrap.sh -i $PWD/../ -f native \
-  && cd .. \
-  && rm -rf riesling .cache
+  curl -L https://github.com/spinicist/riesling/releases/download/v0.12/riesling-linux.tar.gz > riesling-linux.tar.gz \
+  && tar -xzf riesling-linux.tar.gz \
+  && rm riesling-linux.tar.gz
 
 RUN mkdir /root/app
 WORKDIR /root/app
 
 # Define default command.
-ENTRYPOINT ["/root/bin/riesling"]
+ENTRYPOINT ["/root/riesling"]
