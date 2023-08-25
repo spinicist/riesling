@@ -24,7 +24,7 @@ int main_admm(args::Subparser &parser)
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-  args::ValueFlag<Index>       inner_its(parser, "ITS", "Max inner iterations (2)", {"max-its"}, 2);
+  args::ValueFlag<Index>       inner_its(parser, "ITS", "Max inner iterations (1)", {"max-its"}, 1);
   args::ValueFlag<float>       atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);

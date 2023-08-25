@@ -1,5 +1,11 @@
 ## Changelog
 
+# v0.12
+
+- A much improved ADMM implementation, including the residual balancing scheme from Wohlberg 2017. This shows much more robust convergence behaviour. The default number of inner iterations is now only 1, giving improved speed.
+- Implemented a version of PDHG that supports multiple regularizers. However, I prefer the improved ADMM implementation.
+- Implemented the NDFT (Non-uniform Discrete Fourier Transform). This is incredibly slow compared to the NUFFT, but revealed some small innacuracies in the NUFFT implementation. These have now been fixed.
+
 # v0.11
 
 - Fixed many bugs that crept into v0.10.
