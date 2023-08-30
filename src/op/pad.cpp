@@ -50,6 +50,10 @@ void PadOp<Scalar_, Rank, ImgRank>::adjoint(OutCMap const &y, InMap &x) const
   this->finishAdjoint(x, time);
 }
 
+template struct PadOp<float, 1, 1>;
+template struct PadOp<float, 2, 2>;
+template struct PadOp<float, 3, 3>;
+
 template struct PadOp<Cx, 1, 1>;
 template struct PadOp<Cx, 3, 1>;
 template struct PadOp<Cx, 2, 2>;

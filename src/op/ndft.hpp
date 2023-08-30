@@ -17,9 +17,12 @@ struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
          std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
   OP_DECLARE()
 
+  void addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp);
+
 private:
   Re3       traj;
   Re2       xc;
+  Re1       Δf, t;
   Index     N, nSamp, nTrace;
   float     scale;
   Basis<Cx> basis;

@@ -1,6 +1,7 @@
 #include "ndft.hpp"
 
 #include "op/loop.hpp"
+#include "op/pad.hpp"
 #include "op/rank.hpp"
 
 using namespace std::complex_literals;
@@ -13,7 +14,6 @@ NDFTOp<NDim>::NDFTOp(
   : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
   , sdc{s ? s : std::make_shared<TensorIdentity<Cx, 3>>(oshape)}
-
 {
   static_assert(NDim < 4);
   if (tr.dimension(0) != NDim) { Log::Fail("Requested {}D NDFT but trajectory is {}D", NDim, tr.dimension(0)); }
@@ -63,6 +63,22 @@ NDFTOp<NDim>::NDFTOp(
 }
 
 template <int NDim>
+void NDFTOp<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp)
+{
+  PadOp<float, NDim, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
+  Δf.resize(N);
+  assert(N == pad.rows());
+  typename PadOp<float, NDim, NDim>::OutMap fm(Δf.data(), pad.oshape);
+  pad.forward(f0map, fm);
+  t.resize(nSamp);
+  t[0] = t0;
+  for (Index ii = 1; ii < nSamp; ii++) {
+    t[ii] = t[ii - 1] + t0;
+  }
+  Log::Print("Off-resonance correction. f0 range is {} to {} Hz", Minimum(Δf), Maximum(Δf));
+}
+
+template <int NDim>
 void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const  time = this->startForward(x);
@@ -73,8 +89,9 @@ void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
   auto task = [&](Index const itr) {
     for (Index isamp = 0; isamp < nSamp; isamp++) {
       Cx1 const b = basis.chip<2>(itr % basis.dimension(2)).template chip<1>(isamp % basis.dimension(1));
-      Re1 const ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+      Re1       ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
         xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
       Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
       Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<2, 0>>())
                          .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
@@ -105,7 +122,8 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
     Cx2       vox(nC, nV);
     vox.setZero();
     for (Index itr = 0; itr < nTrace; itr++) {
-      Re1 const ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      Re1 ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      if (Δf.size()) { ph -= Δf(ii) * t * 2.f * (float)M_PI; }
       Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
       for (Index iv = 0; iv < nV; iv++) {
         Cx1 const b = basis.template chip<2>(itr % basis.dimension(2))
@@ -125,8 +143,11 @@ template struct NDFTOp<1>;
 template struct NDFTOp<2>;
 template struct NDFTOp<3>;
 
-std::shared_ptr<TensorOperator<Cx, 5, 4>>
-make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Basis<Cx> const &basis, std::shared_ptr<TensorOperator<Cx, 3>> sdc)
+std::shared_ptr<TensorOperator<Cx, 5, 4>> make_ndft(Re3 const                             &traj,
+                                                    Index const                            nC,
+                                                    Sz3 const                              matrix,
+                                                    Basis<Cx> const                       &basis,
+                                                    std::shared_ptr<TensorOperator<Cx, 3>> sdc)
 {
   std::shared_ptr<TensorOperator<Cx, 5, 4>> ndft;
   if (traj.dimension(0) == 2) {
@@ -135,7 +156,8 @@ make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Basis<Cx> const &ba
     ndft = std::make_shared<LoopOp<NDFTOp<2>>>(ndft2, matrix[2]);
   } else {
     Log::Print<Log::Level::Debug>("Creating full 3D NDFT");
-    ndft = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(std::make_shared<NDFTOp<3>>(traj, nC, matrix, basis, sdc));
+    auto ndft3 = std::make_shared<NDFTOp<3>>(traj, nC, matrix, basis, sdc);
+    ndft = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft3);
   }
   return ndft;
 }
