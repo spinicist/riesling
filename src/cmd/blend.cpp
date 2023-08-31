@@ -5,22 +5,9 @@
 #include "parse_args.hpp"
 #include "threads.hpp"
 
-using namespace rl;
+#include "tensorOps.hpp"
 
-decltype(auto) Blend(Cx4 const &image, Re1 const &b)
-{
-  Index const                                   x = image.dimension(1);
-  Index const                                   y = image.dimension(2);
-  Index const                                   z = image.dimension(3);
-  Eigen::IndexList<int, FixOne, FixOne, FixOne> rsh;
-  rsh.set(0, b.dimension(0));
-  Eigen::IndexList<FixOne, int, int, int> brd;
-  brd.set(1, x);
-  brd.set(2, y);
-  brd.set(3, z);
-  Eigen::IndexList<FixZero> sum;
-  return (image * b.reshape(rsh).broadcast(brd).cast<Cx>()).sum(sum);
-}
+using namespace rl;
 
 int main_blend(args::Subparser &parser)
 {
@@ -29,10 +16,9 @@ int main_blend(args::Subparser &parser)
   args::Flag                    mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
   args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string>  oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
-  args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(
-    parser, "TP", "Timepoints within basis for combination", {"tp", 't'}, {0});
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Timepoints within basis for combination",
+                                                              {"tp", 't'}, {0});
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> keep(parser, "K", "Keep these basis vectors", {"keep", 'k'});
-  args::ValueFlag<Index>                                   cycle(parser, "C", "Cycle length", {"cycle"}, -1);
 
   ParseCommand(parser);
 
@@ -59,19 +45,17 @@ int main_blend(args::Subparser &parser)
 
   Cx5         out(AddFront(LastN<4>(dims), (Index)tps.size()));
   float const scale = std::sqrt(basis.dimension(1));
+  Cx2         selected(basis.dimension(0), tps.size());
   for (size_t ii = 0; ii < tps.size(); ii++) {
     Index itp = tps[ii];
     if ((itp < 0) || (itp >= basis.dimension(1))) {
       Log::Fail("Requested timepoint {} exceeds basis length {}", tps[ii], basis.dimension(1));
     }
-    Log::Print("Blending timepoint {} cycle {}", itp, cycle.Get());
-    while (itp >= tps[ii] && itp < basis.dimension(1)) {
-      Re1 const b = basis.chip<1>(itp) * scale;
-      for (Index iv = 0; iv < out.dimension(4); iv++) {
-        out.chip<4>(iv).chip<0>(ii).device(Threads::GlobalDevice()) += Blend(images.chip<4>(iv), b);
-      }
-      itp += cycle.Get();
-    }
+    selected.chip<1>(ii) = (basis.chip<1>(itp) * scale).cast<Cx>();
+  }
+  for (Index iv = 0; iv < out.dimension(4); iv++) {
+    out.chip<4>(iv).device(Threads::GlobalDevice()) =
+      selected.contract(images.chip<4>(iv), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   }
 
   auto const  fname = OutName(iname.Get(), oname.Get(), "blend", "h5");

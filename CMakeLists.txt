@@ -5,6 +5,7 @@ include(Version)
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
+find_package(notcurses REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
@@ -12,6 +13,14 @@ find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
 find_package(range-v3 CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
+
+set(Notcurses_LIBRARIES
+    notcurses-core
+    notcurses++
+    notcurses
+)
+set(Notcurses_LIBRARY_DIRS "/opt/homebrew/lib")
+set(Notcurses_INCLUDE_DIRS "/opt/homebrew/include")
 
 # Ensure this is always defined across all .cpp files
 add_definitions(-DEIGEN_USE_THREADS)
@@ -49,6 +58,7 @@ add_library(vineyard
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp
+    src/img/rgb.cpp
     src/io/hd5-core.cpp
     src/io/nifti.cpp
     src/io/reader.cpp
@@ -144,12 +154,20 @@ add_executable(riesling
     src/cmd/slice.cpp
     src/cmd/traj.cpp
     src/cmd/version.cpp
+    src/cmd/view.cpp
     src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp
     src/main.cpp
 )
-target_link_libraries(riesling
+target_include_directories(riesling PRIVATE
+     ${Notcurses_INCLUDE_DIRS}
+)
+target_link_directories(riesling PRIVATE
+    ${Notcurses_LIBRARY_DIRS}
+)
+target_link_libraries(riesling PRIVATE
     vineyard
+    ${Notcurses_LIBRARIES}
 )
 set_target_properties(riesling PROPERTIES
     CXX_STANDARD 20

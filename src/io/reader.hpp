@@ -23,15 +23,14 @@ struct Reader
   auto list() const -> std::vector<std::string>;       // List all datasets
   auto exists(std::string const &label) const -> bool; // Does a data-set exist?
   auto rank(std::string const &label) const -> Index;  // Determine rank of a dataset
-  template <int Rank>
-  auto dimensions(std::string const &label) const -> Eigen::DSizes<Index, Rank>; // Get Tensor dimensions
+  auto dimensions(std::string const &label) const -> std::vector<Index>; // Get Tensor dimensions
   auto readInfo() const -> Info;                                                 // Read the info struct from a file
   auto readMeta() const -> std::map<std::string, float>;                         // Read meta-data group
 
   template <typename T>
   auto readTensor(std::string const &label) const -> T;
   template <typename T>
-  auto readSlab(std::string const &label, Index const ind) const -> T;
+  auto readSlab(std::string const &label, std::vector<Index> const &sliceDims, std::vector<Index> const &sliceInds) const -> T;
   template <typename Derived>
   auto readMatrix(std::string const &label) const -> Derived;
 

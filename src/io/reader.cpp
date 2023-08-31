@@ -17,22 +17,6 @@ Index getRank(Handle const &parent, std::string const &name)
   return ndims;
 }
 
-template <int ND>
-Eigen::DSizes<Index, ND> get_dims(Handle const &parent, std::string const &name)
-{
-  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor {}", name); }
-
-  hid_t     ds = H5Dget_space(dset);
-  int const ndims = H5Sget_simple_extent_ndims(ds);
-  if (ndims != ND) { Log::Fail("Tensor {}: Requested rank {}, on-disk rank {}", name, ND, ndims); }
-  std::array<hsize_t, ND> hdims;
-  H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
-  Eigen::DSizes<Index, ND> dims;
-  std::reverse_copy(hdims.begin(), hdims.end(), dims.begin());
-  return dims;
-}
-
 template <typename Scalar, int ND>
 void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> &tensor)
 {
@@ -59,56 +43,6 @@ void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Sc
     Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
   } else {
     Log::Print<Log::Level::High>("Read dataset: {}", name);
-  }
-}
-
-template <typename Scalar, int CD>
-void load_tensor_slab(Handle const &parent, std::string const &name, Index const index, Eigen::Tensor<Scalar, CD> &tensor)
-{
-  int const ND = CD + 1;
-  hid_t     dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor '{}'", name); }
-  hid_t      ds = H5Dget_space(dset);
-  auto const rank = H5Sget_simple_extent_ndims(ds);
-  if (rank != ND) { Log::Fail("Tensor {}: has rank {}, expected {}", name, rank, ND); }
-
-  std::array<hsize_t, ND> dims;
-  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
-  std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
-  for (int ii = 0; ii < ND - 1; ii++) {   // Last dimension is SUPPOSED to be different
-    if ((Index)dims[ii] != tensor.dimension(ii)) {
-      Log::Fail(
-        "Tensor {}: expected dimensions were {}, but were {} on disk",
-        name,
-        fmt::join(tensor.dimensions(), ","),
-        fmt::join(dims, ","));
-    }
-  }
-  std::reverse(dims.begin(), dims.end()); // Reverse back
-
-  std::array<hsize_t, ND> h5_start, h5_stride, h5_count, h5_block;
-  h5_start[0] = index;
-  std::fill_n(h5_start.begin() + 1, CD, 0);
-  std::fill_n(h5_stride.begin(), ND, 1);
-  std::fill_n(h5_count.begin(), ND, 1);
-  h5_block[0] = 1;
-  std::copy_n(dims.begin() + 1, CD, h5_block.begin() + 1);
-  auto status = H5Sselect_hyperslab(ds, H5S_SELECT_SET, h5_start.data(), h5_stride.data(), h5_count.data(), h5_block.data());
-
-  std::array<hsize_t, ND> mem_dims, mem_start, mem_stride, mem_count, mem_block;
-  std::copy_n(dims.begin() + 1, CD, mem_dims.begin());
-  std::fill_n(mem_start.begin(), CD, 0);
-  std::fill_n(mem_stride.begin(), CD, 1);
-  std::fill_n(mem_count.begin(), CD, 1);
-  std::copy_n(dims.begin() + 1, CD, mem_block.begin());
-  auto const mem_ds = H5Screate_simple(CD, mem_dims.data(), NULL);
-  status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, mem_start.data(), mem_stride.data(), mem_count.data(), mem_block.data());
-
-  status = H5Dread(dset, type<Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
-  if (status < 0) {
-    Log::Fail("Tensor {}: Error reading slab {}. HD5 Message: {}", name, index, GetError());
-  } else {
-    Log::Print<Log::Level::High>("Read slab {} from tensor {}", index, name);
   }
 }
 
@@ -177,18 +111,22 @@ auto Reader::list() const -> std::vector<std::string> { return List(handle_); }
 
 auto Reader::rank(std::string const &label) const -> Index { return getRank(handle_, label); }
 
-template <int Rank>
-auto Reader::dimensions(std::string const &label) const -> Eigen::DSizes<Index, Rank>
+auto Reader::dimensions(std::string const &label) const -> std::vector<Index>
 {
-  return get_dims<Rank>(handle_, label);
-}
+  hid_t dset = H5Dopen(handle_, label.c_str(), H5P_DEFAULT);
+  if (dset < 0) { Log::Fail("Could not open tensor {}", label); }
 
-template auto Reader::dimensions<1>(std::string const &) const -> Eigen::DSizes<Index, 1>;
-template auto Reader::dimensions<2>(std::string const &) const -> Eigen::DSizes<Index, 2>;
-template auto Reader::dimensions<3>(std::string const &) const -> Eigen::DSizes<Index, 3>;
-template auto Reader::dimensions<4>(std::string const &) const -> Eigen::DSizes<Index, 4>;
-template auto Reader::dimensions<5>(std::string const &) const -> Eigen::DSizes<Index, 5>;
-template auto Reader::dimensions<6>(std::string const &) const -> Eigen::DSizes<Index, 6>;
+  hid_t     ds = H5Dget_space(dset);
+  int const ND = H5Sget_simple_extent_ndims(ds);
+  std::vector<hsize_t> hdims(ND);
+  H5Sget_simple_extent_dims(ds, hdims.data(), NULL);
+  std::vector<Index> dims(ND);
+  for (int ii = 0; ii < ND; ii++) {
+    dims[ii] = hdims[ii];
+  }
+  std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
+  return dims;
+}
 
 template <typename T>
 auto Reader::readTensor(std::string const &label) const -> T
@@ -206,16 +144,83 @@ template auto Reader::readTensor<Cx5>(std::string const &) const -> Cx5;
 template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 
 template <typename T>
-auto Reader::readSlab(std::string const &label, Index const ind) const -> T
+auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceDims, std::vector<Index> const &sliceInds) const -> T
 {
-  constexpr Index ND = T::NumDimensions;
-  T               result(FirstN<ND>(dimensions<ND + 1>(label)));
-  load_tensor_slab(handle_, label, ind, result);
-  return result;
+  if (sliceInds.size() != sliceDims.size()) {
+    Log::Fail("Slice indices had size {}, slice dimensions had size {}", sliceInds.size(), sliceDims.size());
+  }
+
+  constexpr Index SliceRank = T::NumDimensions;
+
+  hid_t     dset = H5Dopen(handle_, label.c_str(), H5P_DEFAULT);
+  if (dset < 0) { Log::Fail("Could not open tensor '{}'", label); }
+  hid_t      ds = H5Dget_space(dset);
+  auto const DiskRank = H5Sget_simple_extent_ndims(ds);
+
+  if (SliceRank + sliceDims.size() != DiskRank) {
+    Log::Fail("Requested {}D slice from {}D tensor with {} slicing dimensions", SliceRank, DiskRank, sliceDims.size());
+  }
+
+  std::vector<hsize_t> diskShape(DiskRank);
+  H5Sget_simple_extent_dims(ds, diskShape.data(), NULL);
+  std::reverse(diskShape.begin(), diskShape.end()); // HD5=row-major, Eigen=col-major
+  for (int ii = 0; ii < sliceDims.size(); ii++) {
+    if (diskShape[sliceDims[ii]] <= sliceInds[ii]) {
+      Log::Fail("Tensor dimension {} has size {}, requested slice at index {}", sliceDims[ii], diskShape[sliceDims[ii]], sliceInds[ii]);
+    }
+  }
+  std::vector<hsize_t> diskStart(DiskRank), diskStride(DiskRank), diskCount(DiskRank), diskBlock(DiskRank);
+  std::fill_n(diskStart.begin(), DiskRank, 0);
+  std::fill_n(diskStride.begin(), DiskRank, 1);
+  std::fill_n(diskCount.begin(), DiskRank, 1);
+  std::copy_n(diskShape.begin(), DiskRank, diskBlock.begin());
+  for (int ii = 0; ii < sliceDims.size(); ii++) {
+    diskStart[sliceDims[ii]] = sliceInds[ii];
+    diskBlock[sliceDims[ii]] = 1;
+  }
+  // Figure out the non-slice dimensions
+  std::vector<hsize_t> dims(SliceRank);
+  int id = 0;
+  for (int ii = 0; ii < DiskRank; ii++) {
+    if (std::find(sliceDims.begin(), sliceDims.end(), ii) == std::end(sliceDims)) {
+      dims[id++] = ii;
+    }
+  }
+
+  std::vector<hsize_t> memShape(SliceRank), memStart(SliceRank), memStride(SliceRank), memCount(SliceRank);
+  for (int ii = 0; ii < SliceRank; ii++) {
+    memShape[ii] = diskShape[dims[ii]];
+  }
+  std::fill_n(memStart.begin(), SliceRank, 0);
+  std::fill_n(memStride.begin(), SliceRank, 1);
+  std::fill_n(memCount.begin(), SliceRank, 1);
+
+   // Reverse back
+  std::reverse(diskShape.begin(), diskShape.end());
+  std::reverse(diskStart.begin(), diskStart.end());
+  std::reverse(diskStride.begin(), diskStride.end());
+  std::reverse(diskCount.begin(), diskCount.end());
+  std::reverse(diskBlock.begin(), diskBlock.end());
+  std::reverse(memShape.begin(), memShape.end());
+
+  auto const mem_ds = H5Screate_simple(SliceRank, memShape.data(), NULL);
+  auto status = H5Sselect_hyperslab(ds, H5S_SELECT_SET, diskStart.data(), diskStride.data(), diskCount.data(), diskBlock.data());
+  status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, memStart.data(), memStride.data(), memCount.data(), memShape.data());
+
+  T tensor;
+  tensor.resize(memShape);
+  status = H5Dread(dset, type<typename T::Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
+  if (status < 0) {
+    Log::Fail("Tensor {}: Error reading slab. HD5 Message: {}", label, GetError());
+  } else {
+    Log::Print<Log::Level::High>("Read slab from tensor {}", label);
+  }
+  return tensor;
 }
 
-template auto Reader::readSlab<Cx3>(std::string const &, Index const) const -> Cx3;
-template auto Reader::readSlab<Cx4>(std::string const &, Index const) const -> Cx4;
+template auto Reader::readSlab<Cx2>(std::string const &, std::vector<Index> const &, std::vector<Index> const &) const -> Cx2;
+template auto Reader::readSlab<Cx3>(std::string const &, std::vector<Index> const &, std::vector<Index> const &) const -> Cx3;
+template auto Reader::readSlab<Cx4>(std::string const &, std::vector<Index> const &, std::vector<Index> const &) const -> Cx4;
 
 template <typename Derived>
 auto Reader::readMatrix(std::string const &label) const -> Derived

@@ -40,18 +40,7 @@ int main_h5(args::Subparser &parser)
     auto const datasets = reader.list();
     if (datasets.empty()) { Log::Fail("No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
-      if (ds != "info") {
-        fmt::print("{} ", ds);
-        switch (reader.rank(ds)) {
-        case 1: fmt::print("{}\n", reader.dimensions<1>(ds)); break;
-        case 2: fmt::print("{}\n", reader.dimensions<2>(ds)); break;
-        case 3: fmt::print("{}\n", reader.dimensions<3>(ds)); break;
-        case 4: fmt::print("{}\n", reader.dimensions<4>(ds)); break;
-        case 5: fmt::print("{}\n", reader.dimensions<5>(ds)); break;
-        case 6: fmt::print("{}\n", reader.dimensions<6>(ds)); break;
-        default: fmt::print("rank is higher than 6\n");
-        }
-      }
+      if (ds != "info") { fmt::print("{}:{}\n", ds, fmt::join(reader.dimensions(ds), ",")); }
     }
   }
   return EXIT_SUCCESS;

@@ -21,7 +21,7 @@ int main_rss(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  Index const nC = reader.dimensions<5>(HD5::Keys::Noncartesian)[0];
+  Index const nC = reader.dimensions(HD5::Keys::Noncartesian)[0];
   auto const  sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   auto        nufft =
     make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis, sdc);

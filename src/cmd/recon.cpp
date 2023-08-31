@@ -32,7 +32,7 @@ int main_recon(args::Subparser &parser)
   }
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
-  Index volumes = fwd ? reader.dimensions<5>(HD5::Keys::Image)[4] : reader.dimensions<5>(HD5::Keys::Noncartesian)[4];
+  Index volumes = fwd ? reader.dimensions(HD5::Keys::Image).at(4) : reader.dimensions(HD5::Keys::Noncartesian).at(4);
 
   if (fwd) {
     HD5::Reader senseReader(senseOpts.type.Get());
