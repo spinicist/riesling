@@ -26,7 +26,8 @@ int main_h5(args::Subparser &parser)
       i.tr,
       i.origin.transpose(),
       i.direction);
-  } else if (dsets) {
+  } 
+  if (dsets) {
     auto const datasets = reader.list();
     if (datasets.empty()) { Log::Fail("No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
@@ -41,7 +42,8 @@ int main_h5(args::Subparser &parser)
       default: fmt::print("rank is higher than 6\n");
       }
     }
-  } else if (keys) {
+  } 
+  if (keys) {
     auto const &meta = reader.readMeta();
     for (auto const &k : keys.Get()) {
       try {
