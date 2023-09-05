@@ -20,10 +20,10 @@ The terminology in RIESLING is:
 RIESLING supports simultaneous reconstruction of multiple images from the same k-space data. The main useage of this is subspace reconstruction, but it also supports dynamic reconstructions with regularization of the time dimension.
 
 In contrast to BART, RIESLING uses named datasets within the ``.h5`` file. The names correspond to the steps in the reconstruction pipeline. The key ones are:
-1. ``noncartesian`` - The noncartesian input k-space data. 5D - (channels, samples, traces, slabs, volumes)
-2. ``cartesian`` - K-space after the gridding operation to the Cartesian grid. 5D - (channels, images, X, Y, Z)
-3. ``channels`` - Separate channel images after Fourier Transfrom to image space 5D - (channels, images, X, Y, Z)
-4. ``image`` - The reconstructed images. 5D - (images, X, Y, Z, volumes)
+1. ``noncartesian`` - The noncartesian input k-space data. 5D - (channel, sample, trace, slab, volumes)
+2. ``cartesian`` - K-space after the gridding operation to the Cartesian grid. 6D - (channel, image, X, Y, Z, volume)
+3. ``channels`` - Separate channel images after Fourier Transfrom to image space 6D - (channel, image, X, Y, Z, volume)
+4. ``image`` - The reconstructed images. 5D - (image, X, Y, Z, volume)
 In addition, the header ``info`` and ``trajectory`` are required at all steps. Below are details of each of these.
 
 Header
