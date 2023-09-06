@@ -34,7 +34,7 @@ int main_ndft(args::Subparser &parser)
     }
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto              channels = reader.readTensor<Cx6>(name);
-    auto              ndft = make_ndft(traj.points(), channels.dimension(0), traj.matrix(coreOpts.fov.Get()), basis);
+    auto              ndft = make_ndft(traj.points(), channels.dimension(0), traj.matrixForFOV(coreOpts.fov.Get()), basis);
     Cx5               noncart(AddBack(ndft->oshape, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = ndft->forward(CChipMap(channels, ii));
@@ -50,7 +50,7 @@ int main_ndft(args::Subparser &parser)
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     auto const channels = noncart.dimension(0);
     auto const sdc = SDC::Choose(sdcOpts, channels, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
-    auto       ndft = make_ndft(traj.points(), channels, traj.matrix(coreOpts.fov.Get()), basis, sdc);
+    auto       ndft = make_ndft(traj.points(), channels, traj.matrixForFOV(coreOpts.fov.Get()), basis, sdc);
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
       output.chip<5>(ii).device(Threads::GlobalDevice()) = ndft->adjoint(CChipMap(noncart, ii));

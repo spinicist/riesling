@@ -133,7 +133,8 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
   nomDims = FirstN<Rank>(info.matrix);
   cartDims = fft_size<Rank>(FirstN<Rank>(info.matrix), nomOS);
   osamp = cartDims[0] / (float)info.matrix[0];
-  Log::Print("{}D Mapping. Trajectory samples {} Grid {}", traj.nDims(), traj.nSamples(), cartDims);
+  Log::Print("{}D Mapping, {} samples {} traces. Matrix {} Grid {}", traj.nDims(), traj.nSamples(), traj.nTraces(), nomDims,
+             cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
 

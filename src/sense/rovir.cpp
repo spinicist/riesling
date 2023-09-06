@@ -41,7 +41,7 @@ auto ROVIR(
   auto        sdc = std::make_shared<TensorScale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
   Re2         basis(1, 1);
   basis.setConstant(1.f);
-  auto       nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrix(opts.fov.Get()), basis, sdc);
+  auto       nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrixForFOV(opts.fov.Get()), basis, sdc);
   auto const sz = LastN<3>(nufft->ishape);
   Cx4 const  channelImages = nufft->adjoint(data).chip<1>(0);
   Re3 const  rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection

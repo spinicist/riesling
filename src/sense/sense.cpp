@@ -20,7 +20,7 @@ Opts::Opts(args::Subparser &parser)
   , frame(parser, "F", "SENSE calibration frame (first)", {"sense-frame"}, 0)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, 12.f)
   , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
-  , fov(parser, "F", "SENSE FoV (default 256mm)", {"sense-fov"}, 256)
+  , fov(parser, "F", "SENSE FoV (default 256,256,256)", {"sense-fov"}, Eigen::Array3f{256.f,256.f,256.f})
   , kRad(parser, "K", "ESPIRIT kernel size (4)", {"espirit-k"}, 3)
   , calRad(parser, "C", "ESPIRIT calibration region (8)", {"espirit-cal"}, 6)
   , gap(parser, "G", "ESPIRIT gap (0)", {"espirit-gap"}, 0)
@@ -39,7 +39,7 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
   }
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
-  auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrix(opts.fov.Get()));
+  auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrixForFOV(opts.fov.Get()));
   auto const M = make_kspace_pre("kspace", nC, traj, IdBasis());
   LSMR const lsmr{nufft, M, 4};
 
@@ -67,7 +67,7 @@ auto UniformNoise(float const λ, Sz3 const shape, Cx4 &channels) -> Cx4
 
 Cx4 Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &noncart)
 {
-  Sz3 const shape = traj.matrix(opts.fov.Get());
+  Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
     Cx4 channels = LoresChannels(opts, core, traj, noncart);

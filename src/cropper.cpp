@@ -2,22 +2,18 @@
 
 namespace rl {
 
-Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelSz, float const extent)
+Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelSz, Eigen::Array3f const extent)
 {
-  if (extent < 0.f) {
-    std::transform(
-      matrix.begin(), matrix.end(), fullSz.begin(), sz_.begin(), [](Index const a, Index const b) { return std::min(a, b); });
-    Log::Print<Log::Level::High>("Cropper start {} size {}", st_, sz_);
-  } else {
-    Eigen::Array3l full;
-    std::copy_n(&fullSz[0], 3, full.begin());
-    // Ensure even, no bigger than the grid
-    Eigen::Array3l crop = (((extent / voxelSz) / 2).floor() * 2).cast<Index>().min(full);
-    std::copy_n(crop.begin(), 3, sz_.begin());
-    Log::Print<Log::Level::High>(
-      "Cropper start {} size {} full {} extent {} voxel-size {}", st_, sz_, fullSz, extent, voxelSz.transpose());
+  for (Index ii = 0; ii < 3; ii++) {
+    if (extent[ii] > 0.f) {
+      sz_[ii] = std::min(((Index)((extent[ii] / voxelSz[ii]) / 2.f) * 2), fullSz[ii]);
+    } else {
+      sz_[ii] = std::min(matrix[ii], fullSz[ii]);
+    }
   }
   calcStart(fullSz);
+  Log::Print<Log::Level::High>("Cropper start {} size {} full {} extent {} voxel-size {}", st_, sz_, fullSz, extent.transpose(),
+                               voxelSz.transpose());
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)

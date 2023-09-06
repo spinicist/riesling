@@ -13,7 +13,8 @@ struct Opts
   Opts(args::Subparser &parser);
   args::ValueFlag<std::string> type;
   args::ValueFlag<Index>       volume, frame;
-  args::ValueFlag<float>       res, λ, fov;
+  args::ValueFlag<float>       res, λ;
+  args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
   args::ValueFlag<Index>       kRad, calRad, gap;
   args::ValueFlag<float>       threshold;
 };

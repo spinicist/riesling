@@ -16,6 +16,16 @@ std::unordered_map<int, Log::Level> levelMap{
   {0, Log::Level::None}, {1, Log::Level::Low}, {2, Log::Level::High}, {3, Log::Level::Debug}};
 }
 
+void Array3fReader::operator()(std::string const &name, std::string const &value, Eigen::Array3f &v)
+{
+  float x, y, z;
+  auto  result = scn::scan(value, "{},{},{}", x, y, z);
+  if (!result) { Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error()); }
+  v.x() = x;
+  v.y() = y;
+  v.z() = z;
+}
+
 void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
   float x, y, z;
@@ -69,7 +79,7 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
   , scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu")
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
-  , fov(parser, "FOV", "Final FoV in mm (default header value)", {"fov"}, -1)
+  , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
   , splitSize(parser, "S", "Bucket split size (16384)", {"bucket-split"}, 16384)
   , ndft(parser, "D", "Use NDFT instead of NUFFT", {"ndft"})

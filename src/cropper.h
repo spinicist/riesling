@@ -23,7 +23,7 @@ struct Cropper
 {
   Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz);
   Cropper(Sz3 const &fullSz, Sz3 const &cropSz);
-  Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelSz, float const extent);
+  Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelSz, Eigen::Array3f const extent);
   Sz3 size() const;
   Sz3 start() const;
   Sz4 dims(Index const nChan) const;
