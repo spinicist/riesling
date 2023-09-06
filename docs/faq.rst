@@ -7,6 +7,7 @@ Understandly, users have questions. Here are some answers.
 #. `When do I need Sample Density Compensation?`_
 #. `Do I need to supply sensitivity maps?`_
 #. `What if I have Cartesian data?`_
+#. `Help! My data is anisotropic!`_
 #. `Which regularizer should I pick?`_
 
 What is the trajectory scaling?
@@ -26,12 +27,20 @@ For most data you do not. ``riesling`` will generate the maps by heavily filteri
 
 If your data contains large holes at the center of k-space (e.g. ZTE data) then you will likely want to obtain sensitivity maps from another dataset with ``sense-calib``.
 
+Help! My data is anisotropic!
+-----------------------------
+
+Various places in the ``riesling`` code used to make assumptions that both the matrix- and voxel-sizes were isotropic. These assumptions have mostly been removed and anisotropic data can be reconstructed quite happily.
+
+A potential difficulty is that by default ``riesling`` will work with a 256 mm isotropic field of view during iterations, before cropping to the nominal field of view at the end. If one dimension of the nominal field of view is too small, ``riesling`` will not be able to create sensitivity maps large enough. The simplest way to fix this is to specify a suitable size with the ``--sense-fov=x,y,z`` option, where the units ``x,y,z`` match the units of the voxel size in the header (usually mm). An alternative is to increase the oversampling beyond 2, but you should check your data actually supports higher oversampling first.
+
+
 What if I have Cartesian data?
 ------------------------------
 
 The default gridding options in ``riesling`` were picked for non-cartesian data and likely will not work with a cartesian dataset. In particular, a twice over-sampled grid is used and the FOV during iterations (determined by `--sense-fov``) is expanded to 256 mm on the basis that most non-cartesian acquisitions oversample the center of k-space and so in practice acquire signal from outside the nominal FOV. These settings will cause artefacts during an iterative recon with cartesian data.
 
-Adding ``--sense-fov=-1`` will instead crop the sensitivity maps tightly the FOV. I then recommend addding either ``--osamp=1.3`` or ``--osamp=1 --kernel=NN``. The latter will effectively switch off the NUFFT functionality and run a plain FFT instead.
+Adding ``--sense-fov=0,0,0`` will instead crop the sensitivity maps tightly the FOV. I then recommend addding either ``--osamp=1.3`` or ``--osamp=1 --kernel=NN``. The latter will effectively switch off the NUFFT functionality and run a plain FFT instead.
 
 Which regularizer should I pick with ADMM?
 ------------------------------------------

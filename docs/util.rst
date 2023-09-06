@@ -197,7 +197,7 @@ This command is an implmentation of `Yeh, E. N. et al. Inherently self-calibrati
 
 * ``--sense-vol=N``
 
-    Use the specified volume for SENSE map estimation (default last).
+    Use the specified volume for SENSE map estimation (default first).
 
 * ``--sense-res=R``
 
