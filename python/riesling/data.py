@@ -54,8 +54,11 @@ def write(filename, data, data_type='noncartesian'):
         )
 
         # write additional information
-        if data_type == 'noncartesian':
+        if 'trajectory' in data.attrs:
             out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression="gzip")
+
+        # define data dimensions
+        if data_type == 'noncartesian':
             data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
         elif data_type == 'cartesian' or data_type == 'channels':
             data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
