@@ -58,7 +58,7 @@ def write(filename, data, data_type='noncartesian'):
             out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression="gzip")
             data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
         elif data_type == 'cartesian' or data_type == 'channels':
-            data_dims = ['channel', 'image', 'x', 'y', 'z']
+            data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
         elif data_type == 'sense':
             data_dims = ['channel', 'x', 'y', 'z']
         elif data_type == 'image':
@@ -98,7 +98,7 @@ def read(filename):
             if key == 'noncartesian':
                 dims = ['channel', 'sample', 'trace', 'slab', 'volume']
             elif key == 'cartesian' or key == 'channels':
-                dims = ['channel', 'image', 'x', 'y', 'z']
+                dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
             elif key == 'sense':
                 dims = ['channel', 'x', 'y', 'z']
             elif key == 'image':
@@ -113,6 +113,7 @@ def read(filename):
         # build xarray output
         if (data.ndim) != len(dims):
             print(f'Number of dimensions in data does not match expected number of dimensions')
+            print(f'Data has shape {data.shape} and detected dimensions are {dims}')
             return None
         data = xr.DataArray(data, dims = dims)
         data.attrs.update(meta)
