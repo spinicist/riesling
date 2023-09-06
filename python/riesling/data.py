@@ -45,13 +45,14 @@ def write(filename, data, data_type='noncartesian'):
 
     with h5py.File(filename, 'w') as out_f:
         # write info header
-        out_f.create_dataset('info', data=_create_info(
-            data.attrs['matrix'],
-            data.attrs['voxel_size'],
-            data.attrs['tr'],
-            data.attrs['origin'],
-            data.attrs['direction'])
-        )
+        if {'matrix','voxel_size','tr','origin','direction'} <= data.attrs.keys():
+            out_f.create_dataset('info', data=_create_info(
+                data.attrs['matrix'],
+                data.attrs['voxel_size'],
+                data.attrs['tr'],
+                data.attrs['origin'],
+                data.attrs['direction'])
+            )
 
         # write additional information
         if 'trajectory' in data.attrs:
