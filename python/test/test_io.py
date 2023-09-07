@@ -78,7 +78,7 @@ class TestReadWrite(unittest.TestCase):
         self.assertEqual(data.dims, data_reload.dims)
 
     def test_kspace(self):
-        os.system(f'../build/riesling recon --fwd --sense={self.prefix}-sim-sense.h5 --sense-fov=-1 {self.prefix}.h5')
+        os.system(f'../build/riesling recon --fwd --sense={self.prefix}-sim-sense.h5 --sense-fov=-1,-1,-1 {self.prefix}.h5')
         data = riesling.data.read(f'{self.prefix}-recon.h5')
         self.assertEqual(data.shape, (1, 1, 2048, 64, 4))
         self.assertEqual(data.dims, ('volume', 'slab', 'trace', 'sample', 'channel'))
