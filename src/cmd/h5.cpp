@@ -21,8 +21,7 @@ int main_h5(args::Subparser &parser)
       }
     }
   } else {
-    // try to load info header
-    try {
+    if (reader.exists("info")) {
       auto const i = reader.readInfo();
       fmt::print(
         "Matrix:     {}\n"
@@ -35,11 +34,8 @@ int main_h5(args::Subparser &parser)
         i.tr,
         i.origin.transpose(),
         i.direction);
-    } catch ( ... ) {
-      
     }
 
-    // read dataset info
     auto const datasets = reader.list();
     if (datasets.empty()) { Log::Fail("No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
