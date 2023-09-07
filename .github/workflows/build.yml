@@ -60,6 +60,16 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$TC"
           cmake --build build
+      
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: install python package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
 
       - name: Tests
         shell: bash
@@ -68,6 +78,8 @@ jobs:
             cd ${{github.workspace}}/build
             ./riesling-tests
           fi
+          cd ${{github.workspace}}/python
+          python -m unittest
 
       - name: Tarball
         run: |
