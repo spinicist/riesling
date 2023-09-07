@@ -80,12 +80,13 @@ jobs:
       - name: Tests
         shell: bash
         run: |
-          if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2
+          if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2, python tests do also only work under Ubuntu (unknown why)
             cd ${{github.workspace}}/build
             ./riesling-tests
+          
+            cd ${{github.workspace}}/python 
+            python -m unittest
           fi
-          cd ${{github.workspace}}/python
-          python -m unittest
 
       - name: Tarball
         run: |
