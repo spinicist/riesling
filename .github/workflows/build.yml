@@ -84,6 +84,7 @@ jobs:
             cd ${{github.workspace}}/build
             ./riesling-tests
           fi
+          echo "${{github.workspace}}/build" >> $GITHUB_PATH
           cd ${{github.workspace}}/python
           python -m unittest
 
