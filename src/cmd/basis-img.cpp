@@ -18,8 +18,8 @@ int main_basis_img(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::Flag                      otsu(parser, "O", "Otsu mask", {"otsu"});
-  args::ValueFlag<Sz3, Sz3Reader> st(parser, "S", "ROI Start", {"roi-start"});
-  args::ValueFlag<Sz3, Sz3Reader> sz(parser, "S", "ROI size", {"roi-size"});
+  args::ValueFlag<Sz3, SzReader<3>> st(parser, "S", "ROI Start", {"roi-start"});
+  args::ValueFlag<Sz3, SzReader<3>> sz(parser, "S", "ROI size", {"roi-size"});
   args::ValueFlag<Index>          spf(parser, "S", "Spokes per frame", {"spf"}, 1);
   args::ValueFlag<Index>          order(parser, "O", "Interpolation order", {"interp-order"}, 3);
   args::Flag                      clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});

@@ -56,21 +56,26 @@ void VectorReader<T>::operator()(std::string const &name, std::string const &inp
 template struct VectorReader<float>;
 template struct VectorReader<Index>;
 
-void Sz2Reader::operator()(std::string const &name, std::string const &value, Sz2 &v)
+template <int N>
+void SzReader<N>::operator()(std::string const &name, std::string const &value, Sz<N> &sz)
 {
-  Index i, j;
-  auto  result = scn::scan(value, "{},{}", i, j);
-  if (!result) { Log::Fail("Could not read {} from '{}': {}", name, value, result.error()); }
-  v = Sz2{i, j};
+  Index v = 0, ind = 0;
+  auto  result = scn::scan(value, "{}", v);
+  if (result) {
+    sz[ind] = v;
+    for (ind = 1; ind < N; ind++) {
+      result = scn::scan(result.range(), ",{}", v);
+      if (!result) { Log::Fail("Could not read {} from '{}': {}", name, value, result.error()); }
+      sz[ind] = v;
+    }
+  } else {
+    Log::Fail("Could not read {} from '{}': {}", name, value, result.error());
+  }
 }
 
-void Sz3Reader::operator()(std::string const &name, std::string const &value, Sz3 &v)
-{
-  Index i, j, k;
-  auto  result = scn::scan(value, "{},{},{}", i, j, k);
-  if (!result) { Log::Fail("Could not read {} from '{}': {}", name, value, result.error()); }
-  v = Sz3{i, j, k};
-}
+template struct SzReader<2>;
+template struct SzReader<3>;
+template struct SzReader<4>;
 
 CoreOpts::CoreOpts(args::Subparser &parser)
   : iname(parser, "F", "Input HD5 file")

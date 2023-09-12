@@ -10,7 +10,7 @@ struct ThresholdWavelets final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
 
-  ThresholdWavelets(float const λ, Sz4 const shape, Index const width, Index const levels);
+  ThresholdWavelets(float const λ, Sz4 const shape, Index const width, Sz4 const dims);
   void apply(float const α, CMap const &x, Map &z) const;
 
 private:

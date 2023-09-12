@@ -23,8 +23,8 @@ struct RegOpts
   args::ValueFlag<Index> llrWin;
   args::Flag             llrShift, llrFFT;
 
-  args::ValueFlag<Index> wavelets;
-  args::ValueFlag<Index> waveLevels;
+  args::ValueFlag<float> wavelets;
+  args::ValueFlag<Sz4, SzReader<4>> waveDims;
   args::ValueFlag<Index> waveWidth;
 };
 

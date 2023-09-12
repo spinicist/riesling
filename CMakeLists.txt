@@ -118,6 +118,7 @@ add_executable(riesling
     src/cmd/eig.cpp
     src/cmd/filter.cpp
     src/cmd/frames.cpp
+    src/cmd/grad.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
     # src/cmd/lad.cpp
@@ -143,8 +144,8 @@ add_executable(riesling
     src/cmd/sense-sim.cpp
     src/cmd/slice.cpp
     src/cmd/traj.cpp
-    src/cmd/transform.cpp
     src/cmd/version.cpp
+    src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp
     src/main.cpp
 )

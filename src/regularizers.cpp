@@ -25,7 +25,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   ,
 
   wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"})
-  , waveLevels(parser, "W", "Wavelet denoising levels", {"wavelet-levels"}, 4)
+  , waveDims(parser, "W", "Wavelet transform dimensions (b,x,y,z 0/1)", {"wavelet-dims"}, Sz4{0,1,1,1})
   , waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6)
 {
 }
@@ -52,7 +52,7 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
   if (opts.wavelets) {
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
     prox.push_back(
-      std::make_shared<Proxs::ThresholdWavelets>(opts.wavelets.Get(), shape, opts.waveWidth.Get(), opts.waveLevels.Get()));
+      std::make_shared<Proxs::ThresholdWavelets>(opts.wavelets.Get(), shape, opts.waveWidth.Get(), opts.waveDims.Get()));
     sizes.push_back(shape);
   }
 
