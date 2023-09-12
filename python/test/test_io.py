@@ -3,10 +3,11 @@ import sys
 import inspect
 import riesling
 import unittest
+import xarray as xr
 import numpy as np
 
 # define test order to make reusing of previous results possible
-order = ['test_image', 'test_sense', 'test_kspace', 'test_rss', 'test_nufft']
+order = ['test_image', 'test_sense', 'test_kspace', 'test_rss', 'test_nufft', 'test_sdc']
 def compare(a, b):
     if order.index(a) < order.index(b):
         return -1
@@ -114,6 +115,20 @@ class TestReadWrite(unittest.TestCase):
         data_reload = riesling.data.read(f'{self.prefix}-recon-nufft_rewrite.h5')
         np.testing.assert_almost_equal(data.data, data_reload.data)
         self.assertEqual(data.dims, data_reload.dims)
+
+    def test_sdc(self):
+        data = riesling.data.read(f'{self.prefix}-recon.h5')
+        sdc = xr.DataArray(np.ones(data.attrs['trajectory'].shape[:-1]), dims=('trace','sample')) # build dummy weights array filled with ones
+        riesling.data.write(f'{self.prefix}-sdc.h5', sdc, data_type='sdc')
+        sdc_reload = riesling.data.read(f'{self.prefix}-sdc.h5')
+        np.testing.assert_almost_equal(sdc.data, sdc_reload.data)
+
+        # run nufft again to check if it works with the custom sdc
+        os.system(f'../build/riesling nufft {self.prefix}-recon.h5 --sdc={self.prefix}-sdc.h5 -o {self.prefix}-recon-sdc')
+        data = riesling.data.read(f'{self.prefix}-recon-sdc-nufft.h5')
+        self.assertEqual(data.shape, (1, 64, 64, 64, 1, 4))
+        self.assertEqual(data.dims, ('volume', 'z', 'y', 'x', 'image', 'channel'))
+        plot(data, ['x','y'], {'volume':0, 'image':0, 'z':[16,32,48], 'channel':0}, title='nufft - channel=0')
 
 if __name__ == "__main__":
     unittest.main()
