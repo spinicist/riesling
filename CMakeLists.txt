@@ -181,6 +181,7 @@ if(${BUILD_TESTS})
         test/op/pad.cpp
         test/op/recon.cpp
         test/op/sense.cpp
+        test/op/wavelets.cpp
     )
     target_link_libraries(riesling-tests PUBLIC
         vineyard

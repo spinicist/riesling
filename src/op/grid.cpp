@@ -7,12 +7,14 @@
 
 #include <mutex>
 
+namespace {
 inline auto Wrap(Index const index, Index const sz) -> Index
 {
   Index const t = index + sz;
   Index const w = t - sz * (t / sz);
   return w;
 }
+} // namespace
 
 namespace rl {
 

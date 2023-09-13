@@ -15,10 +15,10 @@ struct Wavelets final : TensorOperator<Cx, 4, 4>
   static auto PaddedShape(Sz4 const shape, Sz4 const dims) -> Sz4;
 
 private:
-  void  encode_dim(OutMap &y, Index const dim, Index const level) const;
-  void  decode_dim(InMap &x, Index const dim, Index const level) const;
+  void dimLoops(InMap &x, bool const rev) const;
+  void wav1(Index const N, bool const rev, Cx1 &x) const;
   Index N_;
-  Re1   D_; // Coefficients
-  Sz4   levels_;
+  Re1   Cc_, Cr_; // Coefficients
+  Sz4   encodeDims_;
 };
 } // namespace rl
