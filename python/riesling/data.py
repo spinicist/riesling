@@ -18,8 +18,33 @@ def _read_info(hdf5_dataset):
     return d
 
 def write(filename, data, data_type='noncartesian'):
+    # match data dimensions and data format based on data_type
+    if data_type == 'noncartesian':
+        data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
+        dtype = 'c8'
+    elif data_type == 'cartesian' or data_type == 'channels':
+        data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
+        dtype = 'c8'
+    elif data_type == 'sense':
+        data_dims = ['channel', 'x', 'y', 'z']
+        dtype = 'c8'
+    elif data_type == 'image':
+        data_dims = ['image', 'x', 'y', 'z', 'volume']
+        dtype = 'c8'
+    elif data_type == 'sdc':
+        data_dims = ['sample', 'trace']
+        dtype = 'f8'
+    elif data_type == 'basis':
+        data_dims = ['trace', 'volume']
+        dtype = 'f8'
+    else:
+        AssertionError(f'Unknown data type {data_type}')
+
+    if not isinstance(data, xr.DataArray):
+        data = xr.DataArray(data, attrs={}, dims=data_dims) # make it a DataArray with empty header and just assume that dimensions match
+
     # check for info header information
-    if data_type != 'sdc':
+    if data_type != 'sdc' and data_type != 'basis': # sdc and basis do not require an info header
         if not 'matrix' in data.attrs:
             AssertionError('Data object must contain "matrix" attribute')
         if not 'voxel_size' in data.attrs:
@@ -59,26 +84,8 @@ def write(filename, data, data_type='noncartesian'):
         if 'trajectory' in data.attrs:
             out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression="gzip")
 
-        # define data dimensions
-        if data_type == 'noncartesian':
-            data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
-            dtype = 'c8'
-        elif data_type == 'cartesian' or data_type == 'channels':
-            data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
-            dtype = 'c8'
-        elif data_type == 'sense':
-            data_dims = ['channel', 'image', 'x', 'y', 'z']
-        elif data_type == 'image':
-            data_dims = ['image', 'x', 'y', 'z', 'volume']
-            dtype = 'c8'
-        elif data_type == 'sdc':
-            data_dims = ['sample', 'trace']
-            dtype = 'f8'
-        else:
-            AssertionError(f'Unknown data type {data_type}')
-        data_dims.reverse() # invert dimension order to match numpy array shape
-
         # transpose data to right dimensions
+        data_dims.reverse() # invert dimension order to match numpy array shape
         data = data.copy() # deep copy
         data = data.transpose(*data_dims)
 
@@ -101,7 +108,7 @@ def read(filename):
         # try to load actual data
         data = None
         dims = []
-        data_keys = np.array(['noncartesian','cartesian','channels','image','sense','sdc'])
+        data_keys = np.array(['noncartesian','cartesian','channels','image','sense','sdc','basis'])
         data_idx = np.in1d(data_keys, np.array([str(f) for f in f.keys()]))
         if data_idx.any():
             key = data_keys[data_idx][0]
@@ -116,6 +123,8 @@ def read(filename):
                 dims = ['image', 'x', 'y', 'z', 'volume']
             elif key == 'sdc':
                 dims = ['sample', 'trace']
+            elif key == 'basis':
+                dims = ['trace', 'volume']
             else: # this should never happen
                 return None 
             dims.reverse() # invert dimension order to match numpy array shape
