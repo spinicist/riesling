@@ -17,7 +17,7 @@ def _read_info(hdf5_dataset):
         d[key] = item
     return d
 
-def write(filename, data, data_type='noncartesian'):
+def write(filename, data, data_type='noncartesian', compression='gzip'):
     # match data dimensions and data format based on data_type
     if data_type == 'noncartesian':
         data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
@@ -82,7 +82,7 @@ def write(filename, data, data_type='noncartesian'):
 
         # write additional information
         if 'trajectory' in data.attrs:
-            out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression="gzip")
+            out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression=compression)
 
         # transpose data to right dimensions
         data_dims.reverse() # invert dimension order to match numpy array shape
@@ -90,7 +90,7 @@ def write(filename, data, data_type='noncartesian'):
         data = data.transpose(*data_dims)
 
         # write data
-        out_f.create_dataset(data_type, dtype=dtype, data=data.data, chunks=np.shape(data.data), compression="gzip")
+        out_f.create_dataset(data_type, dtype=dtype, data=data.data, chunks=np.shape(data.data), compression=compression)
         out_f.close()
 
 
