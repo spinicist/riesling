@@ -564,7 +564,7 @@ def dictionary(filename):
         plt.close()
         return fig
 
-def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None):
+def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None, zoom=False):
     with h5py.File(filename) as f:
         traj = np.array(f['trajectory'])
         if color == 'read':
@@ -583,13 +583,16 @@ def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
                        traj[spoke_slice, read_slice, (ii + 1) % nd],
                        c=c, cmap='cmr.ember', s=0.5)
             ax[ii].set_aspect('equal')
-            ax[ii].set_xlim((-0.5,0.5))
-            ax[ii].set_ylim((-0.5,0.5))
+            if not zoom:
+                print('set aspect')
+                ax[ii].set_xlim((-0.5,0.5))
+                ax[ii].set_ylim((-0.5,0.5))
         fig.tight_layout()
         plt.close()
     return fig
 
-def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None, angles=[30,-60,0]):
+def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None,
+           angles=[30,-60,0], zoom=False, draw_axes=False):
     with h5py.File(filename) as ff:
         traj = ff['trajectory'][spoke_slice, read_slice, :]
         if color == 'read':
@@ -601,14 +604,16 @@ def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(projection='3d')
 
-        x, y, z = np.array([[-0.5,0,0],[0,-0.5,0],[0,0,-0.5]])
-        u, v, w = np.array([[1,0,0],[0,1,0],[0,0,1]])
-        ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
+        if draw_axes:
+            x, y, z = np.array([[-0.5,0,0],[0,-0.5,0],[0,0,-0.5]])
+            u, v, w = np.array([[1,0,0],[0,1,0],[0,0,1]])
+            ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
         ax.scatter(traj[:, :, 0], traj[:, :, 1], traj[:, :, 2],
-                   c=c, s=3, cmap='cmr.ember')
-        ax.set_xlim((-0.5,0.5))
-        ax.set_ylim((-0.5,0.5))
-        ax.set_zlim((-0.5,0.5))
+                c=c, s=3, cmap='cmr.ember')
+        if not zoom:
+            ax.set_xlim((-0.5,0.5))
+            ax.set_ylim((-0.5,0.5))
+            ax.set_zlim((-0.5,0.5))
         ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='z')
         fig.tight_layout()
         plt.close()
