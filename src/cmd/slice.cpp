@@ -40,11 +40,11 @@ int main_slice(args::Subparser &parser)
   auto        info = traj.info();
   Cx5         ks = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
 
-  Index const cSt = channelStart.Get();
-  Index const rSt = readStart.Get();
-  Index const tSt = traceStart.Get();
-  Index const sSt = slabStart.Get();
-  Index const vSt = volStart.Get();
+  Index const cSt = Wrap(channelStart.Get(), ks.dimension(0));
+  Index const rSt = Wrap(readStart.Get(), ks.dimension(1));
+  Index const tSt = Wrap(traceStart.Get(), ks.dimension(2));
+  Index const sSt = Wrap(slabStart.Get(), ks.dimension(3));
+  Index const vSt = Wrap(volStart.Get(), ks.dimension(4));
 
   Index const cSz = channelSize ? channelSize.Get() : ks.dimension(0) - cSt;
   Index const rSz = readSize ? readSize.Get() : ks.dimension(1) - rSt;
@@ -63,6 +63,9 @@ int main_slice(args::Subparser &parser)
   }
   if (sSt + sSz > ks.dimension(3)) { Log::Fail("Last slab point {} exceeded maximum {}", sSt + sSz, ks.dimension(3)); }
   if (vSt + vSz > ks.dimension(4)) { Log::Fail("Last volume point {} exceeded maximum {}", vSt + vSz, ks.dimension(4)); }
+
+  Log::Print("Selected slice {}:{}, {}:{}, {}:{}, {}:{}, {}:{}", cSt, cSt + cSz - 1, rSt, rSt + rSz - 1, tSt, tSt + tSz - 1,
+             sSt, sSt + sSz - 1, vSt, vSt + vSz - 1);
 
   if (traceSegment) {
     Index const segSz = traceSegment.Get();
