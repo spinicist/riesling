@@ -4,30 +4,30 @@
 
 namespace rl {
 
-template <size_t ND, size_t W>
+template <int ND, int W>
 struct KernelSizes
 {
 };
 
-template <size_t W>
+template <int W>
 struct KernelSizes<1, W>
 {
   using Type = Eigen::Sizes<W>;
 };
 
-template <size_t W>
+template <int W>
 struct KernelSizes<2, W>
 {
   using Type = Eigen::Sizes<W, W>;
 };
 
-template <size_t W>
+template <int W>
 struct KernelSizes<3, W>
 {
   using Type = Eigen::Sizes<W, W, W>;
 };
 
-template <typename Scalar, size_t ND, size_t W>
+template <typename Scalar, int ND, int W>
 struct FixedKernel : Kernel<Scalar, ND>
 {
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<W>>;
@@ -39,7 +39,7 @@ struct FixedKernel : Kernel<Scalar, ND>
   FixedKernel()
   {
     Eigen::TensorFixedSize<float, Eigen::Sizes<W>> pos;
-    for (size_t ii = 0; ii < W; ii++) {
+    for (int ii = 0; ii < W; ii++) {
       centers(ii) = ii + 0.5f - (W / 2.f);
     }
   }

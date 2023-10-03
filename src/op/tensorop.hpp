@@ -5,17 +5,17 @@
 
 namespace rl {
 
-template <typename Scalar_, size_t InRank_, size_t OutRank_ = InRank_>
+template <typename Scalar_, int InRank_, int OutRank_ = InRank_>
 struct TensorOperator : Ops::Op<Scalar_>
 {
   using Scalar = Scalar_;
   using Base = Ops::Op<Scalar>;
-  static const size_t InRank = InRank_;
+  static const int InRank = InRank_;
   using InTensor = Eigen::Tensor<Scalar, InRank>;
   using InMap = Eigen::TensorMap<InTensor>;
   using InCMap = Eigen::TensorMap<InTensor const>;
   using InDims = typename InTensor::Dimensions;
-  static const size_t OutRank = OutRank_;
+  static const int OutRank = OutRank_;
   using OutTensor = Eigen::Tensor<Scalar, OutRank>;
   using OutMap = Eigen::TensorMap<OutTensor>;
   using OutCMap = Eigen::TensorMap<OutTensor const>;
@@ -124,13 +124,13 @@ struct TensorOperator : Ops::Op<Scalar_>
 #define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
   using Parent = TensorOperator<SCALAR, INRANK, OUTRANK>;                                                                      \
   using Scalar = typename Parent::Scalar;                                                                                      \
-  static const size_t InRank = Parent::InRank;                                                                                 \
+  static const int InRank = Parent::InRank;                                                                                 \
   using InTensor = typename Parent::InTensor;                                                                                  \
   using InMap = typename Parent::InMap;                                                                                        \
   using InCMap = typename Parent::InCMap;                                                                                      \
   using InDims = typename Parent::InDims;                                                                                      \
   using Parent::ishape;                                                                                                        \
-  static const size_t OutRank = Parent::OutRank;                                                                               \
+  static const int OutRank = Parent::OutRank;                                                                               \
   using OutTensor = typename Parent::OutTensor;                                                                                \
   using OutMap = typename Parent::OutMap;                                                                                      \
   using OutCMap = typename Parent::OutCMap;                                                                                    \
@@ -143,7 +143,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   using Parent::forward;                                                                                                       \
   using Parent::adjoint;
 
-template <typename Scalar_, size_t Rank>
+template <typename Scalar_, int Rank>
 struct TensorIdentity : TensorOperator<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)

@@ -5,11 +5,11 @@
 
 namespace rl {
 
-template <size_t W>
+template <int W>
 struct KaiserBessel
 {
-  static constexpr size_t Width = W;
-  static constexpr size_t PadWidth = (((W + 1) / 2) * 2) + 1;
+  static constexpr int Width = W;
+  static constexpr int PadWidth = (((W + 1) / 2) * 2) + 1;
 
   static float β(float const osamp) { return (float)M_PI * 2.34f * Width * osamp / 2.f; }
 

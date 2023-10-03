@@ -99,15 +99,6 @@ void Wavelets::dimLoops(InMap &x, bool const reverse) const
   }
 }
 
-namespace {
-inline auto Wrap(Index const index, Index const sz) -> Index
-{
-  Index const t = index + sz;
-  Index const w = t - sz * (t / sz);
-  return w;
-}
-} // namespace
-
 void Wavelets::wav1(Index const sz, bool const reverse, Cx1 &x) const
 {
   if (sz < 4) return;

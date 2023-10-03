@@ -10,7 +10,7 @@
 
 namespace rl {
 
-template <typename Scalar_, size_t NDim>
+template <typename Scalar_, int NDim>
 struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>
 {
   OP_INHERIT(Scalar_, NDim + 2, 3)

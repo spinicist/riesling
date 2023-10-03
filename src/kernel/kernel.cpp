@@ -9,14 +9,14 @@
 
 namespace rl {
 
-template <typename Scalar, size_t ND>
+template <typename Scalar, int ND>
 auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>
 {
   if (kType == "NN") {
     return std::make_shared<NearestNeighbour<Scalar, ND>>();
   } else if (kType.size() == 7 && kType.substr(0, 4) == "rect") {
     std::string const type = kType.substr(4, 2);
-    size_t const      W = std::stoi(kType.substr(6, 1));
+    int const      W = std::stoi(kType.substr(6, 1));
     if (type == "ES") {
       switch (W) {
       case 3: return std::make_shared<Rectilinear<Scalar, ND, ExpSemi<3>>>(osamp);
@@ -36,7 +36,7 @@ auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr
     }
   } else if (kType.size() == 3) {
     std::string const type = kType.substr(0, 2);
-    size_t const      W = std::stoi(kType.substr(2, 1));
+    int const      W = std::stoi(kType.substr(2, 1));
     if (type == "ES") {
       switch (W) {
       case 3: return std::make_shared<Radial<Scalar, ND, ExpSemi<3>>>(osamp);

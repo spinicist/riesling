@@ -23,8 +23,8 @@ TEST_CASE("Wavelets", "[tform]")
     Cx4 y = wave.forward(x);
     Cx4 xx = wave.adjoint(y);
 
-    INFO("y\n" << Transpose(y));
-    INFO("xx\n" << Transpose(xx));
+    INFO("y\n" << y);
+    INFO("xx\n" << xx);
     CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
   }
 
@@ -40,8 +40,8 @@ TEST_CASE("Wavelets", "[tform]")
     Cx4 y = wave.forward(x);
     Cx4 xx = wave.adjoint(y);
 
-    INFO("y\n" << Transpose(y));
-    INFO("xx\n" << Transpose(xx));
+    INFO("y\n" << y);
+    INFO("xx\n" << xx);
     CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
   }
 
@@ -57,8 +57,8 @@ TEST_CASE("Wavelets", "[tform]")
     Cx4 y = wave.forward(x);
     Cx4 xx = wave.adjoint(y);
 
-    INFO("y\n" << Transpose(y));
-    INFO("xx\n" << Transpose(xx));
+    INFO("y\n" << y);
+    INFO("xx\n" << xx);
     CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
   }
 }

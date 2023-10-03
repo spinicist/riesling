@@ -7,7 +7,7 @@
 
 namespace rl {
 
-template <size_t NDim>
+template <int NDim>
 NUFFTOp<NDim>::NUFFTOp(std::shared_ptr<Grid<Cx, NDim>> g, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> s)
   : Parent("NUFFTOp", Concatenate(FirstN<2>(g->ishape), AMin(matrix, LastN<NDim>(g->ishape))), g->oshape)
   , gridder{g}
@@ -20,7 +20,7 @@ NUFFTOp<NDim>::NUFFTOp(std::shared_ptr<Grid<Cx, NDim>> g, Sz<NDim> const matrix,
   Log::Print<Log::Level::High>("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder->ishape);
 }
 
-template <size_t NDim>
+template <int NDim>
 void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
@@ -32,7 +32,7 @@ void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <size_t NDim>
+template <int NDim>
 void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);

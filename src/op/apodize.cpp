@@ -8,17 +8,17 @@
 
 namespace rl {
 
-template <typename S, size_t NDim>
+template <typename S, int NDim>
 ApodizeOp<S, NDim>::ApodizeOp(InDims const                                     ishape,
                               Sz<NDim> const                                   gshape,
                               std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
   : Parent("ApodizeOp", ishape, ishape)
 {
-  for (size_t ii = 0; ii < 2; ii++) {
+  for (int ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
     brd_[ii] = ishape[ii];
   }
-  for (size_t ii = 2; ii < NDim + 2; ii++) {
+  for (int ii = 2; ii < NDim + 2; ii++) {
     res_[ii] = ishape[ii];
     brd_[ii] = 1;
   }
@@ -39,7 +39,7 @@ ApodizeOp<S, NDim>::ApodizeOp(InDims const                                     i
   LOG_DEBUG("Apodization size {} Scale: {} Norm: {}", shape, scale, Norm(apo_));
 }
 
-template <typename S, size_t NDim>
+template <typename S, int NDim>
 void ApodizeOp<S, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
@@ -47,7 +47,7 @@ void ApodizeOp<S, NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <typename S, size_t NDim>
+template <typename S, int NDim>
 void ApodizeOp<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);

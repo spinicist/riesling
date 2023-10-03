@@ -6,7 +6,7 @@
 
 namespace rl {
 
-template <size_t NDim>
+template <int NDim>
 struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)

@@ -7,11 +7,11 @@ namespace rl {
 /*
  * Linear / Bi-linear / Tri-linear
  */
-template <size_t W>
+template <int W>
 struct Triangle
 {
-  static constexpr size_t Width = W;
-  static constexpr size_t PadWidth = W;
+  static constexpr int Width = W;
+  static constexpr int PadWidth = W;
 
   Triangle(float const osamp) {}
 

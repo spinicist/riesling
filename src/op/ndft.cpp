@@ -7,7 +7,7 @@ using namespace std::complex_literals;
 
 namespace rl {
 
-template <size_t NDim>
+template <int NDim>
 NDFTOp<NDim>::NDFTOp(
   Re3 const &tr, Index const nC, Sz<NDim> const shape, Re2 const &b, std::shared_ptr<TensorOperator<Cx, 3>> s)
   : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
@@ -63,12 +63,12 @@ NDFTOp<NDim>::NDFTOp(
   }
 }
 
-template <size_t NDim>
+template <int NDim>
 void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   using RVec = typename Eigen::RowVector<float, NDim>;
-  using CxMap = typename Eigen::Matrix<Cx, -1, 1>::AlignedMapType;
+  using CxMap = typename Eigen::Matrix<Cx, -1, -1>::AlignedMapType;
   using CxCMap = typename Eigen::Matrix<Cx, -1, -1>::ConstAlignedMapType;
 
   Index const nC = ishape[0];
@@ -91,7 +91,7 @@ void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <size_t NDim>
+template <int NDim>
 void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
 {
   auto const time = this->startAdjoint(yy);
@@ -104,7 +104,7 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
   }
 
   using RVec = typename Eigen::RowVector<float, NDim>;
-  using CxMap = typename Eigen::Matrix<Cx, -1, 1>::AlignedMapType;
+  using CxMap = typename Eigen::Matrix<Cx, -1, -1>::AlignedMapType;
   using CxCMap = typename Eigen::Matrix<Cx, -1, -1>::ConstAlignedMapType;
 
   Index const nC = ishape[0];
