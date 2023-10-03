@@ -47,7 +47,7 @@ auto Trajectory::matrixForFOV(float const fov) const -> Sz3
   if (fov > 0) {
     Eigen::Array3l bigMatrix = (((fov / info_.voxel_size) / 2.f).floor() * 2).cast<Index>();
     Sz3            matrix = info_.matrix;
-    for (Index ii = 0; ii < nDims(); ii++) {
+    for (Index ii = 0; ii < 3; ii++) {
       matrix[ii] = bigMatrix[ii];
     }
     Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov, info_.matrix, matrix);
@@ -60,7 +60,7 @@ auto Trajectory::matrixForFOV(float const fov) const -> Sz3
 auto Trajectory::matrixForFOV(Eigen::Array3f const fov) const -> Sz3
 {
   Sz3 matrix;
-  for (Index ii = 0; ii < nDims(); ii++) {
+  for (Index ii = 0; ii < 3; ii++) {
     matrix[ii] = std::max(info_.matrix[ii], 2 * (Index)(fov[ii] / info_.voxel_size[ii] / 2.f));
   }
   Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov.transpose(), info_.matrix, matrix);

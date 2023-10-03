@@ -33,8 +33,6 @@ int main_lsqr(args::Subparser &parser)
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  Info const &info = traj.info();
-
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
@@ -47,7 +45,7 @@ int main_lsqr(args::Subparser &parser)
   LSQR lsqr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), debug};
 
   auto      sz = A->ishape;
-  Cropper   out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
+  Cropper    out_cropper(LastN<3>(sz), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3 const outSz = out_cropper.size();
   Cx5       out(sz[0], outSz[0], outSz[1], outSz[2], nV), resid;
   if (coreOpts.residImage) { resid.resize(sz[0], outSz[0], outSz[1], outSz[2], nV); }

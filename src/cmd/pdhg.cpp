@@ -33,8 +33,6 @@ int main_pdhg(args::Subparser &parser)
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  Info const &info = traj.info();
-
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
@@ -54,7 +52,7 @@ int main_pdhg(args::Subparser &parser)
     };
 
   PDHG        pdhg(A, P, reg, σin.Get(), τin.Get(), debug_x);
-  Cropper     out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
+  Cropper    out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();
   float const scale = Scaling(coreOpts.scaling, recon, P, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);

@@ -29,7 +29,7 @@ int main_admm(args::Subparser &parser)
   args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
-  args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (50)", {"max-outer-its"}, 50);
+  args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (20)", {"max-outer-its"}, 20);
   args::ValueFlag<float> ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f);
   args::ValueFlag<float> ε(parser, "ε", "ADMM convergence tolerance (1e-2)", {"eps"}, 1.e-2f);
   args::ValueFlag<float> μ(parser, "μ", "ADMM residual rescaling tolerance (default 1.2)", {"mu"}, 1.2f);
@@ -41,8 +41,6 @@ int main_admm(args::Subparser &parser)
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  Info const &info = traj.info();
-
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
@@ -51,7 +49,7 @@ int main_admm(args::Subparser &parser)
   auto const shape = recon->ishape;
   auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, basis, preBias.Get());
 
-  Cropper     out_cropper(info.matrix, LastN<3>(shape), info.voxel_size, coreOpts.fov.Get());
+  Cropper    out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();
   float const scale = Scaling(coreOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
