@@ -17,7 +17,7 @@ rc = {'figsize': 4,
 
 def planes(fname, dset='image', slice_pos = 0.5,
            other_dims=None, other_indices=None, img_offset=-1,
-           component='mag', clim=None, cmap=None, cbar=True,
+           component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rotates=(0, 0, 0), fliplr=False, title=None,
            basis_file=None, basis_tp=0):
 
@@ -33,7 +33,7 @@ def planes(fname, dset='image', slice_pos = 0.5,
         data_y = _get_slices(D, dim_y, [index_y], img_y, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
         data_z = _get_slices(D, dim_z, [index_z], img_z, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
-    clim, cmap = _get_colors(clim, cmap, data_x, component)
+    clim, cmap = _get_colors(clim, cmap, data_x, component, climp)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
 
     im_x = _draw(ax[0], _orient(np.squeeze(data_x), rotates[0], fliplr), component, clim, cmap)
@@ -584,7 +584,6 @@ def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
                        c=c, cmap='cmr.ember', s=0.5)
             ax[ii].set_aspect('equal')
             if not zoom:
-                print('set aspect')
                 ax[ii].set_xlim((-0.5,0.5))
                 ax[ii].set_ylim((-0.5,0.5))
         fig.tight_layout()
