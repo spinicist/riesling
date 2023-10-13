@@ -3,24 +3,23 @@
 #include "algo/eig.hpp"
 #include "common.hpp"
 #include "log.hpp"
-#include "prox/l2.hpp"
+#include "prox/lsq.hpp"
 #include "prox/stack.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {
 
-PDHG::PDHG(
-  std::shared_ptr<Op>       A,
-  std::shared_ptr<Op>       P,
-  Regularizers const       &reg,
-  std::vector<float> const &σin,
-  float const               τin,
-  Callback const           &cb)
+PDHG::PDHG(std::shared_ptr<Op>       A,
+           std::shared_ptr<Op>       P,
+           Regularizers const       &reg,
+           std::vector<float> const &σin,
+           float const               τin,
+           Callback const           &cb)
 {
   Index const nR = reg.count();
 
   Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg.ops);
-  l2 = std::make_shared<Proxs::L2<Cx>>(1.f, A->rows());
+  l2 = std::make_shared<Proxs::LeastSquares<Cx>>(1.f, A->rows());
   std::vector<std::shared_ptr<Prox>> ps;
   ps.push_back(l2);
   for (Index ii = 0; ii < nR; ii++) {
