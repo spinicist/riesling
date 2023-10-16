@@ -68,13 +68,13 @@ add_library(vineyard
     src/phantom/sphere.cpp
     src/phantom/shepp-logan.cpp
     src/prox/entropy.cpp
+    src/prox/l1-wavelets.cpp
     src/prox/lsq.cpp
     src/prox/llr.cpp
+    src/prox/norms.cpp
     src/prox/prox.cpp
     src/prox/slr.cpp
     src/prox/stack.cpp
-    src/prox/thresh.cpp
-    src/prox/thresh-wavelets.cpp
     src/sense/coils.cpp
     src/sense/espirit.cpp
     src/sense/rovir.cpp

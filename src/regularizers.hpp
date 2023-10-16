@@ -12,11 +12,14 @@ struct RegOpts
 {
   RegOpts(args::Subparser &parser);
 
-  args::ValueFlag<float> tv;
-  args::ValueFlag<float> tvt;
-  args::ValueFlag<float> tgv;
   args::ValueFlag<float> l1;
   args::ValueFlag<float> nmrent;
+
+  args::ValueFlag<float> tv;
+  args::ValueFlag<float> tvt;
+
+  args::ValueFlag<float> tgv;
+  args::ValueFlag<float> tgvl2;
 
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;

@@ -8,7 +8,7 @@
 #include "parse_args.hpp"
 #include "prox/entropy.hpp"
 #include "prox/llr.hpp"
-#include "prox/thresh-wavelets.hpp"
+#include "prox/l1-wavelets.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -44,11 +44,11 @@ int main_prox(args::Subparser &parser)
   Index const                      nvox = Product(dims);
   std::shared_ptr<Proxs::Prox<Cx>> prox;
   if (wavelets) {
-    prox = std::make_shared<Proxs::ThresholdWavelets>(wavelets.Get(), dims, waveWidth.Get(), waveDims.Get());
+    prox = std::make_shared<Proxs::L1Wavelets>(wavelets.Get(), dims, waveWidth.Get(), waveDims.Get());
   } else if (llr) {
     prox = std::make_shared<Proxs::LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), llrShift, dims);
   } else if (l1) {
-    prox = std::make_shared<Proxs::SoftThreshold>(l1.Get(), nvox);
+    prox = std::make_shared<Proxs::L1>(l1.Get(), nvox);
   } else if (nmrent) {
     prox = std::make_shared<Proxs::Entropy>(nmrent.Get(), nvox);
   } else {
