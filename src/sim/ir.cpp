@@ -9,7 +9,7 @@ IR::IR(Settings const &s)
 {
 }
 
-auto IR::length() const -> Index { return settings.spokesPerSeg * settings.segsPerPrep; }
+auto IR::length() const -> Index { return (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep; }
 
 auto IR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
 {
@@ -19,7 +19,7 @@ auto IR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float>
 auto IR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   float const    T1 = p(0);
-  Eigen::ArrayXf dynamic((settings.spokesPerSeg + settings.k0) * settings.segsPerPrep);
+  Eigen::ArrayXf dynamic(length());
 
   Eigen::Matrix2f inv;
   inv << -1.f, 0.f, 0.f, 1.f;
@@ -68,7 +68,7 @@ auto IR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
       Mz = E1 * A * Mz;
     }
   }
-  if (tp != (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep) { Log::Fail("Programmer error"); }
+  if (tp != length()) { Log::Fail("Programmer error"); }
   return dynamic;
 }
 
