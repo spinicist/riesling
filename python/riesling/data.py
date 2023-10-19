@@ -64,7 +64,7 @@ def write(filename, data, data_type='noncartesian'):
         elif data_type == 'cartesian' or data_type == 'channels':
             data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
         elif data_type == 'sense':
-            data_dims = ['channel', 'x', 'y', 'z']
+            data_dims = ['channel', 'image', 'x', 'y', 'z']
         elif data_type == 'image':
             data_dims = ['image', 'x', 'y', 'z', 'volume']
         else:
@@ -104,7 +104,7 @@ def read(filename):
             elif key == 'cartesian' or key == 'channels':
                 dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
             elif key == 'sense':
-                dims = ['channel', 'x', 'y', 'z']
+                dims = ['channel', 'image', 'x', 'y', 'z']
             elif key == 'image':
                 dims = ['image', 'x', 'y', 'z', 'volume']
             else: # this should never happen

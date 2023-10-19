@@ -53,7 +53,7 @@ class TestReadWrite(unittest.TestCase):
         os.system(f'rm {cls.prefix}*.h5')
 
     def test_image(self):
-        os.system(f'../build/riesling phantom {self.prefix} --matrix={self.matrix} --vox-size={self.voxsz} --nex=0.5 --gradcubes --size=64')
+        os.system(f'riesling phantom {self.prefix} --matrix={self.matrix} --vox-size={self.voxsz} --nex=0.5 --gradcubes --size=64')
         data = riesling.data.read(f'{self.prefix}.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1))
         self.assertEqual(data.dims, ('volume', 'z', 'y', 'x', 'image'))
@@ -66,10 +66,10 @@ class TestReadWrite(unittest.TestCase):
         self.assertEqual(data.dims, data_reload.dims)
 
     def test_sense(self):
-        os.system(f'../build/riesling sense-sim {self.prefix}-sim --matrix={self.matrix} --vox-size={self.voxsz} --channels={self.channels}')
+        os.system(f'riesling sense-sim {self.prefix}-sim --matrix={self.matrix} --vox-size={self.voxsz} --channels={self.channels}')
         data = riesling.data.read(f'{self.prefix}-sim-sense.h5')
-        self.assertEqual(data.shape, (64, 64, 64, 4))
-        self.assertEqual(data.dims, ('z', 'y', 'x', 'channel'))
+        self.assertEqual(data.shape, (64, 64, 64, 1, 4))
+        self.assertEqual(data.dims, ('z', 'y', 'x', 'image', 'channel'))
         plot(data, ['x','y'], {'z':32}, title='sim-sense')
 
         riesling.data.write(f'{self.prefix}-sim-sense_rewrite.h5', data, data_type='sense')
@@ -78,7 +78,7 @@ class TestReadWrite(unittest.TestCase):
         self.assertEqual(data.dims, data_reload.dims)
 
     def test_kspace(self):
-        os.system(f'../build/riesling recon --fwd --sense={self.prefix}-sim-sense.h5 --sense-fov=-1,-1,-1 {self.prefix}.h5')
+        os.system(f'riesling recon --sdc=none --fwd --sense={self.prefix}-sim-sense.h5 --sense-fov=-1,-1,-1 {self.prefix}.h5')
         data = riesling.data.read(f'{self.prefix}-recon.h5')
         self.assertEqual(data.shape, (1, 1, 2048, 64, 4))
         self.assertEqual(data.dims, ('volume', 'slab', 'trace', 'sample', 'channel'))
@@ -92,7 +92,7 @@ class TestReadWrite(unittest.TestCase):
         self.assertEqual(data.dims, data_reload.dims)
 
     def test_rss(self):
-        os.system(f'../build/riesling rss {self.prefix}-recon.h5')
+        os.system(f'riesling rss --sdc-its=4 {self.prefix}-recon.h5')
         data = riesling.data.read(f'{self.prefix}-recon-rss.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1))
         self.assertEqual(data.dims, ('volume', 'z', 'y', 'x', 'image'))
@@ -104,7 +104,7 @@ class TestReadWrite(unittest.TestCase):
         self.assertEqual(data.dims, data_reload.dims)
 
     def test_nufft(self):
-        os.system(f'../build/riesling nufft {self.prefix}-recon.h5')
+        os.system(f'riesling nufft --sdc-its=4 {self.prefix}-recon.h5')
         data = riesling.data.read(f'{self.prefix}-recon-nufft.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1, 4))
         self.assertEqual(data.dims, ('volume', 'z', 'y', 'x', 'image', 'channel'))
