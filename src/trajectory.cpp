@@ -12,8 +12,20 @@ Trajectory::Trajectory(Info const &info, Re3 const &points)
 {
   if (points_.dimension(0) < 1 || points_.dimension(0) > 3) { Log::Fail("Trajectory has {} dimensions", points_.dimension(0)); }
 
-  float const maxCoord = Maximum(points_.abs());
-  if (maxCoord > 0.5f) { Log::Warn("Maximum trajectory co-ordinate {} > 0.5", maxCoord); }
+  Index discarded = 0;
+  for (Index is = 0; is < points_.dimension(2); is++) {
+    for (Index ir = 0; ir < points_.dimension(1); ir++) {
+      if (B0((points_.chip<2>(is).chip<1>(ir).abs() > 0.5f).any())()) {
+        points_.chip<2>(is).chip<1>(ir).setConstant(std::numeric_limits<float>::quiet_NaN());
+        discarded++;
+      }
+    }
+  }
+  if (discarded > 0) {
+    Index const total = points_.dimension(1) * points_.dimension(2);
+    float const percent = (100.f * discarded) / total;
+    Log::Warn("Discarded {} trajectory points ({}%) > 0.5", discarded, percent);
+  }
   Log::Print<Log::Level::Debug>("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
 }
 
