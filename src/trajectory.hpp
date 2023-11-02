@@ -15,6 +15,7 @@ struct Trajectory
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
   void checkDims(Sz3 const dims) const;
+  auto compatible(Trajectory const &other) const -> bool;
   auto info() const -> Info const &;
   auto matrix() const -> Sz3;
   auto FOV() const -> Eigen::Array3f;

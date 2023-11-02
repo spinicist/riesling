@@ -31,6 +31,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(lookup, "lookup", "Basis dictionary lookup");
   COMMAND(lsmr, "lsmr", "Recon with LSMR optimizer");
   COMMAND(lsqr, "lsqr", "Recon with LSQR optimizer");
+  COMMAND(merge, "merge", "Merge non-cartesian data");
   COMMAND(noisify, "noisify", "Add noise to dataset");
   COMMAND(nii, "nii", "Convert h5 to nifti");
   COMMAND(ndft, "ndft", "Apply forward/adjoint NDFT");

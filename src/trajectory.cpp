@@ -41,6 +41,15 @@ void Trajectory::checkDims(Sz3 const dims) const
   if (dims[2] != nTraces()) { Log::Fail("Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
 }
 
+auto Trajectory::compatible(Trajectory const &other) const -> bool
+{
+  if ((other.matrix() == matrix()) && (other.FOV() == FOV()).all() && (other.nDims() == nDims())) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 Info const &Trajectory::info() const { return info_; }
 
 auto Trajectory::matrix() const -> Sz3 { return info_.matrix; }
