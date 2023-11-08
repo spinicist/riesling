@@ -300,7 +300,10 @@ def _get_slices(dset, slice_dim, slices, img_dims, component,
         basis_dim = 0
     else:
         with h5py.File(basis_file) as f:
-            basis = f['basis'][basis_tp, :]
+            if isinstance(basis_tp, int):
+                basis = f['basis'][basis_tp:basis_tp+1, :]
+            else:
+                basis = f['basis'][basis_tp, :]
         basis_dim = -1
 
     if len(other_indices) > (dset.ndim - 3):
@@ -320,7 +323,6 @@ def _get_slices(dset, slice_dim, slices, img_dims, component,
     data = dset[tuple(all_slices)]
     if basis_file:
         data = np.dot(data, basis.T)
-        all_dims = [d + 1 for d in all_dims]
         data = data.transpose(all_dims)
     else:
         data = data.transpose(all_dims)
@@ -426,11 +428,11 @@ def _get_colors(clim, cmap, img, component, climp=None):
 def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos='bottom'):
     if not cbar:
         if title is not None:
-            fig.text(0.5, 0.05, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
+            fig.text(0.5, 0.95, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
     elif component == 'x' or component == 'xlog':
         _add_colorball(clim, ax=ax, cax=cax)
         if title is not None:
-            fig.text(0.5, 0.05, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
+            fig.text(0.5, 0.95, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
     else:
         if cax is None:
             ax = _first(ax)
