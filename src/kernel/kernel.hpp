@@ -4,7 +4,7 @@
 
 namespace rl {
 
-template <typename Scalar, size_t ND>
+template <typename Scalar, int ND>
 struct Kernel
 {
   using Point = Eigen::Matrix<float, ND, 1>;
@@ -26,7 +26,7 @@ struct Kernel
                       Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> = 0;
 };
 
-template <typename Scalar, size_t ND>
+template <typename Scalar, int ND>
 auto make_kernel(std::string const &type, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>;
 
 } // namespace rl

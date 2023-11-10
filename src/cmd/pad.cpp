@@ -10,12 +10,12 @@ using namespace rl;
 
 int main_pad(args::Subparser &parser)
 {
-  args::Positional<std::string>    iname(parser, "FILE", "Input HD5 file");
-  args::Positional<Sz3, Sz3Reader> padDims(parser, "SZ", "Pad/crop dimensions");
-  args::ValueFlag<std::string>     oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::Flag                       fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  args::Flag                       channels(parser, "C", "Work on channels, not images", {'c', "channels"});
-  args::ValueFlag<std::string>     dset(parser, "D", "Dataset name (image)", {'d', "dset"});
+  args::Positional<std::string>      iname(parser, "FILE", "Input HD5 file");
+  args::Positional<Sz3, SzReader<3>> padDims(parser, "SZ", "Pad/crop dimensions");
+  args::ValueFlag<std::string>       oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Flag                         fwd(parser, "", "Apply forward operation", {'f', "fwd"});
+  args::Flag                         channels(parser, "C", "Work on channels, not images", {'c', "channels"});
+  args::ValueFlag<std::string>       dset(parser, "D", "Dataset name (image)", {'d', "dset"});
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "pad", "h5"));

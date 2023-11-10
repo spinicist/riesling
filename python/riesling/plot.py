@@ -17,7 +17,7 @@ rc = {'figsize': 4,
 
 def planes(fname, dset='image', slice_pos = 0.5,
            other_dims=None, other_indices=None, img_offset=-1,
-           component='mag', clim=None, cmap=None, cbar=True,
+           component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rotates=(0, 0, 0), fliplr=False, title=None,
            basis_file=None, basis_tp=0):
 
@@ -33,7 +33,7 @@ def planes(fname, dset='image', slice_pos = 0.5,
         data_y = _get_slices(D, dim_y, [index_y], img_y, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
         data_z = _get_slices(D, dim_z, [index_z], img_z, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
 
-    clim, cmap = _get_colors(clim, cmap, data_x, component)
+    clim, cmap = _get_colors(clim, cmap, data_x, component, climp)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
 
     im_x = _draw(ax[0], _orient(np.squeeze(data_x), rotates[0], fliplr), component, clim, cmap)
@@ -113,8 +113,8 @@ def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_s
     plt.close()
     return fig
 
-def sense(fname, dset='sense', **kwargs):
-    return series(fname, dset=dset, component='x', **kwargs)
+def sense(fname, dset='sense', frame=0, **kwargs):
+    return series(fname, dset=dset, component='x', img_offset=-2, other_dims=[-2], other_indices=[frame], **kwargs)
 
 def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
          other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
@@ -300,7 +300,10 @@ def _get_slices(dset, slice_dim, slices, img_dims, component,
         basis_dim = 0
     else:
         with h5py.File(basis_file) as f:
-            basis = f['basis'][basis_tp, :]
+            if isinstance(basis_tp, int):
+                basis = f['basis'][basis_tp:basis_tp+1, :]
+            else:
+                basis = f['basis'][basis_tp, :]
         basis_dim = -1
 
     if len(other_indices) > (dset.ndim - 3):
@@ -320,7 +323,6 @@ def _get_slices(dset, slice_dim, slices, img_dims, component,
     data = dset[tuple(all_slices)]
     if basis_file:
         data = np.dot(data, basis.T)
-        all_dims = [d + 1 for d in all_dims]
         data = data.transpose(all_dims)
     else:
         data = data.transpose(all_dims)
@@ -426,11 +428,11 @@ def _get_colors(clim, cmap, img, component, climp=None):
 def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos='bottom'):
     if not cbar:
         if title is not None:
-            fig.text(0.5, 0.05, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
+            fig.text(0.5, 0.95, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
     elif component == 'x' or component == 'xlog':
         _add_colorball(clim, ax=ax, cax=cax)
         if title is not None:
-            fig.text(0.5, 0.05, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
+            fig.text(0.5, 0.95, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
     else:
         if cax is None:
             ax = _first(ax)
@@ -564,7 +566,7 @@ def dictionary(filename):
         plt.close()
         return fig
 
-def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None):
+def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None, zoom=False):
     with h5py.File(filename) as f:
         traj = np.array(f['trajectory'])
         if color == 'read':
@@ -583,13 +585,15 @@ def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
                        traj[spoke_slice, read_slice, (ii + 1) % nd],
                        c=c, cmap='cmr.ember', s=0.5)
             ax[ii].set_aspect('equal')
-            ax[ii].set_xlim((-0.5,0.5))
-            ax[ii].set_ylim((-0.5,0.5))
+            if not zoom:
+                ax[ii].set_xlim((-0.5,0.5))
+                ax[ii].set_ylim((-0.5,0.5))
         fig.tight_layout()
         plt.close()
     return fig
 
-def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None, angles=[30,-60,0]):
+def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None,
+           angles=[30,-60,0], zoom=False, draw_axes=False):
     with h5py.File(filename) as ff:
         traj = ff['trajectory'][spoke_slice, read_slice, :]
         if color == 'read':
@@ -601,14 +605,16 @@ def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(projection='3d')
 
-        x, y, z = np.array([[-0.5,0,0],[0,-0.5,0],[0,0,-0.5]])
-        u, v, w = np.array([[1,0,0],[0,1,0],[0,0,1]])
-        ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
+        if draw_axes:
+            x, y, z = np.array([[-0.5,0,0],[0,-0.5,0],[0,0,-0.5]])
+            u, v, w = np.array([[1,0,0],[0,1,0],[0,0,1]])
+            ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
         ax.scatter(traj[:, :, 0], traj[:, :, 1], traj[:, :, 2],
-                   c=c, s=3, cmap='cmr.ember')
-        ax.set_xlim((-0.5,0.5))
-        ax.set_ylim((-0.5,0.5))
-        ax.set_zlim((-0.5,0.5))
+                c=c, s=3, cmap='cmr.ember')
+        if not zoom:
+            ax.set_xlim((-0.5,0.5))
+            ax.set_ylim((-0.5,0.5))
+            ax.set_zlim((-0.5,0.5))
         ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='z')
         fig.tight_layout()
         plt.close()

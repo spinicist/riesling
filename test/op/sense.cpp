@@ -13,14 +13,14 @@ TEST_CASE("ops-sense")
   SECTION("Dot Test")
   {
     Cx4 x(1, mapSz, mapSz, mapSz), u(1, mapSz, mapSz, mapSz);
-    Cx4 maps(channels, mapSz, mapSz, mapSz);
+    Cx5 maps(channels, 1, mapSz, mapSz, mapSz);
     Cx5 y(channels, 1, mapSz, mapSz, mapSz), v(channels, 1, mapSz, mapSz, mapSz);
 
     v.setRandom();
     u.setRandom();
     // The maps need to be normalized for the Dot test
     maps.setRandom();
-    Cx3 rss = ConjugateSum(maps, maps).sqrt();
+    Cx4 const rss = ConjugateSum(maps, maps).sqrt();
     maps = maps / Tile(rss, channels);
 
     SenseOp sense(maps, 1);

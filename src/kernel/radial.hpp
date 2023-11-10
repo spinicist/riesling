@@ -5,12 +5,12 @@
 
 namespace rl {
 
-template <typename Scalar, size_t N, typename Func>
+template <typename Scalar, int N, typename Func>
 struct Radial final : FixedKernel<Scalar, N, Func::PadWidth>
 {
-  static constexpr size_t NDim = N;
-  static constexpr size_t Width = Func::Width;
-  static constexpr size_t PadWidth = Func::PadWidth;
+  static constexpr int NDim = N;
+  static constexpr int Width = Func::Width;
+  static constexpr int PadWidth = Func::PadWidth;
   static constexpr float  HalfWidth = Width / 2.f;
   using Tensor = typename FixedKernel<Scalar, NDim, PadWidth>::Tensor;
   using Point = typename FixedKernel<Scalar, NDim, PadWidth>::Point;

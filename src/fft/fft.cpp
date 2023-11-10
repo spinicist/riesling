@@ -8,6 +8,7 @@
 #include "threads.hpp"
 
 #include "fftw3.h"
+#include <cstdlib>
 #include <filesystem>
 #include <pwd.h>
 #include <sys/types.h>
@@ -18,12 +19,16 @@ namespace FFT {
 
 auto WisdomPath(std::string const &execname) -> std::string
 {
-  struct passwd *pw = getpwuid(getuid());
-  const char    *homedir = pw->pw_dir;
-  char           hostname[128];
-  gethostname(hostname, 127);
-  std::filesystem::path execpath(execname);
-  return fmt::format("{}/.{}-wisdom-{}", homedir, execpath.filename().c_str(), hostname);
+  if (char *const env_p = std::getenv("RL_WISDOM")) {
+    return fmt::format("{}", env_p);
+  } else {
+    struct passwd *pw = getpwuid(getuid());
+    const char    *homedir = pw->pw_dir;
+    char           hostname[128];
+    gethostname(hostname, 127);
+    std::filesystem::path execpath(execname);
+    return fmt::format("{}/.{}-wisdom-{}", homedir, execpath.filename().c_str(), hostname);
+  }
 }
 
 void Start(std::string const &execname)

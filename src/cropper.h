@@ -6,6 +6,20 @@
 namespace rl {
 
 template <typename T, int ND>
+decltype(auto) Crop(Eigen::Tensor<T, ND> const &x, Sz<ND> const &sz)
+{
+  Sz<ND> const fullSz = x.dimensions();
+  Sz<ND>       st;
+  for (Index ii = 0; ii < ND; ii++) {
+    if (sz[ii] > fullSz[ii]) {
+      Log::Fail("Requested crop dimensions {} exceeded tensor dimensions {}", sz, fullSz);
+    }
+    st[ii] = (fullSz[ii] - (sz[ii] - 1)) / 2;
+  }
+  return x.slice(st, sz);
+}
+
+template <typename T, int ND>
 decltype(auto) Crop(Eigen::Tensor<T, ND> &x, Sz<ND> const &sz)
 {
   Sz<ND> const fullSz = x.dimensions();
@@ -18,6 +32,7 @@ decltype(auto) Crop(Eigen::Tensor<T, ND> &x, Sz<ND> const &sz)
   }
   return x.slice(st, sz);
 }
+
 
 /** Cropper object - useful for when the same cropping operation will be carried out multiple times
  *

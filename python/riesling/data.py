@@ -83,7 +83,6 @@ def write(filename, data, data_type='noncartesian', compression='gzip'):
         # write additional information
         if 'trajectory' in data.attrs:
             out_f.create_dataset('trajectory', data=data.attrs['trajectory'], chunks=np.shape(data.attrs['trajectory']), compression=compression)
-
         # transpose data to right dimensions
         data_dims.reverse() # invert dimension order to match numpy array shape
         data = data.copy() # deep copy
@@ -118,7 +117,7 @@ def read(filename):
             elif key == 'cartesian' or key == 'channels':
                 dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
             elif key == 'sense':
-                dims = ['channel', 'x', 'y', 'z']
+                dims = ['channel', 'image', 'x', 'y', 'z']
             elif key == 'image':
                 dims = ['image', 'x', 'y', 'z', 'volume']
             elif key == 'sdc':

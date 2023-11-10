@@ -178,4 +178,12 @@ auto Div(Eigen::DSizes<Index, N> const &sz, Index const d) -> Eigen::DSizes<Inde
   return result;
 }
 
+template <typename T>
+auto Wrap(T const index, T const sz) -> T
+{
+  T const t = index + sz;
+  T const w = t - sz * (t / sz);
+  return w;
+}
+
 } // namespace rl

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
 project(riesling LANGUAGES CXX)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
-include(BuildType)
 include(Version)
 
 find_package(Threads REQUIRED)
@@ -70,13 +68,13 @@ add_library(vineyard
     src/phantom/sphere.cpp
     src/phantom/shepp-logan.cpp
     src/prox/entropy.cpp
-    src/prox/l2.cpp
+    src/prox/l1-wavelets.cpp
+    src/prox/lsq.cpp
     src/prox/llr.cpp
+    src/prox/norms.cpp
     src/prox/prox.cpp
     src/prox/slr.cpp
     src/prox/stack.cpp
-    src/prox/thresh.cpp
-    src/prox/thresh-wavelets.cpp
     src/sense/coils.cpp
     src/sense/espirit.cpp
     src/sense/rovir.cpp
@@ -118,12 +116,14 @@ add_executable(riesling
     src/cmd/eig.cpp
     src/cmd/filter.cpp
     src/cmd/frames.cpp
+    src/cmd/grad.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
     # src/cmd/lad.cpp
     src/cmd/lookup.cpp
     src/cmd/lsmr.cpp
     src/cmd/lsqr.cpp
+    src/cmd/merge.cpp
     src/cmd/nii.cpp
     src/cmd/noisify.cpp
     src/cmd/ndft.cpp
@@ -143,8 +143,8 @@ add_executable(riesling
     src/cmd/sense-sim.cpp
     src/cmd/slice.cpp
     src/cmd/traj.cpp
-    src/cmd/transform.cpp
     src/cmd/version.cpp
+    src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp
     src/main.cpp
 )
@@ -180,6 +180,7 @@ if(${BUILD_TESTS})
         test/op/pad.cpp
         test/op/recon.cpp
         test/op/sense.cpp
+        test/op/wavelets.cpp
     )
     target_link_libraries(riesling-tests PUBLIC
         vineyard

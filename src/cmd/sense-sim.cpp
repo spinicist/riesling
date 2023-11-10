@@ -24,7 +24,7 @@ int main_sense_sim(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   Sz3 shape{matrix.Get(), matrix.Get(), matrix.Get()};
-  Cx4 sense =
+  Cx5 sense =
     birdcage(shape, Eigen::Array3f::Constant(voxel_size.Get()), nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get());
 
   // Normalize

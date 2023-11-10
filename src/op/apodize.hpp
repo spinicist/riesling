@@ -5,7 +5,7 @@
 
 namespace rl {
 
-template <typename Scalar_, size_t NDim>
+template <typename Scalar_, int NDim>
 struct ApodizeOp final : TensorOperator<Scalar_, NDim + 2, NDim + 2>
 {
   OP_INHERIT(Cx, NDim + 2, NDim + 2)

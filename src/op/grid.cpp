@@ -7,16 +7,9 @@
 
 #include <mutex>
 
-inline auto Wrap(Index const index, Index const sz) -> Index
-{
-  Index const t = index + sz;
-  Index const w = t - sz * (t / sz);
-  return w;
-}
-
 namespace rl {
 
-template <typename Scalar, size_t NDim>
+template <typename Scalar, int NDim>
 auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
                               std::string const ktype,
                               float const       osamp,
@@ -30,7 +23,7 @@ auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
   return std::make_shared<Grid<Scalar, NDim>>(kernel, mapping, nC, b);
 }
 
-template <typename Scalar, size_t NDim>
+template <typename Scalar, int NDim>
 Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Re2 const &b)
   : Parent(fmt::format("{}D GridOp", NDim), AddFront(m.cartDims, nC, b.dimension(0)), AddFront(m.noncartDims, nC))
   , kernel{k}
@@ -41,7 +34,7 @@ Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping
   Log::Print<Log::Level::High>("Grid Dims {}", this->ishape);
 }
 
-template <typename Scalar, size_t NDim>
+template <typename Scalar, int NDim>
 void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
@@ -95,7 +88,7 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <typename Scalar, size_t NDim>
+template <typename Scalar, int NDim>
 void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const  time = this->startAdjoint(y);

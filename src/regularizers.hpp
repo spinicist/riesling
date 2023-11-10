@@ -12,19 +12,22 @@ struct RegOpts
 {
   RegOpts(args::Subparser &parser);
 
-  args::ValueFlag<float> tv;
-  args::ValueFlag<float> tvt;
-  args::ValueFlag<float> tgv;
   args::ValueFlag<float> l1;
   args::ValueFlag<float> nmrent;
+
+  args::ValueFlag<float> tv;
+  args::ValueFlag<float> tvt;
+
+  args::ValueFlag<float> tgv;
+  args::ValueFlag<float> tgvl2;
 
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;
   args::ValueFlag<Index> llrWin;
   args::Flag             llrShift, llrFFT;
 
-  args::ValueFlag<Index> wavelets;
-  args::ValueFlag<Index> waveLevels;
+  args::ValueFlag<float> wavelets;
+  args::ValueFlag<Sz4, SzReader<4>> waveDims;
   args::ValueFlag<Index> waveWidth;
 };
 

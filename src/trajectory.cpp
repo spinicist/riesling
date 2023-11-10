@@ -12,8 +12,20 @@ Trajectory::Trajectory(Info const &info, Re3 const &points)
 {
   if (points_.dimension(0) < 1 || points_.dimension(0) > 3) { Log::Fail("Trajectory has {} dimensions", points_.dimension(0)); }
 
-  float const maxCoord = Maximum(points_.abs());
-  if (maxCoord > 0.5f) { Log::Warn("Maximum trajectory co-ordinate {} > 0.5", maxCoord); }
+  Index discarded = 0;
+  for (Index is = 0; is < points_.dimension(2); is++) {
+    for (Index ir = 0; ir < points_.dimension(1); ir++) {
+      if (B0((points_.chip<2>(is).chip<1>(ir).abs() > 0.5f).any())()) {
+        points_.chip<2>(is).chip<1>(ir).setConstant(std::numeric_limits<float>::quiet_NaN());
+        discarded++;
+      }
+    }
+  }
+  if (discarded > 0) {
+    Index const total = points_.dimension(1) * points_.dimension(2);
+    float const percent = (100.f * discarded) / total;
+    Log::Warn("Discarded {} trajectory points ({}%) > 0.5", discarded, percent);
+  }
   Log::Print<Log::Level::Debug>("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
 }
 
@@ -27,6 +39,15 @@ void Trajectory::checkDims(Sz3 const dims) const
 {
   if (dims[1] != nSamples()) { Log::Fail("Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
   if (dims[2] != nTraces()) { Log::Fail("Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
+}
+
+auto Trajectory::compatible(Trajectory const &other) const -> bool
+{
+  if ((other.matrix() == matrix()) && (other.FOV() == FOV()).all() && (other.nDims() == nDims())) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 Info const &Trajectory::info() const { return info_; }
@@ -47,7 +68,7 @@ auto Trajectory::matrixForFOV(float const fov) const -> Sz3
   if (fov > 0) {
     Eigen::Array3l bigMatrix = (((fov / info_.voxel_size) / 2.f).floor() * 2).cast<Index>();
     Sz3            matrix = info_.matrix;
-    for (Index ii = 0; ii < nDims(); ii++) {
+    for (Index ii = 0; ii < 3; ii++) {
       matrix[ii] = bigMatrix[ii];
     }
     Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov, info_.matrix, matrix);
@@ -60,7 +81,7 @@ auto Trajectory::matrixForFOV(float const fov) const -> Sz3
 auto Trajectory::matrixForFOV(Eigen::Array3f const fov) const -> Sz3
 {
   Sz3 matrix;
-  for (Index ii = 0; ii < nDims(); ii++) {
+  for (Index ii = 0; ii < 3; ii++) {
     matrix[ii] = std::max(info_.matrix[ii], 2 * (Index)(fov[ii] / info_.voxel_size[ii] / 2.f));
   }
   Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov.transpose(), info_.matrix, matrix);

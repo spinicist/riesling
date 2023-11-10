@@ -31,14 +31,10 @@ struct VectorReader
   void operator()(std::string const &name, std::string const &value, std::vector<T> &x);
 };
 
-struct Sz2Reader
+template <int N>
+struct SzReader
 {
-  void operator()(std::string const &name, std::string const &value, rl::Sz2 &x);
-};
-
-struct Sz3Reader
-{
-  void operator()(std::string const &name, std::string const &value, rl::Sz3 &x);
+  void operator()(std::string const &name, std::string const &value, rl::Sz<N> &x);
 };
 
 auto ReadBasis(std::string const &basisFile) -> rl::Re2;

@@ -4,12 +4,12 @@
 
 namespace rl {
 
-template <typename Scalar, size_t N>
+template <typename Scalar, int N>
 struct NearestNeighbour final : FixedKernel<Scalar, N, 1>
 {
-  static constexpr size_t NDim = N;
-  static constexpr size_t Width = 1;
-  static constexpr size_t PadWidth = 1;
+  static constexpr int NDim = N;
+  static constexpr int Width = 1;
+  static constexpr int PadWidth = 1;
   static constexpr float  HalfWidth = 1;
   using Tensor = typename FixedKernel<Scalar, NDim, PadWidth>::Tensor;
   using Point = typename FixedKernel<Scalar, NDim, PadWidth>::Point;

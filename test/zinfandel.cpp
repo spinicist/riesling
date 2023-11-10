@@ -86,6 +86,9 @@ TEST_CASE("zinfandel-algo")
     Cx3 diff = test_kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke}) -
                kspace.slice(Sz3{0, 0, 0}, Sz3{n_coil, n_gap, n_spoke});
     float const sum_diff = Norm(diff) / diff.size();
+    INFO(kspace);
+    INFO(test_kspace);
+    INFO(diff);
     CHECK(sum_diff == Approx(0.f).margin(1.e-4f));
   }
 }

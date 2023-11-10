@@ -12,7 +12,7 @@ struct NoncartesianIndex
   int16_t sample;
 };
 
-template <size_t Rank>
+template <int Rank>
 struct Mapping
 {
   struct Bucket

@@ -9,19 +9,19 @@
 
 namespace rl {
 
-template <size_t Rank>
+template <int Rank>
 auto Mapping<Rank>::Bucket::empty() const -> bool
 {
   return indices.empty();
 }
 
-template <size_t Rank>
+template <int Rank>
 auto Mapping<Rank>::Bucket::size() const -> Index
 {
   return indices.size();
 }
 
-template <size_t Rank>
+template <int Rank>
 auto Mapping<Rank>::Bucket::bucketSize() const -> Sz<Rank>
 {
   Sz<Rank> sz;
@@ -29,11 +29,11 @@ auto Mapping<Rank>::Bucket::bucketSize() const -> Sz<Rank>
   return sz;
 }
 
-template <size_t Rank>
+template <int Rank>
 auto Mapping<Rank>::Bucket::bucketStart() const -> Sz<Rank>
 {
   Sz<Rank> st;
-  for (Index ii = 0; ii < Rank; ii++) {
+  for (int ii = 0; ii < Rank; ii++) {
     if (minCorner[ii] < 0) {
       st[ii] = -minCorner[ii];
     } else {
@@ -43,11 +43,11 @@ auto Mapping<Rank>::Bucket::bucketStart() const -> Sz<Rank>
   return st;
 }
 
-template <size_t Rank>
+template <int Rank>
 auto Mapping<Rank>::Bucket::gridStart() const -> Sz<Rank>
 {
   Sz<Rank> st;
-  for (Index ii = 0; ii < Rank; ii++) {
+  for (int ii = 0; ii < Rank; ii++) {
     if (minCorner[ii] < 0) {
       st[ii] = 0L;
     } else {
@@ -57,11 +57,11 @@ auto Mapping<Rank>::Bucket::gridStart() const -> Sz<Rank>
   return st;
 }
 
-template <size_t Rank>
+template <int Rank>
 auto Mapping<Rank>::Bucket::sliceSize() const -> Sz<Rank>
 {
   Sz<Rank> sl;
-  for (Index ii = 0; ii < Rank; ii++) {
+  for (int ii = 0; ii < Rank; ii++) {
     if (maxCorner[ii] >= gridSize[ii]) {
       sl[ii] = gridSize[ii] - minCorner[ii];
     } else {
@@ -80,12 +80,12 @@ inline decltype(auto) nearby(T &&x)
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
-template <size_t Rank>
+template <int Rank>
 Sz<Rank> fft_size(Sz<Rank> const x, float const os)
 {
   // return std::ceil(x);
   Sz<Rank> fsz;
-  for (size_t ii = 0; ii < Rank; ii++) {
+  for (int ii = 0; ii < Rank; ii++) {
     auto ox = x[ii] * os;
     if (ox > 8.f) {
       fsz[ii] = (std::lrint(ox) + 7L) & ~7L;
@@ -106,7 +106,7 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
   std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
     auto const &ac = cart[a];
     auto const &bc = cart[b];
-    for (int ii = N - 1; ii >= 0; ii--) {
+    for (size_t ii = N - 1; ii > -1; ii--) {
       if (ac[ii] < bc[ii]) {
         return true;
       } else if (ac[ii] > bc[ii]) {
@@ -126,7 +126,7 @@ inline auto Wrap(Index const index, Index const sz) -> Index
   return w;
 }
 
-template <size_t Rank>
+template <int Rank>
 Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize)
 {
   Info const &info = traj.info();
@@ -139,7 +139,7 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
 
   Sz<Rank> nB;
-  for (size_t ii = 0; ii < Rank; ii++) {
+  for (int ii = 0; ii < Rank; ii++) {
     nB[ii] = std::ceil(cartDims[ii] / float(bucketSz));
   }
   buckets.reserve(Product(nB));
@@ -176,7 +176,7 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
 
   std::fesetround(FE_TONEAREST);
   Eigen::Array<float, Rank, 1> center, scales;
-  for (size_t ii = 0; ii < Rank; ii++) {
+  for (int ii = 0; ii < Rank; ii++) {
     scales[ii] = cartDims[ii];
     center[ii] = cartDims[ii] / 2;
   }
@@ -190,14 +190,14 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
         continue;
       }
       Eigen::Array<float, Rank, 1> xyz;
-      for (size_t ii = 0; ii < Rank; ii++) {
+      for (int ii = 0; ii < Rank; ii++) {
         xyz[ii] = p[ii] * scales[ii] + center[ii];
       }
       auto const gp = nearby(xyz);
       auto const off = xyz - gp.template cast<float>();
 
       std::array<int16_t, Rank> ijk;
-      for (size_t ii = 0; ii < Rank; ii++) {
+      for (int ii = 0; ii < Rank; ii++) {
         ijk[ii] = Wrap(gp[ii], cartDims[ii]);
       }
       cart.push_back(ijk);

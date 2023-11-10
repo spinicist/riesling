@@ -6,7 +6,7 @@ namespace rl {
 
 struct Settings
 {
-  Index spokesPerSeg = 256, segsPerPrep = 2, segsPerPrepKeep = 2, segsPrep2 = 0, spokesSpoil = 0;
+  Index spokesPerSeg = 256, segsPerPrep = 2, segsPerPrepKeep = 2, segsPrep2 = 0, spokesSpoil = 0, k0 = 0;
   float alpha = 1.f, ascale = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, TI = 0, Trec = 0, TE = 0;
 };
 

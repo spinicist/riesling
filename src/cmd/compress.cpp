@@ -29,9 +29,9 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<Index> lores(parser, "L", "Number of lores traces", {"lores"}, 0);
 
   // PCA Options
-  args::ValueFlag<Sz2, Sz2Reader> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
-  args::ValueFlag<Sz3, Sz3Reader> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
-  args::ValueFlag<Sz2, Sz2Reader> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
+  args::ValueFlag<Sz2, SzReader<2>> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
+  args::ValueFlag<Sz3, SzReader<3>> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
+  args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
   ROVIROpts                       rovirOpts(parser);
 
   ParseCommand(parser, coreOpts.iname);

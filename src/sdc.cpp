@@ -41,7 +41,7 @@ auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Inde
       Log::Print("SDC converged, delta was {}", delta);
       break;
     } else {
-      Log::Print("SDC Step {}/{} Delta {}", ii, its, delta);
+      Log::Print("SDC Step {}/{} Delta {}", ii + 1, its, delta);
     }
   }
   Log::Print("SDC finished.");

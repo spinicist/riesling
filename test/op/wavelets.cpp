@@ -1,0 +1,64 @@
+#include "../../src/op/wavelets.hpp"
+#include "../../src/tensorOps.hpp"
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <fmt/ostream.h>
+
+using namespace rl;
+using namespace Catch;
+
+TEST_CASE("Wavelets", "[tform]")
+{
+  Index const sz = 64;
+
+  SECTION("1D")
+  {
+    Sz4 const shape{sz, 1, 1, 1};
+    Sz4 const dims{1, 0, 0, 0};
+    Wavelets  wave(shape, 6, dims);
+    Cx4       x(shape);
+    x.setZero();
+    x(sz / 2, 0, 0, 0) = Cx(1.f);
+
+    Cx4 y = wave.forward(x);
+    Cx4 xx = wave.adjoint(y);
+
+    INFO("y\n" << y);
+    INFO("xx\n" << xx);
+    CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
+  }
+
+  SECTION("2D")
+  {
+    Sz4 const shape{sz, sz, 1, 1};
+    Sz4 const dims{1, 1, 0, 0};
+    Wavelets  wave(shape, 6, dims);
+    Cx4       x(shape);
+    x.setZero();
+    x(sz / 2, sz / 2, 0, 0) = Cx(1.f);
+
+    Cx4 y = wave.forward(x);
+    Cx4 xx = wave.adjoint(y);
+
+    INFO("y\n" << y);
+    INFO("xx\n" << xx);
+    CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
+  }
+
+  SECTION("3D")
+  {
+    Sz4 const shape{1, sz, sz, sz};
+    Sz4 const dims{0, 1, 1, 1};
+    Wavelets  wave(shape, 6, dims);
+    Cx4       x(shape);
+    x.setZero();
+    x(0, sz / 2, sz / 2, sz / 2) = Cx(1.f);
+
+    Cx4 y = wave.forward(x);
+    Cx4 xx = wave.adjoint(y);
+
+    INFO("y\n" << y);
+    INFO("xx\n" << xx);
+    CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
+  }
+}
