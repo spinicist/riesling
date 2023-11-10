@@ -17,28 +17,32 @@ def _read_info(hdf5_dataset):
         d[key] = item
     return d
 
-def write(filename, data, data_type='noncartesian', compression='gzip'):
-    # match data dimensions and data format based on data_type
-    if data_type == 'noncartesian':
-        data_dims = ['channel', 'sample', 'trace', 'slab', 'volume']
+def _description(dataset):
+    if dataset == 'noncartesian':
+        dims = ['channel', 'sample', 'trace', 'slab', 'volume']
         dtype = 'c8'
-    elif data_type == 'cartesian' or data_type == 'channels':
-        data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
+    elif dataset == 'cartesian' or dataset == 'channels':
+        dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
         dtype = 'c8'
-    elif data_type == 'sense':
-        data_dims = ['channel', 'image', 'x', 'y', 'z']
+    elif dataset == 'sense':
+        dims = ['channel', 'image', 'x', 'y', 'z']
         dtype = 'c8'
-    elif data_type == 'image':
-        data_dims = ['image', 'x', 'y', 'z', 'volume']
+    elif dataset == 'image':
+        dims = ['image', 'x', 'y', 'z', 'volume']
         dtype = 'c8'
-    elif data_type == 'sdc':
-        data_dims = ['sample', 'trace']
+    elif dataset == 'sdc':
+        dims = ['sample', 'trace']
         dtype = 'f8'
-    elif data_type == 'basis':
-        data_dims = ['trace', 'volume']
+    elif dataset == 'basis':
+        dims = ['trace', 'volume']
         dtype = 'f8'
     else:
-        AssertionError(f'Unknown data type {data_type}')
+        AssertionError(f'Unknown data type {dataset}')
+    return (dims, dtype)
+
+def write(filename, data, data_type='noncartesian', compression='gzip'):
+    # match data dimensions and data format based on data_type
+    data_dims, dtype = _description(data_type)
 
     if not isinstance(data, xr.DataArray):
         data = xr.DataArray(data, attrs={}, dims=data_dims) # make it a DataArray with empty header and just assume that dimensions match
@@ -113,20 +117,7 @@ def read(filename):
         if data_idx.any():
             key = data_keys[data_idx][0]
             data = f[key]
-            if key == 'noncartesian':
-                dims = ['channel', 'sample', 'trace', 'slab', 'volume']
-            elif key == 'cartesian' or key == 'channels':
-                dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
-            elif key == 'sense':
-                dims = ['channel', 'image', 'x', 'y', 'z']
-            elif key == 'image':
-                dims = ['image', 'x', 'y', 'z', 'volume']
-            elif key == 'sdc':
-                dims = ['sample', 'trace']
-            elif key == 'basis':
-                dims = ['trace', 'volume']
-            else: # this should never happen
-                return None 
+            dims, _ = _description(key)
             dims.reverse() # invert dimension order to match numpy array shape
         else:
             print(f'Could not find any keys matching {data_keys} in file')
@@ -144,20 +135,3 @@ def read(filename):
             data.name = data.name[1:] # remove / at beginning
 
         return data
-
-def write_noncartesian(fname, kspace, traj, matrix, voxel_size=[1,1,1], tr=1, origin=[0,0,0], direction=np.eye(3)):
-    if kspace.ndim != 5:
-        raise('K-space must be 5 dimensional (channels, samples, traces, slabs, volumes)')
-    if traj.ndim != 3:
-        raise('Trajectory must be 3 dimensional (co-ords, samples, traces)')
-    if traj.shape[2] > 3:
-        raise('Trajectory cannot have more than 3 co-ordinates')
-    if np.max(np.abs(traj)) > 0.5:
-        raise('Trajectory cotained co-ordinates greater than 0.5')
-
-    # Create new H5 file
-    with h5py.File(fname, 'w') as out_f:
-        out_f.create_dataset("info", data=_create_info(matrix, voxel_size, tr, origin, direction))
-        out_f.create_dataset('trajectory', data=traj, chunks=np.shape(traj), compression="gzip")
-        out_f.create_dataset("noncartesian", dtype='c8', data=kspace, chunks=np.shape(kspace), compression="gzip")
-        out_f.close()
