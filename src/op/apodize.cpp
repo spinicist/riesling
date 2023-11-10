@@ -9,10 +9,8 @@
 namespace rl {
 
 template <typename S, int NDim>
-ApodizeOp<S, NDim>::ApodizeOp(InDims const                                     ishape,
-                              Sz<NDim> const                                   gshape,
-                              std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
-  : Parent("ApodizeOp", ishape, ishape)
+ApodizeOp<S, NDim>::ApodizeOp(InDims const ish, Sz<NDim> const gshape, std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
+  : Parent("ApodizeOp", ish, ish)
 {
   for (int ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
