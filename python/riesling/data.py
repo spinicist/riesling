@@ -26,7 +26,7 @@ def write(filename, data, data_type='noncartesian', compression='gzip'):
         data_dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
         dtype = 'c8'
     elif data_type == 'sense':
-        data_dims = ['channel', 'x', 'y', 'z']
+        data_dims = ['channel', 'image', 'x', 'y', 'z']
         dtype = 'c8'
     elif data_type == 'image':
         data_dims = ['image', 'x', 'y', 'z', 'volume']

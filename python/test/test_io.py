@@ -124,7 +124,7 @@ class TestReadWrite(unittest.TestCase):
         np.testing.assert_almost_equal(sdc.data, sdc_reload.data)
 
         # run nufft again to check if it works with the custom sdc
-        os.system(f'../build/riesling nufft {self.prefix}-recon.h5 --sdc={self.prefix}-sdc.h5 -o {self.prefix}-recon-sdc')
+        os.system(f'riesling nufft {self.prefix}-recon.h5 --sdc={self.prefix}-sdc.h5 -o {self.prefix}-recon-sdc')
         data = riesling.data.read(f'{self.prefix}-recon-sdc-nufft.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1, 4))
         self.assertEqual(data.dims, ('volume', 'z', 'y', 'x', 'image', 'channel'))
