@@ -39,7 +39,7 @@ TEST_CASE("NDFT Basis", "[tform]")
   Re3         points(1, 1, M);
   points.setZero();
   Index const O = 4;
-  Re2         basis(O, M);
+  Cx2         basis(O, M);
   basis.setZero();
   Index const P = M / O;
   for (Index ii = 0; ii < O; ii++) {

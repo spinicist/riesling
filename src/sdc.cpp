@@ -1,5 +1,6 @@
 #include "sdc.hpp"
 
+#include "basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
@@ -27,9 +28,7 @@ auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Inde
   Log::Print("Using Pipe/Zwart/Menon SDC...");
   Re3 W(1, traj.nSamples(), traj.nTraces());
   Re3 Wp(W.dimensions());
-  Re2 basis(1, 1);
-  basis.setConstant(1.f);
-  auto gridder = Grid<float, ND>::Make(traj, ktype, os, 1, basis);
+  auto gridder = Grid<float, ND>::Make(traj, ktype, os, 1);
 
   W.setConstant(1.f);
   for (Index ii = 0; ii < its; ii++) {
@@ -152,12 +151,8 @@ auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string
     HD5::Reader reader(iname);
     sdc = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (sdc.dimension(0) != traj.nSamples() || sdc.dimension(1) != traj.nTraces()) {
-      Log::Fail(
-        "SDC dimensions on disk {}x{} did not match info {}x{}",
-        sdc.dimension(0),
-        sdc.dimension(1),
-        traj.nSamples(),
-        traj.nTraces());
+      Log::Fail("SDC dimensions on disk {}x{} did not match info {}x{}", sdc.dimension(0), sdc.dimension(1), traj.nSamples(),
+                traj.nTraces());
     }
   }
   return std::make_shared<TensorScale<Cx, 3>>(dims, sdc.cast<Cx>());

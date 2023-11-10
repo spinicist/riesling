@@ -53,7 +53,7 @@ std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const           
                                                      float const                            osamp,
                                                      Index const                            nC,
                                                      Sz3 const                              matrix,
-                                                     Re2 const                             &basis,
+                                                     Cx2 const                             &basis,
                                                      std::shared_ptr<TensorOperator<Cx, 3>> sdc,
                                                      Index const                            bSz,
                                                      Index const                            sSz)

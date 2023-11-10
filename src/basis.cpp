@@ -5,12 +5,16 @@
 
 namespace rl {
 
-auto IdBasis() -> Re2
+template <typename Scalar>
+auto IdBasis() -> Eigen::Tensor<Scalar, 2>
 {
-  Re2 id(1, 1);
+  Eigen::Tensor<Scalar, 2> id(1, 1);
   id.setConstant(1.f);
   return id;
 }
+
+template auto IdBasis<float>() -> Re2;
+template auto IdBasis<Cx>() -> Cx2;
 
 void SaveBasis(
   Eigen::ArrayXXf const &dynamics,

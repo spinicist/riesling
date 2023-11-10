@@ -50,7 +50,7 @@ struct FixedKernel : Kernel<Scalar, ND>
   void         spread(std::array<int16_t, ND> const   c,
                       Point const                     p,
                       Sz<ND> const                    minCorner,
-                      Eigen::Tensor<float, 1> const  &b,
+                      Eigen::Tensor<Scalar, 1> const     &b,
                       Eigen::Tensor<Scalar, 1> const &y,
                       Eigen::Tensor<Scalar, ND + 2>  &x) const final
   {
@@ -63,7 +63,7 @@ struct FixedKernel : Kernel<Scalar, ND>
       if constexpr (ND == 1) {
         float const kval = k(i1);
         for (Index ib = 0; ib < nB; ib++) {
-          float const bval = kval * b(ib);
+          Scalar const bval = kval * b(ib);
           for (Index ic = 0; ic < nC; ic++) {
             x(ic, ib, ii1) += y(ic) * bval;
           }
@@ -74,7 +74,7 @@ struct FixedKernel : Kernel<Scalar, ND>
           if constexpr (ND == 2) {
             float const kval = k(i2, i1);
             for (Index ib = 0; ib < nB; ib++) {
-              float const bval = kval * b(ib);
+              Scalar const bval = kval * b(ib);
               for (Index ic = 0; ic < nC; ic++) {
                 x(ic, ib, ii2, ii1) += y(ic) * bval;
               }
@@ -84,7 +84,7 @@ struct FixedKernel : Kernel<Scalar, ND>
               Index const ii3 = i3 + c[ND - 3] - hW - minCorner[ND - 3];
               float const kval = k(i3, i2, i1);
               for (Index ib = 0; ib < nB; ib++) {
-                float const bval = kval * b(ib);
+                Scalar const bval = kval * b(ib);
                 for (Index ic = 0; ic < nC; ic++) {
                   x(ic, ib, ii3, ii2, ii1) += y(ic) * bval;
                 }
@@ -99,7 +99,7 @@ struct FixedKernel : Kernel<Scalar, ND>
   auto gather(std::array<int16_t, ND> const                                c,
               Point const                                                  p,
               Sz<ND> const                                                 minCorner,
-              Eigen::Tensor<float, 1> const                               &b,
+              Eigen::Tensor<Scalar, 1> const                                  &b,
               Sz<ND> const                                                 cdims,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> final
   {
@@ -114,7 +114,7 @@ struct FixedKernel : Kernel<Scalar, ND>
       if constexpr (ND == 1) {
         float const kval = k(i1);
         for (Index ib = 0; ib < nB; ib++) {
-          float const bval = kval * b(ib);
+          Scalar const bval = kval * b(ib);
           for (Index ic = 0; ic < nC; ic++) {
             y(ic) += x(ic, ib, ii1) * bval;
           }
@@ -125,7 +125,7 @@ struct FixedKernel : Kernel<Scalar, ND>
           if constexpr (ND == 2) {
             float const kval = k(i2, i1);
             for (Index ib = 0; ib < nB; ib++) {
-              float const bval = kval * b(ib);
+              Scalar const bval = kval * b(ib);
               for (Index ic = 0; ic < nC; ic++) {
                 y(ic) += x(ic, ib, ii2, ii1) * bval;
               }
@@ -135,7 +135,7 @@ struct FixedKernel : Kernel<Scalar, ND>
               Index const ii3 = c[ND - 3] - minCorner[ND - 3] - W_2 + i3;
               float const kval = k(i3, i2, i1);
               for (Index ib = 0; ib < nB; ib++) {
-                float const bval = kval * b(ib);
+                Scalar const bval = kval * b(ib);
                 for (Index ic = 0; ic < nC; ic++) {
                   y(ic) += x(ic, ib, ii3, ii2, ii1) * bval;
                 }

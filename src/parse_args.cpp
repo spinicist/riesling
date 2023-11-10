@@ -1,4 +1,5 @@
 #include "parse_args.hpp"
+#include "basis.hpp"
 #include "io/hd5.hpp"
 #include "io/writer.hpp"
 #include "tensorOps.hpp"
@@ -142,24 +143,22 @@ void ParseCommand(args::Subparser &parser)
   SetThreadCount();
 }
 
-auto ReadBasis(std::string const &basisFile) -> Re2
+auto ReadBasis(std::string const &basisFile) -> Cx2
 {
   if (basisFile.empty()) {
-    Re2 basis(1, 1);
-    basis.setConstant(1.f);
-    return basis;
+    return IdBasis();
   } else {
     std::string fname;
     Index       which = -1;
     auto        result = scn::scan(basisFile, "{},{}", which, fname);
     if (!result) {
       HD5::Reader basisReader(basisFile);
-      return basisReader.readTensor<Re2>(HD5::Keys::Basis);
+      return basisReader.readTensor<Cx2>(HD5::Keys::Basis);
     } else {
       HD5::Reader basisReader(fname);
-      auto const  basis = basisReader.readTensor<Re2>(HD5::Keys::Basis);
+      auto const  basis = basisReader.readTensor<Cx2>(HD5::Keys::Basis);
       if (which >= 0 && which < basis.dimension(1)) {
-        Re2 const b1 = basis.slice(Sz2{0, which}, Sz2{basis.dimension(0), 1});
+        Cx2 const b1 = basis.slice(Sz2{0, which}, Sz2{basis.dimension(0), 1});
         return b1;
       } else {
         Log::Fail("Requested basis vector {} but only {} in file {}", which, basis.dimension(1), fname);

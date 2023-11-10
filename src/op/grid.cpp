@@ -14,7 +14,7 @@ auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
                               std::string const ktype,
                               float const       osamp,
                               Index const       nC,
-                              Re2 const        &b,
+                              Basis const      &b,
                               Index const       bSz,
                               Index const       sSz) -> std::shared_ptr<Grid<Scalar, NDim>>
 {
@@ -24,7 +24,7 @@ auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
 }
 
 template <typename Scalar, int NDim>
-Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Re2 const &b)
+Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Basis const &b)
   : Parent(fmt::format("{}D GridOp", NDim), AddFront(m.cartDims, nC, b.dimension(0)), AddFront(m.noncartDims, nC))
   , kernel{k}
   , mapping{m}
@@ -80,7 +80,7 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
       auto const  o = map.offset[si];
       Index const btp = n.trace % basis.dimension(1);
       y.template chip<2>(n.trace).template chip<1>(n.sample) =
-        this->kernel->gather(c, o, bucket.minCorner, basis.chip<1>(btp), map.cartDims, bGrid);
+        this->kernel->gather(c, o, bucket.minCorner, basis.template chip<1>(btp), map.cartDims, bGrid);
     }
   };
 
@@ -109,7 +109,7 @@ void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
       auto const               o = map.offset[si];
       Index const              btp = n.trace % basis.dimension(1);
       Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
-      this->kernel->spread(c, o, bucket.minCorner, basis.chip<1>(btp), yy, bGrid);
+      this->kernel->spread(c, o, bucket.minCorner, basis.template chip<1>(btp), yy, bGrid);
     }
 
     {

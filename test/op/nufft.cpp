@@ -47,7 +47,7 @@ TEST_CASE("NUFFT Basis", "[tform]")
   Trajectory const traj(info, points);
 
   Index const O = 4;
-  Re2         basis(O, N);
+  Cx2         basis(O, N);
   basis.setZero();
   Index const P = N / O;
   for (Index ii = 0; ii < O; ii++) {

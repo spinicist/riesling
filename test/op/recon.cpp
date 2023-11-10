@@ -1,4 +1,5 @@
 #include "../src/op/recon.hpp"
+#include "../src/basis.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -24,9 +25,7 @@ TEST_CASE("Recon", "[recon]")
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  Re2 basis(nF, nF);
-  basis.setConstant(1.f);
-  auto nufft = make_nufft(traj, ktype, osamp, nC, traj.matrix(), basis);
+  auto nufft = make_nufft(traj, ktype, osamp, nC, traj.matrix(), IdBasis());
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
   senseMaps.setConstant(std::sqrt(1./nC));

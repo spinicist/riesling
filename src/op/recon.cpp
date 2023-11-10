@@ -12,7 +12,7 @@ auto make_recon(CoreOpts                       &coreOpts,
                 SDC::Opts                      &sdcOpts,
                 Trajectory const               &traj,
                 std::shared_ptr<SenseOp> const &sense,
-                Re2 const                      &basis) -> std::shared_ptr<ReconOp>
+                Cx2 const                      &basis) -> std::shared_ptr<ReconOp>
 {
 
   Index const nC = sense->nChannels();

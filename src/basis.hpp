@@ -6,7 +6,8 @@
 
 namespace rl {
 
-auto IdBasis() -> Re2;
+template<typename Scalar = Cx>
+auto IdBasis() -> Eigen::Tensor<Scalar, 2>;
 
 void SaveBasis(
   Eigen::ArrayXXf const &dynamics,

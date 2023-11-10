@@ -109,6 +109,7 @@ template auto Reader::readTensor<I1>(std::string const &) const -> I1;
 template auto Reader::readTensor<Re1>(std::string const &) const -> Re1;
 template auto Reader::readTensor<Re2>(std::string const &) const -> Re2;
 template auto Reader::readTensor<Re3>(std::string const &) const -> Re3;
+template auto Reader::readTensor<Cx2>(std::string const &) const -> Cx2;
 template auto Reader::readTensor<Cx3>(std::string const &) const -> Cx3;
 template auto Reader::readTensor<Cx4>(std::string const &) const -> Cx4;
 template auto Reader::readTensor<Cx5>(std::string const &) const -> Cx5;

@@ -13,7 +13,7 @@ struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
   NDFTOp(Re3 const                             &traj,
          Index const                            nC,
          Sz<NDim> const                         matrix,
-         Re2 const                             &basis = IdBasis(),
+         Cx2 const                             &basis = IdBasis(),
          std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
   OP_DECLARE()
 
@@ -29,7 +29,7 @@ private:
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_ndft(Re3 const                             &traj,
                                                     Index const                            nC,
                                                     Sz3 const                              matrix,
-                                                    Re2 const                             &basis = IdBasis(),
+                                                    Cx2 const                             &basis = IdBasis(),
                                                     std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
 
 } // namespace rl

@@ -21,7 +21,7 @@ struct Opts
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Re2 const &basis = IdBasis())
+auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Cx2 const &basis = IdBasis())
   -> Cx5;
 
 //! Normalizes by RSS with optional regularization
