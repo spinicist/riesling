@@ -9,6 +9,7 @@ import contextlib
 import cmasher
 import colorcet
 import warnings
+from . import io
 
 rc = {'figsize': 4,
       'interpolation': 'none',
@@ -44,20 +45,18 @@ def planes(fname, dset='image', slice_pos = 0.5,
     plt.close()
     return fig
 
-def slices(fname, dset='image', n=4, axis='z', start=0.25, stop=0.75,
-           other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
+def slices(fname, dset='image', image=('x', 'y'),
+           sl='z', n=8, start=0, stop=1,
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-
-    slice_dim, img_dims = _get_dims(axis, img_offset)
-    with h5py.File(fname, 'r') as f:
-        D = f[dset]
-        maxn = D.shape[slice_dim]
-        n = np.amin([n, maxn])
-        slices = np.floor(np.linspace(start*maxn, stop*maxn, n, endpoint=True)).astype(int)
-        data = _get_slices(D, slice_dim, slices, img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
-
+    D = io.read(fname)
+    maxn = len(D[sl])
+    slv = np.floor(np.linspace(start*maxn, stop*maxn, n, endpoint=False)).astype(int)
+    indexers = {image[0]: slice(None), image[1]: slice(None), sl:slv}
+    others = {k: v for k, v in zip(D.dims, [ii//2 for ii in D.shape]) if k not in (*image, sl)}
+    indexers.update(others)
+    data = _get_component(D.isel(indexers), component).transpose(sl, image[0], image[1])
     clim, cmap = _get_colors(clim, cmap, data, component, climp)
     cols = int(np.ceil(n / rows))
     fig, all_ax = plt.subplots(rows, cols, figsize=(rc['figsize']*cols, rc['figsize']*rows), facecolor='black')
@@ -346,6 +345,26 @@ def _get_slices(dset, slice_dim, slices, img_dims, component,
         data = np.real(data)
         warnings.warn('Unknown component, taking real')
 
+    return data
+
+def _get_component(data, component):
+    if component == 'x':
+        pass
+    elif component == 'xlog':
+        pass
+    elif component == 'mag':
+        data = np.abs(data)
+    elif component == 'log':
+        data = np.log1p(np.abs(data))
+    elif component == 'pha':
+        data = np.angle(data)
+    elif component == 'real':
+        data = np.real(data)
+    elif component == 'imag':
+        data = np.imag(data)
+    else:
+        data = np.real(data)
+        warnings.warn('Unknown component, taking real')
     return data
 
 def _get_dims(axis, offset):
