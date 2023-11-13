@@ -19,22 +19,22 @@ def _read_info(hdf5_dataset):
 
 def _description(dataset):
     if dataset == 'noncartesian':
-        dims = ['channel', 'sample', 'trace', 'slab', 'volume']
+        dims = ['channel', 'sample', 'trace', 'slab', 't']
         dtype = 'c8'
     elif dataset == 'cartesian' or dataset == 'channels':
-        dims = ['channel', 'image', 'x', 'y', 'z', 'volume']
+        dims = ['channel', 'v', 'x', 'y', 'z', 't']
         dtype = 'c8'
     elif dataset == 'sense':
-        dims = ['channel', 'image', 'x', 'y', 'z']
+        dims = ['channel', 'v', 'x', 'y', 'z']
         dtype = 'c8'
     elif dataset == 'image':
-        dims = ['image', 'x', 'y', 'z', 'volume']
+        dims = ['v', 'x', 'y', 'z', 't']
         dtype = 'c8'
     elif dataset == 'sdc':
         dims = ['sample', 'trace']
         dtype = 'f8'
     elif dataset == 'basis':
-        dims = ['trace', 'volume']
+        dims = ['trace', 't']
         dtype = 'f8'
     else:
         AssertionError(f'Unknown data type {dataset}')
