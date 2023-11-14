@@ -106,7 +106,7 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
   std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
     auto const &ac = cart[a];
     auto const &bc = cart[b];
-    for (size_t ii = N - 1; ii > -1; ii--) {
+    for (int ii = N - 1; ii > -1; ii--) {
       if (ac[ii] < bc[ii]) {
         return true;
       } else if (ac[ii] > bc[ii]) {
