@@ -1,4 +1,5 @@
 import numpy as np
+import xarray as xa
 import h5py
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -16,107 +17,106 @@ rc = {'figsize': 4,
       'fontsize':12,
       'effects':([effects.Stroke(linewidth=4, foreground='black'), effects.Normal()])}
 
-def planes(fname, dset='image', slice_pos = 0.5,
-           other_dims=None, other_indices=None, img_offset=-1,
+def _indexers(D, image, img_zoom, sl, slv, others):
+    indexers = {image[0]: img_zoom[0], image[1]: img_zoom[1], sl:slv}
+    my_others = others.copy() # Python default argument initialization is DUMB
+    my_others |= {k: v for k, v in zip(D.dims, [ii//2 for ii in D.shape]) if k not in (*image, sl, *my_others.keys())}
+    indexers |= my_others
+    return indexers
+
+def _apply_basis(D, basis_file, basis_tp):
+    if basis_file is None:
+        return D
+
+    basis = io.read(basis_file)
+
+    if isinstance(basis_tp, int):
+        basis = basis[basis_tp:basis_tp+1, :]
+    else:
+        basis = basis[basis_tp, :]
+
+    data = xa.dot(data, basis, dims=('v', 'v'))
+    return data
+
+def planes(fname, pos=0.5, zoom=(slice(None), slice(None)), others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rotates=(0, 0, 0), fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-
-    dim_x, img_x = _get_dims('x', img_offset)
-    dim_y, img_y = _get_dims('y', img_offset)
-    dim_z, img_z = _get_dims('z', img_offset)
-    with h5py.File(fname, 'r') as f:
-        D = f[dset]
-        index_x = int(np.floor(D.shape[dim_x] * slice_pos))
-        index_y = int(np.floor(D.shape[dim_y] * slice_pos))
-        index_z = int(np.floor(D.shape[dim_z] * slice_pos))
-        data_x = _get_slices(D, dim_x, [index_x], img_x, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
-        data_y = _get_slices(D, dim_y, [index_y], img_y, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
-        data_z = _get_slices(D, dim_z, [index_z], img_z, component, other_dims=other_dims, other_indices=other_indices, basis_file=basis_file, basis_tp=basis_tp)
-
+    D = _apply_basis(io.read(fname), basis_file, basis_tp)
+    posx = int(np.floor(len(D['x'])*pos))
+    posy = int(np.floor(len(D['y'])*pos))
+    posz = int(np.floor(len(D['z'])*pos))
+    data_x = _comp(D.isel(_indexers(D, ('x', 'y'), zoom, 'z', posz, others)), component)
+    data_y = _comp(D.isel(_indexers(D, ('x', 'z'), zoom, 'y', posy, others)), component)
+    data_z = _comp(D.isel(_indexers(D, ('y', 'z'), zoom, 'x', posx, others)), component)
     clim, cmap = _get_colors(clim, cmap, data_x, component, climp)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
 
-    im_x = _draw(ax[0], _orient(np.squeeze(data_x), rotates[0], fliplr), component, clim, cmap)
-    im_y = _draw(ax[1], _orient(np.squeeze(data_y), rotates[1], fliplr), component, clim, cmap)
-    im_z = _draw(ax[2], _orient(np.squeeze(data_z), rotates[2], fliplr), component, clim, cmap)
+    im_x = _draw(ax[0], _orient(data_x, rotates[0], fliplr), component, clim, cmap)
+    im_y = _draw(ax[1], _orient(data_y, rotates[1], fliplr), component, clim, cmap)
+    im_z = _draw(ax[2], _orient(data_z, rotates[2], fliplr), component, clim, cmap)
     fig.tight_layout(pad=0)
     _add_colorbar(cbar, component, fig, im_x, clim, title, ax=ax[1])
     plt.close()
     return fig
 
-def slices(fname, dset='image', image=('x', 'y'),
-           sl='z', n=8, start=0, stop=1,
+def slices(fname, image=('x', 'y'), zoom=(slice(None), slice(None)),
+           sl='z', n=None, lim=None, others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-    D = io.read(fname)
+    D = _apply_basis(io.read(fname), basis_file, basis_tp)
     maxn = len(D[sl])
-    slv = np.floor(np.linspace(start*maxn, stop*maxn, n, endpoint=False)).astype(int)
-    indexers = {image[0]: slice(None), image[1]: slice(None), sl:slv}
-    others = {k: v for k, v in zip(D.dims, [ii//2 for ii in D.shape]) if k not in (*image, sl)}
-    indexers.update(others)
-    data = _get_component(D.isel(indexers), component).transpose(sl, image[0], image[1])
+    if n is None:
+        n = maxn
+        slv = np.arange(maxn)
+    else:
+        if lim is None:
+            lim = (0, 1)
+        slv = np.floor(np.linspace(lim[0]*maxn, lim[1]*maxn, n, endpoint=False)).astype(int)
+    data = _comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component)
     clim, cmap = _get_colors(clim, cmap, data, component, climp)
     cols = int(np.ceil(n / rows))
     fig, all_ax = plt.subplots(rows, cols, figsize=(rc['figsize']*cols, rc['figsize']*rows), facecolor='black')
 
     for ir in range(rows):
         for ic in range(cols):
-            sl = (ir * cols) + ic
+            sli = (ir * cols) + ic
             ax = _get_axes(all_ax, ir, ic)
-            im = _draw(ax, _orient(np.squeeze(data[sl, :, :]), rotates, fliplr), component, clim, cmap)
+            im = _draw(ax, _orient(data.isel({sl:sli}), rotates, fliplr), component, clim, cmap)
     fig.tight_layout(pad=0)
     _add_colorbar(cbar, component, fig, im, clim, title, ax=all_ax)
     plt.close()
     return fig
 
-def series(fname, dset='image', axis='z', slice_pos=0.5, series_dim=-1, series_slice=None,
-           other_dims=None, other_indices=None, img_offset=-1, img_slices=None, scales=None,
-           component='mag', clim=None, cmap=None, cbar=True, rows=1, rotates=0, fliplr=False, title=None,
-           basis_file=None, basis_tp=0):
-    slice_dim, img_dims = _get_dims(axis, img_offset)
-    if series_slice is None:
-        series_slice = slice(None)
-    if other_dims is None:
-        other_dims = [slice_dim]
-    else:
-        other_dims = [slice_dim, *other_dims]
-    with h5py.File(fname, 'r') as f:
-        D = f[dset]
-        slice_index = int(np.floor(D.shape[slice_dim] * slice_pos))
-        if other_indices is None:
-            other_indices = [slice_index]
-        else:
-            other_indices = [slice_index, *other_indices]
-        data = _get_slices(D, series_dim, series_slice, img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp)
+def sense(fname, **kwargs):
+    return slices(fname, component='x', sl='channel', **kwargs)
 
-    if scales is not None:
-        data = data * np.array(scales).reshape([data.shape[0], 1, 1])
+def noncart(fname, sample=slice(None), trace=slice(None), **kwargs):
+    return slices(fname, component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
 
-    n = data.shape[-3]
-    clim, cmap = _get_colors(clim, cmap, data, component)
-    cols = int(np.ceil(n / rows))
-    fig, all_ax = plt.subplots(rows, cols, figsize=(rc['figsize']*cols, rc['figsize']*rows), facecolor='black')
-    for ir in range(rows):
-        for ic in range(cols):
-            sl = (ir * cols) + ic
-            ax = _get_axes(all_ax, ir, ic)
-            if sl < n:
-                im = _draw(ax, _orient(np.squeeze(data[sl, :, :]), rotates, fliplr), component, clim, cmap)
-            else:
-                ax.axis('off')
-
-    fig.tight_layout(pad=0)
-    _add_colorbar(cbar, component, fig, im, clim, title, ax=all_ax)
+def weights(fname, sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), log=False, clim=None):
+    data = io.read(fname)[sl_spoke, sl_read].T
+    if log:
+        data = np.log1p(data)
+        if clim is None:
+            clim = (0, np.max(data))
+    elif clim is None:
+        clim = np.nanpercentile(np.abs(data), (2, 98))
+    ind = np.unravel_index(np.argmax(data, axis=None), data.shape)
+    d = data[ind[0], ind[1]]
+    fig, ax = plt.subplots(1, 1, figsize=(18, 6), facecolor='w')
+    im = ax.imshow(data, interpolation='nearest',
+                    cmap='cmr.ember', vmin=clim[0], vmax=clim[1])
+    ax.set_xlabel('Spoke')
+    ax.set_ylabel('Readout')
+    ax.axis('auto')
+    fig.colorbar(im, location='right')
+    fig.tight_layout()
     plt.close()
     return fig
 
-def sense(fname, dset='sense', frame=0, **kwargs):
-    return series(fname, dset=dset, component='x', img_offset=-2, other_dims=[-2], other_indices=[frame], **kwargs)
-
-def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
-         other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
+def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
          component='mag', clim=None, cmap=None, cbar=False,
          difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None,
@@ -124,8 +124,6 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
 
     if len(fnames) < 2:
         raise('Must have more than 1 image to diff')
-    if len(dsets) == 1:
-        dsets = dsets * len(fnames)
     if basis_files and len(basis_files) == 1:
         basis_files = basis_files * len(fnames)
     elif not basis_files:
@@ -137,16 +135,14 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     if titles is not None and len(titles) != len(fnames):
         raise('Number of titles and files did not match')
 
-    slice_dim, img_dims = _get_dims(axis, img_offset)
     with contextlib.ExitStack() as stack:
-        files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
-        dsets = [f[dset] for f, dset in zip(files, dsets)]
-        slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
-        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
-        data = np.concatenate(data)
-    ref = np.max(np.abs(data[:-1, :, :]))
+        Ds = [_apply_basis(io.read(fn), f, tp) for fn, f, tp in zip(fnames, basis_files, basis_tps)]
+        slv = int(np.floor(len(Ds[0][sl]) * pos))
+        data = [_comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component) for D in Ds]
+        data = xa.concat(data, dim='sl')
+    ref = abs(data.isel(sl=-1)).max().to_numpy()
     diffs = np.diff(data, n=1, axis=0) * 100 / ref
-    n = data.shape[-3]
+    n = len(data['sl'])
     clim, cmap = _get_colors(clim, cmap, data, component)
     if component == 'x':
         diff_component = 'x'
@@ -174,17 +170,14 @@ def diff(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     plt.close()
     return fig
 
-def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
-         other_dims=None, other_indices=None, img_offset=-1, img_slices=None,
-         component='mag', clim=None, cmap=None, cbar=True,
+def diff_matrix(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
+         component='mag', clim=None, cmap=None, cbar=False,
          difflim=None, diffmap=None, diffbar=True,
          rotates=0, fliplr=False, title=None,
-         basis_files=None, basis_tps=0):
+         basis_files=[None], basis_tps=[0]):
 
     if len(fnames) < 2:
         raise('Must have more than 1 image to diff')
-    if len(dsets) == 1:
-        dsets = dsets * len(fnames)
     if basis_files and len(basis_files) == 1:
         basis_files = basis_files * len(fnames)
     elif not basis_files:
@@ -196,17 +189,14 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     if titles is not None and len(titles) != len(fnames):
         raise('Number of titles and files did not match')
 
-    slice_dim, img_dims = _get_dims(axis, img_offset)
     with contextlib.ExitStack() as stack:
-        files = [stack.enter_context(h5py.File(fn, 'r')) for fn in fnames]
-        dsets = [f[dset] for f, dset in zip(files, dsets)]
-        slice_index = int(np.floor(dsets[0].shape[slice_dim] * slice_pos))
-        data = [_get_slices(D, slice_dim, slice(slice_index, slice_index+1), img_dims, component, img_slices, other_dims, other_indices, basis_file=basis_file, basis_tp=basis_tp) for [D, basis_file, basis_tp] in zip(dsets, basis_files, basis_tps)]
-        data = np.concatenate(data)
-
-    n = data.shape[-3]
+        Ds = [_apply_basis(io.read(fn), f, tp) for fn, f, tp in zip(fnames, basis_files, basis_tps)]
+        slv = int(np.floor(len(Ds[0][sl]) * pos))
+        data = [_comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component) for D in Ds]
+        data = xa.concat(data, dim='sl')
+    n = len(data['sl'])
     diffs = []
-    ref = np.max(np.abs(data[0, :, :]))
+    ref = abs(data.isel(sl=-1)).max().to_numpy()
     for ii in range(1, n):
         diffs.append([])
         for jj in range(ii):
@@ -239,115 +229,7 @@ def diff_matrix(fnames, dsets=['image'], titles=None, axis='z', slice_pos=0.5,
     plt.close()
     return fig
 
-def noncart(fname, dset='noncartesian', channels=slice(1), read_slice=slice(None), spoke_slice=slice(None),
-            slab=0, volume=0, rows=1, component='xlog', clim=None, cmap=None, cbar=True, title=None, transpose=False):
-    with h5py.File(fname) as f:
-        D = f[dset]
-        data = _get_slices(D, -1, channels, (-2, -3), component, (read_slice, spoke_slice), (-4, -5), (slab, volume))
-    if transpose:
-        data = np.transpose(data, axes=(0,2,1))
-    n = data.shape[0]
-    clim, cmap = _get_colors(clim, cmap, data, component)
-
-    cols = int(np.ceil(n / rows))
-    height = rc['figsize']*rows
-    width = rc['figsize']*cols*data.shape[2]/data.shape[1]
-    fig, all_ax = plt.subplots(rows, cols, figsize=(width, height), facecolor='black')
-    for ir in range(rows):
-        for ic in range(cols):
-            sl = (ir * cols) + ic
-            ax = _get_axes(all_ax, ir, ic)
-            im = _draw(ax, np.squeeze(data[sl, :, :]), component, clim, cmap)
-            _add_colorbar(cbar, component, fig, im, clim, title, ax)
-    plt.close()
-    return fig
-
-def weights(filename, dset='sdc', sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), log=False, clim=None):
-    with h5py.File(filename) as f:
-        data = np.array(f[dset][sl_spoke, sl_read]).T
-        if log:
-            data = np.log1p(data)
-            if clim is None:
-                clim = (0, np.max(data))
-        elif clim is None:
-            clim = np.nanpercentile(np.abs(data), (2, 98))
-        ind = np.unravel_index(np.argmax(data, axis=None), data.shape)
-        d = data[ind[0], ind[1]]
-        fig, ax = plt.subplots(1, 1, figsize=(18, 6), facecolor='w')
-        im = ax.imshow(data, interpolation='nearest',
-                       cmap='cmr.ember', vmin=clim[0], vmax=clim[1])
-        ax.set_xlabel('Spoke')
-        ax.set_ylabel('Readout')
-        ax.axis('auto')
-        fig.colorbar(im, location='right')
-        fig.tight_layout()
-        plt.close()
-    return fig
-
-def _get_slices(dset, slice_dim, slices, img_dims, component,
-                img_slices=None, other_dims=None, other_indices=None,
-                basis_file=None, basis_tp=0):
-    if dset.ndim < 3:
-        raise Exception('Requires at least a 3D image')
-    if img_slices is None:
-        img_slices = (slice(None), slice(None))
-    if other_dims is None:
-        other_dims = []
-    if other_indices is None:
-        other_indices = []
-    if basis_file is None:
-        basis_dim = 0
-    else:
-        with h5py.File(basis_file) as f:
-            if isinstance(basis_tp, int):
-                basis = f['basis'][basis_tp:basis_tp+1, :]
-            else:
-                basis = f['basis'][basis_tp, :]
-        basis_dim = -1
-
-    if len(other_indices) > (dset.ndim - 3):
-        raise Exception('Too many other_indices')
-    elif len(other_indices) < (dset.ndim - 3):
-        other_indices.extend([0,]*(dset.ndim - 3 - len(other_indices)))
-        other_dims.extend([x for x in range(-dset.ndim, 0) if x not in list([*img_dims, *other_dims, slice_dim, basis_dim])])
-    all_slices = [slice(None),]*dset.ndim
-    all_slices[img_dims[0]] = img_slices[0]
-    all_slices[img_dims[1]] = img_slices[1]
-    all_slices[slice_dim] = slices
-    
-    for (od, oi) in zip(other_dims, other_indices):
-        all_slices[od] = slice(oi, oi+1)
-    all_dims=(*other_dims, slice_dim, *img_dims)
-
-    data = dset[tuple(all_slices)]
-    if basis_file:
-        data = np.dot(data, basis.T)
-        data = data.transpose(all_dims)
-    else:
-        data = data.transpose(all_dims)
-    data = data.reshape(data.shape[-3], data.shape[-2], data.shape[-1])
-
-    if component == 'x':
-        pass
-    elif component == 'xlog':
-        pass
-    elif component == 'mag':
-        data = np.abs(data)
-    elif component == 'log':
-        data = np.log1p(np.abs(data))
-    elif component == 'pha':
-        data = np.angle(data)
-    elif component == 'real':
-        data = np.real(data)
-    elif component == 'imag':
-        data = np.imag(data)
-    else:
-        data = np.real(data)
-        warnings.warn('Unknown component, taking real')
-
-    return data
-
-def _get_component(data, component):
+def _comp(data, component):
     if component == 'x':
         pass
     elif component == 'xlog':
@@ -366,27 +248,6 @@ def _get_component(data, component):
         data = np.real(data)
         warnings.warn('Unknown component, taking real')
     return data
-
-def _get_dims(axis, offset):
-    """
-    Gives the image dims and slice dim for the given axis. Because of
-    the Eigen/Numpy ordering swap, dimensions are counted backwards
-    from the end.
-    
-    Args:
-        axis - 'x', 'y' or 'z'
-        offset - Dimension to count back from
-    """
-    if axis == 'z':
-        slice_dim = offset - 3
-        img_dims = [offset - 2, offset - 1]
-    elif axis == 'y':
-        slice_dim = offset - 1
-        img_dims = [offset - 3, offset - 2]
-    elif axis == 'x':
-        slice_dim = offset - 2
-        img_dims = [offset - 1, offset - 3]
-    return slice_dim, img_dims
 
 def _orient(img, rotates, fliplr=False):
     if rotates > 0:
@@ -465,7 +326,7 @@ def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos
         cb = fig.colorbar(im, cax=cax, orientation='horizontal')
         axes = cb.ax
         ticks = (clim[0], np.sum(clim)/2, clim[1])
-        labels = (f' {clim[0]:2.1g}', title, f'{clim[1]:2.1g} ')
+        labels = (f' {clim[0]:2.2f}', title, f'{clim[1]:2.2f} ')
         cb.set_ticks(ticks)
         cb.set_ticklabels(labels, fontsize=rc['fontsize'], path_effects=rc['effects'])
         cb.ax.tick_params(axis='x', bottom=False, top=False)
@@ -545,25 +406,23 @@ def _draw_x(ax, img, clim, cmap='cet_colorwheel', log=False):
     norm = colors.Normalize(vmin=-np.pi, vmax=np.pi)
     smap = cm.ScalarMappable(norm=norm, cmap=cmap)
     pha = np.angle(img)
-    colorized = smap.to_rgba(pha, alpha=1., bytes=False)[:, :, 0:3]
-    colorized = colorized * mag[:, :, None]
+    colorized = smap.to_rgba(pha, alpha=1., bytes=False)[:, :, 0:3] * mag.to_numpy()[..., np.newaxis]
     ax.imshow(colorized, interpolation=rc['interpolation'])
     ax.axis('off')
 
-def basis(path, sl_spoke=slice(None), b=slice(None), show_sum=False):
-    with h5py.File(path, 'r') as f:
-        basis = f['basis'][sl_spoke,b]
-        fig, ax = plt.subplots(figsize=(16, 6))
-        ax.plot(basis)
-        leg = [str(x) for x in range(basis.shape[1])]
-        if show_sum:
-            ax.plot(np.sum(basis, axis=1))
-            leg.append('Sum')
-        ax.legend(leg)
-        ax.grid(True)
-        ax.autoscale(enable=True, tight=True)
-        plt.close()
-        return fig
+def basis(fname, sl_spoke=slice(None), b=slice(None), show_sum=False):
+    basis = io.read(fname)[sl_spoke,b]
+    fig, ax = plt.subplots(figsize=(16, 6))
+    ax.plot(basis)
+    leg = [str(x) for x in range(basis.shape[1])]
+    if show_sum:
+        ax.plot(np.sum(basis, axis=1))
+        leg.append('Sum')
+    ax.legend(leg)
+    ax.grid(True)
+    ax.autoscale(enable=True, tight=True)
+    plt.close()
+    return fig
 
 def dynamics(filename, sl=slice(None), vlines=None):
     with h5py.File(filename) as f:

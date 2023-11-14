@@ -34,7 +34,7 @@ def _description(dataset):
         dims = ['sample', 'trace']
         dtype = 'f8'
     elif dataset == 'basis':
-        dims = ['trace', 't']
+        dims = ['trace', 'v']
         dtype = 'f8'
     else:
         AssertionError(f'Unknown data type {dataset}')
