@@ -150,7 +150,7 @@ auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string
     }
   } else {
     HD5::Reader reader(iname);
-    sdc = reader.readTensor<Re2>(HD5::Keys::SDC);
+    sdc = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (sdc.dimension(0) != traj.nSamples() || sdc.dimension(1) != traj.nTraces()) {
       Log::Fail(
         "SDC dimensions on disk {}x{} did not match info {}x{}",

@@ -64,7 +64,7 @@ auto make_kspace_pre(
     return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
   } else {
     HD5::Reader reader(type);
-    Re2         w = reader.readTensor<Re2>(HD5::Keys::Precond);
+    Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
       Log::Fail("Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0), w.dimension(1),
                 traj.nSamples(), traj.nTraces());

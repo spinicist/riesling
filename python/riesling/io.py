@@ -17,28 +17,28 @@ def _read_info(hdf5_dataset):
         d[key] = item
     return d
 
-def _description(dataset):
-    if dataset == 'noncartesian':
+def _description(key):
+    if key == 'noncartesian':
         dims = ['channel', 'sample', 'trace', 'slab', 't']
         dtype = 'c8'
-    elif dataset == 'cartesian' or dataset == 'channels':
+    elif key == 'cartesian' or key == 'channels':
         dims = ['channel', 'v', 'x', 'y', 'z', 't']
         dtype = 'c8'
-    elif dataset == 'sense':
+    elif key == 'sense':
         dims = ['channel', 'v', 'x', 'y', 'z']
         dtype = 'c8'
-    elif dataset == 'image':
+    elif key == 'image':
         dims = ['v', 'x', 'y', 'z', 't']
         dtype = 'c8'
-    elif dataset == 'sdc':
+    elif key == 'weights':
         dims = ['sample', 'trace']
         dtype = 'f8'
-    elif dataset == 'basis':
+    elif key == 'basis':
         dims = ['trace', 'v']
         dtype = 'f8'
     else:
-        AssertionError(f'Unknown data type {dataset}')
-    return (dims, dtype)
+        raise AssertionError(f'Unknown data type {key}')
+    return dims, dtype
 
 def write(filename, data, data_type='noncartesian', compression='gzip'):
     # match data dimensions and data format based on data_type
@@ -48,7 +48,7 @@ def write(filename, data, data_type='noncartesian', compression='gzip'):
         data = xr.DataArray(data, attrs={}, dims=data_dims) # make it a DataArray with empty header and just assume that dimensions match
 
     # check for info header information
-    if data_type != 'sdc' and data_type != 'basis': # sdc and basis do not require an info header
+    if data_type != 'weights' and data_type != 'basis': # sdc and basis do not require an info header
         if not 'matrix' in data.attrs:
             AssertionError('Data object must contain "matrix" attribute')
         if not 'voxel_size' in data.attrs:
@@ -112,7 +112,7 @@ def read(filename):
         # try to load actual data
         data = None
         dims = []
-        data_keys = np.array(['noncartesian','cartesian','channels','image','sense','sdc','basis'])
+        data_keys = np.array(['noncartesian','cartesian','channels','image','sense','weights','basis'])
         data_idx = np.in1d(data_keys, np.array([str(f) for f in f.keys()]))
         if data_idx.any():
             key = data_keys[data_idx][0]
