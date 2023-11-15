@@ -52,7 +52,9 @@ int main(int const argc, char const *const argv[])
   COMMAND(slice, "slice", "Slice non-cartesian data");
   COMMAND(traj, "traj", "Write out the trajectory and PSF");
   COMMAND(version, "version", "Print version number");
+#ifdef BUILD_VIEW
   COMMAND(view, "view", "View your images into the terminal");
+#endif
   COMMAND(wavelets, "wavelets", "Apply wavelet transform");
   COMMAND(zinfandel, "zinfandel", "ZINFANDEL k-space filling");
   args::GlobalOptions globals(parser, global_group);

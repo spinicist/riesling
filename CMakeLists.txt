@@ -14,14 +14,6 @@ find_package(NIFTI CONFIG REQUIRED)
 find_package(range-v3 CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
 
-set(Notcurses_LIBRARIES
-    notcurses-core
-    notcurses++
-    notcurses
-)
-set(Notcurses_LIBRARY_DIRS "/opt/homebrew/lib")
-set(Notcurses_INCLUDE_DIRS "/opt/homebrew/include")
-
 # Ensure this is always defined across all .cpp files
 add_definitions(-DEIGEN_USE_THREADS)
 
@@ -154,20 +146,12 @@ add_executable(riesling
     src/cmd/slice.cpp
     src/cmd/traj.cpp
     src/cmd/version.cpp
-    src/cmd/view.cpp
     src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp
     src/main.cpp
 )
-target_include_directories(riesling PRIVATE
-     ${Notcurses_INCLUDE_DIRS}
-)
-target_link_directories(riesling PRIVATE
-    ${Notcurses_LIBRARY_DIRS}
-)
 target_link_libraries(riesling PRIVATE
     vineyard
-    ${Notcurses_LIBRARIES}
 )
 set_target_properties(riesling PROPERTIES
     CXX_STANDARD 20
@@ -176,6 +160,32 @@ set_target_properties(riesling PROPERTIES
     CXX_VISIBILITY_PRESET hidden
 )
 install(TARGETS riesling RUNTIME DESTINATION bin)
+
+option(BUILD_VIEW "Build the view command. Requires notcurses" OFF)
+
+if (${BUILD_VIEW})
+    target_sources(riesling PRIVATE src/cmd/view.cpp)
+    target_compile_definitions(riesling PRIVATE -DBUILD_VIEW)
+    # Homebrew notcurses CMake is broken, as is compiling via vcpkg
+    if (LINUX)
+        find_package(notcurses REQUIRED)
+        target_link_libraries(riesling PRIVATE notcurses notcurses-core)
+    else()
+        set(Notcurses_LIBRARIES
+            notcurses-core
+            notcurses
+        )
+        set(Notcurses_LIBRARY_DIRS "/opt/homebrew/lib")
+        set(Notcurses_INCLUDE_DIRS "/opt/homebrew/include")
+        target_include_directories(riesling PRIVATE
+            ${Notcurses_INCLUDE_DIRS}
+        )
+        target_link_directories(riesling PRIVATE
+            ${Notcurses_LIBRARY_DIRS}
+        )
+        target_link_libraries(riesling PRIVATE ${Notcurses_LIBRARIES})
+    endif()
+endif()
 
 option(BUILD_TESTS "Build the tests" ON)
 

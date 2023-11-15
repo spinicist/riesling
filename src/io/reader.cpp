@@ -18,35 +18,6 @@ Index getRank(Handle const &parent, std::string const &name)
 }
 
 template <typename Scalar, int ND>
-void load_tensor(Handle const &parent, std::string const &name, Eigen::Tensor<Scalar, ND> &tensor)
-{
-  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor '{}'", name); }
-  hid_t      ds = H5Dget_space(dset);
-  auto const rank = H5Sget_simple_extent_ndims(ds);
-  if (rank != ND) { Log::Fail("Tensor {}: Requested rank {}, on-disk rank {}", name, ND, rank); }
-
-  std::array<hsize_t, ND> dims;
-  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
-  std::reverse(dims.begin(), dims.end()); // HD5=row-major, Eigen=col-major
-  for (int ii = 0; ii < ND; ii++) {
-    if ((Index)dims[ii] != tensor.dimension(ii)) {
-      Log::Fail(
-        "Tensor {}: expected dimensions were {}, but were {} on disk",
-        name,
-        fmt::join(tensor.dimensions(), ","),
-        fmt::join(dims, ","));
-    }
-  }
-  herr_t ret_value = H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
-  if (ret_value < 0) {
-    Log::Fail("Error reading tensor tensor {}, code: {}", name, ret_value);
-  } else {
-    Log::Print<Log::Level::High>("Read dataset: {}", name);
-  }
-}
-
-template <typename Scalar, int ND>
 Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &name)
 {
   hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
