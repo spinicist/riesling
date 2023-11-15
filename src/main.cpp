@@ -45,6 +45,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(prox, "prox", "Apply proximal operator");
   COMMAND(recon_rss, "recon-rss", "Recon with Root-Sum-Squares");
   COMMAND(recon_sense, "recon-sense", "Recon with SENSE");
+  COMMAND(rss, "rss", "Take RSS across first dimension");
   COMMAND(sdc, "sdc", "Calculate Sample Density Compensation");
   COMMAND(sense, "sense", "Channel combine with SENSE");
   COMMAND(sense_calib, "sense-calib", "Create SENSE maps");
