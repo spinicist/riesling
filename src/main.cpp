@@ -43,10 +43,10 @@ int main(int const argc, char const *const argv[])
   COMMAND(plan, "plan", "Plan FFTs");
   COMMAND(precond, "precond", "Precompute preconditioning weights");
   COMMAND(prox, "prox", "Apply proximal operator");
-  COMMAND(recon, "recon", "Recon with SENSE maps");
-  COMMAND(rss, "rss", "Recon with Root-Sum-Squares");
+  COMMAND(recon_rss, "recon-rss", "Recon with Root-Sum-Squares");
+  COMMAND(recon_sense, "recon-sense", "Recon with SENSE");
   COMMAND(sdc, "sdc", "Calculate Sample Density Compensation");
-  COMMAND(sense, "sense", "Apply SENSE operation");
+  COMMAND(sense, "sense", "Channel combine with SENSE");
   COMMAND(sense_calib, "sense-calib", "Create SENSE maps");
   COMMAND(sense_sim, "sense-sim", "Simulate SENSE maps");
   COMMAND(slice, "slice", "Slice non-cartesian data");

@@ -10,7 +10,7 @@
 
 using namespace rl;
 
-int main_rss(args::Subparser &parser)
+int main_recon_rss(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
   SDC::Opts                    sdcOpts(parser, "pipe");

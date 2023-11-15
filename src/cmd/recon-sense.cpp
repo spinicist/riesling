@@ -11,7 +11,7 @@
 
 using namespace rl;
 
-int main_recon(args::Subparser &parser)
+int main_recon_sense(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
   SDC::Opts                    sdcOpts(parser, "pipe");
