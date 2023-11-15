@@ -5,7 +5,6 @@ include(Version)
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
-find_package(notcurses REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
@@ -166,25 +165,25 @@ option(BUILD_VIEW "Build the view command. Requires notcurses" OFF)
 if (${BUILD_VIEW})
     target_sources(riesling PRIVATE src/cmd/view.cpp)
     target_compile_definitions(riesling PRIVATE -DBUILD_VIEW)
-    # Homebrew notcurses CMake is broken, as is compiling via vcpkg
+    # notcurses CMake is broken, as is compiling via vcpkg
     if (LINUX)
-        find_package(notcurses REQUIRED)
-        target_link_libraries(riesling PRIVATE notcurses notcurses-core)
+        set(Notcurses_INCLUDE_DIRS ${CMAKE_PREFIX_PATH}/include)
+	set(Notcurses_LIBRARY_DIRS ${CMAKE_PREFIX_PATH}/lib64 ${CMAKE_PREFIX_PATH}/lib)
     else()
-        set(Notcurses_LIBRARIES
-            notcurses-core
-            notcurses
-        )
         set(Notcurses_LIBRARY_DIRS "/opt/homebrew/lib")
         set(Notcurses_INCLUDE_DIRS "/opt/homebrew/include")
-        target_include_directories(riesling PRIVATE
-            ${Notcurses_INCLUDE_DIRS}
-        )
-        target_link_directories(riesling PRIVATE
-            ${Notcurses_LIBRARY_DIRS}
-        )
-        target_link_libraries(riesling PRIVATE ${Notcurses_LIBRARIES})
     endif()
+    set(Notcurses_LIBRARIES
+        notcurses-core
+        notcurses
+    )
+    target_include_directories(riesling PRIVATE
+        ${Notcurses_INCLUDE_DIRS}
+    )
+    target_link_directories(riesling PRIVATE
+        ${Notcurses_LIBRARY_DIRS}
+    )
+    target_link_libraries(riesling PRIVATE ${Notcurses_LIBRARIES})
 endif()
 
 option(BUILD_TESTS "Build the tests" ON)

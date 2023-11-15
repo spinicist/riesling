@@ -14,14 +14,16 @@ git submodule update --init --recursive
 FLAGS="base"
 PAR=""
 PREFIX=""
-while getopts "f:hi:j:" opt; do
+VIEW=""
+while getopts "f:hi:j:v" opt; do
     case $opt in
-        f) export FLAGS="$OPTARG";;
-        i) export PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG";;
+        f) FLAGS="$OPTARG";;
+        i) PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG -DCMAKE_PREFIX_PATH=$OPTARG";;
         j) export VCPKG_MAX_CONCURRENCY=$OPTARG
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
+	v) VIEW="-DBUILD_VIEW=ON";;
     esac
 done
 shift $((OPTIND - 1))
@@ -39,7 +41,7 @@ cmake -S ../ $GEN \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake" \
   -DFLAGS_FILE="${FLAGS}" \
-  $PREFIX
+  $PREFIX $VIEW
 cmake --build . $PAR
 
 if [ -n "$PREFIX" ]; then
