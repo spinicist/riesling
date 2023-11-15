@@ -126,17 +126,18 @@ auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceD
   hid_t     dset = H5Dopen(handle_, label.c_str(), H5P_DEFAULT);
   if (dset < 0) { Log::Fail("Could not open tensor '{}'", label); }
   hid_t      ds = H5Dget_space(dset);
-  auto const DiskRank = H5Sget_simple_extent_ndims(ds);
+  Index const DiskRank = H5Sget_simple_extent_ndims(ds);
+  Index const sDsize = sliceDims.size();
 
-  if (SliceRank + sliceDims.size() != DiskRank) {
+  if (SliceRank + sDsize != DiskRank) {
     Log::Fail("Requested {}D slice from {}D tensor with {} slicing dimensions", SliceRank, DiskRank, sliceDims.size());
   }
 
   std::vector<hsize_t> diskShape(DiskRank);
   H5Sget_simple_extent_dims(ds, diskShape.data(), NULL);
   std::reverse(diskShape.begin(), diskShape.end()); // HD5=row-major, Eigen=col-major
-  for (int ii = 0; ii < sliceDims.size(); ii++) {
-    if (diskShape[sliceDims[ii]] <= sliceInds[ii]) {
+  for (int ii = 0; ii < sDsize; ii++) {
+    if (diskShape[sliceDims[ii]] <= (hsize_t)sliceInds[ii]) {
       Log::Fail("Tensor dimension {} has size {}, requested slice at index {}", sliceDims[ii], diskShape[sliceDims[ii]], sliceInds[ii]);
     }
   }
@@ -145,7 +146,7 @@ auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceD
   std::fill_n(diskStride.begin(), DiskRank, 1);
   std::fill_n(diskCount.begin(), DiskRank, 1);
   std::copy_n(diskShape.begin(), DiskRank, diskBlock.begin());
-  for (int ii = 0; ii < sliceDims.size(); ii++) {
+  for (int ii = 0; ii < sDsize; ii++) {
     diskStart[sliceDims[ii]] = sliceInds[ii];
     diskBlock[sliceDims[ii]] = 1;
   }
