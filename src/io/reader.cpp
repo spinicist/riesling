@@ -7,16 +7,6 @@
 namespace rl {
 namespace HD5 {
 
-Index getRank(Handle const &parent, std::string const &name)
-{
-  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor {}", name); }
-
-  hid_t     ds = H5Dget_space(dset);
-  int const ndims = H5Sget_simple_extent_ndims(ds);
-  return ndims;
-}
-
 template <typename Scalar, int ND>
 Eigen::Tensor<Scalar, ND> load_tensor(Handle const &parent, std::string const &name)
 {
@@ -80,7 +70,14 @@ Reader::~Reader()
 
 auto Reader::list() const -> std::vector<std::string> { return List(handle_); }
 
-auto Reader::rank(std::string const &label) const -> Index { return getRank(handle_, label); }
+auto Reader::order(std::string const &name) const -> Index { 
+  hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) { Log::Fail("Could not open tensor {}", name); }
+  hid_t     ds = H5Dget_space(dset);
+  int const ndims = H5Sget_simple_extent_ndims(ds);
+  CheckedCall(H5Dclose(dset), "Could not close dataset");
+  return ndims;
+}
 
 auto Reader::dimensions(std::string const &label) const -> std::vector<Index>
 {
