@@ -4,11 +4,15 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace rl {
 namespace HD5 {
 
 using Handle = int64_t;
+
+template<int N>
+using Names = std::array<std::string, N>;
 
 template <typename T>
 struct type_tag
