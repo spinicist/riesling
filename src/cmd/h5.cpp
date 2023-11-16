@@ -8,7 +8,10 @@ int main_h5(args::Subparser &parser)
 {
   args::Positional<std::string>    iname(parser, "FILE", "Input HD5 file to dump info from");
   args::ValueFlagList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed", {"meta", 'm'});
-  args::Flag                       all(parser, "META", "Print all meta data", {"all", 'a'});
+  args::ValueFlag<Index> dim(parser, "D", "Print size of dimension", {"dim", 'd'}, 0);
+  args::ValueFlag<std::string> dset(parser, "D", "Dataset to interrogate (assume first)", {"dset"}, "");
+  args::Flag all(parser, "META", "Print all meta data", {"all", 'a'});
+
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
 
@@ -26,6 +29,9 @@ int main_h5(args::Subparser &parser)
     for (auto const &kvp : meta) {
       fmt::print("{}: {}\n", kvp.first, kvp.second);
     }
+  } else if (dim) {
+    auto const dname = dset ? dset.Get() : reader.list().front();
+    fmt::print("{}\n", reader.dimensions(dname).at(dim.Get()));
   } else {
     if (reader.exists("info")) {
       auto const i = reader.readInfo();
