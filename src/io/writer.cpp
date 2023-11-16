@@ -77,13 +77,12 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
 bool Writer::exists(std::string const &name) const { return HD5::Exists(handle_, name); }
 
 template <typename Scalar, int N>
-void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, Names<N> const)
+void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, Names<N> const &dnames)
 {
   for (Index ii = 0; ii < N; ii++) {
     if (shape[ii] == 0) { Log::Fail("Tensor {} had a zero dimension. Dims: {}", name, shape); }
   }
 
-  herr_t  status;
   hsize_t ds_dims[N], chunk_dims[N];
   // HD5=row-major, Eigen=col-major, so need to reverse the dimensions
   std::copy_n(shape.rbegin(), N, ds_dims);
@@ -101,33 +100,43 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
 
   auto const space = H5Screate_simple(N, ds_dims, NULL);
   auto const plist = H5Pcreate(H5P_DATASET_CREATE);
-  status = H5Pset_deflate(plist, 2);
-  status = H5Pset_chunk(plist, N, chunk_dims);
+  CheckedCall(H5Pset_deflate(plist, 2), "setting deflate");
+  CheckedCall(H5Pset_chunk(plist, N, chunk_dims), "setting chunk");
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   if (dset < 0) { Log::Fail("Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError()); }
-  status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-  status = H5Pclose(plist);
-  status = H5Sclose(space);
-  status = H5Dclose(dset);
-  if (status) {
-    Log::Fail("Writing Tensor {}: Error {}", name, HD5::GetError());
-  } else {
-    Log::Print<Log::Level::High>("Wrote tensor: {}", name);
+  CheckedCall(H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data), "Writing data");
+
+  hsize_t const adims[1] = {N};
+  auto const aspace = H5Screate_simple(1, adims, NULL);
+  hid_t const atype = H5Tcopy(H5T_C_S1);
+  H5Tset_size(atype, H5T_VARIABLE);
+  char *cnames[N];
+  for (Index ii = 0; ii < N; ii++) {
+    cnames[ii] = (char *)dnames[ii].c_str();
   }
+  hid_t const a = H5Acreate(dset, "dims", atype, aspace, H5P_DEFAULT, H5P_DEFAULT);
+  CheckedCall(H5Awrite(a, atype, cnames), "writing attribute");
+
+  CheckedCall(H5Aclose(a), "closing attribute");
+  CheckedCall(H5Pclose(plist), "closing plist");
+  CheckedCall(H5Sclose(space), "closing space");
+  CheckedCall(H5Dclose(dset), "closing dataset");
+
+  Log::Print<Log::Level::High>("Wrote tensor: {}", name);
 }
 
-template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *, Names<1> const);
-template void Writer::writeTensor<float, 1>(std::string const &, Sz<1> const &, float const *, Names<1> const);
-template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, float const *, Names<2> const);
-template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *, Names<3> const);
-template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *, Names<4> const);
-template void Writer::writeTensor<float, 5>(std::string const &, Sz<5> const &, float const *, Names<5> const);
-template void Writer::writeTensor<Cx, 3>(std::string const &, Sz<3> const &, Cx const *, Names<3> const);
-template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx const *, Names<4> const);
-template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *, Names<5> const);
-template void Writer::writeTensor<Cx, 6>(std::string const &, Sz<6> const &, Cx const *, Names<6> const);
+template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *, Names<1> const &);
+template void Writer::writeTensor<float, 1>(std::string const &, Sz<1> const &, float const *, Names<1> const &);
+template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, float const *, Names<2> const &);
+template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *, Names<3> const &);
+template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *, Names<4> const &);
+template void Writer::writeTensor<float, 5>(std::string const &, Sz<5> const &, float const *, Names<5> const &);
+template void Writer::writeTensor<Cx, 3>(std::string const &, Sz<3> const &, Cx const *, Names<3> const &);
+template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx const *, Names<4> const &);
+template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *, Names<5> const &);
+template void Writer::writeTensor<Cx, 6>(std::string const &, Sz<6> const &, Cx const *, Names<6> const &);
 
 template <typename Derived>
 void Writer::writeMatrix(Eigen::DenseBase<Derived> const &mat, std::string const &name)

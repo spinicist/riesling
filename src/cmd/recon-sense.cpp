@@ -54,8 +54,8 @@ int main_recon_sense(args::Subparser &parser)
     auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "recon", "h5");
     HD5::Writer writer(fname);
     writer.writeInfo(traj.info());
-    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
-    writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data());
+    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+    writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data(), HD5::Dims::Noncartesian);
   } else {
     auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
     traj.checkDims(FirstN<3>(noncart.dimensions()));

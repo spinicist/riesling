@@ -8,6 +8,17 @@
 
 using namespace rl;
 
+// Life is too short. Horrible template problems in Eigen.
+template <int N, int M>
+auto LastNames(HD5::Names<M> const &sz) -> HD5::Names<N>
+{
+  static_assert(N <= M);
+  HD5::Names<N> last;
+  std::copy_n(sz.end() - N, N, last.begin());
+  return last;
+}
+
+
 int main_rss(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
@@ -26,12 +37,12 @@ int main_rss(args::Subparser &parser)
   case 5: {
     Cx5 const in = reader.readTensor<Cx5>(name);
     Cx4 const out = ConjugateSum(in, in).sqrt();
-    writer.writeTensor("image1", out.dimensions(), out.data());
+    writer.writeTensor(name, out.dimensions(), out.data(), LastNames<4>(reader.readDims<5>(name)));
   } break;
   case 6: {
     Cx6 const in = reader.readTensor<Cx6>(name);
     Cx5 const out = ConjugateSum(in, in).sqrt();
-    writer.writeTensor(HD5::Keys::Image, out.dimensions(), out.data());
+    writer.writeTensor(name, out.dimensions(), out.data(), LastNames<5>(reader.readDims<6>(name)));
   } break;
   default: Log::Fail("Dataset {} had order {}", name, order);
   }

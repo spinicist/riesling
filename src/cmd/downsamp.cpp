@@ -31,7 +31,7 @@ int main_downsamp(args::Subparser &parser)
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
   writer.writeInfo(dsTraj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, dsTraj.points().dimensions(), dsTraj.points().data());
+  writer.writeTensor(HD5::Keys::Trajectory, dsTraj.points().dimensions(), dsTraj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Noncartesian, ks2.dimensions(), ks2.data());
 
   return EXIT_SUCCESS;

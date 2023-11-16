@@ -1,4 +1,5 @@
 #include "io/hd5.hpp"
+#include "log.hpp"
 #include "parse_args.hpp"
 #include "types.hpp"
 
@@ -8,9 +9,9 @@ int main_h5(args::Subparser &parser)
 {
   args::Positional<std::string>    iname(parser, "FILE", "Input HD5 file to dump info from");
   args::ValueFlagList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed", {"meta", 'm'});
-  args::ValueFlag<Index> dim(parser, "D", "Print size of dimension", {"dim", 'd'}, 0);
-  args::ValueFlag<std::string> dset(parser, "D", "Dataset to interrogate (assume first)", {"dset"}, "");
-  args::Flag all(parser, "META", "Print all meta data", {"all", 'a'});
+  args::ValueFlag<Index>           dim(parser, "D", "Print size of dimension", {"dim", 'd'}, 0);
+  args::ValueFlag<std::string>     dset(parser, "D", "Dataset to interrogate (assume first)", {"dset"}, "");
+  args::Flag                       all(parser, "META", "Print all meta data", {"all", 'a'});
 
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
@@ -35,12 +36,11 @@ int main_h5(args::Subparser &parser)
   } else {
     if (reader.exists("info")) {
       auto const i = reader.readInfo();
-      fmt::print("Matrix:     {}\n"
-                 "Voxel-size: {}\n"
-                 "TR:         {}\n"
-                 "Origin:     {}\n"
-                 "Direction:\n{}\n",
-                 i.matrix, i.voxel_size.transpose(), i.tr, i.origin.transpose(), i.direction);
+      fmt::print("Matrix:     {}\n", i.matrix);
+      fmt::print("Voxel-size: {}\n", i.voxel_size.transpose());
+      fmt::print("TR:         {}\n", i.tr);
+      fmt::print("Origin:     {}\n", i.origin.transpose());
+      // fmt::print("Direction:\n{}\n", i.direction);
     }
 
     auto const datasets = reader.list();

@@ -24,7 +24,7 @@ int main_sense(args::Subparser &parser)
   Trajectory const traj(ireader.readInfo(), ireader.readTensor<Re3>(HD5::Keys::Trajectory));
   HD5::Writer      writer(OutName(iname.Get(), oname.Get(), "sense"));
   writer.writeInfo(traj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
 
   auto const start = Log::Now();
   if (fwd) {
@@ -43,7 +43,7 @@ int main_sense(args::Subparser &parser)
       channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.forward(CChipMap(images, ii));
     }
     Log::Print("SENSE took {}", Log::ToNow(start));
-    writer.writeTensor(HD5::Keys::Channels, channels.dimensions(), channels.data());
+    writer.writeTensor(HD5::Keys::Channels, channels.dimensions(), channels.data(), HD5::Dims::Cartesian);
   } else {
     std::string const name = dset ? dset.Get() : HD5::Keys::Channels;
     auto const        channels = ireader.readTensor<Cx6>(name);
@@ -62,7 +62,7 @@ int main_sense(args::Subparser &parser)
       images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));
     }
     Log::Print("SENSE Adjoint took {}", Log::ToNow(start));
-    writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
+    writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data(), HD5::Dims::Image);
   }
 
   return EXIT_SUCCESS;

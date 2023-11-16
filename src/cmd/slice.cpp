@@ -88,8 +88,8 @@ int main_slice(args::Subparser &parser)
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
   writer.writeInfo(traj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
-  writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
 
   return EXIT_SUCCESS;
 }

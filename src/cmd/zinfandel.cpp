@@ -111,9 +111,9 @@ int main_zinfandel(args::Subparser &parser)
   HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "zinfandel", "h5"));
   Log::Print("Extended {}", extended.matrix());
   writer.writeInfo(extended.info());
-  writer.writeTensor(HD5::Keys::Trajectory, extended.points().dimensions(), extended.points().data());
+  writer.writeTensor(HD5::Keys::Trajectory, extended.points().dimensions(), extended.points().data(), HD5::Dims::Trajectory);
   writer.writeMeta(reader.readMeta());
-  writer.writeTensor(HD5::Keys::Noncartesian, out.dimensions(), out.data());
+  writer.writeTensor(HD5::Keys::Noncartesian, out.dimensions(), out.data(), HD5::Dims::Noncartesian);
   Log::Print("Finished");
   return EXIT_SUCCESS;
 }

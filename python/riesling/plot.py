@@ -410,17 +410,17 @@ def _draw_x(ax, img, clim, cmap='cet_colorwheel', log=False):
     ax.imshow(colorized, interpolation=rc['interpolation'])
     ax.axis('off')
 
-def basis(fname, sl_spoke=slice(None), b=slice(None), show_sum=False):
+def basis(fname, sl_spoke=slice(None), b=slice(None)):
     basis = io.read(fname)[sl_spoke,b]
-    fig, ax = plt.subplots(figsize=(16, 6))
-    ax.plot(basis)
+    fig, ax = plt.subplots(1, 2, figsize=(16, 6))
+    ax[0].plot(np.real(basis))
+    ax[1].plot(np.imag(basis))
     leg = [str(x) for x in range(basis.shape[1])]
-    if show_sum:
-        ax.plot(np.sum(basis, axis=1))
-        leg.append('Sum')
-    ax.legend(leg)
-    ax.grid(True)
-    ax.autoscale(enable=True, tight=True)
+    ax[0].legend(leg)
+    ax[0].grid(True)
+    # ax[0].autoscale(enable=True, tight=True)
+    ax[1].grid(True)
+    # ax[1].autoscale(enable=True, tight=True)
     plt.close()
     return fig
 

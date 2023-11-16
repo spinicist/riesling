@@ -1,7 +1,6 @@
 #include "parse_args.hpp"
 #include "basis.hpp"
 #include "io/hd5.hpp"
-#include "io/writer.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 #include <algorithm>
@@ -184,10 +183,12 @@ void WriteOutput(CoreOpts                           &opts,
 {
   auto const  fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(HD5::Keys::Image, img.dimensions(), img.data());
+  writer.writeTensor(HD5::Keys::Image, img.dimensions(), img.data(), HD5::Dims::Image);
   writer.writeMeta(meta);
   writer.writeInfo(traj.info());
-  if (opts.keepTrajectory) { writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data()); }
+  if (opts.keepTrajectory) {
+    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  }
   writer.writeString("log", log);
   if (opts.residImage) { writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data()); }
   if (opts.residKSpace) { writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data()); }

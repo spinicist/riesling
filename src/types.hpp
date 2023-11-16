@@ -78,8 +78,8 @@ using Point3 = Eigen::Matrix<float, 3, 1>;
 template <typename T, int N, typename... Args>
 decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
-  Eigen::DSizes<Index, sizeof...(Args)>     front{{toAdd...}};
-  Eigen::DSizes<Index, sizeof...(Args) + N> out;
+  Eigen::DSizes<T, sizeof...(Args)>     front{{toAdd...}};
+  Eigen::DSizes<T, sizeof...(Args) + N> out;
 
   std::copy_n(front.begin(), sizeof...(Args), out.begin());
   std::copy_n(back.begin(), N, out.begin() + sizeof...(Args));
@@ -89,8 +89,8 @@ decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 template <typename T, int N, typename... Args>
 decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
 {
-  std::array<Index, sizeof...(Args)>        back = {{toAdd...}};
-  Eigen::DSizes<Index, sizeof...(Args) + N> out;
+  Eigen::DSizes<T, sizeof...(Args)>     back{{toAdd...}};
+  Eigen::DSizes<T, sizeof...(Args) + N> out;
 
   std::copy_n(front.begin(), N, out.begin());
   std::copy_n(back.begin(), sizeof...(Args), out.begin() + N);
@@ -121,7 +121,7 @@ auto FirstN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 }
 
 template <size_t N, typename T>
-auto LastN(T const &sz) -> Eigen::DSizes<Index, N>
+auto LastN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(N <= sz.size());
   Eigen::DSizes<Index, N> last;
@@ -130,7 +130,7 @@ auto LastN(T const &sz) -> Eigen::DSizes<Index, N>
 }
 
 template <size_t F, size_t N, typename T>
-auto MidN(T const &sz) -> Eigen::DSizes<Index, N>
+auto MidN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(F + N <= sz.size());
   Eigen::DSizes<Index, N> out;

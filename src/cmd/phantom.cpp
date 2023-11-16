@@ -99,7 +99,7 @@ int main_phantom(args::Subparser &parser)
 
   HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeInfo(traj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
 
   Cx3 phantom(info.matrix);
 
@@ -136,6 +136,6 @@ int main_phantom(args::Subparser &parser)
     phantom = SheppLoganPhantom(
       info.matrix, info.voxel_size, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero(), size.Get(), centres, ha, angles, ints);
   }
-  writer.writeTensor(HD5::Keys::Image, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data());
+  writer.writeTensor(HD5::Keys::Image, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
   return EXIT_SUCCESS;
 }

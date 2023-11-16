@@ -6,6 +6,7 @@
 #include <exception>
 #include <fmt/color.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 
 #include "types.hpp"
 

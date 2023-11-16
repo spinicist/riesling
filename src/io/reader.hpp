@@ -29,6 +29,8 @@ struct Reader
 
   template <typename T>
   auto readTensor(std::string const &label) const -> T;
+  template <int N>
+  auto readDims(std::string const &label) const -> Names<N>;
   template <typename T>
   auto readSlab(std::string const &label, std::vector<Index> const &sliceDims, std::vector<Index> const &sliceInds) const -> T;
   template <typename Derived>

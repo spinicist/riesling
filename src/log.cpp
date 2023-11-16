@@ -118,8 +118,8 @@ std::string ToNow(Log::Time const t1)
   }
 }
 
-template <typename Scalar, int ND>
-void Tensor(std::string const &nameIn, Sz<ND> const &shape, Scalar const *data)
+template <typename Scalar, int N>
+void Tensor(std::string const &nameIn, Sz<N> const &shape, Scalar const *data)
 {
   if (debug_file) {
     Index       count = 0;

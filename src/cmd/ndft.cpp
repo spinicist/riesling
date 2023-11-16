@@ -39,9 +39,9 @@ int main_ndft(args::Subparser &parser)
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = ndft->forward(CChipMap(channels, ii));
     }
-    writer.writeTensor(HD5::Keys::Noncartesian, noncart.dimensions(), noncart.data());
+    writer.writeTensor(HD5::Keys::Noncartesian, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
     writer.writeInfo(traj.info());
-    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
+    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
     Log::Print("Forward NDFT took {}", Log::ToNow(start));
   } else {
     Trajectory        traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));

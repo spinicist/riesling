@@ -25,9 +25,9 @@ int main_noisify(args::Subparser &parser)
 
   HD5::Writer writer(OutName(iname.Get(), oname.Get(), "noisy"));
   writer.writeInfo(reader.readInfo());
-  writer.writeTensor(dset.Get(), ks.dimensions(), ks.data());
+  writer.writeTensor(dset.Get(), ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Re3 const traj = reader.readTensor<Re3>(HD5::Keys::Trajectory);
-  writer.writeTensor(HD5::Keys::Trajectory, traj.dimensions(), traj.data());
+  writer.writeTensor(HD5::Keys::Trajectory, traj.dimensions(), traj.data(), HD5::Dims::Trajectory);
 
   return EXIT_SUCCESS;
 }
