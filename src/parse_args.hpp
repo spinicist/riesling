@@ -37,8 +37,6 @@ struct SzReader
   void operator()(std::string const &name, std::string const &value, rl::Sz<N> &x);
 };
 
-auto ReadBasis(std::string const &basisFile) -> rl::Cx2;
-
 // Helper function to generate a good output name
 std::string
 OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension = "h5");

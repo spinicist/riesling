@@ -55,7 +55,7 @@ TEST_CASE("IO", "[io]")
   }
 
   SECTION("Real-Data")
-  {
+  { // This will now pass as I added a float->complex conversion path
     std::filesystem::path const fname("test-real.h5");
 
     { // Use destructor to ensure it is written
@@ -67,7 +67,7 @@ TEST_CASE("IO", "[io]")
     }
     CHECK(std::filesystem::exists(fname));
     HD5::Reader reader(fname);
-    CHECK_THROWS_AS(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {0}, {0}), Log::Failure);
+    CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {0}, {0}));
     std::filesystem::remove(fname);
   }
 }

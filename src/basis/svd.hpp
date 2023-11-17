@@ -1,15 +1,12 @@
 #pragma once
 
-#include "io/writer.hpp"
-#include "parse_args.hpp"
 #include "types.hpp"
+
+#include "io/writer.hpp"
 
 namespace rl {
 
-template<typename Scalar = Cx>
-auto IdBasis() -> Eigen::Tensor<Scalar, 2>;
-
-void SaveBasis(
+void SaveSVDBasis(
   Eigen::ArrayXXf const &dynamics,
   float const            thresh,
   Index const            nB,
@@ -18,4 +15,4 @@ void SaveBasis(
   bool const             normalize,
   HD5::Writer           &writer);
 
-} // namespace rl
+}

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "basis.hpp"
+#include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"

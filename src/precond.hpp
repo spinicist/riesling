@@ -2,7 +2,7 @@
 
 #include "op/ops.hpp"
 #include "trajectory.hpp"
-#include "basis.hpp"
+#include "basis/basis.hpp"
 #include <optional>
 
 namespace rl {

@@ -1,6 +1,6 @@
 #include "types.hpp"
 
-#include "basis.hpp"
+#include "basis/svd.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
@@ -109,7 +109,7 @@ int main_basis_sim(args::Subparser &parser)
   }
 
   HD5::Writer writer(oname.Get());
-  SaveBasis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize, writer);
+  SaveSVDBasis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize, writer);
   writer.writeMatrix(pars, HD5::Keys::Parameters);
   return EXIT_SUCCESS;
 }

@@ -2,7 +2,7 @@
 
 #include "func/dict.hpp"
 #include "algo/decomp.hpp"
-#include "basis.hpp"
+#include "basis/basis.hpp"
 #include "sim/t2flair.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"

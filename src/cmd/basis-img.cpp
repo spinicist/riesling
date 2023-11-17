@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 #include "algo/otsu.hpp"
-#include "basis.hpp"
+#include "basis/svd.hpp"
 #include "interp.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -88,6 +88,6 @@ int main_basis_img(args::Subparser &parser)
     }
   }
   HD5::Writer writer(oname.Get());
-  SaveBasis(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize, writer);
+  SaveSVDBasis(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize, writer);
   return EXIT_SUCCESS;
 }

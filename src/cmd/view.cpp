@@ -1,3 +1,4 @@
+#include "basis/basis.hpp"
 #include "img/rgb.hpp"
 #include "io/hd5.hpp"
 #include "parse_args.hpp"

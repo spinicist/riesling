@@ -1,6 +1,6 @@
 #pragma once
 
-#include "basis.hpp"
+#include "basis/basis.hpp"
 #include "kernel/kernel.hpp"
 #include "mapping.hpp"
 #include "tensorop.hpp"
@@ -16,7 +16,7 @@ struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>
   OP_INHERIT(Scalar_, NDim + 2, 3)
   using Parent::adjoint;
   using Parent::forward;
-  using Basis = Eigen::Tensor<Scalar, 2>;
+  using Basis = Basis<Scalar>;
   std::shared_ptr<Kernel<Scalar, NDim>> kernel;
   Mapping<NDim>                         mapping;
   Basis                                 basis;

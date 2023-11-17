@@ -1,22 +1,11 @@
-#include "basis.hpp"
+#include "svd.hpp"
 
 #include "algo/decomp.hpp"
 #include "algo/stats.hpp"
 
 namespace rl {
 
-template <typename Scalar>
-auto IdBasis() -> Eigen::Tensor<Scalar, 2>
-{
-  Eigen::Tensor<Scalar, 2> id(1, 1);
-  id.setConstant(1.f);
-  return id;
-}
-
-template auto IdBasis<float>() -> Re2;
-template auto IdBasis<Cx>() -> Cx2;
-
-void SaveBasis(
+void SaveSVDBasis(
   Eigen::ArrayXXf const &dynamics,
   float const            thresh,
   Index const            nBasis,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "basis.hpp"
+#include "basis/basis.hpp"
 #include "op/tensorop.hpp"
 #include "sdc.hpp"
 

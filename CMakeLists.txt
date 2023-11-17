@@ -18,7 +18,6 @@ add_definitions(-DEIGEN_USE_THREADS)
 
 # Common library between tests and main executable
 add_library(vineyard
-    src/basis.cpp
     src/compressor.cpp
     src/cropper.cpp
     src/filter.cpp
@@ -46,6 +45,9 @@ add_library(vineyard
     src/algo/otsu.cpp
     src/algo/pdhg.cpp
     src/algo/stats.cpp
+    src/basis/basis.cpp
+    src/basis/fourier.cpp
+    src/basis/svd.cpp
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp
