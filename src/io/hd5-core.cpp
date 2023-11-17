@@ -8,6 +8,62 @@
 namespace rl {
 namespace HD5 {
 
+namespace {
+
+struct complex_t
+{
+  float r; /*real part*/
+  float i; /*imaginary part*/
+};
+
+hid_t complex_tid;
+
+} // namespace
+
+template <>
+hid_t type_impl(type_tag<Index>)
+{
+  return H5T_NATIVE_LONG;
+}
+
+template <>
+hid_t type_impl(type_tag<float>)
+{
+  return H5T_NATIVE_FLOAT;
+}
+
+template <>
+hid_t type_impl(type_tag<double>)
+{
+  return H5T_NATIVE_DOUBLE;
+}
+
+template <>
+hid_t type_impl(type_tag<std::complex<float>>)
+{
+  return complex_tid;
+}
+
+herr_t ConvertFloatComplex(hid_t        src_id,
+                           hid_t        dst_id,
+                           H5T_cdata_t *cdata,
+                           size_t       n,
+                           size_t       buf_stride,
+                           size_t       bkg_stride,
+                           void        *buf,
+                           void        *bkg,
+                           hid_t        plist)
+{
+  // HDF5 wants the conversion in place
+  // Cheat heavily and convert going backwards so we don't overwrite any values
+  float      *src = (float *)buf;
+  Cx         *tgt = (Cx *)buf;
+  for (Index ii = n - 1; ii >= 0; ii--) {
+    tgt[ii] = Cx(src[ii]);
+  }
+  return 0;
+}
+
 void Init()
 {
   static bool NeedsInit = true;
@@ -21,6 +77,14 @@ void Init()
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
+
+    hid_t scalar_id = type_impl(type_tag<float>{});
+    complex_tid = H5Tcreate(H5T_COMPOUND, sizeof(complex_t));
+    CheckedCall(H5Tinsert(complex_tid, "r", HOFFSET(complex_t, r), scalar_id), "inserting real field");
+    CheckedCall(H5Tinsert(complex_tid, "i", HOFFSET(complex_t, i), scalar_id), "inserting imaginary field");
+
+    H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, complex_tid, ConvertFloatComplex);
+
     Log::Print<Log::Level::High>("Initialised HDF5");
   } else {
     Log::Print<Log::Level::High>("HDF5 already initialised");
@@ -87,40 +151,6 @@ void CheckInfoType(hid_t handle)
 }
 
 bool Exists(hid_t const parent, std::string const name) { return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0); }
-
-template <>
-hid_t type_impl(type_tag<Index>)
-{
-  return H5T_NATIVE_LONG;
-}
-
-template <>
-hid_t type_impl(type_tag<float>)
-{
-  return H5T_NATIVE_FLOAT;
-}
-
-template <>
-hid_t type_impl(type_tag<double>)
-{
-  return H5T_NATIVE_DOUBLE;
-}
-
-template <>
-hid_t type_impl(type_tag<std::complex<float>>)
-{
-  struct complex_t
-  {
-    float r; /*real part*/
-    float i; /*imaginary part*/
-  };
-
-  hid_t scalar_id = type_impl(type_tag<float>{});
-  hid_t complex_id = H5Tcreate(H5T_COMPOUND, sizeof(complex_t));
-  CheckedCall(H5Tinsert(complex_id, "r", HOFFSET(complex_t, r), scalar_id), "inserting real field");
-  CheckedCall(H5Tinsert(complex_id, "i", HOFFSET(complex_t, i), scalar_id), "inserting imaginary field");
-  return complex_id;
-}
 
 herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
 {

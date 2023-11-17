@@ -58,6 +58,7 @@ template <int N>
 struct Names : std::array<std::string, N> {};
 
 namespace Dims {
+Names<3> const Basis = {"v", "sample", "trace"};
 Names<6> const Cartesian = {"channel", "v", "x", "y", "z", "t"};
 Names<5> const Image = {"v", "x", "y", "z", "t"};
 Names<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
