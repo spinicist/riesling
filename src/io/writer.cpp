@@ -3,6 +3,7 @@
 #include "io/hd5-core.hpp"
 #include "log.hpp"
 #include <hdf5.h>
+#include <hdf5_hl.h>
 
 namespace rl {
 namespace HD5 {
@@ -77,7 +78,7 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
 bool Writer::exists(std::string const &name) const { return HD5::Exists(handle_, name); }
 
 template <typename Scalar, int N>
-void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, Names<N> const &dnames)
+void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, Names<N> const &labels)
 {
   for (Index ii = 0; ii < N; ii++) {
     if (shape[ii] == 0) { Log::Fail("Tensor {} had a zero dimension. Dims: {}", name, shape); }
@@ -105,21 +106,13 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
+  auto l = labels.rbegin();
+  for (Index ii = 0; ii < N; ii++) {
+    CheckedCall(H5DSset_label(dset, ii, l->c_str()), "setting dimension label");
+    l++;
+  }
   if (dset < 0) { Log::Fail("Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError()); }
   CheckedCall(H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data), "Writing data");
-
-  hsize_t const adims[1] = {N};
-  auto const aspace = H5Screate_simple(1, adims, NULL);
-  hid_t const atype = H5Tcopy(H5T_C_S1);
-  H5Tset_size(atype, H5T_VARIABLE);
-  char *cnames[N];
-  for (Index ii = 0; ii < N; ii++) {
-    cnames[ii] = (char *)dnames[ii].c_str();
-  }
-  hid_t const a = H5Acreate(dset, "dims", atype, aspace, H5P_DEFAULT, H5P_DEFAULT);
-  CheckedCall(H5Awrite(a, atype, cnames), "writing attribute");
-
-  CheckedCall(H5Aclose(a), "closing attribute");
   CheckedCall(H5Pclose(plist), "closing plist");
   CheckedCall(H5Sclose(space), "closing space");
   CheckedCall(H5Dclose(dset), "closing dataset");

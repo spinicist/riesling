@@ -129,10 +129,7 @@ def read(filename, dset=None):
             to_read = list(f.keys())[0]
         else:
             to_read = dset
-        data = f[to_read]
-        dims = list(data.attrs['dims'])
-        dims.reverse()
-        data = xr.DataArray(data, dims=dims)
+        data = xr.DataArray(f[to_read], dims=[d.label for d in f[to_read].dims])
         data.attrs.update(meta)
 
         # name can for unknown reason start with a /

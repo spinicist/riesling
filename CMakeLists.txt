@@ -93,6 +93,7 @@ target_link_libraries(vineyard PUBLIC
     fmt::fmt-header-only
     FFTW3::fftw3f
     hdf5::hdf5-static
+    hdf5::hdf5_hl-static
     NIFTI::niftiio
     range-v3
     scn::scn
