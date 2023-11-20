@@ -21,8 +21,8 @@ struct Opts
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Cx2 const &basis = IdBasis())
-  -> Cx5;
+auto LoresChannels(
+  Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
 
 //! Normalizes by RSS with optional regularization
 auto UniformNoise(float const λ, Sz3 const shape, Cx5 const &channels) -> Cx5;

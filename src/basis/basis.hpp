@@ -5,7 +5,7 @@
 namespace rl {
 
 template<typename Scalar = Cx>
-using Basis = Eigen::Tensor<Scalar, 2>;
+using Basis = Eigen::Tensor<Scalar, 3>;
 
 template<typename Scalar = Cx>
 auto IdBasis() -> Basis<Scalar>;

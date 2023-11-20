@@ -7,9 +7,9 @@
 namespace rl {
 
 template <typename Scalar>
-auto IdBasis() -> Eigen::Tensor<Scalar, 2>
+auto IdBasis() -> Basis<Scalar>
 {
-  Eigen::Tensor<Scalar, 2> id(1, 1);
+  Basis<Scalar> id(1, 1, 1);
   id.setConstant(1.f);
   return id;
 }

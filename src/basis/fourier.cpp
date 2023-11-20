@@ -1,0 +1,28 @@
+#include "fourier.hpp"
+
+#include "fft/fft.hpp"
+#include "io/writer.hpp"
+#include "pad.hpp"
+
+namespace rl {
+
+FourierBasis::FourierBasis(Index const N, Index const samples, Index const traces)
+{
+  Cx3 eye(N, samples > 1 ? N : 1, traces > 1 ? N : 1);
+  eye.setZero();
+  float const energy = std::sqrt(samples * traces);
+  for (Index ii = 0; ii < N; ii++) {
+    eye(ii, samples > 1 ? ii : 0, traces > 1 ? ii : 0) = Cx(energy);
+  }
+  basis = Pad(eye, Sz3{N, samples, traces});
+  auto fft = FFT::Make<3, 2>(basis.dimensions());
+  fft->reverse(basis);
+}
+
+void FourierBasis::writeTo(std::string const &path)
+{
+  HD5::Writer writer(path);
+  writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
+}
+
+} // namespace rl

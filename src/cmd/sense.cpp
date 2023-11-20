@@ -19,7 +19,7 @@ int main_sense(args::Subparser &parser)
   HD5::Reader ireader(iname.Get());
   if (!sname) { Log::Fail("No input SENSE map file specified"); }
   HD5::Reader sreader(sname.Get());
-  auto const  maps = sreader.readTensor<Cx4>(HD5::Keys::SENSE);
+  auto const  maps = sreader.readTensor<Cx5>(HD5::Keys::SENSE);
 
   Trajectory const traj(ireader.readInfo(), ireader.readTensor<Re3>(HD5::Keys::Trajectory));
   HD5::Writer      writer(OutName(iname.Get(), oname.Get(), "sense"));

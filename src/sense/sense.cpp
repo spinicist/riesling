@@ -27,7 +27,7 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Cx2 const &basis) -> Cx5
+auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nT = noncart.dimension(2);

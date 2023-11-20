@@ -78,9 +78,10 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
       auto const  c = map.cart[si];
       auto const  n = map.noncart[si];
       auto const  o = map.offset[si];
-      Index const btp = n.trace % basis.dimension(1);
+      Index const bs = n.sample % basis.dimension(1);
+      Index const bt = n.trace % basis.dimension(2);
       y.template chip<2>(n.trace).template chip<1>(n.sample) =
-        this->kernel->gather(c, o, bucket.minCorner, basis.template chip<1>(btp), map.cartDims, bGrid);
+        this->kernel->gather(c, o, bucket.minCorner, basis.template chip<2>(bt).template chip<1>(bs), map.cartDims, bGrid);
     }
   };
 
@@ -107,9 +108,10 @@ void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
       auto const               c = map.cart[si];
       auto const               n = map.noncart[si];
       auto const               o = map.offset[si];
-      Index const              btp = n.trace % basis.dimension(1);
+      Index const bs = n.sample % basis.dimension(1);
+      Index const bt = n.trace % basis.dimension(2);
       Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
-      this->kernel->spread(c, o, bucket.minCorner, basis.template chip<1>(btp), yy, bGrid);
+      this->kernel->spread(c, o, bucket.minCorner, basis.template chip<2>(bt).template chip<1>(bs), yy, bGrid);
     }
 
     {

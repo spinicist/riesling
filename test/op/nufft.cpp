@@ -22,9 +22,9 @@ TEST_CASE("NUFFT", "[tform]")
   Trajectory const traj(info, points);
   float const      osamp = GENERATE(2.f, 2.3f);
   auto             grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1);
-  NUFFTOp<1>  nufft(grid, Sz1{M});
-  Cx3         ks(nufft.oshape);
-  Cx3         img(nufft.ishape);
+  NUFFTOp<1>       nufft(grid, Sz1{M});
+  Cx3              ks(nufft.oshape);
+  Cx3              img(nufft.ishape);
   img.setZero();
   img(0, 0, M / 2) = std::sqrt(M);
   ks = nufft.forward(img);
@@ -47,12 +47,12 @@ TEST_CASE("NUFFT Basis", "[tform]")
   Trajectory const traj(info, points);
 
   Index const O = 4;
-  Cx2         basis(O, N);
+  Basis<Cx>   basis(O, 1, N);
   basis.setZero();
   Index const P = N / O;
   for (Index ii = 0; ii < O; ii++) {
     for (Index ij = 0; ij < P; ij++) {
-      basis(ii, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
+      basis(ii, 0, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
     }
   }
 

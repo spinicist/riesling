@@ -9,7 +9,7 @@ namespace rl {
 
 template <int NDim>
 NDFTOp<NDim>::NDFTOp(
-  Re3 const &tr, Index const nC, Sz<NDim> const shape, Cx2 const &b, std::shared_ptr<TensorOperator<Cx, 3>> s)
+  Re3 const &tr, Index const nC, Sz<NDim> const shape, Basis<Cx> const &b, std::shared_ptr<TensorOperator<Cx, 3>> s)
   : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
   , sdc{s ? s : std::make_shared<TensorIdentity<Cx, 3>>(oshape)}
 {
@@ -132,7 +132,7 @@ template struct NDFTOp<2>;
 template struct NDFTOp<3>;
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>>
-make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Cx2 const &basis, std::shared_ptr<TensorOperator<Cx, 3>> sdc)
+make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Basis<Cx> const &basis, std::shared_ptr<TensorOperator<Cx, 3>> sdc)
 {
   std::shared_ptr<TensorOperator<Cx, 5, 4>> ndft;
   if (traj.dimension(0) == 2) {

@@ -1,5 +1,6 @@
 #include "types.hpp"
 
+#include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
@@ -16,9 +17,10 @@ int main_blend(args::Subparser &parser)
   args::Flag                    mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
   args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string>  oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
-  args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Timepoints within basis for combination",
-                                                              {"tp", 't'}, {0});
-  args::ValueFlag<std::vector<Index>, VectorReader<Index>> keep(parser, "K", "Keep these basis vectors", {"keep", 'k'});
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> sp(parser, "SP", "Samples within basis for combination", {"sp", 's'},
+                                                              {0});
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Traces within basis for combination", {"tp", 't'},
+                                                              {0});
 
   ParseCommand(parser);
 
@@ -28,30 +30,30 @@ int main_blend(args::Subparser &parser)
   Sz5 const   dims = images.dimensions();
 
   if (!iname) { throw args::Error("No basis file specified"); }
-  HD5::Reader binput(bname.Get());
-  Re2         basis = binput.readTensor<Re2>("basis");
+  auto const basis = ReadBasis(bname.Get());
 
   if (basis.dimension(0) != images.dimension(0)) {
     Log::Fail("Basis has {} vectors but image has {}", basis.dimension(1), images.dimension(0));
-  }
-
-  if (keep) {
-    for (Index ib = 0; ib < basis.dimension(0); ib++) {
-      if (std::find(keep.Get().begin(), keep.Get().end(), ib) == keep.Get().end()) { basis.chip(ib, 0).setZero(); }
-    }
   }
 
   auto const &tps = tp.Get();
 
   Cx5         out(AddFront(LastN<4>(dims), (Index)tps.size()));
   float const scale = std::sqrt(basis.dimension(1));
-  Cx2         selected(basis.dimension(0), tps.size());
-  for (size_t ii = 0; ii < tps.size(); ii++) {
-    Index itp = tps[ii];
-    if ((itp < 0) || (itp >= basis.dimension(1))) {
-      Log::Fail("Requested timepoint {} exceeds basis length {}", tps[ii], basis.dimension(1));
+  if (sp && tp && (tp.Get().size() != sp.Get().size())) {
+    Log::Fail("Sample points {} and time points {} must be equal if both set", sp.Get().size(), tp.Get().size());
+  }
+  Basis<Cx>   selected(basis.dimension(0), sp.Get().size(), tp.Get().size());
+  for (size_t ii = 0; ii < tp.Get().size(); ii++) {
+    Index const is = sp ? sp.Get()[ii] : 0;
+    Index const it = tp ? tp.Get()[ii] : 0;
+    if ((is < 0) || (is >= basis.dimension(0))) {
+      Log::Fail("Requested timepoint {} exceeds samples {}", is, basis.dimension(0));
     }
-    selected.chip<1>(ii) = (basis.chip<1>(itp) * scale).cast<Cx>();
+    if ((it < 0) || (it >= basis.dimension(1))) {
+      Log::Fail("Requested timepoint {} exceeds traces {}", it, basis.dimension(1));
+    }
+    selected.chip<2>(it ? ii : 0).chip<1>(is ? ii : 0) = basis.chip<2>(it).chip<1>(is) * Cx(scale);
   }
   for (Index iv = 0; iv < out.dimension(4); iv++) {
     out.chip<4>(iv).device(Threads::GlobalDevice()) =

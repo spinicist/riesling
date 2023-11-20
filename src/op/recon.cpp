@@ -12,12 +12,11 @@ auto make_recon(CoreOpts                       &coreOpts,
                 SDC::Opts                      &sdcOpts,
                 Trajectory const               &traj,
                 std::shared_ptr<SenseOp> const &sense,
-                Cx2 const                      &basis) -> std::shared_ptr<ReconOp>
+                Basis<Cx> const                &basis) -> std::shared_ptr<ReconOp>
 {
-
   Index const nC = sense->nChannels();
   auto const  shape = sense->mapDimensions();
-  auto const  sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  auto const sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
   if (coreOpts.ndft) {
     auto ndft = make_ndft(traj.points(), nC, shape, basis, sdc);
     return std::make_shared<ReconOp>(sense, ndft);

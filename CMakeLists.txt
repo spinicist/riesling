@@ -24,6 +24,7 @@ add_library(vineyard
     src/interp.cpp
     src/log.cpp
     src/mapping.cpp
+    src/pad.cpp
     src/parse_args.cpp
     src/patches.cpp
     src/precond.cpp
@@ -110,6 +111,7 @@ set_target_properties(vineyard PROPERTIES
 # Main executable
 add_executable(riesling
     src/cmd/admm.cpp
+    src/cmd/basis-fourier.cpp
     src/cmd/basis-img.cpp
     src/cmd/basis-sim.cpp
     src/cmd/blend.cpp

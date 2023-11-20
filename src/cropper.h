@@ -3,6 +3,11 @@
 #include "info.hpp"
 #include "log.hpp"
 
+/*
+ * THIS IS DEPRECATED. NEW CODE SHOULD USE pad.hpp
+ */
+
+
 namespace rl {
 
 template <typename T, int ND>

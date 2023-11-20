@@ -13,7 +13,7 @@ struct PadOp final : TensorOperator<Scalar_, Rank, Rank>
   using OtherDims = Eigen::DSizes<Index, Rank - ImgRank>;
 
   PadOp(ImgDims const &imgShape, ImgDims const &padSize, OtherDims const &otherSize);
-  PadOp(ImgDims const &imgShape, OutDims oshape);
+  PadOp(ImgDims const &imgShape, OutDims const oshape);
 
   OP_DECLARE()
 

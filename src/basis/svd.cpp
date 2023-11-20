@@ -62,7 +62,9 @@ void SaveSVDBasis(
   Eigen::ArrayXf  norm = dict.colwise().norm();
   dict = dict.array().rowwise() / norm.transpose();
 
-  writer.writeMatrix(Eigen::MatrixXf(basis.transpose()), HD5::Keys::Basis);
+  Eigen::MatrixXf const transpose = basis.transpose();
+
+  writer.writeTensor(HD5::Keys::Basis, Sz3{transpose.rows(), 1, transpose.cols()}, transpose.data(), HD5::Dims::Basis);
   writer.writeMatrix(dict, HD5::Keys::Dictionary);
   writer.writeMatrix(norm, HD5::Keys::Norm);
   writer.writeMatrix(dynamics, HD5::Keys::Dynamics);

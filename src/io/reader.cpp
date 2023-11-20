@@ -94,7 +94,7 @@ auto Reader::readTensor(std::string const &name) const -> T
   if (ret_value < 0) {
     Log::Fail("Error reading tensor {}, code: {}", name, ret_value);
   } else {
-    Log::Print<Log::Level::High>("Read tensor {}", name);
+    Log::Print<Log::Level::High>("Read tensor {}, shape {}", name, tDims);
   }
   return tensor;
 }

@@ -13,7 +13,7 @@ PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, ImgDims const &padS
 }
 
 template <typename Scalar_, int Rank, int ImgRank>
-PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, OutDims os)
+PadOp<Scalar_, Rank, ImgRank>::PadOp(ImgDims const &imgSize, OutDims const os)
   : Parent(fmt::format("{}D PadOp", ImgRank), Concatenate(FirstN<Rank - ImgRank>(os), imgSize), os)
 {
   init();

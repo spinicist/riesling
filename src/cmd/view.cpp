@@ -100,43 +100,26 @@ int main_view(args::Subparser &parser)
   ParseCommand(parser);
   HD5::Reader reader(iname.Get());
   Cx5         img = reader.readTensor<Cx5>("image");
-  auto const  basis = ReadBasis(basisFile.Get());
-  bool const  hasBasis = basis.dimension(1) > 1;
-  if (hasBasis && basis.dimension(0) != img.dimension(0)) {
-    Log::Fail("Basis length {} does not match number of images {}", basis.dimension(0), img.dimension(0));
-  }
 
-  Index const nB = (basis.dimension(1) > 1) ? basis.dimension(1) : img.dimension(0);
+  Index const nV = img.dimension(0);
   Index const nI = img.dimension(1);
   Index const nJ = img.dimension(2);
   Index const nK = img.dimension(3);
-  Index const nV = img.dimension(4);
-  Index       iB = nB / 2;
+  Index const nT = img.dimension(4);
+  Index       iV = nV / 2;
   Index       iI = nI / 2;
   Index       iJ = nJ / 2;
   Index       iK = nK / 2;
-  Index       iV = nV / 2;
+  Index       iT = nT / 2;
 
   UI ui;
 
   bool  go = true;
   Index inc = 1;
   while (go) {
-    Re2 sliceX = hasBasis ? Re2(basis.chip<1>(iB)
-                                  .cast<Cx>()
-                                  .contract(img.chip<4>(iV).chip<1>(iI), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>())
-                                  .abs())
-                          : Re2(img.chip<4>(iV).chip<1>(iI).chip<0>(iB).abs());
-    Re2 sliceY = hasBasis ? Re2(basis.chip<1>(iB)
-                                  .cast<Cx>()
-                                  .contract(img.chip<4>(iV).chip<2>(iJ), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>())
-                                  .abs())
-                          : Re2(img.chip<4>(iV).chip<2>(iJ).chip<0>(iB).abs());
-    Re2 sliceZ = hasBasis ? Re2(basis.chip<1>(iB)
-                                  .cast<Cx>()
-                                  .contract(img.chip<4>(iV).chip<3>(iK), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>())
-                                  .abs())
-                          : Re2(img.chip<4>(iV).chip<3>(iK).chip<0>(iB).abs());
+    Re2 sliceX = Re2(img.chip<4>(iT).chip<1>(iI).chip<0>(iV).abs());
+    Re2 sliceY = Re2(img.chip<4>(iT).chip<2>(iJ).chip<0>(iV).abs());
+    Re2 sliceZ = Re2(img.chip<4>(iT).chip<3>(iK).chip<0>(iV).abs());
 
     sliceX = sliceX / Maximum(sliceX);
     sliceY = sliceY / Maximum(sliceY);
@@ -148,22 +131,22 @@ int main_view(args::Subparser &parser)
 
     ui.blitXYZ(imgX, imgY, imgZ);
     ui.setStatus(
-      fmt::format("{} B {}/{} I {}/{} J {}/{} K {}/{} V {}/{}", iname.Get(), iB, nB, iI, nI, iJ, nJ, iK, nK, iV, nV));
+      fmt::format("{} B {}/{} I {}/{} J {}/{} K {}/{} V {}/{}", iname.Get(), iV, nV, iI, nI, iJ, nJ, iK, nK, iV, nV));
     ui.render();
     auto const input = ui.getInput();
 
     if (input == 'x') { break; }
     switch (input) {
-    case 'q': iB = std::max(iB - inc, 0L); break;
-    case 'a': iB = std::min(iB + inc, nB - 1); break;
+    case 'q': iV = std::max(iV - inc, 0L); break;
+    case 'a': iV = std::min(iV + inc, nV - 1); break;
     case 'w': iI = std::max(iI - inc, 0L); break;
     case 's': iI = std::min(iI + inc, nI - 1); break;
     case 'e': iJ = std::max(iJ - inc, 0L); break;
     case 'd': iJ = std::min(iJ + inc, nJ - 1); break;
     case 'r': iK = std::max(iK - inc, 0L); break;
     case 'f': iK = std::min(iK + inc, nK - 1); break;
-    case 't': iV = std::max(iV - inc, 0L); break;
-    case 'g': iV = std::min(iV + inc, nV - 1); break;
+    case 't': iT = std::max(iT - inc, 0L); break;
+    case 'g': iT = std::min(iT + inc, nT - 1); break;
     case '1': inc = 1; break;
     case '2': inc = 2; break;
     case '3': inc = 3; break;
