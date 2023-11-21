@@ -11,7 +11,9 @@ template <int NDim>
 NDFTOp<NDim>::NDFTOp(
   Re3 const &tr, Index const nC, Sz<NDim> const shape, Basis<Cx> const &b, std::shared_ptr<TensorOperator<Cx, 3>> s)
   : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
+  , basis{b}
   , sdc{s ? s : std::make_shared<TensorIdentity<Cx, 3>>(oshape)}
+
 {
   static_assert(NDim < 4);
   if (tr.dimension(0) != NDim) { Log::Fail("Requested {}D NDFT but trajectory is {}D", NDim, tr.dimension(0)); }
@@ -19,42 +21,39 @@ NDFTOp<NDim>::NDFTOp(
   Log::Print<Log::Level::High>("Calculating cartesian co-ords");
   nSamp = tr.dimension(1);
   nTrace = tr.dimension(2);
-  Index const M = nSamp * nTrace;
   N = Product(shape);
   scale = 1.f / std::sqrt(N);
 
-  Eigen::Array<float, NDim, 1> trScale;
-  using FMap = typename Eigen::Array<float, NDim, -1>::ConstAlignedMapType;
-  FMap tm(tr.data(), NDim, M);
+  Re1 trScale(NDim);
   for (Index ii = 0; ii < NDim; ii++) {
     trScale(ii) = shape[ii];
   }
-  traj.resize(NDim, M);
-  traj = ((tm + 0.5f).unaryExpr([](float const f) { return std::fmod(f, 1.f); }) - 0.5f).colwise() * trScale;
+  traj = ((tr + 0.5f).unaryExpr([](float const f) { return std::fmod(f, 1.f); }) - 0.5f) *
+         trScale.reshape(Sz3{NDim, 1, 1}).broadcast(Sz3{1, nSamp, nTrace});
 
-  Index const nB0 = b.dimension(0);
-  Index const nB1 = b.dimension(1);
-  basis = Eigen::Array<Cx, -1, -1>::ConstMapType(b.data(), nB0, nB1).replicate(1, 1 + nTrace / nB1).leftCols(nTrace).template cast<Cx>();
   xc.resize(NDim, N);
   Index       ind = 0;
   Index const si = shape[NDim - 1];
   for (int16_t ii = 0; ii < si; ii++) {
     float const fi = (float)(ii - si / 2) / si;
     if constexpr (NDim == 1) {
-      xc(ind) = 2.f * M_PI * fi;
+      xc(0, ind) = 2.f * M_PI * fi;
       ind++;
     } else {
       Index const sj = shape[NDim - 2];
       for (int16_t ij = 0; ij < sj; ij++) {
         float const fj = (float)(ij - sj / 2) / sj;
         if constexpr (NDim == 2) {
-          xc.col(ind) = 2.f * M_PI * Eigen::Vector2f(fj, fi);
+          xc(0, ind) = 2.f * M_PI * fi;
+          xc(1, ind) = 2.f * M_PI * fj;
           ind++;
         } else {
           Index const sk = shape[NDim - 3];
           for (int16_t ik = 0; ik < sk; ik++) {
             float const fk = (float)(ik - sk / 2) / sk;
-            xc.col(ind) = 2.f * M_PI * Eigen::Vector3f(fk, fj, fi);
+            xc(0, ind) = 2.f * M_PI * fi;
+            xc(1, ind) = 2.f * M_PI * fj;
+            xc(2, ind) = 2.f * M_PI * fk;
             ind++;
           }
         }
@@ -66,25 +65,20 @@ NDFTOp<NDim>::NDFTOp(
 template <int NDim>
 void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
-  using RVec = typename Eigen::RowVector<float, NDim>;
-  using CxMap = typename Eigen::Matrix<Cx, -1, -1>::AlignedMapType;
-  using CxCMap = typename Eigen::Matrix<Cx, -1, -1>::ConstAlignedMapType;
-
+  auto const  time = this->startForward(x);
   Index const nC = ishape[0];
-  Index const nB = ishape[1];
+  Index const nV = ishape[1];
+  auto const  xr = x.reshape(Sz3{nC, nV, N});
 
-  CxCMap xm(x.data(), nC, nB * N);
-  CxMap  ym(y.data(), nC, nSamp * nTrace);
   auto task = [&](Index const itr) {
-    Eigen::VectorXcf const b = basis.col(itr);
     for (Index isamp = 0; isamp < nSamp; isamp++) {
-      Index const            ii = itr * nSamp + isamp;
-      RVec const             f = -traj.col(ii).transpose();
-      Eigen::VectorXf const  ph = f * xc;
-      Eigen::RowVectorXcf const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-      Eigen::VectorXcf const samp = xm * (b * eph).reshaped(nB * N, 1);
-      ym.col(ii) = samp * scale;
+      Cx1 const b = basis.chip<2>(itr % basis.dimension(2)).template chip<1>(isamp % basis.dimension(1));
+      Re1 const ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+        xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+      Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<2, 0>>())
+                         .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+      y.template chip<2>(itr).template chip<1>(isamp) = samp * Cx(scale);
     }
   };
   Threads::For(task, nTrace, "NDFT Forward");
@@ -102,26 +96,24 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
     sy = sdc->adjoint(yy);
     new (&y) OutCMap(sy.data(), sy.dimensions());
   }
+  Index const                            nC = ishape[0];
+  Index const                            nV = ishape[1];
+  Eigen::TensorMap<Eigen::Tensor<Cx, 3>> xm(x.data(), nC, nV, N);
 
-  using RVec = typename Eigen::RowVector<float, NDim>;
-  using CxMap = typename Eigen::Matrix<Cx, -1, -1>::AlignedMapType;
-  using CxCMap = typename Eigen::Matrix<Cx, -1, -1>::ConstAlignedMapType;
-
-  Index const nC = ishape[0];
-  Index const nB = ishape[1];
-
-  CxCMap ym(y.data(), nC, nSamp * nTrace);
-  CxMap  xm(x.data(), nC * nB, N);
   auto task = [&](Index ii) {
-    RVec const             f = xc.col(ii).transpose();
-    Eigen::MatrixXcf vox = Eigen::MatrixXcf::Zero(nC, nB);
+    Re1 const xf = xc.chip<1>(ii);
+    Cx2       vox(nC, nV);
+    vox.setZero();
     for (Index itr = 0; itr < nTrace; itr++) {
-        Eigen::ArrayXf const  ph = f * traj.middleCols(itr * nSamp, nSamp);
-        Eigen::VectorXcf const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-        Eigen::RowVectorXcf const b = basis.col(itr).transpose();
-        vox += ym.middleCols(itr * nSamp, nSamp) * (eph * b);
+      Re1 const ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+      for (Index iv = 0; iv < nV; iv++) {
+        Cx1 const b =
+          basis.template chip<2>(itr % basis.dimension(2)).template chip<0>(iv).broadcast(Sz1{nSamp / basis.dimension(1)});
+        vox.chip<1>(iv) += y.template chip<2>(itr).contract(eph * b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+      }
     }
-    xm.col(ii) = vox.reshaped(nC * nB, 1) * scale;
+    xm.chip<2>(ii) = vox * Cx(scale);
   };
   Threads::For(task, N, "NDFT Adjoint");
   this->finishAdjoint(x, time);

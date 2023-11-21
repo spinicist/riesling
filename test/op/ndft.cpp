@@ -54,5 +54,8 @@ TEST_CASE("NDFT Basis", "[tform]")
   img.setZero();
   img = ndft.adjoint(ks);
   ks = ndft.forward(img);
+  INFO("BASIS\n" << basis);
+  INFO("IMG\n" << img);
+  INFO("KS\n" << ks);
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }
