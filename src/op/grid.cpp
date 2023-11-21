@@ -14,7 +14,7 @@ auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
                               std::string const ktype,
                               float const       osamp,
                               Index const       nC,
-                              Basis const      &b,
+                              Basis<Scalar> const &b,
                               Index const       bSz,
                               Index const       sSz) -> std::shared_ptr<Grid<Scalar, NDim>>
 {
@@ -24,7 +24,7 @@ auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
 }
 
 template <typename Scalar, int NDim>
-Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Basis const &b)
+Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Basis<Scalar> const &b)
   : Parent(fmt::format("{}D GridOp", NDim), AddFront(m.cartDims, nC, b.dimension(0)), AddFront(m.noncartDims, nC))
   , kernel{k}
   , mapping{m}
