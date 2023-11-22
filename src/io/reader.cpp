@@ -3,6 +3,7 @@
 #include "log.hpp"
 #include <filesystem>
 #include <hdf5.h>
+#include <hdf5_hl.h>
 
 namespace rl {
 namespace HD5 {
@@ -114,23 +115,12 @@ auto Reader::readDims(std::string const &name) const -> Names<N>
 {
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
-  hid_t a = H5Aopen(ds, "dims", H5P_DEFAULT);
-  if (a < 0) { // No dims stored
-    return Names<N>();
-  }
-  auto const as = H5Aget_space(a);
-  hsize_t aN;
-  H5Sget_simple_extent_dims(as, &aN, NULL);
-  if (N != aN) { Log::Fail("Dataset {} had {} dimension names, expected {}", name, aN, N); }
-  auto const at = H5Tcopy(H5T_C_S1);
-  H5Tset_size(at, H5T_VARIABLE);
-  char      *cnames[N];
-  Names<N>   names;
-  CheckedCall(H5Aread(a, at, cnames), "reading attribute");
+  Names<N> names;
   for (Index ii = 0; ii < N; ii++) {
-    names[ii] = std::string(cnames[ii]);
+    char buffer[64] = {0};
+    H5DSget_label(ds, ii, buffer, sizeof(buffer));
+    names[ii] = std::string(buffer);
   }
-  H5Aclose(as);
   H5Dclose(ds);
   return names;
 }
