@@ -16,6 +16,7 @@ struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>
   OP_INHERIT(Scalar_, NDim + 2, 3)
   using Parent::adjoint;
   using Parent::forward;
+  using T1 = Eigen::Tensor<Scalar, 1>;
   std::shared_ptr<Kernel<Scalar, NDim>> kernel;
   Mapping<NDim>                         mapping;
   Basis<Scalar>                         basis;

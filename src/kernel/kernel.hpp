@@ -14,14 +14,14 @@ struct Kernel
   virtual void spread(std::array<int16_t, ND> const   c,
                       Point const                     p,
                       Sz<ND> const                    minCorner,
-                      Eigen::Tensor<Scalar, 1> const     &b,
+                      Eigen::Tensor<Scalar, 1> const &b,
                       Eigen::Tensor<Scalar, 1> const &y,
                       Eigen::Tensor<Scalar, ND + 2>  &x) const = 0;
 
   virtual auto gather(std::array<int16_t, ND> const                                c,
                       Point const                                                  p,
                       Sz<ND> const                                                 minCorner,
-                      Eigen::Tensor<Scalar, 1> const                                  &b,
+                      Eigen::Tensor<Scalar, 1> const                              &b,
                       Sz<ND> const                                                 cdims,
                       Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> = 0;
 };

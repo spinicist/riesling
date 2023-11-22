@@ -108,8 +108,10 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
       Re1 const ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
       Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
       for (Index iv = 0; iv < nV; iv++) {
-        Cx1 const b =
-          basis.template chip<2>(itr % basis.dimension(2)).template chip<0>(iv).broadcast(Sz1{nSamp / basis.dimension(1)});
+        Cx1 const b = basis.template chip<2>(itr % basis.dimension(2))
+                        .template chip<0>(iv)
+                        .conjugate()
+                        .broadcast(Sz1{nSamp / basis.dimension(1)});
         vox.chip<1>(iv) += y.template chip<2>(itr).contract(eph * b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
       }
     }

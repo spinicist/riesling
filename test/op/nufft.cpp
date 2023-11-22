@@ -1,7 +1,8 @@
-#include "op/nufft.hpp"
-#include "kernel/kernel.hpp"
-#include "log.hpp"
+#include "basis/fourier.hpp"
 #include "op/grid.hpp"
+#include "op/nufft.hpp"
+#include "log.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -36,7 +37,7 @@ TEST_CASE("NUFFT", "[tform]")
   CHECK(Norm(img) == Approx(Norm(ks)).margin(1.e-2f));
 }
 
-TEST_CASE("NUFFT Basis", "[tform]")
+TEST_CASE("NUFFT Basis Trace", "[tform]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 5;
@@ -58,6 +59,33 @@ TEST_CASE("NUFFT Basis", "[tform]")
 
   float const osamp = 2.f;
   auto        grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, basis);
+
+  NUFFTOp<1> nufft(grid, Sz1{M});
+  Cx3        ks(nufft.oshape);
+  ks.setConstant(1.f);
+  Cx3 img(nufft.ishape);
+  img.setZero();
+  img = nufft.adjoint(ks);
+  ks = nufft.forward(img);
+  CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
+}
+
+TEST_CASE("NUFFT Basis Fourier", "[tform]")
+{
+  Log::SetLevel(Log::Level::Testing);
+  Index const M = 8;
+  Info const  info{.matrix = Sz3{M, 1, 1}};
+  Re3         points(1, M, 1);
+  points.setZero();
+  for (Index ii = 0; ii < M; ii++) {
+    points(0, ii, 0) = -0.5f + ii / (float)M;
+  }
+  Trajectory const traj(info, points);
+  Index const N = 3;
+  auto b = FourierBasis(N, M, 1);
+
+  float const osamp = 2.f;
+  auto        grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, b.basis);
 
   NUFFTOp<1> nufft(grid, Sz1{M});
   Cx3        ks(nufft.oshape);

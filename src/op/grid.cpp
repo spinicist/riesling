@@ -10,13 +10,13 @@
 namespace rl {
 
 template <typename Scalar, int NDim>
-auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
-                              std::string const ktype,
-                              float const       osamp,
-                              Index const       nC,
+auto Grid<Scalar, NDim>::Make(Trajectory const    &traj,
+                              std::string const    ktype,
+                              float const          osamp,
+                              Index const          nC,
                               Basis<Scalar> const &b,
-                              Index const       bSz,
-                              Index const       sSz) -> std::shared_ptr<Grid<Scalar, NDim>>
+                              Index const          bSz,
+                              Index const          sSz) -> std::shared_ptr<Grid<Scalar, NDim>>
 {
   auto kernel = make_kernel<Scalar, NDim>(ktype, osamp);
   auto mapping = Mapping<NDim>(traj, osamp, kernel->paddedWidth(), bSz, sSz);
@@ -24,7 +24,10 @@ auto Grid<Scalar, NDim>::Make(Trajectory const &traj,
 }
 
 template <typename Scalar, int NDim>
-Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Basis<Scalar> const &b)
+Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
+                         Mapping<NDim> const                          m,
+                         Index const                                  nC,
+                         Basis<Scalar> const                         &b)
   : Parent(fmt::format("{}D GridOp", NDim), AddFront(m.cartDims, nC, b.dimension(0)), AddFront(m.noncartDims, nC))
   , kernel{k}
   , mapping{m}
@@ -74,14 +77,13 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
     }
 
     for (auto ii = 0; ii < bucket.size(); ii++) {
-      auto const  si = bucket.indices[ii];
-      auto const  c = map.cart[si];
-      auto const  n = map.noncart[si];
-      auto const  o = map.offset[si];
-      Index const bs = n.sample % basis.dimension(1);
-      Index const bt = n.trace % basis.dimension(2);
+      auto const si = bucket.indices[ii];
+      auto const c = map.cart[si];
+      auto const n = map.noncart[si];
+      auto const o = map.offset[si];
+      T1 const   bs = basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
       y.template chip<2>(n.trace).template chip<1>(n.sample) =
-        this->kernel->gather(c, o, bucket.minCorner, basis.template chip<2>(bt).template chip<1>(bs), map.cartDims, bGrid);
+        this->kernel->gather(c, o, bucket.minCorner, bs, map.cartDims, bGrid);
     }
   };
 
@@ -104,14 +106,14 @@ void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
     InTensor    bGrid(bSz);
     bGrid.setZero();
     for (auto ii = 0; ii < bucket.size(); ii++) {
-      auto const               si = bucket.indices[ii];
-      auto const               c = map.cart[si];
-      auto const               n = map.noncart[si];
-      auto const               o = map.offset[si];
-      Index const bs = n.sample % basis.dimension(1);
-      Index const bt = n.trace % basis.dimension(2);
+      auto const si = bucket.indices[ii];
+      auto const c = map.cart[si];
+      auto const n = map.noncart[si];
+      auto const o = map.offset[si];
+      T1 const   bs =
+        basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1)).conjugate();
       Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
-      this->kernel->spread(c, o, bucket.minCorner, basis.template chip<2>(bt).template chip<1>(bs), yy, bGrid);
+      this->kernel->spread(c, o, bucket.minCorner, bs, yy, bGrid);
     }
 
     {
