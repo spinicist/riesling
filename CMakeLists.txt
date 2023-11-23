@@ -52,7 +52,6 @@ add_library(vineyard
     src/fft/fft.cpp
     src/func/dict.cpp
     src/func/diffs.cpp
-    src/img/rgb.cpp
     src/io/hd5-core.cpp
     src/io/nifti.cpp
     src/io/reader.cpp
@@ -219,6 +218,9 @@ if(${BUILD_TESTS})
         vineyard
         Catch2::Catch2WithMain
     )
+    target_compile_definitions(riesling-tests PRIVATE
+        -DCATCH_CONFIG_CONSOLE_WIDTH=200
+    )
     set_target_properties(riesling-tests PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
@@ -239,9 +241,6 @@ if(${BUILD_BENCHMARKS})
     target_link_libraries(riesling-bench PUBLIC
         vineyard
         Catch2::Catch2WithMain
-    )
-    target_compile_definitions(riesling-bench PRIVATE
-    CATCH_CONFIG_CONSOLE_WIDTH=200
     )
     set_target_properties(riesling-bench PROPERTIES
         CXX_STANDARD 20
