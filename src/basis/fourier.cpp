@@ -6,7 +6,7 @@
 
 namespace rl {
 
-FourierBasis::FourierBasis(Index const N, Index const samples, Index const traces)
+FourierBasis::FourierBasis(Index const N, Index const samples, Index const traces, float const os)
 {
   Cx3 eye(N, samples > 1 ? N : 1, traces > 1 ? N : 1);
   eye.setZero();
@@ -14,9 +14,10 @@ FourierBasis::FourierBasis(Index const N, Index const samples, Index const trace
   for (Index ii = 0; ii < N; ii++) {
     eye(ii, samples > 1 ? ii : 0, traces > 1 ? ii : 0) = Cx(energy);
   }
-  basis = Pad(eye, Sz3{N, samples, traces});
-  auto fft = FFT::Make<3, 2>(basis.dimensions());
-  fft->reverse(basis);
+  Cx3 padded = Pad(eye, Sz3{N, (Index)(os * samples), (Index)(os * traces)});
+  auto fft = FFT::Make<3, 2>(padded.dimensions());
+  fft->reverse(padded);
+  basis = Crop(padded, Sz3{N, samples, traces});
 }
 
 void FourierBasis::writeTo(std::string const &path)

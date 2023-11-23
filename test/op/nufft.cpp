@@ -82,7 +82,7 @@ TEST_CASE("NUFFT Basis Fourier", "[tform]")
   }
   Trajectory const traj(info, points);
   Index const N = 3;
-  auto b = FourierBasis(N, M, 1);
+  auto b = FourierBasis(N, M, 1, 1.f);
 
   float const osamp = 2.f;
   auto        grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, b.basis);

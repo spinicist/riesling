@@ -33,31 +33,36 @@ int main_blend(args::Subparser &parser)
   auto const basis = ReadBasis(bname.Get());
 
   if (basis.dimension(0) != images.dimension(0)) {
-    Log::Fail("Basis has {} vectors but image has {}", basis.dimension(1), images.dimension(0));
+    Log::Fail("Basis has {} vectors but image has {}", basis.dimension(0), images.dimension(0));
   }
 
+  auto const &sps = sp.Get();
   auto const &tps = tp.Get();
 
-  Cx5         out(AddFront(LastN<4>(dims), (Index)tps.size()));
-  float const scale = std::sqrt(basis.dimension(1));
-  if (sp && tp && (tp.Get().size() != sp.Get().size())) {
-    Log::Fail("Sample points {} and time points {} must be equal if both set", sp.Get().size(), tp.Get().size());
-  }
-  Basis<Cx>   selected(basis.dimension(0), sp.Get().size(), tp.Get().size());
-  for (size_t ii = 0; ii < tp.Get().size(); ii++) {
-    Index const is = sp ? sp.Get()[ii] : 0;
-    Index const it = tp ? tp.Get()[ii] : 0;
-    if ((is < 0) || (is >= basis.dimension(0))) {
-      Log::Fail("Requested timepoint {} exceeds samples {}", is, basis.dimension(0));
+  Index const ntotal = sps.size() * tps.size();
+
+  Cx5         out(AddFront(LastN<4>(dims), ntotal));
+  float const scale = std::sqrt(basis.dimension(1 * basis.dimension(2)));
+
+  Basis<Cx> selected(basis.dimension(0), sps.size(), tps.size());
+  for (size_t it = 0; it < tps.size(); it++) {
+    if (tps[it] < 0 || tps[it] >= basis.dimension(2)) {
+      Log::Fail("Requested timepoint {} exceeds traces {}", tps[it], basis.dimension(2));
     }
-    if ((it < 0) || (it >= basis.dimension(1))) {
-      Log::Fail("Requested timepoint {} exceeds traces {}", it, basis.dimension(1));
+
+    for (size_t is = 0; is < sps.size(); is++) {
+      if (sps[is] < 0 || sps[is] >= basis.dimension(1)) {
+        Log::Fail("Requested timepoint {} exceeds samples {}", sps[is], basis.dimension(1));
+      }
+      selected.chip<2>(it).chip<1>(is) = basis.chip<2>(tps[it]).chip<1>(sps[is]).conjugate() * Cx(scale);
     }
-    selected.chip<2>(it ? ii : 0).chip<1>(is ? ii : 0) = basis.chip<2>(it).chip<1>(is) * Cx(scale);
   }
-  for (Index iv = 0; iv < out.dimension(4); iv++) {
-    out.chip<4>(iv).device(Threads::GlobalDevice()) =
-      selected.contract(images.chip<4>(iv), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+
+  Cx2 const sel2 = selected.reshape(Sz2{basis.dimension(0), ntotal});
+  Log::Print("selected {} images {}", sel2.dimensions(), images.dimensions());
+  for (Index it = 0; it < out.dimension(4); it++) {
+    out.chip<4>(it).device(Threads::GlobalDevice()) =
+      sel2.contract(images.chip<4>(it), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   }
 
   auto const  fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
