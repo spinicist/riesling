@@ -1,6 +1,7 @@
 #include "sense/rovir.hpp"
 
 #include "algo/decomp.hpp"
+#include "algo/gs.hpp"
 #include "algo/otsu.hpp"
 #include "cropper.h"
 #include "mapping.hpp"
@@ -102,16 +103,7 @@ auto ROVIR(ROVIROpts        &opts,
   }
   Eigen::MatrixXcf vecs = eig.eigenvectors().array().rowwise().reverse().leftCols(nRetain);
   cholB.matrixU().solveInPlace(vecs);
-
-  // Gram-Schmidt
-  vecs.col(0).normalize();
-  for (Index ii = 1; ii < nRetain; ii++) {
-    for (Index ij = 0; ij < ii; ij++) {
-      vecs.col(ii) -= vecs.col(ij).dot(vecs.col(ii)) * vecs.col(ij);
-    }
-    vecs.col(ii).normalize();
-  }
-
+  vecs = GramSchmidt(vecs);
   return vecs.leftCols(nRetain);
 }
 

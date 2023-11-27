@@ -8,8 +8,6 @@
 #include "parse_args.hpp"
 #include "tensorOps.hpp"
 
-#include <unsupported/Eigen/Splines>
-
 using namespace rl;
 
 int main_basis_img(args::Subparser &parser)

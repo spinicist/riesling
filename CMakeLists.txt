@@ -41,6 +41,7 @@ add_library(vineyard
     src/algo/cg.cpp
     src/algo/decomp.cpp
     src/algo/eig.cpp
+    src/algo/gs.cpp
     src/algo/lsmr.cpp
     src/algo/lsqr.cpp
     src/algo/otsu.cpp
