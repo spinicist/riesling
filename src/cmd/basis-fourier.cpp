@@ -39,7 +39,7 @@ int main_basis_fourier(args::Subparser &parser)
     Eigen::MatrixXcf const fbasis = ortho ? rl::GramSchmidt(basis, true).transpose() : basis.transpose();
 
     rl::HD5::Writer writer(oname.Get());
-    writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{2 * N + 1, samples.Get(), 1}, fbasis.data(), rl::HD5::Dims::Basis);
+    writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{2 * N.Get() + 1, samples.Get(), 1}, fbasis.data(), rl::HD5::Dims::Basis);
   }
   return EXIT_SUCCESS;
 }
