@@ -36,7 +36,7 @@ int main_basis_fourier(args::Subparser &parser)
       basis.col(2 * ii + 2) = eph.conjugate();
     }
 
-    Eigen::MatrixXcf const fbasis = ortho ? rl::GramSchmidt(basis).transpose() : basis.transpose();
+    Eigen::MatrixXcf const fbasis = ortho ? rl::GramSchmidt(basis, true).transpose() : basis.transpose();
 
     rl::HD5::Writer writer(oname.Get());
     writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{2 * N + 1, samples.Get(), 1}, fbasis.data(), rl::HD5::Dims::Basis);

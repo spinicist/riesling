@@ -4,6 +4,6 @@
 
 namespace rl {
 
-auto GramSchmidt(Eigen::MatrixXcf const &mat) -> Eigen::MatrixXcf;
+auto GramSchmidt(Eigen::MatrixXcf const &mat, bool const renorm = false) -> Eigen::MatrixXcf;
 
 }
