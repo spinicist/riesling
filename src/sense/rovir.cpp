@@ -15,8 +15,6 @@ namespace rl {
 ROVIROpts::ROVIROpts(args::Subparser &parser)
   : res(parser, "R", "ROVIR recon resolution", {"rovir-res"}, -1.f)
   , fov(parser, "F", "ROVIR Signal FoV", {"rovir-fov"}, 1024.f)
-  , loThresh(parser, "L", "ROVIR low threshold (percentile)", {"rovir-lo"}, 0.25f)
-  , hiThresh(parser, "H", "ROVIR high threshold (percentile)", {"rovir-hi"}, 0.9999f)
   , gap(parser, "G", "ROVIR gap in voxels", {"rovir-gap"}, 0)
 {
 }

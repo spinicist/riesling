@@ -18,6 +18,7 @@ add_definitions(-DEIGEN_USE_THREADS)
 
 # Common library between tests and main executable
 add_library(vineyard
+    src/colors.cpp
     src/compressor.cpp
     src/cropper.cpp
     src/filter.cpp
@@ -111,6 +112,7 @@ set_target_properties(vineyard PROPERTIES
 # Main executable
 add_executable(riesling
     src/cmd/admm.cpp
+    src/cmd/autofocus.cpp
     src/cmd/basis-fourier.cpp
     src/cmd/basis-img.cpp
     src/cmd/basis-sim.cpp

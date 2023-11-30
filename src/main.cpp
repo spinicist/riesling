@@ -14,6 +14,7 @@ int main(int const argc, char const *const argv[])
   args::Command NM(commands, CMD, DESC, &main_##NM);
 
   COMMAND(admm, "admm", "ADMM recon");
+  COMMAND(autofocus, "autofocus", "Apply Noll's autofocussing");
   COMMAND(basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis_img, "basis-img", "Basis from image data");
   COMMAND(basis_sim, "basis-sim", "Basis from simulations");

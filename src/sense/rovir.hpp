@@ -11,8 +11,6 @@ struct ROVIROpts
   ROVIROpts(args::Subparser &parser);
   args::ValueFlag<float> res;
   args::ValueFlag<float> fov;
-  args::ValueFlag<float> loThresh;
-  args::ValueFlag<float> hiThresh;
   args::ValueFlag<Index> gap;
 };
 

@@ -33,8 +33,7 @@ void Patches(
   }
 
   Log::Print<Log::Level::Debug>("Windows {} Shifts {}", nWindows, shift);
-  Index const K = x.dimension(0);
-  Sz4 const   szP{K, patchSize, patchSize, patchSize};
+  Sz4 const   szP{x.dimension(0), patchSize, patchSize, patchSize};
   Index const inset = (patchSize - windowSize) / 2;
 
   auto zTask = [&](Index const iz) {
@@ -43,7 +42,7 @@ void Patches(
         Sz3 ind{ix - 1, iy - 1, iz - 1};
         Sz4 stP, stW, stW2, szW;
         stP[0] = stW[0] = stW2[0] = 0;
-        szW[0] = K;
+        szW[0] = y.dimension(0);
         bool empty = false;
         for (Index ii = 0; ii < 3; ii++) {
           Index const d = x.dimension(ii + 1);
