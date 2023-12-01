@@ -41,6 +41,6 @@ int main_sense_calib(args::Subparser &parser)
   }
   auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(HD5::Keys::SENSE, maps.dimensions(), maps.data());
+  writer.writeTensor(HD5::Keys::SENSE, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   return EXIT_SUCCESS;
 }
