@@ -94,10 +94,10 @@ void Render()
 
 int main_view(args::Subparser &parser)
 {
-  InitUI();
-
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to view");
   ParseCommand(parser);
+
+  InitUI();
 
   HD5::Reader reader(iname.Get());
   Cx5         img = reader.readTensor<Cx5>("image");
