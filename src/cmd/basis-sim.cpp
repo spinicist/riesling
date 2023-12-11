@@ -108,8 +108,18 @@ int main_basis_sim(args::Subparser &parser)
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
+  SVDBasis const b(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize);
+
+  Log::Print("Computing dictionary");
+  Eigen::MatrixXf dict = b.basis * dyns.matrix();
+  Eigen::ArrayXf  norm = dict.colwise().norm();
+  dict = dict.array().rowwise() / norm.transpose();
+
   HD5::Writer writer(oname.Get());
-  SaveSVDBasis(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize, writer);
+  writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
+  writer.writeMatrix(dict, HD5::Keys::Dictionary);
+  writer.writeMatrix(norm, HD5::Keys::Norm);
+  writer.writeMatrix(dyns, HD5::Keys::Dynamics);
   writer.writeMatrix(pars, HD5::Keys::Parameters);
   return EXIT_SUCCESS;
 }

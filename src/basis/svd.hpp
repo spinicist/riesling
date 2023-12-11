@@ -6,13 +6,15 @@
 
 namespace rl {
 
-void SaveSVDBasis(
-  Eigen::ArrayXXf const &dynamics,
-  float const            thresh,
-  Index const            nB,
-  bool const             demean,
-  bool const             rotate,
-  bool const             normalize,
-  HD5::Writer           &writer);
+struct SVDBasis
+{
+  SVDBasis(Eigen::ArrayXXf const &dynamics,
+           float const            thresh,
+           Index const            nB,
+           bool const             demean,
+           bool const             rotate,
+           bool const             normalize);
+  Eigen::MatrixXf basis;
+};
 
-}
+} // namespace rl

@@ -25,6 +25,8 @@ struct SVD
   SVD(Eigen::Ref<Matrix const> const &mat);
   Matrix         U, V;
   Eigen::ArrayXf S;
+
+  auto equalized(Index const N) const -> Matrix; // Equalize variance over first N vectors
 };
 extern template struct SVD<float>;
 extern template struct SVD<Cx>;

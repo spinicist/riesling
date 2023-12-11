@@ -25,7 +25,8 @@ int main_basis_fourier(args::Subparser &parser)
 
   if (method) {
     rl::FourierBasis fb(N.Get(), samples.Get(), traces.Get(), osamp.Get());
-    fb.writeTo(oname.Get());
+    rl::HD5::Writer writer(oname.Get());
+    writer.writeTensor(rl::HD5::Keys::Basis, fb.basis.dimensions(), fb.basis.data(), rl::HD5::Dims::Basis);
   } else {
     Eigen::MatrixXcf basis = Eigen::MatrixXcf::Zero(samples.Get(), 2 * N + 1);
     basis.col(0).setConstant(1.f);

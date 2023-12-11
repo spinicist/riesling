@@ -85,7 +85,9 @@ int main_basis_img(args::Subparser &parser)
       col++;
     }
   }
+  
+  SVDBasis const b(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize);
   HD5::Writer writer(oname.Get());
-  SaveSVDBasis(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize, writer);
+  writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
   return EXIT_SUCCESS;
 }

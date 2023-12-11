@@ -20,10 +20,4 @@ FourierBasis::FourierBasis(Index const N, Index const samples, Index const trace
   basis = Crop(padded, Sz3{N, samples, traces});
 }
 
-void FourierBasis::writeTo(std::string const &path)
-{
-  HD5::Writer writer(path);
-  writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
-}
-
 } // namespace rl
