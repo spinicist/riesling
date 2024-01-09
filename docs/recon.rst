@@ -145,7 +145,7 @@ These are algorithms for solving non-square systems of equations without forming
 admm
 ----
 
-Uses the Alternating Directions Method-of-Multipliers to add regularizers to the reconstruction problem. This is similar to the BART ``pics`` command. See `S. Boyd, ‘Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers’, FNT in Machine Learning, vol. 3, no. 1, pp. 1–122, 2010, doi: 10.1561/2200000016<http://www.nowpublishers.com/article/Details/MAL-016>`_
+Uses the Alternating Directions Method-of-Multipliers to add regularizers to the reconstruction problem. This is similar to the BART ``pics`` command. See `S. Boyd, ‘Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers’ doi: 10.1561/2200000016 <http://www.nowpublishers.com/article/Details/MAL-016>`_
 
 *Usage*
 
@@ -169,7 +169,7 @@ Uses the Alternating Directions Method-of-Multipliers to add regularizers to the
 
 * ``--rho=P``
 
-    Coupling factor for ADMM. The default value of 1 is robust, and will be adjusted inside the algorithm according to `ADMM Penalty Parameter Selection by Residual Balancing<http://arxiv.org/abs/1704.06209>`_.
+    Coupling factor for ADMM. The default value of 1 is robust, and will be adjusted inside the algorithm according to `ADMM Penalty Parameter Selection by Residual Balancing <http://arxiv.org/abs/1704.06209>`_.
 
 * ``--mu=M``, ``--tau=T``
 
@@ -185,23 +185,23 @@ Multiple regularizers can be specified simultaneously with ADMM, each with a dif
 
 * ``--l1=λ``
 
-    Basic L1 regularization in the image domain, i.e. λ||x||.
+    Basic L1 regularization in the image domain, i.e. λ|x|.
 
 * ``--nmrent=λ``
 
-    Similar to L1 regularization. See `Daniell and Hore<https://linkinghub.elsevier.com/retrieve/pii/0022236489901170>_`. `Not recommended<https://onlinelibrary.wiley.com/doi/10.1002/mrm.1910140103>`_.
+    Similar to L1 regularization. See `Daniell and Hore <https://linkinghub.elsevier.com/retrieve/pii/0022236489901170>`_. `Not recommended <https://onlinelibrary.wiley.com/doi/10.1002/mrm.1910140103>`_.
 
 * ``--tv=λ``
 
-    Classic `Total Variation<https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
+    Classic `Total Variation <https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
 
 * ``--tgv=λ``, ``--tgvl2=λ``
 
-    `Total Generalized Variation<http://doi.wiley.com/10.1002/mrm.22595>`_ and `TGV on the L2 voxelwise norm<http://ieeexplore.ieee.org/document/7466848/>`_. The latter is useful for multichannel images.
+    `Total Generalized Variation <http://doi.wiley.com/10.1002/mrm.22595>`_ and `TGV on the L2 voxelwise norm <http://ieeexplore.ieee.org/document/7466848/>`_. The latter is useful for multichannel images.
 
 * ``--llr=λ``, ``--llr-patch=N``, ``--llr-win=N``, ``--llr-shift``
 
-    `Locally Low-Rank<https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_ regularization. The patch size determines the region to calculate the SVD over, the window size determines the region that is copied to the output image. Set the window size to 1 to calculate an SVD for each output voxel. Set the window size equal to the patch size to use the entire patch. The ``--llr-shift`` option employs the random patch shifting strategy, this may not converge.
+    `Locally Low-Rank <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_ regularization. The patch size determines the region to calculate the SVD over, the window size determines the region that is copied to the output image. Set the window size to 1 to calculate an SVD for each output voxel. Set the window size equal to the patch size to use the entire patch. The ``--llr-shift`` option employs the random patch shifting strategy, this may not converge.
 
 * ``--wavelets=λ``, ``--wavelet-width=W``, ``--wavelet-dims=0,1,1,1``
 

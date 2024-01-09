@@ -15,7 +15,7 @@ RIESLING is a reconstruction toolbox tuned for 3D radial MRI - the name stands f
    :maxdepth: 2
    :caption: Contents:
 
-   docs/contents
+   contents
 
 Indices and tables
 ==================
