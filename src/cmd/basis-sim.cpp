@@ -70,35 +70,34 @@ int main_basis_sim(args::Subparser &parser)
   args::ValueFlag<float>                Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float>                te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
 
-  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(
-    parser, "LO", "Low values for parameters", {"lo"});
-  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pHi(
-    parser, "HI", "High values for parameters", {"hi"});
+  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(parser, "LO", "Low values for parameters",
+                                                                                {"lo"});
+  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pHi(parser, "HI", "High values for parameters",
+                                                                                {"hi"});
   args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
-  args::ValueFlag<float> thresh(parser, "T", "Threshold for SVD retention (default 95%)", {"thresh"}, 99.f);
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
   args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
   args::Flag             normalize(parser, "N", "Normalize dynamics before SVD", {"normalize"});
+  args::Flag             bySeg(parser, "S", "SVD by segment", {"segment"});
 
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
 
-  rl::Settings settings{
-    .spokesPerSeg = sps.Get(),
-    .segsPerPrep = spp.Get(),
-    .segsPerPrepKeep = sppk.Get(),
-    .segsPrep2 = sp2.Get(),
-    .spokesSpoil = spoil.Get(),
-    .k0 = k0.Get(),
-    .alpha = alpha.Get(),
-    .ascale = ascale.Get(),
-    .TR = TR.Get(),
-    .Tramp = Tramp.Get(),
-    .Tssi = Tssi.Get(),
-    .TI = TI.Get(),
-    .Trec = Trec.Get(),
-    .TE = te.Get()};
+  rl::Settings settings{.spokesPerSeg = sps.Get(),
+                        .segsPerPrep = spp.Get(),
+                        .segsPerPrepKeep = sppk.Get(),
+                        .segsPrep2 = sp2.Get(),
+                        .spokesSpoil = spoil.Get(),
+                        .k0 = k0.Get(),
+                        .alpha = alpha.Get(),
+                        .ascale = ascale.Get(),
+                        .TR = TR.Get(),
+                        .Tramp = Tramp.Get(),
+                        .Tssi = Tssi.Get(),
+                        .TI = TI.Get(),
+                        .Trec = Trec.Get(),
+                        .TE = te.Get()};
 
   Eigen::ArrayXXf pars, dyns;
   switch (seq.Get()) {
@@ -108,7 +107,7 @@ int main_basis_sim(args::Subparser &parser)
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
-  SVDBasis const b(dyns, thresh.Get(), nBasis.Get(), demean, rotate, normalize);
+  SVDBasis const b(dyns, nBasis.Get(), demean, rotate, normalize, bySeg ? sps.Get() : -1);
 
   Log::Print("Computing dictionary");
   Eigen::MatrixXf dict = b.basis * dyns.matrix();

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "log.hpp"
 #include "types.hpp"
 
 // Wrappers for dynamic decomps so only compile once

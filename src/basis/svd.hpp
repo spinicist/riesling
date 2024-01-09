@@ -9,11 +9,11 @@ namespace rl {
 struct SVDBasis
 {
   SVDBasis(Eigen::ArrayXXf const &dynamics,
-           float const            thresh,
            Index const            nB,
            bool const             demean,
            bool const             rotate,
-           bool const             normalize);
+           bool const             normalize,
+           Index const            segSize = -1);
   Eigen::MatrixXf basis;
 };
 
