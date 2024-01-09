@@ -10,7 +10,7 @@ RIESLING is provided as a single executable file, similar to ``bart``. The ``rie
 
 - ``riesling h5`` Prints information about compatible ``.h5`` files
 - ``riesling rss`` Performs the most basic reconstruction possible
-- ``riesling admm`` Regularized least-squares reconstruction, similar to ``bart pics``.
+- ``riesling admm`` Regularized least-squares reconstruction, similar to ``bart pics``. *You probably want this one*.
 
 RIESLING exploits the inherent oversampling of most non-Cartesian trajectories at the center of k-space to generate SENSE maps directly from the input data, but utilities are provided to explicitly extract sensitivities if desired. Further details can be found in :doc:`util`. Internally, similarly to BART, RIESLING pipelines are constructed as a series of Linear Operators. These operators are exposed as individual commands if you wish to build up your own pipeline, see :doc:`op`.
 

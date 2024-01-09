@@ -134,7 +134,7 @@ These are algorithms for solving non-square systems of equations without forming
 
 *Important Options*
 
-* ``--max-iters=N``, ``--atol=A``, ``--btol=B``, ``--ctol=C``
+* ``--max-its=N``, ``--atol=A``, ``--btol=B``, ``--ctol=C``
 
     Termination conditions. Reasoable image quality can be obtained in as few as four iterations, but high-resolution features from undersampled data typically take a few tens of iterations. The a and b tolerances are relative to how accurate the solution has become, c is a tolerance on the condition number of the system.
 
@@ -155,34 +155,54 @@ Uses the Alternating Directions Method-of-Multipliers to add regularizers to the
 
 *Important Options*
 
+* ``--max-its=N``, ``--atol=A``, ``--btol=B``, ``--ctol=C``
+
+    These are the same as for ``lsqr`` and control the inner loop of the optimization (the implementation of ADMM uses LSQR internally). You can likely use fewer inner iterations than LSQR as the inner optimization uses a warm start - the default is 1.
+
+* ``--max-outer-its=N``
+
+    The maximum number of ADMM iterations. The default is 20 but a higher number (50 or more) may be required for optimal image quality.
+
+* ``--eps=E``
+
+    Primal and dual convergence tolerance for ADMM. Default value is 0.01.
+
 * ``--rho=P``
 
-    Coupling factor for ADMM. The default value of 1 is robust, and will be adjusted inside the algorithm according to some heuristics if deemed sub-optimal.
+    Coupling factor for ADMM. The default value of 1 is robust, and will be adjusted inside the algorithm according to `ADMM Penalty Parameter Selection by Residual Balancing<http://arxiv.org/abs/1704.06209>`_.
 
-* ``--lambda=L``
+* ``--mu=M``, ``--tau=T``
 
-    Regularization strength.
+    The residual rescaling tolerance and maximum rescaling factor from the Wohlberg paper.
 
-* ``--abstol=A``, ``--reltol=R``
+* ``--scale=bart/otsu/S``
 
-    Set the absolute and relative tolerances for ADMM convergence. The absolute tolerance is generally more important, and will depend on the scaling of your data during reconstruction.
+    The optimal regularization strength λ depends both on the particular regularizer and the typical intensity values in the unregularized image. To make values of λ roughly comparable, it is usual to scale the data such that the intensity values are approximately 1 during the optimization (and then unscale the final image). By default ``riesling`` will perform a NUFFT and then use Otsu's method to find the median foreground intensity as the scaling factor. Alternatively the BART automatic scaling can ne chosen, or a fixed scaling value which _multiplies_ the data can be specified. In the latter case, the NUFFT will not be performed.
 
-* ``--tgv``
+*Regularization Options*
 
-    Apply Total Generalized Varation regularization. See `F. Knoll, K. Bredies, T. Pock, and R. Stollberger, ‘Second order total generalized variation (TGV) for MRI’, Magnetic Resonance in Medicine, vol. 65, no. 2, pp. 480–491, Feb. 2011 <http://doi.wiley.com/10.1002/mrm.22595>`_
+Multiple regularizers can be specified simultaneously with ADMM, each with a different regularization strength λ and options. At least one regularizer must be specified, there is no default option at present.
 
-* ``--tv``
+* ``--l1=λ``
 
-    Apply Total-Variation regularization. See `L. I. Rudin, S. Osher, and E. Fatemi, ‘Nonlinear total variation based noise removal algorithms’, Physica D: Nonlinear Phenomena, vol. 60, no. 1–4, pp. 259–268, Nov. 1992, doi: 10.1016/0167-2789(92)90242-F.<https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_
+    Basic L1 regularization in the image domain, i.e. λ||x||.
 
-* ``--llr-patch=N``, ``--llr-win=N``
+* ``--nmrent=λ``
 
-    Sliding-window Locally Low-Rank regularization. Set the patch-size to enable. See `J. I. Tamir et al., ‘T2 shuffling: Sharp, multicontrast, volumetric fast spin‐echo imaging’, vol. 77, pp. 180–195, 2017 <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_.
+    Similar to L1 regularization. See `Daniell and Hore<https://linkinghub.elsevier.com/retrieve/pii/0022236489901170>_`. `Not recommended<https://onlinelibrary.wiley.com/doi/10.1002/mrm.1910140103>`_.
 
-* ``--wavelets=N``, ``--width=W``
+* ``--tv=λ``
 
-    L1-wavelets with N levels and width W.
+    Classic `Total Variation<https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
 
-* ``--l1`` / ``--nmrent``
+* ``--tgv=λ``, ``--tgvl2=λ``
 
-    Basic L1 or NMR entropy (similar to L1) regularization. See `[1] B. Burns, N. E. Wilson, J. K. Furuyama, and M. A. Thomas, ‘Non-uniformly under-sampled multi-dimensional spectroscopic imaging in vivo : maximum entropy versus compressed sensing reconstruction’, NMR Biomed., vol. 27, no. 2, pp. 191–201, Feb. 2014, doi: 10.1002/nbm.3052.<https://onlinelibrary.wiley.com/doi/10.1002/nbm.3052>`_
+    `Total Generalized Variation<http://doi.wiley.com/10.1002/mrm.22595>`_ and `TGV on the L2 voxelwise norm<http://ieeexplore.ieee.org/document/7466848/>`_. The latter is useful for multichannel images.
+
+* ``--llr=λ``, ``--llr-patch=N``, ``--llr-win=N``, ``--llr-shift``
+
+    `Locally Low-Rank<https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_ regularization. The patch size determines the region to calculate the SVD over, the window size determines the region that is copied to the output image. Set the window size to 1 to calculate an SVD for each output voxel. Set the window size equal to the patch size to use the entire patch. The ``--llr-shift`` option employs the random patch shifting strategy, this may not converge.
+
+* ``--wavelets=λ``, ``--wavelet-width=W``, ``--wavelet-dims=0,1,1,1``
+
+    L1-wavelets of width W (default 6). The number of levels is the maximum possible. Which of the basis,X,Y,Z dimensions to be transformed can be specified with the ``--wavelet-dims`` option.

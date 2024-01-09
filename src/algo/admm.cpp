@@ -100,6 +100,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       break;
     }
     if (io > 0) {
+      // ADMM Penalty Parameter Selection by Residual Balancing, Wohlberg 2017
       float const ratio = std::sqrt(pRes / dRes);
       float const τ = (ratio < 1.f) ? std::max(1.f / τmax, 1.f / ratio) : std::min(τmax, ratio);
       if (pRes > μ * dRes) {
