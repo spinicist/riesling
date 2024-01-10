@@ -1,13 +1,20 @@
 Data Format
 ===========
 
-RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input, intermediate and output data. A command is provided to convert the ``.h5`` format to NiFTI (``.nii``).
+RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input, intermediate and output data. A command is provided to convert reconstructed images in ``.h5`` format to NiFTI (``.nii``).
 
-**Important** RIESLING uses the column-major / fastest-varying first convention internally. The dimensions below are specified in column-major order. HDF5 uses the row-major convention. When interacting with RIESLING via HDF5 you will need to reverse the order of the dimensions.
-
-HDF5 uses a row-major convention, if your software is column major (RIESLING is internally) then the order of the dimensions given below should be reversed.
+Complex Numbers
+---------------
 
 All data in RIESLING is complex-valued. HDF5 does not have a native complex-valued datatype, hence a compound datatype with ``r`` and ``i`` members corresponding to the real and imaginary parts must be used.
+
+Dimension Order
+---------------
+
+RIESLING uses *column-major / fastest-varying first convention* internally. The dimensions below are written in column-major order. However HDF5 uses row-major convention. RIESLING reverses the order of the dimensions when reading/writing files from/to HDF5. The Matlab and Python file utilities handle this reversal correctly. If constructing your own HDF5 file for use with RIESLING please take care with the order of the dimensions.
+
+Dimensions
+----------
 
 The terminology in RIESLING is:
 - "Channel" corresponds to one element in a multi-channel/multi-element receive coil. In contrast to other toolkits RIESLING stores the channels as the fastest-varying index, i.e. the data for each k-space point across all channels is stored contiguously.
