@@ -12,7 +12,6 @@ int main_sdc(args::Subparser &parser)
   CoreOpts                     coreOpts(parser);
   args::ValueFlag<std::string> sdcType(parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
   args::ValueFlag<Index>       lores(parser, "L", "Number of lo-res traces for radial", {'l', "lores"}, 0);
-  args::ValueFlag<Index>       gap(parser, "G", "Read-gap for radial", {'g', "gap"}, 0);
   args::ValueFlag<Index>       its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
@@ -25,7 +24,7 @@ int main_sdc(args::Subparser &parser)
     case 3: dc = SDC::Pipe<3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;
     }
   } else if (sdcType.Get() == "radial") {
-    dc = SDC::Radial(traj, lores.Get(), gap.Get());
+    dc = SDC::Radial3D(traj, lores.Get());
   } else {
     Log::Fail("Uknown SDC method: {}", sdcType.Get());
   }

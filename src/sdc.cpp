@@ -26,8 +26,8 @@ template <int ND>
 auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Index const its, float const pow) -> Re2
 {
   Log::Print("Using Pipe/Zwart/Menon SDC...");
-  Re3 W(1, traj.nSamples(), traj.nTraces());
-  Re3 Wp(W.dimensions());
+  Re3  W(1, traj.nSamples(), traj.nTraces());
+  Re3  Wp(W.dimensions());
   auto gridder = Grid<float, ND>::Make(traj, ktype, os, 1);
 
   W.setConstant(1.f);
@@ -77,60 +77,63 @@ Re2 Radial2D(Trajectory const &traj)
   return sdc;
 }
 
-Re2 Radial3D(Trajectory const &traj, Index const lores, Index const gap)
+Re2 Radial3D(Trajectory const &traj, Index const lores)
 {
-  Log::Print("Calculating 2D radial analytic SDC");
+  Log::Print("Calculating 3D radial analytic SDC");
   auto const &info = traj.info();
+  auto const  nS = traj.nSamples();
+  auto const  nLo = std::abs(lores);
+  auto const  nHi = traj.nTraces() - nLo;
 
-  Eigen::ArrayXf ind = Eigen::ArrayXf::LinSpaced(traj.nSamples(), 0, traj.nSamples() - 1);
-  Eigen::ArrayXf mergeHi = ind - (gap - 1);
-  mergeHi = (mergeHi > 0).select(mergeHi, 0);
-  mergeHi = (mergeHi < 1).select(mergeHi, 1);
-
+  Eigen::ArrayXf mergeHi = Eigen::ArrayXf::Ones(nS);
   Eigen::ArrayXf mergeLo;
   if (lores) {
-    float const scale = Norm(traj.point(traj.nSamples() - 1, lores)) / Norm(traj.point(traj.nSamples() - 1, 0));
-    mergeLo = ind / scale - (gap - 1);
+    // From WASPI Paper (Wu et al 2007)
+    float const lores_scale =
+      (nHi / nLo) * Norm(traj.point(nS - 1, (lores > 0) ? nLo : 0)) / Norm(traj.point(nS - 1, (lores > 0) ? 0 : nHi));
+    auto const  k1 = traj.point(0, (lores > 0) ? nLo : 0);
+    auto const  k2 = traj.point(1, (lores > 0) ? nLo : 0);
+    Index const gap = Norm(k1) / Norm(k2 - k1);
+    mergeLo = Eigen::ArrayXf::LinSpaced(nS, 0, nS - 1) / lores_scale - (gap - 1);
     mergeLo = (mergeLo > 0).select(mergeLo, 0);
     mergeLo = (mergeLo < 1).select(mergeLo, 1);
-    mergeLo = (1 - mergeLo) / scale; // Match intensities of k-space
-    mergeLo.head(gap) = 0.;          // Don't touch these points
+    mergeLo = (1 - mergeLo) / lores_scale; // Match intensities of k-space
   }
 
-  auto spoke_sdc = [&](Index const &spoke, Index const N) -> Re1 {
+  auto spoke_sdc = [&](Index const &spoke, Index const N, Eigen::ArrayXf const &merge) -> Re1 {
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
     auto const  mm = *std::max_element(info.matrix.begin(), info.matrix.end());
-    float const R = (M_PI * mm * mm) / N;
-    float const flat_start = traj.nSamples() / R;
+    float const R = (M_PI * mm * mm) / N; // Approx acceleration
+    float const flat_start = nS / R;
     float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);
-    Re1         sdc(traj.nSamples());
-    for (Index ir = 0; ir < traj.nSamples(); ir++) {
-      float const rad = traj.nSamples() * Norm(traj.point(ir, spoke));
-      float const merge = (spoke < lores) ? mergeLo(ir) : mergeHi(ir);
+    Re1         sdc(nS);
+    for (Index ir = 0; ir < nS; ir++) {
+      float const rad = nS * Norm(traj.point(ir, spoke));
       if (rad == 0.f) {
-        sdc(ir) = merge * V * 1.f / 8.f;
+        sdc(ir) = merge(ir) * V * 1.f / 8.f;
       } else if (rad < flat_start) {
-        sdc(ir) = merge * V * (3.f * (rad * rad) + 1.f / 4.f);
+        sdc(ir) = merge(ir) * V * (3.f * (rad * rad) + 1.f / 4.f);
       } else {
-        sdc(ir) = merge;
+        sdc(ir) = merge(ir);
       }
     }
     return sdc;
   };
 
-  Re2 sdc(traj.nSamples(), traj.nTraces());
+  Re2 sdc(nS, traj.nTraces());
   if (lores) {
-    Re1 const ss = spoke_sdc(0, lores);
-    sdc.slice(Sz2{0, 0}, Sz2{traj.nSamples(), lores}) = ss.reshape(Sz2{traj.nSamples(), 1}).broadcast(Sz2{1, lores});
+    Re2 const sLo = spoke_sdc((lores > 0) ? 0 : nHi, nLo, mergeLo).reshape(Sz2{nS, 1}).broadcast(Sz2{1, nLo});
+    Re2 const sHi = spoke_sdc((lores > 0) ? lores : 0, nHi, mergeHi).reshape(Sz2{nS, 1}).broadcast(Sz2{1, nHi});
+    if (lores < 0) {
+      sdc = sHi.concatenate(sLo, 1);
+    } else {
+      sdc = sLo.concatenate(sHi, 1);
+    }
+  } else {
+    sdc = spoke_sdc(0, traj.nTraces(), mergeHi).reshape(Sz2{nS, 1}).broadcast(Sz2{1, traj.nTraces()});
   }
-  Re1 const ss = spoke_sdc(lores, traj.nTraces() - lores);
-  sdc.slice(Sz2{0, lores}, Sz2{traj.nSamples(), traj.nTraces() - lores}) =
-    ss.reshape(Sz2{traj.nSamples(), 1}).broadcast(Sz2{1, traj.nTraces() - lores});
-
   return sdc;
 }
-
-Re2 Radial(Trajectory const &traj, Index const lores, Index const gap) { return Radial3D(traj, lores, gap); }
 
 auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string const &ktype, float const os)
   -> std::shared_ptr<TensorOperator<Cx, 3>>

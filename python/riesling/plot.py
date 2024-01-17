@@ -96,15 +96,13 @@ def noncart(fname, sample=slice(None), trace=slice(None), **kwargs):
     return slices(fname, component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
 
 def weights(fname, sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), log=False, clim=None):
-    data = io.read(fname)[sl_spoke, sl_read].T
+    data = io.read(fname)[sl_spoke, sl_read].values.T
     if log:
         data = np.log1p(data)
         if clim is None:
             clim = (0, np.max(data))
     elif clim is None:
         clim = np.nanpercentile(np.abs(data), (2, 98))
-    ind = np.unravel_index(np.argmax(data, axis=None), data.shape)
-    d = data[ind[0], ind[1]]
     fig, ax = plt.subplots(1, 1, figsize=(18, 6), facecolor='w')
     im = ax.imshow(data, interpolation='nearest',
                     cmap='cmr.ember', vmin=clim[0], vmax=clim[1])
