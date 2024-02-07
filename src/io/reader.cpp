@@ -258,5 +258,23 @@ auto Reader::readMeta() const -> std::map<std::string, float>
   return meta;
 }
 
+template <>
+auto Reader::readAttribute<float>(std::string const &ds_name, std::string const &attr_name) const -> float
+{
+  float val;
+  CheckedCall(H5LTget_attribute_float(handle_, ds_name.c_str(), attr_name.c_str(), &val),
+              fmt::format("reading attribute {} from {}", attr_name, ds_name));
+  return val;
+}
+
+template <>
+auto Reader::readAttribute<int>(std::string const &ds_name, std::string const &attr_name) const -> int
+{
+  int val;
+  CheckedCall(H5LTget_attribute_int(handle_, ds_name.c_str(), attr_name.c_str(), &val),
+              fmt::format("reading attribute {} from {}", attr_name, ds_name));
+  return val;
+}
+
 } // namespace HD5
 } // namespace rl

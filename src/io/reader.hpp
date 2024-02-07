@@ -28,7 +28,7 @@ struct Reader
   auto readMeta() const -> std::map<std::string, float>;                         // Read meta-data group
 
   template <typename T>
-  auto readAttribute(std::string const &dataset, std::string const &attribute) -> T;
+  auto readAttribute(std::string const &dataset, std::string const &attribute) const -> T;
 
   template <typename T>
   auto readTensor(std::string const &label) const -> T;
