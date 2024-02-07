@@ -58,7 +58,7 @@ int main_nufft(args::Subparser &parser)
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
       output.chip<5>(ii).device(Threads::GlobalDevice()) = nufft->adjoint(CChipMap(noncart, ii));
     }
-    writer.writeTensor(HD5::Keys::Channels, output.dimensions(), output.data());
+    writer.writeTensor(HD5::Keys::Channels, output.dimensions(), output.data(), HD5::Dims::Cartesian);
     Log::Print("NUFFT Adjoint took {}", Log::ToNow(start));
   }
 

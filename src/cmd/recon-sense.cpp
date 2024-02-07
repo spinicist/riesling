@@ -51,7 +51,7 @@ int main_recon_sense(args::Subparser &parser)
       kspace.chip<4>(iv) = recon->forward(padded);
     }
     Log::Print("All Volumes: {}", Log::ToNow(all_start));
-    auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "recon", "h5");
+    auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), "h5");
     HD5::Writer writer(fname);
     writer.writeInfo(traj.info());
     writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);

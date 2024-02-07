@@ -33,7 +33,7 @@ int main_sense_sim(args::Subparser &parser)
   sense /= Tile(rss, nchan.Get());
   auto const  fname = OutName("", iname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
-  writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data());
+  writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data(), HD5::Dims::SENSE);
 
   return EXIT_SUCCESS;
 }

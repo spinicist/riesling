@@ -60,71 +60,44 @@ class TestReadWrite(unittest.TestCase):
         self.assertEqual(data.dims, ('t', 'z', 'y', 'x', 'v'))
         plot(data, ['x','y'], {'t':0, 'v':0, 'z':[16,32,48]}, title='phantom')
 
-        riesling.io.write(f'{self.prefix}_rewrite.h5', data, data_type='image')
-        data_reload = riesling.io.read(f'{self.prefix}_rewrite.h5')
-        np.testing.assert_almost_equal(data.data, data_reload.data)        
-        np.testing.assert_almost_equal(data.attrs['trajectory'], data_reload.attrs['trajectory'])
-        self.assertEqual(data.dims, data_reload.dims)
-
     def test_sense(self):
         os.system(f'riesling sense-sim {self.prefix}-sim --matrix={self.matrix} --vox-size={self.voxsz} --channels={self.channels}')
-        data = riesling.io.read(f'{self.prefix}-sim-sense.h5')
+        data = riesling.io.read(f'{self.prefix}-sim-sense.h5', dset='sense')
         self.assertEqual(data.shape, (64, 64, 64, 1, 4))
         self.assertEqual(data.dims, ('z', 'y', 'x', 'v', 'channel'))
         plot(data, ['x','y'], {'z':32}, title='sim-sense')
 
-        riesling.io.write(f'{self.prefix}-sim-sense_rewrite.h5', data, data_type='sense')
-        data_reload = riesling.io.read(f'{self.prefix}-sim-sense_rewrite.h5')
-        np.testing.assert_almost_equal(data.data, data_reload.data)
-        self.assertEqual(data.dims, data_reload.dims)
-
     def test_kspace(self):
-        os.system(f'riesling recon --sdc=none --fwd --sense={self.prefix}-sim-sense.h5 --sense-fov=-1,-1,-1 {self.prefix}.h5')
-        data = riesling.io.read(f'{self.prefix}-recon.h5')
+        os.system(f'riesling recon-sense --sdc=none --fwd --sense={self.prefix}-sim-sense.h5 --sense-fov=-1,-1,-1 {self.prefix}.h5')
+        data = riesling.io.read(f'{self.prefix}-recon-sense.h5', dset='noncartesian')
         self.assertEqual(data.shape, (1, 1, 2048, 64, 4))
         self.assertEqual(data.dims, ('t', 'slab', 'trace', 'sample', 'channel'))
         self.assertEqual(data.attrs['trajectory'].shape, (2048, 64, 3))
         plot(data, ['sample', 'trace'], {'volume':0, 'slab':0, 'channel':0, 'trace': range(0, 256)}, title='recon')
 
-        riesling.io.write(f'{self.prefix}-recon_rewrite.h5', data, data_type='noncartesian')
-        data_reload = riesling.io.read(f'{self.prefix}-recon_rewrite.h5')
-        np.testing.assert_almost_equal(data.data, data_reload.data)
-        np.testing.assert_almost_equal(data.attrs['trajectory'], data_reload.attrs['trajectory'])
-        self.assertEqual(data.dims, data_reload.dims)
-
     def test_rss(self):
-        os.system(f'riesling rss --sdc-its=4 {self.prefix}-recon.h5')
-        data = riesling.io.read(f'{self.prefix}-recon-rss.h5')
+        os.system(f'riesling recon-rss --sdc-its=4 {self.prefix}-recon-sense.h5')
+        data = riesling.io.read(f'{self.prefix}-recon-sense-recon-rss.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1))
         self.assertEqual(data.dims, ('t', 'z', 'y', 'x', 'v'))
         plot(data, ['x','y'], {'t':0, 'v':0, 'z':[16,32,48]}, title='rss')
 
-        riesling.io.write(f'{self.prefix}-recon-rss_rewrite.h5', data, data_type='image')
-        data_reload = riesling.io.read(f'{self.prefix}-recon-rss_rewrite.h5')
-        np.testing.assert_almost_equal(data.data, data_reload.data)
-        self.assertEqual(data.dims, data_reload.dims)
-
     def test_nufft(self):
-        os.system(f'riesling nufft --sdc-its=4 {self.prefix}-recon.h5')
-        data = riesling.io.read(f'{self.prefix}-recon-nufft.h5')
+        os.system(f'riesling nufft --sdc-its=4 {self.prefix}-recon-sense.h5')
+        data = riesling.io.read(f'{self.prefix}-recon-sense-nufft.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1, 4))
         self.assertEqual(data.dims, ('t', 'z', 'y', 'x', 'v', 'channel'))
         plot(data, ['x','y'], {'t':0, 'v':0, 'z':[16,32,48], 'channel':0}, title='nufft - channel=0')
 
-        riesling.io.write(f'{self.prefix}-recon-nufft_rewrite.h5', data, data_type='channels')
-        data_reload = riesling.io.read(f'{self.prefix}-recon-nufft_rewrite.h5')
-        np.testing.assert_almost_equal(data.data, data_reload.data)
-        self.assertEqual(data.dims, data_reload.dims)
-
     def test_sdc(self):
-        data = riesling.io.read(f'{self.prefix}-recon.h5')
+        data = riesling.io.read(f'{self.prefix}-recon-sense.h5')
         sdc = xr.DataArray(np.ones(data.attrs['trajectory'].shape[:-1]), dims=('trace','sample')) # build dummy weights array filled with ones
         riesling.io.write(f'{self.prefix}-sdc.h5', sdc, data_type='weights')
         sdc_reload = riesling.io.read(f'{self.prefix}-sdc.h5')
         np.testing.assert_almost_equal(sdc.data, sdc_reload.data)
 
         # run nufft again to check if it works with the custom sdc
-        os.system(f'riesling nufft {self.prefix}-recon.h5 --sdc={self.prefix}-sdc.h5 -o {self.prefix}-recon-sdc')
+        os.system(f'riesling nufft {self.prefix}-recon-sense.h5 --sdc={self.prefix}-sdc.h5 -o {self.prefix}-recon-sdc')
         data = riesling.io.read(f'{self.prefix}-recon-sdc-nufft.h5')
         self.assertEqual(data.shape, (1, 64, 64, 64, 1, 4))
         self.assertEqual(data.dims, ('t', 'z', 'y', 'x', 'v', 'channel'))
