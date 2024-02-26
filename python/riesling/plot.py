@@ -24,6 +24,74 @@ def _indexers(D, image, img_zoom, sl, slv, others):
     indexers |= my_others
     return indexers
 
+def _symmetrize(x):
+    x[0] = -x[1]
+    return x
+
+def _comp(data, component, cmap, clim, climp):
+    if component == 'x':
+        pass
+    elif component == 'xlog':
+        pass
+    elif component == 'mag':
+        data = np.abs(data)
+    elif component == 'log':
+        data = np.log1p(np.abs(data))
+    elif component == 'pha':
+        data = np.angle(data)
+    elif component == 'real':
+        data = np.real(data)
+    elif component == 'imag':
+        data = np.imag(data)
+    else:
+        data = np.real(data)
+        warnings.warn('Unknown component, taking real')
+
+    if not cmap:
+        if component == 'mag':
+            cmap = 'gray'
+        elif component == 'log':
+            cmap = 'gray'
+        elif component == 'real':
+            cmap = 'cmr.iceburn'
+        elif component == 'imag':
+            cmap = 'cmr.iceburn'
+        elif component == 'pha':
+            cmap = 'cet_colorwheel'
+        elif component == 'x':
+            cmap = 'cet_colorwheel'
+        elif component == 'xlog':
+            cmap = 'cet_colorwheel'
+        else:
+            raise(f'Unknown component {component}')
+
+    if not clim:
+        if climp is None:
+            climp = (2, 99)
+        if component == 'mag':
+            clim = np.nanpercentile(data, climp)
+        elif component == 'log':
+            clim = np.nanpercentile(data, climp)
+        elif component == 'pha':
+            clim = (-np.pi, np.pi)
+        elif component == 'real':
+            clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
+        elif component == 'imag':
+            clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
+        elif component == 'x':
+            clim = np.nanpercentile(np.abs(data), climp)
+        elif component == 'xlog':
+            clim = np.nanpercentile(np.log1p(np.abs(data)), climp)
+            if not clim.any():
+                clim = np.nanpercentile(np.log1p(np.abs(data)), (0, 100))
+        else:
+            raise(f'Unknown component {component}')
+    if clim[0] == clim[1]:
+        print(f'Color limits were {clim}, expanding')
+        clim[1] = clim[0] + 1
+
+    return data, cmap, clim
+
 def _apply_basis(D, basis_file, basis_tp):
     if basis_file is None:
         return D
@@ -38,18 +106,25 @@ def _apply_basis(D, basis_file, basis_tp):
     data = xa.dot(data, basis, dims=('v', 'v'))
     return data
 
-def planes(fname, pos=0.5, zoom=(slice(None), slice(None)), others={},
+def _orient(img, rotates, fliplr=False):
+    img = img.to_numpy()
+    if rotates != 0:
+        img = np.rot90(img, rotates)
+    if fliplr:
+        img = np.fliplr(img)
+    return img
+
+def planes(fname, dset='image', pos=0.5, zoom=(slice(None), slice(None)), others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rotates=(0, 0, 0), fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-    D = _apply_basis(io.read(fname), basis_file, basis_tp)
+    D = _apply_basis(io.read(fname, dset), basis_file, basis_tp)
     posx = int(np.floor(len(D['x'])*pos))
     posy = int(np.floor(len(D['y'])*pos))
     posz = int(np.floor(len(D['z'])*pos))
-    data_x = _comp(D.isel(_indexers(D, ('x', 'y'), zoom, 'z', posz, others)), component)
-    data_y = _comp(D.isel(_indexers(D, ('x', 'z'), zoom, 'y', posy, others)), component)
-    data_z = _comp(D.isel(_indexers(D, ('y', 'z'), zoom, 'x', posx, others)), component)
-    clim, cmap = _get_colors(clim, cmap, data_x, component, climp)
+    data_x, cmap, clim = _comp(D.isel(_indexers(D, ('x', 'y'), zoom, 'z', posz, others)), component, cmap, clim, climp)
+    data_y, _, _ = _comp(D.isel(_indexers(D, ('x', 'z'), zoom, 'y', posy, others)), component, cmap, clim, climp)
+    data_z, _, _ = _comp(D.isel(_indexers(D, ('y', 'z'), zoom, 'x', posx, others)), component, cmap, clim, climp)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
 
     im_x = _draw(ax[0], _orient(data_x, rotates[0], fliplr), component, clim, cmap)
@@ -60,40 +135,42 @@ def planes(fname, pos=0.5, zoom=(slice(None), slice(None)), others={},
     plt.close()
     return fig
 
-def slices(fname, image=('x', 'y'), zoom=(slice(None), slice(None)),
+def slices(fname, dset='image', image=('x', 'y'), zoom=(slice(None), slice(None)),
            sl='z', n=None, lim=None, others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-    D = _apply_basis(io.read(fname), basis_file, basis_tp)
+    D = _apply_basis(io.read(fname, dset), basis_file, basis_tp)
     maxn = len(D[sl])
     if n is None:
         n = maxn
-        slv = np.arange(maxn)
+        slis = np.arange(maxn)
     else:
         if lim is None:
             lim = (0, 1)
-        slv = np.floor(np.linspace(lim[0]*maxn, lim[1]*maxn, n, endpoint=False)).astype(int)
-    data = _comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component)
-    clim, cmap = _get_colors(clim, cmap, data, component, climp)
+        slis = np.floor(np.linspace(lim[0]*maxn, lim[1]*maxn, n, endpoint=False)).astype(int)
+    data, cmap, clim = _comp(D.isel(_indexers(D, image, zoom, sl, slis, others)), component, cmap, clim, climp)
     cols = int(np.ceil(n / rows))
     fig, all_ax = plt.subplots(rows, cols, figsize=(rc['figsize']*cols, rc['figsize']*rows), facecolor='black')
 
     for ir in range(rows):
         for ic in range(cols):
-            sli = (ir * cols) + ic
+            ii = (ir * cols) + ic
             ax = _get_axes(all_ax, ir, ic)
-            im = _draw(ax, _orient(data.isel({sl:sli}), rotates, fliplr), component, clim, cmap)
+            if ii < len(slis):
+                im = _draw(ax, _orient(data.isel({sl:ii}), rotates, fliplr), component, clim, cmap)
+            else:
+                ax.set_facecolor('k')
     fig.tight_layout(pad=0)
     _add_colorbar(cbar, component, fig, im, clim, title, ax=all_ax)
     plt.close()
     return fig
 
 def sense(fname, **kwargs):
-    return slices(fname, component='x', sl='channel', **kwargs)
+    return slices(fname, dset='sense', component='x', sl='channel', **kwargs)
 
 def noncart(fname, sample=slice(None), trace=slice(None), **kwargs):
-    return slices(fname, component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
+    return slices(fname, dset='noncartesian', component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
 
 def weights(fname, sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), log=False, clim=None):
     data = io.read(fname)[sl_spoke, sl_read].values.T
@@ -138,7 +215,7 @@ def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)),
         slv = int(np.floor(len(Ds[0][sl]) * pos))
         data = [_comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component) for D in Ds]
         data = xa.concat(data, dim='sl')
-    ref = abs(data.isel(sl=-1)).max().to_numpy()
+    ref = abs(data.isel(sl=-1)).max()
     diffs = np.diff(data, n=1, axis=0) * 100 / ref
     n = len(data['sl'])
     clim, cmap = _get_colors(clim, cmap, data, component)
@@ -194,7 +271,7 @@ def diff_matrix(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(
         data = xa.concat(data, dim='sl')
     n = len(data['sl'])
     diffs = []
-    ref = abs(data.isel(sl=-1)).max().to_numpy()
+    ref = abs(data.isel(sl=-1)).max()
     for ii in range(1, n):
         diffs.append([])
         for jj in range(ii):
@@ -226,82 +303,6 @@ def diff_matrix(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(
     _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
     plt.close()
     return fig
-
-def _comp(data, component):
-    if component == 'x':
-        pass
-    elif component == 'xlog':
-        pass
-    elif component == 'mag':
-        data = np.abs(data)
-    elif component == 'log':
-        data = np.log1p(np.abs(data))
-    elif component == 'pha':
-        data = np.angle(data)
-    elif component == 'real':
-        data = np.real(data)
-    elif component == 'imag':
-        data = np.imag(data)
-    else:
-        data = np.real(data)
-        warnings.warn('Unknown component, taking real')
-    return data
-
-def _orient(img, rotates, fliplr=False):
-    if rotates > 0:
-        img = np.rot90(img, rotates)
-    if fliplr:
-        img = np.fliplr(img)
-    return img
-
-def _symmetrize_real(x):
-    x[1] = np.amax([np.abs(x[0]), np.abs(x[1])])
-    x[0] = -x[1]
-    return x
-
-def _get_colors(clim, cmap, img, component, climp=None):
-    if not clim:
-        if climp is None:
-            climp= (2, 99)
-        if component == 'mag':
-            clim = np.nanpercentile(img, climp)
-        elif component == 'log':
-            clim = np.nanpercentile(img, climp)
-        elif component == 'pha':
-            clim = (-np.pi, np.pi)
-        elif component == 'real':
-            clim = _symmetrize_real(np.nanpercentile(img, climp))
-        elif component == 'imag':
-            clim = _symmetrize_real(np.nanpercentile(img, climp))
-        elif component == 'x':
-            clim = np.nanpercentile(np.abs(img), climp)
-        elif component == 'xlog':
-            clim = np.nanpercentile(np.log1p(np.abs(img)), climp)
-            if not clim.any():
-                clim = np.nanpercentile(np.log1p(np.abs(img)), (0, 100))
-        else:
-            raise(f'Unknown component {component}')
-    if clim[0] == clim[1]:
-        print(f'Color limits were {clim}, expanding')
-        clim[1] = clim[0] + 1
-    if not cmap:
-        if component == 'mag':
-            cmap = 'gray'
-        elif component == 'log':
-            cmap = 'gray'
-        elif component == 'real':
-            cmap = 'cmr.iceburn'
-        elif component == 'imag':
-            cmap = 'cmr.iceburn'
-        elif component == 'pha':
-            cmap = 'cet_colorwheel'
-        elif component == 'x':
-            cmap = 'cet_colorwheel'
-        elif component == 'xlog':
-            cmap = 'cet_colorwheel'
-        else:
-            raise(f'Unknown component {component}')
-    return (clim, cmap)
 
 def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos='bottom'):
     if not cbar:
@@ -404,7 +405,7 @@ def _draw_x(ax, img, clim, cmap='cet_colorwheel', log=False):
     norm = colors.Normalize(vmin=-np.pi, vmax=np.pi)
     smap = cm.ScalarMappable(norm=norm, cmap=cmap)
     pha = np.angle(img)
-    colorized = smap.to_rgba(pha, alpha=1., bytes=False)[:, :, 0:3] * mag.to_numpy()[..., np.newaxis]
+    colorized = smap.to_rgba(pha, alpha=1., bytes=False)[:, :, 0:3] * mag[..., np.newaxis]
     ax.imshow(colorized, interpolation=rc['interpolation'])
     ax.axis('off')
 
@@ -442,23 +443,24 @@ def dictionary(filename):
         plt.close()
         return fig
 
-def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None, zoom=False):
+def _traj_color(traj, color, seg_length):
+    if color == 'sample':
+        return np.tile(np.arange(traj.shape[1]), (traj.shape[0]))
+    elif seg_length is not None:
+        return np.tile(np.repeat(np.arange(seg_length), traj.shape[1]), traj.shape[0]//seg_length)
+    else:
+        return np.repeat(np.arange(traj.shape[0]), traj.shape[1])
+
+def traj2d(filename, sample=slice(None), trace=slice(None), color='trace', seg_length=None, zoom=False):
     with h5py.File(filename) as f:
-        traj = np.array(f['trajectory'])
-        if color == 'read':
-            c = np.tile(np.arange(len(traj[0, read_slice, 0])), len(traj[spoke_slice, 0, 0]))
-        elif color == 'seg':
-            c = np.tile(np.repeat(np.arange(sps),
-                                  len(traj[0, read_slice, 0])),
-                        int(len(traj[spoke_slice, 0, 0])/sps))
-        else:
-            c = np.tile(np.arange(len(traj[spoke_slice, 0, 0])), (len(traj[0, read_slice, 0]), 1)).ravel(order='F')
+        traj = np.array(f['trajectory'][trace, sample, :])
+        c = _traj_color(traj, color, seg_length)
         nd = traj.shape[-1]
         fig, ax = plt.subplots(1, nd, figsize=(12, 4), facecolor='w')
         for ii in range(nd):
             ax[ii].grid()
-            ax[ii].scatter(traj[spoke_slice, read_slice, ii % nd],
-                       traj[spoke_slice, read_slice, (ii + 1) % nd],
+            ax[ii].scatter(traj[:, :, ii % nd],
+                       traj[:, :, (ii + 1) % nd],
                        c=c, cmap='cmr.ember', s=0.5)
             ax[ii].set_aspect('equal')
             if not zoom:
@@ -468,16 +470,11 @@ def traj2d(filename, read_slice=slice(None), spoke_slice=slice(None), color='rea
         plt.close()
     return fig
 
-def traj3d(filename, read_slice=slice(None), spoke_slice=slice(None), color='read', sps=None,
+def traj3d(filename, sample=slice(None), trace=slice(None), color='trace', seg_length=None,
            angles=[30,-60,0], zoom=False, draw_axes=False):
     with h5py.File(filename) as ff:
-        traj = ff['trajectory'][spoke_slice, read_slice, :]
-        if color == 'read':
-            c = np.tile(np.arange(traj.shape[1]), (traj.shape[0]))
-        elif color == 'seg':
-            c = np.tile(np.repeat(np.arange(sps), traj.shape[1]), int(traj.shape[0]/sps))
-        else:
-            c = np.tile(np.arange(traj.shape[0]), (traj.shape[1], 1))
+        traj = ff['trajectory'][trace, sample, :]
+        c = _traj_color(traj, color, seg_length)
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(projection='3d')
 
