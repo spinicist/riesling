@@ -45,5 +45,6 @@ int main_graphics(args::Subparser &parser)
   }
   Magick::montageImages(&frames, slices.begin(), slices.end(), montageOpts);
   frames.front().write(oname.Get());
+  rl::Log::Print("Wrote output file {}", oname.Get());
   return EXIT_SUCCESS;
 }

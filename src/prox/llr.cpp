@@ -34,7 +34,7 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
     return yp;
   };
   Patches(patchSize, windowSize, shift, softLLR, x, z);
-  Log::Print<Log::Level::High>("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
+  Log::Debug("LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm(x), Norm(z));
 }
 
 void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
@@ -54,7 +54,7 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
       return yp;
     };
     Patches(patchSize, windowSize, shift, softLLR, x, z);
-    Log::Print<Log::Level::High>("LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
+    Log::Debug("LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
   } else {
     Log::Fail("C++ is stupid");
   }

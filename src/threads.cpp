@@ -27,7 +27,7 @@ Eigen::ThreadPool *GlobalPool()
 {
   if (gp == nullptr) {
     auto const nt = std::thread::hardware_concurrency();
-    Log::Print<Log::Level::High>("Creating default thread pool with {} threads", nt);
+    Log::Debug("Creating default thread pool with {} threads", nt);
     gp = new Eigen::ThreadPool(nt);
   }
   return gp;
@@ -37,7 +37,7 @@ void SetGlobalThreadCount(Index nt)
 {
   if (gp) { delete gp; }
   if (nt < 1) { nt = std::thread::hardware_concurrency(); }
-  Log::Print<Log::Level::High>("Creating thread pool with {} threads", nt);
+  Log::Debug("Creating thread pool with {} threads", nt);
   gp = new Eigen::ThreadPool(nt);
 }
 

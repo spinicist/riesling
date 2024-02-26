@@ -17,7 +17,7 @@ Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
   Index const nKz = grid.dimension(4) - kW + 1;
   Index const nK = nKx * nKy * nKz;
   if (nK < 1) { Log::Fail("No kernels to Hankelfy"); }
-  Log::Print<Log::Level::Debug>("Hankelfying {} kernels", nK);
+  Log::Debug("Hankelfying {} kernels", nK);
   Cx6   kernels(nC, nF, kW, kW, kW, nK);
   Index ik = 0;
   for (Index iz = 0; iz < nKx; iz++) {
@@ -48,7 +48,7 @@ void FromKernels(Cx6 const &kernels, Eigen::TensorMap<Cx5> &grid)
   count.setZero();
   grid.setZero();
   Index ik = 0;
-  Log::Print<Log::Level::Debug>("Unhankelfying {} kernels", nK);
+  Log::Debug("Unhankelfying {} kernels", nK);
   for (Index iz = 0; iz < nZ; iz++) {
     for (Index iy = 0; iy < nY; iy++) {
       for (Index ix = 0; ix < nX; ix++) {
@@ -87,7 +87,7 @@ void SLR::apply(float const α, CMap const &xin, Map &zin) const
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, z);
   fft->reverse(z);
-  Log::Print<Log::Level::High>("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
+  Log::Debug("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
 }
 
 } // namespace rl::Proxs

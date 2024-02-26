@@ -36,7 +36,7 @@ struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
       res[ii] = 1;
       brd[ii] = shape[ii];
     }
-    Log::Print<Log::Level::Debug>("{} shape {}->{} res {} brd {}", this->name, s.dimensions(), shape, res, brd);
+    Log::Debug("{} shape {}->{} res {} brd {}", this->name, s.dimensions(), shape, res, brd);
   }
 
   void forward(InCMap const &x, OutMap &y) const

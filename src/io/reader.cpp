@@ -24,7 +24,7 @@ Derived load_matrix(Handle const &parent, std::string const &name)
   if (ret_value < 0) {
     Log::Fail("Error reading matrix {}, code: {}", name, ret_value);
   } else {
-    Log::Print<Log::Level::High>("Read matrix {}", name);
+    Log::Debug("Read matrix {}", name);
   }
   return matrix;
 }
@@ -36,13 +36,13 @@ Reader::Reader(std::string const &fname)
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (handle_ < 0) { Log::Fail("Failed to open {}", fname); }
   Log::Print("Opened file to read: {}", fname);
-  Log::Print<Log::Level::High>("Handle: {}", handle_);
+  Log::Debug("Handle: {}", handle_);
 }
 
 Reader::~Reader()
 {
   H5Fclose(handle_);
-  Log::Print<Log::Level::High>("Closed handle: {}", handle_);
+  Log::Debug("Closed handle: {}", handle_);
 }
 
 auto Reader::list() const -> std::vector<std::string> { return List(handle_); }
@@ -95,7 +95,7 @@ auto Reader::readTensor(std::string const &name) const -> T
   if (ret_value < 0) {
     Log::Fail("Error reading tensor {}, code: {}", name, ret_value);
   } else {
-    Log::Print<Log::Level::High>("Read tensor {}, shape {}", name, tDims);
+    Log::Debug("Read tensor {}, shape {}", name, tDims);
   }
   return tensor;
 }
@@ -200,7 +200,7 @@ auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceD
   if (status < 0) {
     Log::Fail("Tensor {}: Error reading slab. HD5 Message: {}", label, GetError());
   } else {
-    Log::Print<Log::Level::High>("Read slab from tensor {}", label);
+    Log::Debug("Read slab from tensor {}", label);
   }
   return tensor;
 }
@@ -240,7 +240,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
 {
   auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
-    Log::Print<Log::Level::High>("No meta-data found in file handle {}", handle_);
+    Log::Debug("No meta-data found in file handle {}", handle_);
     return {};
   }
   auto const                   names = List(meta_group);

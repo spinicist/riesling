@@ -22,7 +22,7 @@ void Entropy::apply(float const α, CMap const &v, Map &z) const
     x = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   z = v.array() * (x / vabs);
-  Log::Print<Log::Level::High>("Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, v.norm(), z.norm());
+  Log::Debug("Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, v.norm(), z.norm());
 }
 
 NMREntropy::NMREntropy(float const λ_, Index const sz_)
@@ -43,7 +43,7 @@ void NMREntropy::apply(float const α, CMap const &v, Map &z) const
     x = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   z = v.array() * (x / vabs);
-  Log::Print<Log::Level::High>("NMR Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, v.norm(), z.norm());
+  Log::Debug("NMR Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, v.norm(), z.norm());
 }
 
 } // namespace rl::Proxs

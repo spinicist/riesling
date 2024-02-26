@@ -26,7 +26,7 @@ Trajectory::Trajectory(Info const &info, Re3 const &points)
     float const percent = (100.f * discarded) / total;
     Log::Warn("Discarded {} trajectory points ({}%) > 0.5", discarded, percent);
   }
-  Log::Print<Log::Level::Debug>("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
+  Log::Debug("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
 }
 
 auto Trajectory::nDims() const -> Index { return points_.dimension(0); }
@@ -71,7 +71,7 @@ auto Trajectory::matrixForFOV(float const fov) const -> Sz3
     for (Index ii = 0; ii < 3; ii++) {
       matrix[ii] = bigMatrix[ii];
     }
-    Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov, info_.matrix, matrix);
+    Log::Print("Requested FOV {} from matrix {}, calculated {}", fov, info_.matrix, matrix);
     return matrix;
   } else {
     return info_.matrix;
@@ -84,7 +84,7 @@ auto Trajectory::matrixForFOV(Eigen::Array3f const fov) const -> Sz3
   for (Index ii = 0; ii < 3; ii++) {
     matrix[ii] = std::max(info_.matrix[ii], 2 * (Index)(fov[ii] / info_.voxel_size[ii] / 2.f));
   }
-  Log::Print<Log::Level::High>("Requested FOV {} from matrix {}, calculated {}", fov.transpose(), info_.matrix, matrix);
+  Log::Print("Requested FOV {} from matrix {}, calculated {}", fov.transpose(), info_.matrix, matrix);
   return matrix;
 }
 

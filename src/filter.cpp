@@ -60,7 +60,7 @@ void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const
   auto const nSlice = x.dimension(3);
   assert(coords.dimension(1) == nS);
   assert(coords.dimension(2) == nT);
-  Log::Print<Log::Level::High>("Noncartesian Tukey start {} end {} height {}", s, e, h);
+  Log::Print("Noncartesian Tukey start {} end {} height {}", s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
   x.device(Threads::GlobalDevice()) =
     x * coords.square().sum(Sz1{0}).sqrt().unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice});
@@ -75,7 +75,7 @@ void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const
   auto const nV = x.dimension(4);
   assert(coords.dimension(1) == nS);
   assert(coords.dimension(2) == nT);
-  Log::Print<Log::Level::High>("Noncartesian Tukey start {} end {} height {}", s, e, h);
+  Log::Print("Noncartesian Tukey start {} end {} height {}", s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
   x.device(Threads::GlobalDevice()) =
     x * coords.square().sum(Sz1{0}).sqrt().unaryExpr(f).reshape(Sz5{1, nS, nT, 1, 1}).broadcast(Sz5{nC, 1, 1, nSlice, nV});

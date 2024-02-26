@@ -34,7 +34,6 @@ ApodizeOp<S, NDim>::ApodizeOp(InDims const ish, Sz<NDim> const gshape, std::shar
   PadOp<Cx, NDim, NDim> padA(shape, gshape);
   apo_.resize(shape);
   apo_.device(Threads::GlobalDevice()) = padA.adjoint(temp).abs().inverse().template cast<Cx>();
-  LOG_DEBUG("Apodization size {} Scale: {} Norm: {}", shape, scale, Norm(apo_));
 }
 
 template <typename S, int NDim>

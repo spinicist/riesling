@@ -66,10 +66,8 @@ auto PDHG::run(Cx const *bdata, Index const iterLimit) -> Vector
   l2->setBias(bdata);
   for (Index ii = 0; ii < iterLimit; ii++) {
     xold = x;
-    Log::Print<Log::Level::High>("PDHG updating dual");
     v = u + σOp->forward(Aʹ->forward(x̅));
     proxʹ->apply(σOp, v, u);
-    Log::Print<Log::Level::High>("PDHG updating primal");
     x = x - τ * Aʹ->adjoint(u);
     xdiff = x - xold;
     x̅ = x + xdiff;

@@ -100,7 +100,6 @@ Sz<Rank> fft_size(Sz<Rank> const x, float const os)
 template <size_t N>
 std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 {
-  auto const           start = Log::Now();
   std::vector<int32_t> sorted(cart.size());
   std::iota(sorted.begin(), sorted.end(), 0);
   std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
@@ -115,7 +114,6 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
     }
     return false;
   });
-  Log::Print<Log::Level::High>("Grid co-ord sorting: {}", Log::ToNow(start));
   return sorted;
 }
 

@@ -16,14 +16,14 @@ Writer::Writer(std::string const &fname)
     Log::Fail("Could not open file {} for writing", fname);
   } else {
     Log::Print("Opened file to write: {}", fname);
-    Log::Print<Log::Level::High>("Handle: {}", handle_);
+    Log::Debug("Handle: {}", handle_);
   }
 }
 
 Writer::~Writer()
 {
   H5Fclose(handle_);
-  Log::Print<Log::Level::High>("Closed handle: {}", handle_);
+  Log::Debug("Closed handle: {}", handle_);
 }
 
 void Writer::writeString(std::string const &label, std::string const &string)
@@ -53,19 +53,19 @@ void Writer::writeInfo(Info const &info)
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status != 0) { Log::Fail("Could not write info struct in file {}, code: {}", handle_, status); }
-  Log::Print<Log::Level::High>("Wrote info struct");
+  Log::Debug("Wrote info struct");
 }
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
-  Log::Print("Writing meta data");
+  Log::Debug("Writing meta data");
   auto m_group = H5Gcreate(handle_, Keys::Meta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t    dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
   herr_t     status;
   for (auto const &kvp : meta) {
-    Log::Print("Writing {}:{}", kvp.first, kvp.second);
+    Log::Debug("Writing {}:{}", kvp.first, kvp.second);
     hid_t const dset = H5Dcreate(m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(kvp.second));
     status = H5Dclose(dset);
@@ -117,7 +117,7 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
   CheckedCall(H5Sclose(space), "closing space");
   CheckedCall(H5Dclose(dset), "closing dataset");
 
-  Log::Print<Log::Level::High>("Wrote tensor: {}", name);
+  Log::Debug("Wrote tensor: {}", name);
 }
 
 template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *, Names<1> const &);
@@ -160,7 +160,7 @@ void Writer::writeMatrix(Eigen::DenseBase<Derived> const &mat, std::string const
   if (status) {
     Log::Fail("Could not write matrix {} into handle {}, code: {}", name, handle_, status);
   } else {
-    Log::Print<Log::Level::High>("Wrote matrix: {}", name);
+    Log::Debug("Wrote matrix: {}", name);
   }
 }
 

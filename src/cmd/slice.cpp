@@ -86,10 +86,11 @@ int main_slice(args::Subparser &parser)
     traj = Trajectory(info, traj.points().stride(Sz3{1, readStride.Get(), traceStride.Get()}));
   }
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
+  auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name());
+  HD5::Writer writer(fname);
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
-
+  Log::Print("Wrote output file {}", fname);
   return EXIT_SUCCESS;
 }

@@ -16,7 +16,6 @@ namespace rl {
  */
 auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bias, bool const ndft) -> Re2
 {
-  Log::Print<Log::Level::High>("Ong's Single-channer preconditioner");
   Info const info = traj.info();
   Info       newInfo = info;
   std::transform(newInfo.matrix.begin(), newInfo.matrix.begin() + traj.nDims(), newInfo.matrix.begin(),

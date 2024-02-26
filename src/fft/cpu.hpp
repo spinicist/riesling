@@ -75,7 +75,7 @@ struct CPU final : FFT<TRank, FRank>
     if (forward_plan_ == NULL) { Log::Fail("Could not create forward FFT Planned"); }
     if (reverse_plan_ == NULL) { Log::Fail("Could not create reverse FFT Planned"); }
 
-    Log::Print<Log::Level::High>("FFT planning took {}", Log::ToNow(start));
+    Log::Debug("FFT planning took {}", Log::ToNow(start));
   }
 
   ~CPU()

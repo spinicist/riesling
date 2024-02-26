@@ -30,7 +30,7 @@ SVDBasis::SVDBasis(Eigen::ArrayXXf const &dynamics,
     st += sz;
   }
 
-  Log::Print<Log::Level::Debug>("Orthogonality check:\n{}", fmt::streamed(basis * basis.adjoint()));
+  Log::Debug("Orthogonality check:\n{}", fmt::streamed(basis * basis.adjoint()));
 }
 
 } // namespace rl

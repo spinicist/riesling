@@ -20,8 +20,8 @@ enum struct Level
 {
   Testing = -1, // Suppress everything, even failures
   None = 0,
-  Low = 1,
-  High = 2,
+  Ephemeral = 1,
+  Standard = 2,
   Debug = 3
 };
 
@@ -36,41 +36,48 @@ using Time = std::chrono::high_resolution_clock::time_point;
 Level CurrentLevel();
 void  SetLevel(Level const l);
 void  SetDebugFile(std::string const &fname);
-void  SaveEntry(std::string const &s);
+void  SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level);
 auto  Saved() -> std::string const &;
 void  End();
 auto  TheTime() -> std::string;
 
-template <Log::Level level = Log::Level::Low, typename... Args>
-inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
+template <typename... Args>
+inline auto Format(fmt::format_string<Args...> fstr, Args &&...args) -> std::string
 {
-  std::string const entry = fmt::format("{} {}\n", TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
-  if (level == Level::Low) { SaveEntry(entry); }
-  if (level <= CurrentLevel()) { fmt::print(stderr, "{}", entry); }
+  return fmt::format("{} {}\n", TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
 }
 
-template <Log::Level level = Log::Level::Low, typename... Args>
+template <typename... Args>
+inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
+{
+  SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Ephemeral);
+}
+
+template <typename... Args>
+inline void Debug(fmt::format_string<Args...> fstr, Args &&...args)
+{
+  SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Debug);
+}
+
+template <typename... Args>
 inline void Warn(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  if (level <= CurrentLevel()) {
-    fmt::print(
-      stderr, fmt::fg(fmt::terminal_color::bright_red), "{} {}\n", TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
-  }
+  SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::bright_red, Level::None);
 }
 
 template <typename... Args>
 __attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  auto const msg = fmt::format("{} {}", fmt::format("{}", TheTime()), fmt::format(fstr, std::forward<Args>(args)...));
-  if (CurrentLevel() > Level::Testing) { fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", msg); }
+  auto const msg = Format(fstr, std::forward<Args>(args)...);
+  SaveEntry(msg, fmt::terminal_color::bright_red, Level::None);
   throw Failure(msg);
 }
 
-void        StartProgress(Index const counst, std::string const &label);
-void        StopProgress();
-void        Tick();
-Time        Now();
-std::string ToNow(Time const t);
+void StartProgress(Index const counst, std::string const &label);
+void StopProgress();
+void Tick();
+auto Now() -> Time;
+auto ToNow(Time const t) -> std::string;
 
 template <typename Scalar, int ND>
 void Tensor(std::string const &name, Sz<ND> const &shape, Scalar const *data);

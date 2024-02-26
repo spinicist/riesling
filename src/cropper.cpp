@@ -12,8 +12,8 @@ Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelS
     }
   }
   calcStart(fullSz);
-  Log::Print<Log::Level::High>("Cropper start {} size {} full {} extent {} voxel-size {}", st_, sz_, fullSz, extent.transpose(),
-                               voxelSz.transpose());
+  Log::Debug("Cropper start {} size {} full {} extent {} voxel-size {}", st_, sz_, fullSz, extent.transpose(),
+             voxelSz.transpose());
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)
@@ -22,14 +22,14 @@ Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)
   sz_[1] = cropSz[1];
   sz_[2] = cropSz[2];
   calcStart(fullSz);
-  Log::Print<Log::Level::High>("Cropper start {} size {}", st_, sz_);
+  Log::Debug("Cropper start {} size {}", st_, sz_);
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Sz3 const &cropSz)
 {
   sz_ = cropSz;
   calcStart(fullSz);
-  Log::Print<Log::Level::High>("Cropper start {} size {}", st_, sz_);
+  Log::Debug("Cropper start {} size {}", st_, sz_);
 }
 
 void Cropper::calcStart(Sz3 const &fullSz)

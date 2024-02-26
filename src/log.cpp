@@ -42,7 +42,14 @@ void SetLevel(Level const l)
 
 void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
 
-void SaveEntry(std::string const &s) { savedLog.append(s); }
+void SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level)
+{
+  savedLog.append(s);
+  if (CurrentLevel() >= level) {
+    if (CurrentLevel() == Level::Ephemeral) { fmt::print(stderr, "\033[A\33[2K\r"); }
+    fmt::print(stderr, fmt::fg(color), "{}", s);
+  }
+}
 
 auto Saved() -> std::string const & { return savedLog; }
 
@@ -60,11 +67,11 @@ auto TheTime() -> std::string
 
 void StartProgress(Index const amount, std::string const &text)
 {
-  if (text.size() && CurrentLevel() >= Level::High) {
+  if (text.size() && CurrentLevel() >= Level::Standard) {
     progressMessage = text;
     fmt::print(stderr, "{} Starting {}\n", TheTime(), progressMessage);
   }
-  if (isTTY && CurrentLevel() >= Level::Low) {
+  if (isTTY && CurrentLevel() >= Level::Ephemeral) {
     progressTarget = amount;
     progressCurrent = 0;
     progressNext = std::floor(progressTarget / 100.f);
@@ -73,12 +80,12 @@ void StartProgress(Index const amount, std::string const &text)
 
 void StopProgress()
 {
-  if (isTTY && CurrentLevel() >= Level::Low) {
+  if (isTTY && CurrentLevel() >= Level::Ephemeral) {
     std::scoped_lock lock(progressMutex);
     progressTarget = -1;
     fmt::print(stderr, "\r");
   }
-  if (progressMessage.size() && CurrentLevel() >= Level::High) {
+  if (progressMessage.size() && CurrentLevel() >= Level::Standard) {
     fmt::print(stderr, "{} Finished {}\n", TheTime(), progressMessage);
   }
 }
@@ -107,8 +114,8 @@ std::string ToNow(Log::Time const t1)
   auto const mins = diff % (60 * 60 * 1000) / (60 * 1000);
   auto const secs = diff % (60 * 1000) / 1000;
   if (hours > 0) {
-    return fmt::format(
-      "{} hour{} {} minute{} {} second{}", hours, hours > 1 ? "s" : "", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
+    return fmt::format("{} hour{} {} minute{} {} second{}", hours, hours > 1 ? "s" : "", mins, mins > 1 ? "s" : "", secs,
+                       secs > 1 ? "s" : "");
   } else if (mins > 0) {
     return fmt::format("{} minute{} {} second{}", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
   } else if (secs > 0) {

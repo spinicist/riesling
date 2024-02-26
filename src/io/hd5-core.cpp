@@ -77,17 +77,14 @@ void Init()
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
-
     hid_t scalar_id = type_impl(type_tag<float>{});
     complex_tid = H5Tcreate(H5T_COMPOUND, sizeof(complex_t));
     CheckedCall(H5Tinsert(complex_tid, "r", HOFFSET(complex_t, r), scalar_id), "inserting real field");
     CheckedCall(H5Tinsert(complex_tid, "i", HOFFSET(complex_t, i), scalar_id), "inserting imaginary field");
-
     H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, complex_tid, ConvertFloatComplex);
-
-    Log::Print<Log::Level::High>("Initialised HDF5");
+    Log::Debug("Initialised HDF5");
   } else {
-    Log::Print<Log::Level::High>("HDF5 already initialised");
+    Log::Debug("HDF5 already initialised");
   }
 }
 

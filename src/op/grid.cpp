@@ -34,7 +34,7 @@ Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
   , basis{b}
 {
   static_assert(NDim < 4);
-  Log::Print<Log::Level::High>("Grid Dims {}", this->ishape);
+  Log::Debug("Grid Dims {}", this->ishape);
 }
 
 template <typename Scalar, int NDim>

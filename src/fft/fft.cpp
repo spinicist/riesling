@@ -38,9 +38,9 @@ void Start(std::string const &execname)
   fftwf_set_timelimit(60.0);
   auto const wp = WisdomPath(execname);
   if (fftwf_import_wisdom_from_filename(wp.c_str())) {
-    Log::Print("Read wisdom successfully from {}", wp);
+    Log::Debug("Read wisdom successfully from {}", wp);
   } else {
-    Log::Print("Could not read wisdom from {}, continuing", wp);
+    Log::Debug("Could not read wisdom from {}, continuing", wp);
   }
 }
 
@@ -48,9 +48,9 @@ void End(std::string const &execname)
 {
   auto const &wp = WisdomPath(execname);
   if (fftwf_export_wisdom_to_filename(wp.c_str())) {
-    Log::Print("Saved wisdom to {}", wp);
+    Log::Debug("Saved wisdom to {}", wp);
   } else {
-    Log::Print("Failed to save wisdom to {}", wp);
+    Log::Debug("Failed to save wisdom to {}", wp);
   }
   // Causes use after free errors if this is called before fftw_plan_destroy in the
   // destructors. We don't stop and re-start FFTW threads so calling this is not essential
@@ -60,7 +60,7 @@ void End(std::string const &execname)
 void SetTimelimit(double time)
 {
   fftwf_set_timelimit(time);
-  Log::Print<Log::Level::High>("Set FFT planning timelimit to {} seconds", time);
+  Log::Debug("Set FFT planning timelimit to {} seconds", time);
 }
 
 /*

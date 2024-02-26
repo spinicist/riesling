@@ -58,7 +58,7 @@ auto UniformNoise(float const λ, Sz3 const shape, Cx5 const &channels) -> Cx5
     Log::Print("SENSE λ {}", λ);
     rss.device(Threads::GlobalDevice()) = rss + rss.constant(λ);
   }
-  Log::Print<Log::Level::High>("Normalizing channel images");
+  Log::Debug("Normalizing channel images");
   cropped.device(Threads::GlobalDevice()) = cropped / TileToMatch(rss, cropped.dimensions());
   return cropped;
 }

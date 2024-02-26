@@ -94,7 +94,7 @@ void Wavelets::dimLoops(InMap &x, bool const reverse) const
         }
       };
       Threads::For(wav_task, x.dimension(otherDims[2]));
-      Log::Print<Log::Level::High>("Wavelets Encode Dimension {}", dim);
+      Log::Debug("Wavelets Encode Dimension {}", dim);
     }
   }
 }

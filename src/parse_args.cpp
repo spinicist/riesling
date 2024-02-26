@@ -13,7 +13,7 @@ using namespace rl;
 
 namespace {
 std::unordered_map<int, Log::Level> levelMap{
-  {0, Log::Level::None}, {1, Log::Level::Low}, {2, Log::Level::High}, {3, Log::Level::Debug}};
+  {0, Log::Level::None}, {1, Log::Level::Ephemeral}, {2, Log::Level::Standard}, {3, Log::Level::Debug}};
 }
 
 void Array3fReader::operator()(std::string const &name, std::string const &value, Eigen::Array3f &v)
@@ -94,19 +94,17 @@ CoreOpts::CoreOpts(args::Subparser &parser)
 {
 }
 
-args::Group                    global_group("GLOBAL OPTIONS");
-args::HelpFlag                 help(global_group, "H", "Show this help message", {'h', "help"});
-args::Flag                     verbose(global_group, "V", "Print logging messages to stdout", {'v', "verbose"});
-args::MapFlag<int, Log::Level> verbosity(global_group, "V", "Talk more (values 0-3)", {"verbosity"}, levelMap);
-args::ValueFlag<std::string>   debug(global_group, "F", "Write debug images to file", {"debug"});
-args::ValueFlag<Index>         nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
+args::Group    global_group("GLOBAL OPTIONS");
+args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
+args::MapFlag<int, Log::Level>
+                             verbosity(global_group, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Level::Standard);
+args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
+args::ValueFlag<Index>       nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
 void SetLogging(std::string const &name)
 {
   if (verbosity) {
     Log::SetLevel(verbosity.Get());
-  } else if (verbose) {
-    Log::SetLevel(Log::Level::Low);
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
     Log::SetLevel(levelMap.at(std::atoi(env_p)));
   }
@@ -168,4 +166,5 @@ void WriteOutput(CoreOpts                           &opts,
   writer.writeString("log", log);
   if (opts.residImage) { writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data()); }
   if (opts.residKSpace) { writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data()); }
+  Log::Print("Wrote output file {}", fname);
 }

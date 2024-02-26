@@ -29,7 +29,7 @@ struct TensorOperator : Ops::Op<Scalar_>
     , ishape{xd}
     , oshape{yd}
   {
-    Log::Print<Log::Level::Debug>("{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
+    Log::Debug("{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
   }
 
   virtual ~TensorOperator(){};
@@ -45,7 +45,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   {
     assert(x.rows() == this->cols());
     assert(y.rows() == this->rows());
-    Log::Print<Log::Level::Debug>("Tensor {} forward x {} y {}", this->name, x.rows(), y.rows());
+    Log::Debug("Tensor {} forward x {} y {}", this->name, x.rows(), y.rows());
     InCMap xm(x.data(), ishape);
     OutMap ym(y.data(), oshape);
     forward(xm, ym);
@@ -55,7 +55,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   {
     assert(x.rows() == this->cols());
     assert(y.rows() == this->rows());
-    Log::Print<Log::Level::Debug>("Tensor {} adjoint y {} x {}", this->name, y.rows(), x.rows());
+    Log::Debug("Tensor {} adjoint y {} x {}", this->name, y.rows(), x.rows());
     OutCMap ym(y.data(), oshape);
     InMap   xm(x.data(), ishape);
     adjoint(ym, xm);
@@ -63,8 +63,7 @@ struct TensorOperator : Ops::Op<Scalar_>
 
   virtual auto forward(InTensor const &x) const -> OutTensor
   {
-    Log::Print<Log::Level::Debug>(
-      "Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
+    Log::Debug("Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
     InCMap    xm(x.data(), ishape);
     OutTensor y(oshape);
     OutMap    ym(y.data(), oshape);
@@ -74,8 +73,7 @@ struct TensorOperator : Ops::Op<Scalar_>
 
   virtual auto adjoint(OutTensor const &y) const -> InTensor
   {
-    Log::Print<Log::Level::Debug>(
-      "Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
+    Log::Debug("Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
     OutCMap  ym(y.data(), oshape);
     InTensor x(ishape);
     InMap    xm(x.data(), ishape);
@@ -90,8 +88,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   {
     if (x.dimensions() != ishape) { Log::Fail("{} forward dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(
-        "{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
+      Log::Debug("{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
     }
     return Log::Now();
   }
@@ -99,7 +96,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   void finishForward(OutMap const &y, Log::Time const start) const
   {
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>("{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
+      Log::Debug("{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
     }
   }
 
@@ -107,8 +104,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   {
     if (y.dimensions() != oshape) { Log::Fail("{} adjoint dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>(
-        "{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
+      Log::Debug("{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
     }
     return Log::Now();
   }
@@ -116,7 +112,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   void finishAdjoint(InMap const &x, Log::Time const start) const
   {
     if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Print<Log::Level::Debug>("{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
+      Log::Debug("{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
     }
   }
 };
@@ -124,13 +120,13 @@ struct TensorOperator : Ops::Op<Scalar_>
 #define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
   using Parent = TensorOperator<SCALAR, INRANK, OUTRANK>;                                                                      \
   using Scalar = typename Parent::Scalar;                                                                                      \
-  static const int InRank = Parent::InRank;                                                                                 \
+  static const int InRank = Parent::InRank;                                                                                    \
   using InTensor = typename Parent::InTensor;                                                                                  \
   using InMap = typename Parent::InMap;                                                                                        \
   using InCMap = typename Parent::InCMap;                                                                                      \
   using InDims = typename Parent::InDims;                                                                                      \
   using Parent::ishape;                                                                                                        \
-  static const int OutRank = Parent::OutRank;                                                                               \
+  static const int OutRank = Parent::OutRank;                                                                                  \
   using OutTensor = typename Parent::OutTensor;                                                                                \
   using OutMap = typename Parent::OutMap;                                                                                      \
   using OutCMap = typename Parent::OutCMap;                                                                                    \

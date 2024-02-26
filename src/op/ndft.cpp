@@ -17,8 +17,8 @@ NDFTOp<NDim>::NDFTOp(
 {
   static_assert(NDim < 4);
   if (tr.dimension(0) != NDim) { Log::Fail("Requested {}D NDFT but trajectory is {}D", NDim, tr.dimension(0)); }
-  Log::Print<Log::Level::High>("NDFT Input Dims {} Output Dims {}", ishape, oshape);
-  Log::Print<Log::Level::High>("Calculating cartesian co-ords");
+  Log::Debug("NDFT Input Dims {} Output Dims {}", ishape, oshape);
+  Log::Debug("Calculating cartesian co-ords");
   nSamp = tr.dimension(1);
   nTrace = tr.dimension(2);
   N = Product(shape);
@@ -143,19 +143,16 @@ template struct NDFTOp<1>;
 template struct NDFTOp<2>;
 template struct NDFTOp<3>;
 
-std::shared_ptr<TensorOperator<Cx, 5, 4>> make_ndft(Re3 const                             &traj,
-                                                    Index const                            nC,
-                                                    Sz3 const                              matrix,
-                                                    Basis<Cx> const                       &basis,
-                                                    std::shared_ptr<TensorOperator<Cx, 3>> sdc)
+std::shared_ptr<TensorOperator<Cx, 5, 4>>
+make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Basis<Cx> const &basis, std::shared_ptr<TensorOperator<Cx, 3>> sdc)
 {
   std::shared_ptr<TensorOperator<Cx, 5, 4>> ndft;
   if (traj.dimension(0) == 2) {
-    Log::Print<Log::Level::Debug>("Creating 2D Multi-slice NDFT");
+    Log::Debug("Creating 2D Multi-slice NDFT");
     auto ndft2 = std::make_shared<NDFTOp<2>>(traj, nC, FirstN<2>(matrix), basis, sdc);
     ndft = std::make_shared<LoopOp<NDFTOp<2>>>(ndft2, matrix[2]);
   } else {
-    Log::Print<Log::Level::Debug>("Creating full 3D NDFT");
+    Log::Debug("Creating full 3D NDFT");
     auto ndft3 = std::make_shared<NDFTOp<3>>(traj, nC, matrix, basis, sdc);
     ndft = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft3);
   }
