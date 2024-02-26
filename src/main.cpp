@@ -27,6 +27,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(filter, "filter", "Apply Tukey filter to image");
   COMMAND(frames, "frames", "Create a frame basis");
   COMMAND(grad, "grad", "Apply grad/div operator");
+  COMMAND(graphics, "graphics", "Make beautiful output images");
   COMMAND(grid, "grid", "Grid from/to non/cartesian");
   COMMAND(h5, "h5", "Probe an H5 file");
   // COMMAND(lad, "lad", "Least Absolute Deviations");

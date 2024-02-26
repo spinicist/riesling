@@ -8,6 +8,7 @@ find_package(Catch2 CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
+find_package(unofficial-graphicsmagick CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
 find_package(range-v3 CONFIG REQUIRED)
@@ -125,6 +126,7 @@ add_executable(riesling
     src/cmd/filter.cpp
     src/cmd/frames.cpp
     src/cmd/grad.cpp
+    src/cmd/graphics.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
     # src/cmd/lad.cpp
@@ -159,6 +161,7 @@ add_executable(riesling
 )
 target_link_libraries(riesling PRIVATE
     vineyard
+    unofficial::graphicsmagick::graphicsmagick
 )
 set_target_properties(riesling PROPERTIES
     CXX_STANDARD 20

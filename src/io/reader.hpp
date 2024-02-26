@@ -20,12 +20,12 @@ struct Reader
   Reader(std::string const &fname);
   ~Reader();
 
-  auto list() const -> std::vector<std::string>;       // List all datasets
-  auto exists(std::string const &label) const -> bool; // Does a data-set exist?
-  auto order(std::string const &label) const -> Index;  // Determine order of tensor dataset
+  auto list() const -> std::vector<std::string>;                         // List all datasets
+  auto exists(std::string const &label) const -> bool;                   // Does a data-set exist?
+  auto order(std::string const &label) const -> Index;                   // Determine order of tensor dataset
   auto dimensions(std::string const &label) const -> std::vector<Index>; // Get Tensor dimensions
-  auto readInfo() const -> Info;                                                 // Read the info struct from a file
-  auto readMeta() const -> std::map<std::string, float>;                         // Read meta-data group
+  auto readInfo() const -> Info;                                         // Read the info struct from a file
+  auto readMeta() const -> std::map<std::string, float>;                 // Read meta-data group
 
   template <typename T>
   auto readAttribute(std::string const &dataset, std::string const &attribute) const -> T;
