@@ -38,7 +38,7 @@ int main_compress(args::Subparser &parser)
 
   HD5::Reader      reader(coreOpts.iname.Get());
   Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {refVol.Get()}, {0});
+  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{refVol.Get(), 0}});
   Index const      channels = ks.dimension(0);
   Index const      samples = ks.dimension(1);
   Index const      traces = ks.dimension(2);

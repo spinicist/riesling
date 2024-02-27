@@ -125,19 +125,24 @@ void SetThreadCount()
   Log::Print("Using {} threads", Threads::GlobalThreadCount());
 }
 
-void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
-{
-  parser.Parse();
-  SetLogging(parser.GetCommand().Name());
-  SetThreadCount();
-  if (!iname) { throw args::Error("No input file specified"); }
-}
-
 void ParseCommand(args::Subparser &parser)
 {
   parser.Parse();
   SetLogging(parser.GetCommand().Name());
   SetThreadCount();
+}
+
+void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)
+{
+  ParseCommand(parser);
+  if (!iname) { throw args::Error("No input file specified"); }
+}
+
+void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname, args::Positional<std::string> &oname)
+{
+  ParseCommand(parser);
+  if (!iname) { throw args::Error("No input file specified"); }
+  if (!oname) { throw args::Error("No output file specified"); }
 }
 
 std::string OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)

@@ -3,7 +3,7 @@
 namespace rl {
 
 // Thanks Colorcet!
-std::array<float, 3> const white{1.f, 1.f, 1.f};
+std::array<float, 3> const                  white{1.f, 1.f, 1.f};
 std::array<std::array<float, 3>, 256> const colorwheel{std::array<float, 3>{0.18062f, 0.13244, 0.91856},
                                                        {0.19173, 0.12446, 0.92396},
                                                        {0.20389, 0.11765, 0.92889},
@@ -263,7 +263,6 @@ std::array<std::array<float, 3>, 256> const colorwheel{std::array<float, 3>{0.18
 
 auto Colorize(Cx2 const &img, float const max, bool const grey) -> RGBImage
 {
-
   auto const nX = img.dimension(0);
   auto const nY = img.dimension(1);
   auto       rgb = RGBImage(3, nX, nY);

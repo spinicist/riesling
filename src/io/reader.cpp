@@ -129,57 +129,55 @@ template auto Reader::readDims<5>(std::string const &) const -> Names<5>;
 template auto Reader::readDims<6>(std::string const &) const -> Names<6>;
 
 template <typename T>
-auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceDims, std::vector<Index> const &sliceInds) const
-  -> T
+auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T
 {
-  if (sliceInds.size() != sliceDims.size()) {
-    Log::Fail("Slice indices had size {}, slice dimensions had size {}", sliceInds.size(), sliceDims.size());
-  }
-
-  constexpr Index SliceRank = T::NumDimensions;
+  constexpr Index SlabOrder = T::NumDimensions;
 
   hid_t dset = H5Dopen(handle_, label.c_str(), H5P_DEFAULT);
   if (dset < 0) { Log::Fail("Could not open tensor '{}'", label); }
   hid_t       ds = H5Dget_space(dset);
-  Index const DiskRank = H5Sget_simple_extent_ndims(ds);
-  Index const sDsize = sliceDims.size();
+  Index const DiskOrder = H5Sget_simple_extent_ndims(ds);
 
-  if (SliceRank + sDsize != DiskRank) {
-    Log::Fail("Requested {}D slice from {}D tensor with {} slicing dimensions", SliceRank, DiskRank, sliceDims.size());
+  if (SlabOrder + chips.size() != DiskOrder) {
+    Log::Fail("Requested {}D slice from {}D tensor with {} chips", SlabOrder, DiskOrder, chips.size());
   }
 
-  std::vector<hsize_t> diskShape(DiskRank);
+  std::vector<hsize_t> diskShape(DiskOrder);
   H5Sget_simple_extent_dims(ds, diskShape.data(), NULL);
   std::reverse(diskShape.begin(), diskShape.end()); // HD5=row-major, Eigen=col-major
-  for (int ii = 0; ii < sDsize; ii++) {
-    if (diskShape[sliceDims[ii]] <= (hsize_t)sliceInds[ii]) {
-      Log::Fail("Tensor dimension {} has size {}, requested slice at index {}", sliceDims[ii], diskShape[sliceDims[ii]],
-                sliceInds[ii]);
+  for (int ii = 0; ii < chips.size(); ii++) {
+    auto const chip = chips[ii];
+    if (DiskOrder <= chip.dim) { Log::Fail("Tensor {} has order {} requested chip dim {}", label, DiskOrder, chip.dim); }
+    if (diskShape[chip.dim] <= (hsize_t)chip.index) {
+      Log::Fail("Tensor {} dim {} has size {} requested index {}", label, chip.dim, diskShape[chip.dim], chip.index);
     }
   }
-  std::vector<hsize_t> diskStart(DiskRank), diskStride(DiskRank), diskCount(DiskRank), diskBlock(DiskRank);
-  std::fill_n(diskStart.begin(), DiskRank, 0);
-  std::fill_n(diskStride.begin(), DiskRank, 1);
-  std::fill_n(diskCount.begin(), DiskRank, 1);
-  std::copy_n(diskShape.begin(), DiskRank, diskBlock.begin());
-  for (int ii = 0; ii < sDsize; ii++) {
-    diskStart[sliceDims[ii]] = sliceInds[ii];
-    diskBlock[sliceDims[ii]] = 1;
+  std::vector<hsize_t> diskStart(DiskOrder), diskStride(DiskOrder), diskCount(DiskOrder), diskBlock(DiskOrder);
+  std::fill_n(diskStart.begin(), DiskOrder, 0);
+  std::fill_n(diskStride.begin(), DiskOrder, 1);
+  std::fill_n(diskCount.begin(), DiskOrder, 1);
+  std::copy_n(diskShape.begin(), DiskOrder, diskBlock.begin());
+  for (int ii = 0; ii < chips.size(); ii++) {
+    auto const chip = chips[ii];
+    diskStart[chip.dim] = chip.index;
+    diskBlock[chip.dim] = 1;
   }
-  // Figure out the non-slice dimensions
-  std::vector<hsize_t> dims(SliceRank);
+  // Figure out the non-chip dimensions
+  std::vector<hsize_t> dims(SlabOrder);
   int                  id = 0;
-  for (int ii = 0; ii < DiskRank; ii++) {
-    if (std::find(sliceDims.begin(), sliceDims.end(), ii) == std::end(sliceDims)) { dims[id++] = ii; }
+  for (int ii = 0; ii < DiskOrder; ii++) {
+    if (std::find_if(chips.begin(), chips.end(), [ii](rl::IndexPair const c) { return c.dim == ii; }) == std::end(chips)) {
+      dims[id++] = ii;
+    }
   }
 
-  std::vector<hsize_t> memShape(SliceRank), memStart(SliceRank), memStride(SliceRank), memCount(SliceRank);
-  for (int ii = 0; ii < SliceRank; ii++) {
+  std::vector<hsize_t> memShape(SlabOrder), memStart(SlabOrder), memStride(SlabOrder), memCount(SlabOrder);
+  for (int ii = 0; ii < SlabOrder; ii++) {
     memShape[ii] = diskShape[dims[ii]];
   }
-  std::fill_n(memStart.begin(), SliceRank, 0);
-  std::fill_n(memStride.begin(), SliceRank, 1);
-  std::fill_n(memCount.begin(), SliceRank, 1);
+  std::fill_n(memStart.begin(), SlabOrder, 0);
+  std::fill_n(memStride.begin(), SlabOrder, 1);
+  std::fill_n(memCount.begin(), SlabOrder, 1);
 
   // Reverse back
   std::reverse(diskShape.begin(), diskShape.end());
@@ -189,7 +187,7 @@ auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceD
   std::reverse(diskBlock.begin(), diskBlock.end());
   std::reverse(memShape.begin(), memShape.end());
 
-  auto const mem_ds = H5Screate_simple(SliceRank, memShape.data(), NULL);
+  auto const mem_ds = H5Screate_simple(SlabOrder, memShape.data(), NULL);
   auto       status =
     H5Sselect_hyperslab(ds, H5S_SELECT_SET, diskStart.data(), diskStride.data(), diskCount.data(), diskBlock.data());
   status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, memStart.data(), memStride.data(), memCount.data(), memShape.data());
@@ -205,9 +203,9 @@ auto Reader::readSlab(std::string const &label, std::vector<Index> const &sliceD
   return tensor;
 }
 
-template auto Reader::readSlab<Cx2>(std::string const &, std::vector<Index> const &, std::vector<Index> const &) const -> Cx2;
-template auto Reader::readSlab<Cx3>(std::string const &, std::vector<Index> const &, std::vector<Index> const &) const -> Cx3;
-template auto Reader::readSlab<Cx4>(std::string const &, std::vector<Index> const &, std::vector<Index> const &) const -> Cx4;
+template auto Reader::readSlab<Cx2>(std::string const &, std::vector<rl::IndexPair> const &) const -> Cx2;
+template auto Reader::readSlab<Cx3>(std::string const &, std::vector<rl::IndexPair> const &) const -> Cx3;
+template auto Reader::readSlab<Cx4>(std::string const &, std::vector<rl::IndexPair> const &) const -> Cx4;
 
 template <typename Derived>
 auto Reader::readMatrix(std::string const &label) const -> Derived

@@ -8,9 +8,15 @@
 #include <string>
 
 namespace rl {
+/*
+ * Simple class for reading slabs so we don't need std::pair
+ */
+struct IndexPair
+{
+  Index dim, index;
+};
 
 namespace HD5 {
-
 /*
  * This class is for reading tensors out of generic HDF5 files. Used for SDC, SENSE maps, etc.
  */
@@ -35,7 +41,7 @@ struct Reader
   template <int N>
   auto readDims(std::string const &label) const -> Names<N>;
   template <typename T>
-  auto readSlab(std::string const &label, std::vector<Index> const &sliceDims, std::vector<Index> const &sliceInds) const -> T;
+  auto readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T;
   template <typename Derived>
   auto readMatrix(std::string const &label) const -> Derived;
 

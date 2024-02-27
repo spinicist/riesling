@@ -30,7 +30,7 @@ int main_basis_img(args::Subparser &parser)
   if (!oname) { throw args::Error("No output filename specified"); }
 
   HD5::Reader reader(iname.Get());
-  Cx4         img = reader.readSlab<Cx4>(HD5::Keys::Image, {0}, {0});
+  Cx4         img = reader.readSlab<Cx4>(HD5::Keys::Image, {{0, 0}});
   if (st && sz) { img = Cx4(img.slice(AddFront(st.Get(), 0), AddFront(sz.Get(), img.dimension(0)))); }
   Sz4 const  shape = img.dimensions();
   Cx4 const  ref = img.slice(Sz4{shape[0] - 1, 0, 0, 0}, AddFront(LastN<3>(shape), 1));

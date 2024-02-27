@@ -34,7 +34,7 @@ int main_grid(args::Subparser &parser)
                        rad_ks.data());
     Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
   } else {
-    auto const noncart = channel ? reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {0}, {channel.Get()})
+    auto const noncart = channel ? reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{0, channel.Get()}})
                                  : reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     Index const nC = noncart.dimension(0);
