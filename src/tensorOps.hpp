@@ -91,31 +91,6 @@ inline decltype(auto) FirstToLast4(T const &x)
   return x.shuffle(indices);
 }
 
-template <typename T>
-inline decltype(auto) Tile(T &&x, Index const N)
-{
-  Eigen::IndexList<Eigen::type2index<1>, int, int, int> res;
-  res.set(1, x.dimension(0));
-  res.set(2, x.dimension(1));
-  res.set(3, x.dimension(2));
-  Eigen::IndexList<int, Eigen::type2index<1>, Eigen::type2index<1>, Eigen::type2index<1>> brd;
-  brd.set(0, N);
-  return x.reshape(res).broadcast(brd);
-}
-
-template <typename T, typename U>
-inline decltype(auto) TileToMatch(T &&x, U const &dims)
-{
-  using FixedOne = Eigen::type2index<1>;
-  Eigen::IndexList<FixedOne, int, int, int> res;
-  res.set(1, dims[1]);
-  res.set(2, dims[2]);
-  res.set(3, dims[3]);
-  Eigen::IndexList<int, FixedOne, FixedOne, FixedOne> brd;
-  brd.set(0, dims[0]);
-  return x.reshape(res).broadcast(brd);
-}
-
 template <typename T1, typename T2, int D = 0>
 inline decltype(auto) Contract(T1 const &a, T2 const &b)
 {

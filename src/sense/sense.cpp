@@ -46,21 +46,35 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   Cx5 const channels(Tensorfy(lsmr.run(lores.data()), nufft->ishape));
-  return channels;
+
+  Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
+  for (Index ii = 0; ii < 3; ii++) {
+    if (shape[ii] > channels.dimension(ii + 2)) {
+      Log::Fail("Requested SENSE FOV {} could not be satisfied with FOV {} and oversampling {}", opts.fov.Get().transpose(),
+                traj.FOV().transpose(), coreOpts.osamp.Get());
+    }
+  }
+
+  Cx5 const cropped = Crop(channels, AddFront(shape, channels.dimension(0), channels.dimension(1)));
+
+  return cropped;
 }
 
-auto UniformNoise(float const λ, Sz3 const shape, Cx5 const &channels) -> Cx5
+auto UniformNoise(float const λ, Cx5 const &channels) -> Cx5
 {
-  Cx5 cropped = Crop(channels, AddFront(shape, channels.dimension(0), channels.dimension(1)));
-  Cx4 rss(LastN<4>(cropped.dimensions()));
-  rss.device(Threads::GlobalDevice()) = ConjugateSum(cropped, cropped).sqrt();
+  Sz5 const   shape = channels.dimensions();
+  Index const nC = shape[0];
+  Cx4         rss(LastN<4>(shape));
+  rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
   if (λ > 0.f) {
     Log::Print("SENSE λ {}", λ);
     rss.device(Threads::GlobalDevice()) = rss + rss.constant(λ);
   }
-  Log::Debug("Normalizing channel images");
-  cropped.device(Threads::GlobalDevice()) = cropped / TileToMatch(rss, cropped.dimensions());
-  return cropped;
+  Log::Debug("Normalizing {} channel images", nC);
+  Cx5 normalized(shape);
+  normalized.device(Threads::GlobalDevice()) =
+    channels / rss.reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{nC, 1, 1, 1, 1});
+  return normalized;
 }
 
 auto Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &noncart) -> Cx5
@@ -68,14 +82,7 @@ auto Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &nonca
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
-    auto const channels = LoresChannels(opts, core, traj, noncart);
-    for (Index ii = 0; ii < 3; ii++) {
-      if (shape[ii] > channels.dimension(ii + 2)) {
-        Log::Fail("Requested SENSE FOV {} could not be satisfied with FOV {} and oversampling {}", opts.fov.Get().transpose(),
-                  traj.FOV().transpose(), core.osamp.Get());
-      }
-    }
-    return UniformNoise(opts.λ.Get(), shape, channels);
+    return UniformNoise(opts.λ.Get(), LoresChannels(opts, core, traj, noncart));
   } else if (opts.type.Get() == "espirit") {
     Log::Fail("Not supported right now");
     // auto channels = LoresChannels(opts, core, traj, noncart);

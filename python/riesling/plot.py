@@ -65,7 +65,7 @@ def _comp(data, component, cmap, clim, climp):
         else:
             raise(f'Unknown component {component}')
 
-    if not clim:
+    if clim is None:
         if climp is None:
             climp = (2, 99)
         if component == 'mag':

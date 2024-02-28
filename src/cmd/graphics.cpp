@@ -120,7 +120,7 @@ int main_graphics(args::Subparser &parser)
   args::Flag             grey(parser, "G", "Greyscale", {"grey", 'g'});
   args::Flag             log(parser, "L", "Logarithmic intensity", {"log", 'l'});
 
-  args::ValueFlag<Index> slN(parser, "N", "Number of slices", {"num", 'n'}, 0);
+  args::ValueFlag<Index> slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
   args::ValueFlag<Index> slStart(parser, "S", "Start slice", {"start"}, 0);
   args::ValueFlag<Index> slEnd(parser, "S", "End slice", {"end"});
   args::ValueFlag<Index> slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);

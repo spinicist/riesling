@@ -20,8 +20,7 @@ TEST_CASE("ops-sense")
     u.setRandom();
     // The maps need to be normalized for the Dot test
     maps.setRandom();
-    Cx4 const rss = ConjugateSum(maps, maps).sqrt();
-    maps = maps / Tile(rss, channels);
+    maps = maps / ConjugateSum(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{channels, 1, 1, 1, 1});
 
     SenseOp sense(maps, 1);
     y = sense.forward(u);

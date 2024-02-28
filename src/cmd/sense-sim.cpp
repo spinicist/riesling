@@ -28,9 +28,8 @@ int main_sense_sim(args::Subparser &parser)
     birdcage(shape, Eigen::Array3f::Constant(voxel_size.Get()), nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get());
 
   // Normalize
-  Cx3 rss(shape);
-  rss.device(Threads::GlobalDevice()) = ConjugateSum(sense, sense).sqrt();
-  sense /= Tile(rss, nchan.Get());
+  sense /= ConjugateSum(sense, sense).sqrt().reshape(AddFront(shape, 1, 1)).broadcast(Sz5{nchan.Get(), 1, 1, 1, 1});
+  Log::Print("lolwut");
   auto const  fname = OutName("", iname.Get(), "sense", "h5");
   HD5::Writer writer(fname);
   writer.writeTensor(HD5::Keys::SENSE, sense.dimensions(), sense.data(), HD5::Dims::SENSE);
