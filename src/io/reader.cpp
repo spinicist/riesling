@@ -179,7 +179,10 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
   std::fill_n(memStride.begin(), SlabOrder, 1);
   std::fill_n(memCount.begin(), SlabOrder, 1);
 
-  // Reverse back
+  T tensor;
+  tensor.resize(memShape);
+  
+  // Reverse back to HDF5 order
   std::reverse(diskShape.begin(), diskShape.end());
   std::reverse(diskStart.begin(), diskStart.end());
   std::reverse(diskStride.begin(), diskStride.end());
@@ -191,9 +194,6 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
   auto       status =
     H5Sselect_hyperslab(ds, H5S_SELECT_SET, diskStart.data(), diskStride.data(), diskCount.data(), diskBlock.data());
   status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, memStart.data(), memStride.data(), memCount.data(), memShape.data());
-
-  T tensor;
-  tensor.resize(memShape);
   status = H5Dread(dset, type<typename T::Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
     Log::Fail("Tensor {}: Error reading slab. HD5 Message: {}", label, GetError());

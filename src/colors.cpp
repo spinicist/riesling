@@ -261,7 +261,7 @@ std::array<std::array<float, 3>, 256> const colorwheel{std::array<float, 3>{0.18
                                                        {0.1623, 0.15103, 0.90637},
                                                        {0.17075, 0.14136, 0.9127}};
 
-auto Colorize(Cx2 const &img, float const max, bool const grey) -> RGBImage
+auto Colorize(Cx2 const &img, float const max, bool const grey, bool const log) -> RGBImage
 {
   auto const nX = img.dimension(0);
   auto const nY = img.dimension(1);
@@ -270,7 +270,7 @@ auto Colorize(Cx2 const &img, float const max, bool const grey) -> RGBImage
   for (int iy = 0; iy < nY; iy++) {
     for (int ix = 0; ix < nX; ix++) {
       float const abs = std::abs(img(ix, iy));
-      float const scale = abs / max;
+      float const scale = log ? std::log2(1.f + abs / max) : abs / max;
       float const pha = std::arg(img(ix, iy));
       Index const index = 255 * ((pha + M_PI) / (2.f * M_PI));
 
