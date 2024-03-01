@@ -97,7 +97,7 @@ void Kittify(Magick::Image &graphic)
     auto const chunks = b64 | ranges::views::chunk(ChunkSize);
     auto const nChunks = chunks.size();
     fmt::print(stderr, "\x1B_Ga=T,f=100,m=1;{}\x1B\\", std::string_view(chunks[0].data(), chunks[0].size()));
-    for (int i = 1; i < nChunks - 1; i++) {
+    for (size_t i = 1; i < nChunks - 1; i++) {
       fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunks[i].data(), chunks[i].size()));
     }
     fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", std::string_view(chunks[nChunks - 1].data(), chunks[nChunks - 1].size()));

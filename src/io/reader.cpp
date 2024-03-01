@@ -138,14 +138,14 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
   hid_t       ds = H5Dget_space(dset);
   Index const DiskOrder = H5Sget_simple_extent_ndims(ds);
 
-  if (SlabOrder + chips.size() != DiskOrder) {
+  if (SlabOrder + (Index)chips.size() != DiskOrder) {
     Log::Fail("Requested {}D slice from {}D tensor with {} chips", SlabOrder, DiskOrder, chips.size());
   }
 
   std::vector<hsize_t> diskShape(DiskOrder);
   H5Sget_simple_extent_dims(ds, diskShape.data(), NULL);
   std::reverse(diskShape.begin(), diskShape.end()); // HD5=row-major, Eigen=col-major
-  for (int ii = 0; ii < chips.size(); ii++) {
+  for (size_t ii = 0; ii < chips.size(); ii++) {
     auto const chip = chips[ii];
     if (DiskOrder <= chip.dim) { Log::Fail("Tensor {} has order {} requested chip dim {}", label, DiskOrder, chip.dim); }
     if (diskShape[chip.dim] <= (hsize_t)chip.index) {
@@ -157,7 +157,7 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
   std::fill_n(diskStride.begin(), DiskOrder, 1);
   std::fill_n(diskCount.begin(), DiskOrder, 1);
   std::copy_n(diskShape.begin(), DiskOrder, diskBlock.begin());
-  for (int ii = 0; ii < chips.size(); ii++) {
+  for (size_t ii = 0; ii < chips.size(); ii++) {
     auto const chip = chips[ii];
     diskStart[chip.dim] = chip.index;
     diskBlock[chip.dim] = 1;
