@@ -5,8 +5,9 @@
 #include "tensorOps.hpp"
 #include "types.hpp"
 #include <Magick++.h>
-#include <range/v3/range.hpp>
-#include <range/v3/view.hpp>
+#include <ranges>
+#include <tl/chunk.hpp>
+#include <tl/to.hpp>
 #include <scn/scn.h>
 #include <sys/ioctl.h>
 
@@ -61,10 +62,10 @@ auto SliceData(rl::Cx3 const &data,
   auto const N = slN ? std::min(slN, maxN) : maxN;
 
   std::vector<Magick::Image> slices;
-  for (Index iK = start; iK <= end; iK += maxN / N) {
+  for (Index iK = start; iK <= end; iK += maxN / (N - 1)) {
     rl::Cx2    temp = data.chip(iK, slDim);
     auto const slice = rl::Colorize(temp, win, grey, log);
-    slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 3) % 2], "RGB", Magick::CharPixel, slice.data()));
+    slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
   }
   return slices;
 }
@@ -75,9 +76,10 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const cols, Index const
   Magick::Montage montageOpts;
   montageOpts.backgroundColor(Magick::Color(0, 0, 0));
   montageOpts.tile(Magick::Geometry(cols, rows));
-  montageOpts.geometry(Magick::Geometry(px, px));
+  montageOpts.geometry(slices.front().size());
   std::vector<Magick::Image> frames;
   Magick::montageImages(&frames, slices.begin(), slices.end(), montageOpts);
+  frames.front().size().width(), frames.front().size().height();
   return frames.front();
 }
 
@@ -85,7 +87,7 @@ void Kittify(Magick::Image &graphic)
 {
   struct winsize winSize;
   ioctl(0, TIOCGWINSZ, &winSize);
-  auto const scaling = winSize.ws_xpixel / graphic.size().width();
+  auto const scaling = winSize.ws_xpixel / (float)graphic.size().width();
   graphic.resize(Magick::Geometry(winSize.ws_xpixel, scaling * graphic.size().height()));
   Magick::Blob blob;
   graphic.write(&blob);
@@ -94,18 +96,18 @@ void Kittify(Magick::Image &graphic)
   if (b64.size() <= ChunkSize) {
     fmt::print(stderr, "\x1B_Ga=T,f=100;{}\x1B\\", b64);
   } else {
-    auto const chunks = b64 | ranges::views::chunk(ChunkSize);
+    auto const chunks = b64 | tl::views::chunk(ChunkSize);
     auto const nChunks = chunks.size();
-    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1;{}\x1B\\", std::string_view(chunks[0].data(), chunks[0].size()));
-    for (size_t i = 1; i < nChunks - 1; i++) {
-      fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunks[i].data(), chunks[i].size()));
+    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1;{}\x1B\\", std::string_view(chunks.front().data(), chunks.front().size()));
+    for (auto && chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {
+      fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunk.data(), chunk.size()));
     }
-    fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", std::string_view(chunks[nChunks - 1].data(), chunks[nChunks - 1].size()));
+    fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", std::string_view(chunks.back().data(), chunks.back().size()));
   }
   fmt::print(stderr, "\n");
 }
 
-int main_graphics(args::Subparser &parser)
+int main_montage(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to slice");
   args::Positional<std::string> oname(parser, "FILE", "Image file to save");

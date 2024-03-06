@@ -11,8 +11,8 @@ find_package(FFTW3f CONFIG REQUIRED)
 find_package(unofficial-graphicsmagick CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
-find_package(range-v3 CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
+find_package(tl-ranges CONFIG REQUIRED)
 
 # Ensure this is always defined across all .cpp files
 add_definitions(-DEIGEN_USE_THREADS)
@@ -100,7 +100,7 @@ target_link_libraries(vineyard PUBLIC
     hdf5::hdf5-static
     hdf5::hdf5_hl-static
     NIFTI::niftiio
-    range-v3
+    tl::ranges
     scn::scn
 )
 set_target_properties(vineyard PROPERTIES
@@ -126,13 +126,13 @@ add_executable(riesling
     src/cmd/filter.cpp
     src/cmd/frames.cpp
     src/cmd/grad.cpp
-    src/cmd/graphics.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
     # src/cmd/lad.cpp
     src/cmd/lookup.cpp
     src/cmd/lsmr.cpp
     src/cmd/lsqr.cpp
+    src/cmd/montage.cpp
     src/cmd/merge.cpp
     src/cmd/nii.cpp
     src/cmd/noisify.cpp

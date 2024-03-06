@@ -5,8 +5,6 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 
-#include <range/v3/numeric.hpp>
-
 int main_frames(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");

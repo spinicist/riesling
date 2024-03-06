@@ -1,5 +1,7 @@
 #include "cropper.h"
 
+#include <ranges>
+
 namespace rl {
 
 Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelSz, Eigen::Array3f const extent)
@@ -36,6 +38,9 @@ void Cropper::calcStart(Sz3 const &fullSz)
 {
   // After truncation the -1 makes even and odd sizes line up the way we want
   st_ = Sz3{(fullSz[0] - (sz_[0] - 1)) / 2, (fullSz[1] - (sz_[1] - 1)) / 2, (fullSz[2] - (sz_[2] - 1)) / 2};
+  if (std::ranges::any_of(st_, [](Index const x) { return x < 0; })) {
+    Log::Fail("Requested crop size {} was larger than available size {}", sz_, fullSz);
+  }
 }
 
 Sz3 Cropper::size() const { return sz_; }

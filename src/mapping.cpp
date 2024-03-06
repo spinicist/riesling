@@ -2,8 +2,9 @@
 
 #include <cfenv>
 #include <cmath>
-#include <range/v3/range.hpp>
-#include <range/v3/view.hpp>
+#include <ranges>
+#include <tl/chunk.hpp>
+#include <tl/to.hpp>
 
 #include "tensorOps.hpp"
 
@@ -216,11 +217,11 @@ Mapping<Rank>::Mapping(Trajectory const &traj, float const nomOS, Index const kW
   std::vector<Bucket> chunked;
   for (auto &bucket : buckets) {
     if (bucket.size() > splitSize) {
-      for (auto const indexChunk : ranges::views::chunk(bucket.indices, splitSize)) {
+      for (auto const indexChunk : tl::views::chunk(bucket.indices, splitSize)) {
         chunked.push_back(Bucket{.gridSize = bucket.gridSize,
                                  .minCorner = bucket.minCorner,
                                  .maxCorner = bucket.maxCorner,
-                                 .indices = indexChunk | ranges::to<std::vector<int32_t>>()});
+                                 .indices = indexChunk | tl::to<std::vector<int32_t>>()});
       }
       bucket.indices.clear();
     }
