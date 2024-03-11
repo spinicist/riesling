@@ -29,12 +29,14 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
 {
   rl::HD5::Reader reader(iname);
   auto const      diskOrder = reader.order(dset);
-
+  auto const      diskDims = reader.dimensions(dset);
   if (!chips.size()) {
     if (dset == "image") {
       chips = std::vector<IndexPair>{{0, 0}, {4, 0}};
     } else if (dset == "noncartesian") {
       chips = std::vector<IndexPair>{{3, 0}, {4, 0}};
+    } else if (dset == "sense") {
+      chips = std::vector<IndexPair>{{1, 0}, {4, diskDims.at(4) / 2}};
     }
   } else {
     if (diskOrder - chips.size() != 3) {
