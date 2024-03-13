@@ -17,6 +17,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(autofocus, "autofocus", "Apply Noll's autofocussing");
   COMMAND(basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis_img, "basis-img", "Basis from image data");
+  COMMAND(basis_ip, "basis-ip", "Basis for In-Phase imaging");
   COMMAND(basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(blend, "blend", "Blend basis images");
   COMMAND(cg, "cg", "Recon with Conjugate Gradients");

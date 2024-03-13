@@ -116,6 +116,7 @@ add_executable(riesling
     src/cmd/autofocus.cpp
     src/cmd/basis-fourier.cpp
     src/cmd/basis-img.cpp
+    src/cmd/basis-ip.cpp
     src/cmd/basis-sim.cpp
     src/cmd/blend.cpp
     src/cmd/cg.cpp
