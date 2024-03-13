@@ -1,5 +1,6 @@
 #include "trajectory.hpp"
 
+#include "log.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {

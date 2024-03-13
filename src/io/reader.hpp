@@ -8,14 +8,6 @@
 #include <string>
 
 namespace rl {
-/*
- * Simple class for reading slabs so we don't need std::pair
- */
-struct IndexPair
-{
-  Index dim, index;
-};
-
 namespace HD5 {
 /*
  * This class is for reading tensors out of generic HDF5 files. Used for SDC, SENSE maps, etc.

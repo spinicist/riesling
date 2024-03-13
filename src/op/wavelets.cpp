@@ -46,7 +46,7 @@ Wavelets::Wavelets(Sz4 const shape, Index const N, Sz4 const dims)
     sign = -sign;
   }
   Log::Print("Wavelet dimensions: {}", encodeDims_);
-  Log::Print("Coeffs: {}", Transpose(Cc_));
+  Log::Print("Coeffs: {}", fmt::streamed(Transpose(Cc_)));
 }
 
 void Wavelets::forward(InCMap const &x, OutMap &y) const

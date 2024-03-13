@@ -1,8 +1,10 @@
 #include "parse_args.hpp"
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
+#include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
+
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
@@ -20,7 +22,7 @@ void Array3fReader::operator()(std::string const &name, std::string const &value
 {
   float x, y, z;
   auto  result = scn::scan(value, "{},{},{}", x, y, z);
-  if (!result) { Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error()); }
+  if (!result) { Log::Fail("Could not read vector for {} from value {}", name, value); }
   v.x() = x;
   v.y() = y;
   v.z() = z;
@@ -30,7 +32,7 @@ void Vector3fReader::operator()(std::string const &name, std::string const &valu
 {
   float x, y, z;
   auto  result = scn::scan(value, "{},{},{}", x, y, z);
-  if (!result) { Log::Fail("Could not read vector for {} from value {} because {}", name, value, result.error()); }
+  if (!result) { Log::Fail("Could not read vector for {} from value {}", name, value); }
   v.x() = x;
   v.y() = y;
   v.z() = z;
@@ -65,11 +67,11 @@ void SzReader<N>::operator()(std::string const &name, std::string const &value, 
     sz[ind] = v;
     for (ind = 1; ind < N; ind++) {
       result = scn::scan(result.range(), ",{}", v);
-      if (!result) { Log::Fail("Could not read {} from '{}': {}", name, value, result.error()); }
+      if (!result) { Log::Fail("Could not read {} from '{}'", name, value); }
       sz[ind] = v;
     }
   } else {
-    Log::Fail("Could not read {} from '{}': {}", name, value, result.error());
+    Log::Fail("Could not read {} from '{}'", name, value);
   }
 }
 

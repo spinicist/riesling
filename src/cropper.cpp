@@ -14,8 +14,7 @@ Cropper::Cropper(Sz3 const matrix, Sz3 const fullSz, Eigen::Array3f const voxelS
     }
   }
   calcStart(fullSz);
-  Log::Debug("Cropper start {} size {} full {} extent {} voxel-size {}", st_, sz_, fullSz, extent.transpose(),
-             voxelSz.transpose());
+  Log::Debug("Cropper start {} size {} full {}", st_, sz_, fullSz);
 }
 
 Cropper::Cropper(Sz3 const &fullSz, Eigen::Array3l const &cropSz)

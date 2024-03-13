@@ -166,7 +166,7 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
   std::vector<hsize_t> dims(SlabOrder);
   int                  id = 0;
   for (int ii = 0; ii < DiskOrder; ii++) {
-    if (std::find_if(chips.begin(), chips.end(), [ii](rl::IndexPair const c) { return c.dim == ii; }) == std::end(chips)) {
+    if (std::find_if(chips.begin(), chips.end(), [ii](IndexPair const c) { return c.dim == ii; }) == std::end(chips)) {
       dims[id++] = ii;
     }
   }
@@ -203,9 +203,9 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
   return tensor;
 }
 
-template auto Reader::readSlab<Cx2>(std::string const &, std::vector<rl::IndexPair> const &) const -> Cx2;
-template auto Reader::readSlab<Cx3>(std::string const &, std::vector<rl::IndexPair> const &) const -> Cx3;
-template auto Reader::readSlab<Cx4>(std::string const &, std::vector<rl::IndexPair> const &) const -> Cx4;
+template auto Reader::readSlab<Cx2>(std::string const &, std::vector<IndexPair> const &) const -> Cx2;
+template auto Reader::readSlab<Cx3>(std::string const &, std::vector<IndexPair> const &) const -> Cx3;
+template auto Reader::readSlab<Cx4>(std::string const &, std::vector<IndexPair> const &) const -> Cx4;
 
 template <typename Derived>
 auto Reader::readMatrix(std::string const &label) const -> Derived

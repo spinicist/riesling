@@ -1,44 +1,47 @@
 #include "basis/basis.hpp"
 #include "colors.hpp"
 #include "io/hd5.hpp"
+#include "log.hpp"
 #include "parse_args.hpp"
 #include "tensorOps.hpp"
 #include "types.hpp"
+
 #include <Magick++.h>
 #include <ranges>
-#include <tl/chunk.hpp>
-#include <tl/to.hpp>
 #include <scn/scn.h>
 #include <sys/ioctl.h>
+#include <tl/chunk.hpp>
+#include <tl/to.hpp>
 
 struct IndexPairReader
 {
-  void operator()(std::string const &name, std::string const &value, rl::IndexPair &p)
+  void operator()(std::string const &name, std::string const &value, IndexPair &p)
   {
     Index x, y;
     auto  result = scn::scan(value, "{},{}", x, y);
-    if (!result) { rl::Log::Fail("Could not read Index Pair for {} from value {} because {}", name, value, result.error()); }
+    if (!result) { rl::Log::Fail("Could not read Index Pair for {} from value {}", name, value); }
     p.dim = x;
     p.index = y;
   }
 };
 
-auto ReadData(std::string const &iname, std::string const &dset, std::vector<rl::IndexPair> chips) -> rl::Cx3
+auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips) -> rl::Cx3
 {
   rl::HD5::Reader reader(iname);
   auto const      diskOrder = reader.order(dset);
 
   if (!chips.size()) {
     if (dset == "image") {
-      chips = std::vector<rl::IndexPair>{{0, 0}, {4, 0}};
+      chips = std::vector<IndexPair>{{0, 0}, {4, 0}};
     } else if (dset == "noncartesian") {
-      chips = std::vector<rl::IndexPair>{{3, 0}, {4, 0}};
+      chips = std::vector<IndexPair>{{3, 0}, {4, 0}};
     }
   } else {
     if (diskOrder - chips.size() != 3) {
       rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
     }
   }
+  rl::Log::Debug("Reading chips: {}", chips);
   return reader.readSlab<rl::Cx3>(dset, chips);
 }
 
@@ -66,6 +69,7 @@ auto SliceData(rl::Cx3 const &data,
     rl::Cx2    temp = data.chip(iK, slDim);
     auto const slice = rl::Colorize(temp, win, grey, log);
     slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
+    slices.back().flip(); // Reverse Y for display
   }
   return slices;
 }
@@ -99,7 +103,7 @@ void Kittify(Magick::Image &graphic)
     auto const chunks = b64 | tl::views::chunk(ChunkSize);
     auto const nChunks = chunks.size();
     fmt::print(stderr, "\x1B_Ga=T,f=100,m=1;{}\x1B\\", std::string_view(chunks.front().data(), chunks.front().size()));
-    for (auto && chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {
+    for (auto &&chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {
       fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunk.data(), chunk.size()));
     }
     fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", std::string_view(chunks.back().data(), chunks.back().size()));
@@ -113,7 +117,7 @@ int main_montage(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Image file to save");
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset (image)", {"dset", 'd'}, "image");
 
-  args::ValueFlagList<rl::IndexPair, std::vector, IndexPairReader> chips(parser, "C", "Chip a dimension", {"chip", 'c'});
+  args::ValueFlagList<IndexPair, std::vector, IndexPairReader> chips(parser, "C", "Chip a dimension", {"chip", 'c'});
 
   args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
   args::ValueFlag<int>   px(parser, "T", "Thumbnail size in pixels", {"pix", 'p'}, 256);

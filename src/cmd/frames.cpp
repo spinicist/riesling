@@ -32,7 +32,7 @@ int main_frames(args::Subparser &parser)
   }
 
   rl::HD5::Writer writer(oname.Get());
-  writer.writeTensor(rl::HD5::Keys::Basis, basis.dimensions(), basis.data());
+  writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{basis.dimension(0), 1, basis.dimension(1)}, basis.data(), rl::HD5::Dims::Basis);
 
   return EXIT_SUCCESS;
 }

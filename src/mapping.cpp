@@ -2,6 +2,7 @@
 
 #include <cfenv>
 #include <cmath>
+#include <log.hpp>
 #include <ranges>
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>

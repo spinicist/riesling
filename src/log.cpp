@@ -61,7 +61,7 @@ void End()
 
 auto TheTime() -> std::string
 {
-  auto const t = std::chrono::system_clock::now();
+  auto const t = std::time(nullptr);
   return fmt::format("[{:%H:%M:%S}]", fmt::localtime(t));
 }
 

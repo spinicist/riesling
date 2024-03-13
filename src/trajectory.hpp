@@ -1,7 +1,6 @@
 #pragma once
 
 #include "info.hpp"
-#include "log.hpp"
 #include "types.hpp"
 
 namespace rl {

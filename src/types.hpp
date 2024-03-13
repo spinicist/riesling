@@ -19,6 +19,10 @@
 #include <complex>
 
 using Index = Eigen::Index;
+struct IndexPair /* Simple class so we don't need std::pair*/
+{
+  Index dim, index;
+};
 
 namespace Eigen {
 using Array3l = Array<Index, 3, 1>;
