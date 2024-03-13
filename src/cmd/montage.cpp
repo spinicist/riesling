@@ -83,7 +83,7 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const cols, Index const
   montageOpts.geometry(slices.front().size());
   std::vector<Magick::Image> frames;
   Magick::montageImages(&frames, slices.begin(), slices.end(), montageOpts);
-  frames.front().size().width(), frames.front().size().height();
+
   return frames.front();
 }
 
