@@ -124,7 +124,8 @@ int main_montage(args::Subparser &parser)
   args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
   args::ValueFlag<int>   px(parser, "T", "Thumbnail size in pixels", {"pix", 'p'}, 256);
 
-  args::ValueFlag<float> win(parser, "W", "Window scale", {"win"}, 0.9);
+  args::ValueFlag<float> max(parser, "W", "Max intensity", {"max"});
+  args::ValueFlag<float> maxP(parser, "P", "Max intensity as %", {"maxP"}, 0.9);
   args::Flag             grey(parser, "G", "Greyscale", {"grey", 'g'});
   args::Flag             log(parser, "L", "Logarithmic intensity", {"log", 'l'});
 
@@ -137,9 +138,11 @@ int main_montage(args::Subparser &parser)
   Magick::InitializeMagick(NULL);
 
   auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get());
-  float const maxMag = rl::Maximum(data.abs());
+  float const maxData = rl::Maximum(data.abs());
+  float const winMax = max ? max.Get() : maxP.Get() * maxData;
+  rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
-  auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), win.Get() * maxMag, grey, log);
+  auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, log);
   auto graphic = DoMontage(slices, cols.Get(), px.Get());
   graphic.magick("PNG");
   if (oname) {
