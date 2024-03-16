@@ -30,7 +30,7 @@ int main_compress(args::Subparser &parser)
 
   // PCA Options
   args::ValueFlag<Sz2, SzReader<2>> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
-  args::ValueFlag<Sz3, SzReader<3>> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 4});
+  args::ValueFlag<Sz3, SzReader<3>> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 1});
   args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
   ROVIROpts                       rovirOpts(parser);
 
@@ -38,7 +38,7 @@ int main_compress(args::Subparser &parser)
 
   HD5::Reader      reader(coreOpts.iname.Get());
   Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{refVol.Get(), 0}});
+  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{4, refVol.Get()}});
   Index const      channels = ks.dimension(0);
   Index const      samples = ks.dimension(1);
   Index const      traces = ks.dimension(2);
@@ -46,12 +46,10 @@ int main_compress(args::Subparser &parser)
   if (pca) {
     Index const maxRead = samples - pcaRead.Get()[0];
     Index const nread = (pcaRead.Get()[1] > maxRead) ? maxRead : pcaRead.Get()[1];
-    if (pcaTraces.Get()[0] + pcaTraces.Get()[1] > traces) {
-      Log::Fail("Requested end spoke {} is past end of file {}", pcaTraces.Get()[0] + pcaTraces.Get()[1], traces);
-    }
-    Log::Print("Using {} read points, {} traces, {} stride", nread, pcaTraces.Get()[1], pcaTraces.Get()[2]);
+    Index const maxTrace = traces - pcaTraces.Get()[0];
+    Index const nTrace = (pcaTraces.Get()[1] > maxTrace) ? maxTrace : pcaTraces.Get()[1];
     Cx4 const ref = ks.slice(Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
-                             Sz4{channels, pcaRead.Get()[1], pcaTraces.Get()[1], pcaSlices.Get()[1]})
+                             Sz4{channels, nread, nTrace, pcaSlices.Get()[1]})
                       .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
     auto const cov = Covariance(CollapseToConstMatrix(ref));
     auto const eig = Eig<Cx>(cov);
