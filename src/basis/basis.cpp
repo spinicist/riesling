@@ -23,7 +23,8 @@ auto ReadBasis(std::string const &basisFile) -> Basis<Cx>
     return IdBasis();
   } else {
     HD5::Reader basisReader(basisFile);
-    return basisReader.readTensor<Basis<Cx>>(HD5::Keys::Basis);
+    Basis<Cx> b = basisReader.readTensor<Basis<Cx>>(HD5::Keys::Basis);
+    return b;
   }
 }
 

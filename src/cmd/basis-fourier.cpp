@@ -19,28 +19,11 @@ int main_basis_fourier(args::Subparser &parser)
   args::ValueFlag<Index> samples(parser, "S", "Number of samples (1)", {"samples", 's'}, 1);
   args::ValueFlag<Index> traces(parser, "T", "Number of traces (1)", {"traces", 't'}, 1);
   args::ValueFlag<Index> osamp(parser, "O", "Oversampling (1)", {"osamp", 'o'}, 1.f);
-  args::Flag             method(parser, "P", "Use alternate method", {"method", 'm'});
-  args::Flag             ortho(parser, "O", "Gram-Schmidt orthonormalization", {"ortho"});
   ParseCommand(parser, oname);
 
-  if (method) {
-    rl::FourierBasis fb(N.Get(), samples.Get(), traces.Get(), osamp.Get());
-    rl::HD5::Writer writer(oname.Get());
-    writer.writeTensor(rl::HD5::Keys::Basis, fb.basis.dimensions(), fb.basis.data(), rl::HD5::Dims::Basis);
-  } else {
-    Eigen::MatrixXcf basis = Eigen::MatrixXcf::Zero(samples.Get(), 2 * N + 1);
-    basis.col(0).setConstant(1.f);
-    for (Index ii = 0; ii < N; ii++) {
-      Eigen::VectorXcf const ph = Eigen::VectorXcf::LinSpaced(samples.Get(), 0.f, std::numbers::pi_v<float> * (1 + ii) * 1if);
-      Eigen::VectorXcf const eph = ph.array().exp();
-      basis.col(2 * ii + 1) = eph;
-      basis.col(2 * ii + 2) = eph.conjugate();
-    }
+  rl::FourierBasis fb(N.Get(), samples.Get(), traces.Get(), osamp.Get());
+  rl::HD5::Writer  writer(oname.Get());
+  writer.writeTensor(rl::HD5::Keys::Basis, fb.basis.dimensions(), fb.basis.data(), rl::HD5::Dims::Basis);
 
-    Eigen::MatrixXcf const fbasis = ortho ? rl::GramSchmidt(basis, true).transpose() : basis.transpose();
-
-    rl::HD5::Writer writer(oname.Get());
-    writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{2 * N.Get() + 1, samples.Get(), 1}, fbasis.data(), rl::HD5::Dims::Basis);
-  }
   return EXIT_SUCCESS;
 }
