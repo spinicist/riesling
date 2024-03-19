@@ -409,40 +409,6 @@ def _draw_x(ax, img, clim, cmap='cet_colorwheel', log=False):
     ax.imshow(colorized, interpolation=rc['interpolation'])
     ax.axis('off')
 
-def basis(fname, sl_spoke=slice(None), b=slice(None)):
-    basis = io.read(fname)[sl_spoke,b]
-    fig, ax = plt.subplots(1, 2, figsize=(16, 6))
-    ax[0].plot(np.real(basis))
-    ax[1].plot(np.imag(basis))
-    leg = [str(x) for x in range(basis.shape[1])]
-    ax[0].legend(leg)
-    ax[0].grid(True)
-    # ax[0].autoscale(enable=True, tight=True)
-    ax[1].grid(True)
-    # ax[1].autoscale(enable=True, tight=True)
-    plt.close()
-    return fig
-
-def dynamics(filename, sl=slice(None), vlines=None):
-    with h5py.File(filename) as f:
-        dyn = f['dynamics'][sl,:]
-        fig, ax = plt.subplots(figsize=(16, 6))
-        ax.plot(dyn.T)
-        ax.grid('on')
-        if vlines:
-            [ax.axvline(x) for x in vlines]
-        plt.close()
-        return fig
-
-def dictionary(filename):
-    with h5py.File(filename) as f:
-        d = f['dictionary']
-        fig = plt.figure(figsize=(12,12))
-        ax = fig.add_subplot(projection='3d')
-        ax.scatter(xs = d[:, 0], ys = d[:, 1], zs = d[:, 2])
-        plt.close()
-        return fig
-
 def _traj_color(traj, color, seg_length):
     if color == 'sample':
         return np.tile(np.arange(traj.shape[1]), (traj.shape[0]))
