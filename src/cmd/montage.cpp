@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>
+#include <Eigen/Core>
 
 struct IndexPairReader
 {
@@ -62,13 +63,13 @@ auto SliceData(rl::Cx3 const &data,
   if (slEnd && slEnd >= dShape[slDim]) { rl::Log::Fail("Slice end invalid"); }
   if (slN < 0) { rl::Log::Fail("Requested negative number of slices"); }
   auto const start = slStart;
-  auto const end = slEnd ? slEnd : dShape[slDim];
+  auto const end = slEnd ? slEnd : dShape[slDim] - 1;
   auto const maxN = end - start;
   auto const N = slN ? std::min(slN, maxN) : maxN;
-  float const stride = maxN / (float)(N - 1.f);
+  auto const indices = Eigen::ArrayXf::LinSpaced(N, start, end);
   std::vector<Magick::Image> slices;
-  for (float iK = start; iK < end; iK += stride) {
-    rl::Cx2    temp = data.chip(std::floor(iK), slDim);
+  for (auto const index : indices) {
+    rl::Cx2    temp = data.chip(std::floor(index), slDim);
     auto const slice = rl::Colorize(temp, win, grey, log);
     slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
     slices.back().flip(); // Reverse Y for display
