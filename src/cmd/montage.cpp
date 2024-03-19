@@ -62,13 +62,13 @@ auto SliceData(rl::Cx3 const &data,
   if (slEnd && slEnd >= dShape[slDim]) { rl::Log::Fail("Slice end invalid"); }
   if (slN < 0) { rl::Log::Fail("Requested negative number of slices"); }
   auto const start = slStart;
-  auto const end = slEnd ? slEnd : dShape[slDim] - 1;
-  auto const maxN = 1 + end - start;
+  auto const end = slEnd ? slEnd : dShape[slDim];
+  auto const maxN = end - start;
   auto const N = slN ? std::min(slN, maxN) : maxN;
-
+  float const stride = maxN / (float)(N - 1.f);
   std::vector<Magick::Image> slices;
-  for (Index iK = start; iK <= end; iK += maxN / (N - 1)) {
-    rl::Cx2    temp = data.chip(iK, slDim);
+  for (float iK = start; iK < end; iK += stride) {
+    rl::Cx2    temp = data.chip(std::floor(iK), slDim);
     auto const slice = rl::Colorize(temp, win, grey, log);
     slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
     slices.back().flip(); // Reverse Y for display
