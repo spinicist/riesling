@@ -124,6 +124,7 @@ add_executable(riesling
     src/cmd/denoise.cpp
     src/cmd/downsamp.cpp
     src/cmd/eig.cpp
+    src/cmd/fft.cpp
     src/cmd/filter.cpp
     src/cmd/frames.cpp
     src/cmd/grad.cpp

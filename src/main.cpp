@@ -25,6 +25,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(denoise, "denoise", "Denoise reconstructed images");
   COMMAND(downsamp, "downsamp", "Downsample dataset");
   COMMAND(eig, "eig", "Calculate largest eigenvalue / vector");
+  COMMAND(fft, "fft", "Cartesian FFT of an image");
   COMMAND(filter, "filter", "Apply Tukey filter to image");
   COMMAND(frames, "frames", "Create a frame basis");
   COMMAND(grad, "grad", "Apply grad/div operator");
