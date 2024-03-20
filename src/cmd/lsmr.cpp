@@ -10,8 +10,6 @@
 #include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense/sense.hpp"
-#include "tensorOps.hpp"
-#include "threads.hpp"
 
 using namespace rl;
 

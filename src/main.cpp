@@ -47,6 +47,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(plan, "plan", "Plan FFTs");
   COMMAND(precond, "precond", "Precompute preconditioning weights");
   COMMAND(prox, "prox", "Apply proximal operator");
+  COMMAND(psf, "psf", "Estimate Point Spread Function");
   COMMAND(recon_rss, "recon-rss", "Recon with Root-Sum-Squares");
   COMMAND(recon_sense, "recon-sense", "Recon with SENSE");
   COMMAND(rss, "rss", "Take RSS across first dimension");
