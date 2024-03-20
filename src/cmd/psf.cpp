@@ -1,6 +1,7 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
+#include "fft/fft.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/ndft.hpp"
@@ -20,6 +21,7 @@ int main_psf(args::Subparser &parser)
   args::ValueFlag<float>            atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
   args::ValueFlag<float>            btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
   args::ValueFlag<float>            ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
+  args::Flag                        mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -47,5 +49,12 @@ int main_psf(args::Subparser &parser)
   HD5::Writer writer(fname);
   writer.writeTensor("psf", xm.dimensions(), xm.data());
 
+  if (mtf) {
+    auto const fft = FFT::Make<5, 3>(xm.dimensions());
+    Log::Print("Calculating MTF");
+    fft->forward(xm);
+    writer.writeTensor("mtf", xm.dimensions(), xm.data());
+  }
+  Log::Print("Finished");
   return EXIT_SUCCESS;
 }
