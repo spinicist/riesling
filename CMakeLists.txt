@@ -155,7 +155,6 @@ add_executable(riesling
     src/cmd/sense-calib.cpp
     src/cmd/sense-sim.cpp
     src/cmd/slice.cpp
-    src/cmd/traj.cpp
     src/cmd/version.cpp
     src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp

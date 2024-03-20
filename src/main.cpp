@@ -56,7 +56,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(sense_calib, "sense-calib", "Create SENSE maps");
   COMMAND(sense_sim, "sense-sim", "Simulate SENSE maps");
   COMMAND(slice, "slice", "Slice non-cartesian data");
-  COMMAND(traj, "traj", "Write out the trajectory and PSF");
   COMMAND(version, "version", "Print version number");
 #ifdef BUILD_VIEW
   COMMAND(view, "view", "View your images into the terminal");
