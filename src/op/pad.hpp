@@ -20,7 +20,6 @@ struct PadOp final : TensorOperator<Scalar_, Rank, Rank>
 private:
   InDims                                      left_, right_;
   Eigen::array<std::pair<Index, Index>, Rank> paddings_;
-  float                                       scale_;
 
   void init();
 };
