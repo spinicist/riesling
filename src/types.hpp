@@ -166,8 +166,8 @@ auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> Eigen::DSizes<Inde
   return result;
 }
 
-template <int N>
-auto Mul(Eigen::DSizes<Index, N> const &sz, Index const m) -> Eigen::DSizes<Index, N>
+template <int N, typename T>
+auto Mul(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
   std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return i * m; });
