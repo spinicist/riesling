@@ -6,13 +6,13 @@
 #include "tensorOps.hpp"
 #include "types.hpp"
 
+#include <Eigen/Core>
 #include <Magick++.h>
 #include <ranges>
 #include <scn/scn.h>
 #include <sys/ioctl.h>
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>
-#include <Eigen/Core>
 
 struct IndexPairReader
 {
@@ -26,7 +26,7 @@ struct IndexPairReader
   }
 };
 
-auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips) -> rl::Cx3
+auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips, char const component) -> rl::Cx3
 {
   rl::HD5::Reader reader(iname);
   auto const      diskOrder = reader.order(dset);
@@ -45,7 +45,16 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
     }
   }
   rl::Log::Debug("Reading chips: {}", chips);
-  return reader.readSlab<rl::Cx3>(dset, chips);
+  rl::Cx3 data = reader.readSlab<rl::Cx3>(dset, chips);
+  switch (component) {
+  case 'x': break;
+  case 'r': data = data.real().cast<rl::Cx>(); break;
+  case 'i': data = data.imag().cast<rl::Cx>(); break;
+  case 'm': data = data.abs().cast<rl::Cx>(); break;
+  case 'p': data = data.arg().cast<rl::Cx>(); break;
+  default: rl::Log::Fail("Uknown component type {}", component);
+  }
+  return data;
 }
 
 auto SliceData(rl::Cx3 const &data,
@@ -64,9 +73,10 @@ auto SliceData(rl::Cx3 const &data,
   if (slN < 0) { rl::Log::Fail("Requested negative number of slices"); }
   auto const start = slStart;
   auto const end = slEnd ? slEnd : dShape[slDim] - 1;
-  auto const maxN = end - start;
+  auto const maxN = end - start + 1;
   auto const N = slN ? std::min(slN, maxN) : maxN;
   auto const indices = Eigen::ArrayXf::LinSpaced(N, start, end);
+
   std::vector<Magick::Image> slices;
   for (auto const index : indices) {
     rl::Cx2    temp = data.chip(std::floor(index), slDim);
@@ -95,7 +105,7 @@ void Kittify(Magick::Image &graphic)
   struct winsize winSize;
   ioctl(0, TIOCGWINSZ, &winSize);
   auto const scaling = winSize.ws_xpixel / (float)graphic.size().width();
-  graphic.resize(Magick::Geometry(winSize.ws_xpixel, scaling * graphic.size().height()));
+  graphic.scale(Magick::Geometry(winSize.ws_xpixel, scaling * graphic.size().height()));
   Magick::Blob blob;
   graphic.write(&blob);
   auto const     b64 = blob.base64();
@@ -125,6 +135,7 @@ int main_montage(args::Subparser &parser)
   args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
   args::ValueFlag<int>   px(parser, "T", "Thumbnail size in pixels", {"pix", 'p'}, 256);
 
+  args::ValueFlag<char>  comp(parser, "C", "Component (x,r,i,m,p)", {"comp"}, 'x');
   args::ValueFlag<float> max(parser, "W", "Max intensity", {"max"});
   args::ValueFlag<float> maxP(parser, "P", "Max intensity as %", {"maxP"}, 0.9);
   args::Flag             grey(parser, "G", "Greyscale", {"grey", 'g'});
@@ -138,7 +149,7 @@ int main_montage(args::Subparser &parser)
   ParseCommand(parser, iname);
   Magick::InitializeMagick(NULL);
 
-  auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get());
+  auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get(), comp.Get());
   float const maxData = rl::Maximum(data.abs());
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
   rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
