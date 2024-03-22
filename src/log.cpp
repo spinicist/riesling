@@ -38,6 +38,8 @@ void SetLevel(Level const l)
   } else {
     isTTY = false;
   }
+  // Move the cursor one more line down so we don't erase command names etc.
+  if (CurrentLevel() == Level::Ephemeral) { fmt::print(stderr, "\n"); }
 }
 
 void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
