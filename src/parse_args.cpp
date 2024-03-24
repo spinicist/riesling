@@ -18,6 +18,15 @@ std::unordered_map<int, Log::Level> levelMap{
   {0, Log::Level::None}, {1, Log::Level::Ephemeral}, {2, Log::Level::Standard}, {3, Log::Level::Debug}};
 }
 
+void Array2fReader::operator()(std::string const &name, std::string const &value, Eigen::Array2f &v)
+{
+  float x, y;
+  auto  result = scn::scan(value, "{},{}", x, y);
+  if (!result) { Log::Fail("Could not read vector for {} from value {}", name, value); }
+  v.x() = x;
+  v.y() = y;
+}
+
 void Array3fReader::operator()(std::string const &name, std::string const &value, Eigen::Array3f &v)
 {
   float x, y, z;

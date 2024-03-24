@@ -16,6 +16,11 @@ void ParseCommand(args::Subparser &parser);
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname, args::Positional<std::string> &oname);
 
+struct Array2fReader
+{
+  void operator()(std::string const &name, std::string const &value, Eigen::Array2f &x);
+};
+
 struct Array3fReader
 {
   void operator()(std::string const &name, std::string const &value, Eigen::Array3f &x);

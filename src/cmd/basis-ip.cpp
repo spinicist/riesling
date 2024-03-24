@@ -30,7 +30,7 @@ int main_basis_ip(args::Subparser &parser)
   auto const endPhase = (nG + nS - 1) * sampPhase;
 
   rl::Log::Print("Gap {} Samples {} Max accumulated phase {} radians", nG, nS, endPhase);
-
+  fmt::print("{},{}", startPhase, endPhase);
   Eigen::VectorXcf water = Eigen::VectorXcf::Ones(nS);
 
   Eigen::VectorXcf const ph = Eigen::VectorXcf::LinSpaced(nS, startPhase * 1if, endPhase * 1if);
