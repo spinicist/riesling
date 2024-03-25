@@ -113,7 +113,7 @@ auto SliceData(rl::Cx3 const &data,
   return slices;
 }
 
-auto DoMontage(std::vector<Magick::Image> &slices, Index const cols, Index const px) -> Magick::Image
+auto DoMontage(std::vector<Magick::Image> &slices, Index const cols) -> Magick::Image
 {
   auto const      rows = (Index)std::ceil(slices.size() / (float)cols);
   Magick::Montage montageOpts;
@@ -126,24 +126,76 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const cols, Index const
   return frames.front();
 }
 
-void Decorate(std::string const        &title,
-              Magick::GravityType const gravity,
-              std::string const        &font,
-              float const               fontSize,
-              Magick::Image            &montage)
+void Resize(bool const print, float const printPixWidth, bool const interp, Magick::Image &img)
+{
+  if (print) {
+    float const scale = printPixWidth / (float)img.size().width();
+    if (interp) {
+      img.resize(Magick::Geometry(printPixWidth, scale * img.size().height()));
+    } else {
+      img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
+    }
+    img.density(Magick::Geometry(72, 72));
+  } else {
+    struct winsize winSize;
+    ioctl(0, TIOCGWINSZ, &winSize);
+    auto const scaling = winSize.ws_xpixel / (float)img.size().width();
+    if (interp) {
+      img.resize(Magick::Geometry(winSize.ws_xpixel, scaling * img.size().height()));
+    } else {
+      img.scale(Magick::Geometry(winSize.ws_xpixel, scaling * img.size().height()));
+    }
+    img.density(Magick::Geometry(90, 90));
+  }
+}
+
+void Colorbar(float const win, bool const grey, bool const log, Magick::Image &img)
+{
+  int const W = img.size().width() / 4;
+  int const H = img.density().height() * img.fontPointsize() / 72.f;
+  rl::Cx2 cx(W, H);
+  for (Index ii = 0; ii < W; ii++) {
+    float const mag = ii * win / (W - 1.f);
+    for (Index ij = 0; ij < H; ij++) {
+      float const angle = (ij / (H - 1.f)) * 2.f * M_PI - M_PI;
+      cx(ii, ij) = std::polar(mag, angle);
+    }
+  }
+  auto const             cbar = rl::Colorize(cx, win, grey, log);
+  Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
+  Magick::Geometry const cbarTextBounds(W, H, W * 0.01);
+
+  cbarImg.density(img.density());
+  cbarImg.font(img.font());
+  cbarImg.fontPointsize(img.fontPointsize());
+  cbarImg.fillColor(Magick::ColorMono(true));
+  cbarImg.strokeWidth(8);
+
+  cbarImg.strokeColor(Magick::ColorMono(false));
+  cbarImg.annotate("0", cbarTextBounds, Magick::WestGravity);
+  cbarImg.annotate(fmt::format("{:.2f}", win), cbarTextBounds, Magick::EastGravity);
+  cbarImg.strokeColor(Magick::Color("none"));
+  cbarImg.annotate("0", cbarTextBounds, Magick::WestGravity);
+  cbarImg.annotate(fmt::format("{:.2f}", win), cbarTextBounds, Magick::EastGravity);
+
+  cbarImg.borderColor(Magick::ColorGray(0.));
+  cbarImg.border(Magick::Geometry(4, 4));
+
+  img.composite(cbarImg, Magick::SouthGravity);
+}
+
+void Decorate(std::string const &title, Magick::GravityType const gravity, Magick::Image &montage)
 {
   montage.fillColor(Magick::ColorMono(true));
-  montage.font(font);
-  montage.fontPointsize(fontSize);
+  montage.strokeColor(Magick::ColorMono(false));
+  montage.strokeWidth(8);
+  montage.annotate(title, gravity);
+  montage.strokeColor(Magick::Color("none"));
   montage.annotate(title, gravity);
 }
 
 void Kittify(Magick::Image &graphic)
 {
-  struct winsize winSize;
-  ioctl(0, TIOCGWINSZ, &winSize);
-  auto const scaling = winSize.ws_xpixel / (float)graphic.size().width();
-  graphic.scale(Magick::Geometry(winSize.ws_xpixel, scaling * graphic.size().height()));
   Magick::Blob blob;
   graphic.write(&blob);
   auto const     b64 = blob.base64();
@@ -176,7 +228,8 @@ int main_montage(args::Subparser &parser)
   args::ValueFlag<float>                              fontSize(parser, "FS", "Font size", {"font-size"}, 18);
 
   args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
-  args::ValueFlag<int>   px(parser, "T", "Thumbnail size in pixels", {"pix", 'p'}, 256);
+  args::ValueFlag<int>   width(parser, "W", "Width in pixels for figures", {"width", 'w'}, 1800);
+  args::Flag             interp(parser, "I", "Use proper interpolation", {"interp"});
 
   args::ValueFlag<char>  comp(parser, "C", "Component (x,r,i,m,p)", {"comp"}, 'x');
   args::ValueFlag<float> max(parser, "W", "Max intensity", {"max"});
@@ -198,13 +251,17 @@ int main_montage(args::Subparser &parser)
   rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
   auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, log);
-  auto graphic = DoMontage(slices, cols.Get(), px.Get());
-  Decorate(title ? title.Get() : iname.Get(), gravity.Get(), font.Get(), fontSize.Get(), graphic);
-  graphic.magick("PNG");
+  auto montage = DoMontage(slices, cols.Get());
+  Resize(oname, width.Get(), interp, montage);
+  montage.font(font.Get());
+  montage.fontPointsize(fontSize.Get());
+  Colorbar(winMax, grey, log, montage);
+  Decorate(title ? title.Get() : iname.Get(), gravity.Get(), montage);
+  montage.magick("PNG");
   if (oname) {
-    graphic.write(oname.Get());
+    montage.write(oname.Get());
   } else {
-    Kittify(graphic);
+    Kittify(montage);
   }
   return EXIT_SUCCESS;
 }
