@@ -15,7 +15,7 @@ struct fmt::formatter<IndexPair> : fmt::nested_formatter<Index>
 {
   auto format(IndexPair p, format_context &ctx) const
   {
-    return write_padded(ctx, [=](auto out) { return format_to(out, "({}, {})", nested(p.dim), nested(p.index)); });
+    return write_padded(ctx, [=, this](auto out) { return format_to(out, "({}, {})", nested(p.dim), nested(p.index)); });
   }
 };
 
