@@ -26,6 +26,32 @@ struct IndexPairReader
   }
 };
 
+struct GravityReader
+{
+  void operator()(std::string const &name, std::string const &value, Magick::GravityType &g)
+  {
+    if (value == "South") {
+      g = Magick::GravityType::SouthGravity;
+    } else if (value == "SouthWest") {
+      g = Magick::GravityType::SouthWestGravity;
+    } else if (value == "West") {
+      g = Magick::GravityType::WestGravity;
+    } else if (value == "NorthWest") {
+      g = Magick::GravityType::NorthWestGravity;
+    } else if (value == "North") {
+      g = Magick::GravityType::NorthGravity;
+    } else if (value == "NorthEast") {
+      g = Magick::GravityType::NorthEastGravity;
+    } else if (value == "East") {
+      g = Magick::GravityType::EastGravity;
+    } else if (value == "SouthEast") {
+      g = Magick::GravityType::SouthEastGravity;
+    } else {
+      rl::Log::Fail("Unknown gravity {}", value);
+    }
+  }
+};
+
 auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips, char const component) -> rl::Cx3
 {
   rl::HD5::Reader reader(iname);
@@ -100,6 +126,18 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const cols, Index const
   return frames.front();
 }
 
+void Decorate(std::string const        &title,
+              Magick::GravityType const gravity,
+              std::string const        &font,
+              float const               fontSize,
+              Magick::Image            &montage)
+{
+  montage.fillColor(Magick::ColorMono(true));
+  montage.font(font);
+  montage.fontPointsize(fontSize);
+  montage.annotate(title, gravity);
+}
+
 void Kittify(Magick::Image &graphic)
 {
   struct winsize winSize;
@@ -132,6 +170,11 @@ int main_montage(args::Subparser &parser)
 
   args::ValueFlagList<IndexPair, std::vector, IndexPairReader> chips(parser, "C", "Chip a dimension", {"chip", 'c'});
 
+  args::ValueFlag<std::string>                        title(parser, "T", "Title", {"title", 't'});
+  args::ValueFlag<Magick::GravityType, GravityReader> gravity(parser, "G", "Title gravity", {"gravity"}, Magick::NorthGravity);
+  args::ValueFlag<std::string>                        font(parser, "F", "Font", {"font", 'f'}, "Arial");
+  args::ValueFlag<float>                              fontSize(parser, "FS", "Font size", {"font-size"}, 18);
+
   args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
   args::ValueFlag<int>   px(parser, "T", "Thumbnail size in pixels", {"pix", 'p'}, 256);
 
@@ -156,6 +199,7 @@ int main_montage(args::Subparser &parser)
 
   auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, log);
   auto graphic = DoMontage(slices, cols.Get(), px.Get());
+  Decorate(title ? title.Get() : iname.Get(), gravity.Get(), font.Get(), fontSize.Get(), graphic);
   graphic.magick("PNG");
   if (oname) {
     graphic.write(oname.Get());

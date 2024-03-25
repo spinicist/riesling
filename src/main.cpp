@@ -35,7 +35,9 @@ int main(int const argc, char const *const argv[])
   COMMAND(lookup, "lookup", "Basis dictionary lookup");
   COMMAND(lsmr, "lsmr", "Recon with LSMR optimizer");
   COMMAND(lsqr, "lsqr", "Recon with LSQR optimizer");
+#ifdef BUILD_MONTAGE
   COMMAND(montage, "montage", "Make beautiful output images");
+#endif
   COMMAND(merge, "merge", "Merge non-cartesian data");
   COMMAND(noisify, "noisify", "Add noise to dataset");
   COMMAND(nii, "nii", "Convert h5 to nifti");
@@ -58,9 +60,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(sense_sim, "sense-sim", "Simulate SENSE maps");
   COMMAND(slice, "slice", "Slice non-cartesian data");
   COMMAND(version, "version", "Print version number");
-#ifdef BUILD_VIEW
-  COMMAND(view, "view", "View your images into the terminal");
-#endif
   COMMAND(wavelets, "wavelets", "Apply wavelet transform");
   COMMAND(zinfandel, "zinfandel", "ZINFANDEL k-space filling");
   args::GlobalOptions globals(parser, global_group);

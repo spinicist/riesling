@@ -37,11 +37,13 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
 
-      - name: Install GNU tar
+      - name: Install Dependencies
         shell: bash
         run: |
           if [ "${{runner.os}}" == "macOS" ]; then
-            brew install gnu-tar
+            brew install gnu-tar imagemagick@6
+          else
+            sudo apt-get install -y libmagick++-dev
           fi
 
       - name: Restore vcpkg binary cache

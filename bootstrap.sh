@@ -14,8 +14,7 @@ git submodule update --init --recursive
 FLAGS="base"
 PAR=""
 PREFIX=""
-VIEW=""
-while getopts "f:hi:j:v" opt; do
+while getopts "f:hi:j:" opt; do
     case $opt in
         f) FLAGS="$OPTARG";;
         i) PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG -DCMAKE_PREFIX_PATH=$OPTARG";;
@@ -23,7 +22,6 @@ while getopts "f:hi:j:v" opt; do
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
-	v) VIEW="-DBUILD_VIEW=ON";;
     esac
 done
 shift $((OPTIND - 1))
@@ -35,13 +33,20 @@ else
   GEN=""
 fi
 
+# Check for Magick++ and build montage if available
+if [ -x "$( command -v Magick++-config )" ]; then
+  MONTAGE="-DBUILD_MONTAGE=ON"
+else
+  MONTAGE=""
+fi
+
 mkdir -p build
 cd build
 cmake -S ../ $GEN \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake" \
   -DFLAGS_FILE="${FLAGS}" \
-  $PREFIX $VIEW
+  $PREFIX $MONTAGE
 cmake --build . $PAR
 
 if [ -n "$PREFIX" ]; then

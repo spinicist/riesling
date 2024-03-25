@@ -1,14 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
 project(riesling LANGUAGES CXX)
 include(Version)
-
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
-find_package(unofficial-graphicsmagick CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
@@ -163,7 +161,6 @@ add_executable(riesling
 )
 target_link_libraries(riesling PRIVATE
     vineyard
-    unofficial::graphicsmagick::graphicsmagick
 )
 set_target_properties(riesling PROPERTIES
     CXX_STANDARD 20
@@ -173,30 +170,15 @@ set_target_properties(riesling PROPERTIES
 )
 install(TARGETS riesling RUNTIME DESTINATION bin)
 
-option(BUILD_VIEW "Build the view command. Requires notcurses" OFF)
+option(BUILD_MONTAGE "Build the montage command. Requires ImageMagick" OFF)
 
-if (${BUILD_VIEW})
-    target_sources(riesling PRIVATE src/cmd/view.cpp)
-    target_compile_definitions(riesling PRIVATE -DBUILD_VIEW)
-    # notcurses CMake is broken, as is compiling via vcpkg
-    if (LINUX)
-        set(Notcurses_INCLUDE_DIRS ${CMAKE_PREFIX_PATH}/include)
-	set(Notcurses_LIBRARY_DIRS ${CMAKE_PREFIX_PATH}/lib64 ${CMAKE_PREFIX_PATH}/lib)
-    else()
-        set(Notcurses_LIBRARY_DIRS "/opt/homebrew/lib")
-        set(Notcurses_INCLUDE_DIRS "/opt/homebrew/include")
-    endif()
-    set(Notcurses_LIBRARIES
-        notcurses-core
-        notcurses
-    )
-    target_include_directories(riesling PRIVATE
-        ${Notcurses_INCLUDE_DIRS}
-    )
-    target_link_directories(riesling PRIVATE
-        ${Notcurses_LIBRARY_DIRS}
-    )
-    target_link_libraries(riesling PRIVATE ${Notcurses_LIBRARIES})
+if (${BUILD_MONTAGE})
+    find_package(ImageMagick REQUIRED COMPONENTS Magick++ MagickCore)
+    target_sources(riesling PRIVATE src/cmd/montage.cpp)
+    target_compile_definitions(riesling PRIVATE -DBUILD_MONTAGE)
+    target_compile_definitions(riesling PRIVATE -DMAGICKCORE_HDRI_ENABLE=0 -DMAGICKCORE_QUANTUM_DEPTH=16)
+    target_include_directories(riesling PRIVATE ${ImageMagick_INCLUDE_DIRS})
+    target_link_libraries(riesling PRIVATE ${ImageMagick_LIBRARIES} )
 endif()
 
 option(BUILD_TESTS "Build the tests" ON)
