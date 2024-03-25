@@ -64,6 +64,7 @@ jobs:
           export FLAGS="ci"
           cd ${{github.workspace}}
           cmake -B build -S . \
+            -DBUILD_MONTAGE=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$TC"
           cmake --build build
