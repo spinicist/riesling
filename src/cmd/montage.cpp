@@ -90,7 +90,8 @@ auto SliceData(rl::Cx3 const &data,
                Index const    slN,
                float const    win,
                bool const     grey,
-               bool const     log) -> std::vector<Magick::Image>
+               bool const     log,
+               float const    rotate) -> std::vector<Magick::Image>
 {
   auto const dShape = data.dimensions();
   if (slDim < 0 || slDim > 2) { rl::Log::Fail("Slice dim was {}, must be 0-2", slDim); }
@@ -109,6 +110,7 @@ auto SliceData(rl::Cx3 const &data,
     auto const slice = rl::Colorize(temp, win, grey, log);
     slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
     slices.back().flip(); // Reverse Y for display
+    slices.back().rotate(rotate);
   }
   return slices;
 }
@@ -153,7 +155,7 @@ void Colorbar(float const win, bool const grey, bool const log, Magick::Image &i
 {
   int const W = img.size().width() / 4;
   int const H = img.density().height() * img.fontPointsize() / 72.f;
-  rl::Cx2 cx(W, H);
+  rl::Cx2   cx(W, H);
   for (Index ii = 0; ii < W; ii++) {
     float const mag = ii * win / (W - 1.f);
     for (Index ij = 0; ij < H; ij++) {
@@ -241,7 +243,7 @@ int main_montage(args::Subparser &parser)
   args::ValueFlag<Index> slStart(parser, "S", "Start slice", {"start"}, 0);
   args::ValueFlag<Index> slEnd(parser, "S", "End slice", {"end"});
   args::ValueFlag<Index> slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);
-
+  args::ValueFlag<float> rotate(parser, "D", "Rotate slices (degrees)", {"rot", 'r'}, 0.f);
   ParseCommand(parser, iname);
   Magick::InitializeMagick(NULL);
 
@@ -250,7 +252,7 @@ int main_montage(args::Subparser &parser)
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
   rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
-  auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, log);
+  auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, log, rotate.Get());
   auto montage = DoMontage(slices, cols.Get());
   Resize(oname, width.Get(), interp, montage);
   montage.font(font.Get());
