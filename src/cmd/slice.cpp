@@ -23,7 +23,8 @@ int main_slice(args::Subparser &parser)
   args::ValueFlag<Index> traceStart(parser, "T", "Trace to start split", {"trace-start"}, 0);
   args::ValueFlag<Index> traceSize(parser, "SZ", "Number of traces to keep", {"trace-size"}, 0);
   args::ValueFlag<Index> traceStride(parser, "S", "Trace Stride", {"trace-stride"}, 1);
-  args::ValueFlag<Index> traceSegment(parser, "S", "Trace segment size", {"trace-segment"});
+  args::ValueFlag<Index> traceSegSize(parser, "S", "Trace segment size", {"trace-segsize"});
+  args::ValueFlag<Index> traceSegments(parser, "S", "Trace segments", {"trace-segments"});
 
   args::ValueFlag<Index> volSize(parser, "T", "Number of volumes to keep", {"vol-size"}, 0);
   args::ValueFlag<Index> volStart(parser, "T", "Volume to start split", {"vol-start"}, 0);
@@ -48,15 +49,15 @@ int main_slice(args::Subparser &parser)
 
   Index const cSz = channelSize ? channelSize.Get() : ks.dimension(0) - cSt;
   Index const rSz = readSize ? readSize.Get() : ks.dimension(1) - rSt;
-  Index const tSz = traceSize ? traceSize.Get() : (traceSegment ? traceSegment.Get() - tSt : ks.dimension(2) - tSt);
+  Index const tSz = traceSize ? traceSize.Get() : (traceSegSize ? traceSegSize.Get() - tSt : ks.dimension(2) - tSt);
   Index const sSz = slabSize ? slabSize.Get() : ks.dimension(3) - sSt;
   Index const vSz = volSize ? volSize.Get() : ks.dimension(4) - vSt;
 
   if (cSt + cSz > ks.dimension(0)) { Log::Fail("Last read point {} exceeded maximum {}", cSt + cSz, ks.dimension(0)); }
   if (rSt + rSz > ks.dimension(1)) { Log::Fail("Last read point {} exceeded maximum {}", rSt + rSz, ks.dimension(1)); }
-  if (traceSegment) {
-    if (tSt + tSz > traceSegment.Get()) {
-      Log::Fail("Last trace point {} exceeded segment size {}", tSt + tSz, traceSegment.Get());
+  if (traceSegSize) {
+    if (tSt + tSz > traceSegSize.Get()) {
+      Log::Fail("Last trace point {} exceeded segment size {}", tSt + tSz, traceSegSize.Get());
     }
   } else {
     if (tSt + tSz > ks.dimension(2)) { Log::Fail("Last trace point {} exceeded maximum {}", tSt + tSz, ks.dimension(2)); }
@@ -67,15 +68,20 @@ int main_slice(args::Subparser &parser)
   Log::Print("Selected slice {}:{}, {}:{}, {}:{}, {}:{}, {}:{}", cSt, cSt + cSz - 1, rSt, rSt + rSz - 1, tSt, tSt + tSz - 1,
              sSt, sSt + sSz - 1, vSt, vSt + vSz - 1);
 
-  if (traceSegment) {
-    Index const segSz = traceSegment.Get();
+  if (traceSegSize) {
+    Index const segSz = traceSegSize.Get();
+    if (tSt + tSz > segSz) {
+      Log::Fail("Selected traces {}-{} extend past segment {}", tSt, tSz, segSz);
+    }
     Index const nSeg = ks.dimension(2) / segSz; // Will lose spare traces
-    Sz5 const   shape5{cSz, rSz, tSz * nSeg, sSz, vSz};
+    Index const oSegs = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg): nSeg;
+    Log::Print("Selected {} trace segments", oSegs);
+    Sz5 const   shape5{cSz, rSz, tSz * oSegs, sSz, vSz};
     Sz6 const   shape6{ks.dimension(0), ks.dimension(1), segSz, nSeg, ks.dimension(3), ks.dimension(4)};
-    ks = Cx5(ks.reshape(shape6).slice(Sz6{cSt, rSt, tSt, 0, sSt, vSt}, Sz6{cSz, rSz, tSz, nSeg, sSz, vSz}).reshape(shape5));
-    Sz3 const shape3{3, rSz, tSz * nSeg};
+    ks = Cx5(ks.reshape(shape6).slice(Sz6{cSt, rSt, tSt, 0, sSt, vSt}, Sz6{cSz, rSz, tSz, oSegs, sSz, vSz}).reshape(shape5));
+    Sz3 const shape3{3, rSz, tSz * oSegs};
     Sz4 const shape4{3, traj.nSamples(), segSz, nSeg};
-    traj = Trajectory(info, traj.points().reshape(shape4).slice(Sz4{0, rSt, tSt, 0}, Sz4{3, rSz, tSz, nSeg}).reshape(shape3));
+    traj = Trajectory(info, traj.points().reshape(shape4).slice(Sz4{0, rSt, tSt, 0}, Sz4{3, rSz, tSz, oSegs}).reshape(shape3));
   } else {
     ks = Cx5(ks.slice(Sz5{cSt, rSt, tSt, sSt, vSt}, Sz5{cSz, rSz, tSz, sSz, vSz}));
     traj = Trajectory(info, traj.points().slice(Sz3{0, rSt, tSt}, Sz3{3, rSz, tSz}));

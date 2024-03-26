@@ -39,6 +39,7 @@ int main_recon_rss(args::Subparser &parser)
   Sz4 sz = LastN<4>(A->ishape);
 
   Cx5         allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  traj.checkDims(FirstN<3>(allData.dimensions()));
   Index const volumes = allData.dimension(4);
   Cx5         out(AddBack(sz, volumes));
   auto const &all_start = Log::Now();

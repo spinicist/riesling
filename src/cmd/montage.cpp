@@ -171,7 +171,7 @@ void Colorbar(float const win, bool const grey, bool const log, Magick::Image &i
   cbarImg.font(img.font());
   cbarImg.fontPointsize(img.fontPointsize());
   cbarImg.fillColor(Magick::ColorMono(true));
-  cbarImg.strokeWidth(8);
+  cbarImg.strokeWidth(4);
 
   cbarImg.strokeColor(Magick::ColorMono(false));
   cbarImg.annotate("0", cbarTextBounds, Magick::WestGravity);
@@ -190,7 +190,7 @@ void Decorate(std::string const &title, Magick::GravityType const gravity, Magic
 {
   montage.fillColor(Magick::ColorMono(true));
   montage.strokeColor(Magick::ColorMono(false));
-  montage.strokeWidth(8);
+  montage.strokeWidth(4);
   montage.annotate(title, gravity);
   montage.strokeColor(Magick::Color("none"));
   montage.annotate(title, gravity);
@@ -238,6 +238,7 @@ int main_montage(args::Subparser &parser)
   args::ValueFlag<float> maxP(parser, "P", "Max intensity as %", {"maxP"}, 0.9);
   args::Flag             grey(parser, "G", "Greyscale", {"grey", 'g'});
   args::Flag             log(parser, "L", "Logarithmic intensity", {"log", 'l'});
+  args::Flag             cbar(parser, "C", "Add colorbar", {"cbar"});
 
   args::ValueFlag<Index> slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
   args::ValueFlag<Index> slStart(parser, "S", "Start slice", {"start"}, 0);
@@ -257,7 +258,7 @@ int main_montage(args::Subparser &parser)
   Resize(oname, width.Get(), interp, montage);
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
-  Colorbar(winMax, grey, log, montage);
+  if (cbar) { Colorbar(winMax, grey, log, montage); }
   Decorate(title ? title.Get() : iname.Get(), gravity.Get(), montage);
   montage.magick("PNG");
   if (oname) {
