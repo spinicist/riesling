@@ -7,12 +7,12 @@
 #include "types.hpp"
 
 #include <Eigen/Core>
-#include <Magick++.h>
 #include <ranges>
 #include <scn/scan.h>
 #include <sys/ioctl.h>
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>
+#include "Magick++.h"
 
 struct IndexPairReader
 {

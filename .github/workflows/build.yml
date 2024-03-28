@@ -42,9 +42,11 @@ jobs:
         shell: bash
         run: |
           if [ "${{runner.os}}" == "macOS" ]; then
-            wget https://github.com/macports/macports-base/releases/download/v2.7.1/MacPorts-2.7.1-11-BigSur.pkg
-            sudo installer -pkg ./MacPorts-2.9.1-14-Sonoma.pkg -target /
-            sudo port install imagemagick
+            brew install gnu-tar imagemagick@6
+            export PATH="/opt/homebrew/opt/imagemagick@6/bin:$PATH"
+            export LDFLAGS="-L/opt/homebrew/opt/imagemagick@6/lib
+            export CPPFLAGS="-I/opt/homebrew/opt/imagemagick@6/include
+            export PKG_CONFIG_PATH="/opt/homebrew/opt/imagemagick@6/lib/pkgconfig"
           else
             sudo apt-get install -y libmagick++-dev
           fi
@@ -62,15 +64,7 @@ jobs:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
         run: |
-          TC="${{github.workspace}}/cmake/toolchain.cmake"
-          export VCPKG_OVERLAY_TRIPLETS="${{github.workspace}}/cmake/triplets"
-          export FLAGS="ci"
-          cd ${{github.workspace}}
-          cmake -B build -S . \
-            -DBUILD_MONTAGE=ON \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="$TC"
-          cmake --build build
+          ./bootstrap.sh
       
       - name: Setup python
         uses: actions/setup-python@v5
