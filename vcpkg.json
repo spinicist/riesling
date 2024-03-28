@@ -9,20 +9,6 @@
         "eigen3",
         "fmt",
         {
-            "name": "fftw3",
-            "features": [
-                "threads",
-                "avx2"
-            ],
-            "platform": "x64"
-        },
-        {
-            "name": "fftw3",
-            "features": [
-                "threads"
-            ]
-        },
-        {
             "name": "hdf5",
             "default-features": false,
             "features": [
