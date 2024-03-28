@@ -10,14 +10,6 @@
 
 #include "types.hpp"
 
-template <>
-struct fmt::formatter<IndexPair> : fmt::nested_formatter<Index>
-{
-  auto format(IndexPair p, format_context &ctx) const
-  {
-    return write_padded(ctx, [=, this](auto out) { return format_to(out, "({}, {})", nested(p.dim), nested(p.index)); });
-  }
-};
 
 #define LOG_DEBUG(...)                                                                                                         \
   if (rl::Log::CurrentLevel() == rl::Log::Level::Debug) { rl::Log::Print<Log::Level::High>(__VA_ARGS__); }

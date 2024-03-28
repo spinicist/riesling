@@ -70,7 +70,6 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
       rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
     }
   }
-  rl::Log::Debug("Reading chips: {}", chips);
   rl::Cx3 data = reader.readSlab<rl::Cx3>(dset, chips);
   switch (component) {
   case 'x': break;
