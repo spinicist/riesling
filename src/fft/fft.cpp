@@ -33,34 +33,14 @@ auto WisdomPath(std::string const &execname) -> std::string
 
 void Start(std::string const &execname)
 {
-  fftwf_init_threads();
-  fftwf_make_planner_thread_safe();
-  fftwf_set_timelimit(60.0);
-  auto const wp = WisdomPath(execname);
-  if (fftwf_import_wisdom_from_filename(wp.c_str())) {
-    Log::Debug("Read wisdom successfully from {}", wp);
-  } else {
-    Log::Debug("Could not read wisdom from {}, continuing", wp);
-  }
 }
 
 void End(std::string const &execname)
 {
-  auto const &wp = WisdomPath(execname);
-  if (fftwf_export_wisdom_to_filename(wp.c_str())) {
-    Log::Debug("Saved wisdom to {}", wp);
-  } else {
-    Log::Debug("Failed to save wisdom to {}", wp);
-  }
-  // Causes use after free errors if this is called before fftw_plan_destroy in the
-  // destructors. We don't stop and re-start FFTW threads so calling this is not essential
-  // fftwf_cleanup_threads();
 }
 
 void SetTimelimit(double time)
 {
-  fftwf_set_timelimit(time);
-  Log::Debug("Set FFT planning timelimit to {} seconds", time);
 }
 
 /*

@@ -5,7 +5,7 @@
 #include "../log.hpp"
 #include "../tensorOps.hpp"
 
-#include "fftw3.h"
+#include "ducc0/fft/fftnd_impl.h"
 
 namespace rl {
 namespace FFT {
@@ -20,17 +20,15 @@ struct CPU final : FFT<TRank, FRank>
    */
   CPU(TensorDims const &dims, Index const nThreads)
     : dims_{dims}
-    , threaded_{nThreads > 1}
+    , nThreads_{nThreads}
   {
     Tensor ws(dims);
-    plan(ws, nThreads);
   }
 
   CPU(TensorMap ws, Index const nThreads)
     : dims_(ws.dimensions())
-    , threaded_{nThreads > 1}
+    , nThreads_{nThreads}
   {
-    plan(ws, nThreads);
   }
 
   void plan(TensorMap ws, Index const nThreads)
@@ -58,31 +56,9 @@ struct CPU final : FFT<TRank, FRank>
       phase_.resize(Sz1{nVox_});
       phase_.device(Threads::GlobalDevice()) = tempPhase_.reshape(Sz1{nVox_});
     }
-
-    auto ptr = reinterpret_cast<fftwf_complex *>(ws.data());
-    Log::Print("Planning {} {} FFTs with {} threads", N_, fmt::join(sz, "x"), nThreads);
-
-    // FFTW is row-major. Reverse dims as per
-    // http://www.fftw.org/fftw3_doc/Column_002dmajor-Format.html#Column_002dmajor-Format
-    std::reverse(sz.begin(), sz.end());
-    auto const start = Log::Now();
-    fftwf_plan_with_nthreads(nThreads);
-    forward_plan_ =
-      fftwf_plan_many_dft(FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_FORWARD, FFTW_MEASURE);
-    reverse_plan_ =
-      fftwf_plan_many_dft(FRank, sz.data(), N_, ptr, nullptr, N_, 1, ptr, nullptr, N_, 1, FFTW_BACKWARD, FFTW_MEASURE);
-
-    if (forward_plan_ == NULL) { Log::Fail("Could not create forward FFT Planned"); }
-    if (reverse_plan_ == NULL) { Log::Fail("Could not create reverse FFT Planned"); }
-
-    Log::Debug("FFT planning took {}", Log::ToNow(start));
   }
 
-  ~CPU()
-  {
-    fftwf_destroy_plan(forward_plan_);
-    fftwf_destroy_plan(reverse_plan_);
-  }
+  ~CPU() {}
 
   void forward(TensorMap x) const //!< Image space to k-space
   {
@@ -90,8 +66,14 @@ struct CPU final : FFT<TRank, FRank>
       assert(x.dimension(ii) == dims_[ii]);
     }
     applyPhase(x, 1.f, true);
-    auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
-    fftwf_execute_dft(forward_plan_, ptr, ptr);
+    std::vector<size_t> shape(TRank), axes(FRank);
+    for (Index ii = 0; ii < TRank; ii++) {
+      shape[ii] = x.dimension(ii);
+    }
+    for (Index ii = 0; ii < FRank; ii++) {
+      axes[ii] = ii + (TRank - FRank);
+    }
+    ducc0::c2c(ducc0::cfmav(x.data(), shape), ducc0::vfmav(x.data(), shape), axes, true, scale_, nThreads_);
     applyPhase(x, scale_, true);
   }
 
@@ -100,13 +82,24 @@ struct CPU final : FFT<TRank, FRank>
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
     }
-    applyPhase(x, scale_, false);
-    auto ptr = reinterpret_cast<fftwf_complex *>(x.data());
-    fftwf_execute_dft(reverse_plan_, ptr, ptr);
+    applyPhase(x, 1.f, false);
+    std::vector<size_t> shape(TRank), axes(FRank);
+    for (Index ii = 0; ii < TRank; ii++) {
+      shape[ii] = x.dimension(ii);
+    }
+    for (Index ii = 0; ii < FRank; ii++) {
+      axes[ii] = ii + (TRank - FRank);
+    }
+    ducc0::c2c(ducc0::cfmav(x.data(), shape), ducc0::vfmav(x.data(), shape), axes, false, scale_, nThreads_);
     applyPhase(x, 1.f, false);
   }
 
 private:
+  TensorDims dims_;
+  Cx1        phase_;
+  float      scale_;
+  Index      N_, nVox_, nThreads_;
+
   template <int D, typename T>
   decltype(auto) nextPhase(T const &x, std::array<Cx1, FRank> const &ph) const
   {
@@ -145,7 +138,7 @@ private:
     Sz2        rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
     auto const rbPhase = phase_.reshape(rshP).broadcast(brdP);
     auto       xr = x.reshape(rshX);
-    if (threaded_) {
+    if (nThreads_ > 1) {
       if (fwd) {
         xr.device(Threads::GlobalDevice()) = xr * rbPhase.constant(scale) * rbPhase;
       } else {
@@ -159,13 +152,6 @@ private:
       }
     }
   }
-
-  TensorDims dims_;
-  Cx1        phase_;
-  fftwf_plan forward_plan_, reverse_plan_;
-  float      scale_;
-  Index      N_, nVox_;
-  bool       threaded_;
 };
 
 } // namespace FFT

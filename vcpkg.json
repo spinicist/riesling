@@ -5,6 +5,7 @@
     "dependencies": [
         "args",
         "catch2",
+        "ducc",
         "eigen3",
         "fmt",
         {

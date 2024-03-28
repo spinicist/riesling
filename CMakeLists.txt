@@ -4,9 +4,9 @@ include(Version)
 find_package(Threads REQUIRED)
 find_package(args CONFIG REQUIRED)
 find_package(Catch2 CONFIG REQUIRED)
+find_package(ducc CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
-find_package(FFTW3f CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
@@ -92,9 +92,9 @@ add_library(vineyard
 target_include_directories(vineyard PUBLIC src)
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
+    ducc::ducc
     Eigen3::Eigen
     fmt::fmt-header-only
-    FFTW3::fftw3f
     hdf5::hdf5-static
     hdf5::hdf5_hl-static
     NIFTI::niftiio
