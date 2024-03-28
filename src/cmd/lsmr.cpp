@@ -64,5 +64,6 @@ int main_lsmr(args::Subparser &parser)
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, noncart);
+  Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

@@ -17,7 +17,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(autofocus, "autofocus", "Apply Noll's autofocussing");
   COMMAND(basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis_img, "basis-img", "Basis from image data");
-  COMMAND(basis_ip, "basis-ip", "Basis for In-Phase imaging");
   COMMAND(basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(blend, "blend", "Blend basis images");
   COMMAND(cg, "cg", "Recon with Conjugate Gradients");
@@ -31,6 +30,8 @@ int main(int const argc, char const *const argv[])
   COMMAND(grad, "grad", "Apply grad/div operator");
   COMMAND(grid, "grid", "Grid from/to non/cartesian");
   COMMAND(h5, "h5", "Probe an H5 file");
+  COMMAND(ipop_basis, "ipop-basis", "Make a basis for IP/OP or Water/Fat");
+  COMMAND(ipop_combine, "ipop-combine", "Swap between IP/OP and Water/Fat");
   // COMMAND(lad, "lad", "Least Absolute Deviations");
   COMMAND(lookup, "lookup", "Basis dictionary lookup");
   COMMAND(lsmr, "lsmr", "Recon with LSMR optimizer");

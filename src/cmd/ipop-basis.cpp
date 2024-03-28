@@ -1,18 +1,15 @@
 #include "types.hpp"
 
-#include "algo/gs.hpp"
-#include "basis/fourier.hpp"
 #include "io/writer.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
-#include "algo/gs.hpp"
 
 #include <complex>
 #include <numbers>
 
 using namespace std::literals::complex_literals;
 
-int main_basis_ip(args::Subparser &parser)
+int main_ipop_basis(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
@@ -44,6 +41,8 @@ int main_basis_ip(args::Subparser &parser)
     basis.row(0) = (water + fat) / 2.f;
     basis.row(1) = (water - fat) / 2.f;
   }
+
+  rl::Log::Print("Orthog check\n{}", fmt::streamed(basis * basis.adjoint() / nS));
 
   rl::HD5::Writer writer(oname.Get());
   writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{2, nS, 1}, basis.data(), rl::HD5::Dims::Basis);

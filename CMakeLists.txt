@@ -114,7 +114,6 @@ add_executable(riesling
     src/cmd/autofocus.cpp
     src/cmd/basis-fourier.cpp
     src/cmd/basis-img.cpp
-    src/cmd/basis-ip.cpp
     src/cmd/basis-sim.cpp
     src/cmd/blend.cpp
     src/cmd/cg.cpp
@@ -128,6 +127,8 @@ add_executable(riesling
     src/cmd/grad.cpp
     src/cmd/grid.cpp
     src/cmd/h5.cpp
+    src/cmd/ipop-basis.cpp
+    src/cmd/ipop-combine.cpp
     # src/cmd/lad.cpp
     src/cmd/lookup.cpp
     src/cmd/lsmr.cpp

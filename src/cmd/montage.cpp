@@ -259,7 +259,7 @@ int main_montage(args::Subparser &parser)
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
   if (cbar) { Colorbar(winMax, grey, log, montage); }
-  Decorate(title ? title.Get() : iname.Get(), gravity.Get(), montage);
+  Decorate(title ? title.Get() : fmt::format("{} {}", iname.Get(), dset.Get()), gravity.Get(), montage);
   montage.magick("PNG");
   if (oname) {
     montage.write(oname.Get());
