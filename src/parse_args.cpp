@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fmt/format.h>
-#include <scn/scn.h>
+#include <scn/scan.h>
 
 using namespace rl;
 
@@ -20,44 +20,46 @@ std::unordered_map<int, Log::Level> levelMap{
 
 void Array2fReader::operator()(std::string const &name, std::string const &value, Eigen::Array2f &v)
 {
-  float x, y;
-  auto  result = scn::scan(value, "{},{}", x, y);
-  if (!result) { Log::Fail("Could not read vector for {} from value {}", name, value); }
-  v.x() = x;
-  v.y() = y;
+  if (auto result = scn::scan<float, float>(value, "{},{}")) {
+    v[0] = std::get<0>(result->values());
+    v[1] = std::get<1>(result->values());
+  } else {
+    Log::Fail("Could not read vector for {} from value {}", name, value);
+  }
 }
 
 void Array3fReader::operator()(std::string const &name, std::string const &value, Eigen::Array3f &v)
 {
-  float x, y, z;
-  auto  result = scn::scan(value, "{},{},{}", x, y, z);
-  if (!result) { Log::Fail("Could not read vector for {} from value {}", name, value); }
-  v.x() = x;
-  v.y() = y;
-  v.z() = z;
+  if (auto result = scn::scan<float, float, float>(value, "{},{},{}")) {
+    v[0] = std::get<0>(result->values());
+    v[1] = std::get<1>(result->values());
+    v[2] = std::get<2>(result->values());
+  } else {
+    Log::Fail("Could not read vector for {} from value {}", name, value);
+  }
 }
 
 void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
-  float x, y, z;
-  auto  result = scn::scan(value, "{},{},{}", x, y, z);
-  if (!result) { Log::Fail("Could not read vector for {} from value {}", name, value); }
-  v.x() = x;
-  v.y() = y;
-  v.z() = z;
+  if (auto result = scn::scan<float, float, float>(value, "{},{},{}")) {
+    v[0] = std::get<0>(result->values());
+    v[1] = std::get<1>(result->values());
+    v[2] = std::get<2>(result->values());
+  } else {
+    Log::Fail("Could not read vector for {} from value {}", name, value);
+  }
 }
 
 template <typename T>
 void VectorReader<T>::operator()(std::string const &name, std::string const &input, std::vector<T> &values)
 {
-  T    val;
-  auto result = scn::scan(input, "{}", val);
+  auto result = scn::scan<T>(input, "{}");
   if (result) {
     // Values will have been default initialized. Reset
     values.clear();
-    values.push_back(val);
-    while ((result = scn::scan(result.range(), ",{}", val))) {
-      values.push_back(val);
+    values.push_back(result->value());
+    while ((result = scn::scan<T>(result->range(), ",{}"))) {
+      values.push_back(result->value());
     }
   } else {
     Log::Fail("Could not read argument for {}", name);
@@ -70,14 +72,13 @@ template struct VectorReader<Index>;
 template <int N>
 void SzReader<N>::operator()(std::string const &name, std::string const &value, Sz<N> &sz)
 {
-  Index v = 0, ind = 0;
-  auto  result = scn::scan(value, "{}", v);
-  if (result) {
-    sz[ind] = v;
+  Index ind = 0;
+  if (auto result = scn::scan<Index>(value, "{}")) {
+    sz[ind] = result->value();
     for (ind = 1; ind < N; ind++) {
-      result = scn::scan(result.range(), ",{}", v);
+      result = scn::scan<Index>(result->range(), ",{}");
       if (!result) { Log::Fail("Could not read {} from '{}'", name, value); }
-      sz[ind] = v;
+      sz[ind] = result->value();
     }
   } else {
     Log::Fail("Could not read {} from '{}'", name, value);

@@ -20,5 +20,9 @@
         "scnlib",
         "tl-ranges",
         "zlib"
+    ],
+    "builtin-baseline":"740c7e31b09a7ddceaa730d7a1836531169c9fd6",
+    "overrides": [
+        { "name": "simdutf", "version": "4.0.9" }
     ]
 }

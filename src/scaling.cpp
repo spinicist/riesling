@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include <algorithm>
-#include <scn/scn.h>
+#include <scn/scan.h>
 
 namespace rl {
 
@@ -34,7 +34,8 @@ auto Scaling(
     scale = 1.f / med;
     Log::Print("Otsu + median scaling = {}", scale);
   } else {
-    if (scn::scan(type.Get(), "{}", scale)) {
+    if (auto result = scn::scan<float>(type.Get(), "{}")) {
+      scale = result->value();
       Log::Print("Scale: {}", scale);
     } else {
       Log::Fail("Could not read number from scaling: ", type.Get());

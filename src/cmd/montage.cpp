@@ -9,7 +9,7 @@
 #include <Eigen/Core>
 #include <Magick++.h>
 #include <ranges>
-#include <scn/scn.h>
+#include <scn/scan.h>
 #include <sys/ioctl.h>
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>
@@ -18,11 +18,12 @@ struct IndexPairReader
 {
   void operator()(std::string const &name, std::string const &value, IndexPair &p)
   {
-    Index x, y;
-    auto  result = scn::scan(value, "{},{}", x, y);
-    if (!result) { rl::Log::Fail("Could not read Index Pair for {} from value {}", name, value); }
-    p.dim = x;
-    p.index = y;
+    if (auto result = scn::scan<Index, Index>(value, "{},{}")) {
+      p.dim = std::get<0>(result->values());
+      p.index = std::get<1>(result->values());
+    } else {
+      rl::Log::Fail("Could not read Index Pair for {} from value {}", name, value);
+    }
   }
 };
 
