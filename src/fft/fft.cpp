@@ -7,7 +7,6 @@
 #include "tensorOps.hpp"
 #include "threads.hpp"
 
-#include "fftw3.h"
 #include <cstdlib>
 #include <filesystem>
 #include <pwd.h>

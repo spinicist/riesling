@@ -22,31 +22,42 @@ struct CPU final : FFT<TRank, FRank>
     : dims_{dims}
     , nThreads_{nThreads}
   {
-    Tensor ws(dims);
+    plan();
   }
 
   CPU(TensorMap ws, Index const nThreads)
     : dims_(ws.dimensions())
     , nThreads_{nThreads}
   {
+    plan();
   }
 
-  void plan(TensorMap ws, Index const nThreads)
+  void plan()
   {
     std::array<int, FRank> sz;
     N_ = 1;
     nVox_ = 1;
+
+    shape_.resize(TRank);
+    for (Index ii = 0; ii < TRank; ii++) {
+      shape_[ii] = dims_[TRank - 1 - ii];
+    }
+    fftAxes_.resize(FRank);
+    for (Index ii = 0; ii < FRank; ii++) {
+      fftAxes_[ii] = ii;
+    }
+
     // Process the two different kinds of dimensions - howmany / FFT
     {
       constexpr int FStart = TRank - FRank;
       int           ii = 0;
       for (; ii < FStart; ii++) {
-        N_ *= ws.dimension(ii);
+        N_ *= dims_[ii];
       }
       std::array<Cx1, FRank> phases;
 
       for (; ii < TRank; ii++) {
-        sz[ii - FStart] = ws.dimension(ii);
+        sz[ii - FStart] = dims_[ii];
         nVox_ *= sz[ii - FStart];
         phases[ii - FStart] = Phase(sz[ii - FStart]); // Prep FFT phase factors
       }
@@ -56,6 +67,7 @@ struct CPU final : FFT<TRank, FRank>
       phase_.resize(Sz1{nVox_});
       phase_.device(Threads::GlobalDevice()) = tempPhase_.reshape(Sz1{nVox_});
     }
+    // fmt::print(stderr, "shape {} axes {} scale_ {}\n", shape_, fftAxes_, scale_);
   }
 
   ~CPU() {}
@@ -65,16 +77,9 @@ struct CPU final : FFT<TRank, FRank>
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
     }
-    applyPhase(x, 1.f, true);
-    std::vector<size_t> shape(TRank), axes(FRank);
-    for (Index ii = 0; ii < TRank; ii++) {
-      shape[ii] = x.dimension(ii);
-    }
-    for (Index ii = 0; ii < FRank; ii++) {
-      axes[ii] = ii + (TRank - FRank);
-    }
-    ducc0::c2c(ducc0::cfmav(x.data(), shape), ducc0::vfmav(x.data(), shape), axes, true, scale_, nThreads_);
-    applyPhase(x, scale_, true);
+    applyPhase(x, true);
+    ducc0::c2c(ducc0::cfmav(x.data(), shape_), ducc0::vfmav(x.data(), shape_), fftAxes_, true, scale_, nThreads_);
+    applyPhase(x, true);
   }
 
   void reverse(TensorMap x) const //!< K-space to image space
@@ -82,16 +87,9 @@ struct CPU final : FFT<TRank, FRank>
     for (Index ii = 0; ii < TRank; ii++) {
       assert(x.dimension(ii) == dims_[ii]);
     }
-    applyPhase(x, 1.f, false);
-    std::vector<size_t> shape(TRank), axes(FRank);
-    for (Index ii = 0; ii < TRank; ii++) {
-      shape[ii] = x.dimension(ii);
-    }
-    for (Index ii = 0; ii < FRank; ii++) {
-      axes[ii] = ii + (TRank - FRank);
-    }
-    ducc0::c2c(ducc0::cfmav(x.data(), shape), ducc0::vfmav(x.data(), shape), axes, false, scale_, nThreads_);
-    applyPhase(x, 1.f, false);
+    applyPhase(x, false);
+    ducc0::c2c(ducc0::cfmav(x.data(), shape_), ducc0::vfmav(x.data(), shape_), fftAxes_, false, scale_, nThreads_);
+    applyPhase(x, false);
   }
 
 private:
@@ -99,6 +97,7 @@ private:
   Cx1        phase_;
   float      scale_;
   Index      N_, nVox_, nThreads_;
+  std::vector<size_t> shape_, fftAxes_;
 
   template <int D, typename T>
   decltype(auto) nextPhase(T const &x, std::array<Cx1, FRank> const &ph) const
@@ -133,22 +132,22 @@ private:
     }
   }
 
-  void applyPhase(TensorMap x, float const scale, bool const fwd) const
+  void applyPhase(TensorMap x, bool const fwd) const
   {
     Sz2        rshP{1, nVox_}, brdP{N_, 1}, rshX{N_, nVox_};
     auto const rbPhase = phase_.reshape(rshP).broadcast(brdP);
     auto       xr = x.reshape(rshX);
     if (nThreads_ > 1) {
       if (fwd) {
-        xr.device(Threads::GlobalDevice()) = xr * rbPhase.constant(scale) * rbPhase;
+        xr.device(Threads::GlobalDevice()) = xr * rbPhase;
       } else {
-        xr.device(Threads::GlobalDevice()) = xr * rbPhase.constant(scale) / rbPhase;
+        xr.device(Threads::GlobalDevice()) = xr / rbPhase;
       }
     } else {
       if (fwd) {
-        xr = xr * rbPhase.constant(scale) * rbPhase;
+        xr = xr * rbPhase;
       } else {
-        xr = xr * rbPhase.constant(scale) / rbPhase;
+        xr = xr / rbPhase;
       }
     }
   }

@@ -188,6 +188,7 @@ if(${BUILD_TESTS})
         test/algo.cpp
         test/cropper.cpp
         test/decomp.cpp
+        test/fft1.cpp
         test/fft3.cpp
         test/io.cpp
         test/kernel.cpp
