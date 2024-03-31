@@ -142,7 +142,6 @@ add_executable(riesling
     src/cmd/pdhg.cpp
     src/cmd/pdhg-setup.cpp
     src/cmd/phantom.cpp
-    src/cmd/plan.cpp
     src/cmd/precond.cpp
     src/cmd/prox.cpp
     src/cmd/psf.cpp

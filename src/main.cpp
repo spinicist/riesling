@@ -48,7 +48,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(pdhg, "pdhg", "Primal-Dual Hybrid Gradient");
   COMMAND(pdhg_setup, "pdhg-setup", "Calculate PDHG step sizes");
   COMMAND(phantom, "phantom", "Construct a digitial phantom");
-  COMMAND(plan, "plan", "Plan FFTs");
   COMMAND(precond, "precond", "Precompute preconditioning weights");
   COMMAND(prox, "prox", "Apply proximal operator");
   COMMAND(psf, "psf", "Estimate Point Spread Function");
