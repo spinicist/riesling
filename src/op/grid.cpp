@@ -12,6 +12,7 @@ namespace rl {
 GridOpts::GridOpts(args::Subparser &parser)
   : ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
+  , batches(parser, "B", "Channel batch size (1)", {"batches"}, 1)
   , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
   , splitSize(parser, "S", "Bucket split size (16384)", {"bucket-split"}, 16384)
 {

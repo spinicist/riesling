@@ -37,7 +37,7 @@ int main_ipop_basis(args::Subparser &parser)
   }
 
   auto const             h = basis.householderQr();
-  Eigen::MatrixXcf const Q = Eigen::MatrixXcf(h.householderQ().setLength(nF + 1)) * std::sqrt(nS);
+  Eigen::MatrixXcf const Q = Eigen::MatrixXcf(h.householderQ()).leftCols(nF + 1) * std::sqrt(nS);
   Eigen::MatrixXcf const R = Eigen::MatrixXcf(h.matrixQR().topRows(nF + 1).triangularView<Eigen::Upper>()) / std::sqrt(nS);
   rl::Log::Print("Orthog check\n{}", fmt::streamed(Q.adjoint() * Q / nS));
   rl::HD5::Writer writer(oname.Get());

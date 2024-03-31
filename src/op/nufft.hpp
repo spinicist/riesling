@@ -14,7 +14,10 @@ template <int NDim>
 struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
-  NUFFTOp(std::shared_ptr<Grid<Cx, NDim>> gridder, Sz<NDim> const matrix, std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
+  NUFFTOp(std::shared_ptr<Grid<Cx, NDim>>        gridder,
+          Sz<NDim> const                         matrix,
+          Index const                            batches = 1,
+          std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
   OP_DECLARE()
 
   std::shared_ptr<Grid<Cx, NDim>> gridder;
@@ -23,11 +26,12 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
 
   PadOp<Cx, NDim + 2, NDim>              pad;
   ApodizeOp<Cx, NDim>                    apo;
+  Index const                            batches;
   std::shared_ptr<TensorOperator<Cx, 3>> sdc;
 };
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
-                                                     GridOpts                             &opts,
+                                                     GridOpts                              &opts,
                                                      Index const                            nC,
                                                      Sz3 const                              matrix,
                                                      Basis<Cx> const                       &basis = IdBasis(),

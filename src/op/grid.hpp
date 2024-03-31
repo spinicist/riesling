@@ -16,7 +16,7 @@ struct GridOpts
   GridOpts(args::Subparser &parser);
   args::ValueFlag<std::string> ktype;
   args::ValueFlag<float>       osamp;
-  args::ValueFlag<Index>       bucketSize, splitSize;
+  args::ValueFlag<Index>       batches, bucketSize, splitSize;
 };
 
 template <typename Scalar_, int NDim>

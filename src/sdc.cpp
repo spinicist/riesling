@@ -143,7 +143,7 @@ auto Choose(SDC::Opts &opts, Index const nC, Trajectory const &traj, std::string
   Sz3 const  dims{nC, traj.nSamples(), traj.nTraces()};
   if (iname == "" || iname == "none") {
     Log::Print("Using no density compensation");
-    return std::make_shared<TensorIdentity<Cx, 3>>(dims);
+    return nullptr;
   } else if (iname == "pipe") {
     if (traj.nDims() == 2) {
       sdc = SDC::Pipe<2>(traj, ktype, os, opts.maxIterations.Get(), opts.pow.Get());
