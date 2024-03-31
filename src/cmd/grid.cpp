@@ -13,6 +13,7 @@ using namespace rl;
 int main_grid(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
+  GridOpts               gridOpts(parser);
   SDC::Opts              sdcOpts(parser, "pipe");
   args::Flag             fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<Index> channel(parser, "C", "Only grid this channel", {"channel", 'c'});
@@ -28,7 +29,7 @@ int main_grid(args::Subparser &parser)
   auto const start = Log::Now();
   if (fwd) {
     Cx5        cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);
-    auto const gridder = Grid<Cx, 3>::Make(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), cart.dimension(0), basis);
+    auto const gridder = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), cart.dimension(0), basis);
     auto const rad_ks = gridder->forward(cart);
     writer.writeTensor(HD5::Keys::Noncartesian, Sz5{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1, 1},
                        rad_ks.data());
@@ -39,8 +40,8 @@ int main_grid(args::Subparser &parser)
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     Index const nC = noncart.dimension(0);
     Index const nS = noncart.dimension(3);
-    auto const  gridder = Grid<Cx, 3>::Make(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, basis);
-    auto const  sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+    auto const  gridder = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
+    auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
     Cx6         cart(AddBack(gridder->ishape, nS));
     for (Index is = 0; is < nS; is++) {
       Cx3 slice = noncart.chip<3>(is);

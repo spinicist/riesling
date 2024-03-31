@@ -1,15 +1,17 @@
 #include "types.hpp"
 
+#include "sdc.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
+#include "op/grid.hpp"
 #include "parse_args.hpp"
-#include "sdc.hpp"
 
 using namespace rl;
 
 int main_sdc(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
+  GridOpts                     gridOpts(parser);
   args::ValueFlag<std::string> sdcType(parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
   args::ValueFlag<Index>       lores(parser, "L", "Number of lo-res traces for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index>       its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
@@ -20,8 +22,8 @@ int main_sdc(args::Subparser &parser)
   Re2 dc;
   if (sdcType.Get() == "pipe") {
     switch (traj.nDims()) {
-    case 2: dc = SDC::Pipe<2>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;
-    case 3: dc = SDC::Pipe<3>(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), its.Get()); break;
+    case 2: dc = SDC::Pipe<2>(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), its.Get()); break;
+    case 3: dc = SDC::Pipe<3>(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), its.Get()); break;
     }
   } else if (sdcType.Get() == "radial") {
     dc = SDC::Radial3D(traj, lores.Get());

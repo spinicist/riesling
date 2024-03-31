@@ -14,7 +14,9 @@ using namespace std::literals::complex_literals;
 
 int main_psf(args::Subparser &parser)
 {
-  CoreOpts                          coreOpts(parser);
+  CoreOpts coreOpts(parser);
+  GridOpts gridOpts(parser);
+
   args::Flag                        mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
   args::ValueFlag<Sz3, SzReader<3>> matrix(parser, "M", "Output matrix size", {"matrix", 'm'});
 
@@ -42,8 +44,7 @@ int main_psf(args::Subparser &parser)
   if (coreOpts.ndft) {
     A = make_ndft(traj.points(), nC, shape, basis);
   } else {
-    A = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, shape, basis, nullptr, coreOpts.bucketSize.Get(),
-                   coreOpts.splitSize.Get());
+    A = make_nufft(traj, gridOpts, nC, shape, basis, nullptr);
   }
   auto const M = make_kspace_pre(pre.Get(), nC, traj, basis, preBias.Get(), coreOpts.ndft.Get());
   LSMR       lsmr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get()};
@@ -55,9 +56,9 @@ int main_psf(args::Subparser &parser)
     Eigen::ArrayXcf::LinSpaced(traj.nSamples(), startPhase * 1if, endPhase * 1if).exp() * std::sqrt(nB / (float)Product(shape));
   Eigen::TensorMap<Cx1 const> traceM(trace.data(), Sz1{traj.nSamples()});
 
-  Cx3  ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
-  auto x = lsmr.run(ks.data());
-  auto xm = Tensorfy(x, LastN<4>(A->ishape));
+  Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
+  auto        x = lsmr.run(ks.data());
+  auto        xm = Tensorfy(x, LastN<4>(A->ishape));
   auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), "h5");
   HD5::Writer writer(fname);
   writer.writeTensor("psf", xm.dimensions(), xm.data());

@@ -16,6 +16,7 @@ using namespace rl;
 int main_eig(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
+  GridOpts                     gridOpts(parser);
   SDC::Opts                    sdcOpts(parser, "none");
   SENSE::Opts                  senseOpts(parser);
   args::Flag                   adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
@@ -29,8 +30,8 @@ int main_eig(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, Cx5()), basis.dimension(0));
-  auto const  A = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+  auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
+  auto const  A = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
   auto        P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
   if (adj) {

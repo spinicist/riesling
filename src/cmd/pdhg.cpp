@@ -17,6 +17,7 @@ using namespace rl;
 int main_pdhg(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
+  GridOpts    gridOpts(parser);
   SDC::Opts   sdcOpts(parser, "none");
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
@@ -36,8 +37,8 @@ int main_pdhg(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
-  auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+  auto const recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
   auto       P = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
 
@@ -52,7 +53,7 @@ int main_pdhg(args::Subparser &parser)
     };
 
   PDHG        pdhg(A, P, reg, σin.Get(), τin.Get(), debug_x);
-  Cropper    out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
+  Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();
   float const scale = Scaling(coreOpts.scaling, recon, P, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);

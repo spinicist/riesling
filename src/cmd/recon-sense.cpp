@@ -14,6 +14,7 @@ using namespace rl;
 int main_recon_sense(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
+  GridOpts                     gridOpts(parser);
   SDC::Opts                    sdcOpts(parser, "pipe");
   SENSE::Opts                  senseOpts(parser);
   args::Flag                   fwd(parser, "", "Apply forward operation", {'f', "fwd"});
@@ -36,8 +37,8 @@ int main_recon_sense(args::Subparser &parser)
 
   if (fwd) {
     HD5::Reader senseReader(senseOpts.type.Get());
-    auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, Cx5()), basis.dimension(0));
-    auto const  recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+    auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
+    auto const  recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
     Sz4 const   sz = recon->ishape;
     Sz4 const   osz = AddFront(traj.matrixForFOV(coreOpts.fov.Get()), sz[0]);
 
@@ -59,8 +60,8 @@ int main_recon_sense(args::Subparser &parser)
   } else {
     auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
-    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
-    auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+    auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+    auto const recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
     Sz4 const  sz = recon->ishape;
     Sz4 const  osz = AMin(AddFront(traj.matrixForFOV(coreOpts.fov.Get()), sz[0]), sz);
     Cx4        vol(sz);

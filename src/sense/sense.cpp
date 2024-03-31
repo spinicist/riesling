@@ -27,7 +27,7 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
+auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nT = noncart.dimension(2);
@@ -38,7 +38,7 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
   }
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
-  auto const nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrixForFOV(opts.fov.Get()), basis);
+  auto const nufft = make_nufft(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, traj.matrixForFOV(opts.fov.Get()), basis);
   auto const M = make_kspace_pre("kspace", nC, traj, basis);
   LSMR const lsmr{nufft, M, 4};
 
@@ -51,7 +51,7 @@ auto LoresChannels(Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5
   for (Index ii = 0; ii < 3; ii++) {
     if (shape[ii] > channels.dimension(ii + 2)) {
       Log::Fail("Requested SENSE FOV {} could not be satisfied with FOV {} and oversampling {}", opts.fov.Get().transpose(),
-                traj.FOV().transpose(), coreOpts.osamp.Get());
+                traj.FOV().transpose(), gridOpts.osamp.Get());
     }
   }
 
@@ -77,12 +77,12 @@ auto UniformNoise(float const λ, Cx5 const &channels) -> Cx5
   return normalized;
 }
 
-auto Choose(Opts &opts, CoreOpts &core, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
-    return UniformNoise(opts.λ.Get(), LoresChannels(opts, core, traj, noncart));
+    return UniformNoise(opts.λ.Get(), LoresChannels(opts, nufft, traj, noncart));
   } else if (opts.type.Get() == "espirit") {
     Log::Fail("Not supported right now");
     // auto channels = LoresChannels(opts, core, traj, noncart);

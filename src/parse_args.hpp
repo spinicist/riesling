@@ -51,10 +51,8 @@ struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
   args::Positional<std::string>                  iname;
-  args::ValueFlag<std::string>                   oname, basisFile, ktype, scaling;
-  args::ValueFlag<float>                         osamp;
+  args::ValueFlag<std::string>                   oname, basisFile, scaling;
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
-  args::ValueFlag<Index>                         bucketSize, splitSize;
   args::Flag                                     ndft, residImage, residKSpace, keepTrajectory;
 };
 

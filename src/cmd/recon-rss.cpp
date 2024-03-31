@@ -15,6 +15,7 @@ using namespace rl;
 int main_recon_rss(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
+  GridOpts                     gridOpts(parser);
   SDC::Opts                    sdcOpts(parser, "pipe");
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
   args::ValueFlag<float>       t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
@@ -26,7 +27,7 @@ int main_recon_rss(args::Subparser &parser)
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   Index const nC = reader.dimensions(HD5::Keys::Noncartesian)[0];
-  auto const  sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
 
   std::shared_ptr<TensorOperator<Cx, 5, 4>> A = nullptr;
   if (coreOpts.ndft) {
@@ -34,7 +35,7 @@ int main_recon_rss(args::Subparser &parser)
     if (reader.exists("b0") && t0 && tSamp) { ndft->addOffResonance(reader.readTensor<Re3>("b0"), t0.Get(), tSamp.Get()); }
     A = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft);
   } else {
-    A = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis, sdc);
+    A = make_nufft(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis, sdc);
   }
   Sz4 sz = LastN<4>(A->ishape);
 

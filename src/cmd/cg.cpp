@@ -15,6 +15,7 @@ using namespace rl;
 int main_cg(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
+  GridOpts   GridOpts(parser);
   SDC::Opts   sdcOpts(parser, "pipe");
   SENSE::Opts senseOpts(parser);
   // args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
@@ -30,8 +31,8 @@ int main_cg(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
-  auto const recon = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, GridOpts, traj, noncart), basis.dimension(0));
+  auto const recon = make_recon(coreOpts, GridOpts, sdcOpts, traj, sense, basis);
   auto       normEqs = std::make_shared<NormalOp<Cx>>(recon);
   ConjugateGradients<Cx> cg{normEqs, its.Get(), thr.Get(), true};
 

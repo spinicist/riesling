@@ -3,7 +3,7 @@
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "op/nufft.hpp"
 #include "trajectory.hpp"
 
 namespace rl {
@@ -22,13 +22,13 @@ struct Opts
 
 //! Convenience function to get low resolution multi-channel images
 auto LoresChannels(
-  Opts &opts, CoreOpts &coreOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
+  Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
 
 //! Normalizes by RSS with optional regularization
 auto UniformNoise(float const λ, Cx5 const &channels) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps
-auto Choose(Opts &opts, CoreOpts &core, Trajectory const &t, Cx5 const &noncart) -> Cx5;
+auto Choose(Opts &opts, GridOpts &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;
 
 } // namespace SENSE
 } // namespace rl

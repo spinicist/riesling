@@ -49,6 +49,27 @@ template struct NUFFTOp<2>;
 template struct NUFFTOp<3>;
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
+                                                     GridOpts                             &opts,
+                                                     Index const                            nC,
+                                                     Sz3 const                              matrix,
+                                                     Basis<Cx> const                       &basis,
+                                                     std::shared_ptr<TensorOperator<Cx, 3>> sdc)
+{
+  if (traj.nDims() == 2) {
+    Log::Debug("Creating 2D Multi-slice NUFFT");
+    auto grid =
+      Grid<Cx, 2>::Make(traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.bucketSize.Get(), opts.splitSize.Get());
+    auto nufft2 = std::make_shared<NUFFTOp<2>>(grid, FirstN<2>(matrix), sdc);
+    return std::make_shared<LoopOp<NUFFTOp<2>>>(nufft2, traj.info().matrix[2]);
+  } else {
+    Log::Debug("Creating full 3D NUFFT");
+    auto grid =
+      Grid<Cx, 3>::Make(traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.bucketSize.Get(), opts.splitSize.Get());
+    return std::make_shared<IncreaseOutputRank<NUFFTOp<3>>>(std::make_shared<NUFFTOp<3>>(grid, matrix, sdc));
+  }
+}
+
+std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
                                                      std::string const                     &ktype,
                                                      float const                            osamp,
                                                      Index const                            nC,

@@ -27,6 +27,13 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
 };
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
+                                                     GridOpts                             &opts,
+                                                     Index const                            nC,
+                                                     Sz3 const                              matrix,
+                                                     Basis<Cx> const                       &basis = IdBasis(),
+                                                     std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
+
+std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
                                                      std::string const                     &ktype,
                                                      float const                            osamp,
                                                      Index const                            nC,

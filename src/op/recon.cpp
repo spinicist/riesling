@@ -9,6 +9,7 @@
 namespace rl {
 
 auto make_recon(CoreOpts                       &coreOpts,
+                GridOpts                       &gridOpts,
                 SDC::Opts                      &sdcOpts,
                 Trajectory const               &traj,
                 std::shared_ptr<SenseOp> const &sense,
@@ -16,13 +17,12 @@ auto make_recon(CoreOpts                       &coreOpts,
 {
   Index const nC = sense->nChannels();
   auto const  shape = sense->mapDimensions();
-  auto const sdc = SDC::Choose(sdcOpts, nC, traj, coreOpts.ktype.Get(), coreOpts.osamp.Get());
+  auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
   if (coreOpts.ndft) {
     auto ndft = make_ndft(traj.points(), nC, shape, basis, sdc);
     return std::make_shared<ReconOp>(sense, ndft);
   } else {
-    auto nufft = make_nufft(traj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, shape, basis, sdc, coreOpts.bucketSize.Get(),
-                            coreOpts.splitSize.Get());
+    auto nufft = make_nufft(traj, gridOpts, nC, shape, basis, sdc);
     return std::make_shared<ReconOp>(sense, nufft);
   }
 }

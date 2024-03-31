@@ -16,6 +16,7 @@ using namespace rl;
 int main_zinfandel(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
+  GridOpts gridOpts(parser);
 
   args::ValueFlag<Index> gap(parser, "G", "Set gap value (default 2)", {'g', "gap"}, 2);
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 0)", {"lambda"}, 0.f);
@@ -75,7 +76,7 @@ int main_zinfandel(args::Subparser &parser)
     // Use SLR
     auto const [lores, lo, sz] = traj.downsample(12.f, 0, true, true);
     Log::Print("Extended {}", extended.matrix());
-    auto      A = make_nufft(lores, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());
+    auto      A = make_nufft(lores, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, lores.matrix());
     Sz5 const shape = A->ishape;
     Re2 const w = KSpaceSingle(lores);
     auto      M = std::make_shared<Ops::DiagRep<Cx>>(A->oshape[0], CollapseToArray(w).cast<Cx>());
@@ -96,7 +97,7 @@ int main_zinfandel(args::Subparser &parser)
               ε.Get(), 1.2f, 10.f, debug_x, debug_z};
 
     Trajectory gapTraj(traj.info(), newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}));
-    auto       B = make_nufft(gapTraj, coreOpts.ktype.Get(), coreOpts.osamp.Get(), nC, lores.matrix());
+    auto       B = make_nufft(gapTraj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, lores.matrix());
 
     for (Index iv = 0; iv < nVol; iv++) {
       Cx4 d = data.chip<4>(iv).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nSlab});

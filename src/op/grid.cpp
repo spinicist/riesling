@@ -9,6 +9,14 @@
 
 namespace rl {
 
+GridOpts::GridOpts(args::Subparser &parser)
+  : ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
+  , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
+  , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
+  , splitSize(parser, "S", "Bucket split size (16384)", {"bucket-split"}, 16384)
+{
+}
+
 template <typename Scalar, int NDim>
 auto Grid<Scalar, NDim>::Make(Trajectory const    &traj,
                               std::string const    ktype,

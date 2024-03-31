@@ -16,9 +16,11 @@ using namespace rl;
 
 int main_lsqr(args::Subparser &parser)
 {
-  CoreOpts                     coreOpts(parser);
-  SDC::Opts                    sdcOpts(parser, "none");
-  SENSE::Opts                  senseOpts(parser);
+  CoreOpts    coreOpts(parser);
+  GridOpts   GridOpts(parser);
+  SDC::Opts   sdcOpts(parser, "none");
+  SENSE::Opts senseOpts(parser);
+
   args::ValueFlag<Index>       its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
@@ -36,8 +38,8 @@ int main_lsqr(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, coreOpts, traj, noncart), basis.dimension(0));
-  auto const A = make_recon(coreOpts, sdcOpts, traj, sense, basis);
+  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, GridOpts, traj, noncart), basis.dimension(0));
+  auto const A = make_recon(coreOpts, GridOpts, sdcOpts, traj, sense, basis);
   auto const M = make_kspace_pre(pre.Get(), A->oshape[0], traj, basis, preBias.Get());
   auto       debug = [&A](Index const i, LSQR::Vector const &x) {
     Log::Tensor(fmt::format("lsqr-x-{:02d}", i), A->ishape, x.data());
@@ -45,7 +47,7 @@ int main_lsqr(args::Subparser &parser)
   LSQR lsqr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get(), debug};
 
   auto      sz = A->ishape;
-  Cropper    out_cropper(LastN<3>(sz), traj.matrixForFOV(coreOpts.fov.Get()));
+  Cropper   out_cropper(LastN<3>(sz), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3 const outSz = out_cropper.size();
   Cx5       out(sz[0], outSz[0], outSz[1], outSz[2], nV), resid;
   if (coreOpts.residImage) { resid.resize(sz[0], outSz[0], outSz[1], outSz[2], nV); }
