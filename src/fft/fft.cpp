@@ -16,32 +16,6 @@
 namespace rl {
 namespace FFT {
 
-auto WisdomPath(std::string const &execname) -> std::string
-{
-  if (char *const env_p = std::getenv("RL_WISDOM")) {
-    return fmt::format("{}", env_p);
-  } else {
-    struct passwd *pw = getpwuid(getuid());
-    const char    *homedir = pw->pw_dir;
-    char           hostname[128];
-    gethostname(hostname, 127);
-    std::filesystem::path execpath(execname);
-    return fmt::format("{}/.{}-wisdom-{}", homedir, execpath.filename().c_str(), hostname);
-  }
-}
-
-void Start(std::string const &execname)
-{
-}
-
-void End(std::string const &execname)
-{
-}
-
-void SetTimelimit(double time)
-{
-}
-
 /*
  * Phase factors for FFT shifting
  *

@@ -22,9 +22,6 @@ struct FFT
   virtual void reverse(TensorMap x) const = 0; //!< K-space to image space
 };
 
-void Start(std::string const &execname);
-void End(std::string const &execname);
-void SetTimelimit(double time);
 Cx1  Phase(Index const sz);
 
 template <int TRank, int FFTRank>

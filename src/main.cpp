@@ -1,4 +1,3 @@
-#include "fft/fft.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
 
@@ -63,10 +62,8 @@ int main(int const argc, char const *const argv[])
   COMMAND(wavelets, "wavelets", "Apply wavelet transform");
   COMMAND(zinfandel, "zinfandel", "ZINFANDEL k-space filling");
   args::GlobalOptions globals(parser, global_group);
-  FFT::Start(argv[0]);
   try {
     parser.ParseCLI(argc, argv);
-    FFT::End(argv[0]);
     Log::End();
   } catch (args::Help &) {
     fmt::print(stderr, "{}\n", parser.Help());
@@ -76,7 +73,6 @@ int main(int const argc, char const *const argv[])
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
     exit(EXIT_FAILURE);
   } catch (Log::Failure &f) {
-    FFT::End(argv[0]);
     Log::End();
     exit(EXIT_FAILURE);
   }

@@ -11,8 +11,6 @@ using namespace Catch;
 
 TEST_CASE("FFT1","[FFT]")
 {
-  FFT::Start("riesling-tests");
-
   auto N = GENERATE(32);
   SECTION("<1>")
   {
@@ -30,6 +28,4 @@ TEST_CASE("FFT1","[FFT]")
     ref(N / 2) = sqrt(N);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
   }
-
-  FFT::End("riesling-tests");
 }
