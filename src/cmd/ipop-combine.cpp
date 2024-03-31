@@ -10,6 +10,7 @@ int main_ipop_combine(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "OUTPUT", "Input filename");
 
   args::Flag wf(parser, "W", "Input is Water/Fat, output will be IP/OP", {"wf"});
+  args::ValueFlag<std::string> qr(parser, "R", "Read R from file", {"qr"});
   ParseCommand(parser, iname);
 
   rl::HD5::Reader ifile(iname.Get());
@@ -22,6 +23,11 @@ int main_ipop_combine(args::Subparser &parser)
     output.chip<0>(0) = 0.5f * (input.chip<0>(0) + input.chip<0>(1));
     output.chip<0>(1) = 0.5f * (input.chip<0>(0) - input.chip<0>(1));
     suffix = "ipop";
+  } else if (qr) {
+    rl::HD5::Reader qrfile(qr.Get());
+    auto const R = qrfile.readTensor<rl::Cx2>("R");
+    output = R.contract(input, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+    suffix = "wf";
   } else {
     output.chip<0>(0) = input.chip<0>(0) + input.chip<0>(1);
     output.chip<0>(1) = input.chip<0>(0) - input.chip<0>(1);
