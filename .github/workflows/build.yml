@@ -50,7 +50,17 @@ jobs:
           else
             sudo apt-get install -y libmagick++-dev
           fi
+          if [ -x "$( command -v Magick++-config )" ]; then
+            echo "Found config"
+          else
+            echo "Did not find config"
+          fi
           hash -r
+          if [ -x "$( command -v Magick++-config )" ]; then
+            echo "Found config"
+          else
+            echo "Did not find config"
+          fi
 
       - name: Restore vcpkg binary cache
         id: cache
@@ -65,6 +75,11 @@ jobs:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
         run: |
+          if [ -x "$( command -v Magick++-config )" ]; then
+            echo "Found config"
+          else
+            echo "Did not find config"
+          fi
           ./bootstrap.sh
       
       - name: Setup python
