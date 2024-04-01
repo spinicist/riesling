@@ -11,8 +11,8 @@ using namespace rl;
 int main_sense(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Positional<std::string> sname(parser, "FILE", "SENSE maps HD5 file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::Flag                    fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (image/channels)", {'d', "dset"});
   ParseCommand(parser, iname);
@@ -22,7 +22,7 @@ int main_sense(args::Subparser &parser)
   auto const  maps = sreader.readTensor<Cx5>(HD5::Keys::SENSE);
 
   Trajectory const traj(ireader.readInfo(), ireader.readTensor<Re3>(HD5::Keys::Trajectory));
-  HD5::Writer      writer(OutName(iname.Get(), oname.Get(), "sense"));
+  HD5::Writer      writer(oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
 

@@ -43,13 +43,11 @@ int main_recon_rss(args::Subparser &parser)
   traj.checkDims(FirstN<3>(allData.dimensions()));
   Index const volumes = allData.dimension(4);
   Cx5         out(AddBack(sz, volumes));
-  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < volumes; iv++) {
     auto const channels = A->adjoint(CChipMap(allData, iv));
     out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
+  WriteOutput(coreOpts, out, traj, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

@@ -83,7 +83,6 @@ int main_admm(args::Subparser &parser)
   ADMM opt{A,       M,       reg.ops, reg.prox, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
            ε.Get(), μ.Get(), τ.Get(), debug_x,  debug_z};
 
-  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < nV; iv++) {
     auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
     auto xm = Tensorfy(x, shape);
@@ -94,8 +93,7 @@ int main_admm(args::Subparser &parser)
       resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
     }
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, noncart);
+  WriteOutput(coreOpts, out, traj, Log::Saved(), resid, noncart);
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

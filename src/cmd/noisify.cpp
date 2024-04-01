@@ -8,9 +8,8 @@ using namespace rl;
 
 int main_noisify(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "I", "Input file name");
-
-  args::ValueFlag<std::string> oname(parser, "O", "Output file name", {"out", 'o'});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::ValueFlag<float>       σ(parser, "S", "Noise standard deviation", {"std"}, 1.f);
   args::ValueFlag<std::string> dset(parser, "D", "Dataset to add noise to", {"dset"}, HD5::Keys::Noncartesian);
 
@@ -23,7 +22,7 @@ int main_noisify(args::Subparser &parser)
   noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
   ks += noise * noise.constant(σ.Get());
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), "noisy"));
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   writer.writeTensor(dset.Get(), ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Re3 const traj = reader.readTensor<Re3>(HD5::Keys::Trajectory);

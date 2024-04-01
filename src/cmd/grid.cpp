@@ -23,7 +23,7 @@ int main_grid(args::Subparser &parser)
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
-  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "grid", "h5"));
+  HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   auto const start = Log::Now();

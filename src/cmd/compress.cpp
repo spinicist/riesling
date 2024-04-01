@@ -22,17 +22,17 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<std::string> ccFile(parser, "F", "Read compression matrix from file", {"cc-file"});
 
   // General options
-  args::Flag             save(parser, "S", "Save compression matrix to .h5 file", {"save"});
-  args::ValueFlag<Index> nRetain(parser, "C", "Retain N channels (8)", {"channels"}, 8);
-  args::ValueFlag<float> energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
-  args::ValueFlag<Index> refVol(parser, "V", "Use this volume (default first)", {"vol"}, 0);
-  args::ValueFlag<Index> lores(parser, "L", "Number of lores traces", {"lores"}, 0);
+  args::ValueFlag<std::string> save(parser, "S", "Save compression matrix to .h5 file", {"save"});
+  args::ValueFlag<Index>       nRetain(parser, "C", "Retain N channels (8)", {"channels"}, 8);
+  args::ValueFlag<float>       energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
+  args::ValueFlag<Index>       refVol(parser, "V", "Use this volume (default first)", {"vol"}, 0);
+  args::ValueFlag<Index>       lores(parser, "L", "Number of lores traces", {"lores"}, 0);
 
   // PCA Options
   args::ValueFlag<Sz2, SzReader<2>> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
   args::ValueFlag<Sz3, SzReader<3>> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 1});
   args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
-  ROVIROpts                       rovirOpts(parser);
+  ROVIROpts                         rovirOpts(parser);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -48,8 +48,8 @@ int main_compress(args::Subparser &parser)
     Index const nread = (pcaRead.Get()[1] > maxRead) ? maxRead : pcaRead.Get()[1];
     Index const maxTrace = traces - pcaTraces.Get()[0];
     Index const nTrace = (pcaTraces.Get()[1] > maxTrace) ? maxTrace : pcaTraces.Get()[1];
-    Cx4 const ref = ks.slice(Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
-                             Sz4{channels, nread, nTrace, pcaSlices.Get()[1]})
+    Cx4 const   ref = ks.slice(Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
+                               Sz4{channels, nread, nTrace, pcaSlices.Get()[1]})
                       .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
     auto const cov = Covariance(CollapseToConstMatrix(ref));
     auto const eig = Eig<Cx>(cov);
@@ -71,13 +71,13 @@ int main_compress(args::Subparser &parser)
     compressed.chip<4>(iv) = compressor.compress(Cx4(uncompressed.chip<4>(iv)));
   }
 
-  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name()));
+  HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Noncartesian, compressed.dimensions(), compressed.data());
 
   if (save) {
-    HD5::Writer matfile(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "ccmat"));
+    HD5::Writer matfile(save.Get());
     matfile.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
   }
   return EXIT_SUCCESS;

@@ -12,10 +12,10 @@ using namespace rl;
 
 int main_blend(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> bname(parser, "BASIS", "h5 file containing basis");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<std::string>  oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> sp(parser, "SP", "Samples within basis for combination", {"sp", 's'},
                                                               {0});
@@ -64,9 +64,7 @@ int main_blend(args::Subparser &parser)
     out.chip<4>(it).device(Threads::GlobalDevice()) =
       sel2.contract(images.chip<4>(it), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   }
-
-  auto const  fname = OutName(iname.Get(), oname.Get(), "blend", "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Image, out.dimensions(), out.data());
 

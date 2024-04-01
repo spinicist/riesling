@@ -16,7 +16,7 @@ int main_rss(args::Subparser &parser)
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
 
   auto const name = dset ? dset.Get() : HD5::Keys::Channels;

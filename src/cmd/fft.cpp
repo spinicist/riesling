@@ -10,8 +10,8 @@ using namespace rl;
 
 int main_fft(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    adj(parser, "R", "Adjoint transform", {"adj", 'a'});
   ParseCommand(parser);
 
@@ -28,8 +28,7 @@ int main_fft(args::Subparser &parser)
     }
     images.chip<4>(iv) = img;
   }
-  auto const  fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
   return EXIT_SUCCESS;

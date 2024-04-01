@@ -10,9 +10,9 @@ using namespace rl;
 
 int main_lookup(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> dname(parser, "DICT", "h5 file containing lookup dictionary");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   ParseCommand(parser);
 
   if (!iname) { throw args::Error("No input file specified"); }
@@ -63,9 +63,7 @@ int main_lookup(args::Subparser &parser)
     };
     Threads::For(ztask, images.dimension(3), "Lookup");
   }
-
-  auto const  fname = OutName(iname.Get(), oname.Get(), "lookup", "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Parameters, out_pars.dimensions(), out_pars.data());
   writer.writeTensor(HD5::Keys::ProtonDensity, pd.dimensions(), pd.data());
 

@@ -58,13 +58,11 @@ int main_pdhg(args::Subparser &parser)
   float const scale = Scaling(coreOpts.scaling, recon, P, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
   Cx5         out(shape[0], outSz[0], outSz[1], outSz[2], nV);
-  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < nV; iv++) {
     auto x = pdhg.run(&noncart(0, 0, 0, 0, iv), its.Get());
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
+  WriteOutput(coreOpts, out, traj, Log::Saved());
   return EXIT_SUCCESS;
 }

@@ -18,7 +18,7 @@ auto Focus(Cx4 const &x) -> Cx4 {
 int main_autofocus(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
-  args::ValueFlag<std::string> oname(parser, "O", "Override output name", {'o', "out"});
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::ValueFlag<Index> patch(parser, "P", "Patch size", {"patch", 'p'}, 5);
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
@@ -37,7 +37,7 @@ int main_autofocus(args::Subparser &parser)
   }
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   writer.writeTensor(HD5::Keys::Image, out.dimensions(), out.data(), HD5::Dims::Image);
 

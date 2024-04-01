@@ -59,8 +59,7 @@ int main_psf(args::Subparser &parser)
   Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
   auto        x = lsmr.run(ks.data());
   auto        xm = Tensorfy(x, LastN<4>(A->ishape));
-  auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor("psf", xm.dimensions(), xm.data());
 
   if (mtf) {

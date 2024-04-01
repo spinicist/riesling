@@ -52,7 +52,6 @@ int main_lsmr(args::Subparser &parser)
   Cx5        out(sz[0], outSz[0], outSz[1], outSz[2], nV), resid;
   if (coreOpts.residImage) { resid.resize(sz[0], outSz[0], outSz[1], outSz[2], nV); }
 
-  auto const &all_start = Log::Now();
   for (Index iv = 0; iv < nV; iv++) {
     auto x = lsmr.run(&noncart(0, 0, 0, 0, iv), λ.Get());
     auto xm = Tensorfy(x, sz);
@@ -63,8 +62,7 @@ int main_lsmr(args::Subparser &parser)
       resid.chip<4>(iv) = out_cropper.crop4(xm);
     }
   }
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
-  WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved(), resid, noncart);
+  WriteOutput(coreOpts, out, traj, Log::Saved(), resid, noncart);
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

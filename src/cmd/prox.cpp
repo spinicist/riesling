@@ -15,8 +15,8 @@ using namespace rl;
 
 int main_prox(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Basis images file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::ValueFlag<float>        scale(parser, "S", "Scale data before applying prox", {'s', "scale"}, 1);
   args::ValueFlag<float>        l1(parser, "L1", "Simple L1 regularization", {"l1"});
   args::ValueFlag<float>        nmrent(parser, "E", "NMR Entropy", {"nmrent"});
@@ -60,9 +60,7 @@ int main_prox(args::Subparser &parser)
     prox->apply(1.f, im, om);
     om = om / scale.Get();
   }
-
-  auto const  fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Image, output.dimensions(), output.data());
   return EXIT_SUCCESS;

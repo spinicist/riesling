@@ -7,7 +7,8 @@
 
 int main_ipop_combine(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "OUTPUT", "Input filename");
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   args::Flag wf(parser, "W", "Input is Water/Fat, output will be IP/OP", {"wf"});
   args::ValueFlag<std::string> qr(parser, "R", "Read R from file", {"qr"});
@@ -34,7 +35,7 @@ int main_ipop_combine(args::Subparser &parser)
     suffix = "wf";
   }
 
-  rl::HD5::Writer writer(OutName(iname.Get(), "", suffix));
+  rl::HD5::Writer writer(oname.Get());
   writer.writeTensor(rl::HD5::Keys::Image, output.dimensions(), output.data(), rl::HD5::Dims::Image);
   return EXIT_SUCCESS;
 }

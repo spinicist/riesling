@@ -9,8 +9,8 @@ using namespace rl;
 
 int main_nii(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Input h5 file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Specify output name", {"out", 'o'});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output nii file");
   args::Flag                    mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (default image)", {'d', "dset"}, "image");
   args::ValueFlag<Index>        frameArg(parser, "E", "Frame (default all)", {'e', "frame"}, 0);
@@ -33,11 +33,10 @@ int main_nii(args::Subparser &parser)
   Cx4 const output = image.slice(Sz5{stE, 0, 0, 0, stV}, Sz5{szE, sz[1], sz[2], sz[3], szV})
                        .shuffle(Sz5{1, 2, 3, 0, 4})
                        .reshape(Sz4{sz[1], sz[2], sz[3], szE * szV});
-  auto const ofile = OutName(iname.Get(), oname.Get(), "", "nii");
   if (mag) {
-    WriteNifti(info, Re4(output.abs()), ofile);
+    WriteNifti(info, Re4(output.abs()), oname.Get());
   } else {
-    WriteNifti(info, output, ofile);
+    WriteNifti(info, output, oname.Get());
   }
 
   return EXIT_SUCCESS;

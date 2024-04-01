@@ -90,8 +90,8 @@ template struct SzReader<3>;
 template struct SzReader<4>;
 
 CoreOpts::CoreOpts(args::Subparser &parser)
-  : iname(parser, "F", "Input HD5 file")
-  , oname(parser, "O", "Override output name", {'o', "out"})
+  : iname(parser, "FILE", "Input HD5 file")
+  , oname(parser, "FILE", "Output HD5 file")
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
   , scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu")
   , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
@@ -153,23 +153,15 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname,
   if (!oname) { throw args::Error("No output file specified"); }
 }
 
-std::string OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension)
-{
-  return fmt::format("{}{}.{}", oName.empty() ? std::filesystem::path(iName).filename().replace_extension().string() : oName,
-                     suffix.empty() ? "" : fmt::format("-{}", suffix), extension);
-}
-
 void WriteOutput(CoreOpts                           &opts,
                  rl::Cx5 const                      &img,
-                 std::string const                  &suffix,
                  rl::Trajectory const               &traj,
                  std::string const                  &log,
                  rl::Cx5 const                      &residImage,
                  rl::Cx5 const                      &residKSpace,
                  std::map<std::string, float> const &meta)
 {
-  auto const  fname = OutName(opts.iname.Get(), opts.oname.Get(), suffix, "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(opts.oname.Get());
   writer.writeTensor(HD5::Keys::Image, img.dimensions(), img.data(), HD5::Dims::Image);
   writer.writeMeta(meta);
   writer.writeInfo(traj.info());
@@ -179,5 +171,5 @@ void WriteOutput(CoreOpts                           &opts,
   writer.writeString("log", log);
   if (opts.residImage) { writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data()); }
   if (opts.residKSpace) { writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data()); }
-  Log::Print("Wrote output file {}", fname);
+  Log::Print("Wrote output file {}", opts.oname.Get());
 }

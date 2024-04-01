@@ -11,8 +11,8 @@ using namespace rl;
 
 int main_wavelets(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Input image file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   args::ValueFlag<Sz4, SzReader<4>> dims(parser, "W", "Wavelet dimensions", {"dims"}, Sz4{0, 1, 1, 1});
   args::ValueFlag<Index>            width(parser, "W", "Wavelet width (4/6/8)", {"width", 'w'}, 6);
@@ -22,7 +22,6 @@ int main_wavelets(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
 
   HD5::Reader reader(iname.Get());
-  auto const  fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
   auto        images = reader.readTensor<Cx5>(HD5::Keys::Image);
   Wavelets    wav(FirstN<4>(images.dimensions()), width.Get(), dims.Get());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
@@ -32,7 +31,7 @@ int main_wavelets(args::Subparser &parser)
       images.chip<4>(iv) = wav.forward(ChipMap(images, iv));
     }
   }
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
 

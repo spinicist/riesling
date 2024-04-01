@@ -23,7 +23,7 @@ int main_ndft(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
 
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "ndft", "h5"));
+  HD5::Writer writer(coreOpts.oname.Get());
 
   auto const start = Log::Now();
   if (fwd) {

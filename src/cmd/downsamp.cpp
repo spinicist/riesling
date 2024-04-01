@@ -29,7 +29,7 @@ int main_downsamp(args::Subparser &parser)
     NoncartesianTukey(filterStart.Get() * 0.5, filterEnd.Get() * 0.5, 0.f, dsTraj.points(), ks2);
   }
 
-  HD5::Writer writer(OutName(iname.Get(), oname.Get(), parser.GetCommand().Name()));
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(dsTraj.info());
   writer.writeTensor(HD5::Keys::Trajectory, dsTraj.points().dimensions(), dsTraj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Noncartesian, ks2.dimensions(), ks2.data());

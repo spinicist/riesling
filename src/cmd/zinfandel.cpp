@@ -54,7 +54,7 @@ int main_zinfandel(args::Subparser &parser)
   }
   Trajectory extended(traj.info(), newPoints);
   Log::Print("Extended {}", extended.matrix());
-  Cx5 const   data = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5 const data = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
   traj.checkDims(FirstN<3>(data.dimensions()));
   Index const nC = data.dimension(0);
   Index const nS = data.dimension(1);
@@ -109,7 +109,7 @@ int main_zinfandel(args::Subparser &parser)
     out.slice(Sz5{0, gap.Get(), 0, 0, 0}, Sz5{nC, nS, nT, nSlab, nVol}) = data;
   }
 
-  HD5::Writer writer(OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "zinfandel", "h5"));
+  HD5::Writer writer(coreOpts.oname.Get());
   Log::Print("Extended {}", extended.matrix());
   writer.writeInfo(extended.info());
   writer.writeTensor(HD5::Keys::Trajectory, extended.points().dimensions(), extended.points().data(), HD5::Dims::Trajectory);

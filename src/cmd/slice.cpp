@@ -9,8 +9,8 @@ using namespace rl;
 
 int main_slice(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "FILE", "HD5 file to slice");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   args::ValueFlag<Index> channelSize(parser, "T", "Number of channels to keep", {"channel-size"}, 0);
   args::ValueFlag<Index> channelStart(parser, "T", "Channel to start split", {"channel-start"}, 0);
@@ -92,11 +92,10 @@ int main_slice(args::Subparser &parser)
     traj = Trajectory(info, traj.points().stride(Sz3{1, readStride.Get(), traceStride.Get()}));
   }
 
-  auto const fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name());
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
-  Log::Print("Wrote output file {}", fname);
+  Log::Print("Wrote output file {}", oname.Get());
   return EXIT_SUCCESS;
 }

@@ -43,22 +43,17 @@ struct SzReader
   void operator()(std::string const &name, std::string const &value, rl::Sz<N> &x);
 };
 
-// Helper function to generate a good output name
-std::string
-OutName(std::string const &iName, std::string const &oName, std::string const &suffix, std::string const &extension = "h5");
-
 struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
-  args::Positional<std::string>                  iname;
-  args::ValueFlag<std::string>                   oname, basisFile, scaling;
+  args::Positional<std::string>                  iname, oname;
+  args::ValueFlag<std::string>                   basisFile, scaling;
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
   args::Flag                                     ndft, residImage, residKSpace, keepTrajectory;
 };
 
 void WriteOutput(CoreOpts                           &opts,
                  rl::Cx5 const                      &img,
-                 std::string const                  &suffix,
                  rl::Trajectory const               &traj,
                  std::string const                  &log,
                  rl::Cx5 const                      &residImage = rl::Cx5(),

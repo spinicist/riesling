@@ -32,8 +32,7 @@ int main_sense_calib(args::Subparser &parser)
     sz[1] = 1;
     maps = Cx5(maps.slice(Sz5{0, frame.Get(), 0, 0, 0}, sz));
   }
-  auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), "sense", "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::SENSE, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   return EXIT_SUCCESS;
 }

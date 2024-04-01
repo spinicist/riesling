@@ -11,17 +11,15 @@ using namespace rl;
 
 int main_grad(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "INPUT", "Input image file");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    fwd(parser, "F", "Apply forward operation", {"fwd"});
   ParseCommand(parser);
   if (!iname) { throw args::Error("No input file specified"); }
 
   HD5::Reader reader(iname.Get());
-  auto const  fname = OutName(iname.Get(), oname.Get(), parser.GetCommand().Name(), "h5");
-  HD5::Writer writer(fname);
+  HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
-
   if (fwd) {
     auto   input = reader.readTensor<Cx5>(HD5::Keys::Image);
     Sz4    dims = FirstN<4>(input.dimensions());

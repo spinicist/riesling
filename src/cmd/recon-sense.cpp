@@ -52,8 +52,7 @@ int main_recon_sense(args::Subparser &parser)
       kspace.chip<4>(iv) = recon->forward(padded);
     }
     Log::Print("All Volumes: {}", Log::ToNow(all_start));
-    auto const  fname = OutName(coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), "h5");
-    HD5::Writer writer(fname);
+    HD5::Writer writer(coreOpts.oname.Get());
     writer.writeInfo(traj.info());
     writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
     writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data(), HD5::Dims::Noncartesian);
@@ -67,13 +66,11 @@ int main_recon_sense(args::Subparser &parser)
     Cx4        vol(sz);
     Cx5        out(AddBack(osz, volumes));
     out.setZero();
-    auto const &all_start = Log::Now();
     for (Index iv = 0; iv < volumes; iv++) {
       vol = recon->adjoint(noncart.chip<4>(iv));
       out.chip<4>(iv) = Crop(vol, osz);
     }
-    Log::Print("All Volumes: {}", Log::ToNow(all_start));
-    WriteOutput(coreOpts, out, parser.GetCommand().Name(), traj, Log::Saved());
+    WriteOutput(coreOpts, out, traj, Log::Saved());
   }
 
   return EXIT_SUCCESS;
