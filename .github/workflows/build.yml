@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - ducc
+      - api2
   pull_request:
     branches:
       - main
@@ -42,7 +43,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{runner.os}}" == "macOS" ]; then
-            brew install gnu-tar imagemagick@6
+            brew install imagemagick@6
             export PATH="/opt/homebrew/opt/imagemagick@6/bin:$PATH"
             export LDFLAGS="-L/opt/homebrew/opt/imagemagick@6/lib
             export CPPFLAGS="-I/opt/homebrew/opt/imagemagick@6/include
@@ -75,6 +76,14 @@ jobs:
           CC: ${{matrix.config.cc}}
           CXX: ${{matrix.config.cxx}}
         run: |
+          if [ "${{runner.os}}" == "macOS" ]; then
+            export PATH="/opt/homebrew/opt/imagemagick@6/bin:$PATH"
+            export LDFLAGS="-L/opt/homebrew/opt/imagemagick@6/lib
+            export CPPFLAGS="-I/opt/homebrew/opt/imagemagick@6/include
+            export PKG_CONFIG_PATH="/opt/homebrew/opt/imagemagick@6/lib/pkgconfig"
+          else
+            sudo apt-get install -y libmagick++-dev
+          fi
           if [ -x "$( command -v Magick++-config )" ]; then
             echo "Found config"
           else
