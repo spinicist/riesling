@@ -62,6 +62,7 @@ template std::shared_ptr<FFT<2, 2>> Make(typename FFT<2, 2>::TensorMap, Index co
 template std::shared_ptr<FFT<3, 3>> Make(typename FFT<3, 3>::TensorMap, Index const);
 template std::shared_ptr<FFT<3, 1>> Make(typename FFT<3, 1>::TensorMap, Index const);
 template std::shared_ptr<FFT<4, 2>> Make(typename FFT<4, 2>::TensorMap, Index const);
+template std::shared_ptr<FFT<4, 3>> Make(typename FFT<4, 3>::TensorMap, Index const);
 template std::shared_ptr<FFT<5, 3>> Make(typename FFT<5, 3>::TensorMap, Index const);
 
 } // namespace FFT

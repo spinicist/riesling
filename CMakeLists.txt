@@ -59,6 +59,7 @@ add_library(vineyard
     src/io/writer.cpp
     src/kernel/kernel.cpp
     src/op/apodize.cpp
+    src/op/fft.cpp
     src/op/grad.cpp
     src/op/grid.cpp
     src/op/ndft.cpp
