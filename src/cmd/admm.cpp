@@ -18,7 +18,7 @@ using namespace rl;
 int main_admm(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
-  GridOpts    GridOpts(parser);
+  GridOpts    gridOpts(parser);
   SDC::Opts   sdcOpts(parser, "none");
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
@@ -45,8 +45,8 @@ int main_admm(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, GridOpts, traj, noncart), basis.dimension(0));
-  auto const recon = make_recon(coreOpts, GridOpts, sdcOpts, traj, sense, basis);
+  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+  auto const recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
   auto const shape = recon->ishape;
   auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, basis, preBias.Get());
 
