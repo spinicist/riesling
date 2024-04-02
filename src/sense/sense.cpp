@@ -90,7 +90,7 @@ auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &nonc
     // return ESPIRIT(channels, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
-    return senseReader.readTensor<Cx5>(HD5::Keys::SENSE);
+    return senseReader.readTensor<Cx5>(HD5::Keys::Data);
   }
 }
 

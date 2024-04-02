@@ -20,7 +20,7 @@ int main_sense_calib(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto maps = SENSE::UniformNoise(senseOpts.λ.Get(), SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis));
@@ -33,6 +33,6 @@ int main_sense_calib(args::Subparser &parser)
     maps = Cx5(maps.slice(Sz5{0, frame.Get(), 0, 0, 0}, sz));
   }
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor(HD5::Keys::SENSE, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
+  writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   return EXIT_SUCCESS;
 }

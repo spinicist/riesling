@@ -136,6 +136,6 @@ int main_phantom(args::Subparser &parser)
     phantom = SheppLoganPhantom(
       info.matrix, info.voxel_size, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero(), size.Get(), centres, ha, angles, ints);
   }
-  writer.writeTensor(HD5::Keys::Image, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
   return EXIT_SUCCESS;
 }

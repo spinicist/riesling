@@ -39,7 +39,7 @@ int main_slice(args::Subparser &parser)
   HD5::Reader reader(iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto        info = traj.info();
-  Cx5         ks = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5         ks = reader.readTensor<Cx5>();
 
   Index const cSt = Wrap(channelStart.Get(), ks.dimension(0));
   Index const rSt = Wrap(readStart.Get(), ks.dimension(1));
@@ -95,7 +95,7 @@ int main_slice(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
-  writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
+  writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Log::Print("Wrote output file {}", oname.Get());
   return EXIT_SUCCESS;
 }

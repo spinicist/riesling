@@ -20,7 +20,7 @@ int main_filter(args::Subparser &parser)
 
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
-  Cx5         images = input.readTensor<Cx5>(HD5::Keys::Image);
+  Cx5         images = input.readTensor<Cx5>();
   auto const  fft = FFT::Make<4, 3>(FirstN<4>(images.dimensions()));
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     Cx4 img = images.chip<4>(iv);
@@ -31,6 +31,6 @@ int main_filter(args::Subparser &parser)
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
+  writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data());
   return EXIT_SUCCESS;
 }

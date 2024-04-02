@@ -17,7 +17,7 @@ int main_lookup(args::Subparser &parser)
 
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
-  Cx5 const   images = input.readTensor<Cx5>(HD5::Keys::Image);
+  Cx5 const   images = input.readTensor<Cx5>();
 
   if (!dname) { throw args::Error("No basis file specified"); }
   HD5::Reader dfile(dname.Get());

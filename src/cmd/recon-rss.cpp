@@ -26,7 +26,7 @@ int main_recon_rss(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  Index const nC = reader.dimensions(HD5::Keys::Noncartesian)[0];
+  Index const nC = reader.dimensions(HD5::Keys::Data)[0];
   auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
 
   std::shared_ptr<TensorOperator<Cx, 5, 4>> A = nullptr;
@@ -39,7 +39,7 @@ int main_recon_rss(args::Subparser &parser)
   }
   Sz4 sz = LastN<4>(A->ishape);
 
-  Cx5         allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5         allData = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(allData.dimensions()));
   Index const volumes = allData.dimension(4);
   Cx5         out(AddBack(sz, volumes));

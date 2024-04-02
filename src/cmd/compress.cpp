@@ -38,7 +38,7 @@ int main_compress(args::Subparser &parser)
 
   HD5::Reader      reader(coreOpts.iname.Get());
   Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{4, refVol.Get()}});
+  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
   Index const      channels = ks.dimension(0);
   Index const      samples = ks.dimension(1);
   Index const      traces = ks.dimension(2);
@@ -64,7 +64,7 @@ int main_compress(args::Subparser &parser)
     Log::Fail("Must specify PCA/ROVIR/load from file");
   }
   Compressor  compressor{psi};
-  Cx5 const   uncompressed = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5 const   uncompressed = reader.readTensor<Cx5>();
   Cx5         compressed(AddFront(LastN<4>(uncompressed.dimensions()), psi.cols()));
   Index const volumes = uncompressed.dimension(4);
   for (Index iv = 0; iv < volumes; iv++) {
@@ -74,7 +74,7 @@ int main_compress(args::Subparser &parser)
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
-  writer.writeTensor(HD5::Keys::Noncartesian, compressed.dimensions(), compressed.data());
+  writer.writeTensor(HD5::Keys::Data, compressed.dimensions(), compressed.data());
 
   if (save) {
     HD5::Writer matfile(save.Get());

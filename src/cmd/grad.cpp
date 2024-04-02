@@ -21,7 +21,7 @@ int main_grad(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   if (fwd) {
-    auto   input = reader.readTensor<Cx5>(HD5::Keys::Image);
+    auto   input = reader.readTensor<Cx5>();
     Sz4    dims = FirstN<4>(input.dimensions());
     Cx6    output(AddBack(dims, 3, input.dimension(4)));
     GradOp g(dims, std::vector<Index>{1, 2, 3});
@@ -37,7 +37,7 @@ int main_grad(args::Subparser &parser)
     for (Index iv = 0; iv < input.dimension(5); iv++) {
       output.chip<4>(iv) = g.adjoint(CChipMap(input, iv));
     }
-    writer.writeTensor(HD5::Keys::Image, output.dimensions(), output.data());
+    writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
   }
 
   return EXIT_SUCCESS;

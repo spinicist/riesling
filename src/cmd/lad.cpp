@@ -46,7 +46,7 @@ int main_lad(args::Subparser &parser)
 
   Cropper     out_cropper(info.matrix, LastN<3>(sz), info.voxel_size, coreOpts.fov.Get());
   Sz3         outSz = out_cropper.size();
-  Cx5         allData = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5         allData = reader.readTensor<Cx5>();
   float const scale = Scaling(coreOpts.scaling, recon, M->cadjoint(CChipMap(allData, 0)));
   allData.device(Threads::GlobalDevice()) = allData * allData.constant(scale);
   Index const volumes = allData.dimension(4);

@@ -28,15 +28,15 @@ int main_grid(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   auto const start = Log::Now();
   if (fwd) {
-    Cx5        cart = reader.readTensor<Cx5>(HD5::Keys::Cartesian);
+    Cx5        cart = reader.readTensor<Cx5>();
     auto const gridder = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), cart.dimension(0), basis);
     auto const rad_ks = gridder->forward(cart);
-    writer.writeTensor(HD5::Keys::Noncartesian, Sz5{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1, 1},
+    writer.writeTensor(HD5::Keys::Data, Sz5{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1, 1},
                        rad_ks.data());
     Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
   } else {
-    auto const noncart = channel ? reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{0, channel.Get()}})
-                                 : reader.readTensor<Cx4>(HD5::Keys::Noncartesian);
+    auto const noncart = channel ? reader.readSlab<Cx4>(HD5::Keys::Data, {{0, channel.Get()}})
+                                 : reader.readTensor<Cx4>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     Index const nC = noncart.dimension(0);
     Index const nS = noncart.dimension(3);
@@ -48,7 +48,7 @@ int main_grid(args::Subparser &parser)
       slice = sdc->adjoint(slice);
       cart.chip<5>(is) = gridder->adjoint(slice);
     }
-    writer.writeTensor(HD5::Keys::Cartesian, cart.dimensions(), cart.data());
+    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data());
     Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
   }
 

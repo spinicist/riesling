@@ -29,8 +29,8 @@ int main_merge(args::Subparser &parser)
   if (!traj1.compatible(traj2)) { Log::Fail("Trajectories are not compatible"); }
   Index const nD = traj1.nDims();
 
-  Cx5 ks1 = reader1.readTensor<Cx5>(HD5::Keys::Noncartesian);
-  Cx5 ks2 = reader2.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  Cx5 ks1 = reader1.readTensor<Cx5>();
+  Cx5 ks2 = reader2.readTensor<Cx5>();
 
   if (scale1) { ks1 = ks1 * ks1.constant(scale1.Get()); }
   if (scale2) { ks2 = ks2 * ks2.constant(scale2.Get()); }
@@ -67,7 +67,7 @@ int main_merge(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(traj.info());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
-  writer.writeTensor(HD5::Keys::Noncartesian, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
+  writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
 
   return EXIT_SUCCESS;
 }

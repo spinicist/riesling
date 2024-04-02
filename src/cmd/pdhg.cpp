@@ -32,7 +32,7 @@ int main_pdhg(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto        noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+  auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nV = noncart.dimension(4);
 

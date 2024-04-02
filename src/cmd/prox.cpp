@@ -34,7 +34,7 @@ int main_prox(args::Subparser &parser)
 
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
-  Cx5 const   images = input.readTensor<Cx5>(HD5::Keys::Image) * Cx(scale.Get());
+  Cx5 const   images = input.readTensor<Cx5>() * Cx(scale.Get());
   Cx5         output(images.dimensions());
 
   using Map = Proxs::Prox<Cx>::Map;
@@ -62,6 +62,6 @@ int main_prox(args::Subparser &parser)
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Image, output.dimensions(), output.data());
+  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
   return EXIT_SUCCESS;
 }

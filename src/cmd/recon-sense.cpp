@@ -33,7 +33,7 @@ int main_recon_sense(args::Subparser &parser)
   }
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
-  Index volumes = fwd ? reader.dimensions(HD5::Keys::Image).at(4) : reader.dimensions(HD5::Keys::Noncartesian).at(4);
+  Index volumes = fwd ? reader.dimensions().at(4) : reader.dimensions().at(4);
 
   if (fwd) {
     HD5::Reader senseReader(senseOpts.type.Get());
@@ -43,7 +43,7 @@ int main_recon_sense(args::Subparser &parser)
     Sz4 const   osz = AddFront(traj.matrixForFOV(coreOpts.fov.Get()), sz[0]);
 
     auto const &all_start = Log::Now();
-    auto const  images = reader.readTensor<Cx5>(HD5::Keys::Image);
+    auto const  images = reader.readTensor<Cx5>();
     Cx4         padded(sz);
     Cx5         kspace(AddBack(recon->oshape, volumes));
     for (Index iv = 0; iv < volumes; iv++) {
@@ -55,9 +55,9 @@ int main_recon_sense(args::Subparser &parser)
     HD5::Writer writer(coreOpts.oname.Get());
     writer.writeInfo(traj.info());
     writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
-    writer.writeTensor(HD5::Keys::Noncartesian, kspace.dimensions(), kspace.data(), HD5::Dims::Noncartesian);
+    writer.writeTensor(HD5::Keys::Data, kspace.dimensions(), kspace.data(), HD5::Dims::Noncartesian);
   } else {
-    auto noncart = reader.readTensor<Cx5>(HD5::Keys::Noncartesian);
+    auto noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
     auto const recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);

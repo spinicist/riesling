@@ -28,7 +28,7 @@ int main_denoise(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
 
-  Cx5        images = input.readTensor<Cx5>(HD5::Keys::Image);
+  Cx5        images = input.readTensor<Cx5>();
   auto const fft = llrFft ? FFT::Make<4, 3>(FirstN<4>(images.dimensions())) : nullptr;
 
   auto hardLLR = [λ = λ.Get()](Cx4 const &xp) {
@@ -53,6 +53,6 @@ int main_denoise(args::Subparser &parser)
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
+  writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data());
   return EXIT_SUCCESS;
 }

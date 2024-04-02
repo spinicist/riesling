@@ -162,7 +162,7 @@ void WriteOutput(CoreOpts                           &opts,
                  std::map<std::string, float> const &meta)
 {
   HD5::Writer writer(opts.oname.Get());
-  writer.writeTensor(HD5::Keys::Image, img.dimensions(), img.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
   writer.writeMeta(meta);
   writer.writeInfo(traj.info());
   if (opts.keepTrajectory) {

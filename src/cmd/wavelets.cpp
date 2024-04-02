@@ -22,7 +22,7 @@ int main_wavelets(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
 
   HD5::Reader reader(iname.Get());
-  auto        images = reader.readTensor<Cx5>(HD5::Keys::Image);
+  auto        images = reader.readTensor<Cx5>();
   Wavelets    wav(FirstN<4>(images.dimensions()), width.Get(), dims.Get());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     if (adj) {
@@ -33,7 +33,7 @@ int main_wavelets(args::Subparser &parser)
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
-  writer.writeTensor(HD5::Keys::Image, images.dimensions(), images.data());
+  writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data());
 
   return EXIT_SUCCESS;
 }

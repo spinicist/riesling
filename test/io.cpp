@@ -35,7 +35,7 @@ TEST_CASE("IO", "[io]")
       HD5::Writer writer(fname);
       CHECK_NOTHROW(writer.writeInfo(traj.info()));
       CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data()));
-      CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Noncartesian, refData.dimensions(), refData.data()));
+      CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Data, refData.dimensions(), refData.data()));
     }
     CHECK(std::filesystem::exists(fname));
 
@@ -46,10 +46,10 @@ TEST_CASE("IO", "[io]")
     CHECK(traj.nSamples() == samples);
     CHECK(traj.nTraces() == traces);
 
-    CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{4, 0}}));
-    auto const check0 = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{4, 0}});
+    CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 0}}));
+    auto const check0 = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 0}});
     CHECK(Norm(check0 - refData.chip<4>(0)) == Approx(0.f).margin(1.e-9));
-    auto const check1 = reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{4, 1}});
+    auto const check1 = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 1}});
     CHECK(Norm(check1 - refData.chip<4>(1)) == Approx(0.f).margin(1.e-9));
     std::filesystem::remove(fname);
   }
@@ -63,11 +63,11 @@ TEST_CASE("IO", "[io]")
       Re5 const realData = refData.real();
       writer.writeInfo(traj.info());
       writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
-      writer.writeTensor(HD5::Keys::Noncartesian, realData.dimensions(), realData.data());
+      writer.writeTensor(HD5::Keys::Data, realData.dimensions(), realData.data());
     }
     CHECK(std::filesystem::exists(fname));
     HD5::Reader reader(fname);
-    CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Noncartesian, {{0, 0}}));
+    CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Data, {{0, 0}}));
     std::filesystem::remove(fname);
   }
 }

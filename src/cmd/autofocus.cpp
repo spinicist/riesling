@@ -22,7 +22,7 @@ int main_autofocus(args::Subparser &parser)
   args::ValueFlag<Index> patch(parser, "P", "Patch size", {"patch", 'p'}, 5);
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
-  Cx5 const in = reader.readTensor<Cx5>(HD5::Keys::Image);
+  Cx5 const in = reader.readTensor<Cx5>();
   Index const nX = in.dimension(1);
   Index const nY = in.dimension(2);
   Index const nZ = in.dimension(3);
@@ -39,7 +39,7 @@ int main_autofocus(args::Subparser &parser)
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
-  writer.writeTensor(HD5::Keys::Image, out.dimensions(), out.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
 
   return EXIT_SUCCESS;
 }

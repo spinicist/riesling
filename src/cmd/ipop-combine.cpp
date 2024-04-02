@@ -16,7 +16,7 @@ int main_ipop_combine(args::Subparser &parser)
 
   rl::HD5::Reader ifile(iname.Get());
 
-  rl::Cx5 const input = ifile.readTensor<rl::Cx5>(rl::HD5::Keys::Image);
+  rl::Cx5 const input = ifile.readTensor<rl::Cx5>();
   rl::Cx5       output(input.dimensions());
 
   std::string suffix;
@@ -36,6 +36,6 @@ int main_ipop_combine(args::Subparser &parser)
   }
 
   rl::HD5::Writer writer(oname.Get());
-  writer.writeTensor(rl::HD5::Keys::Image, output.dimensions(), output.data(), rl::HD5::Dims::Image);
+  writer.writeTensor(rl::HD5::Keys::Data, output.dimensions(), output.data(), rl::HD5::Dims::Image);
   return EXIT_SUCCESS;
 }
