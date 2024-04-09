@@ -19,7 +19,7 @@ Opts::Opts(args::Subparser &parser)
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, 12.f)
   , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
-  , fov(parser, "SENSE-FOV", "SENSE FoV (default 256,256,256)", {"sense-fov"}, Eigen::Array3f{256.f, 256.f, 256.f})
+  , fov(parser, "SENSE-FOV", "SENSE FoV (default 256,256,256)", {"sense-fov"}, Eigen::Array3f::Zero())
   , kRad(parser, "K", "ESPIRIT kernel size (4)", {"espirit-k"}, 3)
   , calRad(parser, "C", "ESPIRIT calibration region (8)", {"espirit-cal"}, 6)
   , gap(parser, "G", "ESPIRIT gap (0)", {"espirit-gap"}, 0)
@@ -79,7 +79,6 @@ auto UniformNoise(float const λ, Cx5 const &channels) -> Cx5
 
 auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
-  Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
     return UniformNoise(opts.λ.Get(), LoresChannels(opts, nufft, traj, noncart));
@@ -91,11 +90,7 @@ auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &nonc
     // return ESPIRIT(channels, shape, opts.kRad.Get(), opts.calRad.Get(), opts.gap.Get(), opts.threshold.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
-    Cx5         sense = senseReader.readTensor<Cx5>(HD5::Keys::SENSE);
-    if (LastN<3>(sense.dimensions()) != shape) {
-      Log::Fail("SENSE map spatial dimensions were {}, expected {}", LastN<3>(sense.dimensions()), shape);
-    }
-    return sense;
+    return senseReader.readTensor<Cx5>(HD5::Keys::SENSE);
   }
 }
 
