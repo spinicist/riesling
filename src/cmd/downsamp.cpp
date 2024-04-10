@@ -10,18 +10,20 @@ using namespace rl;
 
 int main_downsamp(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "FILE", "HD5 file to recon");
-  args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
-  args::ValueFlag<float>        res(parser, "R", "Target resolution (4 mm)", {"res"}, 4.0);
-  args::ValueFlag<Index>        lores(parser, "L", "First N traces are lo-res", {"lores"}, 0);
-  args::ValueFlag<float>        filterStart(parser, "T", "Tukey filter start", {"filter-start"}, 0.5f);
-  args::ValueFlag<float>        filterEnd(parser, "T", "Tukey filter end", {"filter-end"}, 1.0f);
-  args::Flag                    noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
-  args::Flag                    corners(parser, "C", "Keep corners", {"corners"});
+  args::Positional<std::string>                  iname(parser, "FILE", "HD5 file to recon");
+  args::ValueFlag<std::string>                   oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::ValueFlag<Eigen::Array3f, Array3fReader> res(parser, "R", "Target resolution (4 mm)", {"res"},
+                                                     Eigen::Array3f::Constant(4.f));
+  args::ValueFlag<Index>                         lores(parser, "L", "First N traces are lo-res", {"lores"}, 0);
+  args::ValueFlag<float>                         filterStart(parser, "T", "Tukey filter start", {"filter-start"}, 0.5f);
+  args::ValueFlag<float>                         filterEnd(parser, "T", "Tukey filter end", {"filter-end"}, 1.0f);
+  args::Flag                                     noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
+  args::Flag                                     corners(parser, "C", "Keep corners", {"corners"});
   ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info        info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
   auto const  ks1 = reader.readTensor<Cx5>();
   auto [dsTraj, ks2] = traj.downsample(ks1, res.Get(), lores.Get(), !noShrink, corners);
 
@@ -30,8 +32,9 @@ int main_downsamp(args::Subparser &parser)
   }
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(dsTraj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, dsTraj.points().dimensions(), dsTraj.points().data(), HD5::Dims::Trajectory);
+  dsTraj.write(writer);
+  info.voxel_size = dsTraj.voxelSize();
+  writer.writeInfo(info);
   writer.writeTensor(HD5::Keys::Data, ks2.dimensions(), ks2.data());
 
   return EXIT_SUCCESS;

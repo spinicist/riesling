@@ -41,7 +41,7 @@ int main_zinfandel(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader, reader.readInfo().voxel_size);
 
   // Extend trajectory
   Re3 newPoints(traj.nDims(), gap.Get() + traj.nSamples(), traj.nTraces());
@@ -52,7 +52,7 @@ int main_zinfandel(args::Subparser &parser)
     newPoints.slice(Sz3{0, ig - 1, 0}, Sz3{traj.nDims(), 1, traj.nTraces()}) =
       newPoints.slice(Sz3{0, ig, 0}, Sz3{traj.nDims(), 1, traj.nTraces()}) + dec;
   }
-  Trajectory extended(traj.info(), newPoints);
+  Trajectory extended(newPoints, traj.matrix(), traj.voxelSize());
   Log::Print("Extended {}", extended.matrix());
   Cx5 const data = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(data.dimensions()));
@@ -74,7 +74,7 @@ int main_zinfandel(args::Subparser &parser)
     }
   } else {
     // Use SLR
-    auto const [lores, lo, sz] = traj.downsample(12.f, 0, true, true);
+    auto const [lores, lo, sz] = traj.downsample(Eigen::Array3f{12.f, 12.f, 12.f}, 0, true, true);
     Log::Print("Extended {}", extended.matrix());
     auto      A = make_nufft(lores, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, lores.matrix());
     Sz5 const shape = A->ishape;
@@ -96,7 +96,7 @@ int main_zinfandel(args::Subparser &parser)
     ADMM admm{A,       M,    {id}, {slr},   inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
               ε.Get(), 1.2f, 10.f, debug_x, debug_z};
 
-    Trajectory gapTraj(traj.info(), newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}));
+    Trajectory gapTraj(newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}), traj.matrix(), traj.voxelSize());
     auto       B = make_nufft(gapTraj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, lores.matrix());
 
     for (Index iv = 0; iv < nVol; iv++) {
@@ -111,8 +111,8 @@ int main_zinfandel(args::Subparser &parser)
 
   HD5::Writer writer(coreOpts.oname.Get());
   Log::Print("Extended {}", extended.matrix());
-  writer.writeInfo(extended.info());
-  writer.writeTensor(HD5::Keys::Trajectory, extended.points().dimensions(), extended.points().data(), HD5::Dims::Trajectory);
+  writer.writeInfo(reader.readInfo());
+  extended.write(writer);
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Noncartesian);
   Log::Print("Finished");

@@ -9,7 +9,7 @@ namespace rl {
 struct ROVIROpts
 {
   ROVIROpts(args::Subparser &parser);
-  args::ValueFlag<float> res;
+  args::ValueFlag<Eigen::Array3f, Array3fReader> res;
   args::ValueFlag<float> fov;
   args::ValueFlag<Index> gap;
 };

@@ -233,6 +233,9 @@ auto Reader::readInfo() const -> Info
 }
 
 auto Reader::exists(std::string const &label) const -> bool { return Exists(handle_, label); }
+auto Reader::exists(std::string const &dset, std::string const &attr) const -> bool {
+  return H5Aexists_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT);
+}
 
 auto Reader::readMeta() const -> std::map<std::string, float>
 {
@@ -271,6 +274,18 @@ auto Reader::readAttribute<int>(std::string const &ds_name, std::string const &a
   int val;
   CheckedCall(H5LTget_attribute_int(handle_, ds_name.c_str(), attr_name.c_str(), &val),
               fmt::format("reading attribute {} from {}", attr_name, ds_name));
+  return val;
+}
+
+template <>
+auto Reader::readAttribute<Sz3>(std::string const &dset, std::string const &attr) const -> Sz3
+{
+  hsize_t sz3[1] = {3};
+  hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
+  Sz3 val;
+
+  auto const attrH = H5Aopen_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+  CheckedCall(H5Aread(attrH, long3_id, val.data()), fmt::format("reading attribute {} from {}", attr, dset));
   return val;
 }
 

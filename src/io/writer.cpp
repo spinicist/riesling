@@ -106,7 +106,7 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
-  auto l = labels.rbegin();
+  auto        l = labels.rbegin();
   for (Index ii = 0; ii < N; ii++) {
     CheckedCall(H5DSset_label(dset, ii, l->c_str()), "setting dimension label");
     l++;
@@ -169,6 +169,20 @@ template void Writer::writeMatrix<Eigen::MatrixXcf>(Eigen::DenseBase<Eigen::Matr
 
 template void Writer::writeMatrix<Eigen::ArrayXf>(Eigen::DenseBase<Eigen::ArrayXf> const &, std::string const &);
 template void Writer::writeMatrix<Eigen::ArrayXXf>(Eigen::DenseBase<Eigen::ArrayXXf> const &, std::string const &);
+
+template <typename T>
+auto writeAttribute(std::string const &dataset, std::string const &attribute, T const &val);
+
+template <>
+void Writer::writeAttribute<Sz3>(std::string const &dset, std::string const &attr, Sz3 const &val)
+{
+  hsize_t const sz3[1] = {3}, sz1[1] = {1};
+  hid_t const   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
+  auto const    space = H5Screate_simple(1, sz1, NULL);
+  auto const    attrH =
+    H5Acreate_by_name(handle_, dset.c_str(), attr.c_str(), long3_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  CheckedCall(H5Awrite(attrH, long3_id, val.data()), fmt::format("writing attribute {} to {}", attr, dset));
+}
 
 } // namespace HD5
 } // namespace rl

@@ -39,7 +39,8 @@ int main_admm(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info const info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nV = noncart.dimension(4);
@@ -87,13 +88,13 @@ int main_admm(args::Subparser &parser)
     auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
-    if (coreOpts.residImage || coreOpts.residKSpace) { noncart.chip<4>(iv) -= recon->forward(xm); }
     if (coreOpts.residImage) {
+      noncart.chip<4>(iv) -= recon->forward(xm);
       xm = recon->adjoint(noncart.chip<4>(iv));
       resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
     }
   }
-  WriteOutput(coreOpts, out, traj, Log::Saved(), resid, noncart);
+  WriteOutput(coreOpts, out, info, Log::Saved(), resid);
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

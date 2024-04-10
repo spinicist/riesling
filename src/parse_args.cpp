@@ -97,7 +97,6 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
   , ndft(parser, "D", "Use NDFT instead of NUFFT", {"ndft"})
   , residImage(parser, "R", "Write residuals in image space", {"resid-image"})
-  , residKSpace(parser, "R", "Write residuals in k-space", {"resid-kspace"})
   , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep"})
 {
 }
@@ -153,23 +152,17 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname,
   if (!oname) { throw args::Error("No output file specified"); }
 }
 
-void WriteOutput(CoreOpts                           &opts,
-                 rl::Cx5 const                      &img,
-                 rl::Trajectory const               &traj,
-                 std::string const                  &log,
-                 rl::Cx5 const                      &residImage,
-                 rl::Cx5 const                      &residKSpace,
-                 std::map<std::string, float> const &meta)
+void WriteOutput(CoreOpts          &opts,
+                 rl::Cx5 const     &img,
+                 rl::Info const    &info,
+                 std::string const &log,
+                 rl::Cx5 const     &residImage,
+                 rl::Cx5 const     &residKSpace)
 {
   HD5::Writer writer(opts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
-  writer.writeMeta(meta);
-  writer.writeInfo(traj.info());
-  if (opts.keepTrajectory) {
-    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
-  }
+  writer.writeInfo(info);
   writer.writeString("log", log);
   if (opts.residImage) { writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data()); }
-  if (opts.residKSpace) { writer.writeTensor(HD5::Keys::ResidualKSpace, residKSpace.dimensions(), residKSpace.data()); }
   Log::Print("Wrote output file {}", opts.oname.Get());
 }

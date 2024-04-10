@@ -49,13 +49,12 @@ struct CoreOpts
   args::Positional<std::string>                  iname, oname;
   args::ValueFlag<std::string>                   basisFile, scaling;
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
-  args::Flag                                     ndft, residImage, residKSpace, keepTrajectory;
+  args::Flag                                     ndft, residImage, keepTrajectory;
 };
 
-void WriteOutput(CoreOpts                           &opts,
-                 rl::Cx5 const                      &img,
-                 rl::Trajectory const               &traj,
-                 std::string const                  &log,
-                 rl::Cx5 const                      &residImage = rl::Cx5(),
-                 rl::Cx5 const                      &residKSpace = rl::Cx5(),
-                 std::map<std::string, float> const &meta = std::map<std::string, float>());
+void WriteOutput(CoreOpts          &opts,
+                 rl::Cx5 const     &img,
+                 rl::Info const    &info,
+                 std::string const &log,
+                 rl::Cx5 const     &residImage = rl::Cx5(),
+                 rl::Cx5 const     &residKSpace = rl::Cx5());

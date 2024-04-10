@@ -34,7 +34,7 @@ int main_psf(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   Index const nC = 1;
   Index const nB = basis.dimension(0);

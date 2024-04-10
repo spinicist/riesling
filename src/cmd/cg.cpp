@@ -15,7 +15,7 @@ using namespace rl;
 int main_cg(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
-  GridOpts   gridOpts(parser);
+  GridOpts    gridOpts(parser);
   SDC::Opts   sdcOpts(parser, "pipe");
   SENSE::Opts senseOpts(parser);
   // args::Flag toeplitz(parser, "T", "Use Töplitz embedding", {"toe", 't'});
@@ -25,7 +25,8 @@ int main_cg(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info const  info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nV = noncart.dimension(4);
@@ -46,12 +47,12 @@ int main_cg(args::Subparser &parser)
     auto x = cg.run(b.data());
     auto xm = Tensorfy(x, sz);
     out.chip<4>(iv) = out_cropper.crop4(xm);
-    if (coreOpts.residImage || coreOpts.residKSpace) { noncart.chip<4>(iv) -= recon->forward(xm); }
     if (coreOpts.residImage) {
+      noncart.chip<4>(iv) -= recon->forward(xm);
       xm = recon->adjoint(noncart.chip<4>(iv));
       resid.chip<4>(iv) = out_cropper.crop4(xm);
     }
   }
-  WriteOutput(coreOpts, out, traj, Log::Saved(), resid, noncart);
+  WriteOutput(coreOpts, out, info, Log::Saved(), resid);
   return EXIT_SUCCESS;
 }

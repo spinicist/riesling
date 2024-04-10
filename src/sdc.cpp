@@ -50,12 +50,11 @@ auto Pipe(Trajectory const &traj, std::string const &ktype, float const os, Inde
 Re2 Radial2D(Trajectory const &traj)
 {
   Log::Print("Calculating 2D radial analytic SDC");
-  Info const &info = traj.info();
-  auto        spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
+  auto spoke_sdc = [&](Index const spoke, Index const N) -> Re1 {
     float const k_delta = Norm(traj.point(1, spoke) - traj.point(0, spoke));
     float const V = 2.f * k_delta * M_PI / N; // Area element
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
-    float const R = (M_PI * *std::max_element(info.matrix.begin(), info.matrix.end())) / N;
+    float const R = (M_PI * *std::max_element(traj.matrix().begin(), traj.matrix().end())) / N;
     float const flat_start = traj.nSamples() / sqrt(R);
     float const flat_val = V * flat_start;
     Re1         sdc(traj.nSamples());
@@ -80,10 +79,9 @@ Re2 Radial2D(Trajectory const &traj)
 Re2 Radial3D(Trajectory const &traj, Index const lores)
 {
   Log::Print("Calculating 3D radial analytic SDC");
-  auto const &info = traj.info();
-  auto const  nS = traj.nSamples();
-  auto const  nLo = std::abs(lores);
-  auto const  nHi = traj.nTraces() - nLo;
+  auto const nS = traj.nSamples();
+  auto const nLo = std::abs(lores);
+  auto const nHi = traj.nTraces() - nLo;
 
   Eigen::ArrayXf mergeHi = Eigen::ArrayXf::Ones(nS);
   Eigen::ArrayXf mergeLo;
@@ -102,7 +100,7 @@ Re2 Radial3D(Trajectory const &traj, Index const lores)
 
   auto spoke_sdc = [&](Index const &spoke, Index const N, Eigen::ArrayXf const &merge) -> Re1 {
     // When k-space becomes undersampled need to flatten DC (Menon & Pipe 1999)
-    auto const  mm = *std::max_element(info.matrix.begin(), info.matrix.end());
+    auto const  mm = *std::max_element(traj.matrix().begin(), traj.matrix().end());
     float const R = (M_PI * mm * mm) / N; // Approx acceleration
     float const flat_start = nS / R;
     float const V = 1.f / (3. * (flat_start * flat_start) + 1. / 4.);

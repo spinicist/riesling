@@ -37,9 +37,10 @@ int main_slice(args::Subparser &parser)
   ParseCommand(parser, iname);
 
   HD5::Reader reader(iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto        info = traj.info();
-  Cx5         ks = reader.readTensor<Cx5>();
+  auto const  info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
+
+  Cx5 ks = reader.readTensor<Cx5>();
 
   Index const cSt = Wrap(channelStart.Get(), ks.dimension(0));
   Index const rSt = Wrap(readStart.Get(), ks.dimension(1));
@@ -70,31 +71,30 @@ int main_slice(args::Subparser &parser)
 
   if (traceSegSize) {
     Index const segSz = traceSegSize.Get();
-    if (tSt + tSz > segSz) {
-      Log::Fail("Selected traces {}-{} extend past segment {}", tSt, tSz, segSz);
-    }
+    if (tSt + tSz > segSz) { Log::Fail("Selected traces {}-{} extend past segment {}", tSt, tSz, segSz); }
     Index const nSeg = ks.dimension(2) / segSz; // Will lose spare traces
-    Index const oSegs = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg): nSeg;
+    Index const oSegs = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg) : nSeg;
     Log::Print("Selected {} trace segments", oSegs);
-    Sz5 const   shape5{cSz, rSz, tSz * oSegs, sSz, vSz};
-    Sz6 const   shape6{ks.dimension(0), ks.dimension(1), segSz, nSeg, ks.dimension(3), ks.dimension(4)};
+    Sz5 const shape5{cSz, rSz, tSz * oSegs, sSz, vSz};
+    Sz6 const shape6{ks.dimension(0), ks.dimension(1), segSz, nSeg, ks.dimension(3), ks.dimension(4)};
     ks = Cx5(ks.reshape(shape6).slice(Sz6{cSt, rSt, tSt, 0, sSt, vSt}, Sz6{cSz, rSz, tSz, oSegs, sSz, vSz}).reshape(shape5));
     Sz3 const shape3{3, rSz, tSz * oSegs};
     Sz4 const shape4{3, traj.nSamples(), segSz, nSeg};
-    traj = Trajectory(info, traj.points().reshape(shape4).slice(Sz4{0, rSt, tSt, 0}, Sz4{3, rSz, tSz, oSegs}).reshape(shape3));
+    traj = Trajectory(traj.points().reshape(shape4).slice(Sz4{0, rSt, tSt, 0}, Sz4{3, rSz, tSz, oSegs}).reshape(shape3),
+                      traj.matrix(), traj.voxelSize());
   } else {
     ks = Cx5(ks.slice(Sz5{cSt, rSt, tSt, sSt, vSt}, Sz5{cSz, rSz, tSz, sSz, vSz}));
-    traj = Trajectory(info, traj.points().slice(Sz3{0, rSt, tSt}, Sz3{3, rSz, tSz}));
+    traj = Trajectory(traj.points().slice(Sz3{0, rSt, tSt}, Sz3{3, rSz, tSz}), traj.matrix(), traj.voxelSize());
   }
 
   if (channelStride || readStride || traceStride || slabStride || volStride) {
     ks = Cx5(ks.stride(Sz5{channelStride.Get(), readStride.Get(), traceStride.Get(), slabStride.Get(), volStride.Get()}));
-    traj = Trajectory(info, traj.points().stride(Sz3{1, readStride.Get(), traceStride.Get()}));
+    traj = Trajectory(traj.points().stride(Sz3{1, readStride.Get(), traceStride.Get()}), traj.matrix(), traj.voxelSize());
   }
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(traj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  writer.writeInfo(info);
+  traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Log::Print("Wrote output file {}", oname.Get());
   return EXIT_SUCCESS;

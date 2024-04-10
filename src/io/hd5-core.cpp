@@ -105,18 +105,16 @@ std::string GetError()
 
 void CheckedCall(herr_t status, std::string const &msg)
 {
-  if (status) { Log::Fail("HD5 Error {}. Status {}. Error:{}\n", msg, status, GetError()); }
+  if (status) { Log::Fail("HD5 Error {}. Status {}. Error: {}\n", msg, status, GetError()); }
 }
 
 hid_t InfoType()
 {
   hid_t   info_id = H5Tcreate(H5T_COMPOUND, sizeof(Info));
   hsize_t sz3[1] = {3};
-  hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
   hid_t   float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
   hsize_t sz33[2] = {3, 3};
   hid_t   float33_id = H5Tarray_create(H5T_NATIVE_FLOAT, 2, sz33);
-  CheckedCall(H5Tinsert(info_id, "matrix", HOFFSET(Info, matrix), long3_id), "inserting matrix field");
   CheckedCall(H5Tinsert(info_id, "voxel_size", HOFFSET(Info, voxel_size), float3_id), "inserting voxel size field");
   CheckedCall(H5Tinsert(info_id, "origin", HOFFSET(Info, origin), float3_id), "inserting oring field");
   CheckedCall(H5Tinsert(info_id, "direction", HOFFSET(Info, direction), float33_id), "inserting direction field");
@@ -147,7 +145,7 @@ void CheckInfoType(hid_t handle)
   }
 }
 
-bool Exists(hid_t const parent, std::string const name) { return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0); }
+auto Exists(hid_t const parent, std::string const &name) -> bool { return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0); }
 
 herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
 {

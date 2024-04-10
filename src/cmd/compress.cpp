@@ -37,7 +37,8 @@ int main_compress(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader      reader(coreOpts.iname.Get());
-  Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info const       info = reader.readInfo();
+  Trajectory       traj(reader, info.voxel_size);
   Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
   Index const      channels = ks.dimension(0);
   Index const      samples = ks.dimension(1);
@@ -72,7 +73,7 @@ int main_compress(args::Subparser &parser)
   }
 
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeInfo(traj.info());
+  writer.writeInfo(info);
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Data, compressed.dimensions(), compressed.data());
 

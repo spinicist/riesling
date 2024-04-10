@@ -14,14 +14,14 @@ TEST_CASE("Recon", "[recon]")
   Index const M = GENERATE(7, 15, 16);
   Index const nC = 4;
   Index const nF = 1;
-  Info const info{.matrix = Sz3{M, M, M}};
+  auto const matrix = Sz3{M, M, M};
   Re3 points(3, 3, 1);
   points.setZero();
-  points(0, 0, 0) = -0.4f;
-  points(1, 0, 0) = -0.4f;
-  points(0, 2, 0) = 0.4f;
-  points(1, 2, 0) = 0.4f;
-  Trajectory const traj(info, points);
+  points(0, 0, 0) = -0.4f * M;
+  points(1, 0, 0) = -0.4f * M;
+  points(0, 2, 0) = 0.4f * M;
+  points(1, 2, 0) = 0.4f * M;
+  Trajectory const traj(points, matrix);
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");

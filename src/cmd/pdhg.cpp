@@ -31,7 +31,8 @@ int main_pdhg(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info const  info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nV = noncart.dimension(4);
@@ -57,12 +58,12 @@ int main_pdhg(args::Subparser &parser)
   Sz3         outSz = out_cropper.size();
   float const scale = Scaling(coreOpts.scaling, recon, P, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
-  Cx5         out(shape[0], outSz[0], outSz[1], outSz[2], nV);
+  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV);
   for (Index iv = 0; iv < nV; iv++) {
     auto x = pdhg.run(&noncart(0, 0, 0, 0, iv), its.Get());
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
   }
-  WriteOutput(coreOpts, out, traj, Log::Saved());
+  WriteOutput(coreOpts, out, info, Log::Saved());
   return EXIT_SUCCESS;
 }

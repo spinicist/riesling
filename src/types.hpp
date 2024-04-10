@@ -174,8 +174,8 @@ auto Mul(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N
   return result;
 }
 
-template <int N>
-auto Div(Eigen::DSizes<Index, N> const &sz, Index const d) -> Eigen::DSizes<Index, N>
+template <int N, typename T>
+auto Div(Eigen::DSizes<Index, N> const &sz, T const d) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
   std::transform(sz.begin(), sz.begin() + N, result.begin(), [d](Index const i) { return i / d; });

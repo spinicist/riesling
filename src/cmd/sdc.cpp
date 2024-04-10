@@ -17,7 +17,7 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<Index>       its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader, reader.readInfo().voxel_size);
 
   Re2 dc;
   if (sdcType.Get() == "pipe") {

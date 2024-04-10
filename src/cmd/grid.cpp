@@ -19,13 +19,14 @@ int main_grid(args::Subparser &parser)
   args::ValueFlag<Index> channel(parser, "C", "Only grid this channel", {"channel", 'c'});
   ParseCommand(parser, coreOpts.iname);
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info const info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeInfo(traj.info());
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  writer.writeInfo(info);
+  traj.write(writer);
   auto const start = Log::Now();
   if (fwd) {
     Cx5        cart = reader.readTensor<Cx5>();

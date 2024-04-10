@@ -14,10 +14,10 @@ int main_precond(args::Subparser &parser)
   args::ValueFlag<float>        preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::ValueFlag<std::string>  basisFile(parser, "BASIS", "File to read basis from", {"basis"});
   ParseCommand(parser, trajFile);
-  HD5::Reader      reader(trajFile.Get());
-  HD5::Writer      writer(preFile.Get());
-  Trajectory const traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  auto             M = KSpaceSingle(traj, ReadBasis(basisFile.Get()), preBias.Get());
+  HD5::Reader reader(trajFile.Get());
+  HD5::Writer writer(preFile.Get());
+  Trajectory  traj(reader, reader.readInfo().voxel_size);
+  auto        M = KSpaceSingle(traj, ReadBasis(basisFile.Get()), preBias.Get());
   writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data());
   return EXIT_SUCCESS;
 }

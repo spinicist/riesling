@@ -16,20 +16,18 @@ namespace rl {
  */
 auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bias, bool const ndft) -> Re2
 {
-  Info const info = traj.info();
-  Info       newInfo = info;
-  std::transform(newInfo.matrix.begin(), newInfo.matrix.begin() + traj.nDims(), newInfo.matrix.begin(),
-                 [](Index const i) { return i * 2; });
-  Trajectory  newTraj(newInfo, traj.points());
+  Sz3 newMatrix = traj.matrix();
+  std::transform(newMatrix.begin(), newMatrix.begin() + traj.nDims(), newMatrix.begin(), [](Index const i) { return i * 2; });
+  Trajectory  newTraj(traj.points(), newMatrix, traj.voxelSize());
   float const osamp = 1.25;
   auto        nufft = ndft ? make_ndft(newTraj.points(), 1, newTraj.matrix(), basis)
                            : make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix(), basis);
   Cx4         W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
-  Cx5       ones(AddFront(info.matrix, psf.dimension(0), psf.dimension(1)));
+  Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
   ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
-  PadOp<Cx, 5, 3> padX(info.matrix, LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
+  PadOp<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   auto            fftX = FFT::Make<5, 3>(psf.dimensions());
   Cx5             xcorr(padX.oshape);
   xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
@@ -40,7 +38,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   Re2 weights = nufft->forward(xcorr).abs().chip(0, 3).chip(0, 0);
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
-    std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(info.matrix) / Product(LastN<3>(ones.dimensions()));
+    std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
   weights.device(Threads::GlobalDevice()) = ((weights * scale) + bias).inverse();
   float const norm = Norm(weights);
   if (!std::isfinite(norm)) {

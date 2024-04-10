@@ -19,11 +19,11 @@ int main_sense_calib(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto maps = SENSE::UniformNoise(senseOpts.λ.Get(), SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis));
+  auto       maps = SENSE::UniformNoise(senseOpts.λ.Get(), SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis));
   if (frame) {
     if (frame.Get() < 0 || frame.Get() >= maps.dimension(1)) {
       Log::Fail("Requested frame {} is outside valid range 0-{}", frame.Get(), maps.dimension(1));

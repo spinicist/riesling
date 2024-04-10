@@ -28,7 +28,7 @@ int main_pdhg_setup(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
   auto const  recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);

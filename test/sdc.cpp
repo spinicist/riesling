@@ -12,13 +12,13 @@ TEST_CASE("SDC", "[sdc]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 16;
-  Info const info{.matrix = Sz3{M, M, M}};
+  auto const matrix = Sz3{M, M, M};
   Index const samples = 3, traces = 1;
   Re3 points(3, samples, traces);
   points.setZero();
-  points(0, 1, 0) = -0.25;
-  points(0, 2, 0) =  0.25;
-  Trajectory const traj(info, points);
+  points(0, 1, 0) = -0.25 * M;
+  points(0, 2, 0) =  0.25 * M;
+  Trajectory const traj(points, matrix);
 
   SECTION("Pipe-NN")
   {

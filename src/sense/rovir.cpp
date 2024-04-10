@@ -13,7 +13,7 @@
 namespace rl {
 
 ROVIROpts::ROVIROpts(args::Subparser &parser)
-  : res(parser, "R", "ROVIR recon resolution", {"rovir-res"}, -1.f)
+  : res(parser, "R", "ROVIR calibration res (12 mm)", {"rovir-res"}, Eigen::Array3f::Constant(12.f))
   , fov(parser, "F", "ROVIR Signal FoV", {"rovir-fov"}, 1024.f)
   , gap(parser, "G", "ROVIR gap in voxels", {"rovir-gap"}, 0)
 {
@@ -33,7 +33,6 @@ auto ROVIR(ROVIROpts        &opts,
   } else {
     data = inData;
   }
-  auto const &info = traj.info();
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
   auto        sdc = std::make_shared<TensorScale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
@@ -46,8 +45,8 @@ auto ROVIR(ROVIROpts        &opts,
   Re3 signalMask(sz), interMask(sz);
   signalMask.setZero();
   interMask = (rss > thresh).cast<float>();
-  Crop(signalMask, info.matrix) = Crop(interMask, info.matrix);
-  Sz3 szGap{info.matrix[0] + opts.gap.Get(), info.matrix[1] + opts.gap.Get(), info.matrix[2] + opts.gap.Get()};
+  Crop(signalMask, traj.matrix()) = Crop(interMask, traj.matrix());
+  Sz3 szGap{traj.matrix()[0] + opts.gap.Get(), traj.matrix()[1] + opts.gap.Get(), traj.matrix()[2] + opts.gap.Get()};
   Crop(interMask, szGap).setZero();
   // Copy to A & B matrices
   Index const nSig = Sum(signalMask);

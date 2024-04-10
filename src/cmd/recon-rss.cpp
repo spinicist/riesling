@@ -24,7 +24,8 @@ int main_recon_rss(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  Info const  info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   Index const nC = reader.dimensions(HD5::Keys::Data)[0];
   auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
@@ -39,7 +40,7 @@ int main_recon_rss(args::Subparser &parser)
   }
   Sz4 sz = LastN<4>(A->ishape);
 
-  Cx5         allData = reader.readTensor<Cx5>();
+  Cx5 allData = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(allData.dimensions()));
   Index const volumes = allData.dimension(4);
   Cx5         out(AddBack(sz, volumes));
@@ -47,7 +48,7 @@ int main_recon_rss(args::Subparser &parser)
     auto const channels = A->adjoint(CChipMap(allData, iv));
     out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
   }
-  WriteOutput(coreOpts, out, traj, Log::Saved());
+  WriteOutput(coreOpts, out, info, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

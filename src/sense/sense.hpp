@@ -14,8 +14,8 @@ struct Opts
   Opts(args::Subparser &parser);
   args::ValueFlag<std::string>                   type;
   args::ValueFlag<Index>                         volume;
-  args::ValueFlag<float>                         res, λ;
-  args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
+  args::ValueFlag<Eigen::Array3f, Array3fReader> res, fov;
+  args::ValueFlag<float>                         λ;
   args::ValueFlag<Index>                         kRad, calRad, gap;
   args::ValueFlag<float>                         threshold;
 };

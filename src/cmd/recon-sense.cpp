@@ -18,20 +18,14 @@ int main_recon_sense(args::Subparser &parser)
   SDC::Opts                    sdcOpts(parser, "pipe");
   SENSE::Opts                  senseOpts(parser);
   args::Flag                   fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  args::ValueFlag<std::string> trajName(parser, "T", "Override trajectory", {"traj"});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
   ParseCommand(parser, coreOpts.iname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj;
-  if (trajName) {
-    HD5::Reader trajReader(trajName.Get());
-    traj = Trajectory(trajReader.readInfo(), trajReader.readTensor<Re3>(HD5::Keys::Trajectory));
-  } else {
-    traj = Trajectory(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
-  }
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
+  Info const  info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
+  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
 
   Index volumes = fwd ? reader.dimensions().at(4) : reader.dimensions().at(4);
 
@@ -53,8 +47,8 @@ int main_recon_sense(args::Subparser &parser)
     }
     Log::Print("All Volumes: {}", Log::ToNow(all_start));
     HD5::Writer writer(coreOpts.oname.Get());
-    writer.writeInfo(traj.info());
-    writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+    writer.writeInfo(info);
+    traj.write(writer);
     writer.writeTensor(HD5::Keys::Data, kspace.dimensions(), kspace.data(), HD5::Dims::Noncartesian);
   } else {
     auto noncart = reader.readTensor<Cx5>();
@@ -70,7 +64,7 @@ int main_recon_sense(args::Subparser &parser)
       vol = recon->adjoint(noncart.chip<4>(iv));
       out.chip<4>(iv) = Crop(vol, osz);
     }
-    WriteOutput(coreOpts, out, traj, Log::Saved());
+    WriteOutput(coreOpts, out, info, Log::Saved());
   }
 
   return EXIT_SUCCESS;

@@ -12,38 +12,34 @@ struct NoncartesianIndex
   int16_t sample;
 };
 
-template <int Rank>
+template <int NDims>
 struct Mapping
 {
   struct Bucket
   {
-    Sz<Rank>             gridSize, minCorner, maxCorner;
+    Sz<NDims>            gridSize, minCorner, maxCorner;
     std::vector<int32_t> indices;
 
     auto empty() const -> bool;
     auto size() const -> Index;
-    auto bucketSize() const -> Sz<Rank>;
-    auto bucketStart() const -> Sz<Rank>;
-    auto gridStart() const -> Sz<Rank>;
-    auto sliceSize() const -> Sz<Rank>;
+    auto bucketSize() const -> Sz<NDims>;
+    auto bucketStart() const -> Sz<NDims>;
+    auto gridStart() const -> Sz<NDims>;
+    auto sliceSize() const -> Sz<NDims>;
   };
 
   Mapping(
-    Trajectory const &t,
-    float const       nomOSamp,
-    Index const       kW,
-    Index const       bucketSize = 32,
-    Index const       splitSize = 16384);
+    Trajectory const &t, float const nomOSamp, Index const kW, Index const bucketSize = 32, Index const splitSize = 16384);
 
-  float    osamp;
-  Sz2      noncartDims;
-  Sz<Rank> cartDims, nomDims;
+  float     osamp;
+  Sz2       noncartDims;
+  Sz<NDims> cartDims, nomDims;
 
-  std::vector<std::array<int16_t, Rank>>    cart;
-  std::vector<NoncartesianIndex>            noncart;
-  std::vector<Eigen::Array<float, Rank, 1>> offset;
-  std::vector<Bucket>                       buckets;
-  std::vector<int32_t>                      sortedIndices;
+  std::vector<std::array<int16_t, NDims>>    cart;
+  std::vector<NoncartesianIndex>             noncart;
+  std::vector<Eigen::Array<float, NDims, 1>> offset;
+  std::vector<Bucket>                        buckets;
+  std::vector<int32_t>                       sortedIndices;
 };
 
 } // namespace rl

@@ -36,11 +36,10 @@ int main_h5(args::Subparser &parser)
   } else {
     if (reader.exists("info")) {
       auto const i = reader.readInfo();
-      fmt::print("Matrix:     {}\n", i.matrix);
       fmt::print("Voxel-size: {}\n", i.voxel_size.transpose());
       fmt::print("TR:         {}\n", i.tr);
       fmt::print("Origin:     {}\n", i.origin.transpose());
-      // fmt::print("Direction:\n{}\n", i.direction);
+      fmt::print("Direction:\n{}\n", fmt::streamed(i.direction));
     }
 
     auto const datasets = reader.list();

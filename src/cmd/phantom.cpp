@@ -18,29 +18,20 @@ Trajectory LoadTrajectory(std::string const &file)
 {
   Log::Print("Reading external trajectory from {}", file);
   HD5::Reader reader(file);
-  return Trajectory(reader.readInfo(), reader.readTensor<Re3>(HD5::Keys::Trajectory));
+  return Trajectory(reader, reader.readInfo().voxel_size);
 }
 
-Trajectory CreateTrajectory(
-  Index const matrix,
-  float const voxSz,
-  float const readOS,
-  Index const sps,
-  float const nex,
-  bool const  phyllo,
-  float const lores,
-  Index const trim)
+Trajectory CreateTrajectory(Index const matrix,
+                            float const voxSz,
+                            float const readOS,
+                            Index const sps,
+                            float const nex,
+                            bool const  phyllo,
+                            float const lores,
+                            Index const trim)
 {
   // Follow the GE definition where factor of PI is ignored
   Index const spokes = sps * std::ceil(nex * matrix * matrix / sps);
-  float const fov = matrix * voxSz;
-  Info        info{
-           .matrix = Eigen::DSizes<Index, 3>{matrix, matrix, matrix},
-           .voxel_size = Eigen::Array3f::Constant(fov / matrix),
-           .origin = Eigen::Array3f::Constant(-fov / 2.f),
-           .direction = Eigen::Matrix3f::Identity(),
-           .tr = 1.f};
-
   Index const samples = Index(readOS * matrix / 2);
 
   Log::Print("Using {} hi-res spokes", spokes);
@@ -57,10 +48,9 @@ Trajectory CreateTrajectory(
 
   if (trim > 0) { points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, samples - trim, spokes})); }
 
-  Log::Print("Matrix Size: {} Voxel Size: {}", info.matrix, info.voxel_size.transpose());
   Log::Print("Samples: {} Traces: {}", samples, spokes);
 
-  return Trajectory(info, points);
+  return Trajectory(points, Sz3{matrix, matrix, matrix}, Eigen::Array3f::Constant(voxSz));
 }
 
 int main_phantom(args::Subparser &parser)
@@ -91,50 +81,42 @@ int main_phantom(args::Subparser &parser)
 
   ParseCommand(parser, iname);
 
-  Trajectory const traj =
-    trajfile
-      ? LoadTrajectory(trajfile.Get())
-      : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), sps.Get(), nex.Get(), phyllo, lores.Get(), trim.Get());
-  auto const &info = traj.info();
-
-  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
-  writer.writeInfo(traj.info());
+  Trajectory const traj = trajfile ? LoadTrajectory(trajfile.Get())
+                                   : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), sps.Get(), nex.Get(), phyllo,
+                                                      lores.Get(), trim.Get());
+  Info const       info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
+                        .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
+                        .direction = Eigen::Matrix3f::Identity(),
+                        .tr = 1.f};
+  HD5::Writer      writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
+  writer.writeInfo(info);
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
 
-  Cx3 phantom(info.matrix);
+  Cx3 phantom(traj.matrix());
 
   if (gradCubes) {
-    phantom = GradCubes(info.matrix, info.voxel_size, size.Get());
+    phantom = GradCubes(traj.matrix(), traj.voxelSize(), size.Get());
   } else {
     // Parameters for the 10 elipsoids in the 3D Shepp-Logan phantom from Cheng et al.
-    std::vector<Eigen::Vector3f> const centres{
-      {0, 0, 0},
-      {0, 0, 0},
-      {-0.22, 0, -0.25},
-      {0.22, 0, -0.25},
-      {0, 0.35, -0.25},
-      {0, 0.1, -0.25},
-      {-0.08, -0.65, -0.25},
-      {0.06, -0.65, -0.25},
-      {0.06, -0.105, 0.625},
-      {0, 0.1, 0.625}};
+    std::vector<Eigen::Vector3f> const centres{{0, 0, 0},
+                                               {0, 0, 0},
+                                               {-0.22, 0, -0.25},
+                                               {0.22, 0, -0.25},
+                                               {0, 0.35, -0.25},
+                                               {0, 0.1, -0.25},
+                                               {-0.08, -0.65, -0.25},
+                                               {0.06, -0.65, -0.25},
+                                               {0.06, -0.105, 0.625},
+                                               {0, 0.1, 0.625}};
 
     // Half-axes
-    std::vector<Eigen::Array3f> const ha{
-      {0.69, 0.92, 0.9},
-      {0.6624, 0.874, 0.88},
-      {0.41, 0.16, 0.21},
-      {0.31, 0.11, 0.22},
-      {0.21, 0.25, 0.5},
-      {0.046, 0.046, 0.046},
-      {0.046, 0.023, 0.02},
-      {0.046, 0.023, 0.02},
-      {0.056, 0.04, 0.1},
-      {0.056, 0.056, 0.1}};
-    std::vector<float> const angles{0, 0, 3 * M_PI / 5, 2 * M_PI / 5, 0, 0, 0, M_PI / 2, M_PI / 2, 0};
-    std::vector<float> const ints{100, -40, -10, -10, 10, 10, 5, 5, 10, -10};
-    phantom = SheppLoganPhantom(
-      info.matrix, info.voxel_size, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero(), size.Get(), centres, ha, angles, ints);
+    std::vector<Eigen::Array3f> const ha{{0.69, 0.92, 0.9},  {0.6624, 0.874, 0.88}, {0.41, 0.16, 0.21},   {0.31, 0.11, 0.22},
+                                         {0.21, 0.25, 0.5},  {0.046, 0.046, 0.046}, {0.046, 0.023, 0.02}, {0.046, 0.023, 0.02},
+                                         {0.056, 0.04, 0.1}, {0.056, 0.056, 0.1}};
+    std::vector<float> const          angles{0, 0, 3 * M_PI / 5, 2 * M_PI / 5, 0, 0, 0, M_PI / 2, M_PI / 2, 0};
+    std::vector<float> const          ints{100, -40, -10, -10, 10, 10, 5, 5, 10, -10};
+    phantom = SheppLoganPhantom(traj.matrix(), traj.voxelSize(), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero(), size.Get(),
+                                centres, ha, angles, ints);
   }
   writer.writeTensor(HD5::Keys::Data, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
   return EXIT_SUCCESS;
