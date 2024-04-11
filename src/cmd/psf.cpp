@@ -31,7 +31,7 @@ int main_psf(args::Subparser &parser)
   args::ValueFlag<Eigen::Array2f, Array2fReader> phases(parser, "P", "Phase accrued at start and end of spoke",
                                                         {"phases", 'p'});
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);

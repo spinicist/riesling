@@ -15,7 +15,7 @@ int main_sdc(args::Subparser &parser)
   args::ValueFlag<std::string> sdcType(parser, "SDC", "SDC type: 'pipe', 'radial'", {"sdc"}, "pipe");
   args::ValueFlag<Index>       lores(parser, "L", "Number of lo-res traces for radial", {'l', "lores"}, 0);
   args::ValueFlag<Index>       its(parser, "N", "Maximum number of iterations (40)", {"max-its", 'n'}, 40);
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
 

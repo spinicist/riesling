@@ -29,7 +29,7 @@ int main_lsqr(args::Subparser &parser)
   args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
   args::ValueFlag<float>       λ(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f);
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();

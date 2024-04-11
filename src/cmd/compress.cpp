@@ -34,7 +34,7 @@ int main_compress(args::Subparser &parser)
   args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
   ROVIROpts                         rovirOpts(parser);
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader      reader(coreOpts.iname.Get());
   Info const       info = reader.readInfo();

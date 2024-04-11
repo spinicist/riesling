@@ -16,7 +16,7 @@ int main_ndft(args::Subparser &parser)
   GridOpts   gridOpts(parser);
   SDC::Opts  sdcOpts(parser, "pipe");
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Info const info = reader.readInfo();

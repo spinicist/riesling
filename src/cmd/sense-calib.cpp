@@ -16,7 +16,7 @@ int main_sense_calib(args::Subparser &parser)
   SDC::Opts              sdcOpts(parser, "pipe");
   args::ValueFlag<Index> frame(parser, "F", "SENSE calibration frame (all)", {"frame"}, -1);
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);

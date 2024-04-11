@@ -25,7 +25,7 @@ int main_eig(args::Subparser &parser)
   args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
   args::Flag                   recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
   args::Flag                   savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);

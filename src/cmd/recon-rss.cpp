@@ -21,7 +21,7 @@ int main_recon_rss(args::Subparser &parser)
   args::ValueFlag<float>       t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
   args::ValueFlag<float>       tSamp(parser, "TS", "Sample time for off-resonance correction", {"tsamp"});
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();

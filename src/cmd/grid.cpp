@@ -17,7 +17,7 @@ int main_grid(args::Subparser &parser)
   SDC::Opts              sdcOpts(parser, "pipe");
   args::Flag             fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<Index> channel(parser, "C", "Only grid this channel", {"channel", 'c'});
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   HD5::Reader reader(coreOpts.iname.Get());
   Info const info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);

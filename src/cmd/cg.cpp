@@ -22,7 +22,7 @@ int main_cg(args::Subparser &parser)
   args::ValueFlag<float> thr(parser, "T", "Termination threshold (1e-10)", {"thresh"}, 1.e-10);
   args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {"max-its"}, 8);
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();

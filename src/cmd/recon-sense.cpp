@@ -20,7 +20,7 @@ int main_recon_sense(args::Subparser &parser)
   args::Flag                   fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
