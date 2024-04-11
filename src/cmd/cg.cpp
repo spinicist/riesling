@@ -41,18 +41,21 @@ int main_cg(args::Subparser &parser)
   Cropper out_cropper(LastN<3>(sz), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3     outSz = out_cropper.size();
   Cx5     out(sz[0], outSz[0], outSz[1], outSz[2], nV), resid;
-  if (coreOpts.residImage) { resid.resize(sz[0], outSz[0], outSz[1], outSz[2], nV); }
+  if (coreOpts.residual) { resid.resize(sz[0], outSz[0], outSz[1], outSz[2], nV); }
   for (Index iv = 0; iv < nV; iv++) {
     auto b = recon->adjoint(CChipMap(noncart, iv));
     auto x = cg.run(b.data());
     auto xm = Tensorfy(x, sz);
     out.chip<4>(iv) = out_cropper.crop4(xm);
-    if (coreOpts.residImage) {
+    if (coreOpts.residual) {
       noncart.chip<4>(iv) -= recon->forward(xm);
       xm = recon->adjoint(noncart.chip<4>(iv));
       resid.chip<4>(iv) = out_cropper.crop4(xm);
     }
   }
-  WriteOutput(coreOpts, out, info, Log::Saved(), resid);
+  WriteOutput(coreOpts, out, info, Log::Saved());
+  if (coreOpts.residual) {
+    WriteOutput(coreOpts, resid, info);
+  }
   return EXIT_SUCCESS;
 }

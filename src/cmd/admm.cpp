@@ -57,7 +57,7 @@ int main_admm(args::Subparser &parser)
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
 
   Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
-  if (coreOpts.residImage) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
+  if (coreOpts.residual) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);
@@ -88,13 +88,16 @@ int main_admm(args::Subparser &parser)
     auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
-    if (coreOpts.residImage) {
+    if (coreOpts.residual) {
       noncart.chip<4>(iv) -= recon->forward(xm);
       xm = recon->adjoint(noncart.chip<4>(iv));
       resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
     }
   }
-  WriteOutput(coreOpts, out, info, Log::Saved(), resid);
+  WriteOutput(coreOpts, out, info, Log::Saved());
+  if (coreOpts.residual) {
+    WriteOutput(coreOpts, resid, info);
+  }
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

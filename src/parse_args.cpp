@@ -93,11 +93,10 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   : iname(parser, "FILE", "Input HD5 file")
   , oname(parser, "FILE", "Output HD5 file")
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
+  , residual(parser, "R", "Write out residual to file", {"residuals"})
   , scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu")
   , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
   , ndft(parser, "D", "Use NDFT instead of NUFFT", {"ndft"})
-  , residImage(parser, "R", "Write residuals in image space", {"resid-image"})
-  , keepTrajectory(parser, "", "Keep the trajectory in the output file", {"keep"})
 {
 }
 
@@ -152,17 +151,11 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname,
   if (!oname) { throw args::Error("No output file specified"); }
 }
 
-void WriteOutput(CoreOpts          &opts,
-                 rl::Cx5 const     &img,
-                 rl::Info const    &info,
-                 std::string const &log,
-                 rl::Cx5 const     &residImage,
-                 rl::Cx5 const     &residKSpace)
+void WriteOutput(CoreOpts &opts, rl::Cx5 const &img, rl::Info const &info, std::string const &log)
 {
   HD5::Writer writer(opts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
   writer.writeInfo(info);
-  writer.writeString("log", log);
-  if (opts.residImage) { writer.writeTensor(HD5::Keys::Residual, residImage.dimensions(), residImage.data()); }
+  if (log.size()) { writer.writeString("log", log); }
   Log::Print("Wrote output file {}", opts.oname.Get());
 }

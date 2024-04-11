@@ -47,14 +47,12 @@ struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
   args::Positional<std::string>                  iname, oname;
-  args::ValueFlag<std::string>                   basisFile, scaling;
+  args::ValueFlag<std::string>                   basisFile, residual, scaling;
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
-  args::Flag                                     ndft, residImage, keepTrajectory;
+  args::Flag                                     ndft;
 };
 
 void WriteOutput(CoreOpts          &opts,
                  rl::Cx5 const     &img,
                  rl::Info const    &info,
-                 std::string const &log,
-                 rl::Cx5 const     &residImage = rl::Cx5(),
-                 rl::Cx5 const     &residKSpace = rl::Cx5());
+                 std::string const &log = "");
