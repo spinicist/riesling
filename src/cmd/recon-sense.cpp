@@ -64,7 +64,7 @@ int main_recon_sense(args::Subparser &parser)
       vol = recon->adjoint(noncart.chip<4>(iv));
       out.chip<4>(iv) = Crop(vol, osz);
     }
-    WriteOutput(coreOpts, out, info, Log::Saved());
+    WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   }
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;

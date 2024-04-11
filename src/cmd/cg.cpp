@@ -53,9 +53,9 @@ int main_cg(args::Subparser &parser)
       resid.chip<4>(iv) = out_cropper.crop4(xm);
     }
   }
-  WriteOutput(coreOpts, out, info, Log::Saved());
+  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   if (coreOpts.residual) {
-    WriteOutput(coreOpts, resid, info);
+    WriteOutput(coreOpts.residual.Get(), resid, info);
   }
   return EXIT_SUCCESS;
 }

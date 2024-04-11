@@ -48,7 +48,7 @@ int main_recon_rss(args::Subparser &parser)
     auto const channels = A->adjoint(CChipMap(allData, iv));
     out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
   }
-  WriteOutput(coreOpts, out, info, Log::Saved());
+  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

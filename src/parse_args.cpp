@@ -151,11 +151,11 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname,
   if (!oname) { throw args::Error("No output file specified"); }
 }
 
-void WriteOutput(CoreOpts &opts, rl::Cx5 const &img, rl::Info const &info, std::string const &log)
+void WriteOutput(std::string const &fname, rl::Cx5 const &img, rl::Info const &info, std::string const &log)
 {
-  HD5::Writer writer(opts.oname.Get());
+  HD5::Writer writer(fname);
   writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
   writer.writeInfo(info);
   if (log.size()) { writer.writeString("log", log); }
-  Log::Print("Wrote output file {}", opts.oname.Get());
+  Log::Print("Wrote output file {}", fname);
 }

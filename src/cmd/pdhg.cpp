@@ -64,6 +64,6 @@ int main_pdhg(args::Subparser &parser)
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
   }
-  WriteOutput(coreOpts, out, info, Log::Saved());
+  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   return EXIT_SUCCESS;
 }

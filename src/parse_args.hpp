@@ -52,7 +52,4 @@ struct CoreOpts
   args::Flag                                     ndft;
 };
 
-void WriteOutput(CoreOpts          &opts,
-                 rl::Cx5 const     &img,
-                 rl::Info const    &info,
-                 std::string const &log = "");
+void WriteOutput(std::string const &fname, rl::Cx5 const &img, rl::Info const &info, std::string const &log = "");
