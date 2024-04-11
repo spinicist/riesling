@@ -163,6 +163,6 @@ void WriteOutput(CoreOpts          &opts,
   writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
   writer.writeInfo(info);
   writer.writeString("log", log);
-  if (opts.residImage) { writer.writeTensor(HD5::Keys::ResidualImage, residImage.dimensions(), residImage.data()); }
+  if (opts.residImage) { writer.writeTensor(HD5::Keys::Residual, residImage.dimensions(), residImage.data()); }
   Log::Print("Wrote output file {}", opts.oname.Get());
 }

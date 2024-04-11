@@ -119,5 +119,6 @@ int main_phantom(args::Subparser &parser)
                                 centres, ha, angles, ints);
   }
   writer.writeTensor(HD5::Keys::Data, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
+  Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

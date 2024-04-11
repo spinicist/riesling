@@ -74,6 +74,22 @@ auto Reader::dimensions(std::string const &label) const -> std::vector<Index>
   return dims;
 }
 
+auto Reader::listNames(std::string const &name) const -> std::vector<std::string>
+{
+  hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
+  if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
+  hid_t     dspace = H5Dget_space(ds);
+  int const ndims = H5Sget_simple_extent_ndims(dspace);
+  std::vector<std::string> names(ndims);
+  char buffer[64] = {0};
+  for (Index ii = 0; ii < ndims; ii++) {
+    H5DSget_label(ds, ii, buffer, sizeof(buffer));
+    names[ii] = std::string(buffer);
+  }
+  CheckedCall(H5Dclose(ds), "Could not close dataset");
+  return names;
+}
+
 template <typename T>
 auto Reader::readTensor(std::string const &name) const -> T
 {
@@ -111,11 +127,14 @@ template auto Reader::readTensor<Cx5>(std::string const &) const -> Cx5;
 template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 
 template <int N>
-auto Reader::readDims(std::string const &name) const -> Names<N>
+auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
 {
+  if (N != order(name)) {
+    Log::Fail("Asked for {} dimension names, but {} order tensor", N, order(name));
+  }
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
-  Names<N> names;
+  DimensionNames<N> names;
   for (Index ii = 0; ii < N; ii++) {
     char buffer[64] = {0};
     H5DSget_label(ds, ii, buffer, sizeof(buffer));
@@ -125,8 +144,8 @@ auto Reader::readDims(std::string const &name) const -> Names<N>
   return names;
 }
 
-template auto Reader::readDims<5>(std::string const &) const -> Names<5>;
-template auto Reader::readDims<6>(std::string const &) const -> Names<6>;
+template auto Reader::dimensionNames<5>(std::string const &) const -> DimensionNames<5>;
+template auto Reader::dimensionNames<6>(std::string const &) const -> DimensionNames<6>;
 
 template <typename T>
 auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T

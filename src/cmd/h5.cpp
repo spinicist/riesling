@@ -45,7 +45,9 @@ int main_h5(args::Subparser &parser)
     auto const datasets = reader.list();
     if (datasets.empty()) { Log::Fail("No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
-      if (ds != "info") { fmt::print("{}:{}\n", ds, fmt::join(reader.dimensions(ds), ",")); }
+      if (ds != "info") {
+        fmt::print("Name: {:12} Shape: {:24} Names: {}\n", ds, fmt::format("{}", reader.dimensions(ds)), reader.listNames(ds));
+      }
     }
   }
   return EXIT_SUCCESS;

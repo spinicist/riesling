@@ -78,7 +78,7 @@ void Writer::writeMeta(std::map<std::string, float> const &meta)
 bool Writer::exists(std::string const &name) const { return HD5::Exists(handle_, name); }
 
 template <typename Scalar, int N>
-void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, Names<N> const &labels)
+void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, DimensionNames<N> const &labels)
 {
   for (Index ii = 0; ii < N; ii++) {
     if (shape[ii] == 0) { Log::Fail("Tensor {} had a zero dimension. Dims: {}", name, shape); }
@@ -120,16 +120,16 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
   Log::Debug("Wrote tensor: {}", name);
 }
 
-template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *, Names<1> const &);
-template void Writer::writeTensor<float, 1>(std::string const &, Sz<1> const &, float const *, Names<1> const &);
-template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, float const *, Names<2> const &);
-template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *, Names<3> const &);
-template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *, Names<4> const &);
-template void Writer::writeTensor<float, 5>(std::string const &, Sz<5> const &, float const *, Names<5> const &);
-template void Writer::writeTensor<Cx, 3>(std::string const &, Sz<3> const &, Cx const *, Names<3> const &);
-template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx const *, Names<4> const &);
-template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *, Names<5> const &);
-template void Writer::writeTensor<Cx, 6>(std::string const &, Sz<6> const &, Cx const *, Names<6> const &);
+template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *, DimensionNames<1> const &);
+template void Writer::writeTensor<float, 1>(std::string const &, Sz<1> const &, float const *, DimensionNames<1> const &);
+template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, float const *, DimensionNames<2> const &);
+template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *, DimensionNames<3> const &);
+template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *, DimensionNames<4> const &);
+template void Writer::writeTensor<float, 5>(std::string const &, Sz<5> const &, float const *, DimensionNames<5> const &);
+template void Writer::writeTensor<Cx, 3>(std::string const &, Sz<3> const &, Cx const *, DimensionNames<3> const &);
+template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx const *, DimensionNames<4> const &);
+template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *, DimensionNames<5> const &);
+template void Writer::writeTensor<Cx, 6>(std::string const &, Sz<6> const &, Cx const *, DimensionNames<6> const &);
 
 template <typename Derived>
 void Writer::writeMatrix(Eigen::DenseBase<Derived> const &mat, std::string const &name)

@@ -43,23 +43,22 @@ std::string const Meta = "meta";
 std::string const Norm = "norm";
 std::string const Parameters = "parameters";
 std::string const ProtonDensity = "pd";
-std::string const ResidualImage = "resid-image";
-std::string const ResidualKSpace = "resid-data";
+std::string const Residual = "residual";
 std::string const Trajectory = "trajectory";
 std::string const Weights = "weights";
 } // namespace Keys
 
 // Horrible hack due to DSizes shenanigans
 template <int N>
-struct Names : std::array<std::string, N> {};
+struct DimensionNames : std::array<std::string, N> {};
 
 namespace Dims {
-Names<3> const Basis = {"v", "sample", "trace"};
-Names<6> const Cartesian = {"channel", "v", "x", "y", "z", "t"};
-Names<5> const Image = {"v", "x", "y", "z", "t"};
-Names<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
-Names<5> const SENSE = {"channel", "v", "x", "y", "z"};
-Names<3> const Trajectory = {"k", "sample", "trace"};
+DimensionNames<3> const Basis = {"v", "sample", "trace"};
+DimensionNames<6> const Cartesian = {"channel", "v", "x", "y", "z", "t"};
+DimensionNames<5> const Image = {"v", "x", "y", "z", "t"};
+DimensionNames<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
+DimensionNames<5> const SENSE = {"channel", "v", "x", "y", "z"};
+DimensionNames<3> const Trajectory = {"k", "sample", "trace"};
 } // namespace Dims
 
 } // namespace HD5

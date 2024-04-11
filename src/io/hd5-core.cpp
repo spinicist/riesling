@@ -126,7 +126,7 @@ void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
   // Also use vector instead of array so I don't forget to change the size if the members change
-  std::vector<std::string> const names{"matrix", "voxel_size", "origin", "direction", "tr"};
+  std::vector<std::string> const names{"voxel_size", "origin", "direction", "tr"};
 
   if (handle < 0) { Log::Fail("Info struct does not exist"); }
   auto const dtype = H5Dget_type(handle);
