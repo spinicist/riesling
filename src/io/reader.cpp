@@ -86,6 +86,7 @@ auto Reader::listNames(std::string const &name) const -> std::vector<std::string
     H5DSget_label(ds, ii, buffer, sizeof(buffer));
     names[ii] = std::string(buffer);
   }
+  std::reverse(names.begin(), names.end());
   CheckedCall(H5Dclose(ds), "Could not close dataset");
   return names;
 }

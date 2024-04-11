@@ -25,8 +25,50 @@ def _indexers(D, image, img_zoom, sl, slv, others):
     return indexers
 
 def _symmetrize(x):
-    x[0] = -x[1]
-    return x
+    m = np.max(x)
+    return [-m, m]
+
+def _cmap(component):
+    if component == 'mag':
+        cmap = 'gray'
+    elif component == 'log':
+        cmap = 'gray'
+    elif component == 'real':
+        cmap = 'cmr.iceburn'
+    elif component == 'imag':
+        cmap = 'cmr.iceburn'
+    elif component == 'pha':
+        cmap = 'cet_colorwheel'
+    elif component == 'x':
+        cmap = 'cet_colorwheel'
+    elif component == 'xlog':
+        cmap = 'cet_colorwheel'
+    else:
+        raise(f'Unknown component {component}')
+    return cmap
+
+def _clim(component, climp, data):
+    if climp is None:
+        climp = (2, 99)
+    if component == 'mag':
+        clim = np.nanpercentile(data, climp)
+    elif component == 'log':
+        clim = np.nanpercentile(data, climp)
+    elif component == 'pha':
+        clim = (-np.pi, np.pi)
+    elif component == 'real':
+        clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
+    elif component == 'imag':
+        clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
+    elif component == 'x':
+        clim = np.nanpercentile(np.abs(data), climp)
+    elif component == 'xlog':
+        clim = np.nanpercentile(np.log1p(np.abs(data)), climp)
+        if not clim.any():
+            clim = np.nanpercentile(np.log1p(np.abs(data)), (0, 100))
+    else:
+        raise(f'Unknown component {component}')
+    return clim
 
 def _comp(data, component, cmap, clim, climp):
     if component == 'x':
@@ -47,45 +89,11 @@ def _comp(data, component, cmap, clim, climp):
         data = np.real(data)
         warnings.warn('Unknown component, taking real')
 
-    if not cmap:
-        if component == 'mag':
-            cmap = 'gray'
-        elif component == 'log':
-            cmap = 'gray'
-        elif component == 'real':
-            cmap = 'cmr.iceburn'
-        elif component == 'imag':
-            cmap = 'cmr.iceburn'
-        elif component == 'pha':
-            cmap = 'cet_colorwheel'
-        elif component == 'x':
-            cmap = 'cet_colorwheel'
-        elif component == 'xlog':
-            cmap = 'cet_colorwheel'
-        else:
-            raise(f'Unknown component {component}')
+    if cmap is None:
+        cmap = _cmap(component)
 
     if clim is None:
-        if climp is None:
-            climp = (2, 99)
-        if component == 'mag':
-            clim = np.nanpercentile(data, climp)
-        elif component == 'log':
-            clim = np.nanpercentile(data, climp)
-        elif component == 'pha':
-            clim = (-np.pi, np.pi)
-        elif component == 'real':
-            clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
-        elif component == 'imag':
-            clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
-        elif component == 'x':
-            clim = np.nanpercentile(np.abs(data), climp)
-        elif component == 'xlog':
-            clim = np.nanpercentile(np.log1p(np.abs(data)), climp)
-            if not clim.any():
-                clim = np.nanpercentile(np.log1p(np.abs(data)), (0, 100))
-        else:
-            raise(f'Unknown component {component}')
+        clim = _clim(component, climp, data)
     if clim[0] == clim[1]:
         print(f'Color limits were {clim}, expanding')
         clim[1] = clim[0] + 1
@@ -114,11 +122,11 @@ def _orient(img, rotates, fliplr=False):
         img = np.fliplr(img)
     return img
 
-def planes(fname, dset='image', pos=0.5, zoom=(slice(None), slice(None)), others={},
+def planes(fname, pos=0.5, zoom=(slice(None), slice(None)), others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rotates=(0, 0, 0), fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-    D = _apply_basis(io.read(fname, dset), basis_file, basis_tp)
+    D = _apply_basis(io.read_data(fname), basis_file, basis_tp)
     posx = int(np.floor(len(D['x'])*pos))
     posy = int(np.floor(len(D['y'])*pos))
     posz = int(np.floor(len(D['z'])*pos))
@@ -135,12 +143,12 @@ def planes(fname, dset='image', pos=0.5, zoom=(slice(None), slice(None)), others
     plt.close()
     return fig
 
-def slices(fname, dset='image', image=('x', 'y'), zoom=(slice(None), slice(None)),
+def slices(fname, image=('x', 'y'), zoom=(slice(None), slice(None)),
            sl='z', n=None, lim=None, others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None,
            basis_file=None, basis_tp=0):
-    D = _apply_basis(io.read(fname, dset), basis_file, basis_tp)
+    D = _apply_basis(io.read_data(fname), basis_file, basis_tp)
     maxn = len(D[sl])
     if n is None:
         n = maxn
@@ -167,10 +175,10 @@ def slices(fname, dset='image', image=('x', 'y'), zoom=(slice(None), slice(None)
     return fig
 
 def sense(fname, **kwargs):
-    return slices(fname, dset='sense', component='x', sl='channel', **kwargs)
+    return slices(fname, component='x', sl='channel', **kwargs)
 
 def noncart(fname, sample=slice(None), trace=slice(None), **kwargs):
-    return slices(fname, dset='noncartesian', component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
+    return slices(fname, component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
 
 def weights(fname, sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), log=False, clim=None):
     data = io.read(fname)[sl_spoke, sl_read].values.T
@@ -191,12 +199,11 @@ def weights(fname, sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), 
     plt.close()
     return fig
 
-def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
-         component='mag', clim=None, cmap=None, cbar=False,
-         difflim=None, diffmap=None, diffbar=True,
+def _diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
+         component='mag', clim=None, climp=None, cmap=None, cbar=False,
+         difflim=None, diffmap=None, diffbar=True, alldiffs=True, percentdiffs=True,
          rotates=0, fliplr=False, title=None,
          basis_files=[None], basis_tps=[0]):
-
     if len(fnames) < 2:
         raise('Must have more than 1 image to diff')
     if basis_files and len(basis_files) == 1:
@@ -211,23 +218,58 @@ def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)),
         raise('Number of titles and files did not match')
 
     with contextlib.ExitStack() as stack:
-        Ds = [_apply_basis(io.read(fn), f, tp) for fn, f, tp in zip(fnames, basis_files, basis_tps)]
+        Ds = [_apply_basis(io.read_data(fn), f, tp) for fn, f, tp in zip(fnames, basis_files, basis_tps)]
         slv = int(np.floor(len(Ds[0][sl]) * pos))
-        data = [_comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component) for D in Ds]
+        all = [_comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component, cmap, clim, climp) for D in Ds]
+        data = [a[0] for a in all]
+        cmaps = [a[1] for a in all]
+        clims = [a[2] for a in all]
         data = xa.concat(data, dim='sl')
-    ref = abs(data.isel(sl=-1)).max()
-    diffs = np.diff(data, n=1, axis=0) * 100 / ref
     n = len(data['sl'])
-    clim, cmap = _get_colors(clim, cmap, data, component)
+    diffs = []
+    ref = abs(data.isel(sl=-1)).max()
+
     if component == 'x':
-        diff_component = 'x'
+        diffcomp = 'x'
     elif component == 'xlog':
-        diff_component = 'xlog'
+        diffcomp = 'xlog'
     elif component == 'pha':
-        diff_component = 'pha'
+        diffcomp = 'pha'
     else:
-        diff_component = 'real'
-    difflim, diffmap = _get_colors(difflim, diffmap, diffs, diff_component)
+        diffcomp = 'real'
+
+    for ii in range(1, n):
+        if alldiffs:
+            diffs.append([])
+            for jj in range(ii):
+                d = (data[ii, :, :] - data[jj, :, :])
+                if percentdiffs:
+                    d = d * 100 / ref
+                diffs[ii - 1].append(d)
+        else:
+            d = (data[ii, :, :] - data[ii - 1, :, :])
+            if percentdiffs:
+                d = d * 100 / ref
+            diffs.append(d)
+
+    if difflim is None:
+        if alldiffs:
+            difflim = _clim(diffcomp, None, diffs[0][0])
+        else:
+            difflim = _clim(diffcomp, None, diffs[0])
+    diffmap = _cmap(diffcomp)
+    return n, data, diffs, cmaps[0], clims[0], diffcomp, diffmap, difflim
+
+
+def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
+         component='mag', clim=None, climp=None, cmap=None, cbar=False,
+         difflim=None, diffmap=None, diffbar=True, percentdiffs=True,
+         rotates=0, fliplr=False, title=None,
+         basis_files=[None], basis_tps=[0]):
+    n, data, diffs, cmap, clim, diffcomp, diffmap, difflim = _diff(fnames, titles, image, zoom, sl, pos, others,
+                                                                   component, clim, climp, cmap, cbar,
+                                                                   difflim, diffmap, diffbar, False, percentdiffs,
+                                                                   rotates, fliplr, title, basis_files, basis_tps)
     fig, ax = plt.subplots(2, n, figsize=(rc['figsize']*n, rc['figsize']*2), facecolor='black')
     for ii in range(n):
         imi = _draw(ax[0, ii], _orient(np.squeeze(data[ii, :, :]), rotates, fliplr), component, clim, cmap)
@@ -235,58 +277,29 @@ def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)),
             ax[0, ii].text(0.1, 0.9, titles[ii], color='white', transform=ax[0, ii].transAxes, ha='left',
                            fontsize=rc['fontsize'], path_effects=rc['effects'])
         if ii > 0:
-            imd = _draw(ax[1, ii], _orient(np.squeeze(diffs[ii-1, :, :]), rotates, fliplr), diff_component, difflim, diffmap)
+            imd = _draw(ax[1, ii], _orient(np.squeeze(diffs[ii-1]), rotates, fliplr), diffcomp, difflim, diffmap)
         else:
             ax[1, ii].set_facecolor('black')
             ax[1, ii].axis('off')
     fig.subplots_adjust(wspace=0, hspace=0)
     _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, :])
-    _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[1, :])
+    if percentdiffs:
+        _add_colorbar(diffbar, diffcomp, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
+    else:
+        _add_colorbar(diffbar, diffcomp, fig, imd, difflim, 'Difference', ax=ax[0, -1])
     plt.close()
     return fig
 
 def diff_matrix(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
-         component='mag', clim=None, cmap=None, cbar=False,
-         difflim=None, diffmap=None, diffbar=True,
+         component='mag', clim=None, climp=None, cmap=None, cbar=False,
+         difflim=None, diffmap=None, diffbar=True, percentdiffs=True,
          rotates=0, fliplr=False, title=None,
          basis_files=[None], basis_tps=[0]):
+    n, data, diffs, cmap, clim, diffcomp, diffmap, difflim = _diff(fnames, titles, image, zoom, sl, pos, others,
+                                                                   component, clim, climp, cmap, cbar,
+                                                                   difflim, diffmap, diffbar, True, percentdiffs,
+                                                                   rotates, fliplr, title, basis_files, basis_tps)
 
-    if len(fnames) < 2:
-        raise('Must have more than 1 image to diff')
-    if basis_files and len(basis_files) == 1:
-        basis_files = basis_files * len(fnames)
-    elif not basis_files:
-        basis_files = [None,] * len(fnames)
-    if basis_tps and len(basis_tps) == 1:
-        basis_tps = basis_tps * len(fnames)
-    elif not basis_tps:
-        basis_tps = [None,] * len(fnames)
-    if titles is not None and len(titles) != len(fnames):
-        raise('Number of titles and files did not match')
-
-    with contextlib.ExitStack() as stack:
-        Ds = [_apply_basis(io.read(fn), f, tp) for fn, f, tp in zip(fnames, basis_files, basis_tps)]
-        slv = int(np.floor(len(Ds[0][sl]) * pos))
-        data = [_comp(D.isel(_indexers(D, image, zoom, sl, slv, others)), component) for D in Ds]
-        data = xa.concat(data, dim='sl')
-    n = len(data['sl'])
-    diffs = []
-    ref = abs(data.isel(sl=-1)).max()
-    for ii in range(1, n):
-        diffs.append([])
-        for jj in range(ii):
-            diffs[ii - 1].append((data[ii, :, :] - data[jj, :, :]) * 100 / ref)
-
-    clim, cmap = _get_colors(clim, cmap, data, component)
-    if component == 'x':
-        diff_component = 'x'
-    elif component == 'xlog':
-        diff_component = 'xlog'
-    elif component == 'pha':
-        diff_component = 'pha'
-    else:
-        diff_component = 'real'
-    difflim, diffmap = _get_colors(difflim, diffmap, diffs[0][0], diff_component)
     fig, ax = plt.subplots(n, n, figsize=(rc['figsize']*n, rc['figsize']*n), facecolor='black')
     for ii in range(n):
         imi = _draw(ax[ii, ii], _orient(np.squeeze(data[ii, :, :]), rotates, fliplr), component, clim, cmap)
@@ -294,13 +307,16 @@ def diff_matrix(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(
             ax[ii, ii].text(0.5, 0.05, titles[ii], color='white', transform=ax[ii, ii].transAxes, ha='center',
                             fontsize=rc['fontsize'], path_effects=rc['effects'])
         for jj in range(ii):
-            imd = _draw(ax[jj, ii], _orient(np.squeeze(diffs[ii - 1][jj]), rotates, fliplr), diff_component, difflim, diffmap)
+            imd = _draw(ax[jj, ii], _orient(np.squeeze(diffs[ii - 1][jj]), rotates, fliplr), diffcomp, difflim, diffmap)
         for jj in range(ii, n):
             ax[jj, ii].set_facecolor('black')
             ax[jj, ii].axis('off')
     fig.subplots_adjust(wspace=0, hspace=0)
     _add_colorbar(cbar, component, fig, imi, clim, title, ax=ax[0, 0])
-    _add_colorbar(diffbar, diff_component, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
+    if percentdiffs:
+        _add_colorbar(diffbar, diffcomp, fig, imd, difflim, 'Diff (%)', ax=ax[0, -1])
+    else:
+        _add_colorbar(diffbar, diffcomp, fig, imd, difflim, 'Difference', ax=ax[0, -1])
     plt.close()
     return fig
 
@@ -417,7 +433,7 @@ def _traj_color(traj, color, seg_length):
     else:
         return np.repeat(np.arange(traj.shape[0]), traj.shape[1])
 
-def traj2d(filename, sample=slice(None), trace=slice(None), color='trace', seg_length=None, zoom=False):
+def traj2d(filename, sample=slice(None), trace=slice(None), color='trace', seg_length=None):
     with h5py.File(filename) as f:
         traj = np.array(f['trajectory'][trace, sample, :])
         c = _traj_color(traj, color, seg_length)
@@ -429,15 +445,12 @@ def traj2d(filename, sample=slice(None), trace=slice(None), color='trace', seg_l
                        traj[:, :, (ii + 1) % nd],
                        c=c, cmap='cmr.ember', s=0.5)
             ax[ii].set_aspect('equal')
-            if not zoom:
-                ax[ii].set_xlim((-0.5,0.5))
-                ax[ii].set_ylim((-0.5,0.5))
         fig.tight_layout()
         plt.close()
     return fig
 
 def traj3d(filename, sample=slice(None), trace=slice(None), color='trace', seg_length=None,
-           angles=[30,-60,0], zoom=False, draw_axes=False):
+           angles=[30,-60,0], draw_axes=False):
     with h5py.File(filename) as ff:
         traj = ff['trajectory'][trace, sample, :]
         c = _traj_color(traj, color, seg_length)
@@ -450,10 +463,6 @@ def traj3d(filename, sample=slice(None), trace=slice(None), color='trace', seg_l
             ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
         ax.scatter(traj[:, :, 0], traj[:, :, 1], traj[:, :, 2],
                 c=c, s=3, cmap='cmr.ember')
-        if not zoom:
-            ax.set_xlim((-0.5,0.5))
-            ax.set_ylim((-0.5,0.5))
-            ax.set_zlim((-0.5,0.5))
         ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='z')
         fig.tight_layout()
         plt.close()

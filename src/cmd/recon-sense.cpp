@@ -66,6 +66,6 @@ int main_recon_sense(args::Subparser &parser)
     }
     WriteOutput(coreOpts, out, info, Log::Saved());
   }
-
+  Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

@@ -26,6 +26,6 @@ int main_noisify(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Re3 const traj = reader.readTensor<Re3>(HD5::Keys::Trajectory);
   writer.writeTensor(HD5::Keys::Trajectory, traj.dimensions(), traj.data(), HD5::Dims::Trajectory);
-
+  Log::Print("Finished {}", parser.GetCommand().Name());
   return EXIT_SUCCESS;
 }

@@ -22,31 +22,34 @@ def write(filename, data=None, trajectory=None, info=None, meta=None, compressio
             for k, v in meta:
                 meta_g.create_dataset(k, data=v)
 
-def read(filename, dset=None):
+def read_data(filename, dset=None):
     with h5py.File(filename) as f:
-        ret = []
-        data = None
-        dims = []
         if dset is None:
             dset = 'data'
-        data = xr.DataArray(f[dset], dims=[d.label for d in f[dset].dims])
-        ret.append(data)
+        return xr.DataArray(f[dset], dims=[d.label for d in f[dset].dims])
 
+def read_info(filename):
+    with h5py.File(filename) as f:
         if 'info' in f.keys():
             info_dset = np.array(f['info'], dtype=INFO_DTYPE)[0]
             info_dict = {}
             for key, item in zip(INFO_FIELDS, info_dset):
                 info_dict[key] = item
-            ret.append(info_dict)
-        
+            return info_dict
+        else:
+            return None
+
+def read_trajectory(filename):
+    with h5py.File(filename) as f:
         if 'trajectory' in f.keys():
-            traj = np.array(f['trajectory'])
-            ret.append(traj)
-        
+            return np.array(f['trajectory'])
+
+def read_meta(filename):
+    with h5py.File(filename) as f:
         if 'meta' in f.keys():
             meta = {}
             for k in f['meta'].keys():
                 meta[key] = f['meta'][key][0]
-            ret.append(meta)
-
-        return ret[:]
+            return meta
+        else:
+            return None

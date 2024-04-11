@@ -50,7 +50,7 @@ void Trajectory::init()
   if (discarded > 0) {
     Index const total = points_.dimension(1) * points_.dimension(2);
     float const percent = (100.f * discarded) / total;
-    Log::Warn("Discarded {} trajectory points ({}%) > 0.5", discarded, percent);
+    Log::Warn("Discarded {} trajectory points ({:.2f}%) outside matrix", discarded, percent);
   }
   Log::Debug("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
 }

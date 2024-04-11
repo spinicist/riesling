@@ -31,8 +31,8 @@ Trajectory CreateTrajectory(Index const matrix,
                             Index const trim)
 {
   // Follow the GE definition where factor of PI is ignored
-  Index const spokes = sps * std::ceil(nex * matrix * matrix / sps);
-  Index const samples = Index(readOS * matrix / 2);
+  Index spokes = sps * std::ceil(nex * matrix * matrix / sps);
+  Index samples = Index(readOS * matrix / 2);
 
   Log::Print("Using {} hi-res spokes", spokes);
   auto points = phyllo ? Phyllotaxis(samples, spokes, 7, sps, true) : ArchimedeanSpiral(samples, spokes);
@@ -47,9 +47,14 @@ Trajectory CreateTrajectory(Index const matrix,
   }
 
   if (trim > 0) { points = Re3(points.slice(Sz3{0, trim, 0}, Sz3{3, samples - trim, spokes})); }
-
+  samples = points.dimension(1);
+  spokes = points.dimension(2);
   Log::Print("Samples: {} Traces: {}", samples, spokes);
 
+  /* Correct scaling */
+  Re1 scaling(3);
+  scaling.setConstant(matrix);
+  points *= scaling.reshape(Sz3{3, 1, 1}).broadcast(Sz3{1, samples, spokes});
   return Trajectory(points, Sz3{matrix, matrix, matrix}, Eigen::Array3f::Constant(voxSz));
 }
 
@@ -65,7 +70,7 @@ int main_phantom(args::Subparser &parser)
 
   args::Flag gradCubes(parser, "", "Grad cubes phantom", {"gradcubes"});
 
-  args::Flag             phyllo(parser, "", "Use a phyllotaxis", {'p', "phyllo"});
+  args::Flag             phyllo(parser, "", "Use a phyllotaxis", {'p', "phyllotaxis"});
   args::ValueFlag<Index> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
   args::ValueFlag<Index> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
   args::Flag             gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
@@ -90,7 +95,7 @@ int main_phantom(args::Subparser &parser)
                         .tr = 1.f};
   HD5::Writer      writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  traj.write(writer);
 
   Cx3 phantom(traj.matrix());
 

@@ -60,7 +60,7 @@ int main_psf(args::Subparser &parser)
   auto        x = lsmr.run(ks.data());
   auto        xm = Tensorfy(x, LastN<4>(A->ishape));
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor("psf", xm.dimensions(), xm.data());
+  writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "x", "y", "z"});
 
   if (mtf) {
     auto const fft = FFT::Make<4, 3>(xm.dimensions());
