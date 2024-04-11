@@ -1,9 +1,0 @@
-version: '2.9.1'
-prefix: '/opt/local'
-variants:
-  select:
-    - aqua
-    - metal
-  deselect: x11
-ports:
-  - name: imagemagick

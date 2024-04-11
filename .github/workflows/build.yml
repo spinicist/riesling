@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - main
-      - ducc
-      - api2
   pull_request:
     branches:
       - main
@@ -39,29 +37,6 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
 
-      - uses: melusina-org/setup-macports@v1
-        if: ${{ runner.os == 'macOS' }}
-        id: 'macports'
-
-      - name: Install Dependencies
-        shell: bash
-        run: |
-          if [ "${{runner.os}}" == "macOS" ]; then
-          else
-            sudo apt-get install -y libmagick++-dev
-          fi
-          if [ -x "$( command -v Magick++-config )" ]; then
-            echo "Found config"
-          else
-            echo "Did not find config"
-          fi
-          hash -r
-          if [ -x "$( command -v Magick++-config )" ]; then
-            echo "Found config"
-          else
-            echo "Did not find config"
-          fi
-
       - name: Restore vcpkg binary cache
         id: cache
         uses: actions/cache@v4
@@ -91,10 +66,8 @@ jobs:
       - name: Tests
         shell: bash
         run: |
-          if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2, python tests do also only work under Ubuntu (unknown why)
-            cd ${{github.workspace}}/build
-            ./riesling-tests
-          fi
+          cd ${{github.workspace}}/build
+          ./riesling-tests
 
       - name: Tarball
         run: |
