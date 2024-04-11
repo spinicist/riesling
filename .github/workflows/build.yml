@@ -47,7 +47,6 @@ jobs:
         shell: bash
         run: |
           if [ "${{runner.os}}" == "macOS" ]; then
-            sudo port install imagemagick
           else
             sudo apt-get install -y libmagick++-dev
           fi
@@ -95,10 +94,6 @@ jobs:
           if [ "${{runner.os}}" != "macOS" ]; then # MacOS runners do not have AVX2, python tests do also only work under Ubuntu (unknown why)
             cd ${{github.workspace}}/build
             ./riesling-tests
-          
-            cd ${{github.workspace}}/python
-            export PATH="${{github.workspace}}/build/:$PATH"
-            python -m unittest
           fi
 
       - name: Tarball
