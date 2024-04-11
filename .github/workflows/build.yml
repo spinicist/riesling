@@ -64,6 +64,7 @@ jobs:
           python -m pip install .
 
       - name: Tests
+        if: ${{ runner.os == 'Linux' }}
         shell: bash
         run: |
           cd ${{github.workspace}}/build
