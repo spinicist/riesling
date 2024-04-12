@@ -16,7 +16,7 @@ int main_grid(args::Subparser &parser)
   GridOpts               gridOpts(parser);
   SDC::Opts              sdcOpts(parser, "pipe");
   args::Flag             fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  args::ValueFlag<Index> channel(parser, "C", "Only grid this channel", {"channel", 'c'});
+  args::ValueFlag<Index> volume(parser, "V", "Volume to grid", {"vol"}, 0);
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   HD5::Reader reader(coreOpts.iname.Get());
   Info const info = reader.readInfo();
@@ -36,8 +36,8 @@ int main_grid(args::Subparser &parser)
                        rad_ks.data());
     Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
   } else {
-    auto const noncart = channel ? reader.readSlab<Cx4>(HD5::Keys::Data, {{0, channel.Get()}})
-                                 : reader.readTensor<Cx4>();
+    auto const noncart = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, volume.Get()}});
+    Log::Print("noncart {} traj {} {}", noncart.dimensions(), traj.nSamples(), traj.nTraces());
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     Index const nC = noncart.dimension(0);
     Index const nS = noncart.dimension(3);
@@ -49,7 +49,7 @@ int main_grid(args::Subparser &parser)
       slice = sdc->adjoint(slice);
       cart.chip<5>(is) = gridder->adjoint(slice);
     }
-    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data());
+    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Cartesian);
     Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
   }
 

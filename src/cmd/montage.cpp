@@ -256,6 +256,7 @@ int main_montage(args::Subparser &parser)
   montage.fontPointsize(fontSize.Get());
   if (cbar) { Colorbar(winMax, grey, log, montage); }
   Decorate(title ? title.Get() : fmt::format("{} {}", iname.Get(), dset.Get()), gravity.Get(), montage);
+  rl::Log::Print("Final image size: {} {}", montage.size().width(), montage.size().height());
   montage.magick("PNG");
   if (oname) {
     montage.write(oname.Get());
