@@ -15,7 +15,7 @@
 
 using namespace rl;
 
-int main_admm(args::Subparser &parser)
+int main_recon_rlsq(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);

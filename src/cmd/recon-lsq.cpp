@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-int main_lsmr(args::Subparser &parser)
+int main_recon_lsq(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);

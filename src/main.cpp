@@ -12,55 +12,16 @@ int main(int const argc, char const *const argv[])
   int           main_##NM(args::Subparser &parser);                                                                            \
   args::Command NM(commands, CMD, DESC, &main_##NM);
 
-  COMMAND(admm, "admm", "ADMM recon");
-  COMMAND(autofocus, "autofocus", "Apply Noll's autofocussing");
-  COMMAND(basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
-  COMMAND(basis_img, "basis-img", "Basis from image data");
-  COMMAND(basis_sim, "basis-sim", "Basis from simulations");
-  COMMAND(blend, "blend", "Blend basis images");
-  COMMAND(cg, "cg", "Recon with Conjugate Gradients");
-  COMMAND(compress, "compress", "Apply channel compression");
-  COMMAND(denoise, "denoise", "Denoise reconstructed images");
-  COMMAND(downsamp, "downsamp", "Downsample dataset");
-  COMMAND(eig, "eig", "Calculate largest eigenvalue / vector");
-  COMMAND(fft, "fft", "Cartesian FFT of an image");
-  COMMAND(filter, "filter", "Apply Tukey filter to image");
-  COMMAND(frames, "frames", "Create a frame basis");
-  COMMAND(grad, "grad", "Apply grad/div operator");
-  COMMAND(grid, "grid", "Grid from/to non/cartesian");
-  COMMAND(h5, "h5", "Probe an H5 file");
-  COMMAND(ipop_basis, "ipop-basis", "Make a basis for IP/OP or Water/Fat");
-  COMMAND(ipop_combine, "ipop-combine", "Swap between IP/OP and Water/Fat");
-  // COMMAND(lad, "lad", "Least Absolute Deviations");
-  COMMAND(lookup, "lookup", "Basis dictionary lookup");
-  COMMAND(lsmr, "lsmr", "Recon with LSMR optimizer");
-  COMMAND(lsqr, "lsqr", "Recon with LSQR optimizer");
+  COMMAND(basis, "basis", "Create a subspace basis");
+  COMMAND(data, "data", "Manipulate riesling files");
 #ifdef BUILD_MONTAGE
   COMMAND(montage, "montage", "Make beautiful output images");
 #endif
-  COMMAND(merge, "merge", "Merge non-cartesian data");
-  COMMAND(noisify, "noisify", "Add noise to dataset");
-  COMMAND(nii, "nii", "Convert h5 to nifti");
-  COMMAND(ndft, "ndft", "Apply forward/adjoint NDFT");
-  COMMAND(nufft, "nufft", "Apply forward/adjoint NUFFT");
-  COMMAND(pad, "pad", "Pad/crop an image");
-  COMMAND(pdhg, "pdhg", "Primal-Dual Hybrid Gradient");
-  COMMAND(pdhg_setup, "pdhg-setup", "Calculate PDHG step sizes");
-  COMMAND(phantom, "phantom", "Construct a digitial phantom");
-  COMMAND(precond, "precond", "Precompute preconditioning weights");
-  COMMAND(prox, "prox", "Apply proximal operator");
-  COMMAND(psf, "psf", "Estimate Point Spread Function");
-  COMMAND(recon_rss, "recon-rss", "Recon with Root-Sum-Squares");
-  COMMAND(recon_sense, "recon-sense", "Recon with SENSE");
-  COMMAND(rss, "rss", "Take RSS across first dimension");
-  COMMAND(sdc, "sdc", "Calculate Sample Density Compensation");
-  COMMAND(sense, "sense", "Channel combine with SENSE");
-  COMMAND(sense_calib, "sense-calib", "Create SENSE maps");
-  COMMAND(sense_sim, "sense-sim", "Simulate SENSE maps");
-  COMMAND(slice, "slice", "Slice non-cartesian data");
+  COMMAND(op, "op", "Linear Operators");
+  COMMAND(recon, "recon", "Reconstruction");
+  COMMAND(sense, "sense", "Sensitivity maps");
+  COMMAND(util, "util", "Utilities");
   COMMAND(version, "version", "Print version number");
-  COMMAND(wavelets, "wavelets", "Apply wavelet transform");
-  COMMAND(zinfandel, "zinfandel", "ZINFANDEL k-space filling");
   args::GlobalOptions globals(parser, global_group);
   try {
     parser.ParseCLI(argc, argv);

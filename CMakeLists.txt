@@ -111,14 +111,14 @@ set_target_properties(vineyard PROPERTIES
 
 # Main executable
 add_executable(riesling
-    src/cmd/admm.cpp
     src/cmd/autofocus.cpp
+    src/cmd/basis.cpp
     src/cmd/basis-fourier.cpp
     src/cmd/basis-img.cpp
     src/cmd/basis-sim.cpp
     src/cmd/blend.cpp
-    src/cmd/cg.cpp
     src/cmd/compress.cpp
+    src/cmd/data.cpp
     src/cmd/denoise.cpp
     src/cmd/downsamp.cpp
     src/cmd/eig.cpp
@@ -132,13 +132,13 @@ add_executable(riesling
     src/cmd/ipop-combine.cpp
     # src/cmd/lad.cpp
     src/cmd/lookup.cpp
-    src/cmd/lsmr.cpp
-    src/cmd/lsqr.cpp
     src/cmd/merge.cpp
     src/cmd/nii.cpp
     src/cmd/noisify.cpp
     src/cmd/ndft.cpp
     src/cmd/nufft.cpp
+    src/cmd/op.cpp
+    src/cmd/op-sense.cpp
     src/cmd/pad.cpp
     src/cmd/pdhg.cpp
     src/cmd/pdhg-setup.cpp
@@ -146,6 +146,9 @@ add_executable(riesling
     src/cmd/precond.cpp
     src/cmd/prox.cpp
     src/cmd/psf.cpp
+    src/cmd/recon.cpp
+    src/cmd/recon-lsq.cpp
+    src/cmd/recon-rlsq.cpp
     src/cmd/recon-rss.cpp
     src/cmd/recon-sense.cpp
     src/cmd/rss.cpp
@@ -154,6 +157,7 @@ add_executable(riesling
     src/cmd/sense-calib.cpp
     src/cmd/sense-sim.cpp
     src/cmd/slice.cpp
+    src/cmd/util.cpp
     src/cmd/version.cpp
     src/cmd/wavelets.cpp
     src/cmd/zinfandel.cpp
