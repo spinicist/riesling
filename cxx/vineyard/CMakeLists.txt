@@ -100,3 +100,9 @@ set_target_properties(vineyard PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_VISIBILITY_PRESET hidden
 )
+install(TARGETS vineyard
+    LIBRARY DESTINATION "lib")
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+    DESTINATION "include"
+    FILES_MATCHING PATTERN "*.hpp"
+)
