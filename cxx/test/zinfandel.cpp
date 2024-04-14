@@ -1,6 +1,6 @@
-#include "../src/log.hpp"
-#include "../src/tensorOps.hpp"
-#include "../src/zin-grappa.hpp"
+#include "log.hpp"
+#include "tensorOps.hpp"
+#include "zin-grappa.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <fmt/format.h>

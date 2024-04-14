@@ -1,5 +1,5 @@
-#include "../../src/op/wavelets.hpp"
-#include "../../src/tensorOps.hpp"
+#include "op/wavelets.hpp"
+#include "tensorOps.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <fmt/ostream.h>

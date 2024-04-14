@@ -1,5 +1,5 @@
-#include "../src/op/recon.hpp"
-#include "../src/basis/basis.hpp"
+#include "op/recon.hpp"
+#include "basis/basis.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

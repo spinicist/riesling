@@ -1,4 +1,4 @@
-#include "../src/cropper.h"
+#include "cropper.h"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <fmt/ostream.h>

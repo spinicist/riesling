@@ -41,14 +41,13 @@ else
 fi
 
 mkdir -p build
-cd build
-cmake -S ../ $GEN \
+cmake -S cxx -B build $GEN \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_TOOLCHAIN_FILE="cmake/toolchain.cmake" \
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/toolchain.cmake" \
   -DFLAGS_FILE="${FLAGS}" \
   $PREFIX $MONTAGE
-cmake --build . $PAR
+cmake --build build $PAR
 
 if [ -n "$PREFIX" ]; then
-  cmake --install .
+  cmake --install build
 fi

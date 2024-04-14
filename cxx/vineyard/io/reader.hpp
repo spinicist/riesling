@@ -1,6 +1,6 @@
 #pragma once
 
-#include "io/hd5-core.hpp"
+#include "hd5-core.hpp"
 
 #include "info.hpp"
 

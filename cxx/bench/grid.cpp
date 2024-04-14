@@ -1,8 +1,8 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
-#include "../src/info.hpp"
-#include "../src/op/grid.hpp"
-#include "../src/traj_spirals.h"
+#include "info.hpp"
+#include "op/grid.hpp"
+#include "traj_spirals.h"
 
 #include <catch2/benchmark/catch_benchmark_all.hpp>
 #include <catch2/catch_test_macros.hpp>

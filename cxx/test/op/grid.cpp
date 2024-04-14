@@ -1,4 +1,4 @@
-#include "../../src/op/grid.hpp"
+#include "op/grid.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include <catch2/catch_approx.hpp>

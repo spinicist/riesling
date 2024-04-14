@@ -1,7 +1,7 @@
-#include "../src/sdc.hpp"
-#include "../src/log.hpp"
-#include "../src/traj_spirals.h"
-#include "../src/trajectory.hpp"
+#include "sdc.hpp"
+#include "log.hpp"
+#include "traj_spirals.h"
+#include "trajectory.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 

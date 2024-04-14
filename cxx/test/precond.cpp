@@ -1,5 +1,5 @@
-#include "../src/precond.hpp"
-#include "../src/basis/basis.hpp"
+#include "precond.hpp"
+#include "basis/basis.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
