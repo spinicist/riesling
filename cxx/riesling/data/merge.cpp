@@ -7,7 +7,7 @@
 
 using namespace rl;
 
-int main_merge(args::Subparser &parser)
+void main_merge(args::Subparser &parser)
 {
   args::Positional<std::string> iname1(parser, "F", "First file");
   args::Positional<std::string> iname2(parser, "F", "Second file");
@@ -68,6 +68,4 @@ int main_merge(args::Subparser &parser)
   writer.writeInfo(reader1.readInfo());
   writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
-
-  return EXIT_SUCCESS;
 }

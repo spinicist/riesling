@@ -9,7 +9,7 @@
 
 using namespace rl;
 
-int main_wavelets(args::Subparser &parser)
+void main_wavelets(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
@@ -34,6 +34,4 @@ int main_wavelets(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data());
-
-  return EXIT_SUCCESS;
 }

@@ -212,7 +212,7 @@ void Kittify(Magick::Image &graphic)
   fmt::print(stderr, "\n");
 }
 
-int main_montage(args::Subparser &parser)
+void main_montage(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to slice");
   args::Positional<std::string> oname(parser, "FILE", "Image file to save");
@@ -263,5 +263,4 @@ int main_montage(args::Subparser &parser)
   } else {
     Kittify(montage);
   }
-  return EXIT_SUCCESS;
 }

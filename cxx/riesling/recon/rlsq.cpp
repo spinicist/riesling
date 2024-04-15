@@ -15,7 +15,7 @@
 
 using namespace rl;
 
-int main_recon_rlsq(args::Subparser &parser)
+void main_recon_rlsq(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
@@ -39,7 +39,7 @@ int main_recon_rlsq(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
-  Info const info = reader.readInfo();
+  Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
@@ -51,7 +51,7 @@ int main_recon_rlsq(args::Subparser &parser)
   auto const shape = recon->ishape;
   auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, basis, preBias.Get());
 
-  Cropper    out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
+  Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();
   float const scale = Scaling(coreOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
@@ -95,9 +95,6 @@ int main_recon_rlsq(args::Subparser &parser)
     }
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) {
-    WriteOutput(coreOpts.residual.Get(), resid, info);
-  }
+  if (coreOpts.residual) { WriteOutput(coreOpts.residual.Get(), resid, info); }
   Log::Print("Finished {}", parser.GetCommand().Name());
-  return EXIT_SUCCESS;
 }

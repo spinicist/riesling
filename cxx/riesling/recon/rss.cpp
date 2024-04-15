@@ -12,7 +12,7 @@
 
 using namespace rl;
 
-int main_recon_rss(args::Subparser &parser)
+void main_recon_rss(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
   GridOpts                     gridOpts(parser);
@@ -50,5 +50,4 @@ int main_recon_rss(args::Subparser &parser)
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
-  return EXIT_SUCCESS;
 }

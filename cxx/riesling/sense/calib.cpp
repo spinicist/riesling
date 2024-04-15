@@ -8,7 +8,7 @@
 
 using namespace rl;
 
-int main_sense_calib(args::Subparser &parser)
+void main_sense_calib(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
   GridOpts               gridOpts(parser);
@@ -34,5 +34,5 @@ int main_sense_calib(args::Subparser &parser)
   }
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
-  return EXIT_SUCCESS;
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }

@@ -58,7 +58,7 @@ Trajectory CreateTrajectory(Index const matrix,
   return Trajectory(points, Sz3{matrix, matrix, matrix}, Eigen::Array3f::Constant(voxSz));
 }
 
-int main_phantom(args::Subparser &parser)
+void main_phantom(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Filename to write phantom data to");
 
@@ -125,5 +125,4 @@ int main_phantom(args::Subparser &parser)
   }
   writer.writeTensor(HD5::Keys::Data, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
   Log::Print("Finished {}", parser.GetCommand().Name());
-  return EXIT_SUCCESS;
 }

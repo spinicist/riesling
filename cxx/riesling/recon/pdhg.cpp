@@ -14,7 +14,7 @@
 
 using namespace rl;
 
-int main_pdhg(args::Subparser &parser)
+void main_pdhg(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
@@ -65,5 +65,5 @@ int main_pdhg(args::Subparser &parser)
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  return EXIT_SUCCESS;
+  rl::Log::Print("Finished {}", parser.GetCommand().Name());
 }

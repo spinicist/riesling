@@ -8,7 +8,7 @@
 
 using namespace rl;
 
-int main_downsamp(args::Subparser &parser)
+void main_downsamp(args::Subparser &parser)
 {
   args::Positional<std::string>                  iname(parser, "FILE", "HD5 file to recon");
   args::ValueFlag<std::string>                   oname(parser, "OUTPUT", "Override output name", {'o', "out"});
@@ -36,6 +36,4 @@ int main_downsamp(args::Subparser &parser)
   info.voxel_size = dsTraj.voxelSize();
   writer.writeInfo(info);
   writer.writeTensor(HD5::Keys::Data, ks2.dimensions(), ks2.data());
-
-  return EXIT_SUCCESS;
 }

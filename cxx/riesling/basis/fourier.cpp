@@ -11,7 +11,7 @@
 
 using namespace std::literals::complex_literals;
 
-int main_basis_fourier(args::Subparser &parser)
+void main_basis_fourier(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
@@ -24,6 +24,4 @@ int main_basis_fourier(args::Subparser &parser)
   rl::FourierBasis fb(N.Get(), samples.Get(), traces.Get(), osamp.Get());
   rl::HD5::Writer  writer(oname.Get());
   writer.writeTensor(rl::HD5::Keys::Basis, fb.basis.dimensions(), fb.basis.data(), rl::HD5::Dims::Basis);
-
-  return EXIT_SUCCESS;
 }

@@ -103,15 +103,15 @@ int main(int const argc, char const *const argv[])
     Log::End();
   } catch (args::Help &) {
     fmt::print(stderr, "{}\n", parser.Help());
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
   } catch (args::Error &e) {
     fmt::print(stderr, "{}\n", parser.Help());
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
-    exit(EXIT_FAILURE);
+    return EXIT_FAILURE;
   } catch (Log::Failure &f) {
     Log::End();
-    exit(EXIT_FAILURE);
+    return EXIT_FAILURE;
   }
 
-  exit(EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 }

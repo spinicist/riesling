@@ -8,7 +8,7 @@
 
 using namespace rl;
 
-int main_rss(args::Subparser &parser)
+void main_rss(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::ValueFlag<std::string>  oname(parser, "OUTPUT", "Override output name", {'o', "out"});
@@ -33,6 +33,4 @@ int main_rss(args::Subparser &parser)
   } break;
   default: Log::Fail("Data had order {}", order);
   }
-
-  return EXIT_SUCCESS;
 }

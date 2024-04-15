@@ -1,14 +1,14 @@
 #include "types.hpp"
 
-#include "sdc.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grid.hpp"
 #include "parse_args.hpp"
+#include "sdc.hpp"
 
 using namespace rl;
 
-int main_sdc(args::Subparser &parser)
+void main_sdc(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
   GridOpts                     gridOpts(parser);
@@ -32,5 +32,5 @@ int main_sdc(args::Subparser &parser)
   }
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Weights, dc.dimensions(), dc.data());
-  return EXIT_SUCCESS;
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }

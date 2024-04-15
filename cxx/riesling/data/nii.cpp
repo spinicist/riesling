@@ -7,7 +7,7 @@
 
 using namespace rl;
 
-int main_nii(args::Subparser &parser)
+void main_nii(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output nii file");
@@ -38,6 +38,4 @@ int main_nii(args::Subparser &parser)
   } else {
     WriteNifti(info, output, oname.Get());
   }
-
-  return EXIT_SUCCESS;
 }

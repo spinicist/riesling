@@ -8,7 +8,7 @@
 
 using namespace rl;
 
-int main_op_sense(args::Subparser &parser)
+void main_op_sense(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
@@ -58,6 +58,4 @@ int main_op_sense(args::Subparser &parser)
     Log::Print("SENSE Adjoint took {}", Log::ToNow(start));
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
   }
-
-  return EXIT_SUCCESS;
 }

@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-int main_zinfandel(args::Subparser &parser)
+void main_zinfandel(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
   GridOpts gridOpts(parser);
@@ -116,5 +116,4 @@ int main_zinfandel(args::Subparser &parser)
   writer.writeMeta(reader.readMeta());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Noncartesian);
   Log::Print("Finished");
-  return EXIT_SUCCESS;
 }

@@ -7,13 +7,13 @@
 #include "op/wavelets.hpp"
 #include "parse_args.hpp"
 #include "prox/entropy.hpp"
-#include "prox/llr.hpp"
 #include "prox/l1-wavelets.hpp"
+#include "prox/llr.hpp"
 #include "threads.hpp"
 
 using namespace rl;
 
-int main_prox(args::Subparser &parser)
+void main_prox(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
@@ -63,5 +63,5 @@ int main_prox(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
-  return EXIT_SUCCESS;
+  rl::Log::Print("Finished {}", parser.GetCommand().Name());
 }

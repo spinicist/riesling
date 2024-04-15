@@ -8,7 +8,7 @@
 
 using namespace rl;
 
-int main_lookup(args::Subparser &parser)
+void main_lookup(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> dname(parser, "DICT", "h5 file containing lookup dictionary");
@@ -66,6 +66,4 @@ int main_lookup(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Parameters, out_pars.dimensions(), out_pars.data());
   writer.writeTensor(HD5::Keys::ProtonDensity, pd.dimensions(), pd.data());
-
-  return EXIT_SUCCESS;
 }

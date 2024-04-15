@@ -8,7 +8,7 @@
 
 using namespace rl;
 
-int main_pad(args::Subparser &parser)
+void main_pad(args::Subparser &parser)
 {
   args::Positional<std::string>      iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string>      oname(parser, "FILE", "Output HD5 file");
@@ -61,6 +61,4 @@ int main_pad(args::Subparser &parser)
       Log::Print("Pad Adjoint took {}", Log::ToNow(start));
     }
     writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data());
-  }
-  return EXIT_SUCCESS;
-}
+  }}

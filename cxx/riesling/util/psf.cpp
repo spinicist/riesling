@@ -12,7 +12,7 @@
 using namespace rl;
 using namespace std::literals::complex_literals;
 
-int main_psf(args::Subparser &parser)
+void main_psf(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
   GridOpts gridOpts(parser);
@@ -70,5 +70,4 @@ int main_psf(args::Subparser &parser)
     writer.writeTensor("mtf", xm.dimensions(), xm.data());
   }
   Log::Print("Finished");
-  return EXIT_SUCCESS;
 }

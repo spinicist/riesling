@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 
-int main_ipop_combine(args::Subparser &parser)
+void main_ipop_combine(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
@@ -37,5 +37,5 @@ int main_ipop_combine(args::Subparser &parser)
 
   rl::HD5::Writer writer(oname.Get());
   writer.writeTensor(rl::HD5::Keys::Data, output.dimensions(), output.data(), rl::HD5::Dims::Image);
-  return EXIT_SUCCESS;
+  rl::Log::Print("Finished {}", parser.GetCommand().Name());
 }

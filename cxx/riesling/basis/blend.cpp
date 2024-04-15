@@ -10,7 +10,7 @@
 
 using namespace rl;
 
-int main_blend(args::Subparser &parser)
+void main_blend(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> bname(parser, "BASIS", "h5 file containing basis");
@@ -67,6 +67,4 @@ int main_blend(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data());
-
-  return EXIT_SUCCESS;
 }

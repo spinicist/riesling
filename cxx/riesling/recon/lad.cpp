@@ -14,7 +14,7 @@
 
 using namespace rl;
 
-int main_lad(args::Subparser &parser)
+void main_lad(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   SDC::Opts   sdcOpts(parser, "none");
@@ -61,5 +61,5 @@ int main_lad(args::Subparser &parser)
 
   Log::Print("All Volumes: {}", Log::ToNow(all_start));
   WriteOutput(out, coreOpts.iname.Get(), coreOpts.oname.Get(), parser.GetCommand().Name(), coreOpts.keepTrajectory, traj);
-  return EXIT_SUCCESS;
+  rl::Log::Print("Finished {}", parser.GetCommand().Name());
 }

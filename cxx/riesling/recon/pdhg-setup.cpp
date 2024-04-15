@@ -14,7 +14,7 @@
 
 using namespace rl;
 
-int main_pdhg_setup(args::Subparser &parser)
+void main_pdhg_setup(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
@@ -41,6 +41,4 @@ int main_pdhg_setup(args::Subparser &parser)
   PDHG pdhg(A, P, reg);
 
   fmt::print("{:4.3E}\n{:4.3E}", fmt::join(pdhg.σ, ","), pdhg.τ);
-
-  return EXIT_SUCCESS;
 }

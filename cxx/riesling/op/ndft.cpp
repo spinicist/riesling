@@ -10,7 +10,7 @@
 
 using namespace rl;
 
-int main_ndft(args::Subparser &parser)
+void main_ndft(args::Subparser &parser)
 {
   CoreOpts   coreOpts(parser);
   GridOpts   gridOpts(parser);
@@ -48,6 +48,4 @@ int main_ndft(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
     Log::Print("NDFT Adjoint took {}", Log::ToNow(start));
   }
-
-  return EXIT_SUCCESS;
 }

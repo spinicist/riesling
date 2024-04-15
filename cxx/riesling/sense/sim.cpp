@@ -10,7 +10,7 @@
 
 using namespace rl;
 
-int main_sense_sim(args::Subparser &parser)
+void main_sense_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "FILE", "Filename to write SENSE maps to");
 
@@ -31,6 +31,4 @@ int main_sense_sim(args::Subparser &parser)
   sense /= ConjugateSum(sense, sense).sqrt().reshape(AddFront(shape, 1, 1)).broadcast(Sz5{nchan.Get(), 1, 1, 1, 1});
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Data, sense.dimensions(), sense.data(), HD5::Dims::SENSE);
-
-  return EXIT_SUCCESS;
 }

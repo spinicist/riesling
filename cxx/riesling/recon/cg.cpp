@@ -12,7 +12,7 @@
 
 using namespace rl;
 
-int main_cg(args::Subparser &parser)
+void main_cg(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
@@ -56,6 +56,4 @@ int main_cg(args::Subparser &parser)
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   if (coreOpts.residual) {
     WriteOutput(coreOpts.residual.Get(), resid, info);
-  }
-  return EXIT_SUCCESS;
-}
+  }}

@@ -7,7 +7,7 @@
 
 using namespace rl;
 
-int main_slice(args::Subparser &parser)
+void main_slice(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
@@ -96,6 +96,5 @@ int main_slice(args::Subparser &parser)
   writer.writeInfo(info);
   traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
-  Log::Print("Wrote output file {}", oname.Get());
-  return EXIT_SUCCESS;
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }

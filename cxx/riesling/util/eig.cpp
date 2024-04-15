@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-int main_eig(args::Subparser &parser)
+void main_eig(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
   GridOpts                     gridOpts(parser);
@@ -48,6 +48,4 @@ int main_eig(args::Subparser &parser)
       writer.writeTensor("evec", A->ishape, vec.data());
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
-  }
-  return EXIT_SUCCESS;
-}
+  }}

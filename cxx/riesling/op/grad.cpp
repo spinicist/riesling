@@ -9,7 +9,7 @@
 
 using namespace rl;
 
-int main_grad(args::Subparser &parser)
+void main_grad(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
@@ -39,6 +39,4 @@ int main_grad(args::Subparser &parser)
     }
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
   }
-
-  return EXIT_SUCCESS;
 }

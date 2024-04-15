@@ -10,7 +10,7 @@
 
 using namespace rl;
 
-int main_grid(args::Subparser &parser)
+void main_grid(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
   GridOpts               gridOpts(parser);
@@ -52,6 +52,4 @@ int main_grid(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Cartesian);
     Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
   }
-
-  return EXIT_SUCCESS;
 }

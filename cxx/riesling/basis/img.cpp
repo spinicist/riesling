@@ -10,22 +10,22 @@
 
 using namespace rl;
 
-int main_basis_img(args::Subparser &parser)
+void main_basis_img(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "INPUT", "Input image file");
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::Flag                      otsu(parser, "O", "Otsu mask", {"otsu"});
+  args::Flag                        otsu(parser, "O", "Otsu mask", {"otsu"});
   args::ValueFlag<Sz3, SzReader<3>> st(parser, "S", "ROI Start", {"roi-start"});
   args::ValueFlag<Sz3, SzReader<3>> sz(parser, "S", "ROI size", {"roi-size"});
-  args::ValueFlag<Index>          spf(parser, "S", "Spokes per frame", {"spf"}, 1);
-  args::ValueFlag<Index>          order(parser, "O", "Interpolation order", {"interp-order"}, 3);
-  args::Flag                      clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});
-  args::ValueFlag<Index>          start2(parser, "S", "Second interp start", {"interp2"});
-  args::ValueFlag<Index>          nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 5);
-  args::Flag                      demean(parser, "C", "Mean-center dynamics", {"demean"});
-  args::Flag                      rotate(parser, "V", "Rotate basis", {"rotate"});
-  args::Flag                      normalize(parser, "N", "Normalize before SVD", {"normalize"});
+  args::ValueFlag<Index>            spf(parser, "S", "Spokes per frame", {"spf"}, 1);
+  args::ValueFlag<Index>            order(parser, "O", "Interpolation order", {"interp-order"}, 3);
+  args::Flag                        clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});
+  args::ValueFlag<Index>            start2(parser, "S", "Second interp start", {"interp2"});
+  args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 5);
+  args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
+  args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
+  args::Flag             normalize(parser, "N", "Normalize before SVD", {"normalize"});
   ParseCommand(parser, iname);
   if (!oname) { throw args::Error("No output filename specified"); }
 
@@ -85,9 +85,9 @@ int main_basis_img(args::Subparser &parser)
       col++;
     }
   }
-  
+
   SVDBasis const b(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize);
-  HD5::Writer writer(oname.Get());
+  HD5::Writer    writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
-  return EXIT_SUCCESS;
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }

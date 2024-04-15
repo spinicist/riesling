@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-int main_recon_lsq(args::Subparser &parser)
+void main_recon_lsq(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
@@ -64,9 +64,6 @@ int main_recon_lsq(args::Subparser &parser)
     }
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) {
-    WriteOutput(coreOpts.residual.Get(), resid, info);
-  }
+  if (coreOpts.residual) { WriteOutput(coreOpts.residual.Get(), resid, info); }
   Log::Print("Finished {}", parser.GetCommand().Name());
-  return EXIT_SUCCESS;
 }

@@ -7,7 +7,7 @@
 
 using namespace rl;
 
-int main_precond(args::Subparser &parser)
+void main_precond(args::Subparser &parser)
 {
   args::Positional<std::string> trajFile(parser, "INPUT", "File to read trajectory from");
   args::Positional<std::string> preFile(parser, "OUTPUT", "File to save pre-conditioner to");
@@ -19,5 +19,5 @@ int main_precond(args::Subparser &parser)
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        M = KSpaceSingle(traj, ReadBasis(basisFile.Get()), preBias.Get());
   writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data());
-  return EXIT_SUCCESS;
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }

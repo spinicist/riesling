@@ -12,7 +12,7 @@
 
 using namespace rl;
 
-int main_compress(args::Subparser &parser)
+void main_compress(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
 
@@ -80,6 +80,4 @@ int main_compress(args::Subparser &parser)
   if (save) {
     HD5::Writer matfile(save.Get());
     matfile.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
-  }
-  return EXIT_SUCCESS;
-}
+  }}

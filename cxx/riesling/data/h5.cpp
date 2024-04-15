@@ -5,7 +5,7 @@
 
 using namespace rl;
 
-int main_h5(args::Subparser &parser)
+void main_h5(args::Subparser &parser)
 {
   args::Positional<std::string>    iname(parser, "FILE", "Input HD5 file to dump info from");
   args::ValueFlagList<std::string> keys(parser, "KEYS", "Meta-data keys to be printed", {"meta", 'm'});
@@ -49,6 +49,4 @@ int main_h5(args::Subparser &parser)
         fmt::print("Name: {:12} Shape: {:24} Names: {}\n", ds, fmt::format("{}", reader.dimensions(ds)), reader.listNames(ds));
       }
     }
-  }
-  return EXIT_SUCCESS;
-}
+  }}

@@ -9,7 +9,7 @@
 
 using namespace rl;
 
-int main_nufft(args::Subparser &parser)
+void main_nufft(args::Subparser &parser)
 {
   CoreOpts   coreOpts(parser);
   GridOpts   gridOpts(parser);
@@ -49,6 +49,4 @@ int main_nufft(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Cartesian);
     Log::Print("NUFFT Adjoint took {}", Log::ToNow(start));
   }
-
-  return EXIT_SUCCESS;
 }

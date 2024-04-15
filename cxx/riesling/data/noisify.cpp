@@ -6,11 +6,11 @@
 
 using namespace rl;
 
-int main_noisify(args::Subparser &parser)
+void main_noisify(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
-  args::ValueFlag<float>       σ(parser, "S", "Noise standard deviation", {"std"}, 1.f);
+  args::ValueFlag<float>        σ(parser, "S", "Noise standard deviation", {"std"}, 1.f);
 
   ParseCommand(parser, iname);
 
@@ -27,5 +27,4 @@ int main_noisify(args::Subparser &parser)
   Re3 const traj = reader.readTensor<Re3>(HD5::Keys::Trajectory);
   writer.writeTensor(HD5::Keys::Trajectory, traj.dimensions(), traj.data(), HD5::Dims::Trajectory);
   Log::Print("Finished {}", parser.GetCommand().Name());
-  return EXIT_SUCCESS;
 }

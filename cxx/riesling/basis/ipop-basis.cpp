@@ -10,7 +10,7 @@
 
 using namespace std::literals::complex_literals;
 
-int main_ipop_basis(args::Subparser &parser)
+void main_ipop_basis(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
@@ -45,5 +45,4 @@ int main_ipop_basis(args::Subparser &parser)
   writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{nF + 1L, nS, 1}, tb.data(), rl::HD5::Dims::Basis);
   writer.writeMatrix(R, "R");
   rl::Log::Print("Finished {}", parser.GetCommand().Name());
-  return EXIT_SUCCESS;
 }

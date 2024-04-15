@@ -50,7 +50,7 @@ enum struct Sequences
 std::unordered_map<std::string, Sequences> SequenceMap{
   {"IR", Sequences::IR}, {"DIR", Sequences::DIR}, {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
 
-int main_basis_sim(args::Subparser &parser)
+void main_basis_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
@@ -120,5 +120,5 @@ int main_basis_sim(args::Subparser &parser)
   writer.writeMatrix(norm, HD5::Keys::Norm);
   writer.writeMatrix(dyns, HD5::Keys::Dynamics);
   writer.writeMatrix(pars, HD5::Keys::Parameters);
-  return EXIT_SUCCESS;
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }
