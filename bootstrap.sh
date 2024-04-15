@@ -41,7 +41,7 @@ else
 fi
 
 mkdir -p build
-cmake -S cxx -B build $GEN \
+cmake -S . -B build $GEN \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/toolchain.cmake" \
   -DFLAGS_FILE="${FLAGS}" \
