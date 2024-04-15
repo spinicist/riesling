@@ -1,7 +1,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
-#include "traj_spirals.h"
+#include "traj_spirals.hpp"
 #include "trajectory.hpp"
 
 #include <filesystem>

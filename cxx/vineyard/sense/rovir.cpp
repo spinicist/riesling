@@ -3,7 +3,7 @@
 #include "algo/decomp.hpp"
 #include "algo/gs.hpp"
 #include "algo/otsu.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "mapping.hpp"
 #include "op/nufft.hpp"
 #include "op/tensorscale.hpp"

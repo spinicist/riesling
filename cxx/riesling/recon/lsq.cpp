@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "op/tensorscale.hpp"

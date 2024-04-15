@@ -82,7 +82,7 @@ add_library(vineyard
     sim/t2flair.cpp
     sim/t2prep.cpp
 )
-target_include_directories(vineyard PUBLIC .)
+target_include_directories(vineyard PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     ducc::ducc
@@ -100,9 +100,19 @@ set_target_properties(vineyard PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_VISIBILITY_PRESET hidden
 )
-install(TARGETS vineyard
-    LIBRARY DESTINATION "lib")
+install(TARGETS vineyard EXPORT vineyard-targets
+    LIBRARY DESTINATION  "lib"
+    INCLUDES DESTINATION "include/vineyard")
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-    DESTINATION "include"
+    DESTINATION "$include"
     FILES_MATCHING PATTERN "*.hpp"
 )
+install(EXPORT vineyard-targets
+    FILE        "vineyard-targets.cmake"
+    NAMESPACE   "vineyard::"
+    DESTINATION "share/vineyard"
+)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/vineyard-config.cmake "
+include(\${CMAKE_CURRENT_LIST_DIR}/vineyard-targets.cmake)
+")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/vineyard-config.cmake DESTINATION share/vineyard)

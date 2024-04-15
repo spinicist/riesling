@@ -8,7 +8,7 @@
 #include "sense/sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
-#include "traj_spirals.h"
+#include "traj_spirals.hpp"
 #include "types.hpp"
 #include <filesystem>
 

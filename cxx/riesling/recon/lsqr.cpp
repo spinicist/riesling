@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 #include "algo/lsqr.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"

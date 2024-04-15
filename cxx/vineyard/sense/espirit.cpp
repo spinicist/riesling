@@ -2,7 +2,7 @@
 
 #include "algo/decomp.hpp"
 #include "algo/stats.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "fft/fft.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"

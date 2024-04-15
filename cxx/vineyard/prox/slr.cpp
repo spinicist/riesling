@@ -1,7 +1,7 @@
 #include "slr.hpp"
 
 #include "algo/decomp.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"

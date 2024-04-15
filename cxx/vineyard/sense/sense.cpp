@@ -1,7 +1,7 @@
 #include "sense/sense.hpp"
 
 #include "algo/lsmr.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "espirit.hpp"
 #include "fft/fft.hpp"
 #include "filter.hpp"

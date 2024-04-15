@@ -1,6 +1,6 @@
 #include "sdc.hpp"
 #include "log.hpp"
-#include "traj_spirals.h"
+#include "traj_spirals.hpp"
 #include "trajectory.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>

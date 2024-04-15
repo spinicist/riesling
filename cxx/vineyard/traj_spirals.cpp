@@ -1,4 +1,4 @@
-#include "traj_spirals.h"
+#include "traj_spirals.hpp"
 #include "log.hpp"
 #include "tensorOps.hpp"
 

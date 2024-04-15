@@ -1,6 +1,6 @@
 #include "types.hpp"
 
-#include "cropper.h"
+#include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"

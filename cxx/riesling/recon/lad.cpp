@@ -2,7 +2,7 @@
 
 #include "algo/lad.hpp"
 #include "algo/lsqr.hpp"
-#include "cropper.h"
+#include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"

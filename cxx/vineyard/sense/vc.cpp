@@ -1,6 +1,6 @@
 #include "vc.h"
 
-#include "cropper.h"
+#include "cropper.hpp"
 #include "fft_plan.h"
 #include "tensorOps.hpp"
 
