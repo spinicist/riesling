@@ -10,38 +10,59 @@ namespace HD5 {
 
 namespace {
 
-struct complex_t
+struct complex_f
 {
   float r; /*real part*/
   float i; /*imaginary part*/
 };
 
-hid_t complex_tid;
+struct complex_d
+{
+  float r; /*real part*/
+  float i; /*imaginary part*/
+};
+
+
+hid_t complex_fid, alternate_complex_fid, complex_did, alternate_complex_did;
 
 } // namespace
 
 template <>
-hid_t type_impl(type_tag<Index>)
+hid_t type_impl(type_tag<Index>, bool const)
 {
   return H5T_NATIVE_LONG;
 }
 
 template <>
-hid_t type_impl(type_tag<float>)
+hid_t type_impl(type_tag<float>, bool const)
 {
   return H5T_NATIVE_FLOAT;
 }
 
 template <>
-hid_t type_impl(type_tag<double>)
+hid_t type_impl(type_tag<double>, bool const)
 {
   return H5T_NATIVE_DOUBLE;
 }
 
 template <>
-hid_t type_impl(type_tag<std::complex<float>>)
+hid_t type_impl(type_tag<std::complex<float>>, bool const alt)
 {
-  return complex_tid;
+  if (alt) {
+    return alternate_complex_fid;
+  } else {
+    return complex_fid;
+  }
+}
+
+template <>
+hid_t type_impl(type_tag<std::complex<double>>, bool const alt)
+{
+  if (alt) {
+    return alternate_complex_did;
+  } else {
+    return complex_did;
+  }
 }
 
 herr_t ConvertFloatComplex(hid_t        src_id,
@@ -56,8 +77,8 @@ herr_t ConvertFloatComplex(hid_t        src_id,
 {
   // HDF5 wants the conversion in place
   // Cheat heavily and convert going backwards so we don't overwrite any values
-  float      *src = (float *)buf;
-  Cx         *tgt = (Cx *)buf;
+  float *src = (float *)buf;
+  Cx    *tgt = (Cx *)buf;
   for (Index ii = n - 1; ii >= 0; ii--) {
     tgt[ii] = Cx(src[ii]);
   }
@@ -77,11 +98,24 @@ void Init()
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
     if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
-    hid_t scalar_id = type_impl(type_tag<float>{});
-    complex_tid = H5Tcreate(H5T_COMPOUND, sizeof(complex_t));
-    CheckedCall(H5Tinsert(complex_tid, "r", HOFFSET(complex_t, r), scalar_id), "inserting real field");
-    CheckedCall(H5Tinsert(complex_tid, "i", HOFFSET(complex_t, i), scalar_id), "inserting imaginary field");
-    H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, complex_tid, ConvertFloatComplex);
+    hid_t fid = type_impl(type_tag<float>{});
+    complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
+    CheckedCall(H5Tinsert(complex_fid, "r", HOFFSET(complex_f, r), fid), "inserting real field");
+    CheckedCall(H5Tinsert(complex_fid, "i", HOFFSET(complex_f, i), fid), "inserting imaginary field");
+    H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, complex_fid, ConvertFloatComplex);
+    alternate_complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
+    CheckedCall(H5Tinsert(complex_fid, "real", HOFFSET(complex_f, r), fid), "inserting real field");
+    CheckedCall(H5Tinsert(complex_fid, "imag", HOFFSET(complex_f, i), fid), "inserting imaginary field");
+    H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, alternate_complex_fid, ConvertFloatComplex);
+    complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
+
+    hid_t did = type_impl(type_tag<double>{});
+    CheckedCall(H5Tinsert(complex_did, "r", HOFFSET(complex_d, r), did), "inserting real field");
+    CheckedCall(H5Tinsert(complex_did, "i", HOFFSET(complex_d, i), did), "inserting imaginary field");
+    alternate_complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
+    CheckedCall(H5Tinsert(complex_did, "real", HOFFSET(complex_f, r), did), "inserting real field");
+    CheckedCall(H5Tinsert(complex_did, "imag", HOFFSET(complex_f, i), did), "inserting imaginary field");
+
     Log::Debug("Initialised HDF5");
   } else {
     Log::Debug("HDF5 already initialised");

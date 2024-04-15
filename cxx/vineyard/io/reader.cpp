@@ -8,28 +8,9 @@
 namespace rl {
 namespace HD5 {
 
-template <typename Derived>
-Derived load_matrix(Handle const &parent, std::string const &name)
-{
-  hid_t dset = H5Dopen(parent, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open matrix '{}'", name); }
-  hid_t      ds = H5Dget_space(dset);
-  auto const rank = H5Sget_simple_extent_ndims(ds);
-  if (rank > 2) { Log::Fail("Matrix {}: has rank {} on disk, must be 1 or 2", name, rank); }
-
-  std::array<hsize_t, 2> dims;
-  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
-  Derived matrix((rank == 2) ? dims[1] : dims[0], (rank == 2) ? dims[0] : 1);
-  herr_t  ret_value = H5Dread(dset, type<typename Derived::Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, matrix.data());
-  if (ret_value < 0) {
-    Log::Fail("Error reading matrix {}, code: {}", name, ret_value);
-  } else {
-    Log::Debug("Read matrix {}", name);
-  }
-  return matrix;
-}
-
-Reader::Reader(std::string const &fname)
+Reader::Reader(std::string const &fname, bool const altX)
+  : owner_{true}
+  , altComplex_{altX}
 {
   if (!std::filesystem::exists(fname)) { Log::Fail("File does not exist: {}", fname); }
   Init();
@@ -39,10 +20,20 @@ Reader::Reader(std::string const &fname)
   Log::Debug("Handle: {}", handle_);
 }
 
+Reader::Reader(Handle const fid, bool const altX)
+  : handle_{fid}
+  , owner_{false}
+  , altComplex_{altX}
+{
+  Log::Print("Reading from HDF5 id {}", fid);
+}
+
 Reader::~Reader()
 {
-  H5Fclose(handle_);
-  Log::Debug("Closed handle: {}", handle_);
+  if (owner_) {
+    H5Fclose(handle_);
+    Log::Debug("Closed handle: {}", handle_);
+  }
 }
 
 auto Reader::list() const -> std::vector<std::string> { return List(handle_); }
@@ -78,10 +69,10 @@ auto Reader::listNames(std::string const &name) const -> std::vector<std::string
 {
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
-  hid_t     dspace = H5Dget_space(ds);
-  int const ndims = H5Sget_simple_extent_ndims(dspace);
+  hid_t                    dspace = H5Dget_space(ds);
+  int const                ndims = H5Sget_simple_extent_ndims(dspace);
   std::vector<std::string> names(ndims);
-  char buffer[64] = {0};
+  char                     buffer[64] = {0};
   for (Index ii = 0; ii < ndims; ii++) {
     H5DSget_label(ds, ii, buffer, sizeof(buffer));
     names[ii] = std::string(buffer);
@@ -130,9 +121,7 @@ template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 template <int N>
 auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
 {
-  if (N != order(name)) {
-    Log::Fail("Asked for {} dimension names, but {} order tensor", N, order(name));
-  }
+  if (N != order(name)) { Log::Fail("Asked for {} dimension names, but {} order tensor", N, order(name)); }
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
   DimensionNames<N> names;
@@ -201,7 +190,7 @@ auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &ch
 
   T tensor;
   tensor.resize(memShape);
-  
+
   // Reverse back to HDF5 order
   std::reverse(diskShape.begin(), diskShape.end());
   std::reverse(diskStart.begin(), diskStart.end());
@@ -228,13 +217,31 @@ template auto Reader::readSlab<Cx3>(std::string const &, std::vector<IndexPair> 
 template auto Reader::readSlab<Cx4>(std::string const &, std::vector<IndexPair> const &) const -> Cx4;
 
 template <typename Derived>
-auto Reader::readMatrix(std::string const &label) const -> Derived
+auto Reader::readMatrix(std::string const &name) const -> Derived
 {
-  return load_matrix<Derived>(handle_, label);
+  hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) { Log::Fail("Could not open matrix '{}'", name); }
+  hid_t      ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank > 2) { Log::Fail("Matrix {}: has rank {} on disk, must be 1 or 2", name, rank); }
+
+  std::array<hsize_t, 2> dims;
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  Derived matrix((rank == 2) ? dims[1] : dims[0], (rank == 2) ? dims[0] : 1);
+  herr_t  ret_value =
+    H5Dread(dset, type<typename Derived::Scalar>(altComplex_), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, matrix.data());
+  if (ret_value < 0) {
+    Log::Fail("Error reading matrix {}, code: {}", name, ret_value);
+  } else {
+    Log::Debug("Read matrix {}", name);
+  }
+  return matrix;
 }
 
 template auto Reader::readMatrix<Eigen::MatrixXf>(std::string const &) const -> Eigen::MatrixXf;
+template auto Reader::readMatrix<Eigen::MatrixXd>(std::string const &) const -> Eigen::MatrixXd;
 template auto Reader::readMatrix<Eigen::MatrixXcf>(std::string const &) const -> Eigen::MatrixXcf;
+template auto Reader::readMatrix<Eigen::MatrixXcd>(std::string const &) const -> Eigen::MatrixXcd;
 
 template auto Reader::readMatrix<Eigen::ArrayXf>(std::string const &) const -> Eigen::ArrayXf;
 template auto Reader::readMatrix<Eigen::ArrayXXf>(std::string const &) const -> Eigen::ArrayXXf;
@@ -253,7 +260,8 @@ auto Reader::readInfo() const -> Info
 }
 
 auto Reader::exists(std::string const &label) const -> bool { return Exists(handle_, label); }
-auto Reader::exists(std::string const &dset, std::string const &attr) const -> bool {
+auto Reader::exists(std::string const &dset, std::string const &attr) const -> bool
+{
   return H5Aexists_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT);
 }
 
@@ -302,7 +310,7 @@ auto Reader::readAttribute<Sz3>(std::string const &dset, std::string const &attr
 {
   hsize_t sz3[1] = {3};
   hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
-  Sz3 val;
+  Sz3     val;
 
   auto const attrH = H5Aopen_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT, H5P_DEFAULT);
   CheckedCall(H5Aread(attrH, long3_id, val.data()), fmt::format("reading attribute {} from {}", attr, dset));

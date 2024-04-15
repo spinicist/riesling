@@ -16,12 +16,12 @@ struct type_tag
 };
 
 template <typename T>
-Handle type_impl(type_tag<T>);
+Handle type_impl(type_tag<T>, bool const alt = false);
 
 template <typename T>
-Handle type()
+Handle type(bool const alt = false)
 {
-  return type_impl(type_tag<T>{});
+  return type_impl(type_tag<T>{}, alt);
 }
 
 void                     Init();

@@ -15,7 +15,8 @@ namespace HD5 {
 struct Reader
 {
   Reader(Reader const &) = delete;
-  Reader(std::string const &fname);
+  Reader(std::string const &fname, bool const altComplex = false);
+  Reader(Handle const fid, bool const altComplex = false);
   ~Reader();
 
   auto list() const -> std::vector<std::string>;                                           // List all datasets
@@ -41,6 +42,7 @@ struct Reader
 
 protected:
   Handle handle_;
+  bool owner_, altComplex_;
 };
 
 } // namespace HD5
