@@ -7,96 +7,69 @@ using namespace rl;
   int           main_##NM(args::Subparser &parser);                                                                            \
   args::Command NM(PARSER, CMD, DESC, &main_##NM);
 
-void main_basis(args::Subparser &parser)
-{
-  COMMAND(parser, basis_fourier, "fourier", "Basis of Fourier harmonics");
-  COMMAND(parser, basis_img, "img", "Basis from image data");
-  COMMAND(parser, basis_sim, "sim", "Basis from simulations");
-  COMMAND(parser, blend, "blend", "Blend basis images");
-  COMMAND(parser, frames, "frames", "Create a time-frame basis");
-  COMMAND(parser, ipop_basis, "fat", "Fat/Water basis");
-  COMMAND(parser, ipop_combine, "fat-post", "Post-process a Fat/Water image");
-  COMMAND(parser, lookup, "lookup", "Basis dictionary lookup");
-
-  parser.Parse();
-}
-
-void main_data(args::Subparser &parser)
-{
-  COMMAND(parser, h5, "h5", "Probe an H5 file");
-  COMMAND(parser, merge, "merge", "Merge non-cartesian data");
-  COMMAND(parser, noisify, "noisify", "Add noise to dataset");
-  COMMAND(parser, nii, "nii", "Convert h5 to nifti");
-  COMMAND(parser, slice, "slice", "Slice non-cartesian data");
-
-  parser.Parse();
-}
-
-void main_op(args::Subparser &parser)
-{
-  COMMAND(parser, fft, "fft", "Cartesian FFT of an image");
-  COMMAND(parser, grad, "grad", "Apply grad/div operator");
-  COMMAND(parser, grid, "grid", "Grid from/to non/cartesian");
-  COMMAND(parser, ndft, "ndft", "Apply forward/adjoint NDFT");
-  COMMAND(parser, nufft, "nufft", "Apply forward/adjoint NUFFT");
-  COMMAND(parser, pad, "pad", "Pad/crop an image");
-  COMMAND(parser, prox, "prox", "Apply Proximal operators");
-  COMMAND(parser, rss, "rss", "Take RSS across first dimension");
-  COMMAND(parser, op_sense, "sense", "Channel combine with SENSE");
-  COMMAND(parser, wavelets, "wavelets", "Apply wavelet transform");
-
-  parser.Parse();
-}
-
-void main_recon(args::Subparser &parser)
-{
-  // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
-  COMMAND(parser, pdhg, "pdhg", "Primal-Dual Hybrid Gradient");
-  COMMAND(parser, pdhg_setup, "pdhg-setup", "Calculate PDHG step sizes");
-  COMMAND(parser, recon_lsq, "lsq", "Least-square (iterative) recon");
-  COMMAND(parser, recon_rlsq, "rlsq", "Regularized least-squares recon");
-  COMMAND(parser, recon_rss, "rss", "Recon with Root-Sum-Squares");
-  COMMAND(parser, recon_sense, "sense", "Recon with SENSE");
-
-  parser.Parse();
-}
-
-void main_sense(args::Subparser &parser)
-{
-  COMMAND(parser, sense_calib, "calib", "Create SENSE maps");
-  COMMAND(parser, sense_sim, "sim", "Simulate SENSE maps");
-}
-
-void main_util(args::Subparser &parser)
-{
-  COMMAND(parser, autofocus, "autofocus", "Apply Noll's autofocussing");
-  COMMAND(parser, denoise, "denoise", "Denoise reconstructed images");
-  COMMAND(parser, compress, "compress", "Apply channel compression");
-  COMMAND(parser, downsamp, "downsamp", "Downsample dataset");
-  COMMAND(parser, eig, "eig", "Calculate largest eigenvalue / vector");
-  COMMAND(parser, filter, "filter", "Apply Tukey filter to image");
-  COMMAND(parser, phantom, "phantom", "Make a phantom image");
-  COMMAND(parser, precond, "precond", "Precompute preconditioning weights");
-  COMMAND(parser, psf, "psf", "Estimate Point Spread Function");
-  COMMAND(parser, sdc, "sdc", "Calculate Sample Density Compensation");
-  COMMAND(parser, zinfandel, "zinfandel", "ZINFANDEL k-space filling");
-}
-
 int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");
-  args::Group          commands(parser, "COMMANDS");
 
-  args::Command basis(commands, "basis", "Create a subspace basis", &main_basis);
-  args::Command data(commands, "data", "Manipulate riesling files", &main_data);
+  args::Group basis(parser, "BASIS");
+  COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
+  COMMAND(basis, basis_img, "basis-img", "Basis from image data");
+  COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
+  COMMAND(basis, blend, "basis-blend", "Blend basis images");
+  COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
+  COMMAND(basis, ipop_basis, "basis-fat", "Fat/Water basis");
+  COMMAND(basis, ipop_combine, "basis-fat-post", "Post-process a Fat/Water image");
+  COMMAND(basis, lookup, "basis-lookup", "Basis dictionary lookup");
+
+  args::Group data(parser, "DATA");
+  COMMAND(data, h5, "h5", "Probe an H5 file");
+  COMMAND(data, merge, "merge", "Merge non-cartesian data");
+  COMMAND(data, noisify, "noisify", "Add noise to dataset");
+  COMMAND(data, nii, "nii", "Convert h5 to nifti");
+  COMMAND(data, slice, "slice", "Slice non-cartesian data");
+
+  args::Group op(parser, "OP");
+  COMMAND(op, fft, "op-fft", "Cartesian FFT of an image");
+  COMMAND(op, grad, "op-grad", "Apply grad/div operator");
+  COMMAND(op, grid, "op-grid", "Grid from/to non/cartesian");
+  COMMAND(op, ndft, "op-ndft", "Apply forward/adjoint NDFT");
+  COMMAND(op, nufft, "op-nufft", "Apply forward/adjoint NUFFT");
+  COMMAND(op, pad, "op-pad", "Pad/crop an image");
+  COMMAND(op, prox, "op-prox", "Apply Proximal operators");
+  COMMAND(op, rss, "op-rss", "Take RSS across first dimension");
+  COMMAND(op, op_sense, "op-sense", "Channel combine with SENSE");
+  COMMAND(op, wavelets, "op-wavelets", "Apply wavelet transform");
+
+  args::Group recon(parser, "RECON");
+  // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
+  COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
+  COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
+  COMMAND(recon, recon_lsq, "recon-lsq", "Least-square (iterative) recon");
+  COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
+  COMMAND(recon, recon_rss, "recon-rss", "Recon with Root-Sum-Squares");
+  COMMAND(recon, recon_sense, "recon-sense", "Recon with SENSE");
+
+  args::Group sense(parser, "SENSE");
+  COMMAND(sense, sense_calib, "sense-calib", "Create SENSE maps");
+  COMMAND(sense, sense_sim, "sense-sim", "Simulate SENSE maps");
+
+  args::Group util(parser, "UTIL");
+  COMMAND(util, autofocus, "autofocus", "Apply Noll's autofocussing");
+  COMMAND(util, denoise, "denoise", "Denoise reconstructed images");
+  COMMAND(util, compress, "compress", "Apply channel compression");
+  COMMAND(util, downsamp, "downsamp", "Downsample dataset");
+  COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
+  COMMAND(util, filter, "filter", "Apply Tukey filter to image");
+  COMMAND(util, phantom, "phantom", "Make a phantom image");
+  COMMAND(util, precond, "precond", "Precompute preconditioning weights");
+  COMMAND(util, psf, "psf", "Estimate Point Spread Function");
+  COMMAND(util, sdc, "sdc", "Calculate Sample Density Compensation");
+  COMMAND(util, zinfandel, "zinfandel", "ZINFANDEL k-space filling");
 #ifdef BUILD_MONTAGE
-  COMMAND(commands, montage, "montage", "Make beautiful output images");
+  COMMAND(util, montage, "montage", "Make beautiful output images");
 #endif
-  args::Command op(commands, "op", "Linear Operators", &main_op);
-  args::Command recon(commands, "recon", "Reconstruction", &main_recon);
-  args::Command sense(commands, "sense", "Sensitivity maps", &main_sense);
-  args::Command util(commands, "util", "Utilities", &main_util);
-  COMMAND(commands, version, "version", "Print version number");
+  COMMAND(util, version, "version", "Print version number");
+
   args::GlobalOptions globals(parser, global_group);
   try {
     parser.ParseCLI(argc, argv);
