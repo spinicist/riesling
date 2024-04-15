@@ -22,6 +22,7 @@ struct Trajectory
   auto FOV() const -> Eigen::Array3f;
   auto matrixForFOV(float const fov = -1.f) const -> Sz3;
   auto matrixForFOV(Eigen::Array3f const fov) const -> Sz3;
+  void shiftFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
   auto downsample(Eigen::Array3f const tgtSize, Index const lores, bool const shrink, bool const corners) const

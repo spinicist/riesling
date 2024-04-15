@@ -120,6 +120,32 @@ auto Trajectory::matrixForFOV(Eigen::Array3f const fov) const -> Sz3
   return matrix;
 }
 
+void Trajectory::shiftFOV(Eigen::Vector3f const shift, Cx5 &data)
+{
+  Re1 delta(3);
+  delta[0] = shift[0] / (voxel_size_[0] * matrix_[0]);
+  delta[1] = shift[1] / (voxel_size_[1] * matrix_[1]);
+  delta[2] = shift[2] / (voxel_size_[2] * matrix_[2]);
+
+  Eigen::IndexPairList<Eigen::type2indexpair<0, 0>> zero2zero;
+  Log::Print("Shifting FOV by {} {} {}", delta[0], delta[1], delta[2]);
+
+  auto const shape = data.dimensions();
+
+  // Check for NaNs (trajectory points that should be ignored) and zero the corresponding data points. Otherwise they become
+  // NaN, and cause problems in iterative recons
+  data.device(Threads::GlobalDevice()) = data * points_.sum(Sz1{0})
+                                                  .isfinite()
+                                                  .reshape(Sz5{1, shape[1], shape[2], 1, 1})
+                                                  .broadcast(Sz5{shape[0], 1, 1, 1, shape[4]})
+                                                  .select((points_.contract(delta, zero2zero).cast<Cx>() * Cx(0.f, 2.f * M_PI))
+                                                            .exp()
+                                                            .reshape(Sz4{1, shape[1], shape[2], shape[3]})
+                                                            .broadcast(Sz4{shape[0], 1, 1, 1})
+                                                            .reshape(Sz5{shape[0], shape[1], shape[2], 1, shape[3]}),
+                                                          data.constant(0.f));
+}
+
 Re3 const &Trajectory::points() const { return points_; }
 
 Re1 Trajectory::point(int16_t const read, int32_t const spoke) const

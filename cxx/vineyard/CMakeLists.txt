@@ -104,7 +104,7 @@ install(TARGETS vineyard EXPORT vineyard-targets
     LIBRARY DESTINATION  "lib"
     INCLUDES DESTINATION "include/vineyard")
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-    DESTINATION "$include"
+    DESTINATION "include"
     FILES_MATCHING PATTERN "*.hpp"
 )
 install(EXPORT vineyard-targets
