@@ -1,54 +1,53 @@
 add_executable(riesling
-    autofocus.cpp
-    basis.cpp
-    basis-fourier.cpp
-    basis-img.cpp
-    basis-sim.cpp
-    blend.cpp
-    compress.cpp
-    data.cpp
-    denoise.cpp
-    downsamp.cpp
-    eig.cpp
-    fft.cpp
-    filter.cpp
-    frames.cpp
-    grad.cpp
-    grid.cpp
-    h5.cpp
-    ipop-basis.cpp
-    ipop-combine.cpp
-    # lad.cpp
-    lookup.cpp
-    merge.cpp
-    nii.cpp
-    noisify.cpp
-    ndft.cpp
-    nufft.cpp
-    op.cpp
-    op-sense.cpp
-    pad.cpp
-    pdhg.cpp
-    pdhg-setup.cpp
-    phantom.cpp
-    precond.cpp
-    prox.cpp
-    psf.cpp
-    recon.cpp
-    recon-lsq.cpp
-    recon-rlsq.cpp
-    recon-rss.cpp
-    recon-sense.cpp
-    rss.cpp
-    sdc.cpp
-    sense.cpp
-    sense-calib.cpp
-    sense-sim.cpp
-    slice.cpp
-    util.cpp
+    basis/fourier.cpp
+    basis/img.cpp
+    basis/sim.cpp
+    basis/blend.cpp
+    basis/frames.cpp
+    basis/ipop-basis.cpp
+    basis/ipop-combine.cpp
+    basis/lookup.cpp
+
+    data/h5.cpp
+    data/merge.cpp
+    data/nii.cpp
+    data/noisify.cpp
+    data/slice.cpp
+
+    op/fft.cpp
+    op/grad.cpp
+    op/grid.cpp
+    op/ndft.cpp
+    op/nufft.cpp
+    op/prox.cpp
+    op/sense.cpp
+    op/pad.cpp
+    op/rss.cpp
+    op/wavelets.cpp
+
+    recon/lsq.cpp
+    recon/pdhg.cpp
+    recon/pdhg-setup.cpp
+    recon/rlsq.cpp
+    recon/rss.cpp
+    recon/sense.cpp
+
+    sense/calib.cpp
+    sense/sim.cpp
+
+    util/autofocus.cpp
+    util/compress.cpp
+    util/denoise.cpp
+    util/downsamp.cpp
+    util/eig.cpp
+    util/filter.cpp
+    util/phantom.cpp
+    util/precond.cpp
+    util/psf.cpp
+    util/sdc.cpp
+    util/zinfandel.cpp
+
     version.cpp
-    wavelets.cpp
-    zinfandel.cpp
     main.cpp
 )
 target_link_libraries(riesling PRIVATE
