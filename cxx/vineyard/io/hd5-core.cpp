@@ -18,10 +18,9 @@ struct complex_f
 
 struct complex_d
 {
-  float r; /*real part*/
-  float i; /*imaginary part*/
+  double r; /*real part*/
+  double i; /*imaginary part*/
 };
-
 
 hid_t complex_fid, alternate_complex_fid, complex_did, alternate_complex_did;
 
@@ -99,22 +98,26 @@ void Init()
     if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
     hid_t fid = type_impl(type_tag<float>{});
+    
     complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
-    CheckedCall(H5Tinsert(complex_fid, "r", HOFFSET(complex_f, r), fid), "inserting real field");
-    CheckedCall(H5Tinsert(complex_fid, "i", HOFFSET(complex_f, i), fid), "inserting imaginary field");
+    CheckedCall(H5Tinsert(complex_fid, "r", HOFFSET(complex_f, r), fid), "inserting .r");
+    CheckedCall(H5Tinsert(complex_fid, "i", HOFFSET(complex_f, i), fid), "inserting .i");
     H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, complex_fid, ConvertFloatComplex);
+
     alternate_complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
-    CheckedCall(H5Tinsert(complex_fid, "real", HOFFSET(complex_f, r), fid), "inserting real field");
-    CheckedCall(H5Tinsert(complex_fid, "imag", HOFFSET(complex_f, i), fid), "inserting imaginary field");
+    CheckedCall(H5Tinsert(alternate_complex_fid, "real", HOFFSET(complex_f, r), fid), "inserting .real ");
+    CheckedCall(H5Tinsert(alternate_complex_fid, "imag", HOFFSET(complex_f, i), fid), "inserting .imag");
     H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, alternate_complex_fid, ConvertFloatComplex);
-    complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
 
     hid_t did = type_impl(type_tag<double>{});
-    CheckedCall(H5Tinsert(complex_did, "r", HOFFSET(complex_d, r), did), "inserting real field");
-    CheckedCall(H5Tinsert(complex_did, "i", HOFFSET(complex_d, i), did), "inserting imaginary field");
-    alternate_complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
-    CheckedCall(H5Tinsert(complex_did, "real", HOFFSET(complex_f, r), did), "inserting real field");
-    CheckedCall(H5Tinsert(complex_did, "imag", HOFFSET(complex_f, i), did), "inserting imaginary field");
+    
+    complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
+    CheckedCall(H5Tinsert(complex_did, "r", HOFFSET(complex_d, r), did), "inserting .r d");
+    CheckedCall(H5Tinsert(complex_did, "i", HOFFSET(complex_d, i), did), "inserting .i d");
+    
+    alternate_complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
+    CheckedCall(H5Tinsert(alternate_complex_did, "real", HOFFSET(complex_d, r), did), "inserting .real d");
+    CheckedCall(H5Tinsert(alternate_complex_did, "imag", HOFFSET(complex_d, i), did), "inserting .imag d");
 
     Log::Debug("Initialised HDF5");
   } else {

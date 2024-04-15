@@ -25,6 +25,7 @@ Reader::Reader(Handle const fid, bool const altX)
   , owner_{false}
   , altComplex_{altX}
 {
+  Init();
   Log::Print("Reading from HDF5 id {}", fid);
 }
 
