@@ -68,12 +68,12 @@ jobs:
         shell: bash
         run: |
           cd ${{github.workspace}}/build
-          ./riesling-tests
+          cxx/test/riesling-tests
 
       - name: Tarball
         run: |
           cd ${{github.workspace}}
-          mv ./build/riesling ./
+          mv ./build/cxx/riesling/riesling ./
           ALL="riesling"
           if [ "${{runner.os}}" == "macOS" ]; then
             echo "Using GNU tar"
