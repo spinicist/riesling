@@ -14,7 +14,6 @@ void main_downsamp(args::Subparser &parser)
   args::ValueFlag<std::string>                   oname(parser, "OUTPUT", "Override output name", {'o', "out"});
   args::ValueFlag<Eigen::Array3f, Array3fReader> res(parser, "R", "Target resolution (4 mm)", {"res"},
                                                      Eigen::Array3f::Constant(4.f));
-  args::ValueFlag<Index>                         lores(parser, "L", "First N traces are lo-res", {"lores"}, 0);
   args::ValueFlag<float>                         filterStart(parser, "T", "Tukey filter start", {"filter-start"}, 0.5f);
   args::ValueFlag<float>                         filterEnd(parser, "T", "Tukey filter end", {"filter-end"}, 1.0f);
   args::Flag                                     noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
@@ -25,7 +24,7 @@ void main_downsamp(args::Subparser &parser)
   Info        info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   auto const  ks1 = reader.readTensor<Cx5>();
-  auto [dsTraj, ks2] = traj.downsample(ks1, res.Get(), lores.Get(), !noShrink, corners);
+  auto [dsTraj, ks2] = traj.downsample(ks1, res.Get(), 0, !noShrink, corners);
 
   if (filterStart || filterEnd) {
     NoncartesianTukey(filterStart.Get() * 0.5, filterEnd.Get() * 0.5, 0.f, dsTraj.points(), ks2);

@@ -154,16 +154,18 @@ Re1 Trajectory::point(int16_t const read, int32_t const spoke) const
   return p;
 }
 
-auto Trajectory::downsample(Eigen::Array3f const tgtSize, Index const lores, bool const shrink, bool const corners) const
-  -> std::tuple<Trajectory, Index, Index>
+auto Trajectory::downsample(Eigen::Array3f const tgtSize,
+                            Index const          fullResTraces,
+                            bool const           shrink,
+                            bool const           corners) const -> std::tuple<Trajectory, Index, Index>
 {
   Eigen::Array3f ratios = voxel_size_ / tgtSize;
   if ((ratios > 1.f).any()) {
     Log::Fail("Downsample voxel-size {} is larger than current voxel-size {}", tgtSize, voxel_size_);
   }
-  auto  dsVox = voxel_size_;
-  auto  dsMatrix = matrix_;
-  Re1   thresh(nDims());
+  auto dsVox = voxel_size_;
+  auto dsMatrix = matrix_;
+  Re1  thresh(nDims());
   for (Index ii = 0; ii < nDims(); ii++) {
     if (shrink) {
       // Account for rounding
@@ -184,7 +186,7 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize, Index const lores, boo
         for (int ii = 0; ii < nDims(); ii++) {
           p(ii) /= ratios(ii);
         }
-        if (it >= lores) { // Ignore lo-res traces for this calculation
+        if (it < fullResTraces) { // Ignore lo-res traces for this calculation
           minSamp = std::min(minSamp, is);
           maxSamp = std::max(maxSamp, is);
         }
@@ -195,9 +197,8 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize, Index const lores, boo
   }
   if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
   Index const dsSamples = maxSamp + 1 - minSamp;
-  Log::Print("Target res {} mm, ratios {}, matrix {}, voxel-size {} mm, read-points {}-{}{}", tgtSize,
-             fmt::streamed(ratios.transpose()), dsMatrix, dsVox.transpose(), minSamp, maxSamp,
-             lores > 0 ? fmt::format(", ignoring {} lo-res traces", lores) : "");
+  Log::Print("Target res {} mm, ratios {}, matrix {}, voxel-size {} mm, read-points {}-{}", tgtSize,
+             fmt::streamed(ratios.transpose()), dsMatrix, dsVox.transpose(), minSamp, maxSamp);
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{nDims(), dsSamples, nTraces()}));
   Log::Print("Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(Trajectory(dsPoints, dsMatrix, dsVox), minSamp, dsSamples);
@@ -205,22 +206,22 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize, Index const lores, boo
 
 auto Trajectory::downsample(Cx5 const           &ks,
                             Eigen::Array3f const tgt,
-                            Index const          lores,
+                            Index const          fullResTraces,
                             bool const           shrink,
                             bool const           corners) const -> std::tuple<Trajectory, Cx5>
 {
-  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, lores, shrink, corners);
+  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, fullResTraces, shrink, corners);
   Cx5 dsKs = ks.slice(Sz5{0, minSamp, 0, 0, 0}, Sz5{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3), ks.dimension(4)});
   return std::make_tuple(dsTraj, dsKs);
 }
 
 auto Trajectory::downsample(Cx4 const           &ks,
                             Eigen::Array3f const tgt,
-                            Index const          lores,
+                            Index const          fullResTraces,
                             bool const           shrink,
                             bool const           corners) const -> std::tuple<Trajectory, Cx4>
 {
-  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, lores, shrink, corners);
+  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, fullResTraces, shrink, corners);
   Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
   return std::make_tuple(dsTraj, dsKs);
 }

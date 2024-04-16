@@ -1,9 +1,9 @@
 #pragma once
 
 #include "info.hpp"
-#include "types.hpp"
 #include "io/reader.hpp"
 #include "io/writer.hpp"
+#include "types.hpp"
 
 namespace rl {
 
@@ -25,11 +25,13 @@ struct Trajectory
   void shiftFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
-  auto downsample(Eigen::Array3f const tgtSize, Index const lores, bool const shrink, bool const corners) const
+  auto downsample(Eigen::Array3f const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<Trajectory, Index, Index>;
-  auto downsample(Cx4 const &ks, Eigen::Array3f const tgtSize, Index const lores, bool const shrink, bool const corners) const
+  auto
+  downsample(Cx4 const &ks, Eigen::Array3f const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<Trajectory, Cx4>;
-  auto downsample(Cx5 const &ks, Eigen::Array3f const tgtSize, Index const lores, bool const shrink, bool const corners) const
+  auto
+  downsample(Cx5 const &ks, Eigen::Array3f const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<Trajectory, Cx5>;
 
 private:
