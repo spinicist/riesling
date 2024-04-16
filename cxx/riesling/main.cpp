@@ -11,6 +11,28 @@ int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");
 
+  args::Group recon(parser, "RECON");
+  // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
+  COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
+  COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
+  COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
+  COMMAND(recon, recon_sense, "recon-sense", "NUFFT + SENSE");
+  COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
+  COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
+
+  args::Group data(parser, "DATA");
+  COMMAND(data, h5, "h5", "Probe an H5 file");
+  COMMAND(data, nii, "nii", "Convert images from H5 to nifti");
+  COMMAND(data, compress, "compress", "Compress non-cartesian channels");
+  COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
+  COMMAND(data, merge, "merge", "Merge non-cartesian data");
+  COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
+  COMMAND(data, slice, "slice", "Slice non-cartesian data");
+
+  args::Group sense(parser, "SENSE");
+  COMMAND(sense, sense_calib, "sense-calib", "Create SENSE maps");
+  COMMAND(sense, sense_sim, "sense-sim", "Simulate SENSE maps");
+
   args::Group basis(parser, "BASIS");
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis, basis_img, "basis-img", "Basis from image data");
@@ -20,13 +42,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, ipop_basis, "basis-fat", "Fat/Water basis");
   COMMAND(basis, ipop_combine, "basis-fat-post", "Post-process a Fat/Water image");
   COMMAND(basis, lookup, "basis-lookup", "Basis dictionary lookup");
-
-  args::Group data(parser, "DATA");
-  COMMAND(data, h5, "h5", "Probe an H5 file");
-  COMMAND(data, merge, "merge", "Merge non-cartesian data");
-  COMMAND(data, noisify, "noisify", "Add noise to dataset");
-  COMMAND(data, nii, "nii", "Convert h5 to nifti");
-  COMMAND(data, slice, "slice", "Slice non-cartesian data");
 
   args::Group op(parser, "OP");
   COMMAND(op, fft, "op-fft", "Cartesian FFT of an image");
@@ -40,24 +55,10 @@ int main(int const argc, char const *const argv[])
   COMMAND(op, op_sense, "op-sense", "Channel combine with SENSE");
   COMMAND(op, wavelets, "op-wavelets", "Apply wavelet transform");
 
-  args::Group recon(parser, "RECON");
-  // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
-  COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
-  COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
-  COMMAND(recon, recon_lsq, "recon-lsq", "Least-square (iterative) recon");
-  COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
-  COMMAND(recon, recon_rss, "recon-rss", "Recon with Root-Sum-Squares");
-  COMMAND(recon, recon_sense, "recon-sense", "Recon with SENSE");
-
-  args::Group sense(parser, "SENSE");
-  COMMAND(sense, sense_calib, "sense-calib", "Create SENSE maps");
-  COMMAND(sense, sense_sim, "sense-sim", "Simulate SENSE maps");
 
   args::Group util(parser, "UTIL");
   COMMAND(util, autofocus, "autofocus", "Apply Noll's autofocussing");
   COMMAND(util, denoise, "denoise", "Denoise reconstructed images");
-  COMMAND(util, compress, "compress", "Apply channel compression");
-  COMMAND(util, downsamp, "downsamp", "Downsample dataset");
   COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
   COMMAND(util, filter, "filter", "Apply Tukey filter to image");
   COMMAND(util, phantom, "phantom", "Make a phantom image");
