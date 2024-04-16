@@ -176,6 +176,9 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
     }
     thresh(ii) = matrix_[ii] * ratios(ii) / 2.f;
   }
+  Log::Print("Downsampling. Target res {} mm, ratios {}, matrix {}, voxel-size {} mm fullRes {}", tgtSize,
+             fmt::streamed(ratios.transpose()), dsMatrix, dsVox.transpose(), fullResTraces);
+
   Index minSamp = nSamples(), maxSamp = 0;
   Re3   dsPoints(points_.dimensions());
   for (Index it = 0; it < nTraces(); it++) {
@@ -186,7 +189,7 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
         for (int ii = 0; ii < nDims(); ii++) {
           p(ii) /= ratios(ii);
         }
-        if (it < fullResTraces) { // Ignore lo-res traces for this calculation
+        if (fullResTraces < 1 || it < fullResTraces) { // Ignore lo-res traces for this calculation
           minSamp = std::min(minSamp, is);
           maxSamp = std::max(maxSamp, is);
         }
@@ -195,10 +198,9 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
       }
     }
   }
-  if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
   Index const dsSamples = maxSamp + 1 - minSamp;
-  Log::Print("Target res {} mm, ratios {}, matrix {}, voxel-size {} mm, read-points {}-{}", tgtSize,
-             fmt::streamed(ratios.transpose()), dsMatrix, dsVox.transpose(), minSamp, maxSamp);
+  Log::Print("Retaining samples {}-{}", minSamp, maxSamp);
+  if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{nDims(), dsSamples, nTraces()}));
   Log::Print("Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(Trajectory(dsPoints, dsMatrix, dsVox), minSamp, dsSamples);
