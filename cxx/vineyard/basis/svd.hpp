@@ -12,8 +12,7 @@ struct SVDBasis
            Index const            nB,
            bool const             demean,
            bool const             rotate,
-           bool const             normalize,
-           Index const            segSize = -1);
+           bool const             normalize);
   Eigen::MatrixXf basis;
 };
 

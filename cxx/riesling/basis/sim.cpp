@@ -42,13 +42,17 @@ auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float
 enum struct Sequences
 {
   IR = 0,
+  IR2,
   DIR,
   T2Prep,
   T2FLAIR,
 };
 
-std::unordered_map<std::string, Sequences> SequenceMap{
-  {"IR", Sequences::IR}, {"DIR", Sequences::DIR}, {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
+std::unordered_map<std::string, Sequences> SequenceMap{{"IR", Sequences::IR},
+                                                       {"IR2", Sequences::IR2},
+                                                       {"DIR", Sequences::DIR},
+                                                       {"T2Prep", Sequences::T2Prep},
+                                                       {"T2FLAIR", Sequences::T2FLAIR}};
 
 void main_basis_sim(args::Subparser &parser)
 {
@@ -79,7 +83,6 @@ void main_basis_sim(args::Subparser &parser)
   args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
   args::Flag             normalize(parser, "N", "Normalize dynamics before SVD", {"normalize"});
-  args::Flag             bySeg(parser, "S", "SVD by segment", {"segment"});
 
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
@@ -102,12 +105,13 @@ void main_basis_sim(args::Subparser &parser)
   Eigen::ArrayXXf pars, dyns;
   switch (seq.Get()) {
   case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
-  SVDBasis const b(dyns, nBasis.Get(), demean, rotate, normalize, bySeg ? sps.Get() : -1);
+  SVDBasis const b(dyns, nBasis.Get(), demean, rotate, normalize);
 
   Log::Print("Computing dictionary");
   Eigen::MatrixXf dict = b.basis * dyns.matrix();

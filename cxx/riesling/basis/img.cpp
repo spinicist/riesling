@@ -86,7 +86,7 @@ void main_basis_img(args::Subparser &parser)
     }
   }
 
-  SVDBasis const b(dynamics, 99.f, nBasis.Get(), demean, rotate, normalize);
+  SVDBasis const b(dynamics, nBasis.Get(), demean, rotate, normalize);
   HD5::Writer    writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
   Log::Print("Finished {}", parser.GetCommand().Name());

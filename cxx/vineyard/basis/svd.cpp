@@ -5,30 +5,20 @@
 
 namespace rl {
 
-SVDBasis::SVDBasis(Eigen::ArrayXXf const &dynamics,
-                   Index const            nRetain,
-                   bool const             demean,
-                   bool const             rotate,
-                   bool const             normalize,
-                   Index const            segSize)
+SVDBasis::SVDBasis(
+  Eigen::ArrayXXf const &dynamics, Index const nRetain, bool const demean, bool const rotate, bool const normalize)
 {
   // Calculate SVD - observations are in cols
   Eigen::ArrayXXf d = normalize ? dynamics.colwise().normalized().transpose().eval() : dynamics.transpose().eval();
   if (demean) { d = d.rowwise() - d.colwise().mean(); }
-  Index const segs = segSize > 0 ? dynamics.cols() / segSize : 1;
-  Index const sz = dynamics.cols() / segs;
-  if (segs * sz != dynamics.cols()) {
-    Log::Fail("Segment size {} does not cleanly divide dynamic length {}", segSize, dynamics.cols());
-  }
-  basis.resize(nRetain, dynamics.cols());
-  Index st = 0;
-  for (Index is = 0; is < segs; is++) {
-    auto const svd = SVD<float>(d.middleRows(st, sz));
-    Log::Print("Retaining {} basis vectors, variance {}", nRetain, svd.S.head(nRetain).square().sum());
-    basis.middleCols(st, sz) = rotate ? svd.equalized(nRetain).transpose().eval() : svd.V.leftCols(nRetain).transpose().eval();
-    basis.middleCols(st, sz) *= std::sqrt(basis.cols());
-    st += sz;
-  }
+  Index const sz = dynamics.cols();
+  basis.resize(nRetain, sz);
+
+  auto const svd = SVD<float>(d);
+  Log::Print("dyn {} {} nRetain {} S {}", dynamics.rows(), dynamics.cols(), nRetain, svd.S.rows());
+  Log::Print("Retaining {} basis vectors, variance {}", nRetain, svd.S.head(nRetain).square().sum());
+  basis = rotate ? svd.equalized(nRetain).transpose().eval() : svd.V.leftCols(nRetain).transpose().eval();
+  basis *= std::sqrt(sz);
 
   Log::Debug("Orthogonality check:\n{}", fmt::streamed(basis * basis.adjoint()));
 }

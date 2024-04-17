@@ -19,7 +19,7 @@ struct IR final : Sequence
 
 struct IR2 final : Sequence
 {
-  static const Index nParameters = 3;
+  static const Index nParameters = 2;
   IR2(Settings const &s);
 
   auto length() const -> Index;
