@@ -42,7 +42,7 @@ void main_blend(args::Subparser &parser)
   Index const ntotal = sps.size() * tps.size();
 
   Cx5         out(AddFront(LastN<4>(dims), ntotal));
-  float const scale = std::sqrt(basis.dimension(1 * basis.dimension(2)));
+  float const scale = std::sqrt(basis.dimension(1) * basis.dimension(2));
 
   Basis<Cx> selected(basis.dimension(0), sps.size(), tps.size());
   for (size_t it = 0; it < tps.size(); it++) {
@@ -57,9 +57,7 @@ void main_blend(args::Subparser &parser)
       selected.chip<2>(it).chip<1>(is) = basis.chip<2>(tps[it]).chip<1>(sps[is]).conjugate() * Cx(scale);
     }
   }
-
   Cx2 const sel2 = selected.reshape(Sz2{basis.dimension(0), ntotal});
-  Log::Print("selected {} images {}", sel2.dimensions(), images.dimensions());
   for (Index it = 0; it < out.dimension(4); it++) {
     out.chip<4>(it).device(Threads::GlobalDevice()) =
       sel2.contract(images.chip<4>(it), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
