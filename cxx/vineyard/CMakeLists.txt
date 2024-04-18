@@ -40,6 +40,7 @@ add_library(vineyard
     algo/pdhg.cpp
     algo/stats.cpp
     basis/basis.cpp
+    basis/bernstein.cpp
     basis/fourier.cpp
     basis/svd.cpp
     fft/fft.cpp

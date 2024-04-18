@@ -1,8 +1,9 @@
 add_executable(riesling
+    basis/blend.cpp
+    basis/bernstein.cpp
     basis/fourier.cpp
     basis/img.cpp
     basis/sim.cpp
-    basis/blend.cpp
     basis/frames.cpp
     basis/ipop-basis.cpp
     basis/ipop-combine.cpp

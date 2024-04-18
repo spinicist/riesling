@@ -34,11 +34,12 @@ int main(int const argc, char const *const argv[])
   COMMAND(sense, sense_sim, "sense-sim", "Simulate SENSE maps");
 
   args::Group basis(parser, "BASIS");
+  COMMAND(basis, bernstein, "basis-bernstein", "Bernstein Polynomials");
+  COMMAND(basis, blend, "basis-blend", "Blend basis images");
+  COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis, basis_img, "basis-img", "Basis from image data");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
-  COMMAND(basis, blend, "basis-blend", "Blend basis images");
-  COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
   COMMAND(basis, ipop_basis, "basis-fat", "Fat/Water basis");
   COMMAND(basis, ipop_combine, "basis-fat-post", "Post-process a Fat/Water image");
   COMMAND(basis, lookup, "basis-lookup", "Basis dictionary lookup");
@@ -54,7 +55,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(op, rss, "op-rss", "Take RSS across first dimension");
   COMMAND(op, op_sense, "op-sense", "Channel combine with SENSE");
   COMMAND(op, wavelets, "op-wavelets", "Apply wavelet transform");
-
 
   args::Group util(parser, "UTIL");
   COMMAND(util, autofocus, "autofocus", "Apply Noll's autofocussing");
