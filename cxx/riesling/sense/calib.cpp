@@ -13,7 +13,6 @@ void main_sense_calib(args::Subparser &parser)
   CoreOpts               coreOpts(parser);
   GridOpts               gridOpts(parser);
   SENSE::Opts            senseOpts(parser);
-  SDC::Opts              sdcOpts(parser, "pipe");
   args::ValueFlag<Index> frame(parser, "F", "SENSE calibration frame (all)", {"frame"}, -1);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);

@@ -74,6 +74,7 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
   case 'p': data = data.arg().cast<rl::Cx>(); break;
   default: rl::Log::Fail("Uknown component type {}", component);
   }
+  rl::Log::Print("Data dims {}", data.dimensions());
   return data;
 }
 
@@ -106,6 +107,7 @@ auto SliceData(rl::Cx3 const &data,
     slices.back().flip(); // Reverse Y for display
     slices.back().rotate(rotate);
   }
+  rl::Log::Print("{} slices, dims {} {}", slices.size(), slices.front().size().height(), slices.front().size().width());
   return slices;
 }
 
