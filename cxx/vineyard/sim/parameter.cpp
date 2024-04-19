@@ -121,4 +121,27 @@ auto T1B1(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eigen
   return p;
 }
 
+auto T1β(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eigen::ArrayXXf
+{
+  CheckSizes(2, {0.6f, -1.f}, {4.3f, 1.f}, lo, hi);
+  float const     R1lo = 1.f / lo[0];
+  float const     R1hi = 1.f / hi[0];
+  float const     βlo = lo[1];
+  float const     βhi = hi[1];
+  Index const     nT = std::floor(std::pow(nS, 1. / 2.));
+  auto const      R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
+  auto const      βs = Eigen::ArrayXf::LinSpaced(nT, βlo, βhi);
+  Eigen::ArrayXXf p(2, nT * nT);
+
+  Index ind = 0;
+  for (Index ib = 0; ib < nT; ib++) {
+    for (Index i1 = 0; i1 < nT; i1++) {
+      p(0, ind) = 1.f / R1s(i1);
+      p(1, ind) = βs(ib);
+      ind++;
+    }
+  }
+  return p;
+}
+
 } // namespace rl::Parameters

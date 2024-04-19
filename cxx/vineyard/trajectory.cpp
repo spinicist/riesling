@@ -176,8 +176,8 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
     }
     thresh(ii) = matrix_[ii] * ratios(ii) / 2.f;
   }
-  Log::Print("Downsampling. Target res {} mm, ratios {}, matrix {}, voxel-size {} mm fullRes {}", tgtSize,
-             fmt::streamed(ratios.transpose()), dsMatrix, dsVox.transpose(), fullResTraces);
+  Log::Print("Downsampling to {} mm from {} mm, matrix {}, ratios {}", tgtSize, dsVox.transpose(), dsMatrix,
+             fmt::streamed(ratios.transpose()));
 
   Index minSamp = nSamples(), maxSamp = 0;
   Re3   dsPoints(points_.dimensions());

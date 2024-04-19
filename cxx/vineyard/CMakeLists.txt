@@ -79,6 +79,7 @@ add_library(vineyard
     sense/sense.cpp
     sim/parameter.cpp
     sim/dir.cpp
+    sim/genprep.cpp
     sim/ir.cpp
     sim/t2flair.cpp
     sim/t2prep.cpp
