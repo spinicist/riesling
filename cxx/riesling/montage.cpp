@@ -6,13 +6,13 @@
 #include "tensorOps.hpp"
 #include "types.hpp"
 
+#include "Magick++.h"
 #include <Eigen/Core>
 #include <ranges>
 #include <scn/scan.h>
 #include <sys/ioctl.h>
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>
-#include "Magick++.h"
 
 struct IndexPairReader
 {
@@ -59,9 +59,7 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
   auto const      diskOrder = reader.order(dset);
   auto const      diskDims = reader.dimensions(dset);
   if (!chips.size()) {
-    if (dset == "data") {
-      chips = std::vector<IndexPair>{{0, 0}, {4, 0}};
-    }
+    if (dset == "data") { chips = std::vector<IndexPair>{{0, 0}, {4, 0}}; }
   } else {
     if (diskOrder - chips.size() != 3) {
       rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
@@ -111,9 +109,11 @@ auto SliceData(rl::Cx3 const &data,
   return slices;
 }
 
-auto DoMontage(std::vector<Magick::Image> &slices, Index const cols) -> Magick::Image
+auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick::Image
 {
-  auto const      rows = (Index)std::ceil(slices.size() / (float)cols);
+  auto const cols = slices.size() < colsIn ? slices.size() : colsIn;
+  auto const rows = (Index)std::ceil(slices.size() / (float)colsIn);
+
   Magick::Montage montageOpts;
   montageOpts.backgroundColor(Magick::Color(0, 0, 0));
   montageOpts.tile(Magick::Geometry(cols, rows));
