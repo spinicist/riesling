@@ -10,10 +10,11 @@ using namespace rl;
 
 void main_sense_calib(args::Subparser &parser)
 {
-  CoreOpts               coreOpts(parser);
-  GridOpts               gridOpts(parser);
-  SENSE::Opts            senseOpts(parser);
-  args::ValueFlag<Index> frame(parser, "F", "SENSE calibration frame (all)", {"frame"}, -1);
+  CoreOpts                     coreOpts(parser);
+  GridOpts                     gridOpts(parser);
+  SENSE::Opts                  senseOpts(parser);
+  args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
+  args::ValueFlag<Index>       frame(parser, "F", "SENSE calibration frame (all)", {"frame"}, -1);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -22,16 +23,30 @@ void main_sense_calib(args::Subparser &parser)
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto       maps = SENSE::UniformNoise(senseOpts.λ.Get(), SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis));
+
+  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis);
+
+  if (refname) {
+    HD5::Reader refFile(refname.Get());
+    Trajectory  refTraj(refFile, refFile.readInfo().voxel_size);
+    if (!refTraj.compatible(traj)) { Log::Fail("Reference data incompatible with multi-channel data"); }
+    auto refNoncart = refFile.readTensor<Cx5>();
+    if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
+    refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
+    Cx4 const ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
+    SENSE::RegularizedNormalization(senseOpts.λ.Get(), ref, channels);
+  }
+
+  SENSE::RegularizedNormalization(senseOpts.λ.Get(), channels);
   if (frame) {
-    if (frame.Get() < 0 || frame.Get() >= maps.dimension(1)) {
-      Log::Fail("Requested frame {} is outside valid range 0-{}", frame.Get(), maps.dimension(1));
+    auto shape = channels.dimensions();
+    if (frame.Get() < 0 || frame.Get() >= shape[1]) {
+      Log::Fail("Requested frame {} is outside valid range 0-{}", frame.Get(), shape[1]);
     }
-    auto sz = maps.dimensions();
-    sz[1] = 1;
-    maps = Cx5(maps.slice(Sz5{0, frame.Get(), 0, 0, 0}, sz));
+    shape[1] = 1;
+    channels = Cx5(channels.slice(Sz5{0, frame.Get(), 0, 0, 0}, shape));
   }
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
+  writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::SENSE);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

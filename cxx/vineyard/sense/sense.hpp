@@ -25,7 +25,8 @@ auto LoresChannels(
   Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
 
 //! Normalizes by RSS with optional regularization
-auto UniformNoise(float const λ, Cx5 const &channels) -> Cx5;
+void RegularizedNormalization(float const λ, Cx4 const &ref, Cx5 &channels);
+void RegularizedNormalization(float const λ, Cx5 &channels);
 
 //! Convenience function called from recon commands to get SENSE maps
 auto Choose(Opts &opts, GridOpts &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;

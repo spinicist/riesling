@@ -60,28 +60,29 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   return cropped;
 }
 
-auto UniformNoise(float const λ, Cx5 const &channels) -> Cx5
+void RegularizedNormalization(float const λ, Cx4 const &ref, Cx5 &channels)
 {
-  Sz5 const   shape = channels.dimensions();
-  Index const nC = shape[0];
-  Cx4         rss(LastN<4>(shape));
-  rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
-  if (λ > 0.f) {
-    Log::Print("SENSE λ {}", λ);
-    rss.device(Threads::GlobalDevice()) = rss + rss.constant(λ);
-  }
-  Log::Debug("Normalizing {} channel images", nC);
+  Sz5 const shape = channels.dimensions();
+  Log::Debug("Normalizing SENSE. Dimensions {} λ {}", shape, λ);
   Cx5 normalized(shape);
-  normalized.device(Threads::GlobalDevice()) =
-    channels / rss.reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{nC, 1, 1, 1, 1});
-  return normalized;
+  channels.device(Threads::GlobalDevice()) =
+    channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
+}
+
+void RegularizedNormalization(float const λ, Cx5 &channels)
+{
+  Cx4 rss(LastN<4>(channels.dimensions()));
+  rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
+  RegularizedNormalization(λ, rss, channels);
 }
 
 auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
-    return UniformNoise(opts.λ.Get(), LoresChannels(opts, nufft, traj, noncart));
+    auto c = LoresChannels(opts, nufft, traj, noncart);
+    RegularizedNormalization(opts.λ.Get(), c);
+    return c;
   } else if (opts.type.Get() == "espirit") {
     Log::Fail("Not supported right now");
     // auto channels = LoresChannels(opts, core, traj, noncart);
