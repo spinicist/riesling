@@ -20,7 +20,8 @@ struct ADMM
   std::vector<std::shared_ptr<Op>>              reg_ops;
   std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
 
-  Index lsqLimit = 8;
+  Index iters0 = 4;
+  Index iters1 = 1;
   float aTol = 1.e-6f;
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;

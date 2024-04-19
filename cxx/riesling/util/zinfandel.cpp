@@ -93,7 +93,7 @@ void main_zinfandel(args::Subparser &parser)
       Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
     };
 
-    ADMM admm{A,       M,    {id}, {slr},   inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
+    ADMM admm{A,       M,    {id}, {slr},   inner_its.Get(), 1, atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
               ε.Get(), 1.2f, 10.f, debug_x, debug_z};
 
     Trajectory gapTraj(newPoints.slice(Sz3{0, 0, 0}, Sz3{traj.nDims(), gap.Get(), nT}), traj.matrix(), traj.voxelSize());

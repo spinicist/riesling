@@ -44,7 +44,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
   std::shared_ptr<Op> I = std::make_shared<Ops::Identity<Cx>>(reg->rows());
   std::shared_ptr<Op> Mʹ = std::make_shared<Ops::DStack<Cx>>(M, I);
 
-  LSMR lsmr{Aʹ, Mʹ, lsqLimit, aTol, bTol, cTol};
+  LSMR lsmr{Aʹ, Mʹ, iters0, aTol, bTol, cTol};
 
   Vector x(A->cols());
   x.setZero();
@@ -65,6 +65,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       ρdiags[ir]->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ.data(), 0.f, x.data());
+    lsmr.iterLimit = iters1;
     if (debug_x) { debug_x(io, x); }
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;

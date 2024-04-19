@@ -25,7 +25,8 @@ void main_recon_rlsq(args::Subparser &parser)
 
   args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
   args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-  args::ValueFlag<Index>       inner_its(parser, "ITS", "Max inner iterations (1)", {"max-its"}, 1);
+  args::ValueFlag<Index>       inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4);
+  args::ValueFlag<Index>       inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1);
   args::ValueFlag<float>       atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
   args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
   args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
@@ -81,8 +82,9 @@ void main_recon_rlsq(args::Subparser &parser)
     }
   };
 
-  ADMM opt{A,       M,       reg.ops, reg.prox, inner_its.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
-           ε.Get(), μ.Get(), τ.Get(), debug_x,  debug_z};
+  ADMM opt{A,          M,          reg.ops,    reg.prox,        inner_its0.Get(), inner_its1.Get(),
+           atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(), ε.Get(),          μ.Get(),
+           τ.Get(),    debug_x,    debug_z};
 
   for (Index iv = 0; iv < nV; iv++) {
     auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
