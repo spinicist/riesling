@@ -39,7 +39,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
   auto const nufft = make_nufft(traj, gridOpts, nC, traj.matrixForFOV(opts.fov.Get()), basis);
-  auto const M = make_kspace_pre("kspace", nC, traj, basis);
+  auto const M = make_kspace_pre(traj, nC, basis);
   LSMR const lsmr{nufft, M, 4};
 
   Cx4        lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});

@@ -50,7 +50,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
 }
 
 auto make_kspace_pre(
-  std::string const &type, Index const nC, Trajectory const &traj, Basis<Cx> const &basis, float const bias, bool const ndft)
+  Trajectory const &traj, Index const nC, Basis<Cx> const &basis, std::string const &type, float const bias, bool const ndft)
   -> std::shared_ptr<Ops::Op<Cx>>
 {
   if (type == "" || type == "none") {

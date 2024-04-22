@@ -15,24 +15,23 @@ using namespace rl;
 
 void main_eig(args::Subparser &parser)
 {
-  CoreOpts                     coreOpts(parser);
-  GridOpts                     gridOpts(parser);
-  SDC::Opts                    sdcOpts(parser, "none");
-  SENSE::Opts                  senseOpts(parser);
-  args::Flag                   adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
-  args::ValueFlag<Index>       its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
-  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-  args::Flag                   recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
-  args::Flag                   savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
+  CoreOpts               coreOpts(parser);
+  GridOpts               gridOpts(parser);
+  PrecondOpts            preOpts(parser);
+  SENSE::Opts            senseOpts(parser);
+  args::Flag             adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
+  args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
+  args::Flag             recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
+  args::Flag             savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
-  auto const  A = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
-  auto        P = make_kspace_pre(pre.Get(), A->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto const  A = make_recon(coreOpts, gridOpts, traj, sense, basis);
+  auto const  P =
+    make_kspace_pre(traj, A->oshape[0], ReadBasis(coreOpts.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());
@@ -48,4 +47,5 @@ void main_eig(args::Subparser &parser)
       writer.writeTensor("evec", A->ishape, vec.data());
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
-  }}
+  }
+}

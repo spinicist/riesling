@@ -19,17 +19,15 @@ void main_recon_rlsq(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
-  SDC::Opts   sdcOpts(parser, "none");
+  PrecondOpts preOpts(parser);
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
 
-  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-  args::ValueFlag<Index>       inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4);
-  args::ValueFlag<Index>       inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1);
-  args::ValueFlag<float>       atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
-  args::ValueFlag<float>       btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
-  args::ValueFlag<float>       ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
+  args::ValueFlag<Index> inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4);
+  args::ValueFlag<Index> inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1);
+  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
+  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
+  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
 
   args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (20)", {"max-outer-its"}, 20);
   args::ValueFlag<float> ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f);
@@ -48,9 +46,9 @@ void main_recon_rlsq(args::Subparser &parser)
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
-  auto const recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
+  auto const recon = make_recon(coreOpts, gridOpts, traj, sense, basis);
   auto const shape = recon->ishape;
-  auto       M = make_kspace_pre(pre.Get(), recon->oshape[0], traj, basis, preBias.Get());
+  auto const M = make_kspace_pre(traj, recon->oshape[0], basis, preOpts.type.Get(), preOpts.bias.Get());
 
   Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();

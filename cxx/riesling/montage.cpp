@@ -115,6 +115,7 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick
 {
   auto const cols = slices.size() < colsIn ? slices.size() : colsIn;
   auto const rows = (Index)std::ceil(slices.size() / (float)colsIn);
+  rl::Log::Print("Rows {} Cols {}", rows, cols);
 
   Magick::Montage montageOpts;
   montageOpts.backgroundColor(Magick::Color(0, 0, 0));

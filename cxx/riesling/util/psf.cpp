@@ -14,19 +14,13 @@ using namespace std::literals::complex_literals;
 
 void main_psf(args::Subparser &parser)
 {
-  CoreOpts coreOpts(parser);
-  GridOpts gridOpts(parser);
+  CoreOpts    coreOpts(parser);
+  GridOpts    gridOpts(parser);
+  PrecondOpts preOpts(parser);
+  LsqOpts     lsqOpts(parser);
 
   args::Flag                        mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
   args::ValueFlag<Sz3, SzReader<3>> matrix(parser, "M", "Output matrix size", {"matrix", 'm'});
-
-  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
-
-  args::ValueFlag<Index> its(parser, "N", "Max iterations (8)", {'i', "max-its"}, 8);
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f);
-  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f);
 
   args::ValueFlag<Eigen::Array2f, Array2fReader> phases(parser, "P", "Phase accrued at start and end of spoke",
                                                         {"phases", 'p'});
@@ -46,8 +40,8 @@ void main_psf(args::Subparser &parser)
   } else {
     A = make_nufft(traj, gridOpts, nC, shape, basis, nullptr);
   }
-  auto const M = make_kspace_pre(pre.Get(), nC, traj, basis, preBias.Get(), coreOpts.ndft.Get());
-  LSMR       lsmr{A, M, its.Get(), atol.Get(), btol.Get(), ctol.Get()};
+  auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];
   float const endPhase = phases.Get()[1];

@@ -13,7 +13,6 @@ using ReconOp = Compose<SenseOp, TensorOperator<Cx, 5, 4>>;
 
 auto make_recon(CoreOpts                       &coreOpts,
                 GridOpts                       &gridOpts,
-                SDC::Opts                      &sdcOpts,
                 Trajectory const               &traj,
                 std::shared_ptr<SenseOp> const &sense,
                 Basis<Cx> const                &basis) -> std::shared_ptr<ReconOp>;

@@ -31,7 +31,6 @@ add_executable(riesling
     recon/pdhg-setup.cpp
     recon/rlsq.cpp
     recon/rss.cpp
-    recon/sense.cpp
 
     sense/calib.cpp
     sense/sim.cpp

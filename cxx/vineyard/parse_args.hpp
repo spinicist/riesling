@@ -52,4 +52,21 @@ struct CoreOpts
   args::Flag                                     ndft;
 };
 
+struct PrecondOpts
+{
+  PrecondOpts(args::Subparser &parser);
+  args::ValueFlag<std::string> type;
+  args::ValueFlag<float>       bias;
+};
+
+struct LsqOpts
+{
+  LsqOpts(args::Subparser &parser);
+  args::ValueFlag<Index> its;
+  args::ValueFlag<float> atol;
+  args::ValueFlag<float> btol;
+  args::ValueFlag<float> ctol;
+  args::ValueFlag<float> λ;
+};
+
 void WriteOutput(std::string const &fname, rl::Cx5 const &img, rl::Info const &info, std::string const &log = "");

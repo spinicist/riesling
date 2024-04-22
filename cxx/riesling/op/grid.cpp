@@ -1,12 +1,11 @@
 #include "types.hpp"
 
+#include "algo/lsmr.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grid.hpp"
 #include "parse_args.hpp"
-#include "sdc.hpp"
-#include "threads.hpp"
-#include <filesystem>
+#include "precond.hpp"
 
 using namespace rl;
 
@@ -14,42 +13,46 @@ void main_grid(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
   GridOpts               gridOpts(parser);
-  SDC::Opts              sdcOpts(parser, "pipe");
+  PrecondOpts            preOpts(parser);
+  LsqOpts                lsqOpts(parser);
   args::Flag             fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  args::ValueFlag<Index> volume(parser, "V", "Volume to grid", {"vol"}, 0);
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
-  HD5::Reader reader(coreOpts.iname.Get());
-  Info const info = reader.readInfo();
-  Trajectory  traj(reader, info.voxel_size);
 
+  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+
+  HD5::Reader reader(coreOpts.iname.Get());
+
+  Trajectory traj(reader, reader.readInfo().voxel_size);
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
+  auto const shape = reader.dimensions();
+  auto const nC = shape[0];
+  auto const nV = shape[shape.size() - 1];
+
+  auto const A = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
+
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeInfo(info);
+  writer.writeInfo(reader.readInfo());
   traj.write(writer);
-  auto const start = Log::Now();
+
   if (fwd) {
-    Cx5        cart = reader.readTensor<Cx5>();
-    auto const gridder = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), cart.dimension(0), basis);
-    auto const rad_ks = gridder->forward(cart);
-    writer.writeTensor(HD5::Keys::Data, Sz5{rad_ks.dimension(0), rad_ks.dimension(1), rad_ks.dimension(2), 1, 1},
-                       rad_ks.data());
-    Log::Print("Wrote non-cartesian k-space. Took {}", Log::ToNow(start));
+    Cx6 const cart = reader.readTensor<Cx6>();
+    Cx5       noncart(AddBack(A->oshape, 1, nV));
+    for (Index iv = 0; iv < nV; iv++) {
+      noncart.chip<4>(iv).chip<3>(0).device(Threads::GlobalDevice()) = A->forward(CChipMap(cart, iv));
+    }
+    writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
   } else {
-    auto const noncart = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, volume.Get()}});
-    Log::Print("noncart {} traj {} {}", noncart.dimensions(), traj.nSamples(), traj.nTraces());
+    auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
-    Index const nC = noncart.dimension(0);
-    Index const nS = noncart.dimension(3);
-    auto const  gridder = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
-    auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
-    Cx6         cart(AddBack(gridder->ishape, nS));
-    for (Index is = 0; is < nS; is++) {
-      Cx3 slice = noncart.chip<3>(is);
-      slice = sdc->adjoint(slice);
-      cart.chip<5>(is) = gridder->adjoint(slice);
+
+    auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
+    LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+
+    Cx6 cart(AddBack(A->ishape, nV));
+    for (Index iv = 0; iv < nV; iv++) {
+      cart.chip<5>(iv).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, iv)), A->ishape);
     }
     writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Cartesian);
-    Log::Print("Wrote cartesian k-space. Took {}", Log::ToNow(start));
   }
+  Log::Print("Finished {}", parser.GetCommand().Name());
 }

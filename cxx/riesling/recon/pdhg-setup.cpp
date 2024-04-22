@@ -18,12 +18,9 @@ void main_pdhg_setup(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
-  SDC::Opts   sdcOpts(parser, "none");
+  PrecondOpts preOpts(parser);
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
-
-  args::ValueFlag<std::string> pre(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace");
-  args::ValueFlag<float>       preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f);
 
   ParseCommand(parser, coreOpts.iname);
 
@@ -31,9 +28,10 @@ void main_pdhg_setup(args::Subparser &parser)
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
-  auto const  recon = make_recon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
+  auto const  recon = make_recon(coreOpts, gridOpts, traj, sense, basis);
   auto const  shape = recon->ishape;
-  auto        P = make_kspace_pre(pre.Get(), recon->oshape[0], traj, ReadBasis(coreOpts.basisFile.Get()), preBias.Get());
+  auto const  P =
+    make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreOpts.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);

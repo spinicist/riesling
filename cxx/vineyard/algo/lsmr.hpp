@@ -19,7 +19,7 @@ struct LSMR
 
   std::shared_ptr<Op>                                   op;
   std::shared_ptr<Op>                                   M; // Pre-conditioner
-  Index                                                 iterLimit = 8;
+  Index                                                 iterLimit = 4;
   float                                                 aTol = 1.e-6f;
   float                                                 bTol = 1.e-6f;
   float                                                 cTol = 1.e-6f;

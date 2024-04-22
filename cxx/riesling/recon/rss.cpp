@@ -1,5 +1,6 @@
 #include "types.hpp"
 
+#include "algo/lsmr.hpp"
 #include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -7,7 +8,7 @@
 #include "op/nufft.hpp"
 #include "op/rank.hpp"
 #include "parse_args.hpp"
-#include "sdc.hpp"
+#include "precond.hpp"
 #include "tensorOps.hpp"
 
 using namespace rl;
@@ -16,8 +17,8 @@ void main_recon_rss(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
   GridOpts                     gridOpts(parser);
-  SDC::Opts                    sdcOpts(parser, "pipe");
-  args::ValueFlag<std::string> basisFile(parser, "BASIS", "Read subspace basis from .h5 file", {"basis", 'b'});
+  PrecondOpts                  preOpts(parser);
+  LsqOpts                      lsqOpts(parser);
   args::ValueFlag<float>       t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
   args::ValueFlag<float>       tSamp(parser, "TS", "Sample time for off-resonance correction", {"tsamp"});
 
@@ -28,24 +29,25 @@ void main_recon_rss(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   Index const nC = reader.dimensions(HD5::Keys::Data)[0];
-  auto const  sdc = SDC::Choose(sdcOpts, nC, traj, gridOpts.ktype.Get(), gridOpts.osamp.Get());
 
   std::shared_ptr<TensorOperator<Cx, 5, 4>> A = nullptr;
   if (coreOpts.ndft) {
-    auto ndft = std::make_shared<NDFTOp<3>>(traj.points(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis, sdc);
+    auto ndft = std::make_shared<NDFTOp<3>>(traj.points(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis);
     if (reader.exists("b0") && t0 && tSamp) { ndft->addOffResonance(reader.readTensor<Re3>("b0"), t0.Get(), tSamp.Get()); }
     A = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft);
   } else {
-    A = make_nufft(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis, sdc);
+    A = make_nufft(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis);
   }
-  Sz4 sz = LastN<4>(A->ishape);
 
-  Cx5 allData = reader.readTensor<Cx5>();
-  traj.checkDims(FirstN<3>(allData.dimensions()));
-  Index const volumes = allData.dimension(4);
-  Cx5         out(AddBack(sz, volumes));
-  for (Index iv = 0; iv < volumes; iv++) {
-    auto const channels = A->adjoint(CChipMap(allData, iv));
+  auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
+  LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+
+  Cx5 noncart = reader.readTensor<Cx5>();
+  traj.checkDims(FirstN<3>(noncart.dimensions()));
+  Index const nVol = noncart.dimension(4);
+  Cx5         out(AddBack(LastN<4>(A->ishape), nVol));
+  for (Index iv = 0; iv < nVol; iv++) {
+    auto const channels = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, iv)), A->ishape);
     out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());

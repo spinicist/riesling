@@ -100,6 +100,20 @@ CoreOpts::CoreOpts(args::Subparser &parser)
 {
 }
 
+PrecondOpts::PrecondOpts(args::Subparser &parser)
+  : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace")
+  , bias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f)
+{
+}
+
+LsqOpts::LsqOpts(args::Subparser &parser) :
+  its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4),
+  atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f),
+   btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f),
+   ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f),
+   λ(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f)
+{}
+
 args::Group    global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
 args::MapFlag<int, Log::Level>
