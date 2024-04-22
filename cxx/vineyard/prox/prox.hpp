@@ -33,7 +33,8 @@ struct Prox
   using Vector = typename Prox<Scalar>::Vector;                                                                                \
   using Map = typename Prox<Scalar>::Map;                                                                                      \
   using CMap = typename Prox<Scalar>::CMap;                                                                                    \
-  using Op = typename Prox<Scalar>::Op;
+  using Op = typename Prox<Scalar>::Op;                                                                                        \
+  using Prox<Scalar>::apply;
 
 template <typename Scalar = Cx>
 struct ConjugateProx final : Prox<Scalar>

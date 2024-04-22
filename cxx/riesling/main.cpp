@@ -16,6 +16,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
   COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
   COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
+  COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
   COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
   COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
 

@@ -1,4 +1,4 @@
-#include "algo/cg.hpp"
+#include "algo/lsmr.hpp"
 #include "op/ops.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -12,14 +12,15 @@ TEST_CASE("Algorithms", "[alg]")
   Index const N = 8;
   Eigen::MatrixXf Amat = Eigen::MatrixXf::Identity(N, N) + Eigen::MatrixXf::Ones(N, N);
   Amat.array() += 1.f;
-  auto A = std::make_shared<Ops::MatMul<float>>(Amat);
-  Eigen::VectorXf const x = Eigen::ArrayXf::LinSpaced(N, 0, N - 1);
+  auto const A = std::make_shared<Ops::MatMul<Cx>>(Amat);
+  auto const M = std::make_shared<Ops::Identity<Cx>>(N);
+  Eigen::VectorXcf const x = Eigen::ArrayXf::LinSpaced(N, 0, N - 1).cast<Cx>();
   auto y = A->forward(x);
 
-  SECTION("CG")
+  SECTION("LSMR")
   {
-    ConjugateGradients<float> cg{A};
-    auto xx = cg.run(y.data());
+    LSMR lsmr{A, M};
+    auto xx = lsmr.run(y.data());
     CHECK((x - xx).norm() == Approx(0.f).margin(1.e-3f));
   }
 }

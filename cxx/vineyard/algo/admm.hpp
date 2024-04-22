@@ -14,7 +14,7 @@ struct ADMM
   using DebugX = std::function<void(Index const, Vector const &)>;
   using DebugZ = std::function<void(Index const, Index const, Vector const &, Vector const &, Vector const &)>;
 
-  std::shared_ptr<Op> A; // Op for least-squares
+  std::shared_ptr<Op> A; // Forward model
   std::shared_ptr<Op> M; // Pre-conditioner
 
   std::vector<std::shared_ptr<Op>>              reg_ops;

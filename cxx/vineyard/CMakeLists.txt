@@ -30,12 +30,11 @@ add_library(vineyard
     zin-grappa.cpp
     algo/admm.cpp
     algo/bidiag.cpp
-    algo/cg.cpp
     algo/decomp.cpp
     algo/eig.cpp
     algo/gs.cpp
+    algo/lad.cpp
     algo/lsmr.cpp
-    algo/lsqr.cpp
     algo/otsu.cpp
     algo/pdhg.cpp
     algo/stats.cpp

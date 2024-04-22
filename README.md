@@ -33,8 +33,7 @@ resulting `riesling` executable to somewhere on your `$PATH`, for instance
 - The Linux executable is compiled on Ubuntu 20.04 and a statically linked
   libstdc++. This means it will hopefully run on most modern Linux
   distributions. Let us know if it doesn't.
-- The Mac executable is compiled with MacOS 11. GitHub CI uses Intel machines,
-  and a native M1 version will not be available until these changes.
+- The Mac executable is compiled with MacOS 14.
 
 ## Usage
 
