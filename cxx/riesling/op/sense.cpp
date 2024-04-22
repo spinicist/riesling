@@ -26,36 +26,28 @@ void main_op_sense(args::Subparser &parser)
   writer.writeInfo(ireader.readInfo());
   traj.write(writer);
 
-  auto const start = Log::Now();
   if (fwd) {
     auto const images = ireader.readTensor<Cx5>();
-    if (!std::equal(images.dimensions().begin() + 1, images.dimensions().begin() + 4, maps.dimensions().begin() + 1)) {
-      Log::Fail("Image dimensions {} did not match SENSE maps {}", fmt::join(images.dimensions(), ","),
-                fmt::join(maps.dimensions(), ","));
+    if (MidN<1, 4>(maps.dimensions()) != FirstN<4>(images.dimensions())) {
+      Log::Fail("Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
     }
     SenseOp sense(maps, images.dimension(0));
-    Cx6     channels(maps.dimension(0), images.dimension(0), maps.dimension(1), maps.dimension(2), maps.dimension(3),
-                     images.dimension(4));
+    Cx6     channels(AddBack(maps.dimensions(), images.dimension(4)));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
-      channels.chip<5>(ii).device(Threads::GlobalDevice()) = sense.forward(CChipMap(images, ii));
+      auto const temp = sense.forward(CChipMap(images, ii));
+      channels.chip<5>(ii).device(Threads::GlobalDevice()) = temp;
     }
-    Log::Print("SENSE took {}", Log::ToNow(start));
     writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::Cartesian);
   } else {
     auto const channels = ireader.readTensor<Cx6>();
-    if (channels.dimension(0) != maps.dimension(0)) {
-      Log::Fail("Number of channels {} did not match SENSE maps {}", channels.dimension(0), maps.dimension(0));
-    }
-    if (!std::equal(channels.dimensions().begin() + 2, channels.dimensions().end(), maps.dimensions().begin() + 1)) {
-      Log::Fail("Image dimensions {} did not match SENSE maps {}", fmt::join(channels.dimensions(), ","),
-                fmt::join(maps.dimensions(), ","));
+    if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
+      Log::Fail("Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
     }
     SenseOp sense(maps, channels.dimension(1));
     Cx5     images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));
     }
-    Log::Print("SENSE Adjoint took {}", Log::ToNow(start));
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
   }
 }

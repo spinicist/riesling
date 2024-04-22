@@ -6,7 +6,7 @@ INFO_FIELDS = ['matrix', 'voxel_size', 'origin', 'direction', 'tr']
 INFO_FORMAT = [('<i8', (3,)), ('<f4', (3,)), ('<f4', (3,)), ('<f4', (3, 3)), '<f4']
 INFO_DTYPE = np.dtype({'names': INFO_FIELDS, 'formats': INFO_FORMAT})
 
-def write(filename, data=None, trajectory=None, info=None, meta=None, compression='gzip'):
+def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=None, compression='gzip'):
     with h5py.File(filename, 'w') as out_f:
         out_f.create_dataset('data', dtype='c8', data=data.data, chunks=np.shape(data.data), compression=compression)
         if trajectory is not None:
@@ -14,7 +14,9 @@ def write(filename, data=None, trajectory=None, info=None, meta=None, compressio
                 AssertionError('Trajectory must be 3 dimensional (co-ords, samples, traces)')
             if trajectory.shape[2] > 3:
                 AssertionError('Trajectory cannot have more than 3 co-ordinates')
-            out_f.create_dataset('trajectory', dtype='f4', data=data.data, compression=compression)
+            traj = out_f.create_dataset('trajectory', dtype='f4', data=trajectory, compression=compression)
+            if matrix is not None:
+                traj.create_attribute('matrix', dtype='i8', data=matrix)
         if info is not None:
             out_f.create_dataset('info', data=np.array([[info[f] for f in INFO_FIELDS]], dtype=INFO_DTYPE))
         if meta is not None:

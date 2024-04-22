@@ -24,20 +24,20 @@ Radial Interstices Enable Speedy Low-volume imagING (RIESLING) is a tool for rec
 Commands
 --------
 
-RIESLING is provided as a single executable file, similar to ``bart``. The ``riesling`` executable provides multiple individual commands, which vary from basic utilities to interrogate files to complete reconstruction pipelines. To see a full list of commands currently available, run ``riesling``. Detailed help for each command can be found in the category pages: :doc:`util`, :doc:`op`, and :doc:`recon`. The full list is not repeated here as they are subject to change. However, the most useful are:
+RIESLING is provided as a single executable file. The ``riesling`` executable provides multiple individual commands, which are grouped into reconstruction, data manipulation, sensitivity map estimation, basis creation, linear operators, and utilities. To see a full list of commands currently available, run ``riesling`` with no arguments. Detailed help for commands can be found in the category pages: :doc:`recon`, :doc:`op` and :doc:`util`. The most useful are:
 
+- ``riesling recon-rlsq`` Regularized least-squares reconstruction, similar to ``bart pics``. *You probably want this one*.
+- ``riesling recon-rss`` Unregularized least-squares reconstruction with root-sum-squares channel combination.
 - ``riesling h5`` Prints information about compatible ``.h5`` files
-- ``riesling rss`` Performs the most basic reconstruction possible
-- ``riesling admm`` Regularized least-squares reconstruction, similar to ``bart pics``. *You probably want this one*.
 
-RIESLING exploits the inherent oversampling of most non-Cartesian trajectories at the center of k-space to generate SENSE maps directly from the input data, but utilities are provided to explicitly extract sensitivities if desired. Further details can be found in :doc:`util`. Internally, similarly to BART, RIESLING pipelines are constructed as a series of Linear Operators. These operators are exposed as individual commands if you wish to build up your own pipeline, see :doc:`op`.
+RIESLING exploits the inherent oversampling of most non-Cartesian trajectories at the center of k-space to generate SENSE maps directly from the input data, but utilities are provided to explicitly extract sensitivities if desired. Further details can be found in :doc:`util`.
 
 Examples
 --------
 
-A `tutorial notebook <https://github.com/spinicist/riesling-examples/tutorial.ipynb>`_ can be run interactively at on `MyBinder <https://mybinder.org/v2/gh/spinicist/riesling-examples/HEAD?filepath=tutorial.ipynb>`_. This explains the various steps required to generate a simulated phantom dataset and then reconstruct it.
+A `tutorial notebook <https://github.com/spinicist/riesling-examples/tutorial.ipynb>`_ is provided to explain the basic steps in reconstruction.
 
 Input Data
 ----------
 
-An important step with using RIESLING is providing data in the correct ``.h5`` format. Details of this format can be found in :doc:`data`. Matlab code to generate these files is provided in the ``/matlab`` directory of the repository. Users of the ZTE sequence on GE platforms should contact the authors to discuss conversion strategies.
+An important step with using RIESLING is providing data in the correct ``.h5`` format. Details of this format can be found in :doc:`data`. Matlab and Python code to generate these files is provided in the ``/matlab`` and ``/python`` directories of the repository respectively. Users of the ZTE sequence on GE platforms should contact the authors to discuss conversion strategies.

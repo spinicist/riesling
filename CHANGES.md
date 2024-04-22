@@ -1,5 +1,17 @@
 ## Changelog
 
+# v1.00
+
+- I now consider RIESLING useable enough to declare version 1 🥂.
+- _The trajectory scaling now matches BART (-M/2 to M/2 where M is matrix size)._
+- The interface has been much simplified - input .h5 files are expected to have a dataset named "data" and commands take both input and output filenames. This removes the need to remember the specific dataset names and suffixes added by commands.
+- Useful commands have been renamed and reorganized to aid discoverability. The most important are `recon-lsq` and `recon-rlsq`, which are now named by the problem they solve (Least-Squares and Regularized Least-Squares respectively) instead of the particular algorithms used (previously they were `lsmr` and `admm`).
+- The new `montage` tool can create pretty montages from RIESLING datasets. These can be saved as PNGs or displayed in the terminal if you use KiTTY. Sadly, due to dependency issues, this command is not included in the Github downloads and you will need to compile on your local machine if you want to use it.
+- Some commands have been removed, in particular `cg`. The remaining commands have many advantages and maintaing all the different algorithms was costing considerable time.
+- Behind the scenes, this version can be considered the "preconditioned least-squares everywhere" release. The operator commands now use a few iterations of preconditioned LSMR to calculute the inverse NUFFT etc. in preference to Density Compensation. This approach was already used for SENSE calibration and I consider it the superior approach over Density Compensation. A discussion on this is welcome at ISMRM, especially if you provide a glass of riesling.
+- RIESLING now uses the DUCC FFT library instead of FFTW. This has comparable performance, no planning, and a much better multi-threading implementation.
+- New and improved regularizers including wavelets and TGV on the L2-norm of multi-channel images.
+
 # v0.12
 
 - A much improved ADMM implementation, including the residual balancing scheme from Wohlberg 2017. This shows much more robust convergence behaviour. The default number of inner iterations is now only 1, giving improved speed.
