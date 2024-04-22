@@ -23,8 +23,10 @@ void main_slice(args::Subparser &parser)
   args::ValueFlag<Index> traceStart(parser, "T", "Trace to start split", {"trace-start"}, 0);
   args::ValueFlag<Index> traceSize(parser, "SZ", "Number of traces to keep", {"trace-size"}, 0);
   args::ValueFlag<Index> traceStride(parser, "S", "Trace Stride", {"trace-stride"}, 1);
-  args::ValueFlag<Index> traceSegSize(parser, "S", "Trace segment size", {"trace-segsize"});
-  args::ValueFlag<Index> traceSegments(parser, "S", "Trace segments", {"trace-segments"});
+
+  args::ValueFlag<Index> tracesPerSeg(parser, "S", "Trace segment size", {"traces-per-seg"}, 0);
+  args::ValueFlag<Index> traceSegStart(parser, "S", "Trace segment start", {"seg-start"}, 0);
+  args::ValueFlag<Index> traceSegments(parser, "S", "Trace segments", {"seg-size"});
 
   args::ValueFlag<Index> volSize(parser, "T", "Number of volumes to keep", {"vol-size"}, 0);
   args::ValueFlag<Index> volStart(parser, "T", "Volume to start split", {"vol-start"}, 0);
@@ -38,49 +40,60 @@ void main_slice(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get());
   auto const  info = reader.readInfo();
-  Trajectory  traj(reader, info.voxel_size);
 
-  Cx5 ks = reader.readTensor<Cx5>();
+  if (reader.order() != 5) { Log::Fail("Dataset does not appear to be non-cartesian with 5 dimensions"); }
+  auto const shape = reader.dimensions();
 
-  Index const cSt = Wrap(channelStart.Get(), ks.dimension(0));
-  Index const rSt = Wrap(readStart.Get(), ks.dimension(1));
-  Index const tSt = Wrap(traceStart.Get(), ks.dimension(2));
-  Index const sSt = Wrap(slabStart.Get(), ks.dimension(3));
-  Index const vSt = Wrap(volStart.Get(), ks.dimension(4));
+  Index const cSt = Wrap(channelStart.Get(), shape[0]);
+  Index const rSt = Wrap(readStart.Get(), shape[1]);
+  Index const tSt = Wrap(traceStart.Get(), shape[2]);
+  Index const sSt = Wrap(slabStart.Get(), shape[3]);
+  Index const vSt = Wrap(volStart.Get(), shape[4]);
 
-  Index const cSz = channelSize ? channelSize.Get() : ks.dimension(0) - cSt;
-  Index const rSz = readSize ? readSize.Get() : ks.dimension(1) - rSt;
-  Index const tSz = traceSize ? traceSize.Get() : (traceSegSize ? traceSegSize.Get() - tSt : ks.dimension(2) - tSt);
-  Index const sSz = slabSize ? slabSize.Get() : ks.dimension(3) - sSt;
-  Index const vSz = volSize ? volSize.Get() : ks.dimension(4) - vSt;
+  Index const cSz = channelSize ? channelSize.Get() : shape[0] - cSt;
+  Index const rSz = readSize ? readSize.Get() : shape[1] - rSt;
+  Index const tSz = traceSize ? traceSize.Get() : (tracesPerSeg ? tracesPerSeg.Get() - tSt : shape[2] - tSt);
+  Index const sSz = slabSize ? slabSize.Get() : shape[3] - sSt;
+  Index const vSz = volSize ? volSize.Get() : shape[4] - vSt;
 
-  if (cSt + cSz > ks.dimension(0)) { Log::Fail("Last read point {} exceeded maximum {}", cSt + cSz, ks.dimension(0)); }
-  if (rSt + rSz > ks.dimension(1)) { Log::Fail("Last read point {} exceeded maximum {}", rSt + rSz, ks.dimension(1)); }
-  if (traceSegSize) {
-    if (tSt + tSz > traceSegSize.Get()) {
-      Log::Fail("Last trace point {} exceeded segment size {}", tSt + tSz, traceSegSize.Get());
+  if (cSt + cSz > shape[0]) { Log::Fail("Last sample point {} exceeded maximum {}", cSt + cSz, shape[0]); }
+  if (rSt + rSz > shape[1]) { Log::Fail("Last sample point {} exceeded maximum {}", rSt + rSz, shape[1]); }
+  if (tracesPerSeg) {
+    if (tSt + tSz > tracesPerSeg.Get()) {
+      Log::Fail("Last trace point {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
     }
   } else {
-    if (tSt + tSz > ks.dimension(2)) { Log::Fail("Last trace point {} exceeded maximum {}", tSt + tSz, ks.dimension(2)); }
+    if (tSt + tSz > shape[2]) { Log::Fail("Last trace point {} exceeded maximum {}", tSt + tSz, shape[2]); }
   }
-  if (sSt + sSz > ks.dimension(3)) { Log::Fail("Last slab point {} exceeded maximum {}", sSt + sSz, ks.dimension(3)); }
-  if (vSt + vSz > ks.dimension(4)) { Log::Fail("Last volume point {} exceeded maximum {}", vSt + vSz, ks.dimension(4)); }
+  if (sSt + sSz > shape[3]) { Log::Fail("Last slab point {} exceeded maximum {}", sSt + sSz, shape[3]); }
+  if (vSt + vSz > shape[4]) { Log::Fail("Last volume point {} exceeded maximum {}", vSt + vSz, shape[4]); }
+
+  if (cSz < 1) { Log::Fail("Channel size was less than 1"); }
+  if (rSz < 1) { Log::Fail("Sample size was less than 1"); }
+  if (tSz < 1) { Log::Fail("Trace size was less than 1"); }
+  if (sSz < 1) { Log::Fail("Slab size was less than 1"); }
+  if (vSz < 1) { Log::Fail("Volume size was less than 1"); }
 
   Log::Print("Selected slice {}:{}, {}:{}, {}:{}, {}:{}, {}:{}", cSt, cSt + cSz - 1, rSt, rSt + rSz - 1, tSt, tSt + tSz - 1,
              sSt, sSt + sSz - 1, vSt, vSt + vSz - 1);
 
-  if (traceSegSize) {
-    Index const segSz = traceSegSize.Get();
-    if (tSt + tSz > segSz) { Log::Fail("Selected traces {}-{} extend past segment {}", tSt, tSz, segSz); }
-    Index const nSeg = ks.dimension(2) / segSz; // Will lose spare traces
-    Index const oSegs = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg) : nSeg;
-    Log::Print("Selected {} trace segments", oSegs);
-    Sz5 const shape5{cSz, rSz, tSz * oSegs, sSz, vSz};
-    Sz6 const shape6{ks.dimension(0), ks.dimension(1), segSz, nSeg, ks.dimension(3), ks.dimension(4)};
-    ks = Cx5(ks.reshape(shape6).slice(Sz6{cSt, rSt, tSt, 0, sSt, vSt}, Sz6{cSz, rSz, tSz, oSegs, sSz, vSz}).reshape(shape5));
-    Sz3 const shape3{3, rSz, tSz * oSegs};
-    Sz4 const shape4{3, traj.nSamples(), segSz, nSeg};
-    traj = Trajectory(traj.points().reshape(shape4).slice(Sz4{0, rSt, tSt, 0}, Sz4{3, rSz, tSz, oSegs}).reshape(shape3),
+  Cx5        ks = reader.readTensor<Cx5>();
+  Trajectory traj(reader, info.voxel_size);
+
+  if (tracesPerSeg) {
+    Index const tps = tracesPerSeg.Get();
+    if (tSt + tSz > tps) { Log::Fail("Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
+    Index const nSeg = shape[2] / tps; // Will lose spare traces
+    Index const segSt = Wrap(traceSegStart.Get(), nSeg);
+    Index const segSz = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg) : nSeg - segSt;
+    Log::Print("Segments {}-{}", segSt, segSt + segSz - 1);
+    Sz5 const shape5{cSz, rSz, tSz * segSz, sSz, vSz};
+    Sz6 const shape6{shape[0], shape[1], tps, nSeg, shape[3], shape[4]};
+    ks =
+      Cx5(ks.reshape(shape6).slice(Sz6{cSt, rSt, tSt, segSt, sSt, vSt}, Sz6{cSz, rSz, tSz, segSz, sSz, vSz}).reshape(shape5));
+    Sz3 const shape3{3, rSz, tSz * segSz};
+    Sz4 const shape4{3, traj.nSamples(), tps, nSeg};
+    traj = Trajectory(traj.points().reshape(shape4).slice(Sz4{0, rSt, tSt, segSt}, Sz4{3, rSz, tSz, segSz}).reshape(shape3),
                       traj.matrix(), traj.voxelSize());
   } else {
     ks = Cx5(ks.slice(Sz5{cSt, rSt, tSt, sSt, vSt}, Sz5{cSz, rSz, tSz, sSz, vSz}));
