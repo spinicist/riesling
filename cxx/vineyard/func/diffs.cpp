@@ -6,13 +6,21 @@ namespace rl {
 
 ForwardDiff::ForwardDiff(Index d)
   : Functor<Cx4>()
-  , dim{d} {};
+  , dim{d}
+{
+}
+
 BackwardDiff::BackwardDiff(Index d)
   : Functor<Cx4>()
-  , dim{d} {};
+  , dim{d}
+{
+}
+
 CentralDiff::CentralDiff(Index d)
   : Functor<Cx4>()
-  , dim{d} {};
+  , dim{d}
+{
+}
 
 void ForwardDiff::operator()(Input x, Output y) const
 {
