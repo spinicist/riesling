@@ -23,7 +23,7 @@ jobs:
         - {
           name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
           os: ubuntu-20.04,
-          cc: "gcc-12", cxx: "g++-12"
+          cc: "gcc-10", cxx: "g++-10"
         }
         - {
           name: "macOS", artifact: "riesling-macos.tar.gz",
