@@ -156,28 +156,32 @@ void Colorbar(float const win, bool const grey, bool const log, Magick::Image &i
   int const H = img.density().height() * img.fontPointsize() / 72.f;
   rl::Cx2   cx(W, H);
   for (Index ii = 0; ii < W; ii++) {
+    if (grey) {
     float const mag = ii * win / (W - 1.f);
-    for (Index ij = 0; ij < H; ij++) {
-      float const angle = (ij / (H - 1.f)) * 2.f * M_PI - M_PI;
-      cx(ii, ij) = std::polar(mag, angle);
+    cx.chip<0>(ii).setConstant(mag);
+    } else {
+      float const angle = -M_PI + 2.f * M_PI * ii / (W - 1.f);
+      cx.chip<0>(ii).setConstant(std::polar(0.5f, angle));
     }
   }
   auto const             cbar = rl::Colorize(cx, win, grey, log);
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
   Magick::Geometry const cbarTextBounds(W, H, W * 0.01);
 
+  std::string const leftLabel = grey ? "0" : "-ᴨ";
+  std::string const rightLabel = grey ? fmt::format("{:.2f}", win) : "ᴨ";
+
   cbarImg.density(img.density());
   cbarImg.font(img.font());
   cbarImg.fontPointsize(img.fontPointsize());
   cbarImg.fillColor(Magick::ColorMono(true));
   cbarImg.strokeWidth(4);
-
   cbarImg.strokeColor(Magick::ColorMono(false));
-  cbarImg.annotate("0", cbarTextBounds, Magick::WestGravity);
-  cbarImg.annotate(fmt::format("{:.2f}", win), cbarTextBounds, Magick::EastGravity);
+  cbarImg.annotate(leftLabel, cbarTextBounds, Magick::WestGravity);
+  cbarImg.annotate(rightLabel, cbarTextBounds, Magick::EastGravity);
   cbarImg.strokeColor(Magick::Color("none"));
-  cbarImg.annotate("0", cbarTextBounds, Magick::WestGravity);
-  cbarImg.annotate(fmt::format("{:.2f}", win), cbarTextBounds, Magick::EastGravity);
+  cbarImg.annotate(leftLabel, cbarTextBounds, Magick::WestGravity);
+  cbarImg.annotate(rightLabel, cbarTextBounds, Magick::EastGravity);
 
   cbarImg.borderColor(Magick::ColorGray(0.));
   cbarImg.border(Magick::Geometry(4, 4));

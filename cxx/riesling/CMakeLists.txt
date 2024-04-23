@@ -46,9 +46,9 @@ add_executable(riesling
     util/precond.cpp
     util/psf.cpp
     util/sdc.cpp
+    util/version.cpp
     util/zinfandel.cpp
 
-    version.cpp
     main.cpp
 )
 target_link_libraries(riesling PRIVATE
@@ -65,7 +65,7 @@ install(TARGETS riesling RUNTIME DESTINATION bin)
 option(BUILD_MONTAGE "Build the montage command. Requires ImageMagick" OFF)
 
 if (${BUILD_MONTAGE})
-    target_sources(riesling PRIVATE montage.cpp)
+    target_sources(riesling PRIVATE util/montage.cpp)
     target_compile_definitions(riesling PRIVATE -DBUILD_MONTAGE)
     execute_process(COMMAND "Magick++-config" "--cxxflags" OUTPUT_VARIABLE IM_CXX)
     execute_process(COMMAND "Magick++-config" "--ldflags" OUTPUT_VARIABLE IM_LD)
