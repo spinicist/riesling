@@ -229,7 +229,7 @@ void main_montage(args::Subparser &parser)
 
   args::ValueFlag<std::string>                        title(parser, "T", "Title", {"title", 't'});
   args::ValueFlag<Magick::GravityType, GravityReader> gravity(parser, "G", "Title gravity", {"gravity"}, Magick::NorthGravity);
-  args::ValueFlag<std::string>                        font(parser, "F", "Font", {"font", 'f'}, "Arial");
+  args::ValueFlag<std::string>                        font(parser, "F", "Font", {"font", 'f'}, "Helvetica");
   args::ValueFlag<float>                              fontSize(parser, "FS", "Font size", {"font-size"}, 18);
 
   args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
