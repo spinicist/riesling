@@ -4,7 +4,7 @@
 using namespace rl;
 
 #define COMMAND(PARSER, NM, CMD, DESC)                                                                                         \
-  int           main_##NM(args::Subparser &parser);                                                                            \
+  void          main_##NM(args::Subparser &parser);                                                                            \
   args::Command NM(PARSER, CMD, DESC, &main_##NM);
 
 int main(int const argc, char const *const argv[])
