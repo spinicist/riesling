@@ -10,18 +10,25 @@ void main_echoes(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::ValueFlag<Index> nS(parser, "S", "Total samples", {"samples", 's'});
+  args::ValueFlag<Index> nG(parser, "G", "Discard samples in gap", {"gap", 'g'});
   args::ValueFlag<Index> nK(parser, "K", "Samples to keep", {"keep", 'k'});
   args::ValueFlag<Index> nE(parser, "E", "Number of echoes", {"echoes", 'e'});
 
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
 
+  if (nG.Get() < 0) { rl::Log::Fail("Gap was negative"); }
+  Index const sz = nK ? nK.Get() : nS.Get();
+  if (nG.Get() + sz > nS.Get()) {
+    rl::Log::Fail("Gap {} plus samples to keep {} is larger than number of samples {}", nG.Get(), sz, nS.Get());
+  }
+
   Index sampPerEcho = nS.Get() / nE.Get();
-  rl::Log::Print("Echoes {} Samples {} Keep {} Samples-per-echo {}", nE.Get(), nS.Get(), nK.Get(), sampPerEcho);
-  rl::Re3 basis(nE.Get(), nK.Get(), 1);
+  rl::Log::Print("Echoes {} Samples {} Keep {}-{} Samples-per-echo {}", nE.Get(), nS.Get(), nG.Get(), nG.Get() + sz, sampPerEcho);
+  rl::Re3 basis(nE.Get(), sz, 1);
   basis.setZero();
-  for (Index is = 0; is < nK.Get(); is++) {
-    Index const ind = is / sampPerEcho;
+  for (Index is = 0; is < sz; is++) {
+    Index const ind = (nG.Get() + is) / sampPerEcho;
     basis(ind, is, 0) = 1.f;
   }
 
