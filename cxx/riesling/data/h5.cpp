@@ -20,11 +20,12 @@ void main_h5(args::Subparser &parser)
     auto const &meta = reader.readMeta();
     for (auto const &k : keys.Get()) {
       try {
-        fmt::print("{}\n", meta.at(k));
+        fmt::print("{} ", meta.at(k));
       } catch (std::out_of_range const &) {
         Log::Fail("Could not find key {}", k);
       }
     }
+    fmt::print("\n");
   } else if (all) {
     auto const &meta = reader.readMeta();
     for (auto const &kvp : meta) {
