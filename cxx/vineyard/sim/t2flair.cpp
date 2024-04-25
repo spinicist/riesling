@@ -24,7 +24,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   float const    R1 = 1.f / p(0);
   float const    R2 = 1.f / p(1);
   float const    η = p(2);
-  Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsPerPrep);
+  Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsPerPrepKeep);
 
   Eigen::Matrix2f inv;
   inv << -η, 0.f, 0.f, 1.f;

@@ -5,11 +5,11 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sim/dir.hpp"
+#include "sim/genprep.hpp"
 #include "sim/ir.hpp"
 #include "sim/parameter.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
-#include "sim/genprep.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -47,15 +47,13 @@ enum struct Sequences
   DIR,
   T2Prep,
   T2FLAIR,
-  GenPrep
+  GenPrep,
+  GenPrep2
 };
 
-std::unordered_map<std::string, Sequences> SequenceMap{{"IR", Sequences::IR},
-                                                       {"IR2", Sequences::IR2},
-                                                       {"DIR", Sequences::DIR},
-                                                       {"T2Prep", Sequences::T2Prep},
-                                                       {"T2FLAIR", Sequences::T2FLAIR},
-                                                       {"Prep", Sequences::GenPrep}};
+std::unordered_map<std::string, Sequences> SequenceMap{
+  {"IR", Sequences::IR},           {"IR2", Sequences::IR2},      {"DIR", Sequences::DIR},       {"T2Prep", Sequences::T2Prep},
+  {"T2FLAIR", Sequences::T2FLAIR}, {"Prep", Sequences::GenPrep}, {"Prep2", Sequences::GenPrep2}};
 
 void main_basis_sim(args::Subparser &parser)
 {
@@ -113,6 +111,7 @@ void main_basis_sim(args::Subparser &parser)
   case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   case Sequences::GenPrep: std::tie(pars, dyns) = Run<rl::GenPrep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::GenPrep2: std::tie(pars, dyns) = Run<rl::GenPrep2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
   }
 
   SVDBasis const b(dyns, nBasis.Get(), demean, rotate, normalize);
