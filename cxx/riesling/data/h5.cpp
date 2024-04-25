@@ -49,4 +49,5 @@ void main_h5(args::Subparser &parser)
         fmt::print("Name: {:12} Shape: {:24} Names: {}\n", ds, fmt::format("{}", reader.dimensions(ds)), reader.listNames(ds));
       }
     }
-  }}
+  }
+}
