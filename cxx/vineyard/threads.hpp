@@ -12,9 +12,9 @@ namespace rl {
 
 namespace Threads {
 
-Index                   GlobalThreadCount();
-void                    SetGlobalThreadCount(Index n_threads);
-Eigen::ThreadPoolDevice GlobalDevice();
+Index                    GlobalThreadCount();
+void                     SetGlobalThreadCount(Index n_threads);
+Eigen::ThreadPoolDevice &GlobalDevice();
 
 using ForFunc = std::function<void(Index const index)>;
 void For(ForFunc f, Index const n, std::string const &label = "");

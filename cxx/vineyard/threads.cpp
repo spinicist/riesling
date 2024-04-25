@@ -17,8 +17,9 @@
 #include <unsupported/Eigen/CXX11/ThreadPool>
 
 namespace {
-Eigen::ThreadPool *gp = nullptr;
-}
+std::unique_ptr<Eigen::ThreadPool>       gp = nullptr;
+std::unique_ptr<Eigen::ThreadPoolDevice> dev = nullptr;
+} // namespace
 
 namespace rl {
 namespace Threads {
@@ -28,22 +29,29 @@ Eigen::ThreadPool *GlobalPool()
   if (gp == nullptr) {
     auto const nt = std::thread::hardware_concurrency();
     Log::Debug("Creating default thread pool with {} threads", nt);
-    gp = new Eigen::ThreadPool(nt);
+    gp = std::make_unique<Eigen::ThreadPool>(nt);
   }
-  return gp;
+  return gp.get();
 }
 
 void SetGlobalThreadCount(Index nt)
 {
-  if (gp) { delete gp; }
   if (nt < 1) { nt = std::thread::hardware_concurrency(); }
   Log::Debug("Creating thread pool with {} threads", nt);
-  gp = new Eigen::ThreadPool(nt);
+  gp = std::make_unique<Eigen::ThreadPool>(nt);
+  dev = std::make_unique<Eigen::ThreadPoolDevice>(gp.get(), nt);
 }
 
 Index GlobalThreadCount() { return GlobalPool()->NumThreads(); }
 
-Eigen::ThreadPoolDevice GlobalDevice() { return Eigen::ThreadPoolDevice(GlobalPool(), GlobalPool()->NumThreads()); }
+Eigen::ThreadPoolDevice &GlobalDevice()
+{
+  if (dev == nullptr) {
+    auto gp = GlobalPool();
+    dev = std::make_unique<Eigen::ThreadPoolDevice>(gp, gp->NumThreads());
+  }
+  return *dev;
+}
 
 void For(ForFunc f, Index const lo, Index const hi, std::string const &label)
 {
