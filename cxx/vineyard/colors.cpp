@@ -262,7 +262,7 @@ std::array<std::array<float, 3>, 256> const phase{
   {6.512128893528150719e-01, 4.740624350126631525e-01, 5.044367478760234530e-02},
   {6.583083928921535932e-01, 4.699391690315524728e-01, 4.941288204103298082e-02}};
 
-auto Colorize(Cx2 const &img, float const max, bool const grey, bool const log) -> RGBImage
+auto Colorize(Cx2 const &img, float const max, bool const grey, float const ɣ) -> RGBImage
 {
   auto const nX = img.dimension(0);
   auto const nY = img.dimension(1);
@@ -271,7 +271,7 @@ auto Colorize(Cx2 const &img, float const max, bool const grey, bool const log) 
   for (int iy = 0; iy < nY; iy++) {
     for (int ix = 0; ix < nX; ix++) {
       float const abs = std::abs(img(ix, iy));
-      float const scale = (grey ? 1.f : 2.f) * (log ? std::log2(1.f + abs / max) : abs / max);
+      float const scale = (grey ? 1.f : 2.f) * std::pow(abs / max, ɣ);
       float const pha = std::arg(img(ix, iy));
       Index const index = 255 * ((pha + M_PI) / (2.f * M_PI));
 

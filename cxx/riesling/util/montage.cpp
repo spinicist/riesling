@@ -85,7 +85,7 @@ auto SliceData(rl::Cx3 const &data,
                Index const    slN,
                float const    win,
                bool const     grey,
-               bool const     log,
+               float const     ɣ,
                float const    rotate) -> std::vector<Magick::Image>
 {
   auto const dShape = data.dimensions();
@@ -102,7 +102,7 @@ auto SliceData(rl::Cx3 const &data,
   std::vector<Magick::Image> slices;
   for (auto const index : indices) {
     rl::Cx2    temp = data.chip(std::floor(index), slDim);
-    auto const slice = rl::Colorize(temp, win, grey, log);
+    auto const slice = rl::Colorize(temp, win, grey, ɣ);
     slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
     slices.back().flip(); // Reverse Y for display
     slices.back().rotate(rotate);
@@ -150,21 +150,21 @@ void Resize(bool const print, float const printPixWidth, bool const interp, Magi
   }
 }
 
-void Colorbar(float const win, bool const grey, bool const log, Magick::Image &img)
+void Colorbar(float const win, bool const grey, float const ɣ, Magick::Image &img)
 {
   int const W = img.size().width() / 4;
   int const H = img.density().height() * img.fontPointsize() / 72.f;
   rl::Cx2   cx(W, H);
   for (Index ii = 0; ii < W; ii++) {
     if (grey) {
-    float const mag = ii * win / (W - 1.f);
-    cx.chip<0>(ii).setConstant(mag);
+      float const mag = ii * win / (W - 1.f);
+      cx.chip<0>(ii).setConstant(mag);
     } else {
       float const angle = -M_PI + 2.f * M_PI * ii / (W - 1.f);
       cx.chip<0>(ii).setConstant(std::polar(0.5f, angle));
     }
   }
-  auto const             cbar = rl::Colorize(cx, win, grey, log);
+  auto const             cbar = rl::Colorize(cx, win, grey, ɣ);
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
   Magick::Geometry const cbarTextBounds(W, H, W * 0.01);
 
@@ -240,7 +240,7 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<float> max(parser, "W", "Max intensity", {"max"});
   args::ValueFlag<float> maxP(parser, "P", "Max intensity as %", {"maxP"}, 0.9);
   args::Flag             grey(parser, "G", "Greyscale", {"grey", 'g'});
-  args::Flag             log(parser, "L", "Logarithmic intensity", {"log", 'l'});
+  args::ValueFlag<float> ɣ(parser, "G", "Gamma correction", {"gamma"}, 1.f);
   args::Flag             cbar(parser, "C", "Add colorbar", {"cbar"});
 
   args::ValueFlag<Index> slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
@@ -256,12 +256,12 @@ void main_montage(args::Subparser &parser)
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
   rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
-  auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, log, rotate.Get());
+  auto slices = SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, ɣ.Get(), rotate.Get());
   auto montage = DoMontage(slices, cols.Get());
   Resize(oname, width.Get(), interp, montage);
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
-  if (cbar) { Colorbar(winMax, grey, log, montage); }
+  if (cbar) { Colorbar(winMax, grey, ɣ.Get(), montage); }
   Decorate(title ? title.Get() : fmt::format("{} {}", iname.Get(), dset.Get()), gravity.Get(), montage);
   rl::Log::Print("Final image size: {} {}", montage.size().width(), montage.size().height());
   montage.magick("PNG");
