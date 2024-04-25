@@ -15,12 +15,12 @@ using namespace rl;
 
 void main_recon_rss(args::Subparser &parser)
 {
-  CoreOpts                     coreOpts(parser);
-  GridOpts                     gridOpts(parser);
-  PrecondOpts                  preOpts(parser);
-  LsqOpts                      lsqOpts(parser);
-  args::ValueFlag<float>       t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
-  args::ValueFlag<float>       tSamp(parser, "TS", "Sample time for off-resonance correction", {"tsamp"});
+  CoreOpts               coreOpts(parser);
+  GridOpts               gridOpts(parser);
+  PrecondOpts            preOpts(parser);
+  LsqOpts                lsqOpts(parser);
+  args::ValueFlag<float> t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
+  args::ValueFlag<float> tSamp(parser, "TS", "Sample time for off-resonance correction", {"tsamp"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -47,8 +47,9 @@ void main_recon_rss(args::Subparser &parser)
   Index const nVol = noncart.dimension(4);
   Cx5         out(AddBack(LastN<4>(A->ishape), nVol));
   for (Index iv = 0; iv < nVol; iv++) {
-    auto const channels = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, iv)), A->ishape);
-    out.chip<4>(iv) = ConjugateSum(channels, channels).sqrt();
+    auto const channels = lsmr.run(&noncart(0, 0, 0, 0, iv));
+    auto const channelsT = Tensorfy(channels, A->ishape);
+    out.chip<4>(iv) = (channelsT * channelsT.conjugate()).sum(Sz1{0}).sqrt();
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
