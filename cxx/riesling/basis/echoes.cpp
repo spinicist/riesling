@@ -33,5 +33,6 @@ void main_echoes(args::Subparser &parser)
   }
 
   rl::HD5::Writer writer(oname.Get());
-  writer.writeTensor(rl::HD5::Keys::Basis, rl::Sz3{basis.dimension(0), 1, basis.dimension(1)}, basis.data(), rl::HD5::Dims::Basis);
+  writer.writeTensor(rl::HD5::Keys::Basis, basis.dimensions(), basis.data(), rl::HD5::Dims::Basis);
+  rl::Log::Print("Finished {}", parser.GetCommand().Name());
 }
