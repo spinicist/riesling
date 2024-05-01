@@ -58,14 +58,25 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
   rl::HD5::Reader reader(iname);
   auto const      diskOrder = reader.order(dset);
   auto const      diskDims = reader.dimensions(dset);
-  if (!chips.size()) {
-    if (dset == "data") { chips = std::vector<IndexPair>{{0, 0}, {4, 0}}; }
+
+  rl::Cx3    data;
+  auto const O = reader.order(dset);
+  if (O < 2) {
+    rl::Log::Fail("Cannot montage 1D data");
+  } else if (O == 2) {
+    auto const data2 = reader.readTensor<rl::Cx2>(dset);
+    auto const shape = data2.dimensions();
+    data = data2.reshape(rl::Sz3{shape[0], shape[1], 1});
   } else {
-    if (diskOrder - chips.size() != 3) {
-      rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
+    if (!chips.size()) {
+      if (dset == "data") { chips = std::vector<IndexPair>{{0, 0}, {4, 0}}; }
+    } else {
+      if (diskOrder - chips.size() != 3) {
+        rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
+      }
     }
+    data = reader.readSlab<rl::Cx3>(dset, chips);
   }
-  rl::Cx3 data = reader.readSlab<rl::Cx3>(dset, chips);
   switch (component) {
   case 'x': break;
   case 'r': data = data.real().cast<rl::Cx>(); break;
@@ -109,27 +120,34 @@ auto SliceData(rl::Cx3 const &data,
                Index const    slStart,
                Index const    slEnd,
                Index const    slN,
+               rl::Sz2        sl0,
+               rl::Sz2        sl1,
                float const    win,
                bool const     grey,
                float const    ɣ,
                float const    rotate) -> std::vector<Magick::Image>
 {
-  auto const dShape = data.dimensions();
   if (slDim < 0 || slDim > 2) { rl::Log::Fail("Slice dim was {}, must be 0-2", slDim); }
-  if (slStart < 0 || slStart >= dShape[slDim]) { rl::Log::Fail("Slice start invalid"); }
-  if (slEnd && slEnd >= dShape[slDim]) { rl::Log::Fail("Slice end invalid"); }
+  auto const shape = data.dimensions();
+  auto const shape1 = rl::Cx2(data.chip(0, slDim)).dimensions();
+  if (slStart < 0 || slStart >= shape[slDim]) { rl::Log::Fail("Slice start invalid"); }
+  if (slEnd && slEnd >= shape[slDim]) { rl::Log::Fail("Slice end invalid"); }
   if (slN < 0) { rl::Log::Fail("Requested negative number of slices"); }
+  if (sl0[0] < 0) { sl0[0] = 0; }
+  if (sl1[0] < 0) { sl1[0] = 0; }
+  if (sl0[0] + sl0[1] >= shape1[0]) { sl0[1] = shape1[0] - sl0[0]; }
+  if (sl1[0] + sl1[1] >= shape1[1]) { sl1[1] = shape1[1] - sl1[0]; }
   auto const start = slStart;
-  auto const end = slEnd ? slEnd : dShape[slDim] - 1;
+  auto const end = slEnd ? slEnd : shape[slDim] - 1;
   auto const maxN = end - start + 1;
   auto const N = slN ? std::min(slN, maxN) : maxN;
   auto const indices = Eigen::ArrayXf::LinSpaced(N, start, end);
 
   std::vector<Magick::Image> slices;
   for (auto const index : indices) {
-    rl::Cx2    temp = data.chip(std::floor(index), slDim);
+    rl::Cx2    temp = data.chip(std::floor(index), slDim).slice(rl::Sz2{sl0[0], sl1[0]}, rl::Sz2{sl0[1], sl1[1]});
     auto const slice = rl::Colorize(temp, win, grey, ɣ);
-    slices.push_back(Magick::Image(dShape[(slDim + 1) % 3], dShape[(slDim + 2) % 3], "RGB", Magick::CharPixel, slice.data()));
+    slices.push_back(Magick::Image(sl0[1], sl1[1], "RGB", Magick::CharPixel, slice.data()));
     slices.back().flip(); // Reverse Y for display
     slices.back().rotate(rotate);
   }
@@ -182,20 +200,20 @@ void Colorbar(float const win, bool const grey, float const ɣ, Magick::Image &i
   int const H = img.density().height() * img.fontPointsize() / 72.f;
   rl::Cx2   cx(W, H);
   for (Index ii = 0; ii < W; ii++) {
-    if (grey) {
+    // if (grey) {
       float const mag = ii * win / (W - 1.f);
       cx.chip<0>(ii).setConstant(mag);
-    } else {
-      float const angle = -M_PI + 2.f * M_PI * ii / (W - 1.f);
-      cx.chip<0>(ii).setConstant(std::polar(0.5f, angle));
-    }
+    // } else {
+    //   float const angle = -M_PI + 2.f * M_PI * ii / (W - 1.f);
+    //   cx.chip<0>(ii).setConstant(std::polar(0.5f, angle));
+    // }
   }
   auto const             cbar = rl::Colorize(cx, win, grey, ɣ);
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
   Magick::Geometry const cbarTextBounds(W, H, W * 0.01);
 
-  std::string const leftLabel = grey ? "0" : "-ᴨ";
-  std::string const rightLabel = grey ? fmt::format("{:.2f}", win) : "ᴨ";
+  std::string const leftLabel = "0";
+  std::string const rightLabel = fmt::format("{:.2f}", win);
 
   cbarImg.density(img.density());
   cbarImg.font(img.font());
@@ -269,12 +287,14 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<float> ɣ(parser, "G", "Gamma correction", {"gamma"}, 1.f);
   args::Flag             cbar(parser, "C", "Add colorbar", {"cbar"});
 
-  args::ValueFlag<Index> slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
-  args::ValueFlag<Index> slStart(parser, "S", "Start slice", {"start"}, 0);
-  args::ValueFlag<Index> slEnd(parser, "S", "End slice", {"end"});
-  args::ValueFlag<Index> slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);
-  args::Flag             cross(parser, "C", "Cross sections", {"cross-sections", 'x'});
-  args::ValueFlag<float> rotate(parser, "D", "Rotate slices (degrees)", {"rot", 'r'}, 0.f);
+  args::ValueFlag<Index>                slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
+  args::ValueFlag<Index>                slStart(parser, "S", "Start slice", {"start"}, 0);
+  args::ValueFlag<Index>                slEnd(parser, "S", "End slice", {"end"});
+  args::ValueFlag<Index>                slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);
+  args::ValueFlag<rl::Sz2, SzReader<2>> sl0(parser, "S", "Dim 0 slice (start, size)", {"sl0"}, rl::Sz2{0, 1024});
+  args::ValueFlag<rl::Sz2, SzReader<2>> sl1(parser, "S", "Dim 1 slice (start, size)", {"sl1"}, rl::Sz2{0, 1024});
+  args::Flag                            cross(parser, "C", "Cross sections", {"cross-sections", 'x'});
+  args::ValueFlag<float>                rotate(parser, "D", "Rotate slices (degrees)", {"rot", 'r'}, 0.f);
   ParseCommand(parser, iname);
   Magick::InitializeMagick(NULL);
 
@@ -283,9 +303,9 @@ void main_montage(args::Subparser &parser)
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
   rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
-  auto slices = cross
-                  ? CrossSections(data, winMax, grey, ɣ.Get(), rotate.Get())
-                  : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), winMax, grey, ɣ.Get(), rotate.Get());
+  auto slices = cross ? CrossSections(data, winMax, grey, ɣ.Get(), rotate.Get())
+                      : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get(), winMax, grey,
+                                  ɣ.Get(), rotate.Get());
   auto montage = DoMontage(slices, cols.Get());
   rl::Log::Print("Initial image size: {} {}", montage.size().width(), montage.size().height());
   Resize(oname, width.Get(), interp, montage);
