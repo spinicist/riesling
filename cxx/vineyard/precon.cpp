@@ -23,6 +23,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   auto        nufft = ndft ? make_ndft(newTraj.points(), 1, newTraj.matrix(), basis)
                            : make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix(), basis);
   Cx4         W(nufft->oshape);
+  Log::Print("Starting preconditioner calculation");
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
   Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));

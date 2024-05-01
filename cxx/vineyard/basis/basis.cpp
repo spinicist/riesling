@@ -24,7 +24,6 @@ auto ReadBasis(std::string const &basisFile) -> Basis<Cx>
   } else {
     HD5::Reader basisReader(basisFile);
     Basis<Cx> b = basisReader.readTensor<Basis<Cx>>(HD5::Keys::Basis);
-    Log::Print("file {} basis {}", basisReader.dimensions(HD5::Keys::Basis), b.dimensions());
     return b;
   }
 }

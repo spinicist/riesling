@@ -11,8 +11,8 @@ void main_precon(args::Subparser &parser)
 {
   args::Positional<std::string> trajFile(parser, "INPUT", "File to read trajectory from");
   args::Positional<std::string> preFile(parser, "OUTPUT", "File to save pre-conditioner to");
-  args::ValueFlag<float>        preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"bias", 'b'}, 1.f);
-  args::ValueFlag<std::string>  basisFile(parser, "BASIS", "File to read basis from", {"basis"});
+  args::ValueFlag<float>        preBias(parser, "BIAS", "Pre-conditioner Bias (1)", {"bias"}, 1.f);
+  args::ValueFlag<std::string>  basisFile(parser, "BASIS", "File to read basis from", {"basis", 'b'});
   ParseCommand(parser, trajFile);
   HD5::Reader reader(trajFile.Get());
   HD5::Writer writer(preFile.Get());
