@@ -20,10 +20,10 @@ Opts::Opts(args::Subparser &parser)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, Eigen::Array3f::Constant(12.f))
   , fov(parser, "SENSE-FOV", "SENSE FoV (default 256,256,256)", {"sense-fov"}, Eigen::Array3f::Zero())
   , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
-  , kRad(parser, "K", "ESPIRIT kernel size (4)", {"espirit-k"}, 3)
-  , calRad(parser, "C", "ESPIRIT calibration region (8)", {"espirit-cal"}, 6)
-  , gap(parser, "G", "ESPIRIT gap (0)", {"espirit-gap"}, 0)
-  , threshold(parser, "T", "ESPIRIT retention threshold (0.015)", {"espirit-thresh"}, 0.015f)
+/*, kRad(parser, "K", "ESPIRIT kernel size (4)", {"espirit-k"}, 3)
+, calRad(parser, "C", "ESPIRIT calibration region (8)", {"espirit-cal"}, 6)
+, gap(parser, "G", "ESPIRIT gap (0)", {"espirit-gap"}, 0)
+, threshold(parser, "T", "ESPIRIT retention threshold (0.015)", {"espirit-thresh"}, 0.015f) */
 {
 }
 
