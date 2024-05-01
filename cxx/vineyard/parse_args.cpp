@@ -100,9 +100,9 @@ CoreOpts::CoreOpts(args::Subparser &parser)
 {
 }
 
-PrecondOpts::PrecondOpts(args::Subparser &parser)
-  : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"pre"}, "kspace")
-  , bias(parser, "BIAS", "Pre-conditioner Bias (1)", {"pre-bias", 'b'}, 1.f)
+PreconOpts::PreconOpts(args::Subparser &parser)
+  : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"precon"}, "kspace")
+  , bias(parser, "BIAS", "Pre-conditioner Bias (1)", {"precon-bias", 'b'}, 1.f)
 {
 }
 

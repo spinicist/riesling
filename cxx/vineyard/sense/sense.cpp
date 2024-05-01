@@ -7,7 +7,7 @@
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "op/nufft.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"
 

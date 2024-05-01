@@ -52,9 +52,9 @@ struct CoreOpts
   args::Flag                                     ndft;
 };
 
-struct PrecondOpts
+struct PreconOpts
 {
-  PrecondOpts(args::Subparser &parser);
+  PreconOpts(args::Subparser &parser);
   args::ValueFlag<std::string> type;
   args::ValueFlag<float>       bias;
 };

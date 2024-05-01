@@ -1,4 +1,4 @@
-#include "precond.hpp"
+#include "precon.hpp"
 #include "basis/basis.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
@@ -8,7 +8,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Preconditioner", "[precond]")
+TEST_CASE("Preconditioner", "[precon]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(15, 16);

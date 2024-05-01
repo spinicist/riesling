@@ -5,17 +5,17 @@
 #include "log.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "threads.hpp"
 
 using namespace rl;
 
 void main_nufft(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PrecondOpts preOpts(parser);
-  LsqOpts     lsqOpts(parser);
+  CoreOpts   coreOpts(parser);
+  GridOpts   gridOpts(parser);
+  PreconOpts preOpts(parser);
+  LsqOpts    lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
 
@@ -35,7 +35,7 @@ void main_nufft(args::Subparser &parser)
 
   if (fwd) {
     auto const channels = reader.readTensor<Cx6>();
-    Cx5  noncart(AddBack(nufft->oshape, channels.dimension(5)));
+    Cx5        noncart(AddBack(nufft->oshape, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
     }

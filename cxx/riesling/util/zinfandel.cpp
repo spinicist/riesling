@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "prox/slr.hpp"
 #include "threads.hpp"
 #include "types.hpp"

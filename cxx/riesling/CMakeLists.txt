@@ -44,7 +44,7 @@ add_executable(riesling
     util/eig.cpp
     util/filter.cpp
     util/phantom.cpp
-    util/precond.cpp
+    util/precon.cpp
     util/psf.cpp
     util/sdc.cpp
     util/version.cpp

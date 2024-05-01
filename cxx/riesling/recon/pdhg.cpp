@@ -7,7 +7,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "regularizers.hpp"
 #include "scaling.hpp"
 #include "sense/sense.hpp"
@@ -18,7 +18,7 @@ void main_pdhg(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
-  PrecondOpts preOpts(parser);
+  PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
 

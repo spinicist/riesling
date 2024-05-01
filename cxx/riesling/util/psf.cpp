@@ -7,17 +7,17 @@
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 
 using namespace rl;
 using namespace std::literals::complex_literals;
 
 void main_psf(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PrecondOpts preOpts(parser);
-  LsqOpts     lsqOpts(parser);
+  CoreOpts   coreOpts(parser);
+  GridOpts   gridOpts(parser);
+  PreconOpts preOpts(parser);
+  LsqOpts    lsqOpts(parser);
 
   args::Flag                        mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
   args::ValueFlag<Sz3, SzReader<3>> matrix(parser, "M", "Output matrix size", {"matrix", 'm'});

@@ -6,7 +6,7 @@
 #include "op/recon.hpp"
 #include "op/tensorscale.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense/sense.hpp"
@@ -17,7 +17,7 @@ void main_recon_lsq(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
   GridOpts    gridOpts(parser);
-  PrecondOpts preOpts(parser);
+  PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
   LsqOpts     lsqOpts(parser);
 

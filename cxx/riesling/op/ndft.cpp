@@ -6,7 +6,7 @@
 #include "op/grid.hpp"
 #include "op/ndft.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "sdc.hpp"
 #include "threads.hpp"
 
@@ -14,10 +14,10 @@ using namespace rl;
 
 void main_ndft(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PrecondOpts preOpts(parser);
-  LsqOpts     lsqOpts(parser);
+  CoreOpts   coreOpts(parser);
+  GridOpts   gridOpts(parser);
+  PreconOpts preOpts(parser);
+  LsqOpts    lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);

@@ -8,7 +8,7 @@
 #include "op/nufft.hpp"
 #include "op/rank.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "tensorOps.hpp"
 
 using namespace rl;
@@ -17,7 +17,7 @@ void main_recon_rss(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
   GridOpts               gridOpts(parser);
-  PrecondOpts            preOpts(parser);
+  PreconOpts             preOpts(parser);
   LsqOpts                lsqOpts(parser);
   args::ValueFlag<float> t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
   args::ValueFlag<float> tSamp(parser, "TS", "Sample time for off-resonance correction", {"tsamp"});

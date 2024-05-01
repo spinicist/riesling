@@ -19,7 +19,7 @@ add_library(vineyard
     pad.cpp
     parse_args.cpp
     patches.cpp
-    precond.cpp
+    precon.cpp
     regularizers.cpp
     scaling.cpp
     sdc.cpp

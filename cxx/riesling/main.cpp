@@ -63,7 +63,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
   COMMAND(util, filter, "filter", "Apply Tukey filter to image");
   COMMAND(util, phantom, "phantom", "Make a phantom image");
-  COMMAND(util, precond, "precond", "Precompute preconditioning weights");
+  COMMAND(util, precon, "precon", "Precompute preconditioning weights");
   COMMAND(util, psf, "psf", "Estimate Point Spread Function");
   COMMAND(util, sdc, "sdc", "Calculate Sample Density Compensation");
   COMMAND(util, zinfandel, "zinfandel", "ZINFANDEL k-space filling");

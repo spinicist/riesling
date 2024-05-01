@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "scaling.hpp"
 #include "sdc.hpp"
 #include "sense/sense.hpp"

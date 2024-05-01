@@ -5,17 +5,17 @@
 #include "log.hpp"
 #include "op/grid.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 
 using namespace rl;
 
 void main_grid(args::Subparser &parser)
 {
-  CoreOpts               coreOpts(parser);
-  GridOpts               gridOpts(parser);
-  PrecondOpts            preOpts(parser);
-  LsqOpts                lsqOpts(parser);
-  args::Flag             fwd(parser, "", "Apply forward operation", {'f', "fwd"});
+  CoreOpts   coreOpts(parser);
+  GridOpts   gridOpts(parser);
+  PreconOpts preOpts(parser);
+  LsqOpts    lsqOpts(parser);
+  args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 

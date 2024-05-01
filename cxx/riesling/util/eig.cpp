@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
-#include "precond.hpp"
+#include "precon.hpp"
 #include "sdc.hpp"
 #include "sense/sense.hpp"
 #include "tensorOps.hpp"
@@ -17,7 +17,7 @@ void main_eig(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
   GridOpts               gridOpts(parser);
-  PrecondOpts            preOpts(parser);
+  PreconOpts             preOpts(parser);
   SENSE::Opts            senseOpts(parser);
   args::Flag             adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);

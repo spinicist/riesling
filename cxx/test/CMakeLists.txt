@@ -10,7 +10,7 @@ if(${BUILD_TESTS})
         io.cpp
         kernel.cpp
         parameters.cpp
-        precond.cpp
+        precon.cpp
         sdc.cpp
         zinfandel.cpp
         op/fft.cpp
