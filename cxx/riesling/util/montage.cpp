@@ -171,42 +171,17 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick
   return frames.front();
 }
 
-void Resize(bool const print, float const printPixWidth, bool const interp, Magick::Image &img)
-{
-  if (print) {
-    float const scale = printPixWidth / (float)img.size().width();
-    if (interp) {
-      img.resize(Magick::Geometry(printPixWidth, scale * img.size().height()));
-    } else {
-      img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
-    }
-    img.density(Magick::Geometry(72, 72));
-  } else {
-    struct winsize winSize;
-    ioctl(0, TIOCGWINSZ, &winSize);
-    auto const scaling = winSize.ws_xpixel / (float)img.size().width();
-    if (interp) {
-      img.resize(Magick::Geometry(winSize.ws_xpixel, scaling * img.size().height()));
-    } else {
-      img.scale(Magick::Geometry(winSize.ws_xpixel, scaling * img.size().height()));
-    }
-    img.density(Magick::Geometry(90, 90));
-  }
-}
-
 void Colorbar(float const win, bool const grey, float const ɣ, Magick::Image &img)
 {
   int const W = img.size().width() / 4;
   int const H = img.density().height() * img.fontPointsize() / 72.f;
   rl::Cx2   cx(W, H);
   for (Index ii = 0; ii < W; ii++) {
-    // if (grey) {
-      float const mag = ii * win / (W - 1.f);
-      cx.chip<0>(ii).setConstant(mag);
-    // } else {
-    //   float const angle = -M_PI + 2.f * M_PI * ii / (W - 1.f);
-    //   cx.chip<0>(ii).setConstant(std::polar(0.5f, angle));
-    // }
+    float const mag = ii * win / (W - 1.f);
+    for (Index ij = 0; ij < H; ij++) {
+      float const angle = -M_PI + 2.f * M_PI * ij / (H - 1.f);
+      cx(ii, ij) = std::polar(mag, angle);
+    }
   }
   auto const             cbar = rl::Colorize(cx, win, grey, ɣ);
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
@@ -243,10 +218,26 @@ void Decorate(std::string const &title, Magick::GravityType const gravity, Magic
   montage.annotate(title, gravity);
 }
 
-void Kittify(Magick::Image &graphic)
+void Printify(std::string const &oname, float const printPixWidth, bool const interp, Magick::Image &img)
 {
+  float const scale = printPixWidth / (float)img.size().width();
+  if (interp) {
+    img.resize(Magick::Geometry(printPixWidth, scale * img.size().height()));
+  } else {
+    img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
+  }
+  img.density(Magick::Geometry(72, 72));
+}
+
+void Kittify(Magick::Image &img)
+{
+  struct winsize winSize;
+  ioctl(0, TIOCGWINSZ, &winSize);
+  float const  iscale = img.size().height() / (float)img.size().width();
+  float const  cscale = (winSize.ws_xpixel / (float)winSize.ws_col) / (winSize.ws_ypixel / (float)winSize.ws_row);
+  Index const  rows = winSize.ws_col * iscale * cscale;
   Magick::Blob blob;
-  graphic.write(&blob);
+  img.write(&blob);
   auto const     b64 = blob.base64();
   constexpr auto ChunkSize = 4096;
   if (b64.size() <= ChunkSize) {
@@ -254,7 +245,8 @@ void Kittify(Magick::Image &graphic)
   } else {
     auto const chunks = b64 | tl::views::chunk(ChunkSize);
     auto const nChunks = chunks.size();
-    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1;{}\x1B\\", std::string_view(chunks.front().data(), chunks.front().size()));
+    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1,c={},r={};{}\x1B\\", winSize.ws_col, rows,
+               std::string_view(chunks.front().data(), chunks.front().size()));
     for (auto &&chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {
       fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunk.data(), chunk.size()));
     }
@@ -307,9 +299,8 @@ void main_montage(args::Subparser &parser)
                       : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get(), winMax, grey,
                                   ɣ.Get(), rotate.Get());
   auto montage = DoMontage(slices, cols.Get());
-  rl::Log::Print("Initial image size: {} {}", montage.size().width(), montage.size().height());
-  Resize(oname, width.Get(), interp, montage);
-  rl::Log::Print("Final image size: {} {}", montage.size().width(), montage.size().height());
+  rl::Log::Print("Image size: {} {}", montage.size().width(), montage.size().height());
+  if (oname) { Printify(oname.Get(), width.Get(), interp, montage); }
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
   if (cbar) { Colorbar(winMax, grey, ɣ.Get(), montage); }
