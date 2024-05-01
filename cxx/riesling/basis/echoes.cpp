@@ -27,9 +27,10 @@ void main_echoes(args::Subparser &parser)
   rl::Log::Print("Echoes {} Samples {} Keep {}-{} Samples-per-echo {}", nE.Get(), nS.Get(), nG.Get(), nG.Get() + sz, sampPerEcho);
   rl::Re3 basis(nE.Get(), sz, 1);
   basis.setZero();
+  float const scale = std::sqrt(nE.Get());
   for (Index is = 0; is < sz; is++) {
     Index const ind = (nG.Get() + is) / sampPerEcho;
-    basis(ind, is, 0) = 1.f;
+    basis(ind, is, 0) = scale;
   }
 
   rl::HD5::Writer writer(oname.Get());
