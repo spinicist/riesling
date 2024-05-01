@@ -10,15 +10,15 @@ using namespace rl;
 
 void main_downsamp(args::Subparser &parser)
 {
-  args::Positional<std::string>                  iname(parser, "FILE", "HD5 file to recon");
-  args::ValueFlag<std::string>                   oname(parser, "OUTPUT", "Override output name", {'o', "out"});
+  args::Positional<std::string>                  iname(parser, "INPUT", "Input file name");
+  args::Positional<std::string>                  oname(parser, "OUTPUT", "Output file name");
   args::ValueFlag<Eigen::Array3f, Array3fReader> res(parser, "R", "Target resolution (4 mm)", {"res"},
                                                      Eigen::Array3f::Constant(4.f));
   args::ValueFlag<float>                         filterStart(parser, "T", "Tukey filter start", {"filter-start"}, 0.5f);
   args::ValueFlag<float>                         filterEnd(parser, "T", "Tukey filter end", {"filter-end"}, 1.0f);
   args::Flag                                     noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
   args::Flag                                     corners(parser, "C", "Keep corners", {"corners"});
-  ParseCommand(parser, iname);
+  ParseCommand(parser, iname, oname);
 
   HD5::Reader reader(iname.Get());
   Info        info = reader.readInfo();
