@@ -16,9 +16,8 @@ namespace rl {
  */
 auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bias, bool const ndft) -> Re2
 {
-  Sz3 newMatrix = traj.matrix();
-  std::transform(newMatrix.begin(), newMatrix.begin() + traj.nDims(), newMatrix.begin(), [](Index const i) { return i * 2; });
-  Trajectory  newTraj(traj.points(), newMatrix, traj.voxelSize());
+  Re3 const   newPoints = traj.points() * 2.f;
+  Trajectory  newTraj(newPoints);
   float const osamp = 1.25;
   auto        nufft = ndft ? make_ndft(newTraj.points(), 1, newTraj.matrix(), basis)
                            : make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix(), basis);

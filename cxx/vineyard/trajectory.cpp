@@ -5,6 +5,34 @@
 
 namespace rl {
 
+/* Temp Hack because .maximum() may be buggy on NEON */
+auto GuessMatrix(Re3 const &points) -> Sz3
+{
+  Re1 max(3);
+  max.setZero();
+  for (Index ii = 0; ii < points.dimension(1); ii++) {
+    for (Index ij = 0; ij < points.dimension(2); ij++) {
+      for (Index ic = 0; ic < 3; ic++) {
+        auto const a = std::fabs(points(ic, ii, ij));
+        if (a > max(ic)) { max(ic) = a; }
+      }
+    }
+  }
+  Sz3 mat;
+  for (Index ii = 0; ii < 3; ii++) {
+    mat[ii] = std::ceil(max(ii)) * 2;
+  }
+  return mat;
+}
+
+Trajectory::Trajectory(Re3 const &points, Eigen::Array3f const voxel_size)
+  : points_{points}
+  , matrix_{GuessMatrix(points_)}
+  , voxel_size_{voxel_size}
+{
+  init();
+}
+
 Trajectory::Trajectory(Re3 const &points, Sz3 const matrix, Eigen::Array3f const voxel_size)
   : points_{points}
   , matrix_{matrix}
@@ -15,15 +43,11 @@ Trajectory::Trajectory(Re3 const &points, Sz3 const matrix, Eigen::Array3f const
 
 Trajectory::Trajectory(HD5::Reader &file, Eigen::Array3f const voxel_size)
 {
-
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
   if (file.exists(HD5::Keys::Trajectory, "matrix")) {
     matrix_ = file.readAttribute<Sz3>(HD5::Keys::Trajectory, "matrix");
   } else {
-    Re1 const maxCoords = points_.abs().maximum(Sz2{1, 2});
-    for (Index ii = 0; ii < points_.dimension(0); ii++) {
-      matrix_[ii] = maxCoords(ii) * 2;
-    }
+    matrix_ = GuessMatrix(points_);
   }
   voxel_size_ = voxel_size;
   init();
@@ -52,7 +76,7 @@ void Trajectory::init()
     float const percent = (100.f * discarded) / total;
     Log::Warn("Discarded {} trajectory points ({:.2f}%) outside matrix", discarded, percent);
   }
-  Log::Debug("{}D Trajectory size {},{}", nDims(), nSamples(), nTraces());
+  Log::Print("Trajectory: samples {} traces {} matrix {}", nSamples(), nTraces(), matrix_);
 }
 
 void Trajectory::write(HD5::Writer &file) const

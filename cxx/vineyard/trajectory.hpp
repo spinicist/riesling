@@ -9,6 +9,7 @@ namespace rl {
 
 struct Trajectory
 {
+  Trajectory(Re3 const &points, Eigen::Array3f const voxel_size = Eigen::Array3f::Ones());
   Trajectory(Re3 const &points, Sz3 const matrix, Eigen::Array3f const voxel_size = Eigen::Array3f::Ones());
   Trajectory(HD5::Reader &file, Eigen::Array3f const voxel_size);
   void write(HD5::Writer &file) const;
