@@ -20,7 +20,7 @@ auto GuessMatrix(Re3 const &points) -> Sz3
   }
   Sz3 mat;
   for (Index ii = 0; ii < 3; ii++) {
-    mat[ii] = std::ceil(max(ii)) * 2;
+    mat[ii] = std::max((Index)(std::ceil(max(ii)) * 2), 1L);
   }
   return mat;
 }
