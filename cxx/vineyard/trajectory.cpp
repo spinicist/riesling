@@ -56,7 +56,7 @@ Trajectory::Trajectory(HD5::Reader &file, Eigen::Array3f const voxel_size)
 void Trajectory::init()
 {
   Index const nD = points_.dimension(0);
-  if (nD < 1 || nD > 3) { Log::Fail("Trajectory has {} dimensions", nD); }
+  if (nD != 3) { Log::Fail("Trajectory data has {}D co-ordinates, must be 3", nD); }
 
   Index discarded = 0;
   Re1   mat(nD);
@@ -85,8 +85,6 @@ void Trajectory::write(HD5::Writer &file) const
   file.writeAttribute(HD5::Keys::Trajectory, "matrix", matrix_);
 }
 
-auto Trajectory::nDims() const -> Index { return points_.dimension(0); }
-
 auto Trajectory::nSamples() const -> Index { return points_.dimension(1); }
 
 auto Trajectory::nTraces() const -> Index { return points_.dimension(2); }
@@ -99,7 +97,7 @@ void Trajectory::checkDims(Sz3 const dims) const
 
 auto Trajectory::compatible(Trajectory const &other) const -> bool
 {
-  if ((other.matrix() == matrix()) && (other.voxelSize() == voxelSize()).all() && (other.nDims() == nDims())) {
+  if ((other.matrix() == matrix()) && (other.voxelSize() == voxelSize()).all()) {
     return true;
   } else {
     return false;
@@ -189,8 +187,8 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
   }
   auto dsVox = voxel_size_;
   auto dsMatrix = matrix_;
-  Re1  thresh(nDims());
-  for (Index ii = 0; ii < nDims(); ii++) {
+  Re1  thresh(3);
+  for (Index ii = 0; ii < 3; ii++) {
     if (shrink) {
       // Account for rounding
       dsMatrix[ii] = matrix_[ii] * ratios[ii];
@@ -210,7 +208,7 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
       Re1 p = points_.chip<2>(it).chip<1>(is);
       if ((corners && B0((p.abs() <= thresh).all())()) || Norm(p / thresh) <= 1.f) {
         dsPoints.chip<2>(it).chip<1>(is) = p;
-        for (int ii = 0; ii < nDims(); ii++) {
+        for (int ii = 0; ii < 3; ii++) {
           p(ii) /= ratios(ii);
         }
         if (fullResTraces < 1 || it < fullResTraces) { // Ignore lo-res traces for this calculation
@@ -225,7 +223,7 @@ auto Trajectory::downsample(Eigen::Array3f const tgtSize,
   Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print("Retaining samples {}-{}", minSamp, maxSamp);
   if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
-  dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{nDims(), dsSamples, nTraces()}));
+  dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{3, dsSamples, nTraces()}));
   Log::Print("Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(Trajectory(dsPoints, dsMatrix, dsVox), minSamp, dsSamples);
 }

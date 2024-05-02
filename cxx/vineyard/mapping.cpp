@@ -132,7 +132,7 @@ Mapping<NDims>::Mapping(Trajectory const &traj, float const nomOS, Index const k
   nomDims = FirstN<NDims>(traj.matrix());
   cartDims = Mul(FirstN<NDims>(traj.matrix()), nomOS);
   osamp = cartDims[0] / (float)traj.matrix()[0];
-  Log::Print("{}D Mapping, {} samples {} traces. Matrix {} Grid {}", traj.nDims(), traj.nSamples(), traj.nTraces(), nomDims,
+  Log::Print("Mapping: {} samples {} traces. Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomDims,
              cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
