@@ -27,7 +27,6 @@ void main_merge(args::Subparser &parser)
   Trajectory  traj2(reader2, reader2.readInfo().voxel_size);
 
   if (!traj1.compatible(traj2)) { Log::Fail("Trajectories are not compatible"); }
-  Index const nD = traj1.nDims();
 
   Cx5 ks1 = reader1.readTensor<Cx5>();
   Cx5 ks2 = reader2.readTensor<Cx5>();
@@ -53,9 +52,9 @@ void main_merge(args::Subparser &parser)
     Log::Print("Datasets have unequal samples ({}, {}), pruning to shortest", nS1, nS2);
     Index const minS = std::min(nS1, nS2);
     ks1 = Cx5(ks1.slice(Sz5{}, Sz5{nC1, minS, nT1, nSl1, nV1}));
-    traj1 = Trajectory(traj1.points().slice(Sz3{}, Sz3{nD, minS, nT1}), traj1.matrix(), traj1.voxelSize());
+    traj1 = Trajectory(traj1.points().slice(Sz3{}, Sz3{3, minS, nT1}), traj1.matrix(), traj1.voxelSize());
     ks2 = Cx5(ks2.slice(Sz5{}, Sz5{nC2, minS, nT2, nSl2, nV2}));
-    traj2 = Trajectory(traj2.points().slice(Sz3{}, Sz3{nD, minS, nT2}), traj2.matrix(), traj2.voxelSize());
+    traj2 = Trajectory(traj2.points().slice(Sz3{}, Sz3{3, minS, nT2}), traj2.matrix(), traj2.voxelSize());
   }
 
   Log::Print("Merging across traces");

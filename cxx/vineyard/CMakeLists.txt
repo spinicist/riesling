@@ -22,7 +22,6 @@ add_library(vineyard
     precon.cpp
     regularizers.cpp
     scaling.cpp
-    sdc.cpp
     signals.cpp
     threads.cpp
     trajectory.cpp
@@ -74,7 +73,7 @@ add_library(vineyard
     prox/stack.cpp
     sense/coils.cpp
     sense/espirit.cpp
-    sense/rovir.cpp
+    # sense/rovir.cpp
     sense/sense.cpp
     sim/parameter.cpp
     sim/dir.cpp

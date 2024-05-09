@@ -8,7 +8,6 @@
 #include "parse_args.hpp"
 #include "precon.hpp"
 #include "scaling.hpp"
-#include "sdc.hpp"
 #include "sense/sense.hpp"
 
 using namespace rl;

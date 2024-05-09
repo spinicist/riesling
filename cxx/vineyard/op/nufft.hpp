@@ -6,7 +6,6 @@
 #include "fft/fft.hpp"
 #include "grid.hpp"
 #include "pad.hpp"
-#include "sdc.hpp"
 
 namespace rl {
 
@@ -16,8 +15,7 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
   OP_INHERIT(Cx, NDim + 2, 3)
   NUFFTOp(std::shared_ptr<Grid<Cx, NDim>>        gridder,
           Sz<NDim> const                         matrix,
-          Index const                            batches = 1,
-          std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
+          Index const                            batches = 1);
   OP_DECLARE()
 
   std::shared_ptr<Grid<Cx, NDim>> gridder;
@@ -27,15 +25,13 @@ struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
   PadOp<Cx, NDim + 2, NDim>              pad;
   ApodizeOp<Cx, NDim>                    apo;
   Index const                            batches;
-  std::shared_ptr<TensorOperator<Cx, 3>> sdc;
 };
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
                                                      GridOpts                              &opts,
                                                      Index const                            nC,
                                                      Sz3 const                              matrix,
-                                                     Basis<Cx> const                       &basis = IdBasis(),
-                                                     std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
+                                                     Basis<Cx> const                       &basis = IdBasis());
 
 std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
                                                      std::string const                     &ktype,
@@ -43,7 +39,6 @@ std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const           
                                                      Index const                            nC,
                                                      Sz3 const                              matrix,
                                                      Basis<Cx> const                       &basis = IdBasis(),
-                                                     std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr,
                                                      Index const                            bSz = 32,
                                                      Index const                            sSz = 16384);
 

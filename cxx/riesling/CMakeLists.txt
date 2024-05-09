@@ -38,7 +38,7 @@ add_executable(riesling
     sense/sim.cpp
 
     util/autofocus.cpp
-    util/compress.cpp
+    # util/compress.cpp
     util/denoise.cpp
     util/downsamp.cpp
     util/eig.cpp
@@ -46,9 +46,8 @@ add_executable(riesling
     util/phantom.cpp
     util/precon.cpp
     util/psf.cpp
-    util/sdc.cpp
     util/version.cpp
-    util/zinfandel.cpp
+    # util/zinfandel.cpp
 
     main.cpp
 )

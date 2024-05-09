@@ -2,10 +2,6 @@
 
 #include "tensorop.hpp"
 
-#include "nufft.hpp"
-#include "sdc.hpp"
-#include "sense/sense.hpp"
-
 namespace rl {
 
 template <typename Op1, typename Op2>

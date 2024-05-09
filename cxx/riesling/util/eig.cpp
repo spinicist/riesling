@@ -6,7 +6,6 @@
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precon.hpp"
-#include "sdc.hpp"
 #include "sense/sense.hpp"
 #include "tensorOps.hpp"
 #include "threads.hpp"

@@ -11,7 +11,6 @@ if(${BUILD_TESTS})
         kernel.cpp
         parameters.cpp
         precon.cpp
-        sdc.cpp
         zinfandel.cpp
         op/fft.cpp
         op/grid.cpp

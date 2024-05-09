@@ -2,7 +2,6 @@
 
 #include "basis/basis.hpp"
 #include "op/tensorop.hpp"
-#include "sdc.hpp"
 
 namespace rl {
 
@@ -13,8 +12,7 @@ struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
   NDFTOp(Re3 const                             &traj,
          Index const                            nC,
          Sz<NDim> const                         matrix,
-         Basis<Cx> const                       &basis = IdBasis(),
-         std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
+         Basis<Cx> const                       &basis = IdBasis());
   OP_DECLARE()
 
   void addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp);

@@ -7,7 +7,6 @@
 #include "op/ndft.hpp"
 #include "parse_args.hpp"
 #include "precon.hpp"
-#include "sdc.hpp"
 #include "threads.hpp"
 
 using namespace rl;

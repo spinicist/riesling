@@ -3,7 +3,6 @@
 #include "op/compose.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
-#include "sdc.hpp"
 #include "sense/sense.hpp"
 
 namespace rl {

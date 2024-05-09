@@ -5,7 +5,6 @@
 #include "op/nufft.hpp"
 #include "op/sense.hpp"
 #include "parse_args.hpp"
-#include "sdc.hpp"
 
 namespace rl {
 

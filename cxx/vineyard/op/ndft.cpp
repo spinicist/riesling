@@ -10,10 +10,9 @@ namespace rl {
 
 template <int NDim>
 NDFTOp<NDim>::NDFTOp(
-  Re3 const &tr, Index const nC, Sz<NDim> const shape, Basis<Cx> const &b, std::shared_ptr<TensorOperator<Cx, 3>> s)
+  Re3 const &tr, Index const nC, Sz<NDim> const shape, Basis<Cx> const &b)
   : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
-  , sdc{s ? s : std::make_shared<TensorIdentity<Cx, 3>>(oshape)}
 {
   static_assert(NDim < 4);
   if (tr.dimension(0) != NDim) { Log::Fail("Requested {}D NDFT but trajectory is {}D", NDim, tr.dimension(0)); }
@@ -149,11 +148,11 @@ make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Basis<Cx> const &ba
   std::shared_ptr<TensorOperator<Cx, 5, 4>> ndft;
   if (traj.dimension(0) == 2) {
     Log::Debug("Creating 2D Multi-slice NDFT");
-    auto ndft2 = std::make_shared<NDFTOp<2>>(traj, nC, FirstN<2>(matrix), basis, sdc);
+    auto ndft2 = std::make_shared<NDFTOp<2>>(traj, nC, FirstN<2>(matrix), basis);
     ndft = std::make_shared<LoopOp<NDFTOp<2>>>(ndft2, matrix[2]);
   } else {
     Log::Debug("Creating full 3D NDFT");
-    auto ndft3 = std::make_shared<NDFTOp<3>>(traj, nC, matrix, basis, sdc);
+    auto ndft3 = std::make_shared<NDFTOp<3>>(traj, nC, matrix, basis);
     ndft = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft3);
   }
   return ndft;

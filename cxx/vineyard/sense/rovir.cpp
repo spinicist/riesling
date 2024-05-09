@@ -7,7 +7,6 @@
 #include "mapping.hpp"
 #include "op/nufft.hpp"
 #include "op/tensorscale.hpp"
-#include "sdc.hpp"
 #include "tensorOps.hpp"
 
 namespace rl {
@@ -35,8 +34,7 @@ auto ROVIR(ROVIROpts        &opts,
   }
   Index const nC = data.dimension(0);
   float const osamp = 3.f;
-  auto        sdc = std::make_shared<TensorScale<Cx, 3>>(FirstN<3>(data.dimensions()), SDC::Pipe<3>(traj).cast<Cx>());
-  auto        nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrixForFOV(opts.fov.Get()), IdBasis(), sdc);
+  auto        nufft = make_nufft(traj, "ES3", osamp, nC, traj.matrixForFOV(opts.fov.Get()), IdBasis());
   auto const  sz = LastN<3>(nufft->ishape);
   Cx4 const   channelImages = nufft->adjoint(data).chip<1>(0);
   Re3 const   rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
