@@ -78,7 +78,7 @@ auto Mapping<NDims>::Bucket::sliceSize() const -> Sz<NDims>
 template <typename T>
 inline decltype(auto) nearby(T &&x)
 {
-  return x.array().unaryExpr([](float const &e) { return std::nearbyint(e); });
+  return x.array().unaryExpr([](float const &e) { return (Index)std::nearbyint(e); });
 }
 
 // Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
@@ -117,13 +117,6 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
     return false;
   });
   return sorted;
-}
-
-inline auto Wrap(Index const index, Index const sz) -> Index
-{
-  Index const t = index + sz;
-  Index const w = t - sz * (t / sz);
-  return w;
 }
 
 template <int NDims>
