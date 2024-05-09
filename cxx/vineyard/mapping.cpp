@@ -11,69 +11,6 @@
 
 namespace rl {
 
-template <int NDims>
-auto Mapping<NDims>::Bucket::empty() const -> bool
-{
-  return indices.empty();
-}
-
-template <int NDims>
-auto Mapping<NDims>::Bucket::size() const -> Index
-{
-  return indices.size();
-}
-
-template <int NDims>
-auto Mapping<NDims>::Bucket::bucketSize() const -> Sz<NDims>
-{
-  Sz<NDims> sz;
-  std::transform(maxCorner.begin(), maxCorner.end(), minCorner.begin(), sz.begin(), std::minus());
-  return sz;
-}
-
-template <int NDims>
-auto Mapping<NDims>::Bucket::bucketStart() const -> Sz<NDims>
-{
-  Sz<NDims> st;
-  for (int ii = 0; ii < NDims; ii++) {
-    if (minCorner[ii] < 0) {
-      st[ii] = -minCorner[ii];
-    } else {
-      st[ii] = 0L;
-    }
-  }
-  return st;
-}
-
-template <int NDims>
-auto Mapping<NDims>::Bucket::gridStart() const -> Sz<NDims>
-{
-  Sz<NDims> st;
-  for (int ii = 0; ii < NDims; ii++) {
-    if (minCorner[ii] < 0) {
-      st[ii] = 0L;
-    } else {
-      st[ii] = minCorner[ii];
-    }
-  }
-  return st;
-}
-
-template <int NDims>
-auto Mapping<NDims>::Bucket::sliceSize() const -> Sz<NDims>
-{
-  Sz<NDims> sl;
-  for (int ii = 0; ii < NDims; ii++) {
-    if (maxCorner[ii] >= gridSize[ii]) {
-      sl[ii] = gridSize[ii] - minCorner[ii];
-    } else {
-      sl[ii] = maxCorner[ii] - minCorner[ii];
-    }
-    if (minCorner[ii] < 0) { sl[ii] += minCorner[ii]; }
-  }
-  return sl;
-}
-
 // Helper function to convert a floating-point vector-like expression to integer values
 template <typename T>
 inline decltype(auto) nearby(T &&x)
@@ -125,8 +62,7 @@ Mapping<NDims>::Mapping(Trajectory const &traj, float const nomOS, Index const k
   nomDims = FirstN<NDims>(traj.matrix());
   cartDims = Mul(FirstN<NDims>(traj.matrix()), nomOS);
   osamp = cartDims[0] / (float)traj.matrix()[0];
-  Log::Print("Mapping: {} samples {} traces. Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomDims,
-             cartDims);
+  Log::Print("Mapping: {} samples {} traces. Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomDims, cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
 
@@ -141,28 +77,28 @@ Mapping<NDims>::Mapping(Trajectory const &traj, float const nomOS, Index const k
       for (Index iy = 0; iy < nB[1]; iy++) {
         for (Index ix = 0; ix < nB[0]; ix++) {
           buckets.push_back(
-            Bucket{.gridSize = cartDims,
-                   .minCorner = Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
-                   .maxCorner = Sz3{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
-                                    std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2),
-                                    std::min((iz + 1) * bucketSz, cartDims[2]) + (kW / 2)}});
+            Bucket<NDims>{.gridSize = cartDims,
+                          .minCorner = Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
+                          .maxCorner = Sz3{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
+                                           std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2),
+                                           std::min((iz + 1) * bucketSz, cartDims[2]) + (kW / 2)}});
         }
       }
     }
   } else if constexpr (NDims == 2) {
     for (Index iy = 0; iy < nB[1]; iy++) {
       for (Index ix = 0; ix < nB[0]; ix++) {
-        buckets.push_back(Bucket{.gridSize = cartDims,
-                                 .minCorner = Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
-                                 .maxCorner = Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
-                                                  std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
+        buckets.push_back(Bucket<NDims>{.gridSize = cartDims,
+                                        .minCorner = Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
+                                        .maxCorner = Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
+                                                         std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
       }
     }
   } else {
     for (Index ix = 0; ix < nB[0]; ix++) {
-      buckets.push_back(Bucket{.gridSize = cartDims,
-                               .minCorner = Sz1{ix * bucketSz - (kW / 2)},
-                               .maxCorner = Sz1{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2)}});
+      buckets.push_back(Bucket<NDims>{.gridSize = cartDims,
+                                      .minCorner = Sz1{ix * bucketSz - (kW / 2)},
+                                      .maxCorner = Sz1{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2)}});
     }
   }
 
@@ -203,24 +139,24 @@ Mapping<NDims>::Mapping(Trajectory const &traj, float const nomOS, Index const k
   }
   Log::Print("Ignored {} invalid trajectory points", invalids);
 
-  std::vector<Bucket> chunked;
+  std::vector<Bucket<NDims>> chunked;
   for (auto &bucket : buckets) {
     if (bucket.size() > splitSize) {
       for (auto const indexChunk : tl::views::chunk(bucket.indices, splitSize)) {
-        chunked.push_back(Bucket{.gridSize = bucket.gridSize,
-                                 .minCorner = bucket.minCorner,
-                                 .maxCorner = bucket.maxCorner,
-                                 .indices = indexChunk | tl::to<std::vector<int32_t>>()});
+        chunked.push_back(Bucket<NDims>{.gridSize = bucket.gridSize,
+                                        .minCorner = bucket.minCorner,
+                                        .maxCorner = bucket.maxCorner,
+                                        .indices = indexChunk | tl::to<std::vector<int32_t>>()});
       }
       bucket.indices.clear();
     }
   }
 
-  Index const eraseCount = std::erase_if(buckets, [](Bucket const &b) { return b.empty(); });
+  Index const eraseCount = std::erase_if(buckets, [](Bucket<NDims> const &b) { return b.empty(); });
   buckets.insert(buckets.end(), chunked.begin(), chunked.end());
   Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
   Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L,
-                                                [](Index sum, Bucket const &b) { return b.indices.size() + sum; }));
+                                                [](Index sum, Bucket<NDims> const &b) { return b.indices.size() + sum; }));
   sortedIndices = sort(cart);
 }
 

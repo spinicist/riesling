@@ -9,6 +9,7 @@ find_package(scn CONFIG REQUIRED)
 find_package(tl-ranges CONFIG REQUIRED)
 
 add_library(vineyard
+    bucket.cpp
     colors.cpp
     compressor.cpp
     cropper.cpp
