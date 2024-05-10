@@ -30,13 +30,13 @@ struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>
   Mapping<NDim>                         mapping;
   Basis<Scalar>                         basis;
 
-  static auto Make(Trajectory const    &t,
-                   std::string const    kt,
-                   float const          os,
-                   Index const          nC = 1,
-                   Basis<Scalar> const &b = IdBasis<Scalar>(),
-                   Index const          bSz = 32,
-                   Index const          sSz = 16384) -> std::shared_ptr<Grid<Scalar, NDim>>;
+  static auto Make(TrajectoryN<NDim> const &t,
+                   std::string const        kt,
+                   float const              os,
+                   Index const              nC = 1,
+                   Basis<Scalar> const     &b = IdBasis<Scalar>(),
+                   Index const              bSz = 32,
+                   Index const              sSz = 16384) -> std::shared_ptr<Grid<Scalar, NDim>>;
   Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
        Mapping<NDim> const                          m,
        Index const                                  nC,

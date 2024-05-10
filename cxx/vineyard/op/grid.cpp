@@ -19,13 +19,13 @@ GridOpts::GridOpts(args::Subparser &parser)
 }
 
 template <typename Scalar, int NDim>
-auto Grid<Scalar, NDim>::Make(Trajectory const    &traj,
-                              std::string const    ktype,
-                              float const          osamp,
-                              Index const          nC,
-                              Basis<Scalar> const &b,
-                              Index const          bSz,
-                              Index const          sSz) -> std::shared_ptr<Grid<Scalar, NDim>>
+auto Grid<Scalar, NDim>::Make(TrajectoryN<NDim> const &traj,
+                              std::string const        ktype,
+                              float const              osamp,
+                              Index const              nC,
+                              Basis<Scalar> const     &b,
+                              Index const              bSz,
+                              Index const              sSz) -> std::shared_ptr<Grid<Scalar, NDim>>
 {
   auto kernel = make_kernel<Scalar, NDim>(ktype, osamp);
   auto mapping = Mapping<NDim>(traj, osamp, kernel->paddedWidth(), bSz, sSz);

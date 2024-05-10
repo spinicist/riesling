@@ -288,35 +288,21 @@ auto Reader::readMeta() const -> std::map<std::string, float>
   return meta;
 }
 
-template <>
-auto Reader::readAttribute<float>(std::string const &ds_name, std::string const &attr_name) const -> float
+template <int N>
+auto Reader::readAttribute(std::string const &dset, std::string const &attr) const -> Sz<N>
 {
-  float val;
-  CheckedCall(H5LTget_attribute_float(handle_, ds_name.c_str(), attr_name.c_str(), &val),
-              fmt::format("reading attribute {} from {}", attr_name, ds_name));
-  return val;
-}
-
-template <>
-auto Reader::readAttribute<int>(std::string const &ds_name, std::string const &attr_name) const -> int
-{
-  int val;
-  CheckedCall(H5LTget_attribute_int(handle_, ds_name.c_str(), attr_name.c_str(), &val),
-              fmt::format("reading attribute {} from {}", attr_name, ds_name));
-  return val;
-}
-
-template <>
-auto Reader::readAttribute<Sz3>(std::string const &dset, std::string const &attr) const -> Sz3
-{
-  hsize_t sz3[1] = {3};
-  hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
-  Sz3     val;
+  hsize_t szN[1] = {N};
+  hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, szN);
+  Sz<N>   val;
 
   auto const attrH = H5Aopen_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT, H5P_DEFAULT);
   CheckedCall(H5Aread(attrH, long3_id, val.data()), fmt::format("reading attribute {} from {}", attr, dset));
   return val;
 }
+
+template auto Reader::readAttribute<1>(std::string const &, std::string const &attr) const -> Sz<1>;
+template auto Reader::readAttribute<2>(std::string const &, std::string const &attr) const -> Sz<2>;
+template auto Reader::readAttribute<3>(std::string const &, std::string const &attr) const -> Sz<3>;
 
 } // namespace HD5
 } // namespace rl

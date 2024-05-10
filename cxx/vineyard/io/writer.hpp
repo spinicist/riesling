@@ -21,8 +21,8 @@ struct Writer
   template <typename Derived>
   void writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label);
 
-  template <typename T>
-  void writeAttribute(std::string const &dataset, std::string const &attribute, T const &val);
+  template <int N>
+  void writeAttribute(std::string const &dataset, std::string const &attribute, Sz<N> const &val);
 
   bool exists(std::string const &name) const;
 

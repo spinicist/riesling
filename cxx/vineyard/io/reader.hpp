@@ -28,8 +28,8 @@ struct Reader
   auto readInfo() const -> Info;                                                           // Read the info struct from a file
   auto readMeta() const -> std::map<std::string, float>;                                   // Read meta-data group
 
-  template <typename T>
-  auto readAttribute(std::string const &dataset, std::string const &attribute) const -> T;
+  template <int N>
+  auto readAttribute(std::string const &dataset, std::string const &attribute) const -> Sz<N>;
 
   template <typename T>
   auto readTensor(std::string const &label = Keys::Data) const -> T;

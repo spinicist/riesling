@@ -16,8 +16,11 @@ struct NoncartesianIndex
 template <int NDims>
 struct Mapping
 {
-  Mapping(
-    Trajectory const &t, float const nomOSamp, Index const kW, Index const bucketSize = 32, Index const splitSize = 16384);
+  Mapping(TrajectoryN<NDims> const &t,
+          float const               nomOSamp,
+          Index const               kW,
+          Index const               bucketSize = 32,
+          Index const               splitSize = 16384);
 
   float     osamp;
   Sz2       noncartDims;

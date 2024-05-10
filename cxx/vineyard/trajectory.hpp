@@ -7,39 +7,43 @@
 
 namespace rl {
 
-struct Trajectory
+template <int NDims>
+struct TrajectoryN
 {
-  Trajectory(Re3 const &points, Eigen::Array3f const voxel_size = Eigen::Array3f::Ones());
-  Trajectory(Re3 const &points, Sz3 const matrix, Eigen::Array3f const voxel_size = Eigen::Array3f::Ones());
-  Trajectory(HD5::Reader &file, Eigen::Array3f const voxel_size);
+  using SzN = Sz<NDims>;
+  using Array = Eigen::Array<float, NDims, 1>;
+
+  TrajectoryN(Re3 const &points, Array const voxel_size = Array::Ones());
+  TrajectoryN(Re3 const &points, SzN const matrix, Array const voxel_size = Array::Ones());
+  TrajectoryN(HD5::Reader &file, Array const voxel_size);
   void write(HD5::Writer &file) const;
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
-  void checkDims(Sz3 const dims) const;
-  auto compatible(Trajectory const &other) const -> bool;
-  auto matrix() const -> Sz3;
-  auto voxelSize() const -> Eigen::Array3f;
-  auto FOV() const -> Eigen::Array3f;
-  auto matrixForFOV(float const fov = -1.f) const -> Sz3;
-  auto matrixForFOV(Eigen::Array3f const fov) const -> Sz3;
+  void checkDims(SzN const dims) const;
+  auto compatible(TrajectoryN const &other) const -> bool;
+  auto matrix() const -> SzN;
+  auto voxelSize() const -> Array;
+  auto FOV() const -> Array;
+  auto matrixForFOV(float const fov = -1.f) const -> SzN;
+  auto matrixForFOV(Array const fov) const -> SzN;
   void shiftFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
-  auto downsample(Eigen::Array3f const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
-    -> std::tuple<Trajectory, Index, Index>;
-  auto
-  downsample(Cx4 const &ks, Eigen::Array3f const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
-    -> std::tuple<Trajectory, Cx4>;
-  auto
-  downsample(Cx5 const &ks, Eigen::Array3f const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
-    -> std::tuple<Trajectory, Cx5>;
+  auto downsample(Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+    -> std::tuple<TrajectoryN, Index, Index>;
+  auto downsample(Cx4 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+    -> std::tuple<TrajectoryN, Cx4>;
+  auto downsample(Cx5 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+    -> std::tuple<TrajectoryN, Cx5>;
 
 private:
   void init();
 
-  Re3            points_;
-  Sz3            matrix_;
-  Eigen::Array3f voxel_size_ = Eigen::Vector3f::Ones();
+  Re3   points_;
+  SzN   matrix_;
+  Array voxel_size_ = Array::Ones();
 };
+
+using Trajectory = TrajectoryN<3>;
 
 } // namespace rl

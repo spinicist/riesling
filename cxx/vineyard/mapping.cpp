@@ -18,23 +18,6 @@ inline decltype(auto) nearby(T &&x)
   return x.array().unaryExpr([](float const &e) { return (Index)std::nearbyint(e); });
 }
 
-// Helper function to get a "good" FFT size. Empirical rule of thumb - multiples of 8 work well
-template <int NDims>
-Sz<NDims> fft_size(Sz<NDims> const x, float const os)
-{
-  // return std::ceil(x);
-  Sz<NDims> fsz;
-  for (int ii = 0; ii < NDims; ii++) {
-    auto ox = x[ii] * os;
-    if (ox > 8.f) {
-      fsz[ii] = (std::lrint(ox) + 7L) & ~7L;
-    } else {
-      fsz[ii] = (Index)std::ceil(ox);
-    }
-  }
-  return fsz;
-}
-
 // Helper function to sort the cartesian indices
 template <size_t N>
 std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
@@ -57,7 +40,8 @@ std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 }
 
 template <int NDims>
-Mapping<NDims>::Mapping(Trajectory const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize)
+Mapping<NDims>::Mapping(
+  TrajectoryN<NDims> const &traj, float const nomOS, Index const kW, Index const bucketSz, Index const splitSize)
 {
   nomDims = FirstN<NDims>(traj.matrix());
   cartDims = Mul(FirstN<NDims>(traj.matrix()), nomOS);

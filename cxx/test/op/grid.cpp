@@ -13,14 +13,14 @@ TEST_CASE("Grid", "[grid]")
   Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(7, 15, 16, 31, 32);
-  auto const matrix = Sz3{M, M, 1};
-  Re3 points(3, 3, 1);
+  auto const matrix = Sz2{M, M};
+  Re3 points(2, 3, 1);
   points.setZero();
   points(0, 0, 0) = -0.4f * M;
   points(1, 0, 0) = -0.4f * M;
   points(0, 2, 0) = 0.4f * M;
   points(1, 2, 0) = 0.4f * M;
-  Trajectory const traj(points, matrix);
+  TrajectoryN<2> const traj(points, matrix);
 
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
@@ -38,11 +38,11 @@ TEST_CASE("Grid", "[grid]")
 
 TEST_CASE("Grid Sample Basis", "[grid]")
 {
-  Log::SetLevel(Log::Level::Debug);
+  Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);
   Index const M = 6;
-  auto const matrix = Sz3{M, 1, 1};
-  Re3 points(3, 6, 1);
+  auto const matrix = Sz1{M};
+  Re3 points(1, 6, 1);
   points.setZero();
   points(0, 0, 0) = -3.f;
   points(0, 1, 0) = -2.f;
@@ -50,7 +50,7 @@ TEST_CASE("Grid Sample Basis", "[grid]")
   points(0, 3, 0) = 0;
   points(0, 4, 0) = 1.f;
   points(0, 5, 0) = 2.f;
-  Trajectory const traj(points, matrix);
+  TrajectoryN<1> const traj(points, matrix);
 
   float const osamp = 1;
   std::string const ktype = GENERATE("NN");

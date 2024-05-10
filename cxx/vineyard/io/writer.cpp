@@ -173,16 +173,22 @@ template void Writer::writeMatrix<Eigen::ArrayXXf>(Eigen::DenseBase<Eigen::Array
 template <typename T>
 auto writeAttribute(std::string const &dataset, std::string const &attribute, T const &val);
 
-template <>
-void Writer::writeAttribute<Sz3>(std::string const &dset, std::string const &attr, Sz3 const &val)
+template <int N>
+void Writer::writeAttribute(std::string const &dset, std::string const &attr, Sz<N> const &val)
 {
-  hsize_t const sz3[1] = {3}, sz1[1] = {1};
-  hid_t const   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, sz3);
+  hsize_t const szN[1] = {N}, sz1[1] = {1};
+  hid_t const   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, szN);
   auto const    space = H5Screate_simple(1, sz1, NULL);
   auto const    attrH =
     H5Acreate_by_name(handle_, dset.c_str(), attr.c_str(), long3_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   CheckedCall(H5Awrite(attrH, long3_id, val.data()), fmt::format("writing attribute {} to {}", attr, dset));
 }
+
+template void Writer::writeAttribute<1>(std::string const &dset, std::string const &attr, Sz<1> const &val);
+template void Writer::writeAttribute<2>(std::string const &dset, std::string const &attr, Sz<2> const &val);
+template void Writer::writeAttribute<3>(std::string const &dset, std::string const &attr, Sz<3> const &val);
+
+
 
 } // namespace HD5
 } // namespace rl
