@@ -3,7 +3,7 @@
 #include "algo/lsmr.hpp"
 #include "algo/otsu.hpp"
 #include "log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include <algorithm>
 #include <scn/scan.h>
 

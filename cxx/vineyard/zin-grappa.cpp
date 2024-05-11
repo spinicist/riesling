@@ -1,7 +1,7 @@
 #include "zin-grappa.hpp"
 
 #include "parse_args.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 #include <Eigen/SVD>

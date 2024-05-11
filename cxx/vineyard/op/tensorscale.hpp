@@ -1,6 +1,6 @@
 #pragma once
 #include "log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "top.hpp"
 
 namespace rl {

@@ -3,7 +3,7 @@
 #include "grid.hpp"
 #include "log.hpp"
 #include "pad.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl {

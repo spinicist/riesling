@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "op/ops.hpp"
 #include "signals.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl {

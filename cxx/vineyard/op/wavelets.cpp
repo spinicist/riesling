@@ -1,5 +1,5 @@
 #include "wavelets.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 #include <fmt/format.h>
 #include <iostream>

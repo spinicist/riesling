@@ -7,7 +7,7 @@
 #include <tl/chunk.hpp>
 #include <tl/to.hpp>
 
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 

@@ -1,7 +1,7 @@
 #include "lsq.hpp"
 
 #include "log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl::Proxs {
 

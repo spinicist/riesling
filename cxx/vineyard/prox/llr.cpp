@@ -3,7 +3,7 @@
 #include "algo/decomp.hpp"
 #include "log.hpp"
 #include "patches.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl::Proxs {
 

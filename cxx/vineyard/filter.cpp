@@ -1,7 +1,7 @@
 #include "filter.hpp"
 
 #include "log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 #include <functional>

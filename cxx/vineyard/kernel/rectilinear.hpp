@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fixed.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 

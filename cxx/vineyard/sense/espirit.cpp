@@ -4,7 +4,7 @@
 #include "algo/stats.hpp"
 #include "cropper.hpp"
 #include "fft/fft.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl {

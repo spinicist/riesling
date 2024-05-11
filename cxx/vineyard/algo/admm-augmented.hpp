@@ -3,7 +3,7 @@
 #include "cg.hpp"
 #include "log.hpp"
 #include "prox/prox.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl {

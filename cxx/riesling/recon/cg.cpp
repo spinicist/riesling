@@ -7,7 +7,7 @@
 #include "parse_args.hpp"
 #include "scaling.hpp"
 #include "sense/sense.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 using namespace rl;

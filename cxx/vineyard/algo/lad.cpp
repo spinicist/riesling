@@ -5,7 +5,7 @@
 #include "op/top.hpp"
 #include "prox/norms.hpp"
 #include "signals.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 

@@ -6,7 +6,7 @@
 #include "parse_args.hpp"
 #include "threads.hpp"
 
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 

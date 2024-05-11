@@ -1,6 +1,6 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "traj_spirals.hpp"
 #include "trajectory.hpp"
 

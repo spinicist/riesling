@@ -1,6 +1,6 @@
 #include "algo/decomp.hpp"
 #include "algo/stats.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <fmt/ostream.h>

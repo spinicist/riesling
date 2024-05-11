@@ -6,7 +6,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 

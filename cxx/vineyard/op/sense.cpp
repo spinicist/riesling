@@ -1,6 +1,6 @@
 #include "sense.hpp"
 
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl {

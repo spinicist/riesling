@@ -7,7 +7,7 @@
 #include "mapping.hpp"
 #include "op/nufft.hpp"
 #include "op/tensorscale.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 

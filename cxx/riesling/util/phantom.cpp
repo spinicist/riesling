@@ -6,7 +6,7 @@
 #include "phantom/gradcubes.hpp"
 #include "phantom/shepp-logan.hpp"
 #include "sense/sense.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 #include "traj_spirals.hpp"
 #include "types.hpp"

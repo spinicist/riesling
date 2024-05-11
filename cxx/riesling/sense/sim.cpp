@@ -3,7 +3,7 @@
 #include "parse_args.hpp"
 #include "sense/coils.hpp"
 #include "sense/sense.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "types.hpp"
 
 #include <filesystem>

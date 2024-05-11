@@ -7,7 +7,7 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "patches.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 using namespace rl;

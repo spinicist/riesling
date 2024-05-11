@@ -2,7 +2,7 @@
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 #include <algorithm>

@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "prox/lsq.hpp"
 #include "prox/stack.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 

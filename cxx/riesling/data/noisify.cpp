@@ -1,7 +1,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "types.hpp"
 
 using namespace rl;

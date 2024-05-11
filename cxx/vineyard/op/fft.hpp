@@ -3,7 +3,7 @@
 #include "top.hpp"
 
 #include "fft/fft.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl::Ops {

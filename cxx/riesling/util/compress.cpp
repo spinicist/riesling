@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sense/rovir.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "types.hpp"
 
 #include <Eigen/Eigenvalues>

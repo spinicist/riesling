@@ -3,7 +3,7 @@
 #include "fft.hpp"
 
 #include "../log.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 
 #include "ducc0/fft/fftnd_impl.h"
 

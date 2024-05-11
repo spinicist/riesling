@@ -5,7 +5,7 @@
 #include "algo/decomp.hpp"
 #include "basis/basis.hpp"
 #include "sim/t2flair.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 #include <catch2/benchmark/catch_benchmark_all.hpp>

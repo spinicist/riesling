@@ -8,7 +8,7 @@
 #include "io/hd5.hpp"
 #include "op/nufft.hpp"
 #include "precon.hpp"
-#include "tensorOps.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 namespace rl {
