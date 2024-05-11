@@ -74,7 +74,6 @@ add_library(vineyard
     prox/stack.cpp
     sense/coils.cpp
     sense/espirit.cpp
-    # sense/rovir.cpp
     sense/sense.cpp
     sim/parameter.cpp
     sim/dir.cpp

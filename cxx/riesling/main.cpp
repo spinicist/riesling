@@ -23,7 +23,7 @@ int main(int const argc, char const *const argv[])
   args::Group data(parser, "DATA");
   COMMAND(data, h5, "h5", "Probe an H5 file");
   COMMAND(data, nii, "nii", "Convert images from H5 to nifti");
-  // COMMAND(data, compress, "compress", "Compress non-cartesian channels");
+  COMMAND(data, compress, "compress", "Compress non-cartesian channels");
   COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
@@ -65,6 +65,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(util, phantom, "phantom", "Make a phantom image");
   COMMAND(util, precon, "precon", "Precompute preconditioning weights");
   COMMAND(util, psf, "psf", "Estimate Point Spread Function");
+  COMMAND(util, rovir, "rovir", "Calculate ROVIR compression matrix");
   // COMMAND(util, zinfandel, "zinfandel", "ZINFANDEL k-space filling");
 #ifdef BUILD_MONTAGE
   COMMAND(util, montage, "montage", "Make beautiful output images");

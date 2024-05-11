@@ -11,6 +11,7 @@ add_executable(riesling
     basis/lookup.cpp
 
     data/h5.cpp
+    data/compress.cpp
     data/merge.cpp
     data/nii.cpp
     data/noisify.cpp
@@ -38,7 +39,6 @@ add_executable(riesling
     sense/sim.cpp
 
     util/autofocus.cpp
-    # util/compress.cpp
     util/denoise.cpp
     util/downsamp.cpp
     util/eig.cpp
@@ -46,6 +46,7 @@ add_executable(riesling
     util/phantom.cpp
     util/precon.cpp
     util/psf.cpp
+    util/rovir.cpp
     util/version.cpp
     # util/zinfandel.cpp
 

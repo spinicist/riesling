@@ -4,7 +4,6 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
-#include "sense/rovir.hpp"
 #include "tensors.hpp"
 #include "types.hpp"
 
@@ -16,9 +15,6 @@ void main_compress(args::Subparser &parser)
 {
   CoreOpts coreOpts(parser);
 
-  // One of the following must be set
-  args::Flag                   pca(parser, "V", "Calculate PCA compression", {"pca"});
-  args::Flag                   rovir(parser, "R", "Calculate ROVIR compression", {"rovir"});
   args::ValueFlag<std::string> ccFile(parser, "F", "Read compression matrix from file", {"cc-file"});
 
   // General options
@@ -32,7 +28,6 @@ void main_compress(args::Subparser &parser)
   args::ValueFlag<Sz2, SzReader<2>> pcaRead(parser, "R", "PCA Samples (start, size)", {"pca-samp"}, Sz2{0, 16});
   args::ValueFlag<Sz3, SzReader<3>> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 1});
   args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
-  ROVIROpts                         rovirOpts(parser);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -44,7 +39,10 @@ void main_compress(args::Subparser &parser)
   Index const      samples = ks.dimension(1);
   Index const      traces = ks.dimension(2);
   Eigen::MatrixXcf psi;
-  if (pca) {
+  if (ccFile) {
+    HD5::Reader matFile(ccFile.Get());
+    psi = matFile.readMatrix<Eigen::MatrixXcf>(HD5::Keys::CompressionMatrix);
+  } else {
     Index const maxRead = samples - pcaRead.Get()[0];
     Index const nread = (pcaRead.Get()[1] > maxRead) ? maxRead : pcaRead.Get()[1];
     Index const maxTrace = traces - pcaTraces.Get()[0];
@@ -56,14 +54,7 @@ void main_compress(args::Subparser &parser)
     auto const eig = Eig<Cx>(cov);
     auto const nR = energy ? Threshold(eig.V, energy.Get()) : nRetain.Get();
     psi = eig.P.leftCols(nR);
-  } else if (rovir) {
-    psi = ROVIR(rovirOpts, traj, energy.Get(), nRetain.Get(), lores.Get(), ks);
-  } else if (ccFile) {
-    HD5::Reader matFile(ccFile.Get());
-    psi = matFile.readMatrix<Eigen::MatrixXcf>(HD5::Keys::CompressionMatrix);
-  } else {
-    Log::Fail("Must specify PCA/ROVIR/load from file");
-  }
+  } 
   Compressor  compressor{psi};
   Cx5 const   uncompressed = reader.readTensor<Cx5>();
   Cx5         compressed(AddFront(LastN<4>(uncompressed.dimensions()), psi.cols()));
