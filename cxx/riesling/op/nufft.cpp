@@ -27,7 +27,7 @@ void main_nufft(args::Subparser &parser)
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   auto const nC = reader.dimensions()[0];
-  auto const nufft = make_nufft(traj, gridOpts, nC, traj.matrixForFOV(coreOpts.fov.Get()), basis);
+  auto const nufft = NUFFTOp<3>::Make(traj.matrixForFOV(coreOpts.fov.Get()), traj, gridOpts, nC, basis);
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(reader.readInfo());
@@ -35,7 +35,7 @@ void main_nufft(args::Subparser &parser)
 
   if (fwd) {
     auto const channels = reader.readTensor<Cx6>();
-    Cx5        noncart(AddBack(nufft->oshape, channels.dimension(5)));
+    Cx5        noncart(AddBack(nufft->oshape, 1, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = nufft->forward(CChipMap(channels, ii));
     }

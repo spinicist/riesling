@@ -14,8 +14,8 @@ TEST_CASE("Recon", "[recon]")
   Index const M = GENERATE(7, 15, 16);
   Index const nC = 4;
   Index const nF = 1;
-  auto const matrix = Sz3{M, M, M};
-  Re3 points(3, 3, 1);
+  auto const  matrix = Sz3{M, M, M};
+  Re3         points(3, 3, 1);
   points.setZero();
   points(0, 0, 0) = -0.4f * M;
   points(1, 0, 0) = -0.4f * M;
@@ -23,16 +23,17 @@ TEST_CASE("Recon", "[recon]")
   points(1, 2, 0) = 0.4f * M;
   Trajectory const traj(points, matrix);
 
-  float const osamp = GENERATE(2.f, 2.7f, 3.f);
+  float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto nufft = make_nufft(traj, ktype, osamp, nC, traj.matrix(), IdBasis());
+  auto              nufft = std::make_shared<NUFFTOp<3>>(traj.matrix(), traj, ktype, osamp, nC);
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
-  senseMaps.setConstant(std::sqrt(1./nC));
+  senseMaps.setConstant(std::sqrt(1. / nC));
   auto sense = std::make_shared<SenseOp>(senseMaps, nF);
-  Compose<SenseOp, TensorOperator<Cx, 5, 4>> recon(sense, nufft);
 
-  Cx4 ks(recon.oshape);
+  Compose<SenseOp, TensorOperator<Cx, 5, 3>> recon(sense, nufft);
+
+  Cx3 ks(recon.oshape);
   Cx4 img(recon.ishape);
   ks.setConstant(1.f);
   img = recon.adjoint(ks);

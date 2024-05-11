@@ -9,13 +9,14 @@ template <int NDim>
 struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
-  NDFTOp(Re3 const                             &traj,
-         Index const                            nC,
-         Sz<NDim> const                         matrix,
-         Basis<Cx> const                       &basis = IdBasis());
-  OP_DECLARE()
+  NDFTOp(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis = IdBasis());
+  OP_DECLARE(NDFTOp)
 
-  void addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp);
+  static auto Make(Sz<NDim> const   matrix,
+                   Re3 const       &traj,
+                   Index const      nC,
+                   Basis<Cx> const &basis = IdBasis()) -> std::shared_ptr<NDFTOp<NDim>>;
+  void        addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp);
 
 private:
   Re3       traj;
@@ -24,14 +25,6 @@ private:
   Index     N, nSamp, nTrace;
   float     scale;
   Basis<Cx> basis;
-
-  std::shared_ptr<TensorOperator<Cx, 3>> sdc;
 };
-
-std::shared_ptr<TensorOperator<Cx, 5, 4>> make_ndft(Re3 const                             &traj,
-                                                    Index const                            nC,
-                                                    Sz3 const                              matrix,
-                                                    Basis<Cx> const                       &basis = IdBasis(),
-                                                    std::shared_ptr<TensorOperator<Cx, 3>> sdc = nullptr);
 
 } // namespace rl

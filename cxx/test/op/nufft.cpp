@@ -22,8 +22,7 @@ TEST_CASE("NUFFT", "[tform]")
   }
   TrajectoryN<1> const traj(points, matrix);
   float const          osamp = GENERATE(2.f, 2.3f);
-  auto                 grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1);
-  NUFFTOp<1>           nufft(grid, Sz1{M});
+  NUFFTOp<1>           nufft(matrix, traj, "ES3", osamp, 1);
   Cx3                  ks(nufft.oshape);
   Cx3                  img(nufft.ishape);
   img.setZero();
@@ -58,10 +57,8 @@ TEST_CASE("NUFFT Basis Trace", "[tform]")
   }
 
   float const osamp = 2.f;
-  auto        grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, basis);
-
-  NUFFTOp<1> nufft(grid, Sz1{M});
-  Cx3        ks(nufft.oshape);
+  NUFFTOp<1>  nufft(Sz1{M}, traj, "ES3", osamp, 1, basis);
+  Cx3         ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);
   img.setZero();
@@ -85,9 +82,7 @@ TEST_CASE("NUFFT Basis Fourier", "[tform]")
   auto                 b = FourierBasis(N, M, 1, 1.f);
 
   float const osamp = 2.f;
-  auto        grid = Grid<Cx, 1>::Make(traj, "ES3", osamp, 1, b.basis);
-
-  NUFFTOp<1> nufft(grid, Sz1{M});
+  NUFFTOp<1> nufft(Sz1{M}, traj, "ES3", osamp, 1, b.basis);
   Cx3        ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);

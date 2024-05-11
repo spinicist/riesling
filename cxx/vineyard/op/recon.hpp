@@ -6,14 +6,24 @@
 #include "op/sense.hpp"
 #include "parse_args.hpp"
 
+/*
+ *  Full recon operators
+ */
+
 namespace rl {
 
-using ReconOp = Compose<SenseOp, TensorOperator<Cx, 5, 4>>;
-
-auto make_recon(CoreOpts                       &coreOpts,
+auto SENSERecon(CoreOpts                       &coreOpts,
                 GridOpts                       &gridOpts,
                 Trajectory const               &traj,
+                Index const                     nSlab,
                 std::shared_ptr<SenseOp> const &sense,
-                Basis<Cx> const                &basis) -> std::shared_ptr<ReconOp>;
+                Basis<Cx> const                &basis) -> TensorOperator<Cx, 4, 4>::Ptr;
+
+auto Channels(CoreOpts         &coreOpts,
+              GridOpts         &gridOpts,
+              Trajectory const &traj,
+              Index const       nC,
+              Index const       nSlab,
+              Basis<Cx> const  &basis) -> TensorOperator<Cx, 5, 4>::Ptr;
 
 } // namespace rl

@@ -4,12 +4,9 @@
 #include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/ndft.hpp"
-#include "op/nufft.hpp"
-#include "op/rank.hpp"
+#include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precon.hpp"
-#include "tensorOps.hpp"
 
 using namespace rl;
 
@@ -29,16 +26,9 @@ void main_recon_rss(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   Index const nC = reader.dimensions(HD5::Keys::Data)[0];
+  Index const nS = reader.dimensions(HD5::Keys::Data)[3];
 
-  std::shared_ptr<TensorOperator<Cx, 5, 4>> A = nullptr;
-  if (coreOpts.ndft) {
-    auto ndft = std::make_shared<NDFTOp<3>>(traj.points(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis);
-    if (reader.exists("b0") && t0 && tSamp) { ndft->addOffResonance(reader.readTensor<Re3>("b0"), t0.Get(), tSamp.Get()); }
-    A = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft);
-  } else {
-    A = make_nufft(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis);
-  }
-
+  auto const A = Channels(coreOpts, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 

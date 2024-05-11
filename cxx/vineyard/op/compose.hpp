@@ -4,6 +4,9 @@
 
 namespace rl {
 
+/*
+ * This represents Op2 * Op1
+ */
 template <typename Op1, typename Op2>
 struct Compose final : TensorOperator<typename Op1::Scalar, Op1::InRank, Op2::OutRank>
 {

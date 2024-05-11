@@ -8,7 +8,7 @@ struct SenseOp final : TensorOperator<Cx, 4, 5>
 {
   OP_INHERIT(Cx, 4, 5)
   SenseOp(Cx5 const &maps, Index const frames);
-  OP_DECLARE()
+  OP_DECLARE(SenseOp)
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
 

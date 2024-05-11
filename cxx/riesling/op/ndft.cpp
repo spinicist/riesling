@@ -29,11 +29,11 @@ void main_ndft(args::Subparser &parser)
 
   Trajectory traj(reader, info.voxel_size);
   auto const nC = reader.dimensions()[0];
-  auto const ndft = make_ndft(traj.points(), nC, traj.matrixForFOV(coreOpts.fov.Get()), basis);
+  auto const ndft = NDFTOp<3>::Make(traj.matrixForFOV(coreOpts.fov.Get()), traj.points(), nC, basis);
 
   if (fwd) {
     auto channels = reader.readTensor<Cx6>();
-    Cx5  noncart(AddBack(ndft->oshape, channels.dimension(5)));
+    Cx5  noncart(AddBack(ndft->oshape, 1, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = ndft->forward(CChipMap(channels, ii));
     }

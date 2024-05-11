@@ -9,8 +9,7 @@ using namespace std::complex_literals;
 namespace rl {
 
 template <int NDim>
-NDFTOp<NDim>::NDFTOp(
-  Re3 const &tr, Index const nC, Sz<NDim> const shape, Basis<Cx> const &b)
+NDFTOp<NDim>::NDFTOp(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis<Cx> const &b)
   : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
 {
@@ -62,6 +61,13 @@ NDFTOp<NDim>::NDFTOp(
 }
 
 template <int NDim>
+auto NDFTOp<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis)
+  -> std::shared_ptr<NDFTOp<NDim>>
+{
+  return std::make_shared<NDFTOp<NDim>>(matrix, traj, nC, basis);
+}
+
+template <int NDim>
 void NDFTOp<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp)
 {
   PadOp<float, NDim, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
@@ -107,11 +113,6 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
   auto const time = this->startAdjoint(yy);
   OutTensor  sy;
   OutCMap    y(yy);
-  if (sdc) {
-    sy.resize(yy.dimensions());
-    sy = sdc->adjoint(yy);
-    new (&y) OutCMap(sy.data(), sy.dimensions());
-  }
   Index const                            nC = ishape[0];
   Index const                            nV = ishape[1];
   Eigen::TensorMap<Eigen::Tensor<Cx, 3>> xm(x.data(), nC, nV, N);
@@ -141,21 +142,5 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
 template struct NDFTOp<1>;
 template struct NDFTOp<2>;
 template struct NDFTOp<3>;
-
-std::shared_ptr<TensorOperator<Cx, 5, 4>>
-make_ndft(Re3 const &traj, Index const nC, Sz3 const matrix, Basis<Cx> const &basis, std::shared_ptr<TensorOperator<Cx, 3>> sdc)
-{
-  std::shared_ptr<TensorOperator<Cx, 5, 4>> ndft;
-  if (traj.dimension(0) == 2) {
-    Log::Debug("Creating 2D Multi-slice NDFT");
-    auto ndft2 = std::make_shared<NDFTOp<2>>(traj, nC, FirstN<2>(matrix), basis);
-    ndft = std::make_shared<LoopOp<NDFTOp<2>>>(ndft2, matrix[2]);
-  } else {
-    Log::Debug("Creating full 3D NDFT");
-    auto ndft3 = std::make_shared<NDFTOp<3>>(traj, nC, matrix, basis);
-    ndft = std::make_shared<IncreaseOutputRank<NDFTOp<3>>>(ndft3);
-  }
-  return ndft;
-}
 
 } // namespace rl

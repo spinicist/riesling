@@ -34,11 +34,11 @@ void main_psf(args::Subparser &parser)
   Index const nB = basis.dimension(0);
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
-  std::shared_ptr<TensorOperator<Cx, 5, 4>> A = nullptr;
+  std::shared_ptr<TensorOperator<Cx, 5, 3>> A = nullptr;
   if (coreOpts.ndft) {
-    A = make_ndft(traj.points(), nC, shape, basis);
+    A = NDFTOp<3>::Make(shape, traj.points(), nC, basis);
   } else {
-    A = make_nufft(traj, gridOpts, nC, shape, basis);
+    A = NUFFTOp<3>::Make(shape, traj, gridOpts, nC, basis);
   }
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};

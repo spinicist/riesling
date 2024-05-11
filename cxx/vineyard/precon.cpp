@@ -18,9 +18,10 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
 {
   Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
   float const osamp = 1.25;
-  auto        nufft = ndft ? make_ndft(newTraj.points(), 1, newTraj.matrix(), basis)
-                           : make_nufft(newTraj, "ES5", osamp, 1, newTraj.matrix(), basis);
-  Cx4         W(nufft->oshape);
+  auto        nufft =
+    ndft ? (TensorOperator<Cx, 5, 3>::Ptr)std::make_shared<NDFTOp<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
+         : (TensorOperator<Cx, 5, 3>::Ptr)std::make_shared<NUFFTOp<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
+  Cx3 W(nufft->oshape);
   Log::Print("Starting preconditioner calculation");
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
@@ -34,7 +35,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   xcorr.device(Threads::GlobalDevice()) = xcorr * xcorr.conjugate();
   fftX->reverse(xcorr);
   xcorr.device(Threads::GlobalDevice()) = xcorr * psf;
-  Re2 weights = nufft->forward(xcorr).abs().chip(0, 3).chip(0, 0);
+  Re2 weights = nufft->forward(xcorr).abs().chip(0, 0);
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
@@ -48,9 +49,12 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   return weights;
 }
 
-auto make_kspace_pre(
-  Trajectory const &traj, Index const nC, Basis<Cx> const &basis, std::string const &type, float const bias, bool const ndft)
-  -> std::shared_ptr<Ops::Op<Cx>>
+auto make_kspace_pre(Trajectory const  &traj,
+                     Index const        nC,
+                     Basis<Cx> const   &basis,
+                     std::string const &type,
+                     float const        bias,
+                     bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>
 {
   if (type == "" || type == "none") {
     Log::Print("Using no preconditioning");

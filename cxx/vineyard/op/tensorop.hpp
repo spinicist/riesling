@@ -20,9 +20,15 @@ struct TensorOperator : Ops::Op<Scalar_>
   using OutMap = Eigen::TensorMap<OutTensor>;
   using OutCMap = Eigen::TensorMap<OutTensor const>;
   using OutDims = typename OutTensor::Dimensions;
-
+  using Ptr = std::shared_ptr<TensorOperator<Scalar, InRank, OutRank>>;
   InDims  ishape;
   OutDims oshape;
+
+  TensorOperator(std::string const &n)
+    : Ops::Op<Scalar>{n}
+  {
+    Log::Debug("{} created.", this->name);
+  }
 
   TensorOperator(std::string const &n, InDims const xd, OutDims const yd)
     : Ops::Op<Scalar>{n}
@@ -133,7 +139,8 @@ struct TensorOperator : Ops::Op<Scalar_>
   using OutDims = typename Parent::OutDims;                                                                                    \
   using Parent::oshape;
 
-#define OP_DECLARE()                                                                                                           \
+#define OP_DECLARE(SELF)                                                                                                       \
+  using Ptr = std::shared_ptr<SELF>;                                                                                           \
   void forward(InCMap const &x, OutMap &y) const;                                                                              \
   void adjoint(OutCMap const &y, InMap &x) const;                                                                              \
   using Parent::forward;                                                                                                       \

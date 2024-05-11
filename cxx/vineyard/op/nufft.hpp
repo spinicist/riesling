@@ -13,33 +13,28 @@ template <int NDim>
 struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
-  NUFFTOp(std::shared_ptr<Grid<Cx, NDim>>        gridder,
-          Sz<NDim> const                         matrix,
-          Index const                            batches = 1);
-  OP_DECLARE()
+  NUFFTOp(Sz<NDim> const           matrix,
+          TrajectoryN<NDim> const &traj,
+          std::string const       &ktype,
+          float const              osamp,
+          Index const              nC,
+          Basis<Cx> const         &basis = IdBasis<Scalar>(),
+          Index const              bucketSz = 32,
+          Index const              splitSz = 16384,
+          Index const              nBatches = 1);
+  OP_DECLARE(NUFFTOp)
 
-  std::shared_ptr<Grid<Cx, NDim>> gridder;
+  static auto Make(Sz<NDim> const matrix, TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis<Cx> const &basis)
+    -> std::shared_ptr<NUFFTOp<NDim>>;
+
+
+  Grid<Cx, NDim> gridder;
   InTensor mutable workspace;
   std::shared_ptr<FFT::FFT<NDim + 2, NDim>> fft;
 
-  PadOp<Cx, NDim + 2, NDim>              pad;
-  ApodizeOp<Cx, NDim>                    apo;
-  Index const                            batches;
+  PadOp<Cx, NDim + 2, NDim> pad;
+  Apodize<Cx, NDim>       apo;
+  Index const               batches;
 };
-
-std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
-                                                     GridOpts                              &opts,
-                                                     Index const                            nC,
-                                                     Sz3 const                              matrix,
-                                                     Basis<Cx> const                       &basis = IdBasis());
-
-std::shared_ptr<TensorOperator<Cx, 5, 4>> make_nufft(Trajectory const                      &traj,
-                                                     std::string const                     &ktype,
-                                                     float const                            osamp,
-                                                     Index const                            nC,
-                                                     Sz3 const                              matrix,
-                                                     Basis<Cx> const                       &basis = IdBasis(),
-                                                     Index const                            bSz = 32,
-                                                     Index const                            sSz = 16384);
 
 } // namespace rl

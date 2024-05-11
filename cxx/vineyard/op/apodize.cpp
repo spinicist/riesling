@@ -9,8 +9,8 @@
 namespace rl {
 
 template <typename S, int NDim>
-ApodizeOp<S, NDim>::ApodizeOp(InDims const ish, Sz<NDim> const gshape, std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
-  : Parent("ApodizeOp", ish, ish)
+Apodize<S, NDim>::Apodize(InDims const ish, Sz<NDim> const gshape, std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
+  : Parent("Apodize", ish, ish)
 {
   for (int ii = 0; ii < 2; ii++) {
     res_[ii] = 1;
@@ -37,7 +37,7 @@ ApodizeOp<S, NDim>::ApodizeOp(InDims const ish, Sz<NDim> const gshape, std::shar
 }
 
 template <typename S, int NDim>
-void ApodizeOp<S, NDim>::forward(InCMap const &x, OutMap &y) const
+void Apodize<S, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_);
@@ -45,15 +45,15 @@ void ApodizeOp<S, NDim>::forward(InCMap const &x, OutMap &y) const
 }
 
 template <typename S, int NDim>
-void ApodizeOp<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
+void Apodize<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   x.device(Threads::GlobalDevice()) = y * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(x, time);
 }
 
-template struct ApodizeOp<Cx, 1>;
-template struct ApodizeOp<Cx, 2>;
-template struct ApodizeOp<Cx, 3>;
+template struct Apodize<Cx, 1>;
+template struct Apodize<Cx, 2>;
+template struct Apodize<Cx, 3>;
 
 } // namespace rl

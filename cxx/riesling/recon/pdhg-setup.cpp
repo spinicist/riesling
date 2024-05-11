@@ -28,7 +28,7 @@ void main_pdhg_setup(args::Subparser &parser)
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   auto const  sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
-  auto const  recon = make_recon(coreOpts, gridOpts, traj, sense, basis);
+  auto const  recon = SENSERecon(coreOpts, gridOpts, traj, reader.dimensions()[3], sense, basis);
   auto const  shape = recon->ishape;
   auto const  P =
     make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreOpts.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());

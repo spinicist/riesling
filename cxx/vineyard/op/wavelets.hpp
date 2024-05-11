@@ -10,7 +10,7 @@ struct Wavelets final : TensorOperator<Cx, 4, 4>
 
   Wavelets(Sz4 const shape, Index const N, Sz4 const dims);
 
-  OP_DECLARE()
+  OP_DECLARE(Wavelets)
 
   static auto PaddedShape(Sz4 const shape, Sz4 const dims) -> Sz4;
 

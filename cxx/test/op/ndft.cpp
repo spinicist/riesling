@@ -17,7 +17,7 @@ TEST_CASE("NDFT", "[tform]")
   for (Index ii = 0; ii < M; ii++) {
     points(0, ii, 0) = -0.5f + ii / (float)M;
   }
-  NDFTOp<1> ndft(points, 1, Sz1{M});
+  NDFTOp<1> ndft(Sz1{M}, points, 1);
   Cx3       ks(ndft.oshape);
   Cx3       img(ndft.ishape);
   img.setZero();
@@ -47,7 +47,7 @@ TEST_CASE("NDFT Basis", "[tform]")
       basis(ii, 0, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
     }
   }
-  NDFTOp<1> ndft(points, 1, Sz1{N}, basis);
+  NDFTOp<1> ndft(Sz1{N}, points, 1, basis);
   Cx3       ks(ndft.oshape);
   ks.setConstant(1.f);
   Cx3 img(ndft.ishape);

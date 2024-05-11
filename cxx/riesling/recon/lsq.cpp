@@ -27,12 +27,12 @@ void main_recon_lsq(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
+  Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
-
-  auto const A = make_recon(coreOpts, gridOpts, traj, sense, basis);
+  auto const A = SENSERecon(coreOpts, gridOpts, traj, nS, sense, basis);
   auto const M = make_kspace_pre(traj, A->oshape[0], basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data());

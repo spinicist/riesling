@@ -33,6 +33,25 @@ auto Grid<Scalar, NDim>::Make(TrajectoryN<NDim> const &traj,
 }
 
 template <typename Scalar, int NDim>
+Grid<Scalar, NDim>::Grid(TrajectoryN<NDim> const &traj,
+                         std::string const        ktype,
+                         float const              osamp,
+                         Index const              nC,
+                         Basis<Scalar> const     &b,
+                         Index const              bSz,
+                         Index const              sSz)
+  : Parent(fmt::format("{}D GridOp", NDim))
+  , kernel{make_kernel<Scalar, NDim>(ktype, osamp)}
+  , mapping{traj, osamp, kernel->paddedWidth(), bSz, sSz}
+  , basis{b}
+{
+  static_assert(NDim < 4);
+  ishape = AddFront(mapping.cartDims, nC, b.dimension(0));
+  oshape = AddFront(mapping.noncartDims, nC);
+  Log::Debug("Grid Dims {}", this->ishape);
+}
+
+template <typename Scalar, int NDim>
 Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
                          Mapping<NDim> const                          m,
                          Index const                                  nC,

@@ -15,7 +15,7 @@ struct PadOp final : TensorOperator<Scalar_, Rank, Rank>
   PadOp(ImgDims const &imgShape, ImgDims const &padSize, OtherDims const &otherSize);
   PadOp(ImgDims const &imgShape, OutDims const oshape);
 
-  OP_DECLARE()
+  OP_DECLARE(PadOp)
 
 private:
   InDims                                      left_, right_;

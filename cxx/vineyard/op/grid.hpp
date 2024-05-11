@@ -37,6 +37,13 @@ struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>
                    Basis<Scalar> const     &b = IdBasis<Scalar>(),
                    Index const              bSz = 32,
                    Index const              sSz = 16384) -> std::shared_ptr<Grid<Scalar, NDim>>;
+  Grid(TrajectoryN<NDim> const &traj,
+       std::string const        ktype,
+       float const              osamp,
+       Index const              nC,
+       Basis<Scalar> const     &b,
+       Index const              bSz,
+       Index const              sSz);
   Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
        Mapping<NDim> const                          m,
        Index const                                  nC,
