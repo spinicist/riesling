@@ -34,7 +34,7 @@ void main_psf(args::Subparser &parser)
   Index const nB = basis.dimension(0);
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
-  std::shared_ptr<TensorOperator<Cx, 5, 3>> A = nullptr;
+  std::shared_ptr<TOp<Cx, 5, 3>> A = nullptr;
   if (coreOpts.ndft) {
     A = NDFTOp<3>::Make(shape, traj.points(), nC, basis);
   } else {

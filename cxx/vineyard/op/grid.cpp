@@ -2,7 +2,7 @@
 
 #include "kernel/kernel.hpp"
 #include "mapping.hpp"
-#include "tensorop.hpp"
+#include "top.hpp"
 #include "threads.hpp"
 
 #include <mutex>

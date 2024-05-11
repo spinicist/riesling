@@ -31,7 +31,7 @@ TEST_CASE("Recon", "[recon]")
   senseMaps.setConstant(std::sqrt(1. / nC));
   auto sense = std::make_shared<SenseOp>(senseMaps, nF);
 
-  Compose<SenseOp, TensorOperator<Cx, 5, 3>> recon(sense, nufft);
+  Compose<SenseOp, TOp<Cx, 5, 3>> recon(sense, nufft);
 
   Cx3 ks(recon.oshape);
   Cx4 img(recon.ishape);

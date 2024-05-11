@@ -17,13 +17,13 @@ auto SENSERecon(CoreOpts                       &coreOpts,
                 Trajectory const               &traj,
                 Index const                     nSlab,
                 std::shared_ptr<SenseOp> const &sense,
-                Basis<Cx> const                &basis) -> TensorOperator<Cx, 4, 4>::Ptr;
+                Basis<Cx> const                &basis) -> TOp<Cx, 4, 4>::Ptr;
 
 auto Channels(CoreOpts         &coreOpts,
               GridOpts         &gridOpts,
               Trajectory const &traj,
               Index const       nC,
               Index const       nSlab,
-              Basis<Cx> const  &basis) -> TensorOperator<Cx, 5, 4>::Ptr;
+              Basis<Cx> const  &basis) -> TOp<Cx, 5, 4>::Ptr;
 
 } // namespace rl

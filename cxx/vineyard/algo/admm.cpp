@@ -2,7 +2,7 @@
 
 #include "log.hpp"
 #include "lsmr.hpp"
-#include "op/tensorop.hpp"
+#include "op/top.hpp"
 #include "signals.hpp"
 #include "tensorOps.hpp"
 

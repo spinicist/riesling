@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tensorop.hpp"
+#include "top.hpp"
 
 namespace rl {
 
@@ -8,7 +8,7 @@ namespace rl {
  * This represents Op2 * Op1
  */
 template <typename Op1, typename Op2>
-struct Compose final : TensorOperator<typename Op1::Scalar, Op1::InRank, Op2::OutRank>
+struct Compose final : TOp<typename Op1::Scalar, Op1::InRank, Op2::OutRank>
 {
   OP_INHERIT(typename Op1::Scalar, Op1::InRank, Op2::OutRank)
   Compose(std::shared_ptr<Op1> op1, std::shared_ptr<Op2> op2)

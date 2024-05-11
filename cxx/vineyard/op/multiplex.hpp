@@ -5,7 +5,7 @@
 namespace rl {
 
 template <typename Sc, int ND>
-struct Multiplex final : TensorOperator<Sc, ND, ND + 1>
+struct Multiplex final : TOp<Sc, ND, ND + 1>
 {
   OP_INHERIT(Sc, ND, ND + 1)
   using Parent::adjoint;

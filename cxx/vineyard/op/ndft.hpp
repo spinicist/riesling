@@ -1,12 +1,12 @@
 #pragma once
 
 #include "basis/basis.hpp"
-#include "op/tensorop.hpp"
+#include "op/top.hpp"
 
 namespace rl {
 
 template <int NDim>
-struct NDFTOp final : TensorOperator<Cx, NDim + 2, 3>
+struct NDFTOp final : TOp<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
   NDFTOp(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis = IdBasis());

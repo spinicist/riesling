@@ -1,10 +1,10 @@
 #pragma once
 
-#include "tensorop.hpp"
+#include "top.hpp"
 
 namespace rl {
 
-struct SenseOp final : TensorOperator<Cx, 4, 5>
+struct SenseOp final : TOp<Cx, 4, 5>
 {
   OP_INHERIT(Cx, 4, 5)
   SenseOp(Cx5 const &maps, Index const frames);

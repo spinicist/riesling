@@ -1,6 +1,6 @@
 #include "cg.hpp"
 
-#include "op/tensorop.hpp"
+#include "op/top.hpp"
 
 namespace rl {
 
@@ -34,7 +34,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
     float const α = r_old / CheckedDot(p, q);
     x = x + p * α;
     if (debug) {
-      if (auto top = std::dynamic_pointer_cast<TensorOperator<Cx, 5, 4>>(op)) {
+      if (auto top = std::dynamic_pointer_cast<TOp<Cx, 5, 4>>(op)) {
         Log::Tensor(fmt::format("cg-x-{:02}", icg), top->ishape, x.data());
         Log::Tensor(fmt::format("cg-r-{:02}", icg), top->ishape, r.data());
       }

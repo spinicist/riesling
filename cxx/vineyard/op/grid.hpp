@@ -4,7 +4,7 @@
 #include "kernel/kernel.hpp"
 #include "mapping.hpp"
 #include "parse_args.hpp"
-#include "tensorop.hpp"
+#include "top.hpp"
 #include "threads.hpp"
 
 #include <mutex>
@@ -20,7 +20,7 @@ struct GridOpts
 };
 
 template <typename Scalar_, int NDim>
-struct Grid final : TensorOperator<Scalar_, NDim + 2, 3>
+struct Grid final : TOp<Scalar_, NDim + 2, 3>
 {
   OP_INHERIT(Scalar_, NDim + 2, 3)
   using Parent::adjoint;

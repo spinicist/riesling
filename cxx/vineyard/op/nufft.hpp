@@ -1,6 +1,6 @@
 #pragma once
 
-#include "op/tensorop.hpp"
+#include "op/top.hpp"
 
 #include "apodize.hpp"
 #include "fft/fft.hpp"
@@ -10,7 +10,7 @@
 namespace rl {
 
 template <int NDim>
-struct NUFFTOp final : TensorOperator<Cx, NDim + 2, 3>
+struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
   NUFFTOp(Sz<NDim> const           matrix,

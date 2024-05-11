@@ -6,7 +6,7 @@
 namespace rl {
 
 template <typename Scalar_, int InRank_, int OutRank_ = InRank_>
-struct TensorOperator : Ops::Op<Scalar_>
+struct TOp : Ops::Op<Scalar_>
 {
   using Scalar = Scalar_;
   using Base = Ops::Op<Scalar>;
@@ -20,17 +20,17 @@ struct TensorOperator : Ops::Op<Scalar_>
   using OutMap = Eigen::TensorMap<OutTensor>;
   using OutCMap = Eigen::TensorMap<OutTensor const>;
   using OutDims = typename OutTensor::Dimensions;
-  using Ptr = std::shared_ptr<TensorOperator<Scalar, InRank, OutRank>>;
+  using Ptr = std::shared_ptr<TOp<Scalar, InRank, OutRank>>;
   InDims  ishape;
   OutDims oshape;
 
-  TensorOperator(std::string const &n)
+  TOp(std::string const &n)
     : Ops::Op<Scalar>{n}
   {
     Log::Debug("{} created.", this->name);
   }
 
-  TensorOperator(std::string const &n, InDims const xd, OutDims const yd)
+  TOp(std::string const &n, InDims const xd, OutDims const yd)
     : Ops::Op<Scalar>{n}
     , ishape{xd}
     , oshape{yd}
@@ -38,7 +38,7 @@ struct TensorOperator : Ops::Op<Scalar_>
     Log::Debug("{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
   }
 
-  virtual ~TensorOperator(){};
+  virtual ~TOp(){};
 
   virtual auto rows() const -> Index { return Product(oshape); }
   virtual auto cols() const -> Index { return Product(ishape); }
@@ -124,7 +124,7 @@ struct TensorOperator : Ops::Op<Scalar_>
 };
 
 #define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
-  using Parent = TensorOperator<SCALAR, INRANK, OUTRANK>;                                                                      \
+  using Parent = TOp<SCALAR, INRANK, OUTRANK>;                                                                      \
   using Scalar = typename Parent::Scalar;                                                                                      \
   static const int InRank = Parent::InRank;                                                                                    \
   using InTensor = typename Parent::InTensor;                                                                                  \
@@ -147,7 +147,7 @@ struct TensorOperator : Ops::Op<Scalar_>
   using Parent::adjoint;
 
 template <typename Scalar_, int Rank>
-struct TensorIdentity : TensorOperator<Scalar_, Rank, Rank>
+struct TensorIdentity : TOp<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
   TensorIdentity(Sz<Rank> dims)

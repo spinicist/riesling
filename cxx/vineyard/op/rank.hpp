@@ -5,7 +5,7 @@
 namespace rl {
 
 template <typename Op>
-struct IncreaseOutputRank final : TensorOperator<typename Op::Scalar, Op::InRank, Op::OutRank + 1>
+struct IncreaseOutputRank final : TOp<typename Op::Scalar, Op::InRank, Op::OutRank + 1>
 {
   OP_INHERIT(typename Op::Scalar, Op::InRank, Op::OutRank + 1)
   using Parent::adjoint;

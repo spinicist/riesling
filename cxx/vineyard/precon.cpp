@@ -19,8 +19,8 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
   float const osamp = 1.25;
   auto        nufft =
-    ndft ? (TensorOperator<Cx, 5, 3>::Ptr)std::make_shared<NDFTOp<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
-         : (TensorOperator<Cx, 5, 3>::Ptr)std::make_shared<NUFFTOp<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
+    ndft ? (TOp<Cx, 5, 3>::Ptr)std::make_shared<NDFTOp<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
+         : (TOp<Cx, 5, 3>::Ptr)std::make_shared<NUFFTOp<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
   Cx3 W(nufft->oshape);
   Log::Print("Starting preconditioner calculation");
   W.setConstant(Cx(1.f, 0.f));

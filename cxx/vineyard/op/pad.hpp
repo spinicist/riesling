@@ -1,11 +1,11 @@
 #pragma once
 
-#include "tensorop.hpp"
+#include "top.hpp"
 
 namespace rl {
 
 template <typename Scalar_, int Rank, int ImgRank = 3>
-struct PadOp final : TensorOperator<Scalar_, Rank, Rank>
+struct PadOp final : TOp<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
 

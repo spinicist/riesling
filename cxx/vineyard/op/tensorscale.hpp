@@ -1,7 +1,7 @@
 #pragma once
 #include "log.hpp"
 #include "tensorOps.hpp"
-#include "tensorop.hpp"
+#include "top.hpp"
 
 namespace rl {
 
@@ -10,7 +10,7 @@ namespace rl {
  * Equivalent to blockwise multiplication by a diagonal matrix
  * */
 template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0>
-struct TensorScale final : TensorOperator<Scalar_, Rank, Rank>
+struct TensorScale final : TOp<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
   using TScales = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;

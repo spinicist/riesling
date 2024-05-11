@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tensorop.hpp"
+#include "top.hpp"
 
 #include "fft/fft.hpp"
 #include "tensorOps.hpp"
@@ -9,7 +9,7 @@
 namespace rl::Ops {
 
 template <int Rank, int FFTRank>
-struct FFTOp final : TensorOperator<Cx, Rank, Rank>
+struct FFTOp final : TOp<Cx, Rank, Rank>
 {
   OP_INHERIT(Cx, Rank, Rank)
 

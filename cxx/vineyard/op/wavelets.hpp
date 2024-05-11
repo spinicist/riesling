@@ -1,10 +1,10 @@
 #pragma once
 
-#include "tensorop.hpp"
+#include "top.hpp"
 
 namespace rl {
 
-struct Wavelets final : TensorOperator<Cx, 4, 4>
+struct Wavelets final : TOp<Cx, 4, 4>
 {
   OP_INHERIT(Cx, 4, 4)
 

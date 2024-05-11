@@ -5,7 +5,7 @@
 namespace rl {
 
 template <typename Op>
-struct LoopOp final : TensorOperator<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
+struct LoopOp final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
   OP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
   using Parent::adjoint;

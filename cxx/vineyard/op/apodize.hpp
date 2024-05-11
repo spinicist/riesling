@@ -1,12 +1,12 @@
 #pragma once
 
 #include "kernel/kernel.hpp"
-#include "tensorop.hpp"
+#include "top.hpp"
 
 namespace rl {
 
 template <typename Scalar_, int NDim>
-struct Apodize final : TensorOperator<Scalar_, NDim + 2, NDim + 2>
+struct Apodize final : TOp<Scalar_, NDim + 2, NDim + 2>
 {
   OP_INHERIT(Cx, NDim + 2, NDim + 2)
   Apodize(InDims const shape, Sz<NDim> const gshape, std::shared_ptr<Kernel<Scalar, NDim>> const &k);
