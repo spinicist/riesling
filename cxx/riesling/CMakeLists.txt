@@ -12,6 +12,7 @@ add_executable(riesling
 
     data/h5.cpp
     data/compress.cpp
+    data/diff.cpp
     data/merge.cpp
     data/nii.cpp
     data/noisify.cpp

@@ -11,7 +11,7 @@ using namespace rl;
 void main_rss(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
-  args::Positional<std::string>  oname(parser, "OUTPUT", "Override output name");
+  args::Positional<std::string>  oname(parser, "OUTPUT", "Output file name");
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
 

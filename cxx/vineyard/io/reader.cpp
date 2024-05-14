@@ -135,6 +135,8 @@ auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
   return names;
 }
 
+template auto Reader::dimensionNames<3>(std::string const &) const -> DimensionNames<3>;
+template auto Reader::dimensionNames<4>(std::string const &) const -> DimensionNames<4>;
 template auto Reader::dimensionNames<5>(std::string const &) const -> DimensionNames<5>;
 template auto Reader::dimensionNames<6>(std::string const &) const -> DimensionNames<6>;
 

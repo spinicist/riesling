@@ -25,6 +25,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, h5, "h5", "Probe an H5 file");
   COMMAND(data, nii, "nii", "Convert images from H5 to nifti");
   COMMAND(data, compress, "compress", "Compress non-cartesian channels");
+  COMMAND(data, diff, "diff", "Take the difference of two datasets");
   COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
