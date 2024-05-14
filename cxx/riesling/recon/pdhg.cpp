@@ -22,8 +22,8 @@ void main_pdhg(args::Subparser &parser)
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
 
-  args::ValueFlag<Index> its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
-
+  args::ValueFlag<std::string> scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
+  args::ValueFlag<Index>       its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
   args::ValueFlag<std::vector<float>, VectorReader<float>> σin(parser, "σ", "Pre-computed dual step sizes", {"sigma"});
   args::ValueFlag<float>                                   τin(parser, "τ", "Pre-computed primal step size", {"tau"}, -1.f);
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
@@ -56,7 +56,7 @@ void main_pdhg(args::Subparser &parser)
   PDHG        pdhg(A, P, reg, σin.Get(), τin.Get(), debug_x);
   Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();
-  float const scale = Scaling(coreOpts.scaling, recon, P, &noncart(0, 0, 0, 0, 0));
+  float const scale = Scaling(scaling, recon, P, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
   Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV);
   for (Index iv = 0; iv < nV; iv++) {

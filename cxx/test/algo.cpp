@@ -21,6 +21,6 @@ TEST_CASE("Algorithms", "[alg]")
   {
     LSMR lsmr{A, M};
     auto xx = lsmr.run(y.data());
-    CHECK((x - xx).norm() == Approx(0.f).margin(1.e-3f));
+    CHECK((x - xx).stableNorm() == Approx(0.f).margin(1.e-3f));
   }
 }

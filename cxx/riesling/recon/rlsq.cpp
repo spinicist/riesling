@@ -20,19 +20,8 @@ void main_recon_rlsq(args::Subparser &parser)
   GridOpts    gridOpts(parser);
   PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
+  RlsqOpts    rlsqOpts(parser);
   RegOpts     regOpts(parser);
-
-  args::ValueFlag<Index> inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4);
-  args::ValueFlag<Index> inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1);
-  args::ValueFlag<float> atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f);
-  args::ValueFlag<float> btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f);
-  args::ValueFlag<float> ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f);
-
-  args::ValueFlag<Index> outer_its(parser, "ITS", "ADMM max iterations (20)", {"max-outer-its"}, 20);
-  args::ValueFlag<float> ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f);
-  args::ValueFlag<float> ε(parser, "ε", "ADMM convergence tolerance (1e-2)", {"eps"}, 1.e-2f);
-  args::ValueFlag<float> μ(parser, "μ", "ADMM residual rescaling tolerance (default 1.2)", {"mu"}, 1.2f);
-  args::ValueFlag<float> τ(parser, "τ", "ADMM residual rescaling maximum (default 10)", {"tau"}, 10.f);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -49,14 +38,6 @@ void main_recon_rlsq(args::Subparser &parser)
   auto const recon = SENSERecon(coreOpts, gridOpts, traj, nS, sense, basis);
   auto const shape = recon->ishape;
   auto const M = make_kspace_pre(traj, recon->oshape[0], basis, preOpts.type.Get(), preOpts.bias.Get());
-
-  Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
-  Sz3         outSz = out_cropper.size();
-  float const scale = Scaling(coreOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
-  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
-
-  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
-  if (coreOpts.residual) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);
@@ -80,12 +61,31 @@ void main_recon_rlsq(args::Subparser &parser)
     }
   };
 
-  ADMM opt{A,          M,          reg.ops,    reg.prox,        inner_its0.Get(), inner_its1.Get(),
-           atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(), ε.Get(),          μ.Get(),
-           τ.Get(),    debug_x,    debug_z};
+  ADMM opt{A,
+           M,
+           reg.ops,
+           reg.prox,
+           rlsqOpts.inner_its0.Get(),
+           rlsqOpts.inner_its1.Get(),
+           rlsqOpts.atol.Get(),
+           rlsqOpts.btol.Get(),
+           rlsqOpts.ctol.Get(),
+           rlsqOpts.outer_its.Get(),
+           rlsqOpts.ε.Get(),
+           rlsqOpts.μ.Get(),
+           rlsqOpts.τ.Get(),
+           debug_x,
+           debug_z};
+
+  Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
+  Sz3         outSz = out_cropper.size();
+  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
+  if (coreOpts.residual) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
+  float const scale = Scaling(rlsqOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
+  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
 
   for (Index iv = 0; iv < nV; iv++) {
-    auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), ρ.Get()));
+    auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get()));
     auto xm = Tensorfy(x, shape);
     out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
     if (coreOpts.residual) {

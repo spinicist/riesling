@@ -9,20 +9,20 @@ namespace rl::Proxs {
 
 LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 const s)
   : Prox<Cx>(Product(s))
-  , λ{l}
+  , λ{l * std::sqrtf(p * p * p)}
   , patchSize{p}
   , windowSize{w}
   , shape{s}
   , shift{doShift}
 {
-  Log::Print("Locally Low-Rank λ {} Patch {} Window {}", λ, patchSize, windowSize);
+  Log::Print("Locally Low-Rank λ {} Scaled λ {} Patch {} Window {}", l, λ, patchSize, windowSize);
 }
 
 void LLR::apply(float const α, CMap const &xin, Map &zin) const
 {
   Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
   Eigen::TensorMap<Cx4>       z(zin.data(), shape);
-  float const                 realλ = λ * α * std::sqrt(patchSize * patchSize * patchSize);
+  float const                 realλ = λ * α;
 
   auto softLLR = [realλ](Cx4 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);

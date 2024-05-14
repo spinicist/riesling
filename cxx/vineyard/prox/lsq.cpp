@@ -32,7 +32,7 @@ void LeastSquares<S>::apply(float const α, CMap const &x, Map &z) const
   } else {
     z = x / (1.f + t);
   }
-  Log::Debug("LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.norm(), y.norm(), z.norm());
+  Log::Debug("LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.stableNorm(), y.stableNorm(), z.stableNorm());
 }
 
 template <typename S>
@@ -44,7 +44,7 @@ void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x,
   } else {
     z = div->forward(x);
   }
-  Log::Debug("LeastSquares λ {} |x| {} |y| {} |z| {}", λ, x.norm(), y.norm(), z.norm());
+  Log::Debug("LeastSquares λ {} |x| {} |y| {} |z| {}", λ, x.stableNorm(), y.stableNorm(), z.stableNorm());
 }
 
 template <typename S>

@@ -21,8 +21,8 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 
     Then for the regularizers, in turn we do:
 
-    z_i = prox_λ/ρ(F_i * x + u_i)
-    u_i = F_i * x + u_i - z_i
+    z_i = prox_λ/ρ(F_i * x + u_{i-1})
+    u_i = F_i * x + u_{i-1} - z_i
     */
 
   Index const                                      R = reg_ops.size();
@@ -76,17 +76,19 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       prox[ir]->apply(1.f / ρ, Fxpu, z[ir]);
       u[ir] = Fxpu - z[ir];
       if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-      float const nFx = Fx.squaredNorm();
-      float const nz = z[ir].squaredNorm();
-      float const nu = reg_ops[ir]->adjoint(u[ir]).squaredNorm();
-      Log::Print("Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, std::sqrt(nFx), std::sqrt(nz), std::sqrt(nu));
-      normFx += nFx;
-      normz += nz;
-      normu += nu;
-      pRes += (Fx - z[ir]).squaredNorm();
-      dRes += reg_ops[ir]->adjoint(z[ir] - zprev).squaredNorm();
+      float const nFx = Fx.stableNorm();
+      float const nz = z[ir].stableNorm();
+      float const nu = reg_ops[ir]->adjoint(u[ir]).stableNorm();
+      float const nP = (Fx - z[ir]).stableNorm();
+      float const nD = (reg_ops[ir]->adjoint(z[ir] - zprev)).stableNorm();
+      normFx += nFx*nFx;
+      normz += nz*nz;
+      normu += nu*nu;
+      pRes += nP * nP;
+      dRes += nD * nD;
+      Log::Print("Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, nFx, nz, nu);
     }
-    float const normx = x.norm();
+    float const normx = x.stableNorm();
     normFx = std::sqrt(normFx);
     normz = std::sqrt(normz);
     normu = std::sqrt(normu);

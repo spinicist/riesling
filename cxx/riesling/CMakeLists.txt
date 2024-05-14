@@ -34,6 +34,7 @@ add_executable(riesling
     recon/pdhg-setup.cpp
     recon/rlsq.cpp
     recon/rss.cpp
+    recon/sake.cpp
 
     sense/calib.cpp
     sense/sim.cpp
@@ -48,7 +49,6 @@ add_executable(riesling
     util/psf.cpp
     util/rovir.cpp
     util/version.cpp
-    # util/zinfandel.cpp
 
     main.cpp
 )

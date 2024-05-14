@@ -19,6 +19,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
   COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
   COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
+  COMMAND(recon, sake, "recon-sake", "SAKE");
 
   args::Group data(parser, "DATA");
   COMMAND(data, h5, "h5", "Probe an H5 file");
@@ -66,7 +67,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(util, precon, "precon", "Precompute preconditioning weights");
   COMMAND(util, psf, "psf", "Estimate Point Spread Function");
   COMMAND(util, rovir, "rovir", "Calculate ROVIR compression matrix");
-  // COMMAND(util, zinfandel, "zinfandel", "ZINFANDEL k-space filling");
 #ifdef BUILD_MONTAGE
   COMMAND(util, montage, "montage", "Make beautiful output images");
 #endif

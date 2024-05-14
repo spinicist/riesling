@@ -8,7 +8,7 @@
 
 namespace rl::Proxs {
 
-Cx6 ToKernels(Eigen::TensorMap<Cx5> const &grid, Index const kW)
+Cx6 ToKernels(Eigen::TensorMap<Cx5 const> const &grid, Index const kW)
 {
   Index const nC = grid.dimension(0);
   Index const nF = grid.dimension(1);
@@ -48,7 +48,7 @@ void FromKernels(Cx6 const &kernels, Eigen::TensorMap<Cx5> &grid)
   count.setZero();
   grid.setZero();
   Index ik = 0;
-  Log::Debug("Unhankelfying {} kernels", nK);
+  Log::Print("Unhankelfying {} kernels", nK);
   for (Index iz = 0; iz < nZ; iz++) {
     for (Index iy = 0; iy < nY; iy++) {
       for (Index ix = 0; ix < nX; ix++) {
@@ -63,31 +63,28 @@ void FromKernels(Cx6 const &kernels, Eigen::TensorMap<Cx5> &grid)
 
 SLR::SLR(float const l, Index const k, Sz5 const sh)
   : Prox<Cx>(Product(sh))
-  , λ{l}
+  , λ{l * std::sqrtf(Product(LastN<3>(sh)))}
   , kSz{k}
   , shape{sh}
-  , fft{FFT::Make<5, 3>(shape)}
 {
   if (kSz < 3) { Log::Fail("SLR kernel size less than 3 not supported"); }
-  Log::Print("Structured Low-Rank λ {} Kernel-size {} Shape {}", λ, kSz, shape);
+  Log::Debug("Structured Low-Rank λ {} Scaled λ {} Kernel-size {} Shape {}", l, λ, kSz, shape);
 }
 
 void SLR::apply(float const α, CMap const &xin, Map &zin) const
 {
-  Eigen::TensorMap<Cx5 const> x(xin.data(), shape);
-  float const                 thresh = λ * α;
-  Eigen::TensorMap<Cx5>       z(zin.data(), shape);
-  z = x;
-  fft->forward(z);
-  Cx6  kernels = ToKernels(z, kSz);
-  auto kMat = CollapseToMatrix<Cx6, 5>(kernels);
+  Eigen::TensorMap<Cx5 const> const x(xin.data(), shape);
+  float const                       thresh = λ * α;
+  Eigen::TensorMap<Cx5>             z(zin.data(), shape);
+  Cx6                               kernels = ToKernels(x, kSz);
+  auto                              kMat = CollapseToMatrix<Cx6, 5>(kernels);
   if (kMat.rows() > kMat.cols()) { Log::Fail("Insufficient kernels for SVD {}x{}", kMat.rows(), kMat.cols()); }
   auto const            svd = SVD<Cx>(kMat.transpose());
-  Eigen::VectorXf const s = (svd.S.array() > thresh).select(svd.S, 0.f);
+  Eigen::VectorXf const s = (svd.S.abs() > thresh).select(svd.S * (svd.S.abs() - thresh) / svd.S.abs(), 0.f);
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
   FromKernels(kernels, z);
-  fft->reverse(z);
-  Log::Debug("SLR α {} λ {} t {} |x| {} |z| {} s {}", α, λ, thresh, Norm(x), Norm(z), s.head(5).transpose());
+  Log::Debug("SLR α {} λ {} t {} |x| {} |z| {} s [{:1.2E} ... {:1.2E}]", α, λ, thresh, Norm(x), Norm(z),
+             fmt::join(s.head(5), ", "), fmt::join(s.tail(5), ", "));
 }
 
 } // namespace rl::Proxs

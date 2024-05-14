@@ -47,7 +47,7 @@ struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
   args::Positional<std::string>                  iname, oname;
-  args::ValueFlag<std::string>                   basisFile, residual, scaling;
+  args::ValueFlag<std::string>                   basisFile, residual;
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
   args::Flag                                     ndft;
 };
@@ -67,6 +67,24 @@ struct LsqOpts
   args::ValueFlag<float> btol;
   args::ValueFlag<float> ctol;
   args::ValueFlag<float> λ;
+};
+
+struct RlsqOpts
+{
+  RlsqOpts(args::Subparser &parser);
+  args::ValueFlag<std::string> scaling;
+
+  args::ValueFlag<Index> inner_its0;
+  args::ValueFlag<Index> inner_its1;
+  args::ValueFlag<float> atol;
+  args::ValueFlag<float> btol;
+  args::ValueFlag<float> ctol;
+
+  args::ValueFlag<Index> outer_its;
+  args::ValueFlag<float> ρ;
+  args::ValueFlag<float> ε;
+  args::ValueFlag<float> μ;
+  args::ValueFlag<float> τ;
 };
 
 void WriteOutput(std::string const &fname, rl::Cx5 const &img, rl::Info const &info, std::string const &log = "");

@@ -37,12 +37,12 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
     S.apply(1.f / ρ, Ax_sub_b + u, z);
     u = u + Ax_sub_b - z;
 
-    float const normx = x.norm();
-    float const normz = z.norm();
-    float const normu = u.norm();
+    float const normx = x.stableNorm();
+    float const normz = z.stableNorm();
+    float const normu = u.stableNorm();
 
-    float const pRes = (Ax_sub_b - z).norm() / std::max(normx, normz);
-    float const dRes = (z - zprev).norm() / normu;
+    float const pRes = (Ax_sub_b - z).stableNorm() / std::max(normx, normz);
+    float const dRes = (z - zprev).stableNorm() / normu;
 
     Log::Print("LAD {:02d} |x| {:4.3E} |z| {:4.3E} |u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", ii, normx, normz,
                normu, ρ, pRes, dRes);

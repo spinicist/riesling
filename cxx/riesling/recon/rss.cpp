@@ -25,18 +25,18 @@ void main_recon_rss(args::Subparser &parser)
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  Index const nC = reader.dimensions(HD5::Keys::Data)[0];
-  Index const nS = reader.dimensions(HD5::Keys::Data)[3];
+  Cx5         noncart = reader.readTensor<Cx5>();
+  traj.checkDims(FirstN<3>(noncart.dimensions()));
+  Index const nC = noncart.dimension(0);
+  Index const nS = noncart.dimension(3);
+  Index const nV = noncart.dimension(4);
 
   auto const A = Channels(coreOpts, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
-  Cx5 noncart = reader.readTensor<Cx5>();
-  traj.checkDims(FirstN<3>(noncart.dimensions()));
-  Index const nVol = noncart.dimension(4);
-  Cx5         out(AddBack(LastN<4>(A->ishape), nVol));
-  for (Index iv = 0; iv < nVol; iv++) {
+  Cx5 out(AddBack(LastN<4>(A->ishape), nV));
+  for (Index iv = 0; iv < nV; iv++) {
     auto const channels = lsmr.run(&noncart(0, 0, 0, 0, iv));
     auto const channelsT = Tensorfy(channels, A->ishape);
     out.chip<4>(iv) = (channelsT * channelsT.conjugate()).sum(Sz1{0}).sqrt();

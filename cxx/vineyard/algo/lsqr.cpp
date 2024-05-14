@@ -29,7 +29,7 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   float sn2 = 0.f;
 
   Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.norm(), β, std::fabs(α * β));
+  Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), β, std::fabs(α * β));
   PushInterrupt();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);

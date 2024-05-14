@@ -16,6 +16,7 @@ struct Op
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
   using Map = typename Vector::MapType;
   using CMap = typename Vector::ConstMapType;
+  using Ptr = std::shared_ptr<Op<Scalar>>;
 
   std::string name;
   Op(std::string const &n);

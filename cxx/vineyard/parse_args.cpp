@@ -94,7 +94,6 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , oname(parser, "FILE", "Output HD5 file")
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
   , residual(parser, "R", "Write out residual to file", {"residuals"})
-  , scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu")
   , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
   , ndft(parser, "D", "Use NDFT instead of NUFFT", {"ndft"})
 {
@@ -106,13 +105,29 @@ PreconOpts::PreconOpts(args::Subparser &parser)
 {
 }
 
-LsqOpts::LsqOpts(args::Subparser &parser) :
-  its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4),
-  atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f),
-   btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f),
-   ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f),
-   λ(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f)
-{}
+LsqOpts::LsqOpts(args::Subparser &parser)
+  : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4)
+  , atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f)
+  , btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f)
+  , ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f)
+  , λ(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f)
+{
+}
+
+RlsqOpts::RlsqOpts(args::Subparser &parser)
+  : scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu")
+  , inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4)
+  , inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1)
+  , atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f)
+  , btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f)
+  , ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f)
+  , outer_its(parser, "ITS", "ADMM max iterations (20)", {"max-outer-its"}, 20)
+  , ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f)
+  , ε(parser, "ε", "ADMM convergence tolerance (1e-2)", {"eps"}, 1.e-2f)
+  , μ(parser, "μ", "ADMM residual rescaling tolerance (default 1.2)", {"mu"}, 1.2f)
+  , τ(parser, "τ", "ADMM residual rescaling maximum (default 10)", {"tau"}, 10.f)
+{
+}
 
 args::Group    global_group("GLOBAL OPTIONS");
 args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});

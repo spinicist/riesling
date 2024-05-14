@@ -27,7 +27,6 @@ add_library(vineyard
     threads.cpp
     trajectory.cpp
     traj_spirals.cpp
-    zin-grappa.cpp
     algo/admm.cpp
     algo/bidiag.cpp
     algo/decomp.cpp

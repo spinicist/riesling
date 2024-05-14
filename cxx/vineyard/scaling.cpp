@@ -9,9 +9,7 @@
 
 namespace rl {
 
-auto Scaling(
-  args::ValueFlag<std::string> &type, TOp<Cx, 4, 4>::Ptr const A, std::shared_ptr<Ops::Op<Cx>> const P, Cx *const b)
-  -> float
+auto Scaling(args::ValueFlag<std::string> &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr const P, Cx *const b) -> float
 {
   float scale;
   if (type.Get() == "bart") {

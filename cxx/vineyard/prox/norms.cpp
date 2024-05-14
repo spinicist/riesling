@@ -16,7 +16,7 @@ void L1::apply(float const α, CMap const &x, Map &z) const
 {
   float t = α * λ;
   z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
-  Log::Debug("Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.norm(), z.norm());
+  Log::Debug("Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.stableNorm(), z.stableNorm());
 }
 
 void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
@@ -24,7 +24,7 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float t = λ * realα->scale;
     z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
-    Log::Debug("Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, x.norm(), z.norm());
+    Log::Debug("Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
     Log::Fail("C++ is stupid");
   }
@@ -44,9 +44,9 @@ void L2::apply(float const α, CMap const &x, Map &z) const
 {
   float const t = α * λ;
   auto const  norms =
-    x.reshaped(block, x.rows() / block).colwise().norm().replicate(block, x.rows() / block).reshaped(x.rows(), 1).array();
+    x.reshaped(block, x.rows() / block).colwise().stableNorm().replicate(block, x.rows() / block).reshaped(x.rows(), 1).array();
   z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (1.f - t / norms), 0.f);
-  Log::Debug("L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.norm(), z.norm());
+  Log::Debug("L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.stableNorm(), z.stableNorm());
 }
 
 void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
@@ -54,9 +54,9 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float      t = λ * realα->scale;
     auto const norms =
-      x.reshaped(block, x.rows() / block).colwise().norm().replicate(block, x.rows() / block).reshaped(x.rows(), 1).array();
+      x.reshaped(block, x.rows() / block).colwise().stableNorm().replicate(block, x.rows() / block).reshaped(x.rows(), 1).array();
     z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (1.f - t / norms), 0.f);
-    Log::Debug("L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.norm(), z.norm());
+    Log::Debug("L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
     Log::Fail("C++ is stupid");
   }

@@ -17,7 +17,7 @@ SVDBasis::SVDBasis(
   auto const svd = SVD<float>(d);
   Log::Print("dyn {} {} nRetain {} S {}", dynamics.rows(), dynamics.cols(), nRetain, svd.S.rows());
   Log::Print("Retaining {} basis vectors, variance {}", nRetain,
-             100.f * svd.S.head(nRetain).matrix().norm() / svd.S.matrix().norm());
+             100.f * svd.S.head(nRetain).matrix().stableNorm() / svd.S.matrix().stableNorm());
   basis = rotate ? svd.equalized(nRetain).transpose().eval() : svd.V.leftCols(nRetain).transpose().eval();
   basis *= std::sqrt(sz);
 

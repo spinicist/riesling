@@ -44,7 +44,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
     float const β = r_new / r_old;
     p = r + p * β;
     float const nr = sqrt(r_new);
-    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, x.norm());
+    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, x.stableNorm());
     if (nr < thresh) {
       Log::Print("Reached convergence threshold");
       break;
