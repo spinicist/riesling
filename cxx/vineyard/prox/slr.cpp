@@ -68,7 +68,7 @@ SLR::SLR(float const l, Index const k, Sz5 const sh)
   , shape{sh}
 {
   if (kSz < 3) { Log::Fail("SLR kernel size less than 3 not supported"); }
-  Log::Debug("Structured Low-Rank λ {} Scaled λ {} Kernel-size {} Shape {}", l, λ, kSz, shape);
+  Log::Print("Structured Low-Rank λ {} Scaled λ {} Kernel-size {} Shape {}", l, λ, kSz, shape);
 }
 
 void SLR::apply(float const α, CMap const &xin, Map &zin) const

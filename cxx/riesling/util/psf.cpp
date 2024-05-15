@@ -1,9 +1,9 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
-#include "fft/fft.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
+#include "op/fft.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "parse_args.hpp"
@@ -57,10 +57,10 @@ void main_psf(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "x", "y", "z"});
 
   if (mtf) {
-    auto const fft = FFT::Make<4, 3>(xm.dimensions());
+    auto const fft = Ops::FFTOp<4, 3>(xm.dimensions());
     Log::Print("Calculating MTF");
     xm *= xm.constant(std::sqrt(Product(shape)));
-    fft->forward(xm);
+    fft.forward(xm);
     writer.writeTensor("mtf", xm.dimensions(), xm.data());
   }
   Log::Print("Finished");

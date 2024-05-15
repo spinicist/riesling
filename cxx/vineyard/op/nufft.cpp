@@ -4,6 +4,7 @@
 #include "loop.hpp"
 #include "op/grid.hpp"
 #include "rank.hpp"
+#include "../fft.hpp"
 
 namespace rl {
 
@@ -20,7 +21,6 @@ NUFFTOp<NDim>::NUFFTOp(Sz<NDim> const           matrix,
   : Parent("NUFFTOp")
   , gridder{traj, ktype, osamp, nChan / nBatch, basis, bucketSz, splitSz}
   , workspace{gridder.ishape}
-  , fft{FFT::Make<NDim + 2, NDim>(workspace)}
   , pad{AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape}
   , apo{pad.ishape, LastN<NDim>(gridder.ishape), gridder.kernel}
   , batches{nBatch}
@@ -28,6 +28,7 @@ NUFFTOp<NDim>::NUFFTOp(Sz<NDim> const           matrix,
   if (nChan % nBatch != 0) { Log::Fail("Batch size {} does not cleanly divide number of channels {}", nBatch, nChan); }
   ishape = AddFront(AMin(matrix, LastN<NDim>(gridder.ishape)), nChan, gridder.ishape[1]);
   oshape = AddFront(LastN<2>(gridder.oshape), nChan);
+  std::iota(fftDims.begin(), fftDims.end(), 2);
   Log::Debug("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder.ishape);
 }
 
@@ -49,7 +50,7 @@ void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     pad.forward(apo.forward(x), wsm);
-    fft->forward(workspace);
+    FFT::Forward(workspace, fftDims);
     gridder.forward(workspace, y);
   } else {
     InTensor     xt(pad.ishape);
@@ -63,7 +64,7 @@ void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
       y_start[0] = ic;
       xt.device(Threads::GlobalDevice()) = x.slice(x_start, xt.dimensions());
       pad.forward(apo.forward(xt), wsm);
-      fft->forward(workspace);
+      FFT::Forward(workspace, fftDims);
       gridder.forward(workspace, ytm);
       y.slice(y_start, yt.dimensions()).device(Threads::GlobalDevice()) = yt;
     }
@@ -78,7 +79,7 @@ void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     gridder.adjoint(y, wsm);
-    fft->reverse(workspace);
+    FFT::Adjoint(workspace, fftDims);
     apo.adjoint(pad.adjoint(workspace), x);
   } else {
     InTensor  xt(pad.ishape);
@@ -93,7 +94,7 @@ void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
       y_start[0] = ic;
       yt.device(Threads::GlobalDevice()) = y.slice(y_start, yt.dimensions());
       gridder.adjoint(yt, wsm);
-      fft->reverse(workspace);
+      FFT::Adjoint(workspace, fftDims);
       apo.adjoint(pad.adjoint(workspace), xtm);
       x.slice(x_start, xt.dimensions()).device(Threads::GlobalDevice()) = xt;
     }

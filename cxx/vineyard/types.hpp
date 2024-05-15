@@ -42,11 +42,13 @@ using I1 = Eigen::Tensor<Index, 1>;
 using I2 = Eigen::Tensor<Index, 2>;
 
 using Re0 = Eigen::TensorFixedSize<float, Eigen::Sizes<>>; // Annoying return type for reductions
-using Re1 = Eigen::Tensor<float, 1>;                       // 1D Real data
-using Re2 = Eigen::Tensor<float, 2>;                       // 2D Real data
-using Re3 = Eigen::Tensor<float, 3>;                       // 3D Real data
-using Re4 = Eigen::Tensor<float, 4>;                       // 4D Real data
-using Re5 = Eigen::Tensor<float, 5>;                       // 5D Real data
+template <int N>
+using ReN = Eigen::Tensor<float, N>;
+using Re1 = ReN<1>;
+using Re2 = ReN<2>;
+using Re3 = ReN<3>;
+using Re4 = ReN<4>;
+using Re5 = ReN<5>;
 
 using Rd1 = Eigen::Tensor<double, 1>;
 using Rd4 = Eigen::Tensor<double, 4>;
@@ -55,12 +57,14 @@ using Cx = std::complex<float>;
 using Cxd = std::complex<double>;
 
 using Cx0 = Eigen::TensorFixedSize<Cx, Eigen::Sizes<>>;
-using Cx1 = Eigen::Tensor<Cx, 1>; // 1D Complex data
-using Cx2 = Eigen::Tensor<Cx, 2>; // 2D Complex data
-using Cx3 = Eigen::Tensor<Cx, 3>; // 3D Complex data
-using Cx4 = Eigen::Tensor<Cx, 4>; // 4D Complex data...spotted a pattern yet?
-using Cx5 = Eigen::Tensor<Cx, 5>;
-using Cx6 = Eigen::Tensor<Cx, 6>;
+template <int N>
+using CxN = Eigen::Tensor<Cx, N>;
+using Cx1 = CxN<1>;
+using Cx2 = CxN<2>;
+using Cx3 = CxN<3>;
+using Cx4 = CxN<4>;
+using Cx5 = CxN<5>;
+using Cx6 = CxN<6>;
 
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 

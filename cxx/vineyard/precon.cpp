@@ -5,6 +5,7 @@
 #include "mapping.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
+#include "fft.hpp"
 #include "op/ops.hpp"
 #include "threads.hpp"
 
@@ -28,12 +29,11 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
   ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
   PadOp<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
-  auto            fftX = FFT::Make<5, 3>(psf.dimensions());
   Cx5             xcorr(padX.oshape);
   xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
-  fftX->forward(xcorr);
+  FFT::Forward(xcorr, Sz3{2,3,4});
   xcorr.device(Threads::GlobalDevice()) = xcorr * xcorr.conjugate();
-  fftX->reverse(xcorr);
+  FFT::Adjoint(xcorr, Sz3{2,3,4});
   xcorr.device(Threads::GlobalDevice()) = xcorr * psf;
   Re2 weights = nufft->forward(xcorr).abs().chip(0, 0);
   // I do not understand this scaling factor but it's in Frank's code and works

@@ -39,17 +39,16 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
   return std::make_tuple(c, s, ρ);
 }
 
-void BidiagInit(
-  std::shared_ptr<Ops::Op<Cx>>              op,
-  std::shared_ptr<Ops::Op<Cx>>              M,
-  Eigen::VectorXcf                         &Mu,
-  Eigen::VectorXcf                         &u,
-  Eigen::VectorXcf                         &v,
-  float                                    &α,
-  float                                    &β,
-  Eigen::VectorXcf                         &x,
-  Eigen::Map<Eigen::VectorXcf const> const &b,
-  Cx                                       *x0)
+void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
+                std::shared_ptr<Ops::Op<Cx>>           M,
+                Eigen::VectorXcf                      &Mu,
+                Eigen::VectorXcf                      &u,
+                Eigen::VectorXcf                      &v,
+                float                                 &α,
+                float                                 &β,
+                Eigen::VectorXcf                      &x,
+                Eigen::VectorXcf::ConstAlignedMapType &b,
+                Cx                                    *x0)
 {
   if (x0) {
     Eigen::Map<Eigen::VectorXcf const> xx0(x0, op->cols());
@@ -70,14 +69,13 @@ void BidiagInit(
   v /= α;
 }
 
-void Bidiag(
-  std::shared_ptr<Ops::Op<Cx>> const op,
-  std::shared_ptr<Ops::Op<Cx>> const M,
-  Eigen::VectorXcf                  &Mu,
-  Eigen::VectorXcf                  &u,
-  Eigen::VectorXcf                  &v,
-  float                             &α,
-  float                             &β)
+void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
+            std::shared_ptr<Ops::Op<Cx>> const M,
+            Eigen::VectorXcf                  &Mu,
+            Eigen::VectorXcf                  &u,
+            Eigen::VectorXcf                  &v,
+            float                             &α,
+            float                             &β)
 {
   // Re-use u to save space
   op->forward(v, u);

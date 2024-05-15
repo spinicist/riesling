@@ -1,7 +1,6 @@
 #include "types.hpp"
 
 #include "algo/decomp.hpp"
-#include "fft/fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -18,7 +17,6 @@ void main_denoise(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   args::Flag             llr(parser, "L", "LLR denoising", {"llr"});
-  args::Flag             llrFft(parser, "L", "LLR denoising in the Fourier domain", {"llr-fft"});
   args::ValueFlag<Index> llrPatch(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
   args::ValueFlag<Index> llrWin(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
   args::ValueFlag<float> λ(parser, "λ", "Threshold", {"lambda"}, 1.f);
@@ -29,7 +27,6 @@ void main_denoise(args::Subparser &parser)
   HD5::Reader input(iname.Get());
 
   Cx5        images = input.readTensor<Cx5>();
-  auto const fft = llrFft ? FFT::Make<4, 3>(FirstN<4>(images.dimensions())) : nullptr;
 
   auto hardLLR = [λ = λ.Get()](Cx4 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);
@@ -46,9 +43,7 @@ void main_denoise(args::Subparser &parser)
   Eigen::TensorMap<Cx4> outmap(out.data(), out.dimensions());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     img = images.chip<4>(iv);
-    if (fft) { fft->forward(img); }
     Patches(llrPatch.Get(), llrWin.Get(), false, hardLLR, ConstMap(img), outmap);
-    if (fft) { fft->reverse(out); }
     images.chip<4>(iv) = out;
   }
   HD5::Writer writer(oname.Get());

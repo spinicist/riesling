@@ -1,4 +1,5 @@
 #include "op/fft.hpp"
+#include "log.hpp"
 #include "tensors.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -9,8 +10,9 @@ using namespace Catch;
 
 TEST_CASE("ops-fft")
 {
-  Index const sz = 16;
-  Sz5 const dims{sz, sz, sz, sz, sz};
+  rl::Log::SetLevel(rl::Log::Level::Debug);
+  Index const      sz = 16;
+  Sz5 const        dims{sz, sz, sz, sz, sz};
   Ops::FFTOp<5, 3> fft(dims);
 
   SECTION("FFT-Dot")

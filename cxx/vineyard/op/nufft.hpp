@@ -3,7 +3,6 @@
 #include "op/top.hpp"
 
 #include "apodize.hpp"
-#include "fft/fft.hpp"
 #include "grid.hpp"
 #include "pad.hpp"
 
@@ -27,14 +26,13 @@ struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
   static auto Make(Sz<NDim> const matrix, TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis<Cx> const &basis)
     -> std::shared_ptr<NUFFTOp<NDim>>;
 
-
   Grid<Cx, NDim> gridder;
   InTensor mutable workspace;
-  std::shared_ptr<FFT::FFT<NDim + 2, NDim>> fft;
 
   PadOp<Cx, NDim + 2, NDim> pad;
-  Apodize<Cx, NDim>       apo;
+  Apodize<Cx, NDim>         apo;
   Index const               batches;
+  Sz<NDim>                  fftDims;
 };
 
 } // namespace rl

@@ -14,8 +14,8 @@ struct Op
 {
   using Scalar = Scalar_;
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = typename Vector::MapType;
-  using CMap = typename Vector::ConstMapType;
+  using Map = typename Vector::AlignedMapType;
+  using CMap = typename Vector::ConstAlignedMapType;
   using Ptr = std::shared_ptr<Op<Scalar>>;
 
   std::string name;

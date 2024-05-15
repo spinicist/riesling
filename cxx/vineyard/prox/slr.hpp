@@ -1,6 +1,5 @@
 #pragma once
 
-#include "fft/fft.hpp"
 #include "prox.hpp"
 
 namespace rl::Proxs {

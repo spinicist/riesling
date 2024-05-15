@@ -1,5 +1,5 @@
 #include "apodize.hpp"
-#include "fft/fft.hpp"
+#include "../fft.hpp"
 #include "grid.hpp"
 #include "log.hpp"
 #include "pad.hpp"
@@ -23,14 +23,13 @@ Apodize<S, NDim>::Apodize(InDims const ish, Sz<NDim> const gshape, std::shared_p
 
   auto const              shape = LastN<NDim>(this->ishape);
   Eigen::Tensor<Cx, NDim> temp(gshape);
-  auto const              fft = FFT::Make<NDim, NDim>(temp);
   temp.setZero();
   Eigen::Tensor<Cx, NDim> k = kernel->at(Eigen::Matrix<float, NDim, 1>::Zero()).template cast<Cx>();
   float const             scale = std::sqrt(Product(shape));
   k = k * k.constant(scale);
   PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
   temp = padK.forward(k);
-  fft->reverse(temp);
+  FFT::Adjoint(temp);
   PadOp<Cx, NDim, NDim> padA(shape, gshape);
   apo_.resize(shape);
   apo_.device(Threads::GlobalDevice()) = padA.adjoint(temp).abs().inverse().template cast<Cx>();

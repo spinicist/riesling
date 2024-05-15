@@ -13,6 +13,7 @@ add_library(vineyard
     colors.cpp
     compressor.cpp
     cropper.cpp
+    fft.cpp
     filter.cpp
     interp.cpp
     log.cpp
@@ -41,7 +42,6 @@ add_library(vineyard
     basis/bernstein.cpp
     basis/fourier.cpp
     basis/svd.cpp
-    fft/fft.cpp
     func/dict.cpp
     func/diffs.cpp
     io/hd5-core.cpp
@@ -72,7 +72,7 @@ add_library(vineyard
     prox/slr.cpp
     prox/stack.cpp
     sense/coils.cpp
-    sense/espirit.cpp
+    # sense/espirit.cpp
     sense/sense.cpp
     sim/parameter.cpp
     sim/dir.cpp

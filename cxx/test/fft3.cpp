@@ -1,4 +1,4 @@
-#include "fft/fft.hpp"
+#include "fft.hpp"
 #include "log.hpp"
 #include "tensors.hpp"
 #include <catch2/catch_test_macros.hpp>
@@ -20,15 +20,14 @@ TEST_CASE("FFT3","[FFT]")
     Index const N = sx * sy * sz;
     Cx3 data(sx, sy, sz);
     Cx3 ref(sx, sy, sz);
-    auto const fft = FFT::Make<3, 3>(data.dimensions());
 
     ref.setConstant(1.f);
     data.setZero();
     data(sx / 2, sy / 2, sz / 2) = sqrt(N); // Parseval's theorem
-    fft->forward(data);
+    FFT::Forward(data);
     INFO("data\n" << data << "\nref\n" << ref);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
-    fft->reverse(data);
+    FFT::Adjoint(data);
     ref.setZero();
     ref(sx / 2, sy / 2, sz / 2) = sqrt(N);
     INFO("data\n" << data << "\nref\n" << ref);
@@ -43,15 +42,14 @@ TEST_CASE("FFT3","[FFT]")
     Index const ne = 1;
     Cx5 data(nc, ne, sx, sy, sz);
     Cx5 ref(nc, ne, sx, sy, sz);
-    auto const fft = FFT::Make<5, 3>(data.dimensions());
 
     ref.setConstant(1.f);
     data.setZero();
     data.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
-    fft->forward(data);
+    FFT::Forward(data, Sz3{2,3,4});
     INFO("data\n" << data << "\nref\n" << ref);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
-    fft->reverse(data);
+    FFT::Adjoint(data, Sz3{2, 3, 4});
     ref.setZero();
     ref.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));

@@ -1,6 +1,6 @@
 #include "types.hpp"
 
-#include "fft/fft.hpp"
+#include "op/fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -22,10 +22,10 @@ void main_filter(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5         images = input.readTensor<Cx5>();
-  auto const  fft = FFT::Make<4, 3>(FirstN<4>(images.dimensions()));
+  auto const  fft = Ops::FFTOp<4, 3>(FirstN<4>(images.dimensions()));
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     Cx4 img = images.chip<4>(iv);
-    fft->forward(img);
+    fft.forward(img);
     if (sharpen) {
       Cx4 filter(img.dimensions());
       filter.setZero();
@@ -39,12 +39,12 @@ void main_filter(args::Subparser &parser)
       filter.chip<3>(c[2] - 1).chip<2>(c[1]).chip<1>(c[0]).setConstant(-1.f);
       filter.chip<3>(c[2] + 1).chip<2>(c[1]).chip<1>(c[0]).setConstant(-1.f);
       filter *= filter.constant(std::sqrt(Product(shape)));
-      fft->forward(filter);
+      fft.forward(filter);
       img *= filter;
     } else {
       CartesianTukey(start.Get(), end.Get(), height.Get(), img);
     }
-    fft->reverse(img);
+    fft.adjoint(img);
     images.chip<4>(iv) = img;
   }
   HD5::Writer writer(oname.Get());

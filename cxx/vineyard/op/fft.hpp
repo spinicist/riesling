@@ -2,7 +2,7 @@
 
 #include "top.hpp"
 
-#include "fft/fft.hpp"
+#include "../fft.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
 
@@ -23,7 +23,8 @@ struct FFTOp final : TOp<Cx, Rank, Rank>
   void adjoint(OutCMap const &y, InMap &x) const;
 
 private:
-  InDims                                   dims_;
-  std::shared_ptr<FFT::FFT<Rank, FFTRank>> fft_;
+  Sz<FFTRank> dims_;
+  CxN<FFTRank> ph_;
+  Sz<Rank> rsh_, brd_;
 };
 } // namespace rl::Ops
