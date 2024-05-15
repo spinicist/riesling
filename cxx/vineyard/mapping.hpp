@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bucket.hpp"
+#include "subgrid.hpp"
 #include "info.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
@@ -29,7 +29,7 @@ struct Mapping
   std::vector<std::array<int16_t, NDims>>    cart;
   std::vector<NoncartesianIndex>             noncart;
   std::vector<Eigen::Array<float, NDims, 1>> offset;
-  std::vector<Bucket<NDims>>                 buckets;
+  std::vector<Subgrid<NDims>>                 buckets;
   std::vector<int32_t>                       sortedIndices;
 };
 

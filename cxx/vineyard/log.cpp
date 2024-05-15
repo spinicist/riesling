@@ -115,13 +115,14 @@ std::string ToNow(Log::Time const t1)
   auto const hours = diff / (60 * 60 * 1000);
   auto const mins = diff % (60 * 60 * 1000) / (60 * 1000);
   auto const secs = diff % (60 * 1000) / 1000;
+  auto const millis = diff % 1000;
   if (hours > 0) {
     return fmt::format("{} hour{} {} minute{} {} second{}", hours, hours > 1 ? "s" : "", mins, mins > 1 ? "s" : "", secs,
                        secs > 1 ? "s" : "");
   } else if (mins > 0) {
     return fmt::format("{} minute{} {} second{}", mins, mins > 1 ? "s" : "", secs, secs > 1 ? "s" : "");
   } else if (secs > 0) {
-    return fmt::format("{} second{}", secs, secs > 1 ? "s" : "");
+    return fmt::format("{}.{} seconds", secs, millis);
   } else {
     return fmt::format("{} millisecond{}", diff, diff > 1 ? "s" : "");
   }

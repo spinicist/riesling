@@ -13,8 +13,8 @@ GridOpts::GridOpts(args::Subparser &parser)
   : ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
   , osamp(parser, "O", "Grid oversampling factor (2)", {'s', "osamp"}, 2.f)
   , batches(parser, "B", "Channel batch size (1)", {"batches"}, 1)
-  , bucketSize(parser, "B", "Gridding bucket size (32)", {"bucket-size"}, 32)
-  , splitSize(parser, "S", "Bucket split size (16384)", {"bucket-split"}, 16384)
+  , bucketSize(parser, "B", "Gridding subgrid size (32)", {"subgrid-size"}, 32)
+  , splitSize(parser, "S", "Subgrid split size (16384)", {"subgrid-split"}, 16384)
 {
 }
 
@@ -75,12 +75,12 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
   auto const &map = this->mapping;
 
   auto grid_task = [&](Index const ibucket) {
-    auto const &bucket = map.buckets[ibucket];
+    auto const &subgrid = map.buckets[ibucket];
 
-    auto const bSz = AddFront(bucket.bucketSize(), nC, nB);
+    auto const bSz = AddFront(subgrid.size(), nC, nB);
     InTensor   bGrid(bSz);
 
-    auto const gSt = AddFront(bucket.minCorner, 0, 0); // Make this the same dims as bSz / ishape
+    auto const gSt = AddFront(subgrid.minCorner, 0, 0); // Make this the same dims as bSz / ishape
     for (Index i1 = 0; i1 < bSz[InRank - 1]; i1++) {
       Index const w1 = Wrap(i1 + gSt[InRank - 1], ishape[InRank - 1]);
       for (Index i2 = 0; i2 < bSz[InRank - 2]; i2++) {
@@ -104,14 +104,14 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
       }
     }
 
-    for (auto ii = 0; ii < bucket.size(); ii++) {
-      auto const si = bucket.indices[ii];
+    for (auto ii = 0; ii < subgrid.count(); ii++) {
+      auto const si = subgrid.indices[ii];
       auto const c = map.cart[si];
       auto const n = map.noncart[si];
       auto const o = map.offset[si];
       T1 const   bs = basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
       y.template chip<2>(n.trace).template chip<1>(n.sample) =
-        this->kernel->gather(c, o, bucket.minCorner, bs, map.cartDims, bGrid);
+        this->kernel->gather(c, o, subgrid.minCorner, bs, map.cartDims, bGrid);
     }
   };
 
@@ -129,24 +129,24 @@ void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 
   std::mutex writeMutex;
   auto       grid_task = [&](Index ibucket) {
-    auto const &bucket = map.buckets[ibucket];
-    auto const  bSz = AddFront(bucket.bucketSize(), nC, nB);
+    auto const &subgrid = map.buckets[ibucket];
+    auto const  bSz = AddFront(subgrid.size(), nC, nB);
     InTensor    bGrid(bSz);
     bGrid.setZero();
-    for (auto ii = 0; ii < bucket.size(); ii++) {
-      auto const si = bucket.indices[ii];
+    for (auto ii = 0; ii < subgrid.count(); ii++) {
+      auto const si = subgrid.indices[ii];
       auto const c = map.cart[si];
       auto const n = map.noncart[si];
       auto const o = map.offset[si];
       T1 const   bs =
         basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1)).conjugate();
       Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
-      this->kernel->spread(c, o, bucket.minCorner, bs, yy, bGrid);
+      this->kernel->spread(c, o, subgrid.minCorner, bs, yy, bGrid);
     }
 
     {
       std::scoped_lock lock(writeMutex);
-      auto const       gSt = AddFront(bucket.minCorner, 0, 0); // Make this the same dims as bSz / ishape
+      auto const       gSt = AddFront(subgrid.minCorner, 0, 0); // Make this the same dims as bSz / ishape
       for (Index i1 = 0; i1 < bSz[InRank - 1]; i1++) {
         Index const w1 = Wrap(i1 + gSt[InRank - 1], ishape[InRank - 1]);
         for (Index i2 = 0; i2 < bSz[InRank - 2]; i2++) {

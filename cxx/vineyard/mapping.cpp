@@ -61,7 +61,7 @@ Mapping<NDims>::Mapping(
       for (Index iy = 0; iy < nB[1]; iy++) {
         for (Index ix = 0; ix < nB[0]; ix++) {
           buckets.push_back(
-            Bucket<NDims>{.gridSize = cartDims,
+            Subgrid<NDims>{.gridSize = cartDims,
                           .minCorner = Sz3{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2), iz * bucketSz - (kW / 2)},
                           .maxCorner = Sz3{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
                                            std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2),
@@ -72,7 +72,7 @@ Mapping<NDims>::Mapping(
   } else if constexpr (NDims == 2) {
     for (Index iy = 0; iy < nB[1]; iy++) {
       for (Index ix = 0; ix < nB[0]; ix++) {
-        buckets.push_back(Bucket<NDims>{.gridSize = cartDims,
+        buckets.push_back(Subgrid<NDims>{.gridSize = cartDims,
                                         .minCorner = Sz2{ix * bucketSz - (kW / 2), iy * bucketSz - (kW / 2)},
                                         .maxCorner = Sz2{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2),
                                                          std::min((iy + 1) * bucketSz, cartDims[1]) + (kW / 2)}});
@@ -80,7 +80,7 @@ Mapping<NDims>::Mapping(
     }
   } else {
     for (Index ix = 0; ix < nB[0]; ix++) {
-      buckets.push_back(Bucket<NDims>{.gridSize = cartDims,
+      buckets.push_back(Subgrid<NDims>{.gridSize = cartDims,
                                       .minCorner = Sz1{ix * bucketSz - (kW / 2)},
                                       .maxCorner = Sz1{std::min((ix + 1) * bucketSz, cartDims[0]) + (kW / 2)}});
     }
@@ -112,7 +112,7 @@ Mapping<NDims>::Mapping(
       offset.push_back(off);
       noncart.push_back(NoncartesianIndex{.trace = is, .sample = ir});
 
-      // Calculate bucket
+      // Calculate subgrid
       Index ib = 0;
       for (int ii = NDims - 1; ii >= 0; ii--) {
         ib = ib * nB[ii] + (ijk[ii] / bucketSz);
@@ -123,24 +123,24 @@ Mapping<NDims>::Mapping(
   }
   Log::Print("Ignored {} invalid trajectory points", invalids);
 
-  std::vector<Bucket<NDims>> chunked;
-  for (auto &bucket : buckets) {
-    if (bucket.size() > splitSize) {
-      for (auto const indexChunk : tl::views::chunk(bucket.indices, splitSize)) {
-        chunked.push_back(Bucket<NDims>{.gridSize = bucket.gridSize,
-                                        .minCorner = bucket.minCorner,
-                                        .maxCorner = bucket.maxCorner,
+  std::vector<Subgrid<NDims>> chunked;
+  for (auto &subgrid : buckets) {
+    if (subgrid.count() > splitSize) {
+      for (auto const indexChunk : tl::views::chunk(subgrid.indices, splitSize)) {
+        chunked.push_back(Subgrid<NDims>{.gridSize = subgrid.gridSize,
+                                        .minCorner = subgrid.minCorner,
+                                        .maxCorner = subgrid.maxCorner,
                                         .indices = indexChunk | tl::to<std::vector<int32_t>>()});
       }
-      bucket.indices.clear();
+      subgrid.indices.clear();
     }
   }
 
-  Index const eraseCount = std::erase_if(buckets, [](Bucket<NDims> const &b) { return b.empty(); });
+  Index const eraseCount = std::erase_if(buckets, [](Subgrid<NDims> const &b) { return b.empty(); });
   buckets.insert(buckets.end(), chunked.begin(), chunked.end());
   Log::Print("Added {} extra, removed {} empty buckets, {} remaining", chunked.size(), eraseCount, buckets.size());
   Log::Print("Total points {}", std::accumulate(buckets.begin(), buckets.end(), 0L,
-                                                [](Index sum, Bucket<NDims> const &b) { return b.indices.size() + sum; }));
+                                                [](Index sum, Subgrid<NDims> const &b) { return b.indices.size() + sum; }));
   sortedIndices = sort(cart);
 }
 

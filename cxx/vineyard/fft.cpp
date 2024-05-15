@@ -92,11 +92,13 @@ void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
   std::transform(fftDims.begin(), fftDims.end(), duccDims.begin(), [](Index const d) { return ND - 1 - d; });
   float const scale = 1.f / std::sqrt(std::transform_reduce(duccDims.begin(), duccDims.end(), 1.f, std::multiplies{},
                                                             [duccShape](size_t const ii) { return duccShape[ii]; }));
-  rl::Log::Debug("DUCC forward FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
   internal::ThreadPool pool(Threads::GlobalDevice());
   internal::Guard      guard(pool);
+  rl::Log::Debug("FFT Shift");
   x.device(Threads::GlobalDevice()) = x * ph.reshape(rsh).broadcast(brd);
+  rl::Log::Debug("DUCC forward FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, true, scale, pool.nthreads());
+  rl::Log::Debug("FFT Shift");
   x.device(Threads::GlobalDevice()) = x * ph.reshape(rsh).broadcast(brd);
 }
 
@@ -144,11 +146,14 @@ void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
   std::transform(fftDims.begin(), fftDims.end(), duccDims.begin(), [](Index const d) { return ND - 1 - d; });
   float const scale = 1.f / std::sqrt(std::transform_reduce(duccDims.begin(), duccDims.end(), 1.f, std::multiplies{},
                                                             [duccShape](size_t const ii) { return duccShape[ii]; }));
-  rl::Log::Debug("DUCC adjoint FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
+  
   internal::ThreadPool pool(Threads::GlobalDevice());
   internal::Guard      guard(pool);
+  rl::Log::Debug("FFT Shift");
   x.device(Threads::GlobalDevice()) = x / ph.reshape(rsh).broadcast(brd);
+  rl::Log::Debug("DUCC adjoint FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, false, scale, pool.nthreads());
+  rl::Log::Debug("FFT Shift");
   x.device(Threads::GlobalDevice()) = x / ph.reshape(rsh).broadcast(brd);
 }
 
