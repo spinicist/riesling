@@ -8,8 +8,7 @@
 
 namespace rl {
 
-template <int NDim>
-struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
+template <int NDim> struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
   NUFFTOp(Sz<NDim> const           matrix,
@@ -33,6 +32,7 @@ struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
   Apodize<Cx, NDim>         apo;
   Index const               batches;
   Sz<NDim>                  fftDims;
+  CxN<NDim>                 fftPh;
 };
 
 } // namespace rl

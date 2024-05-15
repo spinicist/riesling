@@ -29,7 +29,7 @@ Apodize<S, NDim>::Apodize(InDims const ish, Sz<NDim> const gshape, std::shared_p
   k = k * k.constant(scale);
   PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
   temp = padK.forward(k);
-  FFT::Adjoint(temp);
+  FFT::Adjoint(temp, FFT::PhaseShift(temp.dimensions()));
   PadOp<Cx, NDim, NDim> padA(shape, gshape);
   apo_.resize(shape);
   apo_.device(Threads::GlobalDevice()) = padA.adjoint(temp).abs().inverse().template cast<Cx>();

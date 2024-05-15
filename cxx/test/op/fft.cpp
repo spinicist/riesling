@@ -10,7 +10,6 @@ using namespace Catch;
 
 TEST_CASE("ops-fft")
 {
-  rl::Log::SetLevel(rl::Log::Level::Debug);
   Index const      sz = 16;
   Sz5 const        dims{sz, sz, sz, sz, sz};
   Ops::FFTOp<5, 3> fft(dims);

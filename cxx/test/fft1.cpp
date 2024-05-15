@@ -15,16 +15,17 @@ TEST_CASE("FFT1","[FFT]")
   SECTION("<1>")
   {
     Cx1 data(N);
+    Cx1 const ph = FFT::PhaseShift(data.dimensions());
     Cx1 ref(data.dimensions());
 
     ref.setConstant(1.f);
     data.setZero();
     data(N / 2) = sqrt(N); // Parseval's theorem
     INFO("Ref " << ref << "\nData " << data);
-    FFT::Forward(data);
+    FFT::Forward(data, ph);
     INFO("Ref " << ref << "\nData " << data);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
-    FFT::Adjoint(data);
+    FFT::Adjoint(data, ph);
     INFO("Ref " << ref << "\nData " << data);
     ref.setZero();
     ref(N / 2) = sqrt(N);

@@ -25,6 +25,5 @@ struct FFTOp final : TOp<Cx, Rank, Rank>
 private:
   Sz<FFTRank> dims_;
   CxN<FFTRank> ph_;
-  Sz<Rank> rsh_, brd_;
 };
 } // namespace rl::Ops

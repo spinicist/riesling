@@ -19,7 +19,6 @@ BraceWrapping:
   SplitEmptyFunction: true
   SplitEmptyRecord: true
   SplitEmptyNamespace: true
-AlwaysBreakTemplateDeclarations: true
 AllowShortFunctionsOnASingleLine: All
 AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
@@ -27,4 +26,5 @@ AllowShortIfStatementsOnASingleLine: true
 AlignAfterOpenBracket: Align
 AlignConsecutiveDeclarations: Consecutive
 BreakConstructorInitializers: BeforeComma
+BreakTemplateDeclarations: BTDS_No
 ColumnLimit: 128

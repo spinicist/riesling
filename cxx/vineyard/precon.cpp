@@ -1,11 +1,11 @@
 #include "precon.hpp"
 
+#include "fft.hpp"
 #include "io/reader.hpp"
 #include "log.hpp"
 #include "mapping.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
-#include "fft.hpp"
 #include "op/ops.hpp"
 #include "threads.hpp"
 
@@ -19,10 +19,9 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
 {
   Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
   float const osamp = 1.25;
-  auto        nufft =
-    ndft ? (TOp<Cx, 5, 3>::Ptr)std::make_shared<NDFTOp<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
-         : (TOp<Cx, 5, 3>::Ptr)std::make_shared<NUFFTOp<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
-  Cx3 W(nufft->oshape);
+  auto        nufft = ndft ? (TOp<Cx, 5, 3>::Ptr)std::make_shared<NDFTOp<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
+                           : (TOp<Cx, 5, 3>::Ptr)std::make_shared<NUFFTOp<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
+  Cx3         W(nufft->oshape);
   Log::Print("Starting preconditioner calculation");
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
@@ -31,9 +30,10 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
   PadOp<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   Cx5             xcorr(padX.oshape);
   xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
-  FFT::Forward(xcorr, Sz3{2,3,4});
+  auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
+  FFT::Forward(xcorr, Sz3{2, 3, 4}, ph);
   xcorr.device(Threads::GlobalDevice()) = xcorr * xcorr.conjugate();
-  FFT::Adjoint(xcorr, Sz3{2,3,4});
+  FFT::Adjoint(xcorr, Sz3{2, 3, 4}, ph);
   xcorr.device(Threads::GlobalDevice()) = xcorr * psf;
   Re2 weights = nufft->forward(xcorr).abs().chip(0, 0);
   // I do not understand this scaling factor but it's in Frank's code and works

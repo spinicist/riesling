@@ -71,9 +71,21 @@ auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
 }
 
 template <int ND, int NFFT>
-void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims)
+void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 {
   auto const shape = x.dimensions();
+  /* For phase ramps */
+  Sz<ND> rsh, brd;
+  rsh.fill(1);
+  brd.fill(1);
+  for (Index ii = 0; ii < ND; ii++) {
+    if (std::find(fftDims.begin(), fftDims.end(), ii) == fftDims.end()) {
+      brd[ii] = shape[ii];
+    } else {
+      rsh[ii] = shape[ii];
+    }
+  }
+
   /* DUCC is row-major, reverse dims */
   std::vector<size_t> duccShape(ND), duccDims(NFFT);
   std::copy(shape.rbegin(), shape.rend(), duccShape.begin());
@@ -83,35 +95,49 @@ void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims)
   rl::Log::Debug("DUCC forward FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
   internal::ThreadPool pool(Threads::GlobalDevice());
   internal::Guard      guard(pool);
+  x.device(Threads::GlobalDevice()) = x * ph.reshape(rsh).broadcast(brd);
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, true, scale, pool.nthreads());
+  x.device(Threads::GlobalDevice()) = x * ph.reshape(rsh).broadcast(brd);
 }
 
 template <int ND>
-void Forward(Eigen::TensorMap<CxN<ND>> &x)
+void Forward(Eigen::TensorMap<CxN<ND>> &x, CxN<ND> const &ph)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
-  Forward(x, dims);
+  Forward(x, dims, ph);
 }
 
 template <int ND, int NFFT>
-void Forward(CxN<ND> &x, Sz<NFFT> const fftDims)
+void Forward(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Forward(map, fftDims);
+  Forward(map, fftDims, ph);
 }
 
 template <int ND>
-void Forward(CxN<ND> &x)
+void Forward(CxN<ND> &x, CxN<ND> const &ph)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Forward(map);
+  Forward(map, ph);
 }
 
 template <int ND, int NFFT>
-void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims)
+void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 {
   auto const shape = x.dimensions();
+  /* For phase ramps */
+  Sz<ND> rsh, brd;
+  rsh.fill(1);
+  brd.fill(1);
+  for (Index ii = 0; ii < ND; ii++) {
+    if (std::find(fftDims.begin(), fftDims.end(), ii) == fftDims.end()) {
+      brd[ii] = shape[ii];
+    } else {
+      rsh[ii] = shape[ii];
+    }
+  }
+
   /* DUCC is row-major, reverse dims */
   std::vector<size_t> duccShape(ND), duccDims(NFFT);
   std::copy(shape.rbegin(), shape.rend(), duccShape.begin());
@@ -121,52 +147,54 @@ void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims)
   rl::Log::Debug("DUCC adjoint FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
   internal::ThreadPool pool(Threads::GlobalDevice());
   internal::Guard      guard(pool);
+  x.device(Threads::GlobalDevice()) = x / ph.reshape(rsh).broadcast(brd);
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, false, scale, pool.nthreads());
+  x.device(Threads::GlobalDevice()) = x / ph.reshape(rsh).broadcast(brd);
 }
 
 template <int ND>
-void Adjoint(Eigen::TensorMap<CxN<ND>> &x)
+void Adjoint(Eigen::TensorMap<CxN<ND>> &x, CxN<ND> const &ph)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
-  Adjoint(x, dims);
+  Adjoint(x, dims, ph);
 }
 
 template <int ND, int NFFT>
-void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims)
+void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Adjoint(map, fftDims);
+  Adjoint(map, fftDims, ph);
 }
 
 template <int ND>
-void Adjoint(CxN<ND> &x)
+void Adjoint(CxN<ND> &x, CxN<ND> const &ph)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Adjoint(map);
+  Adjoint(map, ph);
 }
 
 template auto PhaseShift<1>(Sz1 const) -> Cx1;
 template auto PhaseShift<2>(Sz2 const) -> Cx2;
 template auto PhaseShift<3>(Sz3 const) -> Cx3;
 
-template void Forward<1, 1>(Cx1 &, Sz1 const);
-template void Forward<3, 1>(Cx3 &, Sz1 const);
-template void Forward<4, 2>(Cx4 &, Sz2 const);
-template void Forward<4, 3>(Cx4 &, Sz3 const);
-template void Forward<5, 3>(Cx5 &, Sz3 const);
-template void Forward<1>(Cx1 &);
-template void Forward<3>(Cx3 &);
+template void Forward<1, 1>(Cx1 &, Sz1 const, Cx1 const &ph);
+template void Forward<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
+template void Forward<4, 2>(Cx4 &, Sz2 const, Cx2 const &ph);
+template void Forward<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
+template void Forward<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
+template void Forward<1>(Cx1 &, Cx1 const &ph);
+template void Forward<3>(Cx3 &, Cx3 const &ph);
 
-template void Adjoint<3, 1>(Cx3 &, Sz1 const);
-template void Adjoint<3, 2>(Cx3 &, Sz2 const);
-template void Adjoint<4, 2>(Cx4 &, Sz2 const);
-template void Adjoint<4, 3>(Cx4 &, Sz3 const);
-template void Adjoint<5, 3>(Cx5 &, Sz3 const);
-template void Adjoint<1>(Eigen::TensorMap<Cx1> &);
-template void Adjoint<1>(Cx1 &);
-template void Adjoint<2>(Cx2 &);
-template void Adjoint<3>(Cx3 &);
+template void Adjoint<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
+template void Adjoint<3, 2>(Cx3 &, Sz2 const, Cx2 const &ph);
+template void Adjoint<4, 2>(Cx4 &, Sz2 const, Cx2 const &ph);
+template void Adjoint<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
+template void Adjoint<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
+template void Adjoint<1>(Eigen::TensorMap<Cx1> &, Cx1 const &ph);
+template void Adjoint<1>(Cx1 &, Cx1 const &ph);
+template void Adjoint<2>(Cx2 &, Cx2 const &ph);
+template void Adjoint<3>(Cx3 &, Cx3 const &ph);
 
 } // namespace FFT
 } // namespace rl
