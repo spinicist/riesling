@@ -2,7 +2,6 @@
 
 #include "op/loop.hpp"
 #include "op/pad.hpp"
-#include "op/rank.hpp"
 
 using namespace std::complex_literals;
 

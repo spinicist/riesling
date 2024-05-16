@@ -19,7 +19,7 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
-  h = v;
+  h.device(Threads::GlobalDevice()) = v;
   h̅.setZero();
 
   // Initialize transformation variables. There are a lot
@@ -73,9 +73,9 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
     ζ̅ = -s̅ * ζ̅;
 
     // Update h, h̅, x.
-    h̅ = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
-    x = x + (ζ / (ρ * ρ̅)) * h̅;
-    h = v - (θnew / ρ) * h;
+    h̅.device(Threads::GlobalDevice()) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
+    x.device(Threads::GlobalDevice()) = x + (ζ / (ρ * ρ̅)) * h̅;
+    h.device(Threads::GlobalDevice()) = v - (θnew / ρ) * h;
 
     // Estimate of |r|.
     float const β́ = ĉ * β̈;

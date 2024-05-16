@@ -4,7 +4,6 @@
 #include "kernel/kernel.hpp"
 #include "loop.hpp"
 #include "op/grid.hpp"
-#include "rank.hpp"
 
 namespace rl {
 

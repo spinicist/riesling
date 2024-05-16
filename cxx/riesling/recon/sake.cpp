@@ -1,7 +1,9 @@
 #include "algo/admm.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
+#include "op/compose.hpp"
 #include "op/fft.hpp"
+#include "op/kernels.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precon.hpp"
@@ -37,12 +39,14 @@ void main_sake(args::Subparser &parser)
 
   Sz5 const    shape = A->ishape;
   auto         fft = std::make_shared<Ops::FFTOp<5, 3>>(shape);
-  auto         slr = std::make_shared<Proxs::SLR>(λ.Get(), kSz.Get(), shape);
+  auto         kernels = std::make_shared<rl::Kernels<Cx, 5, 3>>(shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
+  auto         T = std::make_shared<rl::Compose<TOp<Cx, 5, 5>, TOp<Cx, 5, 6>>>(fft, kernels);
+  auto         slr = std::make_shared<Proxs::SLR<6>>(λ.Get(), T->oshape);
   ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
-  ADMM::DebugZ debug_z = [shape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
-                                 ADMM::Vector const &u) {
+  ADMM::DebugZ debug_z = [shape = T->oshape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
+                                             ADMM::Vector const &u) {
     Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
     Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
     Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
@@ -50,7 +54,7 @@ void main_sake(args::Subparser &parser)
 
   ADMM admm{A,
             M,
-            {fft},
+            {T},
             {slr},
             rlsqOpts.inner_its0.Get(),
             rlsqOpts.inner_its1.Get(),

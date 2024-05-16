@@ -55,10 +55,10 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
     x = xx0;
     // Reuse u to save space
     op->forward(x, u);
-    Mu = b - u;
+    Mu.device(Threads::GlobalDevice()) = b - u;
   } else {
     x.setZero();
-    Mu = b;
+    Mu.device(Threads::GlobalDevice()) = b;
   }
   M->forward(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
@@ -79,14 +79,14 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
 {
   // Re-use u to save space
   op->forward(v, u);
-  Mu = u - α * Mu;
+  Mu.device(Threads::GlobalDevice()) = u - α * Mu;
   M->forward(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
-  Mu /= β;
-  u /= β;
+  Mu.device(Threads::GlobalDevice()) = Mu / β;
+  u.device(Threads::GlobalDevice()) = u / β;
   v = op->adjoint(u) - (β * v);
   α = std::sqrt(CheckedDot(v, v));
-  v /= α;
+  v.device(Threads::GlobalDevice()) = v / α;
 }
 
 } // namespace rl

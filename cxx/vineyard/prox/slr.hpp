@@ -4,16 +4,15 @@
 
 namespace rl::Proxs {
 
-struct SLR final : Prox<Cx>
+template <int ND> struct SLR final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
-  SLR(float const, Index const, Sz5 const);
+  SLR(float const, Sz<ND> const);
   void apply(float const α, CMap const &x, Map &z) const;
 
 private:
-  float                           λ;
-  Index                           kSz;
-  Sz5                             shape;
+  float  λ;
+  Sz<ND> shape;
 };
 
 } // namespace rl::Proxs

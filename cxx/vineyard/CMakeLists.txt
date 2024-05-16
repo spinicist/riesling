@@ -53,6 +53,7 @@ add_library(vineyard
     op/fft.cpp
     op/grad.cpp
     op/grid.cpp
+    op/kernels.cpp
     op/ndft.cpp
     op/nufft.cpp
     op/ops.cpp
