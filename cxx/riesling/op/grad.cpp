@@ -24,7 +24,7 @@ void main_grad(args::Subparser &parser)
     auto   input = reader.readTensor<Cx5>();
     Sz4    dims = FirstN<4>(input.dimensions());
     Cx6    output(AddBack(dims, 3, input.dimension(4)));
-    GradOp g(dims, std::vector<Index>{1, 2, 3});
+    TOps::Grad g(dims, std::vector<Index>{1, 2, 3});
     for (Index iv = 0; iv < input.dimension(4); iv++) {
       output.chip<5>(iv) = g.forward(CChipMap(input, iv));
     }
@@ -33,7 +33,7 @@ void main_grad(args::Subparser &parser)
     auto   input = reader.readTensor<Cx6>("grad");
     Sz4    dims = FirstN<4>(input.dimensions());
     Cx5    output(AddBack(dims, input.dimension(5)));
-    GradOp g(dims, std::vector<Index>{1, 2, 3});
+    TOps::Grad g(dims, std::vector<Index>{1, 2, 3});
     for (Index iv = 0; iv < input.dimension(5); iv++) {
       output.chip<4>(iv) = g.adjoint(CChipMap(input, iv));
     }

@@ -2,13 +2,12 @@
 
 #include "top.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
 /*
  * This represents Op2 * Op1
  */
-template <typename Op1, typename Op2>
-struct Compose final : TOp<typename Op1::Scalar, Op1::InRank, Op2::OutRank>
+template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::Scalar, Op1::InRank, Op2::OutRank>
 {
   OP_INHERIT(typename Op1::Scalar, Op1::InRank, Op2::OutRank)
   Compose(std::shared_ptr<Op1> op1, std::shared_ptr<Op2> op2)
@@ -55,4 +54,4 @@ private:
   std::shared_ptr<Op2> op2_;
 };
 
-} // namespace rl
+} // namespace rl::TOps

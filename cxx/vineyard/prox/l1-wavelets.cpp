@@ -4,7 +4,7 @@ namespace rl::Proxs {
 
 L1Wavelets::L1Wavelets(float const λ, Sz4 const shape, Index const W, Sz4 const dims)
   : Prox<Cx>(Product(shape))
-  , waves_{std::make_shared<Wavelets>(shape, W, dims)}
+  , waves_{std::make_shared<TOps::Wavelets>(shape, W, dims)}
   , thresh_{λ, sz}
 {
 }

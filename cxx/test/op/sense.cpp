@@ -22,7 +22,7 @@ TEST_CASE("ops-sense")
     maps.setRandom();
     maps = maps / ConjugateSum(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{channels, 1, 1, 1, 1});
 
-    SenseOp sense(maps, 1);
+    TOps::SENSE sense(maps, 1);
     y = sense.forward(u);
     x = sense.adjoint(v);
 

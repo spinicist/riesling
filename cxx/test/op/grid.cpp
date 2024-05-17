@@ -25,7 +25,7 @@ TEST_CASE("Grid", "[grid]")
   float const osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
   auto basis = IdBasis<float>();
-  auto grid = Grid<float, 2>::Make(traj, ktype, osamp, 1, basis);
+  auto grid = TOps::Grid<float, 2>::Make(traj, ktype, osamp, 1, basis);
   Re3 noncart(grid->oshape);
   Re4 cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -62,7 +62,7 @@ TEST_CASE("Grid Sample Basis", "[grid]")
   basis(1, 3, 0) = 1.f;
   basis(1, 4, 0) = 1.f;
   basis(1, 5, 0) = 1.f;
-  auto grid = Grid<float, 1>::Make(traj, ktype, osamp, 1, basis);
+  auto grid = TOps::Grid<float, 1>::Make(traj, ktype, osamp, 1, basis);
   Re3 noncart(grid->oshape);
   noncart.setConstant(1.f);
   Re3 cart = grid->adjoint(noncart);

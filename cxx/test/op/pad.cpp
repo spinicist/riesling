@@ -19,7 +19,7 @@ TEST_CASE("ops-pad", "[pad]")
     x.setRandom();
     y.setRandom();
 
-    PadOp<Cx, 3> crop(x.dimensions(), y.dimensions());
+    TOps::Pad<Cx, 3> crop(x.dimensions(), y.dimensions());
     xy = crop.forward(x);
     yx = crop.adjoint(y);
 

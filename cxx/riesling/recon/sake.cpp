@@ -34,13 +34,13 @@ void main_sake(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const A = Channels(coreOpts, gridOpts, traj, nC, nS, basis);
+  auto const A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
 
   Sz5 const    shape = A->ishape;
-  auto         fft = std::make_shared<Ops::FFTOp<5, 3>>(shape);
-  auto         kernels = std::make_shared<rl::Kernels<Cx, 5, 3>>(shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
-  auto         T = std::make_shared<rl::Compose<TOp<Cx, 5, 5>, TOp<Cx, 5, 6>>>(fft, kernels);
+  auto         fft = std::make_shared<TOps::FFT<5, 3>>(shape);
+  auto         kernels = std::make_shared<TOps::Kernels<Cx, 5, 3>>(shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
+  auto         T = std::make_shared<TOps::Compose<TOps::TOp<Cx, 5, 5>, TOps::TOp<Cx, 5, 6>>>(fft, kernels);
   auto         slr = std::make_shared<Proxs::SLR<6>>(λ.Get(), T->oshape);
   ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());

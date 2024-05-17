@@ -29,7 +29,7 @@ void main_ndft(args::Subparser &parser)
 
   Trajectory traj(reader, info.voxel_size);
   auto const nC = reader.dimensions()[0];
-  auto const ndft = NDFTOp<3>::Make(traj.matrixForFOV(coreOpts.fov.Get()), traj.points(), nC, basis);
+  auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(coreOpts.fov.Get()), traj.points(), nC, basis);
 
   if (fwd) {
     auto channels = reader.readTensor<Cx6>();

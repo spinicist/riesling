@@ -12,7 +12,7 @@ TEST_CASE("ops-fft")
 {
   Index const      sz = 16;
   Sz5 const        dims{sz, sz, sz, sz, sz};
-  Ops::FFTOp<5, 3> fft(dims);
+  TOps::FFT<5, 3> fft(dims);
 
   SECTION("FFT-Dot")
   {

@@ -3,10 +3,9 @@
 #include "ops.hpp"
 #include "tensors.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-template <typename Scalar_, int InRank_, int OutRank_ = InRank_>
-struct TOp : Ops::Op<Scalar_>
+template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Ops::Op<Scalar_>
 {
   using Scalar = Scalar_;
   using Base = Ops::Op<Scalar>;
@@ -124,7 +123,7 @@ struct TOp : Ops::Op<Scalar_>
 };
 
 #define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
-  using Parent = TOp<SCALAR, INRANK, OUTRANK>;                                                                      \
+  using Parent = TOp<SCALAR, INRANK, OUTRANK>;                                                                                 \
   using Scalar = typename Parent::Scalar;                                                                                      \
   static const int InRank = Parent::InRank;                                                                                    \
   using InTensor = typename Parent::InTensor;                                                                                  \
@@ -146,11 +145,10 @@ struct TOp : Ops::Op<Scalar_>
   using Parent::forward;                                                                                                       \
   using Parent::adjoint;
 
-template <typename Scalar_, int Rank>
-struct TensorIdentity : TOp<Scalar_, Rank, Rank>
+template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
-  TensorIdentity(Sz<Rank> dims)
+  Identity(Sz<Rank> dims)
     : Parent("Identity", dims, dims)
   {
   }
@@ -170,4 +168,4 @@ struct TensorIdentity : TOp<Scalar_, Rank, Rank>
   }
 };
 
-} // namespace rl
+} // namespace rl::TOps

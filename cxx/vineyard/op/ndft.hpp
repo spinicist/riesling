@@ -3,19 +3,18 @@
 #include "basis/basis.hpp"
 #include "op/top.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-template <int NDim>
-struct NDFTOp final : TOp<Cx, NDim + 2, 3>
+template <int NDim> struct NDFT final : TOp<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
-  NDFTOp(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis = IdBasis());
-  OP_DECLARE(NDFTOp)
+  NDFT(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis = IdBasis());
+  OP_DECLARE(NDFT)
 
   static auto Make(Sz<NDim> const   matrix,
                    Re3 const       &traj,
                    Index const      nC,
-                   Basis<Cx> const &basis = IdBasis()) -> std::shared_ptr<NDFTOp<NDim>>;
+                   Basis<Cx> const &basis = IdBasis()) -> std::shared_ptr<NDFT<NDim>>;
   void        addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp);
 
 private:
@@ -27,4 +26,4 @@ private:
   Basis<Cx> basis;
 };
 
-} // namespace rl
+} // namespace rl::TOps

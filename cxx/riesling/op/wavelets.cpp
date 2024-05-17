@@ -23,7 +23,7 @@ void main_wavelets(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get());
   auto        images = reader.readTensor<Cx5>();
-  Wavelets    wav(FirstN<4>(images.dimensions()), width.Get(), dims.Get());
+  TOps::Wavelets    wav(FirstN<4>(images.dimensions()), width.Get(), dims.Get());
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     if (adj) {
       images.chip<4>(iv) = wav.adjoint(ChipMap(images, iv));

@@ -2,17 +2,16 @@
 
 #include "ops.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-template <typename Op>
-struct LoopOp final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
+template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
   OP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
   using Parent::adjoint;
   using Parent::forward;
 
-  LoopOp(std::shared_ptr<Op> op, Index const N)
-    : Parent("LoopOp", AddBack(op->ishape, N), AddBack(op->oshape, N))
+  Loop(std::shared_ptr<Op> op, Index const N)
+    : Parent("Loop", AddBack(op->ishape, N), AddBack(op->oshape, N))
     , op_{op}
     , N_{N}
   {
@@ -48,7 +47,7 @@ struct LoopOp final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
   // auto adjfwd(InputMap x) const -> InputMap
   // {
   //   for (Index ii = 0; ii < N_; ii++) {
-  //     Log::Debug("LoopOp Adjoint-Forward Iteration {}", ii);
+  //     Log::Debug("Loop Adjoint-Forward Iteration {}", ii);
   //     this->input().chip(ii, InRank - 1) = op_->adjfwd(ChipMap(x, ii));
   //   }
   //   return this->input();
@@ -59,4 +58,4 @@ private:
   Index               N_;
 };
 
-} // namespace rl
+} // namespace rl::TOps

@@ -2,8 +2,8 @@
 
 #include "kernel/kernel.hpp"
 #include "mapping.hpp"
-#include "top.hpp"
 #include "threads.hpp"
+#include "top.hpp"
 
 #include <mutex>
 
@@ -17,6 +17,8 @@ GridOpts::GridOpts(args::Subparser &parser)
   , splitSize(parser, "S", "Subgrid split size (16384)", {"subgrid-split"}, 16384)
 {
 }
+
+namespace TOps {
 
 template <typename Scalar, int NDim>
 auto Grid<Scalar, NDim>::Make(TrajectoryN<NDim> const &traj,
@@ -65,8 +67,7 @@ Grid<Scalar, NDim>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
   Log::Debug("Grid Dims {}", this->ishape);
 }
 
-template <typename Scalar, int NDim>
-void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
+template <typename Scalar, int NDim> void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
@@ -119,8 +120,7 @@ void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <typename Scalar, int NDim>
-void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
+template <typename Scalar, int NDim> void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const  time = this->startAdjoint(y);
   auto const &map = this->mapping;
@@ -183,4 +183,6 @@ template struct Grid<float, 3>;
 template struct Grid<Cx, 1>;
 template struct Grid<Cx, 2>;
 template struct Grid<Cx, 3>;
+
+} // namespace TOps
 } // namespace rl

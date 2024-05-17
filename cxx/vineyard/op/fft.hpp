@@ -6,15 +6,14 @@
 #include "tensors.hpp"
 #include "threads.hpp"
 
-namespace rl::Ops {
+namespace rl::TOps {
 
-template <int Rank, int FFTRank>
-struct FFTOp final : TOp<Cx, Rank, Rank>
+template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 {
   OP_INHERIT(Cx, Rank, Rank)
 
-  FFTOp(InDims const &dims);
-  FFTOp(InMap x);
+  FFT(InDims const &dims);
+  FFT(InMap x);
 
   using Parent::adjoint;
   using Parent::forward;
@@ -23,7 +22,8 @@ struct FFTOp final : TOp<Cx, Rank, Rank>
   void adjoint(OutCMap const &y, InMap &x) const;
 
 private:
-  Sz<FFTRank> dims_;
+  Sz<FFTRank>  dims_;
   CxN<FFTRank> ph_;
 };
-} // namespace rl::Ops
+
+} // namespace rl::TOps

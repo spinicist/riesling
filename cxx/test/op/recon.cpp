@@ -25,13 +25,13 @@ TEST_CASE("Recon", "[recon]")
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              nufft = std::make_shared<NUFFTOp<3>>(traj.matrix(), traj, ktype, osamp, nC);
+  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj.matrix(), traj, ktype, osamp, nC);
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = std::make_shared<SenseOp>(senseMaps, nF);
+  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF);
 
-  Compose<SenseOp, TOp<Cx, 5, 3>> recon(sense, nufft);
+  TOps::Compose<TOps::SENSE, TOps::TOp<Cx, 5, 3>> recon(sense, nufft);
 
   Cx3 ks(recon.oshape);
   Cx4 img(recon.ishape);

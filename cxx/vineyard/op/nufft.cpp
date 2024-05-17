@@ -5,10 +5,10 @@
 #include "loop.hpp"
 #include "op/grid.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
 template <int NDim>
-NUFFTOp<NDim>::NUFFTOp(Sz<NDim> const           matrix,
+NUFFT<NDim>::NUFFT(Sz<NDim> const           matrix,
                        TrajectoryN<NDim> const &traj,
                        std::string const       &ktype,
                        float const              osamp,
@@ -17,7 +17,7 @@ NUFFTOp<NDim>::NUFFTOp(Sz<NDim> const           matrix,
                        Index const              bucketSz,
                        Index const              splitSz,
                        Index const              nBatch)
-  : Parent("NUFFTOp")
+  : Parent("NUFFT")
   , gridder{traj, ktype, osamp, nChan / nBatch, basis, bucketSz, splitSz}
   , workspace{gridder.ishape}
   , pad{AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape}
@@ -33,17 +33,17 @@ NUFFTOp<NDim>::NUFFTOp(Sz<NDim> const           matrix,
 }
 
 template <int NDim>
-auto NUFFTOp<NDim>::Make(Sz<NDim> const           matrix,
+auto NUFFT<NDim>::Make(Sz<NDim> const           matrix,
                          TrajectoryN<NDim> const &traj,
                          GridOpts                &opts,
                          Index const              nC,
-                         Basis<Cx> const         &basis) -> std::shared_ptr<NUFFTOp<NDim>>
+                         Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim>>
 {
-  return std::make_shared<NUFFTOp<NDim>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.bucketSize.Get(),
+  return std::make_shared<NUFFT<NDim>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.bucketSize.Get(),
                                          opts.splitSize.Get(), opts.batches.Get());
 }
 
-template <int NDim> void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
+template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -71,7 +71,7 @@ template <int NDim> void NUFFTOp<NDim>::forward(InCMap const &x, OutMap &y) cons
   this->finishForward(y, time);
 }
 
-template <int NDim> void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) const
+template <int NDim> void NUFFT<NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -100,8 +100,8 @@ template <int NDim> void NUFFTOp<NDim>::adjoint(OutCMap const &y, InMap &x) cons
   this->finishAdjoint(x, time);
 }
 
-template struct NUFFTOp<1>;
-template struct NUFFTOp<2>;
-template struct NUFFTOp<3>;
+template struct NUFFT<1>;
+template struct NUFFT<2>;
+template struct NUFFT<3>;
 
-} // namespace rl
+} // namespace rl::TOps

@@ -5,11 +5,11 @@
 
 using namespace std::complex_literals;
 
-namespace rl {
+namespace rl::TOps {
 
 template <int NDim>
-NDFTOp<NDim>::NDFTOp(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis<Cx> const &b)
-  : Parent("NDFTOp", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
+NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis<Cx> const &b)
+  : Parent("NDFT", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
 {
   static_assert(NDim < 4);
@@ -60,19 +60,19 @@ NDFTOp<NDim>::NDFTOp(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis<
 }
 
 template <int NDim>
-auto NDFTOp<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis)
-  -> std::shared_ptr<NDFTOp<NDim>>
+auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis)
+  -> std::shared_ptr<NDFT<NDim>>
 {
-  return std::make_shared<NDFTOp<NDim>>(matrix, traj, nC, basis);
+  return std::make_shared<NDFT<NDim>>(matrix, traj, nC, basis);
 }
 
 template <int NDim>
-void NDFTOp<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp)
+void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp)
 {
-  PadOp<float, NDim, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
+  TOps::Pad<float, NDim, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
   Δf.resize(N);
   assert(N == pad.rows());
-  typename PadOp<float, NDim, NDim>::OutMap fm(Δf.data(), pad.oshape);
+  typename TOps::Pad<float, NDim, NDim>::OutMap fm(Δf.data(), pad.oshape);
   pad.forward(f0map, fm);
   t.resize(nSamp);
   t[0] = t0;
@@ -82,8 +82,7 @@ void NDFTOp<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, floa
   Log::Print("Off-resonance correction. f0 range is {} to {} Hz", Minimum(Δf), Maximum(Δf));
 }
 
-template <int NDim>
-void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
+template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const  time = this->startForward(x);
   Index const nC = ishape[0];
@@ -106,12 +105,11 @@ void NDFTOp<NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <int NDim>
-void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
+template <int NDim> void NDFT<NDim>::adjoint(OutCMap const &yy, InMap &x) const
 {
-  auto const time = this->startAdjoint(yy);
-  OutTensor  sy;
-  OutCMap    y(yy);
+  auto const                             time = this->startAdjoint(yy);
+  OutTensor                              sy;
+  OutCMap                                y(yy);
   Index const                            nC = ishape[0];
   Index const                            nV = ishape[1];
   Eigen::TensorMap<Eigen::Tensor<Cx, 3>> xm(x.data(), nC, nV, N);
@@ -138,8 +136,8 @@ void NDFTOp<NDim>::adjoint(OutCMap const &yy, InMap &x) const
   this->finishAdjoint(x, time);
 }
 
-template struct NDFTOp<1>;
-template struct NDFTOp<2>;
-template struct NDFTOp<3>;
+template struct NDFT<1>;
+template struct NDFT<2>;
+template struct NDFT<3>;
 
-} // namespace rl
+} // namespace rl::TOps

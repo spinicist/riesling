@@ -37,8 +37,8 @@ void main_pdhg(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
-  auto const recon = SENSERecon(coreOpts, gridOpts, traj, nS, sense, basis);
+  auto const sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+  auto const recon = Recon::SENSE(coreOpts, gridOpts, traj, nS, sense, basis);
   auto const shape = recon->ishape;
   auto const P =
     make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreOpts.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());

@@ -34,11 +34,11 @@ void main_psf(args::Subparser &parser)
   Index const nB = basis.dimension(0);
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
-  std::shared_ptr<TOp<Cx, 5, 3>> A = nullptr;
+  std::shared_ptr<TOps::TOp<Cx, 5, 3>> A = nullptr;
   if (coreOpts.ndft) {
-    A = NDFTOp<3>::Make(shape, traj.points(), nC, basis);
+    A = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
   } else {
-    A = NUFFTOp<3>::Make(shape, traj, gridOpts, nC, basis);
+    A = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);
   }
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
@@ -57,7 +57,7 @@ void main_psf(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "x", "y", "z"});
 
   if (mtf) {
-    auto const fft = Ops::FFTOp<4, 3>(xm.dimensions());
+    auto const fft = TOps::FFT<4, 3>(xm.dimensions());
     Log::Print("Calculating MTF");
     xm *= xm.constant(std::sqrt(Product(shape)));
     fft.forward(xm);

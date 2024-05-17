@@ -19,15 +19,15 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
 {
   Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
   float const osamp = 1.25;
-  auto        nufft = ndft ? (TOp<Cx, 5, 3>::Ptr)std::make_shared<NDFTOp<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
-                           : (TOp<Cx, 5, 3>::Ptr)std::make_shared<NUFFTOp<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
+  auto        nufft = ndft ? (TOps::TOp<Cx, 5, 3>::Ptr)std::make_shared<TOps::NDFT<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
+                           : (TOps::TOp<Cx, 5, 3>::Ptr)std::make_shared<TOps::NUFFT<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
   Cx3         W(nufft->oshape);
   Log::Print("Starting preconditioner calculation");
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
   Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
   ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
-  PadOp<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
+  TOps::Pad<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
   Cx5             xcorr(padX.oshape);
   xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
   auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));

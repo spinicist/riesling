@@ -15,7 +15,7 @@ TEST_CASE("Wavelets", "[tform]")
   {
     Sz4 const shape{sz, 1, 1, 1};
     Sz4 const dims{1, 0, 0, 0};
-    Wavelets  wave(shape, 6, dims);
+    TOps::Wavelets  wave(shape, 6, dims);
     Cx4       x(shape);
     x.setZero();
     x(sz / 2, 0, 0, 0) = Cx(1.f);
@@ -32,7 +32,7 @@ TEST_CASE("Wavelets", "[tform]")
   {
     Sz4 const shape{sz, sz, 1, 1};
     Sz4 const dims{1, 1, 0, 0};
-    Wavelets  wave(shape, 6, dims);
+    TOps::Wavelets  wave(shape, 6, dims);
     Cx4       x(shape);
     x.setZero();
     x(sz / 2, sz / 2, 0, 0) = Cx(1.f);
@@ -49,7 +49,7 @@ TEST_CASE("Wavelets", "[tform]")
   {
     Sz4 const shape{1, sz, sz, sz};
     Sz4 const dims{0, 1, 1, 1};
-    Wavelets  wave(shape, 6, dims);
+    TOps::Wavelets  wave(shape, 6, dims);
     Cx4       x(shape);
     x.setZero();
     x(0, sz / 2, sz / 2, sz / 2) = Cx(1.f);

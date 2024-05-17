@@ -1,42 +1,40 @@
 #include "fft.hpp"
 #include "../fft.hpp"
 
-namespace rl::Ops {
+namespace rl::TOps {
 
 template <int Rank, int FFTRank>
-FFTOp<Rank, FFTRank>::FFTOp(InDims const &dims)
-  : Parent("FFTOp", dims, dims)
+FFT<Rank, FFTRank>::FFT(InDims const &dims)
+  : Parent("FFT", dims, dims)
 {
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
-  ph_ = FFT::PhaseShift(LastN<FFTRank>(ishape));
+  ph_ = rl::FFT::PhaseShift(LastN<FFTRank>(ishape));
 }
 
 template <int Rank, int FFTRank>
-FFTOp<Rank, FFTRank>::FFTOp(InMap x)
-  : Parent("FFTOp", x.dimensions(), x.dimensions())
+FFT<Rank, FFTRank>::FFT(InMap x)
+  : Parent("FFT", x.dimensions(), x.dimensions())
 {
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
 }
 
-template <int Rank, int FFTRank>
-void FFTOp<Rank, FFTRank>::forward(InCMap const &x, OutMap &y) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y = x;
-  FFT::Forward(y, dims_, ph_);
+  rl::FFT::Forward(y, dims_, ph_);
   this->finishForward(y, time);
 }
 
-template <int Rank, int FFTRank>
-void FFTOp<Rank, FFTRank>::adjoint(OutCMap const &y, InMap &x) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   x = y;
-  FFT::Adjoint(x, dims_, ph_);
+  rl::FFT::Adjoint(x, dims_, ph_);
   this->finishAdjoint(x, time);
 }
 
-template struct FFTOp<4, 3>;
-template struct FFTOp<5, 3>;
+template struct FFT<4, 3>;
+template struct FFT<5, 3>;
 
-} // namespace rl::Ops
+} // namespace rl::TOps

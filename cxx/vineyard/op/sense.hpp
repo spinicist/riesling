@@ -2,13 +2,13 @@
 
 #include "top.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-struct SenseOp final : TOp<Cx, 4, 5>
+struct SENSE final : TOp<Cx, 4, 5>
 {
   OP_INHERIT(Cx, 4, 5)
-  SenseOp(Cx5 const &maps, Index const frames);
-  OP_DECLARE(SenseOp)
+  SENSE(Cx5 const &maps, Index const frames);
+  OP_DECLARE(SENSE)
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
 
@@ -19,4 +19,4 @@ private:
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
 };
 
-} // namespace rl
+} // namespace rl::TOps

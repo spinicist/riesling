@@ -2,23 +2,23 @@
 
 #include "top.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-struct GradOp final : TOp<Cx, 4, 5>
+struct Grad final : TOp<Cx, 4, 5>
 {
   OP_INHERIT(Cx, 4, 5)
-  GradOp(InDims const ishape, std::vector<Index> const &gradDims);
-  OP_DECLARE(GradOp)
+  Grad(InDims const ishape, std::vector<Index> const &gradDims);
+  OP_DECLARE(Grad)
 
 private:
   std::vector<Index> dims_;
 };
 
-struct GradVecOp final : TOp<Cx, 5, 5>
+struct GradVec final : TOp<Cx, 5, 5>
 {
   OP_INHERIT(Cx, 5, 5)
-  GradVecOp(InDims const dims);
-  OP_DECLARE(GradVecOp)
+  GradVec(InDims const dims);
+  OP_DECLARE(GradVec)
 };
 
-} // namespace rl
+} // namespace rl::TOps

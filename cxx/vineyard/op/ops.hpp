@@ -5,12 +5,9 @@
 
 #include <initializer_list>
 
-namespace rl {
+namespace rl::Ops {
 
-namespace Ops {
-
-template <typename Scalar_ = Cx>
-struct Op
+template <typename Scalar_ = Cx> struct Op
 {
   using Scalar = Scalar_;
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
@@ -37,8 +34,7 @@ struct Op
   virtual auto operator+(Scalar const) const -> std::shared_ptr<Op<Scalar>>;
 };
 
-template <typename Scalar = Cx>
-struct Identity final : Op<Scalar>
+template <typename Scalar = Cx> struct Identity final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
@@ -54,8 +50,7 @@ private:
   Index sz;
 };
 
-template <typename Scalar = Cx>
-struct MatMul final : Op<Scalar>
+template <typename Scalar = Cx> struct MatMul final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
@@ -75,8 +70,7 @@ private:
 };
 
 //! Scale the output of another Linear Operator
-template <typename Scalar = Cx>
-struct DiagScale final : Op<Scalar>
+template <typename Scalar = Cx> struct DiagScale final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
@@ -96,8 +90,7 @@ private:
   Index sz;
 };
 
-template <typename Scalar = Cx>
-struct DiagRep final : Op<Scalar>
+template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
 {
   using typename Op<Scalar>::Map;
   using typename Op<Scalar>::CMap;
@@ -122,8 +115,7 @@ private:
 };
 
 //! Multiply operators, i.e. y = A * B * x
-template <typename Scalar = Cx>
-struct Multiply final : Op<Scalar>
+template <typename Scalar = Cx> struct Multiply final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
   using typename Op<Scalar>::Map;
@@ -141,8 +133,7 @@ struct Multiply final : Op<Scalar>
 };
 
 //! Vertically stack operators, i.e. A = [B; C]
-template <typename Scalar = Cx>
-struct VStack final : Op<Scalar>
+template <typename Scalar = Cx> struct VStack final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
   using typename Op<Scalar>::Map;
@@ -163,8 +154,7 @@ private:
 };
 
 //! Diagonally stack operators, i.e. A = [B 0; 0 C]
-template <typename Scalar = Cx>
-struct DStack final : Op<Scalar>
+template <typename Scalar = Cx> struct DStack final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
   using typename Op<Scalar>::Map;
@@ -183,8 +173,7 @@ struct DStack final : Op<Scalar>
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
 
-template <typename Scalar = Cx>
-struct Extract final : Op<Scalar>
+template <typename Scalar = Cx> struct Extract final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
   using typename Op<Scalar>::Map;
@@ -201,8 +190,7 @@ private:
   Index r, c, start;
 };
 
-template <typename Scalar = Cx>
-struct Subtract final : Op<Scalar>
+template <typename Scalar = Cx> struct Subtract final : Op<Scalar>
 {
   using typename Op<Scalar>::Vector;
   using typename Op<Scalar>::Map;
@@ -219,6 +207,4 @@ private:
   std::shared_ptr<Op<Scalar>> a, b;
 };
 
-} // namespace Ops
-
-} // namespace rl
+} // namespace rl::Ops

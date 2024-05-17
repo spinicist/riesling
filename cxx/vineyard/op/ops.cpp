@@ -2,9 +2,7 @@
 
 #include <numeric>
 
-namespace rl {
-
-namespace Ops {
+namespace rl::Ops {
 
 template <typename S>
 Op<S>::Op(std::string const &n)
@@ -12,8 +10,7 @@ Op<S>::Op(std::string const &n)
 {
 }
 
-template <typename S>
-auto Op<S>::forward(Vector const &x) const -> Vector
+template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
 {
   Log::Debug("Op {} forward x {} rows {} cols {}", name, x.rows(), rows(), cols());
   assert(x.rows() == cols());
@@ -23,8 +20,7 @@ auto Op<S>::forward(Vector const &x) const -> Vector
   return y;
 }
 
-template <typename S>
-auto Op<S>::adjoint(Vector const &y) const -> Vector
+template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
 {
   Log::Debug("Op {} adjoint y {} rows {} cols {}", name, y.rows(), rows(), cols());
   assert(y.rows() == rows());
@@ -34,8 +30,7 @@ auto Op<S>::adjoint(Vector const &y) const -> Vector
   return x;
 }
 
-template <typename S>
-void Op<S>::forward(Vector const &x, Vector &y) const
+template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
 {
   Log::Debug("Op {} forward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
   assert(x.rows() == cols());
@@ -45,8 +40,7 @@ void Op<S>::forward(Vector const &x, Vector &y) const
   this->forward(xm, ym);
 }
 
-template <typename S>
-void Op<S>::adjoint(Vector const &y, Vector &x) const
+template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
 {
   Log::Debug("Op {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
   assert(x.rows() == cols());
@@ -56,20 +50,17 @@ void Op<S>::adjoint(Vector const &y, Vector &x) const
   this->adjoint(ym, xm);
 }
 
-template <typename S>
-auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>
+template <typename S> auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
   Log::Fail("Op {} does not have an inverse", name);
 }
 
-template <typename S>
-auto Op<S>::inverse(float const bias, float const scale) const -> std::shared_ptr<Op<S>>
+template <typename S> auto Op<S>::inverse(float const bias, float const scale) const -> std::shared_ptr<Op<S>>
 {
   Log::Fail("Op {} does not have an inverse", name);
 }
 
-template <typename S>
-auto Op<S>::operator+(S const) const -> std::shared_ptr<Op<S>>
+template <typename S> auto Op<S>::operator+(S const) const -> std::shared_ptr<Op<S>>
 {
   Log::Fail("Op {} does not have operator+", name);
 }
@@ -84,27 +75,17 @@ Identity<S>::Identity(Index const s)
 {
 }
 
-template <typename S>
-auto Identity<S>::rows() const -> Index
-{
-  return sz;
-}
+template <typename S> auto Identity<S>::rows() const -> Index { return sz; }
 
-template <typename S>
-auto Identity<S>::cols() const -> Index
-{
-  return sz;
-}
+template <typename S> auto Identity<S>::cols() const -> Index { return sz; }
 
-template <typename S>
-void Identity<S>::forward(CMap const &x, Map &y) const
+template <typename S> void Identity<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == y.rows() && x.rows() == sz);
   y = x;
 }
 
-template <typename S>
-void Identity<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void Identity<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == y.rows() && x.rows() == sz);
   x = y;
@@ -120,27 +101,17 @@ MatMul<S>::MatMul(Matrix const m)
 {
 }
 
-template <typename S>
-auto MatMul<S>::rows() const -> Index
-{
-  return mat.rows();
-}
+template <typename S> auto MatMul<S>::rows() const -> Index { return mat.rows(); }
 
-template <typename S>
-auto MatMul<S>::cols() const -> Index
-{
-  return mat.cols();
-}
+template <typename S> auto MatMul<S>::cols() const -> Index { return mat.cols(); }
 
-template <typename S>
-void MatMul<S>::forward(CMap const &x, Map &y) const
+template <typename S> void MatMul<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == mat.cols() && y.rows() == mat.rows());
   y = mat * x;
 }
 
-template <typename S>
-void MatMul<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void MatMul<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == mat.cols() && y.rows() == mat.rows());
   x = mat.adjoint() * y;
@@ -157,35 +128,24 @@ DiagScale<S>::DiagScale(Index const sz1, float const s1)
 {
 }
 
-template <typename S>
-auto DiagScale<S>::rows() const -> Index
-{
-  return sz;
-}
-template <typename S>
-auto DiagScale<S>::cols() const -> Index
-{
-  return sz;
-}
+template <typename S> auto DiagScale<S>::rows() const -> Index { return sz; }
+template <typename S> auto DiagScale<S>::cols() const -> Index { return sz; }
 
-template <typename S>
-void DiagScale<S>::forward(CMap const &x, Map &y) const
+template <typename S> void DiagScale<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   y = x * scale;
 }
 
-template <typename S>
-void DiagScale<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void DiagScale<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   x = y * scale;
 }
 
-template <typename S>
-auto DiagScale<S>::inverse() const -> std::shared_ptr<Op<S>>
+template <typename S> auto DiagScale<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
   return std::make_shared<DiagScale>(sz, 1.f / scale);
 }
@@ -212,19 +172,10 @@ DiagRep<S>::DiagRep(Index const n, Vector const &v, float const b, float const s
 {
 }
 
-template <typename S>
-auto DiagRep<S>::rows() const -> Index
-{
-  return s.rows() * reps;
-}
-template <typename S>
-auto DiagRep<S>::cols() const -> Index
-{
-  return s.rows() * reps;
-}
+template <typename S> auto DiagRep<S>::rows() const -> Index { return s.rows() * reps; }
+template <typename S> auto DiagRep<S>::cols() const -> Index { return s.rows() * reps; }
 
-template <typename S>
-void DiagRep<S>::forward(CMap const &x, Map &y) const
+template <typename S> void DiagRep<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -236,8 +187,7 @@ void DiagRep<S>::forward(CMap const &x, Map &y) const
   }
 }
 
-template <typename S>
-void DiagRep<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void DiagRep<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -249,8 +199,7 @@ void DiagRep<S>::adjoint(CMap const &y, Map &x) const
   }
 }
 
-template <typename S>
-auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>
+template <typename S> auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>
 {
   return std::make_shared<DiagRep>(reps, s.array(), b, sc);
 }
@@ -267,19 +216,10 @@ Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)
   assert(A->cols() == B->rows());
 }
 
-template <typename S>
-auto Multiply<S>::rows() const -> Index
-{
-  return A->rows();
-}
-template <typename S>
-auto Multiply<S>::cols() const -> Index
-{
-  return B->cols();
-}
+template <typename S> auto Multiply<S>::rows() const -> Index { return A->rows(); }
+template <typename S> auto Multiply<S>::cols() const -> Index { return B->cols(); }
 
-template <typename S>
-void Multiply<S>::forward(CMap const &x, Map &y) const
+template <typename S> void Multiply<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -290,8 +230,7 @@ void Multiply<S>::forward(CMap const &x, Map &y) const
   A->forward(tcm, y);
 }
 
-template <typename S>
-void Multiply<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void Multiply<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -330,28 +269,21 @@ VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::vector<std::shared_ptr<Op<S>>
   check();
 }
 
-template <typename S>
-void VStack<S>::check()
+template <typename S> void VStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {
     assert(ops[ii]->cols() == ops[ii + 1]->cols());
   }
 }
 
-template <typename S>
-auto VStack<S>::rows() const -> Index
+template <typename S> auto VStack<S>::rows() const -> Index
 {
   return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->rows(); });
 }
 
-template <typename S>
-auto VStack<S>::cols() const -> Index
-{
-  return ops.front()->cols();
-}
+template <typename S> auto VStack<S>::cols() const -> Index { return ops.front()->cols(); }
 
-template <typename S>
-void VStack<S>::forward(CMap const &x, Map &y) const
+template <typename S> void VStack<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -363,8 +295,7 @@ void VStack<S>::forward(CMap const &x, Map &y) const
   }
 }
 
-template <typename S>
-void VStack<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void VStack<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -397,20 +328,17 @@ DStack<S>::DStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
 {
 }
 
-template <typename S>
-auto DStack<S>::rows() const -> Index
+template <typename S> auto DStack<S>::rows() const -> Index
 {
   return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->rows(); });
 }
 
-template <typename S>
-auto DStack<S>::cols() const -> Index
+template <typename S> auto DStack<S>::cols() const -> Index
 {
   return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->cols(); });
 }
 
-template <typename S>
-void DStack<S>::forward(CMap const &x, Map &y) const
+template <typename S> void DStack<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -426,8 +354,7 @@ void DStack<S>::forward(CMap const &x, Map &y) const
   assert(ic == cols());
 }
 
-template <typename S>
-void DStack<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void DStack<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -443,8 +370,7 @@ void DStack<S>::adjoint(CMap const &y, Map &x) const
   assert(ic == cols());
 }
 
-template <typename S>
-auto DStack<S>::inverse() const -> std::shared_ptr<Op<S>>
+template <typename S> auto DStack<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
   std::vector<std::shared_ptr<Op<S>>> inverses(ops.size());
   for (size_t ii = 0; ii < ops.size(); ii++) {
@@ -465,27 +391,17 @@ Extract<S>::Extract(Index const cols, Index const st, Index const rows)
 {
 }
 
-template <typename S>
-auto Extract<S>::rows() const -> Index
-{
-  return r;
-}
-template <typename S>
-auto Extract<S>::cols() const -> Index
-{
-  return c;
-}
+template <typename S> auto Extract<S>::rows() const -> Index { return r; }
+template <typename S> auto Extract<S>::cols() const -> Index { return c; }
 
-template <typename S>
-void Extract<S>::forward(CMap const &x, Map &y) const
+template <typename S> void Extract<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   y = x.segment(start, r);
 }
 
-template <typename S>
-void Extract<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void Extract<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -507,19 +423,10 @@ Subtract<S>::Subtract(std::shared_ptr<Op<S>> aa, std::shared_ptr<Op<S>> bb)
   assert(a->cols() == b->cols());
 }
 
-template <typename S>
-auto Subtract<S>::rows() const -> Index
-{
-  return a->rows();
-}
-template <typename S>
-auto Subtract<S>::cols() const -> Index
-{
-  return a->cols();
-}
+template <typename S> auto Subtract<S>::rows() const -> Index { return a->rows(); }
+template <typename S> auto Subtract<S>::cols() const -> Index { return a->cols(); }
 
-template <typename S>
-void Subtract<S>::forward(CMap const &x, Map &y) const
+template <typename S> void Subtract<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -530,8 +437,7 @@ void Subtract<S>::forward(CMap const &x, Map &y) const
   y -= tm;
 }
 
-template <typename S>
-void Subtract<S>::adjoint(CMap const &y, Map &x) const
+template <typename S> void Subtract<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -545,6 +451,4 @@ void Subtract<S>::adjoint(CMap const &y, Map &x) const
 template struct Subtract<float>;
 template struct Subtract<Cx>;
 
-} // namespace Ops
-
-} // namespace rl
+} // namespace rl::Ops

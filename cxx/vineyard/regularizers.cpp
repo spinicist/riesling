@@ -34,18 +34,18 @@ RegOpts::RegOpts(args::Subparser &parser)
 
 Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::Op<Cx>> &A)
 {
-  ext_x = std::make_shared<TensorIdentity<Cx, 4>>(shape); // Need for TGV, sigh
+  ext_x = std::make_shared<TOps::Identity<Cx, 4>>(shape); // Need for TGV, sigh
 
   if (opts.tgv) {
     if (opts.tgvl2) {
       Log::Fail("You tried to TGVL2 your TGV. Nope.");
     }
-    auto grad_x = std::make_shared<GradOp>(shape, std::vector<Index>{1, 2, 3});
+    auto grad_x = std::make_shared<TOps::Grad>(shape, std::vector<Index>{1, 2, 3});
     ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
     auto prox1 = std::make_shared<Proxs::L1>(opts.tgv.Get(), op1->rows());
-    auto grad_v = std::make_shared<GradVecOp>(grad_x->oshape);
+    auto grad_v = std::make_shared<TOps::GradVec>(grad_x->oshape);
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
     auto prox2 = std::make_shared<Proxs::L1>(opts.tgv.Get(), op2->rows());
     prox = {prox1, prox2};
@@ -58,12 +58,12 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
     if (opts.tgv) {
       Log::Fail("You tried to TGV your TGV-L2. Nope.");
     }
-    auto grad_x = std::make_shared<GradOp>(shape, std::vector<Index>{1, 2, 3});
+    auto grad_x = std::make_shared<TOps::Grad>(shape, std::vector<Index>{1, 2, 3});
     ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
     auto prox1 = std::make_shared<Proxs::L2>(opts.tgvl2.Get(), op1->rows(), shape[0]);
-    auto grad_v = std::make_shared<GradVecOp>(grad_x->oshape);
+    auto grad_v = std::make_shared<TOps::GradVec>(grad_x->oshape);
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
     auto prox2 = std::make_shared<Proxs::L2>(opts.tgvl2.Get(), op2->rows(), shape[0]);
     prox = {prox1, prox2};
@@ -73,7 +73,7 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
   }
 
   if (opts.wavelets) {
-    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
+    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 4>>(shape), ext_x));
     prox.push_back(
       std::make_shared<Proxs::L1Wavelets>(opts.wavelets.Get(), shape, opts.waveWidth.Get(), opts.waveDims.Get()));
     sizes.push_back(shape);
@@ -81,35 +81,35 @@ Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::
 
   if (opts.llr) {
     if (opts.llrFFT) {
-      ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::FFTOp<4, 3>>(shape), ext_x));
+      ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::FFT<4, 3>>(shape), ext_x));
     } else {
-      ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
+      ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 4>>(shape), ext_x));
     }
     prox.push_back(std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape));
     sizes.push_back(shape);
   }
 
   if (opts.l1) {
-    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
+    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 4>>(shape), ext_x));
     prox.push_back(std::make_shared<Proxs::L1>(opts.l1.Get(), ops.back()->rows()));
     sizes.push_back(shape);
   }
 
   if (opts.nmrent) {
-    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TensorIdentity<Cx, 4>>(shape), ext_x));
+    ops.push_back(std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 4>>(shape), ext_x));
     prox.push_back(std::make_shared<Proxs::NMREntropy>(opts.nmrent.Get(), ops.back()->rows()));
     sizes.push_back(shape);
   }
 
   if (opts.tv) {
-    auto grad = std::make_shared<GradOp>(shape, std::vector<Index>{1, 2, 3});
+    auto grad = std::make_shared<TOps::Grad>(shape, std::vector<Index>{1, 2, 3});
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(grad, ext_x));
     prox.push_back(std::make_shared<Proxs::L1>(opts.tv.Get(), ops.back()->rows()));
     sizes.push_back(grad->oshape);
   }
 
   if (opts.tvt) {
-    auto grad = std::make_shared<GradOp>(shape, std::vector<Index>{0});
+    auto grad = std::make_shared<TOps::Grad>(shape, std::vector<Index>{0});
     ops.push_back(std::make_shared<Ops::Multiply<Cx>>(grad, ext_x));
     prox.push_back(std::make_shared<Proxs::L1>(opts.tvt.Get(), ops.back()->rows()));
     sizes.push_back(grad->oshape);

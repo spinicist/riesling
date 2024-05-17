@@ -1,6 +1,6 @@
 #include "kernels.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
 template <typename Sc, int ND, int NK>
 Kernels<Sc, ND, NK>::Kernels(InDims const ish, Sz<NK> const d, Sz<NK> const w)

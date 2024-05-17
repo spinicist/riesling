@@ -6,7 +6,7 @@
 #include "tensors.hpp"
 #include "threads.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
 template <typename S, int NDim>
 Apodize<S, NDim>::Apodize(InDims const ish, Sz<NDim> const gshape, std::shared_ptr<Kernel<Scalar, NDim>> const &kernel)
@@ -27,24 +27,22 @@ Apodize<S, NDim>::Apodize(InDims const ish, Sz<NDim> const gshape, std::shared_p
   Eigen::Tensor<Cx, NDim> k = kernel->at(Eigen::Matrix<float, NDim, 1>::Zero()).template cast<Cx>();
   float const             scale = std::sqrt(Product(shape));
   k = k * k.constant(scale);
-  PadOp<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
+  TOps::Pad<Cx, NDim, NDim> padK(k.dimensions(), temp.dimensions());
   temp = padK.forward(k);
   FFT::Adjoint(temp, FFT::PhaseShift(temp.dimensions()));
-  PadOp<Cx, NDim, NDim> padA(shape, gshape);
+  TOps::Pad<Cx, NDim, NDim> padA(shape, gshape);
   apo_.resize(shape);
   apo_.device(Threads::GlobalDevice()) = padA.adjoint(temp).abs().inverse().template cast<Cx>();
 }
 
-template <typename S, int NDim>
-void Apodize<S, NDim>::forward(InCMap const &x, OutMap &y) const
+template <typename S, int NDim> void Apodize<S, NDim>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(y, time);
 }
 
-template <typename S, int NDim>
-void Apodize<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
+template <typename S, int NDim> void Apodize<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   x.device(Threads::GlobalDevice()) = y * apo_.reshape(res_).broadcast(brd_);
@@ -55,4 +53,4 @@ template struct Apodize<Cx, 1>;
 template struct Apodize<Cx, 2>;
 template struct Apodize<Cx, 3>;
 
-} // namespace rl
+} // namespace rl::TOps

@@ -31,7 +31,7 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const A = Channels(coreOpts, gridOpts, traj, nC, nS, basis);
+  auto const A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 

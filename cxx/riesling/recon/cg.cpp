@@ -32,7 +32,7 @@ void main_cg(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+  auto const sense = std::make_shared<SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
   auto const recon = SENSERecon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
   auto       normEqs = std::make_shared<NormalOp<Cx>>(recon);
   ConjugateGradients<Cx> cg{normEqs, its.Get(), thr.Get(), true};

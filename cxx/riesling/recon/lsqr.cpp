@@ -39,7 +39,7 @@ void main_lsqr(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<SenseOp>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+  auto const sense = std::make_shared<SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
   auto const A = SENSERecon(coreOpts, gridOpts, sdcOpts, traj, sense, basis);
   auto const M = make_kspace_pre(pre.Get(), A->oshape[0], traj, basis, preBias.Get());
   auto       debug = [&A](Index const i, LSQR::Vector const &x) {

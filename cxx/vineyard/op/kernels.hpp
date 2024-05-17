@@ -2,7 +2,7 @@
 
 #include "top.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
 template <typename Sc, int ND, int NK> struct Kernels final : TOp<Sc, ND, ND + 1>
 {

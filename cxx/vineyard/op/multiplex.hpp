@@ -2,10 +2,9 @@
 
 #include "top.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-template <typename Sc, int ND>
-struct Multiplex final : TOp<Sc, ND, ND + 1>
+template <typename Sc, int ND> struct Multiplex final : TOp<Sc, ND, ND + 1>
 {
   OP_INHERIT(Sc, ND, ND + 1)
   using Parent::adjoint;
@@ -45,4 +44,4 @@ struct Multiplex final : TOp<Sc, ND, ND + 1>
   }
 };
 
-} // namespace rl
+} // namespace rl::TOps

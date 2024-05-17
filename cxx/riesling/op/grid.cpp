@@ -28,7 +28,7 @@ void main_grid(args::Subparser &parser)
   auto const nC = shape[0];
   auto const nV = shape[shape.size() - 1];
 
-  auto const A = Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
+  auto const A = TOps::Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(reader.readInfo());

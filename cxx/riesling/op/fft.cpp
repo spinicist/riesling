@@ -18,7 +18,7 @@ void main_fft(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5         images = input.readTensor<Cx5>();
-  auto const  fft = Ops::FFTOp<4, 3>(FirstN<4>(images.dimensions()));
+  auto const  fft = TOps::FFT<4, 3>(FirstN<4>(images.dimensions()));
   for (Index iv = 0; iv < images.dimension(4); iv++) {
     Cx4 img = images.chip<4>(iv);
     if (adj) {

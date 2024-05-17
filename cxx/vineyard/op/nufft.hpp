@@ -6,12 +6,12 @@
 #include "grid.hpp"
 #include "pad.hpp"
 
-namespace rl {
+namespace rl::TOps {
 
-template <int NDim> struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
+template <int NDim> struct NUFFT final : TOp<Cx, NDim + 2, 3>
 {
   OP_INHERIT(Cx, NDim + 2, 3)
-  NUFFTOp(Sz<NDim> const           matrix,
+  NUFFT(Sz<NDim> const           matrix,
           TrajectoryN<NDim> const &traj,
           std::string const       &ktype,
           float const              osamp,
@@ -20,19 +20,19 @@ template <int NDim> struct NUFFTOp final : TOp<Cx, NDim + 2, 3>
           Index const              bucketSz = 32,
           Index const              splitSz = 16384,
           Index const              nBatches = 1);
-  OP_DECLARE(NUFFTOp)
+  OP_DECLARE(NUFFT)
 
   static auto Make(Sz<NDim> const matrix, TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis<Cx> const &basis)
-    -> std::shared_ptr<NUFFTOp<NDim>>;
+    -> std::shared_ptr<NUFFT<NDim>>;
 
   Grid<Cx, NDim> gridder;
   InTensor mutable workspace;
 
-  PadOp<Cx, NDim + 2, NDim> pad;
+  TOps::Pad<Cx, NDim + 2, NDim> pad;
   Apodize<Cx, NDim>         apo;
   Index const               batches;
   Sz<NDim>                  fftDims;
   CxN<NDim>                 fftPh;
 };
 
-} // namespace rl
+} // namespace rl::TOps

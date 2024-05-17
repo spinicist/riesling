@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-namespace rl {
+namespace rl::TOps {
 
 auto Wavelets::PaddedShape(Sz4 const shape, Sz4 const dims) -> Sz4
 {
@@ -74,8 +74,10 @@ void Wavelets::dimLoops(InMap &x, bool const reverse) const
       std::sort(otherDims.begin(), otherDims.end(), std::less{});
       // Work out the smallest wavelet transform we can do on this dimension. Super annoying.
       Index const maxSz = x.dimension(dim);
-      Index minSz = maxSz;
-      while ((minSz / 2) % 2 == 0 && minSz > 4) { minSz /= 2; }
+      Index       minSz = maxSz;
+      while ((minSz / 2) % 2 == 0 && minSz > 4) {
+        minSz /= 2;
+      }
       auto wav_task = [&](Index const ik) {
         for (Index ij = 0; ij < x.dimension(otherDims[1]); ij++) {
           for (Index ii = 0; ii < x.dimension(otherDims[0]); ii++) {
@@ -133,4 +135,4 @@ void Wavelets::wav1(Index const sz, bool const reverse, Cx1 &x) const
   x.slice(Sz1{0}, Sz1{sz}) = w;
 }
 
-} // namespace rl
+} // namespace rl::TOps

@@ -4,8 +4,8 @@
 #include "kernel/kernel.hpp"
 #include "mapping.hpp"
 #include "parse_args.hpp"
-#include "top.hpp"
 #include "threads.hpp"
+#include "top.hpp"
 
 #include <mutex>
 
@@ -19,8 +19,8 @@ struct GridOpts
   args::ValueFlag<Index>       batches, bucketSize, splitSize;
 };
 
-template <typename Scalar_, int NDim>
-struct Grid final : TOp<Scalar_, NDim + 2, 3>
+namespace TOps {
+template <typename Scalar_, int NDim> struct Grid final : TOp<Scalar_, NDim + 2, 3>
 {
   OP_INHERIT(Scalar_, NDim + 2, 3)
   using Parent::adjoint;
@@ -52,4 +52,5 @@ struct Grid final : TOp<Scalar_, NDim + 2, 3>
   void adjoint(OutCMap const &y, InMap &x) const;
 };
 
+} // namespace TOps
 } // namespace rl

@@ -1,6 +1,7 @@
 #include "grad.hpp"
 #include "threads.hpp"
-namespace rl {
+
+namespace rl::TOps {
 
 namespace {
 template <typename T1, typename T2>
@@ -25,13 +26,13 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, Sz4 const dims, Index const dim)
 }
 } // namespace
 
-GradOp::GradOp(InDims const ish, std::vector<Index> const &d)
-  : Parent("GradOp", ish, AddBack(ish, (Index)d.size()))
+Grad::Grad(InDims const ish, std::vector<Index> const &d)
+  : Parent("Grad", ish, AddBack(ish, (Index)d.size()))
   , dims_{d}
 {
 }
 
-void GradOp::forward(InCMap const &x, OutMap &y) const
+void Grad::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   y.setZero();
@@ -41,7 +42,7 @@ void GradOp::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-void GradOp::adjoint(OutCMap const &y, InMap &x) const
+void Grad::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   x.setZero();
@@ -51,12 +52,12 @@ void GradOp::adjoint(OutCMap const &y, InMap &x) const
   this->finishAdjoint(x, time);
 }
 
-GradVecOp::GradVecOp(InDims const dims)
-  : Parent("GradVecOp", dims, AddBack(FirstN<4>(dims), 6))
+GradVec::GradVec(InDims const dims)
+  : Parent("GradVec", dims, AddBack(FirstN<4>(dims), 6))
 {
 }
 
-void GradVecOp::forward(InCMap const &x, OutMap &y) const
+void GradVec::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   Sz4 const  sz = FirstN<4>(x.dimensions());
@@ -79,7 +80,7 @@ void GradVecOp::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-void GradVecOp::adjoint(OutCMap const &y, InMap &x) const
+void GradVec::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   Sz4 const  sz = FirstN<4>(x.dimensions());
