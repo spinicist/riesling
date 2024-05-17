@@ -20,7 +20,7 @@ Kernels<Sc, ND, NK>::Kernels(InDims const ish, Sz<NK> const d, Sz<NK> const w)
     oshape[D + 1] = kW_[ii];
   }
   oshape[0] = nK;
-  Log::Debug("ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
+  Log::Print("Kernels ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
 }
 
 template <typename Sc, int ND, int NK> void Kernels<Sc, ND, NK>::forward(InCMap const &x, OutMap &y) const
@@ -88,5 +88,6 @@ template <typename Sc, int ND, int NK> void Kernels<Sc, ND, NK>::adjoint(OutCMap
 }
 
 template struct Kernels<Cx, 5, 3>;
+template struct Kernels<Cx, 5, 1>;
 
 } // namespace rl

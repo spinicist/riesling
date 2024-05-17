@@ -36,7 +36,7 @@ void main_pdhg_setup(args::Subparser &parser)
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);
 
-  PDHG pdhg(A, P, reg);
+  PDHG pdhg(A, P, reg.regs);
 
   fmt::print("{:4.3E}\n{:4.3E}", fmt::join(pdhg.σ, ","), pdhg.τ);
 }

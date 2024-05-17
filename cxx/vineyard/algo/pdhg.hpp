@@ -17,12 +17,12 @@ struct PDHG
   using CMap = typename Op::CMap;
   using Callback = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
 
-  PDHG(std::shared_ptr<Op>       A,
-       std::shared_ptr<Op>       P,
-       Regularizers const       &reg,
-       std::vector<float> const &σ = std::vector<float>(),
-       float const               τ = -1.f,
-       Callback const           &cb = nullptr);
+  PDHG(std::shared_ptr<Op>             A,
+       std::shared_ptr<Op>             P,
+       std::vector<Regularizer> const &regs,
+       std::vector<float> const       &σ = std::vector<float>(),
+       float const                     τ = -1.f,
+       Callback const                 &cb = nullptr);
 
   auto run(Cx const *bdata, Index const iterLimit) -> Vector;
 

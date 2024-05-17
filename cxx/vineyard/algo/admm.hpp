@@ -1,7 +1,7 @@
 #pragma once
 
 #include "op/ops.hpp"
-#include "prox/prox.hpp"
+#include "regularizers.hpp"
 
 namespace rl {
 
@@ -17,8 +17,7 @@ struct ADMM
   Op::Ptr A; // Forward model
   Op::Ptr M; // Pre-conditioner
 
-  std::vector<std::shared_ptr<Op>>              reg_ops;
-  std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
+  std::vector<Regularizer> regs;
 
   Index iters0 = 4;
   Index iters1 = 1;

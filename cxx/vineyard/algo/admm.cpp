@@ -25,18 +25,18 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     u_i = F_i * x + u_{i-1} - z_i
     */
 
-  Index const                                      R = reg_ops.size();
+  Index const                                      R = regs.size();
   std::vector<Vector>                              z(R), u(R);
   std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
   std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
   for (Index ir = 0; ir < R; ir++) {
-    Index const sz = reg_ops[ir]->rows();
+    Index const sz = regs[ir].T->rows();
     z[ir].resize(sz);
     z[ir].setZero();
     u[ir].resize(sz);
     u[ir].setZero();
     ρdiags[ir] = std::make_shared<Ops::DiagScale<Cx>>(sz, std::sqrt(ρ));
-    scaled_ops[ir] = std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], reg_ops[ir]);
+    scaled_ops[ir] = std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], regs[ir].T);
   }
 
   std::shared_ptr<Op> reg = std::make_shared<Ops::VStack<Cx>>(scaled_ops);
@@ -59,7 +59,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
     for (Index ir = 0; ir < R; ir++) {
-      Index rr = reg_ops[ir]->rows();
+      Index rr = regs[ir].T->rows();
       bʹ.segment(start, rr) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
       ρdiags[ir]->scale = std::sqrt(ρ);
@@ -70,17 +70,17 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
     for (Index ir = 0; ir < R; ir++) {
-      Vector const Fx = reg_ops[ir]->forward(x);
+      Vector const Fx = regs[ir].T->forward(x);
       Vector const Fxpu = Fx + u[ir];
       Vector const zprev = z[ir];
-      prox[ir]->apply(1.f / ρ, Fxpu, z[ir]);
+      regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
       u[ir] = Fxpu - z[ir];
       if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
       float const nFx = Fx.stableNorm();
       float const nz = z[ir].stableNorm();
-      float const nu = reg_ops[ir]->adjoint(u[ir]).stableNorm();
+      float const nu = regs[ir].T->adjoint(u[ir]).stableNorm();
       float const nP = (Fx - z[ir]).stableNorm();
-      float const nD = (reg_ops[ir]->adjoint(z[ir] - zprev)).stableNorm();
+      float const nD = (regs[ir].T->adjoint(z[ir] - zprev)).stableNorm();
       normFx += nFx*nFx;
       normz += nz*nz;
       normu += nu*nu;

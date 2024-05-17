@@ -12,6 +12,7 @@ struct Prox
   using Map = Eigen::Map<Vector>;
   using CMap = Eigen::Map<Vector const>;
   using Op = Ops::Op<Scalar>;
+  using Ptr = std::shared_ptr<Prox>;
 
   Prox(Index const sz);
 

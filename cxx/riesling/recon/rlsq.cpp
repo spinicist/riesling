@@ -63,8 +63,7 @@ void main_recon_rlsq(args::Subparser &parser)
 
   ADMM opt{A,
            M,
-           reg.ops,
-           reg.prox,
+           reg.regs,
            rlsqOpts.inner_its0.Get(),
            rlsqOpts.inner_its1.Get(),
            rlsqOpts.atol.Get(),

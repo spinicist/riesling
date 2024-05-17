@@ -53,7 +53,7 @@ void main_pdhg(args::Subparser &parser)
       Log::Tensor(fmt::format("pdhg-xdiff-{:02d}", ii), shape, xdiff.data());
     };
 
-  PDHG        pdhg(A, P, reg, σin.Get(), τin.Get(), debug_x);
+  PDHG        pdhg(A, P, reg.regs, σin.Get(), τin.Get(), debug_x);
   Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
   Sz3         outSz = out_cropper.size();
   float const scale = Scaling(scaling, recon, P, &noncart(0, 0, 0, 0, 0));

@@ -21,6 +21,7 @@ void main_sake(args::Subparser &parser)
 
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 1e-1)", {"lambda"}, 1.e-1f);
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 5)", {"kernel-size"}, 5);
+  args::Flag             sep(parser, "S", "Separable kernels", {'s', "seperable"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -37,11 +38,22 @@ void main_sake(args::Subparser &parser)
   auto const A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
 
-  Sz5 const    shape = A->ishape;
-  auto         fft = std::make_shared<TOps::FFT<5, 3>>(shape);
-  auto         kernels = std::make_shared<TOps::Kernels<Cx, 5, 3>>(shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
-  auto         T = std::make_shared<TOps::Compose<TOps::TOp<Cx, 5, 5>, TOps::TOp<Cx, 5, 6>>>(fft, kernels);
-  auto         slr = std::make_shared<Proxs::SLR<6>>(λ.Get(), T->oshape);
+  Sz5 const shape = A->ishape;
+
+  std::vector<Regularizer> regs;
+  auto                     T = std::make_shared<TOps::Identity<Cx, 5>>(shape);
+  if (sep) {
+    auto sx = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{2}, Sz1{kSz.Get()});
+    auto sy = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{3}, Sz1{kSz.Get()});
+    auto sz = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{4}, Sz1{kSz.Get()});
+    regs.push_back({T, sx});
+    regs.push_back({T, sy});
+    regs.push_back({T, sz});
+  } else {
+    auto slr = std::make_shared<Proxs::SLR<3>>(λ.Get(), shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
+    regs.push_back({T, slr});
+  }
+
   ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
@@ -54,8 +66,7 @@ void main_sake(args::Subparser &parser)
 
   ADMM admm{A,
             M,
-            {T},
-            {slr},
+            regs,
             rlsqOpts.inner_its0.Get(),
             rlsqOpts.inner_its1.Get(),
             rlsqOpts.atol.Get(),

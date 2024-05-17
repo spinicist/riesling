@@ -9,29 +9,39 @@
 
 namespace rl {
 
-PDHG::PDHG(std::shared_ptr<Op>       A,
-           std::shared_ptr<Op>       P,
-           Regularizers const       &reg,
-           std::vector<float> const &σin,
-           float const               τin,
-           Callback const           &cb)
+PDHG::PDHG(std::shared_ptr<Op>             A,
+           std::shared_ptr<Op>             P,
+           std::vector<Regularizer> const &regs,
+           std::vector<float> const       &σin,
+           float const                     τin,
+           Callback const                 &cb)
 {
-  Index const nR = reg.count();
-
-  Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg.ops);
+  Index const          nR = regs.size();
+  std::vector<Op::Ptr> ops(nR);
+  std::transform(regs.begin(), regs.end(), ops.begin(), [](auto R) { return R.T; });
+  Aʹ = std::make_shared<Ops::VStack<Cx>>(A, ops);
   l2 = std::make_shared<Proxs::LeastSquares<Cx>>(1.f, A->rows());
   std::vector<std::shared_ptr<Prox>> ps;
   ps.push_back(l2);
   for (Index ii = 0; ii < nR; ii++) {
-    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(reg.prox[ii]));
+    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(regs[ii].P));
   }
   proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
 
-  σ = reg.σ(σin);
+  if (σin.size() == regs.size()) {
+    σ = σin;
+  } else {
+    σ.clear();
+    for (auto &G : ops) {
+      auto eigG = PowerMethod(G, 32);
+      σ.push_back(1.f / eigG.val);
+    }
+  }
+
   std::vector<std::shared_ptr<Op>> sG;
   sG.push_back(P);
   for (Index ii = 0; ii < nR; ii++) {
-    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(reg.ops[ii]->rows(), σ[ii]));
+    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(regs[ii].T->rows(), σ[ii]));
   }
   σOp = std::make_shared<Ops::DStack<Cx>>(sG);
 

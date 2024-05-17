@@ -24,26 +24,27 @@ struct RegOpts
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;
   args::ValueFlag<Index> llrWin;
-  args::Flag             llrShift, llrFFT;
+  args::Flag             llrShift;
 
-  args::ValueFlag<float> wavelets;
+  args::ValueFlag<float>            wavelets;
   args::ValueFlag<Sz4, SzReader<4>> waveDims;
-  args::ValueFlag<Index> waveWidth;
+  args::ValueFlag<Index>            waveWidth;
+};
+
+struct Regularizer
+{
+  Ops::Op<Cx>::Ptr     T;
+  Proxs::Prox<Cx>::Ptr P;
 };
 
 struct Regularizers
 {
   using SizeN = std::variant<Sz3, Sz4, Sz5>;
+  std::vector<Regularizer>     regs;
+  std::shared_ptr<Ops::Op<Cx>> ext_x;
+  std::vector<SizeN>           sizes;
 
   Regularizers(RegOpts &regOpts, Sz4 const shape, std::shared_ptr<Ops::Op<Cx>> &A);
-
-  std::vector<std::shared_ptr<Ops::Op<Cx>>>     ops;
-  std::vector<std::shared_ptr<Proxs::Prox<Cx>>> prox;
-  std::shared_ptr<Ops::Op<Cx>>                  ext_x;
-  std::vector<SizeN>                            sizes;
-
-  auto count() const -> Index;
-  auto σ(std::vector<float> σin) const -> std::vector<float>;
 };
 
 } // namespace rl
