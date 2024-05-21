@@ -37,7 +37,7 @@ void main_op_sense(args::Subparser &parser)
       auto const temp = sense.forward(CChipMap(images, ii));
       channels.chip<5>(ii).device(Threads::GlobalDevice()) = temp;
     }
-    writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::Cartesian);
+    writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::Channels);
   } else {
     auto const channels = ireader.readTensor<Cx6>();
     if (maps.dimensions() != FirstN<5>(channels.dimensions())) {

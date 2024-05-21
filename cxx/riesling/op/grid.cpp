@@ -52,7 +52,7 @@ void main_grid(args::Subparser &parser)
     for (Index iv = 0; iv < nV; iv++) {
       cart.chip<5>(iv).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, iv)), A->ishape);
     }
-    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Cartesian);
+    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
   }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

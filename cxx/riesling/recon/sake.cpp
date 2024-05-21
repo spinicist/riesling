@@ -35,11 +35,12 @@ void main_sake(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
-  auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
+  auto const  A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
+  auto const  M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
+  float const scale = Scaling(rlsqOpts.scaling, A, M, &noncart(0, 0, 0, 0, 0));
+  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
 
-  Sz5 const shape = A->ishape;
-
+  Sz5 const                shape = A->ishape;
   std::vector<Regularizer> regs;
   auto                     T = std::make_shared<TOps::Identity<Cx, 5>>(shape);
   if (sep) {
@@ -79,15 +80,14 @@ void main_sake(args::Subparser &parser)
             debug_x,
             debug_z};
 
-  Cx5         out(AddBack(LastN<4>(A->ishape), nV));
-  float const scale = Scaling(rlsqOpts.scaling, A, M, &noncart(0, 0, 0, 0, 0));
-  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
-
+  Cx6 out(AddBack(A->ishape, nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = admm.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get());
-    auto const channelsT = Tensorfy(channels, A->ishape);
-    out.chip<4>(iv) = (channelsT * channelsT.conjugate()).sum(Sz1{0}).sqrt();
+    out.chip<5>(iv) = Tensorfy(channels, A->ishape) / out.chip<5>(iv).constant(scale);
   }
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
+  HD5::Writer writer(coreOpts.oname.Get());
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Channels);
+  writer.writeInfo(info);
+  writer.writeString("log", Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

@@ -54,7 +54,7 @@ struct DimensionNames : std::array<std::string, N> {};
 
 namespace Dims {
 DimensionNames<3> const Basis = {"v", "sample", "trace"};
-DimensionNames<6> const Cartesian = {"channel", "v", "x", "y", "z", "t"};
+DimensionNames<6> const Channels = {"channel", "v", "x", "y", "z", "t"};
 DimensionNames<5> const Image = {"v", "x", "y", "z", "t"};
 DimensionNames<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
 DimensionNames<5> const SENSE = {"channel", "v", "x", "y", "z"};
