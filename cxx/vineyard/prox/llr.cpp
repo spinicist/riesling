@@ -21,7 +21,7 @@ LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 co
   Index const M = p * p * p;
   Index const N = s[0];
   Index const B = Product(LastN<3>(s)) / (M * N);
-  λ *= (std::sqrtf(M) + std::sqrtf(N) + std::sqrt(std::logf(B * std::min(M, N))));
+  λ *= (std::sqrt(M) + std::sqrt(N) + std::sqrt(std::logf(B * std::min(M, N))));
   Log::Print("Locally Low-Rank λ {} Scaled λ {} Patch {} Window {}", l, λ, patchSize, windowSize);
 }
 

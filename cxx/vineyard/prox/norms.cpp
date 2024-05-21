@@ -53,8 +53,12 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
 {
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float      t = λ * realα->scale;
-    auto const norms =
-      x.reshaped(block, x.rows() / block).colwise().stableNorm().replicate(block, x.rows() / block).reshaped(x.rows(), 1).array();
+    auto const norms = x.reshaped(block, x.rows() / block)
+                         .colwise()
+                         .stableNorm()
+                         .replicate(block, x.rows() / block)
+                         .reshaped(x.rows(), 1)
+                         .array();
     z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (1.f - t / norms), 0.f);
     Log::Debug("L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
