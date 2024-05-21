@@ -24,6 +24,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     z_i = prox_λ/ρ(F_i * x + u_{i-1})
     u_i = F_i * x + u_{i-1} - z_i
     */
+  auto const dev = Threads::GlobalDevice();
 
   Index const                                      R = regs.size();
   std::vector<Vector>                              z(R), u(R);
@@ -52,7 +53,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 
   Vector bʹ(Aʹ->rows());
   bʹ.setZero();
-  bʹ.head(A->rows()) = b;
+  bʹ.head(A->rows()).device(dev) = b;
 
   Log::Print("ADMM Abs ε {}", ε);
   PushInterrupt();
@@ -60,7 +61,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     Index start = A->rows();
     for (Index ir = 0; ir < R; ir++) {
       Index rr = regs[ir].T->rows();
-      bʹ.segment(start, rr) = std::sqrt(ρ) * (z[ir] - u[ir]);
+      bʹ.segment(start, rr).device(dev) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
       ρdiags[ir]->scale = std::sqrt(ρ);
     }
@@ -74,7 +75,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       Vector const Fxpu = Fx + u[ir];
       Vector const zprev = z[ir];
       regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
-      u[ir] = Fxpu - z[ir];
+      u[ir].device(dev) = Fxpu - z[ir];
       if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
       float const nFx = Fx.stableNorm();
       float const nz = z[ir].stableNorm();
