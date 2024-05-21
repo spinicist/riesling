@@ -11,11 +11,12 @@ namespace rl::Proxs {
 template<int NK>
 SLR<NK>::SLR(float const l, Sz5 const sh, Sz<NK> const dims, Sz<NK> const kW)
   : Prox<Cx>(Product(sh))
-  , λ{l * std::sqrtf(Product(LastN<4>(sh)))}
+  , λ{l}
   , shape{sh}
   , F{shape}
   , H{shape, dims, kW}
 {
+  λ *= (std::sqrt(H.rows()) + std::sqrt(H.cols()));
   Log::Print("Structured Low-Rank λ {} Scaled λ {} Shape {}", l, λ, shape);
 }
 

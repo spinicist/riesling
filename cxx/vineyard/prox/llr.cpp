@@ -9,12 +9,19 @@ namespace rl::Proxs {
 
 LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 const s)
   : Prox<Cx>(Product(s))
-  , λ{l * std::sqrtf(p * p * p)}
+  , λ{l}
   , patchSize{p}
   , windowSize{w}
   , shape{s}
   , shift{doShift}
 {
+  /* λ needs to be scaled to work across block-sizes etc.
+   * This is the scaling in BART which is taken from Ong 2016 Beyond Low Rank + Sparse: Multiscale Low Rank Matrix Decomposition
+   */
+  Index const M = p * p * p;
+  Index const N = s[0];
+  Index const B = Product(LastN<3>(s)) / (M * N);
+  λ *= (std::sqrtf(M) + std::sqrtf(N) + std::sqrt(std::logf(B * std::min(M, N))));
   Log::Print("Locally Low-Rank λ {} Scaled λ {} Patch {} Window {}", l, λ, patchSize, windowSize);
 }
 
