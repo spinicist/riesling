@@ -65,6 +65,7 @@ add_library(vineyard
     phantom/sphere.cpp
     phantom/shepp-logan.cpp
     prox/entropy.cpp
+    prox/hermitian.cpp
     prox/l1-wavelets.cpp
     prox/lsq.cpp
     prox/llr.cpp

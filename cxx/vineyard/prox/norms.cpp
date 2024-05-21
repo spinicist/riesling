@@ -33,19 +33,26 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
 L2::L2(float const λ_, Index const sz_, Index const blk)
   : Prox<Cx>(sz_)
   , λ{λ_}
-  , block{blk}
+  , blockSize{blk}
 {
-  Log::Print("L2 Prox λ {}", λ);
-  if (sz_ % block != 0) { Log::Fail("Block size {} does not cleanly divide {}", block, sz_); }
-  if (block == 0) { block = sz_; }
+  if (sz_ % blockSize != 0) { Log::Fail("Block size {} does not cleanly divide {}", blockSize, sz_); }
+  if (blockSize == 0) { blockSize = sz_; }
+  λ *= std::sqrt(blk);
+  Log::Print("L2 Prox λ {} scaled λ {} block size {}", λ_, λ, blockSize);
 }
 
 void L2::apply(float const α, CMap const &x, Map &z) const
 {
   float const t = α * λ;
-  auto const  norms =
-    x.reshaped(block, x.rows() / block).colwise().stableNorm().replicate(block, x.rows() / block).reshaped(x.rows(), 1).array();
-  z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (1.f - t / norms), 0.f);
+  auto const  blks = x.rows() / blockSize;
+  for (Index ib = 0; ib < blks; ib++) {
+    auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
+    if (n > t) {
+      z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
+    } else {
+      z.segment(ib * blockSize, blockSize).setZero();
+    }
+  }
   Log::Debug("L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.stableNorm(), z.stableNorm());
 }
 
@@ -53,13 +60,15 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
 {
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float      t = λ * realα->scale;
-    auto const norms = x.reshaped(block, x.rows() / block)
-                         .colwise()
-                         .stableNorm()
-                         .replicate(block, x.rows() / block)
-                         .reshaped(x.rows(), 1)
-                         .array();
-    z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (1.f - t / norms), 0.f);
+    auto const blks = x.rows() / blockSize;
+    for (Index ib = 0; ib < blks; ib++) {
+      auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
+      if (n > t) {
+        z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
+      } else {
+        z.segment(ib * blockSize, blockSize).setZero();
+      }
+    }
     Log::Debug("L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
     Log::Fail("C++ is stupid");

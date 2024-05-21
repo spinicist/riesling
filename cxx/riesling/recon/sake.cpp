@@ -8,6 +8,7 @@
 #include "parse_args.hpp"
 #include "precon.hpp"
 #include "prox/slr.hpp"
+#include "prox/hermitian.hpp"
 #include "scaling.hpp"
 
 using namespace rl;
@@ -42,23 +43,25 @@ void main_sake(args::Subparser &parser)
 
   Sz5 const                shape = A->ishape;
   std::vector<Regularizer> regs;
-  auto                     T = std::make_shared<TOps::Identity<Cx, 5>>(shape);
-  if (sep) {
-    auto sx = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{2}, Sz1{kSz.Get()});
-    auto sy = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{3}, Sz1{kSz.Get()});
-    auto sz = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{4}, Sz1{kSz.Get()});
-    regs.push_back({T, sx});
-    regs.push_back({T, sy});
-    regs.push_back({T, sz});
-  } else {
-    auto slr = std::make_shared<Proxs::SLR<3>>(λ.Get(), shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
-    regs.push_back({T, slr});
-  }
+  // auto                     T = std::make_shared<TOps::Identity<Cx, 5>>(shape);
+  auto F = std::make_shared<TOps::FFT<5, 3>>(shape);
+  // if (sep) {
+  //   auto sx = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{2}, Sz1{kSz.Get()});
+  //   auto sy = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{3}, Sz1{kSz.Get()});
+  //   auto sz = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{4}, Sz1{kSz.Get()});
+  //   regs.push_back({T, sx});
+  //   regs.push_back({T, sy});
+  //   regs.push_back({T, sz});
+  // } else {
+  //   auto slr = std::make_shared<Proxs::SLR<3>>(λ.Get(), shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
+  //   regs.push_back({T, slr});
+  // }
+  regs.push_back({F, std::make_shared<Proxs::Hermitian>(λ.Get(), shape)});
 
   ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
-  ADMM::DebugZ debug_z = [shape = T->oshape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
+  ADMM::DebugZ debug_z = [shape = F->oshape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
                                              ADMM::Vector const &u) {
     Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
     Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());

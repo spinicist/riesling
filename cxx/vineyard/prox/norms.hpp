@@ -18,7 +18,7 @@ struct L2 final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
   float λ;
-  Index block;
+  Index blockSize;
 
   L2(float const λ, Index const sz, Index const blk);
   void apply(float const α, CMap const &x, Map &z) const;
