@@ -53,7 +53,7 @@ struct GravityReader
   }
 };
 
-auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips, char const component) -> rl::Cx3
+auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips) -> rl::Cx3
 {
   rl::HD5::Reader reader(iname);
   auto const      diskOrder = reader.order(dset);
@@ -77,20 +77,11 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
     }
     data = reader.readSlab<rl::Cx3>(dset, chips);
   }
-  switch (component) {
-  case 'x': break;
-  case 'r': data = data.real().cast<rl::Cx>(); break;
-  case 'i': data = data.imag().cast<rl::Cx>(); break;
-  case 'm': data = data.abs().cast<rl::Cx>(); break;
-  case 'p': data = data.arg().cast<rl::Cx>(); break;
-  default: rl::Log::Fail("Uknown component type {}", component);
-  }
   rl::Log::Print("Data dims {}", data.dimensions());
   return data;
 }
 
-auto CrossSections(rl::Cx3 const &data, float const win, bool const grey, float const ɣ, float const rotate)
-  -> std::vector<Magick::Image>
+auto CrossSections(rl::Cx3 const &data) -> std::vector<rl::Cx2>
 {
   auto const dShape = data.dimensions();
 
@@ -99,20 +90,8 @@ auto CrossSections(rl::Cx3 const &data, float const win, bool const grey, float 
   rl::Cx2 const X = data.chip<0>(dShape[0] / 2);
   rl::Cx2 const Y = data.chip<1>(dShape[1] / 2);
   rl::Cx2 const Z = data.chip<2>(dShape[2] / 2);
-  auto const    sliceX = rl::Colorize(X, win, grey, ɣ);
-  auto const    sliceY = rl::Colorize(Y, win, grey, ɣ);
-  auto const    sliceZ = rl::Colorize(Z, win, grey, ɣ);
-  rl::Log::Print("Cross section sizes {} {} {}", sliceX.dimensions(), sliceY.dimensions(), sliceZ.dimensions());
-  slices[0] = Magick::Image(sliceX.dimension(1), sliceX.dimension(2), "RGB", Magick::CharPixel, sliceX.data());
-  slices[1] = Magick::Image(sliceY.dimension(1), sliceY.dimension(2), "RGB", Magick::CharPixel, sliceY.data());
-  slices[2] = Magick::Image(sliceZ.dimension(1), sliceZ.dimension(2), "RGB", Magick::CharPixel, sliceZ.data());
-  slices[0].flip(); // Reverse Y for display
-  slices[0].rotate(rotate);
-  slices[1].flip(); // Reverse Y for display
-  slices[1].rotate(rotate);
-  slices[2].flip(); // Reverse Y for display
-  slices[2].rotate(rotate);
-  return slices;
+  rl::Log::Print("Cross section sizes {} {} {}", X.dimensions(), Y.dimensions(), Z.dimensions());
+  return {X, Y, Z};
 }
 
 auto SliceData(rl::Cx3 const &data,
@@ -121,11 +100,7 @@ auto SliceData(rl::Cx3 const &data,
                Index const    slEnd,
                Index const    slN,
                rl::Sz2        sl0,
-               rl::Sz2        sl1,
-               float const    win,
-               bool const     grey,
-               float const    ɣ,
-               float const    rotate) -> std::vector<Magick::Image>
+               rl::Sz2        sl1) -> std::vector<rl::Cx2>
 {
   if (slDim < 0 || slDim > 2) { rl::Log::Fail("Slice dim was {}, must be 0-2", slDim); }
   auto const shape = data.dimensions();
@@ -143,16 +118,36 @@ auto SliceData(rl::Cx3 const &data,
   auto const N = slN ? std::min(slN, maxN) : maxN;
   auto const indices = Eigen::ArrayXf::LinSpaced(N, start, end);
 
-  std::vector<Magick::Image> slices;
+  std::vector<rl::Cx2> slices;
   for (auto const index : indices) {
-    rl::Cx2    temp = data.chip(std::floor(index), slDim).slice(rl::Sz2{sl0[0], sl1[0]}, rl::Sz2{sl0[1], sl1[1]});
-    auto const slice = rl::Colorize(temp, win, grey, ɣ);
-    slices.push_back(Magick::Image(sl0[1], sl1[1], "RGB", Magick::CharPixel, slice.data()));
-    slices.back().flip(); // Reverse Y for display
-    slices.back().rotate(rotate);
+    rl::Cx2 temp = data.chip(std::floor(index), slDim).slice(rl::Sz2{sl0[0], sl1[0]}, rl::Sz2{sl0[1], sl1[1]});
+    slices.push_back(temp);
   }
-  rl::Log::Print("{} slices, dims {} {}", slices.size(), slices.front().size().height(), slices.front().size().width());
+  rl::Log::Print("{} slices, dims {} {}", slices.size(), slices.front().dimension(0), slices.front().dimension(1));
   return slices;
+}
+
+auto Colorize(
+  std::vector<rl::Cx2> const &slices, char const component, float const win, float const ɣ, float const rotate)
+{
+  std::vector<Magick::Image> colorized;
+  for (auto const &slice : slices) {
+    rl::RGBImage clr;
+    switch (component) {
+    case 'p': clr = rl::ColorizeComplex(slice / slice.abs().cast<rl::Cx>(), 1.f, 1.f); break;
+    case 'x': clr = rl::ColorizeComplex(slice, win / 2.f, ɣ); break;
+    case 'r': clr = rl::ColorizeReal(slice.real(), -win, win, ɣ); break;
+    case 'i': clr = rl::ColorizeReal(slice.imag(), -win, win, ɣ); break;
+    case 'm': clr = rl::Greyscale(slice.abs(), 0, win, ɣ); break;
+    default: rl::Log::Fail("Uknown component type {}", component);
+    }
+    auto const w = clr.dimension(1);
+    auto const h = clr.dimension(2);
+    colorized.push_back(Magick::Image(w, h, "RGB", Magick::CharPixel, clr.data()));
+    colorized.back().flip(); // Reverse Y for display
+    colorized.back().rotate(rotate);
+  }
+  return colorized;
 }
 
 auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick::Image
@@ -171,7 +166,7 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick
   return frames.front();
 }
 
-void Colorbar(float const win, bool const grey, float const ɣ, Magick::Image &img)
+void Colorbar(char const component, float const win, float const ɣ, Magick::Image &img)
 {
   int const W = img.size().width() / 4;
   int const H = img.density().height() * img.fontPointsize() / 72.f;
@@ -179,11 +174,26 @@ void Colorbar(float const win, bool const grey, float const ɣ, Magick::Image &i
   for (Index ii = 0; ii < W; ii++) {
     float const mag = ii * win / (W - 1.f);
     for (Index ij = 0; ij < H; ij++) {
-      float const angle = -M_PI + 2.f * M_PI * ij / (H - 1.f);
-      cx(ii, ij) = std::polar(mag, angle);
+      switch (component) {
+      case 'p': cx(ii, ij) = std::polar<float>(1.f, -M_PI + 2.f * M_PI * ii / (W - 1.f)); break;
+      case 'x': cx(ii, ij) = std::polar<float>(mag, -M_PI + 2.f * M_PI * ii / (H - 1.f)); break;
+      case 'r': cx(ii, ij) = 2.f * mag - win; break;
+      case 'i': cx(ii, ij) = 2.f * mag - win; break;
+      case 'm': cx(ii, ij) = mag; break;
+      default: rl::Log::Fail("Uknown component type {}", component);
+      }
     }
   }
-  auto const             cbar = rl::Colorize(cx, win, grey, ɣ);
+  rl::RGBImage cbar;
+  switch (component) {
+  case 'p': cbar = rl::ColorizeComplex(cx, 1.f, 1.f); break;
+  case 'x': cbar = rl::ColorizeComplex(cx, win / 2.f, ɣ); break;
+  case 'r': cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ); break;
+  case 'i': cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ); break;
+  case 'm': cbar = rl::Greyscale(cx.abs(), 0, win, ɣ); break;
+  default: rl::Log::Fail("Uknown component type {}", component);
+  }
+
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
   Magick::Geometry const cbarTextBounds(W, H, W * 0.01);
 
@@ -241,7 +251,7 @@ void Kittify(Magick::Image &img)
   auto const     b64 = blob.base64();
   constexpr auto ChunkSize = 4096;
   if (b64.size() <= ChunkSize) {
-    fmt::print(stderr, "\x1B_Ga=T,f=100;{}\x1B\\", b64);
+    fmt::print(stderr, "\x1B_Ga=T,f=100,c={},r={};{}\x1B\\", winSize.ws_col, rows, b64);
   } else {
     auto const chunks = b64 | tl::views::chunk(ChunkSize);
     auto const nChunks = chunks.size();
@@ -275,7 +285,6 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<char>  comp(parser, "C", "Component (x,r,i,m,p)", {"comp"}, 'x');
   args::ValueFlag<float> max(parser, "W", "Max intensity", {"max"});
   args::ValueFlag<float> maxP(parser, "P", "Max intensity as %", {"maxP"}, 0.9);
-  args::Flag             grey(parser, "G", "Greyscale", {"grey", 'g'});
   args::ValueFlag<float> ɣ(parser, "G", "Gamma correction", {"gamma"}, 1.f);
   args::Flag             cbar(parser, "C", "Add colorbar", {"cbar"});
 
@@ -290,20 +299,20 @@ void main_montage(args::Subparser &parser)
   ParseCommand(parser, iname);
   Magick::InitializeMagick(NULL);
 
-  auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get(), comp.Get());
+  auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get());
   float const maxData = rl::Maximum(data.abs());
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
   rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
-  auto slices = cross ? CrossSections(data, winMax, grey, ɣ.Get(), rotate.Get())
-                      : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get(), winMax, grey,
-                                  ɣ.Get(), rotate.Get());
-  auto montage = DoMontage(slices, cols.Get());
+  auto slices =
+    cross ? CrossSections(data) : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get());
+  auto colorized = Colorize(slices, comp.Get(), winMax, ɣ.Get(), rotate.Get());
+  auto montage = DoMontage(colorized, cols.Get());
   rl::Log::Print("Image size: {} {}", montage.size().width(), montage.size().height());
   if (oname) { Printify(oname.Get(), width.Get(), interp, montage); }
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
-  if (cbar) { Colorbar(winMax, grey, ɣ.Get(), montage); }
+  if (cbar) { Colorbar(comp.Get(), winMax, ɣ.Get(), montage); }
   Decorate(title ? title.Get() : fmt::format("{} {}", iname.Get(), dset.Get()), gravity.Get(), montage);
   montage.magick("PNG");
   if (oname) {
