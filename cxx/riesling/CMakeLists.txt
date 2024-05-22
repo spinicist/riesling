@@ -65,14 +65,6 @@ set_target_properties(riesling PROPERTIES
 install(TARGETS riesling RUNTIME DESTINATION bin)
 
 option(BUILD_MONTAGE "Build the montage command. Requires ImageMagick" OFF)
-
 if (${BUILD_MONTAGE})
     target_sources(riesling PRIVATE util/montage.cpp)
-    target_compile_definitions(riesling PRIVATE -DBUILD_MONTAGE)
-    find_package(ImageMagick COMPONENTS Magick++ MagickCore)
-    target_link_libraries(riesling PRIVATE ImageMagick::Magick++ ImageMagick::MagickCore)
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(riesling PUBLIC OpenMP::OpenMP_CXX)
-    endif()
 endif()

@@ -10,4 +10,4 @@ auto ColorizeComplex(Cx2 const &img, float const max, float const ɣ) -> RGBImag
 auto ColorizeReal(Re2 const &img, float const min, float const max, float const ɣ) -> RGBImage;
 auto Greyscale(Re2 const &img, float const min, float const max, float const ɣ) -> RGBImage;
 
-}
+} // namespace rl

@@ -2,17 +2,12 @@
 #include "colors.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
+#include "magick.hpp"
 #include "parse_args.hpp"
 #include "tensors.hpp"
 #include "types.hpp"
 
-#include "Magick++.h"
-#include <Eigen/Core>
-#include <ranges>
 #include <scn/scan.h>
-#include <sys/ioctl.h>
-#include <tl/chunk.hpp>
-#include <tl/to.hpp>
 
 struct IndexPairReader
 {
@@ -127,10 +122,9 @@ auto SliceData(rl::Cx3 const &data,
   return slices;
 }
 
-auto Colorize(
-  std::vector<rl::Cx2> const &slices, char const component, float const win, float const ɣ, float const rotate)
+auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float const win, float const ɣ)
 {
-  std::vector<Magick::Image> colorized;
+  std::vector<rl::RGBImage> colorized;
   for (auto const &slice : slices) {
     rl::RGBImage clr;
     switch (component) {
@@ -141,17 +135,24 @@ auto Colorize(
     case 'm': clr = rl::Greyscale(slice.abs(), 0, win, ɣ); break;
     default: rl::Log::Fail("Uknown component type {}", component);
     }
-    auto const w = clr.dimension(1);
-    auto const h = clr.dimension(2);
-    colorized.push_back(Magick::Image(w, h, "RGB", Magick::CharPixel, clr.data()));
-    colorized.back().flip(); // Reverse Y for display
-    colorized.back().rotate(rotate);
+    colorized.push_back(clr);
   }
   return colorized;
 }
 
-auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick::Image
+auto DoMontage(std::vector<rl::RGBImage> &slices, float const rotate, Index const colsIn) -> Magick::Image
 {
+  auto const w = slices.front().dimension(1);
+  auto const h = slices.front().dimension(2);
+
+  std::vector<Magick::Image> magicks(slices.size());
+  std::transform(slices.begin(), slices.end(), magicks.begin(), [w, h, rotate](rl::RGBImage const &slc) {
+    Magick::Image tmp(w, h, "RGB", Magick::CharPixel, slc.data());
+    tmp.flip();
+    tmp.rotate(rotate);
+    return tmp;
+  });
+
   auto const cols = slices.size() < colsIn ? slices.size() : colsIn;
   auto const rows = (Index)std::ceil(slices.size() / (float)colsIn);
   rl::Log::Print("Rows {} Cols {}", rows, cols);
@@ -159,9 +160,9 @@ auto DoMontage(std::vector<Magick::Image> &slices, Index const colsIn) -> Magick
   Magick::Montage montageOpts;
   montageOpts.backgroundColor(Magick::Color(0, 0, 0));
   montageOpts.tile(Magick::Geometry(cols, rows));
-  montageOpts.geometry(slices.front().size());
+  montageOpts.geometry(magicks.front().size());
   std::vector<Magick::Image> frames;
-  Magick::montageImages(&frames, slices.begin(), slices.end(), montageOpts);
+  Magick::montageImages(&frames, magicks.begin(), magicks.end(), montageOpts);
 
   return frames.front();
 }
@@ -239,32 +240,6 @@ void Printify(std::string const &oname, float const printPixWidth, bool const in
   img.density(Magick::Geometry(72, 72));
 }
 
-void Kittify(Magick::Image &img)
-{
-  struct winsize winSize;
-  ioctl(0, TIOCGWINSZ, &winSize);
-  float const  iscale = img.size().height() / (float)img.size().width();
-  float const  cscale = (winSize.ws_xpixel / (float)winSize.ws_col) / (winSize.ws_ypixel / (float)winSize.ws_row);
-  Index const  rows = winSize.ws_col * iscale * cscale;
-  Magick::Blob blob;
-  img.write(&blob);
-  auto const     b64 = blob.base64();
-  constexpr auto ChunkSize = 4096;
-  if (b64.size() <= ChunkSize) {
-    fmt::print(stderr, "\x1B_Ga=T,f=100,c={},r={};{}\x1B\\", winSize.ws_col, rows, b64);
-  } else {
-    auto const chunks = b64 | tl::views::chunk(ChunkSize);
-    auto const nChunks = chunks.size();
-    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1,c={},r={};{}\x1B\\", winSize.ws_col, rows,
-               std::string_view(chunks.front().data(), chunks.front().size()));
-    for (auto &&chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {
-      fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunk.data(), chunk.size()));
-    }
-    fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", std::string_view(chunks.back().data(), chunks.back().size()));
-  }
-  fmt::print(stderr, "\n");
-}
-
 void main_montage(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "HD5 file to slice");
@@ -278,9 +253,10 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<std::string>                        font(parser, "F", "Font", {"font", 'f'}, "Helvetica");
   args::ValueFlag<float>                              fontSize(parser, "FS", "Font size", {"font-size"}, 18);
 
-  args::ValueFlag<Index> cols(parser, "C", "Output columns", {"cols"}, 8);
-  args::ValueFlag<int>   width(parser, "W", "Width in pixels for figures", {"width", 'w'}, 1800);
-  args::Flag             interp(parser, "I", "Use proper interpolation", {"interp"});
+  args::ValueFlag<int> width(parser, "W", "Width in pixels for figures", {"width", 'w'}, 1800);
+  args::Flag           interp(parser, "I", "Use proper interpolation", {"interp"});
+
+  args::Flag noScale(parser, "N", "Don't scale to terminal width", {"no-scale"});
 
   args::ValueFlag<char>  comp(parser, "C", "Component (x,r,i,m,p)", {"comp"}, 'x');
   args::ValueFlag<float> max(parser, "W", "Max intensity", {"max"});
@@ -294,6 +270,7 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<Index>                slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);
   args::ValueFlag<rl::Sz2, SzReader<2>> sl0(parser, "S", "Dim 0 slice (start, size)", {"sl0"}, rl::Sz2{0, 1024});
   args::ValueFlag<rl::Sz2, SzReader<2>> sl1(parser, "S", "Dim 1 slice (start, size)", {"sl1"}, rl::Sz2{0, 1024});
+  args::ValueFlag<Index>                cols(parser, "C", "Output columns", {"cols"}, 8);
   args::Flag                            cross(parser, "C", "Cross sections", {"cross-sections", 'x'});
   args::ValueFlag<float>                rotate(parser, "D", "Rotate slices (degrees)", {"rot", 'r'}, 0.f);
   ParseCommand(parser, iname);
@@ -306,18 +283,18 @@ void main_montage(args::Subparser &parser)
 
   auto slices =
     cross ? CrossSections(data) : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get());
-  auto colorized = Colorize(slices, comp.Get(), winMax, ɣ.Get(), rotate.Get());
-  auto montage = DoMontage(colorized, cols.Get());
+  auto colorized = Colorize(slices, comp.Get(), winMax, ɣ.Get());
+  auto montage = DoMontage(colorized, rotate.Get(), cols.Get());
   rl::Log::Print("Image size: {} {}", montage.size().width(), montage.size().height());
   if (oname) { Printify(oname.Get(), width.Get(), interp, montage); }
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
   if (cbar) { Colorbar(comp.Get(), winMax, ɣ.Get(), montage); }
   Decorate(title ? title.Get() : fmt::format("{} {}", iname.Get(), dset.Get()), gravity.Get(), montage);
-  montage.magick("PNG");
   if (oname) {
+    montage.magick("PNG");
     montage.write(oname.Get());
   } else {
-    Kittify(montage);
+    rl::ToKitty(montage, !noScale);
   }
 }
