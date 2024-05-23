@@ -20,12 +20,13 @@ auto SENSE(CoreOpts               &coreOpts,
            TOps::SENSE::Ptr const &sense,
            Basis<Cx> const        &basis) -> TOps::TOp<Cx, 4, 4>::Ptr;
 
-auto Channels(CoreOpts         &coreOpts,
-              GridOpts         &gridOpts,
-              Trajectory const &traj,
-              Index const       nC,
-              Index const       nSlab,
-              Basis<Cx> const  &basis) -> TOps::TOp<Cx, 5, 4>::Ptr;
+auto Channels(bool const            ndft,
+              GridOpts             &gridOpts,
+              Trajectory const     &traj,
+              Eigen::Array3f const &fov,
+              Index const           nC,
+              Index const           nSlab,
+              Basis<Cx> const      &basis) -> TOps::TOp<Cx, 5, 4>::Ptr;
 
 } // namespace Recon
 } // namespace rl

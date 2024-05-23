@@ -8,6 +8,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#ifdef BUILD_MONTAGE
+#include "magick.hpp"
+#endif
+
 namespace rl {
 namespace Log {
 
@@ -19,6 +23,7 @@ Failure::Failure(std::string const &msg)
 namespace {
 Level                        log_level = Level::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;
+bool                         debug_live = false;
 bool                         isTTY = false;
 Index                        progressTarget = -1, progressCurrent = 0, progressNext = 0;
 std::mutex                   progressMutex;
@@ -42,7 +47,17 @@ void SetLevel(Level const l)
   if (CurrentLevel() == Level::Ephemeral) { fmt::print(stderr, "\n"); }
 }
 
-void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
+void SetDebugFile(std::string const &fname)
+{
+  if (fname == "live") {
+    debug_live = true;
+#ifdef BUILD_MONTAGE
+    Magick::InitializeMagick(NULL);
+#endif
+  } else {
+    debug_file = std::make_shared<HD5::Writer>(fname);
+  }
+}
 
 void SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level)
 {
@@ -128,8 +143,7 @@ std::string ToNow(Log::Time const t1)
   }
 }
 
-template <typename Scalar, int N>
-void Tensor(std::string const &nameIn, Sz<N> const &shape, Scalar const *data)
+template <typename Scalar, int N> void Tensor(std::string const &nameIn, Sz<N> const &shape, Scalar const *data)
 {
   if (debug_file) {
     Index       count = 0;
@@ -140,6 +154,22 @@ void Tensor(std::string const &nameIn, Sz<N> const &shape, Scalar const *data)
     }
     debug_file->writeTensor(name, shape, data);
   }
+
+#ifdef BUILD_MONTAGE
+  if constexpr (N == 5 && std::is_same<Scalar, Cx>().value) {
+    if (debug_live) {
+      auto const    xt = Eigen::TensorMap<CxN<N> const>(data, shape);
+      rl::Cx2 const X = xt.template chip<4>(shape[4] / 2).template chip<1>(0).template chip<0>(0);
+      rl::Cx2 const Y = xt.template chip<3>(shape[3] / 2).template chip<1>(0).template chip<0>(0);
+      rl::Cx2 const Z = xt.template chip<2>(shape[2] / 2).template chip<1>(0).template chip<0>(0);
+      rl::Cx2 const all = X.concatenate(Y, 0).concatenate(Z, 0);
+      auto const    win = Maximum(all.abs());
+      auto          magick = ToMagick(ColorizeComplex(all, win, 0.8), 0.f);
+      fmt::print(stderr, "{}\n", nameIn);
+      ToKitty(magick, true);
+    }
+  }
+#endif
 }
 
 template void Tensor(std::string const &, Sz<1> const &shape, float const *data);

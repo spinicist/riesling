@@ -12,12 +12,13 @@ using namespace rl;
 
 void main_recon_rss(args::Subparser &parser)
 {
-  CoreOpts               coreOpts(parser);
-  GridOpts               gridOpts(parser);
-  PreconOpts             preOpts(parser);
-  LsqOpts                lsqOpts(parser);
-  args::ValueFlag<float> t0(parser, "T0", "Time of first sample for off-resonance correction", {"t0"});
-  args::ValueFlag<float> tSamp(parser, "TS", "Sample time for off-resonance correction", {"tsamp"});
+  CoreOpts   coreOpts(parser);
+  GridOpts   gridOpts(parser);
+  PreconOpts preOpts(parser);
+  LsqOpts    lsqOpts(parser);
+
+  args::ValueFlag<Eigen::Array3f, Array3fReader> ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"},
+                                                      Eigen::Array3f::Constant(256.f));
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -31,15 +32,16 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
-  Cx5 out(AddBack(LastN<4>(A->ishape), nV));
+  TOps::Pad<Cx, 5, 3> outFOV(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape);
+  Cx5 out(AddBack(LastN<4>(outFOV.ishape), nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = lsmr.run(&noncart(0, 0, 0, 0, iv));
-    auto const channelsT = Tensorfy(channels, A->ishape);
-    out.chip<4>(iv) = (channelsT * channelsT.conjugate()).sum(Sz1{0}).sqrt();
+    auto const cropped = outFOV.adjoint(Tensorfy(channels, A->ishape));
+    out.chip<4>(iv) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt();
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());

@@ -11,7 +11,7 @@ template<int NK>
 struct SLR final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
-  SLR(float const, Sz5 const shape, Sz<NK> const dims, Sz<NK> const kW);
+  SLR(float const, Sz5 const shape, Sz<NK> const dims, Sz<NK> const kW, bool const virt);
   void apply(float const α, CMap const &x, Map &z) const;
 
 private:

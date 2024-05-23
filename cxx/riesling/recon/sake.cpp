@@ -1,7 +1,6 @@
 #include "algo/admm.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "magick.hpp"
 #include "op/compose.hpp"
 #include "op/fft.hpp"
 #include "op/hankel.hpp"
@@ -23,7 +22,12 @@ void main_sake(args::Subparser &parser)
 
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 1e-1)", {"lambda"}, 1.e-1f);
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 5)", {"kernel-size"}, 5);
-  args::Flag             sep(parser, "S", "Separable kernels", {'s', "seperable"});
+
+  args::ValueFlag<Eigen::Array3f, Array3fReader> ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"},
+                                                      Eigen::Array3f::Constant(256.f));
+
+  args::Flag sep(parser, "S", "Separable kernels", {'s', "seperable"});
+  args::Flag virtChan(parser, "V", "Use virtual conjugate channels", {"virtual"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -37,7 +41,7 @@ void main_sake(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const  A = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, basis);
+  auto const  A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
   auto const  M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
   float const scale = Scaling(rlsqOpts.scaling, A, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
@@ -45,37 +49,26 @@ void main_sake(args::Subparser &parser)
   Sz5 const                shape = A->ishape;
   std::vector<Regularizer> regs;
   auto                     T = std::make_shared<TOps::Identity<Cx, 5>>(shape);
-  // auto F = std::make_shared<TOps::FFT<5, 3>>(shape);
   if (sep) {
-    auto sx = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{2}, Sz1{kSz.Get()});
-    auto sy = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{3}, Sz1{kSz.Get()});
-    auto sz = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{4}, Sz1{kSz.Get()});
+    auto sx = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{2}, Sz1{kSz.Get()}, virtChan);
+    auto sy = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{3}, Sz1{kSz.Get()}, virtChan);
+    auto sz = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{4}, Sz1{kSz.Get()}, virtChan);
     regs.push_back({T, sx});
     regs.push_back({T, sy});
     regs.push_back({T, sz});
   } else {
-    auto slr = std::make_shared<Proxs::SLR<3>>(λ.Get(), shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()});
+    auto slr = std::make_shared<Proxs::SLR<3>>(λ.Get(), shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()}, virtChan);
     regs.push_back({T, slr});
   }
-  // regs.push_back({F, std::make_shared<Proxs::Hermitian>(λ.Get(), shape)});
 
-  Magick::InitializeMagick(NULL);
   ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
-    // Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
-    auto const xt = Tensorfy(x, shape);
-    rl::Cx2 const X = xt.chip<4>(shape[4] / 2).chip<1>(0).chip<0>(0);
-    rl::Cx2 const Y = xt.chip<3>(shape[3] / 2).chip<1>(0).chip<0>(0);
-    rl::Cx2 const Z = xt.chip<2>(shape[2] / 2).chip<1>(0).chip<0>(0);
-    rl::Cx2 const all = X.concatenate(Y, 0).concatenate(Z, 0);
-    auto const win = Maximum(all.abs());
-    auto       magick = ToMagick(ColorizeComplex(all, win, 0.8), 0.f);
-    ToKitty(magick, true);
+    Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
   };
   ADMM::DebugZ debug_z = [shape = T->oshape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
                                              ADMM::Vector const &u) {
-    // Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-    // Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
-    // Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
+    Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
+    Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
+    Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
   };
 
   ADMM admm{A,
@@ -93,13 +86,15 @@ void main_sake(args::Subparser &parser)
             debug_x,
             debug_z};
 
-  Cx6 out(AddBack(A->ishape, nV));
+  TOps::Pad<Cx, 5, 3> outFOV(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape);
+  Cx5                 out(AddBack(LastN<4>(outFOV.ishape), nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = admm.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get());
-    out.chip<5>(iv) = Tensorfy(channels, A->ishape) / out.chip<5>(iv).constant(scale);
+    auto const cropped = outFOV.adjoint(Tensorfy(channels, A->ishape));
+    out.chip<4>(iv) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt() / cropped.constant(scale);
   }
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Channels);
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
   writer.writeInfo(info);
   writer.writeString("log", Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());

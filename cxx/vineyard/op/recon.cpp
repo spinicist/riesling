@@ -35,18 +35,19 @@ auto SENSE(CoreOpts               &coreOpts,
   return compose2;
 }
 
-auto Channels(CoreOpts         &coreOpts,
-              GridOpts         &gridOpts,
-              Trajectory const &traj,
-              Index const       nC,
-              Index const       nSlab,
-              Basis<Cx> const  &basis) -> TOps::TOp<Cx, 5, 4>::Ptr
+auto Channels(bool const            ndft,
+              GridOpts             &gridOpts,
+              Trajectory const     &traj,
+              Eigen::Array3f const &fov,
+              Index const           nC,
+              Index const           nSlab,
+              Basis<Cx> const      &basis) -> TOps::TOp<Cx, 5, 4>::Ptr
 {
   Index const nB = basis.dimension(0);
-  auto const  shape = traj.matrixForFOV(coreOpts.fov.Get());
+  auto const  shape = traj.matrixForFOV(fov);
 
   TOps::TOp<Cx, 5, 3>::Ptr FT = nullptr;
-  if (coreOpts.ndft) {
+  if (ndft) {
     FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
   } else {
     FT = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);

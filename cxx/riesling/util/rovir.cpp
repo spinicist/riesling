@@ -40,7 +40,7 @@ void main_rovir(args::Subparser &parser)
   if (res) { std::tie(traj, data) = traj.downsample(data, res.Get(), 0, true, true); }
   Index const nC = data.dimension(0);
   Index const nS = data.dimension(3);
-  auto        nufft = Recon::Channels(coreOpts, gridOpts, traj, nC, nS, IdBasis());
+  auto        nufft = Recon::Channels(coreOpts.ndft, gridOpts, traj, coreOpts.fov.Get(), nC, nS, IdBasis());
 
   auto const sz = LastN<3>(nufft->ishape);
   Cx4 const  channelImages = nufft->adjoint(data).chip<1>(0);
