@@ -4,7 +4,7 @@
 #include "magick.hpp"
 #include "op/compose.hpp"
 #include "op/fft.hpp"
-#include "op/kernels.hpp"
+#include "op/hankel.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"
 #include "precon.hpp"

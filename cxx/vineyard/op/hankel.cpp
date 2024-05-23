@@ -1,10 +1,10 @@
-#include "kernels.hpp"
+#include "hankel.hpp"
 
 namespace rl::TOps {
 
 template <typename Sc, int ND, int NK>
-Kernels<Sc, ND, NK>::Kernels(InDims const ish, Sz<NK> const d, Sz<NK> const w)
-  : Parent("KernelsOp")
+Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w)
+  : Parent("HankelOp")
   , kDims_{d}
   , kW_{w}
 {
@@ -20,10 +20,10 @@ Kernels<Sc, ND, NK>::Kernels(InDims const ish, Sz<NK> const d, Sz<NK> const w)
     oshape[D + 1] = kW_[ii];
   }
   oshape[0] = nK;
-  Log::Print("Kernels ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
+  Log::Print("Hankel ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
 }
 
-template <typename Sc, int ND, int NK> void Kernels<Sc, ND, NK>::forward(InCMap const &x, OutMap &y) const
+template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x);
   Index      ik = 0;
@@ -46,7 +46,7 @@ template <typename Sc, int ND, int NK> void Kernels<Sc, ND, NK>::forward(InCMap 
   this->finishForward(y, time);
 }
 
-template <typename Sc, int ND, int NK> void Kernels<Sc, ND, NK>::adjoint(OutCMap const &y, InMap &x) const
+template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y);
   Sz<NK>     cSz;
@@ -87,7 +87,7 @@ template <typename Sc, int ND, int NK> void Kernels<Sc, ND, NK>::adjoint(OutCMap
   this->finishAdjoint(x, time);
 }
 
-template struct Kernels<Cx, 5, 3>;
-template struct Kernels<Cx, 5, 1>;
+template struct Hankel<Cx, 5, 3>;
+template struct Hankel<Cx, 5, 1>;
 
 } // namespace rl

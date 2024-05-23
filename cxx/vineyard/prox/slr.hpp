@@ -3,7 +3,7 @@
 #include "prox.hpp"
 
 #include "op/fft.hpp"
-#include "op/kernels.hpp"
+#include "op/hankel.hpp"
 
 namespace rl::Proxs {
 
@@ -18,7 +18,7 @@ private:
   float  λ;
   Sz5 shape;
   rl::TOps::FFT<5, 3> F;
-  rl::TOps::Kernels<Cx, 5, NK> H;
+  rl::TOps::Hankel<Cx, 5, NK> H;
 };
 
 } // namespace rl::Proxs

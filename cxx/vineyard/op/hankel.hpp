@@ -4,14 +4,14 @@
 
 namespace rl::TOps {
 
-template <typename Sc, int ND, int NK> struct Kernels final : TOp<Sc, ND, ND + 1>
+template <typename Sc, int ND, int NK> struct Hankel final : TOp<Sc, ND, ND + 1>
 {
   static_assert(NK < ND);
   OP_INHERIT(Sc, ND, ND + 1)
   using Parent::adjoint;
   using Parent::forward;
 
-  Kernels(InDims const ish, Sz<NK> const kDims, Sz<NK> const kW);
+  Hankel(InDims const ish, Sz<NK> const kDims, Sz<NK> const kW);
   void forward(InCMap const &x, OutMap &y) const;
   void adjoint(OutCMap const &y, InMap &x) const;
 

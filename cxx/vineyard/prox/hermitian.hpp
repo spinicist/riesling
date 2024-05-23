@@ -3,7 +3,7 @@
 #include "prox.hpp"
 
 #include "op/fft.hpp"
-#include "op/kernels.hpp"
+#include "op/hankel.hpp"
 
 namespace rl::Proxs {
 
