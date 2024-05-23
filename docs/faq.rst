@@ -13,34 +13,36 @@ Understandly, users have questions. Here are some answers.
 What is the trajectory scaling?
 -------------------------------
 
-The extent of the non-cartesian k-space is scaled as -0.5 to 0.5 in each dimension. The Cartesian grid indices are calculated through a combination of the trajectory, desired output matrix size and the oversampling factor. Note that the cartesian indices run from -N/2 to N/2-1, which is determined by the definition of the FFT. If you have a truly symmetric non-cartesian trajectory then one k-space sample will be dropped at the positive edge of each dimension. This is correct behaviour for the FFT.
+The extent of the non-cartesian k-space is scaled as -N/2 to N/2 in each dimension where N is the nominal matrix size. This matches the scaling in BART. Note that the cartesian indices run from -N/2 to N/2-1, which is determined by the definition of the FFT. If you have a truly symmetric non-cartesian trajectory then one k-space sample will be dropped at the positive edge of each dimension. This is correct behaviour for the FFT.
 
 When do I need Sample Density Compensation?
 -------------------------------------------
 
-Only when using the ``rss``, ``sense`` or ``cg`` commands. If you don't supply SDC factors to those commands they will be calculated automatically. The other reconstruction commands (``lsmr`` and ``admm``) use preconditioning by default instead of SDC. Calculating the preconditioning is much faster than calculating SDC, but you can still save time by calculating the preconditioning weights up front with the ``precond`` command. See `F. Ong, M. Uecker, and M. Lustig, ‘Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’, IEEE Trans. Med. Imaging, vol. 39, no. 5, pp. 1646–1654, May 2020<https://ieeexplore.ieee.org/document/8906069/>`_.
+You don't. As of version 1, ``riesling`` uses pre-conditioned iterative algorithms everywhere, including for the basic NUFFT. SDC factors are surprisingly difficult to calculate correctly or quickly, whereas Frank Ong's k-space preconditioner is correct and fast. See `F. Ong, M. Uecker, and M. Lustig, ‘Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’, IEEE Trans. Med. Imaging, vol. 39, no. 5, pp. 1646–1654, May 2020<https://ieeexplore.ieee.org/document/8906069/>`_.
 
 Do I need to supply sensitivity maps?
 -------------------------------------
 
-For most data you do not. ``riesling`` will generate the maps by heavily filtering the central region of k-space, performing a NUFFT and then normalizing the resulting channel images by the root-sum-of squares. See `Yeh, E. N. et al. Inherently self-calibrating non-cartesian parallel imaging. Magnetic Resonance in Medicine 54, 1–8 (2005). <http://doi.wiley.com/10.1002/mrm.20517>`_. This method works extremely well with most data, including cartesian scans. If you are concerned about the quality of your maps then you can save them with ``sense-calib``. Setting the ``--sense-res=X`` option to a large value, e.g. 20 mm, often yields good quality maps. ``riesling`` also contains an implementation of ESPiRIT.
+For most data you do not. ``riesling`` will generate the maps by heavily filtering the central region of k-space, performing a NUFFT and then normalizing the resulting channel images by the root-sum-of squares. See `Yeh, E. N. et al. Inherently self-calibrating non-cartesian parallel imaging. Magnetic Resonance in Medicine 54, 1–8 (2005). <http://doi.wiley.com/10.1002/mrm.20517>`_. This method works extremely well with most data, including cartesian scans. If you are concerned about the quality of your maps then you can save them with ``sense-calib``. Setting the ``--sense-res=X`` option to a large value, e.g. 20 mm, often yields good quality maps.
 
 If your data contains large holes at the center of k-space (e.g. ZTE data) then you will likely want to obtain sensitivity maps from another dataset with ``sense-calib``.
 
 Help! My data is anisotropic!
 -----------------------------
 
-Various places in the ``riesling`` code used to make assumptions that both the matrix- and voxel-sizes were isotropic. These assumptions have mostly been removed and anisotropic data can be reconstructed quite happily.
-
-A potential difficulty is that by default ``riesling`` will work with a 256 mm isotropic field of view during iterations, before cropping to the nominal field of view at the end. If one dimension of the nominal field of view is too small, ``riesling`` will not be able to create sensitivity maps large enough. The simplest way to fix this is to specify a suitable size with the ``--sense-fov=x,y,z`` option, where the units ``x,y,z`` match the units of the voxel size in the header (usually mm). Setting any of ``x,y,z`` to 0 will use the nominal FOV. An alternative is to increase the oversampling beyond 2, but you should check your data actually supports higher oversampling first.
-
+Various places in the ``riesling`` code used to make assumptions that both the matrix- and voxel-sizes were isotropic. These assumptions have mostly been removed and anisotropic data should be reconstructed quite happily. Please contact me if it doesn't work. Note that the ``montage`` tool does not understand anisotropic voxels yet so images from that tool may look weird. If you convert to NIFTI the header information should be correct for display.
 
 What if I have Cartesian data?
 ------------------------------
 
-The default gridding options in ``riesling`` were picked for non-cartesian data and likely will not work with a cartesian dataset. In particular, a twice over-sampled grid is used and the FOV during iterations (determined by ``--sense-fov``) is expanded to 256 mm on the basis that most non-cartesian acquisitions oversample the center of k-space and so in practice acquire signal from outside the nominal FOV. These settings will cause artefacts during an iterative recon with cartesian data.
+You need to supply a trajectory, running from -N/2 to (N-1)/2 in each dimension. I then recommend addding either ``--osamp=1.3`` or ``--osamp=1 --kernel=NN``. The latter will effectively switch off the NUFFT functionality and run a plain FFT.
 
-Adding ``--sense-fov=0,0,0`` will instead crop the sensitivity maps to the nominal FOV. I then recommend addding either ``--osamp=1.3`` or ``--osamp=1 --kernel=NN``. The latter will effectively switch off the NUFFT functionality and run a plain FFT.
+What if I have multiple echoes / frames?
+----------------------------------------
+
+The suboptimal way of doing this is to split your non-cartesian data into "volumes" using the time (last) dimension. ``riesling`` will then reconstruct each one separately. This assumes that each echo or frame has exactly the same trajectory.
+
+The better way of doing this is to arrange all of your data into one volume and create a basis using `basis-echoes` or `basis-frames` and pass it to the reconstruction command. ``riesling`` will then split your data as desired but reconstruct it simultaneously. This is very powerful - it allows different trajectories, or parts of the trajectory, to be used for different echoes and for regularization to be applied across all of them (e.g. locally low-rank).
 
 Which regularizer should I pick with ADMM?
 ------------------------------------------
