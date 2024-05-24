@@ -103,7 +103,7 @@ if (${BUILD_MONTAGE})
     target_link_libraries(vineyard PUBLIC ImageMagick::Magick++ ImageMagick::MagickCore)
     find_package(OpenMP)
     if(OpenMP_CXX_FOUND)
-        target_link_libraries(riesling PUBLIC OpenMP::OpenMP_CXX)
+        target_link_libraries(vineyard PUBLIC OpenMP::OpenMP_CXX)
     endif()
 endif()
 set_target_properties(vineyard PROPERTIES
