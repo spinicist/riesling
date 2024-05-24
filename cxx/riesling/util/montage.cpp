@@ -142,12 +142,9 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
 
 auto DoMontage(std::vector<rl::RGBImage> &slices, float const rotate, Index const colsIn) -> Magick::Image
 {
-  auto const w = slices.front().dimension(1);
-  auto const h = slices.front().dimension(2);
-
   std::vector<Magick::Image> magicks(slices.size());
-  std::transform(slices.begin(), slices.end(), magicks.begin(), [w, h, rotate](rl::RGBImage const &slc) {
-    Magick::Image tmp(w, h, "RGB", Magick::CharPixel, slc.data());
+  std::transform(slices.begin(), slices.end(), magicks.begin(), [rotate](rl::RGBImage const &slc) {
+    Magick::Image tmp(slc.dimension(1), slc.dimension(2), "RGB", Magick::CharPixel, slc.data());
     tmp.flip();
     tmp.rotate(rotate);
     return tmp;
