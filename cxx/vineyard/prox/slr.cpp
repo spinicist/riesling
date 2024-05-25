@@ -13,7 +13,7 @@ SLR<NK>::SLR(float const l, Sz5 const sh, Sz<NK> const dims, Sz<NK> const kW, bo
   , λ{l}
   , shape{sh}
   , F{shape}
-  , H{shape, dims, kW, virt}
+  , H{shape, dims, kW, true, virt}
 {
   λ *= (std::sqrt(H.rows()) + std::sqrt(H.cols()));
   Log::Print("Structured Low-Rank λ {} Scaled λ {} Shape {}", l, λ, shape);
