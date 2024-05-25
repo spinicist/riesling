@@ -16,7 +16,7 @@ Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, con
   for (Index ii = 0; ii < NK; ii++) {
     auto const D = kDims_[ii];
     if (ishape[D] < kW_[ii]) { Log::Fail("Kernel size is bigger than image size"); }
-    nK *= (ishape[D] - kW_[ii] + 1);
+    nK *= ishape[D];
     kSz_[D] = kW_[ii];
     oshape[D + 2] = kW_[ii];
   }
@@ -28,9 +28,10 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap c
 {
   auto const             time = this->startForward(x);
   Index                  ik = 0;
-  Sz<ND>                 st, stSym, szSym;
+  Sz<ND>                 st, roll, stSym, szSym;
   Eigen::array<bool, ND> rev;
   st.fill(0);
+  roll.fill(0);
   stSym.fill(0);
   rev.fill(false);
   szSym = ishape;
@@ -43,13 +44,13 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap c
 
   std::function<void(Index)> dimLoop = [&](Index ii) {
     Index const D = kDims_[ii];
-    Index const nKd = x.dimension(D) - kW_[ii] + 1 - 1; // -1 because we are dropping the -N/2 samples
+    Index const nKd = x.dimension(D) - 1; // -1 because we are dropping the -N/2 samples
     for (Index id = 0; id < nKd; id++) {
-      st[D] = id;
+      roll[D] = id;
       if (ii == 0) {
-        y.template chip<1>(0).template chip<0>(ik) = x.slice(stSym, szSym).slice(st, kSz_);
+        y.template chip<1>(0).template chip<0>(ik) = x.slice(stSym, szSym).roll(roll).slice(st, kSz_);
         if (virt_) {
-          y.template chip<1>(1).template chip<0>(ik) = x.slice(stSym, szSym).reverse(rev).slice(st, kSz_).conjugate();
+          y.template chip<1>(1).template chip<0>(ik) = x.slice(stSym, szSym).reverse(rev).roll(roll).slice(st, kSz_).conjugate();
         }
         ik++;
       } else {
@@ -67,9 +68,10 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap 
   auto const time = this->startAdjoint(y);
   x.setZero();
   Index                  ik = 0;
-  Sz<ND>                 xSt, stSym, szSym;
+  Sz<ND>                 xSt, roll, stSym, szSym;
   Eigen::array<bool, ND> rev;
   xSt.fill(0);
+  roll.fill(0);
   stSym.fill(0);
   rev.fill(false);
   szSym = ishape;
@@ -80,34 +82,15 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap 
     rev[D] = true;
   }
 
-  Sz<NK>                 cSt, cSz;
-  Eigen::array<bool, NK> cRev;
-  Sz<ND>                 cRsh, cBrd;
-  cSt.fill(0);
-  cRev.fill(true);
-  cRsh.fill(1);
-  cBrd = ishape;
-  for (Index ii = 0; ii < NK; ii++) {
-    Index const D = kDims_[ii];
-    cSz[ii] = ishape[D] - 1;
-    cRsh[D] = ishape[D] - 1;
-    cBrd[D] = 1;
-  }
-  ReN<NK> count(cSz);
-  count.setZero();
-
   std::function<void(Index)> dimLoop = [&](Index ii) {
     Index const D = kDims_[ii];
-    Index const nKd = x.dimension(D) - kW_[ii] + 1 - 1;
+    Index const nKd = x.dimension(D) - 1;
     for (Index id = 0; id < nKd; id++) {
-      xSt[D] = id;
-      cSt[ii] = id;
+      roll[D] = id;
       if (ii == 0) {
-        x.slice(stSym, szSym).slice(xSt, kSz_) += y.template chip<1>(0).template chip<0>(ik);
-        count.slice(cSt, kW_) += count.constant(1.f);
+        x.slice(stSym, szSym).roll(roll).slice(xSt, kSz_) += y.template chip<1>(0).template chip<0>(ik);
         if (virt_) {
-          x.slice(stSym, szSym).reverse(rev).slice(xSt, kSz_) += y.template chip<1>(1).template chip<0>(ik).conjugate();
-          count.reverse(cRev).slice(cSt, kW_) += count.constant(1.f);
+          x.slice(stSym, szSym).reverse(rev).roll(roll).slice(xSt, kSz_) += y.template chip<1>(1).template chip<0>(ik).conjugate();
         }
         ik++;
       } else {
@@ -117,7 +100,7 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap 
   };
   dimLoop(NK - 1);
   assert(ik == y.dimension(0));
-  x.slice(stSym, szSym) /= count.reshape(cRsh).broadcast(cBrd).template cast<Cx>();
+  x.slice(stSym, szSym) /= x.slice(stSym, szSym).constant(Product(kW_) * (virt_ ? 2.f : 1.f));
   this->finishAdjoint(x, time);
 }
 
