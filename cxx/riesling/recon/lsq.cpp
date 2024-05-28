@@ -33,8 +33,9 @@ void main_recon_lsq(args::Subparser &parser)
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
   auto const A = Recon::SENSE(coreOpts, gridOpts, traj, nS, sense, basis);
-  auto const M = make_kspace_pre(traj, A->oshape[0], basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
-  auto       debug = [&A](Index const i, LSMR::Vector const &x) {
+  auto const M =
+    make_kspace_pre(traj, A->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data());
   };
   LSMR lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};

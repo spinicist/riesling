@@ -28,7 +28,7 @@ void main_grid(args::Subparser &parser)
   auto const nC = shape[0];
   auto const nV = shape[shape.size() - 1];
 
-  auto const A = TOps::Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
+  auto const A = TOps::Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis, gridOpts.vcc);
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(reader.readInfo());
@@ -45,7 +45,7 @@ void main_grid(args::Subparser &parser)
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-    auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
+    auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
     LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
     Cx6 cart(AddBack(A->ishape, nV));

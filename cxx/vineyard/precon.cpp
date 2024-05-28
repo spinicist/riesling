@@ -15,20 +15,21 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bias, bool const ndft) -> Re2
+auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc, float const bias, bool const ndft) -> Re2
 {
   Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
   float const osamp = 1.25;
-  auto        nufft = ndft ? (TOps::TOp<Cx, 5, 3>::Ptr)std::make_shared<TOps::NDFT<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
-                           : (TOps::TOp<Cx, 5, 3>::Ptr)std::make_shared<TOps::NUFFT<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
-  Cx3         W(nufft->oshape);
+  auto        nufft =
+    ndft ? (TOps::TOp<Cx, 5, 3>::Ptr)std::make_shared<TOps::NDFT<3>>(newTraj.matrix(), newTraj.points(), 1, basis)
+                : (TOps::TOp<Cx, 5, 3>::Ptr)std::make_shared<TOps::NUFFT<3>>(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis, vcc);
+  Cx3 W(nufft->oshape);
   Log::Print("Starting preconditioner calculation");
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
   Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
   ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
   TOps::Pad<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
-  Cx5             xcorr(padX.oshape);
+  Cx5                 xcorr(padX.oshape);
   xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
   auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
   FFT::Forward(xcorr, Sz3{2, 3, 4}, ph);
@@ -52,6 +53,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, float const bi
 auto make_kspace_pre(Trajectory const  &traj,
                      Index const        nC,
                      Basis<Cx> const   &basis,
+                     bool const         vcc,
                      std::string const &type,
                      float const        bias,
                      bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>
@@ -60,7 +62,7 @@ auto make_kspace_pre(Trajectory const  &traj,
     Log::Print("Using no preconditioning");
     return std::make_shared<Ops::Identity<Cx>>(nC * traj.nSamples() * traj.nTraces());
   } else if (type == "kspace") {
-    Re2 const              w = KSpaceSingle(traj, basis, bias, ndft);
+    Re2 const              w = KSpaceSingle(traj, basis, vcc, bias, ndft);
     Eigen::VectorXcf const wv = CollapseToArray(w);
     return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
   } else {

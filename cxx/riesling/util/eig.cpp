@@ -29,8 +29,8 @@ void main_eig(args::Subparser &parser)
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
   auto const  sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0));
   auto const  A = Recon::SENSE(coreOpts, gridOpts, traj, reader.dimensions()[3], sense, basis);
-  auto const  P =
-    make_kspace_pre(traj, A->oshape[0], ReadBasis(coreOpts.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
+  auto const  P = make_kspace_pre(traj, A->oshape[0], ReadBasis(coreOpts.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
+                                  preOpts.bias.Get());
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());

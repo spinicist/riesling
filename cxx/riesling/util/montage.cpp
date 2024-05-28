@@ -174,7 +174,7 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
     for (Index ij = 0; ij < H; ij++) {
       switch (component) {
       case 'p': cx(ii, ij) = std::polar<float>(1.f, -M_PI + 2.f * M_PI * ii / (W - 1.f)); break;
-      case 'x': cx(ii, ij) = std::polar<float>(mag, -M_PI + 2.f * M_PI * ii / (H - 1.f)); break;
+      case 'x': cx(ii, ij) = std::polar<float>(mag, -M_PI + 2.f * M_PI * ij / (H - 1.f)); break;
       case 'r': cx(ii, ij) = 2.f * mag - win; break;
       case 'i': cx(ii, ij) = 2.f * mag - win; break;
       case 'm': cx(ii, ij) = mag; break;

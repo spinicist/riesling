@@ -37,7 +37,7 @@ void main_recon_rlsq(args::Subparser &parser)
   auto const sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
   auto const recon = Recon::SENSE(coreOpts, gridOpts, traj, nS, sense, basis);
   auto const shape = recon->ishape;
-  auto const M = make_kspace_pre(traj, recon->oshape[0], basis, preOpts.type.Get(), preOpts.bias.Get());
+  auto const M = make_kspace_pre(traj, recon->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);

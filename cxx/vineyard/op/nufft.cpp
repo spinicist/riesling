@@ -9,16 +9,17 @@ namespace rl::TOps {
 
 template <int NDim>
 NUFFT<NDim>::NUFFT(Sz<NDim> const           matrix,
-                       TrajectoryN<NDim> const &traj,
-                       std::string const       &ktype,
-                       float const              osamp,
-                       Index const              nChan,
-                       Basis<Cx> const         &basis,
-                       Index const              bucketSz,
-                       Index const              splitSz,
-                       Index const              nBatch)
+                   TrajectoryN<NDim> const &traj,
+                   std::string const       &ktype,
+                   float const              osamp,
+                   Index const              nChan,
+                   Basis<Cx> const         &basis,
+                   bool const               VCC,
+                   Index const              bucketSz,
+                   Index const              splitSz,
+                   Index const              nBatch)
   : Parent("NUFFT")
-  , gridder{traj, ktype, osamp, nChan / nBatch, basis, bucketSz, splitSz}
+  , gridder{traj, ktype, osamp, nChan / nBatch, basis, VCC, bucketSz, splitSz}
   , workspace{gridder.ishape}
   , pad{AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape}
   , apo{pad.ishape, LastN<NDim>(gridder.ishape), gridder.kernel}
@@ -34,13 +35,13 @@ NUFFT<NDim>::NUFFT(Sz<NDim> const           matrix,
 
 template <int NDim>
 auto NUFFT<NDim>::Make(Sz<NDim> const           matrix,
-                         TrajectoryN<NDim> const &traj,
-                         GridOpts                &opts,
-                         Index const              nC,
-                         Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim>>
+                       TrajectoryN<NDim> const &traj,
+                       GridOpts                &opts,
+                       Index const              nC,
+                       Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim>>
 {
-  return std::make_shared<NUFFT<NDim>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.bucketSize.Get(),
-                                         opts.splitSize.Get(), opts.batches.Get());
+  return std::make_shared<NUFFT<NDim>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.vcc,
+                                       opts.bucketSize.Get(), opts.splitSize.Get(), opts.batches.Get());
 }
 
 template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const

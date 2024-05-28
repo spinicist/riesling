@@ -54,7 +54,7 @@ void main_compress(args::Subparser &parser)
     auto const eig = Eig<Cx>(cov);
     auto const nR = energy ? Threshold(eig.V, energy.Get()) : nRetain.Get();
     psi = eig.P.leftCols(nR);
-  } 
+  }
   Compressor  compressor{psi};
   Cx5 const   uncompressed = reader.readTensor<Cx5>();
   Cx5         compressed(AddFront(LastN<4>(uncompressed.dimensions()), psi.cols()));
@@ -71,4 +71,5 @@ void main_compress(args::Subparser &parser)
   if (save) {
     HD5::Writer matfile(save.Get());
     matfile.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
-  }}
+  }
+}

@@ -40,7 +40,7 @@ void main_psf(args::Subparser &parser)
   } else {
     A = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);
   }
-  auto const M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];

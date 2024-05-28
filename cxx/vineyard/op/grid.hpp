@@ -16,6 +16,7 @@ struct GridOpts
   GridOpts(args::Subparser &parser);
   args::ValueFlag<std::string> ktype;
   args::ValueFlag<float>       osamp;
+  args::Flag                   vcc;
   args::ValueFlag<Index>       batches, bucketSize, splitSize;
 };
 
@@ -29,12 +30,14 @@ template <typename Scalar_, int NDim> struct Grid final : TOp<Scalar_, NDim + 2,
   std::shared_ptr<Kernel<Scalar, NDim>> kernel;
   Mapping<NDim>                         mapping;
   Basis<Scalar>                         basis;
+  std::optional<Mapping<NDim>>          vccMapping;
 
   static auto Make(TrajectoryN<NDim> const &t,
                    std::string const        kt,
                    float const              os,
                    Index const              nC = 1,
                    Basis<Scalar> const     &b = IdBasis<Scalar>(),
+                   bool const               VCC = false,
                    Index const              bSz = 32,
                    Index const              sSz = 16384) -> std::shared_ptr<Grid<Scalar, NDim>>;
   Grid(TrajectoryN<NDim> const &traj,
@@ -42,12 +45,14 @@ template <typename Scalar_, int NDim> struct Grid final : TOp<Scalar_, NDim + 2,
        float const              osamp,
        Index const              nC,
        Basis<Scalar> const     &b,
+       bool const               virt,
        Index const              bSz,
        Index const              sSz);
   Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
        Mapping<NDim> const                          m,
        Index const                                  nC,
-       Basis<Scalar> const                         &b = IdBasis<Scalar>());
+       Basis<Scalar> const                         &b = IdBasis<Scalar>(),
+       bool const                                   virt = false);
   void forward(InCMap const &x, OutMap &y) const;
   void adjoint(OutCMap const &y, InMap &x) const;
 };
