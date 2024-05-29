@@ -165,10 +165,60 @@ template <typename Scalar, int NDim> void Grid<Scalar, NDim>::forward(InCMap con
   this->finishForward(y, time);
 }
 
+template <typename Scalar, int ND, bool vcc>
+inline void adjointCoilDim(Sz<ND + 2>                                       sxi,
+                           Eigen::Tensor<Scalar, ND + 2> const             &sx,
+                           Sz<ND + 2>                                       xi,
+                           Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2>> &x)
+{
+  for (Index ii = 0; ii < sx.dimensions()[0]; ii++) {
+    sxi[0] = ii;
+    if constexpr (std::is_same<Scalar, Cx>::value && vcc) {
+      xi[0] = sx.dimensions()[0] + ii;
+      x(xi) += std::conj(sx(sxi));
+    } else {
+      xi[0] = ii;
+      // fmt::print(stderr, "bGrid {} bi {} x {} xi {}\n", bGrid.dimensions(), bi, x.dimensions(), xi);
+      x(xi) += sx(sxi);
+    }
+  }
+}
+
+template <typename Scalar, int ND, bool vcc>
+inline void adjointBasisDim(Sz<ND + 2>                                       sxi,
+                            Eigen::Tensor<Scalar, ND + 2> const             &sx,
+                            Sz<ND + 2>                                       xi,
+                            Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2>> &x)
+{
+  for (Index ii = 0; ii < x.dimensions()[1]; ii++) {
+    xi[1] = ii;
+    sxi[1] = ii;
+    adjointCoilDim<Scalar, ND, vcc>(sxi, sx, xi, x);
+  }
+}
+
+template <typename Scalar, int ND, bool vcc, int D>
+inline void adjointSpatialDim(Sz<ND + 2>                                       sxi,
+                              Eigen::Tensor<Scalar, ND + 2> const             &sx,
+                              Sz<ND> const                                     xSt,
+                              Sz<ND + 2>                                       xi,
+                              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2>> &x)
+{
+  for (Index ii = 0; ii < sx.dimensions()[D + 2]; ii++) {
+    xi[D + 2] = Wrap(ii + xSt[D], x.dimensions()[D + 2]);
+    sxi[D + 2] = ii;
+    if constexpr (D == 0) {
+      adjointBasisDim<Scalar, ND, vcc>(sxi, sx, xi, x);
+    } else {
+      adjointSpatialDim<Scalar, ND, vcc, D - 1>(sxi, sx, xSt, xi, x);
+    }
+  }
+}
+
 template <typename Scalar, int NDim> void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto outer_task = [&y, &x, &basis = this->basis, &kernel = this->kernel, &ishape = this->ishape](Mapping<NDim> const &map,
-                                                                                                   bool const           conj) {
+                                                                                                   bool const           vcc) {
     Index const nC = ishape[0];
     Index const nB = ishape[1];
 
@@ -189,32 +239,15 @@ template <typename Scalar, int NDim> void Grid<Scalar, NDim>::adjoint(OutCMap co
         kernel->spread(c, o, subgrid.minCorner, bs, yy, bGrid);
       }
 
-      if (conj) { bGrid = bGrid.conjugate(); }
-
       {
         std::scoped_lock lock(writeMutex);
-        auto const       gSt = AddFront(subgrid.minCorner, 0, 0); // Make this the same dims as bSz / ishape
-        for (Index i1 = 0; i1 < bSz[InRank - 1]; i1++) {
-          Index const w1 = Wrap(i1 + gSt[InRank - 1], ishape[InRank - 1]);
-          for (Index i2 = 0; i2 < bSz[InRank - 2]; i2++) {
-            Index const w2 = Wrap(i2 + gSt[InRank - 2], ishape[InRank - 2]);
-            for (Index i3 = 0; i3 < bSz[InRank - 3]; i3++) {
-              Index const w3 = Wrap(i3 + gSt[InRank - 3], ishape[InRank - 3]);
-              if constexpr (NDim == 1) {
-                x(i3, i2, w1) += bGrid(i3, i2, i1);
-              } else {
-                for (Index i4 = 0; i4 < bSz[InRank - 4]; i4++) {
-                  if constexpr (NDim == 2) {
-                    x(i4, i3, w2, w1) += bGrid(i4, i3, i2, i1);
-                  } else {
-                    for (Index i5 = 0; i5 < bSz[InRank - 5]; i5++) {
-                      x(i5, i4, w3, w2, w1) += bGrid(i5, i4, i3, i2, i1);
-                    }
-                  }
-                }
-              }
-            }
-          }
+        Sz<NDim + 2>     xi, bi;
+        xi.fill(0);
+        bi.fill(0);
+        if (vcc) {
+          adjointSpatialDim<Scalar, NDim, true, NDim - 1>(bi, bGrid, subgrid.minCorner, xi, x);
+        } else {
+          adjointSpatialDim<Scalar, NDim, false, NDim - 1>(bi, bGrid, subgrid.minCorner, xi, x);
         }
       }
     };
