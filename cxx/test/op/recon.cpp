@@ -29,7 +29,7 @@ TEST_CASE("Recon", "[recon]")
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF);
+  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF, false);
 
   TOps::Compose<TOps::SENSE, TOps::TOp<Cx, 5, 3>> recon(sense, nufft);
 

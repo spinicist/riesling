@@ -1,7 +1,7 @@
 #include "op/sense.hpp"
 #include "tensors.hpp"
-#include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace rl;
 using namespace Catch;
@@ -22,7 +22,7 @@ TEST_CASE("ops-sense")
     maps.setRandom();
     maps = maps / ConjugateSum(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{channels, 1, 1, 1, 1});
 
-    TOps::SENSE sense(maps, 1);
+    TOps::SENSE sense(maps, 1, false);
     y = sense.forward(u);
     x = sense.adjoint(v);
 

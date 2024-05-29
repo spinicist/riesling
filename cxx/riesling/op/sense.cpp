@@ -13,7 +13,8 @@ void main_op_sense(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Positional<std::string> sname(parser, "FILE", "SENSE maps HD5 file");
-  args::Flag                    fwd(parser, "", "Apply forward operation", {'f', "fwd"});
+  args::Flag                    fwd(parser, "F", "Apply forward operation", {'f', "fwd"});
+  args::Flag                    vcc(parser, "V", "Add Virtual Conjugate Channels", {"vcc"});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (image/channels)", {'d', "dset"});
   ParseCommand(parser, iname);
   HD5::Reader ireader(iname.Get());
@@ -31,8 +32,8 @@ void main_op_sense(args::Subparser &parser)
     if (MidN<1, 4>(maps.dimensions()) != FirstN<4>(images.dimensions())) {
       Log::Fail("Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
     }
-    TOps::SENSE sense(maps, images.dimension(0));
-    Cx6     channels(AddBack(maps.dimensions(), images.dimension(4)));
+    TOps::SENSE sense(maps, images.dimension(0), vcc);
+    Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
       auto const temp = sense.forward(CChipMap(images, ii));
       channels.chip<5>(ii).device(Threads::GlobalDevice()) = temp;
@@ -43,8 +44,8 @@ void main_op_sense(args::Subparser &parser)
     if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
       Log::Fail("Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
     }
-    TOps::SENSE sense(maps, channels.dimension(1));
-    Cx5     images(LastN<5>(channels.dimensions()));
+    TOps::SENSE sense(maps, channels.dimension(1), vcc);
+    Cx5         images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));
     }

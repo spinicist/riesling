@@ -17,13 +17,14 @@ auto SENSE(CoreOpts               &coreOpts,
            TOps::SENSE::Ptr const &sense,
            Basis<Cx> const        &basis) -> TOps::TOp<Cx, 4, 4>::Ptr
 {
-  Index const nC = sense->nChannels();
-  auto const  shape = sense->mapDimensions();
+  auto const shape = sense->mapDimensions();
 
   TOps::TOp<Cx, 5, 3>::Ptr FT = nullptr;
   if (coreOpts.ndft) {
-    FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
+    if (gridOpts.vcc) { Log::Fail("VCC and NDFT not supported yet"); }
+    FT = TOps::NDFT<3>::Make(shape, traj.points(), sense->nChannels(), basis);
   } else {
+    auto const nC = sense->nChannels() / (gridOpts.vcc ? 2 : 1);
     FT = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);
   }
 

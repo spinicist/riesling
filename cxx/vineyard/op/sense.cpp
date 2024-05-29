@@ -3,12 +3,16 @@
 #include "tensors.hpp"
 #include "threads.hpp"
 
+#include <numbers>
+
+constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
+
 namespace rl::TOps {
 
 SENSE::SENSE(Cx5 const &maps, Index const frames, bool const vcc)
   : Parent("SENSEOp",
            AddFront(LastN<3>(maps.dimensions()), frames),
-           AddFront(LastN<3>(maps.dimensions()), maps.dimension(0), frames))
+           AddFront(LastN<3>(maps.dimensions()), maps.dimension(0) * (vcc ? 2 : 1), frames))
   , maps_{std::move(maps)}
   , vcc_{vcc}
 {
@@ -32,14 +36,33 @@ SENSE::SENSE(Cx5 const &maps, Index const frames, bool const vcc)
 void SENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y);
-  y.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
+  if (vcc_) {
+    Sz5 st{0, 0, 0, 0, 0}, sz = oshape;
+    sz[0] /= 2;
+    y.slice(st, sz).device(Threads::GlobalDevice()) =
+      x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * maps_.constant(inv_sqrt2);
+    st[0] += sz[0];
+    y.slice(st, sz).device(Threads::GlobalDevice()) =
+      x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * maps_.constant(inv_sqrt2);
+  } else {
+    y.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
+  }
   finishForward(y, time);
 }
 
 void SENSE::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x);
-  x.device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.broadcast(brdMaps));
+  if (vcc_) {
+    Sz5 st{0, 0, 0, 0, 0}, sz = oshape;
+    sz[0] /= 2;
+    x.device(Threads::GlobalDevice()) = ConjugateSum(y.slice(st, sz), maps_.broadcast(brdMaps)) * maps_.constant(inv_sqrt2);
+    st[0] += sz[0];
+    x.device(Threads::GlobalDevice()) =
+      x + ConjugateSum(y.slice(st, sz), maps_.broadcast(brdMaps).conjugate()) * maps_.constant(inv_sqrt2);
+  } else {
+    x.device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.broadcast(brdMaps));
+  }
   finishAdjoint(x, time);
 }
 

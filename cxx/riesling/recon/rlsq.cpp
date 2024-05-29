@@ -34,7 +34,8 @@ void main_recon_rlsq(args::Subparser &parser)
   Index const nV = noncart.dimension(4);
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0));
+  auto const sense =
+    std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, noncart), basis.dimension(0), gridOpts.vcc);
   auto const recon = Recon::SENSE(coreOpts, gridOpts, traj, nS, sense, basis);
   auto const shape = recon->ishape;
   auto const M = make_kspace_pre(traj, recon->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
@@ -76,9 +77,9 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
-  Sz3         outSz = out_cropper.size();
-  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
+  Cropper out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
+  Sz3     outSz = out_cropper.size();
+  Cx5     out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
   if (coreOpts.residual) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
   float const scale = Scaling(rlsqOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);

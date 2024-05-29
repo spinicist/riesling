@@ -7,7 +7,7 @@ namespace rl::TOps {
 struct SENSE final : TOp<Cx, 4, 5>
 {
   OP_INHERIT(Cx, 4, 5)
-  SENSE(Cx5 const &maps, Index const frames, bool const vcc = false);
+  SENSE(Cx5 const &maps, Index const frames, bool const vcc);
   OP_DECLARE(SENSE)
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
