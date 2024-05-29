@@ -17,7 +17,7 @@ struct GridOpts
   args::ValueFlag<std::string> ktype;
   args::ValueFlag<float>       osamp;
   args::Flag                   vcc;
-  args::ValueFlag<Index>       batches, bucketSize, splitSize;
+  args::ValueFlag<Index>       batches, subgridSize, splitSize;
 };
 
 namespace TOps {
@@ -26,7 +26,6 @@ template <typename Scalar_, int NDim> struct Grid final : TOp<Scalar_, NDim + 2,
   OP_INHERIT(Scalar_, NDim + 2, 3)
   using Parent::adjoint;
   using Parent::forward;
-  using T1 = Eigen::Tensor<Scalar, 1>;
   std::shared_ptr<Kernel<Scalar, NDim>> kernel;
   Mapping<NDim>                         mapping;
   Basis<Scalar>                         basis;

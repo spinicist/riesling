@@ -18,7 +18,7 @@ template <int NDim> struct NUFFT final : TOp<Cx, NDim + 2, 3>
         Index const              nC,
         Basis<Cx> const         &basis = IdBasis<Scalar>(),
         bool const               VCC = false,
-        Index const              bucketSz = 32,
+        Index const              subgridSz = 32,
         Index const              splitSz = 16384,
         Index const              nBatches = 1);
   OP_DECLARE(NUFFT)

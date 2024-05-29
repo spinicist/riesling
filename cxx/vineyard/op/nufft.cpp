@@ -15,11 +15,11 @@ NUFFT<NDim>::NUFFT(Sz<NDim> const           matrix,
                    Index const              nChan,
                    Basis<Cx> const         &basis,
                    bool const               VCC,
-                   Index const              bucketSz,
+                   Index const              subgridSz,
                    Index const              splitSz,
                    Index const              nBatch)
   : Parent("NUFFT")
-  , gridder{traj, ktype, osamp, nChan / nBatch, basis, VCC, bucketSz, splitSz}
+  , gridder{traj, ktype, osamp, nChan / nBatch, basis, VCC, subgridSz, splitSz}
   , workspace{gridder.ishape}
   , pad{AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape}
   , apo{pad.ishape, LastN<NDim>(gridder.ishape), gridder.kernel}
@@ -41,7 +41,7 @@ auto NUFFT<NDim>::Make(Sz<NDim> const           matrix,
                        Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim>>
 {
   return std::make_shared<NUFFT<NDim>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.vcc,
-                                       opts.bucketSize.Get(), opts.splitSize.Get(), opts.batches.Get());
+                                       opts.subgridSize.Get(), opts.splitSize.Get(), opts.batches.Get());
 }
 
 template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const

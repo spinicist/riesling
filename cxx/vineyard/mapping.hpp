@@ -19,7 +19,7 @@ struct Mapping
   Mapping(TrajectoryN<NDims> const &t,
           float const               nomOSamp,
           Index const               kW,
-          Index const               bucketSize = 32,
+          Index const               subgridSize = 32,
           Index const               splitSize = 16384);
 
   float     osamp;
@@ -29,7 +29,7 @@ struct Mapping
   std::vector<std::array<int16_t, NDims>>    cart;
   std::vector<NoncartesianIndex>             noncart;
   std::vector<Eigen::Array<float, NDims, 1>> offset;
-  std::vector<Subgrid<NDims>>                 buckets;
+  std::vector<Subgrid<NDims>>                 subgrids;
   std::vector<int32_t>                       sortedIndices;
 };
 

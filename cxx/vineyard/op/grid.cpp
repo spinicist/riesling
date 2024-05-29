@@ -17,7 +17,7 @@ GridOpts::GridOpts(args::Subparser &parser)
   , osamp(parser, "O", "Grid oversampling factor (2)", {"osamp"}, 2.f)
   , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
   , batches(parser, "B", "Channel batch size (1)", {"batches"}, 1)
-  , bucketSize(parser, "B", "Gridding subgrid size (32)", {"subgrid-size"}, 32)
+  , subgridSize(parser, "B", "Gridding subgrid size (32)", {"subgrid-size"}, 32)
   , splitSize(parser, "S", "Subgrid split size (16384)", {"subgrid-split"}, 16384)
 {
 }
@@ -76,93 +76,90 @@ Grid<Scalar, NDim>::Grid(
 
 template <typename Scalar, int ND, bool vcc>
 inline void forwardCoilDim(Sz<ND + 2>                                                   xi,
-                           Sz<ND + 2>                                                   bi,
                            Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-                           Eigen::Tensor<Scalar, ND + 2>                               &bGrid)
+                           Sz<ND + 2>                                                   sxi,
+                           Eigen::Tensor<Scalar, ND + 2>                               &sx)
 {
-  for (Index ii = 0; ii < bGrid.dimensions()[0]; ii++) {
-    bi[0] = ii;
+  for (Index ii = 0; ii < sx.dimensions()[0]; ii++) {
+    sxi[0] = ii;
     if constexpr (std::is_same<Scalar, Cx>::value && vcc) {
-      xi[0] = bGrid.dimensions()[0] + ii;
-      bGrid(bi) = std::conj(x(xi));
+      xi[0] = sx.dimensions()[0] + ii;
+      sx(sxi) = std::conj(x(xi));
     } else {
       xi[0] = ii;
-      // fmt::print(stderr, "bGrid {} bi {} x {} xi {}\n", bGrid.dimensions(), bi, x.dimensions(), xi);
-      bGrid(bi) = x(xi);
+      sx(sxi) = x(xi);
     }
   }
 }
 
 template <typename Scalar, int ND, bool vcc>
 inline void forwardBasisDim(Sz<ND + 2>                                                   xi,
-                            Sz<ND + 2>                                                   bi,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-                            Eigen::Tensor<Scalar, ND + 2>                               &bGrid)
+                            Sz<ND + 2>                                                   sxi,
+                            Eigen::Tensor<Scalar, ND + 2>                               &sx)
 {
   for (Index ii = 0; ii < x.dimensions()[1]; ii++) {
     xi[1] = ii;
-    bi[1] = ii;
-    forwardCoilDim<Scalar, ND, vcc>(xi, bi, x, bGrid);
+    sxi[1] = ii;
+    forwardCoilDim<Scalar, ND, vcc>(xi, x, sxi, sx);
   }
 }
 
 template <typename Scalar, int ND, bool vcc, int D>
 inline void forwardSpatialDim(Sz<ND> const                                                 xSt,
                               Sz<ND + 2>                                                   xi,
-                              Sz<ND + 2>                                                   sxi,
                               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
+                              Sz<ND + 2>                                                   sxi,
                               Eigen::Tensor<Scalar, ND + 2>                               &sx)
 {
   for (Index ii = 0; ii < sx.dimensions()[D + 2]; ii++) {
     xi[D + 2] = Wrap(ii + xSt[D], x.dimensions()[D + 2]);
     sxi[D + 2] = ii;
     if constexpr (D == 0) {
-      forwardBasisDim<Scalar, ND, vcc>(xi, sxi, x, sx);
+      forwardBasisDim<Scalar, ND, vcc>(xi, x, sxi, sx);
     } else {
-      forwardSpatialDim<Scalar, ND, vcc, D - 1>(xSt, xi, sxi, x, sx);
+      forwardSpatialDim<Scalar, ND, vcc, D - 1>(xSt, xi, x, sxi, sx);
     }
   }
 }
 
+template <typename Scalar, int ND, bool vcc>
+inline void forwardTask(Mapping<ND> const                                           &map,
+                        Basis<Scalar> const                                         &basis,
+                        std::shared_ptr<Kernel<Scalar, ND>> const                   &kernel,
+                        Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
+                        Eigen::TensorMap<Eigen::Tensor<Scalar, 3>>                  &y)
+{
+  Index const nC = x.dimensions()[0] / (vcc ? 2 : 1);
+  Index const nB = x.dimensions()[1];
+  auto        grid_task = [&](Index const is) {
+    auto const                   &subgrid = map.subgrids[is];
+    Eigen::Tensor<Scalar, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
+    Sz<ND + 2>                    xi, sxi;
+    xi.fill(0);
+    sxi.fill(0);
+    forwardSpatialDim<Scalar, ND, vcc, ND - 1>(subgrid.minCorner, xi, x, sxi, sx);
+
+    for (auto ii = 0; ii < subgrid.count(); ii++) {
+      auto const                     si = subgrid.indices[ii];
+      auto const                     c = map.cart[si];
+      auto const                     n = map.noncart[si];
+      auto const                     o = map.offset[si];
+      Eigen::Tensor<Scalar, 1> const bs =
+        basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
+      y.template chip<2>(n.trace).template chip<1>(n.sample) += kernel->gather(c, o, subgrid.minCorner, bs, map.cartDims, sx);
+    }
+  };
+  Threads::For(grid_task, map.subgrids.size());
+}
+
 template <typename Scalar, int NDim> void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
 {
-  auto outer_task = [&x, &y, &basis = this->basis, &kernel = this->kernel, &ishape = this->ishape](Mapping<NDim> const &map,
-                                                                                                   bool const           vcc) {
-    Index const nC = ishape[0] / (vcc ? 2 : 1);
-    Index const nB = ishape[1];
-    auto        grid_task = [&](Index const ibucket) {
-      auto const &subgrid = map.buckets[ibucket];
-
-      auto const bSz = AddFront(subgrid.size(), nC, nB);
-      InTensor   bGrid(bSz);
-
-      Sz<NDim + 2> xi, bi;
-      xi.fill(0);
-      bi.fill(0);
-      if (vcc) {
-        forwardSpatialDim<Scalar, NDim, true, NDim - 1>(subgrid.minCorner, xi, bi, x, bGrid);
-      } else {
-        forwardSpatialDim<Scalar, NDim, false, NDim - 1>(subgrid.minCorner, xi, bi, x, bGrid);
-      }
-
-      for (auto ii = 0; ii < subgrid.count(); ii++) {
-        auto const si = subgrid.indices[ii];
-        auto const c = map.cart[si];
-        auto const n = map.noncart[si];
-        auto const o = map.offset[si];
-        T1 const   bs = basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
-        y.template chip<2>(n.trace).template chip<1>(n.sample) +=
-          kernel->gather(c, o, subgrid.minCorner, bs, map.cartDims, bGrid);
-      }
-    };
-    Threads::For(grid_task, map.buckets.size());
-  };
-
   auto const time = this->startForward(x);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
-  outer_task(this->mapping, false);
+  forwardTask<Scalar, NDim, false>(this->mapping, this->basis, this->kernel, x, y);
   if (this->vccMapping) {
-    outer_task(this->vccMapping.value(), true);
+    forwardTask<Scalar, NDim, true>(this->vccMapping.value(), this->basis, this->kernel, x, y);
     y.device(Threads::GlobalDevice()) = y / y.constant(sqrt2);
   }
   this->finishForward(y, time);
@@ -229,8 +226,8 @@ inline void adjointTask(Mapping<ND> const                                      &
   Index const nB = x.dimensions()[1];
 
   std::mutex writeMutex;
-  auto       grid_task = [&](Index ibucket) {
-    auto const                   &subgrid = map.buckets[ibucket];
+  auto       grid_task = [&](Index is) {
+    auto const                   &subgrid = map.subgrids[is];
     Eigen::Tensor<Scalar, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
     sx.setZero();
     for (auto ii = 0; ii < subgrid.count(); ii++) {
@@ -252,7 +249,7 @@ inline void adjointTask(Mapping<ND> const                                      &
       adjointSpatialDim<Scalar, ND, vcc, ND - 1>(sxi, sx, subgrid.minCorner, xi, x);
     }
   };
-  Threads::For(grid_task, map.buckets.size());
+  Threads::For(grid_task, map.subgrids.size());
 }
 
 template <typename Scalar, int NDim> void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
