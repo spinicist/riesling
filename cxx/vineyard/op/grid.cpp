@@ -6,6 +6,9 @@
 #include "top.hpp"
 
 #include <mutex>
+#include <numbers>
+
+using namespace std::numbers;
 
 namespace rl {
 
@@ -160,7 +163,7 @@ template <typename Scalar, int NDim> void Grid<Scalar, NDim>::forward(InCMap con
   outer_task(this->mapping, false);
   if (this->vccMapping) {
     outer_task(this->vccMapping.value(), true);
-    y.device(Threads::GlobalDevice()) = y / y.constant(2.f);
+    y.device(Threads::GlobalDevice()) = y / y.constant(sqrt2);
   }
   this->finishForward(y, time);
 }
@@ -215,51 +218,52 @@ inline void adjointSpatialDim(Sz<ND + 2>                                       s
   }
 }
 
+template <typename Scalar, int ND, bool vcc>
+inline void adjointTask(Mapping<ND> const                                      &map,
+                        Basis<Scalar> const                                    &basis,
+                        std::shared_ptr<Kernel<Scalar, ND>> const              &kernel,
+                        Eigen::TensorMap<Eigen::Tensor<Scalar, 3> const> const &y,
+                        Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2>>        &x)
+{
+  Index const nC = x.dimensions()[0] / (vcc ? 2 : 1);
+  Index const nB = x.dimensions()[1];
+
+  std::mutex writeMutex;
+  auto       grid_task = [&](Index ibucket) {
+    auto const                   &subgrid = map.buckets[ibucket];
+    Eigen::Tensor<Scalar, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
+    sx.setZero();
+    for (auto ii = 0; ii < subgrid.count(); ii++) {
+      auto const                     si = subgrid.indices[ii];
+      auto const                     c = map.cart[si];
+      auto const                     n = map.noncart[si];
+      auto const                     o = map.offset[si];
+      Eigen::Tensor<Scalar, 1> const bs =
+        basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1)).conjugate();
+      Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
+      kernel->spread(c, o, subgrid.minCorner, bs, yy, sx);
+    }
+
+    {
+      std::scoped_lock lock(writeMutex);
+      Sz<ND + 2>       xi, sxi;
+      xi.fill(0);
+      sxi.fill(0);
+      adjointSpatialDim<Scalar, ND, vcc, ND - 1>(sxi, sx, subgrid.minCorner, xi, x);
+    }
+  };
+  Threads::For(grid_task, map.buckets.size());
+}
+
 template <typename Scalar, int NDim> void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto outer_task = [&y, &x, &basis = this->basis, &kernel = this->kernel, &ishape = this->ishape](Mapping<NDim> const &map,
-                                                                                                   bool const           vcc) {
-    Index const nC = ishape[0];
-    Index const nB = ishape[1];
-
-    std::mutex writeMutex;
-    auto       grid_task = [&](Index ibucket) {
-      auto const &subgrid = map.buckets[ibucket];
-      auto const  bSz = AddFront(subgrid.size(), nC, nB);
-      InTensor    bGrid(bSz);
-      bGrid.setZero();
-      for (auto ii = 0; ii < subgrid.count(); ii++) {
-        auto const si = subgrid.indices[ii];
-        auto const c = map.cart[si];
-        auto const n = map.noncart[si];
-        auto const o = map.offset[si];
-        T1 const   bs =
-          basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1)).conjugate();
-        Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
-        kernel->spread(c, o, subgrid.minCorner, bs, yy, bGrid);
-      }
-
-      {
-        std::scoped_lock lock(writeMutex);
-        Sz<NDim + 2>     xi, bi;
-        xi.fill(0);
-        bi.fill(0);
-        if (vcc) {
-          adjointSpatialDim<Scalar, NDim, true, NDim - 1>(bi, bGrid, subgrid.minCorner, xi, x);
-        } else {
-          adjointSpatialDim<Scalar, NDim, false, NDim - 1>(bi, bGrid, subgrid.minCorner, xi, x);
-        }
-      }
-    };
-    Threads::For(grid_task, map.buckets.size());
-  };
 
   auto const time = this->startAdjoint(y);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
-  outer_task(this->mapping, false);
+  adjointTask<Scalar, NDim, false>(this->mapping, this->basis, this->kernel, y, x);
   if (this->vccMapping) {
-    outer_task(this->vccMapping.value(), true);
-    x.device(Threads::GlobalDevice()) = x / x.constant(2.f);
+    adjointTask<Scalar, NDim, true>(this->vccMapping.value(), this->basis, this->kernel, y, x);
+    x.device(Threads::GlobalDevice()) = x / x.constant(sqrt2);
   }
   this->finishAdjoint(x, time);
 }
