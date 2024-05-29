@@ -21,7 +21,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
-    auto const time = this->startForward(x);
+    auto const time = this->startForward(x, y);
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::InCMap xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
       typename Op::OutMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
@@ -34,7 +34,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
-    auto const time = this->startAdjoint(y);
+    auto const time = this->startAdjoint(y, x);
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::OutCMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
       typename Op::InMap   xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
@@ -43,15 +43,6 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     }
     this->finishAdjoint(x, time);
   }
-
-  // auto adjfwd(InputMap x) const -> InputMap
-  // {
-  //   for (Index ii = 0; ii < N_; ii++) {
-  //     Log::Debug("Loop Adjoint-Forward Iteration {}", ii);
-  //     this->input().chip(ii, InRank - 1) = op_->adjfwd(ChipMap(x, ii));
-  //   }
-  //   return this->input();
-  // }
 
 private:
   std::shared_ptr<Op> op_;

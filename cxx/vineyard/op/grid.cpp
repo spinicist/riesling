@@ -130,7 +130,7 @@ inline void forwardTask(Mapping<ND> const                                       
                         Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
                         Eigen::TensorMap<Eigen::Tensor<Scalar, 3>>                  &y)
 {
-  Index const nC = x.dimensions()[0] / (vcc ? 2 : 1);
+  Index const nC = y.dimensions()[0];
   Index const nB = x.dimensions()[1];
   auto        grid_task = [&](Index const is) {
     auto const                   &subgrid = map.subgrids[is];
@@ -155,7 +155,7 @@ inline void forwardTask(Mapping<ND> const                                       
 
 template <typename Scalar, int NDim> void Grid<Scalar, NDim>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
   forwardTask<Scalar, NDim, false>(this->mapping, this->basis, this->kernel, x, y);
   if (this->vccMapping) {
@@ -222,9 +222,9 @@ inline void adjointTask(Mapping<ND> const                                      &
                         Eigen::TensorMap<Eigen::Tensor<Scalar, 3> const> const &y,
                         Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2>>        &x)
 {
-  Index const nC = x.dimensions()[0] / (vcc ? 2 : 1);
+  Index const nC = y.dimensions()[0];
   Index const nB = x.dimensions()[1];
-
+  
   std::mutex writeMutex;
   auto       grid_task = [&](Index is) {
     auto const                   &subgrid = map.subgrids[is];
@@ -255,7 +255,7 @@ inline void adjointTask(Mapping<ND> const                                      &
 template <typename Scalar, int NDim> void Grid<Scalar, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
 
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
   adjointTask<Scalar, NDim, false>(this->mapping, this->basis, this->kernel, y, x);
   if (this->vccMapping) {

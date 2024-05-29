@@ -37,14 +37,15 @@ Apodize<S, NDim>::Apodize(InDims const ish, Sz<NDim> const gshape, std::shared_p
 
 template <typename S, int NDim> void Apodize<S, NDim>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   y.device(Threads::GlobalDevice()) = x * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(y, time);
 }
 
 template <typename S, int NDim> void Apodize<S, NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
+  Log::Debug("y {} x {} res {} brd {}", y.dimensions(), x.dimensions(), res_, brd_);
   x.device(Threads::GlobalDevice()) = y * apo_.reshape(res_).broadcast(brd_);
   this->finishForward(x, time);
 }

@@ -26,8 +26,8 @@ NUFFT<NDim>::NUFFT(Sz<NDim> const           matrix,
   , batches{nBatch}
 {
   if (nChan % nBatch != 0) { Log::Fail("Batch size {} does not cleanly divide number of channels {}", nBatch, nChan); }
-  ishape = AddFront(AMin(matrix, LastN<NDim>(gridder.ishape)), nChan, gridder.ishape[1]);
-  oshape = AddFront(LastN<2>(gridder.oshape), nChan);
+  ishape = AddFront(AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape[0], gridder.ishape[1]);
+  oshape = AddFront(LastN<2>(gridder.oshape), gridder.oshape[0]);
   std::iota(fftDims.begin(), fftDims.end(), 2);
   fftPh = FFT::PhaseShift(LastN<NDim>(gridder.ishape));
   Log::Debug("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder.ishape);
@@ -46,7 +46,7 @@ auto NUFFT<NDim>::Make(Sz<NDim> const           matrix,
 
 template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     pad.forward(apo.forward(x), wsm);
@@ -74,7 +74,7 @@ template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const
 
 template <int NDim> void NUFFT<NDim>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     gridder.adjoint(y, wsm);

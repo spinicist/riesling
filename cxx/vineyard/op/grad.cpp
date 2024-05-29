@@ -34,7 +34,7 @@ Grad::Grad(InDims const ish, std::vector<Index> const &d)
 
 void Grad::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   y.setZero();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     ForwardDiff(x, y.chip<4>(ii), x.dimensions(), dims_[ii]);
@@ -44,7 +44,7 @@ void Grad::forward(InCMap const &x, OutMap &y) const
 
 void Grad::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
   x.setZero();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     BackwardDiff(y.chip<4>(ii), x, x.dimensions(), dims_[ii]);
@@ -59,7 +59,7 @@ GradVec::GradVec(InDims const dims)
 
 void GradVec::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   Sz4 const  sz = FirstN<4>(x.dimensions());
   y.setZero();
   for (Index ii = 0; ii < 3; ii++) {
@@ -82,7 +82,7 @@ void GradVec::forward(InCMap const &x, OutMap &y) const
 
 void GradVec::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
   Sz4 const  sz = FirstN<4>(x.dimensions());
   x.setZero();
   for (Index ii = 0; ii < 3; ii++) {

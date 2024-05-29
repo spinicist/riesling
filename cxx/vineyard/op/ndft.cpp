@@ -84,7 +84,7 @@ void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float 
 
 template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const  time = this->startForward(x);
+  auto const  time = this->startForward(x, y);
   Index const nC = ishape[0];
   Index const nV = ishape[1];
   auto const  xr = x.reshape(Sz3{nC, nV, N});
@@ -107,7 +107,7 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
 
 template <int NDim> void NDFT<NDim>::adjoint(OutCMap const &yy, InMap &x) const
 {
-  auto const                             time = this->startAdjoint(yy);
+  auto const                             time = this->startAdjoint(yy, x);
   OutTensor                              sy;
   OutCMap                                y(yy);
   Index const                            nC = ishape[0];

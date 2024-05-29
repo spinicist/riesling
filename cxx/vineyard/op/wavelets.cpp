@@ -51,7 +51,7 @@ Wavelets::Wavelets(Sz4 const shape, Index const N, Sz4 const dims)
 
 void Wavelets::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = startForward(x);
+  auto const time = startForward(x, y);
   y = x;
   dimLoops(y, false);
   finishForward(y, time);
@@ -59,7 +59,7 @@ void Wavelets::forward(InCMap const &x, OutMap &y) const
 
 void Wavelets::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = startAdjoint(y);
+  auto const time = startAdjoint(y, x);
   x = y;
   dimLoops(x, true);
   finishAdjoint(x, time);

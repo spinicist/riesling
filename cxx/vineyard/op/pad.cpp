@@ -34,14 +34,14 @@ template <typename Scalar_, int Rank, int ImgRank> void Pad<Scalar_, Rank, ImgRa
 
 template <typename Scalar_, int Rank, int ImgRank> void Pad<Scalar_, Rank, ImgRank>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   y.device(Threads::GlobalDevice()) = x.pad(paddings_);
   this->finishForward(y, time);
 }
 
 template <typename Scalar_, int Rank, int ImgRank> void Pad<Scalar_, Rank, ImgRank>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
   x.device(Threads::GlobalDevice()) = y.slice(left_, ishape);
   this->finishAdjoint(x, time);
 }

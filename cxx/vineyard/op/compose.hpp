@@ -31,7 +31,7 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
     typename Op1::OutTensor temp(op1_->oshape);
     typename Op1::OutMap    tm(temp.data(), op1_->oshape);
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
-    auto const              time = this->startForward(x);
+    auto const              time = this->startForward(x, y);
     op1_->forward(x, tm);
     op2_->forward(tcm, y);
     this->finishForward(y, time);
@@ -42,7 +42,7 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
     typename Op1::OutTensor temp(op1_->oshape);
     typename Op1::OutMap    tm(temp.data(), op1_->oshape);
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
-    auto const              time = this->startAdjoint(y);
+    auto const              time = this->startAdjoint(y, x);
     op2_->adjoint(y, tm);
     op1_->adjoint(tcm, x);
     this->finishAdjoint(x, time);

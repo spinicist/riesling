@@ -89,9 +89,10 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   virtual void forward(InCMap const &x, OutMap &y) const = 0;
   virtual void adjoint(OutCMap const &y, InMap &x) const = 0;
 
-  auto startForward(InCMap const &x) const
+  auto startForward(InCMap const &x, OutMap const &y) const
   {
-    if (x.dimensions() != ishape) { Log::Fail("{} forward dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
+    if (x.dimensions() != ishape) { Log::Fail("{} forward x dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
+    if (y.dimensions() != oshape) { Log::Fail("{} forward y dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Debug("{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
     }
@@ -105,9 +106,10 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
     }
   }
 
-  auto startAdjoint(OutCMap const &y) const
+  auto startAdjoint(OutCMap const &y, InMap const &x) const
   {
-    if (y.dimensions() != oshape) { Log::Fail("{} adjoint dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
+    if (y.dimensions() != oshape) { Log::Fail("{} adjoint y dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
+    if (x.dimensions() != ishape) { Log::Fail("{} adjoint x dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Debug("{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
     }
@@ -155,14 +157,14 @@ template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
 
   void forward(InCMap const &x, OutMap &y) const
   {
-    auto const time = Parent::startForward(x);
+    auto const time = Parent::startForward(x, y);
     y = x;
     Parent::finishAdjoint(y, time);
   }
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
-    auto const time = Parent::startAdjoint(y);
+    auto const time = Parent::startAdjoint(y, x);
     x = y;
     Parent::finishAdjoint(x, time);
   }

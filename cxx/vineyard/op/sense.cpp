@@ -5,11 +5,12 @@
 
 namespace rl::TOps {
 
-SENSE::SENSE(Cx5 const &maps, Index const frames)
+SENSE::SENSE(Cx5 const &maps, Index const frames, bool const vcc)
   : Parent("SENSEOp",
            AddFront(LastN<3>(maps.dimensions()), frames),
            AddFront(LastN<3>(maps.dimensions()), maps.dimension(0), frames))
   , maps_{std::move(maps)}
+  , vcc_{vcc}
 {
   if (!(maps.dimension(1) == 1 || maps.dimension(1) == frames)) {
     Log::Fail("SENSE maps had {} frames, expected {}", maps.dimension(1), frames);
@@ -30,14 +31,14 @@ SENSE::SENSE(Cx5 const &maps, Index const frames)
 
 void SENSE::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = startForward(x);
+  auto const time = startForward(x, y);
   y.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
   finishForward(y, time);
 }
 
 void SENSE::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = startAdjoint(y);
+  auto const time = startAdjoint(y, x);
   x.device(Threads::GlobalDevice()) = ConjugateSum(y, maps_.broadcast(brdMaps));
   finishAdjoint(x, time);
 }

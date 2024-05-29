@@ -20,7 +20,7 @@ FFT<Rank, FFTRank>::FFT(InMap x)
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x);
+  auto const time = this->startForward(x, y);
   y = x;
   rl::FFT::Forward(y, dims_, ph_);
   this->finishForward(y, time);
@@ -28,7 +28,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y);
+  auto const time = this->startAdjoint(y, x);
   x = y;
   rl::FFT::Adjoint(x, dims_, ph_);
   this->finishAdjoint(x, time);
