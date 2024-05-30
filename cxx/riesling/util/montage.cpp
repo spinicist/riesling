@@ -183,20 +183,38 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
     }
   }
   rl::RGBImage cbar;
+  std::string  leftLabel, rightLabel;
   switch (component) {
-  case 'p': cbar = rl::ColorizeComplex(cx, 1.f, 1.f); break;
-  case 'x': cbar = rl::ColorizeComplex(cx, win / 2.f, ɣ); break;
-  case 'r': cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ); break;
-  case 'i': cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ); break;
-  case 'm': cbar = rl::Greyscale(cx.abs(), 0, win, ɣ); break;
+  case 'p': {
+    leftLabel = "-ᴨ";
+    rightLabel = "ᴨ";
+    cbar = rl::ColorizeComplex(cx, 1.f, 1.f);
+  } break;
+  case 'x': {
+    leftLabel = "0";
+    rightLabel = fmt::format("{:.1f}", win);
+    cbar = rl::ColorizeComplex(cx, win / 2.f, ɣ);
+  } break;
+  case 'r': {
+    leftLabel = fmt::format("{:.1f}", -win);
+    rightLabel = fmt::format("{:.1f}", win);
+    cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ);
+  } break;
+  case 'i': {
+    leftLabel = fmt::format("{:.1f}", -win);
+    rightLabel = fmt::format("{:.1f}", win);
+    cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ);
+  } break;
+  case 'm': {
+    leftLabel = "0";
+    rightLabel = fmt::format("{:.1f}", win);
+    cbar = rl::Greyscale(cx.abs(), 0, win, ɣ);
+  } break;
   default: rl::Log::Fail("Uknown component type {}", component);
   }
 
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
   Magick::Geometry const cbarTextBounds(W, H, W * 0.01);
-
-  std::string const leftLabel = "0";
-  std::string const rightLabel = fmt::format("{:.2f}", win);
 
   cbarImg.density(img.density());
   cbarImg.font(img.font());
