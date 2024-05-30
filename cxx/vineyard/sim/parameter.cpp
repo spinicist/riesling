@@ -1,6 +1,6 @@
 #include "parameter.hpp"
 
-#include "../log.hpp"
+#include "log.hpp"
 #include <random>
 
 namespace rl::Parameters {
@@ -156,8 +156,10 @@ auto T1β1β2(Index const nS, std::vector<float> lo, std::vector<float> hi) -> E
   Index const nβ = 20;
   Index const nT = std::floor((float)nS / nβ / nβ);
   auto const  R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
-  auto const  β1s = Eigen::ArrayXf::LinSpaced(nT, β1lo, β1hi);
-  auto const  β2s = Eigen::ArrayXf::LinSpaced(nT, β2lo, β2hi);
+  auto const  β1s = Eigen::ArrayXf::LinSpaced(nβ, β1lo, β1hi);
+  auto const  β2s = Eigen::ArrayXf::LinSpaced(nβ, β2lo, β2hi);
+
+  Log::Print("nT {} R1 {}:{} β1 {}:{} β2 {}:{}", nT, R1lo, R1hi, β1lo, β1hi, β2lo, β2hi);
 
   Eigen::ArrayXXf p(3, nT * nβ * nβ);
 
