@@ -2,23 +2,30 @@ import h5py
 import xarray as xr
 import numpy as np
 
-INFO_FIELDS = ['matrix', 'voxel_size', 'origin', 'direction', 'tr']
-INFO_FORMAT = [('<i8', (3,)), ('<f4', (3,)), ('<f4', (3,)), ('<f4', (3, 3)), '<f4']
+INFO_FIELDS = ['voxel_size', 'origin', 'direction', 'tr']
+INFO_FORMAT = [('<f4', (3,)), ('<f4', (3,)), ('<f4', (3, 3)), '<f4']
 INFO_DTYPE = np.dtype({'names': INFO_FIELDS, 'formats': INFO_FORMAT})
 
 def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=None, compression='gzip'):
     with h5py.File(filename, 'w') as out_f:
+        # create dataset and assign dimension labels
         out_f.create_dataset('data', dtype='c8', data=data.data, chunks=np.shape(data.data), compression=compression)
+        for idd, dim in enumerate(data.dims):
+            out_f['data'].dims[idd].label = dim
+
+        # add trajectory property
         if trajectory is not None:
-            if trajectory.ndim != 3:
-                AssertionError('Trajectory must be 3 dimensional (co-ords, samples, traces)')
-            if trajectory.shape[2] > 3:
-                AssertionError('Trajectory cannot have more than 3 co-ordinates')
+            assert trajectory.ndim == 3, 'Trajectory must be 3 dimensional (co-ords, samples, traces)'
+            assert trajectory.shape[2] <= 3, 'Trajectory cannot have more than 3 co-ordinates'
             traj = out_f.create_dataset('trajectory', dtype='f4', data=trajectory, compression=compression)
             if matrix is not None:
                 traj.create_attribute('matrix', dtype='i8', data=matrix)
+
+        # add info struct
         if info is not None:
-            out_f.create_dataset('info', data=np.array([[info[f] for f in INFO_FIELDS]], dtype=INFO_DTYPE))
+            out_f.create_dataset('info', data=np.array([tuple([info[f] for f in INFO_FIELDS])], dtype=INFO_DTYPE))
+
+        # add meta info
         if meta is not None:
             meta_g = out_f.create_group('meta')
             for k, v in meta:
@@ -51,7 +58,7 @@ def read_meta(filename):
         if 'meta' in f.keys():
             meta = {}
             for k in f['meta'].keys():
-                meta[key] = f['meta'][key][0]
+                meta[k] = f['meta'][k][0]
             return meta
         else:
             return None
