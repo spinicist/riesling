@@ -18,6 +18,9 @@ def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=Non
             assert trajectory.ndim == 3, 'Trajectory must be 3 dimensional (co-ords, samples, traces)'
             assert trajectory.shape[2] <= 3, 'Trajectory cannot have more than 3 co-ordinates'
             traj = out_f.create_dataset('trajectory', dtype='f4', data=trajectory, compression=compression)
+            traj.dims[2].label = "k"
+            traj.dims[1].label = "sample"
+            traj.dims[0].label = "trace"
             if matrix is not None:
                 traj.create_attribute('matrix', dtype='i8', data=matrix)
 
