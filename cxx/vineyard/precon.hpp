@@ -9,7 +9,7 @@
 namespace rl {
 
 auto KSpaceSingle(
-  Trajectory const &traj, Basis<Cx> const &basis, bool const vcc, float const bias = 1.f, bool const ndft = false) -> Re2;
+  Trajectory const &traj, Basis<Cx> const &basis, bool const vcc, float const bias = 1.f) -> Re2;
 
 auto make_kspace_pre(Trajectory const  &traj,
                      Index const        nC,

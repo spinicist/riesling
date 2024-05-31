@@ -20,11 +20,11 @@ TEST_CASE("NUFFT", "[tform]")
   for (Index ii = 0; ii < M; ii++) {
     points(0, ii, 0) = -0.5f * M + ii;
   }
-  TrajectoryN<1> const traj(points, matrix);
-  float const          osamp = GENERATE(2.f, 2.3f);
-  TOps::NUFFT<1>           nufft(matrix, traj, "ES3", osamp, 1);
-  Cx3                  ks(nufft.oshape);
-  Cx3                  img(nufft.ishape);
+  TrajectoryN<1> const  traj(points, matrix);
+  float const           osamp = GENERATE(2.f, 2.3f);
+  TOps::NUFFT<1, false> nufft(matrix, traj, "ES3", osamp, 1);
+  Cx3                   ks(nufft.oshape);
+  Cx3                   img(nufft.ishape);
   img.setZero();
   img(0, 0, M / 2) = std::sqrt(M);
   ks = nufft.forward(img);
@@ -56,9 +56,9 @@ TEST_CASE("NUFFT Basis Trace", "[tform]")
     }
   }
 
-  float const osamp = 2.f;
-  TOps::NUFFT<1>  nufft(Sz1{M}, traj, "ES3", osamp, 1, basis);
-  Cx3         ks(nufft.oshape);
+  float const    osamp = 2.f;
+  TOps::NUFFT<1> nufft(Sz1{M}, traj, "ES3", osamp, 1, basis);
+  Cx3            ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);
   img.setZero();
@@ -81,9 +81,9 @@ TEST_CASE("NUFFT Basis Fourier", "[tform]")
   Index const          N = 3;
   auto                 b = FourierBasis(N, M, 1, 1.f);
 
-  float const osamp = 2.f;
-  TOps::NUFFT<1> nufft(Sz1{M}, traj, "ES3", osamp, 1, b.basis);
-  Cx3        ks(nufft.oshape);
+  float const           osamp = 2.f;
+  TOps::NUFFT<1, false> nufft(Sz1{M}, traj, "ES3", osamp, 1, b.basis);
+  Cx3                   ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);
   img.setZero();
@@ -101,17 +101,18 @@ TEST_CASE("NUFFT VCC", "[tform]")
   points.setZero();
 
   TrajectoryN<1> const traj(points, matrix);
-  TOps::NUFFT<1>           nufft(matrix, traj, "NN", 1.f, 1, IdBasis<Cx>(), true);
+  TOps::NUFFT<1, true> nufft(matrix, traj, "NN", 1.f, 1, IdBasis<Cx>(), true);
   Cx3                  ks(nufft.oshape);
+  // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));
-  Cx3                  img(nufft.ishape);
+  Cx4 img(nufft.ishape);
   img = nufft.adjoint(ks);
   INFO("IMG\n" << img);
   INFO("dims " << img.dimensions());
   CHECK(Norm(img) == Approx(1.f).margin(1.e-2f));
   for (Index ii = 0; ii < M; ii++) {
-    CHECK(img(0, 0, ii).real() == Approx(img(1, 0, ii).real()).margin(1e-6f));
-    CHECK(img(0, 0, ii).imag() == Approx(-img(1, 0, ii).imag()).margin(1e-6f));
+    CHECK(img(0, 0, 0, ii).real() == Approx(-img(0, 1, 0, ii).real()).margin(1e-6f));
+    CHECK(img(0, 0, 0, ii).imag() == Approx(-img(0, 1, 0, ii).imag()).margin(1e-6f));
   }
   ks = nufft.forward(img);
   INFO("KS\n" << ks);

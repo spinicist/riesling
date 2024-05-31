@@ -9,7 +9,7 @@
 #include <fmt/ranges.h>
 
 #include "types.hpp"
-
+#include "io/hd5-core.hpp"
 
 #define LOG_DEBUG(...)                                                                                                         \
   if (rl::Log::CurrentLevel() == rl::Log::Level::Debug) { rl::Log::Print<Log::Level::High>(__VA_ARGS__); }
@@ -42,32 +42,27 @@ auto  Saved() -> std::string const &;
 void  End();
 auto  TheTime() -> std::string;
 
-template <typename... Args>
-inline auto Format(fmt::format_string<Args...> fstr, Args &&...args) -> std::string
+template <typename... Args> inline auto Format(fmt::format_string<Args...> fstr, Args &&...args) -> std::string
 {
   return fmt::format("{} {}\n", TheTime(), fmt::format(fstr, std::forward<Args>(args)...));
 }
 
-template <typename... Args>
-inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
+template <typename... Args> inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
 {
   SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Ephemeral);
 }
 
-template <typename... Args>
-inline void Debug(fmt::format_string<Args...> fstr, Args &&...args)
+template <typename... Args> inline void Debug(fmt::format_string<Args...> fstr, Args &&...args)
 {
   SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Debug);
 }
 
-template <typename... Args>
-inline void Warn(fmt::format_string<Args...> const &fstr, Args &&...args)
+template <typename... Args> inline void Warn(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::bright_red, Level::None);
 }
 
-template <typename... Args>
-__attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
+template <typename... Args> __attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   auto const msg = Format(fstr, std::forward<Args>(args)...);
   SaveEntry(msg, fmt::terminal_color::bright_red, Level::None);
@@ -81,7 +76,10 @@ auto Now() -> Time;
 auto ToNow(Time const t) -> std::string;
 
 template <typename Scalar, int ND>
-void Tensor(std::string const &name, Sz<ND> const &shape, Scalar const *data);
+void Tensor(std::string const             &name,
+            Sz<ND> const                  &shape,
+            Scalar const                  *data,
+            HD5::DimensionNames<ND> const &dims = HD5::DimensionNames<ND>());
 
 } // namespace Log
 } // namespace rl

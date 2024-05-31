@@ -16,8 +16,6 @@ struct Opts
   args::ValueFlag<Index>                         volume;
   args::ValueFlag<Eigen::Array3f, Array3fReader> res, fov;
   args::ValueFlag<float>                         λ;
-  /*args::ValueFlag<Index>                         kRad, calRad, gap;
-    args::ValueFlag<float>                         threshold;*/
 };
 
 //! Convenience function to get low resolution multi-channel images

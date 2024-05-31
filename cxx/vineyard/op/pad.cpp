@@ -53,9 +53,12 @@ template struct Pad<float, 3, 3>;
 template struct Pad<Cx, 1, 1>;
 template struct Pad<Cx, 3, 1>;
 template struct Pad<Cx, 2, 2>;
+template struct Pad<Cx, 4, 1>;
 template struct Pad<Cx, 4, 2>;
 template struct Pad<Cx, 3, 3>;
 template struct Pad<Cx, 4, 3>;
+template struct Pad<Cx, 5, 2>;
 template struct Pad<Cx, 5, 3>;
+template struct Pad<Cx, 6, 3>;
 
 } // namespace rl::TOps

@@ -7,44 +7,45 @@
 
 namespace rl::TOps {
 
-template <int NDim>
-NUFFT<NDim>::NUFFT(Sz<NDim> const           matrix,
-                   TrajectoryN<NDim> const &traj,
-                   std::string const       &ktype,
-                   float const              osamp,
-                   Index const              nChan,
-                   Basis<Cx> const         &basis,
-                   bool const               VCC,
-                   Index const              subgridSz,
-                   Index const              splitSz,
-                   Index const              nBatch)
+template <int NDim, bool VCC>
+NUFFT<NDim, VCC>::NUFFT(Sz<NDim> const           matrix,
+                        TrajectoryN<NDim> const &traj,
+                        std::string const       &ktype,
+                        float const              osamp,
+                        Index const              nChan,
+                        Basis<Cx> const         &basis,
+                        Index const              subgridSz,
+                        Index const              splitSz,
+                        Index const              nBatch)
   : Parent("NUFFT")
-  , gridder{traj, ktype, osamp, nChan / nBatch, basis, VCC, subgridSz, splitSz}
+  , gridder{traj, ktype, osamp, nChan / nBatch, basis, subgridSz, splitSz}
   , workspace{gridder.ishape}
   , pad{AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape}
   , apo{pad.ishape, LastN<NDim>(gridder.ishape), gridder.kernel}
   , batches{nBatch}
 {
   if (nChan % nBatch != 0) { Log::Fail("Batch size {} does not cleanly divide number of channels {}", nBatch, nChan); }
-  ishape = AddFront(AMin(matrix, LastN<NDim>(gridder.ishape)), gridder.ishape[0], gridder.ishape[1]);
-  oshape = AddFront(LastN<2>(gridder.oshape), gridder.oshape[0]);
-  std::iota(fftDims.begin(), fftDims.end(), 2);
+  ishape = pad.ishape;
+  ishape[0] = nChan; // Undo batching
+  oshape = gridder.oshape;
+  oshape[0] = nChan;
+  std::iota(fftDims.begin(), fftDims.end(), 2 + VCC);
   fftPh = FFT::PhaseShift(LastN<NDim>(gridder.ishape));
   Log::Debug("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder.ishape);
 }
 
-template <int NDim>
-auto NUFFT<NDim>::Make(Sz<NDim> const           matrix,
-                       TrajectoryN<NDim> const &traj,
-                       GridOpts                &opts,
-                       Index const              nC,
-                       Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim>>
+template <int NDim, bool VCC>
+auto NUFFT<NDim, VCC>::Make(Sz<NDim> const           matrix,
+                            TrajectoryN<NDim> const &traj,
+                            GridOpts                &opts,
+                            Index const              nC,
+                            Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim, VCC>>
 {
-  return std::make_shared<NUFFT<NDim>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.vcc,
-                                       opts.subgridSize.Get(), opts.splitSize.Get(), opts.batches.Get());
+  return std::make_shared<NUFFT<NDim, VCC>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.subgridSize.Get(),
+                                            opts.splitSize.Get(), opts.batches.Get());
 }
 
-template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const
+template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -56,7 +57,7 @@ template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const
     InTensor     xt(pad.ishape);
     OutTensor    yt(gridder.oshape);
     OutMap       ytm(yt.data(), yt.dimensions());
-    Sz<NDim + 2> x_start;
+    Sz<NDim + 3> x_start;
     Sz3          y_start;
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[0];
@@ -72,7 +73,7 @@ template <int NDim> void NUFFT<NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time);
 }
 
-template <int NDim> void NUFFT<NDim>::adjoint(OutCMap const &y, InMap &x) const
+template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -85,7 +86,7 @@ template <int NDim> void NUFFT<NDim>::adjoint(OutCMap const &y, InMap &x) const
     InMap     xtm(xt.data(), xt.dimensions());
     OutTensor yt(gridder.oshape);
 
-    Sz<NDim + 2> x_start;
+    Sz<NDim + 3> x_start;
     Sz3          y_start;
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[0];
@@ -101,8 +102,12 @@ template <int NDim> void NUFFT<NDim>::adjoint(OutCMap const &y, InMap &x) const
   this->finishAdjoint(x, time);
 }
 
-template struct NUFFT<1>;
-template struct NUFFT<2>;
-template struct NUFFT<3>;
+template struct NUFFT<1, false>;
+template struct NUFFT<2, false>;
+template struct NUFFT<3, false>;
+
+template struct NUFFT<1, true>;
+template struct NUFFT<2, true>;
+template struct NUFFT<3, true>;
 
 } // namespace rl::TOps

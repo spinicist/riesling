@@ -65,6 +65,7 @@ using Cx3 = CxN<3>;
 using Cx4 = CxN<4>;
 using Cx5 = CxN<5>;
 using Cx6 = CxN<6>;
+using Cx7 = CxN<7>;
 
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
@@ -77,6 +78,7 @@ using Sz3 = Sz<3>;
 using Sz4 = Sz<4>;
 using Sz5 = Sz<5>;
 using Sz6 = Sz<6>;
+using Sz7 = Sz<7>;
 
 using Size3 = Eigen::Array<int16_t, 3, 1>;
 using Point1 = Eigen::Matrix<float, 1, 1>;

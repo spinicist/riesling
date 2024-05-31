@@ -185,17 +185,23 @@ template auto PhaseShift<3>(Sz3 const) -> Cx3;
 
 template void Forward<1, 1>(Cx1 &, Sz1 const, Cx1 const &ph);
 template void Forward<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
+template void Forward<4, 1>(Cx4 &, Sz1 const, Cx1 const &ph);
 template void Forward<4, 2>(Cx4 &, Sz2 const, Cx2 const &ph);
 template void Forward<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
+template void Forward<5, 2>(Cx5 &, Sz2 const, Cx2 const &ph);
 template void Forward<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
+template void Forward<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
 template void Forward<1>(Cx1 &, Cx1 const &ph);
 template void Forward<3>(Cx3 &, Cx3 const &ph);
 
 template void Adjoint<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
 template void Adjoint<3, 2>(Cx3 &, Sz2 const, Cx2 const &ph);
+template void Adjoint<4, 1>(Cx4 &, Sz1 const, Cx1 const &ph);
 template void Adjoint<4, 2>(Cx4 &, Sz2 const, Cx2 const &ph);
 template void Adjoint<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
+template void Adjoint<5, 2>(Cx5 &, Sz2 const, Cx2 const &ph);
 template void Adjoint<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
+template void Adjoint<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
 template void Adjoint<1>(Eigen::TensorMap<Cx1> &, Cx1 const &ph);
 template void Adjoint<1>(Cx1 &, Cx1 const &ph);
 template void Adjoint<2>(Cx2 &, Cx2 const &ph);

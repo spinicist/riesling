@@ -3,8 +3,8 @@
 #include "io/reader.hpp"
 #include "op/compose.hpp"
 #include "op/nufft.hpp"
-#include "op/sense.hpp"
 #include "parse_args.hpp"
+#include "sense/sense.hpp"
 
 /*
  *  Full recon operators
@@ -15,10 +15,11 @@ namespace Recon {
 
 auto SENSE(CoreOpts               &coreOpts,
            GridOpts               &gridOpts,
+           SENSE::Opts            &senseOpts,
            Trajectory const       &traj,
            Index const             nSlab,
-           TOps::SENSE::Ptr const &sense,
-           Basis<Cx> const        &basis) -> TOps::TOp<Cx, 4, 4>::Ptr;
+           Basis<Cx> const        &basis,
+           Cx5 const              &data) -> TOps::TOp<Cx, 4, 4>::Ptr;
 
 auto Channels(bool const            ndft,
               GridOpts             &gridOpts,

@@ -29,6 +29,7 @@ add_executable(riesling
     op/rss.cpp
     op/wavelets.cpp
 
+    recon/channels.cpp
     recon/lad.cpp
     recon/lsq.cpp
     recon/pdhg.cpp

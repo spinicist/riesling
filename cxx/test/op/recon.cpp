@@ -1,4 +1,6 @@
-#include "op/recon.hpp"
+#include "op/nufft.hpp"
+#include "op/sense.hpp"
+#include "op/compose.hpp"
 #include "basis/basis.hpp"
 #include "log.hpp"
 #include <catch2/catch_approx.hpp>
@@ -29,7 +31,7 @@ TEST_CASE("Recon", "[recon]")
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF, false);
+  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF);
 
   TOps::Compose<TOps::SENSE, TOps::TOp<Cx, 5, 3>> recon(sense, nufft);
 

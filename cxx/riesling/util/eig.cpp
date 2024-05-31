@@ -26,10 +26,9 @@ void main_eig(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
+  auto        noncart = reader.readTensor<Cx5>();
   auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const  sense =
-    std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, Cx5()), basis.dimension(0), gridOpts.vcc);
-  auto const A = Recon::SENSE(coreOpts, gridOpts, traj, reader.dimensions()[3], sense, basis);
+  auto const A = Recon::SENSE(coreOpts, gridOpts, senseOpts, traj, reader.dimensions()[3], basis, noncart);
   auto const P = make_kspace_pre(traj, A->oshape[0], ReadBasis(coreOpts.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
                                  preOpts.bias.Get());
 

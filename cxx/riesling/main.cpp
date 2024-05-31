@@ -19,6 +19,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
   COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
   COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
+  COMMAND(recon, channels, "recon-channels", "Least-Squares, all channels");
   COMMAND(recon, sake, "recon-sake", "SAKE");
 
   args::Group data(parser, "DATA");

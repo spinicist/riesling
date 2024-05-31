@@ -5,35 +5,48 @@
 #include "op/multiplex.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
-#include "sense/sense.hpp"
+#include "op/reshape.hpp"
+#include "op/sense.hpp"
 
 namespace rl {
 namespace Recon {
 
-auto SENSE(CoreOpts               &coreOpts,
-           GridOpts               &gridOpts,
-           Trajectory const       &traj,
-           Index const             nSlab,
-           TOps::SENSE::Ptr const &sense,
-           Basis<Cx> const        &basis) -> TOps::TOp<Cx, 4, 4>::Ptr
+auto SENSE(CoreOpts         &coreOpts,
+           GridOpts         &gridOpts,
+           SENSE::Opts      &senseOpts,
+           Trajectory const &traj,
+           Index const       nSlab,
+           Basis<Cx> const  &basis,
+           Cx5 const        &data) -> TOps::TOp<Cx, 4, 4>::Ptr
 {
-  auto const shape = sense->mapDimensions();
-
-  TOps::TOp<Cx, 5, 3>::Ptr FT = nullptr;
   if (coreOpts.ndft) {
-    if (gridOpts.vcc) { Log::Fail("VCC and NDFT not supported yet"); }
-    FT = TOps::NDFT<3>::Make(shape, traj.points(), sense->nChannels(), basis);
+    if (gridOpts.vcc) { Log::Warn("VCC and NDFT not supported yet"); }
+    auto sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), basis.dimension(0));
+    auto nufft = TOps::NDFT<3>::Make(sense->mapDimensions(), traj.points(), sense->nChannels(), basis);
+    auto loop = std::make_shared<TOps::Loop<TOps::NDFT<3>>>(nufft, nSlab);
+    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
+    auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+    auto compose2 = std::make_shared<decltype(TOps::Compose(sense, compose1))>(sense, compose1);
+    return compose2;
   } else {
-    auto const nC = sense->nChannels() / (gridOpts.vcc ? 2 : 1);
-    FT = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);
+    if (gridOpts.vcc) {
+      auto sense = std::make_shared<TOps::VCCSENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), basis.dimension(0));
+      auto nufft = TOps::NUFFT<3, true>::Make(sense->mapDimensions(), traj, gridOpts, sense->nChannels(), basis);
+      auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, true>>>(nufft, nSlab);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 6>>(sense->oshape, nSlab);
+      auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+      auto compose2 = std::make_shared<decltype(TOps::Compose(sense, compose1))>(sense, compose1);
+      return compose2;
+    } else {
+      auto sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), basis.dimension(0));
+      auto nufft = TOps::NUFFT<3, false>::Make(sense->mapDimensions(), traj, gridOpts, sense->nChannels(), basis);
+      auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
+      auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+      auto compose2 = std::make_shared<decltype(TOps::Compose(sense, compose1))>(sense, compose1);
+      return compose2;
+    }
   }
-
-  auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(FT, nSlab);
-  auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
-
-  auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-  auto compose2 = std::make_shared<decltype(TOps::Compose(sense, compose1))>(sense, compose1);
-  return compose2;
 }
 
 auto Channels(bool const            ndft,
@@ -44,21 +57,32 @@ auto Channels(bool const            ndft,
               Index const           nSlab,
               Basis<Cx> const      &basis) -> TOps::TOp<Cx, 5, 4>::Ptr
 {
-  Index const nB = basis.dimension(0);
   auto const  shape = traj.matrixForFOV(fov);
 
-  TOps::TOp<Cx, 5, 3>::Ptr FT = nullptr;
   if (ndft) {
-    FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
+    auto                                 FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
+    std::shared_ptr<TOps::TOp<Cx, 6, 4>> loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(FT, nSlab);
+    std::shared_ptr<TOps::TOp<Cx, 5, 6>> slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(FT->ishape, nSlab);
+    std::shared_ptr<TOps::TOp<Cx, 5, 4>> compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+    return compose1;
   } else {
-    FT = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);
+    if (gridOpts.vcc) {
+      auto       nufft = TOps::NUFFT<3, true>::Make(shape, traj, gridOpts, nC, basis);
+      auto const ns = nufft->ishape;
+      auto       reshape =
+        std::make_shared<TOps::ReshapeInput<TOps::NUFFT<3, true>, 5>>(nufft, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
+      auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(reshape, nSlab);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
+      auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+      return compose2;
+    } else {
+      auto nufft = TOps::NUFFT<3, false>::Make(shape, traj, gridOpts, nC, basis);
+      auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
+      auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+      return compose1;
+    }
   }
-
-  std::shared_ptr<TOps::TOp<Cx, 6, 4>> loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(FT, nSlab);
-  std::shared_ptr<TOps::TOp<Cx, 5, 6>> slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(AddFront(shape, nC, nB), nSlab);
-
-  std::shared_ptr<TOps::TOp<Cx, 5, 4>> compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-  return compose1;
 }
 
 } // namespace Recon

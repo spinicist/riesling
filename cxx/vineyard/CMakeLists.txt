@@ -59,6 +59,7 @@ add_library(vineyard
     op/ops.cpp
     op/pad.cpp
     op/recon.cpp
+    op/reshape.cpp
     op/sense.cpp
     op/wavelets.cpp
     phantom/gradcubes.cpp

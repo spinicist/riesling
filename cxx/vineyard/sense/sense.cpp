@@ -37,7 +37,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   }
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
-  auto const nufft = TOps::NUFFT<3>::Make(traj.matrixForFOV(opts.fov.Get()), traj, gridOpts, nC, basis);
+  auto const nufft = TOps::NUFFT<3, false>::Make(traj.matrixForFOV(opts.fov.Get()), traj, gridOpts, nC, basis);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
   LSMR const lsmr{nufft, M, 4};
 
