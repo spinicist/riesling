@@ -2,7 +2,7 @@
 #include "colors.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "magick.hpp"
+#include "../magick.hpp"
 #include "parse_args.hpp"
 #include "tensors.hpp"
 #include "types.hpp"

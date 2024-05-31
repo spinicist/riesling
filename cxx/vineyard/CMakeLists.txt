@@ -95,17 +95,6 @@ target_link_libraries(vineyard PUBLIC
     tl::ranges
     scn::scn
 )
-option(BUILD_MONTAGE "Build the montage command. Requires ImageMagick" OFF)
-if (${BUILD_MONTAGE})
-    target_sources(vineyard PRIVATE magick.cpp)
-    target_compile_definitions(vineyard PUBLIC -DBUILD_MONTAGE)
-    find_package(ImageMagick COMPONENTS Magick++ MagickCore)
-    target_link_libraries(vineyard PRIVATE ImageMagick::Magick++ ImageMagick::MagickCore)
-    find_package(OpenMP)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(vineyard PRIVATE OpenMP::OpenMP_CXX)
-    endif()
-endif()
 set_target_properties(vineyard PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
