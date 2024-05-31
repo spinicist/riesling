@@ -50,7 +50,7 @@ TrajectoryN<NDims>::TrajectoryN(HD5::Reader &file, Array const voxel_size)
 {
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
   if (file.exists(HD5::Keys::Trajectory, "matrix")) {
-    matrix_ = file.readAttribute<NDims>(HD5::Keys::Trajectory, "matrix");
+    matrix_ = file.readAttributeSz<NDims>(HD5::Keys::Trajectory, "matrix");
   } else {
     matrix_ = GuessMatrix<NDims>(points_);
   }

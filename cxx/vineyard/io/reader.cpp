@@ -83,8 +83,7 @@ auto Reader::listNames(std::string const &name) const -> std::vector<std::string
   return names;
 }
 
-template <typename T>
-auto Reader::readTensor(std::string const &name) const -> T
+template <typename T> auto Reader::readTensor(std::string const &name) const -> T
 {
   constexpr auto ND = T::NumDimensions;
   using Scalar = typename T::Scalar;
@@ -119,8 +118,7 @@ template auto Reader::readTensor<Cx4>(std::string const &) const -> Cx4;
 template auto Reader::readTensor<Cx5>(std::string const &) const -> Cx5;
 template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 
-template <int N>
-auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
+template <int N> auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
 {
   if (N != order(name)) { Log::Fail("Asked for {} dimension names, but {} order tensor", N, order(name)); }
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
@@ -140,8 +138,7 @@ template auto Reader::dimensionNames<4>(std::string const &) const -> DimensionN
 template auto Reader::dimensionNames<5>(std::string const &) const -> DimensionNames<5>;
 template auto Reader::dimensionNames<6>(std::string const &) const -> DimensionNames<6>;
 
-template <typename T>
-auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T
+template <typename T> auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T
 {
   constexpr Index SlabOrder = T::NumDimensions;
 
@@ -219,8 +216,7 @@ template auto Reader::readSlab<Cx2>(std::string const &, std::vector<IndexPair> 
 template auto Reader::readSlab<Cx3>(std::string const &, std::vector<IndexPair> const &) const -> Cx3;
 template auto Reader::readSlab<Cx4>(std::string const &, std::vector<IndexPair> const &) const -> Cx4;
 
-template <typename Derived>
-auto Reader::readMatrix(std::string const &name) const -> Derived
+template <typename Derived> auto Reader::readMatrix(std::string const &name) const -> Derived
 {
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (dset < 0) { Log::Fail("Could not open matrix '{}'", name); }
@@ -290,8 +286,23 @@ auto Reader::readMeta() const -> std::map<std::string, float>
   return meta;
 }
 
-template <int N>
-auto Reader::readAttribute(std::string const &dset, std::string const &attr) const -> Sz<N>
+auto Reader::readAttributeFloat(std::string const &dset, std::string const &attr) const -> float
+{
+  float       val;
+  auto const attrH = H5Aopen_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+  CheckedCall(H5Aread(attrH, H5T_NATIVE_FLOAT, &val), fmt::format("reading attribute {} from {}", attr, dset));
+  return val;
+}
+
+auto Reader::readAttributeInt(std::string const &dset, std::string const &attr) const -> long
+{
+  long       val;
+  auto const attrH = H5Aopen_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+  CheckedCall(H5Aread(attrH, H5T_NATIVE_LONG, &val), fmt::format("reading attribute {} from {}", attr, dset));
+  return val;
+}
+
+template <int N> auto Reader::readAttributeSz(std::string const &dset, std::string const &attr) const -> Sz<N>
 {
   hsize_t szN[1] = {N};
   hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, szN);
@@ -302,9 +313,9 @@ auto Reader::readAttribute(std::string const &dset, std::string const &attr) con
   return val;
 }
 
-template auto Reader::readAttribute<1>(std::string const &, std::string const &attr) const -> Sz<1>;
-template auto Reader::readAttribute<2>(std::string const &, std::string const &attr) const -> Sz<2>;
-template auto Reader::readAttribute<3>(std::string const &, std::string const &attr) const -> Sz<3>;
+template auto Reader::readAttributeSz<1>(std::string const &, std::string const &attr) const -> Sz<1>;
+template auto Reader::readAttributeSz<2>(std::string const &, std::string const &attr) const -> Sz<2>;
+template auto Reader::readAttributeSz<3>(std::string const &, std::string const &attr) const -> Sz<3>;
 
 } // namespace HD5
 } // namespace rl
