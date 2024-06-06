@@ -22,7 +22,7 @@ def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=Non
             traj.dims[1].label = "sample"
             traj.dims[0].label = "trace"
             if matrix is not None:
-                traj.create_attribute('matrix', dtype='i8', data=matrix)
+                traj.attrs.create('matrix', np.array(matrix), dtype=h5py.h5t.array_create(h5py.h5t.NATIVE_INT64, (3,)))
 
         # add info struct
         if info is not None:
