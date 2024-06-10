@@ -31,7 +31,7 @@ NUFFT<NDim, VCC>::NUFFT(Sz<NDim> const           matrix,
   oshape[0] = nChan;
   std::iota(fftDims.begin(), fftDims.end(), 2 + VCC);
   fftPh = FFT::PhaseShift(LastN<NDim>(gridder.ishape));
-  Log::Debug("NUFFT Input Dims {} Output Dims {} Grid Dims {}", ishape, oshape, gridder.ishape);
+  Log::Print("NUFFT Input {} Output {} Grid {} Batches {}", ishape, oshape, gridder.ishape, batches);
 }
 
 template <int NDim, bool VCC>

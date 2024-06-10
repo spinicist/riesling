@@ -130,8 +130,8 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
     switch (component) {
     case 'p': clr = rl::ColorizeComplex(slice / slice.abs().cast<rl::Cx>(), 1.f, 1.f); break;
     case 'x': clr = rl::ColorizeComplex(slice, win / 2.f, ɣ); break;
-    case 'r': clr = rl::ColorizeReal(slice.real(), -win, win, ɣ); break;
-    case 'i': clr = rl::ColorizeReal(slice.imag(), -win, win, ɣ); break;
+    case 'r': clr = rl::ColorizeReal(slice.real(), win, ɣ); break;
+    case 'i': clr = rl::ColorizeReal(slice.imag(), win, ɣ); break;
     case 'm': clr = rl::Greyscale(slice.abs(), 0, win, ɣ); break;
     default: rl::Log::Fail("Uknown component type {}", component);
     }
@@ -198,12 +198,12 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
   case 'r': {
     leftLabel = fmt::format("{:.1f}", -win);
     rightLabel = fmt::format("{:.1f}", win);
-    cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ);
+    cbar = rl::ColorizeReal(cx.real(), win, ɣ);
   } break;
   case 'i': {
     leftLabel = fmt::format("{:.1f}", -win);
     rightLabel = fmt::format("{:.1f}", win);
-    cbar = rl::ColorizeReal(cx.real(), -win, win, ɣ);
+    cbar = rl::ColorizeReal(cx.real(), win, ɣ);
   } break;
   case 'm': {
     leftLabel = "0";

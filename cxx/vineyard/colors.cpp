@@ -374,7 +374,7 @@ auto ColorizeComplex(Cx2 const &img, float const max, float const ɣ) -> RGBImag
   return rgb;
 }
 
-auto ColorizeReal(Re2 const &img, float const min, float const max, float const ɣ) -> RGBImage
+auto ColorizeReal(Re2 const &img, float const max, float const ɣ) -> RGBImage
 {
   auto const nX = img.dimension(0);
   auto const nY = img.dimension(1);
@@ -382,7 +382,9 @@ auto ColorizeReal(Re2 const &img, float const min, float const max, float const 
   rgb.setZero();
   for (int iy = 0; iy < nY; iy++) {
     for (int ix = 0; ix < nX; ix++) {
-      float const val = std::clamp(std::pow((img(ix, iy) - min) / (max - min), ɣ), 0.f, 1.f);
+      float const abs = std::abs(img(ix, iy));
+      float const gamma_corrected = std::copysign(std::pow(abs / max, ɣ), img(ix, iy));
+      float const val = std::clamp(gamma_corrected / 2.f + 0.5f, 0.f, 1.f);
       Index const index = val * (iceburn.size() - 1);
 
       RGBf const &color = iceburn[index];
