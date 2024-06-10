@@ -35,7 +35,6 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
       res[ii] = 1;
       brd[ii] = shape[ii];
     }
-    Log::Debug("{} shape {}->{} res {} brd {}", this->name, s.dimensions(), shape, res, brd);
   }
 
   void forward(InCMap const &x, OutMap &y) const

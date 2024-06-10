@@ -13,13 +13,19 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   Log::Print("LSMR λ {}", λ);
   Index const rows = op->rows();
   Index const cols = op->cols();
-  CMap const  b(bdata, rows);
-  Vector      Mu(rows), u(rows);
-  Vector      v(cols), h(cols), h̅(cols), x(cols);
+  if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
+  CMap const b(bdata, rows);
+  Vector     Mu(rows), u(rows);
+  Vector     v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
-  h.device(Threads::GlobalDevice()) = v;
+
+  if (iterLimit == 0) { // Bug out and return v
+    Log::Print("LSMR 0 |x| {:4.3E}", v.stableNorm());
+    return v;
+  }
+  h = v;
   h̅.setZero();
 
   // Initialize transformation variables. There are a lot

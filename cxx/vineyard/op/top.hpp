@@ -50,7 +50,7 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   {
     assert(x.rows() == this->cols());
     assert(y.rows() == this->rows());
-    Log::Debug("Tensor {} forward x {} y {}", this->name, x.rows(), y.rows());
+    Log::Debug("TOp {} forward {}->{}", this->name, this->ishape, this->oshape);
     InCMap xm(x.data(), ishape);
     OutMap ym(y.data(), oshape);
     forward(xm, ym);
@@ -60,7 +60,7 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   {
     assert(x.rows() == this->cols());
     assert(y.rows() == this->rows());
-    Log::Debug("Tensor {} adjoint y {} x {}", this->name, y.rows(), x.rows());
+    Log::Debug("TOp {} adjoint {}->{}", this->name, this->oshape, this->ishape);
     OutCMap ym(y.data(), oshape);
     InMap   xm(x.data(), ishape);
     adjoint(ym, xm);
@@ -68,20 +68,20 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
 
   virtual auto forward(InTensor const &x) const -> OutTensor
   {
-    Log::Debug("Tensor {} forward x {} ishape {} oshape {}", this->name, x.dimensions(), this->ishape, this->oshape);
     InCMap    xm(x.data(), ishape);
     OutTensor y(oshape);
     OutMap    ym(y.data(), oshape);
+    Log::Debug("TOp {} forward {}->{} Allocated {}", this->name, this->ishape, this->oshape, ym.dimensions());
     forward(xm, ym);
     return y;
   }
 
   virtual auto adjoint(OutTensor const &y) const -> InTensor
   {
-    Log::Debug("Tensor {} adjoint y {} ishape {} oshape {}", this->name, y.dimensions(), this->ishape, this->oshape);
     OutCMap  ym(y.data(), oshape);
     InTensor x(ishape);
     InMap    xm(x.data(), ishape);
+    Log::Debug("TOp {} adjoint {}->{} Allocated {}", this->name, this->oshape, this->ishape, xm.dimensions());
     adjoint(ym, xm);
     return x;
   }

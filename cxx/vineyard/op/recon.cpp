@@ -57,7 +57,7 @@ auto Channels(bool const            ndft,
               Index const           nSlab,
               Basis<Cx> const      &basis) -> TOps::TOp<Cx, 5, 4>::Ptr
 {
-  auto const  shape = traj.matrixForFOV(fov);
+  auto const shape = traj.matrixForFOV(fov);
 
   if (ndft) {
     auto                                 FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
@@ -77,10 +77,15 @@ auto Channels(bool const            ndft,
       return compose2;
     } else {
       auto nufft = TOps::NUFFT<3, false>::Make(shape, traj, gridOpts, nC, basis);
-      auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
-      auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-      return compose1;
+      if (nSlab == 1) {
+        auto reshape = std::make_shared<TOps::ReshapeOutput<TOps::NUFFT<3, false>, 4>>(nufft, AddBack(nufft->oshape, 1));
+        return reshape;
+      } else {
+        auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
+        auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
+        auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+        return compose1;
+      }
     }
   }
 }

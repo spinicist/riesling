@@ -5,7 +5,7 @@
 // #include "espirit.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
-#include "op/nufft.hpp"
+#include "op/recon.hpp"
 #include "precon.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
@@ -37,14 +37,14 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   }
 
   auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
-  auto const nufft = TOps::NUFFT<3, false>::Make(traj.matrixForFOV(opts.fov.Get()), traj, gridOpts, nC, basis);
+  auto const A = Recon::Channels(false, gridOpts, traj, opts.fov.Get(), nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
-  LSMR const lsmr{nufft, M, 4};
+  LSMR const lsmr{A, M, 4};
 
   Cx4        lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const channels(Tensorfy(lsmr.run(lores.data()), nufft->ishape));
+  Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
 
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
   for (Index ii = 0; ii < 3; ii++) {

@@ -11,7 +11,6 @@ TEST_CASE("Algorithms", "[alg]")
 {
   Index const N = 8;
   Eigen::MatrixXf Amat = Eigen::MatrixXf::Identity(N, N) + Eigen::MatrixXf::Ones(N, N);
-  Amat.array() += 1.f;
   auto const A = std::make_shared<Ops::MatMul<Cx>>(Amat);
   auto const M = std::make_shared<Ops::Identity<Cx>>(N);
   Eigen::VectorXcf const x = Eigen::ArrayXf::LinSpaced(N, 0, N - 1).cast<Cx>();
@@ -21,6 +20,7 @@ TEST_CASE("Algorithms", "[alg]")
   {
     LSMR lsmr{A, M};
     auto xx = lsmr.run(y.data());
+    INFO("x " << x.transpose() << "\ny " << y.transpose() << "\nxx " << xx.transpose());
     CHECK((x - xx).stableNorm() == Approx(0.f).margin(1.e-3f));
   }
 }

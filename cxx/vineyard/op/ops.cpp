@@ -16,6 +16,7 @@ template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
   assert(x.rows() == cols());
   Vector y(this->rows());
   Map    ym(y.data(), y.size());
+  y.setZero();
   this->forward(CMap(x.data(), x.size()), ym);
   return y;
 }
@@ -26,6 +27,7 @@ template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
   assert(y.rows() == rows());
   Vector x(this->cols());
   Map    xm(x.data(), x.size());
+  x.setZero();
   this->adjoint(CMap(y.data(), y.size()), xm);
   return x;
 }
@@ -82,13 +84,13 @@ template <typename S> auto Identity<S>::cols() const -> Index { return sz; }
 template <typename S> void Identity<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == y.rows() && x.rows() == sz);
-  y = x;
+  y += x;
 }
 
 template <typename S> void Identity<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == y.rows() && x.rows() == sz);
-  x = y;
+  x += y;
 }
 
 template struct Identity<float>;
@@ -108,13 +110,13 @@ template <typename S> auto MatMul<S>::cols() const -> Index { return mat.cols();
 template <typename S> void MatMul<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == mat.cols() && y.rows() == mat.rows());
-  y = mat * x;
+  y += mat * x;
 }
 
 template <typename S> void MatMul<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == mat.cols() && y.rows() == mat.rows());
-  x = mat.adjoint() * y;
+  x += mat.adjoint() * y;
 }
 
 template struct MatMul<float>;
@@ -135,14 +137,14 @@ template <typename S> void DiagScale<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  y = x * scale;
+  y += x * scale;
 }
 
 template <typename S> void DiagScale<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  x = y * scale;
+  x += y * scale;
 }
 
 template <typename S> auto DiagScale<S>::inverse() const -> std::shared_ptr<Op<S>>
@@ -181,9 +183,9 @@ template <typename S> void DiagRep<S>::forward(CMap const &x, Map &y) const
   assert(y.rows() == rows());
   auto rep = s.array().transpose().replicate(reps, 1).reshaped();
   if (isInverse) {
-    y = x.array() / (bias + scale * rep);
+    y.array() += x.array() / (bias + scale * rep);
   } else {
-    y = x.array() * rep;
+    y.array() += x.array() * rep;
   }
 }
 
@@ -193,9 +195,9 @@ template <typename S> void DiagRep<S>::adjoint(CMap const &y, Map &x) const
   assert(y.rows() == rows());
   auto rep = s.array().transpose().replicate(reps, 1).reshaped();
   if (isInverse) {
-    x = y.array() / (bias + scale * rep);
+    x.array() += y.array() / (bias + scale * rep);
   } else {
-    x = y.array() * rep;
+    x.array() += y.array() * rep;
   }
 }
 
@@ -398,16 +400,16 @@ template <typename S> void Extract<S>::forward(CMap const &x, Map &y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  y = x.segment(start, r);
+  y += x.segment(start, r);
 }
 
 template <typename S> void Extract<S>::adjoint(CMap const &y, Map &x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
-  x.segment(0, start).setZero();
-  x.segment(start, r) = y;
-  x.segment(start + r, c - (start + r)).setZero();
+  // x.segment(0, start).setZero();
+  x.segment(start, r) += y;
+  // x.segment(start + r, c - (start + r)).setZero();
 }
 
 template struct Extract<float>;

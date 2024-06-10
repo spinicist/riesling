@@ -55,6 +55,8 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
     gridder.forward(workspace, y);
   } else {
     InTensor     xt(pad.ishape);
+    InMap        xtm(xt.data(), xt.dimensions());
+    InCMap       xtc(xt.data(), xt.dimensions());
     OutTensor    yt(gridder.oshape);
     OutMap       ytm(yt.data(), yt.dimensions());
     Sz<NDim + 3> x_start;
@@ -63,8 +65,10 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
       Index const ic = ib * gridder.ishape[0];
       x_start[0] = ic;
       y_start[0] = ic;
+      Log::Debug("Batch {} x_start {} y_start {}", ib, x_start, y_start);
       xt.device(Threads::GlobalDevice()) = x.slice(x_start, xt.dimensions());
-      pad.forward(apo.forward(xt), wsm);
+      apo.forward(xtc, xtm);
+      pad.forward(xtc, wsm);
       FFT::Forward(workspace, fftDims, fftPh);
       gridder.forward(workspace, ytm);
       y.slice(y_start, yt.dimensions()).device(Threads::GlobalDevice()) = yt;
@@ -80,22 +84,26 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
   if (batches == 1) {
     gridder.adjoint(y, wsm);
     FFT::Adjoint(workspace, fftDims, fftPh);
-    apo.adjoint(pad.adjoint(workspace), x);
+    pad.adjoint(workspace, x);
+    InCMap xc(x.data(), x.dimensions());
+    apo.adjoint(xc, x);
   } else {
     InTensor  xt(pad.ishape);
     InMap     xtm(xt.data(), xt.dimensions());
+    InCMap    xtc(xt.data(), xt.dimensions());
     OutTensor yt(gridder.oshape);
-
     Sz<NDim + 3> x_start;
     Sz3          y_start;
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[0];
       x_start[0] = ic;
       y_start[0] = ic;
+      Log::Debug("Batch {} x_start {} y_start {}", ib, x_start, y_start);
       yt.device(Threads::GlobalDevice()) = y.slice(y_start, yt.dimensions());
       gridder.adjoint(yt, wsm);
       FFT::Adjoint(workspace, fftDims, fftPh);
-      apo.adjoint(pad.adjoint(workspace), xtm);
+      pad.adjoint(workspace, xtm);
+      apo.adjoint(xtc, xtm);
       x.slice(x_start, xt.dimensions()).device(Threads::GlobalDevice()) = xt;
     }
   }

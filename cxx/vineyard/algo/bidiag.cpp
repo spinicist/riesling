@@ -1,5 +1,7 @@
 #include "bidiag.hpp"
 
+#include "log.hpp"
+
 namespace rl {
 
 auto StableGivens(float const a, float const b) -> std::tuple<float, float, float>
@@ -60,10 +62,12 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
     x.setZero();
     Mu.device(Threads::GlobalDevice()) = b;
   }
+  u.setZero();
   M->forward(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
   Mu /= β;
   u /= β;
+  v.setZero();
   op->adjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
   v /= α;
@@ -77,14 +81,15 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
             float                             &α,
             float                             &β)
 {
-  // Re-use u to save space
-  op->forward(v, u);
-  Mu.device(Threads::GlobalDevice()) = u - α * Mu;
+  Mu.device(Threads::GlobalDevice()) = -α * Mu;
+  op->forward(v, Mu);
+  u.setZero();
   M->forward(Mu, u);
   β = std::sqrt(CheckedDot(Mu, u));
   Mu.device(Threads::GlobalDevice()) = Mu / β;
   u.device(Threads::GlobalDevice()) = u / β;
-  v = op->adjoint(u) - (β * v);
+  v.device(Threads::GlobalDevice()) = -β * v;
+  op->adjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
   v.device(Threads::GlobalDevice()) = v / α;
 }

@@ -45,9 +45,8 @@ template <typename S, int AD, int OD> void Apodize<S, AD, OD>::forward(InCMap co
 template <typename S, int AD, int OD> void Apodize<S, AD, OD>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x);
-  Log::Debug("y {} x {} res {} brd {}", y.dimensions(), x.dimensions(), res_, brd_);
   x.device(Threads::GlobalDevice()) = y * apo_.reshape(res_).broadcast(brd_);
-  this->finishForward(x, time);
+  this->finishAdjoint(x, time);
 }
 
 template struct Apodize<Cx, 1, 2>;

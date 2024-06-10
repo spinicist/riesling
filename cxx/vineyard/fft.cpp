@@ -64,7 +64,6 @@ auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
     brd = shape;
     rsh[ii] = shape[ii];
     brd[ii] = 1;
-    rl::Log::Debug("x {} ph {} rsh {} brd {}", x.dimensions(), ph.dimensions(), rsh, brd);
     x.device(Threads::GlobalDevice()) = x * ph.reshape(rsh).broadcast(brd);
   }
   return x;
