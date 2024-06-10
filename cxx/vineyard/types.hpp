@@ -70,7 +70,7 @@ using Cx7 = CxN<7>;
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
 // Useful shorthands
-template <Index Rank>
+template <int Rank>
 using Sz = typename Eigen::DSizes<Index, Rank>;
 using Sz1 = Sz<1>;
 using Sz2 = Sz<2>;
@@ -148,10 +148,10 @@ auto MidN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
   return out;
 }
 
-template <typename T>
-Index Product(T const &indices)
+template <int N>
+Index Product(Sz<N> const &indices)
 {
-  return std::accumulate(indices.cbegin(), indices.cend(), 1, std::multiplies<Index>());
+  return std::accumulate(indices.cbegin(), indices.cend(), 1L, std::multiplies<Index>());
 }
 
 template <typename T>
