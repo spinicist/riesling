@@ -37,7 +37,6 @@ L2::L2(float const λ_, Index const sz_, Index const blk)
 {
   if (sz_ % blockSize != 0) { Log::Fail("Block size {} does not cleanly divide {}", blockSize, sz_); }
   if (blockSize == 0) { blockSize = sz_; }
-  λ *= std::sqrt(blk);
   Log::Print("L2 Prox λ {} scaled λ {} block size {}", λ_, λ, blockSize);
 }
 
