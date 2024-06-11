@@ -34,6 +34,24 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const 
   this->finishAdjoint(x, time);
 }
 
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = this->startForward(x, y);
+  InTensor   tmp = x;
+  rl::FFT::Forward(tmp, dims_, ph_);
+  y += tmp;
+  this->finishForward(y, time);
+}
+
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const &y, InMap &x) const
+{
+  auto const time = this->startAdjoint(y, x);
+  InTensor   tmp = y;
+  rl::FFT::Adjoint(tmp, dims_, ph_);
+  x += tmp;
+  this->finishAdjoint(x, time);
+}
+
 template struct FFT<4, 3>;
 template struct FFT<5, 3>;
 

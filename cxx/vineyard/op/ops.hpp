@@ -1,38 +1,8 @@
 #pragma once
 
-#include "log.hpp"
-#include "types.hpp"
-
-#include <initializer_list>
+#include "op.hpp"
 
 namespace rl::Ops {
-
-template <typename Scalar_ = Cx> struct Op
-{
-  using Scalar = Scalar_;
-  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = typename Vector::AlignedMapType;
-  using CMap = typename Vector::ConstAlignedMapType;
-  using Ptr = std::shared_ptr<Op<Scalar>>;
-
-  std::string name;
-  Op(std::string const &n);
-
-  virtual auto rows() const -> Index = 0;
-  virtual auto cols() const -> Index = 0;
-  virtual void forward(CMap const &x, Map &y) const = 0;
-  virtual void adjoint(CMap const &y, Map &x) const = 0;
-
-  virtual auto forward(Vector const &x) const -> Vector;
-  virtual auto adjoint(Vector const &y) const -> Vector;
-
-  void forward(Vector const &x, Vector &y) const;
-  void adjoint(Vector const &y, Vector &x) const;
-
-  virtual auto inverse() const -> std::shared_ptr<Op<Scalar>>;
-  virtual auto inverse(float const bias, float const scale) const -> std::shared_ptr<Op<Scalar>>;
-  virtual auto operator+(Scalar const) const -> std::shared_ptr<Op<Scalar>>;
-};
 
 template <typename Scalar = Cx> struct Identity final : Op<Scalar>
 {
@@ -45,6 +15,8 @@ template <typename Scalar = Cx> struct Identity final : Op<Scalar>
   auto cols() const -> Index;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
 private:
   Index sz;
@@ -64,6 +36,8 @@ template <typename Scalar = Cx> struct MatMul final : Op<Scalar>
   using Op<Scalar>::adjoint;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
 private:
   Matrix mat;
@@ -82,6 +56,8 @@ template <typename Scalar = Cx> struct DiagScale final : Op<Scalar>
 
   void forward(CMap const &, Map &) const;
   void adjoint(CMap const &, Map &) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
   auto  inverse() const -> std::shared_ptr<Op<Scalar>>;
   float scale;
@@ -104,6 +80,8 @@ template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
   std::shared_ptr<Op<Scalar>> inverse(float const bias, float const scale) const;
 
@@ -130,6 +108,9 @@ template <typename Scalar = Cx> struct Multiply final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
+
 };
 
 //! Vertically stack operators, i.e. A = [B; C]
@@ -147,6 +128,8 @@ template <typename Scalar = Cx> struct VStack final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
 private:
   void                                     check();
@@ -167,6 +150,8 @@ template <typename Scalar = Cx> struct DStack final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
   std::shared_ptr<Op<Scalar>> inverse() const;
 
@@ -185,6 +170,8 @@ template <typename Scalar = Cx> struct Extract final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
 private:
   Index r, c, start;
@@ -202,6 +189,8 @@ template <typename Scalar = Cx> struct Subtract final : Op<Scalar>
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
 
 private:
   std::shared_ptr<Op<Scalar>> a, b;

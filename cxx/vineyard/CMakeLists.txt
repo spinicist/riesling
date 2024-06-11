@@ -56,11 +56,13 @@ add_library(vineyard
     op/hankel.cpp
     op/ndft.cpp
     op/nufft.cpp
+    op/op.cpp
     op/ops.cpp
     op/pad.cpp
     op/recon.cpp
     op/reshape.cpp
     op/sense.cpp
+    op/top.cpp
     op/wavelets.cpp
     phantom/gradcubes.cpp
     phantom/sphere.cpp

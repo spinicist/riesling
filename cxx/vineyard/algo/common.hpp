@@ -33,7 +33,7 @@ inline auto CheckedDot(T const &x1, T const &x2) -> float
   if (std::abs(dot.imag()) > std::abs(dot.real()) * tol) {
     Log::Fail("Imaginary part of dot product {} exceeded {} times real part {}", dot.imag(), tol, dot.real());
   } else if (!std::isfinite(dot.real())) {
-    Log::Fail("Dot product was not finite.");
+    Log::Fail("Dot product was not finite. |x1| {} |x2| {}", x1.stableNorm(), x2.stableNorm());
   } else {
     return dot.real();
   }

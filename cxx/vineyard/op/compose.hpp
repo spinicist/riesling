@@ -47,7 +47,28 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
     op1_->adjoint(tcm, x);
     this->finishAdjoint(x, time);
   }
-  // auto adjfwd(InputMap x) const -> InputMap { return op1_->adjoint(op2_->adjfwd(op1_->forward(x))); }
+
+  void iforward(InCMap const &x, OutMap &y) const
+  {
+    typename Op1::OutTensor temp(op1_->oshape);
+    typename Op1::OutMap    tm(temp.data(), op1_->oshape);
+    typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
+    auto const              time = this->startForward(x, y);
+    op1_->forward(x, tm);
+    op2_->iforward(tcm, y);
+    this->finishForward(y, time);
+  }
+
+  void iadjoint(OutCMap const &y, InMap &x) const
+  {
+    typename Op1::OutTensor temp(op1_->oshape);
+    typename Op1::OutMap    tm(temp.data(), op1_->oshape);
+    typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
+    auto const              time = this->startAdjoint(y, x);
+    op2_->adjoint(y, tm);
+    op1_->iadjoint(tcm, x);
+    this->finishAdjoint(x, time);
+  }
 
 private:
   std::shared_ptr<Op1> op1_;

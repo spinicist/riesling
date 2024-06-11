@@ -70,6 +70,24 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
     this->finishAdjoint(x, time);
   }
 
+  void iforward(InCMap const &x, OutMap &y) const
+  {
+    auto const                time = this->startForward(x, y);
+    typename Op::InCMap const xm(x.data(), op_->ishape);
+    typename Op::OutMap       ym(y.data(), op_->oshape);
+    op_->iforward(xm, ym);
+    this->finishForward(y, time);
+  }
+
+  void iadjoint(OutCMap const &y, InMap &x) const
+  {
+    auto const                 time = this->startAdjoint(y, x);
+    typename Op::OutCMap const ym(y.data(), op_->oshape);
+    typename Op::InMap         xm(x.data(), op_->ishape);
+    op_->iadjoint(ym, xm);
+    this->finishAdjoint(x, time);
+  }
+
 private:
   std::shared_ptr<Op> op_;
 };

@@ -51,6 +51,8 @@ template <typename Scalar_, int ND, bool VCC = false> struct Grid final : TOp<Sc
        Basis<Scalar> const                       &b = IdBasis<Scalar>());
   void forward(InCMap const &x, OutMap &y) const;
   void adjoint(OutCMap const &y, InMap &x) const;
+  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const &y, InMap &x) const;
 };
 
 } // namespace TOps

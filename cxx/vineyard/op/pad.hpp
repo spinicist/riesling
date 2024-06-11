@@ -15,6 +15,8 @@ template <typename Scalar_, int Rank, int ImgRank = 3> struct Pad final : TOp<Sc
   Pad(ImgDims const &imgShape, OutDims const oshape);
 
   OP_DECLARE(Pad)
+  void iadjoint(OutCMap const &y, InMap &x) const;
+  void iforward(InCMap const &x, OutMap &y) const;
 
 private:
   InDims                                      left_, right_;

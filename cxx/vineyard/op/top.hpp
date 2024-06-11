@@ -23,105 +23,37 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   InDims  ishape;
   OutDims oshape;
 
-  TOp(std::string const &n)
-    : Ops::Op<Scalar>{n}
-  {
-    Log::Debug("{} created.", this->name);
-  }
+  TOp(std::string const &n);
+  TOp(std::string const &n, InDims const xd, OutDims const yd);
 
-  TOp(std::string const &n, InDims const xd, OutDims const yd)
-    : Ops::Op<Scalar>{n}
-    , ishape{xd}
-    , oshape{yd}
-  {
-    Log::Debug("{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
-  }
+  virtual ~TOp();
 
-  virtual ~TOp(){};
+  auto rows() const -> Index final;
+  auto cols() const -> Index final;
 
-  virtual auto rows() const -> Index { return Product(oshape); }
-  virtual auto cols() const -> Index { return Product(ishape); }
-
-  using Base::adjoint;
   using Base::forward;
+  using Base::adjoint;
   using Base::inverse;
 
-  void forward(typename Base::CMap const &x, typename Base::Map &y) const final
-  {
-    assert(x.rows() == this->cols());
-    assert(y.rows() == this->rows());
-    Log::Debug("TOp {} forward {}->{}", this->name, this->ishape, this->oshape);
-    InCMap xm(x.data(), ishape);
-    OutMap ym(y.data(), oshape);
-    forward(xm, ym);
-  }
+  void forward(typename Base::CMap const &x, typename Base::Map &y) const final;
+  void adjoint(typename Base::CMap const &y, typename Base::Map &x) const final;
 
-  void adjoint(typename Base::CMap const &y, typename Base::Map &x) const final
-  {
-    assert(x.rows() == this->cols());
-    assert(y.rows() == this->rows());
-    Log::Debug("TOp {} adjoint {}->{}", this->name, this->oshape, this->ishape);
-    OutCMap ym(y.data(), oshape);
-    InMap   xm(x.data(), ishape);
-    adjoint(ym, xm);
-  }
+  void iforward(typename Base::CMap const &x, typename Base::Map &y) const final;
+  void iadjoint(typename Base::CMap const &y, typename Base::Map &x) const final;
 
-  virtual auto forward(InTensor const &x) const -> OutTensor
-  {
-    InCMap    xm(x.data(), ishape);
-    OutTensor y(oshape);
-    OutMap    ym(y.data(), oshape);
-    Log::Debug("TOp {} forward {}->{} Allocated {}", this->name, this->ishape, this->oshape, ym.dimensions());
-    forward(xm, ym);
-    return y;
-  }
-
-  virtual auto adjoint(OutTensor const &y) const -> InTensor
-  {
-    OutCMap  ym(y.data(), oshape);
-    InTensor x(ishape);
-    InMap    xm(x.data(), ishape);
-    Log::Debug("TOp {} adjoint {}->{} Allocated {}", this->name, this->oshape, this->ishape, xm.dimensions());
-    adjoint(ym, xm);
-    return x;
-  }
+  virtual auto forward(InTensor const &x) const -> OutTensor;
+  virtual auto adjoint(OutTensor const &y) const -> InTensor;
 
   virtual void forward(InCMap const &x, OutMap &y) const = 0;
   virtual void adjoint(OutCMap const &y, InMap &x) const = 0;
+  virtual void iforward(InCMap const &x, OutMap &y) const;
+  virtual void iadjoint(OutCMap const &y, InMap &x) const;
 
-  auto startForward(InCMap const &x, OutMap const &y) const
-  {
-    if (x.dimensions() != ishape) { Log::Fail("{} forward x dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
-    if (y.dimensions() != oshape) { Log::Fail("{} forward y dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Debug("{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
-    }
-    return Log::Now();
-  }
+  auto startForward(InCMap const &x, OutMap const &y) const -> Log::Time;
+  void finishForward(OutMap const &y, Log::Time const start) const;
 
-  void finishForward(OutMap const &y, Log::Time const start) const
-  {
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Debug("{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
-    }
-  }
-
-  auto startAdjoint(OutCMap const &y, InMap const &x) const
-  {
-    if (y.dimensions() != oshape) { Log::Fail("{} adjoint y dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
-    if (x.dimensions() != ishape) { Log::Fail("{} adjoint x dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Debug("{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
-    }
-    return Log::Now();
-  }
-
-  void finishAdjoint(InMap const &x, Log::Time const start) const
-  {
-    if (Log::CurrentLevel() == Log::Level::Debug) {
-      Log::Debug("{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
-    }
-  }
+  auto startAdjoint(OutCMap const &y, InMap const &x) const -> Log::Time;
+  void finishAdjoint(InMap const &x, Log::Time const start) const;
 };
 
 #define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
@@ -150,24 +82,13 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
 template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
-  Identity(Sz<Rank> dims)
-    : Parent("Identity", dims, dims)
-  {
-  }
+  Identity(Sz<Rank> dims);
 
-  void forward(InCMap const &x, OutMap &y) const
-  {
-    auto const time = Parent::startForward(x, y);
-    y = x;
-    Parent::finishAdjoint(y, time);
-  }
+  void forward(InCMap const &x, OutMap &y) const;
+  void adjoint(OutCMap const &y, InMap &x) const;
 
-  void adjoint(OutCMap const &y, InMap &x) const
-  {
-    auto const time = Parent::startAdjoint(y, x);
-    x = y;
-    Parent::finishAdjoint(x, time);
-  }
+  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const &y, InMap &x) const;
 };
 
 } // namespace rl::TOps

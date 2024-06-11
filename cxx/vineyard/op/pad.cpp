@@ -46,6 +46,20 @@ template <typename Scalar_, int Rank, int ImgRank> void Pad<Scalar_, Rank, ImgRa
   this->finishAdjoint(x, time);
 }
 
+template <typename Scalar_, int Rank, int ImgRank> void Pad<Scalar_, Rank, ImgRank>::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = this->startForward(x, y);
+  y.device(Threads::GlobalDevice()) += x.pad(paddings_);
+  this->finishForward(y, time);
+}
+
+template <typename Scalar_, int Rank, int ImgRank> void Pad<Scalar_, Rank, ImgRank>::iadjoint(OutCMap const &y, InMap &x) const
+{
+  auto const time = this->startAdjoint(y, x);
+  x.device(Threads::GlobalDevice()) += y.slice(left_, ishape);
+  this->finishAdjoint(x, time);
+}
+
 template struct Pad<float, 1, 1>;
 template struct Pad<float, 2, 2>;
 template struct Pad<float, 3, 3>;

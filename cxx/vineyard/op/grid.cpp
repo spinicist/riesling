@@ -183,6 +183,14 @@ template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::for
   this->finishForward(y, time);
 }
 
+template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = this->startForward(x, y);
+  forwardTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
+  if (this->vccMapping) { forwardTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
+  this->finishForward(y, time);
+}
+
 template <typename Scalar, int ND, bool hasVCC, bool isVCC>
 inline void adjointCoilDim(Sz<ND + 2>                                                sxi,
                            Eigen::Tensor<Scalar, ND + 2> const                      &sx,
@@ -280,6 +288,15 @@ template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::adj
 
   auto const time = this->startAdjoint(y, x);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
+  adjointTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
+  if (this->vccMapping) { adjointTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
+  this->finishAdjoint(x, time);
+}
+
+template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
+{
+
+  auto const time = this->startAdjoint(y, x);
   adjointTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
   if (this->vccMapping) { adjointTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
   this->finishAdjoint(x, time);

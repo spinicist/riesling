@@ -50,6 +50,20 @@ void SENSE::adjoint(OutCMap const &y, InMap &x) const
   finishAdjoint(x, time);
 }
 
+void SENSE::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = startForward(x, y);
+  y.device(Threads::GlobalDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
+  finishForward(y, time);
+}
+
+void SENSE::iadjoint(OutCMap const &y, InMap &x) const
+{
+  auto const time = startAdjoint(y, x);
+  x.device(Threads::GlobalDevice()) += ConjugateSum(y, maps_.broadcast(brdMaps));
+  finishAdjoint(x, time);
+}
+
 auto SENSE::nChannels() const -> Index { return oshape[0]; }
 auto SENSE::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
@@ -102,6 +116,29 @@ void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
   x.device(Threads::GlobalDevice()) = (ConjugateSum(y.slice(st0, sz), maps_.reshape(resMaps).broadcast(brdMaps)) +
                                        ConjugateSum(y.slice(st1, sz), maps_.reshape(resMaps).broadcast(brdMaps).conjugate())) *
                                       maps_.constant(inv_sqrt2);
+  finishAdjoint(x, time);
+}
+
+void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = startForward(x, y);
+  Sz6        st0{0, 0, 0, 0, 0, 0}, st1{0, 1, 0, 0, 0, 0}, sz = oshape;
+  sz[1] = 1;
+  y.slice(st0, sz).device(Threads::GlobalDevice()) +=
+    x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps) * maps_.constant(inv_sqrt2);
+  y.slice(st1, sz).device(Threads::GlobalDevice()) +=
+    x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps).conjugate() * maps_.constant(inv_sqrt2);
+  finishForward(y, time);
+}
+
+void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
+{
+  auto const time = startAdjoint(y, x);
+  Sz6        st0{0, 0, 0, 0, 0, 0}, st1{0, 1, 0, 0, 0, 0}, sz = oshape;
+  sz[1] = 1;
+  x.device(Threads::GlobalDevice()) += (ConjugateSum(y.slice(st0, sz), maps_.reshape(resMaps).broadcast(brdMaps)) +
+                                        ConjugateSum(y.slice(st1, sz), maps_.reshape(resMaps).broadcast(brdMaps).conjugate())) *
+                                       maps_.constant(inv_sqrt2);
   finishAdjoint(x, time);
 }
 

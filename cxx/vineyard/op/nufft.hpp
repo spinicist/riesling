@@ -24,6 +24,10 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
   static auto Make(Sz<NDim> const matrix, TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis<Cx> const &basis)
     -> std::shared_ptr<NUFFT<NDim, VCC>>;
 
+  void iadjoint(OutCMap const &y, InMap &x) const;
+  void iforward(InCMap const &x, OutMap &y) const;
+
+private:
   Grid<Cx, NDim, VCC> gridder;
   InTensor mutable workspace;
 

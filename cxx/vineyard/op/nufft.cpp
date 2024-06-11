@@ -115,6 +115,59 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
   this->finishAdjoint(x, time);
 }
 
+template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = this->startForward(x, y);
+  InMap      wsm(workspace.data(), gridder.ishape);
+  if (batches == 1) {
+    wsm.device(Threads::GlobalDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
+    FFT::Forward(workspace, fftDims, fftPh);
+    gridder.iforward(workspace, y);
+  } else {
+    OutTensor    yt(gridder.oshape);
+    OutMap       ytm(yt.data(), yt.dimensions());
+    Sz<NDim + 3> x_start;
+    Sz3          y_start;
+    for (Index ib = 0; ib < batches; ib++) {
+      Index const ic = ib * gridder.ishape[0];
+      x_start[0] = ic;
+      y_start[0] = ic;
+      wsm.device(Threads::GlobalDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
+      FFT::Forward(workspace, fftDims, fftPh);
+      gridder.forward(workspace, ytm);
+      y.slice(y_start, yt.dimensions()).device(Threads::GlobalDevice()) += yt;
+    }
+  }
+  this->finishForward(y, time);
+}
+
+template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
+{
+  auto const time = this->startAdjoint(y, x);
+  InMap      wsm(workspace.data(), gridder.ishape);
+  if (batches == 1) {
+    gridder.adjoint(y, wsm);
+    FFT::Adjoint(workspace, fftDims, fftPh);
+    x.device(Threads::GlobalDevice()) += workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
+  } else {
+    OutTensor    yt(gridder.oshape);
+    Sz<NDim + 3> x_start;
+    Sz3          y_start;
+    for (Index ib = 0; ib < batches; ib++) {
+      Index const ic = ib * gridder.ishape[0];
+      x_start[0] = ic;
+      y_start[0] = ic;
+      yt.device(Threads::GlobalDevice()) = y.slice(y_start, yt.dimensions());
+      gridder.adjoint(yt, wsm);
+      FFT::Adjoint(workspace, fftDims, fftPh);
+      x.slice(x_start, batchShape_).device(Threads::GlobalDevice()) +=
+        workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
+    }
+  }
+  this->finishAdjoint(x, time);
+}
+
+
 template struct NUFFT<1, false>;
 template struct NUFFT<2, false>;
 template struct NUFFT<3, false>;
