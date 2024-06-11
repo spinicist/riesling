@@ -9,7 +9,7 @@ find_package(scn CONFIG REQUIRED)
 find_package(tl-ranges CONFIG REQUIRED)
 
 add_library(vineyard
-    subgrid.cpp
+    apodize.cpp
     colors.cpp
     compressor.cpp
     cropper.cpp
@@ -25,6 +25,7 @@ add_library(vineyard
     regularizers.cpp
     scaling.cpp
     signals.cpp
+    subgrid.cpp
     threads.cpp
     trajectory.cpp
     traj_spirals.cpp
@@ -49,7 +50,6 @@ add_library(vineyard
     io/reader.cpp
     io/writer.cpp
     kernel/kernel.cpp
-    op/apodize.cpp
     op/fft.cpp
     op/grad.cpp
     op/grid.cpp

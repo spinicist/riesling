@@ -2,9 +2,8 @@
 
 #include "op/top.hpp"
 
-#include "apodize.hpp"
-#include "grid.hpp"
-#include "pad.hpp"
+#include "op/grid.hpp"
+#include "op/pad.hpp"
 
 namespace rl::TOps {
 
@@ -28,11 +27,15 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
   Grid<Cx, NDim, VCC> gridder;
   InTensor mutable workspace;
 
-  TOps::Pad<Cx, NDim + 2 + VCC, NDim> pad;
-  Apodize<Cx, NDim, 2 + VCC>          apo;
-  Index const                         batches;
-  Sz<NDim>                            fftDims;
-  CxN<NDim>                           fftPh;
+  Index const batches;
+  InDims      batchShape_;
+  Sz<NDim>    fftDims;
+  CxN<NDim>   fftPh;
+
+  InTensor apo_;
+  InDims   apoBrd_, padLeft_;
+
+  std::array<std::pair<Index, Index>, NDim + 2 + VCC> paddings_;
 };
 
 } // namespace rl::TOps

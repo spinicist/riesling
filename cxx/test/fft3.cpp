@@ -20,15 +20,14 @@ TEST_CASE("FFT3", "[FFT]")
     Index const N = sx * sy * sz;
     Cx3         data(sx, sy, sz);
     Cx3         ref(sx, sy, sz);
-    auto const  ph = FFT::PhaseShift(data.dimensions());
 
     ref.setConstant(1.f);
     data.setZero();
     data(sx / 2, sy / 2, sz / 2) = sqrt(N); // Parseval's theorem
-    FFT::Forward(data, ph);
+    FFT::Forward(data);
     INFO("data\n" << data << "\nref\n" << ref);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
-    FFT::Adjoint(data, ph);
+    FFT::Adjoint(data);
     ref.setZero();
     ref(sx / 2, sy / 2, sz / 2) = sqrt(N);
     INFO("data\n" << data << "\nref\n" << ref);

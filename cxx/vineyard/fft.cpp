@@ -102,11 +102,11 @@ void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
 }
 
 template <int ND>
-void Forward(Eigen::TensorMap<CxN<ND>> &x, CxN<ND> const &ph)
+void Forward(Eigen::TensorMap<CxN<ND>> &x)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
-  Forward(x, dims, ph);
+  Forward(x, dims, PhaseShift(x.dimensions()));
 }
 
 template <int ND, int NFFT>
@@ -117,10 +117,10 @@ void Forward(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 }
 
 template <int ND>
-void Forward(CxN<ND> &x, CxN<ND> const &ph)
+void Forward(CxN<ND> &x)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Forward(map, ph);
+  Forward(map);
 }
 
 template <int ND, int NFFT>
@@ -157,11 +157,11 @@ void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
 }
 
 template <int ND>
-void Adjoint(Eigen::TensorMap<CxN<ND>> &x, CxN<ND> const &ph)
+void Adjoint(Eigen::TensorMap<CxN<ND>> &x)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
-  Adjoint(x, dims, ph);
+  Adjoint(x, dims, PhaseShift(x.dimensions()));
 }
 
 template <int ND, int NFFT>
@@ -172,10 +172,10 @@ void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 }
 
 template <int ND>
-void Adjoint(CxN<ND> &x, CxN<ND> const &ph)
+void Adjoint(CxN<ND> &x)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Adjoint(map, ph);
+  Adjoint(map);
 }
 
 template auto PhaseShift<1>(Sz1 const) -> Cx1;
@@ -190,8 +190,8 @@ template void Forward<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
 template void Forward<5, 2>(Cx5 &, Sz2 const, Cx2 const &ph);
 template void Forward<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
 template void Forward<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
-template void Forward<1>(Cx1 &, Cx1 const &ph);
-template void Forward<3>(Cx3 &, Cx3 const &ph);
+template void Forward<1>(Cx1 &);
+template void Forward<3>(Cx3 &);
 
 template void Adjoint<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
 template void Adjoint<3, 2>(Cx3 &, Sz2 const, Cx2 const &ph);
@@ -201,10 +201,10 @@ template void Adjoint<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
 template void Adjoint<5, 2>(Cx5 &, Sz2 const, Cx2 const &ph);
 template void Adjoint<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
 template void Adjoint<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
-template void Adjoint<1>(Eigen::TensorMap<Cx1> &, Cx1 const &ph);
-template void Adjoint<1>(Cx1 &, Cx1 const &ph);
-template void Adjoint<2>(Cx2 &, Cx2 const &ph);
-template void Adjoint<3>(Cx3 &, Cx3 const &ph);
+template void Adjoint<1>(Eigen::TensorMap<Cx1> &);
+template void Adjoint<1>(Cx1 &);
+template void Adjoint<2>(Cx2 &);
+template void Adjoint<3>(Cx3 &);
 
 } // namespace FFT
 } // namespace rl
