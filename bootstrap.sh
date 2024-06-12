@@ -1,4 +1,4 @@
-#!/bin/bash -eux
+#!/bin/bash -e
 
 USAGE="Usage: $0 [options]
 
@@ -23,7 +23,7 @@ done
 shift $((OPTIND - 1))
 
 # If vcpkg is not installed, install it
-if [ -x "$( command -v vcpkg )" ]; then
+if [[ (-x "$( command -v vcpkg )") && (-n $VCPKG_ROOT) ]]; then
   echo "vcpkg installed"
 else
   git clone https://github.com/microsoft/vcpkg.git .vcpkg

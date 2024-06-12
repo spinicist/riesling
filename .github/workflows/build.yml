@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
 
-      - uses: seanmiddleditch/gha-setup-ninja@master
+      - uses: ashutoshvarma/setup-ninja@master
 
       - name: Restore vcpkg binary cache
         id: cache
