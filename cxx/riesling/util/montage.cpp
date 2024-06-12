@@ -9,15 +9,21 @@
 
 #include <scn/scan.h>
 
-struct IndexPairReader
+struct NameIndex
 {
-  void operator()(std::string const &name, std::string const &value, IndexPair &p)
+  std::string name;
+  Index index;
+};
+
+struct NameIndexReader
+{
+  void operator()(std::string const &name, std::string const &value, NameIndex &ni)
   {
-    if (auto result = scn::scan<Index, Index>(value, "{},{}")) {
-      p.dim = std::get<0>(result->values());
-      p.index = std::get<1>(result->values());
+    if (auto result = scn::scan<std::string, Index>(value, "{:[a-z]},{:d}")) {
+      ni.name = std::get<0>(result->values());
+      ni.index = std::get<1>(result->values());
     } else {
-      rl::Log::Fail("Could not read Index Pair for {} from value {}", name, value);
+      rl::Log::Fail("Could not read NameIndex for {} from value {}, error {}", name, value, result.error().msg());
     }
   }
 };
@@ -48,7 +54,7 @@ struct GravityReader
   }
 };
 
-auto ReadData(std::string const &iname, std::string const &dset, std::vector<IndexPair> chips) -> rl::Cx3
+auto ReadData(std::string const &iname, std::string const &dset, std::vector<NameIndex> namedChips) -> rl::Cx3
 {
   rl::HD5::Reader reader(iname);
   auto const      diskOrder = reader.order(dset);
@@ -62,12 +68,28 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Ind
     auto const data2 = reader.readTensor<rl::Cx2>(dset);
     auto const shape = data2.dimensions();
     data = data2.reshape(rl::Sz3{shape[0], shape[1], 1});
+  } else if (O == 3) {
+    data = reader.readTensor<rl::Cx3>(dset);
   } else {
-    if (!chips.size()) {
-      if (dset == "data") { chips = std::vector<IndexPair>{{0, 0}, {4, 0}}; }
+    std::vector<rl::HD5::IndexPair> chips;
+    if (!namedChips.size()) {
+      if (dset == "data") { chips = std::vector<rl::HD5::IndexPair>{{0, 0}, {4, 0}}; }
+      else { rl::Log::Fail("No chips specified"); }
     } else {
-      if (diskOrder - chips.size() != 3) {
+      if (diskOrder - namedChips.size() != 3) {
         rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
+      }
+      auto const names = reader.listNames(dset);
+      for (auto const &nc: namedChips) {
+        if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
+          auto const d = std::distance(names.cbegin(), id);
+          if (nc.index < 0 || nc.index >= diskDims[d]) {
+            rl::Log::Fail("Invalid index {} for dimension {}", nc.index, nc.name);
+          }
+          chips.push_back({d, nc.index});
+        } else {
+          rl::Log::Fail("Could find dimension named {}", nc.name);
+        }
       }
     }
     data = reader.readSlab<rl::Cx3>(dset, chips);
@@ -261,7 +283,7 @@ void main_montage(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Image file to save");
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset (image)", {"dset", 'd'}, "data");
 
-  args::ValueFlagList<IndexPair, std::vector, IndexPairReader> chips(parser, "C", "Chip a dimension", {"chip", 'c'});
+  args::ValueFlagList<NameIndex, std::vector, NameIndexReader> chips(parser, "C", "Chip a dimension", {"chip", 'c'});
 
   args::ValueFlag<std::string>                        title(parser, "T", "Title", {"title", 't'});
   args::ValueFlag<Magick::GravityType, GravityReader> gravity(parser, "G", "Title gravity", {"gravity"}, Magick::NorthGravity);

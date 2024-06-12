@@ -9,6 +9,12 @@
 
 namespace rl {
 namespace HD5 {
+using Index = Eigen::Index;
+struct IndexPair /* Simple class so we don't need std::pair*/
+{
+  Index dim, index;
+};
+
 /*
  * This class is for reading tensors out of generic HDF5 files. Used for SDC, SENSE maps, etc.
  */
