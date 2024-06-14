@@ -1,6 +1,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
+#include "trajectory.hpp"
 #include "types.hpp"
 
 using namespace rl;
@@ -40,12 +41,17 @@ void main_h5(args::Subparser &parser)
       fmt::print("TR:         {}\n", i.tr);
       fmt::print("Origin:     {}\n", i.origin.transpose());
       fmt::print("Direction:\n{}\n", fmt::streamed(i.direction));
+      if (reader.exists("trajectory")) {
+        Trajectory traj(reader, i.voxel_size);
+        fmt::print("Trajectory: Samples {} Traces {} Matrix {} FOV {}\n", traj.nSamples(), traj.nTraces(), traj.matrix(),
+                   traj.FOV());
+      }
     }
 
     auto const datasets = reader.list();
     if (datasets.empty()) { Log::Fail("No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
-      if (ds != "info") {
+      if (ds != "info" && ds != "trajectory") {
         fmt::print("Name: {:12} Shape: {:24} Names: {}\n", ds, fmt::format("{}", reader.dimensions(ds)), reader.listNames(ds));
       }
     }
