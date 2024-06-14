@@ -6,8 +6,7 @@
 namespace rl {
 
 /* Temp Hack because .maximum() may be buggy on NEON */
-template <int NDims>
-auto GuessMatrix(Re3 const &points) -> Sz<NDims>
+template <int NDims> auto GuessMatrix(Re3 const &points) -> Sz<NDims>
 {
   if (points.dimension(0) != NDims) { Log::Fail("Incorrect number of co-ordinates for GuessMatrix"); }
   Re1 max(NDims);
@@ -45,8 +44,7 @@ TrajectoryN<NDims>::TrajectoryN(Re3 const &points, SzN const matrix, Array const
   init();
 }
 
-template <int NDims>
-TrajectoryN<NDims>::TrajectoryN(HD5::Reader &file, Array const voxel_size)
+template <int NDims> TrajectoryN<NDims>::TrajectoryN(HD5::Reader &file, Array const voxel_size)
 {
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
   if (file.exists(HD5::Keys::Trajectory, "matrix")) {
@@ -58,8 +56,7 @@ TrajectoryN<NDims>::TrajectoryN(HD5::Reader &file, Array const voxel_size)
   init();
 }
 
-template <int NDims>
-void TrajectoryN<NDims>::init()
+template <int NDims> void TrajectoryN<NDims>::init()
 {
   Index const nD = points_.dimension(0);
   if (nD != NDims) { Log::Fail("Trajectory points have {} co-ordinates, expected {}", nD, NDims); }
@@ -82,37 +79,26 @@ void TrajectoryN<NDims>::init()
     float const percent = (100.f * discarded) / total;
     Log::Warn("Discarded {} trajectory points ({:.2f}%) outside matrix", discarded, percent);
   }
-  Log::Print("{}D Trajectory samples {} traces {} matrix {}", NDims, nSamples(), nTraces(), matrix_);
+  Log::Print("{}D Trajectory Samples {} Traces {} Matrix {} FOV {}", NDims, nSamples(), nTraces(), matrix_, FOV());
 }
 
-template <int NDims>
-void TrajectoryN<NDims>::write(HD5::Writer &file) const
+template <int NDims> void TrajectoryN<NDims>::write(HD5::Writer &file) const
 {
   file.writeTensor(HD5::Keys::Trajectory, points_.dimensions(), points_.data(), HD5::Dims::Trajectory);
   file.writeAttribute(HD5::Keys::Trajectory, "matrix", matrix_);
 }
 
-template <int NDims>
-auto TrajectoryN<NDims>::nSamples() const -> Index
-{
-  return points_.dimension(1);
-}
+template <int NDims> auto TrajectoryN<NDims>::nSamples() const -> Index { return points_.dimension(1); }
 
-template <int NDims>
-auto TrajectoryN<NDims>::nTraces() const -> Index
-{
-  return points_.dimension(2);
-}
+template <int NDims> auto TrajectoryN<NDims>::nTraces() const -> Index { return points_.dimension(2); }
 
-template <int NDims>
-void TrajectoryN<NDims>::checkDims(SzN const dims) const
+template <int NDims> void TrajectoryN<NDims>::checkDims(SzN const dims) const
 {
   if (dims[1] != nSamples()) { Log::Fail("Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
   if (dims[2] != nTraces()) { Log::Fail("Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
 }
 
-template <int NDims>
-auto TrajectoryN<NDims>::compatible(TrajectoryN const &other) const -> bool
+template <int NDims> auto TrajectoryN<NDims>::compatible(TrajectoryN const &other) const -> bool
 {
   if ((other.matrix() == matrix()) && (other.voxelSize() == voxelSize()).all()) {
     return true;
@@ -121,20 +107,11 @@ auto TrajectoryN<NDims>::compatible(TrajectoryN const &other) const -> bool
   }
 }
 
-template <int NDims>
-auto TrajectoryN<NDims>::matrix() const -> SzN
-{
-  return matrix_;
-}
+template <int NDims> auto TrajectoryN<NDims>::matrix() const -> SzN { return matrix_; }
 
-template <int NDims>
-auto TrajectoryN<NDims>::voxelSize() const -> Array
-{
-  return voxel_size_;
-}
+template <int NDims> auto TrajectoryN<NDims>::voxelSize() const -> Array { return voxel_size_; }
 
-template <int NDims>
-auto TrajectoryN<NDims>::FOV() const -> Array
+template <int NDims> auto TrajectoryN<NDims>::FOV() const -> Array
 {
   Array fov;
   for (Index ii = 0; ii < 3; ii++) {
@@ -143,35 +120,23 @@ auto TrajectoryN<NDims>::FOV() const -> Array
   return fov;
 }
 
-template <int NDims>
-auto TrajectoryN<NDims>::matrixForFOV(float const fov) const -> SzN
+template <int NDims> auto TrajectoryN<NDims>::matrixForFOV(float const fov) const -> SzN
 {
-  if (fov > 0) {
-    Array bigMatrix = (((fov / voxel_size_) / 2.f).floor() * 2);
-    SzN   matrix = matrix_;
-    for (Index ii = 0; ii < 3; ii++) {
-      matrix[ii] = bigMatrix[ii];
-    }
-    Log::Print("Requested FOV {} from matrix {}, calculated {}", fov, matrix_, matrix);
-    return matrix;
-  } else {
-    return matrix_;
-  }
+  auto const afov = Array::Constant(fov);
+  return matrixForFOV(afov);
 }
 
-template <int NDims>
-auto TrajectoryN<NDims>::matrixForFOV(Array const fov) const -> SzN
+template <int NDims> auto TrajectoryN<NDims>::matrixForFOV(Array const fov) const -> SzN
 {
   SzN matrix;
   for (Index ii = 0; ii < 3; ii++) {
     matrix[ii] = std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
   }
-  Log::Print("Requested FOV {} from matrix {}, calculated {}", fov.transpose(), matrix_, matrix);
+  Log::Print("Trajectory FOV {} matrix {}. Requested FOV {} matrix {}", FOV().transpose(), matrix_, fov.transpose(), matrix);
   return matrix;
 }
 
-template <int NDims>
-void TrajectoryN<NDims>::shiftFOV(Eigen::Vector3f const shift, Cx5 &data)
+template <int NDims> void TrajectoryN<NDims>::shiftFOV(Eigen::Vector3f const shift, Cx5 &data)
 {
   Re1 delta(NDims);
   for (Index ii = 0; ii < NDims; ii++) {
@@ -198,14 +163,9 @@ void TrajectoryN<NDims>::shiftFOV(Eigen::Vector3f const shift, Cx5 &data)
                      data.constant(0.f));
 }
 
-template <int NDims>
-Re3 const &TrajectoryN<NDims>::points() const
-{
-  return points_;
-}
+template <int NDims> Re3 const &TrajectoryN<NDims>::points() const { return points_; }
 
-template <int NDims>
-Re1 TrajectoryN<NDims>::point(int16_t const read, int32_t const spoke) const
+template <int NDims> Re1 TrajectoryN<NDims>::point(int16_t const read, int32_t const spoke) const
 {
   Re1 const p = points_.template chip<2>(spoke).template chip<1>(read);
   return p;
@@ -263,9 +223,11 @@ auto TrajectoryN<NDims>::downsample(Array const tgtSize, Index const fullResTrac
 }
 
 template <int NDims>
-auto TrajectoryN<NDims>::downsample(
-  Cx5 const &ks, Array const tgt, Index const fullResTraces, bool const shrink, bool const corners) const
-  -> std::tuple<TrajectoryN, Cx5>
+auto TrajectoryN<NDims>::downsample(Cx5 const  &ks,
+                                    Array const tgt,
+                                    Index const fullResTraces,
+                                    bool const  shrink,
+                                    bool const  corners) const -> std::tuple<TrajectoryN, Cx5>
 {
   auto const [dsTraj, minSamp, nSamp] = downsample(tgt, fullResTraces, shrink, corners);
   Cx5 dsKs = ks.slice(Sz5{0, minSamp, 0, 0, 0}, Sz5{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3), ks.dimension(4)});
@@ -273,9 +235,11 @@ auto TrajectoryN<NDims>::downsample(
 }
 
 template <int NDims>
-auto TrajectoryN<NDims>::downsample(
-  Cx4 const &ks, Array const tgt, Index const fullResTraces, bool const shrink, bool const corners) const
-  -> std::tuple<TrajectoryN, Cx4>
+auto TrajectoryN<NDims>::downsample(Cx4 const  &ks,
+                                    Array const tgt,
+                                    Index const fullResTraces,
+                                    bool const  shrink,
+                                    bool const  corners) const -> std::tuple<TrajectoryN, Cx4>
 {
   auto const [dsTraj, minSamp, nSamp] = downsample(tgt, fullResTraces, shrink, corners);
   Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
