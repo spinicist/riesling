@@ -34,4 +34,18 @@ auto Threshold(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh)
   return nRetain;
 }
 
+auto Percentiles(Eigen::Ref<Eigen::ArrayXf const> const &vals, std::vector<float> const &ps) -> std::vector<float>
+{
+  Eigen::ArrayXf x = vals;
+  std::sort(x.begin(), x.end());
+
+  std::vector<float> pvals;
+  for (auto const p : ps) {
+    if (p < 0. || p > 100.) { Log::Fail("Requested percentile {} outside range 0-100", p); }
+    Index const ind = std::clamp(Index(p * (x.size() - 1)), 0L, Index(x.size() - 1));
+    pvals.push_back(x[ind]);
+  }
+  return pvals;
+}
+
 } // namespace rl

@@ -1,5 +1,6 @@
 #include "types.hpp"
 
+#include "algo/stats.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
@@ -24,7 +25,7 @@ void main_sense_calib(args::Subparser &parser)
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis);
-
+  Cx4 ref = ConjugateSum(channels, channels).sqrt();
   if (refname) {
     HD5::Reader refFile(refname.Get());
     Trajectory  refTraj(refFile, refFile.readInfo().voxel_size);
@@ -32,11 +33,16 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    Cx4 const ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
-    SENSE::RegularizedNormalization(senseOpts.λ.Get(), ref, channels);
-  }
+    Cx4 const body = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
 
-  SENSE::RegularizedNormalization(senseOpts.λ.Get(), channels);
+    // Normalize intensities by matching median values
+    Re4 const bAbs = body.abs();
+    Re4 const bRef = ref.abs();
+    float const medBody = Percentiles(CollapseToArray(bAbs), {0.5})[0];
+    float const medRef = Percentiles(CollapseToArray(bRef), {0.5})[0];
+    ref = body * body.constant(medRef / medBody);
+  }
+  SENSE::TikhonovDivision(channels, ref, senseOpts.λ.Get());
   if (frame) {
     auto shape = channels.dimensions();
     if (frame.Get() < 0 || frame.Get() >= shape[1]) {

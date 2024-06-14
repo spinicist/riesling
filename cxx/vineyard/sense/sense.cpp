@@ -43,7 +43,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   Cx4        lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
-  NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
+  // NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
 
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
@@ -59,7 +59,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   return cropped;
 }
 
-void RegularizedNormalization(float const λ, Cx4 const &ref, Cx5 &channels)
+void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ)
 {
   Sz5 const shape = channels.dimensions();
   Log::Debug("Normalizing SENSE. Dimensions {} λ {}", shape, λ);
@@ -68,19 +68,12 @@ void RegularizedNormalization(float const λ, Cx4 const &ref, Cx5 &channels)
     channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
 }
 
-void RegularizedNormalization(float const λ, Cx5 &channels)
-{
-  Cx4 rss(LastN<4>(channels.dimensions()));
-  rss.device(Threads::GlobalDevice()) = ConjugateSum(channels, channels).sqrt();
-  RegularizedNormalization(λ, rss, channels);
-}
-
 auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
     auto c = LoresChannels(opts, nufft, traj, noncart);
-    RegularizedNormalization(opts.λ.Get(), c);
+    TikhonovDivision(c, ConjugateSum(c, c).sqrt(), opts.λ.Get());
     return c;
   } else if (opts.type.Get() == "espirit") {
     Log::Fail("Not supported right now");
