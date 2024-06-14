@@ -129,6 +129,7 @@ template <int N> auto Reader::dimensionNames(std::string const &name) const -> D
     H5DSget_label(ds, ii, buffer, sizeof(buffer));
     names[ii] = std::string(buffer);
   }
+  std::reverse(names.begin(), names.end());
   H5Dclose(ds);
   return names;
 }
