@@ -38,7 +38,7 @@ void main_psf(args::Subparser &parser)
   if (coreOpts.ndft) {
     A = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
   } else {
-    A = TOps::NUFFT<3>::Make(shape, traj, gridOpts, nC, basis);
+    A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis, shape);
   }
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};

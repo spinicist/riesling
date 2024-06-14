@@ -22,7 +22,7 @@ TEST_CASE("NUFFT", "[tform]")
   }
   TrajectoryN<1> const  traj(points, matrix);
   float const           osamp = GENERATE(2.f, 2.3f);
-  TOps::NUFFT<1, false> nufft(matrix, traj, "ES3", osamp, 1);
+  TOps::NUFFT<1, false> nufft(traj, "ES3", osamp, 1);
   Cx3                   ks(nufft.oshape);
   Cx3                   img(nufft.ishape);
   img.setZero();
@@ -57,7 +57,7 @@ TEST_CASE("NUFFT Basis Trace", "[tform]")
   }
 
   float const    osamp = 2.f;
-  TOps::NUFFT<1> nufft(Sz1{M}, traj, "ES3", osamp, 1, basis);
+  TOps::NUFFT<1> nufft(traj, "ES3", osamp, 1, basis);
   Cx3            ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);
@@ -82,7 +82,7 @@ TEST_CASE("NUFFT Basis Fourier", "[tform]")
   auto                 b = FourierBasis(N, M, 1, 1.f);
 
   float const           osamp = 2.f;
-  TOps::NUFFT<1, false> nufft(Sz1{M}, traj, "ES3", osamp, 1, b.basis);
+  TOps::NUFFT<1, false> nufft(traj, "ES3", osamp, 1, b.basis);
   Cx3                   ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);
@@ -101,7 +101,7 @@ TEST_CASE("NUFFT VCC", "[tform]")
   points.setZero();
 
   TrajectoryN<1> const traj(points, matrix);
-  TOps::NUFFT<1, true> nufft(matrix, traj, "NN", 1.f, 1, IdBasis<Cx>(), true);
+  TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, IdBasis<Cx>());
   Cx3                  ks(nufft.oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));

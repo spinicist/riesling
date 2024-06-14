@@ -21,7 +21,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc
   float const osamp = 1.25;
   Re2         weights;
   if (vcc) {
-    TOps::NUFFT<3, true> nufft(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
+    TOps::NUFFT<3, true> nufft(newTraj, "ES5", osamp, 1, basis);
     Cx3                  W(nufft.oshape);
     Log::Print("Starting preconditioner calculation");
     W.setConstant(Cx(1.f, 0.f));
@@ -42,7 +42,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc
       std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
     weights.device(Threads::GlobalDevice()) = ((weights * scale) + bias).inverse();
   } else {
-    TOps::NUFFT<3, false> nufft(newTraj.matrix(), newTraj, "ES5", osamp, 1, basis);
+    TOps::NUFFT<3, false> nufft(newTraj, "ES5", osamp, 1, basis);
     Cx3                   W(nufft.oshape);
     Log::Print("Starting preconditioner calculation");
     W.setConstant(Cx(1.f, 0.f));

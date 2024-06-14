@@ -27,7 +27,7 @@ TEST_CASE("Recon", "[recon]")
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj.matrix(), traj, ktype, osamp, nC);
+  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC);
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
   senseMaps.setConstant(std::sqrt(1. / nC));

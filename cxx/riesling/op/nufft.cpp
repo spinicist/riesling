@@ -27,7 +27,7 @@ void main_nufft(args::Subparser &parser)
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
   auto const nC = reader.dimensions()[0];
-  auto const nufft = TOps::NUFFT<3>::Make(traj.matrixForFOV(coreOpts.fov.Get()), traj, gridOpts, nC, basis);
+  auto const nufft = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis, traj.matrixForFOV(coreOpts.fov.Get()));
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(reader.readInfo());

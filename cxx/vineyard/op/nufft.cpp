@@ -6,12 +6,12 @@
 namespace rl::TOps {
 
 template <int NDim, bool VCC>
-NUFFT<NDim, VCC>::NUFFT(Sz<NDim> const           matrix,
-                        TrajectoryN<NDim> const &traj,
+NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
                         std::string const       &ktype,
                         float const              osamp,
                         Index const              nChan,
                         Basis<Cx> const         &basis,
+                        Sz<NDim> const           matrix,
                         Index const              subgridSz,
                         Index const              splitSz,
                         Index const              nBatch)
@@ -22,7 +22,19 @@ NUFFT<NDim, VCC>::NUFFT(Sz<NDim> const           matrix,
 {
   if (nChan % nBatch != 0) { Log::Fail("Batch size {} does not cleanly divide number of channels {}", nBatch, nChan); }
   // We need to take the minimum of the image dimensions, then stitch the right dimensions onto the front
-  batchShape_ = Concatenate(FirstN<2 + VCC>(gridder.ishape), AMin(matrix, LastN<NDim>(gridder.ishape)));
+  // Strictly, the input shape should be the trajectory matrix size.
+  // However, for efficiency, we allow the input shape to be specified in order to match SENSE maps without needing
+  // an additional padding/cropping operation. Hence the rules are:
+  // matrix = 0 - use the trajectory matrix.
+  // matrix > 0 < grid size - use the matrix.
+  // matrix > grid size - error
+  if (std::all_of(matrix.cbegin(), matrix.cend(), [](Index ii) { return ii == 0; })) {
+    batchShape_ = Concatenate(FirstN<2 + VCC>(gridder.ishape), traj.matrix());
+  } else if (std::equal(matrix.cbegin(), matrix.cend(), gridder.ishape.cbegin() + 2 + VCC, std::less())) {
+    batchShape_ = Concatenate(FirstN<2 + VCC>(gridder.ishape), matrix);
+  } else {
+    Log::Fail("Requested NUFFT matrix {} but grid size is {}", matrix, LastN<NDim>(gridder.ishape));
+  }
   ishape = batchShape_;
   ishape[0] = nChan; // Undo batching
   oshape = gridder.oshape;
@@ -53,13 +65,13 @@ NUFFT<NDim, VCC>::NUFFT(Sz<NDim> const           matrix,
 }
 
 template <int NDim, bool VCC>
-auto NUFFT<NDim, VCC>::Make(Sz<NDim> const           matrix,
-                            TrajectoryN<NDim> const &traj,
+auto NUFFT<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
                             GridOpts                &opts,
                             Index const              nC,
-                            Basis<Cx> const         &basis) -> std::shared_ptr<NUFFT<NDim, VCC>>
+                            Basis<Cx> const         &basis,
+                            Sz<NDim> const           matrix) -> std::shared_ptr<NUFFT<NDim, VCC>>
 {
-  return std::make_shared<NUFFT<NDim, VCC>>(matrix, traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, opts.subgridSize.Get(),
+  return std::make_shared<NUFFT<NDim, VCC>>(traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, matrix, opts.subgridSize.Get(),
                                             opts.splitSize.Get(), opts.batches.Get());
 }
 
@@ -166,7 +178,6 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, 
   }
   this->finishAdjoint(x, time);
 }
-
 
 template struct NUFFT<1, false>;
 template struct NUFFT<2, false>;

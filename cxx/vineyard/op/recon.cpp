@@ -31,7 +31,7 @@ auto SENSE(CoreOpts         &coreOpts,
   } else {
     if (gridOpts.vcc) {
       auto sense = std::make_shared<TOps::VCCSENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), basis.dimension(0));
-      auto nufft = TOps::NUFFT<3, true>::Make(sense->mapDimensions(), traj, gridOpts, sense->nChannels(), basis);
+      auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), basis, sense->mapDimensions());
       auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, true>>>(nufft, nSlab);
       auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 6>>(sense->oshape, nSlab);
       auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
@@ -39,7 +39,7 @@ auto SENSE(CoreOpts         &coreOpts,
       return compose2;
     } else {
       auto sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), basis.dimension(0));
-      auto nufft = TOps::NUFFT<3, false>::Make(sense->mapDimensions(), traj, gridOpts, sense->nChannels(), basis);
+      auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), basis, sense->mapDimensions());
       auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
       auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
       auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
@@ -67,7 +67,7 @@ auto Channels(bool const            ndft,
     return compose1;
   } else {
     if (gridOpts.vcc) {
-      auto       nufft = TOps::NUFFT<3, true>::Make(shape, traj, gridOpts, nC, basis);
+      auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis, shape);
       auto const ns = nufft->ishape;
       auto       reshape =
         std::make_shared<TOps::ReshapeInput<TOps::NUFFT<3, true>, 5>>(nufft, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
@@ -76,7 +76,7 @@ auto Channels(bool const            ndft,
       auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
       return compose2;
     } else {
-      auto nufft = TOps::NUFFT<3, false>::Make(shape, traj, gridOpts, nC, basis);
+      auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis, shape);
       if (nSlab == 1) {
         auto reshape = std::make_shared<TOps::ReshapeOutput<TOps::NUFFT<3, false>, 4>>(nufft, AddBack(nufft->oshape, 1));
         return reshape;
