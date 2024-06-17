@@ -77,7 +77,7 @@ auto NUFFT<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
 
 template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     wsm.device(Threads::GlobalDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
@@ -98,12 +98,12 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
       y.slice(y_start, yt.dimensions()).device(Threads::GlobalDevice()) = yt;
     }
   }
-  this->finishForward(y, time);
+  this->finishForward(y, time, false);
 }
 
 template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     gridder.adjoint(y, wsm);
@@ -124,12 +124,12 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
         workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
     }
   }
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, false);
 }
 
 template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     wsm.device(Threads::GlobalDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
@@ -150,12 +150,12 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, O
       y.slice(y_start, yt.dimensions()).device(Threads::GlobalDevice()) += yt;
     }
   }
-  this->finishForward(y, time);
+  this->finishForward(y, time, true);
 }
 
 template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     gridder.adjoint(y, wsm);
@@ -176,7 +176,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, 
         workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
     }
   }
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, true);
 }
 
 template struct NUFFT<1, false>;

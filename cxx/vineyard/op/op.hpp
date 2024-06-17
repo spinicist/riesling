@@ -18,23 +18,29 @@ template <typename Scalar_ = Cx> struct Op
 
   virtual auto rows() const -> Index = 0;
   virtual auto cols() const -> Index = 0;
-  
+
   virtual void forward(CMap const &x, Map &y) const = 0;
   virtual void adjoint(CMap const &y, Map &x) const = 0;
   virtual auto forward(Vector const &x) const -> Vector;
   virtual auto adjoint(Vector const &y) const -> Vector;
-  void forward(Vector const &x, Vector &y) const;
-  void adjoint(Vector const &y, Vector &x) const;
+  void         forward(Vector const &x, Vector &y) const;
+  void         adjoint(Vector const &y, Vector &x) const;
 
   /* These versions add in-place to the output */
   virtual void iforward(CMap const &x, Map &y) const = 0;
   virtual void iadjoint(CMap const &y, Map &x) const = 0;
-  void iforward(Vector const &x, Vector &y) const;
-  void iadjoint(Vector const &y, Vector &x) const;
+  void         iforward(Vector const &x, Vector &y) const;
+  void         iadjoint(Vector const &y, Vector &x) const;
 
   virtual auto inverse() const -> std::shared_ptr<Op<Scalar>>;
   virtual auto inverse(float const bias, float const scale) const -> std::shared_ptr<Op<Scalar>>;
   virtual auto operator+(Scalar const) const -> std::shared_ptr<Op<Scalar>>;
+
+protected:
+  auto startForward(CMap const &x, Map const &y, bool const ip) const -> Log::Time;
+  void finishForward(Map const &y, Log::Time const start, bool const ip) const;
+  auto startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time;
+  void finishAdjoint(Map const &x, Log::Time const start, bool const ip) const;
 };
 
 } // namespace rl::Ops

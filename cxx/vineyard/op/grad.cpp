@@ -34,22 +34,22 @@ Grad::Grad(InDims const ish, std::vector<Index> const &d)
 
 void Grad::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, false);
   y.setZero();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     ForwardDiff(x, y.chip<4>(ii), x.dimensions(), dims_[ii]);
   }
-  this->finishForward(y, time);
+  this->finishForward(y, time, false);
 }
 
 void Grad::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, false);
   x.setZero();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     BackwardDiff(y.chip<4>(ii), x, x.dimensions(), dims_[ii]);
   }
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, false);
 }
 
 GradVec::GradVec(InDims const dims)
@@ -59,7 +59,7 @@ GradVec::GradVec(InDims const dims)
 
 void GradVec::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, false);
   Sz4 const  sz = FirstN<4>(x.dimensions());
   y.setZero();
   for (Index ii = 0; ii < 3; ii++) {
@@ -77,12 +77,12 @@ void GradVec::forward(InCMap const &x, OutMap &y) const
 
   y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)) /= y.slice(Sz5{0, 0, 0, 0, 3}, AddBack(sz, 3)).constant(2.f);
 
-  this->finishForward(y, time);
+  this->finishForward(y, time, false);
 }
 
 void GradVec::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, false);
   Sz4 const  sz = FirstN<4>(x.dimensions());
   x.setZero();
   for (Index ii = 0; ii < 3; ii++) {
@@ -97,7 +97,7 @@ void GradVec::adjoint(OutCMap const &y, InMap &x) const
   ForwardDiff(y.chip<4>(4), x.chip<4>(2), sz, 1);
   ForwardDiff(y.chip<4>(5), x.chip<4>(2), sz, 2);
 
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, false);
 }
 
 } // namespace rl

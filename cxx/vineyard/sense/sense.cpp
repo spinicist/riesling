@@ -2,10 +2,14 @@
 
 #include "algo/lsmr.hpp"
 #include "cropper.hpp"
-// #include "espirit.hpp"
+#include "fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
+#include "op/fft.hpp"
+#include "op/ops.hpp"
+#include "op/pad.hpp"
 #include "op/recon.hpp"
+#include "op/sense.hpp"
 #include "precon.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
@@ -16,6 +20,7 @@ namespace SENSE {
 Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/espirit/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
+  , kWidth(parser, "K", "SENSE kernel width (7)", {"sense-width"}, 7)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, Eigen::Array3f::Constant(12.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
   , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
@@ -66,6 +71,73 @@ void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ)
   Cx5 normalized(shape);
   channels.device(Threads::GlobalDevice()) =
     channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
+}
+
+auto SobolevWeights(Index const kW, Index const l) -> Re3
+{
+  Re3 W(kW, kW, kW);
+  for (Index ik = 0; ik < kW; ik++) {
+    float const kk = (ik - (kW / 2.f)) / kW;
+    for (Index ij = 0; ij < kW; ij++) {
+      float const kj = (ij - (kW / 2.f)) / kW;
+      for (Index ii = 0; ii < kW; ii++) {
+        float const ki = (ii - (kW / 2.f)) / kW;
+        float const k2 = (ki * ki + kj * kj + kk * kk);
+        W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
+      }
+    }
+  }
+  return W;
+}
+
+void Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW)
+{
+  Sz5 const shape = channels.dimensions();
+  Sz5       xshape(shape[0], shape[1], kW, kW, kW);
+  // Get scaling between channels and ref
+  float const scale = Norm(channels) / Norm(ref);
+  Log::Print("|channels| {} |ref| {} scale {}", Norm(channels), Norm(ref), scale);
+  // Set up operators
+  auto pad = std::make_shared<TOps::Pad<Cx, 5, 3>>(Sz3{kW, kW, kW}, shape);
+  auto fft = std::make_shared<TOps::FFT<5, 3>>(shape, true);
+  auto nonsense = std::make_shared<TOps::NonSENSE>(ref * ref.constant(scale), shape[0]);
+  auto c1 = std::make_shared<TOps::Compose<TOps::Pad<Cx, 5, 3>, TOps::FFT<5, 3>>>(pad, fft);
+  auto A = std::make_shared<TOps::Compose<TOps::TOp<Cx, 5, 5>, TOps::TOp<Cx, 5, 5>>>(c1, nonsense);
+
+  // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
+  Cx3 const  sw = SobolevWeights(kW, 16).cast<Cx>();
+  auto const swv = CollapseToArray(sw);
+  auto       W = std::make_shared<Ops::DiagRep<Cx>>(shape[0] * shape[1], swv);
+  auto       λ = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), 1.f);
+  auto       reg = std::make_shared<Ops::Multiply<Cx>>(λ, W);
+  auto       Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg);
+
+  Ops::Op<Cx>::Vector bʹ(Aʹ->rows());
+  bʹ.head(A->rows()) = CollapseToArray(channels);
+  bʹ.tail(reg->rows()).setZero();
+
+  Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
+  Log::Tensor("ref", ref.dimensions(), ref.data(), {"v", "x", "y", "z"});
+  Log::Tensor("channels", shape, channels.data(), HD5::Dims::SENSE);
+  auto debug = [xshape, &pad, &fft](Index const i, LSMR::Vector const &x) {
+    Log::Tensor(fmt::format("x-{:02d}", i), xshape, x.data(), HD5::Dims::SENSE);
+    Cx5 temp = pad->forward(Tensorfy(x, xshape));
+    Cx5 temp2 = fft->forward(temp);
+    Log::Tensor(fmt::format("ximg-{:02d}", i), temp2.dimensions(), temp2.data(), HD5::Dims::SENSE);
+  };
+  LSMR lsmr{Aʹ};
+  lsmr.iterLimit = 32;
+  lsmr.debug = debug;
+  auto x = lsmr.run(bʹ.data(), 0.f);
+  Log::Print("Finished run");
+  auto xm = Tensorfy(x, xshape);
+
+  {
+    Log::Print("Final FFT");
+    Cx5 const temp = pad->forward(xm);
+    Log::Print("temp {} channels {}", temp.dimensions(), channels.dimensions());
+    channels = fft->forward(temp);
+  }
 }
 
 auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5

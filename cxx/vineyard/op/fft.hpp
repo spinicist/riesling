@@ -12,7 +12,7 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 {
   OP_INHERIT(Cx, Rank, Rank)
 
-  FFT(InDims const &dims);
+  FFT(InDims const &dims, bool const adjoint = false);
   FFT(InMap x);
 
   using Parent::adjoint;
@@ -26,6 +26,7 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 private:
   Sz<FFTRank>  dims_;
   CxN<FFTRank> ph_;
+  bool adjoint_;
 };
 
 } // namespace rl::TOps

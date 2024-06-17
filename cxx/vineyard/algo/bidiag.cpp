@@ -88,7 +88,7 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
   if (M) {
     M->forward(Mu, u);
   } else {
-    Mu = u;
+    u = Mu;
   }
   β = std::sqrt(CheckedDot(Mu, u));
   Mu.device(Threads::GlobalDevice()) = Mu / β;

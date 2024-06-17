@@ -10,7 +10,6 @@ Op<S>::Op(std::string const &n)
 
 template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
 {
-  Log::Debug("Op {} forward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   CMap xm(x.data(), x.size());
@@ -20,7 +19,6 @@ template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
 
 template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
 {
-  Log::Debug("Op {} adjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   CMap ym(y.data(), y.size());
@@ -30,29 +28,28 @@ template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
 
 template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
 {
-  Log::Debug("Op {} forward x {} rows {} cols {}", name, x.rows(), rows(), cols());
   assert(x.rows() == cols());
   Vector y(this->rows());
   Map    ym(y.data(), y.size());
   y.setZero();
+  Log::Debug("Op {} forward allocated [{}]", name, y.size());
   this->forward(CMap(x.data(), x.size()), ym);
   return y;
 }
 
 template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
 {
-  Log::Debug("Op {} adjoint y {} rows {} cols {}", name, y.rows(), rows(), cols());
   assert(y.rows() == rows());
   Vector x(this->cols());
   Map    xm(x.data(), x.size());
   x.setZero();
+  Log::Debug("Op {} adjoint allocated [{}]", name, x.size());
   this->adjoint(CMap(y.data(), y.size()), xm);
   return x;
 }
 
 template <typename S> void Op<S>::iforward(Vector const &x, Vector &y) const
 {
-  Log::Debug("Op {} iforward x {} y {} rows {} cols {}", name, x.rows(), y.rows(), rows(), cols());
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   CMap xm(x.data(), x.size());
@@ -62,12 +59,45 @@ template <typename S> void Op<S>::iforward(Vector const &x, Vector &y) const
 
 template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x) const
 {
-  Log::Debug("Op {} iadjoint y {} x {} rows {} cols {}", name, y.rows(), x.rows(), rows(), cols());
   assert(x.rows() == cols());
   assert(y.rows() == rows());
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
   this->iadjoint(ym, xm);
+}
+
+template <typename S> auto Op<S>::startForward(CMap const &x, Map const &y, bool const ip) const -> Log::Time
+{
+  if (x.rows() != cols()) { Log::Fail("Op {} forward x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (y.rows() != rows()) { Log::Fail("Op {} forward y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (Log::CurrentLevel() == Log::Level::Debug) {
+    Log::Debug("Op{} {} forward [{}, {}] |x| {}", ip ? "-Add" : "", this->name, rows(), cols(), x.stableNorm());
+  }
+  return Log::Now();
+}
+
+template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const start, bool const ip) const
+{
+  if (Log::CurrentLevel() == Log::Level::Debug) {
+    Log::Debug("Op{} {} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), y.stableNorm());
+  }
+}
+
+template <typename S> auto Op<S>::startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time
+{
+  if (y.rows() != rows()) { Log::Fail("Op {} forward y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (x.rows() != cols()) { Log::Fail("Op {} forward x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (Log::CurrentLevel() == Log::Level::Debug) {
+    Log::Debug("Op{} {} adjoint [{},{}] |y| {}", ip ? "-Add" : "", this->name, rows(), cols(), y.stableNorm());
+  }
+  return Log::Now();
+}
+
+template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const start, bool const ip) const
+{
+  if (Log::CurrentLevel() == Log::Level::Debug) {
+    Log::Debug("Op{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());
+  }
 }
 
 template <typename S> auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>

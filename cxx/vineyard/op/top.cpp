@@ -26,7 +26,6 @@ template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CM
 {
   assert(x.rows() == this->cols());
   assert(y.rows() == this->rows());
-  Log::Debug("TOp {} forward {}->{}", this->name, this->ishape, this->oshape);
   InCMap xm(x.data(), ishape);
   OutMap ym(y.data(), oshape);
   forward(xm, ym);
@@ -36,7 +35,6 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CM
 {
   assert(x.rows() == this->cols());
   assert(y.rows() == this->rows());
-  Log::Debug("TOp {} adjoint {}->{}", this->name, this->oshape, this->ishape);
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
   adjoint(ym, xm);
@@ -46,7 +44,6 @@ template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::C
 {
   assert(x.rows() == this->cols());
   assert(y.rows() == this->rows());
-  Log::Debug("TOp {} forward {}->{}", this->name, this->ishape, this->oshape);
   InCMap xm(x.data(), ishape);
   OutMap ym(y.data(), oshape);
   iforward(xm, ym);
@@ -56,7 +53,6 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::C
 {
   assert(x.rows() == this->cols());
   assert(y.rows() == this->rows());
-  Log::Debug("TOp {} adjoint {}->{}", this->name, this->oshape, this->ishape);
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
   iadjoint(ym, xm);
@@ -67,7 +63,7 @@ template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x
   InCMap    xm(x.data(), ishape);
   OutTensor y(oshape);
   OutMap    ym(y.data(), oshape);
-  Log::Debug("TOp {} forward {}->{} Allocated {}", this->name, this->ishape, this->oshape, ym.dimensions());
+  Log::Debug("TOp {} forward allocated {}", this->name, ym.dimensions());
   forward(xm, ym);
   return y;
 }
@@ -77,7 +73,7 @@ template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &
   OutCMap  ym(y.data(), oshape);
   InTensor x(ishape);
   InMap    xm(x.data(), ishape);
-  Log::Debug("TOp {} adjoint {}->{} Allocated {}", this->name, this->oshape, this->ishape, xm.dimensions());
+  Log::Debug("TOp {} adjoint allocated {}", this->name, xm.dimensions());
   adjoint(ym, xm);
   return x;
 }
@@ -92,37 +88,40 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &y
   Log::Fail("In place {} not implemented", this->name);
 }
 
-template <typename S, int I, int O> auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y) const -> Log::Time
+template <typename S, int I, int O>
+auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Log::Time
 {
-  if (x.dimensions() != ishape) { Log::Fail("{} forward x dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
-  if (y.dimensions() != oshape) { Log::Fail("{} forward y dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
+  if (x.dimensions() != ishape) { Log::Fail("TOp {} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
+  if (y.dimensions() != oshape) { Log::Fail("TOp {} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
   if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("{} forward started. Dimensions {}->{}. Norm {}", this->name, this->ishape, this->oshape, Norm(x));
+    Log::Debug("TOp{} {} forward {}->{} |x| {}", ip ? "-Add" : "", this->name, this->ishape, this->oshape, Norm(x));
   }
   return Log::Now();
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap const &y, Log::Time const start) const
+template <typename S, int I, int O>
+void TOp<S, I, O>::finishForward(OutMap const &y, Log::Time const start, bool const ip) const
 {
   if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("{} forward finished. Took {}. Norm {}.", this->name, Log::ToNow(start), Norm(y));
+    Log::Debug("TOp{} {} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(y));
   }
 }
 
-template <typename S, int I, int O> auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x) const -> Log::Time
+template <typename S, int I, int O>
+auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Log::Time
 {
-  if (y.dimensions() != oshape) { Log::Fail("{} adjoint y dims were: {} expected: {}", this->name, y.dimensions(), oshape); }
-  if (x.dimensions() != ishape) { Log::Fail("{} adjoint x dims were: {} expected: {}", this->name, x.dimensions(), ishape); }
+  if (y.dimensions() != oshape) { Log::Fail("TOp {} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
+  if (x.dimensions() != ishape) { Log::Fail("TOp {} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
   if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("{} adjoint started. Dimensions {}->{}. Norm {}", this->name, this->oshape, this->ishape, Norm(y));
+    Log::Debug("TOp{} {} adjoint {}->{} |y| {}", ip ? "-Add" : "", this->name, this->oshape, this->ishape, Norm(y));
   }
   return Log::Now();
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Log::Time const start) const
+template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Log::Time const start, bool const ip) const
 {
   if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("{} adjoint finished. Took {}. Norm {}", this->name, Log::ToNow(start), Norm(x));
+    Log::Debug("TOp{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(x));
   }
 }
 
@@ -160,30 +159,30 @@ Identity<S, R>::Identity(Sz<R> dims)
 
 template <typename S, int R> void Identity<S, R>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = Parent::startForward(x, y);
+  auto const time = Parent::startForward(x, y, false);
   y.device(Threads::GlobalDevice()) = x;
-  Parent::finishAdjoint(y, time);
+  Parent::finishAdjoint(y, time, false);
 }
 
 template <typename S, int R> void Identity<S, R>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = Parent::startAdjoint(y, x);
+  auto const time = Parent::startAdjoint(y, x, false);
   x.device(Threads::GlobalDevice()) = y;
-  Parent::finishAdjoint(x, time);
+  Parent::finishAdjoint(x, time, false);
 }
 
 template <typename S, int R> void Identity<S, R>::iforward(InCMap const &x, OutMap &y) const
 {
-  auto const time = Parent::startForward(x, y);
+  auto const time = Parent::startForward(x, y, true);
   y.device(Threads::GlobalDevice()) += x;
-  Parent::finishAdjoint(y, time);
+  Parent::finishAdjoint(y, time, true);
 }
 
 template <typename S, int R> void Identity<S, R>::iadjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = Parent::startAdjoint(y, x);
+  auto const time = Parent::startAdjoint(y, x, true);
   x.device(Threads::GlobalDevice()) += y;
-  Parent::finishAdjoint(x, time);
+  Parent::finishAdjoint(x, time, true);
 }
 
 template struct Identity<Cx, 4>;

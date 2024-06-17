@@ -15,6 +15,7 @@ void main_sense_calib(args::Subparser &parser)
   SENSE::Opts                  senseOpts(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
   args::ValueFlag<Index>       frame(parser, "F", "SENSE calibration frame (all)", {"frame"}, -1);
+  args::Flag                   nonsense(parser, "N", "NonSENSE", {'n', "nonsense"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -36,13 +37,19 @@ void main_sense_calib(args::Subparser &parser)
     Cx4 const body = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
 
     // Normalize intensities by matching median values
-    Re4 const bAbs = body.abs();
-    Re4 const bRef = ref.abs();
+    Re4 const   bAbs = body.abs();
+    Re4 const   bRef = ref.abs();
     float const medBody = Percentiles(CollapseToArray(bAbs), {0.5})[0];
     float const medRef = Percentiles(CollapseToArray(bRef), {0.5})[0];
     ref = body * body.constant(medRef / medBody);
   }
-  SENSE::TikhonovDivision(channels, ref, senseOpts.λ.Get());
+
+  if (nonsense) {
+    SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get() * gridOpts.osamp.Get());
+  } else {
+    SENSE::TikhonovDivision(channels, ref, senseOpts.λ.Get());
+  }
+
   if (frame) {
     auto shape = channels.dimensions();
     if (frame.Get() < 0 || frame.Get() >= shape[1]) {

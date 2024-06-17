@@ -49,7 +49,7 @@ Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, boo
 
 template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const             time = this->startForward(x, y);
+  auto const             time = this->startForward(x, y, false);
   Index                  ik = 0;
   Sz<ND>                 st, roll, stSym, szSym;
   Eigen::array<bool, ND> rev;
@@ -91,12 +91,12 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap c
   ind.setZero();
   dimLoop(NK - 1, ind);
   assert(ik == y.dimension(0));
-  this->finishForward(y, time);
+  this->finishForward(y, time, false);
 }
 
 template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, false);
   x.setZero();
   Index                  ik = 0;
   Sz<ND>                 xSt, roll, stSym, szSym;
@@ -141,7 +141,7 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap 
   dimLoop(NK - 1, ind);
   assert(ik == y.dimension(0));
   x.slice(stSym, szSym) /= x.slice(stSym, szSym).constant(Product(kW_) * (virt_ ? 2.f : 1.f));
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, false);
 }
 
 template struct Hankel<Cx, 5, 3>;

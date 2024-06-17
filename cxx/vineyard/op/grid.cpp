@@ -176,19 +176,19 @@ inline void forwardTask(Mapping<ND> const                                       
 
 template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, false);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
   forwardTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
   if (this->vccMapping) { forwardTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
-  this->finishForward(y, time);
+  this->finishForward(y, time, false);
 }
 
 template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, true);
   forwardTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
   if (this->vccMapping) { forwardTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
-  this->finishForward(y, time);
+  this->finishForward(y, time, true);
 }
 
 template <typename Scalar, int ND, bool hasVCC, bool isVCC>
@@ -286,20 +286,20 @@ inline void adjointTask(Mapping<ND> const                                       
 template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
 
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
   adjointTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
   if (this->vccMapping) { adjointTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, false);
 }
 
 template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
 {
 
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, true);
   adjointTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
   if (this->vccMapping) { adjointTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, true);
 }
 
 template struct Grid<float, 1, false>;

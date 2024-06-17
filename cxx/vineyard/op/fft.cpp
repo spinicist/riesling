@@ -4,8 +4,9 @@
 namespace rl::TOps {
 
 template <int Rank, int FFTRank>
-FFT<Rank, FFTRank>::FFT(InDims const &dims)
+FFT<Rank, FFTRank>::FFT(InDims const &dims, bool const adj)
   : Parent("FFT", dims, dims)
+  , adjoint_{adj}
 {
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
   ph_ = rl::FFT::PhaseShift(LastN<FFTRank>(ishape));
@@ -20,36 +21,52 @@ FFT<Rank, FFTRank>::FFT(InMap x)
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, false);
   y = x;
-  rl::FFT::Forward(y, dims_, ph_);
-  this->finishForward(y, time);
+  if (adjoint_) {
+    rl::FFT::Adjoint(y, dims_, ph_);
+  } else {
+    rl::FFT::Forward(y, dims_, ph_);
+  }
+  this->finishForward(y, time, false);
 }
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, false);
   x = y;
-  rl::FFT::Adjoint(x, dims_, ph_);
-  this->finishAdjoint(x, time);
+  if (adjoint_) {
+    rl::FFT::Forward(x, dims_, ph_);
+  } else {
+    rl::FFT::Adjoint(x, dims_, ph_);
+  }
+  this->finishAdjoint(x, time, false);
 }
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap const &x, OutMap &y) const
 {
-  auto const time = this->startForward(x, y);
+  auto const time = this->startForward(x, y, true);
   InTensor   tmp = x;
-  rl::FFT::Forward(tmp, dims_, ph_);
+  if (adjoint_) {
+    rl::FFT::Adjoint(tmp, dims_, ph_);
+  } else {
+    rl::FFT::Forward(tmp, dims_, ph_);
+  }
   y += tmp;
-  this->finishForward(y, time);
+  this->finishForward(y, time, true);
 }
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = this->startAdjoint(y, x);
+  auto const time = this->startAdjoint(y, x, true);
   InTensor   tmp = y;
-  rl::FFT::Adjoint(tmp, dims_, ph_);
+  if (adjoint_) {
+    rl::FFT::Forward(tmp, dims_, ph_);
+  } else {
+    rl::FFT::Adjoint(tmp, dims_, ph_);
+  }
   x += tmp;
-  this->finishAdjoint(x, time);
+  this->finishAdjoint(x, time, true);
 }
 
 template struct FFT<4, 3>;

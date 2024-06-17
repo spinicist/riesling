@@ -31,8 +31,8 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   auto rows() const -> Index final;
   auto cols() const -> Index final;
 
-  using Base::forward;
   using Base::adjoint;
+  using Base::forward;
   using Base::inverse;
 
   void forward(typename Base::CMap const &x, typename Base::Map &y) const final;
@@ -49,11 +49,12 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   virtual void iforward(InCMap const &x, OutMap &y) const;
   virtual void iadjoint(OutCMap const &y, InMap &x) const;
 
-  auto startForward(InCMap const &x, OutMap const &y) const -> Log::Time;
-  void finishForward(OutMap const &y, Log::Time const start) const;
+protected:
+  auto startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Log::Time;
+  void finishForward(OutMap const &y, Log::Time const start, bool const ip) const;
 
-  auto startAdjoint(OutCMap const &y, InMap const &x) const -> Log::Time;
-  void finishAdjoint(InMap const &x, Log::Time const start) const;
+  auto startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Log::Time;
+  void finishAdjoint(InMap const &x, Log::Time const start, bool const ip) const;
 };
 
 #define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \

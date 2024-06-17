@@ -39,16 +39,16 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
 
   void forward(InCMap const &x, OutMap &y) const
   {
-    auto const time = this->startForward(x);
+    auto const time = this->startForward(x, y, false);
     y.device(Threads::GlobalDevice()) = x * scales.reshape(res).broadcast(brd);
-    this->finishForward(y, time);
+    this->finishForward(y, time, false);
   }
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
-    auto const time = this->startAdjoint(y);
+    auto const time = this->startAdjoint(y, x, false);
     x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
-    this->finishAdjoint(x, time);
+    this->finishAdjoint(x, time, false);
   }
 
   auto inverse() const -> std::shared_ptr<Ops::Op<Cx>>

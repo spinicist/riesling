@@ -21,6 +21,22 @@ private:
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
 };
 
+struct NonSENSE final : TOp<Cx, 5, 5>
+{
+  OP_INHERIT(Cx, 5, 5)
+  NonSENSE(Cx4 const &img, Index const nC);
+  OP_DECLARE(SENSE)
+  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const &y, InMap &x) const;
+  auto nChannels() const -> Index;
+  auto mapDimensions() const -> Sz3;
+
+private:
+  Cx4                                                   img_;
+  Eigen::IndexList<FixOne, int, int, int, int>          res_;
+  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd_;
+};
+
 struct VCCSENSE final : TOp<Cx, 4, 6>
 {
   OP_INHERIT(Cx, 4, 6)
