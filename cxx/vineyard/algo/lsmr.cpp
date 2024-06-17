@@ -22,8 +22,9 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
 
   if (iterLimit == 0) { // Bug out and return v
-    Log::Print("LSMR 0 |x| {:4.3E}", v.stableNorm());
-    return v;
+    x = v * (α * β);
+    Log::Print("LSMR 0 |x| {:4.3E}", x.stableNorm());
+    return x;
   }
   h = v;
   h̅.setZero();

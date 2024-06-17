@@ -62,14 +62,17 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
     x.setZero();
     Mu.device(Threads::GlobalDevice()) = b;
   }
-  M->forward(Mu, u);
+  if (M) {
+    M->forward(Mu, u);
+  } else {
+    u = Mu;
+  }
   β = std::sqrt(CheckedDot(Mu, u));
   Mu /= β;
   u /= β;
   op->adjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
   v /= α;
-  
 }
 
 void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
@@ -82,7 +85,11 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
 {
   Mu.device(Threads::GlobalDevice()) = -α * Mu;
   op->iforward(v, Mu);
-  M->forward(Mu, u);
+  if (M) {
+    M->forward(Mu, u);
+  } else {
+    Mu = u;
+  }
   β = std::sqrt(CheckedDot(Mu, u));
   Mu.device(Threads::GlobalDevice()) = Mu / β;
   u.device(Threads::GlobalDevice()) = u / β;
