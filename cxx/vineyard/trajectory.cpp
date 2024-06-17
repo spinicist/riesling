@@ -114,7 +114,7 @@ template <int NDims> auto TrajectoryN<NDims>::voxelSize() const -> Array { retur
 template <int NDims> auto TrajectoryN<NDims>::FOV() const -> Array
 {
   Array fov;
-  for (Index ii = 0; ii < 3; ii++) {
+  for (Index ii = 0; ii < NDims; ii++) {
     fov[ii] = matrix_[ii] * voxel_size_[ii];
   }
   return fov;
@@ -192,8 +192,7 @@ auto TrajectoryN<NDims>::downsample(Array const tgtSize, Index const fullResTrac
     }
     thresh(ii) = matrix_[ii] * ratios(ii) / 2.f;
   }
-  Log::Print("Downsampling to {} mm from {} mm, matrix {}, ratios {}", tgtSize, dsVox.transpose(), dsMatrix,
-             fmt::streamed(ratios.transpose()));
+  Log::Print("Downsample {}->{} mm, matrix {}, ratios {}", voxel_size_, tgtSize, dsMatrix, fmt::streamed(ratios.transpose()));
 
   Index minSamp = nSamples(), maxSamp = 0;
   Re3   dsPoints(points_.dimensions());
@@ -241,6 +240,22 @@ auto TrajectoryN<NDims>::downsample(Cx4 const  &ks,
                                     bool const  shrink,
                                     bool const  corners) const -> std::tuple<TrajectoryN, Cx4>
 {
+  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, fullResTraces, shrink, corners);
+  Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
+  return std::make_tuple(dsTraj, dsKs);
+}
+
+template <int NDims>
+auto TrajectoryN<NDims>::downsample(Cx4 const  &ks,
+                                    Sz3 const   tgtMat,
+                                    Index const fullResTraces,
+                                    bool const  shrink,
+                                    bool const  corners) const -> std::tuple<TrajectoryN, Cx4>
+{
+  Array tgt;
+  for (Index ii = 0; ii < NDims; ii++) {
+    tgt[ii] = (voxel_size_[ii] * matrix_[ii]) / tgtMat[ii];
+  }
   auto const [dsTraj, minSamp, nSamp] = downsample(tgt, fullResTraces, shrink, corners);
   Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
   return std::make_tuple(dsTraj, dsKs);

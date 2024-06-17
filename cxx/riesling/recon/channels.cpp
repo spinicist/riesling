@@ -29,18 +29,18 @@ void main_channels(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const  A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
-  auto const  M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
-  auto debug = [&A](Index const i, LSMR::Vector const &x) {
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
+  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+  auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "x", "y", "z"});
   };
-  LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug}; 
+  LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
-  TOps::Pad<Cx, 5, 3> outFOV(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape);
-  Cx6                 out(AddBack(outFOV.ishape, nV));
+  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]));
+  Cx6               out(AddBack(outFOV.ishape, nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = lsmr.run(&noncart(0, 0, 0, 0, iv), lsqOpts.λ.Get());
-    auto const cropped = outFOV.adjoint(Tensorfy(channels, A->ishape));
+    auto const cropped = outFOV.forward(Tensorfy(channels, A->ishape));
     out.chip<5>(iv) = cropped;
   }
   HD5::Writer writer(coreOpts.oname.Get());

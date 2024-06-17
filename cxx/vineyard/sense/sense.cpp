@@ -1,15 +1,13 @@
 #include "sense/sense.hpp"
 
 #include "algo/lsmr.hpp"
-#include "cropper.hpp"
 #include "fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "op/fft.hpp"
-#include "op/ops.hpp"
-#include "op/pad.hpp"
 #include "op/recon.hpp"
 #include "op/sense.hpp"
+#include "pad.hpp"
 #include "precon.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
@@ -41,14 +39,14 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
     Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);
   }
 
-  auto const [traj, lo, sz] = inTraj.downsample(opts.res.Get(), 0, false, false);
+  Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
+  auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, false, false);
   auto const A = Recon::Channels(false, gridOpts, traj, opts.fov.Get(), nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
   LSMR const lsmr{A, M, 4};
 
-  Cx4        lores = noncart.chip<4>(opts.volume.Get()).slice(Sz4{0, lo, 0, 0}, Sz4{nC, sz, nT, nS});
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
-  // NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
+  NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
 
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
@@ -64,6 +62,27 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   return cropped;
 }
 
+auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
+{
+  auto const nC = noncart.dimension(0);
+  auto const nT = noncart.dimension(2);
+  auto const nS = noncart.dimension(3);
+  auto const nV = noncart.dimension(4);
+  if (opts.volume.Get() >= nV) {
+    Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);
+  }
+
+  Sz3 kSz;
+  kSz.fill(opts.kWidth.Get());
+  Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
+  auto const [traj, lores] = inTraj.downsample(ncVol, kSz, 0, true, true);
+  auto const A = TOps::Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
+  auto const M = make_kspace_pre(traj, nC, basis, false);
+  LSMR const lsmr{A, M, 4};
+  Cx5 const  channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
+  return channels;
+}
+
 void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ)
 {
   Sz5 const shape = channels.dimensions();
@@ -73,15 +92,15 @@ void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ)
     channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
 }
 
-auto SobolevWeights(Index const kW, Index const l) -> Re3
+auto SobolevWeights(Sz3 const kW, Index const l) -> Re3
 {
-  Re3 W(kW, kW, kW);
-  for (Index ik = 0; ik < kW; ik++) {
-    float const kk = (ik - (kW / 2.f)) / kW;
-    for (Index ij = 0; ij < kW; ij++) {
-      float const kj = (ij - (kW / 2.f)) / kW;
-      for (Index ii = 0; ii < kW; ii++) {
-        float const ki = (ii - (kW / 2.f)) / kW;
+  Re3 W(kW);
+  for (Index ik = 0; ik < kW[2]; ik++) {
+    float const kk = (ik - (kW[2] / 2.f)) / kW[2];
+    for (Index ij = 0; ij < kW[1]; ij++) {
+      float const kj = (ij - (kW[1] / 2.f)) / kW[1];
+      for (Index ii = 0; ii < kW[0]; ii++) {
+        float const ki = (ii - (kW[0] / 2.f)) / kW[0];
         float const k2 = (ki * ki + kj * kj + kk * kk);
         W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
       }
@@ -90,22 +109,30 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
   return W;
 }
 
-void Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW)
+void Nonsense(Cx5 &channels, Cx4 const &ref)
 {
-  Sz5 const shape = channels.dimensions();
-  Sz5       xshape(shape[0], shape[1], kW, kW, kW);
-  // Get scaling between channels and ref
-  float const scale = Norm(channels) / Norm(ref);
-  Log::Print("|channels| {} |ref| {} scale {}", Norm(channels), Norm(ref), scale);
+  Sz5 const xshape = channels.dimensions();
+  Sz3 const ishape = LastN<3>(xshape);
+  Sz3 const pshape = Mul(ishape, 2);
+  Sz5 const shape = Concatenate(FirstN<2>(xshape), pshape);
+
+  // Make reference kernel into a reference image
+  Sz4 const        rshape = ref.dimensions();
+  TOps::Pad<Cx, 4> padRef(rshape, LastN<4>(shape));
+  Cx4              refImg = padRef.forward(ref);
+  FFT::Adjoint<4, 3>(refImg, Sz3{1, 2, 3}, FFT::PhaseShift(LastN<3>(refImg.dimensions())));
+
   // Set up operators
-  auto pad = std::make_shared<TOps::Pad<Cx, 5, 3>>(Sz3{kW, kW, kW}, shape);
+  auto sc = std::make_shared<Ops::DiagScale<Cx>>(Product(xshape), std::sqrt(8)); // 8 = 2 cubed
+  auto pad = std::make_shared<TOps::Pad<Cx, 5>>(xshape, shape);
   auto fft = std::make_shared<TOps::FFT<5, 3>>(shape, true);
-  auto nonsense = std::make_shared<TOps::NonSENSE>(ref * ref.constant(scale), shape[0]);
-  auto c1 = std::make_shared<TOps::Compose<TOps::Pad<Cx, 5, 3>, TOps::FFT<5, 3>>>(pad, fft);
-  auto A = std::make_shared<TOps::Compose<TOps::TOp<Cx, 5, 5>, TOps::TOp<Cx, 5, 5>>>(c1, nonsense);
+  auto padFFT = std::make_shared<Ops::Multiply<Cx>>(fft, pad);
+  auto nonsense = std::make_shared<TOps::NonSENSE>(refImg, shape[0]);
+  auto mul = std::make_shared<Ops::Multiply<Cx>>(nonsense, padFFT);
+  auto A = std::make_shared<Ops::Multiply<Cx>>(padFFT->inverse(), mul);
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-  Cx3 const  sw = SobolevWeights(kW, 16).cast<Cx>();
+  Cx3 const  sw = SobolevWeights(ishape, 16).cast<Cx>();
   auto const swv = CollapseToArray(sw);
   auto       W = std::make_shared<Ops::DiagRep<Cx>>(shape[0] * shape[1], swv);
   auto       λ = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), 1.f);
@@ -117,8 +144,8 @@ void Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW)
   bʹ.tail(reg->rows()).setZero();
 
   Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
-  Log::Tensor("ref", ref.dimensions(), ref.data(), {"v", "x", "y", "z"});
-  Log::Tensor("channels", shape, channels.data(), HD5::Dims::SENSE);
+  Log::Tensor("ref", refImg.dimensions(), refImg.data(), {"v", "x", "y", "z"});
+  Log::Tensor("channels", xshape, channels.data(), HD5::Dims::SENSE);
   auto debug = [xshape, &pad, &fft](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("x-{:02d}", i), xshape, x.data(), HD5::Dims::SENSE);
     Cx5 temp = pad->forward(Tensorfy(x, xshape));
@@ -126,17 +153,14 @@ void Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW)
     Log::Tensor(fmt::format("ximg-{:02d}", i), temp2.dimensions(), temp2.data(), HD5::Dims::SENSE);
   };
   LSMR lsmr{Aʹ};
-  lsmr.iterLimit = 32;
+  lsmr.iterLimit = 8;
   lsmr.debug = debug;
   auto x = lsmr.run(bʹ.data(), 0.f);
   Log::Print("Finished run");
-  auto xm = Tensorfy(x, xshape);
-
+  channels = Tensorfy(x, xshape);
   {
-    Log::Print("Final FFT");
-    Cx5 const temp = pad->forward(xm);
-    Log::Print("temp {} channels {}", temp.dimensions(), channels.dimensions());
-    channels = fft->forward(temp);
+    auto const temp = padFFT->forward(x);
+    Log::Tensor("maps", shape, temp.data(), HD5::Dims::SENSE);
   }
 }
 

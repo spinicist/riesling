@@ -19,6 +19,12 @@ FFT<Rank, FFTRank>::FFT(InMap x)
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
 }
 
+template <int Rank, int FFTRank>
+auto FFT<Rank, FFTRank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Cx>>
+{
+  return std::make_shared<FFT<Rank, FFTRank>>(this->ishape, !this->adjoint_);
+}
+
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);

@@ -43,10 +43,10 @@ template <int NDims>
 Mapping<NDims>::Mapping(
   TrajectoryN<NDims> const &traj, float const nomOS, Index const kW, Index const subgridSz, Index const splitSize)
 {
-  nomDims = FirstN<NDims>(traj.matrix());
-  cartDims = Mul(FirstN<NDims>(traj.matrix()), nomOS);
+  nomDims = traj.matrix();
+  cartDims = Mul(nomDims, nomOS);
   osamp = cartDims[0] / (float)traj.matrix()[0];
-  Log::Print("Mapping: {} samples {} traces. Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomDims, cartDims);
+  Log::Print("Mapping samples {} traces {} OS {} Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomOS, nomDims, cartDims);
 
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
 

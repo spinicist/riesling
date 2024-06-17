@@ -5,6 +5,7 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sense/sense.hpp"
+#include "fft.hpp"
 
 using namespace rl;
 
@@ -25,8 +26,8 @@ void main_sense_calib(args::Subparser &parser)
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
-  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis);
-  Cx4 ref = ConjugateSum(channels, channels).sqrt();
+  Cx5 channels = SENSE::LoresKernels(senseOpts, gridOpts, traj, noncart, basis);
+  Cx4 ref;
   if (refname) {
     HD5::Reader refFile(refname.Get());
     Trajectory  refTraj(refFile, refFile.readInfo().voxel_size);
@@ -34,21 +35,19 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    Cx4 const body = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
+    ref = SENSE::LoresKernels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
 
-    // Normalize intensities by matching median values
-    Re4 const   bAbs = body.abs();
-    Re4 const   bRef = ref.abs();
-    float const medBody = Percentiles(CollapseToArray(bAbs), {0.5})[0];
-    float const medRef = Percentiles(CollapseToArray(bRef), {0.5})[0];
-    ref = body * body.constant(medRef / medBody);
-  }
-
-  if (nonsense) {
-    SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get() * gridOpts.osamp.Get());
+    // Normalize energy
+    ref = ref * ref.constant(Norm(channels) / Norm(ref));
   } else {
-    SENSE::TikhonovDivision(channels, ref, senseOpts.λ.Get());
+    auto const phases = FFT::PhaseShift(LastN<3>(channels.dimensions()));
+    Cx5 temp = channels;
+    FFT::Adjoint<5, 3>(temp, Sz3{2, 3, 4}, phases);
+    ref = ConjugateSum(temp, temp);
+    FFT::Forward<4, 3>(ref, Sz3{1, 2, 3}, phases);
   }
+  
+  SENSE::Nonsense(channels, ref);
 
   if (frame) {
     auto shape = channels.dimensions();

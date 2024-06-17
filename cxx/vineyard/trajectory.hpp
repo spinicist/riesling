@@ -7,8 +7,7 @@
 
 namespace rl {
 
-template <int NDims>
-struct TrajectoryN
+template <int NDims> struct TrajectoryN
 {
   using SzN = Sz<NDims>;
   using Array = Eigen::Array<float, NDims, 1>;
@@ -29,9 +28,13 @@ struct TrajectoryN
   void shiftFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
-  auto downsample(Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
-    -> std::tuple<TrajectoryN, Index, Index>;
+  auto downsample(Array const tgtSize,
+                  Index const fullResTraces,
+                  bool const  shrink,
+                  bool const  corners) const -> std::tuple<TrajectoryN, Index, Index>;
   auto downsample(Cx4 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+    -> std::tuple<TrajectoryN, Cx4>;
+  auto downsample(Cx4 const &ks, Sz3 const tgtMat, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx4>;
   auto downsample(Cx5 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx5>;

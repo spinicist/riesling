@@ -148,7 +148,9 @@ template struct TOp<float, 1, 1>;
 template struct TOp<float, 2, 2>;
 template struct TOp<float, 3, 3>;
 template struct TOp<float, 4, 3>;
+template struct TOp<float, 4, 4>;
 template struct TOp<float, 5, 3>;
+template struct TOp<float, 5, 5>;
 template struct TOp<float, 5, 7>;
 
 template <typename S, int R>

@@ -74,6 +74,7 @@ template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
 
   DiagRep(Index const reps, Vector const &s);
   DiagRep(Index const reps, Vector const &s, float const b, float const sc);
+  auto inverse(float const bias, float const scale) const -> std::shared_ptr<Op<Scalar>> final;
 
   auto rows() const -> Index;
   auto cols() const -> Index;
@@ -82,8 +83,6 @@ template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
   void adjoint(CMap const &y, Map &x) const;
   void iforward(CMap const &x, Map &y) const;
   void iadjoint(CMap const &y, Map &x) const;
-
-  std::shared_ptr<Op<Scalar>> inverse(float const bias, float const scale) const;
 
 private:
   Index  reps;
@@ -102,15 +101,18 @@ template <typename Scalar = Cx> struct Multiply final : Op<Scalar>
   std::shared_ptr<Op<Scalar>> A, B;
 
   Multiply(std::shared_ptr<Op<Scalar>> A, std::shared_ptr<Op<Scalar>> B);
+  auto inverse() const -> std::shared_ptr<Op<Scalar>> final;
 
   auto rows() const -> Index;
   auto cols() const -> Index;
+
+  using Op<Scalar>::forward;
+  using Op<Scalar>::adjoint;
 
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
   void iforward(CMap const &x, Map &y) const;
   void iadjoint(CMap const &y, Map &x) const;
-
 };
 
 //! Vertically stack operators, i.e. A = [B; C]

@@ -28,8 +28,8 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc
     Cx6 const psf = nufft.adjoint(W);
     Cx6       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1), psf.dimension(2)));
     ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
-    TOps::Pad<Cx, 6, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<3>(psf.dimensions()));
-    Cx6                 xcorr(padX.oshape);
+    TOps::Pad<Cx, 6> padX(ones.dimensions(), psf.dimensions());
+    Cx6              xcorr(padX.oshape);
     xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
     auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
     FFT::Forward(xcorr, Sz3{3, 4, 5}, ph);
@@ -49,8 +49,8 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc
     Cx5 const psf = nufft.adjoint(W);
     Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
     ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
-    TOps::Pad<Cx, 5, 3> padX(traj.matrix(), LastN<3>(psf.dimensions()), FirstN<2>(psf.dimensions()));
-    Cx5                 xcorr(padX.oshape);
+    TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
+    Cx5              xcorr(padX.oshape);
     xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
     auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
     FFT::Forward(xcorr, Sz3{2, 3, 4}, ph);

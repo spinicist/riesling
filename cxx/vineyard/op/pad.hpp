@@ -4,17 +4,28 @@
 
 namespace rl::TOps {
 
-template <typename Scalar_, int Rank, int ImgRank = 3> struct Pad final : TOp<Scalar_, Rank, Rank>
+template <typename Scalar_, int Rank> struct Pad final : TOp<Scalar_, Rank, Rank>
 {
   OP_INHERIT(Scalar_, Rank, Rank)
-
-  using ImgDims = Eigen::DSizes<Index, ImgRank>;
-  using OtherDims = Eigen::DSizes<Index, Rank - ImgRank>;
-
-  Pad(ImgDims const &imgShape, ImgDims const &padSize, OtherDims const &otherSize);
-  Pad(ImgDims const &imgShape, OutDims const oshape);
-
+  Pad(InDims const ishape, OutDims const oshape);
+  auto inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>> final;
   OP_DECLARE(Pad)
+  void iadjoint(OutCMap const &y, InMap &x) const;
+  void iforward(InCMap const &x, OutMap &y) const;
+
+private:
+  InDims                                      left_, right_;
+  Eigen::array<std::pair<Index, Index>, Rank> paddings_;
+
+  void init();
+};
+
+template <typename Scalar_, int Rank> struct Crop final : TOp<Scalar_, Rank, Rank>
+{
+  OP_INHERIT(Scalar_, Rank, Rank)
+  Crop(InDims const big, OutDims const small);
+  auto inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>> final;
+  OP_DECLARE(Crop)
   void iadjoint(OutCMap const &y, InMap &x) const;
   void iforward(InCMap const &x, OutMap &y) const;
 

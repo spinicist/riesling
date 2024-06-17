@@ -21,9 +21,11 @@ struct Opts
 //! Convenience function to get low resolution multi-channel images
 auto LoresChannels(
   Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
+auto LoresKernels(
+  Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
 
 void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ);
-void Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW);
+void Nonsense(Cx5 &channels, Cx4 const &ref);
 
 //! Convenience function called from recon commands to get SENSE maps
 auto Choose(Opts &opts, GridOpts &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;

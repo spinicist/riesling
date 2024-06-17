@@ -86,8 +86,8 @@ void main_sake(args::Subparser &parser)
             debug_x,
             debug_z};
 
-  TOps::Pad<Cx, 5, 3> outFOV(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape);
-  Cx5                 out(AddBack(LastN<4>(outFOV.ishape), nV));
+  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]));
+  Cx5               out(AddBack(LastN<4>(outFOV.ishape), nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = admm.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get());
     auto const cropped = outFOV.adjoint(Tensorfy(channels, A->ishape));

@@ -152,6 +152,11 @@ DiagRep<S>::DiagRep(Index const n, Vector const &v, float const b, float const s
 {
 }
 
+template <typename S> auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>
+{
+  return std::make_shared<DiagRep>(reps, s.array(), b, sc);
+}
+
 template <typename S> auto DiagRep<S>::rows() const -> Index { return s.rows() * reps; }
 template <typename S> auto DiagRep<S>::cols() const -> Index { return s.rows() * reps; }
 
@@ -203,11 +208,6 @@ template <typename S> void DiagRep<S>::iadjoint(CMap const &y, Map &x) const
   this->finishAdjoint(x, time, true);
 }
 
-template <typename S> auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>
-{
-  return std::make_shared<DiagRep>(reps, s.array(), b, sc);
-}
-
 template struct DiagRep<float>;
 template struct DiagRep<Cx>;
 
@@ -217,7 +217,14 @@ Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)
   , A{AA}
   , B{BB}
 {
-  assert(A->cols() == B->rows());
+  if (A->cols() != B->rows()) {
+    Log::Fail("Multiply Op mismatched dimensions [{},{}] and [{},{}]", A->rows(), A->cols(), B->rows(), B->cols());
+  }
+}
+
+template <typename S> auto Multiply<S>::inverse() const -> std::shared_ptr<Op<S>>
+{
+  return std::make_shared<Multiply<S>>(B->inverse(), A->inverse());
 }
 
 template <typename S> auto Multiply<S>::rows() const -> Index { return A->rows(); }

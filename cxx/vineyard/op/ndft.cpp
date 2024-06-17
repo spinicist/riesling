@@ -69,10 +69,10 @@ auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Ba
 template <int NDim>
 void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp)
 {
-  TOps::Pad<float, NDim, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
+  TOps::Pad<float, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
   Δf.resize(N);
   assert(N == pad.rows());
-  typename TOps::Pad<float, NDim, NDim>::OutMap fm(Δf.data(), pad.oshape);
+  typename TOps::Pad<float, NDim>::OutMap fm(Δf.data(), pad.oshape);
   pad.forward(f0map, fm);
   t.resize(nSamp);
   t[0] = t0;
