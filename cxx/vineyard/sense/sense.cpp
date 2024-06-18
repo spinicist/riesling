@@ -149,12 +149,16 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
    * k = N^-1 k'
    */
 
+  
+
   // Set up operators
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = std::make_shared<Ops::Multiply<Cx>>(F, P);
+  auto FPinv = FP->inverse();
   auto S = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
+  auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
 
   // Testing
   // auto x = Ops::Op<Cx>::Vector::Ones(FP->cols());
@@ -164,12 +168,12 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
   // Log::Print("|c| {} |cc| {}", Norm(channels), Norm(cc));
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-  Cx3 const  sw = SobolevWeights(kW, os, 8).cast<Cx>();
+  Cx3 const  sw = SobolevWeights(kW, os, 4).cast<Cx>();
   auto const swv = CollapseToArray(sw);
   auto       W = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], swv);
   auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
   auto       R = std::make_shared<Ops::Multiply<Cx>>(L, W);
-  auto       A = std::make_shared<Ops::VStack<Cx>>(SFP, R);
+  auto       A = std::make_shared<Ops::VStack<Cx>>(PFSFP, R);
 
   // Preconditioner
   auto Ninv = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], (1.f + λ * swv).inverse().sqrt());
@@ -177,8 +181,9 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
 
   // Data
   Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
+  auto const ck = FPinv->forward(c);
   Ops::Op<Cx>::Vector cʹ(Aʹ->rows());
-  cʹ.head(SFP->rows()) = c;
+  cʹ.head(SFP->rows()) = ck;
   cʹ.tail(R->rows()).setZero();
 
   Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
