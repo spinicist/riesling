@@ -124,10 +124,10 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5
   auto p = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
   auto f = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto fp = std::make_shared<Ops::Multiply<Cx>>(f, p);
-  auto fp_inv = fp->inverse();
+  // auto fp_inv = fp->inverse();
   auto n = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
-  auto nfp = std::make_shared<Ops::Multiply<Cx>>(n, fp);
-  auto A = std::make_shared<Ops::Multiply<Cx>>(fp_inv, nfp);
+  auto A = std::make_shared<Ops::Multiply<Cx>>(n, fp);
+  // auto A = std::make_shared<Ops::Multiply<Cx>>(fp_inv, nfp);
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
   Cx3 const  sw = SobolevWeights(Sz3{kW, kW, kW}, 16).cast<Cx>();
@@ -139,24 +139,14 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5
 
   // Preconditioner
   auto I = std::make_shared<Ops::Identity<Cx>>(A->rows());
-  auto M = W->inverse();
+  auto M = W;
   auto Mʹ = std::make_shared<Ops::DStack<Cx>>(I, M);
 
-  Ops::Op<Cx>::CMap cmap(channels.data(), fp_inv->rows());
+  Ops::Op<Cx>::CMap cmap(channels.data(), A->rows());
   // auto b = fp_inv->forward(cmap);
   Ops::Op<Cx>::Vector bʹ(Aʹ->rows());
   bʹ.head(A->rows()) = cmap;
   bʹ.tail(reg->rows()).setZero();
-
-  Ops::Op<Cx>::Vector x0(Aʹ->cols());
-  x0.setConstant(1.f);
-
-  // Test for fun
-  auto const y0ʹ = Aʹ->forward(x0);
-  Ops::Op<Cx>::Vector y00 = y0ʹ.head(A->rows());
-  Ops::Op<Cx>::Vector y01 = y0ʹ.tail(reg->rows());
-  Log::Tensor("y00", kshape, y00.data(), HD5::Dims::SENSE);
-  Log::Tensor("y01", kshape, y01.data(), HD5::Dims::SENSE);
 
   Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
   Log::Tensor("ref", ref.dimensions(), ref.data(), {"v", "x", "y", "z"});
@@ -170,7 +160,7 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5
     Log::Tensor(fmt::format("ximg-{:02d}", i), temp2.dimensions(), temp2.data(), HD5::Dims::SENSE);
   };
   LSMR lsmr{Aʹ, Mʹ};
-  lsmr.iterLimit = 2;
+  lsmr.iterLimit = 8;
   lsmr.debug = debug;
   auto const x = lsmr.run(bʹ.data(), 0.f);
   // auto const kernels = Tensorfy(x, kshape);

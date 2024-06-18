@@ -8,6 +8,10 @@ Op<S>::Op(std::string const &n)
 {
 }
 
+template <typename S> void Op<S>::inverse(CMap const &y, Map &x) const {
+  Log::Fail("Op {} does not have an inverse defined", name);
+}
+
 template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
 {
   assert(x.rows() == cols());
@@ -24,6 +28,15 @@ template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
   this->adjoint(ym, xm);
+}
+
+template <typename S> void Op<S>::inverse(Vector const &y, Vector &x) const
+{
+  assert(x.rows() == cols());
+  assert(y.rows() == rows());
+  CMap ym(y.data(), y.size());
+  Map  xm(x.data(), x.size());
+  this->inverse(ym, xm);
 }
 
 template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
@@ -85,8 +98,8 @@ template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const st
 
 template <typename S> auto Op<S>::startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time
 {
-  if (y.rows() != rows()) { Log::Fail("Op {} forward y [{}] expected [{}]", this->name, y.rows(), rows()); }
-  if (x.rows() != cols()) { Log::Fail("Op {} forward x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (y.rows() != rows()) { Log::Fail("Op {} adjoint y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (x.rows() != cols()) { Log::Fail("Op {} adjoint x [{}] expected [{}]", this->name, x.rows(), cols()); }
   if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("Op{} {} adjoint [{},{}] |y| {}", ip ? "-Add" : "", this->name, rows(), cols(), y.stableNorm());
   }
@@ -94,6 +107,23 @@ template <typename S> auto Op<S>::startAdjoint(CMap const &y, Map const &x, bool
 }
 
 template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const start, bool const ip) const
+{
+  if (Log::CurrentLevel() == Log::Level::Debug) {
+    Log::Debug("Op{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());
+  }
+}
+
+template <typename S> auto Op<S>::startInverse(CMap const &y, Map const &x, bool const ip) const -> Log::Time
+{
+  if (y.rows() != rows()) { Log::Fail("Op {} inverse y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (x.rows() != cols()) { Log::Fail("Op {} inverse x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (Log::CurrentLevel() == Log::Level::Debug) {
+    Log::Debug("Op{} {} inverse [{},{}] |y| {}", ip ? "-Add" : "", this->name, rows(), cols(), y.stableNorm());
+  }
+  return Log::Now();
+}
+
+template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const start, bool const ip) const
 {
   if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("Op{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());

@@ -63,7 +63,7 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
     Mu.device(Threads::GlobalDevice()) = b;
   }
   if (M) {
-    M->forward(Mu, u);
+    M->inverse(Mu, u);
   } else {
     u = Mu;
   }
@@ -86,7 +86,7 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
   Mu.device(Threads::GlobalDevice()) = -α * Mu;
   op->iforward(v, Mu);
   if (M) {
-    M->forward(Mu, u);
+    M->inverse(Mu, u);
   } else {
     u = Mu;
   }

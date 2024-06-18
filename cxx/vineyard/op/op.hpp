@@ -21,10 +21,12 @@ template <typename Scalar_ = Cx> struct Op
 
   virtual void forward(CMap const &x, Map &y) const = 0;
   virtual void adjoint(CMap const &y, Map &x) const = 0;
+  virtual void inverse(CMap const &y, Map &x) const;
   virtual auto forward(Vector const &x) const -> Vector;
   virtual auto adjoint(Vector const &y) const -> Vector;
   void         forward(Vector const &x, Vector &y) const;
   void         adjoint(Vector const &y, Vector &x) const;
+  void         inverse(Vector const &y, Vector &x) const;
 
   /* These versions add in-place to the output */
   virtual void iforward(CMap const &x, Map &y) const = 0;
@@ -41,6 +43,8 @@ protected:
   void finishForward(Map const &y, Log::Time const start, bool const ip) const;
   auto startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time;
   void finishAdjoint(Map const &x, Log::Time const start, bool const ip) const;
+  auto startInverse(CMap const &y, Map const &x, bool const ip) const -> Log::Time;
+  void finishInverse(Map const &x, Log::Time const start, bool const ip) const;
 };
 
 #define OP_INHERIT                                                                                                             \

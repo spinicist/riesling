@@ -10,6 +10,7 @@ template <typename Scalar = Cx> struct Identity final : Op<Scalar>
   Identity(Index const s);
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
   void iforward(CMap const &x, Map &y) const;
   void iadjoint(CMap const &y, Map &x) const;
 private:
@@ -53,6 +54,7 @@ template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
   auto inverse(float const bias, float const scale) const -> std::shared_ptr<Op<Scalar>> final;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
   void iforward(CMap const &x, Map &y) const;
   void iadjoint(CMap const &y, Map &x) const;
 private:
@@ -101,6 +103,7 @@ template <typename Scalar = Cx> struct DStack final : Op<Scalar>
   auto inverse() const -> std::shared_ptr<Op<Scalar>> final;
   void forward(CMap const &x, Map &y) const;
   void adjoint(CMap const &y, Map &x) const;
+  void inverse(CMap const &y, Map &x) const;
   void iforward(CMap const &x, Map &y) const;
   void iadjoint(CMap const &y, Map &x) const;
   std::vector<std::shared_ptr<Op<Scalar>>> ops;

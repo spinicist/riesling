@@ -27,6 +27,13 @@ template <typename S> void Identity<S>::adjoint(CMap const &y, Map &x) const
   this->finishAdjoint(x, time, false);
 }
 
+template <typename S> void Identity<S>::inverse(CMap const &y, Map &x) const
+{
+  auto const time = this->startInverse(y, x, false);
+  x = y;
+  this->finishInverse(x, time, false);
+}
+
 template <typename S> void Identity<S>::iforward(CMap const &x, Map &y) const
 {
   auto const time = this->startForward(x, y, true);
@@ -188,6 +195,18 @@ template <typename S> void DiagRep<S>::adjoint(CMap const &y, Map &x) const
     x.array() = y.array() * rep;
   }
   this->finishAdjoint(x, time, false);
+}
+
+template <typename S> void DiagRep<S>::inverse(CMap const &y, Map &x) const
+{
+  auto const time = this->startInverse(y, x, false);
+  auto       rep = s.array().transpose().replicate(reps, 1).reshaped();
+  if (isInverse) {
+    x.array() = y.array() * (bias + scale * rep);
+  } else {
+    x.array() = y.array() / rep;
+  }
+  this->finishInverse(x, time, false);
 }
 
 template <typename S> void DiagRep<S>::iforward(CMap const &x, Map &y) const
@@ -430,6 +449,22 @@ template <typename S> void DStack<S>::adjoint(CMap const &y, Map &x) const
   assert(ir == rows());
   assert(ic == cols());
   this->finishAdjoint(x, time, false);
+}
+
+template <typename S> void DStack<S>::inverse(CMap const &y, Map &x) const
+{
+  auto const time = this->startInverse(y, x, false);
+  Index      ir = 0, ic = 0;
+  for (auto const &op : ops) {
+    Map  xm(x.data() + ic, op->cols());
+    CMap ym(y.data() + ir, op->rows());
+    op->inverse(ym, xm);
+    ir += op->rows();
+    ic += op->cols();
+  }
+  assert(ir == rows());
+  assert(ic == cols());
+  this->finishInverse(x, time, false);
 }
 
 template <typename S> void DStack<S>::iforward(CMap const &x, Map &y) const

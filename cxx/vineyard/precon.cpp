@@ -61,7 +61,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc
     // I do not understand this scaling factor but it's in Frank's code and works
     float scale =
       std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
-    weights.device(Threads::GlobalDevice()) = ((weights * scale) + bias).inverse();
+    weights.device(Threads::GlobalDevice()) = (weights * scale) + bias;
   }
 
   float const norm = Norm(weights);
