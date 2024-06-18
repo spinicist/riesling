@@ -123,33 +123,28 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
   /* We want to solve:
-   * c = SFPk
+   * Pt Ft c = Pt Ft S F P k
    *
    * Where c is the channel images, k is the SENSE kernels
    * P is padding, F is FT, S is SENSE (but multiply by the reference image)
-   * This is about half of a circular convolution
+   * This is a circular convolution done via FFT
    *
    * We need to add the regularizer from nlinv / ENLIVE. This is a Sobolev weights in k-space
    * Hence solve the modified system
    *
-   * c' = [ c   = [ SFP   k
-   *        0 ]      λW ]
-   * A = [ SFP
-   *        λW ]
-   * c' = A k
+   * c' = [ Pt Ft c ] = [ Pt Ft S F P ]  k
+   *      [       0 ]   [          λW ]
+   * A = [ Pt Ft S F P ]
+   *     [          λW ]
    *
    * But the Sobolev weights W are horrendously ill-conditioned. Hence need a pre-conditioner.
-   * At A = [(SFP)t λW] [ SFP ] = [(SFP)t SFP + (λW)^2]
-   *                    [  λW ]
+   * Take a punt on N = (I + λW) ^ (-1/2)
    * N = W
    *
-   * c' = A N^-1 N k = A'k'
-   * A' = [ SFP   N^-1
-   *          W ]
+   * c' = A N^-1 N k = A' k'
+   * A' = A N^-1
    * k = N^-1 k'
    */
-
-  
 
   // Set up operators
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
@@ -159,13 +154,6 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
   auto S = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
   auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
-
-  // Testing
-  // auto x = Ops::Op<Cx>::Vector::Ones(FP->cols());
-  // auto xx = FP->adjoint(FP->forward(x));
-  // Log::Print("|x| {} |xx| {}", x.stableNorm(), xx.stableNorm());
-  // auto cc = S->adjoint(S->forward(channels));
-  // Log::Print("|c| {} |cc| {}", Norm(channels), Norm(cc));
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
   Cx3 const  sw = SobolevWeights(kW, os, 4).cast<Cx>();
@@ -185,12 +173,6 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
   Ops::Op<Cx>::Vector cʹ(Aʹ->rows());
   cʹ.head(SFP->rows()) = ck;
   cʹ.tail(R->rows()).setZero();
-
-  Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
-  Log::Tensor("ref", ref.dimensions(), ref.data(), {"v", "x", "y", "z"});
-  Log::Tensor("channels", cshape, channels.data(), HD5::Dims::SENSE);
-  // Log::Tensor("b", kshape, b.data(), HD5::Dims::SENSE);
-
   auto debug = [&](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("x-{:02d}", i), kshape, x.data(), HD5::Dims::SENSE);
     auto const temp = FP->forward(Ninv->forward(x));
@@ -201,8 +183,6 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, fl
   lsqr.iterLimit = 16;
   lsqr.debug = debug;
   auto const kʹ = lsqr.run(cʹ.data(), 0.f);
-  // auto const kernels = Tensorfy(x, kshape);
-  Log::Print("Finished run");
   auto const temp = FP->forward(Ninv->forward(kʹ));
   Cx5        maps = Tensorfy(temp, cshape);
   return maps;
