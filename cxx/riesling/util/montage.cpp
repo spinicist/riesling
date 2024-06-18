@@ -77,7 +77,7 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
       else { rl::Log::Fail("No chips specified"); }
     } else {
       if (diskOrder - namedChips.size() != 3) {
-        rl::Log::Fail("Dataset {} has order {} and only {} chips", dset, diskOrder, chips.size());
+        rl::Log::Fail("Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping", namedChips.size(), dset, diskOrder);
       }
       auto const names = reader.listNames(dset);
       for (auto const &nc: namedChips) {

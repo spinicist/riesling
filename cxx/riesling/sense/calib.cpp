@@ -1,11 +1,12 @@
 #include "types.hpp"
 
 #include "algo/stats.hpp"
+#include "fft.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
+#include "pad.hpp"
 #include "parse_args.hpp"
 #include "sense/sense.hpp"
-#include "fft.hpp"
 
 using namespace rl;
 
@@ -26,7 +27,7 @@ void main_sense_calib(args::Subparser &parser)
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
 
-  Cx5 channels = SENSE::LoresKernels(senseOpts, gridOpts, traj, noncart, basis);
+  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis);
   Cx4 ref;
   if (refname) {
     HD5::Reader refFile(refname.Get());
@@ -35,29 +36,31 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    ref = SENSE::LoresKernels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
+    ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
 
     // Normalize energy
     ref = ref * ref.constant(Norm(channels) / Norm(ref));
   } else {
-    auto const phases = FFT::PhaseShift(LastN<3>(channels.dimensions()));
-    Cx5 temp = channels;
-    FFT::Adjoint<5, 3>(temp, Sz3{2, 3, 4}, phases);
-    ref = ConjugateSum(temp, temp);
-    FFT::Forward<4, 3>(ref, Sz3{1, 2, 3}, phases);
+    ref = ConjugateSum(channels, channels);
   }
-  
-  SENSE::Nonsense(channels, ref);
 
+  auto maps = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get() * gridOpts.osamp.Get());
   if (frame) {
-    auto shape = channels.dimensions();
+    auto shape = maps.dimensions();
     if (frame.Get() < 0 || frame.Get() >= shape[1]) {
       Log::Fail("Requested frame {} is outside valid range 0-{}", frame.Get(), shape[1]);
     }
     shape[1] = 1;
-    channels = Cx5(channels.slice(Sz5{0, frame.Get(), 0, 0, 0}, shape));
+    maps = Cx5(maps.slice(Sz5{0, frame.Get(), 0, 0, 0}, shape));
   }
+
+  // Pad out to full SENSE map size
+  // Sz5 const ksize = kernels.dimensions();
+  // Sz3 const mat = traj.matrixForFOV(senseOpts.fov.Get());
+  // Sz5 const mapsize = AddFront(mat, ksize[0], ksize[1]);
+  // Cx5       maps = Pad(kernels, mapsize);
+  // FFT::Adjoint<5, 3>(maps, Sz3{2, 3, 4}, FFT::PhaseShift(mat));
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::SENSE);
+  writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }
