@@ -6,11 +6,11 @@ namespace rl::TOps {
 
 struct Wavelets final : TOp<Cx, 4, 4>
 {
-  OP_INHERIT(Cx, 4, 4)
+  TOP_INHERIT(Cx, 4, 4)
 
   Wavelets(Sz4 const shape, Index const N, Sz4 const dims);
 
-  OP_DECLARE(Wavelets)
+  TOP_DECLARE(Wavelets)
 
   static auto PaddedShape(Sz4 const shape, Sz4 const dims) -> Sz4;
 

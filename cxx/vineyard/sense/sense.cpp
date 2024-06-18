@@ -96,11 +96,11 @@ auto SobolevWeights(Sz3 const kW, Index const l) -> Re3
 {
   Re3 W(kW);
   for (Index ik = 0; ik < kW[2]; ik++) {
-    float const kk = (ik - (kW[2] / 2));
+    float const kk = ik - (kW[2] / 2);
     for (Index ij = 0; ij < kW[1]; ij++) {
-      float const kj = (ij - (kW[1] / 2));
+      float const kj = ij - (kW[1] / 2);
       for (Index ii = 0; ii < kW[0]; ii++) {
-        float const ki = (ii - (kW[0] / 2));
+        float const ki = ii - (kW[0] / 2);
         float const k2 = (ki * ki + kj * kj + kk * kk);
         W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
       }
@@ -121,38 +121,56 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
   // Set up operators
-  auto pad = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
-  auto fft = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
-  auto fp = std::make_shared<Ops::Multiply<Cx>>(fft, pad);
-  auto nonsense = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
-  auto A = std::make_shared<Ops::Multiply<Cx>>(nonsense, fp);
+  auto p = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
+  auto f = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
+  auto fp = std::make_shared<Ops::Multiply<Cx>>(f, p);
+  auto fp_inv = fp->inverse();
+  auto n = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
+  auto nfp = std::make_shared<Ops::Multiply<Cx>>(n, fp);
+  auto A = std::make_shared<Ops::Multiply<Cx>>(fp_inv, nfp);
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
   Cx3 const  sw = SobolevWeights(Sz3{kW, kW, kW}, 16).cast<Cx>();
   auto const swv = CollapseToArray(sw);
-  auto       W = std::make_shared<Ops::DiagRep<Cx>>(cshape[0] * cshape[1], swv);
+  auto       W = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], swv);
   auto       λ = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), 1.f);
   auto       reg = std::make_shared<Ops::Multiply<Cx>>(λ, W);
   auto       Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg);
 
+  // Preconditioner
+  auto I = std::make_shared<Ops::Identity<Cx>>(A->rows());
+  auto M = W->inverse();
+  auto Mʹ = std::make_shared<Ops::DStack<Cx>>(I, M);
+
+  Ops::Op<Cx>::CMap cmap(channels.data(), fp_inv->rows());
+  // auto b = fp_inv->forward(cmap);
   Ops::Op<Cx>::Vector bʹ(Aʹ->rows());
-  bʹ.head(A->rows()) = CollapseToArray(channels);
+  bʹ.head(A->rows()) = cmap;
   bʹ.tail(reg->rows()).setZero();
+
+  Ops::Op<Cx>::Vector x0(Aʹ->cols());
+  x0.setConstant(1.f);
+
+  // Test for fun
+  auto const y0ʹ = Aʹ->forward(x0);
+  Ops::Op<Cx>::Vector y00 = y0ʹ.head(A->rows());
+  Ops::Op<Cx>::Vector y01 = y0ʹ.tail(reg->rows());
+  Log::Tensor("y00", kshape, y00.data(), HD5::Dims::SENSE);
+  Log::Tensor("y01", kshape, y01.data(), HD5::Dims::SENSE);
 
   Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
   Log::Tensor("ref", ref.dimensions(), ref.data(), {"v", "x", "y", "z"});
   Log::Tensor("channels", cshape, channels.data(), HD5::Dims::SENSE);
+  // Log::Tensor("b", kshape, b.data(), HD5::Dims::SENSE);
 
   auto debug = [&](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("x-{:02d}", i), kshape, x.data(), HD5::Dims::SENSE);
-    Log::Print("|x| {}", x.stableNorm());
     auto const temp = fp->forward(x);
-    Log::Print("|x| {}", temp.stableNorm());
     auto const temp2 = Tensorfy(temp, cshape);
     Log::Tensor(fmt::format("ximg-{:02d}", i), temp2.dimensions(), temp2.data(), HD5::Dims::SENSE);
   };
-  LSMR lsmr{Aʹ};
-  lsmr.iterLimit = 32;
+  LSMR lsmr{Aʹ, Mʹ};
+  lsmr.iterLimit = 2;
   lsmr.debug = debug;
   auto const x = lsmr.run(bʹ.data(), 0.f);
   // auto const kernels = Tensorfy(x, kshape);

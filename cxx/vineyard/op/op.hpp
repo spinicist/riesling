@@ -43,4 +43,13 @@ protected:
   void finishAdjoint(Map const &x, Log::Time const start, bool const ip) const;
 };
 
+#define OP_INHERIT                                                                                                             \
+  using typename Op<Scalar>::Vector;                                                                                           \
+  using typename Op<Scalar>::Map;                                                                                              \
+  using typename Op<Scalar>::CMap;                                                                                             \
+  using Op<Scalar>::forward;                                                                                                   \
+  using Op<Scalar>::adjoint;                                                                                                   \
+  auto rows() const -> Index;                                                                                                  \
+  auto cols() const -> Index;
+
 } // namespace rl::Ops

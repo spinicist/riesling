@@ -139,6 +139,7 @@ DiagRep<S>::DiagRep(Index const n, Vector const &v)
   , reps{n}
   , s{v}
 {
+  Log::Print("Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
 }
 
 template <typename S>
@@ -150,6 +151,11 @@ DiagRep<S>::DiagRep(Index const n, Vector const &v, float const b, float const s
   , bias{b}
   , scale{sc}
 {
+}
+
+template <typename S> auto DiagRep<S>::inverse() const -> std::shared_ptr<Op<S>>
+{
+  return std::make_shared<DiagRep>(reps, s.array().inverse());
 }
 
 template <typename S> auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>

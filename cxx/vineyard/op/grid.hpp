@@ -23,7 +23,7 @@ struct GridOpts
 namespace TOps {
 template <typename Scalar_, int ND, bool VCC = false> struct Grid final : TOp<Scalar_, ND + 2 + VCC, 3>
 {
-  OP_INHERIT(Scalar_, ND + 2 + VCC, 3)
+  TOP_INHERIT(Scalar_, ND + 2 + VCC, 3)
   using Parent::adjoint;
   using Parent::forward;
   std::shared_ptr<Kernel<Scalar, ND>> kernel;

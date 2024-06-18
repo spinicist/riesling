@@ -6,7 +6,7 @@ namespace rl::TOps {
 
 template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
 {
-  OP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
+  TOP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
   using Parent::adjoint;
   using Parent::forward;
 

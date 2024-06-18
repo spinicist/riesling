@@ -9,7 +9,7 @@ namespace rl::TOps {
 
 template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VCC, 3>
 {
-  OP_INHERIT(Cx, NDim + 2 + VCC, 3)
+  TOP_INHERIT(Cx, NDim + 2 + VCC, 3)
   NUFFT(TrajectoryN<NDim> const &traj,
         std::string const       &ktype,
         float const              osamp,
@@ -19,7 +19,7 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
         Index const              subgridSz = 32,
         Index const              splitSz = 16384,
         Index const              nBatches = 1);
-  OP_DECLARE(NUFFT)
+  TOP_DECLARE(NUFFT)
 
   static auto Make(TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis<Cx> const &basis, Sz<NDim> const matrix)
     -> std::shared_ptr<NUFFT<NDim, VCC>>;

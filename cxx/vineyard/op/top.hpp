@@ -57,7 +57,7 @@ protected:
   void finishAdjoint(InMap const &x, Log::Time const start, bool const ip) const;
 };
 
-#define OP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                    \
+#define TOP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                   \
   using Parent = TOp<SCALAR, INRANK, OUTRANK>;                                                                                 \
   using Scalar = typename Parent::Scalar;                                                                                      \
   static const int InRank = Parent::InRank;                                                                                    \
@@ -73,7 +73,7 @@ protected:
   using OutDims = typename Parent::OutDims;                                                                                    \
   using Parent::oshape;
 
-#define OP_DECLARE(SELF)                                                                                                       \
+#define TOP_DECLARE(SELF)                                                                                                      \
   using Ptr = std::shared_ptr<SELF>;                                                                                           \
   void forward(InCMap const &x, OutMap &y) const;                                                                              \
   void adjoint(OutCMap const &y, InMap &x) const;                                                                              \
@@ -82,7 +82,7 @@ protected:
 
 template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
 {
-  OP_INHERIT(Scalar_, Rank, Rank)
+  TOP_INHERIT(Scalar_, Rank, Rank)
   Identity(Sz<Rank> dims);
 
   void forward(InCMap const &x, OutMap &y) const;

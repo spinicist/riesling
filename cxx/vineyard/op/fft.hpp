@@ -10,7 +10,7 @@ namespace rl::TOps {
 
 template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 {
-  OP_INHERIT(Cx, Rank, Rank)
+  TOP_INHERIT(Cx, Rank, Rank)
 
   FFT(InDims const &dims, bool const adjoint = false);
   FFT(InMap x);

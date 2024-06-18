@@ -9,7 +9,7 @@ namespace rl::TOps {
  */
 template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::Scalar, Op1::InRank, Op2::OutRank>
 {
-  OP_INHERIT(typename Op1::Scalar, Op1::InRank, Op2::OutRank)
+  TOP_INHERIT(typename Op1::Scalar, Op1::InRank, Op2::OutRank)
   Compose(std::shared_ptr<Op1> op1, std::shared_ptr<Op2> op2)
     : Parent(fmt::format("{}+{}", op1->name, op2->name), op1->ishape, op2->oshape)
     , op1_{op1}

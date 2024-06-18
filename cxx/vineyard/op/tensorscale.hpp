@@ -11,7 +11,7 @@ namespace rl::TOps {
  * */
 template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struct TensorScale final : TOp<Scalar_, Rank, Rank>
 {
-  OP_INHERIT(Scalar_, Rank, Rank)
+  TOP_INHERIT(Scalar_, Rank, Rank)
   using TScales = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
   using Parent::adjoint;
   using Parent::forward;

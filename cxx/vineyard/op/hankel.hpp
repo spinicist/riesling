@@ -7,7 +7,7 @@ namespace rl::TOps {
 template <typename Sc, int ND, int NK> struct Hankel final : TOp<Sc, ND, ND + 2>
 {
   static_assert(NK < ND);
-  OP_INHERIT(Sc, ND, ND + 2)
+  TOP_INHERIT(Sc, ND, ND + 2)
   using Parent::adjoint;
   using Parent::forward;
 

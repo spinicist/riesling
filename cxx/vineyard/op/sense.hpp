@@ -6,9 +6,9 @@ namespace rl::TOps {
 
 struct SENSE final : TOp<Cx, 4, 5>
 {
-  OP_INHERIT(Cx, 4, 5)
+  TOP_INHERIT(Cx, 4, 5)
   SENSE(Cx5 const &maps, Index const frames);
-  OP_DECLARE(SENSE)
+  TOP_DECLARE(SENSE)
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
   auto nChannels() const -> Index;
@@ -23,9 +23,9 @@ private:
 
 struct NonSENSE final : TOp<Cx, 5, 5>
 {
-  OP_INHERIT(Cx, 5, 5)
+  TOP_INHERIT(Cx, 5, 5)
   NonSENSE(Cx4 const &img, Index const nC);
-  OP_DECLARE(SENSE)
+  TOP_DECLARE(SENSE)
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
   auto nChannels() const -> Index;
@@ -39,9 +39,9 @@ private:
 
 struct VCCSENSE final : TOp<Cx, 4, 6>
 {
-  OP_INHERIT(Cx, 4, 6)
+  TOP_INHERIT(Cx, 4, 6)
   VCCSENSE(Cx5 const &maps, Index const frames);
-  OP_DECLARE(VCCSENSE)
+  TOP_DECLARE(VCCSENSE)
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
   auto nChannels() const -> Index;

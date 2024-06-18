@@ -5,7 +5,7 @@ namespace rl::TOps {
 
 template <int Rank, int FFTRank>
 FFT<Rank, FFTRank>::FFT(InDims const &dims, bool const adj)
-  : Parent("FFT", dims, dims)
+  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), dims, dims)
   , adjoint_{adj}
 {
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
