@@ -36,6 +36,7 @@ add_library(vineyard
     algo/gs.cpp
     algo/lad.cpp
     algo/lsmr.cpp
+    algo/lsqr.cpp
     algo/otsu.cpp
     algo/pdhg.cpp
     algo/stats.cpp

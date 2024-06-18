@@ -13,6 +13,7 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   Log::Print("LSQR λ {}", λ);
   Index const rows = op->rows();
   Index const cols = op->cols();
+  if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
   CMap const  b(bdata, rows);
   Vector      Mu(rows), u(rows);
   Vector      x(cols), v(cols), w(cols);
@@ -20,6 +21,12 @@ auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
   w = v;
+
+  if (iterLimit == 0) { // Bug out and return v
+    x = v * (α * β);
+    Log::Print("LSMR 0 |x| {:4.3E}", x.stableNorm());
+    return x;
+  }
 
   float ρ̅ = α;
   float ɸ̅ = β;

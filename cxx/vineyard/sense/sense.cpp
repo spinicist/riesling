@@ -1,6 +1,7 @@
 #include "sense/sense.hpp"
 
 #include "algo/lsmr.hpp"
+#include "algo/lsqr.hpp"
 #include "fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
@@ -21,7 +22,7 @@ Opts::Opts(args::Subparser &parser)
   , kWidth(parser, "K", "SENSE kernel width (7)", {"sense-width"}, 7)
   , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, Eigen::Array3f::Constant(12.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
-  , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 0.f)
+  , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 1.e-3f)
 /*, kRad(parser, "K", "ESPIRIT kernel size (4)", {"espirit-k"}, 3)
 , calRad(parser, "C", "ESPIRIT calibration region (8)", {"espirit-cal"}, 6)
 , gap(parser, "G", "ESPIRIT gap (0)", {"espirit-gap"}, 0)
@@ -92,15 +93,15 @@ void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ)
     channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
 }
 
-auto SobolevWeights(Sz3 const kW, Index const l) -> Re3
+auto SobolevWeights(Index const kW, float const os, Index const l) -> Re3
 {
-  Re3 W(kW);
-  for (Index ik = 0; ik < kW[2]; ik++) {
-    float const kk = ik - (kW[2] / 2);
-    for (Index ij = 0; ij < kW[1]; ij++) {
-      float const kj = ij - (kW[1] / 2);
-      for (Index ii = 0; ii < kW[0]; ii++) {
-        float const ki = ii - (kW[0] / 2);
+  Re3 W(kW, kW, kW);
+  for (Index ik = 0; ik < kW; ik++) {
+    float const kk = (ik - (kW / 2)) / os;
+    for (Index ij = 0; ij < kW; ij++) {
+      float const kj = (ij - (kW / 2)) / os;
+      for (Index ii = 0; ii < kW; ii++) {
+        float const ki = (ii - (kW / 2)) / os;
         float const k2 = (ki * ki + kj * kj + kk * kk);
         W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
       }
@@ -109,44 +110,76 @@ auto SobolevWeights(Sz3 const kW, Index const l) -> Re3
   return W;
 }
 
-auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5
+auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW1, float const os, float const λ) -> Cx5
 {
   Sz5 const cshape = channels.dimensions();
   if (LastN<4>(cshape) != ref.dimensions()) {
     Log::Fail("SENSE dimensions don't match channels {} reference {}", cshape, ref.dimensions());
   }
+  Index const kW = kW1 * os;
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
     Log::Fail("SENSE matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
+  /* We want to solve:
+   * c = SFPk
+   *
+   * Where c is the channel images, k is the SENSE kernels
+   * P is padding, F is FT, S is SENSE (but multiply by the reference image)
+   * This is about half of a circular convolution
+   *
+   * We need to add the regularizer from nlinv / ENLIVE. This is a Sobolev weights in k-space
+   * Hence solve the modified system
+   *
+   * c' = [ c   = [ SFP   k
+   *        0 ]      λW ]
+   * A = [ SFP
+   *        λW ]
+   * c' = A k
+   *
+   * But the Sobolev weights W are horrendously ill-conditioned. Hence need a pre-conditioner.
+   * At A = [(SFP)t λW] [ SFP ] = [(SFP)t SFP + (λW)^2]
+   *                    [  λW ]
+   * N = W
+   *
+   * c' = A N^-1 N k = A'k'
+   * A' = [ SFP   N^-1
+   *          W ]
+   * k = N^-1 k'
+   */
+
   // Set up operators
-  auto p = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
-  auto f = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
-  auto fp = std::make_shared<Ops::Multiply<Cx>>(f, p);
-  // auto fp_inv = fp->inverse();
-  auto n = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
-  auto A = std::make_shared<Ops::Multiply<Cx>>(n, fp);
-  // auto A = std::make_shared<Ops::Multiply<Cx>>(fp_inv, nfp);
+  auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
+  auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
+  auto FP = std::make_shared<Ops::Multiply<Cx>>(F, P);
+  auto S = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
+  auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
+
+  // Testing
+  // auto x = Ops::Op<Cx>::Vector::Ones(FP->cols());
+  // auto xx = FP->adjoint(FP->forward(x));
+  // Log::Print("|x| {} |xx| {}", x.stableNorm(), xx.stableNorm());
+  // auto cc = S->adjoint(S->forward(channels));
+  // Log::Print("|c| {} |cc| {}", Norm(channels), Norm(cc));
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-  Cx3 const  sw = SobolevWeights(Sz3{kW, kW, kW}, 16).cast<Cx>();
+  Cx3 const  sw = SobolevWeights(kW, os, 8).cast<Cx>();
   auto const swv = CollapseToArray(sw);
   auto       W = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], swv);
-  auto       λ = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), 1.f);
-  auto       reg = std::make_shared<Ops::Multiply<Cx>>(λ, W);
-  auto       Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg);
+  auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
+  auto       R = std::make_shared<Ops::Multiply<Cx>>(L, W);
+  auto       A = std::make_shared<Ops::VStack<Cx>>(SFP, R);
 
   // Preconditioner
-  auto I = std::make_shared<Ops::Identity<Cx>>(A->rows());
-  auto M = W;
-  auto Mʹ = std::make_shared<Ops::DStack<Cx>>(I, M);
+  auto Ninv = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], (1.f + λ * swv).inverse().sqrt());
+  auto Aʹ = std::make_shared<Ops::Multiply<Cx>>(A, Ninv);
 
-  Ops::Op<Cx>::CMap cmap(channels.data(), A->rows());
-  // auto b = fp_inv->forward(cmap);
-  Ops::Op<Cx>::Vector bʹ(Aʹ->rows());
-  bʹ.head(A->rows()) = cmap;
-  bʹ.tail(reg->rows()).setZero();
+  // Data
+  Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
+  Ops::Op<Cx>::Vector cʹ(Aʹ->rows());
+  cʹ.head(SFP->rows()) = c;
+  cʹ.tail(R->rows()).setZero();
 
   Log::Tensor("W", sw.dimensions(), sw.data(), {"x", "y", "z"});
   Log::Tensor("ref", ref.dimensions(), ref.data(), {"v", "x", "y", "z"});
@@ -155,17 +188,17 @@ auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5
 
   auto debug = [&](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("x-{:02d}", i), kshape, x.data(), HD5::Dims::SENSE);
-    auto const temp = fp->forward(x);
+    auto const temp = FP->forward(Ninv->forward(x));
     auto const temp2 = Tensorfy(temp, cshape);
     Log::Tensor(fmt::format("ximg-{:02d}", i), temp2.dimensions(), temp2.data(), HD5::Dims::SENSE);
   };
-  LSMR lsmr{Aʹ, Mʹ};
-  lsmr.iterLimit = 8;
-  lsmr.debug = debug;
-  auto const x = lsmr.run(bʹ.data(), 0.f);
+  LSQR lsqr{Aʹ};
+  lsqr.iterLimit = 16;
+  lsqr.debug = debug;
+  auto const kʹ = lsqr.run(cʹ.data(), 0.f);
   // auto const kernels = Tensorfy(x, kshape);
   Log::Print("Finished run");
-  auto const temp = fp->forward(x);
+  auto const temp = FP->forward(Ninv->forward(kʹ));
   Cx5        maps = Tensorfy(temp, cshape);
   return maps;
 }

@@ -94,6 +94,22 @@ private:
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
 
+//! Horizontally stack operators, i.e. A = [B C]
+template <typename Scalar = Cx> struct HStack final : Op<Scalar>
+{
+  OP_INHERIT
+  HStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
+  HStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
+  HStack(std::shared_ptr<Op<Scalar>> op1, std::vector<std::shared_ptr<Op<Scalar>>> const &others);
+  void forward(CMap const &x, Map &y) const;
+  void adjoint(CMap const &y, Map &x) const;
+  void iforward(CMap const &x, Map &y) const;
+  void iadjoint(CMap const &y, Map &x) const;
+private:
+  void                                     check();
+  std::vector<std::shared_ptr<Op<Scalar>>> ops;
+};
+
 //! Diagonally stack operators, i.e. A = [B 0; 0 C]
 template <typename Scalar = Cx> struct DStack final : Op<Scalar>
 {

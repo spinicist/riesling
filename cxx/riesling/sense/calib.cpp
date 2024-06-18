@@ -37,14 +37,14 @@ void main_sense_calib(args::Subparser &parser)
     if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
     ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
-
-    // Normalize energy
-    ref = ref * ref.constant(Norm(channels) / Norm(ref));
   } else {
     ref = ConjugateSum(channels, channels);
   }
-
-  auto maps = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get() * gridOpts.osamp.Get());
+  // Normalize energy
+  channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
+  ref = ref *
+        ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));
+  auto maps = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.λ.Get());
   if (frame) {
     auto shape = maps.dimensions();
     if (frame.Get() < 0 || frame.Get() >= shape[1]) {

@@ -25,7 +25,7 @@ auto LoresKernels(
   Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis = IdBasis()) -> Cx5;
 
 void TikhonovDivision(Cx5 &channels, Cx4 const &ref, float const λ);
-auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW) -> Cx5;
+auto Nonsense(Cx5 &channels, Cx4 const &ref, Index const kW, float const os, float const λ) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps
 auto Choose(Opts &opts, GridOpts &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;

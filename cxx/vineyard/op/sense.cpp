@@ -80,8 +80,6 @@ void NonSENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
   y.device(Threads::GlobalDevice()) = img_.reshape(res_).broadcast(brd_) * x;
-  Log::Tensor("nsx", x.dimensions(), x.data(), HD5::Dims::SENSE);
-  Log::Tensor("nsy", y.dimensions(), y.data(), HD5::Dims::SENSE);
   finishForward(y, time, false);
 }
 

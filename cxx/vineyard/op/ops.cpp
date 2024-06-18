@@ -330,7 +330,10 @@ VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::vector<std::shared_ptr<Op<S>>
 template <typename S> void VStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {
-    assert(ops[ii]->cols() == ops[ii + 1]->cols());
+    if (ops[ii]->cols() != ops[ii + 1]->cols()) {
+      Log::Fail("VStack op {} {} had {} cols but op {} {} had {}", ii, ops[ii]->name, ops[ii]->cols(), ii + 1,
+                ops[ii + 1]->name, ops[ii + 1]->cols());
+    }
   }
 }
 
@@ -394,6 +397,100 @@ template <typename S> void VStack<S>::iadjoint(CMap const &y, Map &x) const
 
 template struct VStack<float>;
 template struct VStack<Cx>;
+
+template <typename S>
+HStack<S>::HStack(std::vector<std::shared_ptr<Op<S>>> const &o)
+  : Op<S>{"HStack"}
+  , ops{o}
+{
+  check();
+}
+
+template <typename S>
+HStack<S>::HStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
+  : Op<S>{"HStack"}
+  , ops{op1, op2}
+{
+  check();
+}
+
+template <typename S>
+HStack<S>::HStack(std::shared_ptr<Op<S>> op1, std::vector<std::shared_ptr<Op<S>>> const &others)
+  : Op<S>{"HStack"}
+  , ops{op1}
+{
+  ops.insert(ops.end(), others.begin(), others.end());
+  check();
+}
+
+template <typename S> void HStack<S>::check()
+{
+  for (size_t ii = 0; ii < ops.size() - 1; ii++) {
+    if (ops[ii]->rows() != ops[ii + 1]->rows()) {
+      Log::Fail("HStack op {} {} had {} rows but op {} {} had {}", ii, ops[ii]->name, ops[ii]->rows(), ii + 1,
+                ops[ii + 1]->name, ops[ii + 1]->rows());
+    }
+  }
+}
+
+template <typename S> auto HStack<S>::rows() const -> Index { return ops.front()->rows(); }
+
+template <typename S> auto HStack<S>::cols() const -> Index
+{
+  return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->cols(); });
+}
+
+template <typename S> void HStack<S>::forward(CMap const &x, Map &y) const
+{
+  auto const time = this->startForward(x, y, false);
+  Index      ic = 0;
+  y.setZero();
+  for (auto const &op : ops) {
+    CMap xm(x.data() + ic, op->cols());
+    ic += op->cols();
+    op->iforward(xm, y); // Need to sum, use in-place version
+  }
+  this->finishForward(y, time, false);
+}
+
+template <typename S> void HStack<S>::adjoint(CMap const &y, Map &x) const
+{
+  auto const time = this->startAdjoint(y, x, false);
+  Index      ic = 0;
+  for (auto const &op : ops) {
+    Map xm(x.data() + ic, op->cols());
+    ic += op->cols();
+    op->adjoint(y, xm);
+  }
+  this->finishAdjoint(x, time, false);
+}
+
+template <typename S> void HStack<S>::iforward(CMap const &x, Map &y) const
+{
+  auto const time = this->startForward(x, y, true);
+  Index      ic = 0;
+  for (auto const &op : ops) {
+    CMap xm(x.data() + ic, op->cols());
+    ic += op->cols();
+    op->iforward(xm, y); // Need to sum, use in-place version
+  }
+  this->finishForward(y, time, true);
+}
+
+template <typename S> void HStack<S>::iadjoint(CMap const &y, Map &x) const
+{
+  auto const time = this->startAdjoint(y, x, true);
+  Index      ic = 0;
+  for (auto const &op : ops) {
+    Map xm(x.data() + ic, op->cols());
+    ic += op->cols();
+    op->iadjoint(y, xm);
+  }
+  this->finishAdjoint(x, time, true);
+}
+
+template struct HStack<float>;
+template struct HStack<Cx>;
 
 template <typename S>
 DStack<S>::DStack(std::vector<std::shared_ptr<Op<S>>> const &o)
