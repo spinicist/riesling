@@ -37,14 +37,16 @@ void main_sense_calib(args::Subparser &parser)
     if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
     ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
+    // Normalize energy
+    channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
+    ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));
   } else {
-    ref = ConjugateSum(channels, channels);
+    ref = ConjugateSum(channels, channels).sqrt();
   }
-  // Normalize energy
-  channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
-  ref = ref *
-        ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));
-  auto maps = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.λ.Get());
+
+  auto maps = nonsense ? SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get())
+                       : SENSE::TikhonovDivision(channels, ref, senseOpts.λ.Get());
+
   if (frame) {
     auto shape = maps.dimensions();
     if (frame.Get() < 0 || frame.Get() >= shape[1]) {
@@ -54,12 +56,6 @@ void main_sense_calib(args::Subparser &parser)
     maps = Cx5(maps.slice(Sz5{0, frame.Get(), 0, 0, 0}, shape));
   }
 
-  // Pad out to full SENSE map size
-  // Sz5 const ksize = kernels.dimensions();
-  // Sz3 const mat = traj.matrixForFOV(senseOpts.fov.Get());
-  // Sz5 const mapsize = AddFront(mat, ksize[0], ksize[1]);
-  // Cx5       maps = Pad(kernels, mapsize);
-  // FFT::Adjoint<5, 3>(maps, Sz3{2, 3, 4}, FFT::PhaseShift(mat));
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   Log::Print("Finished {}", parser.GetCommand().Name());

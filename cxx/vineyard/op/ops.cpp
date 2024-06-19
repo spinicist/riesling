@@ -146,7 +146,7 @@ DiagRep<S>::DiagRep(Index const n, Vector const &v)
   , reps{n}
   , s{v}
 {
-  Log::Print("Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
+  Log::Debug("Diagonal Repeat. Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
 }
 
 template <typename S>
