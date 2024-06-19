@@ -133,8 +133,7 @@ VCCSENSE::VCCSENSE(Cx5 const &maps, Index const frames)
 void VCCSENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
-  y.chip<1>(0).device(Threads::GlobalDevice()) =
-    x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<1>(0).device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
   y.chip<1>(1).device(Threads::GlobalDevice()) =
     x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, false);
@@ -142,29 +141,20 @@ void VCCSENSE::forward(InCMap const &x, OutMap &y) const
 
 void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = startAdjoint(y, x, false);
   Eigen::IndexList<Eigen::type2index<0>> zero;
-  Cx5 const y0 = y.chip<1>(0);
-  Cx5 const y1 = y.chip<1>(1);
-  Cx4 const real = (y0 * maps_.broadcast(brdMaps).conjugate()).sum(zero);
-  Cx4 const virt = (y1 * maps_.broadcast(brdMaps)).sum(zero);
-  x.device(Threads::GlobalDevice()) =
-    (real + virt) * Cx(inv_sqrt2);
-  Log::Tensor("vcc-y", y.dimensions(), y.data(), {"channel", "vcc", "v", "x", "y", "z"});
-  Log::Tensor("vcc-y0", y0.dimensions(), y0.data(), HD5::Dims::SENSE);
-  Log::Tensor("vcc-y1", y0.dimensions(), y1.data(), HD5::Dims::SENSE);
-  Log::Tensor("vcc-maps", maps_.dimensions(), maps_.data(), HD5::Dims::SENSE);
-  Log::Tensor("vcc-real", real.dimensions(), real.data(), {"v", "x", "y", "z"});
-  Log::Tensor("vcc-virt", virt.dimensions(), virt.data(), {"v", "x", "y", "z"});
-  Log::Tensor("vcc-x", x.dimensions(), x.data(), {"v", "x", "y", "z"});
+
+  auto const time = startAdjoint(y, x, false);
+  auto const real = (y.chip<1>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  auto const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps)).sum(zero);
+  x.device(Threads::GlobalDevice()) = (real + virt) * Cx(inv_sqrt2);
+
   finishAdjoint(x, time, false);
 }
 
 void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
-  y.chip<1>(0).device(Threads::GlobalDevice()) +=
-    x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<1>(0).device(Threads::GlobalDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
   y.chip<1>(1).device(Threads::GlobalDevice()) +=
     x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, true);
@@ -172,15 +162,13 @@ void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
 
 void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = startAdjoint(y, x, true);
   Eigen::IndexList<Eigen::type2index<0>> zero;
-  Cx4 const real = (y.chip<1>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
-  Cx4 const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps)).sum(zero);
-  x.device(Threads::GlobalDevice()) +=
-    (real + virt) * Cx(inv_sqrt2);
-  Log::Tensor("vcc-real", real.dimensions(), real.data(), {"v", "x", "y", "z"});
-  Log::Tensor("vcc-virt", virt.dimensions(), virt.data(), {"v", "x", "y", "z"});
-  Log::Tensor("vcc-x", x.dimensions(), x.data(), {"v", "x", "y", "z"});
+
+  auto const time = startAdjoint(y, x, true);
+  auto const real = (y.chip<1>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  auto const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps)).sum(zero);
+  x.device(Threads::GlobalDevice()) += (real + virt) * Cx(inv_sqrt2);
+
   finishAdjoint(x, time, true);
 }
 
