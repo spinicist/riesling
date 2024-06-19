@@ -37,11 +37,11 @@ void main_channels(args::Subparser &parser)
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
   TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]));
-  Cx6               out(AddBack(outFOV.ishape, nV));
+  Cx6               out(AddBack(outFOV.oshape, nV));
   for (Index iv = 0; iv < nV; iv++) {
-    auto const channels = lsmr.run(&noncart(0, 0, 0, 0, iv), lsqOpts.λ.Get());
-    auto const cropped = outFOV.forward(Tensorfy(channels, A->ishape));
-    out.chip<5>(iv) = cropped;
+    auto const x = lsmr.run(&noncart(0, 0, 0, 0, iv), lsqOpts.λ.Get());
+    auto const xm = Tensorfy(x, A->ishape);
+    out.chip<5>(iv) = outFOV.forward(xm);
   }
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Channels);
