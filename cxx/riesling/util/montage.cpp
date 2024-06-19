@@ -83,10 +83,10 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
       for (auto const &nc: namedChips) {
         if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
           auto const d = std::distance(names.cbegin(), id);
-          if (nc.index < 0 || nc.index >= diskDims[d]) {
-            rl::Log::Fail("Invalid index {} for dimension {}", nc.index, nc.name);
+          if (nc.index >= diskDims[d]) {
+            rl::Log::Fail("Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
           }
-          chips.push_back({d, nc.index});
+          chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d]  / 2});
         } else {
           rl::Log::Fail("Could find dimension named {}", nc.name);
         }
