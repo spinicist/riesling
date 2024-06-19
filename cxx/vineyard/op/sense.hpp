@@ -48,11 +48,10 @@ struct VCCSENSE final : TOp<Cx, 4, 6>
   auto mapDimensions() const -> Sz3;
 
 private:
-  Cx5                                                           maps_;
-  Eigen::IndexList<FixOne, FixOne, int, int, int, int>          resX;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne, FixOne> brdX;
-  Eigen::IndexList<int, FixOne, int, int, int, int>             resMaps;
-  Eigen::IndexList<FixOne, FixOne, int, FixOne, FixOne, FixOne> brdMaps;
+  Cx5                                                   maps_;
+  Eigen::IndexList<FixOne, int, int, int, int>          resX;
+  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdX;
+  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
 };
 
 } // namespace rl::TOps

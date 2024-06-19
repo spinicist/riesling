@@ -71,10 +71,16 @@ auto Channels(bool const            ndft,
       auto const ns = nufft->ishape;
       auto       reshape =
         std::make_shared<TOps::ReshapeInput<TOps::NUFFT<3, true>, 5>>(nufft, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
-      auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(reshape, nSlab);
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
-      auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-      return compose2;
+      if (nSlab == 1) {
+        auto rout =
+          std::make_shared<TOps::ReshapeOutput<decltype(reshape)::element_type, 4>>(reshape, AddBack(reshape->oshape, 1));
+        return rout;
+      } else {
+        auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(reshape, nSlab);
+        auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
+        auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+        return compose2;
+      }
     } else {
       auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis, shape);
       if (nSlab == 1) {

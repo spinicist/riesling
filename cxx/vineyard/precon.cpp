@@ -86,7 +86,7 @@ auto make_kspace_pre(Trajectory const  &traj,
     return std::make_shared<Ops::Identity<Cx>>(nC * traj.nSamples() * traj.nTraces());
   } else if (type == "kspace") {
     if (ndft) { Log::Warn("Preconditioning for NDFT is not supported yet, using NUFFT preconditioner"); }
-    Re2 const              w = KSpaceSingle(traj, basis, vcc, bias);
+    Re2 const              w = KSpaceSingle(traj, basis, false, bias);
     Eigen::VectorXcf const wv = CollapseToArray(w);
     return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
   } else {

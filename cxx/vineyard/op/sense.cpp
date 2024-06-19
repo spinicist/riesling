@@ -117,68 +117,70 @@ VCCSENSE::VCCSENSE(Cx5 const &maps, Index const frames)
     Log::Fail("SENSE maps had {} frames, expected {}", maps.dimension(1), frames);
   }
 
-  resX.set(2, frames);
-  resX.set(3, maps_.dimension(2));
-  resX.set(4, maps_.dimension(3));
-  resX.set(5, maps_.dimension(4));
+  resX.set(1, frames);
+  resX.set(2, maps_.dimension(2));
+  resX.set(3, maps_.dimension(3));
+  resX.set(4, maps_.dimension(4));
   brdX.set(0, maps_.dimension(0));
 
-  resMaps.set(0, maps_.dimension(0));
-  resMaps.set(2, maps_.dimension(1));
-  resMaps.set(3, maps_.dimension(2));
-  resMaps.set(4, maps_.dimension(3));
-  resMaps.set(5, maps_.dimension(4));
-
   if (maps.dimension(1) == 1) {
-    brdMaps.set(2, frames);
+    brdMaps.set(1, frames);
   } else {
-    brdMaps.set(2, 1);
+    brdMaps.set(1, 1);
   }
 }
 
 void VCCSENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
-  Sz6        st0{0, 0, 0, 0, 0, 0}, st1{0, 1, 0, 0, 0, 0}, sz = oshape;
-  sz[1] = 1;
-  y.slice(st0, sz).device(Threads::GlobalDevice()) =
-    x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps) * maps_.constant(inv_sqrt2);
-  y.slice(st1, sz).device(Threads::GlobalDevice()) =
-    x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps).conjugate() * maps_.constant(inv_sqrt2);
+  y.chip<1>(0).device(Threads::GlobalDevice()) =
+    x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<1>(1).device(Threads::GlobalDevice()) =
+    x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, false);
 }
 
 void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, false);
-  Sz6        st0{0, 0, 0, 0, 0, 0}, st1{0, 1, 0, 0, 0, 0}, sz = oshape;
-  sz[1] = 1;
-  x.device(Threads::GlobalDevice()) = (ConjugateSum(y.slice(st0, sz), maps_.reshape(resMaps).broadcast(brdMaps)) +
-                                       ConjugateSum(y.slice(st1, sz), maps_.reshape(resMaps).broadcast(brdMaps).conjugate())) *
-                                      maps_.constant(inv_sqrt2);
+  Eigen::IndexList<Eigen::type2index<0>> zero;
+  Cx5 const y0 = y.chip<1>(0);
+  Cx5 const y1 = y.chip<1>(1);
+  Cx4 const real = (y0 * maps_.broadcast(brdMaps)).sum(zero);
+  Cx4 const virt = (y1 * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  x.device(Threads::GlobalDevice()) =
+    (real + virt) * Cx(inv_sqrt2);
+  Log::Tensor("vcc-y", y.dimensions(), y.data(), {"channel", "vcc", "v", "x", "y", "z"});
+  Log::Tensor("vcc-y0", y0.dimensions(), y0.data(), HD5::Dims::SENSE);
+  Log::Tensor("vcc-y1", y0.dimensions(), y1.data(), HD5::Dims::SENSE);
+  Log::Tensor("vcc-maps", maps_.dimensions(), maps_.data(), HD5::Dims::SENSE);
+  Log::Tensor("vcc-real", real.dimensions(), real.data(), {"v", "x", "y", "z"});
+  Log::Tensor("vcc-virt", virt.dimensions(), virt.data(), {"v", "x", "y", "z"});
+  Log::Tensor("vcc-x", x.dimensions(), x.data(), {"v", "x", "y", "z"});
   finishAdjoint(x, time, false);
 }
 
 void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
-  Sz6        st0{0, 0, 0, 0, 0, 0}, st1{0, 1, 0, 0, 0, 0}, sz = oshape;
-  sz[1] = 1;
-  y.slice(st0, sz).device(Threads::GlobalDevice()) +=
-    x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps) * maps_.constant(inv_sqrt2);
-  y.slice(st1, sz).device(Threads::GlobalDevice()) +=
-    x.reshape(resX).broadcast(brdX) * maps_.reshape(resMaps).broadcast(brdMaps).conjugate() * maps_.constant(inv_sqrt2);
+  y.chip<1>(0).device(Threads::GlobalDevice()) +=
+    x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<1>(1).device(Threads::GlobalDevice()) +=
+    x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, true);
 }
 
 void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
-  Sz6        st0{0, 0, 0, 0, 0, 0}, st1{0, 1, 0, 0, 0, 0}, sz = oshape;
-  sz[1] = 1;
-  x.device(Threads::GlobalDevice()) += (ConjugateSum(y.slice(st0, sz), maps_.reshape(resMaps).broadcast(brdMaps)) +
-                                        ConjugateSum(y.slice(st1, sz), maps_.reshape(resMaps).broadcast(brdMaps).conjugate())) *
-                                       maps_.constant(inv_sqrt2);
+  Eigen::IndexList<Eigen::type2index<0>> zero;
+  Cx4 const real = (y.chip<1>(0) * maps_.broadcast(brdMaps)).sum(zero);
+  Cx4 const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  x.device(Threads::GlobalDevice()) +=
+    (real + virt) * Cx(inv_sqrt2);
+  Log::Tensor("vcc-real", real.dimensions(), real.data(), {"v", "x", "y", "z"});
+  Log::Tensor("vcc-virt", virt.dimensions(), virt.data(), {"v", "x", "y", "z"});
+  Log::Tensor("vcc-x", x.dimensions(), x.data(), {"v", "x", "y", "z"});
   finishAdjoint(x, time, true);
 }
 
