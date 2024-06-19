@@ -146,8 +146,8 @@ void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
   Eigen::IndexList<Eigen::type2index<0>> zero;
   Cx5 const y0 = y.chip<1>(0);
   Cx5 const y1 = y.chip<1>(1);
-  Cx4 const real = (y0 * maps_.broadcast(brdMaps)).sum(zero);
-  Cx4 const virt = (y1 * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  Cx4 const real = (y0 * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  Cx4 const virt = (y1 * maps_.broadcast(brdMaps)).sum(zero);
   x.device(Threads::GlobalDevice()) =
     (real + virt) * Cx(inv_sqrt2);
   Log::Tensor("vcc-y", y.dimensions(), y.data(), {"channel", "vcc", "v", "x", "y", "z"});
@@ -174,8 +174,8 @@ void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
   Eigen::IndexList<Eigen::type2index<0>> zero;
-  Cx4 const real = (y.chip<1>(0) * maps_.broadcast(brdMaps)).sum(zero);
-  Cx4 const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  Cx4 const real = (y.chip<1>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  Cx4 const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps)).sum(zero);
   x.device(Threads::GlobalDevice()) +=
     (real + virt) * Cx(inv_sqrt2);
   Log::Tensor("vcc-real", real.dimensions(), real.data(), {"v", "x", "y", "z"});
