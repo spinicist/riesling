@@ -20,7 +20,7 @@ template <int NDims> auto GuessMatrix(Re3 const &points) -> Sz<NDims>
     }
   }
   Sz<NDims> mat;
-  for (Index ii = 0; ii < 3; ii++) {
+  for (Index ii = 0; ii < NDims; ii++) {
     mat[ii] = std::max((Index)(std::ceil(max(ii)) * 2), 1L);
   }
   return mat;
@@ -188,7 +188,7 @@ auto TrajectoryN<NDims>::downsample(Array const tgtSize, Index const fullResTrac
   auto dsVox = voxel_size_;
   auto dsMatrix = matrix_;
   Re1  thresh(3);
-  for (Index ii = 0; ii < 3; ii++) {
+  for (Index ii = 0; ii < NDims; ii++) {
     if (shrink) {
       // Account for rounding
       dsMatrix[ii] = matrix_[ii] * ratios[ii];
