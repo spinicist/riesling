@@ -123,7 +123,7 @@ template <int NDims> auto TrajectoryN<NDims>::matrix(float const os) const -> Sz
 template <int NDims> auto TrajectoryN<NDims>::matrixForFOV(Array const fov, float const os) const -> SzN
 {
   SzN matrix;
-  for (Index ii = 0; ii < 3; ii++) {
+  for (Index ii = 0; ii < NDims; ii++) {
     matrix[ii] = os * std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
   }
   Log::Print("Trajectory FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
