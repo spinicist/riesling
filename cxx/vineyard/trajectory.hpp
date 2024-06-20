@@ -20,11 +20,10 @@ template <int NDims> struct TrajectoryN
   auto nTraces() const -> Index;
   void checkDims(SzN const dims) const;
   auto compatible(TrajectoryN const &other) const -> bool;
-  auto matrix() const -> SzN;
+  auto matrix(float os = 1.f) const -> SzN;
+  auto matrixForFOV(Array const fov, float os = 1.f) const -> SzN;
   auto voxelSize() const -> Array;
   auto FOV() const -> Array;
-  auto matrixForFOV(float const fov = -1.f) const -> SzN;
-  auto matrixForFOV(Array const fov) const -> SzN;
   void shiftFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;

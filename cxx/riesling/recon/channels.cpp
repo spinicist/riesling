@@ -14,9 +14,6 @@ void main_channels(args::Subparser &parser)
   PreconOpts preOpts(parser);
   LsqOpts    lsqOpts(parser);
 
-  args::ValueFlag<Eigen::Array3f, Array3fReader> ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"},
-                                                      Eigen::Array3f::Constant(256.f));
-
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
@@ -29,7 +26,7 @@ void main_channels(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "x", "y", "z"});

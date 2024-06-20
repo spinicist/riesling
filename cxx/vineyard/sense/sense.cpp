@@ -38,7 +38,8 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, false, false);
-  auto const A = Recon::Channels(false, gridOpts, traj, opts.fov.Get(), nC, nS, basis);
+  auto const shape1 = traj.matrix(gridOpts.osamp.Get());
+  auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, basis, shape1);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
   LSMR const lsmr{A, M, 4};
 
@@ -47,6 +48,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
 
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
+  Log::Print("shape1 {} channels {} shape{}", shape1, channels.dimensions(), shape);
   for (Index ii = 0; ii < 3; ii++) {
     if (shape[ii] > channels.dimension(ii + 2)) {
       Log::Fail("Requested SENSE FOV {} could not be satisfied with FOV {} and oversampling {}", opts.fov.Get().transpose(),

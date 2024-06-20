@@ -49,21 +49,19 @@ auto SENSE(CoreOpts         &coreOpts,
   }
 }
 
-auto Channels(bool const            ndft,
-              GridOpts             &gridOpts,
-              Trajectory const     &traj,
-              Eigen::Array3f const &fov,
-              Index const           nC,
-              Index const           nSlab,
-              Basis<Cx> const      &basis) -> TOps::TOp<Cx, 5, 4>::Ptr
+auto Channels(bool const        ndft,
+              GridOpts         &gridOpts,
+              Trajectory const &traj,
+              Index const       nC,
+              Index const       nSlab,
+              Basis<Cx> const  &basis,
+              Sz3 const         shape) -> TOps::TOp<Cx, 5, 4>::Ptr
 {
-  auto const shape = traj.matrixForFOV(fov);
-
   if (ndft) {
-    auto                                 FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
-    std::shared_ptr<TOps::TOp<Cx, 6, 4>> loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(FT, nSlab);
-    std::shared_ptr<TOps::TOp<Cx, 5, 6>> slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(FT->ishape, nSlab);
-    std::shared_ptr<TOps::TOp<Cx, 5, 4>> compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
+    auto FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
+    auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(FT, nSlab);
+    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(FT->ishape, nSlab);
+    auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
     return compose1;
   } else {
     if (gridOpts.vcc) {

@@ -13,21 +13,21 @@
 namespace rl {
 namespace Recon {
 
-auto SENSE(CoreOpts               &coreOpts,
-           GridOpts               &gridOpts,
-           SENSE::Opts            &senseOpts,
-           Trajectory const       &traj,
-           Index const             nSlab,
-           Basis<Cx> const        &basis,
-           Cx5 const              &data) -> TOps::TOp<Cx, 4, 4>::Ptr;
+auto SENSE(CoreOpts         &coreOpts,
+           GridOpts         &gridOpts,
+           SENSE::Opts      &senseOpts,
+           Trajectory const &traj,
+           Index const       nSlab,
+           Basis<Cx> const  &basis,
+           Cx5 const        &data) -> TOps::TOp<Cx, 4, 4>::Ptr;
 
-auto Channels(bool const            ndft,
-              GridOpts             &gridOpts,
-              Trajectory const     &traj,
-              Eigen::Array3f const &fov,
-              Index const           nC,
-              Index const           nSlab,
-              Basis<Cx> const      &basis) -> TOps::TOp<Cx, 5, 4>::Ptr;
+auto Channels(bool const        ndft,
+              GridOpts         &gridOpts,
+              Trajectory const &traj,
+              Index const       nC,
+              Index const       nSlab,
+              Basis<Cx> const  &basis,
+              Sz3 const         shape = Sz3()) -> TOps::TOp<Cx, 5, 4>::Ptr;
 
 } // namespace Recon
 } // namespace rl

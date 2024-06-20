@@ -107,7 +107,29 @@ template <int NDims> auto TrajectoryN<NDims>::compatible(TrajectoryN const &othe
   }
 }
 
-template <int NDims> auto TrajectoryN<NDims>::matrix() const -> SzN { return matrix_; }
+template <int NDims> auto TrajectoryN<NDims>::matrix(float const os) const -> SzN
+{
+  if (os == 1.f) {
+    return matrix_;
+  } else {
+    SzN om;
+    for (Index ii = 0; ii < NDims; ii++) {
+      om[ii] = os * matrix_[ii];
+    }
+    return om;
+  }
+}
+
+template <int NDims> auto TrajectoryN<NDims>::matrixForFOV(Array const fov, float const os) const -> SzN
+{
+  SzN matrix;
+  for (Index ii = 0; ii < 3; ii++) {
+    matrix[ii] = os * std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
+  }
+  Log::Print("Trajectory FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
+             fov.transpose(), os, matrix);
+  return matrix;
+}
 
 template <int NDims> auto TrajectoryN<NDims>::voxelSize() const -> Array { return voxel_size_; }
 
@@ -118,22 +140,6 @@ template <int NDims> auto TrajectoryN<NDims>::FOV() const -> Array
     fov[ii] = matrix_[ii] * voxel_size_[ii];
   }
   return fov;
-}
-
-template <int NDims> auto TrajectoryN<NDims>::matrixForFOV(float const fov) const -> SzN
-{
-  auto const afov = Array::Constant(fov);
-  return matrixForFOV(afov);
-}
-
-template <int NDims> auto TrajectoryN<NDims>::matrixForFOV(Array const fov) const -> SzN
-{
-  SzN matrix;
-  for (Index ii = 0; ii < 3; ii++) {
-    matrix[ii] = std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
-  }
-  Log::Print("Trajectory FOV {} matrix {}. Requested FOV {} matrix {}", FOV().transpose(), matrix_, fov.transpose(), matrix);
-  return matrix;
 }
 
 template <int NDims> void TrajectoryN<NDims>::shiftFOV(Eigen::Vector3f const shift, Cx5 &data)

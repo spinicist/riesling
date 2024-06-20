@@ -17,9 +17,6 @@ void main_recon_rss(args::Subparser &parser)
   PreconOpts preOpts(parser);
   LsqOpts    lsqOpts(parser);
 
-  args::ValueFlag<Eigen::Array3f, Array3fReader> ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"},
-                                                      Eigen::Array3f::Constant(256.f));
-
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
@@ -33,7 +30,7 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, basis);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 

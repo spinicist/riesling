@@ -41,7 +41,7 @@ void main_sake(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const  A = Recon::Channels(coreOpts.ndft, gridOpts, traj, ifov.Get(), nC, nS, basis);
+  auto const  A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, basis);
   auto const  M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
   float const scale = Scaling(rlsqOpts.scaling, A, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);

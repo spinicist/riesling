@@ -28,9 +28,9 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
   // matrix = 0 - use the trajectory matrix.
   // matrix > 0 < grid size - use the matrix.
   // matrix > grid size - error
-  if (std::all_of(matrix.cbegin(), matrix.cend(), [](Index ii) { return ii == 0; })) {
+  if (std::all_of(matrix.cbegin(), matrix.cend(), [](Index ii) { return ii < 1; })) {
     batchShape_ = Concatenate(FirstN<2 + VCC>(gridder.ishape), traj.matrix());
-  } else if (std::equal(matrix.cbegin(), matrix.cend(), gridder.ishape.cbegin() + 2 + VCC, std::less())) {
+  } else if (std::equal(matrix.cbegin(), matrix.cend(), gridder.ishape.cbegin() + 2 + VCC, std::less_equal())) {
     batchShape_ = Concatenate(FirstN<2 + VCC>(gridder.ishape), matrix);
   } else {
     Log::Fail("Requested NUFFT matrix {} but grid size is {}", matrix, LastN<NDim>(gridder.ishape));
