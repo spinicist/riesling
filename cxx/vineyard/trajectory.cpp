@@ -163,9 +163,8 @@ template <int NDims> void TrajectoryN<NDims>::shiftFOV(Eigen::Vector3f const shi
              .broadcast(Sz5{shape[0], 1, 1, 1, shape[4]})
              .select((points_.contract(delta, zero2zero).template cast<Cx>() * Cx(0.f, 2.f * M_PI))
                        .exp()
-                       .reshape(Sz4{1, shape[1], shape[2], shape[3]})
-                       .broadcast(Sz4{shape[0], 1, 1, 1})
-                       .reshape(Sz5{shape[0], shape[1], shape[2], 1, shape[3]}),
+                       .reshape(Sz5{1, shape[1], shape[2], 1, 1})
+                       .broadcast(Sz5{shape[0], 1, 1, shape[3], shape[4]}),
                      data.constant(0.f));
 }
 
