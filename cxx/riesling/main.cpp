@@ -44,6 +44,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis, basis_img, "basis-img", "Basis from image data");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
+  COMMAND(basis, basis_sim2, "basis-sim2", "Let's do this");
   COMMAND(basis, ipop_basis, "basis-fat", "Fat/Water basis");
   COMMAND(basis, ipop_combine, "basis-fat-post", "Post-process a Fat/Water image");
   COMMAND(basis, lookup, "basis-lookup", "Basis dictionary lookup");
