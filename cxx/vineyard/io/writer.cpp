@@ -106,9 +106,12 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
+  if (dset < 0) {
+    Log::Fail("Could not create dataset {} dimensions {} error {}", name, shape, GetError());
+  }
   auto        l = labels.rbegin();
   for (Index ii = 0; ii < N; ii++) {
-    CheckedCall(H5DSset_label(dset, ii, l->c_str()), "setting dimension label");
+    CheckedCall(H5DSset_label(dset, ii, l->c_str()), fmt::format("dataset {} dimension {} label {}", name, ii, *l));
     l++;
   }
   if (dset < 0) { Log::Fail("Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError()); }
