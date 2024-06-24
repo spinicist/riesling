@@ -10,7 +10,7 @@ template <int N>
 auto Apodize(Sz<N> const shape, Sz<N> const gshape, std::shared_ptr<Kernel<Cx, N>> const &kernel) -> CxN<N>
 {
   CxN<N> k = kernel->at(Eigen::Matrix<float, N, 1>::Zero()).template cast<Cx>();
-  float const           scale = std::sqrtf(Product(shape));
+  float const           scale = std::sqrt(static_cast<float>(Product(shape)));
   k = k * k.constant(scale);
   auto temp = Pad(k, gshape);
   FFT::Adjoint(temp);
