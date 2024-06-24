@@ -19,7 +19,7 @@ struct Settings
 {
   Index samplesPerSpoke = 256, samplesInGap = 2, spokesPerSeg = 256, spokesSpoil = 0, segsPerPrep = 2, segsPrep2 = 1,
         segsKeep = 2;
-  float tSamp = 10e-6, alpha = 1.f, ascale = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, Tprep = 0, Trec = 0;
+  float tSamp = 10e-6, alpha = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, Tprep = 0, Trec = 0;
 };
 
 auto T1β1β2ω(std::vector<float> lo, std::vector<float> hi, std::vector<float> const spacing) -> Eigen::ArrayXXf
@@ -179,7 +179,6 @@ void main_basis_sim2(args::Subparser &parser)
   args::ValueFlag<Index> sp2(parser, "G", "Segments before prep 2", {"sp2"}, 0);
   args::ValueFlag<Index> sk(parser, "K", "Segments to keep", {"sk"}, 1);
   args::ValueFlag<float> alpha(parser, "FLIP ANGLE", "Read-out fli,p-angle", {'a', "alpha"}, 1.);
-  args::ValueFlag<float> ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
   args::ValueFlag<float> TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
   args::ValueFlag<float> Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.f);
   args::ValueFlag<Index> spoil(parser, "N", "Spoil periods", {"spoil"}, 0);
@@ -216,9 +215,8 @@ void main_basis_sim2(args::Subparser &parser)
     .segsPerPrep = spp.Get(),
     .segsPrep2 = sp2.Get(),
     .segsKeep = sk.Get(),
-    .alpha = alpha.Get(),
-    .ascale = ascale.Get(),
     .tSamp = Tsamp.Get(),
+    .alpha = alpha.Get(),
     .TR = TR.Get(),
     .Tramp = Tramp.Get(),
     .Tssi = Tssi.Get(),

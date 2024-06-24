@@ -2,6 +2,8 @@
 #include "fft.hpp"
 #include "pad.hpp"
 
+#include <cmath>
+
 namespace rl {
 
 template <int N>

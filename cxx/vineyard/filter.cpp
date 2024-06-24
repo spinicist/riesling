@@ -4,6 +4,7 @@
 #include "tensors.hpp"
 #include "threads.hpp"
 
+#include <cmath>
 #include <functional>
 #include <numbers>
 
