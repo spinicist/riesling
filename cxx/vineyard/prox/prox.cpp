@@ -10,8 +10,7 @@ Prox<S>::Prox(Index const s)
 {
 }
 
-template <typename S>
-void Prox<S>::apply(float const α, Vector const &x, Vector &z) const
+template <typename S> void Prox<S>::apply(float const α, Vector const &x, Vector &z) const
 {
   assert(x.size() == sz);
   assert(z.size() == sz);
@@ -20,8 +19,7 @@ void Prox<S>::apply(float const α, Vector const &x, Vector &z) const
   this->apply(α, xm, zm);
 }
 
-template <typename S>
-void Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const
+template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const
 {
   assert(x.size() == sz);
   assert(z.size() == sz);
@@ -30,8 +28,7 @@ void Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) co
   this->apply(α, xm, zm);
 }
 
-template <typename S>
-auto Prox<S>::apply(float const α, Vector const &x) const -> Vector
+template <typename S> auto Prox<S>::apply(float const α, Vector const &x) const -> Vector
 {
   assert(x.size() == sz);
   Vector z(sz);
@@ -39,14 +36,12 @@ auto Prox<S>::apply(float const α, Vector const &x) const -> Vector
   return z;
 }
 
-template <typename S>
-void Prox<S>::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
+template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const, CMap const &, Map &) const
 {
   Log::Fail("Not implemented");
 }
 
-template <typename S>
-auto Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector
+template <typename S> auto Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector
 {
   assert(x.size() == sz);
   Vector z(sz);
@@ -64,8 +59,7 @@ ConjugateProx<S>::ConjugateProx(std::shared_ptr<Prox<S>> pp)
 {
 }
 
-template <typename S>
-void ConjugateProx<S>::apply(float const α, CMap const &x, Map &z) const
+template <typename S> void ConjugateProx<S>::apply(float const α, CMap const &x, Map &z) const
 {
   Vector x1 = x / α;
   CMap   x1m(x1.data(), x1.size());
@@ -74,8 +68,7 @@ void ConjugateProx<S>::apply(float const α, CMap const &x, Map &z) const
   z += x;
 }
 
-template <typename S>
-void ConjugateProx<S>::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
+template <typename S> void ConjugateProx<S>::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
 {
   auto   αinv = α->inverse();
   Vector x1 = αinv->forward(x);

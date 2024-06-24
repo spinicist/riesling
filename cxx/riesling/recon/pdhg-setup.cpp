@@ -2,7 +2,6 @@
 
 #include "algo/eig.hpp"
 #include "algo/pdhg.hpp"
-#include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"

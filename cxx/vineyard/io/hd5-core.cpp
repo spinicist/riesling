@@ -26,26 +26,13 @@ hid_t complex_fid, alternate_complex_fid, complex_did, alternate_complex_did;
 
 } // namespace
 
-template <>
-hid_t type_impl(type_tag<Index>, bool const)
-{
-  return H5T_NATIVE_LONG;
-}
+template <> hid_t type_impl(type_tag<Index>, bool const) { return H5T_NATIVE_LONG; }
 
-template <>
-hid_t type_impl(type_tag<float>, bool const)
-{
-  return H5T_NATIVE_FLOAT;
-}
+template <> hid_t type_impl(type_tag<float>, bool const) { return H5T_NATIVE_FLOAT; }
 
-template <>
-hid_t type_impl(type_tag<double>, bool const)
-{
-  return H5T_NATIVE_DOUBLE;
-}
+template <> hid_t type_impl(type_tag<double>, bool const) { return H5T_NATIVE_DOUBLE; }
 
-template <>
-hid_t type_impl(type_tag<std::complex<float>>, bool const alt)
+template <> hid_t type_impl(type_tag<std::complex<float>>, bool const alt)
 {
   if (alt) {
     return alternate_complex_fid;
@@ -54,8 +41,7 @@ hid_t type_impl(type_tag<std::complex<float>>, bool const alt)
   }
 }
 
-template <>
-hid_t type_impl(type_tag<std::complex<double>>, bool const alt)
+template <> hid_t type_impl(type_tag<std::complex<double>>, bool const alt)
 {
   if (alt) {
     return alternate_complex_did;
@@ -64,15 +50,7 @@ hid_t type_impl(type_tag<std::complex<double>>, bool const alt)
   }
 }
 
-herr_t ConvertFloatComplex(hid_t        src_id,
-                           hid_t        dst_id,
-                           H5T_cdata_t *cdata,
-                           size_t       n,
-                           size_t       buf_stride,
-                           size_t       bkg_stride,
-                           void        *buf,
-                           void        *bkg,
-                           hid_t        plist)
+herr_t ConvertFloatComplex(hid_t, hid_t, H5T_cdata_t *, size_t n, size_t, size_t, void *buf, void *, hid_t)
 {
   // HDF5 wants the conversion in place
   // Cheat heavily and convert going backwards so we don't overwrite any values
@@ -98,7 +76,7 @@ void Init()
     if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
     hid_t fid = type_impl(type_tag<float>{});
-    
+
     complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
     CheckedCall(H5Tinsert(complex_fid, "r", HOFFSET(complex_f, r), fid), "inserting .r");
     CheckedCall(H5Tinsert(complex_fid, "i", HOFFSET(complex_f, i), fid), "inserting .i");
@@ -110,11 +88,11 @@ void Init()
     H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, alternate_complex_fid, ConvertFloatComplex);
 
     hid_t did = type_impl(type_tag<double>{});
-    
+
     complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
     CheckedCall(H5Tinsert(complex_did, "r", HOFFSET(complex_d, r), did), "inserting .r d");
     CheckedCall(H5Tinsert(complex_did, "i", HOFFSET(complex_d, i), did), "inserting .i d");
-    
+
     alternate_complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
     CheckedCall(H5Tinsert(alternate_complex_did, "real", HOFFSET(complex_d, r), did), "inserting .real d");
     CheckedCall(H5Tinsert(alternate_complex_did, "imag", HOFFSET(complex_d, i), did), "inserting .imag d");
@@ -184,7 +162,7 @@ void CheckInfoType(hid_t handle)
 
 auto Exists(hid_t const parent, std::string const &name) -> bool { return (H5Lexists(parent, name.c_str(), H5P_DEFAULT) > 0); }
 
-herr_t AddName(hid_t id, const char *name, const H5L_info_t *linfo, void *opdata)
+herr_t AddName(hid_t, const char *name, const H5L_info_t *, void *opdata)
 {
   auto names = reinterpret_cast<std::vector<std::string> *>(opdata);
   names->push_back(name);

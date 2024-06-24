@@ -13,11 +13,12 @@ bool received = false;
 
 void Handler(int sig)
 {
-  if (received) {
-    std::abort();
-  } else {
+  if (sig == SIGINT) {
+    if (received) { Log::Fail("Second SIGINT received, terminating"); }
     Log::Print("SIGINT received, will terminate when current iteration finishes. Press Ctrl-C again to terminate now.");
     received = true;
+  } else {
+    Log::Fail("Unknown signal {} received, aborting", sig);
   }
 }
 

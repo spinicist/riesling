@@ -35,5 +35,5 @@ struct Functor1
 template <typename T>
 struct Identity1 final : Functor1<T>
 {
-  auto operator()(float const λ, Eigen::TensorMap<T const> in) const -> T { return in; }
+  auto operator()(float const, Eigen::TensorMap<T const> in) const -> T { return in; }
 };

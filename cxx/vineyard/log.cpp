@@ -79,7 +79,7 @@ void StartProgress(Index const amount, std::string const &text)
   if (isTTY && CurrentLevel() >= Level::Ephemeral) {
     progressTarget = amount;
     progressCurrent = 0;
-    progressNext = std::floor(progressTarget / 100.f);
+    progressNext = (Index)std::floor(progressTarget / 100.f);
   }
 }
 
@@ -103,7 +103,7 @@ void Tick()
     if (progressCurrent > progressNext) {
       float const percent = (100.f * progressCurrent) / progressTarget;
       fmt::print(stderr, "\x1b[2K\r{:02.0f}%", percent);
-      progressNext += std::floor(progressTarget / 100.f);
+      progressNext += static_cast<Index>(std::floor(progressTarget / 100.f));
     }
   }
 }

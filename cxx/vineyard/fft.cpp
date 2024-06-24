@@ -33,16 +33,16 @@ struct ThreadPool : ducc0::detail_threading::thread_pool
   {
   }
 
-  size_t nthreads() const override { return pool_->NumThreads(); }
+  size_t nthreads() const override { return (size_t)pool_->NumThreads(); }
   size_t adjust_nthreads(size_t nthreads_in) const override
   {
     // If called by a thread in the pool, return 1
     if (pool_->CurrentThreadId() >= 0) {
       return 1;
     } else if (nthreads_in == 0) {
-      return pool_->NumThreads();
+      return (size_t)pool_->NumThreads();
     }
-    return std::min<size_t>(nthreads_in, pool_->NumThreads());
+    return std::min<size_t>(nthreads_in, (size_t)pool_->NumThreads());
   };
   void submit(std::function<void()> work) override { pool_->Schedule(std::move(work)); }
 
@@ -57,7 +57,7 @@ auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
 {
   Eigen::Tensor<Cx, NFFT> x(shape);
   x.setConstant(1.f);
-  for (Index ii = 0; ii < NFFT; ii++) {
+  for (size_t ii = 0; ii < NFFT; ii++) {
     auto const ph = internal::Phase1D(shape[ii]);
     Sz<NFFT>   rsh, brd;
     rsh.fill(1);
@@ -77,7 +77,7 @@ void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
   Sz<ND> rsh, brd;
   rsh.fill(1);
   brd.fill(1);
-  for (Index ii = 0; ii < ND; ii++) {
+  for (size_t ii = 0; ii < ND; ii++) {
     if (std::find(fftDims.begin(), fftDims.end(), ii) == fftDims.end()) {
       brd[ii] = shape[ii];
     } else {
@@ -131,7 +131,7 @@ void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
   Sz<ND> rsh, brd;
   rsh.fill(1);
   brd.fill(1);
-  for (Index ii = 0; ii < ND; ii++) {
+  for (size_t ii = 0; ii < ND; ii++) {
     if (std::find(fftDims.begin(), fftDims.end(), ii) == fftDims.end()) {
       brd[ii] = shape[ii];
     } else {

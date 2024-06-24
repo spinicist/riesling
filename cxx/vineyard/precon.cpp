@@ -76,7 +76,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis<Cx> const &basis, bool const vcc
 auto make_kspace_pre(Trajectory const  &traj,
                      Index const        nC,
                      Basis<Cx> const   &basis,
-                     bool const         vcc,
+                     bool const         ,
                      std::string const &type,
                      float const        bias,
                      bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>

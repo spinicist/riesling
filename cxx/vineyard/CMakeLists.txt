@@ -12,7 +12,6 @@ add_library(vineyard
     apodize.cpp
     colors.cpp
     compressor.cpp
-    cropper.cpp
     fft.cpp
     filter.cpp
     interp.cpp

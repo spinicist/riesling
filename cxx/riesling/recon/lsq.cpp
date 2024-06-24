@@ -1,10 +1,8 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
-#include "cropper.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "op/tensorscale.hpp"
 #include "parse_args.hpp"
 #include "precon.hpp"
 #include "scaling.hpp"
@@ -39,20 +37,18 @@ void main_recon_lsq(args::Subparser &parser)
   };
   LSMR lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
-  auto const sz = A->ishape;
-  Cropper    out_cropper(LastN<3>(sz), traj.matrixForFOV(coreOpts.fov.Get()));
-  Sz3 const  outSz = out_cropper.size();
-  Cx5        out(sz[0], outSz[0], outSz[1], outSz[2], nV), resid;
-  if (coreOpts.residual) { resid.resize(sz[0], outSz[0], outSz[1], outSz[2], nV); }
+  TOps::Crop<Cx, 4> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0]));
+  Cx5               out(AddBack(oc.oshape, nV)), resid;
+  if (coreOpts.residual) { resid.resize(out.dimensions()); }
 
   for (Index iv = 0; iv < nV; iv++) {
     auto x = lsmr.run(&noncart(0, 0, 0, 0, iv), lsqOpts.λ.Get());
-    auto xm = Tensorfy(x, sz);
-    out.chip<4>(iv) = out_cropper.crop4(xm);
+    auto xm = Tensorfy(x, A->ishape);
+    out.chip<4>(iv) = oc.forward(xm);
     if (coreOpts.residual) {
       noncart.chip<4>(iv) -= A->forward(xm);
       xm = A->adjoint(noncart.chip<4>(iv));
-      resid.chip<4>(iv) = out_cropper.crop4(xm);
+      resid.chip<4>(iv) = oc.forward(xm);
     }
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());

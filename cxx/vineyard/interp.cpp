@@ -22,7 +22,7 @@ Interpolator::Interpolator(Eigen::ArrayXi const &x, Eigen::ArrayXf const &y, Eig
   m_width = x[x.size() - 1] - m_min;
   m_clamp = c;
   Eigen::ArrayXf const scaledx = (x.cast<float>() - m_min) / m_width;
-  m_spline = Eigen::SplineFitting<Spline>::Interpolate(y.transpose(), std::min<int>(x.rows() - 1, order), scaledx.transpose());
+  m_spline = Eigen::SplineFitting<Spline>::Interpolate(y.transpose(), std::min(x.rows() - 1L, order), scaledx.transpose());
 }
 
 auto Interpolator::scale(float const x) const -> float

@@ -5,6 +5,7 @@
 #include "threads.hpp"
 
 #include <functional>
+#include <numbers>
 
 namespace rl {
 inline float Tukey(float const &r, float const &sw, float const &ew, float const &eh)
@@ -12,7 +13,7 @@ inline float Tukey(float const &r, float const &sw, float const &ew, float const
   if (r > ew) {
     return 0.f;
   } else if (r > sw) {
-    return (0.5f * ((1 + eh) + (1 - eh) * cos((M_PI * (r - sw)) / (ew - sw))));
+    return (0.5f * ((1.f + eh) + (1.f - eh) * std::cosf((std::numbers::pi_v<float> * (r - sw)) / (ew - sw))));
   } else {
     return 1.f;
   }

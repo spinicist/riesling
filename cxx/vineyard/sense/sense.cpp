@@ -29,7 +29,6 @@ Opts::Opts(args::Subparser &parser)
 auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
-  auto const nT = noncart.dimension(2);
   auto const nS = noncart.dimension(3);
   auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
@@ -64,8 +63,6 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
-  auto const nT = noncart.dimension(2);
-  auto const nS = noncart.dimension(3);
   auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
     Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);

@@ -78,12 +78,12 @@ template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &
   return x;
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const &x, OutMap &y) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const &, OutMap &) const
 {
   Log::Fail("In place {} not implemented", this->name);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &y, InMap &x) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &, InMap &) const
 {
   Log::Fail("In place {} not implemented", this->name);
 }

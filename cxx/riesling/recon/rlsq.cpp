@@ -2,7 +2,6 @@
 
 #include "algo/admm.hpp"
 #include "algo/lsmr.hpp"
-#include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
@@ -47,13 +46,13 @@ void main_recon_rlsq(args::Subparser &parser)
 
   ADMM::DebugZ debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
                              ADMM::Vector const &u) {
-    if (std::holds_alternative<Sz4>(reg.sizes[ir])) {
-      auto const Fshape = std::get<Sz4>(reg.sizes[ir]);
+    if (std::holds_alternative<Sz4>(reg.sizes[static_cast<size_t>(ir)])) {
+      auto const Fshape = std::get<Sz4>(reg.sizes[static_cast<size_t>(ir)]);
       Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
       Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
       Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
-    } else if (std::holds_alternative<Sz5>(reg.sizes[ir])) {
-      auto const Fshape = std::get<Sz5>(reg.sizes[ir]);
+    } else if (std::holds_alternative<Sz5>(reg.sizes[static_cast<size_t>(ir)])) {
+      auto const Fshape = std::get<Sz5>(reg.sizes[static_cast<size_t>(ir)]);
       Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
       Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
       Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
@@ -75,21 +74,21 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  Cropper out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
-  Sz3     outSz = out_cropper.size();
-  Cx5     out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
-  if (coreOpts.residual) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
+  TOps::Crop<Cx, 4> oc(recon->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), recon->ishape[0]));
+  Cx5               out(AddBack(oc.oshape, nV)), resid;
+  if (coreOpts.residual) { resid.resize(out.dimensions()); }
+
   float const scale = Scaling(rlsqOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
 
   for (Index iv = 0; iv < nV; iv++) {
     auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get()));
-    auto xm = Tensorfy(x, shape);
-    out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
+    auto xm = Tensorfy(x, recon->ishape);
+    out.chip<4>(iv) = oc.forward(xm) / out.chip<4>(iv).constant(scale);
     if (coreOpts.residual) {
       noncart.chip<4>(iv) -= recon->forward(xm);
       xm = recon->adjoint(noncart.chip<4>(iv));
-      resid.chip<4>(iv) = out_cropper.crop4(xm) / resid.chip<4>(iv).constant(scale);
+      resid.chip<4>(iv) = oc.forward(xm) / resid.chip<4>(iv).constant(scale);
     }
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());

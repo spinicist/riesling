@@ -168,7 +168,7 @@ inline void forwardTask(Mapping<ND> const                                       
       auto const                     o = map.offset[si];
       Eigen::Tensor<Scalar, 1> const bs =
         basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
-      y.template chip<2>(n.trace).template chip<1>(n.sample) += kernel->gather(c, o, subgrid.minCorner, bs, map.cartDims, sx);
+      y.template chip<2>(n.trace).template chip<1>(n.sample) += kernel->gather(c, o, subgrid.minCorner, bs, sx);
     }
   };
   Threads::For(grid_task, map.subgrids.size());

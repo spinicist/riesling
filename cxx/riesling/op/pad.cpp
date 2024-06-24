@@ -23,7 +23,6 @@ void main_pad(args::Subparser &parser)
   Sz6        inDims = inImages.dimensions();
   Sz6        outDims(inDims[0], inDims[1], padDims.Get()[0], padDims.Get()[1], padDims.Get()[2], inDims[5]);
   Cx6        outImages(outDims);
-  auto const start = Log::Now();
 
   if (fwd) {
     TOps::Pad<Cx, 6> pad(inDims, outDims);

@@ -3,7 +3,6 @@ if(${BUILD_TESTS})
     find_package(Catch2 CONFIG REQUIRED)
     add_executable(riesling-tests
         algo.cpp
-        cropper.cpp
         decomp.cpp
         fft1.cpp
         fft3.cpp

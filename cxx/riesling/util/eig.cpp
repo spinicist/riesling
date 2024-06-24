@@ -1,7 +1,6 @@
 #include "types.hpp"
 
 #include "algo/eig.hpp"
-#include "cropper.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "parse_args.hpp"

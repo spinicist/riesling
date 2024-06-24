@@ -21,7 +21,7 @@ struct NearestNeighbour final : FixedKernel<Scalar, N, 1>
     Log::Print("Nearest-neighbour FixedKernel");
   }
 
-  auto operator()(Point const p) const -> Tensor
+  auto operator()(Point const ) const -> Tensor
   {
     Tensor z;
     z.setConstant(1.f);

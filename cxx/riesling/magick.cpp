@@ -79,7 +79,7 @@ auto LiveSlice(Eigen::TensorMap<CxN<N> const> const &xt,
 }
 
 template <int N>
-void LiveDebug(std::string const &nameIn, Sz<N> const &shape, Cx const *data, std::array<std::string, N> const &dimNames)
+void LiveDebug(std::string const &, Sz<N> const &shape, Cx const *data, std::array<std::string, N> const &dimNames)
 {
   Magick::InitializeMagick(NULL);
   auto const xt = Eigen::TensorMap<CxN<N> const>(data, shape);

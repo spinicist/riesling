@@ -1,7 +1,6 @@
 #include "types.hpp"
 
 #include "algo/lad.hpp"
-#include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
@@ -43,26 +42,23 @@ void main_recon_lad(args::Subparser &parser)
 
   auto const basis = ReadBasis(coreOpts.basisFile.Get());
   auto const A = Recon::SENSE(coreOpts, gridOpts, senseOpts, traj, nS, basis, noncart);
-  auto const shape = A->ishape;
   auto const M = make_kspace_pre(traj, A->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
-
-  Cropper out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
-  Sz3     outSz = out_cropper.size();
 
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
 
-  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV), resid;
-  if (coreOpts.residual) { resid.resize(shape[0], outSz[0], outSz[1], outSz[2], nV); }
+  TOps::Crop<Cx, 4> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0]));
+  Cx5               out(AddBack(oc.oshape, nV)), resid;
+  if (coreOpts.residual) { resid.resize(out.dimensions()); }
 
   for (Index iv = 0; iv < nV; iv++) {
     auto x = lad.run(&noncart(0, 0, 0, 0, iv), ρ.Get());
-    auto xm = Tensorfy(x, shape);
-    out.chip<4>(iv) = out_cropper.crop4(xm);
+    auto xm = Tensorfy(x, A->ishape);
+    out.chip<4>(iv) = oc.forward(xm);
     if (coreOpts.residual) {
       noncart.chip<4>(iv) -= A->forward(xm);
       xm = A->adjoint(noncart.chip<4>(iv));
-      resid.chip<4>(iv) = out_cropper.crop4(xm);
+      resid.chip<4>(iv) = oc.forward(xm);
     }
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());

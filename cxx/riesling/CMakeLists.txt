@@ -50,7 +50,7 @@ add_executable(riesling
     util/phantom.cpp
     util/precon.cpp
     util/psf.cpp
-    util/rovir.cpp
+    # util/rovir.cpp
     util/version.cpp
 
     main.cpp

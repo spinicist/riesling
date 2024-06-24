@@ -2,7 +2,6 @@
 
 #include "algo/eig.hpp"
 #include "algo/pdhg.hpp"
-#include "cropper.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
@@ -53,15 +52,17 @@ void main_pdhg(args::Subparser &parser)
     };
 
   PDHG        pdhg(A, P, reg.regs, σin.Get(), τin.Get(), debug_x);
-  Cropper     out_cropper(LastN<3>(shape), traj.matrixForFOV(coreOpts.fov.Get()));
-  Sz3         outSz = out_cropper.size();
+  
+  TOps::Crop<Cx, 4> oc(recon->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), recon->ishape[0]));
+  Cx5               out(AddBack(oc.oshape, nV));
+
   float const scale = Scaling(scaling, recon, P, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
-  Cx5 out(shape[0], outSz[0], outSz[1], outSz[2], nV);
+
   for (Index iv = 0; iv < nV; iv++) {
     auto x = pdhg.run(&noncart(0, 0, 0, 0, iv), its.Get());
-    auto xm = Tensorfy(x, shape);
-    out.chip<4>(iv) = out_cropper.crop4(xm) / out.chip<4>(iv).constant(scale);
+    auto xm = Tensorfy(x, recon->ishape);
+    out.chip<4>(iv) = oc.forward(xm) / out.chip<4>(iv).constant(scale);
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   rl::Log::Print("Finished {}", parser.GetCommand().Name());

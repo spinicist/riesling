@@ -22,7 +22,7 @@ struct Settings
   float tSamp = 10e-6, alpha = 1.f, ascale = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, Tprep = 0, Trec = 0;
 };
 
-auto T1β1β2ω(Index const nS, std::vector<float> lo, std::vector<float> hi, std::vector<float> const spacing) -> Eigen::ArrayXXf
+auto T1β1β2ω(std::vector<float> lo, std::vector<float> hi, std::vector<float> const spacing) -> Eigen::ArrayXXf
 {
   Parameters::CheckSizes(4, {0.6f, -1.f, -1.f, -1000.f}, {4.3f, 1.f, 1.f, 1000.f}, lo, hi);
   if (spacing.size() != 4) { Log::Fail("Spacing had wrong number of elements"); }
@@ -141,7 +141,6 @@ auto Simulate(Settings const settings, Eigen::ArrayXf const &p) -> Cx2
 }
 
 auto Run(Settings const                 &s,
-         Index const                     nsamp,
          std::vector<std::vector<float>> los,
          std::vector<std::vector<float>> his,
          std::vector<float>              spacings)
@@ -151,11 +150,11 @@ auto Run(Settings const                 &s,
 
   Index const     nP = 4;
   Eigen::ArrayXXf parameters(nP, 0);
-  Log::Print("nsamp {} los {} parameters {} {}", nsamp, los.size(), parameters.rows(), parameters.cols());
+  Log::Print("los {} parameters {} {}", los.size(), parameters.rows(), parameters.cols());
   parameters.setZero();
   for (size_t ii = 0; ii < los.size(); ii++) {
     Log::Print("Parameter set {}/{}. Low {} High {}", ii + 1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
-    auto p = T1β1β2ω(nsamp, los[ii], his[ii], spacings);
+    auto p = T1β1β2ω(los[ii], his[ii], spacings);
     parameters.conservativeResize(4, parameters.cols() + p.cols());
     parameters.rightCols(p.cols()) = p;
   }
@@ -189,7 +188,6 @@ void main_basis_sim2(args::Subparser &parser)
   args::ValueFlag<float> Tprep(parser, "TPREP", "Time from prep to segment start", {"tprep"}, 0.f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
 
-  args::ValueFlag<Index> samples(parser, "S", "Number of samples (1)", {"samples", 's'}, 1);
   args::ValueFlag<Index> gap(parser, "G", "Gap before samples begin", {"gap", 'g'}, 0);
   args::ValueFlag<Index> tSamp(parser, "T", "Sample time (10μs)", {"tsamp", 't'}, 10);
 
@@ -229,7 +227,7 @@ void main_basis_sim2(args::Subparser &parser)
   };
 
   Log::Print("nsamp {}", nsamp.Get());
-  auto                      dall = Run(settings, nsamp.Get(), pLo.Get(), pHi.Get(), spacings.Get());
+  auto                      dall = Run(settings, pLo.Get(), pHi.Get(), spacings.Get());
   Eigen::ArrayXXcf::MapType dmap(dall.data(), dall.dimension(0) * dall.dimension(1), dall.dimension(2));
 
   if (normalize) { dmap = dmap.colwise().normalized(); }

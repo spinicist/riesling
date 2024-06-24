@@ -30,7 +30,7 @@ struct NameIndexReader
 
 struct GravityReader
 {
-  void operator()(std::string const &name, std::string const &value, Magick::GravityType &g)
+  void operator()(std::string const &, std::string const &value, Magick::GravityType &g)
   {
     if (value == "South") {
       g = Magick::GravityType::SouthGravity;
@@ -172,7 +172,7 @@ auto DoMontage(std::vector<rl::RGBImage> &slices, float const rotate, Index cons
     return tmp;
   });
 
-  auto const cols = slices.size() < colsIn ? slices.size() : colsIn;
+  auto const cols = (Index)slices.size() < colsIn ? (Index)slices.size() : colsIn;
   auto const rows = (Index)std::ceil(slices.size() / (float)colsIn);
   rl::Log::Print("Rows {} Cols {}", rows, cols);
 
@@ -266,7 +266,7 @@ void Decorate(std::string const &title, Magick::GravityType const gravity, Magic
   montage.annotate(title, gravity);
 }
 
-void Printify(std::string const &oname, float const printPixWidth, bool const interp, Magick::Image &img)
+void Printify(float const printPixWidth, bool const interp, Magick::Image &img)
 {
   float const scale = printPixWidth / (float)img.size().width();
   if (interp) {
@@ -323,7 +323,7 @@ void main_montage(args::Subparser &parser)
   auto colorized = Colorize(slices, comp.Get(), winMax, ɣ.Get());
   auto montage = DoMontage(colorized, rotate.Get(), cols.Get());
   rl::Log::Print("Image size: {} {}", montage.size().width(), montage.size().height());
-  if (oname) { Printify(oname.Get(), width.Get(), interp, montage); }
+  if (oname) { Printify(width.Get(), interp, montage); }
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
   if (cbar) { Colorbar(comp.Get(), winMax, ɣ.Get(), montage); }

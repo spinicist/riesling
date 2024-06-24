@@ -1,7 +1,7 @@
 #pragma once
 
-#include "subgrid.hpp"
 #include "info.hpp"
+#include "subgrid.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
 
@@ -13,8 +13,7 @@ struct NoncartesianIndex
   int16_t sample;
 };
 
-template <int NDims>
-struct Mapping
+template <int NDims> struct Mapping
 {
   Mapping(TrajectoryN<NDims> const &t,
           float const               nomOSamp,
@@ -29,7 +28,7 @@ struct Mapping
   std::vector<std::array<int16_t, NDims>>    cart;
   std::vector<NoncartesianIndex>             noncart;
   std::vector<Eigen::Array<float, NDims, 1>> offset;
-  std::vector<Subgrid<NDims>>                 subgrids;
+  std::vector<Subgrid<NDims>>                subgrids;
   std::vector<int32_t>                       sortedIndices;
 };
 

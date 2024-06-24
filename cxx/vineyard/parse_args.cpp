@@ -72,7 +72,7 @@ template struct VectorReader<Index>;
 template <int N>
 void SzReader<N>::operator()(std::string const &name, std::string const &value, Sz<N> &sz)
 {
-  Index ind = 0;
+  size_t ind = 0;
   if (auto result = scn::scan<Index>(value, "{}")) {
     sz[ind] = result->value();
     for (ind = 1; ind < N; ind++) {

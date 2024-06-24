@@ -8,7 +8,8 @@ Op<S>::Op(std::string const &n)
 {
 }
 
-template <typename S> void Op<S>::inverse(CMap const &y, Map &x) const {
+template <typename S> void Op<S>::inverse(CMap const &, Map &) const
+{
   Log::Fail("Op {} does not have an inverse defined", name);
 }
 
@@ -135,7 +136,7 @@ template <typename S> auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>
   Log::Fail("Op {} does not have an inverse", name);
 }
 
-template <typename S> auto Op<S>::inverse(float const bias, float const scale) const -> std::shared_ptr<Op<S>>
+template <typename S> auto Op<S>::inverse(float const, float const) const -> std::shared_ptr<Op<S>>
 {
   Log::Fail("Op {} does not have an inverse", name);
 }

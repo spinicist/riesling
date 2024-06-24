@@ -12,22 +12,21 @@
 namespace rl {
 
 // Helper function to convert a floating-point vector-like expression to integer values
-template <typename T>
-inline decltype(auto) nearby(T &&x)
+template <typename T> inline decltype(auto) nearby(T &&x)
 {
   return x.array().unaryExpr([](float const &e) { return (Index)std::nearbyint(e); });
 }
 
 // Helper function to sort the cartesian indices
-template <size_t N>
-std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
+template <size_t N> std::vector<int32_t> sort(std::vector<std::array<int16_t, N>> const &cart)
 {
   std::vector<int32_t> sorted(cart.size());
   std::iota(sorted.begin(), sorted.end(), 0);
-  std::sort(sorted.begin(), sorted.end(), [&](Index const a, Index const b) {
+  std::sort(sorted.begin(), sorted.end(), [&](size_t const a, size_t const b) {
     auto const &ac = cart[a];
     auto const &bc = cart[b];
-    for (int ii = N - 1; ii > -1; ii--) {
+    for (size_t fi = 0; fi < N; fi++) {
+      size_t ii = N - 1 - fi;
       if (ac[ii] < bc[ii]) {
         return true;
       } else if (ac[ii] > bc[ii]) {
@@ -51,10 +50,10 @@ Mapping<NDims>::Mapping(
   noncartDims = Sz2{traj.nSamples(), traj.nTraces()};
 
   Sz<NDims> nB;
-  for (int ii = 0; ii < NDims; ii++) {
-    nB[ii] = std::ceil(cartDims[ii] / float(subgridSz));
+  for (size_t ii = 0; ii < NDims; ii++) {
+    nB[ii] = (Index)std::ceil(cartDims[ii] / float(subgridSz));
   }
-  subgrids.reserve(Product(nB));
+  subgrids.reserve(static_cast<size_t>(Product(nB)));
 
   if constexpr (NDims == 3) {
     for (Index iz = 0; iz < nB[2]; iz++) {
@@ -62,10 +61,10 @@ Mapping<NDims>::Mapping(
         for (Index ix = 0; ix < nB[0]; ix++) {
           subgrids.push_back(
             Subgrid<NDims>{.gridSize = cartDims,
-                          .minCorner = Sz3{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2), iz * subgridSz - (kW / 2)},
-                          .maxCorner = Sz3{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
-                                           std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2),
-                                           std::min((iz + 1) * subgridSz, cartDims[2]) + (kW / 2)}});
+                           .minCorner = Sz3{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2), iz * subgridSz - (kW / 2)},
+                           .maxCorner = Sz3{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
+                                            std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2),
+                                            std::min((iz + 1) * subgridSz, cartDims[2]) + (kW / 2)}});
         }
       }
     }
@@ -73,16 +72,16 @@ Mapping<NDims>::Mapping(
     for (Index iy = 0; iy < nB[1]; iy++) {
       for (Index ix = 0; ix < nB[0]; ix++) {
         subgrids.push_back(Subgrid<NDims>{.gridSize = cartDims,
-                                        .minCorner = Sz2{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2)},
-                                        .maxCorner = Sz2{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
-                                                         std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2)}});
+                                          .minCorner = Sz2{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2)},
+                                          .maxCorner = Sz2{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
+                                                           std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2)}});
       }
     }
   } else {
     for (Index ix = 0; ix < nB[0]; ix++) {
       subgrids.push_back(Subgrid<NDims>{.gridSize = cartDims,
-                                      .minCorner = Sz1{ix * subgridSz - (kW / 2)},
-                                      .maxCorner = Sz1{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2)}});
+                                        .minCorner = Sz1{ix * subgridSz - (kW / 2)},
+                                        .maxCorner = Sz1{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2)}});
     }
   }
 
@@ -98,15 +97,15 @@ Mapping<NDims>::Mapping(
         continue;
       }
       Eigen::Array<float, NDims, 1> xyz;
-      for (int ii = 0; ii < NDims; ii++) {
-        xyz[ii] = p[ii] * osamp + center[ii];
+      for (Index ii = 0; ii < NDims; ii++) {
+        xyz[ii] = p[ii] * osamp + center[(size_t)ii];
       }
       auto const gp = nearby(xyz);
       auto const off = xyz - gp.template cast<float>();
 
       std::array<int16_t, NDims> ijk;
       for (int ii = 0; ii < NDims; ii++) {
-        ijk[ii] = Wrap(gp[ii], cartDims[ii]);
+        ijk[(size_t)ii] = static_cast<int16_t>(Wrap(gp[ii], cartDims[(size_t)ii]));
       }
       cart.push_back(ijk);
       offset.push_back(off);
@@ -114,10 +113,10 @@ Mapping<NDims>::Mapping(
 
       // Calculate subgrid
       Index ib = 0;
-      for (int ii = NDims - 1; ii >= 0; ii--) {
-        ib = ib * nB[ii] + (ijk[ii] / subgridSz);
+      for (Index ii = NDims - 1; ii >= 0; ii--) {
+        ib = ib * nB[ii] + ((Index)ijk[ii] / subgridSz);
       }
-      subgrids[ib].indices.push_back(index);
+      subgrids[(size_t)ib].indices.push_back(index);
       index++;
     }
   }
@@ -128,19 +127,19 @@ Mapping<NDims>::Mapping(
     if (subgrid.count() > splitSize) {
       for (auto const indexChunk : tl::views::chunk(subgrid.indices, splitSize)) {
         chunked.push_back(Subgrid<NDims>{.gridSize = subgrid.gridSize,
-                                        .minCorner = subgrid.minCorner,
-                                        .maxCorner = subgrid.maxCorner,
-                                        .indices = indexChunk | tl::to<std::vector<int32_t>>()});
+                                         .minCorner = subgrid.minCorner,
+                                         .maxCorner = subgrid.maxCorner,
+                                         .indices = indexChunk | tl::to<std::vector<int32_t>>()});
       }
       subgrid.indices.clear();
     }
   }
 
-  Index const eraseCount = std::erase_if(subgrids, [](Subgrid<NDims> const &b) { return b.empty(); });
+  auto const eraseCount = std::erase_if(subgrids, [](Subgrid<NDims> const &b) { return b.empty(); });
   subgrids.insert(subgrids.end(), chunked.begin(), chunked.end());
   Log::Print("Added {} extra, removed {} empty subgrids, {} remaining", chunked.size(), eraseCount, subgrids.size());
-  Log::Print("Total points {}", std::accumulate(subgrids.begin(), subgrids.end(), 0L,
-                                                [](Index sum, Subgrid<NDims> const &b) { return b.indices.size() + sum; }));
+  Log::Print("Total points {}", std::accumulate(subgrids.begin(), subgrids.end(), 0UL,
+                                                [](size_t sum, Subgrid<NDims> const &b) { return b.indices.size() + sum; }));
   sortedIndices = sort(cart);
 }
 
