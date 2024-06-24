@@ -22,34 +22,39 @@ struct Settings
   float tSamp = 10e-6, alpha = 1.f, ascale = 1.f, TR = 2.e-3f, Tramp = 10.e-3f, Tssi = 10.e-3f, Tprep = 0, Trec = 0;
 };
 
-auto T1β1β2ω(Index const nS, std::vector<float> lo, std::vector<float> hi) -> Eigen::ArrayXXf
+auto T1β1β2ω(Index const nS, std::vector<float> lo, std::vector<float> hi, std::vector<float> const spacing) -> Eigen::ArrayXXf
 {
   Parameters::CheckSizes(4, {0.6f, -1.f, -1.f, -1000.f}, {4.3f, 1.f, 1.f, 1000.f}, lo, hi);
+  if (spacing.size() != 4) { Log::Fail("Spacing had wrong number of elements"); }
   float const R1lo = 1.f / lo[0];
   float const R1hi = 1.f / hi[0];
+  float const R1Δ = spacing[0];
   float const β1lo = lo[1];
   float const β1hi = hi[1];
+  float const β1Δ = spacing[1];
   float const β2lo = lo[2];
   float const β2hi = hi[2];
+  float const β2Δ = spacing[2];
   float const ωlo = lo[3] * 2.f * M_PI;
   float const ωhi = hi[3] * 2.f * M_PI;
-  Index const nω = 10;
-  Index const nβ = 2;
-  Index const nT = std::floor((float)nS / nβ / nβ / nω);
-  if (nT == 0) { Log::Fail("nT was zero"); }
-  auto const R1s = Eigen::ArrayXf::LinSpaced(nT, R1lo, R1hi);
-  auto const β1s = Eigen::ArrayXf::LinSpaced(nβ, β1lo, β1hi);
-  auto const β2s = Eigen::ArrayXf::LinSpaced(nβ, β2lo, β2hi);
-  auto const ωs = Eigen::ArrayXf::LinSpaced(nω, ωlo, ωhi);
-  Log::Print("nT {} R1 {}:{} β1 {}:{} β2 {}:{} ω {}:{}", nT, R1lo, R1hi, β1lo, β1hi, β2lo, β2hi, ωlo, ωhi);
+  float const ωΔ = spacing[3];
+  Index const nω = std::max<Index>(1, (ωhi - ωlo) / ωΔ);
+  Index const nβ1 = std::max<Index>(1, (β1hi - β1lo) / β1Δ);
+  Index const nβ2 = std::max<Index>(1, (β2hi - β2lo) / β2Δ);
+  Index const nR1 = std::max<Index>(1, (R1hi - R1lo) / R1Δ);
+  auto const  R1s = Eigen::ArrayXf::LinSpaced(nR1, R1lo, R1hi);
+  auto const  β1s = Eigen::ArrayXf::LinSpaced(nβ1, β1lo, β1hi);
+  auto const  β2s = Eigen::ArrayXf::LinSpaced(nβ2, β2lo, β2hi);
+  auto const  ωs = Eigen::ArrayXf::LinSpaced(nω, ωlo, ωhi);
+  Log::Print("R1 {} {}:{} β1 {} {}:{} β2 {} {}:{} ω {} {}:{}", nR1, R1lo, R1hi, nβ1, β1lo, β1hi, nβ2, β2lo, β2hi, nω, ωlo, ωhi);
 
-  Eigen::ArrayXXf p(4, nT * nβ * nβ * nω);
+  Eigen::ArrayXXf p(4, nR1 * nβ1 * nβ2 * nω);
 
   Index ind = 0;
   for (Index iω = 0; iω < nω; iω++) {
-    for (Index ib2 = 0; ib2 < nβ; ib2++) {
-      for (Index ib1 = 0; ib1 < nβ; ib1++) {
-        for (Index i1 = 0; i1 < nT; i1++) {
+    for (Index ib2 = 0; ib2 < nβ1; ib2++) {
+      for (Index ib1 = 0; ib1 < nβ2; ib1++) {
+        for (Index i1 = 0; i1 < nR1; i1++) {
           p(0, ind) = 1.f / R1s(i1);
           p(1, ind) = β1s(ib1);
           p(2, ind) = β2s(ib2);
@@ -135,28 +140,30 @@ auto Simulate(Settings const settings, Eigen::ArrayXf const &p) -> Cx2
   return phase.contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
-auto Run(Settings const &s, Index const nsamp, std::vector<std::vector<float>> los, std::vector<std::vector<float>> his)
+auto Run(Settings const                 &s,
+         Index const                     nsamp,
+         std::vector<std::vector<float>> los,
+         std::vector<std::vector<float>> his,
+         std::vector<float>              spacings)
 {
   if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
   if (los.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
 
   Index const     nP = 4;
-  Eigen::ArrayXXf parameters(nP, nsamp * los.size());
+  Eigen::ArrayXXf parameters(nP, 0);
   Log::Print("nsamp {} los {} parameters {} {}", nsamp, los.size(), parameters.rows(), parameters.cols());
   parameters.setZero();
-  Index totalP = 0;
   for (size_t ii = 0; ii < los.size(); ii++) {
     Log::Print("Parameter set {}/{}. Low {} High {}", ii + 1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
-    auto p = T1β1β2ω(nsamp, los[ii], his[ii]);
-    parameters.middleCols(totalP, p.cols()) = p;
-    totalP += p.cols();
+    auto p = T1β1β2ω(nsamp, los[ii], his[ii], spacings);
+    parameters.conservativeResize(4, parameters.cols() + p.cols());
+    parameters.rightCols(p.cols()) = p;
   }
-  parameters.conservativeResize(nP, totalP);
   Log::Print("Parameters {} {}", parameters.rows(), parameters.cols());
-  Cx3        dynamics(s.samplesPerSpoke, s.spokesPerSeg * s.segsKeep, totalP);
+  Cx3        dynamics(s.samplesPerSpoke, s.spokesPerSeg * s.segsKeep, parameters.cols());
   auto const start = Log::Now();
   auto       task = [&](Index const ii) { dynamics.chip<2>(ii) = Simulate(s, parameters.col(ii)); };
-  Threads::For(task, totalP, "Simulation");
+  Threads::For(task, parameters.cols(), "Simulation");
   Log::Print("Simulation took {}", Log::ToNow(start));
   return dynamics;
 }
@@ -182,17 +189,19 @@ void main_basis_sim2(args::Subparser &parser)
   args::ValueFlag<float> Tprep(parser, "TPREP", "Time from prep to segment start", {"tprep"}, 0.f);
   args::ValueFlag<float> Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
 
-  args::ValueFlag<Index>     samples(parser, "S", "Number of samples (1)", {"samples", 's'}, 1);
-  args::ValueFlag<Index>     gap(parser, "G", "Gap before samples begin", {"gap", 'g'}, 0);
-  args::ValueFlag<Index>     tSamp(parser, "T", "Sample time (10μs)", {"tsamp", 't'}, 10);
-  args::ValueFlagList<float> freqs(parser, "F", "Fat frequencies (-450 Hz)", {"freq", 'f'}, {440.f});
+  args::ValueFlag<Index> samples(parser, "S", "Number of samples (1)", {"samples", 's'}, 1);
+  args::ValueFlag<Index> gap(parser, "G", "Gap before samples begin", {"gap", 'g'}, 0);
+  args::ValueFlag<Index> tSamp(parser, "T", "Sample time (10μs)", {"tsamp", 't'}, 10);
 
+  args::ValueFlag<std::vector<float>, VectorReader<float>> spacings(parser, "S", "Parameter spacings", {"spacing"},
+                                                                    {1.f, 1.f, 1.f, 1.f});
   args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(parser, "LO", "Low values for parameters",
                                                                                 {"lo"});
   args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pHi(parser, "HI", "High values for parameters",
                                                                                 {"hi"});
 
   args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 128);
+  args::Flag             svd(parser, "S", "Do SVD", {"svd"});
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 4);
   args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
@@ -220,14 +229,21 @@ void main_basis_sim2(args::Subparser &parser)
   };
 
   Log::Print("nsamp {}", nsamp.Get());
-  auto const                     dall = Run(settings, nsamp.Get(), pLo.Get(), pHi.Get());
-  Eigen::ArrayXXcf::ConstMapType dmap(dall.data(), dall.dimension(0) * dall.dimension(1), dall.dimension(2));
-  Log::Print("dmap {} {}", dmap.rows(), dmap.cols());
-  SVDBasis<Cx> const             b(dmap, nBasis.Get(), demean, rotate, normalize);
-  HD5::Writer                    writer(oname.Get());
-  Log::Print("dall {} basis {} {}", dall.dimensions(), b.basis.rows(), b.basis.cols());
-  writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), dall.dimension(0), dall.dimension(1)}, b.basis.data(),
-                     HD5::Dims::Basis);
+  auto                      dall = Run(settings, nsamp.Get(), pLo.Get(), pHi.Get(), spacings.Get());
+  Eigen::ArrayXXcf::MapType dmap(dall.data(), dall.dimension(0) * dall.dimension(1), dall.dimension(2));
+
+  if (normalize) { dmap = dmap.colwise().normalized(); }
+
+  HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), {"sample", "trace", "p"});
+  if (svd) {
+    SVDBasis<Cx> const b(dmap, nBasis.Get(), demean, rotate, false);
+    writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), dall.dimension(0), dall.dimension(1)}, b.basis.data(),
+                       HD5::Dims::Basis);
+  } else {
+    Cx3 const shuffled = dall.shuffle(Sz3{2, 0, 1});
+    writer.writeTensor(HD5::Keys::Basis, shuffled.dimensions(), shuffled.data(), HD5::Dims::Basis);
+  }
+
   Log::Print("Finished {}", parser.GetCommand().Name());
 }
