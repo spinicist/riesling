@@ -13,11 +13,6 @@ GenPrep::GenPrep(Settings const &s)
 
 auto GenPrep::length() const -> Index { return (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep; }
 
-auto GenPrep::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
-{
-  return Parameters::T1β(nsamp, lo, hi);
-}
-
 auto GenPrep::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   float const    T1 = p(0);
@@ -81,11 +76,6 @@ GenPrep2::GenPrep2(Settings const &s)
 }
 
 auto GenPrep2::length() const -> Index { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
-
-auto GenPrep2::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
-{
-  return Parameters::T1β1β2(nsamp, lo, hi);
-}
 
 auto GenPrep2::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {

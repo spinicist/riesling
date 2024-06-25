@@ -14,11 +14,6 @@ T2FLAIR::T2FLAIR(Settings const &s)
 
 auto T2FLAIR::length() const -> Index { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
 
-auto T2FLAIR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
-{
-  return Parameters::T1T2η(nsamp, lo, hi);
-}
-
 auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   float const    R1 = 1.f / p(0);

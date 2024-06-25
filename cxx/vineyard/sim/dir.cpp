@@ -19,11 +19,6 @@ DIR::DIR(Settings const s)
 
 Index DIR::length() const { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
 
-Eigen::ArrayXXf DIR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const
-{
-  return Parameters::T1T2η(nsamp, lo, hi);
-}
-
 Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
 {
   float const    T1 = p(0);

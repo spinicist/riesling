@@ -13,7 +13,6 @@ struct T2Prep final : Sequence
   T2Prep(Settings const &s);
 
   auto length() const -> Index;
-  auto parameters(Index const nsamp, std::vector<float> const lo, std::vector<float> const hi) const -> Eigen::ArrayXXf;
   auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
 };
 

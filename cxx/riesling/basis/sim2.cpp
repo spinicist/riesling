@@ -24,7 +24,6 @@ struct Settings
 
 auto T1β1β2ω(std::vector<float> lo, std::vector<float> hi, std::vector<float> const spacing) -> Eigen::ArrayXXf
 {
-  Parameters::CheckSizes(4, {0.6f, -1.f, -1.f, -1000.f}, {4.3f, 1.f, 1.f, 1000.f}, lo, hi);
   if (spacing.size() != 4) { Log::Fail("Spacing had wrong number of elements"); }
   float const R1lo = 1.f / lo[0];
   float const R1hi = 1.f / hi[0];

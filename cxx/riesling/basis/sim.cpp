@@ -15,27 +15,27 @@
 using namespace rl;
 
 template <typename T>
-auto Run(rl::Settings const &s, Index const nsamp, std::vector<std::vector<float>> los, std::vector<std::vector<float>> his)
+auto Run(rl::Settings const                &s,
+         std::vector<Eigen::ArrayXf>        los,
+         std::vector<Eigen::ArrayXf>        his,
+         std::vector<Eigen::ArrayXf> const &Δs)
 {
   if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
   if (los.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
 
   T               simulator{s};
   Index const     nP = T::nParameters;
-  Eigen::ArrayXXf parameters(nP, nsamp * los.size());
-  parameters.setZero();
-  Index totalP = 0;
+  Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
     Log::Print("Parameter set {}/{}. Low {} High {}", ii + 1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
-    auto p = simulator.parameters(nsamp, los[ii], his[ii]);
-    parameters.middleCols(totalP, p.cols()) = p;
-    totalP += p.cols();
+    auto p = ParameterGrid(nP, los[ii], his[ii], Δs[ii]);
+    parameters.conservativeResize(nP, parameters.cols() + p.cols());
+    parameters.rightCols(p.cols()) = p;
   }
-  parameters.conservativeResize(nP, totalP);
-  Eigen::ArrayXXf dynamics(simulator.length(), totalP);
+  Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
   auto const      start = Log::Now();
   auto            task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
-  Threads::For(task, totalP, "Simulation");
+  Threads::For(task, parameters.cols(), "Simulation");
   Log::Print("Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
 }
@@ -75,11 +75,9 @@ void main_basis_sim(args::Subparser &parser)
   args::ValueFlag<float>                Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float>                te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
 
-  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pLo(parser, "LO", "Low values for parameters",
-                                                                                {"lo"});
-  args::ValueFlagList<std::vector<float>, std::vector, VectorReader<float>> pHi(parser, "HI", "High values for parameters",
-                                                                                {"hi"});
-  args::ValueFlag<Index> nsamp(parser, "N", "Number of samples per tissue (default 2048)", {"nsamp"}, 2048);
+  args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pLo(parser, "LO", "Low values for parameters", {"lo"});
+  args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
+  args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pΔ(parser, "Δ", "Grid Δ for parameters", {"delta"});
   args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
   args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
   args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
@@ -105,13 +103,13 @@ void main_basis_sim(args::Subparser &parser)
 
   Eigen::ArrayXXf pars, dyns;
   switch (seq.Get()) {
-  case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::GenPrep: std::tie(pars, dyns) = Run<rl::GenPrep>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
-  case Sequences::GenPrep2: std::tie(pars, dyns) = Run<rl::GenPrep2>(settings, nsamp.Get(), pLo.Get(), pHi.Get()); break;
+  case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::GenPrep: std::tie(pars, dyns) = Run<rl::GenPrep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::GenPrep2: std::tie(pars, dyns) = Run<rl::GenPrep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   }
 
   SVDBasis const b(dyns, nBasis.Get(), demean, rotate, normalize);

@@ -11,11 +11,6 @@ IR::IR(Settings const &s)
 
 auto IR::length() const -> Index { return (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep; }
 
-auto IR::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
-{
-  return Parameters::T1(nsamp, lo, hi);
-}
-
 auto IR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
   float const    T1 = p(0);
@@ -80,11 +75,6 @@ IR2::IR2(Settings const &s)
 }
 
 auto IR2::length() const -> Index { return (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep; }
-
-auto IR2::parameters(Index const nsamp, std::vector<float> lo, std::vector<float> hi) const -> Eigen::ArrayXXf
-{
-  return Parameters::T1B1(nsamp, lo, hi);
-}
 
 auto IR2::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
