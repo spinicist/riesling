@@ -33,7 +33,7 @@ auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   float const     erec = exp(-R1 * settings.Trec);
   E1 << e1, 1.f - e1, 0.f, 1.f;
   Einv << einv, 1.f - einv, 0.f, 1.f;
-  E2 << e2, 0.f, 0.f, 1.f;
+  E2 << -e2, 0.f, 0.f, 1.f;
   Eramp << eramp, 1.f - eramp, 0.f, 1.f;
   Essi << essi, 1.f - essi, 0.f, 1.f;
   Erec << erec, 1.f - erec, 0.f, 1.f;
