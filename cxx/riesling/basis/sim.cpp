@@ -1,15 +1,16 @@
 #include "types.hpp"
 
+#include "algo/decomp.hpp"
 #include "basis/svd.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sim/dir.hpp"
-#include "sim/genprep.hpp"
-#include "sim/ir.hpp"
+// #include "sim/genprep.hpp"
+// #include "sim/ir.hpp"
 #include "sim/parameter.hpp"
 #include "sim/t2flair.hpp"
-#include "sim/t2prep.hpp"
+// #include "sim/t2prep.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -32,9 +33,9 @@ auto Run(rl::Settings const                &s,
     parameters.conservativeResize(nP, parameters.cols() + p.cols());
     parameters.rightCols(p.cols()) = p;
   }
-  Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
-  auto const      start = Log::Now();
-  auto            task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
+  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, s.spokesPerSeg * s.segsKeep);
+  auto const start = Log::Now();
+  auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = simulator.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
   Log::Print("Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
@@ -42,18 +43,20 @@ auto Run(rl::Settings const                &s,
 
 enum struct Sequences
 {
-  IR = 0,
-  IR2,
+  // IR = 0,
+  // IR2,
   DIR,
-  T2Prep,
+  // T2Prep,
   T2FLAIR,
-  GenPrep,
-  GenPrep2
+  // GenPrep,
+  // GenPrep2
 };
 
 std::unordered_map<std::string, Sequences> SequenceMap{
-  {"IR", Sequences::IR},           {"IR2", Sequences::IR2},      {"DIR", Sequences::DIR},       {"T2Prep", Sequences::T2Prep},
-  {"T2FLAIR", Sequences::T2FLAIR}, {"Prep", Sequences::GenPrep}, {"Prep2", Sequences::GenPrep2}};
+  // {"IR", Sequences::IR},           {"IR2", Sequences::IR2},
+  {"DIR", Sequences::DIR},        // {"T2Prep", Sequences::T2Prep},
+  {"T2FLAIR", Sequences::T2FLAIR} //, {"Prep", Sequences::GenPrep}, {"Prep2", Sequences::GenPrep2}
+};
 
 void main_basis_sim(args::Subparser &parser)
 {
@@ -78,17 +81,14 @@ void main_basis_sim(args::Subparser &parser)
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pLo(parser, "LO", "Low values for parameters", {"lo"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pΔ(parser, "Δ", "Grid Δ for parameters", {"delta"});
-  args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 0);
-  args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
-  args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
-  args::Flag             normalize(parser, "N", "Normalize dynamics before SVD", {"normalize"});
+  args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
 
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
 
   rl::Settings settings{.spokesPerSeg = sps.Get(),
                         .segsPerPrep = spp.Get(),
-                        .segsPerPrepKeep = sppk.Get(),
+                        .segsKeep = sppk.Get(),
                         .segsPrep2 = sp2.Get(),
                         .spokesSpoil = spoil.Get(),
                         .k0 = k0.Get(),
@@ -100,30 +100,39 @@ void main_basis_sim(args::Subparser &parser)
                         .TI = TI.Get(),
                         .Trec = Trec.Get(),
                         .TE = te.Get()};
+  Log::Print("{}", settings.format());
 
-  Eigen::ArrayXXf pars, dyns;
+  Eigen::ArrayXXf pars;
+  Cx3             dall;
   switch (seq.Get()) {
-  case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::DIR: std::tie(pars, dyns) = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2FLAIR: std::tie(pars, dyns) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::GenPrep: std::tie(pars, dyns) = Run<rl::GenPrep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::GenPrep2: std::tie(pars, dyns) = Run<rl::GenPrep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  // case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  // case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2FLAIR:
+    std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get());
+    break;
+    // case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+    // case Sequences::GenPrep: std::tie(pars, dyns) = Run<rl::GenPrep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+    // case Sequences::GenPrep2: std::tie(pars, dyns) = Run<rl::GenPrep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   }
+  Sz3 const                 dshape = dall.dimensions();
+  Index const               L = dshape[1] * dshape[2];
+  Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], L);
+  dmap.rowwise().normalize();
+  SVD<Cx> svd(dmap);
 
-  SVDBasis const b(dyns, nBasis.Get(), demean, rotate, normalize);
+  Cx3                       basis(nRetain.Get(), dshape[1], dshape[2]);
+  Eigen::ArrayXXcf::MapType bmap(basis.data(), nRetain.Get(), L);
+  bmap = svd.V.leftCols(nRetain.Get()).transpose() * std::sqrt(L);
 
-  Log::Print("Computing dictionary");
-  Eigen::MatrixXf dict = b.basis * dyns.matrix();
-  Eigen::ArrayXf  norm = dict.colwise().norm();
-  dict = dict.array().rowwise() / norm.transpose();
+  Log::Print("Computing projection");
+  Cx3                       proj(dshape);
+  Eigen::ArrayXXcf::MapType pmap(proj.data(), dshape[0], L);
+  pmap = bmap.transpose() * bmap * dmap.transpose();
 
   HD5::Writer writer(oname.Get());
-  writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
-  writer.writeMatrix(dict, HD5::Keys::Dictionary);
-  writer.writeMatrix(norm, HD5::Keys::Norm);
-  writer.writeMatrix(dyns, HD5::Keys::Dynamics);
-  writer.writeMatrix(pars, HD5::Keys::Parameters);
+  writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
+  writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
+  writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

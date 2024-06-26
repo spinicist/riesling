@@ -80,11 +80,12 @@ add_library(vineyard
     # sense/espirit.cpp
     sense/sense.cpp
     sim/parameter.cpp
+    sim/sequence.cpp
     sim/dir.cpp
-    sim/genprep.cpp
-    sim/ir.cpp
+    # sim/genprep.cpp
+    # sim/ir.cpp
     sim/t2flair.cpp
-    sim/t2prep.cpp
+    # sim/t2prep.cpp
 )
 target_include_directories(vineyard PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 target_link_libraries(vineyard PUBLIC

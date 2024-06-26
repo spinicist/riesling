@@ -11,7 +11,7 @@ struct T2FLAIR final : Sequence
   T2FLAIR(Settings const &s);
 
   auto length() const -> Index;
-  auto simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf;
+  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
 };
 
 } // namespace rl

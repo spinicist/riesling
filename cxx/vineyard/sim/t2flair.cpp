@@ -12,17 +12,17 @@ T2FLAIR::T2FLAIR(Settings const &s)
 {
 }
 
-auto T2FLAIR::length() const -> Index { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
+auto T2FLAIR::length() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
 
-auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
+auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  float const    R1 = 1.f / p(0);
-  float const    R2 = 1.f / p(1);
-  float const    η = p(2);
-  Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsPerPrepKeep);
+  if (p.size() != 3) { Log::Fail("Need 3 parameters T1 T2 Δf"); }
+  float const R1 = 1.f / p(0);
+  float const R2 = 1.f / p(1);
+  float const Δf = p(2);
 
   Eigen::Matrix2f inv;
-  inv << -η, 0.f, 0.f, 1.f;
+  inv << -1.f, 0.f, 0.f, 1.f;
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Er, Erec;
   float const     e1 = exp(-R1 * settings.TR);
@@ -51,31 +51,32 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
+  Cx1             s0(settings.spokesPerSeg * settings.segsKeep);
   for (Index ig = 0; ig < settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
-      dynamic(tp++) = Mz(0) * sina;
+      s0(tp++) = Mz(0) * sina;
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
   }
   Mz = Essi * Erec * E2 * Mz;
-  for (Index ig = 0; ig < (settings.segsPerPrepKeep - settings.segsPrep2); ig++) {
+  for (Index ig = 0; ig < (settings.segsKeep - settings.segsPrep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
-      dynamic(tp++) = Mz(0) * sina;
+      s0(tp++) = Mz(0) * sina;
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsPerPrepKeep) { Log::Fail("Programmer error"); }
-  return dynamic;
+  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
+  return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
 } // namespace rl

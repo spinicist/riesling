@@ -7,24 +7,17 @@ namespace rl {
 DIR::DIR(Settings const s)
   : Sequence{s}
 {
-  Log::Print(
-    "DIR simulation TI1 {} Trec {} ⍺ {} TR {} SPG {} TE {}",
-    settings.TI,
-    settings.Trec,
-    settings.alpha,
-    settings.TR,
-    settings.spokesPerSeg,
-    settings.TE);
+  Log::Print("DIR Sequence");
 }
 
-Index DIR::length() const { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
+Index DIR::length() const { return settings.spokesPerSeg * settings.segsKeep; }
 
-Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
+auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  float const    T1 = p(0);
-  float const    T2 = p(1);
-  float const    η = p(2);
-  Eigen::ArrayXf dynamic(length());
+  if (p.size() != 3) { Log::Fail("Need 3 parameters T1 T2 Δf"); }
+  float const T1 = p(0);
+  float const T2 = p(1);
+  float const Δf = p(2);
 
   Eigen::Matrix2f inv;
   inv << -1, 0.f, 0.f, 1.f;
@@ -40,7 +33,7 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
   float const     erec = exp(-R1 * settings.Trec);
   E1 << e1, 1.f - e1, 0.f, 1.f;
   Einv << einv, 1.f - einv, 0.f, 1.f;
-  E2 << -η * e2, 0.f, 0.f, 1.f;
+  E2 << e2, 0.f, 0.f, 1.f;
   Eramp << eramp, 1.f - eramp, 0.f, 1.f;
   Essi << essi, 1.f - essi, 0.f, 1.f;
   Erec << erec, 1.f - erec, 0.f, 1.f;
@@ -60,31 +53,32 @@ Eigen::ArrayXf DIR::simulate(Eigen::ArrayXf const &p) const
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
+  Cx1             s0(settings.spokesPerSeg * settings.segsKeep);
   for (Index ig = 0; ig < settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
-      dynamic(tp++) = Mz(0) * sina;
+      s0(tp++) = Mz(0) * sina;
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
   }
   Mz = E2 * Mz;
-  for (Index ig = 0; ig < settings.segsPerPrepKeep - settings.segsPrep2; ig++) {
+  for (Index ig = 0; ig < settings.segsKeep - settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
-      dynamic(tp++) = Mz(0) * sina;
+      s0(tp++) = Mz(0) * sina;
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsPerPrepKeep) { Log::Fail("Programmer error"); }
-  return dynamic;
+  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
+  return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
 } // namespace rl

@@ -75,7 +75,7 @@ GenPrep2::GenPrep2(Settings const &s)
 {
 }
 
-auto GenPrep2::length() const -> Index { return settings.spokesPerSeg * settings.segsPerPrepKeep; }
+auto GenPrep2::length() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
 
 auto GenPrep2::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
 {
@@ -87,7 +87,7 @@ auto GenPrep2::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
   prep1 << β1, 0.f, 0.f, 1.f;
   prep2 << β2, 0.f, 0.f, 1.f;
  
-  Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsPerPrepKeep);
+  Eigen::ArrayXf dynamic(settings.spokesPerSeg * settings.segsKeep);
 
   Eigen::Matrix2f E1, Eramp, Essi, Er, Erec;
   float const     e1 = exp(-R1 * settings.TR);
@@ -126,7 +126,7 @@ auto GenPrep2::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
     Mz = Essi * Eramp * Mz;
   }
   Mz = Essi * Erec * prep2 * Mz;
-  for (Index ig = 0; ig < (settings.segsPerPrepKeep - settings.segsPrep2); ig++) {
+  for (Index ig = 0; ig < (settings.segsKeep - settings.segsPrep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
       Mz = E1 * A * Mz;
@@ -137,7 +137,7 @@ auto GenPrep2::simulate(Eigen::ArrayXf const &p) const -> Eigen::ArrayXf
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsPerPrepKeep) { Log::Fail("Programmer error"); }
+  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
   return dynamic;
 }
 

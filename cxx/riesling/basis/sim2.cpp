@@ -34,30 +34,30 @@ auto T1β1β2ω(std::vector<float> lo, std::vector<float> hi, std::vector<float>
   float const β2lo = lo[2];
   float const β2hi = hi[2];
   float const β2Δ = spacing[2];
-  float const f0lo = lo[3];
-  float const f0hi = hi[3];
-  float const f0Δ = spacing[3];
-  Index const nf0 = std::max<Index>(1, (f0hi - f0lo) / f0Δ);
+  float const Δflo = lo[3];
+  float const Δfhi = hi[3];
+  float const ΔfΔ = spacing[3];
+  Index const nΔf = std::max<Index>(1, (Δfhi - Δflo) / ΔfΔ);
   Index const nβ1 = std::max<Index>(1, (β1hi - β1lo) / β1Δ);
   Index const nβ2 = std::max<Index>(1, (β2hi - β2lo) / β2Δ);
   Index const nR1 = std::max<Index>(1, (R1hi - R1lo) / R1Δ);
   auto const  R1s = Eigen::ArrayXf::LinSpaced(nR1, R1lo, R1hi);
   auto const  β1s = Eigen::ArrayXf::LinSpaced(nβ1, β1lo, β1hi);
   auto const  β2s = Eigen::ArrayXf::LinSpaced(nβ2, β2lo, β2hi);
-  auto const  f0s = Eigen::ArrayXf::LinSpaced(nf0, f0lo, f0hi);
-  Log::Print("R1 {} {}:{} β1 {} {}:{} β2 {} {}:{} f0 {} {}:{}", nR1, R1lo, R1hi, nβ1, β1lo, β1hi, nβ2, β2lo, β2hi, nf0, f0lo, f0hi);
+  auto const  Δfs = Eigen::ArrayXf::LinSpaced(nΔf, Δflo, Δfhi);
+  Log::Print("R1 {} {}:{} β1 {} {}:{} β2 {} {}:{} Δf {} {}:{}", nR1, R1lo, R1hi, nβ1, β1lo, β1hi, nβ2, β2lo, β2hi, nΔf, Δflo, Δfhi);
 
-  Eigen::ArrayXXf p(4, nR1 * nβ1 * nβ2 * nf0);
+  Eigen::ArrayXXf p(4, nR1 * nβ1 * nβ2 * nΔf);
 
   Index ind = 0;
-  for (Index if0 = 0; if0 < nf0; if0++) {
+  for (Index iΔf = 0; iΔf < nΔf; iΔf++) {
     for (Index ib2 = 0; ib2 < nβ1; ib2++) {
       for (Index ib1 = 0; ib1 < nβ2; ib1++) {
         for (Index i1 = 0; i1 < nR1; i1++) {
           p(0, ind) = 1.f / R1s(i1);
           p(1, ind) = β1s(ib1);
           p(2, ind) = β2s(ib2);
-          p(3, ind) = f0s(if0);
+          p(3, ind) = Δfs(iΔf);
           ind++;
         }
       }
@@ -71,7 +71,7 @@ auto Simulate(Settings const settings, Eigen::ArrayXf const &p) -> Cx2
   float const R1 = 1.f / p(0);
   float const β1 = p(1);
   float const β2 = p(2);
-  float const f0 = p(3);
+  float const Δf = p(3);
 
   Eigen::Matrix2f prep1, prep2;
   prep1 << β1, 0.f, 0.f, 1.f;
@@ -130,7 +130,7 @@ auto Simulate(Settings const settings, Eigen::ArrayXf const &p) -> Cx2
   // Now do offresonance
   Cx1                       phase(settings.samplesPerSpoke);
   Eigen::VectorXcf::MapType pm(phase.data(), settings.samplesPerSpoke);
-  float const               sampPhase = settings.tSamp * f0 * 2 * M_PI;
+  float const               sampPhase = settings.tSamp * Δf * 2 * M_PI;
   float const               startPhase = settings.samplesInGap * sampPhase;
   float const               endPhase = (settings.samplesInGap + settings.samplesPerSpoke - 1) * sampPhase;
   pm = Eigen::VectorXcf::LinSpaced(settings.samplesPerSpoke, startPhase * 1if, endPhase * 1if).array().exp();
