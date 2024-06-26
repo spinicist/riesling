@@ -26,4 +26,17 @@ struct Sequence
   auto offres(float const Δf) const -> Cx1;
 };
 
+enum struct Sequences
+{
+  // IR = 0,
+  // IR2,
+  DIR,
+  // T2Prep,
+  T2FLAIR,
+  // GenPrep,
+  // GenPrep2
+};
+
+extern std::unordered_map<std::string, Sequences> SequenceMap;
+
 } // namespace rl

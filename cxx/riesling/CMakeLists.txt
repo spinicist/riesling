@@ -5,7 +5,7 @@ add_executable(riesling
     basis/fourier.cpp
     basis/img.cpp
     basis/sim.cpp
-    basis/sim2.cpp
+    basis/svd.cpp
     basis/frames.cpp
     basis/ipop-basis.cpp
     basis/ipop-combine.cpp

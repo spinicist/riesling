@@ -17,7 +17,7 @@ auto ParameterGrid(Index const           nPar,
   Eigen::ArrayXi N(nPar);
   Index          nTotal = 1;
   for (int ii = 0; ii < nPar; ii++) {
-    N[ii] = 1 + (hi[ii] - lo[ii]) / delta[ii];
+    N[ii] = (delta[ii] > 0.f) ? 1 + (hi[ii] - lo[ii]) / delta[ii] : 1;
     nTotal *= N[ii];
   }
 
