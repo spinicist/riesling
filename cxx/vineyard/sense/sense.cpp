@@ -47,7 +47,6 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
 
   Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
-  Log::Print("shape1 {} channels {} shape{}", shape1, channels.dimensions(), shape);
   for (Index ii = 0; ii < 3; ii++) {
     if (shape[ii] > channels.dimension(ii + 2)) {
       Log::Fail("Requested SENSE FOV {} could not be satisfied with FOV {} and oversampling {}", opts.fov.Get().transpose(),

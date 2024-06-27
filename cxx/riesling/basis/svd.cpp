@@ -6,11 +6,11 @@
 #include "log.hpp"
 #include "parse_args.hpp"
 #include "sim/dir.hpp"
-// #include "sim/genprep.hpp"
-// #include "sim/ir.hpp"
+#include "sim/ir.hpp"
 #include "sim/parameter.hpp"
+#include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
-// #include "sim/t2prep.hpp"
+#include "sim/t2prep.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -94,15 +94,12 @@ void main_basis_svd(args::Subparser &parser)
   Eigen::ArrayXXf pars;
   Cx3             dall;
   switch (seq.Get()) {
-  // case Sequences::IR: std::tie(pars, dyns) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  // case Sequences::IR2: std::tie(pars, dyns) = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2FLAIR:
-    std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get());
-    break;
-    // case Sequences::T2Prep: std::tie(pars, dyns) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-    // case Sequences::GenPrep: std::tie(pars, dyns) = Run<rl::GenPrep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-    // case Sequences::GenPrep2: std::tie(pars, dyns) = Run<rl::GenPrep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   }
   Sz3 const                 dshape = dall.dimensions();
   Index const               L = dshape[1] * dshape[2];

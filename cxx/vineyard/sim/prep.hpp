@@ -8,6 +8,7 @@ namespace rl {
 
 struct Prep final : Sequence
 {
+  static const Index nParameters = 3;
   Prep(Settings const &s);
 
   auto length() const -> Index;
@@ -16,6 +17,7 @@ struct Prep final : Sequence
 
 struct Prep2 final : Sequence
 {
+  static const Index nParameters = 4;
   Prep2(Settings const &s);
 
   auto length() const -> Index;

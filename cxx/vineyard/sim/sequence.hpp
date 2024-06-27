@@ -30,7 +30,7 @@ enum struct Sequences
 {
   Prep = 0,
   Prep2,
-  IR = 0,
+  IR,
   DIR,
   T2Prep,
   T2FLAIR
