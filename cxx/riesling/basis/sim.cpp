@@ -19,16 +19,16 @@ template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf
 {
   if (plist.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
 
-  T               simulator{s};
+  T               seq{s};
   Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, plist.size());
   for (size_t ii = 0; ii < plist.size(); ii++) {
     Log::Print("Parameter set {}", fmt::streamed(plist[ii].transpose()));
     parameters.col(ii) = plist[ii];
   }
-  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, s.spokesPerSeg * s.segsKeep);
+  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, seq.length());
   auto const start = Log::Now();
-  auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = simulator.simulate(parameters.col(ii)); };
+  auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
   Log::Print("Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);

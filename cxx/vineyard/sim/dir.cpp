@@ -53,7 +53,7 @@ auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  Cx1             s0(settings.spokesPerSeg * settings.segsKeep);
+  Cx1             s0(length());
   for (Index ig = 0; ig < settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {

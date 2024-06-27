@@ -28,13 +28,12 @@ struct Sequence
 
 enum struct Sequences
 {
-  // IR = 0,
-  // IR2,
+  Prep = 0,
+  Prep2,
+  IR = 0,
   DIR,
-  // T2Prep,
-  T2FLAIR,
-  // GenPrep,
-  // GenPrep2
+  T2Prep,
+  T2FLAIR
 };
 
 extern std::unordered_map<std::string, Sequences> SequenceMap;
