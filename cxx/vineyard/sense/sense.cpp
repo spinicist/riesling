@@ -8,7 +8,7 @@
 #include "op/fft.hpp"
 #include "op/recon.hpp"
 #include "op/sense.hpp"
-#include "pad.hpp"
+#include "op/pad.hpp"
 #include "precon.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
@@ -36,7 +36,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   }
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
-  auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, false, false);
+  auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
   auto const shape1 = traj.matrix(gridOpts.osamp.Get());
   auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, basis, shape1);
   auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
@@ -46,17 +46,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
 
-  Sz3 const shape = traj.matrixForFOV(opts.fov.Get());
-  for (Index ii = 0; ii < 3; ii++) {
-    if (shape[ii] > channels.dimension(ii + 2)) {
-      Log::Fail("Requested SENSE FOV {} could not be satisfied with FOV {} and oversampling {}", opts.fov.Get().transpose(),
-                traj.FOV().transpose(), gridOpts.osamp.Get());
-    }
-  }
-
-  Cx5 const cropped = Crop(channels, AddFront(shape, channels.dimension(0), channels.dimension(1)));
-
-  return cropped;
+  return channels;
 }
 
 auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis<Cx> const &basis) -> Cx5
@@ -140,9 +130,10 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
   // Set up operators
+  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW*kW*kW)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
-  auto FP = std::make_shared<Ops::Multiply<Cx>>(F, P);
+  auto FP = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::Multiply<Cx>>(F, P), D);
   auto FPinv = FP->inverse();
   auto S = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
@@ -163,17 +154,17 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   // Data
   Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
   auto const          ck = FPinv->forward(c);
-  Ops::Op<Cx>::Vector cʹ(Aʹ->rows());
+
+  Ops::Op<Cx>::Vector cʹ(A->rows());
   cʹ.head(FPinv->rows()) = ck;
   cʹ.tail(R->rows()).setZero();
 
-  LSQR lsqr{Aʹ};
+  LSQR lsqr{A};
   lsqr.iterLimit = 16;
   auto const kʹ = lsqr.run(cʹ.data(), 0.f);
 
-  auto const temp = FP->forward(Ninv->forward(kʹ));
-  Cx5 const  maps = Tensorfy(temp, cshape);
-  return maps;
+  Cx5 const  kernels = Tensorfy(kʹ, kshape);
+  return kernels;
 }
 
 auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5

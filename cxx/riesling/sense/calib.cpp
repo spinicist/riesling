@@ -4,7 +4,8 @@
 #include "fft.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "pad.hpp"
+#include "op/fft.hpp"
+#include "op/pad.hpp"
 #include "parse_args.hpp"
 #include "sense/sense.hpp"
 
@@ -16,7 +17,6 @@ void main_sense_calib(args::Subparser &parser)
   GridOpts                     gridOpts(parser);
   SENSE::Opts                  senseOpts(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
-  args::ValueFlag<Index>       frame(parser, "F", "SENSE calibration frame (all)", {"frame"}, -1);
   args::Flag                   nonsense(parser, "N", "NonSENSE", {'n', "nonsense"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
@@ -43,20 +43,16 @@ void main_sense_calib(args::Subparser &parser)
   } else {
     ref = ConjugateSum(channels, channels).sqrt();
   }
-
-  auto maps = nonsense ? SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get())
-                       : SENSE::TikhonovDivision(channels, ref, senseOpts.λ.Get());
-
-  if (frame) {
-    auto shape = maps.dimensions();
-    if (frame.Get() < 0 || frame.Get() >= shape[1]) {
-      Log::Fail("Requested frame {} is outside valid range 0-{}", frame.Get(), shape[1]);
-    }
-    shape[1] = 1;
-    maps = Cx5(maps.slice(Sz5{0, frame.Get(), 0, 0, 0}, shape));
-  }
-
   HD5::Writer writer(coreOpts.oname.Get());
+  auto              kernels = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
+  auto const        kshape = kernels.dimensions();
+  auto const        fshape = AddFront(traj.matrix(gridOpts.osamp.Get()), kshape[0], kshape[1]);
+  auto const        cshape = AddFront(traj.matrixForFOV(senseOpts.fov.Get()), kshape[0], kshape[1]);
+  TOps::Pad<Cx, 5>  P(kshape, fshape);
+  TOps::FFT<5, 3>   F(fshape, false);
+  TOps::Crop<Cx, 5> C(fshape, cshape);
+  Cx5 const         maps =
+    C.forward(F.adjoint(P.forward(kernels))) * Cx(std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape))));
   writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }
