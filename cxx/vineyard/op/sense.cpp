@@ -65,8 +65,8 @@ void SENSE::iadjoint(OutCMap const &y, InMap &x) const
 auto SENSE::nChannels() const -> Index { return oshape[0]; }
 auto SENSE::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
-NonSENSE::NonSENSE(Cx4 const &img, Index const nC)
-  : Parent("NonSENSEOp", AddFront(img.dimensions(), nC), AddFront(img.dimensions(), nC))
+EstimateKernels::EstimateKernels(Cx4 const &img, Index const nC)
+  : Parent("EstimateKernelsOp", AddFront(img.dimensions(), nC), AddFront(img.dimensions(), nC))
   , img_{img}
 {
   res_.set(1, img_.dimension(0));
@@ -76,36 +76,36 @@ NonSENSE::NonSENSE(Cx4 const &img, Index const nC)
   brd_.set(0, nC);
 }
 
-void NonSENSE::forward(InCMap const &x, OutMap &y) const
+void EstimateKernels::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
   y.device(Threads::GlobalDevice()) = img_.reshape(res_).broadcast(brd_) * x;
   finishForward(y, time, false);
 }
 
-void NonSENSE::adjoint(OutCMap const &y, InMap &x) const
+void EstimateKernels::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, false);
   x.device(Threads::GlobalDevice()) = img_.reshape(res_).broadcast(brd_).conjugate() * y;
   finishAdjoint(x, time, false);
 }
 
-void NonSENSE::iforward(InCMap const &x, OutMap &y) const
+void EstimateKernels::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
   y.device(Threads::GlobalDevice()) += img_.reshape(res_).broadcast(brd_) * x;
   finishForward(y, time, true);
 }
 
-void NonSENSE::iadjoint(OutCMap const &y, InMap &x) const
+void EstimateKernels::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
   x.device(Threads::GlobalDevice()) += img_.reshape(res_).broadcast(brd_).conjugate() * y;
   finishAdjoint(x, time, true);
 }
 
-auto NonSENSE::nChannels() const -> Index { return oshape[0]; }
-auto NonSENSE::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
+auto EstimateKernels::nChannels() const -> Index { return oshape[0]; }
+auto EstimateKernels::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
 VCCSENSE::VCCSENSE(Cx5 const &maps, Index const frames)
   : Parent("VCCSENSE",

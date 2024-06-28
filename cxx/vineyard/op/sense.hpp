@@ -21,10 +21,10 @@ private:
   Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
 };
 
-struct NonSENSE final : TOp<Cx, 5, 5>
+struct EstimateKernels final : TOp<Cx, 5, 5>
 {
   TOP_INHERIT(Cx, 5, 5)
-  NonSENSE(Cx4 const &img, Index const nC);
+  EstimateKernels(Cx4 const &img, Index const nC);
   TOP_DECLARE(SENSE)
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;

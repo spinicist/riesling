@@ -42,7 +42,7 @@ void main_sense_calib(args::Subparser &parser)
   } else {
     ref = ConjugateSum(channels, channels).sqrt();
   }
-  Cx5 const   kernels = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
+  Cx5 const   kernels = SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   Log::Print("Finished {}", parser.GetCommand().Name());

@@ -17,7 +17,7 @@ namespace rl {
 namespace SENSE {
 
 Opts::Opts(args::Subparser &parser)
-  : type(parser, "T", "SENSE type (auto/nonsense/file.h5)", {"sense", 's'}, "auto")
+  : type(parser, "T", "SENSE type (auto/EstimateKernels/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 21)
   , res(parser, "R", "SENSE calibration res (10,10,10)", {"sense-res"}, Eigen::Array3f::Constant(10.f))
@@ -110,7 +110,7 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
  * A = [ Pt Ft S F P ]
  *     [          λW ]
  */
-auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
+auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
 {
   Sz5 const cshape = channels.dimensions();
   if (LastN<4>(cshape) != ref.dimensions()) {
@@ -127,7 +127,7 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::Multiply<Cx>>(F, P), D);
   auto FPinv = FP->inverse();
-  auto S = std::make_shared<TOps::NonSENSE>(ref, cshape[0]);
+  auto S = std::make_shared<TOps::EstimateKernels>(ref, cshape[0]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
   auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
 
@@ -173,7 +173,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
     Log::Print("SENSE Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
     Cx4 const ref = ConjugateSum(c, c);
-    kernels = Nonsense(c, ref, opts.kWidth.Get(), opts.λ.Get());
+    kernels = EstimateKernels(c, ref, opts.kWidth.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
