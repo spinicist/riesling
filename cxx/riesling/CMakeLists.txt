@@ -40,6 +40,7 @@ add_executable(riesling
     recon/sake.cpp
 
     sense/calib.cpp
+    sense/maps.cpp
     sense/sim.cpp
 
     util/autofocus.cpp

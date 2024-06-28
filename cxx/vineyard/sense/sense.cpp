@@ -6,9 +6,9 @@
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "op/fft.hpp"
+#include "op/pad.hpp"
 #include "op/recon.hpp"
 #include "op/sense.hpp"
-#include "op/pad.hpp"
 #include "precon.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
@@ -20,9 +20,9 @@ Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/nonsense/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (15)", {"sense-width"}, 21)
-  , res(parser, "R", "SENSE calibration res (12 mm)", {"sense-res"}, Eigen::Array3f::Constant(12.f))
+  , res(parser, "R", "SENSE calibration res (10 mm)", {"sense-res"}, Eigen::Array3f::Constant(10.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
-  , λ(parser, "L", "SENSE regularization", {"sense-lambda"}, 1.e-3f)
+  , λ(parser, "L", "SENSE regularization (0.01)", {"sense-lambda"}, 1.e-2f)
 {
 }
 
@@ -122,7 +122,7 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
   // Set up operators
-  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW*kW*kW)));
+  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW * kW * kW)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::Multiply<Cx>>(F, P), D);
@@ -140,8 +140,8 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   auto       A = std::make_shared<Ops::VStack<Cx>>(PFSFP, R);
 
   // Data
-  Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
-  auto const          ck = FPinv->forward(c);
+  Ops::Op<Cx>::CMap c(channels.data(), SFP->rows());
+  auto const        ck = FPinv->forward(c);
 
   Ops::Op<Cx>::Vector cʹ(A->rows());
   cʹ.head(FPinv->rows()) = ck;
@@ -151,8 +151,19 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   lsqr.iterLimit = 16;
   auto const kʹ = lsqr.run(cʹ.data(), 0.f);
 
-  Cx5 const  kernels = Tensorfy(kʹ, kshape);
+  Cx5 const kernels = Tensorfy(kʹ, kshape);
   return kernels;
+}
+
+auto KernelsToMaps(Cx5 const &kernels, Sz3 const fmat, Sz3 const cmat) -> Cx5
+{
+  auto const        kshape = kernels.dimensions();
+  auto const        fshape = AddFront(fmat, kshape[0], kshape[1]);
+  auto const        cshape = AddFront(cmat, kshape[0], kshape[1]);
+  TOps::Pad<Cx, 5>  P(kshape, fshape);
+  TOps::FFT<5, 3>   F(fshape, false);
+  TOps::Crop<Cx, 5> C(fshape, cshape);
+  return C.forward(F.adjoint(P.forward(kernels))) * Cx(std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape))));
 }
 
 auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5

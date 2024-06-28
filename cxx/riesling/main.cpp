@@ -33,7 +33,8 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, slice, "slice", "Slice non-cartesian data");
 
   args::Group sense(parser, "SENSE");
-  COMMAND(sense, sense_calib, "sense-calib", "Create SENSE maps");
+  COMMAND(sense, sense_calib, "sense-calib", "Calibrate SENSE kernels");
+  COMMAND(sense, sense_maps, "sense-maps", "Convert SENSE kernels to maps");
   COMMAND(sense, sense_sim, "sense-sim", "Simulate SENSE maps");
 
   args::Group basis(parser, "BASIS");

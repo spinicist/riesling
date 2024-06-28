@@ -17,7 +17,6 @@ void main_sense_calib(args::Subparser &parser)
   GridOpts                     gridOpts(parser);
   SENSE::Opts                  senseOpts(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
-  args::Flag                   nonsense(parser, "N", "NonSENSE", {'n', "nonsense"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
@@ -43,16 +42,8 @@ void main_sense_calib(args::Subparser &parser)
   } else {
     ref = ConjugateSum(channels, channels).sqrt();
   }
+  Cx5 const   kernels = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
   HD5::Writer writer(coreOpts.oname.Get());
-  auto              kernels = SENSE::Nonsense(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
-  auto const        kshape = kernels.dimensions();
-  auto const        fshape = AddFront(traj.matrix(gridOpts.osamp.Get()), kshape[0], kshape[1]);
-  auto const        cshape = AddFront(traj.matrixForFOV(senseOpts.fov.Get()), kshape[0], kshape[1]);
-  TOps::Pad<Cx, 5>  P(kshape, fshape);
-  TOps::FFT<5, 3>   F(fshape, false);
-  TOps::Crop<Cx, 5> C(fshape, cshape);
-  Cx5 const         maps =
-    C.forward(F.adjoint(P.forward(kernels))) * Cx(std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape))));
-  writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
+  writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }
