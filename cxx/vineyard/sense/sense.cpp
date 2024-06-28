@@ -109,14 +109,6 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
  *      [       0 ]   [          λW ]
  * A = [ Pt Ft S F P ]
  *     [          λW ]
- *
- * But the Sobolev weights W are horrendously ill-conditioned. Hence need a pre-conditioner.
- * Take a punt on N = (I + λW) ^ (-1/2)
- * N = W
- *
- * c' = A N^-1 N k = A' k'
- * A' = A N^-1
- * k = N^-1 k'
  */
 auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
 {
@@ -146,10 +138,6 @@ auto Nonsense(Cx5 const &channels, Cx4 const &ref, Index const kW, float const �
   auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
   auto       R = std::make_shared<Ops::Multiply<Cx>>(L, W);
   auto       A = std::make_shared<Ops::VStack<Cx>>(PFSFP, R);
-
-  // Preconditioner
-  auto Ninv = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], (1.f + λ * swv).inverse().sqrt());
-  auto Aʹ = std::make_shared<Ops::Multiply<Cx>>(A, Ninv);
 
   // Data
   Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
