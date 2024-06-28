@@ -19,10 +19,10 @@ namespace SENSE {
 Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/nonsense/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
-  , kWidth(parser, "K", "SENSE kernel width (15)", {"sense-width"}, 21)
-  , res(parser, "R", "SENSE calibration res (10 mm)", {"sense-res"}, Eigen::Array3f::Constant(10.f))
+  , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 21)
+  , res(parser, "R", "SENSE calibration res (10,10,10)", {"sense-res"}, Eigen::Array3f::Constant(10.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
-  , λ(parser, "L", "SENSE regularization (0.01)", {"sense-lambda"}, 1.e-2f)
+  , λ(parser, "L", "SENSE regularization (1e-3)", {"sense-lambda"}, 1.e-3f)
 {
 }
 
@@ -166,20 +166,19 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const fmat, Sz3 const cmat) -> Cx5
   return C.forward(F.adjoint(P.forward(kernels))) * Cx(std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape))));
 }
 
-auto Choose(Opts &opts, GridOpts &nufft, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
+  Cx5 kernels;
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
-    auto const c = LoresChannels(opts, nufft, traj, noncart);
-    return TikhonovDivision(c, ConjugateSum(c, c).sqrt(), opts.λ.Get());
-  } else if (opts.type.Get() == "nonsense") {
-    Log::Print("NONSENSE Self-Calibration");
-    auto c = LoresChannels(opts, nufft, traj, noncart);
-    return Nonsense(c, ConjugateSum(c, c).sqrt(), opts.kWidth.Get(), opts.λ.Get());
+    Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
+    Cx4 const ref = ConjugateSum(c, c);
+    kernels = Nonsense(c, ref, opts.kWidth.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
-    return senseReader.readTensor<Cx5>(HD5::Keys::Data);
+    kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
   }
+  return SENSE::KernelsToMaps(kernels, traj.matrix(gopts.osamp.Get()), traj.matrixForFOV(opts.fov.Get()));
 }
 
 } // namespace SENSE
