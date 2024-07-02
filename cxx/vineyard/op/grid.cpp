@@ -147,7 +147,7 @@ inline void forwardTask(Mapping<ND> const                                       
                         Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC> const> const &x,
                         Eigen::TensorMap<Eigen::Tensor<Scalar, 3>>                           &y)
 {
-  Index const nC = y.dimensions()[0];
+  Index const nC = y.dimension(0);
   Index const nB = basis.dimension(0);
   auto        grid_task = [&](Index const is) {
     auto const                   &subgrid = map.subgrids[is];
@@ -158,7 +158,6 @@ inline void forwardTask(Mapping<ND> const                                       
     if constexpr (hasVCC) { xi[1] = isVCC; }
     Sz<ND + 2> sxi;
     sxi.fill(0);
-
     forwardSpatialDim<Scalar, ND, hasVCC, isVCC, ND - 1>(subgrid.minCorner, xi, x, sxi, sx);
 
     for (auto ii = 0; ii < subgrid.count(); ii++) {
@@ -168,7 +167,8 @@ inline void forwardTask(Mapping<ND> const                                       
       auto const                     o = map.offset[si];
       Eigen::Tensor<Scalar, 1> const bs =
         basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
-      y.template chip<2>(n.trace).template chip<1>(n.sample) += kernel->gather(c, o, subgrid.minCorner, bs, sx);
+      Eigen::TensorMap<Eigen::Tensor<Scalar, 1>> yy(&y(0, n.sample, n.trace), Sz1{nC});
+      kernel->gather(c, o, subgrid.minCorner, bs, sx, yy);
     }
   };
   Threads::For(grid_task, map.subgrids.size());
