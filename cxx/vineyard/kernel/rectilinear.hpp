@@ -5,13 +5,12 @@
 
 namespace rl {
 
-template <typename Scalar, int N, typename Func>
-struct Rectilinear final : FixedKernel<Scalar, N, Func::PadWidth>
+template <typename Scalar, int N, typename Func> struct Rectilinear final : FixedKernel<Scalar, N, Func::PadWidth>
 {
-  static constexpr int NDim = N;
-  static constexpr int Width = Func::Width;
-  static constexpr int PadWidth = Func::PadWidth;
-  static constexpr float  HalfWidth = Width / 2.f;
+  static constexpr int   NDim = N;
+  static constexpr int   Width = Func::Width;
+  static constexpr int   PadWidth = Func::PadWidth;
+  static constexpr float HalfWidth = Width / 2.f;
   using Tensor = typename FixedKernel<Scalar, NDim, PadWidth>::Tensor;
   using Point = typename FixedKernel<Scalar, NDim, PadWidth>::Point;
   using Pos = typename FixedKernel<Scalar, NDim, PadWidth>::OneD;
@@ -20,18 +19,12 @@ struct Rectilinear final : FixedKernel<Scalar, N, Func::PadWidth>
   float β, scale;
 
   Rectilinear(float const osamp)
-    : 
-    β{f.β(osamp)}
+    : β{f.β(osamp)}
     , scale{1.f}
   {
     static_assert(N < 4);
     scale = 1. / Norm((*this)(Point::Zero()));
     Log::Print("Rectilinear, scale {}", scale);
-  }
-
-  void setOversampling(float const osamp) {
-    β = f.β(osamp);
-    scale = 1. / Norm((*this)(Point::Zero()));
   }
 
   auto operator()(Point const p) const -> Tensor

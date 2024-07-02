@@ -4,12 +4,10 @@
 
 namespace rl {
 
-template <typename Scalar, int ND>
-struct Kernel
+template <typename Scalar, int ND> struct Kernel
 {
   using Point = Eigen::Matrix<float, ND, 1>;
   virtual auto paddedWidth() const -> Index = 0;
-  virtual void setOversampling(float const os) = 0;
   virtual auto at(Point const p) const -> Eigen::Tensor<float, ND> = 0;
   virtual void spread(std::array<int16_t, ND> const   c,
                       Point const                     p,

@@ -4,31 +4,26 @@
 
 namespace rl {
 
-template <int ND, int W>
-struct KernelSizes
+template <int ND, int W> struct KernelSizes
 {
 };
 
-template <int W>
-struct KernelSizes<1, W>
+template <int W> struct KernelSizes<1, W>
 {
   using Type = Eigen::Sizes<W>;
 };
 
-template <int W>
-struct KernelSizes<2, W>
+template <int W> struct KernelSizes<2, W>
 {
   using Type = Eigen::Sizes<W, W>;
 };
 
-template <int W>
-struct KernelSizes<3, W>
+template <int W> struct KernelSizes<3, W>
 {
   using Type = Eigen::Sizes<W, W, W>;
 };
 
-template <typename Scalar, int ND, int W>
-struct FixedKernel : Kernel<Scalar, ND>
+template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND>
 {
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<W>>;
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<ND, W>::Type>;
