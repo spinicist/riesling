@@ -107,7 +107,7 @@ target_link_libraries(vineyard PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     ducc::ducc
     Eigen3::Eigen
-    fmt::fmt-header-only
+    fmt::fmt
     hdf5::hdf5-static
     hdf5::hdf5_hl-static
     NIFTI::niftiio
