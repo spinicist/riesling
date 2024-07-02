@@ -21,9 +21,8 @@ template <typename Scalar, int ND> struct Kernel
                       Sz<ND> const                                                 minCorner,
                       Eigen::Tensor<Scalar, 1> const                              &b,
                       Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x) const -> Eigen::Tensor<Scalar, 1> = 0;
+  
+  static auto Make(std::string const &type, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>;
 };
-
-template <typename Scalar, int ND>
-auto make_kernel(std::string const &type, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>;
 
 } // namespace rl

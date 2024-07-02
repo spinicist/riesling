@@ -56,7 +56,7 @@ Grid<Scalar, NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
                               Index const              bSz,
                               Index const              sSz)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""))
-  , kernel{make_kernel<Scalar, NDim>(ktype, osamp)}
+  , kernel{Kernel<Scalar, NDim>::Make(ktype, osamp)}
   , mapping{traj, osamp, kernel->paddedWidth(), bSz, sSz}
   , basis{b}
 {

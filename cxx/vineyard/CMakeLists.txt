@@ -28,6 +28,7 @@ add_library(vineyard
     threads.cpp
     trajectory.cpp
     traj_spirals.cpp
+
     algo/admm.cpp
     algo/bidiag.cpp
     algo/decomp.cpp
@@ -39,17 +40,27 @@ add_library(vineyard
     algo/otsu.cpp
     algo/pdhg.cpp
     algo/stats.cpp
+
     basis/basis.cpp
     basis/bernstein.cpp
     basis/fourier.cpp
     basis/svd.cpp
+
     func/dict.cpp
     func/diffs.cpp
+
     io/hd5-core.cpp
     io/nifti.cpp
     io/reader.cpp
     io/writer.cpp
-    kernel/kernel.cpp
+
+    kernel/kernel-f1.cpp
+    kernel/kernel-f2.cpp
+    kernel/kernel-f3.cpp
+    kernel/kernel-cx1.cpp
+    kernel/kernel-cx2.cpp
+    kernel/kernel-cx3.cpp
+
     op/fft.cpp
     op/grad.cpp
     op/grid.cpp
@@ -64,9 +75,11 @@ add_library(vineyard
     op/sense.cpp
     op/top.cpp
     op/wavelets.cpp
+
     phantom/gradcubes.cpp
     phantom/sphere.cpp
     phantom/shepp-logan.cpp
+
     prox/entropy.cpp
     prox/hermitian.cpp
     prox/l1-wavelets.cpp
@@ -76,9 +89,11 @@ add_library(vineyard
     prox/prox.cpp
     prox/slr.cpp
     prox/stack.cpp
+
     sense/coils.cpp
     # sense/espirit.cpp
     sense/sense.cpp
+
     sim/parameter.cpp
     sim/sequence.cpp
     sim/prep.cpp
@@ -105,6 +120,16 @@ set_target_properties(vineyard PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_VISIBILITY_PRESET hidden
 )
+# set_source_files_properties(
+#     op/grid.cpp
+#     kernel/kernel-f1.cpp
+#     kernel/kernel-f2.cpp
+#     kernel/kernel-f3.cpp
+#     kernel/kernel-cx1.cpp
+#     kernel/kernel-cx2.cpp
+#     kernel/kernel-cx3.cpp
+#     PROPERTIES COMPILE_FLAGS -ffast-math
+# )
 install(TARGETS vineyard EXPORT vineyard-targets
     LIBRARY DESTINATION  "lib"
     INCLUDES DESTINATION "include/vineyard")

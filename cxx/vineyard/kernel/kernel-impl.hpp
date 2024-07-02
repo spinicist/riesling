@@ -10,7 +10,7 @@
 namespace rl {
 
 template <typename Scalar, int ND>
-auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>
+auto Kernel<Scalar, ND>::Make(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Scalar, ND>>
 {
   if (kType == "NN") {
     return std::make_shared<NearestNeighbour<Scalar, ND>>();
@@ -58,12 +58,5 @@ auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr
 
   Log::Fail("Unknown kernel type {}", kType);
 }
-
-template auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<float, 1>>;
-template auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<float, 2>>;
-template auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<float, 3>>;
-template auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Cx, 1>>;
-template auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Cx, 2>>;
-template auto make_kernel(std::string const &kType, float const osamp) -> std::shared_ptr<Kernel<Cx, 3>>;
 
 } // namespace rl
