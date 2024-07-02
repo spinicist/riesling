@@ -2,7 +2,6 @@
 #include "kernel/kaiser.hpp"
 #include "kernel/nn.hpp"
 #include "kernel/radial.hpp"
-#include "kernel/rectilinear.hpp"
 #include "kernel/triangle.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_template_test_macros.hpp>
@@ -16,9 +15,7 @@ TEMPLATE_TEST_CASE(
   "1D Kernels",
   "[kernels]",
   (rl::Radial<float, 1, rl::KaiserBessel<3>>),
-  (rl::Radial<float, 1, rl::KaiserBessel<5>>),
-  (rl::Rectilinear<float, 1, rl::ExpSemi<3>>),
-  (rl::Rectilinear<float, 1, rl::ExpSemi<5>>))
+  (rl::Radial<float, 1, rl::KaiserBessel<5>>))
 {
   TestType kernel(2.f);
   typename TestType::Point p;

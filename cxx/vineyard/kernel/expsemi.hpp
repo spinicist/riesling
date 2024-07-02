@@ -19,9 +19,9 @@ struct ExpSemi
   ExpSemi() { Log::Print("Exponential Semi-Circle kernel width {}", W); }
 
   template <typename T>
-  inline auto operator()(T const &z, float const β) const
+  inline auto operator()(T const &z2, float const β) const
   {
-    return (z > 1.f).select(z.constant(0.f), (z.constant(β) * ((z.constant(1.f) - z.square()).sqrt() - z.constant(1.f))).exp());
+    return (z2 > 1.f).select(z2.constant(0.f), (z2.constant(β) * ((z2.constant(1.f) - z2).sqrt() - z2.constant(1.f))).exp());
   }
 };
 

@@ -120,16 +120,16 @@ set_target_properties(vineyard PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_VISIBILITY_PRESET hidden
 )
-# set_source_files_properties(
-#     op/grid.cpp
-#     kernel/kernel-f1.cpp
-#     kernel/kernel-f2.cpp
-#     kernel/kernel-f3.cpp
-#     kernel/kernel-cx1.cpp
-#     kernel/kernel-cx2.cpp
-#     kernel/kernel-cx3.cpp
-#     PROPERTIES COMPILE_FLAGS -ffast-math
-# )
+set_source_files_properties(
+    op/grid.cpp
+    kernel/kernel-f1.cpp
+    kernel/kernel-f2.cpp
+    kernel/kernel-f3.cpp
+    kernel/kernel-cx1.cpp
+    kernel/kernel-cx2.cpp
+    kernel/kernel-cx3.cpp
+    PROPERTIES COMPILE_FLAGS -ffast-math
+)
 install(TARGETS vineyard EXPORT vineyard-targets
     LIBRARY DESTINATION  "lib"
     INCLUDES DESTINATION "include/vineyard")

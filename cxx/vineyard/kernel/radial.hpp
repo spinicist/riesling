@@ -44,7 +44,7 @@ template <typename Scalar, int N, typename Func> struct Radial final : FixedKern
             z1.reshape(Sz3{1, 1, PadWidth}).broadcast(Sz3{PadWidth, PadWidth, 1});
       }
     }
-    return f(z.sqrt(), β) * z.constant(scale);
+    return f(z, β) * z.constant(scale);
   }
 };
 

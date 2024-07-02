@@ -17,9 +17,9 @@ struct KaiserBessel
   KaiserBessel() { Log::Print("Kaiser-Bessel kernel width {}", W); }
 
   template <typename T>
-  inline auto operator()(T const &z, float const β) const
+  inline auto operator()(T const &z2, float const β) const
   {
-    return (z > 1.f).select(z.constant(0.f), (z.constant(β) * (z.constant(1.f) - z.square())).sqrt().bessel_i0());
+    return (z2 > 1.f).select(z2.constant(0.f), (z2.constant(β) * (z2.constant(1.f) - z2)).sqrt().bessel_i0());
   }
 };
 
