@@ -7,9 +7,6 @@ add_executable(riesling
     basis/sim.cpp
     basis/svd.cpp
     basis/frames.cpp
-    basis/ipop-basis.cpp
-    basis/ipop-combine.cpp
-    basis/lookup.cpp
 
     data/h5.cpp
     data/compress.cpp

@@ -13,6 +13,8 @@
 #include "sim/t2prep.hpp"
 #include "threads.hpp"
 
+#include <Eigen/Householder>
+
 using namespace rl;
 
 template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf> plist)
@@ -59,6 +61,8 @@ void main_basis_sim(args::Subparser &parser)
 
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> plist(parser, "P", "Parameters", {"par"});
 
+  args::Flag ortho(parser, "O", "Orthogonalize basis", {"ortho"});
+
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
 
@@ -95,9 +99,19 @@ void main_basis_sim(args::Subparser &parser)
   Index const               L = dshape[1] * dshape[2];
   Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], L);
   dmap.rowwise().normalize();
-  dmap *= std::sqrt(L);
 
   HD5::Writer writer(oname.Get());
+
+  if (ortho) {
+    auto const             h = dmap.matrix().transpose().householderQr();
+    Eigen::MatrixXcf const Q = Eigen::MatrixXcf(h.householderQ()).leftCols(dshape[0]);
+    Eigen::MatrixXcf const R = Eigen::MatrixXcf(h.matrixQR().topRows(dshape[0]).triangularView<Eigen::Upper>()) / std::sqrt(L);
+    dmap = Q.transpose().rowwise().normalized();
+    writer.writeMatrix(R, "R");
+  }
+
+  dmap *= std::sqrt(L);
+
   writer.writeTensor(HD5::Keys::Basis, dall.dimensions(), dall.data(), HD5::Dims::Basis);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

@@ -46,9 +46,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, basis_img, "basis-img", "Basis from image data + SVD");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(basis, basis_svd, "basis-svd", "Basis from simulations + SVD");
-  COMMAND(basis, ipop_basis, "basis-fat", "Fat/Water basis");
-  COMMAND(basis, ipop_combine, "basis-fat-post", "Post-process a Fat/Water image");
-  COMMAND(basis, lookup, "basis-lookup", "Basis dictionary lookup");
 
   args::Group op(parser, "OP");
   COMMAND(op, fft, "op-fft", "Cartesian FFT of an image");
