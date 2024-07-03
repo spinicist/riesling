@@ -20,23 +20,37 @@ float const os = 2.f;
 TEST_CASE("Grid ES3", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
-  auto gridfi3 = TOps::Grid<Cx, 3>::Make(traj, "ES3", os, C);
-  Cx5  c(gridfi3->ishape);
-  Cx3  nc(gridfi3->oshape);
+  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES3", os, C);
+  Cx5  c(grid->ishape);
+  Cx3  nc(grid->oshape);
+  c.setRandom();
   nc.setRandom();
-  BENCHMARK("ES3 Noncartesian->Cartesian") { gridfi3->adjoint(nc); };
-  BENCHMARK("ES3 Cartesian->Noncartesian") { gridfi3->forward(c); };
+  Cx5Map mc(c.data(), c.dimensions());
+  Cx3Map mnc(nc.data(), nc.dimensions());
+  Cx5CMap cc(c.data(), c.dimensions());
+  Cx3CMap cnc(nc.data(), nc.dimensions());
+  BENCHMARK("forward") { grid->forward(cc, mnc); };
+  BENCHMARK("iforward") { grid->iforward(cc, mnc); };
+  BENCHMARK("adjoint") { grid->adjoint(cnc, mc); };
+  BENCHMARK("iadjoint") { grid->iadjoint(cnc, mc); };
 }
 
 TEST_CASE("Grid ES5", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
-  auto gridfi5 = TOps::Grid<Cx, 3>::Make(traj, "ES5", os, C);
-  Cx5  c(gridfi5->ishape);
-  Cx3  nc(gridfi5->oshape);
+  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES5", os, C);
+  Cx5  c(grid->ishape);
+  Cx3  nc(grid->oshape);
+  c.setRandom();
   nc.setRandom();
-  BENCHMARK("ES5 Noncartesian->Cartesian") { gridfi5->adjoint(nc); };
-  BENCHMARK("ES5 Cartesian->Noncartesian") { gridfi5->forward(c); };
+  Cx5Map mc(c.data(), c.dimensions());
+  Cx3Map mnc(nc.data(), nc.dimensions());
+  Cx5CMap cc(c.data(), c.dimensions());
+  Cx3CMap cnc(nc.data(), nc.dimensions());
+  BENCHMARK("forward") { grid->forward(cc, mnc); };
+  BENCHMARK("iforward") { grid->iforward(cc, mnc); };
+  BENCHMARK("adjoint") { grid->adjoint(cnc, mc); };
+  BENCHMARK("iadjoint") { grid->iadjoint(cnc, mc); };
 }
 
 TEST_CASE("GridBasis ES3", "[grid]")
@@ -44,11 +58,19 @@ TEST_CASE("GridBasis ES3", "[grid]")
   Index const nB = 4;
   Cx3         basis(nB, 1, 256);
   basis.setConstant(1.f);
-  auto gridfi3 = TOps::Grid<Cx, 3>::Make(traj, "ES3", os, C, basis);
-  Cx5  c(gridfi3->ishape);
-  Cx3  nc(gridfi3->oshape);
-  BENCHMARK("ES3 Noncartesian->Cartesian") { gridfi3->adjoint(nc); };
-  BENCHMARK("ES3 Cartesian->Noncartesian") { gridfi3->forward(c); };
+  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES3", os, C, basis);
+  Cx5  c(grid->ishape);
+  Cx3  nc(grid->oshape);
+  c.setRandom();
+  nc.setRandom();
+  Cx5Map mc(c.data(), c.dimensions());
+  Cx3Map mnc(nc.data(), nc.dimensions());
+  Cx5CMap cc(c.data(), c.dimensions());
+  Cx3CMap cnc(nc.data(), nc.dimensions());
+  BENCHMARK("forward") { grid->forward(cc, mnc); };
+  BENCHMARK("iforward") { grid->iforward(cc, mnc); };
+  BENCHMARK("adjoint") { grid->adjoint(cnc, mc); };
+  BENCHMARK("iadjoint") { grid->iadjoint(cnc, mc); };
 }
 
 TEST_CASE("GridBasis ES5", "[grid]")
@@ -56,9 +78,17 @@ TEST_CASE("GridBasis ES5", "[grid]")
   Index const nB = 4;
   Cx3         basis(nB, 1, 256);
   basis.setConstant(1.f);
-  auto gridfi5 = TOps::Grid<Cx, 3>::Make(traj, "ES5", os, C, basis);
-  Cx5  c(gridfi5->ishape);
-  Cx3  nc(gridfi5->oshape);
-  BENCHMARK("ES5 Noncartesian->Cartesian") { gridfi5->adjoint(nc); };
-  BENCHMARK("ES5 Cartesian->Noncartesian") { gridfi5->forward(c); };
+  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES5", os, C, basis);
+  Cx5  c(grid->ishape);
+  Cx3  nc(grid->oshape);
+  c.setRandom();
+  nc.setRandom();
+  Cx5Map mc(c.data(), c.dimensions());
+  Cx3Map mnc(nc.data(), nc.dimensions());
+  Cx5CMap cc(c.data(), c.dimensions());
+  Cx3CMap cnc(nc.data(), nc.dimensions());
+  BENCHMARK("forward") { grid->forward(cc, mnc); };
+  BENCHMARK("iforward") { grid->iforward(cc, mnc); };
+  BENCHMARK("adjoint") { grid->adjoint(cnc, mc); };
+  BENCHMARK("iadjoint") { grid->iadjoint(cnc, mc); };
 }

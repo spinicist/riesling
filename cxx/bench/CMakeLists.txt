@@ -4,6 +4,7 @@ if(${BUILD_BENCHMARKS})
     add_executable(riesling-bench
         dot.cpp
         grid.cpp
+        kernel.cpp
         rss.cpp
     )
     target_link_libraries(riesling-bench PUBLIC

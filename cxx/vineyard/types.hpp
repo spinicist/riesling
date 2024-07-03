@@ -38,8 +38,7 @@ using I1 = Eigen::Tensor<Index, 1>;
 using I2 = Eigen::Tensor<Index, 2>;
 
 using Re0 = Eigen::TensorFixedSize<float, Eigen::Sizes<>>; // Annoying return type for reductions
-template <int N>
-using ReN = Eigen::Tensor<float, N>;
+template <int N> using ReN = Eigen::Tensor<float, N>;
 using Re1 = ReN<1>;
 using Re2 = ReN<2>;
 using Re3 = ReN<3>;
@@ -53,8 +52,7 @@ using Cx = std::complex<float>;
 using Cxd = std::complex<double>;
 
 using Cx0 = Eigen::TensorFixedSize<Cx, Eigen::Sizes<>>;
-template <int N>
-using CxN = Eigen::Tensor<Cx, N>;
+template <int N> using CxN = Eigen::Tensor<Cx, N>;
 using Cx1 = CxN<1>;
 using Cx2 = CxN<2>;
 using Cx3 = CxN<3>;
@@ -63,11 +61,28 @@ using Cx5 = CxN<5>;
 using Cx6 = CxN<6>;
 using Cx7 = CxN<7>;
 
+template <int N> using CxNMap = Eigen::TensorMap<CxN<N>>;
+using Cx1Map = CxNMap<1>;
+using Cx2Map = CxNMap<2>;
+using Cx3Map = CxNMap<3>;
+using Cx4Map = CxNMap<4>;
+using Cx5Map = CxNMap<5>;
+using Cx6Map = CxNMap<6>;
+using Cx7Map = CxNMap<7>;
+
+template <int N> using CxNCMap = Eigen::TensorMap<CxN<N> const>;
+using Cx1CMap = CxNCMap<1>;
+using Cx2CMap = CxNCMap<2>;
+using Cx3CMap = CxNCMap<3>;
+using Cx4CMap = CxNCMap<4>;
+using Cx5CMap = CxNCMap<5>;
+using Cx6CMap = CxNCMap<6>;
+using Cx7CMap = CxNCMap<7>;
+
 using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
 
 // Useful shorthands
-template <int Rank>
-using Sz = typename Eigen::DSizes<Index, Rank>;
+template <int Rank> using Sz = typename Eigen::DSizes<Index, Rank>;
 using Sz1 = Sz<1>;
 using Sz2 = Sz<2>;
 using Sz3 = Sz<3>;
@@ -81,8 +96,7 @@ using Point1 = Eigen::Matrix<float, 1, 1>;
 using Point2 = Eigen::Matrix<float, 2, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
 
-template <typename T, int N, typename... Args>
-decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
+template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
   Eigen::DSizes<T, sizeof...(Args)>     front{{toAdd...}};
   Eigen::DSizes<T, sizeof...(Args) + N> out;
@@ -92,8 +106,7 @@ decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
   return out;
 }
 
-template <typename T, int N, typename... Args>
-decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
+template <typename T, int N, typename... Args> decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
 {
   Eigen::DSizes<T, sizeof...(Args)>     back{{toAdd...}};
   Eigen::DSizes<T, sizeof...(Args) + N> out;
@@ -103,8 +116,7 @@ decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
   return out;
 }
 
-template <typename T, int N1, int N2>
-decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> const &b)
+template <typename T, int N1, int N2> decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> const &b)
 {
   T constexpr Total = N1 + N2;
   Eigen::DSizes<T, Total> result;
@@ -117,8 +129,7 @@ decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> c
   return result;
 }
 
-template <size_t N, typename T>
-auto FirstN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
+template <size_t N, typename T> auto FirstN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(N <= sz.size());
   Eigen::DSizes<typename T::value_type, N> first;
@@ -126,8 +137,7 @@ auto FirstN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
   return first;
 }
 
-template <size_t N, typename T>
-auto LastN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
+template <size_t N, typename T> auto LastN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(N <= sz.size());
   Eigen::DSizes<Index, N> last;
@@ -135,8 +145,7 @@ auto LastN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
   return last;
 }
 
-template <size_t F, size_t N, typename T>
-auto MidN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
+template <size_t F, size_t N, typename T> auto MidN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(F + N <= sz.size());
   Eigen::DSizes<Index, N> out;
@@ -144,14 +153,12 @@ auto MidN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
   return out;
 }
 
-template <int N>
-Index Product(Sz<N> const &indices)
+template <int N> Index Product(Sz<N> const &indices)
 {
   return std::accumulate(indices.cbegin(), indices.cend(), 1L, std::multiplies<Index>());
 }
 
-template <typename T>
-T AMin(T const &a, T const &b)
+template <typename T> T AMin(T const &a, T const &b)
 {
   T m;
   for (size_t ii = 0; ii < a.size(); ii++) {
@@ -160,32 +167,28 @@ T AMin(T const &a, T const &b)
   return m;
 }
 
-template <int N>
-auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> Eigen::DSizes<Index, N>
+template <int N> auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
   std::transform(sz.begin(), sz.begin() + N, result.begin(), [a](Index const i) { return i + a; });
   return result;
 }
 
-template <int N, typename T>
-auto Mul(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N>
+template <int N, typename T> auto Mul(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
   std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return i * m; });
   return result;
 }
 
-template <int N, typename T>
-auto Div(Eigen::DSizes<Index, N> const &sz, T const d) -> Eigen::DSizes<Index, N>
+template <int N, typename T> auto Div(Eigen::DSizes<Index, N> const &sz, T const d) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
   std::transform(sz.begin(), sz.begin() + N, result.begin(), [d](Index const i) { return i / d; });
   return result;
 }
 
-template <typename T>
-auto Wrap(T const index, T const sz) -> T
+template <typename T> auto Wrap(T const index, T const sz) -> T
 {
   T const t = index + sz;
   T const w = t - sz * (t / sz);
