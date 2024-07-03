@@ -8,8 +8,8 @@
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 
-#include "types.hpp"
 #include "io/hd5-core.hpp"
+#include "types.hpp"
 
 #define LOG_DEBUG(...)                                                                                                         \
   if (rl::Log::CurrentLevel() == rl::Log::Level::Debug) { rl::Log::Print<Log::Level::High>(__VA_ARGS__); }
@@ -49,23 +49,29 @@ template <typename... Args> inline auto Format(fmt::format_string<Args...> fstr,
 
 template <typename... Args> inline void Print(fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Ephemeral);
+  if (CurrentLevel() > Level::Testing) {
+    SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Ephemeral);
+  }
 }
 
 template <typename... Args> inline void Debug(fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Debug);
+  if (CurrentLevel() > Level::Testing) {
+    SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Debug);
+  }
 }
 
 template <typename... Args> inline void Warn(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::bright_red, Level::None);
+  if (CurrentLevel() > Level::Testing) {
+    SaveEntry(Format(fstr, std::forward<Args>(args)...), fmt::terminal_color::bright_red, Level::None);
+  }
 }
 
 template <typename... Args> __attribute__((noreturn)) inline void Fail(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   auto const msg = Format(fstr, std::forward<Args>(args)...);
-  SaveEntry(msg, fmt::terminal_color::bright_red, Level::None);
+  if (CurrentLevel() > Level::Testing) { SaveEntry(msg, fmt::terminal_color::bright_red, Level::None); }
   throw Failure(msg);
 }
 
