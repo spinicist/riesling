@@ -4,7 +4,6 @@
 #include "kaiser.hpp"
 #include "nn.hpp"
 #include "radial.hpp"
-#include "triangle.hpp"
 
 namespace rl {
 
