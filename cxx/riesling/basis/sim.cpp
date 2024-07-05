@@ -103,12 +103,11 @@ void main_basis_sim(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
 
   if (ortho) {
-    auto const             h = dmap.matrix().transpose().householderQr();
-    Eigen::MatrixXcf const I = Eigen::MatrixXcf::Identity(L, dshape[0]);
-    Eigen::MatrixXcf const Q = h.householderQ() * I;
-    Log::Print("dmap {} {} I {} {} Q {} {}", dmap.rows(), dmap.cols(), I.rows(), I.cols(), Q.rows(), Q.cols());
-    Eigen::MatrixXcf const R = Eigen::MatrixXcf(h.matrixQR().topRows(dshape[0]).triangularView<Eigen::Upper>()) / std::sqrt(L);
-    dmap = Q.transpose().rowwise().normalized();
+    auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
+    Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(L, dshape[0]);
+    Eigen::MatrixXcd const Q = h.householderQ() * I;
+    Eigen::MatrixXcf const R = h.matrixQR().topRows(dshape[0]).cast<Cx>().triangularView<Eigen::Upper>();
+    dmap = Q.transpose().rowwise().normalized().cast<Cx>();
     writer.writeMatrix(R, "R");
   }
 
