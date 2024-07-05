@@ -6,15 +6,22 @@ INFO_FIELDS = ['voxel_size', 'origin', 'direction', 'tr']
 INFO_FORMAT = [('<f4', (3,)), ('<f4', (3,)), ('<f4', (3, 3)), '<f4']
 INFO_DTYPE = np.dtype({'names': INFO_FIELDS, 'formats': INFO_FORMAT})
 
+def __info():
+    info = {'voxel_size': [1,1,1],
+            'origin': [0,0,0],
+            'direction': np.eye(3,3),
+            'tr': 1}
+    return info
+
 def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=None, compression='gzip'):
     with h5py.File(filename, 'w') as out_f:
-        # create dataset and assign dimension labels
-        out_f.create_dataset('data', dtype='c8', data=data.data, chunks=np.shape(data.data), compression=compression)
-        for idd, dim in enumerate(data.dims):
-            out_f['data'].dims[idd].label = dim
+        if data is not None: # create dataset and assign dimension labels
+            out_f.create_dataset('data', dtype='c8', data=data.data, chunks=np.shape(data.data), compression=compression)
+            if hasattr(data, 'dims'):
+                for idd, dim in enumerate(data.dims):
+                    out_f['data'].dims[idd].label = dim
 
-        # add trajectory property
-        if trajectory is not None:
+        if trajectory is not None: # add trajectory property
             assert trajectory.ndim == 3, 'Trajectory must be 3 dimensional (co-ords, samples, traces)'
             assert trajectory.shape[2] <= 3, 'Trajectory cannot have more than 3 co-ordinates'
             traj = out_f.create_dataset('trajectory', dtype='f4', data=trajectory, compression=compression)
@@ -25,8 +32,9 @@ def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=Non
                 traj.attrs.create('matrix', np.array(matrix), dtype=h5py.h5t.array_create(h5py.h5t.NATIVE_INT64, (3,)))
 
         # add info struct
-        if info is not None:
-            out_f.create_dataset('info', data=np.array([tuple([info[f] for f in INFO_FIELDS])], dtype=INFO_DTYPE))
+        if info is None:
+            info = __info()
+        out_f.create_dataset('info', data=np.array([tuple([info[f] for f in INFO_FIELDS])], dtype=INFO_DTYPE))
 
         # add meta info
         if meta is not None:
