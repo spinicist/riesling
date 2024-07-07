@@ -1,4 +1,4 @@
-#include "mapping.hpp"
+#include "grid-mapping.hpp"
 
 #include <cfenv>
 #include <cmath>

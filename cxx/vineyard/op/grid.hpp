@@ -1,13 +1,10 @@
 #pragma once
 
 #include "basis/basis.hpp"
+#include "grid-mapping.hpp"
 #include "kernel/kernel.hpp"
-#include "mapping.hpp"
 #include "parse_args.hpp"
-#include "threads.hpp"
 #include "top.hpp"
-
-#include <mutex>
 
 namespace rl {
 

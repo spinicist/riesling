@@ -1,7 +1,5 @@
 #include "grid.hpp"
 
-#include "kernel/kernel.hpp"
-#include "mapping.hpp"
 #include "threads.hpp"
 #include "top.hpp"
 

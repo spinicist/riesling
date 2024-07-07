@@ -16,7 +16,6 @@ add_library(vineyard
     filter.cpp
     interp.cpp
     log.cpp
-    mapping.cpp
     pad.cpp
     parse_args.cpp
     patches.cpp
@@ -24,7 +23,6 @@ add_library(vineyard
     regularizers.cpp
     scaling.cpp
     signals.cpp
-    subgrid.cpp
     threads.cpp
     trajectory.cpp
     traj_spirals.cpp
@@ -64,6 +62,8 @@ add_library(vineyard
     op/fft.cpp
     op/grad.cpp
     op/grid.cpp
+    op/grid-mapping.cpp
+    op/grid-subgrid.cpp
     op/hankel.cpp
     op/ndft.cpp
     op/nufft.cpp

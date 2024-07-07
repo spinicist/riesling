@@ -3,7 +3,6 @@
 #include "fft.hpp"
 #include "io/reader.hpp"
 #include "log.hpp"
-#include "mapping.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "op/ops.hpp"

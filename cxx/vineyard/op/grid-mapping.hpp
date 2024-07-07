@@ -1,7 +1,7 @@
 #pragma once
 
 #include "info.hpp"
-#include "subgrid.hpp"
+#include "grid-subgrid.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
 
