@@ -18,9 +18,9 @@ struct GridOpts
 };
 
 namespace TOps {
-template <typename Scalar_, int ND, bool VCC = false> struct Grid final : TOp<Scalar_, ND + 2 + VCC, 3>
+template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
 {
-  TOP_INHERIT(Scalar_, ND + 2 + VCC, 3)
+  TOP_INHERIT(Cx, ND + 2 + VCC, 3)
   using Parent::adjoint;
   using Parent::forward;
   std::shared_ptr<Kernel<Scalar, ND>> kernel;
@@ -34,7 +34,7 @@ template <typename Scalar_, int ND, bool VCC = false> struct Grid final : TOp<Sc
                    Index const            nC = 1,
                    Basis<Scalar> const   &b = IdBasis<Scalar>(),
                    Index const            bSz = 32,
-                   Index const            sSz = 16384) -> std::shared_ptr<Grid<Scalar, ND, VCC>>;
+                   Index const            sSz = 16384) -> std::shared_ptr<Grid<ND, VCC>>;
   Grid(TrajectoryN<ND> const &traj,
        std::string const      ktype,
        float const            osamp,

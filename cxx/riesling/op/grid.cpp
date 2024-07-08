@@ -17,19 +17,19 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
   -> TOps::TOp<Cx, 5, 4>::Ptr
 {
   if (gridOpts.vcc) {
-    auto       grid = TOps::Grid<Cx, 3, true>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis,
+    auto       grid = TOps::Grid<3, true>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis,
                                                     gridOpts.subgridSize.Get(), gridOpts.splitSize.Get());
     auto const ns = grid->ishape;
     auto       reshape =
-      std::make_shared<TOps::ReshapeInput<TOps::Grid<Cx, 3, true>, 5>>(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
+      std::make_shared<TOps::ReshapeInput<TOps::Grid<3, true>, 5>>(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
     auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(reshape, nSlab);
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
     auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
     return compose2;
   } else {
-    auto grid = TOps::Grid<Cx, 3, false>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis,
+    auto grid = TOps::Grid<3, false>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis,
                                                gridOpts.subgridSize.Get(), gridOpts.splitSize.Get());
-    auto loop = std::make_shared<TOps::Loop<TOps::Grid<Cx, 3, false>>>(grid, nSlab);
+    auto loop = std::make_shared<TOps::Loop<TOps::Grid<3, false>>>(grid, nSlab);
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nSlab);
     auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
     return compose1;

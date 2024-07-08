@@ -31,7 +31,7 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
   void iforward(InCMap const &x, OutMap &y) const;
 
 private:
-  Grid<Cx, NDim, VCC> gridder;
+  Grid<NDim, VCC> gridder;
   InTensor mutable workspace;
 
   Index const batches;

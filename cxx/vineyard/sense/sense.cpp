@@ -61,7 +61,7 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
   kSz.fill(opts.kWidth.Get());
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto const [traj, lores] = inTraj.downsample(ncVol, kSz, 0, true, true);
-  auto const A = TOps::Grid<Cx, 3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
+  auto const A = TOps::Grid<3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
   auto const M = make_kspace_pre(traj, nC, basis, false);
   LSMR const lsmr{A, M, 4};
   Cx5 const  channels(Tensorfy(lsmr.run(lores.data()), A->ishape));

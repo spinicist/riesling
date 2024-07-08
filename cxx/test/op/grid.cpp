@@ -27,10 +27,10 @@ TEST_CASE("Grid", "[grid]")
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              basis = IdBasis<float>();
-  auto              grid = TOps::Grid<float, 2, false>::Make(traj, ktype, osamp, 1, basis);
-  Re3               noncart(grid->oshape);
-  Re4               cart(grid->ishape);
+  auto              basis = IdBasis<Cx>();
+  auto              grid = TOps::Grid<2, false>::Make(traj, ktype, osamp, 1, basis);
+  Cx3               noncart(grid->oshape);
+  Cx4               cart(grid->ishape);
   noncart.setConstant(1.f);
   cart = grid->adjoint(noncart);
   INFO("M " << M << " OS " << osamp << " " << ktype);
@@ -57,7 +57,7 @@ TEST_CASE("Grid Sample Basis", "[grid]")
 
   float const       osamp = 1;
   std::string const ktype = GENERATE("NN");
-  Re3               basis(2, 6, 1);
+  Cx3               basis(2, 6, 1);
   basis.setZero();
   basis(0, 0, 0) = 1.f;
   basis(0, 1, 0) = 1.f;
@@ -65,24 +65,24 @@ TEST_CASE("Grid Sample Basis", "[grid]")
   basis(1, 3, 0) = 1.f;
   basis(1, 4, 0) = 1.f;
   basis(1, 5, 0) = 1.f;
-  auto grid = TOps::Grid<float, 1, false>::Make(traj, ktype, osamp, 1, basis);
-  Re3  noncart(grid->oshape);
+  auto grid = TOps::Grid<1, false>::Make(traj, ktype, osamp, 1, basis);
+  Cx3  noncart(grid->oshape);
   noncart.setConstant(1.f);
-  Re3 cart = grid->adjoint(noncart);
+  Cx3 cart = grid->adjoint(noncart);
   INFO("GRID\n" << cart);
-  CHECK(cart(0, 0, 0) == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 0, 1) == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 0, 2) == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 0, 3) == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 0, 4) == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 0, 5) == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 1, 0) == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 1, 1) == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 1, 2) == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 1, 3) == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 1, 4) == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 1, 5) == Approx(1.f).margin(1e-2f));
-  Re3 nc2 = grid->forward(cart);
+  CHECK(cart(0, 0, 0).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(0, 0, 1).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(0, 0, 2).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(0, 0, 3).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 0, 4).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 0, 5).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 1, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 1, 1).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 1, 2).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 1, 3).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(0, 1, 4).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(0, 1, 5).real() == Approx(1.f).margin(1e-2f));
+  Cx3 nc2 = grid->forward(cart);
   INFO("NC\n" << nc2);
   CHECK(Norm(nc2 - noncart) == Approx(0.f).margin(1e-2f));
 }
@@ -99,7 +99,7 @@ TEST_CASE("Grid VCC", "[grid]")
   }
   TrajectoryN<1> const traj(points, matrix);
 
-  auto grid = TOps::Grid<Cx, 1, true>::Make(traj, "NN", 1.f, 1, IdBasis<Cx>(), true);
+  auto grid = TOps::Grid<1, true>::Make(traj, "NN", 1.f, 1, IdBasis<Cx>(), true);
   Cx3  noncart(grid->oshape);
   Cx4  cart(grid->ishape);
   noncart.setConstant(Cx(0.f, 1.f));

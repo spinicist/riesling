@@ -24,16 +24,16 @@ GridOpts::GridOpts(args::Subparser &parser)
 
 namespace TOps {
 
-template <typename Scalar, int NDim, bool VCC>
-auto Grid<Scalar, NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
-                                   std::string const        ktype,
-                                   float const              osamp,
-                                   Index const              nC,
-                                   Basis<Scalar> const     &b,
-                                   Index const              bSz,
-                                   Index const              sSz) -> std::shared_ptr<Grid<Scalar, NDim, VCC>>
+template <int NDim, bool VCC>
+auto Grid<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
+                           std::string const        ktype,
+                           float const              osamp,
+                           Index const              nC,
+                           Basis<Scalar> const     &b,
+                           Index const              bSz,
+                           Index const              sSz) -> std::shared_ptr<Grid<NDim, VCC>>
 {
-  return std::make_shared<Grid<Scalar, NDim, VCC>>(traj, ktype, osamp, nC, b, bSz, sSz);
+  return std::make_shared<Grid<NDim, VCC>>(traj, ktype, osamp, nC, b, bSz, sSz);
 }
 
 template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index const nB) -> Sz<ND + 2 + VCC>
@@ -45,14 +45,14 @@ template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index
   }
 }
 
-template <typename Scalar, int NDim, bool VCC>
-Grid<Scalar, NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
-                              std::string const        ktype,
-                              float const              osamp,
-                              Index const              nC,
-                              Basis<Scalar> const     &b,
-                              Index const              bSz,
-                              Index const              sSz)
+template <int NDim, bool VCC>
+Grid<NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
+                      std::string const        ktype,
+                      float const              osamp,
+                      Index const              nC,
+                      Basis<Scalar> const     &b,
+                      Index const              bSz,
+                      Index const              sSz)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""))
   , kernel{Kernel<Scalar, NDim>::Make(ktype, osamp)}
   , mapping{traj, osamp, kernel->paddedWidth(), bSz, sSz}
@@ -69,11 +69,11 @@ Grid<Scalar, NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
   Log::Debug("Grid Dims {}", this->ishape);
 }
 
-template <typename Scalar, int NDim, bool VCC>
-Grid<Scalar, NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
-                              Mapping<NDim> const                          m,
-                              Index const                                  nC,
-                              Basis<Scalar> const                         &b)
+template <int NDim, bool VCC>
+Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
+                      Mapping<NDim> const                          m,
+                      Index const                                  nC,
+                      Basis<Scalar> const                         &b)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""),
            AddVCC<VCC>(m.cartDims, nC, b.dimension(0)),
            AddFront(m.noncartDims, nC))
@@ -85,17 +85,17 @@ Grid<Scalar, NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
   Log::Debug("Grid Dims {}", this->ishape);
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC>
-inline void forwardCoilDim(Sz<ND + 2 + hasVCC>                                                   xi,
-                           Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC> const> const &x,
-                           Sz<ND + 2>                                                            sxi,
-                           Eigen::Tensor<Scalar, ND + 2>                                        &sx)
+template <int ND, bool hasVCC, bool isVCC>
+inline void forwardCoilDim(Sz<ND + 2 + hasVCC>                                               xi,
+                           Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
+                           Sz<ND + 2>                                                        sxi,
+                           Eigen::Tensor<Cx, ND + 2>                                        &sx)
 {
   for (Index ii = 0; ii < sx.dimensions()[0]; ii++) {
     sxi[0] = ii;
     xi[0] = ii;
     if constexpr (hasVCC) {
-      if constexpr (std::is_same<Scalar, Cx>::value && isVCC) {
+      if constexpr (isVCC) {
         sx(sxi) = std::conj(x(xi)) * inv_sqrt2;
       } else {
         sx(sxi) = x(xi) * inv_sqrt2;
@@ -107,99 +107,99 @@ inline void forwardCoilDim(Sz<ND + 2 + hasVCC>                                  
   }
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC>
-inline void forwardBasisDim(Sz<ND + 2 + hasVCC>                                                   xi,
-                            Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC> const> const &x,
-                            Sz<ND + 2>                                                            sxi,
-                            Eigen::Tensor<Scalar, ND + 2>                                        &sx)
+template <int ND, bool hasVCC, bool isVCC>
+inline void forwardBasisDim(Sz<ND + 2 + hasVCC>                                               xi,
+                            Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
+                            Sz<ND + 2>                                                        sxi,
+                            Eigen::Tensor<Cx, ND + 2>                                        &sx)
 {
   for (Index ii = 0; ii < sx.dimensions()[1]; ii++) {
     xi[1 + hasVCC] = ii;
     sxi[1] = ii;
-    forwardCoilDim<Scalar, ND, hasVCC, isVCC>(xi, x, sxi, sx);
+    forwardCoilDim<ND, hasVCC, isVCC>(xi, x, sxi, sx);
   }
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC, int D>
-inline void forwardSpatialDim(Sz<ND> const                                                          xSt,
-                              Sz<ND + 2 + hasVCC>                                                   xi,
-                              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC> const> const &x,
-                              Sz<ND + 2>                                                            sxi,
-                              Eigen::Tensor<Scalar, ND + 2>                                        &sx)
+template <int ND, bool hasVCC, bool isVCC, int D>
+inline void forwardSpatialDim(Sz<ND> const                                                      xSt,
+                              Sz<ND + 2 + hasVCC>                                               xi,
+                              Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
+                              Sz<ND + 2>                                                        sxi,
+                              Eigen::Tensor<Cx, ND + 2>                                        &sx)
 {
   for (Index ii = 0; ii < sx.dimensions()[D + 2]; ii++) {
     xi[D + 2 + hasVCC] = Wrap(ii + xSt[D], x.dimensions()[D + 2 + hasVCC]);
     sxi[D + 2] = ii;
     if constexpr (D == 0) {
-      forwardBasisDim<Scalar, ND, hasVCC, isVCC>(xi, x, sxi, sx);
+      forwardBasisDim<ND, hasVCC, isVCC>(xi, x, sxi, sx);
     } else {
-      forwardSpatialDim<Scalar, ND, hasVCC, isVCC, D - 1>(xSt, xi, x, sxi, sx);
+      forwardSpatialDim<ND, hasVCC, isVCC, D - 1>(xSt, xi, x, sxi, sx);
     }
   }
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC>
-inline void forwardTask(Mapping<ND> const                                                    &map,
-                        Basis<Scalar> const                                                  &basis,
-                        std::shared_ptr<Kernel<Scalar, ND>> const                            &kernel,
-                        Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC> const> const &x,
-                        Eigen::TensorMap<Eigen::Tensor<Scalar, 3>>                           &y)
+template <int ND, bool hasVCC, bool isVCC>
+inline void forwardTask(Mapping<ND> const                                                &map,
+                        Basis<Cx> const                                                  &basis,
+                        std::shared_ptr<Kernel<Cx, ND>> const                            &kernel,
+                        Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
+                        Eigen::TensorMap<Eigen::Tensor<Cx, 3>>                           &y)
 {
   Index const nC = y.dimension(0);
   Index const nB = basis.dimension(0);
   auto        grid_task = [&](Index const is) {
-    auto const                   &subgrid = map.subgrids[is];
-    Eigen::Tensor<Scalar, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
+    auto const               &subgrid = map.subgrids[is];
+    Eigen::Tensor<Cx, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
 
     Sz<ND + 2 + hasVCC> xi;
     xi.fill(0);
     if constexpr (hasVCC) { xi[1] = isVCC; }
     Sz<ND + 2> sxi;
     sxi.fill(0);
-    forwardSpatialDim<Scalar, ND, hasVCC, isVCC, ND - 1>(subgrid.minCorner, xi, x, sxi, sx);
+    forwardSpatialDim<ND, hasVCC, isVCC, ND - 1>(subgrid.minCorner, xi, x, sxi, sx);
 
     for (auto ii = 0; ii < subgrid.count(); ii++) {
-      auto const                     si = subgrid.indices[ii];
-      auto const                     c = map.cart[si];
-      auto const                     n = map.noncart[si];
-      auto const                     o = map.offset[si];
-      Eigen::Tensor<Scalar, 1> const bs =
+      auto const                 si = subgrid.indices[ii];
+      auto const                 c = map.cart[si];
+      auto const                 n = map.noncart[si];
+      auto const                 o = map.offset[si];
+      Eigen::Tensor<Cx, 1> const bs =
         basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
-      Eigen::TensorMap<Eigen::Tensor<Scalar, 1>> yy(&y(0, n.sample, n.trace), Sz1{nC});
+      Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, n.sample, n.trace), Sz1{nC});
       kernel->gather(c, o, subgrid.minCorner, bs, sx, yy);
     }
   };
   Threads::For(grid_task, map.subgrids.size());
 }
 
-template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::forward(InCMap const &x, OutMap &y) const
+template <int NDim, bool VCC> void Grid<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
-  forwardTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
-  if (this->vccMapping) { forwardTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
+  forwardTask<NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
+  if (this->vccMapping) { forwardTask<NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
   this->finishForward(y, time, false);
 }
 
-template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
+template <int NDim, bool VCC> void Grid<NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
-  forwardTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
-  if (this->vccMapping) { forwardTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
+  forwardTask<NDim, VCC, false>(this->mapping, this->basis, this->kernel, x, y);
+  if (this->vccMapping) { forwardTask<NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, x, y); }
   this->finishForward(y, time, true);
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC>
-inline void adjointCoilDim(Sz<ND + 2>                                                sxi,
-                           Eigen::Tensor<Scalar, ND + 2> const                      &sx,
-                           Sz<ND + 2 + hasVCC>                                       xi,
-                           Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC>> &x)
+template <int ND, bool hasVCC, bool isVCC>
+inline void adjointCoilDim(Sz<ND + 2>                                            sxi,
+                           Eigen::Tensor<Cx, ND + 2> const                      &sx,
+                           Sz<ND + 2 + hasVCC>                                   xi,
+                           Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
 {
   for (Index ii = 0; ii < sx.dimensions()[0]; ii++) {
     sxi[0] = ii;
     xi[0] = ii;
     if constexpr (hasVCC) {
-      if constexpr (std::is_same<Scalar, Cx>::value && isVCC) {
+      if constexpr (isVCC) {
         x(xi) += std::conj(sx(sxi)) * inv_sqrt2;
       } else {
         x(xi) += sx(sxi) * inv_sqrt2;
@@ -210,60 +210,60 @@ inline void adjointCoilDim(Sz<ND + 2>                                           
   }
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC>
-inline void adjointBasisDim(Sz<ND + 2>                                                sxi,
-                            Eigen::Tensor<Scalar, ND + 2> const                      &sx,
-                            Sz<ND + 2 + hasVCC>                                       xi,
-                            Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC>> &x)
+template <int ND, bool hasVCC, bool isVCC>
+inline void adjointBasisDim(Sz<ND + 2>                                            sxi,
+                            Eigen::Tensor<Cx, ND + 2> const                      &sx,
+                            Sz<ND + 2 + hasVCC>                                   xi,
+                            Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
 {
   for (Index ii = 0; ii < sx.dimensions()[1]; ii++) {
     xi[1 + hasVCC] = ii;
     sxi[1] = ii;
-    adjointCoilDim<Scalar, ND, hasVCC, isVCC>(sxi, sx, xi, x);
+    adjointCoilDim<ND, hasVCC, isVCC>(sxi, sx, xi, x);
   }
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC, int D>
-inline void adjointSpatialDim(Sz<ND + 2>                                                sxi,
-                              Eigen::Tensor<Scalar, ND + 2> const                      &sx,
-                              Sz<ND> const                                              xSt,
-                              Sz<ND + 2 + hasVCC>                                       xi,
-                              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC>> &x)
+template <int ND, bool hasVCC, bool isVCC, int D>
+inline void adjointSpatialDim(Sz<ND + 2>                                            sxi,
+                              Eigen::Tensor<Cx, ND + 2> const                      &sx,
+                              Sz<ND> const                                          xSt,
+                              Sz<ND + 2 + hasVCC>                                   xi,
+                              Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
 {
   for (Index ii = 0; ii < sx.dimensions()[D + 2]; ii++) {
     xi[D + 2 + hasVCC] = Wrap(ii + xSt[D], x.dimensions()[D + 2 + hasVCC]);
     sxi[D + 2] = ii;
     if constexpr (D == 0) {
-      adjointBasisDim<Scalar, ND, hasVCC, isVCC>(sxi, sx, xi, x);
+      adjointBasisDim<ND, hasVCC, isVCC>(sxi, sx, xi, x);
     } else {
-      adjointSpatialDim<Scalar, ND, hasVCC, isVCC, D - 1>(sxi, sx, xSt, xi, x);
+      adjointSpatialDim<ND, hasVCC, isVCC, D - 1>(sxi, sx, xSt, xi, x);
     }
   }
 }
 
-template <typename Scalar, int ND, bool hasVCC, bool isVCC>
-inline void adjointTask(Mapping<ND> const                                        &map,
-                        Basis<Scalar> const                                      &basis,
-                        std::shared_ptr<Kernel<Scalar, ND>> const                &kernel,
-                        Eigen::TensorMap<Eigen::Tensor<Scalar, 3> const> const   &y,
-                        Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2 + hasVCC>> &x)
+template <int ND, bool hasVCC, bool isVCC>
+inline void adjointTask(Mapping<ND> const                                    &map,
+                        Basis<Cx> const                                      &basis,
+                        std::shared_ptr<Kernel<Cx, ND>> const                &kernel,
+                        Eigen::TensorMap<Eigen::Tensor<Cx, 3> const> const   &y,
+                        Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
 {
   Index const nC = y.dimensions()[0];
   Index const nB = basis.dimension(0);
 
   std::mutex writeMutex;
   auto       grid_task = [&](Index is) {
-    auto const                   &subgrid = map.subgrids[is];
-    Eigen::Tensor<Scalar, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
+    auto const               &subgrid = map.subgrids[is];
+    Eigen::Tensor<Cx, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
     sx.setZero();
     for (auto ii = 0; ii < subgrid.count(); ii++) {
-      auto const                     si = subgrid.indices[ii];
-      auto const                     c = map.cart[si];
-      auto const                     n = map.noncart[si];
-      auto const                     o = map.offset[si];
-      Eigen::Tensor<Scalar, 1> const bs =
+      auto const                 si = subgrid.indices[ii];
+      auto const                 c = map.cart[si];
+      auto const                 n = map.noncart[si];
+      auto const                 o = map.offset[si];
+      Eigen::Tensor<Cx, 1> const bs =
         basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1)).conjugate();
-      Eigen::Tensor<Scalar, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
+      Eigen::Tensor<Cx, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
       kernel->spread(c, o, subgrid.minCorner, bs, yy, sx);
     }
 
@@ -275,39 +275,36 @@ inline void adjointTask(Mapping<ND> const                                       
       if constexpr (hasVCC) { xi[1] = isVCC; }
       Sz<ND + 2> sxi;
       sxi.fill(0);
-      adjointSpatialDim<Scalar, ND, hasVCC, isVCC, ND - 1>(sxi, sx, subgrid.minCorner, xi, x);
+      adjointSpatialDim<ND, hasVCC, isVCC, ND - 1>(sxi, sx, subgrid.minCorner, xi, x);
     }
   };
   Threads::For(grid_task, map.subgrids.size());
 }
 
-template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
+template <int NDim, bool VCC> void Grid<NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
 
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
-  adjointTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
-  if (this->vccMapping) { adjointTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
+  adjointTask<NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
+  if (this->vccMapping) { adjointTask<NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
   this->finishAdjoint(x, time, false);
 }
 
-template <typename Scalar, int NDim, bool VCC> void Grid<Scalar, NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
+template <int NDim, bool VCC> void Grid<NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
 {
 
   auto const time = this->startAdjoint(y, x, true);
-  adjointTask<Scalar, NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
-  if (this->vccMapping) { adjointTask<Scalar, NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
+  adjointTask<NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);
+  if (this->vccMapping) { adjointTask<NDim, VCC, true>(this->vccMapping.value(), this->basis, this->kernel, y, x); }
   this->finishAdjoint(x, time, true);
 }
 
-template struct Grid<float, 1, false>;
-template struct Grid<float, 2, false>;
-template struct Grid<float, 3, false>;
-template struct Grid<Cx, 1, false>;
-template struct Grid<Cx, 2, false>;
-template struct Grid<Cx, 3, false>;
-template struct Grid<Cx, 1, true>;
-template struct Grid<Cx, 2, true>;
-template struct Grid<Cx, 3, true>;
+template struct Grid<1, false>;
+template struct Grid<2, false>;
+template struct Grid<3, false>;
+template struct Grid<1, true>;
+template struct Grid<2, true>;
+template struct Grid<3, true>;
 } // namespace TOps
 } // namespace rl
