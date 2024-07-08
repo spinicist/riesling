@@ -15,11 +15,11 @@ auto Choose(Index n, Index k) -> Index
 
 namespace rl {
 
-auto BernsteinPolynomial(Index const N, Index const traces) -> Basis<Cx>
+auto BernsteinPolynomial(Index const N, Index const traces) -> Basis
 {
   Eigen::ArrayXf const x = Eigen::ArrayXf::LinSpaced(traces, 0.f, 1.f);
 
-  Basis<Cx> basis(N + 1, 1, traces);
+  Basis basis(N + 1, 1, traces);
   for (Index ii = 0; ii <= N; ii++) {
     Eigen::ArrayXf const b = Choose(N, ii) * x.pow(ii) * (1.f - x).pow(N - ii);
     for (Index it = 0; it < traces; it++) {

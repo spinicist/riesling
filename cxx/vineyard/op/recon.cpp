@@ -16,7 +16,7 @@ auto SENSE(CoreOpts         &coreOpts,
            SENSE::Opts      &senseOpts,
            Trajectory const &traj,
            Index const       nSlab,
-           Basis<Cx> const  &basis,
+           Basis const  &basis,
            Cx5 const        &data) -> TOps::TOp<Cx, 4, 4>::Ptr
 {
   if (coreOpts.ndft) {
@@ -54,7 +54,7 @@ auto Channels(bool const        ndft,
               Trajectory const &traj,
               Index const       nC,
               Index const       nSlab,
-              Basis<Cx> const  &basis,
+              Basis const  &basis,
               Sz3 const         shape) -> TOps::TOp<Cx, 5, 4>::Ptr
 {
   if (ndft) {

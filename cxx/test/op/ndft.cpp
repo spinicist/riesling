@@ -18,8 +18,8 @@ TEST_CASE("NDFT", "[tform]")
     points(0, ii, 0) = -0.5f + ii / (float)M;
   }
   TOps::NDFT<1> ndft(Sz1{M}, points, 1);
-  Cx3       ks(ndft.oshape);
-  Cx3       img(ndft.ishape);
+  Cx3           ks(ndft.oshape);
+  Cx3           img(ndft.ishape);
   img.setZero();
   img(0, 0, M / 2) = std::sqrt(M);
   ks = ndft.forward(img);
@@ -39,7 +39,7 @@ TEST_CASE("NDFT Basis", "[tform]")
   Re3         points(1, 1, M);
   points.setZero();
   Index const O = 4;
-  Basis<Cx>   basis(O, 1, M);
+  Basis       basis(O, 1, M);
   basis.setZero();
   Index const P = M / O;
   for (Index ii = 0; ii < O; ii++) {
@@ -48,7 +48,7 @@ TEST_CASE("NDFT Basis", "[tform]")
     }
   }
   TOps::NDFT<1> ndft(Sz1{N}, points, 1, basis);
-  Cx3       ks(ndft.oshape);
+  Cx3           ks(ndft.oshape);
   ks.setConstant(1.f);
   Cx3 img(ndft.ishape);
   img.setZero();

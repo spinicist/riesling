@@ -27,7 +27,7 @@ TEST_CASE("Grid", "[grid]")
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              basis = IdBasis<Cx>();
+  auto              basis = IdBasis();
   auto              grid = TOps::Grid<2, false>::Make(traj, ktype, osamp, 1, basis);
   Cx3               noncart(grid->oshape);
   Cx4               cart(grid->ishape);
@@ -99,7 +99,7 @@ TEST_CASE("Grid VCC", "[grid]")
   }
   TrajectoryN<1> const traj(points, matrix);
 
-  auto grid = TOps::Grid<1, true>::Make(traj, "NN", 1.f, 1, IdBasis<Cx>(), true);
+  auto grid = TOps::Grid<1, true>::Make(traj, "NN", 1.f, 1, IdBasis(), true);
   Cx3  noncart(grid->oshape);
   Cx4  cart(grid->ishape);
   noncart.setConstant(Cx(0.f, 1.f));

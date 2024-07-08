@@ -14,18 +14,16 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
         std::string const       &ktype,
         float const              osamp,
         Index const              nC,
-        Basis<Cx> const         &basis = IdBasis<Scalar>(),
+        Basis const             &basis = IdBasis(),
         Sz<NDim> const           matrix = Sz<NDim>(),
         Index const              subgridSz = 32,
         Index const              splitSz = 16384,
         Index const              nBatches = 1);
   TOP_DECLARE(NUFFT)
 
-  static auto Make(TrajectoryN<NDim> const &traj,
-                   GridOpts                &opts,
-                   Index const              nC,
-                   Basis<Cx> const         &basis,
-                   Sz<NDim> const           matrix = Sz<NDim>()) -> std::shared_ptr<NUFFT<NDim, VCC>>;
+  static auto
+  Make(TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis const &basis, Sz<NDim> const matrix = Sz<NDim>())
+    -> std::shared_ptr<NUFFT<NDim, VCC>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;
   void iforward(InCMap const &x, OutMap &y) const;

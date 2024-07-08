@@ -44,7 +44,7 @@ void main_blend(args::Subparser &parser)
   Cx5         out(AddFront(LastN<4>(dims), ntotal));
   float const scale = std::sqrt(basis.dimension(1) * basis.dimension(2));
 
-  Basis<Cx> selected(basis.dimension(0), sps.size(), tps.size());
+  Basis selected(basis.dimension(0), sps.size(), tps.size());
   for (size_t it = 0; it < tps.size(); it++) {
     if (tps[it] < 0 || tps[it] >= basis.dimension(2)) {
       Log::Fail("Requested timepoint {} exceeds traces {}", tps[it], basis.dimension(2));

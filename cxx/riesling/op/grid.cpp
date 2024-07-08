@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Basis<Cx> const &basis)
+auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Basis const &basis)
   -> TOps::TOp<Cx, 5, 4>::Ptr
 {
   if (gridOpts.vcc) {

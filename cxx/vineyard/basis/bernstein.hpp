@@ -4,6 +4,6 @@
 
 namespace rl {
 
-auto BernsteinPolynomial(Index const N, Index const traces) -> Basis<Cx>;
+auto BernsteinPolynomial(Index const N, Index const traces) -> Basis;
 
 } // namespace rl

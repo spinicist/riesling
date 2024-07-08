@@ -47,7 +47,7 @@ TEST_CASE("NUFFT Basis Trace", "[tform]")
   TrajectoryN<1> const traj(points, matrix);
 
   Index const O = 4;
-  Basis<Cx>   basis(O, 1, N);
+  Basis       basis(O, 1, N);
   basis.setZero();
   Index const P = N / O;
   for (Index ii = 0; ii < O; ii++) {
@@ -101,7 +101,7 @@ TEST_CASE("NUFFT VCC", "[tform]")
   points.setZero();
 
   TrajectoryN<1> const traj(points, matrix);
-  TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, IdBasis<Cx>());
+  TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, IdBasis());
   Cx3                  ks(nufft.oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));

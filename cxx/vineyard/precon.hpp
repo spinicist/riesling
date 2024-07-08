@@ -9,11 +9,11 @@
 namespace rl {
 
 auto KSpaceSingle(
-  Trajectory const &traj, Basis<Cx> const &basis, bool const vcc, float const bias = 1.f) -> Re2;
+  Trajectory const &traj, Basis const &basis, bool const vcc, float const bias = 1.f) -> Re2;
 
 auto make_kspace_pre(Trajectory const  &traj,
                      Index const        nC,
-                     Basis<Cx> const   &basis,
+                     Basis const   &basis,
                      bool const         vcc,
                      std::string const &type = "kspace",
                      float const        bias = 1.f,

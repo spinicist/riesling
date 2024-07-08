@@ -8,7 +8,7 @@ using namespace std::complex_literals;
 namespace rl::TOps {
 
 template <int NDim>
-NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis<Cx> const &b)
+NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis const &b)
   : Parent("NDFT", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
 {
@@ -60,7 +60,7 @@ NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis<Cx> 
 }
 
 template <int NDim>
-auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis<Cx> const &basis)
+auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis const &basis)
   -> std::shared_ptr<NDFT<NDim>>
 {
   return std::make_shared<NDFT<NDim>>(matrix, traj, nC, basis);

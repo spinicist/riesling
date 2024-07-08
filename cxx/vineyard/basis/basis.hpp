@@ -4,12 +4,9 @@
 
 namespace rl {
 
-template<typename Scalar = Cx>
-using Basis = Eigen::Tensor<Scalar, 3>;
+using Basis = Cx3;
 
-template<typename Scalar = Cx>
-auto IdBasis() -> Basis<Scalar>;
-
-auto ReadBasis(std::string const &basisFile) -> Basis<Cx>;
+auto IdBasis() -> Basis;
+auto ReadBasis(std::string const &basisFile) -> Basis;
 
 } // namespace rl

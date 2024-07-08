@@ -10,7 +10,7 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
                         std::string const       &ktype,
                         float const              osamp,
                         Index const              nChan,
-                        Basis<Cx> const         &basis,
+                        Basis const         &basis,
                         Sz<NDim> const           matrix,
                         Index const              subgridSz,
                         Index const              splitSz,
@@ -68,7 +68,7 @@ template <int NDim, bool VCC>
 auto NUFFT<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
                             GridOpts                &opts,
                             Index const              nC,
-                            Basis<Cx> const         &basis,
+                            Basis const         &basis,
                             Sz<NDim> const           matrix) -> std::shared_ptr<NUFFT<NDim, VCC>>
 {
   return std::make_shared<NUFFT<NDim, VCC>>(traj, opts.ktype.Get(), opts.osamp.Get(), nC, basis, matrix, opts.subgridSize.Get(),
