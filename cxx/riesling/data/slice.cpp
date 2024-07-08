@@ -16,9 +16,9 @@ void main_slice(args::Subparser &parser)
   args::ValueFlag<Index> channelStart(parser, "T", "Channel to start split", {"channel-start"}, 0);
   args::ValueFlag<Index> channelStride(parser, "SZ", "Channel stride", {"channel-stride"}, 1);
 
-  args::ValueFlag<Index> readSize(parser, "T", "Number of read samples to keep", {"read-size"}, 0);
-  args::ValueFlag<Index> readStart(parser, "T", "Read sample to start split", {"read-start"}, 0);
-  args::ValueFlag<Index> readStride(parser, "SZ", "Read sample stride", {"read-stride"}, 1);
+  args::ValueFlag<Index> sampleSize(parser, "T", "Number of read samples to keep", {"sample-size"}, 0);
+  args::ValueFlag<Index> sampleStart(parser, "T", "Read sample to start split", {"sample-start"}, 0);
+  args::ValueFlag<Index> sampleStride(parser, "SZ", "Read sample stride", {"sample-stride"}, 1);
 
   args::ValueFlag<Index> traceStart(parser, "T", "Trace to start split", {"trace-start"}, 0);
   args::ValueFlag<Index> traceSize(parser, "SZ", "Number of traces to keep", {"trace-size"}, 0);
@@ -45,13 +45,13 @@ void main_slice(args::Subparser &parser)
   auto const shape = reader.dimensions();
 
   Index const cSt = Wrap(channelStart.Get(), shape[0]);
-  Index const rSt = Wrap(readStart.Get(), shape[1]);
+  Index const rSt = Wrap(sampleStart.Get(), shape[1]);
   Index const tSt = Wrap(traceStart.Get(), shape[2]);
   Index const sSt = Wrap(slabStart.Get(), shape[3]);
   Index const vSt = Wrap(volStart.Get(), shape[4]);
 
   Index const cSz = channelSize ? channelSize.Get() : shape[0] - cSt;
-  Index const rSz = readSize ? readSize.Get() : shape[1] - rSt;
+  Index const rSz = sampleSize ? sampleSize.Get() : shape[1] - rSt;
   Index const tSz = traceSize ? traceSize.Get() : (tracesPerSeg ? tracesPerSeg.Get() - tSt : shape[2] - tSt);
   Index const sSz = slabSize ? slabSize.Get() : shape[3] - sSt;
   Index const vSz = volSize ? volSize.Get() : shape[4] - vSt;
@@ -100,9 +100,9 @@ void main_slice(args::Subparser &parser)
     traj = Trajectory(traj.points().slice(Sz3{0, rSt, tSt}, Sz3{3, rSz, tSz}), traj.matrix(), traj.voxelSize());
   }
 
-  if (channelStride || readStride || traceStride || slabStride || volStride) {
-    ks = Cx5(ks.stride(Sz5{channelStride.Get(), readStride.Get(), traceStride.Get(), slabStride.Get(), volStride.Get()}));
-    traj = Trajectory(traj.points().stride(Sz3{1, readStride.Get(), traceStride.Get()}), traj.matrix(), traj.voxelSize());
+  if (channelStride || sampleStride || traceStride || slabStride || volStride) {
+    ks = Cx5(ks.stride(Sz5{channelStride.Get(), sampleStride.Get(), traceStride.Get(), slabStride.Get(), volStride.Get()}));
+    traj = Trajectory(traj.points().stride(Sz3{1, sampleStride.Get(), traceStride.Get()}), traj.matrix(), traj.voxelSize());
   }
 
   HD5::Writer writer(oname.Get());
