@@ -20,7 +20,7 @@ float const os = 2.f;
 TEST_CASE("Grid ES3", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
-  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES3", os, C);
+  auto grid = TOps::Grid<3>::Make(traj, "ES3", os, C);
   Cx5  c(grid->ishape);
   Cx3  nc(grid->oshape);
   c.setRandom();
@@ -38,7 +38,7 @@ TEST_CASE("Grid ES3", "[grid]")
 TEST_CASE("Grid ES5", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
-  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES5", os, C);
+  auto grid = TOps::Grid<3>::Make(traj, "ES5", os, C);
   Cx5  c(grid->ishape);
   Cx3  nc(grid->oshape);
   c.setRandom();
@@ -58,7 +58,7 @@ TEST_CASE("GridBasis ES3", "[grid]")
   Index const nB = 4;
   Cx3         basis(nB, 1, 256);
   basis.setConstant(1.f);
-  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES3", os, C, basis);
+  auto grid = TOps::Grid<3>::Make(traj, "ES3", os, C, basis);
   Cx5  c(grid->ishape);
   Cx3  nc(grid->oshape);
   c.setRandom();
@@ -78,7 +78,7 @@ TEST_CASE("GridBasis ES5", "[grid]")
   Index const nB = 4;
   Cx3         basis(nB, 1, 256);
   basis.setConstant(1.f);
-  auto grid = TOps::Grid<Cx, 3>::Make(traj, "ES5", os, C, basis);
+  auto grid = TOps::Grid<3>::Make(traj, "ES5", os, C, basis);
   Cx5  c(grid->ishape);
   Cx3  nc(grid->oshape);
   c.setRandom();
