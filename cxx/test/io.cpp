@@ -57,7 +57,7 @@ TEST_CASE("IO", "[io]")
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
       Re5 const   realData = refData.real();
-      writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data());
+      traj.write(writer);
       writer.writeTensor(HD5::Keys::Data, realData.dimensions(), realData.data());
     }
     CHECK(std::filesystem::exists(fname));

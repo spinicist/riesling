@@ -65,7 +65,7 @@ void main_compress(args::Subparser &parser)
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, compressed.dimensions(), compressed.data(), HD5::Dims::Noncartesian);
 
   if (save) {

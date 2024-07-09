@@ -20,7 +20,7 @@ Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/EstimateKernels/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 21)
-  , res(parser, "R", "SENSE calibration res (10,10,10)", {"sense-res"}, Eigen::Array3f::Constant(10.f))
+  , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
   , λ(parser, "L", "SENSE regularization (1e-3)", {"sense-lambda"}, 1.e-3f)
 {

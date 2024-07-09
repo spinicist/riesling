@@ -65,6 +65,6 @@ void main_merge(args::Subparser &parser)
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader1.readInfo());
-  writer.writeTensor(HD5::Keys::Trajectory, traj.points().dimensions(), traj.points().data(), HD5::Dims::Trajectory);
+  traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
 }
