@@ -69,6 +69,8 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pΔ(parser, "Δ", "Grid Δ for parameters", {"delta"});
   args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
 
+  args::Flag save(parser, "S", "Save dynamics and projections", {"save"});
+
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
 
@@ -121,7 +123,9 @@ void main_basis_svd(args::Subparser &parser)
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
-  writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
-  writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);
+  if (save) {
+    writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
+    writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);
+  }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }
