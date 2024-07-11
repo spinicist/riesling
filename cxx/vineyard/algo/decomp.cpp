@@ -28,6 +28,15 @@ SVD<S>::SVD(Eigen::Ref<Matrix const> const &mat)
 }
 
 template<typename S>
+auto SVD<S>::variance(Index const N) const -> Eigen::ArrayXf {
+  Eigen::ArrayXf const squares = S.square();
+  Eigen::ArrayXf cumsum(N);
+  std::partial_sum(squares.begin(), squares.begin() + N, cumsum.begin());
+  cumsum /= squares.sum();
+  return cumsum;
+}
+
+template<typename S>
 auto SVD<S>::equalized(Index const N) const -> Matrix {
     // Amoeba Rotation
     // http://stats.stackexchange.com/a/177555/87414

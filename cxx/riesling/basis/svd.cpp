@@ -24,7 +24,7 @@ auto Run(rl::Settings const                &s,
   if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
   if (los.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
 
-  T               simulator{s};
+  T               seq{s};
   Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
@@ -33,9 +33,9 @@ auto Run(rl::Settings const                &s,
     parameters.conservativeResize(nP, parameters.cols() + p.cols());
     parameters.rightCols(p.cols()) = p;
   }
-  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, s.spokesPerSeg * s.segsKeep);
+  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, seq.length());
   auto const start = Log::Now();
-  auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = simulator.simulate(parameters.col(ii)); };
+  auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
   Log::Print("Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
@@ -99,6 +99,7 @@ void main_basis_svd(args::Subparser &parser)
   case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::IR2: std::tie(pars, dall) = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
@@ -109,6 +110,7 @@ void main_basis_svd(args::Subparser &parser)
   dmap.rowwise().normalize();
   Log::Print("Computing SVD {}x{}", dshape[0], L);
   SVD<Cx> svd(dmap);
+  Log::Print("Variance explained: {}%", svd.variance(nRetain.Get()) * 100);
 
   Cx3                       basis(nRetain.Get(), dshape[1], dshape[2]);
   Eigen::MatrixXcf::MapType bmap(basis.data(), nRetain.Get(), L);

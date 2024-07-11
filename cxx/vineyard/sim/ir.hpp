@@ -16,4 +16,13 @@ struct IR final : Sequence
   auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
 };
 
+struct IR2 final : Sequence
+{
+  static const Index nParameters = 3;
+  IR2(Settings const &s);
+
+  auto length() const -> Index;
+  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
+};
+
 } // namespace rl

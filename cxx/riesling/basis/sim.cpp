@@ -91,6 +91,7 @@ void main_basis_sim(args::Subparser &parser)
   case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, plist.Get()); break;
   case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, plist.Get()); break;
   case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, plist.Get()); break;
+  case Sequences::IR2: std::tie(pars, dall) = Run<rl::IR2>(settings, plist.Get()); break;
   case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(settings, plist.Get()); break;
   case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(settings, plist.Get()); break;
   case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, plist.Get()); break;

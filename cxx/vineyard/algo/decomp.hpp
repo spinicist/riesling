@@ -6,8 +6,7 @@
 
 namespace rl {
 
-template <typename Scalar = Cx>
-struct Eig
+template <typename Scalar = Cx> struct Eig
 {
   using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   Eig(Eigen::Ref<Matrix const> const &gramian);
@@ -17,14 +16,15 @@ struct Eig
 extern template struct Eig<float>;
 extern template struct Eig<Cx>;
 
-template <typename Scalar = Cx>
-struct SVD
+template <typename Scalar = Cx> struct SVD
 {
   using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   SVD(Eigen::Ref<Matrix const> const &mat);
   Matrix         U, V;
   Eigen::ArrayXf S;
 
+  auto variance(Index const N) const
+    -> Eigen::ArrayXf;                           // Calculate the cumulative fractional variance contained in first N vectors
   auto equalized(Index const N) const -> Matrix; // Equalize variance over first N vectors
 };
 extern template struct SVD<float>;
