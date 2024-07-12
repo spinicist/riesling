@@ -20,7 +20,7 @@ struct Writer
   void                             writeTensor(std::string const       &label,
                                                Sz<N> const             &shape,
                                                Scalar const            *data,
-                                               DimensionNames<N> const &dims = DimensionNames<N>());
+                                               DimensionNames<N> const &dims);
   template <typename Derived> void writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label);
 
   template <int N> void writeAttribute(std::string const &dataset, std::string const &attribute, Sz<N> const &val);

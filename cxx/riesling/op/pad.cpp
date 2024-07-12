@@ -31,6 +31,6 @@ void main_pad(args::Subparser &parser)
     TOps::Crop<Cx, 6> crop(inDims, outDims);
     outImages = crop.forward(inImages);
   }
-  writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data());
+  writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data(), HD5::Dims::Channels);
 }
 

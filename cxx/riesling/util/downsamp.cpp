@@ -34,5 +34,5 @@ void main_downsamp(args::Subparser &parser)
   dsTraj.write(writer);
   info.voxel_size = dsTraj.voxelSize();
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Data, ks2.dimensions(), ks2.data());
+  writer.writeTensor(HD5::Keys::Data, ks2.dimensions(), ks2.data(), HD5::Dims::Noncartesian);
 }

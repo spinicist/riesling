@@ -35,14 +35,14 @@ void main_eig(args::Subparser &parser)
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());
     if (savevec) {
       HD5::Writer writer(coreOpts.oname.Get());
-      writer.writeTensor("evec", A->ishape, vec.data());
+      writer.writeTensor("evec", A->ishape, vec.data(), {"v", "x", "y", "z"});
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   } else {
     auto const [val, vec] = PowerMethodForward(A, P, its.Get());
     if (savevec) {
       HD5::Writer writer(coreOpts.oname.Get());
-      writer.writeTensor("evec", A->ishape, vec.data());
+      writer.writeTensor("evec", A->ishape, vec.data(), {"v", "x", "y", "z"});
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   }

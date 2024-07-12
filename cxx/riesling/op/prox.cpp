@@ -62,6 +62,6 @@ void main_prox(args::Subparser &parser)
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
+  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
   rl::Log::Print("Finished {}", parser.GetCommand().Name());
 }

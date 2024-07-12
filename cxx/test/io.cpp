@@ -31,7 +31,7 @@ TEST_CASE("IO", "[io]")
     { // Use destructor to ensure it is written
       HD5::Writer writer(fname);
       CHECK_NOTHROW(traj.write(writer));
-      CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Data, refData.dimensions(), refData.data()));
+      CHECK_NOTHROW(writer.writeTensor(HD5::Keys::Data, refData.dimensions(), refData.data(), HD5::Dims::Noncartesian));
     }
     CHECK(std::filesystem::exists(fname));
 
@@ -58,7 +58,7 @@ TEST_CASE("IO", "[io]")
       HD5::Writer writer(fname);
       Re5 const   realData = refData.real();
       traj.write(writer);
-      writer.writeTensor(HD5::Keys::Data, realData.dimensions(), realData.data());
+      writer.writeTensor(HD5::Keys::Data, realData.dimensions(), realData.data(), HD5::Dims::Noncartesian);
     }
     CHECK(std::filesystem::exists(fname));
     HD5::Reader reader(fname);

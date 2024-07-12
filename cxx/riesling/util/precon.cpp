@@ -19,6 +19,6 @@ void main_precon(args::Subparser &parser)
   HD5::Writer writer(preFile.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        M = KSpaceSingle(traj, ReadBasis(basisFile.Get()), vcc, preBias.Get());
-  writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data());
+  writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"sample", "trace"});
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

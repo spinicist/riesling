@@ -61,7 +61,7 @@ void main_psf(args::Subparser &parser)
     Log::Print("Calculating MTF");
     xm *= xm.constant(std::sqrt(Product(shape)));
     fft.forward(xm);
-    writer.writeTensor("mtf", xm.dimensions(), xm.data());
+    writer.writeTensor("mtf", xm.dimensions(), xm.data(), {"v", "x", "y", "z"});
   }
   Log::Print("Finished");
 }

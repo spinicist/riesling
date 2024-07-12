@@ -28,7 +28,7 @@ void main_grad(args::Subparser &parser)
     for (Index iv = 0; iv < input.dimension(4); iv++) {
       output.chip<5>(iv) = g.forward(CChipMap(input, iv));
     }
-    writer.writeTensor("grad", output.dimensions(), output.data());
+    writer.writeTensor("grad", output.dimensions(), output.data(), {"v", "x", "y", "z", "g", "t"});
   } else {
     auto   input = reader.readTensor<Cx6>("grad");
     Sz4    dims = FirstN<4>(input.dimensions());
@@ -37,6 +37,6 @@ void main_grad(args::Subparser &parser)
     for (Index iv = 0; iv < input.dimension(5); iv++) {
       output.chip<4>(iv) = g.adjoint(CChipMap(input, iv));
     }
-    writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
+    writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
   }
 }

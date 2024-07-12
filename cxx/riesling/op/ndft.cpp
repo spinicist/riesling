@@ -50,6 +50,6 @@ void main_ndft(args::Subparser &parser)
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
       output.chip<5>(ii).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, ii)), ndft->ishape);
     }
-    writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data());
+    writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
   }
 }
