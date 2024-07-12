@@ -64,16 +64,13 @@ Grid<NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
   if constexpr (VCC) {
     Log::Print("Adding VCC");
     auto const conjTraj = TrajectoryN<NDim>(-traj.points(), traj.matrix(), traj.voxelSize());
-    vccMapping = Mapping<NDim, VCC>(conjTraj, osamp, kernel->paddedWidth(), bSz, sSz);
+    vccMapping = Mapping<NDim>(conjTraj, osamp, kernel->paddedWidth(), bSz, sSz);
   }
   Log::Debug("Grid Dims {}", this->ishape);
 }
 
 template <int NDim, bool VCC>
-Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
-                      Mapping<NDim, VCC> const                     m,
-                      Index const                                  nC,
-                      Basis const                                 &b)
+Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Basis const &b)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""),
            AddVCC<VCC>(m.cartDims, nC, b.dimension(0)),
            AddFront(m.noncartDims, nC))
@@ -86,7 +83,7 @@ Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void forwardTask(Mapping<ND, hasVCC> const                                        &map,
+inline void forwardTask(Mapping<ND> const                                                &map,
                         Basis const                                                      &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                            &kernel,
                         Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
@@ -97,7 +94,7 @@ inline void forwardTask(Mapping<ND, hasVCC> const                               
   auto        grid_task = [&](Index const is) {
     auto const               &subgrid = map.subgrids[is];
     Eigen::Tensor<Cx, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
-    subgrid.template gridToSubgrid<isVCC>(x, sx);
+    subgrid.template gridToSubgrid<hasVCC, isVCC>(x, sx);
 
     for (auto ii = 0; ii < subgrid.count(); ii++) {
       auto const                 si = subgrid.indices[ii];
@@ -131,7 +128,7 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::iforward(InCMap const &x, Ou
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void adjointTask(Mapping<ND, hasVCC> const                            &map,
+inline void adjointTask(Mapping<ND> const                                    &map,
                         Basis const                                          &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                &kernel,
                         Eigen::TensorMap<Eigen::Tensor<Cx, 3> const> const   &y,
@@ -158,7 +155,7 @@ inline void adjointTask(Mapping<ND, hasVCC> const                            &ma
 
     {
       std::scoped_lock lock(writeMutex);
-      subgrid.template subgridToGrid<isVCC>(sx, x);
+      subgrid.template subgridToGrid<hasVCC, isVCC>(sx, x);
     }
   };
   Threads::For(grid_task, map.subgrids.size());

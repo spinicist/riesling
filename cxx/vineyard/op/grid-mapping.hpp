@@ -13,7 +13,7 @@ struct NoncartesianIndex
   int16_t sample;
 };
 
-template <int NDims, bool VCC> struct Mapping
+template <int NDims> struct Mapping
 {
   Mapping(TrajectoryN<NDims> const &t,
           float const               nomOSamp,
@@ -28,7 +28,7 @@ template <int NDims, bool VCC> struct Mapping
   std::vector<std::array<int16_t, NDims>>    cart;
   std::vector<NoncartesianIndex>             noncart;
   std::vector<Eigen::Array<float, NDims, 1>> offset;
-  std::vector<Subgrid<NDims, VCC>>           subgrids;
+  std::vector<Subgrid<NDims>>                subgrids;
   std::vector<int32_t>                       sortedIndices;
 };
 

@@ -38,8 +38,8 @@ template <size_t N> std::vector<int32_t> sort(std::vector<std::array<int16_t, N>
   return sorted;
 }
 
-template <int NDims, bool VCC>
-Mapping<NDims, VCC>::Mapping(
+template <int NDims>
+Mapping<NDims>::Mapping(
   TrajectoryN<NDims> const &traj, float const nomOS, Index const kW, Index const subgridSz, Index const splitSize)
 {
   nomDims = traj.matrix();
@@ -59,7 +59,7 @@ Mapping<NDims, VCC>::Mapping(
     for (Index iz = 0; iz < nB[2]; iz++) {
       for (Index iy = 0; iy < nB[1]; iy++) {
         for (Index ix = 0; ix < nB[0]; ix++) {
-          subgrids.push_back(Subgrid<NDims, VCC>{
+          subgrids.push_back(Subgrid<NDims>{
             .minCorner = Sz3{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2), iz * subgridSz - (kW / 2)},
             .maxCorner = Sz3{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
                              std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2),
@@ -70,14 +70,14 @@ Mapping<NDims, VCC>::Mapping(
   } else if constexpr (NDims == 2) {
     for (Index iy = 0; iy < nB[1]; iy++) {
       for (Index ix = 0; ix < nB[0]; ix++) {
-        subgrids.push_back(Subgrid<NDims, VCC>{.minCorner = Sz2{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2)},
+        subgrids.push_back(Subgrid<NDims>{.minCorner = Sz2{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2)},
                                                .maxCorner = Sz2{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
                                                                 std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2)}});
       }
     }
   } else {
     for (Index ix = 0; ix < nB[0]; ix++) {
-      subgrids.push_back(Subgrid<NDims, VCC>{.minCorner = Sz1{ix * subgridSz - (kW / 2)},
+      subgrids.push_back(Subgrid<NDims>{.minCorner = Sz1{ix * subgridSz - (kW / 2)},
                                              .maxCorner = Sz1{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2)}});
     }
   }
@@ -119,11 +119,11 @@ Mapping<NDims, VCC>::Mapping(
   }
   Log::Print("Ignored {} invalid trajectory points", invalids);
 
-  std::vector<Subgrid<NDims, VCC>> chunked;
+  std::vector<Subgrid<NDims>> chunked;
   for (auto &subgrid : subgrids) {
     if (subgrid.count() > splitSize) {
       for (auto const indexChunk : tl::views::chunk(subgrid.indices, splitSize)) {
-        chunked.push_back(Subgrid<NDims, VCC>{.minCorner = subgrid.minCorner,
+        chunked.push_back(Subgrid<NDims>{.minCorner = subgrid.minCorner,
                                               .maxCorner = subgrid.maxCorner,
                                               .indices = indexChunk | tl::to<std::vector<int32_t>>()});
       }
@@ -131,21 +131,17 @@ Mapping<NDims, VCC>::Mapping(
     }
   }
 
-  auto const eraseCount = std::erase_if(subgrids, [](Subgrid<NDims, VCC> const &b) { return b.empty(); });
+  auto const eraseCount = std::erase_if(subgrids, [](Subgrid<NDims> const &b) { return b.empty(); });
   subgrids.insert(subgrids.end(), chunked.begin(), chunked.end());
   Log::Print("Added {} extra, removed {} empty subgrids, {} remaining", chunked.size(), eraseCount, subgrids.size());
   Log::Print("Total points {}",
              std::accumulate(subgrids.begin(), subgrids.end(), 0UL,
-                             [](size_t sum, Subgrid<NDims, VCC> const &b) { return b.indices.size() + sum; }));
+                             [](size_t sum, Subgrid<NDims> const &b) { return b.indices.size() + sum; }));
   sortedIndices = sort(cart);
 }
 
-template struct Mapping<1, false>;
-template struct Mapping<2, false>;
-template struct Mapping<3, false>;
-
-template struct Mapping<1, true>;
-template struct Mapping<2, true>;
-template struct Mapping<3, true>;
+template struct Mapping<1>;
+template struct Mapping<2>;
+template struct Mapping<3>;
 
 } // namespace rl
