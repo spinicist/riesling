@@ -86,59 +86,6 @@ Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void forwardCoilDim(Sz<ND + 2 + hasVCC>                                               xi,
-                           Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
-                           Sz<ND + 2>                                                        sxi,
-                           Eigen::Tensor<Cx, ND + 2>                                        &sx)
-{
-  for (Index ii = 0; ii < sx.dimensions()[0]; ii++) {
-    sxi[0] = ii;
-    xi[0] = ii;
-    if constexpr (hasVCC) {
-      if constexpr (isVCC) {
-        sx(sxi) = std::conj(x(xi)) * inv_sqrt2;
-      } else {
-        sx(sxi) = x(xi) * inv_sqrt2;
-      }
-
-    } else {
-      sx(sxi) = x(xi);
-    }
-  }
-}
-
-template <int ND, bool hasVCC, bool isVCC>
-inline void forwardBasisDim(Sz<ND + 2 + hasVCC>                                               xi,
-                            Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
-                            Sz<ND + 2>                                                        sxi,
-                            Eigen::Tensor<Cx, ND + 2>                                        &sx)
-{
-  for (Index ii = 0; ii < sx.dimensions()[1]; ii++) {
-    xi[1 + hasVCC] = ii;
-    sxi[1] = ii;
-    forwardCoilDim<ND, hasVCC, isVCC>(xi, x, sxi, sx);
-  }
-}
-
-template <int ND, bool hasVCC, bool isVCC, int D>
-inline void forwardSpatialDim(Sz<ND> const                                                      xSt,
-                              Sz<ND + 2 + hasVCC>                                               xi,
-                              Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
-                              Sz<ND + 2>                                                        sxi,
-                              Eigen::Tensor<Cx, ND + 2>                                        &sx)
-{
-  for (Index ii = 0; ii < sx.dimensions()[D + 2]; ii++) {
-    xi[D + 2 + hasVCC] = Wrap(ii + xSt[D], x.dimensions()[D + 2 + hasVCC]);
-    sxi[D + 2] = ii;
-    if constexpr (D == 0) {
-      forwardBasisDim<ND, hasVCC, isVCC>(xi, x, sxi, sx);
-    } else {
-      forwardSpatialDim<ND, hasVCC, isVCC, D - 1>(xSt, xi, x, sxi, sx);
-    }
-  }
-}
-
-template <int ND, bool hasVCC, bool isVCC>
 inline void forwardTask(Mapping<ND, hasVCC> const                                        &map,
                         Basis const                                                      &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                            &kernel,
@@ -150,13 +97,7 @@ inline void forwardTask(Mapping<ND, hasVCC> const                               
   auto        grid_task = [&](Index const is) {
     auto const               &subgrid = map.subgrids[is];
     Eigen::Tensor<Cx, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
-
-    Sz<ND + 2 + hasVCC> xi;
-    xi.fill(0);
-    if constexpr (hasVCC) { xi[1] = isVCC; }
-    Sz<ND + 2> sxi;
-    sxi.fill(0);
-    forwardSpatialDim<ND, hasVCC, isVCC, ND - 1>(subgrid.minCorner, xi, x, sxi, sx);
+    subgrid.template gridToSubgrid<isVCC>(x, sx);
 
     for (auto ii = 0; ii < subgrid.count(); ii++) {
       auto const                 si = subgrid.indices[ii];
