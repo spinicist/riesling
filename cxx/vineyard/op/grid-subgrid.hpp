@@ -6,7 +6,7 @@ namespace rl {
 
 template <int ND, bool VCC> struct Subgrid
 {
-  Sz<ND>               gridSize, minCorner, maxCorner;
+  Sz<ND>               minCorner, maxCorner;
   std::vector<int32_t> indices;
 
   auto empty() const -> bool;

@@ -60,7 +60,6 @@ Mapping<NDims, VCC>::Mapping(
       for (Index iy = 0; iy < nB[1]; iy++) {
         for (Index ix = 0; ix < nB[0]; ix++) {
           subgrids.push_back(Subgrid<NDims, VCC>{
-            .gridSize = cartDims,
             .minCorner = Sz3{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2), iz * subgridSz - (kW / 2)},
             .maxCorner = Sz3{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
                              std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2),
@@ -71,16 +70,14 @@ Mapping<NDims, VCC>::Mapping(
   } else if constexpr (NDims == 2) {
     for (Index iy = 0; iy < nB[1]; iy++) {
       for (Index ix = 0; ix < nB[0]; ix++) {
-        subgrids.push_back(Subgrid<NDims, VCC>{.gridSize = cartDims,
-                                               .minCorner = Sz2{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2)},
+        subgrids.push_back(Subgrid<NDims, VCC>{.minCorner = Sz2{ix * subgridSz - (kW / 2), iy * subgridSz - (kW / 2)},
                                                .maxCorner = Sz2{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2),
                                                                 std::min((iy + 1) * subgridSz, cartDims[1]) + (kW / 2)}});
       }
     }
   } else {
     for (Index ix = 0; ix < nB[0]; ix++) {
-      subgrids.push_back(Subgrid<NDims, VCC>{.gridSize = cartDims,
-                                             .minCorner = Sz1{ix * subgridSz - (kW / 2)},
+      subgrids.push_back(Subgrid<NDims, VCC>{.minCorner = Sz1{ix * subgridSz - (kW / 2)},
                                              .maxCorner = Sz1{std::min((ix + 1) * subgridSz, cartDims[0]) + (kW / 2)}});
     }
   }
@@ -126,8 +123,7 @@ Mapping<NDims, VCC>::Mapping(
   for (auto &subgrid : subgrids) {
     if (subgrid.count() > splitSize) {
       for (auto const indexChunk : tl::views::chunk(subgrid.indices, splitSize)) {
-        chunked.push_back(Subgrid<NDims, VCC>{.gridSize = subgrid.gridSize,
-                                              .minCorner = subgrid.minCorner,
+        chunked.push_back(Subgrid<NDims, VCC>{.minCorner = subgrid.minCorner,
                                               .maxCorner = subgrid.maxCorner,
                                               .indices = indexChunk | tl::to<std::vector<int32_t>>()});
       }
