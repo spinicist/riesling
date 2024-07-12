@@ -133,8 +133,8 @@ VCCSENSE::VCCSENSE(Cx5 const &maps, Index const frames)
 void VCCSENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
-  y.chip<1>(0).device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
-  y.chip<1>(1).device(Threads::GlobalDevice()) =
+  y.chip<2>(0).device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<2>(1).device(Threads::GlobalDevice()) =
     x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, false);
 }
@@ -144,8 +144,8 @@ void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
   Eigen::IndexList<Eigen::type2index<0>> zero;
 
   auto const time = startAdjoint(y, x, false);
-  auto const real = (y.chip<1>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
-  auto const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps)).sum(zero);
+  auto const real = (y.chip<2>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  auto const virt = (y.chip<2>(1) * maps_.broadcast(brdMaps)).sum(zero);
   x.device(Threads::GlobalDevice()) = (real + virt) * Cx(inv_sqrt2);
 
   finishAdjoint(x, time, false);
@@ -154,8 +154,8 @@ void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
 void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
-  y.chip<1>(0).device(Threads::GlobalDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
-  y.chip<1>(1).device(Threads::GlobalDevice()) +=
+  y.chip<2>(0).device(Threads::GlobalDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<2>(1).device(Threads::GlobalDevice()) +=
     x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, true);
 }
@@ -165,8 +165,8 @@ void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
   Eigen::IndexList<Eigen::type2index<0>> zero;
 
   auto const time = startAdjoint(y, x, true);
-  auto const real = (y.chip<1>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
-  auto const virt = (y.chip<1>(1) * maps_.broadcast(brdMaps)).sum(zero);
+  auto const real = (y.chip<2>(0) * maps_.broadcast(brdMaps).conjugate()).sum(zero);
+  auto const virt = (y.chip<2>(1) * maps_.broadcast(brdMaps)).sum(zero);
   x.device(Threads::GlobalDevice()) += (real + virt) * Cx(inv_sqrt2);
 
   finishAdjoint(x, time, true);

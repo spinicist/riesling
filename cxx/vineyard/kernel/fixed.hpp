@@ -44,7 +44,6 @@ template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND
   virtual auto operator()(Point const p) const -> Tensor = 0;
   void         spread(std::array<int16_t, ND> const   c,
                       Point const                     p,
-                      Sz<ND> const                    minCorner,
                       Eigen::Tensor<Scalar, 1> const &b,
                       Eigen::Tensor<Scalar, 1> const &y,
                       Eigen::Tensor<Scalar, ND + 2>  &x) const final
@@ -54,7 +53,7 @@ template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND
     Index const nC = x.dimension(0);
     Index const nB = b.size();
     for (Index i1 = 0; i1 < W; i1++) {
-      Index const ii1 = i1 + c[ND - 1] - hW - minCorner[ND - 1];
+      Index const ii1 = i1 + c[ND - 1] - hW;
       if constexpr (ND == 1) {
         float const kval = k(i1);
         for (Index ib = 0; ib < nB; ib++) {
@@ -66,7 +65,7 @@ template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND
         }
       } else {
         for (Index i2 = 0; i2 < W; i2++) {
-          Index const ii2 = i2 + c[ND - 2] - hW - minCorner[ND - 2];
+          Index const ii2 = i2 + c[ND - 2] - hW;
           if constexpr (ND == 2) {
             float const kval = k(i2, i1);
             for (Index ib = 0; ib < nB; ib++) {
@@ -78,7 +77,7 @@ template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND
             }
           } else {
             for (Index i3 = 0; i3 < W; i3++) {
-              Index const ii3 = i3 + c[ND - 3] - hW - minCorner[ND - 3];
+              Index const ii3 = i3 + c[ND - 3] - hW;
               float const kval = k(i3, i2, i1);
               for (Index ib = 0; ib < nB; ib++) {
                 Scalar const bval = kval * b(ib);
@@ -96,7 +95,6 @@ template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND
 
   void gather(std::array<int16_t, ND> const                                c,
               Point const                                                  p,
-              Sz<ND> const                                                 minCorner,
               Eigen::Tensor<Scalar, 1> const                              &b,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
               Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
@@ -104,42 +102,33 @@ template <typename Scalar, int ND, int W> struct FixedKernel : Kernel<Scalar, ND
     auto const k = this->operator()(p);
     Sz<ND>     offset;
     for (int id = 0; id < ND; id++) {
-      offset[id] = c[id] - minCorner[id] - (W - 1) / 2;
+      offset[id] = c[id] - (W - 1) / 2;
     }
     Index const nC = x.dimension(0);
     Index const nB = b.size();
-    for (Index i1 = 0; i1 < W; i1++) {
-      Index const ii1 = i1 + offset[ND - 1];
-      if constexpr (ND == 1) {
-        float const kval = k(i1);
-        for (Index ib = 0; ib < nB; ib++) {
-          Scalar const bval = kval * b(ib);
-          for (Index ic = 0; ic < nC; ic++) {
-            Scalar const xval = x(ic, ib, ii1) * bval;
-            y(ic) = y(ic) + xval;
+
+    for (Index ic = 0; ic < nC; ic++) {
+      for (Index i1 = 0; i1 < W; i1++) {
+        Index const ii1 = i1 + offset[ND - 1];
+        if constexpr (ND == 1) {
+          for (Index ib = 0; ib < nB; ib++) {
+            Scalar const bval = b(ib);
+            y(ic) += x(ic, ib, ii1) * k(i1) * bval;
           }
-        }
-      } else {
-        for (Index i2 = 0; i2 < W; i2++) {
-          Index const ii2 = i2 + offset[ND - 2];
-          if constexpr (ND == 2) {
-            float const kval = k(i2, i1);
-            for (Index ib = 0; ib < nB; ib++) {
-              Scalar const bval = kval * b(ib);
-              for (Index ic = 0; ic < nC; ic++) {
-                Scalar const xval = x(ic, ib, ii2, ii1) * bval;
-                y(ic) = y(ic) + xval;
-              }
-            }
-          } else {
-            for (Index i3 = 0; i3 < W; i3++) {
-              Index const ii3 = i3 + offset[ND - 3];
-              float const kval = k(i3, i2, i1);
+        } else {
+          for (Index i2 = 0; i2 < W; i2++) {
+            Index const ii2 = i2 + offset[ND - 2];
+            if constexpr (ND == 2) {
               for (Index ib = 0; ib < nB; ib++) {
-                Scalar const bval = kval * b(ib);
-                for (Index ic = 0; ic < nC; ic++) {
-                  Scalar const xval = x(ic, ib, ii3, ii2, ii1) * bval;
-                  y(ic) = y(ic) + xval;
+                Scalar const bval = b(ib);
+                y(ic) += x(ic, ib, ii2, ii1) * k(i2, i1) * bval;
+              }
+            } else {
+              for (Index i3 = 0; i3 < W; i3++) {
+                Index const ii3 = i3 + offset[ND - 3];
+                for (Index ib = 0; ib < nB; ib++) {
+                  Scalar const bval = b(ib);
+                  y(ic) += x(ic, ib, ii3, ii2, ii1) * k(i3, i2, i1) * bval;
                 }
               }
             }

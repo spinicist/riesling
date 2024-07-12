@@ -96,6 +96,12 @@ using Point1 = Eigen::Matrix<float, 1, 1>;
 using Point2 = Eigen::Matrix<float, 2, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
 
+template<int N> auto Constant(Index const c) -> Sz<N> {
+  Sz<N> C;
+  C.fill(c);
+  return C;
+}
+
 template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
   Eigen::DSizes<T, sizeof...(Args)>     front{{toAdd...}};
