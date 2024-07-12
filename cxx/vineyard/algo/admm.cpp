@@ -65,7 +65,6 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       start += rr;
       ρdiags[ir]->scale = std::sqrt(ρ);
     }
-    Log::Print("|x| {} |b| {}", x.stableNorm(), bʹ.stableNorm());
     x = lsmr.run(bʹ.data(), 0.f, x.data());
     lsmr.iterLimit = iters1;
     if (debug_x) { debug_x(io, x); }

@@ -8,7 +8,7 @@
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
-auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
+auto LSMR::run(Cx const *bdata, float const λ, Cx *x0data) const -> Vector
 {
   Log::Print("LSMR λ {}", λ);
   Index const rows = op->rows();
@@ -19,10 +19,15 @@ auto LSMR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
   Vector     v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
-  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
+  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0data);
 
   if (iterLimit == 0) { // Bug out and return v
-    x = v * (α * β);
+    if (x0data) {
+      CMap const x0(x0data, cols);
+      x = x0 + v * (α * β);
+    } else {
+      x = v * (α * β);
+    }
     Log::Print("LSMR 0 |x| {:4.3E}", x.stableNorm());
     return x;
   }
