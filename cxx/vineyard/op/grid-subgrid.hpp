@@ -4,7 +4,7 @@
 
 namespace rl {
 
-template<int NDims>
+template<int NDims, bool VCC>
 struct Subgrid
 {
   Sz<NDims>            gridSize, minCorner, maxCorner;

@@ -29,7 +29,7 @@ auto Grid<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
                            std::string const        ktype,
                            float const              osamp,
                            Index const              nC,
-                           Basis const     &b,
+                           Basis const             &b,
                            Index const              bSz,
                            Index const              sSz) -> std::shared_ptr<Grid<NDim, VCC>>
 {
@@ -50,7 +50,7 @@ Grid<NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
                       std::string const        ktype,
                       float const              osamp,
                       Index const              nC,
-                      Basis const     &b,
+                      Basis const             &b,
                       Index const              bSz,
                       Index const              sSz)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""))
@@ -64,16 +64,16 @@ Grid<NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
   if constexpr (VCC) {
     Log::Print("Adding VCC");
     auto const conjTraj = TrajectoryN<NDim>(-traj.points(), traj.matrix(), traj.voxelSize());
-    vccMapping = Mapping<NDim>(conjTraj, osamp, kernel->paddedWidth(), bSz, sSz);
+    vccMapping = Mapping<NDim, VCC>(conjTraj, osamp, kernel->paddedWidth(), bSz, sSz);
   }
   Log::Debug("Grid Dims {}", this->ishape);
 }
 
 template <int NDim, bool VCC>
 Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k,
-                      Mapping<NDim> const                          m,
+                      Mapping<NDim, VCC> const                     m,
                       Index const                                  nC,
-                      Basis const                         &b)
+                      Basis const                                 &b)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""),
            AddVCC<VCC>(m.cartDims, nC, b.dimension(0)),
            AddFront(m.noncartDims, nC))
@@ -139,8 +139,8 @@ inline void forwardSpatialDim(Sz<ND> const                                      
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void forwardTask(Mapping<ND> const                                                &map,
-                        Basis const                                                  &basis,
+inline void forwardTask(Mapping<ND, hasVCC> const                                        &map,
+                        Basis const                                                      &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                            &kernel,
                         Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
                         Eigen::TensorMap<Eigen::Tensor<Cx, 3>>                           &y)
@@ -242,8 +242,8 @@ inline void adjointSpatialDim(Sz<ND + 2>                                        
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void adjointTask(Mapping<ND> const                                    &map,
-                        Basis const                                      &basis,
+inline void adjointTask(Mapping<ND, hasVCC> const                            &map,
+                        Basis const                                          &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                &kernel,
                         Eigen::TensorMap<Eigen::Tensor<Cx, 3> const> const   &y,
                         Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
