@@ -131,58 +131,6 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::iforward(InCMap const &x, Ou
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void adjointCoilDim(Sz<ND + 2>                                            sxi,
-                           Eigen::Tensor<Cx, ND + 2> const                      &sx,
-                           Sz<ND + 2 + hasVCC>                                   xi,
-                           Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
-{
-  for (Index ii = 0; ii < sx.dimensions()[0]; ii++) {
-    sxi[0] = ii;
-    xi[0] = ii;
-    if constexpr (hasVCC) {
-      if constexpr (isVCC) {
-        x(xi) += std::conj(sx(sxi)) * inv_sqrt2;
-      } else {
-        x(xi) += sx(sxi) * inv_sqrt2;
-      }
-    } else {
-      x(xi) += sx(sxi);
-    }
-  }
-}
-
-template <int ND, bool hasVCC, bool isVCC>
-inline void adjointBasisDim(Sz<ND + 2>                                            sxi,
-                            Eigen::Tensor<Cx, ND + 2> const                      &sx,
-                            Sz<ND + 2 + hasVCC>                                   xi,
-                            Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
-{
-  for (Index ii = 0; ii < sx.dimensions()[1]; ii++) {
-    xi[1 + hasVCC] = ii;
-    sxi[1] = ii;
-    adjointCoilDim<ND, hasVCC, isVCC>(sxi, sx, xi, x);
-  }
-}
-
-template <int ND, bool hasVCC, bool isVCC, int D>
-inline void adjointSpatialDim(Sz<ND + 2>                                            sxi,
-                              Eigen::Tensor<Cx, ND + 2> const                      &sx,
-                              Sz<ND> const                                          xSt,
-                              Sz<ND + 2 + hasVCC>                                   xi,
-                              Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC>> &x)
-{
-  for (Index ii = 0; ii < sx.dimensions()[D + 2]; ii++) {
-    xi[D + 2 + hasVCC] = Wrap(ii + xSt[D], x.dimensions()[D + 2 + hasVCC]);
-    sxi[D + 2] = ii;
-    if constexpr (D == 0) {
-      adjointBasisDim<ND, hasVCC, isVCC>(sxi, sx, xi, x);
-    } else {
-      adjointSpatialDim<ND, hasVCC, isVCC, D - 1>(sxi, sx, xSt, xi, x);
-    }
-  }
-}
-
-template <int ND, bool hasVCC, bool isVCC>
 inline void adjointTask(Mapping<ND, hasVCC> const                            &map,
                         Basis const                                          &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                &kernel,
@@ -210,13 +158,7 @@ inline void adjointTask(Mapping<ND, hasVCC> const                            &ma
 
     {
       std::scoped_lock lock(writeMutex);
-
-      Sz<ND + 2 + hasVCC> xi;
-      xi.fill(0);
-      if constexpr (hasVCC) { xi[1] = isVCC; }
-      Sz<ND + 2> sxi;
-      sxi.fill(0);
-      adjointSpatialDim<ND, hasVCC, isVCC, ND - 1>(sxi, sx, subgrid.minCorner, xi, x);
+      subgrid.template subgridToGrid<isVCC>(sx, x);
     }
   };
   Threads::For(grid_task, map.subgrids.size());

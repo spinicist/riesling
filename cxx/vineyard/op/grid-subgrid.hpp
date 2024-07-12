@@ -15,6 +15,8 @@ template <int ND, bool VCC> struct Subgrid
 
   template<bool isVCC>
   void gridToSubgrid(CxNCMap<ND + 2 + VCC> const &x, CxN<ND + 2> &sx) const;
+  template<bool isVCC>
+  void subgridToGrid(CxNCMap<ND + 2> const &sx, CxNMap<ND + 2 + VCC> &x) const;
 };
 
 } // namespace rl
