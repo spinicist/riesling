@@ -21,9 +21,8 @@ template <int NDims> struct Mapping
           Index const               subgridSize = 32,
           Index const               splitSize = 16384);
 
-  float     osamp;
   Sz2       noncartDims;
-  Sz<NDims> cartDims, nomDims;
+  Sz<NDims> cartDims;
 
   std::vector<std::array<int16_t, NDims>>    cart;
   std::vector<NoncartesianIndex>             noncart;
