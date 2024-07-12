@@ -17,7 +17,6 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
         Basis const             &basis = IdBasis(),
         Sz<NDim> const           matrix = Sz<NDim>(),
         Index const              subgridSz = 32,
-        Index const              splitSz = 16384,
         Index const              nBatches = 1);
   TOP_DECLARE(NUFFT)
 

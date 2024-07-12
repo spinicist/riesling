@@ -18,22 +18,17 @@ GridOpts::GridOpts(args::Subparser &parser)
   , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
   , batches(parser, "B", "Channel batch size (1)", {"batches"}, 1)
   , subgridSize(parser, "B", "Gridding subgrid size (32)", {"subgrid-size"}, 32)
-  , splitSize(parser, "S", "Subgrid split size (16384)", {"subgrid-split"}, 16384)
 {
 }
 
 namespace TOps {
 
 template <int NDim, bool VCC>
-auto Grid<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
-                           std::string const        ktype,
-                           float const              osamp,
-                           Index const              nC,
-                           Basis const             &b,
-                           Index const              bSz,
-                           Index const              sSz) -> std::shared_ptr<Grid<NDim, VCC>>
+auto Grid<NDim, VCC>::Make(
+  TrajectoryN<NDim> const &traj, std::string const ktype, float const osamp, Index const nC, Basis const &b, Index const bSz)
+  -> std::shared_ptr<Grid<NDim, VCC>>
 {
-  return std::make_shared<Grid<NDim, VCC>>(traj, ktype, osamp, nC, b, bSz, sSz);
+  return std::make_shared<Grid<NDim, VCC>>(traj, ktype, osamp, nC, b, bSz);
 }
 
 template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index const nB) -> Sz<ND + 2 + VCC>
@@ -46,44 +41,28 @@ template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index
 }
 
 template <int NDim, bool VCC>
-Grid<NDim, VCC>::Grid(TrajectoryN<NDim> const &traj,
-                      std::string const        ktype,
-                      float const              osamp,
-                      Index const              nC,
-                      Basis const             &b,
-                      Index const              bSz,
-                      Index const              sSz)
+Grid<NDim, VCC>::Grid(
+  TrajectoryN<NDim> const &traj, std::string const ktype, float const osamp, Index const nC, Basis const &b, Index const bSz)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""))
   , kernel{Kernel<Scalar, NDim>::Make(ktype, osamp)}
-  , mapping{traj, osamp, kernel->paddedWidth(), bSz, sSz}
   , basis{b}
 {
   static_assert(NDim < 4);
-  ishape = AddVCC<VCC>(mapping.cartDims, nC, b.dimension(0));
-  oshape = AddFront(mapping.noncartDims, nC);
+
+  auto const m = CalcMapping(traj, osamp, kernel->paddedWidth(), bSz);
+  mapping = m.mappings;
+  ishape = AddVCC<VCC>(m.cartDims, nC, b.dimension(0));
+  oshape = AddFront(m.noncartDims, nC);
   if constexpr (VCC) {
     Log::Print("Adding VCC");
     auto const conjTraj = TrajectoryN<NDim>(-traj.points(), traj.matrix(), traj.voxelSize());
-    vccMapping = Mapping<NDim>(conjTraj, osamp, kernel->paddedWidth(), bSz, sSz);
+    vccMapping = CalcMapping<NDim>(conjTraj, osamp, kernel->paddedWidth(), bSz).mappings;
   }
   Log::Debug("Grid Dims {}", this->ishape);
 }
 
-template <int NDim, bool VCC>
-Grid<NDim, VCC>::Grid(std::shared_ptr<Kernel<Scalar, NDim>> const &k, Mapping<NDim> const m, Index const nC, Basis const &b)
-  : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""),
-           AddVCC<VCC>(m.cartDims, nC, b.dimension(0)),
-           AddFront(m.noncartDims, nC))
-  , kernel{k}
-  , mapping{m}
-  , basis{b}
-{
-  static_assert(NDim < 4);
-  Log::Debug("Grid Dims {}", this->ishape);
-}
-
 template <int ND, bool hasVCC, bool isVCC>
-inline void forwardTask(Mapping<ND> const                                                &map,
+inline void forwardTask(std::vector<Mapping<ND>> const                                   &mappings,
                         Basis const                                                      &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                            &kernel,
                         Eigen::TensorMap<Eigen::Tensor<Cx, ND + 2 + hasVCC> const> const &x,
@@ -91,24 +70,25 @@ inline void forwardTask(Mapping<ND> const                                       
 {
   Index const nC = y.dimension(0);
   Index const nB = basis.dimension(0);
-  auto        grid_task = [&](Index const is) {
-    auto const               &subgrid = map.subgrids[is];
-    Eigen::Tensor<Cx, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
-    subgrid.template gridToSubgrid<hasVCC, isVCC>(x, sx);
-
-    for (auto ii = 0; ii < subgrid.count(); ii++) {
-      auto const                 si = subgrid.indices[ii];
-      auto const                 c = map.cart[si];
-      auto const                 n = map.noncart[si];
-      auto const                 o = map.offset[si];
-      Eigen::Tensor<Cx, 1> const bs =
-        basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1));
-      Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, n.sample, n.trace), Sz1{nC});
-      kernel->gather(c, o, subgrid.minCorner, bs, sx, yy);
+  // auto        grid_task = [&](Index const is) {
+  CxN<ND + 2> sx(AddFront(mappings.front().subgrid.size(), nC, nB));
+  Sz<ND>      current = mappings.front().subgrid.minCorner;
+  for (auto const &m : mappings) {
+    if (current != m.subgrid.minCorner) {
+      sx.resize(AddFront(m.subgrid.size(), nC, nB));
+      sx.setZero();
+      current = m.subgrid.minCorner;
     }
-  };
-  Threads::For(grid_task, map.subgrids.size());
+    m.subgrid.template gridToSubgrid<hasVCC, isVCC>(x, sx);
+
+    Eigen::Tensor<Cx, 1> const bs =
+      basis.template chip<2>(m.noncart.trace % basis.dimension(2)).template chip<1>(m.noncart.sample % basis.dimension(1));
+    Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.noncart.sample, m.noncart.trace), Sz1{nC});
+    kernel->gather(m.cart, m.offset, m.subgrid.minCorner, bs, sx, yy);
+  }
 }
+// };
+// Threads::For(grid_task, map.subgrids.size());
 
 template <int NDim, bool VCC> void Grid<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
@@ -128,7 +108,7 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::iforward(InCMap const &x, Ou
 }
 
 template <int ND, bool hasVCC, bool isVCC>
-inline void adjointTask(Mapping<ND> const                                    &map,
+inline void adjointTask(std::vector<Mapping<ND>> const                       &mappings,
                         Basis const                                          &basis,
                         std::shared_ptr<Kernel<Cx, ND>> const                &kernel,
                         Eigen::TensorMap<Eigen::Tensor<Cx, 3> const> const   &y,
@@ -138,32 +118,38 @@ inline void adjointTask(Mapping<ND> const                                    &ma
   Index const nB = basis.dimension(0);
 
   std::mutex writeMutex;
-  auto       grid_task = [&](Index is) {
-    auto const               &subgrid = map.subgrids[is];
-    Eigen::Tensor<Cx, ND + 2> sx(AddFront(subgrid.size(), nC, nB));
-    sx.setZero();
-    for (auto ii = 0; ii < subgrid.count(); ii++) {
-      auto const                 si = subgrid.indices[ii];
-      auto const                 c = map.cart[si];
-      auto const                 n = map.noncart[si];
-      auto const                 o = map.offset[si];
-      Eigen::Tensor<Cx, 1> const bs =
-        basis.template chip<2>(n.trace % basis.dimension(2)).template chip<1>(n.sample % basis.dimension(1)).conjugate();
-      Eigen::Tensor<Cx, 1> yy = y.template chip<2>(n.trace).template chip<1>(n.sample);
-      kernel->spread(c, o, subgrid.minCorner, bs, yy, sx);
+  // auto       grid_task = [&](Index is) {
+
+  CxN<ND + 2> sx(AddFront(mappings.front().subgrid.size(), nC, nB));
+  Sz<ND>      current = mappings.front().subgrid.minCorner;
+
+  for (auto const &m : mappings) {
+    if (current != m.subgrid.minCorner) {
+      fmt::print(stderr, "current {} next {} size {}\n", current, m.subgrid.minCorner, m.subgrid.size());
+      std::scoped_lock lock(writeMutex);
+      m.subgrid.template subgridToGrid<hasVCC, isVCC>(sx, x);
+
+      sx.resize(AddFront(m.subgrid.size(), nC, nB));
+      sx.setZero();
+      current = m.subgrid.minCorner;
     }
 
-    {
-      std::scoped_lock lock(writeMutex);
-      subgrid.template subgridToGrid<hasVCC, isVCC>(sx, x);
-    }
-  };
-  Threads::For(grid_task, map.subgrids.size());
+    Eigen::Tensor<Cx, 1> const bs = basis.template chip<2>(m.noncart.trace % basis.dimension(2))
+                                      .template chip<1>(m.noncart.sample % basis.dimension(1))
+                                      .conjugate();
+    Eigen::Tensor<Cx, 1> yy = y.template chip<2>(m.noncart.trace).template chip<1>(m.noncart.sample);
+    kernel->spread(m.cart, m.offset, m.subgrid.minCorner, bs, yy, sx);
+  }
+
+  {
+    std::scoped_lock lock(writeMutex);
+    mappings.back().subgrid.template subgridToGrid<hasVCC, isVCC>(sx, x);
+  }
 }
+// Threads::For(grid_task, map.subgrids.size());
 
 template <int NDim, bool VCC> void Grid<NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
-
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
   adjointTask<NDim, VCC, false>(this->mapping, this->basis, this->kernel, y, x);

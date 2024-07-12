@@ -8,10 +8,6 @@ constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
 
 namespace rl {
 
-template <int ND> auto Subgrid<ND>::empty() const -> bool { return indices.empty(); }
-
-template <int ND> auto Subgrid<ND>::count() const -> Index { return indices.size(); }
-
 template <int ND> auto Subgrid<ND>::size() const -> Sz<ND>
 {
   Sz<ND> sz;

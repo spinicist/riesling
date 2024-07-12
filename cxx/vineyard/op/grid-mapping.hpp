@@ -13,22 +13,26 @@ struct NoncartesianIndex
   int16_t sample;
 };
 
-template <int NDims> struct Mapping
+template <int ND> struct Mapping
 {
-  Mapping(TrajectoryN<NDims> const &t,
-          float const               nomOSamp,
-          Index const               kW,
-          Index const               subgridSize = 32,
-          Index const               splitSize = 16384);
+  Sz2    noncartDims;
+  Sz<ND> cartDims;
 
-  Sz2       noncartDims;
-  Sz<NDims> cartDims;
-
-  std::vector<std::array<int16_t, NDims>>    cart;
-  std::vector<NoncartesianIndex>             noncart;
-  std::vector<Eigen::Array<float, NDims, 1>> offset;
-  std::vector<Subgrid<NDims>>                subgrids;
-  std::vector<int32_t>                       sortedIndices;
+  std::array<int16_t, ND>    cart;
+  NoncartesianIndex          noncart;
+  Eigen::Array<float, ND, 1> offset;
+  Subgrid<ND>                subgrid;
 };
+
+template <int ND> struct CalcMapping_t
+{
+  std::vector<Mapping<ND>> mappings;
+  Sz2                      noncartDims;
+  Sz<ND>                   cartDims;
+};
+
+template <int ND>
+auto CalcMapping(TrajectoryN<ND> const &t, float const nomOSamp, Index const kW, Index const subgridSize = 32)
+  -> CalcMapping_t<ND>;
 
 } // namespace rl
