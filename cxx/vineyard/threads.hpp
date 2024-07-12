@@ -12,6 +12,7 @@ namespace rl {
 
 namespace Threads {
 
+Eigen::ThreadPool       *GlobalPool();
 Index                    GlobalThreadCount();
 void                     SetGlobalThreadCount(Index n_threads);
 Eigen::ThreadPoolDevice &GlobalDevice();
