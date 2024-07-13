@@ -72,14 +72,16 @@ inline void forwardTask(std::vector<Mapping<ND>> const                          
   Index const nB = basis.dimension(0);
   // auto        grid_task = [&](Index const is) {
   CxN<ND + 2> sx(AddFront(mappings.front().subgrid.size(), nC, nB));
+  sx.setZero();
   Sz<ND>      current = mappings.front().subgrid.minCorner;
+  mappings.front().subgrid.template gridToSubgrid<hasVCC, isVCC>(x, sx);
   for (auto const &m : mappings) {
     if (current != m.subgrid.minCorner) {
+      m.subgrid.template gridToSubgrid<hasVCC, isVCC>(x, sx);
       sx.resize(AddFront(m.subgrid.size(), nC, nB));
       sx.setZero();
       current = m.subgrid.minCorner;
     }
-    m.subgrid.template gridToSubgrid<hasVCC, isVCC>(x, sx);
 
     Eigen::Tensor<Cx, 1> const bs =
       basis.template chip<2>(m.noncart.trace % basis.dimension(2)).template chip<1>(m.noncart.sample % basis.dimension(1));
@@ -121,6 +123,7 @@ inline void adjointTask(std::vector<Mapping<ND>> const                       &ma
   // auto       grid_task = [&](Index is) {
 
   CxN<ND + 2> sx(AddFront(mappings.front().subgrid.size(), nC, nB));
+  sx.setZero();
   Sz<ND>      current = mappings.front().subgrid.minCorner;
 
   for (auto const &m : mappings) {
