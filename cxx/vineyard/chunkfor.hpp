@@ -6,7 +6,7 @@
 #include <tl/chunk.hpp>
 
 namespace rl::Threads {
-template <typename T, typename F> void ChunkFor(F f, std::vector<T> const &v)
+template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vector<T> const &v, Types&... args)
 {
   Index const    nt = GlobalThreadCount();
   Index const    cSz = std::ceil(v.size() / (float)nt); // Desired chunk size
@@ -14,8 +14,8 @@ template <typename T, typename F> void ChunkFor(F f, std::vector<T> const &v)
   Eigen::Barrier barrier(static_cast<unsigned int>(nC));
   auto const     chunks = v | tl::views::chunk(cSz);
   for (auto const &chunk : chunks) {
-    GlobalPool()->Schedule([&barrier, &f, chunk] {
-      f(chunk);
+    GlobalPool()->Schedule([&, chunk] {
+      f(chunk, args...);
       barrier.Notify();
     });
   }
