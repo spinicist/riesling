@@ -55,7 +55,6 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
         auto const m = sgSz * (ijk[id] / sgSz);
         subgrid[id] = m - (kW / 2);
       }
-      fmt::print(stderr, "subgrid {}\n", subgrid);
       mappings.push_back(Mapping<ND>{.cart = ijk, .noncart = {is, ir}, .offset = off, .subgrid = subgrid});
       index++;
     }
