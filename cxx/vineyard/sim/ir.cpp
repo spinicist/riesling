@@ -13,12 +13,13 @@ auto IR::traces() const -> Index { return (settings.spokesPerSeg + settings.k0) 
 
 auto IR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.rows() != 2) { Log::Fail("Parameters must be T1 Δf"); }
+  if (p.rows() != 3) { Log::Fail("Parameters must be T1 Δf Q"); }
   float const T1 = p(0);
   float const Δf = p(1);
+  float const Q = p(2);
 
   Eigen::Matrix2f inv;
-  inv << -1.f, 0.f, 0.f, 1.f;
+  inv << -Q, 0.f, 0.f, 1.f;
 
   float const     R1 = 1.f / T1;
   Eigen::Matrix2f E1, Einv, Eramp, Essi, Erec;
@@ -78,13 +79,14 @@ auto IR2::traces() const -> Index { return (settings.spokesPerSeg + settings.k0)
 
 auto IR2::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.rows() != 3) { Log::Fail("Parameters must be T1 T2 Δf"); }
+  if (p.rows() != 4) { Log::Fail("Parameters must be T1 T2 Δf Q"); }
   float const T1 = p(0);
   float const T2 = p(1);
   float const Δf = p(2);
+  float const Q = p(3);
 
   Eigen::Matrix2f inv;
-  inv << -1.f, 0.f, 0.f, 1.f;
+  inv << -Q, 0.f, 0.f, 1.f;
 
   float const     R1 = 1.f / T1;
   Eigen::Matrix2f E1, Einv, Eramp, Essi, Erec;
