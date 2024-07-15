@@ -13,7 +13,7 @@ constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
 
 TEST_CASE("Grid", "[grid]")
 {
-  Log::SetLevel(Log::Level::Debug);
+  Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(7, 15, 16, 31, 32);
   auto const  matrix = Sz2{M, M};

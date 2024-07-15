@@ -25,7 +25,7 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   using Parent::forward;
   std::shared_ptr<Kernel<Scalar, ND>>     kernel;
   Index                                   subgridW;
-  std::vector<Mapping<ND>>                mapping;
+  std::vector<Mapping<ND>>                mappings;
   Basis                                   basis;
   std::optional<std::vector<Mapping<ND>>> vccMapping;
 
