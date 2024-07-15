@@ -1,6 +1,5 @@
 #pragma once
 
-#include "grid-subgrid.hpp"
 #include "info.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
@@ -21,7 +20,7 @@ template <int ND> struct Mapping
   std::array<int16_t, ND>    cart;
   NoncartesianIndex          noncart;
   Eigen::Array<float, ND, 1> offset;
-  Subgrid<ND>                subgrid;
+  Sz<ND>                     subgrid;
 };
 
 template <int ND> struct CalcMapping_t
@@ -32,7 +31,7 @@ template <int ND> struct CalcMapping_t
 };
 
 template <int ND>
-auto CalcMapping(TrajectoryN<ND> const &t, float const nomOSamp, Index const kW, Index const subgridSize = 32)
+auto CalcMapping(TrajectoryN<ND> const &t, float const nomOSamp, Index const kW, Index const subgridSize)
   -> CalcMapping_t<ND>;
 
 } // namespace rl

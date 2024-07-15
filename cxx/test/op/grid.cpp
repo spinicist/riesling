@@ -11,37 +11,36 @@ using namespace Catch;
 
 constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
 
-TEST_CASE("Grid", "[grid1]")
+TEST_CASE("Grid 1D", "[grid]")
 {
-  Log::SetLevel(Log::Level::Testing);
+  Log::SetLevel(Log::Level::Debug);
   Threads::SetGlobalThreadCount(1);
-  Index const M = GENERATE(7); //, 15, 16, 31, 32);
+  Index const M = GENERATE(16); //, (7, 15, 16, 31, 32);
   auto const  matrix = Sz1{M};
   Re3         points(1, 3, 1);
   points.setZero();
-  points(0, 0, 0) = -0.4f * M;
-  points(0, 2, 0) = 0.4f * M;
+  points(0, 0, 0) = -M/2;
+  points(0, 2, 0) = M/2 - 1;
   TrajectoryN<1> const traj(points, matrix);
 
-  float const       osamp = GENERATE(2.f); //, 2.7f, 3.f);
-  std::string const ktype = GENERATE("ES7");
+  float const       osamp = GENERATE(2.f); //, (2.f, 2.7f, 3.f);
+  std::string const ktype = GENERATE("ES3");
   auto              basis = IdBasis();
-  auto              grid = TOps::Grid<1, false>::Make(traj, ktype, osamp, 1, basis);
+  auto              grid = TOps::Grid<1, false>::Make(traj, ktype, osamp, 1, basis, 8);
   Cx3               noncart(grid->oshape);
   Cx3               cart(grid->ishape);
   noncart.setConstant(1.f);
   cart = grid->adjoint(noncart);
   INFO("M " << M << " OS " << osamp << " " << ktype);
-  INFO("cart\n" << cart);
   CHECK(Norm(cart) == Approx(Norm(noncart)).margin(1e-2f));
   noncart = grid->forward(cart);
-  INFO("noncart\n" << noncart);
   CHECK(Norm(noncart) == Approx(Norm(cart)).margin(1e-2f));
 }
 
+
 TEST_CASE("Grid", "[grid]")
 {
-  Log::SetLevel(Log::Level::Testing);
+  Log::SetLevel(Log::Level::Debug);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(7, 15, 16, 31, 32);
   auto const  matrix = Sz2{M, M};

@@ -50,17 +50,13 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
         ijk[(size_t)ii] = static_cast<int16_t>(Wrap(gp[ii], cartDims[(size_t)ii]));
       }
 
-      // Calculate subgrid
-      Index  ib = 0;
-      Sz<ND> minC, maxC;
+      Sz<ND> subgrid;
       for (Index id = 0; id < ND; id++) {
         auto const m = sgSz * (ijk[id] / sgSz);
-        minC[id] = m - (kW / 2);
-        maxC[id] = std::min(m + sgSz, cartDims[id]) + (kW / 2);
+        subgrid[id] = m - (kW / 2);
       }
-      mappings.push_back(Mapping<ND>{
-        .cart = ijk, .noncart = {is, ir}, .offset = off, .subgrid = Subgrid<ND>{.minCorner = minC, .maxCorner = maxC}});
-
+      fmt::print(stderr, "subgrid {}\n", subgrid);
+      mappings.push_back(Mapping<ND>{.cart = ijk, .noncart = {is, ir}, .offset = off, .subgrid = subgrid});
       index++;
     }
   }
@@ -69,7 +65,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
   std::sort(mappings.begin(), mappings.end(), [](Mapping<ND> const &a, Mapping<ND> const &b) {
     for (size_t di = 0; di < ND; di++) {
       size_t id = ND - 1 - di;
-      if (a.subgrid.minCorner[id] < b.subgrid.minCorner[id]) { return true; }
+      if (a.subgrid[id] < b.subgrid[id]) { return true; }
     }
     return false;
   });
