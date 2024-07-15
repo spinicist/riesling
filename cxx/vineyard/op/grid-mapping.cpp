@@ -31,9 +31,9 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
   Index                  valid = 0;
   Index                    invalids = 0;
   std::vector<Mapping<ND>> mappings;
-  for (int32_t is = 0; is < traj.nTraces(); is++) {
-    for (int16_t ir = 0; ir < traj.nSamples(); ir++) {
-      Re1 const p = traj.point(ir, is);
+  for (int32_t it = 0; it < traj.nTraces(); it++) {
+    for (int16_t is = 0; is < traj.nSamples(); is++) {
+      Re1 const p = traj.point(is, it);
       if (!B0(p.isfinite().all())()) {
         invalids++;
         continue;
@@ -56,7 +56,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
         subgrid[id] = m - (kW / 2);
         ijk[id] -= subgrid[id];
       }
-      mappings.push_back(Mapping<ND>{.cart = ijk, .noncart = {is, ir}, .offset = off, .subgrid = subgrid});
+      mappings.push_back(Mapping<ND>{.cart = ijk, .sample = is, .trace = it, .offset = off, .subgrid = subgrid});
       valid++;
     }
   }
