@@ -21,7 +21,7 @@ Level                        log_level = Level::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;
 bool                         isTTY = false;
 Index                        progressTarget = -1, progressCurrent = 0, progressNext = 0;
-std::mutex                   progressMutex;
+std::mutex                   progressMutex, logMutex;
 std::string                  progressMessage;
 std::string                  savedLog;
 } // namespace
@@ -46,7 +46,6 @@ void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5:
 
 void SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level)
 {
-  std::mutex logMutex;
   {
     std::scoped_lock lock(logMutex);
     savedLog.append(s); // This is not thread-safe

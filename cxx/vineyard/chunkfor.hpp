@@ -2,38 +2,37 @@
 
 #include "threads.hpp"
 
-#include <ranges>
-#include <tl/chunk.hpp>
+#include <span>
 
 #include "log.hpp"
 
 namespace rl::Threads {
 
-template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vector<T> const &v, Types&... args)
+template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vector<T> const &vv, Types &...args)
 {
+  std::span<T const> v{vv};
+  Index const        nT = GlobalThreadCount();
   if (v.size() == 0) {
     Log::Debug("No work to do");
     return;
-  } else if (v.size() == 1) {
+  } else if (nT == 1 || v.size() < nT) {
     f(v, args...);
+  } else {
+    Index const    den = v.size() / nT;
+    Index const    rem = v.size() % nT;
+    Eigen::Barrier barrier(static_cast<unsigned int>(nT));
+    for (Index it = 0; it < nT; it++) {
+      Index const        lo = it * den + std::min(it, rem);
+      Index const        hi = (it + 1) * den + std::min(it + 1, rem);
+      Index const        n = hi - lo;
+      std::span<T const> sv = v.subspan(lo, n);
+      GlobalPool()->Schedule([&, f, sv] {
+        f(sv, args...);
+        barrier.Notify();
+      });
+    }
+    barrier.Wait();
   }
-  Index const    nt = GlobalThreadCount();
-  Index const    cSz = std::max(std::floor(v.size() / (float)nt), 1.f); // Desired chunk size
-  Index const    nC = std::ceil(v.size() / cSz);
-  Eigen::Barrier barrier(static_cast<unsigned int>(nC));
-  auto const     chunks = v | tl::views::chunk(cSz);
-  Log::Debug("Threads {} Chunks {} Size {}", nt, nC, cSz);
-  for (auto const &chunk : chunks) {
-    Log::Debug("Scheduling...");
-    GlobalPool()->Schedule([&, chunk] {
-      f(chunk, args...);
-      Log::Debug("Notifying...");
-      barrier.Notify();
-    });
-  }
-  Log::Debug("Waiting...");
-  barrier.Wait();
-  Log::Debug("Finished");
 }
 
 } // namespace rl::Threads

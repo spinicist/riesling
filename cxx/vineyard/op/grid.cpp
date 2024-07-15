@@ -68,12 +68,12 @@ Grid<NDim, VCC>::Grid(
 /* Needs to be a functor to avoid template errors */
 template <int ND, bool hasVCC, bool isVCC> struct forwardTask
 {
-  void operator()(std::ranges::viewable_range auto const &mappings,
-                  Index const                             subgridW,
-                  Basis const                            &basis,
-                  std::shared_ptr<Kernel<Cx, ND>> const  &kernel,
-                  CxNCMap<ND + 2 + hasVCC> const         &x,
-                  CxNMap<3>                              &y)
+  void operator()(std::span<Mapping<ND> const> const &mappings,
+                  Index const                         subgridW,
+                  Basis const                        &basis,
+                  Kernel<Cx, ND>::Ptr const          &kernel,
+                  CxNCMap<ND + 2 + hasVCC> const     &x,
+                  CxNMap<3>                          &y) const
   {
     Index const nC = y.dimension(0);
     Index const nB = basis.dimension(0);
@@ -116,13 +116,13 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::iforward(InCMap const &x, Ou
 
 template <int ND, bool hasVCC, bool isVCC> struct adjointTask
 {
-  void operator()(std::ranges::viewable_range auto const &mappings,
-                  std::mutex                             &writeMutex,
-                  Index const                             subgridW,
-                  Basis const                            &basis,
-                  std::shared_ptr<Kernel<Cx, ND>> const  &kernel,
-                  CxNCMap<3> const                       &y,
-                  CxNMap<ND + 2 + hasVCC>                &x)
+  void operator()(std::span<Mapping<ND> const> const &mappings,
+                  std::mutex                         &writeMutex,
+                  Index const                         subgridW,
+                  Basis const                        &basis,
+                  Kernel<Cx, ND>::Ptr const          &kernel,
+                  CxNCMap<3> const                   &y,
+                  CxNMap<ND + 2 + hasVCC>            &x) const
   {
     Index const nC = y.dimensions()[0];
     Index const nB = basis.dimension(0);

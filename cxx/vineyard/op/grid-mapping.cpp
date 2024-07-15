@@ -28,7 +28,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
 
   std::fesetround(FE_TONEAREST);
   auto const               center = Div(cartDims, 2);
-  int32_t                  index = 0;
+  Index                  valid = 0;
   Index                    invalids = 0;
   std::vector<Mapping<ND>> mappings;
   for (int32_t is = 0; is < traj.nTraces(); is++) {
@@ -57,10 +57,10 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
         ijk[id] -= subgrid[id];
       }
       mappings.push_back(Mapping<ND>{.cart = ijk, .noncart = {is, ir}, .offset = off, .subgrid = subgrid});
-      index++;
+      valid++;
     }
   }
-  Log::Print("Ignored {} invalid trajectory points", invalids);
+  Log::Print("Ignored {} invalid trajectory points, {} remaing", invalids, valid);
 
   std::sort(mappings.begin(), mappings.end(), [](Mapping<ND> const &a, Mapping<ND> const &b) {
     for (size_t di = 0; di < ND; di++) {

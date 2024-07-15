@@ -89,9 +89,9 @@ TEST_CASE("Grid Sample Basis", "[grid]")
 
 TEST_CASE("Grid VCC", "[grid]")
 {
-  Log::SetLevel(Log::Level::Testing);
-  Threads::SetGlobalThreadCount(1);
-  Index const M = GENERATE(7, 8);
+  Log::SetLevel(Log::Level::Debug);
+  Threads::SetGlobalThreadCount(0);
+  Index const M = GENERATE(15, 16);
   auto const  matrix = Sz1{M};
   Re3         points(1, M / 2, 1);
   for (Index ii = 0; ii < M / 2; ii++) {
