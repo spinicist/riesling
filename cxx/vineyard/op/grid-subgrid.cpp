@@ -110,7 +110,7 @@ template <> void GridToSubgrid<1, true, false>(Sz1 const sg, Cx4CMap const &x, C
     Index const iix = Wrap(ix + sg[0], x.dimension(3));
     for (Index ib = 0; ib < sx.dimension(1); ib++) {
       for (Index ic = 0; ic < sx.dimension(0); ic++) {
-        sx(ic, ib, ix) = x(ic, ib, 0, iix) * inv_sqrt2;
+        sx(ic, ib, ix) = x(ic, 0, ib, iix) * inv_sqrt2;
       }
     }
   }
@@ -124,7 +124,7 @@ template <> void GridToSubgrid<2, true, false>(Sz2 const sg, Cx5CMap const &x, C
       Index const iix = Wrap(ix + sg[0], x.dimension(3));
       for (Index ib = 0; ib < sx.dimension(1); ib++) {
         for (Index ic = 0; ic < sx.dimension(0); ic++) {
-          sx(ic, ib, ix, iy) = x(ic, ib, 0, iix, iiy) * inv_sqrt2;
+          sx(ic, ib, ix, iy) = x(ic, 0, ib, iix, iiy) * inv_sqrt2;
         }
       }
     }
@@ -141,7 +141,7 @@ template <> void GridToSubgrid<3, true, false>(Sz3 const sg, Cx6CMap const &x, C
         Index const iix = Wrap(ix + sg[0], x.dimension(3));
         for (Index ib = 0; ib < sx.dimension(1); ib++) {
           for (Index ic = 0; ic < sx.dimension(0); ic++) {
-            sx(ic, ib, ix, iy, iz) = x(ic, ib, 0, iix, iiy, iiz) * inv_sqrt2;
+            sx(ic, ib, ix, iy, iz) = x(ic, 0, ib, iix, iiy, iiz) * inv_sqrt2;
           }
         }
       }
@@ -155,7 +155,7 @@ template <> void SubgridToGrid<1, true, false>(Sz1 const sg, Cx3CMap const &sx, 
     Index const iix = Wrap(ix + sg[0], x.dimension(3));
     for (Index ib = 0; ib < sx.dimension(1); ib++) {
       for (Index ic = 0; ic < sx.dimension(0); ic++) {
-        x(ic, ib, 0, iix) += sx(ic, ib, ix) * inv_sqrt2;
+        x(ic, 0, ib, iix) += sx(ic, ib, ix) * inv_sqrt2;
       }
     }
   }
@@ -169,7 +169,7 @@ template <> void SubgridToGrid<2, true, false>(Sz2 const sg, Cx4CMap const &sx, 
       Index const iix = Wrap(ix + sg[0], x.dimension(3));
       for (Index ib = 0; ib < sx.dimension(1); ib++) {
         for (Index ic = 0; ic < sx.dimension(0); ic++) {
-          x(ic, ib, 0, iix, iiy) += sx(ic, ib, ix, iy) * inv_sqrt2;
+          x(ic, 0, ib, iix, iiy) += sx(ic, ib, ix, iy) * inv_sqrt2;
         }
       }
     }
@@ -186,7 +186,7 @@ template <> void SubgridToGrid<3, true, false>(Sz3 const sg, Cx5CMap const &sx, 
         Index const iix = Wrap(ix + sg[0], x.dimension(3));
         for (Index ib = 0; ib < sx.dimension(1); ib++) {
           for (Index ic = 0; ic < sx.dimension(0); ic++) {
-            x(ic, ib, 0, iix, iiy, iiz) += sx(ic, ib, ix, iy, iz) * inv_sqrt2;
+            x(ic, 0, ib, iix, iiy, iiz) += sx(ic, ib, ix, iy, iz) * inv_sqrt2;
           }
         }
       }
@@ -202,7 +202,7 @@ template <> void GridToSubgrid<1, true, true>(Sz1 const sg, Cx4CMap const &x, Cx
     Index const iix = Wrap(ix + sg[0], x.dimension(3));
     for (Index ib = 0; ib < sx.dimension(1); ib++) {
       for (Index ic = 0; ic < sx.dimension(0); ic++) {
-        sx(ic, ib, ix) = std::conj(x(ic, ib, 1, iix)) * inv_sqrt2;
+        sx(ic, ib, ix) = std::conj(x(ic, 1, ib, iix)) * inv_sqrt2;
       }
     }
   }
@@ -216,7 +216,7 @@ template <> void GridToSubgrid<2, true, true>(Sz2 const sg, Cx5CMap const &x, Cx
       Index const iix = Wrap(ix + sg[0], x.dimension(3));
       for (Index ib = 0; ib < sx.dimension(1); ib++) {
         for (Index ic = 0; ic < sx.dimension(0); ic++) {
-          sx(ic, ib, ix, iy) = std::conj(x(ic, ib, 1, iix, iiy)) * inv_sqrt2;
+          sx(ic, ib, ix, iy) = std::conj(x(ic, 1, ib, iix, iiy)) * inv_sqrt2;
         }
       }
     }
@@ -233,7 +233,7 @@ template <> void GridToSubgrid<3, true, true>(Sz3 const sg, Cx6CMap const &x, Cx
         Index const iix = Wrap(ix + sg[0], x.dimension(3));
         for (Index ib = 0; ib < sx.dimension(1); ib++) {
           for (Index ic = 0; ic < sx.dimension(0); ic++) {
-            sx(ic, ib, ix, iy, iz) = std::conj(x(ic, ib, 1, iix, iiy, iiz)) * inv_sqrt2;
+            sx(ic, ib, ix, iy, iz) = std::conj(x(ic, 1, ib, iix, iiy, iiz)) * inv_sqrt2;
           }
         }
       }
@@ -247,7 +247,7 @@ template <> void SubgridToGrid<1, true, true>(Sz1 const sg, Cx3CMap const &sx, C
     Index const iix = Wrap(ix + sg[0], x.dimension(3));
     for (Index ib = 0; ib < sx.dimension(1); ib++) {
       for (Index ic = 0; ic < sx.dimension(0); ic++) {
-        x(ic, ib, 1, iix) += std::conj(sx(ic, ib, ix)) * inv_sqrt2;
+        x(ic, 1, ib, iix) += std::conj(sx(ic, ib, ix)) * inv_sqrt2;
       }
     }
   }
@@ -261,7 +261,7 @@ template <> void SubgridToGrid<2, true, true>(Sz2 const sg, Cx4CMap const &sx, C
       Index const iix = Wrap(ix + sg[0], x.dimension(3));
       for (Index ib = 0; ib < sx.dimension(1); ib++) {
         for (Index ic = 0; ic < sx.dimension(0); ic++) {
-          x(ic, ib, 1, iix, iiy) += std::conj(sx(ic, ib, ix, iy)) * inv_sqrt2;
+          x(ic, 1, ib, iix, iiy) += std::conj(sx(ic, ib, ix, iy)) * inv_sqrt2;
         }
       }
     }
@@ -278,7 +278,7 @@ template <> void SubgridToGrid<3, true, true>(Sz3 const sg, Cx5CMap const &sx, C
         Index const iix = Wrap(ix + sg[0], x.dimension(3));
         for (Index ib = 0; ib < sx.dimension(1); ib++) {
           for (Index ic = 0; ic < sx.dimension(0); ic++) {
-            x(ic, ib, 1, iix, iiy, iiz) += std::conj(sx(ic, ib, ix, iy, iz)) * inv_sqrt2;
+            x(ic, 1, ib, iix, iiy, iiz) += std::conj(sx(ic, ib, ix, iy, iz)) * inv_sqrt2;
           }
         }
       }

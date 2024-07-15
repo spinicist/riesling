@@ -37,7 +37,7 @@ auto Grid<NDim, VCC>::Make(
 template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index const nB) -> Sz<ND + 2 + VCC>
 {
   if constexpr (VCC) {
-    return AddFront(cart, nC, nB, 2);
+    return AddFront(cart, nC, 2, nB);
   } else {
     return AddFront(cart, nC, nB);
   }
@@ -88,7 +88,7 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
       Eigen::Tensor<Cx, 1> const bs =
         basis.template chip<2>(m.noncart.trace % basis.dimension(2)).template chip<1>(m.noncart.sample % basis.dimension(1));
       Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.noncart.sample, m.noncart.trace), Sz1{nC});
-      kernel->gather(m.cart, m.offset, current, bs, sx, yy);
+      kernel->gather(m.cart, m.offset, bs, sx, yy);
     }
   }
 };
@@ -143,7 +143,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
                                         .template chip<1>(m.noncart.sample % basis.dimension(1))
                                         .conjugate();
       Eigen::Tensor<Cx, 1> yy = y.template chip<2>(m.noncart.trace).template chip<1>(m.noncart.sample);
-      kernel->spread(m.cart, m.offset, current, bs, yy, sx);
+      kernel->spread(m.cart, m.offset, bs, yy, sx);
     }
 
     {
