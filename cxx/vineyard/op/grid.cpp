@@ -130,7 +130,6 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
     CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nC, nB));
     sx.setZero();
     Sz<ND> current = mappings.front().subgrid;
-
     for (auto const &m : mappings) {
       if (current != m.subgrid) {
         std::scoped_lock lock(writeMutex);
@@ -139,9 +138,8 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
         current = m.subgrid;
       }
 
-      Eigen::Tensor<Cx, 1> const bs = basis.template chip<2>(m.trace % basis.dimension(2))
-                                        .template chip<1>(m.sample % basis.dimension(1))
-                                        .conjugate();
+      Eigen::Tensor<Cx, 1> const bs =
+        basis.template chip<2>(m.trace % basis.dimension(2)).template chip<1>(m.sample % basis.dimension(1)).conjugate();
       Eigen::Tensor<Cx, 1> yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
       kernel->spread(m.cart, m.offset, bs, yy, sx);
     }

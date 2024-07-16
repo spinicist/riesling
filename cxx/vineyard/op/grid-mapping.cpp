@@ -63,9 +63,17 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
   Log::Print("Ignored {} invalid trajectory points, {} remaing", invalids, valid);
 
   std::sort(mappings.begin(), mappings.end(), [](Mapping<ND> const &a, Mapping<ND> const &b) {
+    // First compare on subgrids
     for (size_t di = 0; di < ND; di++) {
       size_t id = ND - 1 - di;
       if (a.subgrid[id] < b.subgrid[id]) { return true; }
+      else if (b.subgrid[id] < a.subgrid[id]) {return false; }
+    }
+    // Then compare on ijk location
+    for (size_t di = 0; di < ND; di++) {
+      size_t id = ND - 1 - di;
+      if (a.cart[id] < b.cart[id]) { return true; }
+      else if (b.cart[id] < a.cart[id]) {return false; }
     }
     return false;
   });

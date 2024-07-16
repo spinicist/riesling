@@ -15,13 +15,12 @@ template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vec
   if (v.size() == 0) {
     Log::Debug("No work to do");
     return;
-  } else if (nT == 1 || v.size() < nT) {
-    f(v, args...);
   } else {
     Index const    den = v.size() / nT;
     Index const    rem = v.size() % nT;
-    Eigen::Barrier barrier(static_cast<unsigned int>(nT));
-    for (Index it = 0; it < nT; it++) {
+    Index const    nC = std::min<Index>(v.size(), nT);
+    Eigen::Barrier barrier(nC);
+    for (Index it = 0; it < nC; it++) {
       Index const        lo = it * den + std::min(it, rem);
       Index const        hi = (it + 1) * den + std::min(it + 1, rem);
       Index const        n = hi - lo;
