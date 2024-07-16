@@ -47,9 +47,11 @@ void main_recon_lsq(args::Subparser &parser)
     out.chip<4>(iv) = oc.forward(xm);
     if (coreOpts.residual) {
       noncart.chip<4>(iv) -= A->forward(xm);
-      xm = A->adjoint(noncart.chip<4>(iv));
+      lsmr.iterLimit = 0;
+      x = lsmr.run(&noncart(0, 0, 0, 0, iv), 0);
+      lsmr.iterLimit = lsqOpts.its.Get();
       resid.chip<4>(iv) = oc.forward(xm);
-    }
+    }    
   }
   WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
   if (coreOpts.residual) { WriteOutput(coreOpts.residual.Get(), resid, info); }
