@@ -20,7 +20,7 @@ add_library(vineyard
     pad.cpp
     patches.cpp
     precon.cpp
-    # regularizers.cpp
+    regularizers.cpp
     scaling.cpp
     signals.cpp
     threads.cpp

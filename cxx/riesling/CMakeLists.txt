@@ -33,7 +33,7 @@ add_executable(riesling
     recon/lsq.cpp
     # recon/pdhg.cpp
     # recon/pdhg-setup.cpp
-    # recon/rlsq.cpp
+    recon/rlsq.cpp
     # recon/rss.cpp
     # recon/sake.cpp
 

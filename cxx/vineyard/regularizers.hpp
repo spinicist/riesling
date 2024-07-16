@@ -1,7 +1,7 @@
 #pragma once
 
-#include "op/ops.hpp"
 #include "args.hpp"
+#include "op/top.hpp"
 #include "prox/prox.hpp"
 
 #include <variant>
@@ -33,18 +33,19 @@ struct RegOpts
 
 struct Regularizer
 {
+  using SizeN = std::variant<Sz3, Sz4, Sz5>;
   Ops::Op<Cx>::Ptr     T;
   Proxs::Prox<Cx>::Ptr P;
+  SizeN                size;
 };
 
-struct Regularizers
+struct Regularizers_t
 {
-  using SizeN = std::variant<Sz3, Sz4, Sz5>;
   std::vector<Regularizer>     regs;
-  std::shared_ptr<Ops::Op<Cx>> ext_x;
-  std::vector<SizeN>           sizes;
-
-  Regularizers(RegOpts &regOpts, Sz5 const shape, std::shared_ptr<Ops::Op<Cx>> &A);
+  Ops::Op<Cx>::Ptr A;
+  Ops::Op<Cx>::Ptr ext_x;
 };
+
+auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A) -> Regularizers_t;
 
 } // namespace rl

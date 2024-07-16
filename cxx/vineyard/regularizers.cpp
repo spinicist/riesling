@@ -31,9 +31,12 @@ RegOpts::RegOpts(args::Subparser &parser)
 {
 }
 
-Regularizers::Regularizers(RegOpts &opts, Sz5 const shape, std::shared_ptr<Ops::Op<Cx>> &A)
+auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regularizers_t
 {
-  ext_x = std::make_shared<TOps::Identity<Cx, 5>>(shape); // Need for TGV, sigh
+  Ops::Op<Cx>::Ptr A = recon;
+  auto const shape = recon->ishape;
+  Ops::Op<Cx>::Ptr ext_x = std::make_shared<TOps::Identity<Cx, 5>>(shape); // Need for TGV, sigh
+  std::vector<Regularizer> regs;
 
   if (opts.tgv) {
     if (opts.tgvl2) { Log::Fail("You tried to TGVL2 your TGV. Nope."); }
@@ -45,9 +48,8 @@ Regularizers::Regularizers(RegOpts &opts, Sz5 const shape, std::shared_ptr<Ops::
     auto grad_v = std::make_shared<TOps::GradVec>(grad_x->oshape);
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
     auto prox2 = std::make_shared<Proxs::L1>(opts.tgv.Get(), op2->rows());
-    regs.push_back({op1, prox1});
-    regs.push_back({op2, prox2});
-    sizes = {grad_x->oshape, grad_v->oshape};
+    regs.push_back({op1, prox1, grad_x->oshape});
+    regs.push_back({op2, prox2, grad_v->oshape});
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
   }
 
@@ -61,9 +63,8 @@ Regularizers::Regularizers(RegOpts &opts, Sz5 const shape, std::shared_ptr<Ops::
     auto grad_v = std::make_shared<TOps::GradVec>(grad_x->oshape);
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
     auto prox2 = std::make_shared<Proxs::L2>(opts.tgvl2.Get(), op2->rows(), shape[0]);
-    regs.push_back({op1, prox1});
-    regs.push_back({op2, prox2});
-    sizes = {grad_x->oshape, grad_v->oshape};
+    regs.push_back({op1, prox1, grad_x->oshape});
+    regs.push_back({op2, prox2, grad_v->oshape});
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
   }
 
@@ -112,6 +113,8 @@ Regularizers::Regularizers(RegOpts &opts, Sz5 const shape, std::shared_ptr<Ops::
   }
 
   if (regs.size() == 0) { Log::Fail("Must specify at least one regularizer"); }
+
+  return {regs, A, ext_x};
 }
 
 } // namespace rl
