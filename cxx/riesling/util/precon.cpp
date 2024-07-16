@@ -2,7 +2,7 @@
 
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "precon.hpp"
 
 using namespace rl;

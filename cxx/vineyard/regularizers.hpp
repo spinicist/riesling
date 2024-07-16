@@ -1,7 +1,7 @@
 #pragma once
 
 #include "op/ops.hpp"
-#include "parse_args.hpp"
+#include "args.hpp"
 #include "prox/prox.hpp"
 
 #include <variant>
@@ -44,7 +44,7 @@ struct Regularizers
   std::shared_ptr<Ops::Op<Cx>> ext_x;
   std::vector<SizeN>           sizes;
 
-  Regularizers(RegOpts &regOpts, Sz4 const shape, std::shared_ptr<Ops::Op<Cx>> &A);
+  Regularizers(RegOpts &regOpts, Sz5 const shape, std::shared_ptr<Ops::Op<Cx>> &A);
 };
 
 } // namespace rl

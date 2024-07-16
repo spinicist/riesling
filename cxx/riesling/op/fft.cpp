@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/fft.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "threads.hpp"
 
 using namespace rl;

@@ -9,6 +9,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
   TOP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
   using Parent::adjoint;
   using Parent::forward;
+  using Ptr = std::shared_ptr<Loop>;
 
   Loop(std::shared_ptr<Op> op, Index const N)
     : Parent("Loop", AddBack(op->ishape, N), AddBack(op->oshape, N))
@@ -75,5 +76,12 @@ private:
   std::shared_ptr<Op> op_;
   Index               N_;
 };
+
+template <typename Op>
+auto MakeLoop(std::shared_ptr<Op> op, Index const N) -> Loop<Op>::Ptr
+{
+  return std::make_shared<Loop<Op>>(op, N);
+}
+
 
 } // namespace rl::TOps

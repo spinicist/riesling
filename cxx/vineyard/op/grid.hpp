@@ -3,8 +3,9 @@
 #include "basis/basis.hpp"
 #include "grid-mapping.hpp"
 #include "kernel/kernel.hpp"
-#include "parse_args.hpp"
 #include "top.hpp"
+
+#include <args.hxx>
 
 namespace rl {
 

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "args.hpp"
 #include "io/reader.hpp"
 #include "op/compose.hpp"
 #include "op/nufft.hpp"
-#include "parse_args.hpp"
 #include "sense/sense.hpp"
 
 /*
@@ -13,20 +13,21 @@
 namespace rl {
 namespace Recon {
 
-auto SENSE(CoreOpts         &coreOpts,
+auto SENSE(bool const        ndft,
            GridOpts         &gridOpts,
            SENSE::Opts      &senseOpts,
            Trajectory const &traj,
            Index const       nSlab,
-           Basis const  &basis,
-           Cx5 const        &data) -> TOps::TOp<Cx, 4, 4>::Ptr;
+           Index const       nTime,
+           Basis const      &basis,
+           Cx5 const        &data) -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 auto Channels(bool const        ndft,
               GridOpts         &gridOpts,
               Trajectory const &traj,
               Index const       nC,
               Index const       nSlab,
-              Basis const  &basis,
+              Basis const      &basis,
               Sz3 const         shape = Sz3()) -> TOps::TOp<Cx, 5, 4>::Ptr;
 
 } // namespace Recon

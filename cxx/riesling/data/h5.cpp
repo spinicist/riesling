@@ -1,6 +1,6 @@
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
 

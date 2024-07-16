@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "op/grad.hpp"
 #include "op/wavelets.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "threads.hpp"
 
 using namespace rl;

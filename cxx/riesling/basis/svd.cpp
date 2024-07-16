@@ -4,7 +4,7 @@
 #include "basis/svd.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "sim/dir.hpp"
 #include "sim/ir.hpp"
 #include "sim/parameter.hpp"

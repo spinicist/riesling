@@ -104,6 +104,7 @@ template<int N> auto Constant(Index const c) -> Sz<N> {
 
 template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
+  static_assert(sizeof...(Args) > 0);
   Eigen::DSizes<T, sizeof...(Args)>     front{{toAdd...}};
   Eigen::DSizes<T, sizeof...(Args) + N> out;
 
@@ -114,6 +115,7 @@ template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DS
 
 template <typename T, int N, typename... Args> decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
 {
+  static_assert(sizeof...(Args) > 0);
   Eigen::DSizes<T, sizeof...(Args)>     back{{toAdd...}};
   Eigen::DSizes<T, sizeof...(Args) + N> out;
 

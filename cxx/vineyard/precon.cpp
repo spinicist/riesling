@@ -72,22 +72,22 @@ auto KSpaceSingle(Trajectory const &traj, Basis const &basis, bool const vcc, fl
   return weights;
 }
 
-auto make_kspace_pre(Trajectory const  &traj,
-                     Index const        nC,
-                     Basis const   &basis,
-                     bool const         ,
-                     std::string const &type,
-                     float const        bias,
-                     bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>
+auto MakeKspacePre(Trajectory const  &traj,
+                   Index const        nC,
+                   Index const        nT,
+                   Basis const       &basis,
+                   std::string const &type,
+                   float const        bias,
+                   bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>
 {
   if (type == "" || type == "none") {
     Log::Print("Using no preconditioning");
-    return std::make_shared<Ops::Identity<Cx>>(nC * traj.nSamples() * traj.nTraces());
+    return std::make_shared<Ops::Identity<Cx>>(nC * traj.nSamples() * traj.nTraces() * nT);
   } else if (type == "kspace") {
     if (ndft) { Log::Warn("Preconditioning for NDFT is not supported yet, using NUFFT preconditioner"); }
     Re2 const              w = KSpaceSingle(traj, basis, false, bias);
     Eigen::VectorXcf const wv = CollapseToArray(w);
-    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
+    return std::make_shared<Ops::DiagRep<Cx>>(wv, nC, nT);
   } else {
     HD5::Reader reader(type);
     Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
@@ -96,7 +96,7 @@ auto make_kspace_pre(Trajectory const  &traj,
                 traj.nSamples(), traj.nTraces());
     }
     Eigen::VectorXcf const wv = CollapseToArray(w);
-    return std::make_shared<Ops::DiagRep<Cx>>(nC, wv);
+    return std::make_shared<Ops::DiagRep<Cx>>(wv, nC, nT);
   }
 }
 

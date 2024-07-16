@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "args.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
 
@@ -15,38 +16,6 @@ extern args::Flag     verbose;
 void ParseCommand(args::Subparser &parser);
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname, args::Positional<std::string> &oname);
-
-struct Array2fReader
-{
-  void operator()(std::string const &name, std::string const &value, Eigen::Array2f &x);
-};
-
-struct Array3fReader
-{
-  void operator()(std::string const &name, std::string const &value, Eigen::Array3f &x);
-};
-
-struct ArrayXfReader
-{
-  void operator()(std::string const &name, std::string const &value, Eigen::ArrayXf &x);
-};
-
-struct Vector3fReader
-{
-  void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);
-};
-
-template <typename T>
-struct VectorReader
-{
-  void operator()(std::string const &name, std::string const &value, std::vector<T> &x);
-};
-
-template <int N>
-struct SzReader
-{
-  void operator()(std::string const &name, std::string const &value, rl::Sz<N> &x);
-};
 
 struct CoreOpts
 {
@@ -91,5 +60,3 @@ struct RlsqOpts
   args::ValueFlag<float> μ;
   args::ValueFlag<float> τ;
 };
-
-void WriteOutput(std::string const &fname, rl::Cx5 const &img, rl::Info const &info, std::string const &log = "");

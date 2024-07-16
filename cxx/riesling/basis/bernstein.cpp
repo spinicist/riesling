@@ -3,7 +3,7 @@
 #include "basis/bernstein.hpp"
 #include "io/writer.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 
 void main_bernstein(args::Subparser &parser)
 {

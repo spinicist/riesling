@@ -39,7 +39,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
   auto const shape1 = traj.matrix(gridOpts.osamp.Get());
   auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, basis, shape1);
-  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
+  auto const M = MakeKspacePre(traj, nC, 1, basis);
   LSMR const lsmr{A, M, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
@@ -62,7 +62,7 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto const [traj, lores] = inTraj.downsample(ncVol, kSz, 0, true, true);
   auto const A = TOps::Grid<3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
-  auto const M = make_kspace_pre(traj, nC, basis, false);
+  auto const M = MakeKspacePre(traj, nC, 1, basis);
   LSMR const lsmr{A, M, 4};
   Cx5 const  channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
   return channels;
@@ -134,7 +134,7 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
   Cx3 const  sw = SobolevWeights(kW, 4).cast<Cx>();
   auto const swv = CollapseToArray(sw);
-  auto       W = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], swv);
+  auto       W = std::make_shared<Ops::DiagRep<Cx>>(swv, kshape[0] * kshape[1], 1);
   auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
   auto       R = std::make_shared<Ops::Multiply<Cx>>(L, W);
   auto       A = std::make_shared<Ops::VStack<Cx>>(PFSFP, R);

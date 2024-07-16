@@ -27,14 +27,15 @@ add_executable(riesling
     op/rss.cpp
     op/wavelets.cpp
 
-    recon/channels.cpp
+    recon/outputs.cpp
+    # recon/channels.cpp
     recon/lad.cpp
     recon/lsq.cpp
-    recon/pdhg.cpp
-    recon/pdhg-setup.cpp
-    recon/rlsq.cpp
-    recon/rss.cpp
-    recon/sake.cpp
+    # recon/pdhg.cpp
+    # recon/pdhg-setup.cpp
+    # recon/rlsq.cpp
+    # recon/rss.cpp
+    # recon/sake.cpp
 
     sense/calib.cpp
     sense/maps.cpp
@@ -51,11 +52,13 @@ add_executable(riesling
     # util/rovir.cpp
     util/version.cpp
 
+    inputs.cpp
     main.cpp
 )
 target_link_libraries(riesling PRIVATE
     vineyard
 )
+target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 set_target_properties(riesling PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON

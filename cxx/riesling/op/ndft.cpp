@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/grid.hpp"
 #include "op/ndft.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "precon.hpp"
 #include "threads.hpp"
 
@@ -41,9 +41,10 @@ void main_ndft(args::Subparser &parser)
     traj.write(writer);
   } else {
     auto noncart = reader.readTensor<Cx5>();
+    Index const nT = noncart.dimension(4);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-    auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+    auto const M = MakeKspacePre(traj, nC, nT, basis, preOpts.type.Get(), preOpts.bias.Get());
     LSMR const lsmr{ndft, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));

@@ -4,7 +4,7 @@
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "patches.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"

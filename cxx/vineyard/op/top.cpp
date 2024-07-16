@@ -140,6 +140,7 @@ template struct TOp<Cx, 5, 6>;
 template struct TOp<Cx, 5, 7>;
 template struct TOp<Cx, 6, 3>;
 template struct TOp<Cx, 6, 4>;
+template struct TOp<Cx, 6, 5>;
 template struct TOp<Cx, 6, 6>;
 template struct TOp<Cx, 6, 7>;
 template struct TOp<Cx, 7, 4>;

@@ -4,7 +4,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/nufft.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "precon.hpp"
 #include "threads.hpp"
 
@@ -44,7 +44,7 @@ void main_nufft(args::Subparser &parser)
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-    auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+    auto const M = MakeKspacePre(traj, nC, 1, basis, preOpts.type.Get(), preOpts.bias.Get());
     LSMR const lsmr{nufft, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
     Cx6 output(AddBack(nufft->ishape, noncart.dimension(3)));

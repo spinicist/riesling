@@ -10,6 +10,7 @@ find_package(tl-ranges CONFIG REQUIRED)
 
 add_library(vineyard
     apodize.cpp
+    args.cpp
     colors.cpp
     compressor.cpp
     fft.cpp
@@ -17,10 +18,9 @@ add_library(vineyard
     interp.cpp
     log.cpp
     pad.cpp
-    parse_args.cpp
     patches.cpp
     precon.cpp
-    regularizers.cpp
+    # regularizers.cpp
     scaling.cpp
     signals.cpp
     threads.cpp

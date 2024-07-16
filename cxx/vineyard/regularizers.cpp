@@ -31,9 +31,9 @@ RegOpts::RegOpts(args::Subparser &parser)
 {
 }
 
-Regularizers::Regularizers(RegOpts &opts, Sz4 const shape, std::shared_ptr<Ops::Op<Cx>> &A)
+Regularizers::Regularizers(RegOpts &opts, Sz5 const shape, std::shared_ptr<Ops::Op<Cx>> &A)
 {
-  ext_x = std::make_shared<TOps::Identity<Cx, 4>>(shape); // Need for TGV, sigh
+  ext_x = std::make_shared<TOps::Identity<Cx, 5>>(shape); // Need for TGV, sigh
 
   if (opts.tgv) {
     if (opts.tgvl2) { Log::Fail("You tried to TGVL2 your TGV. Nope."); }

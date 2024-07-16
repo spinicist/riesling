@@ -2,9 +2,9 @@
 
 #include "algo/gs.hpp"
 #include "basis/fourier.hpp"
+#include "inputs.hpp"
 #include "io/writer.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
 
 #include <complex>
 #include <numbers>

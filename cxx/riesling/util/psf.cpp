@@ -1,12 +1,12 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/fft.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
-#include "parse_args.hpp"
 #include "precon.hpp"
 
 using namespace rl;
@@ -40,7 +40,7 @@ void main_psf(args::Subparser &parser)
   } else {
     A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis, shape);
   }
-  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto const M = MakeKspacePre(traj, nC, 1, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];

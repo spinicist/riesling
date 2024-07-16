@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/pad.hpp"
 #include "op/wavelets.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "prox/entropy.hpp"
 #include "prox/l1-wavelets.hpp"
 #include "prox/llr.hpp"

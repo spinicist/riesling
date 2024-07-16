@@ -3,7 +3,7 @@
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "threads.hpp"
 
 #include "tensors.hpp"
@@ -21,7 +21,6 @@ void main_blend(args::Subparser &parser)
                                                               {0});
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Traces within basis for combination", {"tp", 't'},
                                                               {0});
-
   ParseCommand(parser);
 
   if (!iname) { throw args::Error("No input file specified"); }
