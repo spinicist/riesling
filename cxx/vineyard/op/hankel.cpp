@@ -1,5 +1,7 @@
 #include "hankel.hpp"
 
+#include "log.hpp"
+
 namespace rl::TOps {
 
 template <typename Sc, int ND, int NK>

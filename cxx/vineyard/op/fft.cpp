@@ -1,6 +1,8 @@
 #include "fft.hpp"
 #include "../fft.hpp"
 
+#include <fmt/format.h>
+
 namespace rl::TOps {
 
 template <int Rank, int FFTRank>

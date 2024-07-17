@@ -2,6 +2,8 @@
 
 #include "ops.hpp"
 
+#include "log.hpp"
+
 namespace rl::TOps {
 
 template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>

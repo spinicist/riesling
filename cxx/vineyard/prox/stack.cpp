@@ -1,5 +1,7 @@
 #include "stack.hpp"
 
+#include "log.hpp"
+
 namespace rl::Proxs {
 
 template <typename S>

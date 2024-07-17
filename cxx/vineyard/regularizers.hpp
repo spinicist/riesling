@@ -26,14 +26,14 @@ struct RegOpts
   args::ValueFlag<Index> llrWin;
   args::Flag             llrShift;
 
-  args::ValueFlag<float>            wavelets;
-  args::ValueFlag<Sz4, SzReader<4>> waveDims;
-  args::ValueFlag<Index>            waveWidth;
+  args::ValueFlag<float>                                   wavelets;
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> waveDims;
+  args::ValueFlag<Index>                                   waveWidth;
 };
 
 struct Regularizer
 {
-  using SizeN = std::variant<Sz3, Sz4, Sz5>;
+  using SizeN = std::variant<Sz4, Sz5, Sz6>;
   Ops::Op<Cx>::Ptr     T;
   Proxs::Prox<Cx>::Ptr P;
   SizeN                size;
@@ -41,9 +41,9 @@ struct Regularizer
 
 struct Regularizers_t
 {
-  std::vector<Regularizer>     regs;
-  Ops::Op<Cx>::Ptr A;
-  Ops::Op<Cx>::Ptr ext_x;
+  std::vector<Regularizer> regs;
+  Ops::Op<Cx>::Ptr         A;
+  Ops::Op<Cx>::Ptr         ext_x;
 };
 
 auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A) -> Regularizers_t;

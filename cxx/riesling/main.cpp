@@ -14,7 +14,7 @@ int main(int const argc, char const *const argv[])
   args::Group recon(parser, "RECON");
   // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
-  // COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
+  COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
   // COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
   COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
   // COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
@@ -87,6 +87,8 @@ int main(int const argc, char const *const argv[])
   } catch (Log::Failure &f) {
     Log::End();
     return EXIT_FAILURE;
+  } catch (std::exception const &e) {
+    Log::Fail2("{}\n", e.what());
   }
 
   return EXIT_SUCCESS;

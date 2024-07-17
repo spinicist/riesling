@@ -1,5 +1,7 @@
 #include "ops.hpp"
 
+#include "log.hpp"
+
 namespace rl::Ops {
 
 template <typename S>
@@ -144,7 +146,8 @@ template <typename S>
 DiagRep<S>::DiagRep(Vector const &v, Index const repI, Index const repO)
   : Op<S>("DiagRep")
   , s{v}
-  , rI{repI}, rO{repO}
+  , rI{repI}
+  , rO{repO}
 {
   Log::Debug("Diagonal Repeat. Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
 }
@@ -153,7 +156,8 @@ template <typename S>
 DiagRep<S>::DiagRep(Vector const &v, float const b, float const sc, Index const repI, Index const repO)
   : Op<S>("DiagRep")
   , s{v}
-  , rI{repI}, rO{repO}
+  , rI{repI}
+  , rO{repO}
   , isInverse{true}
   , bias{b}
   , scale{sc}

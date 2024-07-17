@@ -2,9 +2,9 @@
 
 #include "algo/decomp.hpp"
 #include "filter.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "patches.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
@@ -26,26 +26,21 @@ void main_denoise(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
 
-  Cx5        images = input.readTensor<Cx5>();
-
-  auto hardLLR = [λ = λ.Get()](Cx4 const &xp) {
+  auto hardLLR = [λ = λ.Get()](Cx5 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);
     auto const       svd = SVD<Cx>(patch.transpose());
     // Soft-threhold svals
     Eigen::VectorXf const s = (svd.S.array().abs() > λ).select(svd.S, 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-    Cx4 yp = Tensorfy(patch, xp.dimensions());
+    Cx5 yp = Tensorfy(patch, xp.dimensions());
     return yp;
   };
 
-  Cx4                   img(FirstN<4>(images.dimensions()));
-  Cx4                   out(FirstN<4>(images.dimensions()));
-  Eigen::TensorMap<Cx4> outmap(out.data(), out.dimensions());
-  for (Index iv = 0; iv < images.dimension(4); iv++) {
-    img = images.chip<4>(iv);
-    Patches(llrPatch.Get(), llrWin.Get(), false, hardLLR, ConstMap(img), outmap);
-    images.chip<4>(iv) = out;
-  }
+  Cx5    images = input.readTensor<Cx5>();
+  Cx5    out(images.dimensions());
+  Cx5Map outmap(out.data(), out.dimensions());
+  Patches(llrPatch.Get(), llrWin.Get(), false, hardLLR, ConstMap(images), outmap);
+
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);

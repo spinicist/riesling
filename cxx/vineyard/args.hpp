@@ -24,14 +24,14 @@ struct Vector3fReader
   void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);
 };
 
-template <typename T>
-struct VectorReader
+template <typename T> struct VectorReader
 {
   void operator()(std::string const &name, std::string const &value, std::vector<T> &x);
 };
 
-template <int N>
-struct SzReader
+template <typename T> using VectorFlag = args::ValueFlag<std::vector<T>, VectorReader<T>>;
+
+template <int N> struct SzReader
 {
   void operator()(std::string const &name, std::string const &value, rl::Sz<N> &x);
 };

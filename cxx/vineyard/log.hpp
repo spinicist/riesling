@@ -75,6 +75,13 @@ template <typename... Args> __attribute__((noreturn)) inline void Fail(fmt::form
   throw Failure(msg);
 }
 
+template <typename... Args> __attribute__((noreturn)) inline void Fail2(fmt::format_string<Args...> const &fstr, Args &&...args)
+{
+  auto const msg = Format(fstr, std::forward<Args>(args)...);
+  if (CurrentLevel() > Level::Testing) { SaveEntry(msg, fmt::terminal_color::bright_red, Level::None); }
+  exit(EXIT_FAILURE);
+}
+
 void StartProgress(Index const counst, std::string const &label);
 void StopProgress();
 void Tick();

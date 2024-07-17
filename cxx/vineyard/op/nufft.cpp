@@ -2,6 +2,7 @@
 
 #include "../fft.hpp"
 #include "apodize.hpp"
+#include "log.hpp"
 
 namespace rl::TOps {
 

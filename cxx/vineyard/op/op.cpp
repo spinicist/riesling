@@ -1,5 +1,7 @@
 #include "op.hpp"
 
+#include "log.hpp"
+
 namespace rl::Ops {
 
 template <typename S>
