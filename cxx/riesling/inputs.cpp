@@ -21,7 +21,7 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   : iname(parser, "FILE", "Input HD5 file")
   , oname(parser, "FILE", "Output HD5 file")
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
-  , residual(parser, "R", "Write out residual to file", {"residuals"})
+  , residual(parser, "R", "Write out residual to file", {"residual", 'r'})
   , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
   , ndft(parser, "D", "Use NDFT instead of NUFFT", {"ndft"})
 {

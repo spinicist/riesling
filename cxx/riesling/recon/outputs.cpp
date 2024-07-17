@@ -5,17 +5,30 @@
 
 namespace rl {
 
-void WriteOutput(std::string const &fname, Cx5 const &img, Info const &info, std::string const &log)
+template <int ND>
+void WriteOutput(
+  std::string const &fname, CxN<ND> const &img, HD5::DimensionNames<ND> const &dims, Info const &info, std::string const &log)
 {
   HD5::Writer writer(fname);
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), dims);
   if (log.size()) { writer.writeString("log", log); }
   Log::Print("Wrote output file {}", fname);
 }
 
-void WriteResidual(
-  std::string const &fname, Cx5 &noncart, Cx5Map &x, Info const &info, TOps::TOp<Cx, 5, 5>::Ptr A, Ops::Op<Cx>::Ptr M)
+template void
+WriteOutput<5>(std::string const &, Cx5 const &, HD5::DimensionNames<5> const &, Info const &, std::string const &);
+template void
+WriteOutput<6>(std::string const &, Cx6 const &, HD5::DimensionNames<6> const &, Info const &, std::string const &);
+
+template <int ND>
+void WriteResidual(std::string const                 &fname,
+                   Cx5                               &noncart,
+                   CxNCMap<ND> const                 &x,
+                   Info const                        &info,
+                   typename TOps::TOp<Cx, ND, 5>::Ptr A,
+                   Ops::Op<Cx>::Ptr                   M,
+                   HD5::DimensionNames<ND> const &dims)
 {
   noncart -= A->forward(x);
   if (M) {
@@ -23,11 +36,26 @@ void WriteResidual(
     Ops::Op<Cx>::CMap nccmap(noncart.data(), noncart.size());
     M->inverse(nccmap, ncmap);
   }
-  x = A->adjoint(noncart);
+  auto        r = A->adjoint(noncart);
   HD5::Writer writer(fname);
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Data, x.dimensions(), x.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, r.dimensions(), r.data(), dims);
   Log::Print("Wrote residual file {}", fname);
 }
+
+template void WriteResidual<5>(std::string const &,
+                               Cx5 &,
+                               Cx5CMap const &,
+                               Info const &,
+                               TOps::TOp<Cx, 5, 5>::Ptr,
+                               Ops::Op<Cx>::Ptr,
+                               HD5::DimensionNames<5> const &);
+template void WriteResidual<6>(std::string const &,
+                               Cx5 &,
+                               Cx6CMap const &,
+                               Info const &,
+                               TOps::TOp<Cx, 6, 5>::Ptr,
+                               Ops::Op<Cx>::Ptr,
+                               HD5::DimensionNames<6> const &);
 
 } // namespace rl

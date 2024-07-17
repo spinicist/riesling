@@ -27,8 +27,9 @@ auto Channels(bool const        ndft,
               Trajectory const &traj,
               Index const       nC,
               Index const       nSlab,
+              Index const       nTime,
               Basis const      &basis,
-              Sz3 const         shape = Sz3()) -> TOps::TOp<Cx, 5, 4>::Ptr;
+              Sz3 const         shape = Sz3()) -> TOps::TOp<Cx, 6, 5>::Ptr;
 
 } // namespace Recon
 } // namespace rl

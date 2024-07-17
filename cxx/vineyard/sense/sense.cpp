@@ -38,13 +38,13 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
   auto const shape1 = traj.matrix(gridOpts.osamp.Get());
-  auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, basis, shape1);
+  auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, 1, basis, shape1);
   auto const M = MakeKspacePre(traj, nC, 1, basis);
   LSMR const lsmr{A, M, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
+  Cx5 const channels = Tensorfy(lsmr.run(lores.data()), A->ishape).chip<5>(0);
 
   return channels;
 }

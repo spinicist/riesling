@@ -1,8 +1,9 @@
 #include "algo/lsmr.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "inputs.hpp"
+#include "outputs.hpp"
 #include "precon.hpp"
 
 using namespace rl;
@@ -24,25 +25,21 @@ void main_channels(args::Subparser &parser)
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
-  Index const nV = noncart.dimension(4);
+  Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, basis);
-  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis);
+  auto const M = MakeKspacePre(traj, nC, nT, basis, preOpts.type.Get(), preOpts.bias.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "x", "y", "z"});
   };
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
-  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]));
-  Cx6               out(AddBack(outFOV.oshape, nV));
-  for (Index iv = 0; iv < nV; iv++) {
-    auto const x = lsmr.run(&noncart(0, 0, 0, 0, iv), lsqOpts.λ.Get());
-    auto const xm = Tensorfy(x, A->ishape);
-    out.chip<5>(iv) = outFOV.forward(xm);
-  }
-  HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Channels);
-  writer.writeInfo(info);
-  writer.writeString("log", Log::Saved());
+  auto const x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
+  auto const xm = Tensorfy(x, A->ishape);
+
+  TOps::Crop<Cx, 6> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[1], nT), nC));
+  auto              out = oc.forward(xm);
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Channels, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Channels); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

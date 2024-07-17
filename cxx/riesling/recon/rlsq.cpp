@@ -75,12 +75,12 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  auto x = ext_x->forward(opt.run(noncart.data(), rlsqOpts.ρ.Get()));
-  auto xm = Tensorfy(x, recon->ishape);
+  auto const x = ext_x->forward(opt.run(noncart.data(), rlsqOpts.ρ.Get()));
+  auto const xm = Tensorfy(x, recon->ishape);
 
   TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(coreOpts.fov.Get(), recon->ishape[0], nT));
   auto              out = oc.forward(xm);
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, recon, M); }
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, recon, M, HD5::Dims::Image); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

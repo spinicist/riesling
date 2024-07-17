@@ -5,6 +5,7 @@
 #include "log.hpp"
 #include "op/recon.hpp"
 #include "inputs.hpp"
+#include "outputs.hpp"
 #include "precon.hpp"
 
 using namespace rl;
@@ -29,17 +30,16 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, basis);
-  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis);
+  auto const M = MakeKspacePre(traj, nC, nT, basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+  auto x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
+  auto xm = Tensorfy(x, A->ishape);
 
-  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), nC, nV));
-  Cx5               out(AddBack(LastN<4>(outFOV.ishape), nV));
-  for (Index it = 0; it < nT; it++) {
-    auto const channels = lsmr.run(&noncart(0, 0, 0, 0, it));
-    auto const cropped = outFOV.forward(Tensorfy(channels, A->ishape));
-    out.chip<4>(it) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt();
-  }
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
+  Cx5 const rss = (xm * xm.conjugate()).sum(Sz1{0}).sqrt();
+  TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
+  auto              out = oc.forward(rss);
+
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

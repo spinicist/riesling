@@ -58,15 +58,17 @@ auto Channels(bool const        ndft,
               Trajectory const &traj,
               Index const       nC,
               Index const       nSlab,
+              Index const       nTime,
               Basis const      &basis,
-              Sz3 const         shape) -> TOps::TOp<Cx, 5, 4>::Ptr
+              Sz3 const         shape) -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   if (ndft) {
     auto FT = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
     auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(FT, nSlab);
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(FT->ishape, nSlab);
     auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-    return compose1;
+    auto timeLoop = TOps::MakeLoop(compose1, nTime);
+    return timeLoop;
   } else {
     if (gridOpts.vcc) {
       auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis, shape);
@@ -76,23 +78,27 @@ auto Channels(bool const        ndft,
       if (nSlab == 1) {
         auto rout =
           std::make_shared<TOps::ReshapeOutput<decltype(reshape)::element_type, 4>>(reshape, AddBack(reshape->oshape, 1));
-        return rout;
+        auto timeLoop = TOps::MakeLoop(rout, nTime);
+        return timeLoop;
       } else {
         auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(reshape, nSlab);
         auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
         auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-        return compose2;
+        auto timeLoop = TOps::MakeLoop(compose2, nTime);
+        return timeLoop;
       }
     } else {
       auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis, shape);
       if (nSlab == 1) {
         auto reshape = std::make_shared<TOps::ReshapeOutput<TOps::NUFFT<3, false>, 4>>(nufft, AddBack(nufft->oshape, 1));
-        return reshape;
+        auto timeLoop = TOps::MakeLoop(reshape, nTime);
+        return timeLoop;
       } else {
         auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
         auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
         auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-        return compose1;
+        auto timeLoop = TOps::MakeLoop(compose1, nTime);
+        return timeLoop;
       }
     }
   }

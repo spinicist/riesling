@@ -46,14 +46,15 @@ void main_recon_lad(args::Subparser &parser)
   auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis, noncart);
   auto const M = MakeKspacePre(traj, nC, nT, basis, preOpts.type.Get(), preOpts.bias.Get());
 
-  LAD  lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
+  LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
-  auto x = lad.run(noncart.data(), ρ.Get());
-  auto xm = Tensorfy(x, A->ishape);
+
+  auto const x = lad.run(noncart.data(), ρ.Get());
+  auto const xm = Tensorfy(x, A->ishape);
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M); }
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

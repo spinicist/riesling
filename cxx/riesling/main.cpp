@@ -12,14 +12,13 @@ int main(int const argc, char const *const argv[])
   args::ArgumentParser parser("RIESLING");
 
   args::Group recon(parser, "RECON");
-  // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
   COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
-  // COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
+  COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
   COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
   // COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
   // COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
-  // COMMAND(recon, channels, "recon-channels", "Least-Squares, all channels");
+  COMMAND(recon, channels, "recon-channels", "Least-Squares, all channels");
   // COMMAND(recon, sake, "recon-sake", "SAKE");
 
   args::Group data(parser, "DATA");

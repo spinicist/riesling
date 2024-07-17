@@ -28,13 +28,13 @@ add_executable(riesling
     op/wavelets.cpp
 
     recon/outputs.cpp
-    # recon/channels.cpp
+    recon/channels.cpp
     recon/lad.cpp
     recon/lsq.cpp
     # recon/pdhg.cpp
     # recon/pdhg-setup.cpp
     recon/rlsq.cpp
-    # recon/rss.cpp
+    recon/rss.cpp
     # recon/sake.cpp
 
     sense/calib.cpp

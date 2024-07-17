@@ -38,12 +38,13 @@ void main_recon_lsq(args::Subparser &parser)
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"v", "x", "y", "z"});
   };
   LSMR lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
-  auto x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
-  auto xm = Tensorfy(x, A->ishape);
+  
+  auto const x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
+  auto const xm = Tensorfy(x, A->ishape);
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M); }
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }
