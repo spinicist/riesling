@@ -67,6 +67,9 @@ template <int ND> void GradVec<ND>::forward(InCMap const &x, OutMap &y) const
   auto const time = this->startForward(x, y, false);
   auto const sz = FirstN<ND - 1>(x.dimensions());
   y.setZero();
+  /*
+   * Grad applied to a vector produces a tensor. Here it is flattened back into a vector
+   */
   Index yind = dims_.size();
   for (Index ii = 0; ii < dims_.size(); ii++) {
     BackwardDiff(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii]);
@@ -85,6 +88,9 @@ template <int ND> void GradVec<ND>::adjoint(OutCMap const &y, InMap &x) const
   auto const time = this->startAdjoint(y, x, false);
   auto const sz = FirstN<ND - 1>(x.dimensions());
   x.setZero();
+  /*
+   *  This is the tensor form of Div (see wikipedia page) but with the tensor flattened into a vector
+   */
   Index yind = dims_.size();
   for (Index ii = 0; ii < dims_.size(); ii++) {
     ForwardDiff(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]);
