@@ -38,7 +38,7 @@ template <int ND> void Grad<ND>::forward(InCMap const &x, OutMap &y) const
   auto const time = this->startForward(x, y, false);
   y.setZero();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
-    ForwardDiff(x, y.template chip<4>(ii), x.dimensions(), dims_[ii]);
+    ForwardDiff(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii]);
   }
   this->finishForward(y, time, false);
 }
@@ -48,7 +48,7 @@ template <int ND> void Grad<ND>::adjoint(OutCMap const &y, InMap &x) const
   auto const time = this->startAdjoint(y, x, false);
   x.setZero();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
-    BackwardDiff(y.template chip<4>(ii), x, x.dimensions(), dims_[ii]);
+    BackwardDiff(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii]);
   }
   this->finishAdjoint(x, time, false);
 }
