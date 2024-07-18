@@ -30,6 +30,7 @@ void WriteResidual(std::string const                 &fname,
                    Ops::Op<Cx>::Ptr                   M,
                    HD5::DimensionNames<ND> const &dims)
 {
+  Log::Print("Calculating residual...");
   noncart -= A->forward(x);
   if (M) {
     Ops::Op<Cx>::Map  ncmap(noncart.data(), noncart.size());
@@ -37,6 +38,7 @@ void WriteResidual(std::string const                 &fname,
     M->inverse(nccmap, ncmap);
   }
   auto        r = A->adjoint(noncart);
+  Log::Print("Finished calculating residual");
   HD5::Writer writer(fname);
   writer.writeInfo(info);
   writer.writeTensor(HD5::Keys::Data, r.dimensions(), r.data(), dims);
