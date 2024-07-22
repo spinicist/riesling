@@ -22,16 +22,15 @@ void main_recon_rss(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
-  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
+  Basis const basis(coreOpts.basisFile.Get());
   Cx5         noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
-  Index const nV = basis.dimension(0);
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis);
-  auto const M = MakeKspacePre(traj, nC, nT, basis, preOpts.type.Get(), preOpts.bias.Get());
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, &basis);
+  auto const M = MakeKspacePre(traj, nC, nT, &basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
   auto x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
   auto xm = Tensorfy(x, A->ishape);

@@ -4,9 +4,24 @@
 
 namespace rl {
 
-using Basis = Cx3;
+struct Basis {
+    using Ptr = Basis *;
+    using CPtr = Basis const *;
+    Cx3 B;
+    Cx2 R;
 
-auto IdBasis() -> Basis;
-auto ReadBasis(std::string const &basisFile) -> Basis;
+    Basis();
+    Basis(Cx3 const &B);
+    Basis(Cx3 const &B, Cx2 const &R);
+    Basis(Index const nB, Index const nSample, Index const nTrace);
+    Basis(std::string const &basisFile);
+
+    void write(std::string const &basisFile) const;
+    auto nV() const -> Index;
+    auto nSample() const -> Index;
+    auto nTrace() const -> Index;
+
+    template <int ND> void applyR(CxN<ND> &data) const;
+};
 
 } // namespace rl

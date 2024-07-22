@@ -1,7 +1,7 @@
 #include "types.hpp"
 
 #include "algo/decomp.hpp"
-#include "basis/svd.hpp"
+#include "basis/basis.hpp"
 #include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -11,6 +11,7 @@
 #include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 #include <Eigen/Householder>
@@ -101,19 +102,20 @@ void main_basis_sim(args::Subparser &parser)
   Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], L);
   dmap.rowwise().normalize();
 
-  HD5::Writer writer(oname.Get());
-
   if (ortho) {
     auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
     Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(L, dshape[0]);
     Eigen::MatrixXcd const Q = h.householderQ() * I;
     Eigen::MatrixXcf const R = h.matrixQR().topRows(dshape[0]).cast<Cx>().triangularView<Eigen::Upper>();
-    dmap = Q.transpose().rowwise().normalized().cast<Cx>();
-    writer.writeMatrix(R, "R");
+    Eigen::MatrixXcf const Rinv = R.inverse();
+    dmap = Q.transpose().cast<Cx>() * std::sqrt(L);
+    Basis b(dall, Tensorfy(R, Sz2{R.rows(), R.cols()}));
+    b.write(oname.Get());
+  } else {
+    dmap *= std::sqrt(L);
+    Basis b(dall);
+    b.write(oname.Get());
   }
 
-  dmap *= std::sqrt(L);
-
-  writer.writeTensor(HD5::Keys::Basis, dall.dimensions(), dall.data(), HD5::Dims::Basis);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

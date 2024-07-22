@@ -19,7 +19,7 @@ auto SENSE(bool const        ndft,
            Trajectory const &traj,
            Index const       nSlab,
            Index const       nTime,
-           Basis const      &basis,
+           Basis::CPtr       basis,
            Cx5 const        &data) -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 auto Channels(bool const        ndft,
@@ -28,7 +28,7 @@ auto Channels(bool const        ndft,
               Index const       nC,
               Index const       nSlab,
               Index const       nTime,
-              Basis const      &basis,
+              Basis::CPtr       basis,
               Sz3 const         shape = Sz3()) -> TOps::TOp<Cx, 6, 5>::Ptr;
 
 } // namespace Recon

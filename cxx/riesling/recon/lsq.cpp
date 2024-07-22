@@ -30,21 +30,36 @@ void main_recon_lsq(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis, noncart);
-  auto const M = MakeKspacePre(traj, nC, nT, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  Basis const basis(coreOpts.basisFile.Get());
+  auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, &basis, noncart);
+  auto const M = MakeKspacePre(traj, nC, nT, &basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   Log::Print("A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
-  auto debug = [&A](Index const i, LSMR::Vector const &x) {
-    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"v", "x", "y", "z"});
+  auto debug = [shape = A->ishape](Index const i, LSMR::Vector const &x) {
+    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image);
   };
   LSMR lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
-  
+
   auto const x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
   auto const xm = Tensorfy(x, A->ishape);
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
+  basis.applyR(out);
   WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
-  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
+  if (coreOpts.residual) {
+    noncart -= A->forward(xm);
+    Basis const id;
+    auto const A1 = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, &id, noncart);
+    auto const M1 =
+      MakeKspacePre(traj, nC, nT, &id, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+    Ops::Op<Cx>::Map  ncmap(noncart.data(), noncart.size());
+    Ops::Op<Cx>::CMap nccmap(noncart.data(), noncart.size());
+    M1->inverse(nccmap, ncmap);
+    auto r = A1->adjoint(noncart);
+    Log::Print("Finished calculating residual");
+    HD5::Writer writer(coreOpts.residual.Get());
+    writer.writeInfo(info);
+    writer.writeTensor(HD5::Keys::Data, r.dimensions(), r.data(), HD5::Dims::Image);
+  }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

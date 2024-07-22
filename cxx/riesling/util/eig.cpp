@@ -29,10 +29,9 @@ void main_eig(args::Subparser &parser)
   auto const  nC = noncart.dimension(0);
   auto const  nS = noncart.dimension(3);
   auto const  nT = noncart.dimension(4);
-  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const  A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis, noncart);
-  auto const  P =
-    MakeKspacePre(traj, nC, nT, ReadBasis(coreOpts.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
+  Basis const basis(coreOpts.basisFile.Get());
+  auto const  A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, &basis, noncart);
+  auto const  P = MakeKspacePre(traj, nC, nT, &basis, preOpts.type.Get(), preOpts.bias.Get());
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());

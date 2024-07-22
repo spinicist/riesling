@@ -16,5 +16,5 @@ void main_bernstein(args::Subparser &parser)
   auto b = rl::BernsteinPolynomial(order.Get(), traces.Get());
 
   rl::HD5::Writer writer(oname.Get());
-  writer.writeTensor(rl::HD5::Keys::Basis, b.dimensions(), b.data(), rl::HD5::Dims::Basis);
+  writer.writeTensor(rl::HD5::Keys::Basis, b.B.dimensions(), b.B.data(), rl::HD5::Dims::Basis);
 }

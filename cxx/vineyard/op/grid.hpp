@@ -27,17 +27,13 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   std::shared_ptr<Kernel<Scalar, ND>>     kernel;
   Index                                   subgridW;
   std::vector<Mapping<ND>>                mappings;
-  Basis                                   basis;
+  Basis::CPtr                             basis;
   std::optional<std::vector<Mapping<ND>>> vccMapping;
 
-  static auto Make(TrajectoryN<ND> const &t,
-                   std::string const      kt,
-                   float const            os,
-                   Index const            nC = 1,
-                   Basis const           &b = IdBasis(),
-                   Index const            sgW = 32) -> std::shared_ptr<Grid<ND, VCC>>;
-  Grid(
-    TrajectoryN<ND> const &traj, std::string const ktype, float const osamp, Index const nC, Basis const &b, Index const sgW);
+  static auto
+  Make(TrajectoryN<ND> const &t, std::string const kt, float const os, Index const nC, Basis::CPtr b, Index const sgW = 32)
+    -> std::shared_ptr<Grid<ND, VCC>>;
+  Grid(TrajectoryN<ND> const &traj, std::string const ktype, float const osamp, Index const nC, Basis::CPtr b, Index const sgW);
   void forward(InCMap const &x, OutMap &y) const;
   void adjoint(OutCMap const &y, InMap &x) const;
   void iforward(InCMap const &x, OutMap &y) const;

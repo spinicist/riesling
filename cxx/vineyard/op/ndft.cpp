@@ -8,8 +8,8 @@ using namespace std::complex_literals;
 namespace rl::TOps {
 
 template <int NDim>
-NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis const &b)
-  : Parent("NDFT", AddFront(shape, nC, b.dimension(0)), AddFront(LastN<2>(tr.dimensions()), nC))
+NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis::CPtr b)
+  : Parent("NDFT", AddFront(shape, nC, b ? b->nV() : 1), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
 {
   static_assert(NDim < 4);
@@ -60,14 +60,12 @@ NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis cons
 }
 
 template <int NDim>
-auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis const &basis)
-  -> std::shared_ptr<NDFT<NDim>>
+auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis::CPtr basis) -> std::shared_ptr<NDFT<NDim>>
 {
   return std::make_shared<NDFT<NDim>>(matrix, traj, nC, basis);
 }
 
-template <int NDim>
-void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const )
+template <int NDim> void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const)
 {
   TOps::Pad<float, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
   Δf.resize(N);
@@ -91,7 +89,7 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
 
   auto task = [&](Index const itr) {
     for (Index isamp = 0; isamp < nSamp; isamp++) {
-      Cx1 const b = basis.chip<2>(itr % basis.dimension(2)).template chip<1>(isamp % basis.dimension(1));
+      Cx1 const b = basis->B.chip<2>(itr % basis->nSample()).template chip<1>(isamp % basis->nTrace());
       Re1       ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
         xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
       if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
@@ -123,10 +121,10 @@ template <int NDim> void NDFT<NDim>::adjoint(OutCMap const &yy, InMap &x) const
       if (Δf.size()) { ph -= Δf(ii) * t * 2.f * (float)M_PI; }
       Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
       for (Index iv = 0; iv < nV; iv++) {
-        Cx1 const b = basis.template chip<2>(itr % basis.dimension(2))
+        Cx1 const b = basis->B.template chip<2>(itr % basis->nTrace())
                         .template chip<0>(iv)
                         .conjugate()
-                        .broadcast(Sz1{nSamp / basis.dimension(1)});
+                        .broadcast(Sz1{nSamp / basis->nSample()});
         vox.chip<1>(iv) += y.template chip<2>(itr).contract(eph * b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
       }
     }

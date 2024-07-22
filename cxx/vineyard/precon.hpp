@@ -8,12 +8,12 @@
 
 namespace rl {
 
-auto KSpaceSingle(Trajectory const &traj, Basis const &basis, bool const vcc, float const bias = 1.f) -> Re2;
+auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, float const bias = 1.f) -> Re2;
 
 auto MakeKspacePre(Trajectory const  &traj,
                    Index const        nC,
                    Index const        nT,
-                   Basis const       &basis,
+                   Basis::CPtr        basis,
                    std::string const &type = "kspace",
                    float const        bias = 1.f,
                    bool const         ndft = false) -> std::shared_ptr<Ops::Op<Cx>>;

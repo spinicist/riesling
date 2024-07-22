@@ -45,6 +45,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, basis_img, "basis-img", "Basis from image data + SVD");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(basis, basis_svd, "basis-svd", "Basis from simulations + SVD");
+  COMMAND(basis, basis_R, "basis-R", "Apply R matrix");
 
   args::Group op(parser, "OP");
   COMMAND(op, fft, "op-fft", "Cartesian FFT of an image");

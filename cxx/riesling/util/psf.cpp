@@ -29,18 +29,18 @@ void main_psf(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
-  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
+  Basis const  basis(coreOpts.basisFile.Get());
   Index const nC = 1;
-  Index const nB = basis.dimension(0);
+  Index const nB = basis.nV();
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
   std::shared_ptr<TOps::TOp<Cx, 5, 3>> A = nullptr;
   if (coreOpts.ndft) {
-    A = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
+    A = TOps::NDFT<3>::Make(shape, traj.points(), nC, &basis);
   } else {
-    A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis, shape);
+    A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, &basis, shape);
   }
-  auto const M = MakeKspacePre(traj, nC, 1, basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto const M = MakeKspacePre(traj, nC, 1, &basis, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];

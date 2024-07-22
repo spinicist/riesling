@@ -21,8 +21,9 @@ TEST_CASE("NUFFT", "[tform]")
     points(0, ii, 0) = -0.5f * M + ii;
   }
   TrajectoryN<1> const  traj(points, matrix);
+  Basis                 basis;
   float const           osamp = GENERATE(2.f, 2.3f);
-  TOps::NUFFT<1, false> nufft(traj, "ES3", osamp, 1);
+  TOps::NUFFT<1, false> nufft(traj, "ES3", osamp, 1, &basis);
   Cx3                   ks(nufft.oshape);
   Cx3                   img(nufft.ishape);
   img.setZero();
@@ -48,42 +49,17 @@ TEST_CASE("NUFFT Basis Trace", "[tform]")
 
   Index const O = 4;
   Basis       basis(O, 1, N);
-  basis.setZero();
+  basis.B.setZero();
   Index const P = N / O;
   for (Index ii = 0; ii < O; ii++) {
     for (Index ij = 0; ij < P; ij++) {
-      basis(ii, 0, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
+      basis.B(ii, 0, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
     }
   }
 
   float const    osamp = 2.f;
-  TOps::NUFFT<1> nufft(traj, "ES3", osamp, 1, basis);
+  TOps::NUFFT<1> nufft(traj, "ES3", osamp, 1, &basis);
   Cx3            ks(nufft.oshape);
-  ks.setConstant(1.f);
-  Cx3 img(nufft.ishape);
-  img.setZero();
-  img = nufft.adjoint(ks);
-  ks = nufft.forward(img);
-  CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
-}
-
-TEST_CASE("NUFFT Basis Fourier", "[tform]")
-{
-  Log::SetLevel(Log::Level::Testing);
-  Index const M = 8;
-  auto const  matrix = Sz1{M};
-  Re3         points(1, M, 1);
-  points.setZero();
-  for (Index ii = 0; ii < M; ii++) {
-    points(0, ii, 0) = -0.5f * M + ii;
-  }
-  TrajectoryN<1> const traj(points, matrix);
-  Index const          N = 3;
-  auto                 b = FourierBasis(N, M, 1, 1.f);
-
-  float const           osamp = 2.f;
-  TOps::NUFFT<1, false> nufft(traj, "ES3", osamp, 1, b.basis);
-  Cx3                   ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);
   img.setZero();
@@ -101,7 +77,8 @@ TEST_CASE("NUFFT VCC", "[tform]")
   points.setZero();
 
   TrajectoryN<1> const traj(points, matrix);
-  TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, IdBasis());
+  Basis basis;
+  TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, &basis);
   Cx3                  ks(nufft.oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));

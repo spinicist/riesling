@@ -1,9 +1,9 @@
 #include "types.hpp"
 
 #include "basis/basis.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "threads.hpp"
 
 #include "tensors.hpp"
@@ -29,34 +29,37 @@ void main_blend(args::Subparser &parser)
   Sz5 const   dims = images.dimensions();
 
   if (!iname) { throw args::Error("No basis file specified"); }
-  auto const basis = ReadBasis(bname.Get());
+  Basis const basis(bname.Get());
 
-  if (basis.dimension(0) != images.dimension(0)) {
-    Log::Fail("Basis has {} vectors but image has {}", basis.dimension(0), images.dimension(0));
+  if (basis.nV() != images.dimension(0)) {
+    Log::Fail("Basis has {} vectors but image has {}", basis.nV(), images.dimension(0));
   }
 
   auto const &sps = sp.Get();
   auto const &tps = tp.Get();
+  if (sps.size() != tps.size()) {
+    Log::Fail("Must have same number of trace and sample points");
+  }
 
   Index const ntotal = sps.size() * tps.size();
 
   Cx5         out(AddFront(LastN<4>(dims), ntotal));
-  float const scale = std::sqrt(basis.dimension(1) * basis.dimension(2));
+  float const scale = std::sqrt(basis.nSample() * basis.nTrace());
 
-  Basis selected(basis.dimension(0), sps.size(), tps.size());
+  Cx3 selected(basis.nV(), sps.size(), tps.size());
   for (size_t it = 0; it < tps.size(); it++) {
-    if (tps[it] < 0 || tps[it] >= basis.dimension(2)) {
-      Log::Fail("Requested timepoint {} exceeds traces {}", tps[it], basis.dimension(2));
+    if (tps[it] < 0 || tps[it] >= basis.nTrace()) {
+      Log::Fail("Requested timepoint {} exceeds traces {}", tps[it], basis.nTrace());
     }
 
     for (size_t is = 0; is < sps.size(); is++) {
-      if (sps[is] < 0 || sps[is] >= basis.dimension(1)) {
-        Log::Fail("Requested timepoint {} exceeds samples {}", sps[is], basis.dimension(1));
+      if (sps[is] < 0 || sps[is] >= basis.nSample()) {
+        Log::Fail("Requested timepoint {} exceeds samples {}", sps[is], basis.nSample());
       }
-      selected.chip<2>(it).chip<1>(is) = basis.chip<2>(tps[it]).chip<1>(sps[is]).conjugate() * Cx(scale);
+      selected.chip<2>(it).chip<1>(is) = basis.B.chip<2>(tps[it]).chip<1>(sps[is]).conjugate() * Cx(scale);
     }
   }
-  Cx2 const sel2 = selected.reshape(Sz2{basis.dimension(0), ntotal});
+  Cx2 const sel2 = selected.reshape(Sz2{basis.nV(), ntotal});
   for (Index it = 0; it < out.dimension(4); it++) {
     out.chip<4>(it).device(Threads::GlobalDevice()) =
       sel2.contract(images.chip<4>(it), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());

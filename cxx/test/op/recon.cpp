@@ -24,10 +24,11 @@ TEST_CASE("Recon", "[recon]")
   points(0, 2, 0) = 0.4f * M;
   points(1, 2, 0) = 0.4f * M;
   Trajectory const traj(points, matrix);
+  Basis basis;
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC);
+  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC, &basis);
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
   senseMaps.setConstant(std::sqrt(1. / nC));

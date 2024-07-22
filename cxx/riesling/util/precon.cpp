@@ -1,8 +1,8 @@
 #include "types.hpp"
 
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "precon.hpp"
 
 using namespace rl;
@@ -18,7 +18,8 @@ void main_precon(args::Subparser &parser)
   HD5::Reader reader(trajFile.Get());
   HD5::Writer writer(preFile.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
-  auto        M = KSpaceSingle(traj, ReadBasis(basisFile.Get()), vcc, preBias.Get());
+  Basis const basis(basisFile.Get());
+  auto        M = KSpaceSingle(traj, &basis, vcc, preBias.Get());
   writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"sample", "trace"});
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

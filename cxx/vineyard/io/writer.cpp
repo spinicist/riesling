@@ -129,6 +129,7 @@ template void Writer::writeTensor<float, 2>(std::string const &, Sz<2> const &, 
 template void Writer::writeTensor<float, 3>(std::string const &, Sz<3> const &, float const *, DimensionNames<3> const &);
 template void Writer::writeTensor<float, 4>(std::string const &, Sz<4> const &, float const *, DimensionNames<4> const &);
 template void Writer::writeTensor<float, 5>(std::string const &, Sz<5> const &, float const *, DimensionNames<5> const &);
+template void Writer::writeTensor<Cx, 2>(std::string const &, Sz<2> const &, Cx const *, DimensionNames<2> const &);
 template void Writer::writeTensor<Cx, 3>(std::string const &, Sz<3> const &, Cx const *, DimensionNames<3> const &);
 template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx const *, DimensionNames<4> const &);
 template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *, DimensionNames<5> const &);

@@ -14,7 +14,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(Trajectory const &traj, Basis const &basis, bool const vcc, float const bias) -> Re2
+auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, float const bias) -> Re2
 {
   Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
   float const osamp = 1.25;
@@ -75,7 +75,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis const &basis, bool const vcc, fl
 auto MakeKspacePre(Trajectory const  &traj,
                    Index const        nC,
                    Index const        nT,
-                   Basis const       &basis,
+                   Basis::CPtr        basis,
                    std::string const &type,
                    float const        bias,
                    bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>

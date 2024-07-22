@@ -24,9 +24,9 @@ void main_sense_calib(args::Subparser &parser)
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
+  Basis const basis(coreOpts.basisFile.Get());
 
-  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis);
+  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, &basis);
   Cx4 ref;
   if (refname) {
     HD5::Reader refFile(refname.Get());
@@ -35,7 +35,7 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis).chip<0>(0);
+    ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, &basis).chip<0>(0);
     // Normalize energy
     channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
     ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));
