@@ -17,7 +17,7 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
                 float                                 &β,
                 Eigen::VectorXcf                      &x,
                 Eigen::VectorXcf::ConstAlignedMapType &b,
-                Cx                                    *x0);
+                Eigen::VectorXcf::ConstAlignedMapType &x0);
 
 void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
             std::shared_ptr<Ops::Op<Cx>> const M,

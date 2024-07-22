@@ -30,7 +30,7 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
   PushInterrupt();
   for (Index ii = 0; ii < outerLimit; ii++) {
     bzu = b + z - u;
-    x = inner.run(bzu.data(), 0.f, x.data());
+    x = inner.run(bzu, 0.f, x);
     inner.iterLimit = iters1;
     Ax_sub_b = A->forward(x) - b;
     zprev = z;

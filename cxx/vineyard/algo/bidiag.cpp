@@ -50,10 +50,10 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
                 float                                 &β,
                 Eigen::VectorXcf                      &x,
                 Eigen::VectorXcf::ConstAlignedMapType &b,
-                Cx                                    *x0)
+                Eigen::VectorXcf::ConstAlignedMapType &x0)
 {
-  if (x0) {
-    x = Eigen::VectorXcf::ConstMapType(x0, A->cols());
+  if (x0.size()) {
+    x = x0;
     A->forward(x, u); // Reuse u to save space
     Mu.device(Threads::GlobalDevice()) = b - u;
   } else {

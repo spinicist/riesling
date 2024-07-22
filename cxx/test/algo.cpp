@@ -19,7 +19,7 @@ TEST_CASE("Algorithms", "[alg]")
   SECTION("LSMR")
   {
     LSMR lsmr{A, M};
-    auto xx = lsmr.run(y.data());
+    auto xx = lsmr.run(y);
     INFO("x " << x.transpose() << "\ny " << y.transpose() << "\nxx " << xx.transpose());
     CHECK((x - xx).stableNorm() == Approx(0.f).margin(1.e-3f));
   }

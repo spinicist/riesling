@@ -8,7 +8,11 @@
 
 namespace rl {
 
-auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
+auto ADMM::run(Vector const &b, float const ρ) const -> Vector {
+  return run(CMap{b.data(), b.rows()}, ρ);
+}
+
+auto ADMM::run(CMap const b, float ρ) const -> Vector
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
    * For the least squares part we are solving:
@@ -24,6 +28,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     z_i = prox_λ/ρ(F_i * x + u_{i-1})
     u_i = F_i * x + u_{i-1} - z_i
     */
+  if (b.rows() != A->rows()) { Log::Fail("ADMM: b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::GlobalDevice();
 
   Index const                                      R = regs.size();
@@ -49,7 +54,6 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
 
   Vector x(A->cols());
   x.setZero();
-  CMap const b(bdata, A->rows());
 
   Vector bʹ(Aʹ->rows());
   bʹ.setZero();
@@ -65,7 +69,7 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       start += rr;
       ρdiags[ir]->scale = std::sqrt(ρ);
     }
-    x = lsmr.run(bʹ.data(), 0.f, x.data());
+    x = lsmr.run(bʹ, 0.f, x);
     lsmr.iterLimit = iters1;
     if (debug_x) { debug_x(io, x); }
 
@@ -82,9 +86,9 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
       float const nu = regs[ir].T->adjoint(u[ir]).stableNorm();
       float const nP = (Fx - z[ir]).stableNorm();
       float const nD = (regs[ir].T->adjoint(z[ir] - zprev)).stableNorm();
-      normFx += nFx*nFx;
-      normz += nz*nz;
-      normu += nu*nu;
+      normFx += nFx * nFx;
+      normz += nz * nz;
+      normu += nu * nu;
       pRes += nP * nP;
       dRes += nD * nD;
       Log::Print("Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, nFx, nz, nu);
@@ -96,8 +100,8 @@ auto ADMM::run(Cx const *bdata, float ρ) const -> Vector
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM {:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", io, normx,
-               normFx, normz, normu, ρ, pRes, dRes);
+    Log::Print("ADMM {:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", io,
+               normx, normFx, normz, normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
       Log::Print("Primal and dual tolerances achieved, stopping");

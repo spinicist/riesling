@@ -49,7 +49,7 @@ void main_nufft(args::Subparser &parser)
 
     Cx6 output(AddBack(nufft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, ii)), nufft->ishape);
+      output.chip<5>(ii).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(CollapseToConstVector(noncart)), nufft->ishape);
     }
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
   }

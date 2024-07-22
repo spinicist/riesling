@@ -75,7 +75,7 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  auto const x = ext_x->forward(opt.run(noncart.data(), rlsqOpts.ρ.Get()));
+  auto const x = ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()));
   auto const xm = Tensorfy(x, recon->ishape);
 
   TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(coreOpts.fov.Get(), recon->ishape[0], nT));

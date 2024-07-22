@@ -51,7 +51,7 @@ void main_psf(args::Subparser &parser)
   Eigen::TensorMap<Cx1 const> traceM(trace.data(), Sz1{traj.nSamples()});
 
   Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
-  auto        x = lsmr.run(ks.data());
+  auto        x = lsmr.run(CollapseToConstVector(ks));
   auto        xm = Tensorfy(x, LastN<4>(A->ishape));
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "x", "y", "z"});

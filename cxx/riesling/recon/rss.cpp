@@ -32,7 +32,7 @@ void main_recon_rss(args::Subparser &parser)
   auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, &basis);
   auto const M = MakeKspacePre(traj, nC, nT, &basis, preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
-  auto x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
+  auto x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto xm = Tensorfy(x, A->ishape);
 
   Cx5 const rss = (xm * xm.conjugate()).sum(Sz1{0}).sqrt();

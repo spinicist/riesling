@@ -34,7 +34,7 @@ void main_channels(args::Subparser &parser)
   };
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
-  auto const x = lsmr.run(noncart.data(), lsqOpts.λ.Get());
+  auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto const xm = Tensorfy(x, A->ishape);
 
   TOps::Crop<Cx, 6> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[1], nT), nC));

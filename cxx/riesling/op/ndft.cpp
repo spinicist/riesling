@@ -1,11 +1,11 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grid.hpp"
 #include "op/ndft.hpp"
-#include "inputs.hpp"
 #include "precon.hpp"
 #include "threads.hpp"
 
@@ -40,7 +40,7 @@ void main_ndft(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
     traj.write(writer);
   } else {
-    auto noncart = reader.readTensor<Cx5>();
+    auto        noncart = reader.readTensor<Cx5>();
     Index const nT = noncart.dimension(4);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
@@ -49,7 +49,7 @@ void main_ndft(args::Subparser &parser)
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(&noncart(0, 0, 0, 0, ii)), ndft->ishape);
+      output.chip<5>(ii).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(CollapseToArray(noncart)), ndft->ishape);
     }
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
   }
