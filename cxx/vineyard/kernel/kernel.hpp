@@ -9,7 +9,7 @@ template <typename Scalar, int ND> struct Kernel
   using Ptr = std::shared_ptr<Kernel>;
   using Point = Eigen::Matrix<float, ND, 1>;
   virtual auto paddedWidth() const -> int = 0;
-  virtual auto at(Point const p) const -> Eigen::Tensor<float, ND> = 0;
+  virtual auto operator()(Point const p) const -> Eigen::Tensor<float, ND> = 0;
   // virtual void spread(std::array<int16_t, ND> const   c,
   //                     Point const                     p,
   //                     Eigen::Tensor<Scalar, 1> const &y,

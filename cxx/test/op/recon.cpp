@@ -27,7 +27,7 @@ TEST_CASE("Recon", "[recon]")
   Basis basis;
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
-  std::string const ktype = GENERATE("ES7");
+  std::string const ktype = GENERATE("ES3");
   auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC, &basis);
 
   Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
@@ -41,7 +41,10 @@ TEST_CASE("Recon", "[recon]")
   ks.setConstant(1.f);
   img = recon.adjoint(ks);
   // Super loose tolerance
+  INFO("ks\n" << ks);
+  INFO("img\n" << img);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-1f));
   ks = recon.forward(img);
+  INFO("ks\n" << ks);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-1f));
 }
