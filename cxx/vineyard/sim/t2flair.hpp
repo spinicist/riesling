@@ -7,7 +7,7 @@ namespace rl {
 
 struct T2FLAIR final : Sequence
 {
-  static const Index nParameters = 3;
+  static const Index nParameters = 4;
   T2FLAIR(Settings const &s);
 
   auto length() const -> Index;
