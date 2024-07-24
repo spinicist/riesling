@@ -6,6 +6,7 @@
 #include "top.hpp"
 
 #include <args.hxx>
+#include <optional>
 
 namespace rl {
 
