@@ -2,23 +2,24 @@
 
 #include "algo/decomp.hpp"
 #include "basis/svd.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "sim/dir.hpp"
 #include "sim/ir.hpp"
 #include "sim/parameter.hpp"
 #include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 using namespace rl;
 
 template <typename T>
 auto Run(rl::Settings const                &s,
-         std::vector<Eigen::ArrayXf>        los,
-         std::vector<Eigen::ArrayXf>        his,
+         std::vector<Eigen::ArrayXf> const &los,
+         std::vector<Eigen::ArrayXf> const &his,
          std::vector<Eigen::ArrayXf> const &Δs)
 {
   if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
@@ -28,17 +29,19 @@ auto Run(rl::Settings const                &s,
   Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
-    Log::Print("Parameter set {}/{}. Low {} High {}", ii + 1, los.size(), fmt::join(los[ii], "/"), fmt::join(his[ii], "/"));
-    auto p = ParameterGrid(nP, los[ii], his[ii], Δs[ii]);
+    auto const p = ParameterGrid(nP, los[ii], his[ii], Δs[ii]);
+    Log::Print("Parameter set {}/{}. Size {} Low {} High {}", ii + 1, los.size(), p.cols(), fmt::join(los[ii], "/"),
+               fmt::join(his[ii], "/"));
     parameters.conservativeResize(nP, parameters.cols() + p.cols());
     parameters.rightCols(p.cols()) = p;
   }
-  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, seq.length());
+  Log::Print("Total parameter sets {}", parameters.cols());
+  Cx3        dynamics(parameters.cols(), seq.samples(), seq.traces());
   auto const start = Log::Now();
   auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
-  Log::Print("Simulation took {}", Log::ToNow(start));
-  return std::make_tuple(parameters, dynamics);
+  Log::Print("Simulation took {}. Final size {}", Log::ToNow(start), dynamics.dimensions());
+  return dynamics;
 }
 
 void main_basis_svd(args::Subparser &parser)
@@ -46,8 +49,8 @@ void main_basis_svd(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
   args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
-  args::ValueFlag<Index>                samp(parser, "S", "Samples per spoke", {"samples"}, 64);
-  args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 3);
+  args::ValueFlag<Index>                samp(parser, "S", "Samples per spoke", {"samples"}, 1);
+  args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 0);
   args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
   args::ValueFlag<Index>                spp(parser, "SPP", "Segments per prep", {'g', "spp"}, 1);
   args::ValueFlag<Index>                sk(parser, "sk", "Segments per prep to keep", {"sk"}, 1);
@@ -93,34 +96,37 @@ void main_basis_svd(args::Subparser &parser)
                         .TE = te.Get()};
   Log::Print("{}", settings.format());
 
-  Eigen::ArrayXXf pars;
-  Cx3             dall;
+  Cx3 dall;
   switch (seq.Get()) {
-  case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::IR2: std::tie(pars, dall) = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::Prep: dall = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::Prep2: dall = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::IR: dall = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::IR2: dall = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::DIR: dall = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2Prep: dall = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::T2FLAIR: dall = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   }
   Sz3 const                 dshape = dall.dimensions();
   Index const               L = dshape[1] * dshape[2];
   Eigen::MatrixXcf::MapType dmap(dall.data(), dshape[0], L);
-  dmap.rowwise().normalize();
-  Log::Print("Computing SVD {}x{}", dshape[0], L);
-  SVD<Cx> svd(dmap);
-  Log::Print("Variance explained: {}%", svd.variance(nRetain.Get()) * 100);
+  Log::Print("Normalizing entries");
+  auto ntask = [&](Index const ii) { dmap.row(ii) = dmap.row(ii).normalized(); };
+  Threads::For(ntask, dmap.rows(), "Normalizing");
 
   Cx3                       basis(nRetain.Get(), dshape[1], dshape[2]);
   Eigen::MatrixXcf::MapType bmap(basis.data(), nRetain.Get(), L);
-  bmap = svd.V.leftCols(nRetain.Get()).transpose();
+
+  Log::Print("Computing SVD {}x{}", dshape[0], L);
+  SVD<Cxd> svd(dmap.cast<Cxd>());
+  Log::Print("Variance explained: {}%", svd.variance(nRetain.Get()) * 100);
+  bmap = svd.V.leftCols(nRetain.Get()).transpose().cast<Cx>();
 
   Log::Print("Computing projection");
   Cx3                       proj(dshape);
   Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);
   Eigen::MatrixXcf const    temp = bmap.conjugate() * dmap.transpose();
   pmap = (bmap.transpose() * temp).transpose();
+  Log::Print("Residual {}%", 100 * Norm(dall - proj) / Norm(dall));
 
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
   HD5::Writer writer(oname.Get());

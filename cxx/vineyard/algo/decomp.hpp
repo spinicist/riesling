@@ -9,25 +9,22 @@ namespace rl {
 template <typename Scalar = Cx> struct Eig
 {
   using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+  using RealArray = Eigen::Array<typename Eigen::NumTraits<Scalar>::Real, Eigen::Dynamic, 1>;
   Eig(Eigen::Ref<Matrix const> const &gramian);
-  Matrix         P;
-  Eigen::ArrayXf V;
+  Matrix    P;
+  RealArray V;
 };
-extern template struct Eig<float>;
-extern template struct Eig<Cx>;
 
 template <typename Scalar = Cx> struct SVD
 {
   using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+  using RealArray = Eigen::Array<typename Eigen::NumTraits<Scalar>::Real, Eigen::Dynamic, 1>;
   SVD(Eigen::Ref<Matrix const> const &mat);
-  Matrix         U, V;
-  Eigen::ArrayXf S;
+  Matrix    U, V;
+  RealArray S;
 
-  auto variance(Index const N) const
-    -> Eigen::ArrayXf;                           // Calculate the cumulative fractional variance contained in first N vectors
-  auto equalized(Index const N) const -> Matrix; // Equalize variance over first N vectors
+  auto variance(Index const N) const -> RealArray; // Calculate the cumulative fractional variance contained in first N vectors
+  auto equalized(Index const N) const -> Matrix;   // Equalize variance over first N vectors
 };
-extern template struct SVD<float>;
-extern template struct SVD<Cx>;
 
 } // namespace rl

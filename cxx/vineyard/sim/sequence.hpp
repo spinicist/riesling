@@ -22,7 +22,8 @@ struct Sequence
   {
   }
 
-  virtual auto length() const -> Index = 0;
+  virtual auto samples() const -> Index;
+  virtual auto traces() const -> Index = 0;
   virtual auto simulate(Eigen::ArrayXf const &p) const -> Cx2 = 0;
   auto         offres(float const Δf) const -> Cx1;  // Off-resonance effects only
   auto         readout(float const T2, float const Δf) const -> Cx1; // Include transverse decay

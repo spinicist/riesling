@@ -12,7 +12,7 @@ T2FLAIR::T2FLAIR(Settings const &s)
 {
 }
 
-auto T2FLAIR::length() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
+auto T2FLAIR::traces() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
 
 auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
@@ -77,7 +77,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
     Mz = Essi * Eramp * Mz;
   }
   if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
-  return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
+  return readout(p(1), Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
 } // namespace rl

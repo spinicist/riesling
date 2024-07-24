@@ -10,14 +10,15 @@ DIR::DIR(Settings const s)
   Log::Print("DIR Sequence");
 }
 
-Index DIR::length() const { return settings.spokesPerSeg * settings.segsKeep; }
+Index DIR::traces() const { return settings.spokesPerSeg * settings.segsKeep; }
 
 auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 3) { Log::Fail("Need 3 parameters T1 T2 Δf"); }
+  if (p.size() != 4) { Log::Fail("Need 4 parameters T1 T2 Δf"); }
   float const T1 = p(0);
   float const T2 = p(1);
   float const Δf = p(2);
+  float const Q = p(3);
 
   Eigen::Matrix2f inv;
   inv << -1, 0.f, 0.f, 1.f;
@@ -33,7 +34,7 @@ auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   float const     erec = exp(-R1 * settings.Trec);
   E1 << e1, 1.f - e1, 0.f, 1.f;
   Einv << einv, 1.f - einv, 0.f, 1.f;
-  E2 << -e2, 0.f, 0.f, 1.f;
+  E2 << -Q * e2, 0.f, 0.f, 1.f;
   Eramp << eramp, 1.f - eramp, 0.f, 1.f;
   Essi << essi, 1.f - essi, 0.f, 1.f;
   Erec << erec, 1.f - erec, 0.f, 1.f;
@@ -53,7 +54,7 @@ auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  Cx1             s0(length());
+  Cx1             s0(traces());
   for (Index ig = 0; ig < settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {

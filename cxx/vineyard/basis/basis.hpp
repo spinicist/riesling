@@ -21,6 +21,7 @@ struct Basis {
     auto nSample() const -> Index;
     auto nTrace() const -> Index;
 
+    template <int ND> auto blend(CxN<ND> const &images, Index const is, Index const it) const -> CxN<ND - 1>;
     template <int ND> void applyR(CxN<ND> &data) const;
 };
 

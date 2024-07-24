@@ -52,6 +52,7 @@ void main_recon_lsq(args::Subparser &parser)
     auto const A1 = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, &id, noncart);
     auto const M1 =
       MakeKspacePre(traj, nC, nT, &id, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+    Log::Print("A1 {} {} M1 {} {}", A1->ishape, A1->oshape, M1->rows(), M1->cols());
     Ops::Op<Cx>::Map  ncmap(noncart.data(), noncart.size());
     Ops::Op<Cx>::CMap nccmap(noncart.data(), noncart.size());
     M1->inverse(nccmap, ncmap);

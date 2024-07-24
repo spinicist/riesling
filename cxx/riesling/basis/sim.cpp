@@ -29,7 +29,7 @@ template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf
     Log::Print("Parameter set {}", fmt::streamed(plist[ii].transpose()));
     parameters.col(ii) = plist[ii];
   }
-  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, seq.length());
+  Cx3        dynamics(parameters.cols(), seq.samples(), seq.traces());
   auto const start = Log::Now();
   auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");

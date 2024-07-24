@@ -21,6 +21,8 @@ auto Settings::format() const -> std::string
     Tramp, Tssi, TI, Trec, TE);
 }
 
+auto Sequence::samples() const -> Index { return std::max(1L, settings.samplesPerSpoke); }
+
 auto Sequence::offres(float const Δf) const -> Cx1
 {
   if (settings.samplesPerSpoke < 1) {
@@ -34,7 +36,7 @@ auto Sequence::offres(float const Δf) const -> Cx1
   float const               startPhase = settings.samplesGap * sampPhase;
   float const               endPhase = (settings.samplesGap + settings.samplesPerSpoke - 1) * sampPhase;
   pm = Eigen::VectorXcf::LinSpaced(settings.samplesPerSpoke, startPhase * 1if, endPhase * 1if).array().exp();
-  // Log::Print("Δf {} startPhase {} endPhase {}", Δf, startPhase, endPhase);
+  // Log::Print("Δf {} startPhase {} endPhase {}\n{}\n", Δf, startPhase, endPhase, fmt::streamed(pm.transpose()));
   return phase;
 }
 

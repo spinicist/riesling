@@ -11,7 +11,7 @@ Prep::Prep(Settings const &s)
 {
 }
 
-auto Prep::length() const -> Index { return (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep; }
+auto Prep::traces() const -> Index { return (settings.spokesPerSeg + settings.k0) * settings.segsPerPrep; }
 
 auto Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
@@ -52,7 +52,7 @@ auto Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  Cx1             s0(length());
+  Cx1             s0(traces());
   for (Index ig = 0; ig < settings.segsPerPrep; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
@@ -68,7 +68,7 @@ auto Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
       Mz = E1 * A * Mz;
     }
   }
-  if (tp != length()) { Log::Fail("Programmer error"); }
+  if (tp != traces()) { Log::Fail("Programmer error"); }
   return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
@@ -77,7 +77,7 @@ Prep2::Prep2(Settings const &s)
 {
 }
 
-auto Prep2::length() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
+auto Prep2::traces() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
 
 auto Prep2::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
@@ -116,7 +116,7 @@ auto Prep2::simulate(Eigen::ArrayXf const &p) const -> Cx2
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  Cx1             s0(length());
+  Cx1             s0(traces());
   for (Index ig = 0; ig < settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
