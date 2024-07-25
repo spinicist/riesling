@@ -29,7 +29,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final : Kernel<Scalar
   }
 
   void spread(std::array<int16_t, ND> const   c,
-              Point const                     p,
+              Point const                    &p,
               Eigen::Tensor<Scalar, 1> const &b,
               Eigen::Tensor<Scalar, 1> const &y,
               Eigen::Tensor<Scalar, ND + 2>  &x) const final
@@ -52,7 +52,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final : Kernel<Scalar
   }
 
   void gather(std::array<int16_t, ND> const                                c,
-              Point const                                                  p,
+              Point const                                                 &p,
               Eigen::Tensor<Scalar, 1> const                              &b,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
               Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final

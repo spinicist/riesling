@@ -121,6 +121,7 @@ set_target_properties(vineyard PROPERTIES
     CXX_VISIBILITY_PRESET hidden
 )
 set_source_files_properties(
+    op/grid.cpp
     op/grid-subgrid.cpp
     kernel/kernel-f1.cpp
     kernel/kernel-f2.cpp

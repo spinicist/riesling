@@ -11,7 +11,7 @@ template <typename Scalar, int ND, typename Func> struct Radial final : Kernel<S
   static constexpr int   PadWidth = Func::PadWidth;
   static constexpr float HalfWidth = Width / 2.f;
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<Func::PadWidth>>;
-  using Tensor = typename Eigen::TensorFixedSize<float, typename KernelSizes<ND, Func::PadWidth>::Type>;
+  using Tensor = typename FixedKernel<float, ND, PadWidth>::Tensor;
   using Point = typename FixedKernel<float, ND, PadWidth>::Point;
   using Pos = typename FixedKernel<float, ND, PadWidth>::OneD;
 
@@ -31,9 +31,11 @@ template <typename Scalar, int ND, typename Func> struct Radial final : Kernel<S
     Log::Print("Radial, scale {}", scale);
   }
 
-  virtual auto paddedWidth() const -> int final { return Func::PadWidth; };
+  virtual auto paddedWidth() const -> int final { return Func::PadWidth; }
 
-  auto operator()(Point const p) const -> Eigen::Tensor<float, ND> final
+  inline auto operator()(Point const p) const -> Eigen::Tensor<float, ND> final { return this->dist2(p); }
+
+  inline auto dist2(Point const p) const -> Tensor
   {
     Tensor    z;
     Pos const z1 = ((this->centers - p(ND - 1)) / HalfWidth).square();
@@ -54,21 +56,23 @@ template <typename Scalar, int ND, typename Func> struct Radial final : Kernel<S
   }
 
   void spread(std::array<int16_t, ND> const   c,
-              Point const                     p,
+              Point const                    &p,
               Eigen::Tensor<Scalar, 1> const &b,
               Eigen::Tensor<Scalar, 1> const &y,
               Eigen::Tensor<Scalar, ND + 2>  &x) const final
   {
-    FixedKernel<Scalar, ND, Func::PadWidth>::Spread(c, this->operator()(p), b, y, x);
+    Tensor const d = this->dist2(p);
+    FixedKernel<Scalar, ND, Func::PadWidth>::Spread(c, d, b, y, x);
   }
 
   void gather(std::array<int16_t, ND> const                                c,
-              Point const                                                  p,
+              Point const                                                 &p,
               Eigen::Tensor<Scalar, 1> const                              &b,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
               Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
   {
-    FixedKernel<Scalar, ND, Func::PadWidth>::Gather(c, this->operator()(p), b, x, y);
+    Tensor const d = this->dist2(p);
+    FixedKernel<Scalar, ND, Func::PadWidth>::Gather(c, d, b, x, y);
   }
 };
 } // namespace rl

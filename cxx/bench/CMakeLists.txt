@@ -7,6 +7,11 @@ if(${BUILD_BENCHMARKS})
         kernel.cpp
         rss.cpp
     )
+    set_source_files_properties(
+        grid.cpp
+        kernel.cpp
+        PROPERTIES COMPILE_FLAGS -ffast-math
+    )
     target_link_libraries(riesling-bench PUBLIC
         vineyard
         Catch2::Catch2WithMain
