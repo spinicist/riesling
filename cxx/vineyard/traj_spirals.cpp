@@ -49,8 +49,7 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
     endPoint(2) = -t;
     traj.chip(half + is, 2) = endPoint.contract(read, empty);
   }
-  // Trajectory is stored between -0.5 and 0.5, so scale
-  return 0.5f * traj;
+  return traj * traj.constant(nRead);
 }
 
 Index Fib(Index n)
@@ -113,7 +112,7 @@ Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, 
       traj.chip((ii * spi) + is, 2) = endPoint.contract(read, empty);
     }
   }
-  traj = traj * traj.constant(0.5); // Scale to -0.5 to 0.5
+  traj = traj * traj.constant(nRead);
   return traj;
 }
 } // namespace rl

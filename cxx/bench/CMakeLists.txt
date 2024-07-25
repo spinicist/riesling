@@ -5,11 +5,13 @@ if(${BUILD_BENCHMARKS})
         dot.cpp
         grid.cpp
         kernel.cpp
+        nufft.cpp
         rss.cpp
     )
     set_source_files_properties(
         grid.cpp
         kernel.cpp
+        nufft.cpp
         PROPERTIES COMPILE_FLAGS -ffast-math
     )
     target_link_libraries(riesling-bench PUBLIC
