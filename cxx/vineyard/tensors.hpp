@@ -213,18 +213,22 @@ template <typename T> inline auto CChipMap(T const &a, Index const index)
   return Eigen::TensorMap<Tensor const>(a.data() + Product(chipDims) * index, chipDims);
 }
 
-template <typename T> inline auto ConstMap(Eigen::TensorMap<T> x)
+template <typename T> inline auto ConstMap(Eigen::TensorMap<T> &x) -> Eigen::TensorMap<T const>
 {
   Eigen::TensorMap<T const> cx(x.data(), x.dimensions());
   return cx;
 }
 
-template <typename T> inline auto ConstMap(T x)
+template <typename T> inline auto ConstMap(T &x) -> Eigen::TensorMap<T const>
 {
   Eigen::TensorMap<T const> cx(x.data(), x.dimensions());
   return cx;
 }
 
-template <typename T> inline auto Map(T x) { return Eigen::TensorMap<T>(x.data(), x.dimensions()); }
+template <typename T> inline auto Map(T &x) -> Eigen::TensorMap<T>
+{
+  Eigen::TensorMap<T> xm(x.data(), x.dimensions());
+  return xm;
+}
 
 } // namespace rl

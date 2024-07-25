@@ -41,12 +41,12 @@ TEMPLATE_TEST_CASE(
   typename TestType::Point p;
   p.setConstant(0.f);
   auto const k0 = kernel(p);
-  INFO(rl::Transpose(k0));
+  INFO(k0);
   CHECK(rl::Norm(k0) == Approx(1.f).margin(1.e-9));
   CHECK(k0(0, 0) == Approx(0.f).margin(1.e-9));
   p.setConstant(0.5f);
   auto const k1 = kernel(p);
-  INFO(rl::Transpose(k1));
+  INFO(k1);
   CHECK(k1(0, 0) == Approx(0.f).margin(1.e-9));
   CHECK(k1(1, 1) == Approx(k1(TestType::PadWidth - 1, TestType::PadWidth - 1)).margin(1.e-5));
 }
@@ -61,12 +61,12 @@ TEMPLATE_TEST_CASE(
   typename TestType::Point p;
   p.setConstant(0.f);
   auto const k0 = kernel(p);
-  INFO(rl::Transpose(k0));
+  INFO(k0);
   CHECK(rl::Norm(k0) == Approx(1.f).margin(1.e-9));
   CHECK(k0(0, 0, 0) == Approx(0.f).margin(1.e-9));
   p.setConstant(0.5f);
   auto const k1 = kernel(p);
-  INFO(rl::Transpose(k1));
+  INFO(k1);
   CHECK(k1(0, 0, 0) == Approx(0.f).margin(1.e-9));
   CHECK(k1(1, 1, 1) == Approx(k1(TestType::PadWidth - 1, TestType::PadWidth - 1, TestType::PadWidth - 1)).margin(1.e-5));
 }

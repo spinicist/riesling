@@ -33,6 +33,8 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
 
   void forward(InCMap const &x, OutMap &y) const
   {
+    assert(x.dimensions() == op1_->ishape);
+    assert(y.dimensions() == op2_->oshape);
     typename Op1::OutTensor temp(op1_->oshape);
     typename Op1::OutMap    tm(temp.data(), op1_->oshape);
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
@@ -44,6 +46,8 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
+    assert(x.dimensions() == op1_->ishape);
+    assert(y.dimensions() == op2_->oshape);
     typename Op1::OutTensor temp(op1_->oshape);
     typename Op1::OutMap    tm(temp.data(), op1_->oshape);
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
@@ -55,6 +59,8 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
 
   void iforward(InCMap const &x, OutMap &y) const
   {
+    assert(x.dimensions() == op1_->ishape);
+    assert(y.dimensions() == op2_->oshape);
     typename Op1::OutTensor temp(op1_->oshape);
     typename Op1::OutMap    tm(temp.data(), op1_->oshape);
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
@@ -66,6 +72,8 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
 
   void iadjoint(OutCMap const &y, InMap &x) const
   {
+    assert(x.dimensions() == op1_->ishape);
+    assert(y.dimensions() == op2_->oshape);
     typename Op1::OutTensor temp(op1_->oshape);
     typename Op1::OutMap    tm(temp.data(), op1_->oshape);
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);

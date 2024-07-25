@@ -6,7 +6,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("ops-sense")
+TEST_CASE("SENSE", "[ops]")
 {
   Index const channels = 2, mapSz = 4;
   // With credit to PyLops
@@ -29,5 +29,38 @@ TEST_CASE("ops-sense")
     auto const yy = Dot(y, v);
     auto const xx = Dot(u, x);
     CHECK(std::abs((yy - xx) / (yy + xx + 1.e-15f)) == Approx(0).margin(1.e-6));
+  }
+}
+
+TEST_CASE("VCC SENSE", "[ops]")
+{
+  Index const channels = 2, mapSz = 4;
+  // With credit to PyLops
+  SECTION("Dot Test")
+  {
+    Cx4 x(1, mapSz, mapSz, mapSz), u(1, mapSz, mapSz, mapSz);
+    Cx5 maps(channels, 1, mapSz, mapSz, mapSz);
+    Cx6 y(channels, 2, 1, mapSz, mapSz, mapSz), v(channels, 2, 1, mapSz, mapSz, mapSz);
+
+    v.setRandom();
+    u.setRandom();
+    // The maps need to be normalized for the Dot test
+    maps.setRandom();
+    maps = maps / ConjugateSum(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{channels, 1, 1, 1, 1});
+
+    TOps::VCCSENSE sense(maps, 1);
+    y = sense.forward(u);
+    x = sense.adjoint(v);
+
+    auto const yy = Dot(y, v);
+    auto const xx = Dot(u, x);
+    CHECK(std::abs((yy - xx) / (yy + xx + 1.e-15f)) == Approx(0).margin(1.e-6));
+
+    y.setZero();
+    Eigen::TensorMap<Cx6> ym = Map(y);
+    sense.iforward(u, ym);
+    x.setZero();
+    Eigen::TensorMap<Cx4> xm = Map(x);
+    sense.iadjoint(v, xm);
   }
 }
