@@ -18,6 +18,10 @@ struct ExpSemi
 
   ExpSemi() { Log::Print("Exponential Semi-Circle kernel width {}", W); }
 
+  inline static auto Scalar(float const z2, float const β) -> float {
+    return z2 > 1.f ? 0.f :  std::exp(β * std::sqrt(1.f - z2) - 1.f);
+  }
+
   template <typename T>
   inline auto operator()(T const &z2, float const β) const
   {

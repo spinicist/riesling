@@ -12,7 +12,7 @@ if(${BUILD_BENCHMARKS})
         grid.cpp
         kernel.cpp
         nufft.cpp
-        PROPERTIES COMPILE_FLAGS -ffast-math
+        PROPERTIES COMPILE_FLAGS "-ffinite-math-only -funsafe-math-optimizations"
     )
     target_link_libraries(riesling-bench PUBLIC
         vineyard

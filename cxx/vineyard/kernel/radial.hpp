@@ -11,9 +11,9 @@ template <typename Scalar, int ND, typename Func> struct Radial final : Kernel<S
   static constexpr int   PadWidth = Func::PadWidth;
   static constexpr float HalfWidth = Width / 2.f;
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<Func::PadWidth>>;
-  using Tensor = typename FixedKernel<float, ND, PadWidth>::Tensor;
-  using Point = typename FixedKernel<float, ND, PadWidth>::Point;
-  using Pos = typename FixedKernel<float, ND, PadWidth>::OneD;
+  using Tensor = typename FixedKernel<float, ND, Func>::Tensor;
+  using Point = typename FixedKernel<float, ND, Func>::Point;
+  using Pos = typename FixedKernel<float, ND, Func>::OneD;
 
   Func  f;
   float β, scale;
@@ -62,7 +62,7 @@ template <typename Scalar, int ND, typename Func> struct Radial final : Kernel<S
               Eigen::Tensor<Scalar, ND + 2>  &x) const final
   {
     Tensor const d = this->dist2(p);
-    FixedKernel<Scalar, ND, Func::PadWidth>::Spread(c, d, b, y, x);
+    FixedKernel<Scalar, ND, Func>::Spread(c, d, b, y, x);
   }
 
   void gather(std::array<int16_t, ND> const                                c,
@@ -72,7 +72,7 @@ template <typename Scalar, int ND, typename Func> struct Radial final : Kernel<S
               Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
   {
     Tensor const d = this->dist2(p);
-    FixedKernel<Scalar, ND, Func::PadWidth>::Gather(c, d, b, x, y);
+    FixedKernel<Scalar, ND, Func>::Gather(c, d, b, x, y);
   }
 };
 } // namespace rl

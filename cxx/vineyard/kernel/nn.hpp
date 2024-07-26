@@ -9,9 +9,9 @@ template <typename Scalar, int ND> struct NearestNeighbour final : Kernel<Scalar
   static constexpr int   Width = 1;
   static constexpr int   PadWidth = 1;
   static constexpr float HalfWidth = 1;
-  using Tensor = typename FixedKernel<float, ND, PadWidth>::Tensor;
-  using Point = typename FixedKernel<float, ND, PadWidth>::Point;
-  using Pos = typename FixedKernel<float, ND, PadWidth>::OneD;
+  using Tensor = Eigen::TensorFixedSize<Scalar, typename KernelSizes<ND, 1>::Type>;
+  using Point = Eigen::Matrix<float, ND, 1>;
+  using Pos = Eigen::TensorFixedSize<float, typename KernelSizes<ND, 1>::Type>;
 
   NearestNeighbour()
   {
@@ -23,7 +23,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final : Kernel<Scalar
 
   auto operator()(Point const) const -> Eigen::Tensor<float, ND> final
   {
-    Tensor z;
+    Eigen::Tensor<float, ND> z;
     z.setConstant(1.f);
     return z;
   }
