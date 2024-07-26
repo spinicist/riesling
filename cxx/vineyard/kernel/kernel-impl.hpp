@@ -24,13 +24,13 @@ auto Kernel<Scalar, ND>::Make(std::string const &kType, float const osamp) -> st
       default: Log::Fail("Unsupported kernel width {}", W);
       }
     } else if (type == "KB") {
-      switch (W) {
-      case 3: return std::make_shared<Radial<Scalar, ND, KaiserBessel<3>>>(osamp);
-      case 4: return std::make_shared<Radial<Scalar, ND, KaiserBessel<4>>>(osamp);
-      case 5: return std::make_shared<Radial<Scalar, ND, KaiserBessel<5>>>(osamp);
-      case 7: return std::make_shared<Radial<Scalar, ND, KaiserBessel<7>>>(osamp);
-      default: Log::Fail("Unsupported kernel width {}", W);
-      }
+      // switch (W) {
+      // case 3: return std::make_shared<Radial<Scalar, ND, KaiserBessel<3>>>(osamp);
+      // case 4: return std::make_shared<Radial<Scalar, ND, KaiserBessel<4>>>(osamp);
+      // case 5: return std::make_shared<Radial<Scalar, ND, KaiserBessel<5>>>(osamp);
+      // case 7: return std::make_shared<Radial<Scalar, ND, KaiserBessel<7>>>(osamp);
+      // default: Log::Fail("Unsupported kernel width {}", W);
+      // }
     }
   }
 

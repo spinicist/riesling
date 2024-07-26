@@ -41,10 +41,10 @@ TEST_CASE("Recon", "[recon]")
   ks.setConstant(1.f);
   img = recon.adjoint(ks);
   // Super loose tolerance
-  INFO("ks\n" << ks);
-  INFO("img\n" << img);
+  // INFO("ks\n" << ks);
+  // INFO("img\n" << img);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-1f));
   ks = recon.forward(img);
-  INFO("ks\n" << ks);
+  // INFO("ks\n" << ks);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-1f));
 }

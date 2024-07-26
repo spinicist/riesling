@@ -26,21 +26,10 @@ TEST_CASE("Kernels", "[kernels]")
   Cx1                          y(C);
   Cx1Map                       ym(y.data(), Sz1{8});
   std::array<int16_t, 3> const c{8, 8, 8};
-  // auto const                   d3 = es3.dist2(p);
-  // BENCHMARK(fmt::format("ES3 Fixed Spread {}", B)) { FixedKernel<Cx, 3, ExpSemi<3>>::Spread(c, d3, b, y, x); };
-  float const β = ExpSemi<3>::β(2.f);
-  BENCHMARK(fmt::format("ES3 Spread {}", B)) { es3.spread(c, p, b, y, x); };
-  BENCHMARK(fmt::format("ES3 Fixed Spread2 {}", B)) { FixedKernel<Cx, 3, ExpSemi<3>>::Spread2(β, c, p, b, y, x); };
-  // BENCHMARK(fmt::format("ES3 Fixed Gather {}", B)) { FixedKernel<Cx, 3, ExpSemi<3>>::Gather(c, d3, b, x, ym); };
-  
-  BENCHMARK(fmt::format("ES3 Gather {}", B)) { es3.gather(c, p, b, x, ym); };
-  BENCHMARK(fmt::format("ES3 Fixed Gather2 {}", B)) { FixedKernel<Cx, 3, ExpSemi<3>>::Gather2(β, c, p, b, x, ym); };
 
-  // auto const d5 = es5.dist2(p);
-  // BENCHMARK(fmt::format("ES5 Fixed Spread {}", B)) { FixedKernel<Cx, 3, ExpSemi<5>>::Spread(c, d5, b, y, x); };
+  BENCHMARK(fmt::format("ES3 Spread {}", B)) { es3.spread(c, p, b, y, x); };  
+  BENCHMARK(fmt::format("ES3 Gather {}", B)) { es3.gather(c, p, b, x, ym); };
+
   BENCHMARK(fmt::format("ES5 Spread {}", B)) { es5.spread(c, p, b, y, x); };
-  BENCHMARK(fmt::format("ES5 Fixed Spread2 {}", B)) { FixedKernel<Cx, 3, ExpSemi<5>>::Spread2(β, c, p, b, y, x); };
-  // BENCHMARK(fmt::format("ES5 Fixed Gather {}", B)) { FixedKernel<Cx, 3, ExpSemi<5>>::Gather(c, d5, b, x, ym); };
   BENCHMARK(fmt::format("ES5 Gather {}", B)) { es5.gather(c, p, b, x, ym); };
-  BENCHMARK(fmt::format("ES5 Fixed Gather2 {}", B)) { FixedKernel<Cx, 3, ExpSemi<5>>::Gather2(β, c, p, b, x, ym); };
 }

@@ -12,7 +12,7 @@
 using namespace Catch;
 
 TEMPLATE_TEST_CASE(
-  "1D Kernels",
+  "1D Kernel",
   "[kernels]",
   (rl::Radial<float, 1, rl::ExpSemi<3>>),
   (rl::Radial<float, 1, rl::ExpSemi<5>>))
@@ -28,11 +28,14 @@ TEMPLATE_TEST_CASE(
   auto const k1 = kernel(p);
   INFO(rl::Transpose(k1));
   CHECK(k1(0) == Approx(0.f).margin(1.e-9));
+  INFO(rl::Transpose(k1));
+  INFO(p.transpose());
+  INFO(TestType::PadWidth);
   CHECK(k1(1) == Approx(k1(TestType::PadWidth - 1)).margin(1.e-5));
 }
 
 TEMPLATE_TEST_CASE(
-  "2D Kernels",
+  "2D Kernel",
   "[kernels]",
   (rl::Radial<float, 2, rl::ExpSemi<3>>),
   (rl::Radial<float, 2, rl::ExpSemi<5>>))
@@ -52,7 +55,7 @@ TEMPLATE_TEST_CASE(
 }
 
 TEMPLATE_TEST_CASE(
-  "3D Kernels",
+  "3D Kernel",
   "[kernels]",
   (rl::Radial<float, 3, rl::ExpSemi<3>>),
   (rl::Radial<float, 3, rl::ExpSemi<5>>))
