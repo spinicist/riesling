@@ -40,7 +40,7 @@ void main_sense_calib(args::Subparser &parser)
     channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
     ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));
   } else {
-    ref = ConjugateSum(channels, channels).sqrt();
+    ref = ConjugateSum<1>(channels, channels).sqrt();
   }
   Cx5 const   kernels = SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
   HD5::Writer writer(coreOpts.oname.Get());

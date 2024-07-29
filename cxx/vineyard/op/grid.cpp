@@ -33,9 +33,9 @@ auto Grid<NDim, VCC>::Make(
 template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index const nB) -> Sz<ND + 2 + VCC>
 {
   if constexpr (VCC) {
-    return AddFront(cart, nC, 2, nB);
+    return AddFront(cart, nB, nC, 2);
   } else {
-    return AddFront(cart, nC, nB);
+    return AddFront(cart, nB, nC);
   }
 }
 
@@ -43,7 +43,7 @@ template <int NDim, bool VCC>
 Grid<NDim, VCC>::Grid(
   TrajectoryN<NDim> const &traj, std::string const ktype, float const osamp, Index const nC, Basis::CPtr b, Index const sgW)
   : Parent(fmt::format("{}D GridOp{}", NDim, VCC ? " VCC" : ""))
-  , kernel{Kernel<Scalar, NDim>::Make(ktype, osamp)}
+  , kernel{KernelBase<Scalar, NDim>::Make(ktype, osamp)}
   , subgridW{sgW + 2 * (kernel->paddedWidth() / 2)}
   , basis{b}
 {
@@ -51,7 +51,7 @@ Grid<NDim, VCC>::Grid(
 
   auto const m = CalcMapping(traj, osamp, kernel->paddedWidth(), sgW);
   mappings = m.mappings;
-  ishape = AddVCC<VCC>(m.cartDims, nC, basis->nV());
+  ishape = AddVCC<VCC>(m.cartDims, nC, basis ? basis->nB() : 1);
   oshape = AddFront(m.noncartDims, nC);
   if constexpr (VCC) {
     Log::Print("Adding VCC");
@@ -66,14 +66,16 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
 {
   void operator()(std::span<Mapping<ND> const> const &mappings,
                   Index const                         subgridW,
-                  Basis const                        &basis,
-                  Kernel<Cx, ND>::Ptr const          &kernel,
+                  Basis::CPtr const                  &basis,
+                  KernelBase<Cx, ND>::Ptr const      &kernel,
                   CxNCMap<ND + 2 + hasVCC> const     &x,
                   CxNMap<3>                          &y) const
   {
     Index const nC = y.dimension(0);
-    Index const nB = basis.nV();
-    CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nC, nB));
+    Index const nB = basis ? basis->nB() : 1;
+    Index const nT = basis ? basis->nTrace() : 0;
+    Index const nS = basis ? basis->nSample() : 0;
+    CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nB, nC));
     Sz<ND>      current = mappings.front().subgrid;
     GridToSubgrid<ND, hasVCC, isVCC>(current, x, sx);
     for (auto const &m : mappings) {
@@ -81,10 +83,13 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
         current = m.subgrid;
         GridToSubgrid<ND, hasVCC, isVCC>(current, x, sx);
       }
-      Eigen::Tensor<Cx, 1> const bs =
-        basis.B.template chip<2>(m.trace % basis.nTrace()).template chip<1>(m.sample % basis.nSample());
       Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
-      kernel->gather(m.cart, m.offset, bs, sx, yy);
+      if (basis) {
+        Eigen::Tensor<Cx, 1> const bs = basis->B.template chip<2>(m.trace % nT).template chip<1>(m.sample % nS);
+        kernel->gather(m.cart, m.offset, bs, sx, yy);
+      } else {
+        kernel->gather(m.cart, m.offset, sx, yy);
+      }
     }
   }
 };
@@ -93,9 +98,9 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::forward(InCMap const &x, Out
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::GlobalDevice()) = y.constant(0.f);
-  Threads::ChunkFor(forwardTask<NDim, VCC, false>(), this->mappings, subgridW, *(this->basis), this->kernel, x, y);
+  Threads::ChunkFor(forwardTask<NDim, VCC, false>(), this->mappings, subgridW, this->basis, this->kernel, x, y);
   if constexpr (VCC == true) {
-    Threads::ChunkFor(forwardTask<NDim, VCC, true>(), this->vccMapping.value(), subgridW, *(this->basis), this->kernel, x, y);
+    Threads::ChunkFor(forwardTask<NDim, VCC, true>(), this->vccMapping.value(), subgridW, this->basis, this->kernel, x, y);
   }
   this->finishForward(y, time, false);
 }
@@ -103,9 +108,9 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::forward(InCMap const &x, Out
 template <int NDim, bool VCC> void Grid<NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
-  Threads::ChunkFor(forwardTask<NDim, VCC, false>(), this->mappings, subgridW, (*this->basis), this->kernel, x, y);
+  Threads::ChunkFor(forwardTask<NDim, VCC, false>(), this->mappings, subgridW, this->basis, this->kernel, x, y);
   if constexpr (VCC == true) {
-    Threads::ChunkFor(forwardTask<NDim, VCC, true>(), this->vccMapping.value(), subgridW, (*this->basis), this->kernel, x, y);
+    Threads::ChunkFor(forwardTask<NDim, VCC, true>(), this->vccMapping.value(), subgridW, this->basis, this->kernel, x, y);
   }
   this->finishForward(y, time, true);
 }
@@ -115,15 +120,16 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
   void operator()(std::span<Mapping<ND> const> const &mappings,
                   std::mutex                         &writeMutex,
                   Index const                         subgridW,
-                  Basis const                        &basis,
-                  Kernel<Cx, ND>::Ptr const          &kernel,
+                  Basis::CPtr const                  &basis,
+                  KernelBase<Cx, ND>::Ptr const      &kernel,
                   CxNCMap<3> const                   &y,
                   CxNMap<ND + 2 + hasVCC>            &x) const
   {
     Index const nC = y.dimensions()[0];
-    Index const nB = basis.nV();
-
-    CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nC, nB));
+    Index const nB = basis ? basis->nB() : 1;
+    Index const nT = basis ? basis->nTrace() : 0;
+    Index const nS = basis ? basis->nSample() : 0;
+    CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nB, nC));
     sx.setZero();
     Sz<ND> current = mappings.front().subgrid;
     for (auto const &m : mappings) {
@@ -133,11 +139,13 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
         sx.setZero();
         current = m.subgrid;
       }
-
-      Eigen::Tensor<Cx, 1> const bs =
-        basis.B.template chip<2>(m.trace % basis.nTrace()).template chip<1>(m.sample % basis.nSample()).conjugate();
       Eigen::Tensor<Cx, 1> yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
-      kernel->spread(m.cart, m.offset, bs, yy, sx);
+      if (basis) {
+        Eigen::Tensor<Cx, 1> const bs = basis->B.template chip<2>(m.trace % nT).template chip<1>(m.sample % nS).conjugate();
+        kernel->spread(m.cart, m.offset, bs, yy, sx);
+      } else {
+        kernel->spread(m.cart, m.offset, yy, sx);
+      }
     }
 
     {
@@ -152,10 +160,10 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::adjoint(OutCMap const &y, In
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::GlobalDevice()) = x.constant(0.f);
   std::mutex writeMutex;
-  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutex, subgridW, (*this->basis), this->kernel, y, x);
+  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutex, subgridW, this->basis, this->kernel, y, x);
   if constexpr (VCC == true) {
-    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), writeMutex, subgridW, (*this->basis),
-                      this->kernel, y, x);
+    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), writeMutex, subgridW, this->basis, this->kernel,
+                      y, x);
   }
   this->finishAdjoint(x, time, false);
 }
@@ -164,10 +172,10 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::iadjoint(OutCMap const &y, I
 {
   auto const time = this->startAdjoint(y, x, true);
   std::mutex writeMutex;
-  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutex, subgridW, (*this->basis), this->kernel, y, x);
+  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutex, subgridW, this->basis, this->kernel, y, x);
   if constexpr (VCC == true) {
-    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), writeMutex, subgridW, (*this->basis), this->kernel,
-                      y, x);
+    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), writeMutex, subgridW, this->basis,
+                      this->kernel, y, x);
   }
   this->finishAdjoint(x, time, true);
 }

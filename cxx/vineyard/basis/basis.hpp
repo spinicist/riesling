@@ -17,7 +17,7 @@ struct Basis {
     Basis(std::string const &basisFile);
 
     void write(std::string const &basisFile) const;
-    auto nV() const -> Index;
+    auto nB() const -> Index;
     auto nSample() const -> Index;
     auto nTrace() const -> Index;
 

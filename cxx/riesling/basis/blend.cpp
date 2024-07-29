@@ -31,9 +31,9 @@ void main_blend(args::Subparser &parser)
   if (!iname) { throw args::Error("No basis file specified"); }
   Basis const basis(bname.Get());
 
-  if (basis.nV() != images.dimension(0)) {
-    Log::Fail("Basis has {} vectors but image has {}", basis.nV(), images.dimension(0));
-  }
+  if (basis.nB() != images.dimension(0)) {
+    Log::Fail("Basis has {} vectors but image has {}", basis.nB(), images.dimension(0));
+  }\
 
   auto const &sps = sp.Get();
   auto const &tps = tp.Get();

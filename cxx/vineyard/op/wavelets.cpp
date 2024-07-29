@@ -120,7 +120,6 @@ template <int ND> void Wavelets<ND>::wav1(Index const sz, bool const reverse, Cx
       Index const index = 2 * ii + Noff;
       for (Index k = 0; k < N_; k++) {
         Index const wrapped = Wrap(index + k, sz);
-        // fmt::print(stderr, "index {} wrapped {}\n", index, wrapped);
         w[ii] += Cc_[k] * x[wrapped];
         w[ii + hSz] += Cr_[k] * x[wrapped];
       }

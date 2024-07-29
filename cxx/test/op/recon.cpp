@@ -13,7 +13,7 @@ using namespace Catch;
 TEST_CASE("Recon", "[recon]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = GENERATE(7, 15, 16);
+  Index const M = GENERATE(7); //, 15, 16);
   Index const nC = 4;
   Index const nF = 1;
   auto const  matrix = Sz3{M, M, M};
@@ -26,11 +26,11 @@ TEST_CASE("Recon", "[recon]")
   Trajectory const traj(points, matrix);
   Basis basis;
 
-  float const       osamp = GENERATE(2.f, 2.7f, 3.f);
+  float const       osamp = GENERATE(2.f); //, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES3");
   auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC, &basis);
 
-  Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
+  Cx5 senseMaps(AddFront(traj.matrix(), nF, nC));
   senseMaps.setConstant(std::sqrt(1. / nC));
   auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF);
 

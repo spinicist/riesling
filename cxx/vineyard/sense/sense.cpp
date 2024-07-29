@@ -113,7 +113,10 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
 auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
 {
   Sz5 const cshape = channels.dimensions();
-  if (LastN<4>(cshape) != ref.dimensions()) {
+  if (ref.dimension(0) != 1) {
+    Log::Fail("SENSE reference must be single channel");
+  }
+  if (LastN<3>(cshape) != LastN<3>(ref.dimensions())) {
     Log::Fail("SENSE dimensions don't match channels {} reference {}", cshape, ref.dimensions());
   }
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
@@ -127,7 +130,7 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::Multiply<Cx>>(F, P), D);
   auto FPinv = FP->inverse();
-  auto S = std::make_shared<TOps::EstimateKernels>(ref, cshape[0]);
+  auto S = std::make_shared<TOps::EstimateKernels>(ref, cshape[1]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
   auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
 
@@ -172,7 +175,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
-    Cx4 const ref = ConjugateSum(c, c).sqrt();
+    Cx4 const ref = ConjugateSum<1>(c, c).sqrt();
     kernels = EstimateKernels(c, ref, opts.kWidth.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());

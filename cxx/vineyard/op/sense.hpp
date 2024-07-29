@@ -16,9 +16,9 @@ struct SENSE final : TOp<Cx, 4, 5>
 
 private:
   Cx5                                                   maps_;
-  Eigen::IndexList<FixOne, int, int, int, int>          resX;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdX;
-  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
+  Eigen::IndexList<int, FixOne, int, int, int>          resX;
+  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdX;
+  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdMaps;
 };
 
 struct EstimateKernels final : TOp<Cx, 5, 5>
@@ -33,8 +33,8 @@ struct EstimateKernels final : TOp<Cx, 5, 5>
 
 private:
   Cx4                                                   img_;
-  Eigen::IndexList<FixOne, int, int, int, int>          res_;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brd_;
+  Eigen::IndexList<int, FixOne, int, int, int>          res_;
+  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brd_;
 };
 
 struct VCCSENSE final : TOp<Cx, 4, 6>
@@ -49,9 +49,9 @@ struct VCCSENSE final : TOp<Cx, 4, 6>
 
 private:
   Cx5                                                   maps_;
-  Eigen::IndexList<FixOne, int, int, int, int>          resX;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdX;
-  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdMaps;
+  Eigen::IndexList<int, FixOne, int, int, int>          resX;
+  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdX;
+  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdMaps;
 };
 
 } // namespace rl::TOps

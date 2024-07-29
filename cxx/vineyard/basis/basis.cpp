@@ -50,7 +50,7 @@ void Basis::write(std::string const &basisFile) const
   if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), {"v2", "v1"}); }
 }
 
-auto Basis::nV() const -> Index { return B.dimension(0); }
+auto Basis::nB() const -> Index { return B.dimension(0); }
 auto Basis::nSample() const -> Index { return B.dimension(1); }
 auto Basis::nTrace() const -> Index { return B.dimension(2); }
 

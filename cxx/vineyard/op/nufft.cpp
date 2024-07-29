@@ -36,7 +36,7 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
     Log::Fail("Requested NUFFT matrix {} but grid size is {}", matrix, LastN<NDim>(gridder.ishape));
   }
   ishape = batchShape_;
-  ishape[0] = nChan; // Undo batching
+  ishape[1] = nChan; // Undo batching
   oshape = gridder.oshape;
   oshape[0] = nChan;
   std::iota(fftDims.begin(), fftDims.end(), 2 + VCC);
@@ -51,7 +51,6 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
     apoBrd_[ii] = gridder.ishape[ii];
   }
   apo_ = Apodize(LastN<NDim>(ishape), LastN<NDim>(gridder.ishape), gridder.kernel).reshape(apo_shape);
-
   // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);

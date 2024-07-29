@@ -1,6 +1,7 @@
 #include "ops.hpp"
 
 #include "log.hpp"
+#include "threads.hpp"
 
 namespace rl::Ops {
 
@@ -182,9 +183,9 @@ template <typename S> void DiagRep<S>::forward(CMap const &x, Map &y) const
   auto const time = this->startForward(x, y, false);
   auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    y.array() = x.array() / (bias + scale * rep);
+    y.array().device(Threads::GlobalDevice()) = x.array() / (bias + scale * rep);
   } else {
-    y.array() = x.array() * rep;
+    y.array().device(Threads::GlobalDevice()) = x.array() * rep;
   }
   this->finishForward(y, time, false);
 }
@@ -194,9 +195,9 @@ template <typename S> void DiagRep<S>::adjoint(CMap const &y, Map &x) const
   auto const time = this->startAdjoint(y, x, false);
   auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    x.array() = y.array() / (bias + scale * rep);
+    x.array().device(Threads::GlobalDevice()) = y.array() / (bias + scale * rep);
   } else {
-    x.array() = y.array() * rep;
+    x.array().device(Threads::GlobalDevice()) = y.array() * rep;
   }
   this->finishAdjoint(x, time, false);
 }
@@ -206,9 +207,9 @@ template <typename S> void DiagRep<S>::inverse(CMap const &y, Map &x) const
   auto const time = this->startInverse(y, x, false);
   auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    x.array() = y.array() * (bias + scale * rep);
+    x.array().device(Threads::GlobalDevice()) = y.array() * (bias + scale * rep);
   } else {
-    x.array() = y.array() / rep;
+    x.array().device(Threads::GlobalDevice()) = y.array() / rep;
   }
   this->finishInverse(x, time, false);
 }
@@ -218,9 +219,9 @@ template <typename S> void DiagRep<S>::iforward(CMap const &x, Map &y) const
   auto const time = this->startForward(x, y, true);
   auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    y.array() += x.array() / (bias + scale * rep);
+    y.array().device(Threads::GlobalDevice()) += x.array() / (bias + scale * rep);
   } else {
-    y.array() += x.array() * rep;
+    y.array().device(Threads::GlobalDevice()) += x.array() * rep;
   }
   this->finishForward(y, time, true);
 }
@@ -230,9 +231,9 @@ template <typename S> void DiagRep<S>::iadjoint(CMap const &y, Map &x) const
   auto const time = this->startAdjoint(y, x, true);
   auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    x.array() += y.array() / (bias + scale * rep);
+    x.array().device(Threads::GlobalDevice()) += y.array() / (bias + scale * rep);
   } else {
-    x.array() += y.array() * rep;
+    x.array().device(Threads::GlobalDevice()) += y.array() * rep;
   }
   this->finishAdjoint(x, time, true);
 }

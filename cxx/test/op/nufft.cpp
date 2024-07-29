@@ -10,7 +10,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("NUFFT", "[tform]")
+TEST_CASE("NUFFT", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(5, 6);
@@ -37,7 +37,7 @@ TEST_CASE("NUFFT", "[tform]")
   CHECK(Norm(img) == Approx(Norm(ks)).margin(1.e-2f));
 }
 
-TEST_CASE("NUFFT Basis Trace", "[tform]")
+TEST_CASE("NUFFT-Basis", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = 5;
@@ -68,28 +68,26 @@ TEST_CASE("NUFFT Basis Trace", "[tform]")
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }
 
-TEST_CASE("NUFFT VCC", "[tform]")
+TEST_CASE("NUFFT-VCC", "[nufft]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(7, 8);
   auto const  matrix = Sz1{M};
   Re3         points(1, 1, 1);
   points.setZero();
 
   TrajectoryN<1> const traj(points, matrix);
-  Basis basis;
+  Basis                basis;
   TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, &basis);
   Cx3                  ks(nufft.oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));
-  Cx4 img(nufft.ishape);
-  img = nufft.adjoint(ks);
+  Cx4 img = nufft.adjoint(ks);
   INFO("IMG\n" << img);
   INFO("dims " << img.dimensions());
   CHECK(Norm(img) == Approx(1.f).margin(1.e-2f));
   for (Index ii = 0; ii < M; ii++) {
-    CHECK(img(0, 0, 0, ii).real() == Approx(-img(0, 1, 0, ii).real()).margin(1e-6f));
-    CHECK(img(0, 0, 0, ii).imag() == Approx(-img(0, 1, 0, ii).imag()).margin(1e-6f));
+    CHECK(img(0, 0, 0, ii).real() == Approx(-img(0, 0, 1, ii).real()).margin(1e-6f));
+    CHECK(img(0, 0, 0, ii).imag() == Approx(-img(0, 0, 1, ii).imag()).margin(1e-6f));
   }
   ks = nufft.forward(img);
   INFO("KS\n" << ks);

@@ -4,8 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
-#include "kernel/expsemi.hpp"
-#include "kernel/radial.hpp"
+#include "kernel/kernel-impl.hpp"
 #include "log.hpp"
 
 using namespace rl;
@@ -13,9 +12,9 @@ using namespace rl;
 TEST_CASE("Kernels", "[kernels]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Radial<Cx, 3, ExpSemi<3>> es3(2.f);
-  Radial<Cx, 3, ExpSemi<5>> es5(2.f);
-  auto const                p = Radial<Cx, 3, ExpSemi<3>>::Point::Constant(0.5f);
+  Kernel<Cx, 3, ExpSemi<3>> es3(2.f);
+  Kernel<Cx, 3, ExpSemi<5>> es5(2.f);
+  auto const                p = Kernel<Cx, 3, ExpSemi<3>>::Point::Constant(0.5f);
 
   Index const B = GENERATE(1, 256); //, 4, 8, 32, 128, 256);
   Index const C = 8;

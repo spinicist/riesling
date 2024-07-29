@@ -9,7 +9,7 @@ namespace rl::TOps {
 
 template <int NDim>
 NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis::CPtr b)
-  : Parent("NDFT", AddFront(shape, nC, b ? b->nV() : 1), AddFront(LastN<2>(tr.dimensions()), nC))
+  : Parent("NDFT", AddFront(shape, nC, b ? b->nB() : 1), AddFront(LastN<2>(tr.dimensions()), nC))
   , basis{b}
 {
   static_assert(NDim < 4);

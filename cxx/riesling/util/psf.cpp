@@ -31,7 +31,7 @@ void main_psf(args::Subparser &parser)
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   Basis const  basis(coreOpts.basisFile.Get());
   Index const nC = 1;
-  Index const nB = basis.nV();
+  Index const nB = basis.nB();
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
   std::shared_ptr<TOps::TOp<Cx, 5, 3>> A = nullptr;

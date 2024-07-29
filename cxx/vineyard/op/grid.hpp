@@ -25,7 +25,7 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   TOP_INHERIT(Cx, ND + 2 + VCC, 3)
   using Parent::adjoint;
   using Parent::forward;
-  std::shared_ptr<Kernel<Scalar, ND>>     kernel;
+  std::shared_ptr<KernelBase<Scalar, ND>> kernel;
   Index                                   subgridW;
   std::vector<Mapping<ND>>                mappings;
   Basis::CPtr                             basis;

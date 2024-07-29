@@ -59,10 +59,16 @@ template <typename T> float Norm2(T const &a) { return std::real(Dot(a, a)); }
 
 template <typename T> float Norm(T const &a) { return std::sqrt(std::real(Dot(a, a))); }
 
-template <typename T, typename U> inline decltype(auto) ConjugateSum(T &&x, U &&y)
+template <int D, typename T, typename U> inline decltype(auto) Sum(T &&x, U &&y)
 {
-  Eigen::IndexList<Eigen::type2index<0>> zero;
-  return (x * y.conjugate()).sum(zero);
+  Eigen::IndexList<Eigen::type2index<D>> dim;
+  return (x * y).sum(dim);
+}
+
+template <int D, typename T, typename U> inline decltype(auto) ConjugateSum(T &&x, U &&y)
+{
+  Eigen::IndexList<Eigen::type2index<D>> dim;
+  return (x * y.conjugate()).sum(dim);
 }
 
 template <typename T> inline decltype(auto) FirstToLast4(T const &x)

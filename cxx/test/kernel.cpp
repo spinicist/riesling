@@ -1,8 +1,7 @@
 #include "kernel/expsemi.hpp"
 #include "kernel/kaiser.hpp"
-#include "kernel/nn.hpp"
-#include "kernel/radial.hpp"
-#include "kernel/triangle.hpp"
+#include "kernel/kernel-impl.hpp"
+#include "kernel/kernel-nn.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -11,11 +10,27 @@
 
 using namespace Catch;
 
+TEST_CASE(
+  "1D-NN",
+  "[kernels]")
+{
+  rl::NearestNeighbour<float, 1> kernel;
+  rl::NearestNeighbour<float, 1>::Point p;
+  p.setConstant(0.f);
+  auto const k0 = kernel(p);
+  INFO(rl::Transpose(k0));
+  CHECK(k0(0) == Approx(1.f).margin(1.e-9));
+  p.setConstant(0.5f);
+  auto const k1 = kernel(p);
+  INFO(rl::Transpose(k1));
+  CHECK(k1(0) == Approx(1.f).margin(1.e-9));
+}
+
 TEMPLATE_TEST_CASE(
-  "1D Kernel",
+  "1D-ExpSemi",
   "[kernels]",
-  (rl::Radial<float, 1, rl::ExpSemi<3>>),
-  (rl::Radial<float, 1, rl::ExpSemi<5>>))
+  (rl::Kernel<float, 1, rl::ExpSemi<3>>),
+  (rl::Kernel<float, 1, rl::ExpSemi<5>>))
 {
   TestType kernel(2.f);
   typename TestType::Point p;
@@ -35,10 +50,10 @@ TEMPLATE_TEST_CASE(
 }
 
 TEMPLATE_TEST_CASE(
-  "2D Kernel",
+  "2D-ExpSemi",
   "[kernels]",
-  (rl::Radial<float, 2, rl::ExpSemi<3>>),
-  (rl::Radial<float, 2, rl::ExpSemi<5>>))
+  (rl::Kernel<float, 2, rl::ExpSemi<3>>),
+  (rl::Kernel<float, 2, rl::ExpSemi<5>>))
 {
   TestType kernel(2.f);
   typename TestType::Point p;
@@ -55,10 +70,10 @@ TEMPLATE_TEST_CASE(
 }
 
 TEMPLATE_TEST_CASE(
-  "3D Kernel",
+  "3D-ExpSemi",
   "[kernels]",
-  (rl::Radial<float, 3, rl::ExpSemi<3>>),
-  (rl::Radial<float, 3, rl::ExpSemi<5>>))
+  (rl::Kernel<float, 3, rl::ExpSemi<3>>),
+  (rl::Kernel<float, 3, rl::ExpSemi<5>>))
 {
   TestType kernel(2.f);
   typename TestType::Point p;
