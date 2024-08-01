@@ -7,8 +7,9 @@ namespace rl {
  * sampling on a sphere applied to 3D selective RF pulse design’, Magnetic Resonance in Medicine,
  * vol. 32, no. 6, pp. 778–784, Dec. 1994, doi: 10.1002/mrm.1910320614.
  */
-Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
+Re3 ArchimedeanSpiral(Index const matrix, float const OS, Index const nSpoke)
 {
+  Index const nRead = OS * matrix / 2.f;
   Re3 traj(3, nRead, nSpoke);
   Re1 read(nRead);
   for (Index ir = 0; ir < nRead; ir++) {
@@ -49,7 +50,7 @@ Re3 ArchimedeanSpiral(Index const nRead, Index const nSpoke)
     endPoint(2) = -t;
     traj.chip(half + is, 2) = endPoint.contract(read, empty);
   }
-  return traj * traj.constant(nRead);
+  return traj * traj.constant(matrix / 2.f);
 }
 
 Index Fib(Index n)
@@ -65,7 +66,7 @@ Index Fib(Index n)
   }
 }
 
-Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, Index const spi, bool const gm)
+Re3 Phyllotaxis(Index const matrix, float const OS, Index const ntraces, Index const smoothness, Index const spi, bool const gm)
 {
   if ((ntraces % spi) != 0) { Log::Fail("traces per interleave {} is not a divisor of total traces {}", spi, ntraces); }
   Index           nInterleaves = ntraces / spi;
@@ -75,6 +76,7 @@ Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, 
 
   float dphi = phi_gold * Fib(smoothness);
 
+  Index const nRead = OS * matrix / 2.f;
   Re1 read(nRead);
   for (Index ir = 0; ir < nRead; ir++) {
     read(ir) = (float)(ir) / nRead;
@@ -112,7 +114,7 @@ Re3 Phyllotaxis(Index const nRead, Index const ntraces, Index const smoothness, 
       traj.chip((ii * spi) + is, 2) = endPoint.contract(read, empty);
     }
   }
-  traj = traj * traj.constant(nRead);
+  traj = traj * traj.constant(matrix / 2.f);
   return traj;
 }
 } // namespace rl

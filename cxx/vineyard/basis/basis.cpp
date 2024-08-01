@@ -31,18 +31,6 @@ Basis::Basis(Index const nB, Index const nSample, Index const nTrace)
   B.setConstant(1.f);
 }
 
-Basis::Basis(std::string const &basisFile)
-{
-  if (basisFile.empty()) {
-    B.resize(1, 1, 1);
-    B.setConstant(1.f);
-  } else {
-    HD5::Reader basisReader(basisFile);
-    B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
-    if (basisReader.exists("R")) { R = basisReader.readTensor<Cx2>("R"); }
-  }
-}
-
 void Basis::write(std::string const &basisFile) const
 {
   HD5::Writer writer(basisFile);
@@ -88,5 +76,21 @@ template <int ND> void Basis::applyR(CxN<ND> &data) const
 }
 
 template void Basis::applyR(Cx5 &) const;
+
+auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>
+{
+  if (basisFile.empty()) {
+    return nullptr;
+  } else {
+    HD5::Reader basisReader(basisFile);
+    Cx3 const   B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
+    if (basisReader.exists("R")) {
+      Cx2 const R = basisReader.readTensor<Cx2>("R");
+      return std::make_unique<Basis>(B, R);
+    } else {
+      return std::make_unique<Basis>(B);
+    }
+  }
+}
 
 } // namespace rl

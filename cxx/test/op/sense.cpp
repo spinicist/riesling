@@ -23,7 +23,7 @@ TEST_CASE("SENSE", "[SENSE]")
     maps =
       maps / ConjugateSum<1>(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{1, channels, 1, 1, 1});
 
-    TOps::SENSE sense(maps, 1);
+    TOps::SENSE sense(maps);
     y = sense.forward(u);
     x = sense.adjoint(v);
 
@@ -50,7 +50,7 @@ TEST_CASE("VCC-SENSE", "[SENSE]")
     maps =
       maps / ConjugateSum<1>(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{1, channels, 1, 1, 1});
 
-    TOps::VCCSENSE sense(maps, 1);
+    TOps::VCCSENSE sense(maps);
     y = sense.forward(u);
     x = sense.adjoint(v);
 

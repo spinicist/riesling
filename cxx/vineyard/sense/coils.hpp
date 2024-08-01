@@ -13,5 +13,5 @@ auto birdcage(Sz3 const            &matrix,
               Index const           channels,
               Index const           nrings,
               float const           coil_rad_mm, // Radius of the actual coil, i.e. where the channels should go
-              float const           sense_rad_mm) -> Cx5;
+              float const           sense_rad_mm) -> Cx4;
 } // namespace rl

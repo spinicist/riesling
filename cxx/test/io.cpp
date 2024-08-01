@@ -19,10 +19,10 @@ TEST_CASE("IO", "[io]")
   Log::SetLevel(Log::Level::Testing);
   Index const      M = 4;
   auto const       matrix = Sz3{M, M, M};
-  Index const      channels = 1, samples = 32, traces = 64, slices = 1, volumes = 2;
-  auto const       points = ArchimedeanSpiral(samples, traces);
+  Index const      channels = 1, traces = 64, slices = 1, volumes = 2;
+  auto const       points = ArchimedeanSpiral(M, 1.f, traces);
   Trajectory const traj(points, matrix);
-  Cx5              refData(channels, samples, traces, slices, volumes);
+  Cx5              refData(channels, points.dimension(1), points.dimension(2), slices, volumes);
   refData.setConstant(1.f);
 
   SECTION("Basic")
@@ -39,8 +39,8 @@ TEST_CASE("IO", "[io]")
     HD5::Reader reader(fname);
 
     Trajectory check(reader, Eigen::Array3f::Ones());
-    CHECK(traj.nSamples() == samples);
-    CHECK(traj.nTraces() == traces);
+    CHECK(traj.nSamples() == points.dimension(1));
+    CHECK(traj.nTraces() == points.dimension(2));
 
     CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 0}}));
     auto const check0 = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 0}});

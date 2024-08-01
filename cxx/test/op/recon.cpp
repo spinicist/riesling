@@ -10,12 +10,11 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Recon", "[recon]")
+TEST_CASE("Recon-Basic", "[recon]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(7); //, 15, 16);
   Index const nC = 4;
-  Index const nF = 1;
   auto const  matrix = Sz3{M, M, M};
   Re3         points(3, 3, 1);
   points.setZero();
@@ -30,9 +29,9 @@ TEST_CASE("Recon", "[recon]")
   std::string const ktype = GENERATE("ES3");
   auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC, &basis);
 
-  Cx5 senseMaps(AddFront(traj.matrix(), nF, nC));
+  Cx5 senseMaps(AddFront(traj.matrix(), 1, nC));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF);
+  auto sense = std::make_shared<TOps::SENSE>(senseMaps);
 
   TOps::Compose<TOps::SENSE, TOps::TOp<Cx, 5, 3>> recon(sense, nufft);
 

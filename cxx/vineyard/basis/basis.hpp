@@ -2,6 +2,8 @@
 
 #include "types.hpp"
 
+#include <memory>
+
 namespace rl {
 
 struct Basis {
@@ -14,7 +16,6 @@ struct Basis {
     Basis(Cx3 const &B);
     Basis(Cx3 const &B, Cx2 const &R);
     Basis(Index const nB, Index const nSample, Index const nTrace);
-    Basis(std::string const &basisFile);
 
     void write(std::string const &basisFile) const;
     auto nB() const -> Index;
@@ -24,5 +25,7 @@ struct Basis {
     template <int ND> auto blend(CxN<ND> const &images, Index const is, Index const it) const -> CxN<ND - 1>;
     template <int ND> void applyR(CxN<ND> &data) const;
 };
+
+auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>;
 
 } // namespace rl

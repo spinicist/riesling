@@ -11,24 +11,24 @@ constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
 
 namespace rl::TOps {
 
-SENSE::SENSE(Cx5 const &maps, Index const frames)
+SENSE::SENSE(Cx5 const &maps, Basis::CPtr const b)
   : Parent("SENSEOp",
-           AddFront(LastN<3>(maps.dimensions()), frames),
-           AddFront(LastN<3>(maps.dimensions()), frames, maps.dimension(1)))
+           AddFront(LastN<3>(maps.dimensions()), b ? b->nB() : 1),
+           AddFront(LastN<3>(maps.dimensions()), b ? b->nB() : 1, maps.dimension(1)))
   , maps_{std::move(maps)}
 {
-  if (!(maps_.dimension(0) == 1 || maps_.dimension(0) == frames)) {
-    Log::Fail("SENSE maps had {} frames, expected {}", maps_.dimension(0), frames);
+  if (!(maps_.dimension(0) == 1 || maps_.dimension(0) == (b ? b->nB() : 1))) {
+    Log::Fail("SENSE maps had {} b ? b->nB() : 1, expected {}", maps_.dimension(0), b ? b->nB() : 1);
   }
 
-  resX.set(0, frames);
+  resX.set(0, b ? b->nB() : 1);
   resX.set(2, maps_.dimension(2));
   resX.set(3, maps_.dimension(3));
   resX.set(4, maps_.dimension(4));
   brdX.set(1, maps_.dimension(1));
 
   if (maps.dimension(0) == 1) {
-    brdMaps.set(0, frames);
+    brdMaps.set(0, b ? b->nB() : 1);
   } else {
     brdMaps.set(0, 1);
   }
@@ -109,24 +109,24 @@ void EstimateKernels::iadjoint(OutCMap const &y, InMap &x) const
 auto EstimateKernels::nChannels() const -> Index { return oshape[1]; }
 auto EstimateKernels::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
-VCCSENSE::VCCSENSE(Cx5 const &maps, Index const frames)
+VCCSENSE::VCCSENSE(Cx5 const &maps, Basis::CPtr const b)
   : Parent("VCCSENSE",
-           AddFront(LastN<3>(maps.dimensions()), frames),
-           AddFront(LastN<3>(maps.dimensions()), frames, maps.dimension(1), 2))
+           AddFront(LastN<3>(maps.dimensions()), b ? b->nB() : 1),
+           AddFront(LastN<3>(maps.dimensions()), b ? b->nB() : 1, maps.dimension(1), 2))
   , maps_{std::move(maps)}
 {
-  if (!(maps.dimension(0) == 1 || maps.dimension(0) == frames)) {
-    Log::Fail("SENSE maps had {} frames, expected {}", maps.dimension(0), frames);
+  if (!(maps.dimension(0) == 1 || maps.dimension(0) == (b ? b->nB() : 1))) {
+    Log::Fail("SENSE maps had {} b ? b->nB() : 1, expected {}", maps.dimension(0), b ? b->nB() : 1);
   }
 
-  resX.set(0, frames);
+  resX.set(0, b ? b->nB() : 1);
   resX.set(2, maps_.dimension(2));
   resX.set(3, maps_.dimension(3));
   resX.set(4, maps_.dimension(4));
   brdX.set(1, maps_.dimension(1));
 
   if (maps.dimension(0) == 1) {
-    brdMaps.set(0, frames);
+    brdMaps.set(0, b ? b->nB() : 1);
   } else {
     brdMaps.set(0, 1);
   }

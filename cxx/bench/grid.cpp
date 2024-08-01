@@ -12,9 +12,8 @@ using namespace rl;
 
 Index const M = 64;
 Index const C = 8;
-Index const samples = M / 2;
 Index const traces = M * M;
-auto const  points = ArchimedeanSpiral(samples, traces);
+auto const  points = ArchimedeanSpiral(M, 1.f, traces);
 Basis basis;
 Trajectory  traj(points);
 float const os = 2.f;

@@ -113,9 +113,6 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
 auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
 {
   Sz5 const cshape = channels.dimensions();
-  if (ref.dimension(0) != 1) {
-    Log::Fail("SENSE reference must be single channel");
-  }
   if (LastN<3>(cshape) != LastN<3>(ref.dimensions())) {
     Log::Fail("SENSE dimensions don't match channels {} reference {}", cshape, ref.dimensions());
   }

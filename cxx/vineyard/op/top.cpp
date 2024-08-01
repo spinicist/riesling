@@ -62,6 +62,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::C
 
 template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x) const -> OutTensor
 {
+  assert(x.dimensions() == ishape);
   InCMap    xm(x.data(), ishape);
   OutTensor y(oshape);
   OutMap    ym(y.data(), oshape);
@@ -72,6 +73,7 @@ template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x
 
 template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &y) const -> InTensor
 {
+  assert(y.dimensions() == oshape);
   OutCMap  ym(y.data(), oshape);
   InTensor x(ishape);
   InMap    xm(x.data(), ishape);

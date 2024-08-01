@@ -29,10 +29,10 @@ void main_blend(args::Subparser &parser)
   Sz5 const   dims = images.dimensions();
 
   if (!iname) { throw args::Error("No basis file specified"); }
-  Basis const basis(bname.Get());
+  auto const basis = LoadBasis(bname.Get());
 
-  if (basis.nB() != images.dimension(0)) {
-    Log::Fail("Basis has {} vectors but image has {}", basis.nB(), images.dimension(0));
+  if (basis->nB() != images.dimension(0)) {
+    Log::Fail("Basis has {} vectors but image has {}", basis->nB(), images.dimension(0));
   }\
 
   auto const &sps = sp.Get();
@@ -46,7 +46,7 @@ void main_blend(args::Subparser &parser)
   for (Index io = 0; io < nO; io++) {
     Log::Print("Blending sample {} trace {}", sps[io], tps[io]);
     out.chip<0>(io).device(Threads::GlobalDevice()) =
-      basis.blend(images, sps[io], tps[io]);
+      basis->blend(images, sps[io], tps[io]);
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
