@@ -89,6 +89,7 @@ void main_basis_sim(args::Subparser &parser)
   Eigen::ArrayXXf pars;
   Cx3             dall;
   switch (seq.Get()) {
+  case Sequences::NoPrep: std::tie(pars, dall) = Run<rl::NoPrep>(settings, plist.Get()); break;
   case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, plist.Get()); break;
   case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, plist.Get()); break;
   case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, plist.Get()); break;

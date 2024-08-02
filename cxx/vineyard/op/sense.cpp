@@ -18,7 +18,7 @@ SENSE::SENSE(Cx5 const &maps, Basis::CPtr const b)
   , maps_{std::move(maps)}
 {
   if (!(maps_.dimension(0) == 1 || maps_.dimension(0) == (b ? b->nB() : 1))) {
-    Log::Fail("SENSE maps had {} b ? b->nB() : 1, expected {}", maps_.dimension(0), b ? b->nB() : 1);
+    Log::Fail("SENSE maps had basis size {}, expected {}", maps_.dimension(0), b ? b->nB() : 1);
   }
 
   resX.set(0, b ? b->nB() : 1);
@@ -116,7 +116,7 @@ VCCSENSE::VCCSENSE(Cx5 const &maps, Basis::CPtr const b)
   , maps_{std::move(maps)}
 {
   if (!(maps.dimension(0) == 1 || maps.dimension(0) == (b ? b->nB() : 1))) {
-    Log::Fail("SENSE maps had {} b ? b->nB() : 1, expected {}", maps.dimension(0), b ? b->nB() : 1);
+    Log::Fail("SENSE maps had basis size {}, expected {}", maps.dimension(0), b ? b->nB() : 1);
   }
 
   resX.set(0, b ? b->nB() : 1);

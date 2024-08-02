@@ -43,6 +43,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis, basis_img, "basis-img", "Basis from image data + SVD");
+  COMMAND(basis, basis_outer, "basis-outer", "Outer product of bases");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(basis, basis_svd, "basis-svd", "Basis from simulations + SVD");
 

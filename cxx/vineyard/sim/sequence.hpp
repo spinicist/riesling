@@ -31,7 +31,8 @@ struct Sequence
 
 enum struct Sequences
 {
-  Prep = 0,
+  NoPrep = 0,
+  Prep,
   Prep2,
   IR,
   IR2,

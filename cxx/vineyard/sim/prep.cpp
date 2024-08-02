@@ -6,6 +6,20 @@
 
 namespace rl {
 
+NoPrep::NoPrep(Settings const &s)
+  : Sequence{s}
+{
+}
+
+auto NoPrep::traces() const -> Index { return 1; }
+
+auto NoPrep::simulate(Eigen::ArrayXf const &p) const -> Cx2
+{
+  if (p.size() != 1) { Log::Fail("Must have 1 parameter Δf"); }
+  Cx1 const off = offres(p[0]);
+  return off.reshape(Sz2{off.dimension(0), 1});
+}
+
 Prep::Prep(Settings const &s)
   : Sequence{s}
 {

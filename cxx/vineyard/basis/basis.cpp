@@ -42,6 +42,13 @@ auto Basis::nB() const -> Index { return B.dimension(0); }
 auto Basis::nSample() const -> Index { return B.dimension(1); }
 auto Basis::nTrace() const -> Index { return B.dimension(2); }
 
+void Basis::concat(Basis const &other) {
+  if (other.nSample() != nSample() || other.nTrace() != nTrace()) {
+    Log::Fail("Incompatible basis dimensions");
+  }
+  B = Cx3(B.concatenate(other.B, 0));
+}
+
 template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index const it) const -> CxN<ND - 1>
 {
   float const scale = std::sqrt(nSample() * nTrace());

@@ -9,8 +9,8 @@ using namespace std::literals::complex_literals;
 namespace rl {
 
 std::unordered_map<std::string, Sequences> SequenceMap{
-  {"Prep", Sequences::Prep}, {"Prep2", Sequences::Prep2},   {"IR", Sequences::IR},          {"IR2", Sequences::IR2},
-  {"DIR", Sequences::DIR},   {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
+  {"NoPrep", Sequences::NoPrep}, {"Prep", Sequences::Prep}, {"Prep2", Sequences::Prep2},   {"IR", Sequences::IR},
+  {"IR2", Sequences::IR2},       {"DIR", Sequences::DIR},   {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
 
 auto Settings::format() const -> std::string
 {
