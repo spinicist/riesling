@@ -1,6 +1,7 @@
 add_executable(riesling
     basis/blend.cpp
     basis/bernstein.cpp
+    basis/concat.cpp
     basis/echoes.cpp
     basis/fourier.cpp
     basis/img.cpp

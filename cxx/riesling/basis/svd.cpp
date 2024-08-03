@@ -98,6 +98,7 @@ void main_basis_svd(args::Subparser &parser)
 
   Cx3 dall;
   switch (seq.Get()) {
+  case Sequences::NoPrep: dall = Run<rl::NoPrep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::Prep: dall = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::Prep2: dall = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
   case Sequences::IR: dall = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
@@ -118,15 +119,15 @@ void main_basis_svd(args::Subparser &parser)
 
   Log::Print("Computing SVD {}x{}", dshape[0], L);
   SVD<Cxd> svd(dmap.cast<Cxd>());
-  Log::Print("Variance explained: {}%", svd.variance(nRetain.Get()) * 100);
-  bmap = svd.V.leftCols(nRetain.Get()).transpose().cast<Cx>();
+  bmap = svd.basis(nRetain.Get()).cast<Cx>();
 
   Log::Print("Computing projection");
   Cx3                       proj(dshape);
   Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);
-  Eigen::MatrixXcf const    temp = bmap.conjugate() * dmap.transpose();
+  Eigen::MatrixXcf          temp = bmap.conjugate() * dmap.transpose();
   pmap = (bmap.transpose() * temp).transpose();
-  Log::Print("Residual {}%", 100 * Norm(dall - proj) / Norm(dall));
+  auto resid = Norm(dall - proj) / Norm(dall);
+  Log::Print("Residual {}%", 100 * resid);
 
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
   HD5::Writer writer(oname.Get());

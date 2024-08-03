@@ -10,7 +10,7 @@
 
 using namespace rl;
 
-void main_basis_outer(args::Subparser &parser)
+void main_basis_concat(args::Subparser &parser)
 {
   args::Positional<std::string> iname1(parser, "F", "First file");
   args::Positional<std::string> iname2(parser, "F", "Second file");
@@ -22,31 +22,24 @@ void main_basis_outer(args::Subparser &parser)
   if (!iname2) { throw args::Error("Input file 2 not specified"); }
   if (!oname) { throw args::Error("Output file not specified"); }
 
-  auto b1 = LoadBasis(iname1.Get());
-  auto b2 = LoadBasis(iname2.Get());
+  auto const b1 = LoadBasis(iname1.Get());
+  auto const b2 = LoadBasis(iname2.Get());
 
-  if (b1->nTrace() != 1) { Log::Fail("Expected 1st basis to have 1 trace"); }
-  if (b2->nSample() != 1) { Log::Fail("Expected 2nd basis to have 1 sample"); }
+  if (b1->nSample() != b1->nSample()) { Log::Fail("Number of samples in both bases must match"); }
+  if (b1->nTrace() != b1->nTrace()) { Log::Fail("Number of traces in both bases must match"); }
 
   auto const n1 = b1->nB();
   auto const n2 = b2->nB();
   auto const nS = b1->nSample();
   auto const nT = b2->nTrace();
-  Cx3        nb(n1 * n2, nS, nT);
 
-  for (Index i2 = 0; i2 < n2; i2++) {
-    for (Index i1 = 0; i1 < n1; i1++) {
-      for (Index is = 0; is < nS; is++) {
-        for (Index it = 0; it < nT; it++) {
-          nb(i2 * n1 + i1, is, it) = b1->B(i1, is, 0) * b2->B(i2, 0, it);
-        }
-      }
-    }
-  }
+  Cx3 nb(n1 + n2, nS, nT);
+  nb.slice(Sz3{0, 0, 0}, Sz3{n1, nS, nT}) = b1->B;
+  nb.slice(Sz3{n1, 0, 0}, Sz3{n2, nS, nT}) = b2->B;
 
   if (ortho) {
+    auto const                N = n1 + n2;
     auto const                M = nS * nT;
-    auto const                N = n1 * n2;
     Eigen::ArrayXXcf::MapType bmap(nb.data(), N, M);
     auto const                h = bmap.cast<Cxd>().matrix().transpose().householderQr();
     Eigen::MatrixXcd const    I = Eigen::MatrixXcd::Identity(M, N);

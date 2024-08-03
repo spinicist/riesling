@@ -99,21 +99,20 @@ void main_basis_sim(args::Subparser &parser)
   case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, plist.Get()); break;
   }
   Sz3 const                 dshape = dall.dimensions();
-  Index const               L = dshape[1] * dshape[2];
-  Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], L);
+  Index const               M = dshape[1] * dshape[2];
+  Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], M);
   dmap.rowwise().normalize();
 
   if (ortho) {
     auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
-    Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(L, dshape[0]);
+    Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(M, dshape[0]);
     Eigen::MatrixXcd const Q = h.householderQ() * I;
     Eigen::MatrixXcf const R = h.matrixQR().topRows(dshape[0]).cast<Cx>().triangularView<Eigen::Upper>();
-    Eigen::MatrixXcf const Rinv = R.inverse();
-    dmap = Q.transpose().cast<Cx>() * std::sqrt(L);
+    dmap = Q.transpose().cast<Cx>() * std::sqrt(M);
     Basis b(dall, Tensorfy(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
-    dmap *= std::sqrt(L);
+    dmap *= std::sqrt(M);
     Basis b(dall);
     b.write(oname.Get());
   }

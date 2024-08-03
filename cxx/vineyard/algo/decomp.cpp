@@ -34,6 +34,11 @@ template <typename Scalar> auto SVD<Scalar>::variance(Index const N) const -> Re
   return cumsum;
 }
 
+template <typename Scalar> auto SVD<Scalar>::basis(Index const N) const -> Matrix
+{
+  return V.leftCols(N).adjoint();
+}
+
 template <typename Scalar> auto SVD<Scalar>::equalized(Index const N) const -> Matrix
 {
   // Amoeba Rotation
