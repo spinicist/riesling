@@ -40,12 +40,14 @@ void main_basis_concat(args::Subparser &parser)
   if (ortho) {
     auto const                N = n1 + n2;
     auto const                M = nS * nT;
+    auto const                scale = std::sqrt(M);
     Eigen::ArrayXXcf::MapType bmap(nb.data(), N, M);
     auto const                h = bmap.cast<Cxd>().matrix().transpose().householderQr();
     Eigen::MatrixXcd const    I = Eigen::MatrixXcd::Identity(M, N);
     Eigen::MatrixXcd const    Q = h.householderQ() * I;
-    Eigen::MatrixXcf const    R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
-    bmap = Q.transpose().cast<Cx>() * std::sqrt(M);
+    Eigen::MatrixXcf    R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
+    R /= scale;
+    bmap = Q.transpose().cast<Cx>() * scale;
     Basis b(nb, Tensorfy(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
