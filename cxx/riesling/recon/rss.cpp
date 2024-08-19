@@ -29,13 +29,13 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis.get());
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
   auto x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto xm = Tensorfy(x, A->ishape);
 
-  Cx5 const rss = (xm * xm.conjugate()).sum(Sz1{0}).sqrt();
+  Cx5 const rss = DimDot<1>(xm, xm).sqrt();
   TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(rss);
 

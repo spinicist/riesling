@@ -28,7 +28,7 @@ void main_sense_sim(args::Subparser &parser)
     birdcage(shape, Eigen::Array3f::Constant(voxel_size.Get()), nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get());
 
   // Normalize
-  sense /= ConjugateSum<0>(sense, sense).sqrt().reshape(AddFront(shape, 1)).broadcast(Sz4{nchan.Get(), 1, 1, 1});
+  sense /= DimDot<0>(sense, sense).sqrt().reshape(AddFront(shape, 1)).broadcast(Sz4{nchan.Get(), 1, 1, 1});
 
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Data, AddFront(sense.dimensions(), 1), sense.data(), HD5::Dims::SENSE);

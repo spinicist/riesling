@@ -44,7 +44,7 @@ void SENSE::forward(InCMap const &x, OutMap &y) const
 void SENSE::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, false);
-  x.device(Threads::GlobalDevice()) = ConjugateSum<1>(y, maps_.broadcast(brdMaps));
+  x.device(Threads::GlobalDevice()) = DimDot<1>(y, maps_.broadcast(brdMaps));
   finishAdjoint(x, time, false);
 }
 
@@ -58,7 +58,7 @@ void SENSE::iforward(InCMap const &x, OutMap &y) const
 void SENSE::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
-  x.device(Threads::GlobalDevice()) += ConjugateSum<1>(y, maps_.broadcast(brdMaps));
+  x.device(Threads::GlobalDevice()) += DimDot<1>(y, maps_.broadcast(brdMaps));
   finishAdjoint(x, time, true);
 }
 
@@ -144,7 +144,7 @@ void VCCSENSE::forward(InCMap const &x, OutMap &y) const
 void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, false);
-  auto const real = ConjugateSum<1>(y.chip<2>(0), maps_.broadcast(brdMaps));
+  auto const real = DimDot<1>(y.chip<2>(0), maps_.broadcast(brdMaps));
   auto const virt = Sum<1>(y.chip<2>(1), maps_.broadcast(brdMaps));
   x.device(Threads::GlobalDevice()) = (real + virt) * Cx(inv_sqrt2);
 
@@ -163,7 +163,7 @@ void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
 void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
-  auto const real = ConjugateSum<1>(y.chip<2>(0), maps_.broadcast(brdMaps));
+  auto const real = DimDot<1>(y.chip<2>(0), maps_.broadcast(brdMaps));
   auto const virt = Sum<1>(y.chip<2>(1), maps_.broadcast(brdMaps));
   x.device(Threads::GlobalDevice()) += (real + virt) * Cx(inv_sqrt2);
 

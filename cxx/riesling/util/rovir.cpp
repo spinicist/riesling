@@ -43,7 +43,7 @@ void main_rovir(args::Subparser &parser)
 
   auto const sz = LastN<3>(nufft->ishape);
   Cx4 const  channelImages = nufft->adjoint(data).chip<1>(0);
-  Re3 const  rss = ConjugateSum(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
+  Re3 const  rss = DimDot<1>(channelImages, channelImages).real().sqrt().log1p(); // For ROI selection
   auto       thresh = Otsu(CollapseToArray(rss)).thresh;
   Log::Print("ROVIR signal threshold {}", thresh);
   Re3 signalMask(sz), interMask(sz);

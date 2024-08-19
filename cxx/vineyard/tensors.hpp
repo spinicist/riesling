@@ -48,16 +48,16 @@ template <typename T> typename T::Scalar Maximum(T const &a)
   return m();
 }
 
-template <typename T1, typename T2> typename T1::Scalar Dot(T1 const &a, T2 const &b)
+template <typename T, typename U> inline decltype(auto) Dot(T &&a, U &&b)
 {
-  Eigen::TensorFixedSize<typename T1::Scalar, Eigen::Sizes<>> d;
-  d.device(rl::Threads::GlobalDevice()) = (a.conjugate() * b).sum();
+  Eigen::TensorFixedSize<typename std::remove_reference<T>::type::Scalar, Eigen::Sizes<>> d;
+  d.device(rl::Threads::GlobalDevice()) = (a * b.conjugate()).sum();
   return d();
 }
 
-template <typename T> float Norm2(T const &a) { return std::real(Dot(a, a)); }
+template <typename T> inline decltype(auto) Norm2(T &&a) { return std::real(Dot(a, a)); }
 
-template <typename T> float Norm(T const &a) { return std::sqrt(std::real(Dot(a, a))); }
+template <typename T> inline decltype(auto) Norm(T &&a) { return std::sqrt(std::real(Dot(a, a))); }
 
 template <int D, typename T, typename U> inline decltype(auto) Sum(T &&x, U &&y)
 {
@@ -65,7 +65,7 @@ template <int D, typename T, typename U> inline decltype(auto) Sum(T &&x, U &&y)
   return (x * y).sum(dim);
 }
 
-template <int D, typename T, typename U> inline decltype(auto) ConjugateSum(T &&x, U &&y)
+template <int D, typename T, typename U> inline decltype(auto) DimDot(T &&x, U &&y)
 {
   Eigen::IndexList<Eigen::type2index<D>> dim;
   return (x * y.conjugate()).sum(dim);

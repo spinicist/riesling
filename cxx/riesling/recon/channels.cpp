@@ -27,7 +27,7 @@ void main_channels(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis.get());
+  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "x", "y", "z"});
@@ -37,7 +37,7 @@ void main_channels(args::Subparser &parser)
   auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto const xm = Tensorfy(x, A->ishape);
 
-  TOps::Crop<Cx, 6> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[1], nT), nC));
+  TOps::Crop<Cx, 6> oc(A->ishape, AddBack(AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]), nT));
   auto              out = oc.forward(xm);
   WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Channels, info, Log::Saved());
   if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Channels); }

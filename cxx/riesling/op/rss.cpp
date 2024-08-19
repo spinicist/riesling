@@ -23,12 +23,12 @@ void main_rss(args::Subparser &parser)
   switch (order) {
   case 5: {
     Cx5 const in = reader.readTensor<Cx5>();
-    Cx4 const out = ConjugateSum<1>(in, in).sqrt();
+    Cx4 const out = DimDot<1>(in, in).sqrt();
     writer.writeTensor(HD5::Keys::Data, AddFront(out.dimensions(), 1), out.data(), reader.dimensionNames<5>());
   } break;
   case 6: {
     Cx6 const in = reader.readTensor<Cx6>();
-    Cx5 const out = ConjugateSum<1>(in, in).sqrt();
+    Cx5 const out = DimDot<1>(in, in).sqrt();
     writer.writeTensor(HD5::Keys::Data, AddFront(out.dimensions(), 1), out.data(), reader.dimensionNames<6>());
   } break;
   default: Log::Fail("Data had order {}", order);

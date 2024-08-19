@@ -172,7 +172,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
-    Cx4 const ref = ConjugateSum<1>(c, c).sqrt();
+    Cx4 const ref = DimDot<1>(c, c).sqrt();
     kernels = EstimateKernels(c, ref, opts.kWidth.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
