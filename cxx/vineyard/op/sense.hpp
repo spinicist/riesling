@@ -9,7 +9,7 @@ namespace rl::TOps {
 struct SENSE final : TOp<Cx, 4, 5>
 {
   TOP_INHERIT(Cx, 4, 5)
-  SENSE(Cx5 const &maps, Basis::CPtr const b = nullptr);
+  SENSE(Cx5 const &maps, Index const nB = 1);
   TOP_DECLARE(SENSE)
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
@@ -42,7 +42,7 @@ private:
 struct VCCSENSE final : TOp<Cx, 4, 6>
 {
   TOP_INHERIT(Cx, 4, 6)
-  VCCSENSE(Cx5 const &maps, Basis::CPtr const b = nullptr);
+  VCCSENSE(Cx5 const &maps, Index const nB = 1);
   TOP_DECLARE(VCCSENSE)
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
