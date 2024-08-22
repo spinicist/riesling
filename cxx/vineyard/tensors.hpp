@@ -48,65 +48,27 @@ template <typename T> typename T::Scalar Maximum(T const &a)
   return m();
 }
 
-template <typename T, typename U> inline decltype(auto) Dot(T &&a, U &&b)
+template <typename T, typename U> inline decltype(auto) Dot(T const &a, U const &b)
 {
-  Eigen::TensorFixedSize<typename std::remove_reference<T>::type::Scalar, Eigen::Sizes<>> d;
-  d.device(rl::Threads::GlobalDevice()) = (a * b.conjugate()).sum();
-  return d();
+  using Scalar = typename std::remove_reference<T>::type::Scalar;
+  Eigen::TensorFixedSize<Scalar, Eigen::Sizes<>> d0;
+  d0.device(rl::Threads::GlobalDevice()) = (a * b.conjugate()).sum();
+  Scalar const d = d0();
+  return d;
 }
 
-template <typename T> inline decltype(auto) Norm2(T &&a) { return std::real(Dot(a, a)); }
+template <typename T> inline decltype(auto) Norm(T const &a) { return std::sqrt(std::real(Dot(a, a))); }
 
-template <typename T> inline decltype(auto) Norm(T &&a) { return std::sqrt(std::real(Dot(a, a))); }
-
-template <int D, typename T, typename U> inline decltype(auto) Sum(T &&x, U &&y)
+template <int D, typename T, typename U> inline decltype(auto) Sum(T const &x, U const &y)
 {
   Eigen::IndexList<Eigen::type2index<D>> dim;
   return (x * y).sum(dim);
 }
 
-template <int D, typename T, typename U> inline decltype(auto) DimDot(T &&x, U &&y)
+template <int D, typename T, typename U> inline decltype(auto) DimDot(T const &x, U const &y)
 {
   Eigen::IndexList<Eigen::type2index<D>> dim;
   return (x * y.conjugate()).sum(dim);
-}
-
-template <typename T> inline decltype(auto) FirstToLast4(T const &x)
-{
-  Eigen::IndexList<Eigen::type2index<1>, Eigen::type2index<2>, Eigen::type2index<3>, Eigen::type2index<0>> indices;
-  return x.shuffle(indices);
-}
-
-template <typename T1, typename T2, int D = 0> inline decltype(auto) Contract(T1 const &a, T2 const &b)
-{
-  return a.contract(b, Eigen::IndexPairList<Eigen::type2indexpair<D, D>>());
-}
-
-template <typename T1, typename T2> inline decltype(auto) Outer(T1 const &a, T2 const &b)
-{
-  constexpr Eigen::array<Eigen::IndexPair<Index>, 0> empty = {};
-  return a.contract(b, empty);
-}
-
-template <typename T> inline decltype(auto) ExpandSum(T const &a, T const &b, T const &c)
-{
-  using FixedOne = Eigen::type2index<1>;
-  Eigen::IndexList<int, FixedOne, FixedOne> rsh_a;
-  Eigen::IndexList<FixedOne, int, int>      brd_a;
-  rsh_a.set(0, a.size());
-  brd_a.set(1, b.size());
-  brd_a.set(2, c.size());
-  Eigen::IndexList<FixedOne, int, FixedOne> rsh_b;
-  Eigen::IndexList<int, FixedOne, int>      brd_b;
-  brd_b.set(0, a.size());
-  rsh_b.set(1, b.size());
-  brd_b.set(2, c.size());
-  Eigen::IndexList<FixedOne, FixedOne, int> rsh_c;
-  Eigen::IndexList<int, int, FixedOne>      brd_c;
-  brd_c.set(0, a.size());
-  brd_c.set(1, b.size());
-  rsh_c.set(2, c.size());
-  return a.reshape(rsh_a).broadcast(brd_a) + b.reshape(rsh_b).broadcast(brd_b) + c.reshape(rsh_c).broadcast(brd_c);
 }
 
 template <typename Scalar, int N> inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> const &shape)
