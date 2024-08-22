@@ -109,27 +109,31 @@ void main_basis_svd(args::Subparser &parser)
   }
   Sz3 const                 dshape = dall.dimensions();
   Index const               L = dshape[1] * dshape[2];
+  Index const               N = nRetain.Get();
+
   Eigen::MatrixXcf::MapType dmap(dall.data(), dshape[0], L);
   Log::Print("Normalizing entries");
   auto ntask = [&](Index const ii) { dmap.row(ii) = dmap.row(ii).normalized(); };
   Threads::For(ntask, dmap.rows(), "Normalizing");
 
-  Cx3                       basis(nRetain.Get(), dshape[1], dshape[2]);
-  Eigen::MatrixXcf::MapType bmap(basis.data(), nRetain.Get(), L);
+  Cx3                       basis(N, dshape[1], dshape[2]);
+  Eigen::MatrixXcf::MapType bmap(basis.data(), N, L);
 
-  Log::Print("Computing SVD {}x{}", dshape[0], L);
+  Log::Print("Computing SVD {}x{}", N, L);
   SVD<Cxd> svd(dmap.cast<Cxd>());
   bmap = svd.basis(nRetain.Get()).cast<Cx>();
-
+  Log::Print("bmap\nrow norms {}\ncol norms {}", bmap.rowwise().norm().transpose(), bmap.colwise().norm().head(10));
   Log::Print("Computing projection");
   Cx3                       proj(dshape);
-  Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);
+  Eigen::MatrixXcf::MapType pmap(proj.data(), N, L);
   Eigen::MatrixXcf          temp = bmap.conjugate() * dmap.transpose();
   pmap = (bmap.transpose() * temp).transpose();
   auto resid = Norm(dall - proj) / Norm(dall);
   Log::Print("Residual {}%", 100 * resid);
 
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
+  Log::Print("bmap\nrow norms {}\ncol norms {}", bmap.rowwise().norm().transpose(), bmap.colwise().norm().head(10));
+  Log::Print("bmap*bmap'\n{}", fmt::streamed(bmap.matrix() * bmap.matrix().adjoint()));
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
   if (save) {

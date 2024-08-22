@@ -47,7 +47,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
     W.setConstant(Cx(1.f, 0.f));
     Cx5 const psf = nufft.adjoint(W);
     Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
-    ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
+    ones.setConstant(1.f);
     TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
     Cx5              xcorr(padX.oshape);
     xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
