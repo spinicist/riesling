@@ -31,16 +31,24 @@ Basis::Basis(Index const nB, Index const nSample, Index const nTrace)
   B.setConstant(1.f);
 }
 
+auto Basis::nB() const -> Index { return B.dimension(0); }
+auto Basis::nSample() const -> Index { return B.dimension(1); }
+auto Basis::nTrace() const -> Index { return B.dimension(2); }
+
+auto Basis::entry(Index const s, Index const t) const -> Cx1 {
+  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
+}
+
+auto Basis::entryConj(Index const s, Index const t) const -> Cx1 {
+  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)).conjugate();
+}
+
 void Basis::write(std::string const &basisFile) const
 {
   HD5::Writer writer(basisFile);
   writer.writeTensor(HD5::Keys::Basis, B.dimensions(), B.data(), HD5::Dims::Basis);
   if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), {"v2", "v1"}); }
 }
-
-auto Basis::nB() const -> Index { return B.dimension(0); }
-auto Basis::nSample() const -> Index { return B.dimension(1); }
-auto Basis::nTrace() const -> Index { return B.dimension(2); }
 
 void Basis::concat(Basis const &other)
 {

@@ -88,7 +88,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[1];
       x_start[1] = ic;
-      y_start[1] = ic;
+      y_start[0] = ic;
       wsm.device(Threads::GlobalDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
       FFT::Forward(workspace, fftDims, fftPh);
       gridder.forward(workspace, ytm);
@@ -113,7 +113,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[1];
       x_start[1] = ic;
-      y_start[1] = ic;
+      y_start[0] = ic;
       yt.device(Threads::GlobalDevice()) = y.slice(y_start, yt.dimensions());
       gridder.adjoint(yt, wsm);
       FFT::Adjoint(workspace, fftDims, fftPh);
@@ -140,7 +140,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, O
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[1];
       x_start[1] = ic;
-      y_start[1] = ic;
+      y_start[0] = ic;
       wsm.device(Threads::GlobalDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
       FFT::Forward(workspace, fftDims, fftPh);
       gridder.forward(workspace, ytm);
@@ -165,7 +165,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, 
     for (Index ib = 0; ib < batches; ib++) {
       Index const ic = ib * gridder.ishape[1];
       x_start[1] = ic;
-      y_start[1] = ic;
+      y_start[0] = ic;
       yt.device(Threads::GlobalDevice()) = y.slice(y_start, yt.dimensions());
       gridder.adjoint(yt, wsm);
       FFT::Adjoint(workspace, fftDims, fftPh);

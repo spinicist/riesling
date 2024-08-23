@@ -73,8 +73,6 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
   {
     Index const nC = y.dimension(0);
     Index const nB = basis ? basis->nB() : 1;
-    Index const nT = basis ? basis->nTrace() : 0;
-    Index const nS = basis ? basis->nSample() : 0;
     CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nB, nC));
     Sz<ND>      current = mappings.front().subgrid;
     GridToSubgrid<ND, hasVCC, isVCC>(current, x, sx);
@@ -84,9 +82,8 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
         GridToSubgrid<ND, hasVCC, isVCC>(current, x, sx);
       }
       Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
-      if (basis) {
-        Eigen::Tensor<Cx, 1> const bs = basis->B.template chip<2>(m.trace % nT).template chip<1>(m.sample % nS);
-        kernel->gather(m.cart, m.offset, bs, sx, yy);
+      if (basis) {;
+        kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
       } else {
         kernel->gather(m.cart, m.offset, sx, yy);
       }
@@ -127,8 +124,6 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
   {
     Index const nC = y.dimensions()[0];
     Index const nB = basis ? basis->nB() : 1;
-    Index const nT = basis ? basis->nTrace() : 0;
-    Index const nS = basis ? basis->nSample() : 0;
     CxN<ND + 2> sx(AddFront(Constant<ND>(subgridW), nB, nC));
     sx.setZero();
     Sz<ND> current = mappings.front().subgrid;
@@ -141,8 +136,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
       }
       Eigen::Tensor<Cx, 1> yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
       if (basis) {
-        Eigen::Tensor<Cx, 1> const bs = basis->B.template chip<2>(m.trace % nT).template chip<1>(m.sample % nS).conjugate();
-        kernel->spread(m.cart, m.offset, bs, yy, sx);
+        kernel->spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace), yy, sx);
       } else {
         kernel->spread(m.cart, m.offset, yy, sx);
       }
