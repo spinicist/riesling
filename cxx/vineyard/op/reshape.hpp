@@ -2,6 +2,8 @@
 
 #include "op/top.hpp"
 
+#include "log.hpp"
+
 namespace rl::TOps {
 
 template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Scalar, Rank, Op::OutRank>

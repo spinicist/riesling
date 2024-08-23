@@ -96,8 +96,25 @@ using Point1 = Eigen::Matrix<float, 1, 1>;
 using Point2 = Eigen::Matrix<float, 2, 1>;
 using Point3 = Eigen::Matrix<float, 3, 1>;
 
+template <int N> auto Constant(Index const c) -> Sz<N>
+{
+  Sz<N> C;
+  C.fill(c);
+  return C;
+}
+
+template <int N> auto Range(Index const st = 0, Index const mod = std::numeric_limits<Index>::max()) -> Sz<N>
+{
+  Sz<N> r;
+  for (Index ii = 0; ii < N; ii++) {
+    r[ii] = (st + ii) % mod;
+  }
+  return r;
+}
+
 template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
+  static_assert(sizeof...(Args) > 0);
   Eigen::DSizes<T, sizeof...(Args)>     front{{toAdd...}};
   Eigen::DSizes<T, sizeof...(Args) + N> out;
 
@@ -108,6 +125,7 @@ template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DS
 
 template <typename T, int N, typename... Args> decltype(auto) AddBack(Eigen::DSizes<T, N> const &front, Args... toAdd)
 {
+  static_assert(sizeof...(Args) > 0);
   Eigen::DSizes<T, sizeof...(Args)>     back{{toAdd...}};
   Eigen::DSizes<T, sizeof...(Args) + N> out;
 

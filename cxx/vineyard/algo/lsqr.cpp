@@ -6,17 +6,22 @@
 #include "signals.hpp"
 
 namespace rl {
+
+auto LSQR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector {
+  return run(CMap{b.data(), b.rows()}, λ, CMap{x0.data(), x0.rows()});
+}
+
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
-auto LSQR::run(Cx const *bdata, float const λ, Cx *x0) const -> Vector
+auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
 {
   Log::Print("LSQR λ {}", λ);
   Index const rows = op->rows();
   Index const cols = op->cols();
   if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
-  CMap const  b(bdata, rows);
-  Vector      Mu(rows), u(rows);
-  Vector      x(cols), v(cols), w(cols);
+  if (b.rows() != rows) { Log::Fail("LSQR: b had size {}, expected {}", b.rows(), rows); }
+  Vector     Mu(rows), u(rows);
+  Vector     x(cols), v(cols), w(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);

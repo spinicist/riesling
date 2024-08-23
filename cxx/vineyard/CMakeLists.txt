@@ -10,6 +10,7 @@ find_package(tl-ranges CONFIG REQUIRED)
 
 add_library(vineyard
     apodize.cpp
+    args.cpp
     colors.cpp
     compressor.cpp
     fft.cpp
@@ -17,7 +18,6 @@ add_library(vineyard
     interp.cpp
     log.cpp
     pad.cpp
-    parse_args.cpp
     patches.cpp
     precon.cpp
     regularizers.cpp
@@ -122,6 +122,7 @@ set_target_properties(vineyard PROPERTIES
 )
 set_source_files_properties(
     op/grid.cpp
+    op/grid-subgrid.cpp
     kernel/kernel-f1.cpp
     kernel/kernel-f2.cpp
     kernel/kernel-f3.cpp

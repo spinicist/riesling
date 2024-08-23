@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/sense.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -28,10 +28,10 @@ void main_op_sense(args::Subparser &parser)
 
   if (fwd) {
     auto const images = ireader.readTensor<Cx5>();
-    if (MidN<1, 4>(maps.dimensions()) != FirstN<4>(images.dimensions())) {
+    if (LastN<3>(maps.dimensions()) != MidN<1, 3>(images.dimensions())) {
       Log::Fail("Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
     }
-    TOps::SENSE sense(maps, images.dimension(0));
+    TOps::SENSE sense(maps);
     Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
       auto const temp = sense.forward(CChipMap(images, ii));
@@ -43,7 +43,7 @@ void main_op_sense(args::Subparser &parser)
     if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
       Log::Fail("Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
     }
-    TOps::SENSE sense(maps, channels.dimension(1));
+    TOps::SENSE sense(maps);
     Cx5         images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));

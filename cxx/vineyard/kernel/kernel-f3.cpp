@@ -1,7 +1,5 @@
-#include "kernel.hpp"
-
 #include "kernel-impl.hpp"
 
 namespace rl {
-template struct Kernel<float, 3>;
+template struct KernelBase<float, 3>;
 }

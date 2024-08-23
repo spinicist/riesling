@@ -12,17 +12,18 @@ T2FLAIR::T2FLAIR(Settings const &s)
 {
 }
 
-auto T2FLAIR::length() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
+auto T2FLAIR::traces() const -> Index { return settings.spokesPerSeg * settings.segsKeep; }
 
 auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 3) { Log::Fail("Need 3 parameters T1 T2 Δf"); }
+  if (p.size() != 4) { Log::Fail("Need 3 parameters T1 T2 Δf"); }
   float const R1 = 1.f / p(0);
   float const R2 = 1.f / p(1);
   float const Δf = p(2);
+  float const Q = p(3);
 
   Eigen::Matrix2f inv;
-  inv << -1.f, 0.f, 0.f, 1.f;
+  inv << -Q, 0.f, 0.f, 1.f;
 
   Eigen::Matrix2f E1, E2, Eramp, Essi, Er, Erec;
   float const     e1 = exp(-R1 * settings.TR);
@@ -76,7 +77,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
     Mz = Essi * Eramp * Mz;
   }
   if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
-  return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
+  return readout(p(1), Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
 } // namespace rl

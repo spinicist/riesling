@@ -26,7 +26,7 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis const &basis) -> Cx5
+auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
@@ -38,18 +38,18 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
   auto const shape1 = traj.matrix(gridOpts.osamp.Get());
-  auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, basis, shape1);
-  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc);
+  auto const A = Recon::Channels(false, gridOpts, traj, nC, nS, 1, basis, shape1);
+  auto const M = MakeKspacePre(traj, nC, 1, basis);
   LSMR const lsmr{A, M, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
+  Cx5 const channels = Tensorfy(lsmr.run(CollapseToConstVector(lores)), A->ishape).chip<5>(0);
 
   return channels;
 }
 
-auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis const &basis) -> Cx5
+auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nV = noncart.dimension(4);
@@ -62,9 +62,9 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto const [traj, lores] = inTraj.downsample(ncVol, kSz, 0, true, true);
   auto const A = TOps::Grid<3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
-  auto const M = make_kspace_pre(traj, nC, basis, false);
+  auto const M = MakeKspacePre(traj, nC, 1, basis);
   LSMR const lsmr{A, M, 4};
-  Cx5 const  channels(Tensorfy(lsmr.run(lores.data()), A->ishape));
+  Cx5 const  channels(Tensorfy(lsmr.run(CollapseToConstVector(lores)), A->ishape));
   return channels;
 }
 
@@ -113,7 +113,7 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
 auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
 {
   Sz5 const cshape = channels.dimensions();
-  if (LastN<4>(cshape) != ref.dimensions()) {
+  if (LastN<3>(cshape) != LastN<3>(ref.dimensions())) {
     Log::Fail("SENSE dimensions don't match channels {} reference {}", cshape, ref.dimensions());
   }
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
@@ -127,14 +127,14 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::Multiply<Cx>>(F, P), D);
   auto FPinv = FP->inverse();
-  auto S = std::make_shared<TOps::EstimateKernels>(ref, cshape[0]);
+  auto S = std::make_shared<TOps::EstimateKernels>(ref, cshape[1]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
   auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
   Cx3 const  sw = SobolevWeights(kW, 4).cast<Cx>();
-  auto const swv = CollapseToArray(sw);
-  auto       W = std::make_shared<Ops::DiagRep<Cx>>(kshape[0] * kshape[1], swv);
+  auto const swv = CollapseToConstVector(sw);
+  auto       W = std::make_shared<Ops::DiagRep<Cx>>(swv, kshape[0] * kshape[1], 1);
   auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
   auto       R = std::make_shared<Ops::Multiply<Cx>>(L, W);
   auto       A = std::make_shared<Ops::VStack<Cx>>(PFSFP, R);
@@ -149,7 +149,7 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
 
   LSQR lsqr{A};
   lsqr.iterLimit = 16;
-  auto const kʹ = lsqr.run(cʹ.data(), 0.f);
+  auto const kʹ = lsqr.run(cʹ);
 
   Cx5 const kernels = Tensorfy(kʹ, kshape);
   return kernels;
@@ -172,7 +172,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
-    Cx4 const ref = ConjugateSum(c, c).sqrt();
+    Cx4 const ref = DimDot<1>(c, c).sqrt();
     kernels = EstimateKernels(c, ref, opts.kWidth.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());

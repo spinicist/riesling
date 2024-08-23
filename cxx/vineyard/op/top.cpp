@@ -1,5 +1,7 @@
 #include "top.hpp"
 
+#include "log.hpp"
+
 namespace rl::TOps {
 
 template <typename S, int I, int O>
@@ -60,6 +62,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::C
 
 template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x) const -> OutTensor
 {
+  assert(x.dimensions() == ishape);
   InCMap    xm(x.data(), ishape);
   OutTensor y(oshape);
   OutMap    ym(y.data(), oshape);
@@ -70,6 +73,7 @@ template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x
 
 template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &y) const -> InTensor
 {
+  assert(y.dimensions() == oshape);
   OutCMap  ym(y.data(), oshape);
   InTensor x(ishape);
   InMap    xm(x.data(), ishape);
@@ -89,7 +93,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &,
 }
 
 template <typename S, int I, int O>
-auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Log::Time
+auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time
 {
   if (x.dimensions() != ishape) { Log::Fail("TOp {} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
   if (y.dimensions() != oshape) { Log::Fail("TOp {} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
@@ -99,8 +103,7 @@ auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip)
   return Log::Now();
 }
 
-template <typename S, int I, int O>
-void TOp<S, I, O>::finishForward(OutMap const &y, Log::Time const start, bool const ip) const
+template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap const &y, Time const start, bool const ip) const
 {
   if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("TOp{} {} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(y));
@@ -108,7 +111,7 @@ void TOp<S, I, O>::finishForward(OutMap const &y, Log::Time const start, bool co
 }
 
 template <typename S, int I, int O>
-auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Log::Time
+auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time
 {
   if (y.dimensions() != oshape) { Log::Fail("TOp {} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
   if (x.dimensions() != ishape) { Log::Fail("TOp {} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
@@ -118,7 +121,7 @@ auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip)
   return Log::Now();
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Log::Time const start, bool const ip) const
+template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Time const start, bool const ip) const
 {
   if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("TOp{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(x));
@@ -140,6 +143,7 @@ template struct TOp<Cx, 5, 6>;
 template struct TOp<Cx, 5, 7>;
 template struct TOp<Cx, 6, 3>;
 template struct TOp<Cx, 6, 4>;
+template struct TOp<Cx, 6, 5>;
 template struct TOp<Cx, 6, 6>;
 template struct TOp<Cx, 6, 7>;
 template struct TOp<Cx, 7, 4>;

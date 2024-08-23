@@ -13,10 +13,10 @@ TEST_CASE("Wavelets", "[tform]")
 
   SECTION("1D")
   {
-    Sz4 const shape{sz, 1, 1, 1};
-    Sz4 const dims{1, 0, 0, 0};
-    TOps::Wavelets  wave(shape, 6, dims);
-    Cx4       x(shape);
+    Sz4 const          shape{sz, 1, 1, 1};
+    std::vector<Index> dims{0};
+    TOps::Wavelets     wave(shape, 6, dims);
+    Cx4                x(shape);
     x.setZero();
     x(sz / 2, 0, 0, 0) = Cx(1.f);
 
@@ -30,10 +30,10 @@ TEST_CASE("Wavelets", "[tform]")
 
   SECTION("2D")
   {
-    Sz4 const shape{sz, sz, 1, 1};
-    Sz4 const dims{1, 1, 0, 0};
-    TOps::Wavelets  wave(shape, 6, dims);
-    Cx4       x(shape);
+    Sz4 const          shape{sz, sz, 1, 1};
+    std::vector<Index> dims{0, 1};
+    TOps::Wavelets     wave(shape, 6, dims);
+    Cx4                x(shape);
     x.setZero();
     x(sz / 2, sz / 2, 0, 0) = Cx(1.f);
 
@@ -47,10 +47,10 @@ TEST_CASE("Wavelets", "[tform]")
 
   SECTION("3D")
   {
-    Sz4 const shape{1, sz, sz, sz};
-    Sz4 const dims{0, 1, 1, 1};
-    TOps::Wavelets  wave(shape, 6, dims);
-    Cx4       x(shape);
+    Sz4 const          shape{1, sz, sz, sz};
+    std::vector<Index> dims{1, 2, 3};
+    TOps::Wavelets     wave(shape, 6, dims);
+    Cx4                x(shape);
     x.setZero();
     x(0, sz / 2, sz / 2, sz / 2) = Cx(1.f);
 

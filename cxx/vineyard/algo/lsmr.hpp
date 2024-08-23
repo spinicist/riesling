@@ -2,6 +2,7 @@
 
 #include "op/ops.hpp"
 #include <functional>
+#include <span>
 
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
@@ -26,7 +27,8 @@ struct LSMR
 
   std::function<void(Index const iter, Vector const &)> debug = nullptr;
 
-  auto run(Cx const *bdata, float const λ = 0.f, Cx *x0 = nullptr) const -> Vector;
+  auto run(Vector const &b, float const λ = 0.f, Vector const &x0 = Vector()) const -> Vector;
+  auto run(CMap const b, float const λ = 0.f, CMap x0 = CMap(nullptr, 0)) const -> Vector;
 };
 
 } // namespace rl

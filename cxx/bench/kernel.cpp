@@ -4,8 +4,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
-#include "kernel/expsemi.hpp"
-#include "kernel/radial.hpp"
+#include "kernel/kernel-impl.hpp"
 #include "log.hpp"
 
 using namespace rl;
@@ -13,18 +12,23 @@ using namespace rl;
 TEST_CASE("Kernels", "[kernels]")
 {
   Log::SetLevel(Log::Level::Testing);
-  rl::Radial<Cx, 3, rl::ExpSemi<3>> es(2.f);
-  std::array<int16_t, 3> const      c{0, 0, 0};
-  auto const                        p = rl::Radial<float, 3, rl::ExpSemi<3>>::Point::Constant(0.5f);
-  Sz3 const                         mc{-2, -2, -2};
+  Kernel<Cx, 3, ExpSemi<3>> es3(2.f);
+  Kernel<Cx, 3, ExpSemi<5>> es5(2.f);
+  auto const                p = Kernel<Cx, 3, ExpSemi<3>>::Point::Constant(0.5f);
 
-  Index const B = GENERATE(1, 4, 8, 32, 128, 256);
+  Index const B = GENERATE(1, 256); //, 4, 8, 32, 128, 256);
+  Index const C = 8;
   Cx1         b(B);
   b.setRandom();
-  Cx5 x(8, B, 16, 16, 16);
+  Cx5 x(B, C, 16, 16, 16);
   x.setRandom();
-  Cx1    y(8);
-  Cx1Map ym(y.data(), Sz1{8});
-  BENCHMARK(fmt::format("ES Spread {}", B)) { es.spread(c, p, mc, b, y, x); };
-  BENCHMARK(fmt::format("ES Gather {}", B)) { es.gather(c, p, mc, b, x, ym); };
+  Cx1                          y(C);
+  Cx1Map                       ym(y.data(), Sz1{8});
+  std::array<int16_t, 3> const c{8, 8, 8};
+
+  BENCHMARK(fmt::format("ES3 Spread {}", B)) { es3.spread(c, p, b, y, x); };  
+  BENCHMARK(fmt::format("ES3 Gather {}", B)) { es3.gather(c, p, b, x, ym); };
+
+  BENCHMARK(fmt::format("ES5 Spread {}", B)) { es5.spread(c, p, b, y, x); };
+  BENCHMARK(fmt::format("ES5 Gather {}", B)) { es5.gather(c, p, b, x, ym); };
 }

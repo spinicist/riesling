@@ -1,4 +1,4 @@
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fmt/format.h>
-#include <scn/scan.h>
 
 using namespace rl;
 
@@ -18,100 +17,11 @@ std::unordered_map<int, Log::Level> levelMap{
   {0, Log::Level::None}, {1, Log::Level::Ephemeral}, {2, Log::Level::Standard}, {3, Log::Level::Debug}};
 }
 
-void Array2fReader::operator()(std::string const &name, std::string const &value, Eigen::Array2f &v)
-{
-  if (auto result = scn::scan<float, float>(value, "{},{}")) {
-    v[0] = std::get<0>(result->values());
-    v[1] = std::get<1>(result->values());
-  } else {
-    Log::Fail("Could not read vector for {} from value {}", name, value);
-  }
-}
-
-void Array3fReader::operator()(std::string const &name, std::string const &value, Eigen::Array3f &v)
-{
-  if (auto result = scn::scan<float, float, float>(value, "{},{},{}")) {
-    v[0] = std::get<0>(result->values());
-    v[1] = std::get<1>(result->values());
-    v[2] = std::get<2>(result->values());
-  } else {
-    Log::Fail("Could not read vector for {} from value {}", name, value);
-  }
-}
-
-void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
-{
-  if (auto result = scn::scan<float, float, float>(value, "{},{},{}")) {
-    v[0] = std::get<0>(result->values());
-    v[1] = std::get<1>(result->values());
-    v[2] = std::get<2>(result->values());
-  } else {
-    Log::Fail("Could not read vector for {} from value {}", name, value);
-  }
-}
-
-void ArrayXfReader::operator()(std::string const &name, std::string const &input, Eigen::ArrayXf &val)
-{
-  auto result = scn::scan<float>(input, "{}");
-  std::vector<float> values;
-  if (result) {
-    values.push_back(result->value());
-    while ((result = scn::scan<float>(result->range(), ",{}"))) {
-      values.push_back(result->value());
-    }
-  } else {
-    Log::Fail("Could not read argument for {}", name);
-  }
-  val.resize(values.size());
-  for (size_t ii = 0; ii < values.size(); ii++) {
-    val[ii] = values[ii];
-  }
-}
-
-template <typename T>
-void VectorReader<T>::operator()(std::string const &name, std::string const &input, std::vector<T> &values)
-{
-  auto result = scn::scan<T>(input, "{}");
-  if (result) {
-    // Values will have been default initialized. Reset
-    values.clear();
-    values.push_back(result->value());
-    while ((result = scn::scan<T>(result->range(), ",{}"))) {
-      values.push_back(result->value());
-    }
-  } else {
-    Log::Fail("Could not read argument for {}", name);
-  }
-}
-
-template struct VectorReader<float>;
-template struct VectorReader<Index>;
-
-template <int N>
-void SzReader<N>::operator()(std::string const &name, std::string const &value, Sz<N> &sz)
-{
-  size_t ind = 0;
-  if (auto result = scn::scan<Index>(value, "{}")) {
-    sz[ind] = result->value();
-    for (ind = 1; ind < N; ind++) {
-      result = scn::scan<Index>(result->range(), ",{}");
-      if (!result) { Log::Fail("Could not read {} from '{}'", name, value); }
-      sz[ind] = result->value();
-    }
-  } else {
-    Log::Fail("Could not read {} from '{}'", name, value);
-  }
-}
-
-template struct SzReader<2>;
-template struct SzReader<3>;
-template struct SzReader<4>;
-
 CoreOpts::CoreOpts(args::Subparser &parser)
   : iname(parser, "FILE", "Input HD5 file")
   , oname(parser, "FILE", "Output HD5 file")
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
-  , residual(parser, "R", "Write out residual to file", {"residuals"})
+  , residual(parser, "R", "Write out residual to file", {"residual", 'r'})
   , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
   , ndft(parser, "D", "Use NDFT instead of NUFFT", {"ndft"})
 {
@@ -135,7 +45,7 @@ LsqOpts::LsqOpts(args::Subparser &parser)
 RlsqOpts::RlsqOpts(args::Subparser &parser)
   : scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu")
   , inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4)
-  , inner_its1(parser, "ITS", "Subsequent inner iterations (0)", {"max-its"}, 0)
+  , inner_its1(parser, "ITS", "Subsequent inner iterations (1)", {"max-its"}, 1)
   , atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f)
   , btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f)
   , ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f)
@@ -196,13 +106,4 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname,
   ParseCommand(parser);
   if (!iname) { throw args::Error("No input file specified"); }
   if (!oname) { throw args::Error("No output file specified"); }
-}
-
-void WriteOutput(std::string const &fname, rl::Cx5 const &img, rl::Info const &info, std::string const &log)
-{
-  HD5::Writer writer(fname);
-  writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), HD5::Dims::Image);
-  writer.writeInfo(info);
-  if (log.size()) { writer.writeString("log", log); }
-  Log::Print("Wrote output file {}", fname);
 }

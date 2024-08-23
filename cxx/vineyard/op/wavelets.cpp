@@ -1,33 +1,30 @@
 #include "wavelets.hpp"
 #include "tensors.hpp"
 #include "threads.hpp"
-#include <fmt/format.h>
-#include <iostream>
-#include <vector>
+
+#include "log.hpp"
 
 namespace rl::TOps {
 
-auto Wavelets::PaddedShape(Sz4 const shape, Sz4 const dims) -> Sz4
+template <int ND> auto Wavelets<ND>::PaddedShape(Sz<ND> const shape, std::vector<Index> const dims) -> Sz<ND>
 {
-  Sz4 padded;
-  for (Index ii = 0; ii < 4; ii++) {
-    if (dims[ii]) {
-      padded[ii] = ((shape[ii] + 1) / 2) * 2;
-    } else {
-      padded[ii] = shape[ii];
-    }
+  Sz<ND> padded = shape;
+  for (auto const d : dims) {
+    if (d < 0 || d >= ND) { throw(std::runtime_error(fmt::format("Invalid wavelet dimensions {}", dims))); }
+    padded[d] = ((shape[d] + 1) / 2) * 2;
   }
   return padded;
 }
 
-Wavelets::Wavelets(Sz4 const shape, Index const N, Sz4 const dims)
+template <int ND>
+Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> const dims)
   : Parent("WaveletsOp", shape, shape)
   , N_{N}
-  , encodeDims_{dims}
+  , dims_{dims}
 {
   // Check image is adequately padded and bug out if not
   auto const padded = PaddedShape(shape, dims);
-  if (shape != padded) { Log::Fail("Wavelets had dimensions {}, required {}", shape, padded); }
+  if (shape != padded) { throw(std::runtime_error(fmt::format("Wavelets had dimensions {}, required {}", shape, padded))); }
   // Daubechie's coeffs courtesy of Wikipedia
   Cc_.resize(N_);
   Cr_.resize(N_);
@@ -37,7 +34,7 @@ Wavelets::Wavelets(Sz4 const shape, Index const N, Sz4 const dims)
   case 8:
     Cc_.setValues({0.32580343f, 1.01094572f, 0.89220014f, -0.03957503f, -0.26450717f, 0.0436163f, 0.0465036f, -0.01498699f});
     break;
-  default: Log::Fail("Asked for co-efficients that have not been implemented");
+  default: throw(std::runtime_error("Asked for co-efficients that have not been implemented"));
   }
   Cc_ = Cc_ / static_cast<float>(M_SQRT2); // Get scaling correct
   float sign = 1;
@@ -45,63 +42,60 @@ Wavelets::Wavelets(Sz4 const shape, Index const N, Sz4 const dims)
     Cr_[ii] = sign * Cc_[N_ - 1 - ii];
     sign = -sign;
   }
-  Log::Print("Wavelet dimensions: {}", encodeDims_);
-  Log::Print("Coeffs: {}", fmt::streamed(Transpose(Cc_)));
+  Log::Debug("Wavelet dimensions: {}", dims_);
+  Log::Debug("Coeffs: {}", fmt::streamed(Transpose(Cc_)));
 }
 
-void Wavelets::forward(InCMap const &x, OutMap &y) const
+template <int ND> void Wavelets<ND>::forward(InCMap const &x, OutMap &y) const
 {
-  auto const time = startForward(x, y, false);
+  auto const time = this->startForward(x, y, false);
   y = x;
   dimLoops(y, false);
-  finishForward(y, time, false);
+  this->finishForward(y, time, false);
 }
 
-void Wavelets::adjoint(OutCMap const &y, InMap &x) const
+template <int ND> void Wavelets<ND>::adjoint(OutCMap const &y, InMap &x) const
 {
-  auto const time = startAdjoint(y, x, false);
+  auto const time = this->startAdjoint(y, x, false);
   x = y;
   dimLoops(x, true);
-  finishAdjoint(x, time, false);
+  this->finishAdjoint(x, time, false);
 }
 
-void Wavelets::dimLoops(InMap &x, bool const reverse) const
+template <int ND> void Wavelets<ND>::dimLoops(InMap &x, bool const reverse) const
 {
-  Index const maxDim = 4;
-  for (Index dim = 0; dim < 4; dim++) {
-    if (encodeDims_[dim] != 0) {
-      std::array<Index, 3> otherDims{(dim + 1) % maxDim, (dim + 2) % maxDim, (dim + 3) % maxDim};
-      std::sort(otherDims.begin(), otherDims.end(), std::less{});
-      // Work out the smallest wavelet transform we can do on this dimension. Super annoying.
-      Index const maxSz = x.dimension(dim);
-      Index       minSz = maxSz;
-      while ((minSz / 2) % 2 == 0 && minSz > 4) {
-        minSz /= 2;
-      }
-      auto wav_task = [&](Index const ik) {
-        for (Index ij = 0; ij < x.dimension(otherDims[1]); ij++) {
-          for (Index ii = 0; ii < x.dimension(otherDims[0]); ii++) {
-            Cx1 temp = x.chip(ik, otherDims[2]).chip(ij, otherDims[1]).chip(ii, otherDims[0]);
-            if (reverse) {
-              for (Index sz = minSz; sz <= maxSz; sz *= 2) {
-                wav1(sz, reverse, temp);
-              }
-            } else {
-              for (Index sz = maxSz; sz >= minSz; sz /= 2) {
-                wav1(sz, reverse, temp);
-              }
-            }
-            x.chip(ik, otherDims[2]).chip(ij, otherDims[1]).chip(ii, otherDims[0]) = temp;
-          }
-        }
-      };
-      Threads::For(wav_task, x.dimension(otherDims[2]));
-      Log::Debug("Wavelets Encode Dimension {}", dim);
+  for (auto const dim : dims_) {
+    auto const shuf = Range<ND>(dim, ND);
+    auto const otherDims = LastN<ND - 1>(shuf);
+    auto const maxSz = ishape[dim];
+    auto const otherSz = std::transform_reduce(otherDims.begin(), otherDims.end(), 1L, std::multiplies{},
+                                               [ish = this->ishape](size_t const ii) { return ish[ii]; });
+
+    // Work out the smallest wavelet transform we can do on this dimension. Super annoying.
+    Index minSz = maxSz;
+    while ((minSz / 2) % 2 == 0 && minSz > 4) {
+      minSz /= 2;
     }
+    auto wav_task = [&](Index const ii) {
+      Cx1 temp = x.shuffle(shuf).reshape(Sz2{maxSz, otherSz}).template chip<1>(ii);
+      if (reverse) {
+        for (Index sz = minSz; sz <= maxSz; sz *= 2) {
+          wav1(sz, reverse, temp);
+        }
+      } else {
+        for (Index sz = maxSz; sz >= minSz; sz /= 2) {
+          wav1(sz, reverse, temp);
+        }
+      }
+      x.shuffle(shuf).reshape(Sz2{maxSz, otherSz}).template chip<1>(ii) = temp;
+    };
+
+    Threads::For(wav_task, otherSz);
+    Log::Debug("Wavelets Encode Dimension {}", dim);
   }
 }
 
-void Wavelets::wav1(Index const sz, bool const reverse, Cx1 &x) const
+template <int ND> void Wavelets<ND>::wav1(Index const sz, bool const reverse, Cx1 &x) const
 {
   if (sz < 4) return;
   if (sz % 2 == 1) return;
@@ -126,7 +120,6 @@ void Wavelets::wav1(Index const sz, bool const reverse, Cx1 &x) const
       Index const index = 2 * ii + Noff;
       for (Index k = 0; k < N_; k++) {
         Index const wrapped = Wrap(index + k, sz);
-        // fmt::print(stderr, "index {} wrapped {}\n", index, wrapped);
         w[ii] += Cc_[k] * x[wrapped];
         w[ii + hSz] += Cr_[k] * x[wrapped];
       }
@@ -134,5 +127,8 @@ void Wavelets::wav1(Index const sz, bool const reverse, Cx1 &x) const
   }
   x.slice(Sz1{0}, Sz1{sz}) = w;
 }
+
+template struct Wavelets<4>;
+template struct Wavelets<5>;
 
 } // namespace rl::TOps

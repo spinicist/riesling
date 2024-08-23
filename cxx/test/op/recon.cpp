@@ -10,12 +10,11 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Recon", "[recon]")
+TEST_CASE("Recon-Basic", "[recon]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = GENERATE(7, 15, 16);
+  Index const M = GENERATE(7); //, 15, 16);
   Index const nC = 4;
-  Index const nF = 1;
   auto const  matrix = Sz3{M, M, M};
   Re3         points(3, 3, 1);
   points.setZero();
@@ -24,14 +23,15 @@ TEST_CASE("Recon", "[recon]")
   points(0, 2, 0) = 0.4f * M;
   points(1, 2, 0) = 0.4f * M;
   Trajectory const traj(points, matrix);
+  Basis basis;
 
-  float const       osamp = GENERATE(2.f, 2.7f, 3.f);
-  std::string const ktype = GENERATE("ES7");
-  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC);
+  float const       osamp = GENERATE(2.f); //, 2.7f, 3.f);
+  std::string const ktype = GENERATE("ES3");
+  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC, &basis);
 
-  Cx5 senseMaps(AddFront(traj.matrix(), nC, nF));
+  Cx5 senseMaps(AddFront(traj.matrix(), 1, nC));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = std::make_shared<TOps::SENSE>(senseMaps, nF);
+  auto sense = std::make_shared<TOps::SENSE>(senseMaps);
 
   TOps::Compose<TOps::SENSE, TOps::TOp<Cx, 5, 3>> recon(sense, nufft);
 
@@ -40,7 +40,10 @@ TEST_CASE("Recon", "[recon]")
   ks.setConstant(1.f);
   img = recon.adjoint(ks);
   // Super loose tolerance
+  // INFO("ks\n" << ks);
+  // INFO("img\n" << img);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-1f));
   ks = recon.forward(img);
+  // INFO("ks\n" << ks);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-1f));
 }

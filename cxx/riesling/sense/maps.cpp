@@ -2,19 +2,19 @@
 
 #include "algo/stats.hpp"
 #include "fft.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/fft.hpp"
 #include "op/pad.hpp"
-#include "parse_args.hpp"
 #include "sense/sense.hpp"
 
 using namespace rl;
 
 void main_sense_maps(args::Subparser &parser)
 {
-  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file"), oname(parser, "FILE", "Output HD5 file"),
-    tname(parser, "FILE", "Recon HD5 file");
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file"),
+    tname(parser, "FILE", "Target HD5 file for reconstruction"), oname(parser, "FILE", "Output HD5 file");
 
   args::ValueFlag<float>                         osamp(parser, "O", "Grid oversampling factor (2)", {"osamp"}, 2.f);
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"},

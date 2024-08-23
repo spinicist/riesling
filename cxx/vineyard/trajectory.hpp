@@ -7,10 +7,10 @@
 
 namespace rl {
 
-template <int NDims> struct TrajectoryN
+template <int ND> struct TrajectoryN
 {
-  using SzN = Sz<NDims>;
-  using Array = Eigen::Array<float, NDims, 1>;
+  using SzN = Sz<ND>;
+  using Array = Eigen::Array<float, ND, 1>;
 
   TrajectoryN(Re3 const &points, Array const voxel_size = Array::Ones());
   TrajectoryN(Re3 const &points, SzN const matrix, Array const voxel_size = Array::Ones());
@@ -22,6 +22,7 @@ template <int NDims> struct TrajectoryN
   auto compatible(TrajectoryN const &other) const -> bool;
   auto matrix(float os = 1.f) const -> SzN;
   auto matrixForFOV(Array const fov, float os = 1.f) const -> SzN;
+  auto matrixForFOV(Array const fov, Index const nB, Index const nT, float os = 1.f) const -> Sz<ND + 2>;
   auto voxelSize() const -> Array;
   auto FOV() const -> Array;
   void shiftFOV(Eigen::Vector3f const, Cx5 &data);

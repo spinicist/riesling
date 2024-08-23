@@ -1,9 +1,10 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
+#include "inputs.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "parse_args.hpp"
+#include "outputs.hpp"
 #include "precon.hpp"
 #include "scaling.hpp"
 #include "sense/sense.hpp"
@@ -25,35 +26,40 @@ void main_recon_lsq(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
+  Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
-  Index const nV = noncart.dimension(4);
+  Index const nT = noncart.dimension(4);
 
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::SENSE(coreOpts, gridOpts, senseOpts, traj, nS, basis, noncart);
-  auto const M =
-    make_kspace_pre(traj, A->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
-  auto debug = [&A](Index const i, LSMR::Vector const &x) {
-    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"v", "x", "y", "z"});
+  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
+  auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  Log::Debug("A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
+  auto debug = [shape = A->ishape](Index const i, LSMR::Vector const &x) {
+    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image);
   };
   LSMR lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
-  TOps::Crop<Cx, 4> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0]));
-  Cx5               out(AddBack(oc.oshape, nV)), resid;
-  if (coreOpts.residual) { resid.resize(out.dimensions()); }
+  auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
+  auto const xm = Tensorfy(x, A->ishape);
 
-  for (Index iv = 0; iv < nV; iv++) {
-    auto x = lsmr.run(&noncart(0, 0, 0, 0, iv), lsqOpts.λ.Get());
-    auto xm = Tensorfy(x, A->ishape);
-    out.chip<4>(iv) = oc.forward(xm);
-    if (coreOpts.residual) {
-      noncart.chip<4>(iv) -= A->forward(xm);
-      lsmr.iterLimit = 0;
-      x = lsmr.run(&noncart(0, 0, 0, 0, iv), 0);
-      lsmr.iterLimit = lsqOpts.its.Get();
-      resid.chip<4>(iv) = oc.forward(xm);
-    }    
+  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
+  auto              out = oc.forward(xm);
+  if (basis) { basis->applyR(out); }
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) {
+    noncart -= A->forward(xm);
+    Basis const id;
+    auto const  A1 = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, &id, noncart);
+    auto const  M1 = MakeKspacePre(traj, nC, nT, &id, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+    Log::Print("A1 {} {} M1 {} {}", A1->ishape, A1->oshape, M1->rows(), M1->cols());
+    Ops::Op<Cx>::Map  ncmap(noncart.data(), noncart.size());
+    Ops::Op<Cx>::CMap nccmap(noncart.data(), noncart.size());
+    M1->inverse(nccmap, ncmap);
+    auto r = A1->adjoint(noncart);
+    Log::Print("Finished calculating residual");
+    HD5::Writer writer(coreOpts.residual.Get());
+    writer.writeInfo(info);
+    writer.writeTensor(HD5::Keys::Data, r.dimensions(), r.data(), HD5::Dims::Image);
   }
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) { WriteOutput(coreOpts.residual.Get(), resid, info); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

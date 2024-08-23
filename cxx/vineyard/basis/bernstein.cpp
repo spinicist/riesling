@@ -19,11 +19,12 @@ auto BernsteinPolynomial(Index const N, Index const traces) -> Basis
 {
   Eigen::ArrayXf const x = Eigen::ArrayXf::LinSpaced(traces, 0.f, 1.f);
 
-  Basis basis(N + 1, 1, traces);
+  Basis basis;
+  basis.B.resize(N + 1, 1, traces);
   for (Index ii = 0; ii <= N; ii++) {
     Eigen::ArrayXf const b = Choose(N, ii) * x.pow(ii) * (1.f - x).pow(N - ii);
     for (Index it = 0; it < traces; it++) {
-      basis(ii, 0, it) = b(it);
+      basis.B(ii, 0, it) = b(it);
     }
   }
   return basis;

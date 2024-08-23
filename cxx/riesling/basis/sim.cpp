@@ -1,16 +1,17 @@
 #include "types.hpp"
 
 #include "algo/decomp.hpp"
-#include "basis/svd.hpp"
+#include "basis/basis.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
 #include "sim/dir.hpp"
 #include "sim/ir.hpp"
 #include "sim/parameter.hpp"
 #include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
+#include "tensors.hpp"
 #include "threads.hpp"
 
 #include <Eigen/Householder>
@@ -28,7 +29,7 @@ template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf
     Log::Print("Parameter set {}", fmt::streamed(plist[ii].transpose()));
     parameters.col(ii) = plist[ii];
   }
-  Cx3        dynamics(parameters.cols(), s.samplesPerSpoke, seq.length());
+  Cx3        dynamics(parameters.cols(), seq.samples(), seq.traces());
   auto const start = Log::Now();
   auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
@@ -88,6 +89,7 @@ void main_basis_sim(args::Subparser &parser)
   Eigen::ArrayXXf pars;
   Cx3             dall;
   switch (seq.Get()) {
+  case Sequences::NoPrep: std::tie(pars, dall) = Run<rl::NoPrep>(settings, plist.Get()); break;
   case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, plist.Get()); break;
   case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, plist.Get()); break;
   case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, plist.Get()); break;
@@ -97,23 +99,23 @@ void main_basis_sim(args::Subparser &parser)
   case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, plist.Get()); break;
   }
   Sz3 const                 dshape = dall.dimensions();
-  Index const               L = dshape[1] * dshape[2];
-  Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], L);
+  Index const               M = dshape[1] * dshape[2];
+  Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], M);
   dmap.rowwise().normalize();
-
-  HD5::Writer writer(oname.Get());
 
   if (ortho) {
     auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
-    Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(L, dshape[0]);
+    Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(M, dshape[0]);
     Eigen::MatrixXcd const Q = h.householderQ() * I;
     Eigen::MatrixXcf const R = h.matrixQR().topRows(dshape[0]).cast<Cx>().triangularView<Eigen::Upper>();
-    dmap = Q.transpose().rowwise().normalized().cast<Cx>();
-    writer.writeMatrix(R, "R");
+    dmap = Q.transpose().cast<Cx>() * std::sqrt(M);
+    Basis b(dall, Tensorfy(R, Sz2{R.rows(), R.cols()}));
+    b.write(oname.Get());
+  } else {
+    dmap *= std::sqrt(M);
+    Basis b(dall);
+    b.write(oname.Get());
   }
 
-  dmap *= std::sqrt(L);
-
-  writer.writeTensor(HD5::Keys::Basis, dall.dimensions(), dall.data(), HD5::Dims::Basis);
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

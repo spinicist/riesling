@@ -1,6 +1,6 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "sense/coils.hpp"
 #include "sense/sense.hpp"
 #include "tensors.hpp"
@@ -24,11 +24,12 @@ void main_sense_sim(args::Subparser &parser)
   ParseCommand(parser, oname);
 
   Sz3 shape{matrix.Get(), matrix.Get(), matrix.Get()};
-  Cx5 sense =
+  Cx4 sense =
     birdcage(shape, Eigen::Array3f::Constant(voxel_size.Get()), nchan.Get(), coil_rings.Get(), coil_r.Get(), coil_r.Get());
 
   // Normalize
-  sense /= ConjugateSum(sense, sense).sqrt().reshape(AddFront(shape, 1, 1)).broadcast(Sz5{nchan.Get(), 1, 1, 1, 1});
+  sense /= DimDot<0>(sense, sense).sqrt().reshape(AddFront(shape, 1)).broadcast(Sz4{nchan.Get(), 1, 1, 1});
+
   HD5::Writer writer(oname.Get());
-  writer.writeTensor(HD5::Keys::Data, sense.dimensions(), sense.data(), HD5::Dims::SENSE);
+  writer.writeTensor(HD5::Keys::Data, AddFront(sense.dimensions(), 1), sense.data(), HD5::Dims::SENSE);
 }

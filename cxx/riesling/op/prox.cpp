@@ -1,11 +1,11 @@
 #include "types.hpp"
 
 #include "func/dict.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/pad.hpp"
 #include "op/wavelets.hpp"
-#include "parse_args.hpp"
 #include "prox/entropy.hpp"
 #include "prox/l1-wavelets.hpp"
 #include "prox/llr.hpp"
@@ -26,9 +26,9 @@ void main_prox(args::Subparser &parser)
   args::ValueFlag<Index> llrWin(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
   args::Flag             llrShift(parser, "S", "Enable random LLR shifting", {"llr-shift"});
 
-  args::ValueFlag<float>            wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"});
-  args::ValueFlag<Sz4, SzReader<4>> waveDims(parser, "W", "Wavelet denoising levels", {"wavelet-dims"}, Sz4{0, 1, 1, 1});
-  args::ValueFlag<Index>            waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6);
+  args::ValueFlag<float> wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"});
+  VectorFlag<Index>      waveDims(parser, "W", "Wavelet denoising levels", {"wavelet-dims"}, std::vector<Index>{1, 2, 3});
+  args::ValueFlag<Index> waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6);
 
   ParseCommand(parser);
 
@@ -39,14 +39,16 @@ void main_prox(args::Subparser &parser)
 
   using Map = Proxs::Prox<Cx>::Map;
   using CMap = Proxs::Prox<Cx>::CMap;
+  CMap        im(images.data(), images.size());
+  Map         om(output.data(), output.size());
 
-  Sz4 const                        dims = FirstN<4>(images.dimensions());
-  Index const                      nvox = Product(dims);
+  Sz5 const                        shape = images.dimensions();
+  Index const                      nvox = Product(shape);
   std::shared_ptr<Proxs::Prox<Cx>> prox;
   if (wavelets) {
-    prox = std::make_shared<Proxs::L1Wavelets>(wavelets.Get(), dims, waveWidth.Get(), waveDims.Get());
+    prox = std::make_shared<Proxs::L1Wavelets>(wavelets.Get(), shape, waveWidth.Get(), waveDims.Get());
   } else if (llr) {
-    prox = std::make_shared<Proxs::LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), llrShift, dims);
+    prox = std::make_shared<Proxs::LLR>(llr.Get(), llrPatch.Get(), llrWin.Get(), llrShift, shape);
   } else if (l1) {
     prox = std::make_shared<Proxs::L1>(l1.Get(), nvox);
   } else if (nmrent) {
@@ -54,12 +56,9 @@ void main_prox(args::Subparser &parser)
   } else {
     throw args::Error("Must specify at least one regularization method");
   }
-  for (Index iv = 0; iv < images.dimension(4); iv++) {
-    CMap im(&images(0, 0, 0, 0, iv), nvox);
-    Map  om(&output(0, 0, 0, 0, iv), nvox);
-    prox->apply(1.f, im, om);
-    om = om / scale.Get();
-  }
+  prox->apply(1.f, im, om);
+  output = output / output.constant(scale.Get());
+
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);

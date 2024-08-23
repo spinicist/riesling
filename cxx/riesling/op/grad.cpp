@@ -1,10 +1,10 @@
 #include "types.hpp"
 
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grad.hpp"
 #include "op/wavelets.hpp"
-#include "parse_args.hpp"
 #include "threads.hpp"
 
 using namespace rl;
@@ -21,22 +21,16 @@ void main_grad(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   if (fwd) {
-    auto   input = reader.readTensor<Cx5>();
-    Sz4    dims = FirstN<4>(input.dimensions());
-    Cx6    output(AddBack(dims, 3, input.dimension(4)));
-    TOps::Grad g(dims, std::vector<Index>{1, 2, 3});
-    for (Index iv = 0; iv < input.dimension(4); iv++) {
-      output.chip<5>(iv) = g.forward(CChipMap(input, iv));
-    }
-    writer.writeTensor("grad", output.dimensions(), output.data(), {"v", "x", "y", "z", "g", "t"});
+    auto const    input = reader.readTensor<Cx5>();
+    auto const    shape = input.dimensions();
+    TOps::Grad<5> g(shape, std::vector<Index>{1, 2, 3});
+    auto const    output = g.forward(input);
+    writer.writeTensor("data", output.dimensions(), output.data(), {"v", "x", "y", "z", "g", "t"});
   } else {
-    auto   input = reader.readTensor<Cx6>("grad");
-    Sz4    dims = FirstN<4>(input.dimensions());
-    Cx5    output(AddBack(dims, input.dimension(5)));
-    TOps::Grad g(dims, std::vector<Index>{1, 2, 3});
-    for (Index iv = 0; iv < input.dimension(5); iv++) {
-      output.chip<4>(iv) = g.adjoint(CChipMap(input, iv));
-    }
+    auto const    input = reader.readTensor<Cx6>();
+    auto const    shape = input.dimensions();
+    TOps::Grad<5> g(FirstN<5>(shape), std::vector<Index>{1, 2, 3});
+    auto const    output = g.adjoint(input);
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
   }
 }

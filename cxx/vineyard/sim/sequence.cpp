@@ -9,8 +9,8 @@ using namespace std::literals::complex_literals;
 namespace rl {
 
 std::unordered_map<std::string, Sequences> SequenceMap{
-  {"Prep", Sequences::Prep}, {"Prep2", Sequences::Prep2},   {"IR", Sequences::IR},          {"IR2", Sequences::IR2},
-  {"DIR", Sequences::DIR},   {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
+  {"NoPrep", Sequences::NoPrep}, {"Prep", Sequences::Prep}, {"Prep2", Sequences::Prep2},   {"IR", Sequences::IR},
+  {"IR2", Sequences::IR2},       {"DIR", Sequences::DIR},   {"T2Prep", Sequences::T2Prep}, {"T2FLAIR", Sequences::T2FLAIR}};
 
 auto Settings::format() const -> std::string
 {
@@ -20,6 +20,8 @@ auto Settings::format() const -> std::string
     samplesPerSpoke, samplesGap, spokesPerSeg, spokesSpoil, k0, segsPerPrep, segsPrep2, segsKeep, alpha, ascale, Tsamp, TR,
     Tramp, Tssi, TI, Trec, TE);
 }
+
+auto Sequence::samples() const -> Index { return std::max(1L, settings.samplesPerSpoke); }
 
 auto Sequence::offres(float const Δf) const -> Cx1
 {
@@ -34,7 +36,7 @@ auto Sequence::offres(float const Δf) const -> Cx1
   float const               startPhase = settings.samplesGap * sampPhase;
   float const               endPhase = (settings.samplesGap + settings.samplesPerSpoke - 1) * sampPhase;
   pm = Eigen::VectorXcf::LinSpaced(settings.samplesPerSpoke, startPhase * 1if, endPhase * 1if).array().exp();
-  // Log::Print("Δf {} startPhase {} endPhase {}", Δf, startPhase, endPhase);
+  // Log::Print("Δf {} startPhase {} endPhase {}\n{}\n", Δf, startPhase, endPhase, fmt::streamed(pm.transpose()));
   return phase;
 }
 

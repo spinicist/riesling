@@ -1,9 +1,10 @@
 #pragma once
 
+#include "args.hpp"
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/nufft.hpp"
+#include "op/grid.hpp"
 #include "trajectory.hpp"
 
 namespace rl {
@@ -19,10 +20,10 @@ struct Opts
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(
-  Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis const &basis = IdBasis()) -> Cx5;
-auto LoresKernels(
-  Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis const &basis = IdBasis()) -> Cx5;
+auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis = nullptr)
+  -> Cx5;
+auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis = nullptr)
+  -> Cx5;
 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
 auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5;

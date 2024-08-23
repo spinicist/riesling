@@ -33,7 +33,8 @@ struct ADMM
   DebugX debug_x = nullptr;
   DebugZ debug_z = nullptr;
 
-  auto run(Cx const *bdata, float const ρ) const -> Vector;
+  auto run(Vector const &b, float const ρ) const -> Vector;
+  auto run(CMap const b, float const ρ) const -> Vector;
 };
 
 } // namespace rl

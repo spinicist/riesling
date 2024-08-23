@@ -1,5 +1,5 @@
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 
 using namespace rl;
 
@@ -12,15 +12,14 @@ int main(int const argc, char const *const argv[])
   args::ArgumentParser parser("RIESLING");
 
   args::Group recon(parser, "RECON");
-  // COMMAND(parser, lad, "lad", "Least Absolute Deviations");
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
   COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
   COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
   COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
-  COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
-  COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
+  // COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
+  // COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
   COMMAND(recon, channels, "recon-channels", "Least-Squares, all channels");
-  COMMAND(recon, sake, "recon-sake", "SAKE");
+  // COMMAND(recon, sake, "recon-sake", "SAKE");
 
   args::Group data(parser, "DATA");
   COMMAND(data, h5, "h5", "Probe an H5 file");
@@ -40,10 +39,12 @@ int main(int const argc, char const *const argv[])
   args::Group basis(parser, "BASIS");
   COMMAND(basis, bernstein, "basis-bernstein", "Bernstein Polynomials");
   COMMAND(basis, blend, "basis-blend", "Blend basis images");
+  COMMAND(basis, basis_concat, "basis-concat", "Concatenate bases");
   COMMAND(basis, echoes, "basis-echoes", "Split echoes from sample dimension");
   COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis, basis_img, "basis-img", "Basis from image data + SVD");
+  COMMAND(basis, basis_outer, "basis-outer", "Outer product of bases");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(basis, basis_svd, "basis-svd", "Basis from simulations + SVD");
 
@@ -87,6 +88,8 @@ int main(int const argc, char const *const argv[])
   } catch (Log::Failure &f) {
     Log::End();
     return EXIT_FAILURE;
+  } catch (std::exception const &e) {
+    Log::Fail2("{}\n", e.what());
   }
 
   return EXIT_SUCCESS;

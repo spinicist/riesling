@@ -10,7 +10,7 @@ struct L1Wavelets final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
 
-  L1Wavelets(float const λ, Sz4 const shape, Index const width, Sz4 const dims);
+  L1Wavelets(float const λ, Sz5 const shape, Index const width, std::vector<Index> const dims);
   void apply(float const α, CMap const &x, Map &z) const;
 
 private:

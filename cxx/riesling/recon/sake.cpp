@@ -5,7 +5,7 @@
 #include "op/fft.hpp"
 #include "op/hankel.hpp"
 #include "op/recon.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "precon.hpp"
 #include "prox/hermitian.hpp"
 #include "prox/slr.hpp"

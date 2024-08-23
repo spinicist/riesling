@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "../magick.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 #include "tensors.hpp"
 #include "types.hpp"
 

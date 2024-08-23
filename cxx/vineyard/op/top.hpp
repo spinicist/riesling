@@ -20,6 +20,7 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   using OutCMap = Eigen::TensorMap<OutTensor const>;
   using OutDims = typename OutTensor::Dimensions;
   using Ptr = std::shared_ptr<TOp<Scalar, InRank, OutRank>>;
+  using Time = Base::Time;
   InDims  ishape;
   OutDims oshape;
 
@@ -50,11 +51,11 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   virtual void iadjoint(OutCMap const &y, InMap &x) const;
 
 protected:
-  auto startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Log::Time;
-  void finishForward(OutMap const &y, Log::Time const start, bool const ip) const;
+  auto startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time;
+  void finishForward(OutMap const &y, Time const start, bool const ip) const;
 
-  auto startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Log::Time;
-  void finishAdjoint(InMap const &x, Log::Time const start, bool const ip) const;
+  auto startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time;
+  void finishAdjoint(InMap const &x, Time const start, bool const ip) const;
 };
 
 #define TOP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                   \

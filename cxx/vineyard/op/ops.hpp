@@ -48,8 +48,8 @@ private:
 template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
 {
   OP_INHERIT
-  DiagRep(Index const reps, Vector const &s);
-  DiagRep(Index const reps, Vector const &s, float const b, float const sc);
+  DiagRep(Vector const &s, Index const repInner, Index const repOuter);
+  DiagRep(Vector const &s, float const b, float const sc, Index const repInner, Index const repOuter);
   auto inverse() const -> std::shared_ptr<Op<Scalar>> final;
   auto inverse(float const bias, float const scale) const -> std::shared_ptr<Op<Scalar>> final;
   void forward(CMap const &x, Map &y) const;
@@ -58,8 +58,8 @@ template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
   void iforward(CMap const &x, Map &y) const;
   void iadjoint(CMap const &y, Map &x) const;
 private:
-  Index  reps;
   Vector s;
+  Index  rI, rO;
   bool   isInverse = false;
   float  bias = 0.f, scale = 0.f;
 };

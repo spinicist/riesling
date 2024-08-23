@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "io/nifti.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 
 using namespace rl;
 

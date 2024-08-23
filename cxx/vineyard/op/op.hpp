@@ -1,7 +1,8 @@
 #pragma once
 
-#include "log.hpp"
 #include "types.hpp"
+
+#include <chrono>
 
 namespace rl::Ops {
 
@@ -12,6 +13,7 @@ template <typename Scalar_ = Cx> struct Op
   using Map = typename Vector::AlignedMapType;
   using CMap = typename Vector::ConstAlignedMapType;
   using Ptr = std::shared_ptr<Op<Scalar>>;
+  using Time = std::chrono::high_resolution_clock::time_point;
 
   std::string name;
   Op(std::string const &n);
@@ -39,12 +41,12 @@ template <typename Scalar_ = Cx> struct Op
   virtual auto operator+(Scalar const) const -> std::shared_ptr<Op<Scalar>>;
 
 protected:
-  auto startForward(CMap const &x, Map const &y, bool const ip) const -> Log::Time;
-  void finishForward(Map const &y, Log::Time const start, bool const ip) const;
-  auto startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time;
-  void finishAdjoint(Map const &x, Log::Time const start, bool const ip) const;
-  auto startInverse(CMap const &y, Map const &x, bool const ip) const -> Log::Time;
-  void finishInverse(Map const &x, Log::Time const start, bool const ip) const;
+  auto startForward(CMap const &x, Map const &y, bool const ip) const -> Time;
+  void finishForward(Map const &y, Time const start, bool const ip) const;
+  auto startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Time;
+  void finishAdjoint(Map const &x, Time const start, bool const ip) const;
+  auto startInverse(CMap const &y, Map const &x, bool const ip) const -> Time;
+  void finishInverse(Map const &x, Time const start, bool const ip) const;
 };
 
 #define OP_INHERIT                                                                                                             \

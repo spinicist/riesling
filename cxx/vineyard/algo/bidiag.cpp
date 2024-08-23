@@ -41,7 +41,7 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
   return std::make_tuple(c, s, ρ);
 }
 
-void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
+void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
                 std::shared_ptr<Ops::Op<Cx>>           M,
                 Eigen::VectorXcf                      &Mu,
                 Eigen::VectorXcf                      &u,
@@ -50,13 +50,11 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
                 float                                 &β,
                 Eigen::VectorXcf                      &x,
                 Eigen::VectorXcf::ConstAlignedMapType &b,
-                Cx                                    *x0)
+                Eigen::VectorXcf::ConstAlignedMapType &x0)
 {
-  if (x0) {
-    Eigen::Map<Eigen::VectorXcf const> xx0(x0, op->cols());
-    x = xx0;
-    // Reuse u to save space
-    op->forward(x, u);
+  if (x0.size()) {
+    x = x0;
+    A->forward(x, u); // Reuse u to save space
     Mu.device(Threads::GlobalDevice()) = b - u;
   } else {
     x.setZero();
@@ -70,12 +68,12 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
   β = std::sqrt(CheckedDot(Mu, u));
   Mu /= β;
   u /= β;
-  op->adjoint(u, v);
+  A->adjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
   v /= α;
 }
 
-void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
+void Bidiag(std::shared_ptr<Ops::Op<Cx>> const A,
             std::shared_ptr<Ops::Op<Cx>> const M,
             Eigen::VectorXcf                  &Mu,
             Eigen::VectorXcf                  &u,
@@ -84,7 +82,7 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
             float                             &β)
 {
   Mu.device(Threads::GlobalDevice()) = -α * Mu;
-  op->iforward(v, Mu);
+  A->iforward(v, Mu);
   if (M) {
     M->inverse(Mu, u);
   } else {
@@ -94,7 +92,7 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
   Mu.device(Threads::GlobalDevice()) = Mu / β;
   u.device(Threads::GlobalDevice()) = u / β;
   v.device(Threads::GlobalDevice()) = -β * v;
-  op->iadjoint(u, v);
+  A->iadjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
   v.device(Threads::GlobalDevice()) = v / α;
 }

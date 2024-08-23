@@ -6,31 +6,26 @@
 #include "signals.hpp"
 
 namespace rl {
+
+auto LSMR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector {
+  return run(CMap{b.data(), b.rows()}, λ, CMap{x0.data(), x0.rows()});
+}
+
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
-auto LSMR::run(Cx const *bdata, float const λ, Cx *x0data) const -> Vector
+auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
 {
   Log::Print("LSMR λ {}", λ);
+  if (iterLimit < 1) { Log::Fail("LSMR requires at least 1 iteration"); }
   Index const rows = op->rows();
   Index const cols = op->cols();
   if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
-  CMap const b(bdata, rows);
+  if (b.rows() != rows) { Log::Fail("LSMR: b had size {} expected {}", b.rows(), rows);}
   Vector     Mu(rows), u(rows);
   Vector     v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
-  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0data);
-
-  if (iterLimit == 0) { // Bug out and return v
-    if (x0data) {
-      CMap const x0(x0data, cols);
-      x = x0 + v * (α * β);
-    } else {
-      x = v * (α * β);
-    }
-    Log::Print("LSMR 0 |x| {:4.3E}", x.stableNorm());
-    return x;
-  }
+  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
   h = v;
   h̅.setZero();
 

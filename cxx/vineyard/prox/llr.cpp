@@ -7,7 +7,7 @@
 
 namespace rl::Proxs {
 
-LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 const s)
+LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz5 const s)
   : Prox<Cx>(Product(s))
   , λ{l}
   , patchSize{p}
@@ -20,24 +20,24 @@ LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz4 co
    */
   Index const M = p * p * p;
   Index const N = s[0];
-  Index const B = Product(LastN<3>(s)) / (M * N);
+  Index const B = Product(LastN<4>(s)) / (M * N);
   λ *= (std::sqrt(M) + std::sqrt(N) + std::sqrt(std::log(B * std::min(M, N))));
   Log::Print("Locally Low-Rank λ {} Scaled λ {} Patch {} Window {}", l, λ, patchSize, windowSize);
 }
 
 void LLR::apply(float const α, CMap const &xin, Map &zin) const
 {
-  Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
-  Eigen::TensorMap<Cx4>       z(zin.data(), shape);
-  float const                 realλ = λ * α;
+  Cx5CMap     x(xin.data(), shape);
+  Cx5Map      z(zin.data(), shape);
+  float const realλ = λ * α;
 
-  auto softLLR = [realλ](Cx4 const &xp) {
+  auto softLLR = [realλ](Cx5 const &xp) {
     Eigen::MatrixXcf patch = CollapseToMatrix(xp);
     auto const       svd = SVD<Cx>(patch.transpose());
     // Soft-threhold svals
     Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-    Cx4 yp = Tensorfy(patch, xp.dimensions());
+    Cx5 yp = Tensorfy(patch, xp.dimensions());
     return yp;
   };
   Patches(patchSize, windowSize, shift, softLLR, x, z);
@@ -47,17 +47,17 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
 void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
 {
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
-    Eigen::TensorMap<Cx4 const> x(xin.data(), shape);
-    Eigen::TensorMap<Cx4>       z(zin.data(), shape);
-    float const                 realλ = λ * realα->scale * std::sqrt(patchSize * patchSize * patchSize);
+    Cx5CMap     x(xin.data(), shape);
+    Cx5Map      z(zin.data(), shape);
+    float const realλ = λ * realα->scale * std::sqrt(patchSize * patchSize * patchSize);
 
-    auto softLLR = [realλ](Cx4 const &xp) {
+    auto softLLR = [realλ](Cx5 const &xp) {
       Eigen::MatrixXcf patch = CollapseToMatrix(xp);
       auto const       svd = SVD<Cx>(patch.transpose());
       // Soft-threhold svals
       Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
       patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-      Cx4 yp = Tensorfy(patch, xp.dimensions());
+      Cx5 yp = Tensorfy(patch, xp.dimensions());
       return yp;
     };
     Patches(patchSize, windowSize, shift, softLLR, x, z);

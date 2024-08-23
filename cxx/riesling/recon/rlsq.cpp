@@ -2,10 +2,11 @@
 
 #include "algo/admm.hpp"
 #include "algo/lsmr.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "parse_args.hpp"
+#include "outputs.hpp"
 #include "precon.hpp"
 #include "regularizers.hpp"
 #include "scaling.hpp"
@@ -29,16 +30,16 @@ void main_recon_rlsq(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
+  Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
-  Index const nV = noncart.dimension(4);
+  Index const nT = noncart.dimension(4);
 
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const recon = Recon::SENSE(coreOpts, gridOpts, senseOpts, traj, nS, basis, noncart);
+  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const recon = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
   auto const shape = recon->ishape;
-  auto const M = make_kspace_pre(traj, recon->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+  auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
-  std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
-  Regularizers                 reg(regOpts, shape, A);
+  auto [reg, A, ext_x] = Regularizers(regOpts, recon);
 
   ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
     Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
@@ -46,13 +47,13 @@ void main_recon_rlsq(args::Subparser &parser)
 
   ADMM::DebugZ debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
                              ADMM::Vector const &u) {
-    if (std::holds_alternative<Sz4>(reg.sizes[static_cast<size_t>(ir)])) {
-      auto const Fshape = std::get<Sz4>(reg.sizes[static_cast<size_t>(ir)]);
+    if (std::holds_alternative<Sz4>(reg[ir].size)) {
+      auto const Fshape = std::get<Sz4>(reg[ir].size);
       Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
       Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
       Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
-    } else if (std::holds_alternative<Sz5>(reg.sizes[static_cast<size_t>(ir)])) {
-      auto const Fshape = std::get<Sz5>(reg.sizes[static_cast<size_t>(ir)]);
+    } else if (std::holds_alternative<Sz5>(reg[ir].size)) {
+      auto const Fshape = std::get<Sz5>(reg[ir].size);
       Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
       Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
       Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
@@ -61,7 +62,7 @@ void main_recon_rlsq(args::Subparser &parser)
 
   ADMM opt{A,
            M,
-           reg.regs,
+           reg,
            rlsqOpts.inner_its0.Get(),
            rlsqOpts.inner_its1.Get(),
            rlsqOpts.atol.Get(),
@@ -74,24 +75,13 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  TOps::Crop<Cx, 4> oc(recon->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), recon->ishape[0]));
-  Cx5               out(AddBack(oc.oshape, nV)), resid;
-  if (coreOpts.residual) { resid.resize(out.dimensions()); }
+  auto const x = ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()));
+  auto const xm = Tensorfy(x, recon->ishape);
 
-  float const scale = Scaling(rlsqOpts.scaling, recon, M, &noncart(0, 0, 0, 0, 0));
-  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
-
-  for (Index iv = 0; iv < nV; iv++) {
-    auto x = reg.ext_x->forward(opt.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get()));
-    auto xm = Tensorfy(x, recon->ishape);
-    out.chip<4>(iv) = oc.forward(xm) / out.chip<4>(iv).constant(scale);
-    if (coreOpts.residual) {
-      noncart.chip<4>(iv) -= recon->forward(xm);
-      xm = recon->adjoint(noncart.chip<4>(iv));
-      resid.chip<4>(iv) = oc.forward(xm) / resid.chip<4>(iv).constant(scale);
-    }
-  }
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) { WriteOutput(coreOpts.residual.Get(), resid, info); }
+  TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(coreOpts.fov.Get(), recon->ishape[0], nT));
+  auto              out = oc.forward(xm);
+  if (basis) { basis->applyR(out); }
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, recon, M, HD5::Dims::Image); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

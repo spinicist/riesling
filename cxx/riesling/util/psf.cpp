@@ -1,12 +1,12 @@
 #include "types.hpp"
 
 #include "algo/lsmr.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/fft.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
-#include "parse_args.hpp"
 #include "precon.hpp"
 
 using namespace rl;
@@ -29,18 +29,18 @@ void main_psf(args::Subparser &parser)
 
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
-  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
+  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   Index const nC = 1;
-  Index const nB = basis.dimension(0);
+  Index const nB = basis->nB();
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
   std::shared_ptr<TOps::TOp<Cx, 5, 3>> A = nullptr;
   if (coreOpts.ndft) {
-    A = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis);
+    A = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis.get());
   } else {
-    A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis, shape);
+    A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis.get(), shape);
   }
-  auto const M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto const M = MakeKspacePre(traj, nC, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];
@@ -51,7 +51,7 @@ void main_psf(args::Subparser &parser)
   Eigen::TensorMap<Cx1 const> traceM(trace.data(), Sz1{traj.nSamples()});
 
   Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
-  auto        x = lsmr.run(ks.data());
+  auto        x = lsmr.run(CollapseToConstVector(ks));
   auto        xm = Tensorfy(x, LastN<4>(A->ishape));
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "x", "y", "z"});

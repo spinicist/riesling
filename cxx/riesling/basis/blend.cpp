@@ -1,9 +1,9 @@
 #include "types.hpp"
 
 #include "basis/basis.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
 #include "threads.hpp"
 
 #include "tensors.hpp"
@@ -21,7 +21,6 @@ void main_blend(args::Subparser &parser)
                                                               {0});
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Traces within basis for combination", {"tp", 't'},
                                                               {0});
-
   ParseCommand(parser);
 
   if (!iname) { throw args::Error("No input file specified"); }
@@ -30,37 +29,24 @@ void main_blend(args::Subparser &parser)
   Sz5 const   dims = images.dimensions();
 
   if (!iname) { throw args::Error("No basis file specified"); }
-  auto const basis = ReadBasis(bname.Get());
+  auto const basis = LoadBasis(bname.Get());
 
-  if (basis.dimension(0) != images.dimension(0)) {
-    Log::Fail("Basis has {} vectors but image has {}", basis.dimension(0), images.dimension(0));
-  }
+  if (basis->nB() != images.dimension(0)) {
+    Log::Fail("Basis has {} vectors but image has {}", basis->nB(), images.dimension(0));
+  }\
 
   auto const &sps = sp.Get();
   auto const &tps = tp.Get();
-
-  Index const ntotal = sps.size() * tps.size();
-
-  Cx5         out(AddFront(LastN<4>(dims), ntotal));
-  float const scale = std::sqrt(basis.dimension(1) * basis.dimension(2));
-
-  Basis selected(basis.dimension(0), sps.size(), tps.size());
-  for (size_t it = 0; it < tps.size(); it++) {
-    if (tps[it] < 0 || tps[it] >= basis.dimension(2)) {
-      Log::Fail("Requested timepoint {} exceeds traces {}", tps[it], basis.dimension(2));
-    }
-
-    for (size_t is = 0; is < sps.size(); is++) {
-      if (sps[is] < 0 || sps[is] >= basis.dimension(1)) {
-        Log::Fail("Requested timepoint {} exceeds samples {}", sps[is], basis.dimension(1));
-      }
-      selected.chip<2>(it).chip<1>(is) = basis.chip<2>(tps[it]).chip<1>(sps[is]).conjugate() * Cx(scale);
-    }
+  if (sps.size() != tps.size()) {
+    Log::Fail("Must have same number of trace and sample points");
   }
-  Cx2 const sel2 = selected.reshape(Sz2{basis.dimension(0), ntotal});
-  for (Index it = 0; it < out.dimension(4); it++) {
-    out.chip<4>(it).device(Threads::GlobalDevice()) =
-      sel2.contract(images.chip<4>(it), Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+  Index const nO = sps.size();
+  Cx5         out(AddFront(LastN<4>(dims), nO));
+
+  for (Index io = 0; io < nO; io++) {
+    Log::Print("Blending sample {} trace {}", sps[io], tps[io]);
+    out.chip<0>(io).device(Threads::GlobalDevice()) =
+      basis->blend(images, sps[io], tps[io]);
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "op/ops.hpp"
-#include "parse_args.hpp"
+#include "args.hpp"
+#include "op/top.hpp"
 #include "prox/prox.hpp"
 
 #include <variant>
@@ -26,25 +26,26 @@ struct RegOpts
   args::ValueFlag<Index> llrWin;
   args::Flag             llrShift;
 
-  args::ValueFlag<float>            wavelets;
-  args::ValueFlag<Sz4, SzReader<4>> waveDims;
-  args::ValueFlag<Index>            waveWidth;
+  args::ValueFlag<float>                                   wavelets;
+  args::ValueFlag<std::vector<Index>, VectorReader<Index>> waveDims;
+  args::ValueFlag<Index>                                   waveWidth;
 };
 
 struct Regularizer
 {
+  using SizeN = std::variant<Sz4, Sz5, Sz6>;
   Ops::Op<Cx>::Ptr     T;
   Proxs::Prox<Cx>::Ptr P;
+  SizeN                size;
 };
 
-struct Regularizers
+struct Regularizers_t
 {
-  using SizeN = std::variant<Sz3, Sz4, Sz5>;
-  std::vector<Regularizer>     regs;
-  std::shared_ptr<Ops::Op<Cx>> ext_x;
-  std::vector<SizeN>           sizes;
-
-  Regularizers(RegOpts &regOpts, Sz4 const shape, std::shared_ptr<Ops::Op<Cx>> &A);
+  std::vector<Regularizer> regs;
+  Ops::Op<Cx>::Ptr         A;
+  Ops::Op<Cx>::Ptr         ext_x;
 };
+
+auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A) -> Regularizers_t;
 
 } // namespace rl

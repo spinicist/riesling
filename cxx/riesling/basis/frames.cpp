@@ -3,7 +3,7 @@
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "parse_args.hpp"
+#include "inputs.hpp"
 
 void main_frames(args::Subparser &parser)
 {
@@ -14,6 +14,7 @@ void main_frames(args::Subparser &parser)
   args::ValueFlag<Index> reps(parser, "R", "Repetitions", {"reps"});
   args::ValueFlag<Index> startFrame(parser, "F", "Start frame", {"start"});
   args::ValueFlag<Index> incFrame(parser, "F", "Frame increment", {"inc"}, 1);
+  args::ValueFlag<Index> retain(parser, "R", "Frames to retain", {"retain"});
   ParseCommand(parser);
   if (!oname) { throw args::Error("No output filename specified"); }
 
@@ -29,6 +30,10 @@ void main_frames(args::Subparser &parser)
       basis(ifr, 0, index++) = 1.;
     }
     if (incFrame) { index += incFrame.Get() * tracesPerFrame.Get(); }
+  }
+
+  if (retain) {
+    basis = rl::Re3(basis.slice(rl::Sz3{0, 0, 0}, rl::Sz3{retain.Get(), 1, nT}));
   }
 
   rl::HD5::Writer writer(oname.Get());

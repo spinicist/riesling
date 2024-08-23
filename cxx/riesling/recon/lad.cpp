@@ -1,10 +1,11 @@
 #include "types.hpp"
 
 #include "algo/lad.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "parse_args.hpp"
+#include "outputs.hpp"
 #include "precon.hpp"
 #include "scaling.hpp"
 #include "sense/sense.hpp"
@@ -37,31 +38,23 @@ void main_recon_lad(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
+  Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
-  Index const nV = noncart.dimension(4);
+  Index const nT = noncart.dimension(4);
 
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::SENSE(coreOpts, gridOpts, senseOpts, traj, nS, basis, noncart);
-  auto const M = make_kspace_pre(traj, A->oshape[0], basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
+  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
+  auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
 
-  TOps::Crop<Cx, 4> oc(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0]));
-  Cx5               out(AddBack(oc.oshape, nV)), resid;
-  if (coreOpts.residual) { resid.resize(out.dimensions()); }
+  auto const x = lad.run(noncart.data(), ρ.Get());
+  auto const xm = Tensorfy(x, A->ishape);
 
-  for (Index iv = 0; iv < nV; iv++) {
-    auto x = lad.run(&noncart(0, 0, 0, 0, iv), ρ.Get());
-    auto xm = Tensorfy(x, A->ishape);
-    out.chip<4>(iv) = oc.forward(xm);
-    if (coreOpts.residual) {
-      noncart.chip<4>(iv) -= A->forward(xm);
-      xm = A->adjoint(noncart.chip<4>(iv));
-      resid.chip<4>(iv) = oc.forward(xm);
-    }
-  }
-  WriteOutput(coreOpts.oname.Get(), out, info, Log::Saved());
-  if (coreOpts.residual) { WriteOutput(coreOpts.residual.Get(), resid, info); }
+  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
+  auto              out = oc.forward(xm);
+  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
   Log::Print("Finished {}", parser.GetCommand().Name());
 }

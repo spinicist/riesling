@@ -9,7 +9,7 @@ T2Prep::T2Prep(Settings const &s)
 {
 }
 
-auto T2Prep::length() const -> Index { return settings.spokesPerSeg * settings.segsPerPrep; }
+auto T2Prep::traces() const -> Index { return settings.spokesPerSeg * settings.segsPerPrep; }
 
 auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
@@ -45,7 +45,7 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
   // Now fill in dynamic
   Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
-  Cx1             s0(length());
+  Cx1             s0(traces());
   for (Index ig = 0; ig < settings.segsPerPrep; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
