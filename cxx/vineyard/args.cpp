@@ -63,6 +63,24 @@ void ArrayXfReader::operator()(std::string const &name, std::string const &input
   }
 }
 
+void ArrayXiReader::operator()(std::string const &name, std::string const &input, Eigen::ArrayXi &val)
+{
+  auto             result = scn::scan<int>(input, "{}");
+  std::vector<int> values;
+  if (result) {
+    values.push_back(result->value());
+    while ((result = scn::scan<int>(result->range(), ",{}"))) {
+      values.push_back(result->value());
+    }
+  } else {
+    throw(ArgsError(fmt::format("Could not read argument for {}", name)));
+  }
+  val.resize(values.size());
+  for (size_t ii = 0; ii < values.size(); ii++) {
+    val[ii] = values[ii];
+  }
+}
+
 template <typename T>
 void VectorReader<T>::operator()(std::string const &name, std::string const &input, std::vector<T> &values)
 {

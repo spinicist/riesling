@@ -19,6 +19,11 @@ struct ArrayXfReader
   void operator()(std::string const &name, std::string const &value, Eigen::ArrayXf &x);
 };
 
+struct ArrayXiReader
+{
+  void operator()(std::string const &name, std::string const &value, Eigen::ArrayXi &x);
+};
+
 struct Vector3fReader
 {
   void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);

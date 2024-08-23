@@ -8,7 +8,7 @@ using namespace Catch;
 TEST_CASE("Parameters", "[pars]")
 {
   auto const t1t2pd =
-    rl::ParameterGrid(3, Eigen::Array3f{0.5f, 0.04f, 0.7f}, Eigen::Array3f{4.0f, 0.1f, 1.f}, Eigen::Array3f{0.5f, 0.02f, 0.1f});
+    rl::ParameterGrid(3, Eigen::Array3f{0.5f, 0.04f, 0.7f}, Eigen::Array3f{4.0f, 0.1f, 1.f}, Eigen::Array3i{8, 4, 4});
 
   SECTION("Basic")
   {

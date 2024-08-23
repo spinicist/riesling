@@ -20,7 +20,7 @@ template <typename T>
 auto Run(rl::Settings const                &s,
          std::vector<Eigen::ArrayXf> const &los,
          std::vector<Eigen::ArrayXf> const &his,
-         std::vector<Eigen::ArrayXf> const &Δs)
+         std::vector<Eigen::ArrayXi> const &Ns)
 {
   if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
   if (los.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
@@ -29,7 +29,7 @@ auto Run(rl::Settings const                &s,
   Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
-    auto const p = ParameterGrid(nP, los[ii], his[ii], Δs[ii]);
+    auto const p = ParameterGrid(nP, los[ii], his[ii], Ns[ii]);
     Log::Print("Parameter set {}/{}. Size {} Low {} High {}", ii + 1, los.size(), p.cols(), fmt::join(los[ii], "/"),
                fmt::join(his[ii], "/"));
     parameters.conservativeResize(nP, parameters.cols() + p.cols());
@@ -69,7 +69,7 @@ void main_basis_svd(args::Subparser &parser)
 
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pLo(parser, "LO", "Low values for parameters", {"lo"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
-  args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pΔ(parser, "Δ", "Grid Δ for parameters", {"delta"});
+  args::ValueFlagList<Eigen::ArrayXi, std::vector, ArrayXiReader> pN(parser, "N", "Grid N for parameters", {"N"});
   args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
 
   args::Flag save(parser, "S", "Save dynamics and projections", {"save"});
@@ -98,18 +98,18 @@ void main_basis_svd(args::Subparser &parser)
 
   Cx3 dall;
   switch (seq.Get()) {
-  case Sequences::NoPrep: dall = Run<rl::NoPrep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::Prep: dall = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::Prep2: dall = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::IR: dall = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::IR2: dall = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::DIR: dall = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2Prep: dall = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
-  case Sequences::T2FLAIR: dall = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pΔ.Get()); break;
+  case Sequences::NoPrep: dall = Run<rl::NoPrep>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::Prep: dall = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::Prep2: dall = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::IR: dall = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::IR2: dall = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::DIR: dall = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::T2Prep: dall = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::T2FLAIR: dall = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
   }
-  Sz3 const                 dshape = dall.dimensions();
-  Index const               L = dshape[1] * dshape[2];
-  Index const               N = nRetain.Get();
+  Sz3 const   dshape = dall.dimensions();
+  Index const L = dshape[1] * dshape[2];
+  Index const N = nRetain.Get();
 
   Eigen::MatrixXcf::MapType dmap(dall.data(), dshape[0], L);
   Log::Print("Normalizing entries");
@@ -119,7 +119,7 @@ void main_basis_svd(args::Subparser &parser)
   Cx3                       basis(N, dshape[1], dshape[2]);
   Eigen::MatrixXcf::MapType bmap(basis.data(), N, L);
 
-  Log::Print("Computing SVD {}x{}", N, L);
+  Log::Print("Computing SVD {}x{}", dmap.rows(), dmap.cols());
   SVD<Cxd> svd(dmap.cast<Cxd>());
   bmap = svd.basis(nRetain.Get()).cast<Cx>();
   Log::Print("Computing projection");

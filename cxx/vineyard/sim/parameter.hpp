@@ -7,6 +7,6 @@ namespace rl {
 auto ParameterGrid(Index const           nPar,
                    Eigen::ArrayXf const &lo,
                    Eigen::ArrayXf const &hi,
-                   Eigen::ArrayXf const &delta) -> Eigen::ArrayXXf;
+                   Eigen::ArrayXi const &N) -> Eigen::ArrayXXf;
 
 } // namespace rl

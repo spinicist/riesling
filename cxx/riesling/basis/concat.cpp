@@ -47,10 +47,7 @@ void main_basis_concat(args::Subparser &parser)
     Eigen::MatrixXcd const    Q = h.householderQ() * I;
     Eigen::MatrixXcf    R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
     R /= scale;
-    Log::Print("bmap\nrow norms {}\ncol norms {}", bmap.rowwise().norm().transpose(), bmap.colwise().norm().head(10));
     bmap = Q.transpose().cast<Cx>() * scale;
-    Log::Print("bmap\nrow norms {}\ncol norms {}", bmap.rowwise().norm().transpose(), bmap.colwise().norm().head(10));
-    Log::Print("bmap*bmap'\n{}", fmt::streamed(bmap.matrix() * bmap.matrix().adjoint()));
     Basis b(nb, Tensorfy(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
