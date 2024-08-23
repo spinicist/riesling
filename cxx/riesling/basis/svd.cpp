@@ -122,7 +122,6 @@ void main_basis_svd(args::Subparser &parser)
   Log::Print("Computing SVD {}x{}", N, L);
   SVD<Cxd> svd(dmap.cast<Cxd>());
   bmap = svd.basis(nRetain.Get()).cast<Cx>();
-  Log::Print("bmap\nrow norms {}\ncol norms {}", bmap.rowwise().norm().transpose(), bmap.colwise().norm().head(10));
   Log::Print("Computing projection");
   Cx3                       proj(dshape);
   Eigen::MatrixXcf::MapType pmap(proj.data(), N, L);
@@ -132,8 +131,6 @@ void main_basis_svd(args::Subparser &parser)
   Log::Print("Residual {}%", 100 * resid);
 
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
-  Log::Print("bmap\nrow norms {}\ncol norms {}", bmap.rowwise().norm().transpose(), bmap.colwise().norm().head(10));
-  Log::Print("bmap*bmap'\n{}", fmt::streamed(bmap.matrix() * bmap.matrix().adjoint()));
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
   if (save) {
