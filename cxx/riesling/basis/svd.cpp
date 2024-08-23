@@ -124,7 +124,7 @@ void main_basis_svd(args::Subparser &parser)
   bmap = svd.basis(nRetain.Get()).cast<Cx>();
   Log::Print("Computing projection");
   Cx3                       proj(dshape);
-  Eigen::MatrixXcf::MapType pmap(proj.data(), N, L);
+  Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);
   Eigen::MatrixXcf          temp = bmap.conjugate() * dmap.transpose();
   pmap = (bmap.transpose() * temp).transpose();
   auto resid = Norm(dall - proj) / Norm(dall);
