@@ -34,9 +34,13 @@ TEST_CASE("Grid", "[grid]")
   noncart.setConstant(1.f);
   cart = grid->adjoint(noncart);
   INFO("M " << M << " OS " << osamp << " " << ktype);
-  CHECK(Norm(cart) == Approx(Norm(noncart)).margin(1e-2f));
+  // INFO("noncart\n" << noncart);
+  // INFO("cart\n" << cart);
+  auto const cs = std::sqrt(cart.size());
+  CHECK((Norm(cart) - Norm(noncart))/cs == Approx(0.f).margin(2e-4f));
   noncart = grid->forward(cart);
-  CHECK(Norm(noncart) == Approx(Norm(cart)).margin(1e-2f));
+  // INFO("noncart\n" << noncart);
+  CHECK((Norm(cart) - Norm(noncart))/cs == Approx(0.f).margin(2e-4f));
 }
 
 TEST_CASE("Grid-Basis-Sample", "[grid]")

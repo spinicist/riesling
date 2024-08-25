@@ -25,4 +25,15 @@ template <int ND> struct CalcMapping_t
 template <int ND>
 auto CalcMapping(TrajectoryN<ND> const &t, float const nomOSamp, Index const kW, Index const subgridSize) -> CalcMapping_t<ND>;
 
+inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }
+
+template <int ND> inline auto SubgridCorner(Sz<ND> const sgInd, Index const sgSz, Index const kW)
+{
+  Sz<ND> c;
+  for (int id = 0; id < ND; id++) {
+    c[id] = (sgSz * sgInd[id]) - (kW / 2);
+  }
+  return c;
+}
+
 } // namespace rl
