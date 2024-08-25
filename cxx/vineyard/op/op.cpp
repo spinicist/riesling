@@ -129,7 +129,7 @@ template <typename S> auto Op<S>::startInverse(CMap const &y, Map const &x, bool
 template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const start, bool const ip) const
 {
   if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("Op{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());
+    Log::Debug("Op{} {} inverse finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());
   }
 }
 

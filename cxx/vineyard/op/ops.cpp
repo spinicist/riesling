@@ -153,26 +153,9 @@ DiagRep<S>::DiagRep(Vector const &v, Index const repI, Index const repO)
   Log::Debug("Diagonal Repeat. Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
 }
 
-template <typename S>
-DiagRep<S>::DiagRep(Vector const &v, float const b, float const sc, Index const repI, Index const repO)
-  : Op<S>("DiagRep")
-  , s{v}
-  , rI{repI}
-  , rO{repO}
-  , isInverse{true}
-  , bias{b}
-  , scale{sc}
-{
-}
-
 template <typename S> auto DiagRep<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
   return std::make_shared<DiagRep>(s.array().inverse(), rI, rO);
-}
-
-template <typename S> auto DiagRep<S>::inverse(float const b, float const sc) const -> std::shared_ptr<Op<S>>
-{
-  return std::make_shared<DiagRep>(s.array(), b, sc, rI, rO);
 }
 
 template <typename S> auto DiagRep<S>::rows() const -> Index { return s.rows() * rI * rO; }
@@ -181,9 +164,9 @@ template <typename S> auto DiagRep<S>::cols() const -> Index { return s.rows() *
 template <typename S> void DiagRep<S>::forward(CMap const &x, Map &y) const
 {
   auto const time = this->startForward(x, y, false);
-  auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
+  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    y.array().device(Threads::GlobalDevice()) = x.array() / (bias + scale * rep);
+    y.array().device(Threads::GlobalDevice()) = x.array() / rep;
   } else {
     y.array().device(Threads::GlobalDevice()) = x.array() * rep;
   }
@@ -193,9 +176,9 @@ template <typename S> void DiagRep<S>::forward(CMap const &x, Map &y) const
 template <typename S> void DiagRep<S>::adjoint(CMap const &y, Map &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
+  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    x.array().device(Threads::GlobalDevice()) = y.array() / (bias + scale * rep);
+    x.array().device(Threads::GlobalDevice()) = y.array() / rep;
   } else {
     x.array().device(Threads::GlobalDevice()) = y.array() * rep;
   }
@@ -205,9 +188,9 @@ template <typename S> void DiagRep<S>::adjoint(CMap const &y, Map &x) const
 template <typename S> void DiagRep<S>::inverse(CMap const &y, Map &x) const
 {
   auto const time = this->startInverse(y, x, false);
-  auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
+  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    x.array().device(Threads::GlobalDevice()) = y.array() * (bias + scale * rep);
+    x.array().device(Threads::GlobalDevice()) = y.array() * rep;
   } else {
     x.array().device(Threads::GlobalDevice()) = y.array() / rep;
   }
@@ -217,9 +200,9 @@ template <typename S> void DiagRep<S>::inverse(CMap const &y, Map &x) const
 template <typename S> void DiagRep<S>::iforward(CMap const &x, Map &y) const
 {
   auto const time = this->startForward(x, y, true);
-  auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
+  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    y.array().device(Threads::GlobalDevice()) += x.array() / (bias + scale * rep);
+    y.array().device(Threads::GlobalDevice()) += x.array() / rep;
   } else {
     y.array().device(Threads::GlobalDevice()) += x.array() * rep;
   }
@@ -231,7 +214,7 @@ template <typename S> void DiagRep<S>::iadjoint(CMap const &y, Map &x) const
   auto const time = this->startAdjoint(y, x, true);
   auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
   if (isInverse) {
-    x.array().device(Threads::GlobalDevice()) += y.array() / (bias + scale * rep);
+    x.array().device(Threads::GlobalDevice()) += y.array() / rep;
   } else {
     x.array().device(Threads::GlobalDevice()) += y.array() * rep;
   }
