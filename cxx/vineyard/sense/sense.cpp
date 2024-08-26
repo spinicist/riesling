@@ -73,7 +73,7 @@ auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx
   Sz5 const shape = channels.dimensions();
   Log::Print("Normalizing SENSE. Dimensions {} λ {}", shape, λ);
   Cx5 normalized(shape);
-  normalized.device(Threads::GlobalDevice()) =
+  normalized.device(Threads::TensorDevice()) =
     channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
   return normalized;
 }

@@ -170,7 +170,7 @@ template <int ND> void TrajectoryN<ND>::shiftFOV(Eigen::Vector3f const shift, Cx
 
   // Check for NaNs (trajectory points that should be ignored) and zero the corresponding data points. Otherwise they become
   // NaN, and cause problems in iterative recons
-  data.device(Threads::GlobalDevice()) =
+  data.device(Threads::TensorDevice()) =
     data * points_.sum(Sz1{0})
              .isfinite()
              .reshape(Sz5{1, shape[1], shape[2], 1, 1})

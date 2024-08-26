@@ -82,7 +82,7 @@ template <int ND> void Basis::applyR(CxN<ND> &data) const
     Eigen::MatrixXcf const         Rinv = Rm.inverse();
     auto const                     Rim = Tensorfy(Rinv, Sz2{Rinv.rows(), Rinv.cols()});
     Log::Print("Apply R");
-    data.device(Threads::GlobalDevice()) = CxN<ND>(Rim.contract(data, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()));
+    data.device(Threads::TensorDevice()) = CxN<ND>(Rim.contract(data, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()));
   }
 }
 

@@ -80,9 +80,9 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
     ζ̅ = -s̅ * ζ̅;
 
     // Update h, h̅, x.
-    h̅.device(Threads::GlobalDevice()) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
-    x.device(Threads::GlobalDevice()) = x + (ζ / (ρ * ρ̅)) * h̅;
-    h.device(Threads::GlobalDevice()) = v - (θnew / ρ) * h;
+    h̅.device(Threads::CoreDevice()) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
+    x.device(Threads::CoreDevice()) = x + (ζ / (ρ * ρ̅)) * h̅;
+    h.device(Threads::CoreDevice()) = v - (θnew / ρ) * h;
 
     // Estimate of |r|.
     float const β́ = ĉ * β̈;

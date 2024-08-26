@@ -30,7 +30,7 @@ void ForwardDiff::operator()(Input x, Output y) const
   Sz4       fwd{0, 1, 1, 1};
   fwd[dim + 1] = 2;
   y.setZero();
-  y.slice(st1, sz).device(Threads::GlobalDevice()) = x.slice(fwd, sz) - x.slice(st1, sz);
+  y.slice(st1, sz).device(Threads::TensorDevice()) = x.slice(fwd, sz) - x.slice(st1, sz);
 }
 
 void BackwardDiff::operator()(Input x, Output y) const
@@ -40,7 +40,7 @@ void BackwardDiff::operator()(Input x, Output y) const
   Sz4       bck{0, 1, 1, 1};
   bck[dim + 1] = 0;
   y.setZero();
-  y.slice(st1, sz).device(Threads::GlobalDevice()) = x.slice(st1, sz) - x.slice(bck, sz);
+  y.slice(st1, sz).device(Threads::TensorDevice()) = x.slice(st1, sz) - x.slice(bck, sz);
 }
 
 void CentralDiff::operator()(Input x, Output y) const
@@ -52,7 +52,7 @@ void CentralDiff::operator()(Input x, Output y) const
   fwd[dim + 1] = 2;
   bck[dim + 1] = 0;
   y.setZero();
-  y.slice(st1, sz).device(Threads::GlobalDevice()) = (x.slice(fwd, sz) - x.slice(bck, sz)) / x.slice(st1, sz).constant(2.f);
+  y.slice(st1, sz).device(Threads::TensorDevice()) = (x.slice(fwd, sz) - x.slice(bck, sz)) / x.slice(st1, sz).constant(2.f);
 }
 
 } // namespace rl

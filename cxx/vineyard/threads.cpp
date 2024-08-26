@@ -13,18 +13,20 @@
 #include "log.hpp"
 
 // Need to define EIGEN_USE_THREADS before including these. This is done in CMakeLists.txt
+#include <Eigen/ThreadPool>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <unsupported/Eigen/CXX11/ThreadPool>
 
 namespace {
 std::unique_ptr<Eigen::ThreadPool>       gp = nullptr;
-std::unique_ptr<Eigen::ThreadPoolDevice> dev = nullptr;
+std::unique_ptr<Eigen::CoreThreadPoolDevice> coreDev = nullptr;
+std::unique_ptr<Eigen::ThreadPoolDevice> tensorDev = nullptr;
 } // namespace
 
 namespace rl {
 namespace Threads {
 
-Eigen::ThreadPool *GlobalPool()
+auto GlobalPool() -> Eigen::ThreadPool *
 {
   if (gp == nullptr) {
     auto const nt = std::thread::hardware_concurrency();
@@ -34,23 +36,33 @@ Eigen::ThreadPool *GlobalPool()
   return gp.get();
 }
 
+auto GlobalThreadCount() -> Index { return GlobalPool()->NumThreads(); }
+
 void SetGlobalThreadCount(Index nt)
 {
   if (nt < 1) { nt = std::thread::hardware_concurrency(); }
   Log::Debug("Creating thread pool with {} threads", nt);
   gp = std::make_unique<Eigen::ThreadPool>(nt);
-  dev = std::make_unique<Eigen::ThreadPoolDevice>(gp.get(), nt);
+  coreDev = std::make_unique<Eigen::CoreThreadPoolDevice>(*gp, nt);
+  tensorDev = std::make_unique<Eigen::ThreadPoolDevice>(gp.get(), nt);
 }
 
-Index GlobalThreadCount() { return GlobalPool()->NumThreads(); }
-
-Eigen::ThreadPoolDevice &GlobalDevice()
+auto CoreDevice() -> Eigen::CoreThreadPoolDevice&
 {
-  if (dev == nullptr) {
+  if (coreDev == nullptr) {
     auto gp = GlobalPool();
-    dev = std::make_unique<Eigen::ThreadPoolDevice>(gp, gp->NumThreads());
+    coreDev = std::make_unique<Eigen::CoreThreadPoolDevice>(*gp, gp->NumThreads());
   }
-  return *dev;
+  return *coreDev;
+}
+
+auto TensorDevice() -> Eigen::ThreadPoolDevice&
+{
+  if (tensorDev == nullptr) {
+    auto gp = GlobalPool();
+    tensorDev = std::make_unique<Eigen::ThreadPoolDevice>(gp, gp->NumThreads());
+  }
+  return *tensorDev;
 }
 
 void For(ForFunc f, Index const lo, Index const hi, std::string const &label)

@@ -55,6 +55,7 @@ Grid<NDim, VCC>::Grid(
   oshape = AddFront(m.noncartDims, nC);
   nMutexes = std::ceil(m.cartDims[NDim - 1] / (float)subgridW);
   if (nMutexes < 4) { nMutexes = 1; } // Any less than this we only lock once
+  Log::Debug("Using {} mutexes", nMutexes);
   if constexpr (VCC) {
     Log::Print("Adding VCC");
     auto const conjTraj = TrajectoryN<NDim>(-traj.points(), traj.matrix(), traj.voxelSize());
@@ -85,7 +86,6 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
       }
       Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
       if (basis) {
-        ;
         kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
       } else {
         kernel->gather(m.cart, m.offset, sx, yy);
@@ -97,7 +97,7 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
 template <int NDim, bool VCC> void Grid<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::GlobalDevice()) = y.constant(0.f);
+  y.device(Threads::TensorDevice()) = y.constant(0.f);
   Threads::ChunkFor(forwardTask<NDim, VCC, false>(), this->mappings, subgridW, this->basis, this->kernel, x, y);
   if constexpr (VCC == true) {
     Threads::ChunkFor(forwardTask<NDim, VCC, true>(), this->vccMapping.value(), subgridW, this->basis, this->kernel, x, y);
@@ -166,7 +166,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
 template <int NDim, bool VCC> void Grid<NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::GlobalDevice()) = x.constant(0.f);
+  x.device(Threads::TensorDevice()) = x.constant(0.f);
   std::vector<std::mutex> writeMutexes(nMutexes);
   Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutexes, subgridW, this->basis, this->kernel, y, x);
   if constexpr (VCC == true) {

@@ -55,10 +55,10 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
   if (x0.size()) {
     x = x0;
     A->forward(x, u); // Reuse u to save space
-    Mu.device(Threads::GlobalDevice()) = b - u;
+    Mu.device(Threads::CoreDevice()) = b - u;
   } else {
     x.setZero();
-    Mu.device(Threads::GlobalDevice()) = b;
+    Mu.device(Threads::CoreDevice()) = b;
   }
   if (M) {
     M->inverse(Mu, u);
@@ -81,7 +81,7 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const A,
             float                             &α,
             float                             &β)
 {
-  Mu.device(Threads::GlobalDevice()) = -α * Mu;
+  Mu.device(Threads::CoreDevice()) = -α * Mu;
   A->iforward(v, Mu);
   if (M) {
     M->inverse(Mu, u);
@@ -89,12 +89,12 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const A,
     u = Mu;
   }
   β = std::sqrt(CheckedDot(Mu, u));
-  Mu.device(Threads::GlobalDevice()) = Mu / β;
-  u.device(Threads::GlobalDevice()) = u / β;
-  v.device(Threads::GlobalDevice()) = -β * v;
+  Mu.device(Threads::CoreDevice()) = Mu / β;
+  u.device(Threads::CoreDevice()) = u / β;
+  v.device(Threads::CoreDevice()) = -β * v;
   A->iadjoint(u, v);
   α = std::sqrt(CheckedDot(v, v));
-  v.device(Threads::GlobalDevice()) = v / α;
+  v.device(Threads::CoreDevice()) = v / α;
 }
 
 } // namespace rl
