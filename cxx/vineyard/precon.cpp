@@ -29,17 +29,17 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
     ones.setConstant(1. / std::sqrt(psf.dimension(0) * psf.dimension(1)));
     TOps::Pad<Cx, 6> padX(ones.dimensions(), psf.dimensions());
     Cx6              xcorr(padX.oshape);
-    xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
+    xcorr.device(Threads::TensorDevice()) = padX.forward(ones);
     auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
     FFT::Forward(xcorr, Sz3{3, 4, 5}, ph);
-    xcorr.device(Threads::GlobalDevice()) = xcorr * xcorr.conjugate();
+    xcorr.device(Threads::TensorDevice()) = xcorr * xcorr.conjugate();
     FFT::Adjoint(xcorr, Sz3{3, 4, 5}, ph);
-    xcorr.device(Threads::GlobalDevice()) = xcorr * psf;
+    xcorr.device(Threads::TensorDevice()) = xcorr * psf;
     weights = nufft.forward(xcorr).abs().chip(0, 0);
     // I do not understand this scaling factor but it's in Frank's code and works
     float scale =
       std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
-    weights.device(Threads::GlobalDevice()) = ((weights * scale) + bias).inverse();
+    weights.device(Threads::TensorDevice()) = ((weights * scale) + bias).inverse();
   } else {
     TOps::NUFFT<3, false> nufft(newTraj, "ES5", osamp, 1, basis);
     Cx3                   W(nufft.oshape);
@@ -50,17 +50,17 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
     ones.setConstant(1.f);
     TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
     Cx5              xcorr(padX.oshape);
-    xcorr.device(Threads::GlobalDevice()) = padX.forward(ones);
+    xcorr.device(Threads::TensorDevice()) = padX.forward(ones);
     auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
     FFT::Forward(xcorr, Sz3{2, 3, 4}, ph);
-    xcorr.device(Threads::GlobalDevice()) = xcorr * xcorr.conjugate();
+    xcorr.device(Threads::TensorDevice()) = xcorr * xcorr.conjugate();
     FFT::Adjoint(xcorr, Sz3{2, 3, 4}, ph);
-    xcorr.device(Threads::GlobalDevice()) = xcorr * psf;
+    xcorr.device(Threads::TensorDevice()) = xcorr * psf;
     weights = nufft.forward(xcorr).abs().chip(0, 0);
     // I do not understand this scaling factor but it's in Frank's code and works
     float scale =
       std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
-    weights.device(Threads::GlobalDevice()) = (weights * scale) + bias;
+    weights.device(Threads::TensorDevice()) = (weights * scale) + bias;
   }
 
   float const norm = Norm(weights);

@@ -20,8 +20,7 @@ inline float Tukey(float const &r, float const &sw, float const &ew, float const
   }
 }
 
-template <typename Scalar, int D>
-void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar, D> &ks)
+template <typename Scalar, int D> void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar, D> &ks)
 {
   auto const sz = ks.dimension(D - 1);
   auto const sy = ks.dimension(D - 2);
@@ -64,7 +63,7 @@ void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const
   assert(coords.dimension(2) == nT);
   Log::Print("Noncartesian Tukey start {} end {} height {}", s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  x.device(Threads::GlobalDevice()) =
+  x.device(Threads::TensorDevice()) =
     x * coords.square().sum(Sz1{0}).sqrt().unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice});
 }
 
@@ -79,7 +78,7 @@ void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const
   assert(coords.dimension(2) == nT);
   Log::Print("Noncartesian Tukey start {} end {} height {}", s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  x.device(Threads::GlobalDevice()) =
+  x.device(Threads::TensorDevice()) =
     x * coords.square().sum(Sz1{0}).sqrt().unaryExpr(f).reshape(Sz5{1, nS, nT, 1, 1}).broadcast(Sz5{nC, 1, 1, nSlice, nV});
 }
 

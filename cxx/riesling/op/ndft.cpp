@@ -35,7 +35,7 @@ void main_ndft(args::Subparser &parser)
     auto channels = reader.readTensor<Cx6>();
     Cx5  noncart(AddBack(ndft->oshape, 1, channels.dimension(5)));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      noncart.chip<4>(ii).chip<3>(0).device(Threads::GlobalDevice()) = ndft->forward(CChipMap(channels, ii));
+      noncart.chip<4>(ii).chip<3>(0).device(Threads::TensorDevice()) = ndft->forward(CChipMap(channels, ii));
     }
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
     traj.write(writer);
@@ -49,7 +49,7 @@ void main_ndft(args::Subparser &parser)
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::GlobalDevice()) = Tensorfy(lsmr.run(CollapseToArray(noncart)), ndft->ishape);
+      output.chip<5>(ii).device(Threads::TensorDevice()) = Tensorfy(lsmr.run(CollapseToArray(noncart)), ndft->ishape);
     }
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
   }

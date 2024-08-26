@@ -45,7 +45,7 @@ void main_blend(args::Subparser &parser)
 
   for (Index io = 0; io < nO; io++) {
     Log::Print("Blending sample {} trace {}", sps[io], tps[io]);
-    out.chip<0>(io).device(Threads::GlobalDevice()) =
+    out.chip<0>(io).device(Threads::TensorDevice()) =
       basis->blend(images, sps[io], tps[io]);
   }
   HD5::Writer writer(oname.Get());

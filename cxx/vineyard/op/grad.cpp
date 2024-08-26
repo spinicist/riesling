@@ -12,7 +12,7 @@ template <typename T1, typename T2, typename SzT> inline auto ForwardDiff(T1 con
   decltype(sz) st, fwd;
   fwd[dim] = 1;
   sz[dim] -= 1;
-  b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(fwd, sz) - a.slice(st, sz));
+  b.slice(st, sz).device(Threads::TensorDevice()) += (a.slice(fwd, sz) - a.slice(st, sz));
 }
 
 template <typename T1, typename T2, typename SzT> inline auto BackwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim)
@@ -22,7 +22,7 @@ template <typename T1, typename T2, typename SzT> inline auto BackwardDiff(T1 co
   auto bck = decltype(sz){};
   st[dim] = 1;
   sz[dim] -= 1;
-  b.slice(st, sz).device(Threads::GlobalDevice()) += (a.slice(bck, sz) - a.slice(st, sz));
+  b.slice(st, sz).device(Threads::TensorDevice()) += (a.slice(bck, sz) - a.slice(st, sz));
 }
 } // namespace
 

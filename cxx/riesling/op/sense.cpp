@@ -35,7 +35,7 @@ void main_op_sense(args::Subparser &parser)
     Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
       auto const temp = sense.forward(CChipMap(images, ii));
-      channels.chip<5>(ii).device(Threads::GlobalDevice()) = temp;
+      channels.chip<5>(ii).device(Threads::TensorDevice()) = temp;
     }
     writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::Channels);
   } else {
@@ -46,7 +46,7 @@ void main_op_sense(args::Subparser &parser)
     TOps::SENSE sense(maps);
     Cx5         images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      images.chip<4>(ii).device(Threads::GlobalDevice()) = sense.adjoint(CChipMap(channels, ii));
+      images.chip<4>(ii).device(Threads::TensorDevice()) = sense.adjoint(CChipMap(channels, ii));
     }
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
   }

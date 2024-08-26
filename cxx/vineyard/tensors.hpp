@@ -21,21 +21,21 @@ template <typename T> decltype(auto) Transpose(T const &a)
 template <typename T> typename T::Scalar Sum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s;
-  s.device(rl::Threads::GlobalDevice()) = a.sum();
+  s.device(rl::Threads::TensorDevice()) = a.sum();
   return s();
 }
 
 template <typename T> typename T::Scalar Mean(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> s;
-  s.device(rl::Threads::GlobalDevice()) = a.mean();
+  s.device(rl::Threads::TensorDevice()) = a.mean();
   return s();
 }
 
 template <typename T> typename T::Scalar Minimum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;
-  m.device(rl::Threads::GlobalDevice()) = a.minimum();
+  m.device(rl::Threads::TensorDevice()) = a.minimum();
   return m();
 }
 
@@ -44,7 +44,7 @@ template <typename T> auto NoNaNs(T const &a) -> T { return a.isfinite().select(
 template <typename T> typename T::Scalar Maximum(T const &a)
 {
   Eigen::TensorFixedSize<typename T::Scalar, Eigen::Sizes<>> m;
-  m.device(rl::Threads::GlobalDevice()) = a.maximum();
+  m.device(rl::Threads::TensorDevice()) = a.maximum();
   return m();
 }
 
@@ -52,7 +52,7 @@ template <typename T, typename U> inline decltype(auto) Dot(T const &a, U const 
 {
   using Scalar = typename std::remove_reference<T>::type::Scalar;
   Eigen::TensorFixedSize<Scalar, Eigen::Sizes<>> d0;
-  d0.device(rl::Threads::GlobalDevice()) = (a * b.conjugate()).sum();
+  d0.device(rl::Threads::TensorDevice()) = (a * b.conjugate()).sum();
   Scalar const d = d0();
   return d;
 }

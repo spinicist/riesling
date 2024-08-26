@@ -35,28 +35,28 @@ SENSE::SENSE(Cx5 const &maps, Index const nB)
 void SENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
-  y.device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
+  y.device(Threads::TensorDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
   finishForward(y, time, false);
 }
 
 void SENSE::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, false);
-  x.device(Threads::GlobalDevice()) = DimDot<1>(y, maps_.broadcast(brdMaps));
+  x.device(Threads::TensorDevice()) = DimDot<1>(y, maps_.broadcast(brdMaps));
   finishAdjoint(x, time, false);
 }
 
 void SENSE::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
-  y.device(Threads::GlobalDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
+  y.device(Threads::TensorDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
   finishForward(y, time, true);
 }
 
 void SENSE::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
-  x.device(Threads::GlobalDevice()) += DimDot<1>(y, maps_.broadcast(brdMaps));
+  x.device(Threads::TensorDevice()) += DimDot<1>(y, maps_.broadcast(brdMaps));
   finishAdjoint(x, time, true);
 }
 
@@ -79,28 +79,28 @@ EstimateKernels::EstimateKernels(Cx4 const &img, Index const nC)
 void EstimateKernels::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
-  y.device(Threads::GlobalDevice()) = img_.reshape(res_).broadcast(brd_) * x;
+  y.device(Threads::TensorDevice()) = img_.reshape(res_).broadcast(brd_) * x;
   finishForward(y, time, false);
 }
 
 void EstimateKernels::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, false);
-  x.device(Threads::GlobalDevice()) = img_.reshape(res_).broadcast(brd_).conjugate() * y;
+  x.device(Threads::TensorDevice()) = img_.reshape(res_).broadcast(brd_).conjugate() * y;
   finishAdjoint(x, time, false);
 }
 
 void EstimateKernels::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
-  y.device(Threads::GlobalDevice()) += img_.reshape(res_).broadcast(brd_) * x;
+  y.device(Threads::TensorDevice()) += img_.reshape(res_).broadcast(brd_) * x;
   finishForward(y, time, true);
 }
 
 void EstimateKernels::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = startAdjoint(y, x, true);
-  x.device(Threads::GlobalDevice()) += img_.reshape(res_).broadcast(brd_).conjugate() * y;
+  x.device(Threads::TensorDevice()) += img_.reshape(res_).broadcast(brd_).conjugate() * y;
   finishAdjoint(x, time, true);
 }
 
@@ -131,8 +131,8 @@ VCCSENSE::VCCSENSE(Cx5 const &maps, Index const nB)
 void VCCSENSE::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, false);
-  y.chip<2>(0).device(Threads::GlobalDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
-  y.chip<2>(1).device(Threads::GlobalDevice()) =
+  y.chip<2>(0).device(Threads::TensorDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<2>(1).device(Threads::TensorDevice()) =
     x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, false);
 }
@@ -142,7 +142,7 @@ void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
   auto const time = startAdjoint(y, x, false);
   auto const real = DimDot<1>(y.chip<2>(0), maps_.broadcast(brdMaps));
   auto const virt = Sum<1>(y.chip<2>(1), maps_.broadcast(brdMaps));
-  x.device(Threads::GlobalDevice()) = (real + virt) * Cx(inv_sqrt2);
+  x.device(Threads::TensorDevice()) = (real + virt) * Cx(inv_sqrt2);
 
   finishAdjoint(x, time, false);
 }
@@ -150,8 +150,8 @@ void VCCSENSE::adjoint(OutCMap const &y, InMap &x) const
 void VCCSENSE::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = startForward(x, y, true);
-  y.chip<2>(0).device(Threads::GlobalDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
-  y.chip<2>(1).device(Threads::GlobalDevice()) +=
+  y.chip<2>(0).device(Threads::TensorDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * Cx(inv_sqrt2);
+  y.chip<2>(1).device(Threads::TensorDevice()) +=
     x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps).conjugate() * Cx(inv_sqrt2);
   finishForward(y, time, true);
 }
@@ -161,7 +161,7 @@ void VCCSENSE::iadjoint(OutCMap const &y, InMap &x) const
   auto const time = startAdjoint(y, x, true);
   auto const real = DimDot<1>(y.chip<2>(0), maps_.broadcast(brdMaps));
   auto const virt = Sum<1>(y.chip<2>(1), maps_.broadcast(brdMaps));
-  x.device(Threads::GlobalDevice()) += (real + virt) * Cx(inv_sqrt2);
+  x.device(Threads::TensorDevice()) += (real + virt) * Cx(inv_sqrt2);
 
   finishAdjoint(x, time, true);
 }

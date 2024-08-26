@@ -29,28 +29,28 @@ auto Pad<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::GlobalDevice()) = x.pad(paddings_);
+  y.device(Threads::TensorDevice()) = x.pad(paddings_);
   this->finishForward(y, time, false);
 }
 
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::GlobalDevice()) = y.slice(left_, ishape);
+  x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
   this->finishAdjoint(x, time, false);
 }
 
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::GlobalDevice()) += x.pad(paddings_);
+  y.device(Threads::TensorDevice()) += x.pad(paddings_);
   this->finishForward(y, time, true);
 }
 
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::GlobalDevice()) += y.slice(left_, ishape);
+  x.device(Threads::TensorDevice()) += y.slice(left_, ishape);
   this->finishAdjoint(x, time, true);
 }
 
@@ -90,28 +90,28 @@ auto Crop<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
 template <typename Scalar, int Rank> void Crop<Scalar, Rank>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::GlobalDevice()) = x.slice(left_, oshape);
+  y.device(Threads::TensorDevice()) = x.slice(left_, oshape);
   this->finishForward(y, time, false);
 }
 
 template <typename Scalar, int Rank> void Crop<Scalar, Rank>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::GlobalDevice()) = y.pad(paddings_);
+  x.device(Threads::TensorDevice()) = y.pad(paddings_);
   this->finishAdjoint(x, time, false);
 }
 
 template <typename Scalar, int Rank> void Crop<Scalar, Rank>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::GlobalDevice()) += x.slice(left_, oshape);
+  y.device(Threads::TensorDevice()) += x.slice(left_, oshape);
   this->finishForward(y, time, true);
 }
 
 template <typename Scalar, int Rank> void Crop<Scalar, Rank>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::GlobalDevice()) += y.pad(paddings_);
+  x.device(Threads::TensorDevice()) += y.pad(paddings_);
   this->finishAdjoint(x, time, true);
 }
 

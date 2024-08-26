@@ -5,17 +5,19 @@
 
 // Forward declare
 namespace Eigen {
-class ThreadPoolDevice;
+class CoreThreadPoolDevice;
 } // namespace Eigen
 
 namespace rl {
 
 namespace Threads {
 
-Eigen::ThreadPool       *GlobalPool();
-Index                    GlobalThreadCount();
-void                     SetGlobalThreadCount(Index n_threads);
-Eigen::ThreadPoolDevice &GlobalDevice();
+auto GlobalPool() -> Eigen::ThreadPool *;
+auto CoreDevice() -> Eigen::CoreThreadPoolDevice &;
+auto TensorDevice() -> Eigen::ThreadPoolDevice &;
+
+auto GlobalThreadCount() -> Index;
+void SetGlobalThreadCount(Index n_threads);
 
 using ForFunc = std::function<void(Index const index)>;
 void For(ForFunc f, Index const n, std::string const &label = "");
