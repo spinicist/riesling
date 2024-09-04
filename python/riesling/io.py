@@ -16,7 +16,7 @@ def __info():
 def write(filename, data=None, trajectory=None, matrix=None, info=None, meta=None, compression='gzip'):
     with h5py.File(filename, 'w') as out_f:
         if data is not None: # create dataset and assign dimension labels
-            out_f.create_dataset('data', dtype='c8', data=data.data, chunks=np.shape(data.data), compression=compression)
+            out_f.create_dataset('data', dtype='c8', data=data.data, chunks=True, compression=compression)
             if hasattr(data, 'dims'):
                 for idd, dim in enumerate(data.dims):
                     out_f['data'].dims[idd].label = dim
