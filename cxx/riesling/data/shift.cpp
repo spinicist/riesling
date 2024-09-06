@@ -17,7 +17,7 @@ void main_shift(args::Subparser &parser)
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   Cx5         ks = reader.readTensor<Cx5>();
-  traj.shiftInFOV(shift.Get(), ks);
+  traj.shiftInFOV(info.direction.inverse() * shift.Get(), ks);
   HD5::Writer writer(oname.Get());
   writer.writeInfo(info);
   traj.write(writer);
