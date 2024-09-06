@@ -12,7 +12,7 @@
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

@@ -7,7 +7,7 @@
 #include "op/grid.hpp"
 #include "op/ndft.hpp"
 #include "precon.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

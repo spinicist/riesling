@@ -2,8 +2,8 @@
 
 #include "common.hpp"
 #include "op/ops.hpp"
-#include "signals.hpp"
-#include "threads.hpp"
+#include "sys/signals.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 /*

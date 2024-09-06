@@ -6,7 +6,7 @@
 #include "log.hpp"
 #include "op/nufft.hpp"
 #include "precon.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

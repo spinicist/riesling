@@ -6,7 +6,7 @@
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "op/ops.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 

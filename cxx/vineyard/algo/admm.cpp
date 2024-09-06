@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "lsmr.hpp"
 #include "op/top.hpp"
-#include "signals.hpp"
+#include "sys/signals.hpp"
 #include "tensors.hpp"
 
 namespace rl {

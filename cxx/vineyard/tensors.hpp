@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 

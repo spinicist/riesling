@@ -4,7 +4,7 @@
 #include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 #include "tensors.hpp"
 

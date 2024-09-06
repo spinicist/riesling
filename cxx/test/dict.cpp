@@ -5,7 +5,7 @@
 #include "basis/basis.hpp"
 #include "sim/t2flair.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 #include <catch2/benchmark/catch_benchmark_all.hpp>
 #include <catch2/catch_approx.hpp>

@@ -5,7 +5,7 @@
 #include "cropper.hpp"
 #include "fft/fft.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 namespace SENSE {

@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "patches.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

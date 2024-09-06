@@ -7,7 +7,7 @@
 #include "precon.hpp"
 #include "sense/sense.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

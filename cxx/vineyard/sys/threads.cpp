@@ -9,7 +9,7 @@
  *
  */
 
-#include "threads.hpp"
+#include "sys/threads.hpp"
 #include "log.hpp"
 
 // Need to define EIGEN_USE_THREADS before including these. This is done in CMakeLists.txt

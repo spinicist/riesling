@@ -4,7 +4,7 @@
 #include "algo/stats.hpp"
 #include "io/hd5.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 

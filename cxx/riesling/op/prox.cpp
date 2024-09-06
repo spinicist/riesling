@@ -9,7 +9,7 @@
 #include "prox/entropy.hpp"
 #include "prox/l1-wavelets.hpp"
 #include "prox/llr.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 
