@@ -92,12 +92,15 @@ void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
                                                             [duccShape](size_t const ii) { return duccShape[ii]; }));
   internal::ThreadPool pool(Threads::TensorDevice());
   internal::Guard      guard(pool);
-  rl::Log::Debug("FFT Shift");
+  auto t = Log::Now();
   x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
-  rl::Log::Debug("DUCC forward FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
+  rl::Log::Debug("FFT Shift took {}", Log::ToNow(t));
+  t = Log::Now();
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, true, scale, pool.nthreads());
-  rl::Log::Debug("FFT Shift");
+  rl::Log::Debug("Forward FFT shape {} dims {} scale {} took {}", duccShape, duccDims, scale, Log::ToNow(t));
+  t = Log::Now();
   x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
+  rl::Log::Debug("FFT Shift took {}", Log::ToNow(t));
 }
 
 template <int ND>
@@ -146,12 +149,15 @@ void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
                                                             [duccShape](size_t const ii) { return duccShape[ii]; }));
   internal::ThreadPool pool(Threads::TensorDevice());
   internal::Guard      guard(pool);
-  rl::Log::Debug("FFT Shift");
+  auto t = Log::Now();
   x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
-  rl::Log::Debug("DUCC adjoint FFT shape {} dims {} scale {}", duccShape, duccDims, scale);
+  rl::Log::Debug("FFT Shift took {}", Log::ToNow(t));
+  t = Log::Now();
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, false, scale, pool.nthreads());
-  rl::Log::Debug("FFT Shift");
+  rl::Log::Debug("Adjoint FFT shape {} dims {} scale {} took {}", duccShape, duccDims, scale, Log::ToNow(t));
+  t = Log::Now();
   x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
+  rl::Log::Debug("FFT Shift took {}", Log::ToNow(t));
 }
 
 template <int ND>

@@ -31,11 +31,13 @@ struct Reader
   auto order(std::string const &label = Keys::Data) const -> Index;                        // Determine order of tensor dataset
   auto dimensions(std::string const &label = Keys::Data) const -> std::vector<Index>;      // Get Tensor dimensions
   auto listNames(std::string const &label = Keys::Data) const -> std::vector<std::string>; // Get dimension names
-  auto readInfo() const -> Info;                                                           // Read the info struct from a file
-  auto readMeta() const -> std::map<std::string, float>;                                   // Read meta-data group
 
-  auto readAttributeFloat(std::string const &dataset, std::string const &attribute) const -> float;
-  auto readAttributeInt(std::string const &dataset, std::string const &attribute) const -> long;
+  auto readString(std::string const &label) const -> std::string; // Read a string dataset
+  auto readInfo() const -> Info;                                  // Read the info struct from a file
+  auto readMeta() const -> std::map<std::string, float>;          // Read meta-data group
+
+  auto                  readAttributeFloat(std::string const &dataset, std::string const &attribute) const -> float;
+  auto                  readAttributeInt(std::string const &dataset, std::string const &attribute) const -> long;
   template <int N> auto readAttributeSz(std::string const &dataset, std::string const &attribute) const -> Sz<N>;
 
   template <typename T> auto       readTensor(std::string const &label = Keys::Data) const -> T;

@@ -48,6 +48,7 @@ add_executable(riesling
     util/denoise.cpp
     util/downsamp.cpp
     util/eig.cpp
+    util/log.cpp
     util/filter.cpp
     util/phantom.cpp
     util/precon.cpp

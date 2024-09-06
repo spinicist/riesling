@@ -66,6 +66,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(util, denoise, "denoise", "Denoise reconstructed images");
   COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
   COMMAND(util, filter, "filter", "Apply Tukey filter to image");
+  COMMAND(util, log, "log", "Print log to stdout");
   COMMAND(util, phantom, "phantom", "Make a phantom image");
   COMMAND(util, precon, "precon", "Precompute preconditioning weights");
   COMMAND(util, psf, "psf", "Estimate Point Spread Function");
