@@ -1,16 +1,15 @@
 #pragma once
 
 #include "common.hpp"
+#include "iter.hpp"
 #include "op/ops.hpp"
-#include "sys/signals.hpp"
 #include "sys/threads.hpp"
 
 namespace rl {
 /*
  * Wrapper for solving normal equations
  */
-template <typename Scalar_ = Cx>
-struct NormalOp final : Ops::Op<Scalar_>
+template <typename Scalar_ = Cx> struct NormalOp final : Ops::Op<Scalar_>
 {
   using Scalar = Scalar_;
   using Op = typename Ops::Op<Scalar>;
@@ -42,8 +41,7 @@ struct NormalOp final : Ops::Op<Scalar_>
   void adjoint(CMap const &x, Map &y) const { Log::Fail("Normal Operators do not have adjoints"); }
 };
 
-template <typename Scalar = Cx>
-struct ConjugateGradients
+template <typename Scalar = Cx> struct ConjugateGradients
 {
   using Op = Ops::Op<Scalar>;
   using Vector = typename Op::Vector;

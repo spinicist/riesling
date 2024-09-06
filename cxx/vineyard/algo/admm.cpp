@@ -1,16 +1,14 @@
 #include "admm.hpp"
 
+#include "iter.hpp"
 #include "log.hpp"
 #include "lsmr.hpp"
 #include "op/top.hpp"
-#include "sys/signals.hpp"
 #include "tensors.hpp"
 
 namespace rl {
 
-auto ADMM::run(Vector const &b, float const ρ) const -> Vector {
-  return run(CMap{b.data(), b.rows()}, ρ);
-}
+auto ADMM::run(Vector const &b, float const ρ) const -> Vector { return run(CMap{b.data(), b.rows()}, ρ); }
 
 auto ADMM::run(CMap const b, float ρ) const -> Vector
 {
@@ -60,7 +58,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   bʹ.head(A->rows()).device(dev) = b;
 
   Log::Print("ADMM Abs ε {}", ε);
-  PushInterrupt();
+  Iterating::Starting();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
     for (Index ir = 0; ir < R; ir++) {
@@ -123,9 +121,9 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         }
       }
     }
-    if (InterruptReceived()) { break; }
+    if (Iterating::ShouldStop()) { break; }
   }
-  PopInterrupt();
+  Iterating::Finished();
   return x;
 }
 
