@@ -54,14 +54,14 @@ void main_psf(args::Subparser &parser)
   auto        x = lsmr.run(CollapseToConstVector(ks));
   auto        xm = Tensorfy(x, LastN<4>(A->ishape));
   HD5::Writer writer(coreOpts.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "x", "y", "z"});
+  writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "i", "j", "k"});
 
   if (mtf) {
     auto const fft = TOps::FFT<4, 3>(xm.dimensions());
     Log::Print("Calculating MTF");
     xm *= xm.constant(std::sqrt(Product(shape)));
     fft.forward(xm);
-    writer.writeTensor("mtf", xm.dimensions(), xm.data(), {"v", "x", "y", "z"});
+    writer.writeTensor("mtf", xm.dimensions(), xm.data(), {"v", "i", "j", "k"});
   }
   Log::Print("Finished");
 }

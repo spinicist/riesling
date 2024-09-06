@@ -30,7 +30,7 @@ void main_channels(args::Subparser &parser)
   auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
-    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "x", "y", "z"});
+    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "i", "j", "k"});
   };
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 

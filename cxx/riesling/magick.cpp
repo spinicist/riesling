@@ -85,9 +85,9 @@ void LiveDebug(std::string const &, Sz<N> const &shape, Cx const *data, std::arr
   auto const xt = Eigen::TensorMap<CxN<N> const>(data, shape);
 
   std::vector<Magick::Image> magicks;
-  magicks.push_back(LiveSlice<N>(xt, dimNames, "x", "y"));
-  magicks.push_back(LiveSlice<N>(xt, dimNames, "y", "z"));
-  magicks.push_back(LiveSlice<N>(xt, dimNames, "z", "x"));
+  magicks.push_back(LiveSlice<N>(xt, dimNames, "i", "j"));
+  magicks.push_back(LiveSlice<N>(xt, dimNames, "j", "k"));
+  magicks.push_back(LiveSlice<N>(xt, dimNames, "k", "i"));
 
   Magick::Montage montageOpts;
   montageOpts.backgroundColor(Magick::Color(0, 0, 0));
