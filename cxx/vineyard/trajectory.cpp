@@ -156,7 +156,7 @@ template <int ND> auto TrajectoryN<ND>::FOV() const -> Array
   return fov;
 }
 
-template <int ND> void TrajectoryN<ND>::shiftFOV(Eigen::Vector3f const shift, Cx5 &data)
+template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, Cx5 &data)
 {
   Re1 delta(ND);
   for (Index ii = 0; ii < ND; ii++) {
