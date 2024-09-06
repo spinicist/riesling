@@ -98,7 +98,7 @@ template <typename T> inline decltype(auto) CollapseToArray(T &t)
 {
   using Scalar = typename T::Scalar;
   typename Eigen::Array<Scalar, Eigen::Dynamic, 1>::AlignedMapType mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()), 1);
+    t.data(), t.size(), 1);
   return mapped;
 }
 
@@ -106,7 +106,7 @@ template <typename T> inline decltype(auto) CollapseToArray(T const &t)
 {
   using Scalar = typename T::Scalar;
   typename Eigen::Array<Scalar, Eigen::Dynamic, 1>::ConstAlignedMapType mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()), 1);
+    t.data(), t.size(), 1);
   return mapped;
 }
 
@@ -114,7 +114,7 @@ template <typename T> inline decltype(auto) CollapseToVector(T &t)
 {
   using Scalar = typename T::Scalar;
   typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::AlignedMapType mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()), 1);
+    t.data(), t.size(), 1);
   return mapped;
 }
 
@@ -122,7 +122,7 @@ template <typename T> inline decltype(auto) CollapseToConstVector(T &t)
 {
   using Scalar = typename T::Scalar;
   typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::ConstAlignedMapType mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()), 1);
+    t.data(), t.size(), 1);
   return mapped;
 }
 
@@ -130,7 +130,7 @@ template <typename T> inline decltype(auto) CollapseToVector(T const &t)
 {
   using Scalar = typename T::Scalar;
   typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::ConstAlignedMapType mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().end(), 1, std::multiplies<Eigen::Index>()), 1);
+    t.data(), t.size(), 1);
   return mapped;
 }
 
@@ -138,8 +138,8 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1, std::multiplies<Eigen::Index>()),
-    std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
+    std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
 }
 
@@ -147,8 +147,8 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1, std::multiplies<Eigen::Index>()),
-    std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
+    std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
 }
 
@@ -156,8 +156,8 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToConstM
 {
   using Scalar = typename T::Scalar;
   Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
-    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1, std::multiplies<Eigen::Index>()),
-    std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1, std::multiplies<Eigen::Index>()));
+    t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
+    std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
 }
 
