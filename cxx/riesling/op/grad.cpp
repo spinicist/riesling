@@ -25,7 +25,7 @@ void main_grad(args::Subparser &parser)
     auto const    shape = input.dimensions();
     TOps::Grad<5> g(shape, std::vector<Index>{1, 2, 3});
     auto const    output = g.forward(input);
-    writer.writeTensor("data", output.dimensions(), output.data(), {"v", "x", "y", "z", "g", "t"});
+    writer.writeTensor("data", output.dimensions(), output.data(), {"v", "i", "j", "k", "g", "t"});
   } else {
     auto const    input = reader.readTensor<Cx6>();
     auto const    shape = input.dimensions();
