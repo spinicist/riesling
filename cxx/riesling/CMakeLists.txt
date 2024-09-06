@@ -16,6 +16,7 @@ add_executable(riesling
     data/merge.cpp
     data/nii.cpp
     data/noisify.cpp
+    data/shift.cpp
     data/slice.cpp
 
     op/fft.cpp

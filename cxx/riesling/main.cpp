@@ -29,6 +29,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
+  COMMAND(data, shift, "shift", "Shift k-space data in FOV with phase ramps");
   COMMAND(data, slice, "slice", "Slice non-cartesian data");
 
   args::Group sense(parser, "SENSE");

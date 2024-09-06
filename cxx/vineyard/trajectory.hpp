@@ -25,7 +25,7 @@ template <int ND> struct TrajectoryN
   auto matrixForFOV(Array const fov, Index const nB, Index const nT, float os = 1.f) const -> Sz<ND + 2>;
   auto voxelSize() const -> Array;
   auto FOV() const -> Array;
-  void shiftFOV(Eigen::Vector3f const, Cx5 &data);
+  void shiftInFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Re1;
   auto points() const -> Re3 const &;
   auto downsample(Array const tgtSize,
