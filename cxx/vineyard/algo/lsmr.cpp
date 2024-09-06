@@ -2,12 +2,13 @@
 
 #include "bidiag.hpp"
 #include "common.hpp"
+#include "iter.hpp"
 #include "log.hpp"
-#include "sys/signals.hpp"
 
 namespace rl {
 
-auto LSMR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector {
+auto LSMR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector
+{
   return run(CMap{b.data(), b.rows()}, λ, CMap{x0.data(), x0.rows()});
 }
 
@@ -20,9 +21,9 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
   Index const rows = op->rows();
   Index const cols = op->cols();
   if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
-  if (b.rows() != rows) { Log::Fail("LSMR: b had size {} expected {}", b.rows(), rows);}
-  Vector     Mu(rows), u(rows);
-  Vector     v(cols), h(cols), h̅(cols), x(cols);
+  if (b.rows() != rows) { Log::Fail("LSMR: b had size {} expected {}", b.rows(), rows); }
+  Vector Mu(rows), u(rows);
+  Vector v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
@@ -54,7 +55,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
 
   Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
   Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), normb, std::fabs(ζ̅));
-  PushInterrupt();
+  Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
 
@@ -143,9 +144,9 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
       Log::Print("Ax - b reached machine precision");
       break;
     }
-    if (InterruptReceived()) { break; }
+    if (Iterating::ShouldStop()) { break; }
   }
-  PopInterrupt();
+  Iterating::Finished();
   return x;
 }
 

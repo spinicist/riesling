@@ -29,6 +29,7 @@ add_library(vineyard
     algo/decomp.cpp
     algo/eig.cpp
     algo/gs.cpp
+    algo/iter.cpp
     algo/lad.cpp
     algo/lsmr.cpp
     algo/lsqr.cpp

@@ -1,10 +1,10 @@
 #include "lad.hpp"
 
+#include "iter.hpp"
 #include "log.hpp"
 #include "lsmr.hpp"
 #include "op/top.hpp"
 #include "prox/norms.hpp"
-#include "sys/signals.hpp"
 #include "tensors.hpp"
 
 namespace rl {
@@ -27,7 +27,7 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
   u.setZero();
 
   Log::Print("LAD Abs ε {}", ε);
-  PushInterrupt();
+  Iterating::Starting();
   for (Index ii = 0; ii < outerLimit; ii++) {
     bzu = b + z - u;
     x = inner.run(bzu, 0.f, x);
@@ -63,9 +63,9 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
         u *= τ;
       }
     }
-    if (InterruptReceived()) { break; }
+    if (Iterating::ShouldStop()) { break; }
   }
-  PopInterrupt();
+  Iterating::Finished();
   return x;
 }
 

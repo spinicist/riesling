@@ -28,7 +28,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
   float const thresh = resTol * std::sqrt(r_old);
   Log::Print("CG |r| {:4.3E} threshold {:4.3E}", std::sqrt(r_old), thresh);
   Log::Print("IT |r|       α         β         |x|");
-  PushInterrupt();
+  Iterating::Starting();
   for (Index icg = 0; icg < iterLimit; icg++) {
     op->forward(p, q);
     float const α = r_old / CheckedDot(p, q);
@@ -50,9 +50,9 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
       break;
     }
     r_old = r_new;
-    if (InterruptReceived()) { break; }
+    if (Iterating::ShouldStop()) { break; }
   }
-  PopInterrupt();
+  Iterating::Finished();
   return x;
 }
 

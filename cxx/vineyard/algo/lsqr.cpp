@@ -2,12 +2,13 @@
 
 #include "bidiag.hpp"
 #include "common.hpp"
+#include "iter.hpp"
 #include "log.hpp"
-#include "sys/signals.hpp"
 
 namespace rl {
 
-auto LSQR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector {
+auto LSQR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector
+{
   return run(CMap{b.data(), b.rows()}, λ, CMap{x0.data(), x0.rows()});
 }
 
@@ -20,8 +21,8 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
   Index const cols = op->cols();
   if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
   if (b.rows() != rows) { Log::Fail("LSQR: b had size {}, expected {}", b.rows(), rows); }
-  Vector     Mu(rows), u(rows);
-  Vector     x(cols), v(cols), w(cols);
+  Vector Mu(rows), u(rows);
+  Vector x(cols), v(cols), w(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
@@ -42,7 +43,7 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
 
   Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
   Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), β, std::fabs(α * β));
-  PushInterrupt();
+  Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
 
@@ -112,9 +113,9 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
       Log::Print("Ax - b reached machine precision");
       break;
     }
-    if (InterruptReceived()) { break; }
+    if (Iterating::ShouldStop()) { break; }
   }
-  PopInterrupt();
+  Iterating::Finished();
   return x;
 }
 
