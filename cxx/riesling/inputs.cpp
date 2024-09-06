@@ -3,7 +3,7 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 #include <algorithm>
 #include <cstdlib>

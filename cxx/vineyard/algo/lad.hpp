@@ -3,9 +3,9 @@
 #include "func/functor.hpp"
 #include "log.hpp"
 #include "op/ops.hpp"
-#include "signals.hpp"
+#include "sys/signals.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 

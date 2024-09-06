@@ -10,7 +10,6 @@ find_package(tl-ranges CONFIG REQUIRED)
 
 add_library(vineyard
     apodize.cpp
-    args.cpp
     colors.cpp
     compressor.cpp
     fft.cpp
@@ -22,8 +21,6 @@ add_library(vineyard
     precon.cpp
     regularizers.cpp
     scaling.cpp
-    signals.cpp
-    threads.cpp
     trajectory.cpp
     traj_spirals.cpp
 
@@ -101,6 +98,10 @@ add_library(vineyard
     sim/dir.cpp
     sim/t2flair.cpp
     sim/t2prep.cpp
+
+    sys/args.cpp
+    sys/signals.cpp
+    sys/threads.cpp
 )
 target_include_directories(vineyard PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 target_link_libraries(vineyard PUBLIC

@@ -3,7 +3,7 @@
 #include "algo/decomp.hpp"
 #include "log.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl::Proxs {
 

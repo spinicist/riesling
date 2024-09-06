@@ -2,7 +2,7 @@
 
 #include "log.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 #include <cmath>
 #include <functional>

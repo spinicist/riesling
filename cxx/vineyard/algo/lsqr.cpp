@@ -3,7 +3,7 @@
 #include "bidiag.hpp"
 #include "common.hpp"
 #include "log.hpp"
-#include "signals.hpp"
+#include "sys/signals.hpp"
 
 namespace rl {
 

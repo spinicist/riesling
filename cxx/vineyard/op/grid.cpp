@@ -1,9 +1,9 @@
 #include "grid.hpp"
 
-#include "threads.hpp"
+#include "sys/threads.hpp"
 #include "top.hpp"
 
-#include "chunkfor.hpp"
+#include "sys/chunkfor.hpp"
 #include "grid-subgrid.hpp"
 
 #include <mutex>

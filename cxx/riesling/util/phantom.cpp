@@ -7,7 +7,7 @@
 #include "phantom/shepp-logan.hpp"
 #include "sense/sense.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 #include "traj_spirals.hpp"
 #include "types.hpp"
 #include <filesystem>

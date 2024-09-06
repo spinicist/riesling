@@ -11,7 +11,7 @@
 #include "op/sense.hpp"
 #include "precon.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 namespace SENSE {

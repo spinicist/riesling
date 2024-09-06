@@ -4,7 +4,7 @@
 #include "lsmr.hpp"
 #include "op/top.hpp"
 #include "prox/norms.hpp"
-#include "signals.hpp"
+#include "sys/signals.hpp"
 #include "tensors.hpp"
 
 namespace rl {

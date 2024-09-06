@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/fft.hpp"
 #include "inputs.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

@@ -4,7 +4,7 @@
 #include "log.hpp"
 #include "inputs.hpp"
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 using namespace rl;
 

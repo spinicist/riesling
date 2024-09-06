@@ -1,7 +1,7 @@
 #include "sense.hpp"
 
 #include "tensors.hpp"
-#include "threads.hpp"
+#include "sys/threads.hpp"
 
 #include "log.hpp"
 
