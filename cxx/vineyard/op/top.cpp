@@ -97,17 +97,13 @@ auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip)
 {
   if (x.dimensions() != ishape) { Log::Fail("TOp {} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
   if (y.dimensions() != oshape) { Log::Fail("TOp {} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
-  if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("TOp{} {} forward {}->{} |x| {}", ip ? "-Add" : "", this->name, this->ishape, this->oshape, Norm(x));
-  }
+  Log::Debug("TOp{} {} forward {}->{} |x| {}", ip ? "-Add" : "", this->name, this->ishape, this->oshape, Norm(x));
   return Log::Now();
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap const &y, Time const start, bool const ip) const
 {
-  if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("TOp{} {} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(y));
-  }
+  Log::Debug("TOp{} {} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(y));
 }
 
 template <typename S, int I, int O>
@@ -115,17 +111,13 @@ auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip)
 {
   if (y.dimensions() != oshape) { Log::Fail("TOp {} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
   if (x.dimensions() != ishape) { Log::Fail("TOp {} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
-  if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("TOp{} {} adjoint {}->{} |y| {}", ip ? "-Add" : "", this->name, this->oshape, this->ishape, Norm(y));
-  }
+  Log::Debug("TOp{} {} adjoint {}->{} |y| {}", ip ? "-Add" : "", this->name, this->oshape, this->ishape, Norm(y));
   return Log::Now();
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Time const start, bool const ip) const
 {
-  if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("TOp{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(x));
-  }
+  Log::Debug("TOp{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(x));
 }
 
 // Yeah, this was likely a mistake

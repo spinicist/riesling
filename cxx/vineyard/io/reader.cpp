@@ -246,6 +246,24 @@ template auto Reader::readMatrix<Eigen::MatrixXcd>(std::string const &) const ->
 template auto Reader::readMatrix<Eigen::ArrayXf>(std::string const &) const -> Eigen::ArrayXf;
 template auto Reader::readMatrix<Eigen::ArrayXXf>(std::string const &) const -> Eigen::ArrayXXf;
 
+auto Reader::readString(std::string const &name) const -> std::string {
+  hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) { Log::Fail("Could not open dataset '{}'", name); }
+  hid_t      ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank != 1) { Log::Fail("String {}: has rank {} on disk, must be 1", name, rank); }
+  std::array<hsize_t, 1> dims;
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  hid_t const tid = H5Tcopy(H5T_C_S1);
+  H5Tset_size(tid, H5T_VARIABLE);
+  H5Tset_cset(tid, H5T_CSET_UTF8);
+  char *rdata[dims[0]];
+  CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata), "Could not read string");
+  CheckedCall(H5Dclose(dset), "Could not close string dataset");
+  Log::Debug("Read string {}", name);
+  return std::string(rdata[0]);
+}
+
 auto Reader::readInfo() const -> Info
 {
   // First get the Info struct
@@ -289,7 +307,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
 
 auto Reader::readAttributeFloat(std::string const &dset, std::string const &attr) const -> float
 {
-  float       val;
+  float      val;
   auto const attrH = H5Aopen_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT, H5P_DEFAULT);
   CheckedCall(H5Aread(attrH, H5T_NATIVE_FLOAT, &val), fmt::format("reading attribute {} from {}", attr, dset));
   return val;

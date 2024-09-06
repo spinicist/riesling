@@ -33,6 +33,7 @@ void Writer::writeString(std::string const &label, std::string const &string)
   auto const  space = H5Screate_simple(1, dim, NULL);
   hid_t const tid = H5Tcopy(H5T_C_S1);
   H5Tset_size(tid, H5T_VARIABLE);
+  H5Tset_cset(tid, H5T_CSET_UTF8);
   hid_t const dset = H5Dcreate(handle_, label.c_str(), tid, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   auto        ptr = string.c_str();
   status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ptr);
