@@ -19,6 +19,12 @@ Index                        progressTarget = -1, progressCurrent = 0, progressN
 std::mutex                   progressMutex, logMutex;
 std::string                  progressMessage;
 std::vector<std::string>     savedEntries;
+
+auto TheTime() -> std::string
+{
+  auto const t = std::time(nullptr);
+  return fmt::format("{:%H:%M:%S}", fmt::localtime(t));
+}
 } // namespace
 
 Level CurrentLevel() { return log_level; }
@@ -39,10 +45,13 @@ void SetLevel(Level const l)
 
 void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
 
-void SaveEntry(
-  std::string const &category, fmt::string_view fmt, fmt::format_args args, fmt::terminal_color const color, Level const level)
+auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string
 {
-  auto const s = fmt::format("[{}] [{:<6}] {}", TheTime(), category, fmt::vformat(fmt, args));
+  return fmt::format("[{}] [{:<6}] {}", TheTime(), category, fmt::vformat(fmt, args));
+}
+
+void SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level)
+{
   {
     std::scoped_lock lock(logMutex);
     savedEntries.push_back(s); // This is not thread-safe
@@ -59,12 +68,6 @@ void End()
 {
   debug_file.reset();
   log_level = Level::None;
-}
-
-auto TheTime() -> std::string
-{
-  auto const t = std::time(nullptr);
-  return fmt::format("{:%H:%M:%S}", fmt::localtime(t));
 }
 
 void StartProgress(Index const amount, std::string const &text)

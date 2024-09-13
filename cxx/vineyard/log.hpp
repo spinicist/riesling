@@ -26,43 +26,27 @@ enum struct Level
   Debug = 3
 };
 
-struct Failure
-{
-  std::string      category;
-  fmt::string_view fstr;
-  fmt::format_args args;
-
-  template <typename... Args>
-  Failure(std::string const &cat, fmt::format_string<Args...> fs, Args &&...args)
-    : category{cat}
-    , fstr{fs}
-    , args{fmt::make_format_args(args...)}
-  {
-  }
-};
-
 using Time = std::chrono::high_resolution_clock::time_point;
 
 Level CurrentLevel();
 void  SetLevel(Level const l);
 void  SetDebugFile(std::string const &fname);
-void  SaveEntry(
-   std::string const &category, fmt::string_view fmt, fmt::format_args args, fmt::terminal_color const color, Level const level);
-auto Saved() -> std::vector<std::string> const &;
-void End();
-auto TheTime() -> std::string;
+auto  FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
+void  SaveEntry(std::string const &entry, fmt::terminal_color const color, Level const level);
+auto  Saved() -> std::vector<std::string> const &;
+void  End();
 
 template <typename... Args> inline void Print(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::white, Level::Ephemeral);
+    SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Ephemeral);
   }
 }
 
 template <typename... Args> inline void Debug(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::white, Level::Debug);
+    SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Debug);
   }
 }
 
@@ -70,16 +54,22 @@ template <typename... Args>
 inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::bright_red, Level::None);
+    SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_red, Level::None);
   }
 }
 
-template <typename... Args>
-__attribute__((noreturn)) inline void Fail(Failure const &f)
+struct Failure : std::runtime_error
 {
-  if (CurrentLevel() > Level::Testing) {
-    SaveEntry(f.category, f.fstr, f.args, fmt::terminal_color::bright_red, Level::None);
+  template <typename... Args>
+  Failure(std::string const &cat, fmt::format_string<Args...> fs, Args &&...args)
+    : std::runtime_error(FormatEntry(cat, fs, fmt::make_format_args(args...)))
+  {
   }
+};
+
+inline void Fail(Failure const &f)
+{
+  if (CurrentLevel() > Level::Testing) { SaveEntry(f.what(), fmt::terminal_color::bright_red, Level::None); }
 }
 
 void StartProgress(Index const counst, std::string const &label);
