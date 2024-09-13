@@ -45,7 +45,7 @@ void main_recon_lsq(args::Subparser &parser)
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
   if (basis) { basis->applyR(out); }
-  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   if (coreOpts.residual) {
     noncart -= A->forward(xm);
     Basis const id;

@@ -39,6 +39,6 @@ void main_recon_rss(args::Subparser &parser)
   TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(rss);
 
-  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   Log::Print(cmd, "Finished");
 }

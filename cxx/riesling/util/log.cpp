@@ -11,7 +11,10 @@ void main_log(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
   if (reader.exists("log")) {
-    fmt::print("{}", reader.readString("log"));
+    auto const entries = reader.readStrings("log");
+    for (auto const &entry : entries) {
+      fmt::print("{}\n", entry);
+    }
   } else {
     Log::Fail(cmd, "File {} does not contain a log", iname.Get());
   }

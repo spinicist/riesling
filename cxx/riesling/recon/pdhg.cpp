@@ -64,6 +64,6 @@ void main_pdhg(args::Subparser &parser)
     auto xm = Tensorfy(x, recon->ishape);
     out.chip<4>(iv) = oc.forward(xm) / out.chip<4>(iv).constant(scale);
   }
-  WriteOutput(cmd, coreOpts.oname.Get(), out, info, Log::Saved());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, info);
   rl::Log::Print(cmd, "Finished");
 }

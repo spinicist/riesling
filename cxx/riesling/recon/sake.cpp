@@ -96,6 +96,6 @@ void main_sake(args::Subparser &parser)
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
   writer.writeInfo(info);
-  writer.writeString("log", Log::Saved());
+  writer.writeString("log");
   Log::Print(cmd, "Finished");
 }

@@ -86,39 +86,39 @@ template <typename S> auto Op<S>::startForward(CMap const &x, Map const &y, bool
 {
   if (x.rows() != cols()) { Log::Fail("Op", "{} forward x [{}] expected [{}]", this->name, x.rows(), cols()); }
   if (y.rows() != rows()) { Log::Fail("Op", "{} forward y [{}] expected [{}]", this->name, y.rows(), rows()); }
-  Log::Debug("Op", "{} forward [{}, {}] |x| {}", ip ? "-Add" : "", this->name, rows(), cols(), x.stableNorm());
+  Log::Debug("Op", "{} {}forward [{}, {}] |x| {}", this->name, (ip ? "IP " : ""), rows(), cols(), x.stableNorm());
   return Log::Now();
 }
 
 template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const start, bool const ip) const
 {
-  Log::Debug("Op", "{} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), y.stableNorm());
+  Log::Debug("Op", "{} {}forward finished in {} |y| {}.", this->name, (ip ? "IP " : ""), Log::ToNow(start), y.stableNorm());
 }
 
 template <typename S> auto Op<S>::startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time
 {
   if (y.rows() != rows()) { Log::Fail("Op", "{} adjoint y [{}] expected [{}]", this->name, y.rows(), rows()); }
   if (x.rows() != cols()) { Log::Fail("Op", "{} adjoint x [{}] expected [{}]", this->name, x.rows(), cols()); }
-  Log::Debug("Op", "{}adjoint [{},{}] |y| {}", ip ? "-Add" : "", this->name, rows(), cols(), y.stableNorm());
+  Log::Debug("Op", "{} {}adjoint [{},{}] |y| {}", this->name, (ip ? "IP " : ""), rows(), cols(), y.stableNorm());
   return Log::Now();
 }
 
 template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const start, bool const ip) const
 {
-  Log::Debug("Op", "{}adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());
+  Log::Debug("Op", "{} {}adjoint finished in {} |x| {}", this->name, (ip ? "IP " : ""), Log::ToNow(start), x.stableNorm());
 }
 
 template <typename S> auto Op<S>::startInverse(CMap const &y, Map const &x, bool const ip) const -> Log::Time
 {
   if (y.rows() != rows()) { Log::Fail("Op", "{} inverse y [{}] expected [{}]", this->name, y.rows(), rows()); }
   if (x.rows() != cols()) { Log::Fail("Op", "{} inverse x [{}] expected [{}]", this->name, x.rows(), cols()); }
-  Log::Debug("Op", "{}inverse [{},{}] |y| {}", ip ? "-Add" : "", this->name, rows(), cols(), y.stableNorm());
+  Log::Debug("Op", "{} {}inverse [{},{}] |y| {}", this->name, (ip ? "IP " : ""), rows(), cols(), y.stableNorm());
   return Log::Now();
 }
 
 template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const start, bool const ip) const
 {
-  Log::Debug("Op", "{}inverse finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), x.stableNorm());
+  Log::Debug("Op", "{} {}inverse finished in {} |x| {}", this->name, (ip ? "IP " : ""), Log::ToNow(start), x.stableNorm());
 }
 
 template <typename S> auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>

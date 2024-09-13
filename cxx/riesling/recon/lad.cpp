@@ -54,7 +54,7 @@ void main_recon_lad(args::Subparser &parser)
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
-  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
   Log::Print(cmd, "Finished");
 }

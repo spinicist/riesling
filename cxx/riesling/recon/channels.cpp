@@ -39,7 +39,7 @@ void main_channels(args::Subparser &parser)
 
   TOps::Crop<Cx, 6> oc(A->ishape, AddBack(AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]), nT));
   auto              out = oc.forward(xm);
-  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Channels, info, Log::Saved());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Channels, info);
   if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Channels); }
   Log::Print(cmd, "Finished");
 }

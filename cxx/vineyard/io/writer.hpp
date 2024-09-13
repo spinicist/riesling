@@ -13,6 +13,7 @@ struct Writer
   Writer(std::string const &fname_);
   ~Writer();
   void writeString(std::string const &label, std::string const &string);
+  void writeStrings(std::string const &label, std::vector<std::string> const &string);
   void writeInfo(Info const &info);
   void writeMeta(std::map<std::string, float> const &meta);
 

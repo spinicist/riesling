@@ -263,6 +263,25 @@ auto Reader::readString(std::string const &name) const -> std::string {
   return std::string(rdata[0]);
 }
 
+auto Reader::readStrings(std::string const &name) const -> std::vector<std::string> {
+  hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) { Log::Fail("HD5", "Could not open dataset '{}'", name); }
+  hid_t      ds = H5Dget_space(dset);
+  auto const rank = H5Sget_simple_extent_ndims(ds);
+  if (rank != 1) { Log::Fail("HD5", "String {} has rank {} on disk, must be 1", name, rank); }
+  std::array<hsize_t, 1> dims;
+  H5Sget_simple_extent_dims(ds, dims.data(), NULL);
+  hid_t const tid = H5Tcopy(H5T_C_S1);
+  H5Tset_size(tid, H5T_VARIABLE);
+  H5Tset_cset(tid, H5T_CSET_UTF8);
+  char *rdata[dims[0]];
+  CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata), "Could not read string");
+  CheckedCall(H5Dclose(dset), "Could not close string dataset");
+  std::vector<std::string> strings(rdata, rdata + dims[0]);
+  Log::Debug("HD5", "Read strings {}", name);
+  return strings;
+}
+
 auto Reader::readInfo() const -> Info
 {
   // First get the Info struct

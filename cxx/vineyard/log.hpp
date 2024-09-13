@@ -29,7 +29,7 @@ enum struct Level
 class Failure : public std::runtime_error
 {
 public:
-  Failure(std::string const &msg);
+  Failure();
 };
 
 using Time = std::chrono::high_resolution_clock::time_point;
@@ -37,48 +37,48 @@ using Time = std::chrono::high_resolution_clock::time_point;
 Level CurrentLevel();
 void  SetLevel(Level const l);
 void  SetDebugFile(std::string const &fname);
-void  SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level);
-auto  Saved() -> std::string const &;
-void  End();
-auto  TheTime() -> std::string;
-
-template <typename... Args> inline auto Format(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args) -> std::string
-{
-  return fmt::format("[{}] [{}] {}\n", TheTime(), category, fmt::format(fstr, std::forward<Args>(args)...));
-}
+void  SaveEntry(
+   std::string const &category, fmt::string_view fmt, fmt::format_args args, fmt::terminal_color const color, Level const level);
+auto Saved() -> std::vector<std::string> const &;
+void End();
+auto TheTime() -> std::string;
 
 template <typename... Args> inline void Print(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(Format(category, fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Ephemeral);
+    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::white, Level::Ephemeral);
   }
 }
 
 template <typename... Args> inline void Debug(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(Format(category, fstr, std::forward<Args>(args)...), fmt::terminal_color::white, Level::Debug);
+    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::white, Level::Debug);
   }
 }
 
-template <typename... Args> inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
+template <typename... Args>
+inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(Format(category, fstr, std::forward<Args>(args)...), fmt::terminal_color::bright_red, Level::None);
+    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::bright_red, Level::None);
   }
 }
 
-template <typename... Args> __attribute__((noreturn)) inline void Fail(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
+template <typename... Args>
+__attribute__((noreturn)) inline void Fail(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  auto const msg = Format(category, fstr, std::forward<Args>(args)...);
-  if (CurrentLevel() > Level::Testing) { SaveEntry(msg, fmt::terminal_color::bright_red, Level::None); }
-  throw Failure(msg);
+  if (CurrentLevel() > Level::Testing) {
+    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::bright_red, Level::None);
+  }
+  throw Failure();
 }
 
 template <typename... Args> __attribute__((noreturn)) inline void Fail2(fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  auto const msg = Format("except", fstr, std::forward<Args>(args)...);
-  if (CurrentLevel() > Level::Testing) { SaveEntry(msg, fmt::terminal_color::bright_red, Level::None); }
+  if (CurrentLevel() > Level::Testing) {
+    SaveEntry("", fstr, fmt::make_format_args(args...), fmt::terminal_color::bright_red, Level::None);
+  }
   exit(EXIT_FAILURE);
 }
 

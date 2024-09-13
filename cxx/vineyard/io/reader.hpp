@@ -33,6 +33,7 @@ struct Reader
   auto listNames(std::string const &label = Keys::Data) const -> std::vector<std::string>; // Get dimension names
 
   auto readString(std::string const &label) const -> std::string; // Read a string dataset
+  auto readStrings(std::string const &label) const -> std::vector<std::string>;
   auto readInfo() const -> Info;                                  // Read the info struct from a file
   auto readMeta() const -> std::map<std::string, float>;          // Read meta-data group
 

@@ -11,8 +11,8 @@
 namespace rl {
 namespace Log {
 
-Failure::Failure(std::string const &msg)
-  : std::runtime_error(msg)
+Failure::Failure()
+  : std::runtime_error("")
 {
 }
 
@@ -23,7 +23,7 @@ bool                         isTTY = false;
 Index                        progressTarget = -1, progressCurrent = 0, progressNext = 0;
 std::mutex                   progressMutex, logMutex;
 std::string                  progressMessage;
-std::string                  savedLog;
+std::vector<std::string>     savedEntries;
 } // namespace
 
 Level CurrentLevel() { return log_level; }
@@ -44,19 +44,21 @@ void SetLevel(Level const l)
 
 void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
 
-void SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level)
+void SaveEntry(
+  std::string const &category, fmt::string_view fmt, fmt::format_args args, fmt::terminal_color const color, Level const level)
 {
+  auto const s = fmt::format("[{}] [{:<6}] {}", TheTime(), category, fmt::vformat(fmt, args));
   {
     std::scoped_lock lock(logMutex);
-    savedLog.append(s); // This is not thread-safe
+    savedEntries.push_back(s); // This is not thread-safe
   }
   if (CurrentLevel() >= level) {
     if (CurrentLevel() == Level::Ephemeral) { fmt::print(stderr, "\033[A\33[2K\r"); }
-    fmt::print(stderr, fmt::fg(color), "{}", s);
+    fmt::print(stderr, fmt::fg(color), "{}\n", s);
   }
 }
 
-auto Saved() -> std::string const & { return savedLog; }
+auto Saved() -> std::vector<std::string> const & { return savedEntries; }
 
 void End()
 {
