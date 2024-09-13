@@ -31,9 +31,9 @@ void main_sense_calib(args::Subparser &parser)
   if (refname) {
     HD5::Reader refFile(refname.Get());
     Trajectory  refTraj(refFile, refFile.readInfo().voxel_size);
-    if (!refTraj.compatible(traj)) { Log::Fail(cmd, "Reference data incompatible with multi-channel data"); }
+    if (!refTraj.compatible(traj)) { throw Log::Failure(cmd, "Reference data incompatible with multi-channel data"); }
     auto refNoncart = refFile.readTensor<Cx5>();
-    if (refNoncart.dimension(0) != 1) { Log::Fail(cmd, "Reference data must be single channel"); }
+    if (refNoncart.dimension(0) != 1) { throw Log::Failure(cmd, "Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
     ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis.get()).chip<0>(0);
     // Normalize energy

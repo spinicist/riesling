@@ -91,7 +91,7 @@ auto MakeKspacePre(Trajectory const  &traj,
     HD5::Reader reader(type);
     Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
-      Log::Fail("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0), w.dimension(1),
+      throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0), w.dimension(1),
                 traj.nSamples(), traj.nTraces());
     }
     Eigen::VectorXcf const wv = CollapseToArray(w);

@@ -16,7 +16,7 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
     : Parent("ReshapeInput", ish, op->oshape)
     , op_{op}
   {
-    if (Product(ish) != Product(op->ishape)) { Log::Fail("TOp", "ReshapeInput shape {} does not match {}", ish, op->ishape); }
+    if (Product(ish) != Product(op->ishape)) { throw Log::Failure("TOp", "ReshapeInput shape {} does not match {}", ish, op->ishape); }
   }
 
   void forward(InCMap const &x, OutMap &y) const
@@ -69,7 +69,7 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
     : Parent("ReshapeOutput", op->ishape, osh)
     , op_{op}
   {
-    if (Product(osh) != Product(op->oshape)) { Log::Fail("TOp", "ReshapeInput shape {} does not match {}", osh, op->oshape); }
+    if (Product(osh) != Product(op->oshape)) { throw Log::Failure("TOp", "ReshapeInput shape {} does not match {}", osh, op->oshape); }
   }
 
   void forward(InCMap const &x, OutMap &y) const

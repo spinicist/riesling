@@ -13,7 +13,7 @@ auto IR::traces() const -> Index { return (settings.spokesPerSeg + settings.k0) 
 
 auto IR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.rows() != 3) { Log::Fail("Sim", "Parameters must be T1 Δf Q"); }
+  if (p.rows() != 3) { throw Log::Failure("Sim", "Parameters must be T1 Δf Q"); }
   float const T1 = p(0);
   float const Δf = p(1);
   float const Q = p(2);
@@ -66,7 +66,7 @@ auto IR::simulate(Eigen::ArrayXf const &p) const -> Cx2
       Mz = E1 * A * Mz;
     }
   }
-  if (tp != traces()) { Log::Fail("Sim", "Programmer error"); }
+  if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
   return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
@@ -79,7 +79,7 @@ auto IR2::traces() const -> Index { return (settings.spokesPerSeg + settings.k0)
 
 auto IR2::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.rows() != 4) { Log::Fail("Sim", "Parameters must be T1 T2 Δf Q"); }
+  if (p.rows() != 4) { throw Log::Failure("Sim", "Parameters must be T1 T2 Δf Q"); }
   float const T1 = p(0);
   float const T2 = p(1);
   float const Δf = p(2);
@@ -133,7 +133,7 @@ auto IR2::simulate(Eigen::ArrayXf const &p) const -> Cx2
       Mz = E1 * A * Mz;
     }
   }
-  if (tp != traces()) { Log::Fail("Sim", "Programmer error"); }
+  if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
   return readout(T2, Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 

@@ -8,15 +8,15 @@ namespace rl {
 auto ParameterGrid(Index const nPar, Eigen::ArrayXf const &lo, Eigen::ArrayXf const &hi, Eigen::ArrayXi const &N)
   -> Eigen::ArrayXXf
 {
-  if (lo.size() != nPar) { Log::Fail("Pars", "Low values had {} elements, expected {}", lo.size(), nPar); }
-  if (hi.size() != nPar) { Log::Fail("Pars", "High values had {} elements, expected {}", hi.size(), nPar); }
-  if (N.size() != nPar) { Log::Fail("Pars", "N had {} elements, expected {}", N.size(), nPar); }
+  if (lo.size() != nPar) { throw Log::Failure("Pars", "Low values had {} elements, expected {}", lo.size(), nPar); }
+  if (hi.size() != nPar) { throw Log::Failure("Pars", "High values had {} elements, expected {}", hi.size(), nPar); }
+  if (N.size() != nPar) { throw Log::Failure("Pars", "N had {} elements, expected {}", N.size(), nPar); }
 
   Eigen::ArrayXf delta(nPar);
   Index          nTotal = 1;
   for (int ii = 0; ii < nPar; ii++) {
     if (N[ii] < 1) {
-      Log::Fail("Pars", "{} N was less than 1", ii);
+      throw Log::Failure("Pars", "{} N was less than 1", ii);
     } else if (N[ii] == 1) {
       delta[ii] = 0.f;
     } else {

@@ -29,7 +29,7 @@ void main_nii(args::Subparser &parser)
     Sz6 const sz = image.dimensions();
     output = image.shuffle(Sz6{2, 3, 4, 0, 1, 5}).reshape(Sz4{sz[2], sz[3], sz[4], sz[0] * sz[1] * sz[5]});
   } else {
-    Log::Fail(cmd, "Dataset {} was order {}, needs to be 5 or 6", dset.Get(), input.order());
+    throw Log::Failure(cmd, "Dataset {} was order {}, needs to be 5 or 6", dset.Get(), input.order());
   }
 
   if (mag) {

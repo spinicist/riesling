@@ -26,8 +26,8 @@ void main_basis_outer(args::Subparser &parser)
   auto b1 = LoadBasis(iname1.Get());
   auto b2 = LoadBasis(iname2.Get());
 
-  if (b1->nTrace() != 1) { Log::Fail(cmd, "Expected 1st basis to have 1 trace"); }
-  if (b2->nSample() != 1) { Log::Fail(cmd, "Expected 2nd basis to have 1 sample"); }
+  if (b1->nTrace() != 1) { throw Log::Failure(cmd, "Expected 1st basis to have 1 trace"); }
+  if (b2->nSample() != 1) { throw Log::Failure(cmd, "Expected 2nd basis to have 1 sample"); }
 
   auto const n1 = b1->nB();
   auto const n2 = b2->nB();

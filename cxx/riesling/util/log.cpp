@@ -17,7 +17,7 @@ void main_log(args::Subparser &parser)
       if (!filter || (entry.substr(12, 6).find(filter.Get())) != std::string::npos) { fmt::print("{}\n", entry); }
     }
   } else {
-    Log::Fail(cmd, "File {} does not contain a log", iname.Get());
+    throw Log::Failure(cmd, "File {} does not contain a log", iname.Get());
   }
   Log::Print(cmd, "Finished");
 }

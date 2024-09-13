@@ -20,7 +20,7 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
   , workspace{gridder.ishape}
   , batches{nBatch}
 {
-  if (nChan % nBatch != 0) { Log::Fail("NUFFT", "Batch size {} does not cleanly divide number of channels {}", nBatch, nChan); }
+  if (nChan % nBatch != 0) { throw Log::Failure("NUFFT", "Batch size {} does not cleanly divide number of channels {}", nBatch, nChan); }
   // We need to take the minimum of the image dimensions, then stitch the right dimensions onto the front
   // Strictly, the input shape should be the trajectory matrix size.
   // However, for efficiency, we allow the input shape to be specified in order to match SENSE maps without needing
@@ -33,7 +33,7 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
   } else if (std::equal(matrix.cbegin(), matrix.cend(), gridder.ishape.cbegin() + 2 + VCC, std::less_equal())) {
     batchShape_ = Concatenate(FirstN<2 + VCC>(gridder.ishape), matrix);
   } else {
-    Log::Fail("NUFFT", "Requested matrix {} but grid size is {}", matrix, LastN<NDim>(gridder.ishape));
+    throw Log::Failure("NUFFT", "Requested matrix {} but grid size is {}", matrix, LastN<NDim>(gridder.ishape));
   }
   ishape = batchShape_;
   ishape[1] = nChan; // Undo batching

@@ -12,7 +12,7 @@ Op<S>::Op(std::string const &n)
 
 template <typename S> void Op<S>::inverse(CMap const &, Map &) const
 {
-  Log::Fail("Op", "{} does not have an inverse defined", name);
+  throw Log::Failure("Op", "{} does not have an inverse defined", name);
 }
 
 template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
@@ -84,8 +84,8 @@ template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x) const
 
 template <typename S> auto Op<S>::startForward(CMap const &x, Map const &y, bool const ip) const -> Log::Time
 {
-  if (x.rows() != cols()) { Log::Fail("Op", "{} forward x [{}] expected [{}]", this->name, x.rows(), cols()); }
-  if (y.rows() != rows()) { Log::Fail("Op", "{} forward y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (x.rows() != cols()) { throw Log::Failure("Op", "{} forward x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure("Op", "{} forward y [{}] expected [{}]", this->name, y.rows(), rows()); }
   Log::Debug("Op", "{} {}forward [{}, {}] |x| {}", this->name, (ip ? "IP " : ""), rows(), cols(), x.stableNorm());
   return Log::Now();
 }
@@ -97,8 +97,8 @@ template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const st
 
 template <typename S> auto Op<S>::startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time
 {
-  if (y.rows() != rows()) { Log::Fail("Op", "{} adjoint y [{}] expected [{}]", this->name, y.rows(), rows()); }
-  if (x.rows() != cols()) { Log::Fail("Op", "{} adjoint x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure("Op", "{} adjoint y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (x.rows() != cols()) { throw Log::Failure("Op", "{} adjoint x [{}] expected [{}]", this->name, x.rows(), cols()); }
   Log::Debug("Op", "{} {}adjoint [{},{}] |y| {}", this->name, (ip ? "IP " : ""), rows(), cols(), y.stableNorm());
   return Log::Now();
 }
@@ -110,8 +110,8 @@ template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const st
 
 template <typename S> auto Op<S>::startInverse(CMap const &y, Map const &x, bool const ip) const -> Log::Time
 {
-  if (y.rows() != rows()) { Log::Fail("Op", "{} inverse y [{}] expected [{}]", this->name, y.rows(), rows()); }
-  if (x.rows() != cols()) { Log::Fail("Op", "{} inverse x [{}] expected [{}]", this->name, x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure("Op", "{} inverse y [{}] expected [{}]", this->name, y.rows(), rows()); }
+  if (x.rows() != cols()) { throw Log::Failure("Op", "{} inverse x [{}] expected [{}]", this->name, x.rows(), cols()); }
   Log::Debug("Op", "{} {}inverse [{},{}] |y| {}", this->name, (ip ? "IP " : ""), rows(), cols(), y.stableNorm());
   return Log::Now();
 }
@@ -123,17 +123,17 @@ template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const st
 
 template <typename S> auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>
 {
-  Log::Fail("Op", "{} does not have an inverse", name);
+  throw Log::Failure("Op", "{} does not have an inverse", name);
 }
 
 template <typename S> auto Op<S>::inverse(float const, float const) const -> std::shared_ptr<Op<S>>
 {
-  Log::Fail("Op", "{} does not have an inverse", name);
+  throw Log::Failure("Op", "{} does not have an inverse", name);
 }
 
 template <typename S> auto Op<S>::operator+(S const) const -> std::shared_ptr<Op<S>>
 {
-  Log::Fail("Op", "{} does not have operator+", name);
+  throw Log::Failure("Op", "{} does not have operator+", name);
 }
 
 template struct Op<float>;

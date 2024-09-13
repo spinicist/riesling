@@ -10,7 +10,7 @@ Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
   : Parent(fmt::format("Pad {}D", Rank), is, os)
 {
   for (Index ii = 0; ii < Rank; ii++) {
-    if (ishape[ii] > oshape[ii]) { Log::Fail("Pad", "Padding input dims {} larger than output dims {}", ishape, oshape); }
+    if (ishape[ii] > oshape[ii]) { throw Log::Failure("Pad", "Padding input dims {} larger than output dims {}", ishape, oshape); }
   }
   std::transform(oshape.begin(), oshape.end(), ishape.begin(), left_.begin(),
                  [](Index big, Index small) { return (big - small + 1) / 2; });
@@ -72,7 +72,7 @@ Crop<Scalar, Rank>::Crop(InDims const id, OutDims const od)
   : Parent(fmt::format("Crop {}D", Rank), id, od)
 {
   for (Index ii = 0; ii < Rank; ii++) {
-    if (ishape[ii] < oshape[ii]) { Log::Fail("Crop", "Crop input dims {} smaller than output dims {}", ishape, oshape); }
+    if (ishape[ii] < oshape[ii]) { throw Log::Failure("Crop", "Crop input dims {} smaller than output dims {}", ishape, oshape); }
   }
   std::transform(ishape.begin(), ishape.end(), oshape.begin(), left_.begin(),
                  [](Index big, Index small) { return (big - small + 1) / 2; });

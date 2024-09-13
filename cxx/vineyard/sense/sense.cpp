@@ -32,7 +32,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   auto const nS = noncart.dimension(3);
   auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
-    Log::Fail("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
+    throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
   }
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
@@ -54,7 +54,7 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
   auto const nC = noncart.dimension(0);
   auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
-    Log::Fail("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
+    throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
   }
 
   Sz3 kSz;
@@ -114,10 +114,10 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
 {
   Sz5 const cshape = channels.dimensions();
   if (LastN<3>(cshape) != LastN<3>(ref.dimensions())) {
-    Log::Fail("SENSE", "Dimensions don't match channels {} reference {}", cshape, ref.dimensions());
+    throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", cshape, ref.dimensions());
   }
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
-    Log::Fail("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
+    throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
@@ -170,7 +170,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) {
-    Log::Fail("SENSE", "Data is single-channel");
+    throw Log::Failure("SENSE", "Data is single-channel");
   }
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE", "Self-Calibration");

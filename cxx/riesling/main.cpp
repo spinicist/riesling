@@ -1,5 +1,5 @@
-#include "log.hpp"
 #include "inputs.hpp"
+#include "log.hpp"
 
 using namespace rl;
 
@@ -88,10 +88,13 @@ int main(int const argc, char const *const argv[])
     fmt::print(stderr, fmt::fg(fmt::terminal_color::bright_red), "{}\n", e.what());
     return EXIT_FAILURE;
   } catch (Log::Failure &f) {
+    Log::Fail(f);
     Log::End();
     return EXIT_FAILURE;
   } catch (std::exception const &e) {
-    Log::Fail2("{}\n", e.what());
+    Log::Fail(Log::Failure("None", "{}", e.what()));
+    Log::End();
+    return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;

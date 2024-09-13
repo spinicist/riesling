@@ -9,7 +9,7 @@ auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vec
 {
   Index const rows = op->rows();
   if (rows != op->cols()) {
-    Log::Fail("CG op had {} rows and {} cols, should be square", rows, op->cols());
+    throw Log::Failure("CG op had {} rows and {} cols, should be square", rows, op->cols());
   }
   Map const   b(bdata, rows);
   Vector      q(rows), p(rows), r(rows), x(rows);

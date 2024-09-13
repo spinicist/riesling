@@ -18,10 +18,10 @@ void main_echoes(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
-  if (nG.Get() < 0) { rl::Log::Fail(cmd, "Gap was negative"); }
+  if (nG.Get() < 0) { throw rl::Log::Failure(cmd, "Gap was negative"); }
   Index const sz = nK ? nK.Get() : nS.Get();
   if (nG.Get() + sz > nS.Get()) {
-    rl::Log::Fail(cmd, "Gap {} plus samples to keep {} is larger than number of samples {}", nG.Get(), sz, nS.Get());
+    throw rl::Log::Failure(cmd, "Gap {} plus samples to keep {} is larger than number of samples {}", nG.Get(), sz, nS.Get());
   }
 
   Index sampPerEcho = nS.Get() / nE.Get();

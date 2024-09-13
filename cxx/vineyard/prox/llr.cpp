@@ -63,7 +63,7 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
     Patches(patchSize, windowSize, shift, softLLR, x, z);
     Log::Debug("Prox", "LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm(x), Norm(z));
   } else {
-    Log::Fail("Prox", "C++ is stupid");
+    throw Log::Failure("Prox", "C++ is stupid");
   }
 }
 

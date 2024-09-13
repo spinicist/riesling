@@ -13,7 +13,7 @@ auto birdcage(Sz3 const            &matrix,
   Cx4 all(channels, matrix[0], matrix[1], matrix[2]);
 
   if (channels < 1) {
-    Log::Fail("SENSE", "Must have at least one channel for birdcage sensitivities");
+    throw Log::Failure("SENSE", "Must have at least one channel for birdcage sensitivities");
   } else if (channels == 1) {
     all.setConstant(1.f);
   } else {

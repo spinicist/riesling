@@ -26,7 +26,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     z_i = prox_λ/ρ(F_i * x + u_{i-1})
     u_i = F_i * x + u_{i-1} - z_i
     */
-  if (b.rows() != A->rows()) { Log::Fail("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
+  if (b.rows() != A->rows()) { throw Log::Failure("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
 
   Index const                                      R = regs.size();

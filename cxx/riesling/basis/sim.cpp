@@ -20,7 +20,7 @@ using namespace rl;
 
 template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf> plist)
 {
-  if (plist.size() == 0) { Log::Fail("Sim", "Must specify at least one set of tissue parameters"); }
+  if (plist.size() == 0) { throw Log::Failure("Sim", "Must specify at least one set of tissue parameters"); }
 
   T               seq{s};
   Index const     nP = T::nParameters;

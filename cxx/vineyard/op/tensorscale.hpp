@@ -26,7 +26,7 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     }
     for (auto ii = FrontRank; ii < Rank - BackRank; ii++) {
       if (shape[ii] != s.dimension(ii - FrontRank)) {
-        Log::Fail("Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
+        throw Log::Failure("Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
       }
       res[ii] = shape[ii];
       brd[ii] = 1;

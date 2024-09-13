@@ -17,11 +17,11 @@ auto LSQR::run(Vector const &b, float const λ, Vector const &x0) const -> Vecto
 auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
 {
   Log::Print("LSQR", "λ {}", λ);
-  if (iterLimit < 1) { Log::Fail("LSQR", "Requires at least 1 iteration"); }
+  if (iterLimit < 1) { throw Log::Failure("LSQR", "Requires at least 1 iteration"); }
   Index const rows = op->rows();
   Index const cols = op->cols();
-  if (rows < 1 || cols < 1) { Log::Fail("LSQR", "Invalid operator size rows {} cols {}", rows, cols); }
-  if (b.rows() != rows) { Log::Fail("LSQR", "b had size {}, expected {}", b.rows(), rows); }
+  if (rows < 1 || cols < 1) { throw Log::Failure("LSQR", "Invalid operator size rows {} cols {}", rows, cols); }
+  if (b.rows() != rows) { throw Log::Failure("LSQR", "b had size {}, expected {}", b.rows(), rows); }
   Vector Mu(rows), u(rows);
   Vector x(cols), v(cols), w(cols);
 

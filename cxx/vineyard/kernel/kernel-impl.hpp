@@ -96,7 +96,7 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
       case 4: return std::make_shared<Kernel<Scalar, ND, ExpSemi<4>>>(osamp);
       case 5: return std::make_shared<Kernel<Scalar, ND, ExpSemi<5>>>(osamp);
       case 7: return std::make_shared<Kernel<Scalar, ND, ExpSemi<7>>>(osamp);
-      default: Log::Fail("Kernel", "Unsupported width {}", W);
+      default: throw Log::Failure("Kernel", "Unsupported width {}", W);
       }
     } else if (type == "KB") {
       switch (W) {
@@ -104,12 +104,12 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
       case 4: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<4>>>(osamp);
       case 5: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<5>>>(osamp);
       case 7: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<7>>>(osamp);
-      default: Log::Fail("Kernel", "Unsupported width {}", W);
+      default: throw Log::Failure("Kernel", "Unsupported width {}", W);
       }
     }
   }
 
-  Log::Fail("Kernel", "Unknown type {}", kType);
+  throw Log::Failure("Kernel", "Unknown type {}", kType);
 }
 
 } // namespace rl

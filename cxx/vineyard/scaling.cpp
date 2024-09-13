@@ -36,7 +36,7 @@ auto Scaling(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr
       scale = result->value();
       Log::Print("Scale", "Scale: {}", scale);
     } else {
-      Log::Fail("Scale", "Could not read number from scaling: ", type);
+      throw Log::Failure("Scale", "Could not read number from scaling: ", type);
     }
   }
   return scale;

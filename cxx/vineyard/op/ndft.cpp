@@ -13,7 +13,7 @@ NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis::CPt
   , basis{b}
 {
   static_assert(NDim < 4);
-  if (tr.dimension(0) != NDim) { Log::Fail("NDFT", "Requested {}D but trajectory is {}D", NDim, tr.dimension(0)); }
+  if (tr.dimension(0) != NDim) { throw Log::Failure("NDFT", "Requested {}D but trajectory is {}D", NDim, tr.dimension(0)); }
   Log::Debug("NDFT", "ishape {} oshape {}", ishape, oshape);
   Log::Debug("NDFT", "Calculating cartesian co-ords");
   nSamp = tr.dimension(1);

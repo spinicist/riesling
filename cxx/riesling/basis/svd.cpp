@@ -22,8 +22,8 @@ auto Run(rl::Settings const                &s,
          std::vector<Eigen::ArrayXf> const &his,
          std::vector<Eigen::ArrayXi> const &Ns)
 {
-  if (los.size() != his.size()) { Log::Fail("Sim", "Different number of parameter low bounds and high bounds"); }
-  if (los.size() == 0) { Log::Fail("Sim", "Must specify at least one set of tissue parameters"); }
+  if (los.size() != his.size()) { throw Log::Failure("Sim", "Different number of parameter low bounds and high bounds"); }
+  if (los.size() == 0) { throw Log::Failure("Sim", "Must specify at least one set of tissue parameters"); }
 
   T               seq{s};
   Index const     nP = T::nParameters;

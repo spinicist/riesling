@@ -17,11 +17,11 @@ auto LSMR::run(Vector const &b, float const λ, Vector const &x0) const -> Vecto
 auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
 {
   Log::Print("LSMR", "λ {}", λ);
-  if (iterLimit < 1) { Log::Fail("LSMR", "Requires at least 1 iteration"); }
+  if (iterLimit < 1) { throw Log::Failure("LSMR", "Requires at least 1 iteration"); }
   Index const rows = op->rows();
   Index const cols = op->cols();
-  if (rows < 1 || cols < 1) { Log::Fail("LSMR", "Invalid operator size rows {} cols {}", rows, cols); }
-  if (b.rows() != rows) { Log::Fail("LSMR", "b had size {} expected {}", b.rows(), rows); }
+  if (rows < 1 || cols < 1) { throw Log::Failure("LSMR", "Invalid operator size rows {} cols {}", rows, cols); }
+  if (b.rows() != rows) { throw Log::Failure("LSMR", "b had size {} expected {}", b.rows(), rows); }
   Vector Mu(rows), u(rows);
   Vector v(cols), h(cols), h̅(cols), x(cols);
 

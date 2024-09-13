@@ -13,7 +13,7 @@ auto T2Prep::traces() const -> Index { return settings.spokesPerSeg * settings.s
 
 auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 3) { Log::Fail("Sim", "Must have 3 parameters T1 T2 Δf"); }
+  if (p.size() != 3) { throw Log::Failure("Sim", "Must have 3 parameters T1 T2 Δf"); }
   float const R1 = 1.f / p(0);
   float const R2 = 1.f / p(1);
   float const Δf = p(2);
@@ -56,10 +56,10 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
       Mz = E1 * A * Mz;
     }
     Mz = Essi * Eramp * Mz;
-    if (!std::isfinite(std::abs(s0(tp - 1)))) { Log::Fail("Sim", "R1 {} R2 {}", R1, R2); }
+    if (!std::isfinite(std::abs(s0(tp - 1)))) { throw Log::Failure("Sim", "R1 {} R2 {}", R1, R2); }
   }
 
-  if (tp != settings.spokesPerSeg * settings.segsPerPrep) { Log::Fail("Sim", "Programmer error"); }
+  if (tp != settings.spokesPerSeg * settings.segsPerPrep) { throw Log::Failure("Sim", "Programmer error"); }
   return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 

@@ -18,7 +18,7 @@ void main_op_sense(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const cmd = parser.GetCommand().Name();
   HD5::Reader ireader(iname.Get());
-  if (!sname) { Log::Fail(cmd, "No input SENSE map file specified"); }
+  if (!sname) { throw Log::Failure(cmd, "No input SENSE map file specified"); }
   HD5::Reader sreader(sname.Get());
   auto const  maps = sreader.readTensor<Cx5>();
 
@@ -30,7 +30,7 @@ void main_op_sense(args::Subparser &parser)
   if (fwd) {
     auto const images = ireader.readTensor<Cx5>();
     if (LastN<3>(maps.dimensions()) != MidN<1, 3>(images.dimensions())) {
-      Log::Fail(cmd, "Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
+      throw Log::Failure(cmd, "Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
     }
     TOps::SENSE sense(maps);
     Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
@@ -42,7 +42,7 @@ void main_op_sense(args::Subparser &parser)
   } else {
     auto const channels = ireader.readTensor<Cx6>();
     if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
-      Log::Fail(cmd, "Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
+      throw Log::Failure(cmd, "Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
     }
     TOps::SENSE sense(maps);
     Cx5         images(LastN<5>(channels.dimensions()));

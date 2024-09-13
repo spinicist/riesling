@@ -8,7 +8,7 @@ namespace rl {
 /* Temp Hack because .maximum() may be buggy on NEON */
 template <int ND> auto GuessMatrix(Re3 const &points) -> Sz<ND>
 {
-  if (points.dimension(0) != ND) { Log::Fail("Traj", "Incorrect number of co-ordinates for GuessMatrix"); }
+  if (points.dimension(0) != ND) { throw Log::Failure("Traj", "Incorrect number of co-ordinates for GuessMatrix"); }
   Re1 max(ND);
   max.setZero();
   for (Index ii = 0; ii < points.dimension(1); ii++) {
@@ -59,7 +59,7 @@ template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const vo
 template <int ND> void TrajectoryN<ND>::init()
 {
   Index const nD = points_.dimension(0);
-  if (nD != ND) { Log::Fail("Traj", "Points have {} co-ordinates, expected {}", nD, ND); }
+  if (nD != ND) { throw Log::Failure("Traj", "Points have {} co-ordinates, expected {}", nD, ND); }
 
   Index discarded = 0;
   Re1   mat(nD);
@@ -94,8 +94,8 @@ template <int ND> auto TrajectoryN<ND>::nTraces() const -> Index { return points
 
 template <int ND> void TrajectoryN<ND>::checkDims(SzN const dims) const
 {
-  if (dims[1] != nSamples()) { Log::Fail("Traj", "Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
-  if (dims[2] != nTraces()) { Log::Fail("Traj", "Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
+  if (dims[1] != nSamples()) { throw Log::Failure("Traj", "Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
+  if (dims[2] != nTraces()) { throw Log::Failure("Traj", "Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
 }
 
 template <int ND> auto TrajectoryN<ND>::compatible(TrajectoryN const &other) const -> bool
@@ -196,7 +196,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
 {
   Array ratios = voxel_size_ / tgtSize;
   if ((ratios > 1.f).any()) {
-    Log::Fail("Traj", "Requested voxel-size {} is smaller than current {}", tgtSize, voxel_size_);
+    throw Log::Failure("Traj", "Requested voxel-size {} is smaller than current {}", tgtSize, voxel_size_);
   }
   auto dsVox = voxel_size_;
   auto dsMatrix = matrix_;
@@ -234,7 +234,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
   }
   Index const dsSamples = maxSamp + 1 - minSamp;
   Log::Print("Traj", "Retaining samples {}-{}", minSamp, maxSamp);
-  if (minSamp > maxSamp) { Log::Fail("Traj", "No valid trajectory points remain after downsampling"); }
+  if (minSamp > maxSamp) { throw Log::Failure("Traj", "No valid trajectory points remain after downsampling"); }
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{3, dsSamples, nTraces()}));
   Log::Print("Traj", "Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(TrajectoryN(dsPoints, dsMatrix, dsVox), minSamp, dsSamples);

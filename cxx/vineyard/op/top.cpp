@@ -84,19 +84,19 @@ template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &
 
 template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const &, OutMap &) const
 {
-  Log::Fail("TOp", "In place {} not implemented", this->name);
+  throw Log::Failure("TOp", "In place {} not implemented", this->name);
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &, InMap &) const
 {
-  Log::Fail("TOp", "In place {} not implemented", this->name);
+  throw Log::Failure("TOp", "In place {} not implemented", this->name);
 }
 
 template <typename S, int I, int O>
 auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time
 {
-  if (x.dimensions() != ishape) { Log::Fail("TOp", "{} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
-  if (y.dimensions() != oshape) { Log::Fail("TOp", "{} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
+  if (x.dimensions() != ishape) { throw Log::Failure("TOp", "{} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
+  if (y.dimensions() != oshape) { throw Log::Failure("TOp", "{} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
   Log::Debug("TOp", "{} {}forward {}->{} |x| {}", this->name, (ip ? "IP " : ""), this->ishape, this->oshape, Norm(x));
   return Log::Now();
 }
@@ -109,8 +109,8 @@ template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap cons
 template <typename S, int I, int O>
 auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time
 {
-  if (y.dimensions() != oshape) { Log::Fail("TOp", "{} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
-  if (x.dimensions() != ishape) { Log::Fail("TOp", "{} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
+  if (y.dimensions() != oshape) { throw Log::Failure("TOp", "{} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
+  if (x.dimensions() != ishape) { throw Log::Failure("TOp", "{} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
   Log::Debug("TOp", "{} {}adjoint {}->{} |y| {}", this->name, (ip ? "IP " : ""), this->oshape, this->ishape, Norm(y));
   return Log::Now();
 }

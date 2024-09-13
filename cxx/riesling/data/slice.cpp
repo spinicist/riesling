@@ -41,7 +41,7 @@ void main_slice(args::Subparser &parser)
   HD5::Reader reader(iname.Get());
   auto const  info = reader.readInfo();
 
-  if (reader.order() != 5) { Log::Fail(cmd, "Dataset does not appear to be non-cartesian with 5 dimensions"); }
+  if (reader.order() != 5) { throw Log::Failure(cmd, "Dataset does not appear to be non-cartesian with 5 dimensions"); }
   auto const shape = reader.dimensions();
 
   Index const cSt = Wrap(channelStart.Get(), shape[0]);
@@ -56,23 +56,23 @@ void main_slice(args::Subparser &parser)
   Index const sSz = slabSize ? slabSize.Get() : shape[3] - sSt;
   Index const vSz = volSize ? volSize.Get() : shape[4] - vSt;
 
-  if (cSt + cSz > shape[0]) { Log::Fail(cmd, "Last sample point {} exceeded maximum {}", cSt + cSz, shape[0]); }
-  if (rSt + rSz > shape[1]) { Log::Fail(cmd, "Last sample point {} exceeded maximum {}", rSt + rSz, shape[1]); }
+  if (cSt + cSz > shape[0]) { throw Log::Failure(cmd, "Last sample point {} exceeded maximum {}", cSt + cSz, shape[0]); }
+  if (rSt + rSz > shape[1]) { throw Log::Failure(cmd, "Last sample point {} exceeded maximum {}", rSt + rSz, shape[1]); }
   if (tracesPerSeg) {
     if (tSt + tSz > tracesPerSeg.Get()) {
-      Log::Fail(cmd, "Last trace point {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
+      throw Log::Failure(cmd, "Last trace point {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
     }
   } else {
-    if (tSt + tSz > shape[2]) { Log::Fail(cmd, "Last trace point {} exceeded maximum {}", tSt + tSz, shape[2]); }
+    if (tSt + tSz > shape[2]) { throw Log::Failure(cmd, "Last trace point {} exceeded maximum {}", tSt + tSz, shape[2]); }
   }
-  if (sSt + sSz > shape[3]) { Log::Fail(cmd, "Last slab point {} exceeded maximum {}", sSt + sSz, shape[3]); }
-  if (vSt + vSz > shape[4]) { Log::Fail(cmd, "Last volume point {} exceeded maximum {}", vSt + vSz, shape[4]); }
+  if (sSt + sSz > shape[3]) { throw Log::Failure(cmd, "Last slab point {} exceeded maximum {}", sSt + sSz, shape[3]); }
+  if (vSt + vSz > shape[4]) { throw Log::Failure(cmd, "Last volume point {} exceeded maximum {}", vSt + vSz, shape[4]); }
 
-  if (cSz < 1) { Log::Fail(cmd, "Channel size was less than 1"); }
-  if (rSz < 1) { Log::Fail(cmd, "Sample size was less than 1"); }
-  if (tSz < 1) { Log::Fail(cmd, "Trace size was less than 1"); }
-  if (sSz < 1) { Log::Fail(cmd, "Slab size was less than 1"); }
-  if (vSz < 1) { Log::Fail(cmd, "Volume size was less than 1"); }
+  if (cSz < 1) { throw Log::Failure(cmd, "Channel size was less than 1"); }
+  if (rSz < 1) { throw Log::Failure(cmd, "Sample size was less than 1"); }
+  if (tSz < 1) { throw Log::Failure(cmd, "Trace size was less than 1"); }
+  if (sSz < 1) { throw Log::Failure(cmd, "Slab size was less than 1"); }
+  if (vSz < 1) { throw Log::Failure(cmd, "Volume size was less than 1"); }
 
   Log::Print(cmd, "Selected slice {}:{}, {}:{}, {}:{}, {}:{}, {}:{}", cSt, cSt + cSz - 1, rSt, rSt + rSz - 1, tSt,
              tSt + tSz - 1, sSt, sSt + sSz - 1, vSt, vSt + vSz - 1);
@@ -82,7 +82,7 @@ void main_slice(args::Subparser &parser)
 
   if (tracesPerSeg) {
     Index const tps = tracesPerSeg.Get();
-    if (tSt + tSz > tps) { Log::Fail(cmd, "Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
+    if (tSt + tSz > tps) { throw Log::Failure(cmd, "Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
     Index const nSeg = shape[2] / tps; // Will lose spare traces
     Index const segSt = Wrap(traceSegStart.Get(), nSeg);
     Index const segSz = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg) : nSeg - segSt;

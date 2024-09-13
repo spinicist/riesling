@@ -23,7 +23,7 @@ struct NameIndexReader
       ni.name = std::get<0>(result->values());
       ni.index = std::get<1>(result->values());
     } else {
-      rl::Log::Fail("montage", "Could not read NameIndex for {} from value {}, error {}", name, value, result.error().msg());
+      throw rl::Log::Failure("montage", "Could not read NameIndex for {} from value {}, error {}", name, value, result.error().msg());
     }
   }
 };
@@ -49,7 +49,7 @@ struct GravityReader
     } else if (value == "SouthEast") {
       g = Magick::GravityType::SouthEastGravity;
     } else {
-      rl::Log::Fail("montage", "Unknown gravity {}", value);
+      throw rl::Log::Failure("montage", "Unknown gravity {}", value);
     }
   }
 };
@@ -63,7 +63,7 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
   rl::Cx3    data;
   auto const O = reader.order(dset);
   if (O < 2) {
-    rl::Log::Fail("montage", "Cannot montage 1D data");
+    throw rl::Log::Failure("montage", "Cannot montage 1D data");
   } else if (O == 2) {
     auto const data2 = reader.readTensor<rl::Cx2>(dset);
     auto const shape = data2.dimensions();
@@ -74,21 +74,21 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
     std::vector<rl::HD5::IndexPair> chips;
     if (!namedChips.size()) {
       if (dset == "data") { chips = std::vector<rl::HD5::IndexPair>{{0, 0}, {4, 0}}; }
-      else { rl::Log::Fail("montage", "No chips specified"); }
+      else { throw rl::Log::Failure("montage", "No chips specified"); }
     } else {
       if (diskOrder - namedChips.size() != 3) {
-        rl::Log::Fail("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping", namedChips.size(), dset, diskOrder);
+        throw rl::Log::Failure("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping", namedChips.size(), dset, diskOrder);
       }
       auto const names = reader.listNames(dset);
       for (auto const &nc: namedChips) {
         if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
           auto const d = std::distance(names.cbegin(), id);
           if (nc.index >= diskDims[d]) {
-            rl::Log::Fail("montage", "Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
+            throw rl::Log::Failure("montage", "Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
           }
           chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d]  / 2});
         } else {
-          rl::Log::Fail("montage", "Could find dimension named {}", nc.name);
+          throw rl::Log::Failure("montage", "Could find dimension named {}", nc.name);
         }
       }
     }
@@ -119,12 +119,12 @@ auto SliceData(rl::Cx3 const &data,
                rl::Sz2        sl0,
                rl::Sz2        sl1) -> std::vector<rl::Cx2>
 {
-  if (slDim < 0 || slDim > 2) { rl::Log::Fail("montage", "Slice dim was {}, must be 0-2", slDim); }
+  if (slDim < 0 || slDim > 2) { throw rl::Log::Failure("montage", "Slice dim was {}, must be 0-2", slDim); }
   auto const shape = data.dimensions();
   auto const shape1 = rl::Cx2(data.chip(0, slDim)).dimensions();
-  if (slStart < 0 || slStart >= shape[slDim]) { rl::Log::Fail("montage", "Slice start invalid"); }
-  if (slEnd && slEnd >= shape[slDim]) { rl::Log::Fail("montage", "Slice end invalid"); }
-  if (slN < 0) { rl::Log::Fail("montage", "Requested negative number of slices"); }
+  if (slStart < 0 || slStart >= shape[slDim]) { throw rl::Log::Failure("montage", "Slice start invalid"); }
+  if (slEnd && slEnd >= shape[slDim]) { throw rl::Log::Failure("montage", "Slice end invalid"); }
+  if (slN < 0) { throw rl::Log::Failure("montage", "Requested negative number of slices"); }
   if (sl0[0] < 0) { sl0[0] = 0; }
   if (sl1[0] < 0) { sl1[0] = 0; }
   if (sl0[0] + sl0[1] >= shape1[0]) { sl0[1] = shape1[0] - sl0[0]; }
@@ -155,7 +155,7 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
     case 'r': clr = rl::ColorizeReal(slice.real(), win, ɣ); break;
     case 'i': clr = rl::ColorizeReal(slice.imag(), win, ɣ); break;
     case 'm': clr = rl::Greyscale(slice.abs(), 0, win, ɣ); break;
-    default: rl::Log::Fail("montage", "Uknown component type {}", component);
+    default: throw rl::Log::Failure("montage", "Uknown component type {}", component);
     }
     colorized.push_back(clr);
   }
@@ -200,7 +200,7 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
       case 'r': cx(ii, ij) = 2.f * mag - win; break;
       case 'i': cx(ii, ij) = 2.f * mag - win; break;
       case 'm': cx(ii, ij) = mag; break;
-      default: rl::Log::Fail("montage", "Uknown component type {}", component);
+      default: throw rl::Log::Failure("montage", "Uknown component type {}", component);
       }
     }
   }
@@ -232,7 +232,7 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
     rightLabel = fmt::format("{:.1f}", win);
     cbar = rl::Greyscale(cx.abs(), 0, win, ɣ);
   } break;
-  default: rl::Log::Fail("montage", "Uknown component type {}", component);
+  default: throw rl::Log::Failure("montage", "Uknown component type {}", component);
   }
 
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());

@@ -9,7 +9,7 @@ namespace rl {
 
 template <typename S> Eig<S>::Eig(Eigen::Ref<Matrix const> const &g)
 {
-  if (g.rows() != g.cols()) { Log::Fail("Eig", "This is for self-adjoint Eigensystems"); }
+  if (g.rows() != g.cols()) { throw Log::Failure("Eig", "This is for self-adjoint Eigensystems"); }
   Eigen::SelfAdjointEigenSolver<Matrix> eig(g);
   V = eig.eigenvalues().reverse();
   P = eig.eigenvectors().rowwise().reverse();

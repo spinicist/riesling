@@ -26,10 +26,19 @@ enum struct Level
   Debug = 3
 };
 
-class Failure : public std::runtime_error
+struct Failure
 {
-public:
-  Failure();
+  std::string      category;
+  fmt::string_view fstr;
+  fmt::format_args args;
+
+  template <typename... Args>
+  Failure(std::string const &cat, fmt::format_string<Args...> fs, Args &&...args)
+    : category{cat}
+    , fstr{fs}
+    , args{fmt::make_format_args(args...)}
+  {
+  }
 };
 
 using Time = std::chrono::high_resolution_clock::time_point;
@@ -66,20 +75,11 @@ inline void Warn(std::string const &category, fmt::format_string<Args...> const 
 }
 
 template <typename... Args>
-__attribute__((noreturn)) inline void Fail(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
+__attribute__((noreturn)) inline void Fail(Failure const &f)
 {
   if (CurrentLevel() > Level::Testing) {
-    SaveEntry(category, fstr, fmt::make_format_args(args...), fmt::terminal_color::bright_red, Level::None);
+    SaveEntry(f.category, f.fstr, f.args, fmt::terminal_color::bright_red, Level::None);
   }
-  throw Failure();
-}
-
-template <typename... Args> __attribute__((noreturn)) inline void Fail2(fmt::format_string<Args...> const &fstr, Args &&...args)
-{
-  if (CurrentLevel() > Level::Testing) {
-    SaveEntry("", fstr, fmt::make_format_args(args...), fmt::terminal_color::bright_red, Level::None);
-  }
-  exit(EXIT_FAILURE);
 }
 
 void StartProgress(Index const counst, std::string const &label);

@@ -19,7 +19,7 @@ Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, boo
   Eigen::Array<float, NK, 1> rad, ind;
   for (Index ii = 0; ii < NK; ii++) {
     auto const D = kDims_[ii];
-    if (ishape[D] < kW_[ii]) { Log::Fail("Hankel", "Kernel size is bigger than image size"); }
+    if (ishape[D] < kW_[ii]) { throw Log::Failure("Hankel", "Kernel size is bigger than image size"); }
     kSz_[D] = kW_[ii];
     oshape[D + 2] = kW_[ii];
     if (!sphere_) {

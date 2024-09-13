@@ -28,7 +28,7 @@ SENSE::SENSE(Cx5 const &maps, Index const nB)
   } else if (maps_.dimension(0) == nB) {
     brdMaps.set(0, 1);
   } else {
-    Log::Fail("SENSE", "Maps had basis size {} expected {}", maps_.dimension(0), nB);
+    throw Log::Failure("SENSE", "Maps had basis size {} expected {}", maps_.dimension(0), nB);
   }
 }
 
@@ -124,7 +124,7 @@ VCCSENSE::VCCSENSE(Cx5 const &maps, Index const nB)
   } else if (maps_.dimension(0) == nB) {
     brdMaps.set(0, 1);
   } else {
-    Log::Fail("SENSE", "Maps had basis size {} expected {}", maps_.dimension(0), nB);
+    throw Log::Failure("SENSE", "Maps had basis size {} expected {}", maps_.dimension(0), nB);
   }
 }
 

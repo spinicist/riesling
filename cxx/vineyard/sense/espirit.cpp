@@ -21,7 +21,7 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
   Index const gapPlusKW = ((gapRad + kRad) * 2) - 1;
   Index const nSkip = gapRad ? gapPlusKW * gapPlusKW * gapPlusKW : 0;
   Index const nk = calW * calW * calW - nSkip;
-  if (nk < 1) { Log::Fail("No kernels to Hankelfy"); }
+  if (nk < 1) { throw Log::Failure("No kernels to Hankelfy"); }
   Cx5 kernels(nchan, kW, kW, kW, nk);
 
   Index       k = 0;
@@ -31,7 +31,7 @@ Cx5 ToKernels(Cx4 const &grid, Index const kRad, Index const calRad, Index const
   Sz3 const st = Add(halfShape, -(calRad - 1) - (kRad - 1));
   for (Index ii = 0; ii < 3; ii++) {
     if (st[ii] < 0) {
-      Log::Fail("Grid size {} not large enough for calibration radius {} + kernel radius {}", grid.dimension(1), calRad, kRad);
+      throw Log::Failure("Grid size {} not large enough for calibration radius {} + kernel radius {}", grid.dimension(1), calRad, kRad);
     }
   }
 

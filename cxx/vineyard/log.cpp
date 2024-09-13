@@ -11,11 +11,6 @@
 namespace rl {
 namespace Log {
 
-Failure::Failure()
-  : std::runtime_error("")
-{
-}
-
 namespace {
 Level                        log_level = Level::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;

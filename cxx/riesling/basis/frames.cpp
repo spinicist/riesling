@@ -27,7 +27,7 @@ void main_frames(args::Subparser &parser)
   basis.setZero();
   for (Index ifr = 0; ifr < nF; ifr++) {
     for (Index it = 0; it < tracesPerFrame.Get(); it++) {
-      if (index >= nT) { rl::Log::Fail(cmd, "Trace index {} exceeded maximum {}", index, nT); }
+      if (index >= nT) { throw rl::Log::Failure(cmd, "Trace index {} exceeded maximum {}", index, nT); }
       basis(ifr, 0, index++) = 1.;
     }
     if (incFrame) { index += incFrame.Get() * tracesPerFrame.Get(); }

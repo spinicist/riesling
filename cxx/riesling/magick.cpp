@@ -74,7 +74,7 @@ auto LiveSlice(Eigen::TensorMap<CxN<N> const> const &xt,
     auto                        magick = ToMagick(ColorizeComplex(slice, win, 0.8), 0.f);
     return magick;
   } else {
-    Log::Fail("magick", "Could not find dimensions {} and {}", d0, d1);
+    throw Log::Failure("magick", "Could not find dimensions {} and {}", d0, d1);
   }
 }
 

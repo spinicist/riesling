@@ -231,7 +231,7 @@ Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)
   , B{BB}
 {
   if (A->cols() != B->rows()) {
-    Log::Fail("Op", "Multiply mismatched dimensions [{},{}] and [{},{}]", A->rows(), A->cols(), B->rows(), B->cols());
+    throw Log::Failure("Op", "Multiply mismatched dimensions [{},{}] and [{},{}]", A->rows(), A->cols(), B->rows(), B->cols());
   }
 }
 
@@ -319,7 +319,7 @@ template <typename S> void VStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {
     if (ops[ii]->cols() != ops[ii + 1]->cols()) {
-      Log::Fail("Op", "VStack {} {} had {} cols but op {} {} had {}", ii, ops[ii]->name, ops[ii]->cols(), ii + 1,
+      throw Log::Failure("Op", "VStack {} {} had {} cols but op {} {} had {}", ii, ops[ii]->name, ops[ii]->cols(), ii + 1,
                 ops[ii + 1]->name, ops[ii + 1]->cols());
     }
   }
@@ -415,7 +415,7 @@ template <typename S> void HStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {
     if (ops[ii]->rows() != ops[ii + 1]->rows()) {
-      Log::Fail("Op", "HStack {} {} had {} rows but op {} {} had {}", ii, ops[ii]->name, ops[ii]->rows(), ii + 1,
+      throw Log::Failure("Op", "HStack {} {} had {} rows but op {} {} had {}", ii, ops[ii]->name, ops[ii]->rows(), ii + 1,
                 ops[ii + 1]->name, ops[ii + 1]->rows());
     }
   }

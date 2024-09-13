@@ -26,8 +26,8 @@ void main_basis_concat(args::Subparser &parser)
   auto const b1 = LoadBasis(iname1.Get());
   auto const b2 = LoadBasis(iname2.Get());
 
-  if (b1->nSample() != b1->nSample()) { Log::Fail(cmd, "Number of samples in both bases must match"); }
-  if (b1->nTrace() != b1->nTrace()) { Log::Fail(cmd, "Number of traces in both bases must match"); }
+  if (b1->nSample() != b1->nSample()) { throw Log::Failure(cmd, "Number of samples in both bases must match"); }
+  if (b1->nTrace() != b1->nTrace()) { throw Log::Failure(cmd, "Number of traces in both bases must match"); }
 
   auto const n1 = b1->nB();
   auto const n2 = b2->nB();

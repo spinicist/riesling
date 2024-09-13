@@ -26,7 +26,7 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
     z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
     Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
-    Log::Fail("Prox", "C++ is stupid");
+    throw Log::Failure("Prox", "C++ is stupid");
   }
 }
 
@@ -35,7 +35,7 @@ L2::L2(float const λ_, Index const sz_, Index const blk)
   , λ{λ_}
   , blockSize{blk}
 {
-  if (sz_ % blockSize != 0) { Log::Fail("Prox", "Block size {} does not cleanly divide {}", blockSize, sz_); }
+  if (sz_ % blockSize != 0) { throw Log::Failure("Prox", "Block size {} does not cleanly divide {}", blockSize, sz_); }
   if (blockSize == 0) { blockSize = sz_; }
   Log::Print("Prox", "L2 Prox λ {} scaled λ {} block size {}", λ_, λ, blockSize);
 }
@@ -70,7 +70,7 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
     }
     Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
-    Log::Fail("Prox", "C++ is stupid");
+    throw Log::Failure("Prox", "C++ is stupid");
   }
 }
 

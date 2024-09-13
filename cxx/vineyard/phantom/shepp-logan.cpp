@@ -24,7 +24,7 @@ Cx3 SheppLoganPhantom(
   std::vector<float> const           &intensities)
 {
   if (!(centres.size() == ha.size() && centres.size() == angles.size() && centres.size() == intensities.size())) {
-    Log::Fail("Phan", "Shepp Logan property lengths did not match");
+    throw Log::Failure("Phan", "Shepp Logan property lengths did not match");
   }
 
   Log::Print("Phan", "Drawing 3D Shepp Logan");

@@ -29,7 +29,7 @@ void main_diff(args::Subparser &parser)
   auto const orderB = readerB.order(dset.Get());
 
   if (orderA != orderB) {
-    Log::Fail(cmd, "Dataset {} in file {} had order {} but in file {} it was {}", dset.Get(), aname.Get(), orderA, bname.Get(),
+    throw Log::Failure(cmd, "Dataset {} in file {} had order {} but in file {} it was {}", dset.Get(), aname.Get(), orderA, bname.Get(),
               orderB);
   }
 
@@ -37,7 +37,7 @@ void main_diff(args::Subparser &parser)
   auto const shapeB = readerB.dimensions(dset.Get());
 
   if (shapeA != shapeB) {
-    Log::Fail(cmd, "Dataset {} in file {} had shape {} but in file {} it was {}", dset.Get(), aname.Get(), shapeA, bname.Get(),
+    throw Log::Failure(cmd, "Dataset {} in file {} had shape {} but in file {} it was {}", dset.Get(), aname.Get(), shapeA, bname.Get(),
               shapeB);
   }
 
@@ -60,7 +60,7 @@ void main_diff(args::Subparser &parser)
     Cx6 const diff = B - A;
     writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.dimensionNames<6>());
   } break;
-  default: Log::Fail(cmd, "Data had order {}, I'm lazy", orderA);
+  default: throw Log::Failure(cmd, "Data had order {}, I'm lazy", orderA);
   }
   Log::Print(cmd, "Finished");
 }

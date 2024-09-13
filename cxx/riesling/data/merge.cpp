@@ -27,7 +27,7 @@ void main_merge(args::Subparser &parser)
   Trajectory  traj1(reader1, reader1.readInfo().voxel_size);
   Trajectory  traj2(reader2, reader2.readInfo().voxel_size);
 
-  if (!traj1.compatible(traj2)) { Log::Fail(cmd, "Trajectories are not compatible"); }
+  if (!traj1.compatible(traj2)) { throw Log::Failure(cmd, "Trajectories are not compatible"); }
 
   Cx5 ks1 = reader1.readTensor<Cx5>();
   Cx5 ks2 = reader2.readTensor<Cx5>();
@@ -45,9 +45,9 @@ void main_merge(args::Subparser &parser)
   Index const nT2 = ks2.dimension(2);
   Index const nSl2 = ks2.dimension(3);
   Index const nV2 = ks2.dimension(4);
-  if (nC1 != nC2) { Log::Fail(cmd, "Datasets have {} and {} channels", nC1, nC2); }
-  if (nSl1 != nSl2) { Log::Fail(cmd, "Datasets have {} and {} slabs", nSl1, nSl2); }
-  if (nV1 != nV2) { Log::Fail(cmd, "Datasets have {} and {} volumes", nV1, nV2); }
+  if (nC1 != nC2) { throw Log::Failure(cmd, "Datasets have {} and {} channels", nC1, nC2); }
+  if (nSl1 != nSl2) { throw Log::Failure(cmd, "Datasets have {} and {} slabs", nSl1, nSl2); }
+  if (nV1 != nV2) { throw Log::Failure(cmd, "Datasets have {} and {} volumes", nV1, nV2); }
 
   if (nS1 != nS2) {
     Log::Print(cmd, "Datasets have unequal samples ({}, {}), pruning to shortest", nS1, nS2);

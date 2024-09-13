@@ -24,7 +24,7 @@ void main_h5(args::Subparser &parser)
       try {
         fmt::print("{} ", meta.at(k));
       } catch (std::out_of_range const &) {
-        Log::Fail(cmd, "Could not find key {}", k);
+        throw Log::Failure(cmd, "Could not find key {}", k);
       }
     }
     fmt::print("\n");
@@ -50,7 +50,7 @@ void main_h5(args::Subparser &parser)
     }
 
     auto const datasets = reader.list();
-    if (datasets.empty()) { Log::Fail(cmd, "No datasets found in {}", iname.Get()); }
+    if (datasets.empty()) { throw Log::Failure(cmd, "No datasets found in {}", iname.Get()); }
     for (auto const &ds : datasets) {
       if (ds != "info" && ds != "trajectory") {
         fmt::print("Name: {:12} Shape: {:24} Names: {}\n", ds, fmt::format("{}", reader.dimensions(ds)), reader.listNames(ds));

@@ -16,7 +16,7 @@ auto T2FLAIR::traces() const -> Index { return settings.spokesPerSeg * settings.
 
 auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 4) { Log::Fail("Sim", "Need 3 parameters T1 T2 Δf"); }
+  if (p.size() != 4) { throw Log::Failure("Sim", "Need 3 parameters T1 T2 Δf"); }
   float const R1 = 1.f / p(0);
   float const R2 = 1.f / p(1);
   float const Δf = p(2);
@@ -76,7 +76,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Sim", "Programmer error"); }
+  if (tp != settings.spokesPerSeg * settings.segsKeep) { throw Log::Failure("Sim", "Programmer error"); }
   return readout(p(1), Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
