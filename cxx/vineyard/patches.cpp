@@ -27,7 +27,7 @@ void Patches(
     }
   }
 
-  Log::Debug("Windows {} Shifts {}", nWindows, shift);
+  Log::Debug("Patch", "Windows {} Shifts {}", nWindows, shift);
   Sz5 const   szP{x.dimension(0), patchSize, patchSize, patchSize, x.dimension(4)};
   Index const inset = (patchSize - windowSize) / 2;
 

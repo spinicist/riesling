@@ -15,7 +15,7 @@ auto NoPrep::traces() const -> Index { return 1; }
 
 auto NoPrep::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 1) { Log::Fail("Must have 1 parameter Δf"); }
+  if (p.size() != 1) { Log::Fail("Sim", "Must have 1 parameter Δf"); }
   Cx1 const off = offres(p[0]);
   return off.reshape(Sz2{off.dimension(0), 1});
 }
@@ -29,7 +29,7 @@ auto Prep::traces() const -> Index { return (settings.spokesPerSeg + settings.k0
 
 auto Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 3) { Log::Fail("Must have 3 parameters T1 β Δf"); }
+  if (p.size() != 3) { Log::Fail("Sim", "Must have 3 parameters T1 β Δf"); }
   float const T1 = p(0);
   float const β = p(1);
   float const Δf = p(2);
@@ -82,7 +82,7 @@ auto Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
       Mz = E1 * A * Mz;
     }
   }
-  if (tp != traces()) { Log::Fail("Programmer error"); }
+  if (tp != traces()) { Log::Fail("Sim", "Programmer error"); }
   return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 
@@ -95,7 +95,7 @@ auto Prep2::traces() const -> Index { return settings.spokesPerSeg * settings.se
 
 auto Prep2::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 4) { Log::Fail("Must have 4 parameters T1 β1 β2 Δf"); }
+  if (p.size() != 4) { Log::Fail("Sim", "Must have 4 parameters T1 β1 β2 Δf"); }
   float const R1 = 1.f / p(0);
   float const β1 = p(1);
   float const β2 = p(2);
@@ -154,7 +154,7 @@ auto Prep2::simulate(Eigen::ArrayXf const &p) const -> Cx2
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
+  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Sim", "Programmer error"); }
   return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 

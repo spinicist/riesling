@@ -47,7 +47,7 @@ void main_grid(args::Subparser &parser)
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
 
   Trajectory traj(reader, reader.readInfo().voxel_size);
@@ -77,5 +77,5 @@ void main_grid(args::Subparser &parser)
     auto       c = lsmr.run(CollapseToConstVector(noncart));
     writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
   }
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

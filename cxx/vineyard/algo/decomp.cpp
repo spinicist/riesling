@@ -9,7 +9,7 @@ namespace rl {
 
 template <typename S> Eig<S>::Eig(Eigen::Ref<Matrix const> const &g)
 {
-  if (g.rows() != g.cols()) { Log::Fail("This is for self-adjoin Eigensystems"); }
+  if (g.rows() != g.cols()) { Log::Fail("Eig", "This is for self-adjoint Eigensystems"); }
   Eigen::SelfAdjointEigenSolver<Matrix> eig(g);
   V = eig.eigenvalues().reverse();
   P = eig.eigenvectors().rowwise().reverse();
@@ -43,7 +43,7 @@ template <typename Scalar> auto SVD<Scalar>::equalized(Index const N) const -> M
 {
   // Amoeba Rotation
   // http://stats.stackexchange.com/a/177555/87414
-  Log::Print("Equalizing variances for first {} vectors", N);
+  Log::Print("SVD", "Equalizing variances for first {} vectors", N);
   RealArray       v = S.head(N).square();
   float const     μ = v.mean();
   Eigen::MatrixXf R = Eigen::MatrixXf::Identity(N, N);

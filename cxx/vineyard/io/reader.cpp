@@ -12,12 +12,11 @@ Reader::Reader(std::string const &fname, bool const altX)
   : owner_{true}
   , altComplex_{altX}
 {
-  if (!std::filesystem::exists(fname)) { Log::Fail("File does not exist: {}", fname); }
+  if (!std::filesystem::exists(fname)) { Log::Fail("HD5", "File does not exist: {}", fname); }
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  if (handle_ < 0) { Log::Fail("Failed to open {}", fname); }
-  Log::Print("Opened file to read: {}", fname);
-  Log::Debug("Handle: {}", handle_);
+  if (handle_ < 0) { Log::Fail("HD5", "Failed to open {}", fname); }
+  Log::Print("HD5", "Reading from {} id {}", fname, handle_);
 }
 
 Reader::Reader(Handle const fid, bool const altX)
@@ -26,14 +25,14 @@ Reader::Reader(Handle const fid, bool const altX)
   , altComplex_{altX}
 {
   Init();
-  Log::Print("Reading from HDF5 id {}", fid);
+  Log::Print("HD5", "Reading from id {}", handle_);
 }
 
 Reader::~Reader()
 {
   if (owner_) {
     H5Fclose(handle_);
-    Log::Debug("Closed handle: {}", handle_);
+    Log::Debug("HD5", "Closed id {}", handle_);
   }
 }
 
@@ -42,7 +41,7 @@ auto Reader::list() const -> std::vector<std::string> { return List(handle_); }
 auto Reader::order(std::string const &name) const -> Index
 {
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor {}", name); }
+  if (dset < 0) { Log::Fail("HD5", "Could not open tensor {}", name); }
   hid_t     ds = H5Dget_space(dset);
   int const ndims = H5Sget_simple_extent_ndims(ds);
   CheckedCall(H5Dclose(dset), "Could not close dataset");
@@ -52,7 +51,7 @@ auto Reader::order(std::string const &name) const -> Index
 auto Reader::dimensions(std::string const &label) const -> std::vector<Index>
 {
   hid_t dset = H5Dopen(handle_, label.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor {}", label); }
+  if (dset < 0) { Log::Fail("HD5", "Could not open tensor {}", label); }
 
   hid_t                ds = H5Dget_space(dset);
   int const            ND = H5Sget_simple_extent_ndims(ds);
@@ -69,7 +68,7 @@ auto Reader::dimensions(std::string const &label) const -> std::vector<Index>
 auto Reader::listNames(std::string const &name) const -> std::vector<std::string>
 {
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
-  if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
+  if (ds < 0) { Log::Fail("HD5", "Could not open tensor '{}'", name); }
   hid_t                    dspace = H5Dget_space(ds);
   int const                ndims = H5Sget_simple_extent_ndims(dspace);
   std::vector<std::string> names(ndims);
@@ -88,10 +87,10 @@ template <typename T> auto Reader::readTensor(std::string const &name) const -> 
   constexpr auto ND = T::NumDimensions;
   using Scalar = typename T::Scalar;
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor '{}'", name); }
+  if (dset < 0) { Log::Fail("HD5", "Could not open tensor '{}'", name); }
   hid_t      ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
-  if (rank != ND) { Log::Fail("Tensor {}: has rank {}, expected {}", name, rank, ND); }
+  if (rank != ND) { Log::Fail("HD5", "Tensor {} has rank {} expected {}", name, rank, ND); }
 
   std::array<hsize_t, ND> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
@@ -101,9 +100,9 @@ template <typename T> auto Reader::readTensor(std::string const &name) const -> 
   Eigen::Tensor<Scalar, ND> tensor(tDims);
   herr_t                    ret_value = H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, tensor.data());
   if (ret_value < 0) {
-    Log::Fail("Error reading tensor {}, code: {}", name, ret_value);
+    Log::Fail("HD5", "Error reading tensor {} code {}", name, ret_value);
   } else {
-    Log::Debug("Read tensor {}, shape {}", name, tDims);
+    Log::Debug("HD5", "Read tensor {} shape {}", name, tDims);
   }
   return tensor;
 }
@@ -120,9 +119,9 @@ template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 
 template <int N> auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
 {
-  if (N != order(name)) { Log::Fail("Asked for {} dimension names, but {} order tensor", N, order(name)); }
+  if (N != order(name)) { Log::Fail("HD5", "Asked for {} dimension names, but {} order tensor", N, order(name)); }
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
-  if (ds < 0) { Log::Fail("Could not open tensor '{}'", name); }
+  if (ds < 0) { Log::Fail("HD5", "Could not open tensor '{}'", name); }
   DimensionNames<N> names;
   for (Index ii = 0; ii < N; ii++) {
     char buffer[64] = {0};
@@ -144,12 +143,12 @@ template <typename T> auto Reader::readSlab(std::string const &label, std::vecto
   constexpr Index SlabOrder = T::NumDimensions;
 
   hid_t dset = H5Dopen(handle_, label.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open tensor '{}'", label); }
+  if (dset < 0) { Log::Fail("HD5", "Could not open tensor '{}'", label); }
   hid_t       ds = H5Dget_space(dset);
   Index const DiskOrder = H5Sget_simple_extent_ndims(ds);
 
   if (SlabOrder + (Index)chips.size() != DiskOrder) {
-    Log::Fail("Requested {}D slice from {}D tensor with {} chips", SlabOrder, DiskOrder, chips.size());
+    Log::Fail("HD5", "Requested {}D slice from {}D tensor with {} chips", SlabOrder, DiskOrder, chips.size());
   }
 
   std::vector<hsize_t> diskShape(DiskOrder);
@@ -157,9 +156,9 @@ template <typename T> auto Reader::readSlab(std::string const &label, std::vecto
   std::reverse(diskShape.begin(), diskShape.end()); // HD5=row-major, Eigen=col-major
   for (size_t ii = 0; ii < chips.size(); ii++) {
     auto const chip = chips[ii];
-    if (DiskOrder <= chip.dim) { Log::Fail("Tensor {} has order {} requested chip dim {}", label, DiskOrder, chip.dim); }
+    if (DiskOrder <= chip.dim) { Log::Fail("HD5", "Tensor {} has order {} requested chip dim {}", label, DiskOrder, chip.dim); }
     if (diskShape[chip.dim] <= (hsize_t)chip.index) {
-      Log::Fail("Tensor {} dim {} has size {} requested index {}", label, chip.dim, diskShape[chip.dim], chip.index);
+      Log::Fail("HD5", "Tensor {} dim {} has size {} requested index {}", label, chip.dim, diskShape[chip.dim], chip.index);
     }
   }
   std::vector<hsize_t> diskStart(DiskOrder), diskStride(DiskOrder), diskCount(DiskOrder), diskBlock(DiskOrder);
@@ -206,9 +205,9 @@ template <typename T> auto Reader::readSlab(std::string const &label, std::vecto
   status = H5Sselect_hyperslab(mem_ds, H5S_SELECT_SET, memStart.data(), memStride.data(), memCount.data(), memShape.data());
   status = H5Dread(dset, type<typename T::Scalar>(), mem_ds, ds, H5P_DEFAULT, tensor.data());
   if (status < 0) {
-    Log::Fail("Tensor {}: Error reading slab. HD5 Message: {}", label, GetError());
+    Log::Fail("HD5", "Tensor {}: Error reading slab. HD5 Message: {}", label, GetError());
   } else {
-    Log::Debug("Read slab from tensor {}", label);
+    Log::Debug("HD5", "Read slab from tensor {}", label);
   }
   return tensor;
 }
@@ -220,10 +219,10 @@ template auto Reader::readSlab<Cx4>(std::string const &, std::vector<IndexPair> 
 template <typename Derived> auto Reader::readMatrix(std::string const &name) const -> Derived
 {
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open matrix '{}'", name); }
+  if (dset < 0) { Log::Fail("HD5", "Could not open matrix '{}'", name); }
   hid_t      ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
-  if (rank > 2) { Log::Fail("Matrix {}: has rank {} on disk, must be 1 or 2", name, rank); }
+  if (rank > 2) { Log::Fail("HD5", "Matrix {} has rank {} on disk, must be 1 or 2", name, rank); }
 
   std::array<hsize_t, 2> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
@@ -231,9 +230,9 @@ template <typename Derived> auto Reader::readMatrix(std::string const &name) con
   herr_t  ret_value =
     H5Dread(dset, type<typename Derived::Scalar>(altComplex_), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, matrix.data());
   if (ret_value < 0) {
-    Log::Fail("Error reading matrix {}, code: {}", name, ret_value);
+    Log::Fail("HD5", "Error reading matrix {}, code: {}", name, ret_value);
   } else {
-    Log::Debug("Read matrix {}", name);
+    Log::Debug("HD5", "Read matrix {}", name);
   }
   return matrix;
 }
@@ -248,10 +247,10 @@ template auto Reader::readMatrix<Eigen::ArrayXXf>(std::string const &) const -> 
 
 auto Reader::readString(std::string const &name) const -> std::string {
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not open dataset '{}'", name); }
+  if (dset < 0) { Log::Fail("HD5", "Could not open dataset '{}'", name); }
   hid_t      ds = H5Dget_space(dset);
   auto const rank = H5Sget_simple_extent_ndims(ds);
-  if (rank != 1) { Log::Fail("String {}: has rank {} on disk, must be 1", name, rank); }
+  if (rank != 1) { Log::Fail("HD5", "String {} has rank {} on disk, must be 1", name, rank); }
   std::array<hsize_t, 1> dims;
   H5Sget_simple_extent_dims(ds, dims.data(), NULL);
   hid_t const tid = H5Tcopy(H5T_C_S1);
@@ -260,7 +259,7 @@ auto Reader::readString(std::string const &name) const -> std::string {
   char *rdata[dims[0]];
   CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata), "Could not read string");
   CheckedCall(H5Dclose(dset), "Could not close string dataset");
-  Log::Debug("Read string {}", name);
+  Log::Debug("HD5", "Read string {}", name);
   return std::string(rdata[0]);
 }
 
@@ -287,7 +286,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
 {
   auto meta_group = H5Gopen(handle_, Keys::Meta.c_str(), H5P_DEFAULT);
   if (meta_group < 0) {
-    Log::Debug("No meta-data found in file handle {}", handle_);
+    Log::Debug("HD5", "No meta-data found in file handle {}", handle_);
     return {};
   }
   auto const                   names = List(meta_group);
@@ -301,7 +300,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
     meta[name] = value;
   }
   status = H5Gclose(meta_group);
-  if (status != 0) { Log::Fail("Could not load meta-data, code: {}", status); }
+if (status != 0) { Log::Fail("HD5", "Could not load meta-data, code: {}", status); }
   return meta;
 }
 

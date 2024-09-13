@@ -6,8 +6,8 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "patches.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 
@@ -22,7 +22,7 @@ void main_denoise(args::Subparser &parser)
   args::ValueFlag<float> λ(parser, "λ", "Threshold", {"lambda"}, 1.f);
 
   ParseCommand(parser);
-
+  auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
 
@@ -44,5 +44,5 @@ void main_denoise(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

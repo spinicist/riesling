@@ -23,7 +23,7 @@ struct NameIndexReader
       ni.name = std::get<0>(result->values());
       ni.index = std::get<1>(result->values());
     } else {
-      rl::Log::Fail("Could not read NameIndex for {} from value {}, error {}", name, value, result.error().msg());
+      rl::Log::Fail("montage", "Could not read NameIndex for {} from value {}, error {}", name, value, result.error().msg());
     }
   }
 };
@@ -49,7 +49,7 @@ struct GravityReader
     } else if (value == "SouthEast") {
       g = Magick::GravityType::SouthEastGravity;
     } else {
-      rl::Log::Fail("Unknown gravity {}", value);
+      rl::Log::Fail("montage", "Unknown gravity {}", value);
     }
   }
 };
@@ -63,7 +63,7 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
   rl::Cx3    data;
   auto const O = reader.order(dset);
   if (O < 2) {
-    rl::Log::Fail("Cannot montage 1D data");
+    rl::Log::Fail("montage", "Cannot montage 1D data");
   } else if (O == 2) {
     auto const data2 = reader.readTensor<rl::Cx2>(dset);
     auto const shape = data2.dimensions();
@@ -74,27 +74,27 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
     std::vector<rl::HD5::IndexPair> chips;
     if (!namedChips.size()) {
       if (dset == "data") { chips = std::vector<rl::HD5::IndexPair>{{0, 0}, {4, 0}}; }
-      else { rl::Log::Fail("No chips specified"); }
+      else { rl::Log::Fail("montage", "No chips specified"); }
     } else {
       if (diskOrder - namedChips.size() != 3) {
-        rl::Log::Fail("Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping", namedChips.size(), dset, diskOrder);
+        rl::Log::Fail("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping", namedChips.size(), dset, diskOrder);
       }
       auto const names = reader.listNames(dset);
       for (auto const &nc: namedChips) {
         if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
           auto const d = std::distance(names.cbegin(), id);
           if (nc.index >= diskDims[d]) {
-            rl::Log::Fail("Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
+            rl::Log::Fail("montage", "Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
           }
           chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d]  / 2});
         } else {
-          rl::Log::Fail("Could find dimension named {}", nc.name);
+          rl::Log::Fail("montage", "Could find dimension named {}", nc.name);
         }
       }
     }
     data = reader.readSlab<rl::Cx3>(dset, chips);
   }
-  rl::Log::Print("Data dims {}", data.dimensions());
+  rl::Log::Print("montage", "Data dims {}", data.dimensions());
   return data;
 }
 
@@ -107,7 +107,7 @@ auto CrossSections(rl::Cx3 const &data) -> std::vector<rl::Cx2>
   rl::Cx2 const X = data.chip<0>(dShape[0] / 2);
   rl::Cx2 const Y = data.chip<1>(dShape[1] / 2);
   rl::Cx2 const Z = data.chip<2>(dShape[2] / 2);
-  rl::Log::Print("Cross section sizes {} {} {}", X.dimensions(), Y.dimensions(), Z.dimensions());
+  rl::Log::Print("montage", "Cross section sizes {} {} {}", X.dimensions(), Y.dimensions(), Z.dimensions());
   return {X, Y, Z};
 }
 
@@ -119,12 +119,12 @@ auto SliceData(rl::Cx3 const &data,
                rl::Sz2        sl0,
                rl::Sz2        sl1) -> std::vector<rl::Cx2>
 {
-  if (slDim < 0 || slDim > 2) { rl::Log::Fail("Slice dim was {}, must be 0-2", slDim); }
+  if (slDim < 0 || slDim > 2) { rl::Log::Fail("montage", "Slice dim was {}, must be 0-2", slDim); }
   auto const shape = data.dimensions();
   auto const shape1 = rl::Cx2(data.chip(0, slDim)).dimensions();
-  if (slStart < 0 || slStart >= shape[slDim]) { rl::Log::Fail("Slice start invalid"); }
-  if (slEnd && slEnd >= shape[slDim]) { rl::Log::Fail("Slice end invalid"); }
-  if (slN < 0) { rl::Log::Fail("Requested negative number of slices"); }
+  if (slStart < 0 || slStart >= shape[slDim]) { rl::Log::Fail("montage", "Slice start invalid"); }
+  if (slEnd && slEnd >= shape[slDim]) { rl::Log::Fail("montage", "Slice end invalid"); }
+  if (slN < 0) { rl::Log::Fail("montage", "Requested negative number of slices"); }
   if (sl0[0] < 0) { sl0[0] = 0; }
   if (sl1[0] < 0) { sl1[0] = 0; }
   if (sl0[0] + sl0[1] >= shape1[0]) { sl0[1] = shape1[0] - sl0[0]; }
@@ -140,7 +140,7 @@ auto SliceData(rl::Cx3 const &data,
     rl::Cx2 temp = data.chip(std::floor(index), slDim).slice(rl::Sz2{sl0[0], sl1[0]}, rl::Sz2{sl0[1], sl1[1]});
     slices.push_back(temp);
   }
-  rl::Log::Print("{} slices, dims {} {}", slices.size(), slices.front().dimension(0), slices.front().dimension(1));
+  rl::Log::Print("montage", "{} slices, dims {} {}", slices.size(), slices.front().dimension(0), slices.front().dimension(1));
   return slices;
 }
 
@@ -155,7 +155,7 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
     case 'r': clr = rl::ColorizeReal(slice.real(), win, ɣ); break;
     case 'i': clr = rl::ColorizeReal(slice.imag(), win, ɣ); break;
     case 'm': clr = rl::Greyscale(slice.abs(), 0, win, ɣ); break;
-    default: rl::Log::Fail("Uknown component type {}", component);
+    default: rl::Log::Fail("montage", "Uknown component type {}", component);
     }
     colorized.push_back(clr);
   }
@@ -174,7 +174,7 @@ auto DoMontage(std::vector<rl::RGBImage> &slices, float const rotate, Index cons
 
   auto const cols = (Index)slices.size() < colsIn ? (Index)slices.size() : colsIn;
   auto const rows = (Index)std::ceil(slices.size() / (float)colsIn);
-  rl::Log::Print("Rows {} Cols {}", rows, cols);
+  rl::Log::Print("montage", "Rows {} Cols {}", rows, cols);
 
   Magick::Montage montageOpts;
   montageOpts.backgroundColor(Magick::Color(0, 0, 0));
@@ -200,7 +200,7 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
       case 'r': cx(ii, ij) = 2.f * mag - win; break;
       case 'i': cx(ii, ij) = 2.f * mag - win; break;
       case 'm': cx(ii, ij) = mag; break;
-      default: rl::Log::Fail("Uknown component type {}", component);
+      default: rl::Log::Fail("montage", "Uknown component type {}", component);
       }
     }
   }
@@ -232,7 +232,7 @@ void Colorbar(char const component, float const win, float const ɣ, Magick::Ima
     rightLabel = fmt::format("{:.1f}", win);
     cbar = rl::Greyscale(cx.abs(), 0, win, ɣ);
   } break;
-  default: rl::Log::Fail("Uknown component type {}", component);
+  default: rl::Log::Fail("montage", "Uknown component type {}", component);
   }
 
   Magick::Image          cbarImg(W, H, "RGB", Magick::CharPixel, cbar.data());
@@ -311,18 +311,19 @@ void main_montage(args::Subparser &parser)
   args::Flag                            cross(parser, "C", "Cross sections", {"cross-sections", 'x'});
   args::ValueFlag<float>                rotate(parser, "D", "Rotate slices (degrees)", {"rot", 'r'}, 0.f);
   ParseCommand(parser, iname);
+  auto const cmd = parser.GetCommand().Name();
   Magick::InitializeMagick(NULL);
 
   auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get());
   float const maxData = rl::Maximum(data.abs());
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
-  rl::Log::Print("Max magnitude in data {}. Window maximum {}", maxData, winMax);
+  rl::Log::Print(cmd, "Max magnitude in data {}. Window maximum {}", maxData, winMax);
 
   auto slices =
     cross ? CrossSections(data) : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get());
   auto colorized = Colorize(slices, comp.Get(), winMax, ɣ.Get());
   auto montage = DoMontage(colorized, rotate.Get(), cols.Get());
-  rl::Log::Print("Image size: {} {}", montage.size().width(), montage.size().height());
+  rl::Log::Print(cmd, "Image size: {} {}", montage.size().width(), montage.size().height());
   if (oname) { Printify(width.Get(), interp, montage); }
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
@@ -334,4 +335,5 @@ void main_montage(args::Subparser &parser)
   } else {
     rl::ToKitty(montage, !noScale);
   }
+  rl::Log::Print(cmd, "Finished");
 }

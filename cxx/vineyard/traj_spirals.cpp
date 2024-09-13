@@ -68,7 +68,7 @@ Index Fib(Index n)
 
 Re3 Phyllotaxis(Index const matrix, float const OS, Index const ntraces, Index const smoothness, Index const spi, bool const gm)
 {
-  if ((ntraces % spi) != 0) { Log::Fail("traces per interleave {} is not a divisor of total traces {}", spi, ntraces); }
+  if ((ntraces % spi) != 0) { Log::Fail("Phyll", "Traces per interleave {} is not a divisor of total traces {}", spi, ntraces); }
   Index           nInterleaves = ntraces / spi;
   constexpr float phi_gold = 2.399963229728653;
   constexpr float phi_gm1 = 0.465571231876768;

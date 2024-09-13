@@ -19,7 +19,7 @@ Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, boo
   Eigen::Array<float, NK, 1> rad, ind;
   for (Index ii = 0; ii < NK; ii++) {
     auto const D = kDims_[ii];
-    if (ishape[D] < kW_[ii]) { Log::Fail("Kernel size is bigger than image size"); }
+    if (ishape[D] < kW_[ii]) { Log::Fail("Hankel", "Kernel size is bigger than image size"); }
     kSz_[D] = kW_[ii];
     oshape[D + 2] = kW_[ii];
     if (!sphere_) {
@@ -46,7 +46,7 @@ Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, boo
     dimLoop(NK - 1, ind);
   }
   oshape[0] = nK;
-  Log::Print("Hankel ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
+  Log::Print("Hankel", "ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
 }
 
 template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap const &x, OutMap &y) const

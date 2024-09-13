@@ -67,7 +67,7 @@ void End()
 auto TheTime() -> std::string
 {
   auto const t = std::time(nullptr);
-  return fmt::format("[{:%H:%M:%S}]", fmt::localtime(t));
+  return fmt::format("{:%H:%M:%S}", fmt::localtime(t));
 }
 
 void StartProgress(Index const amount, std::string const &text)

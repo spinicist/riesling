@@ -8,7 +8,7 @@ template <typename S, int I, int O>
 TOp<S, I, O>::TOp(std::string const &n)
   : Ops::Op<Scalar>{n}
 {
-  Log::Debug("{} created.", this->name);
+  Log::Debug("TOp", "{} created.", this->name);
 }
 
 template <typename S, int I, int O>
@@ -17,7 +17,7 @@ TOp<S, I, O>::TOp(std::string const &n, InDims const xd, OutDims const yd)
   , ishape{xd}
   , oshape{yd}
 {
-  Log::Debug("{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
+  Log::Debug("TOp", "{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
 }
 
 template <typename S, int I, int O> TOp<S, I, O>::~TOp(){};
@@ -66,7 +66,7 @@ template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x
   InCMap    xm(x.data(), ishape);
   OutTensor y(oshape);
   OutMap    ym(y.data(), oshape);
-  Log::Debug("TOp {} forward allocated {}", this->name, ym.dimensions());
+  Log::Debug("TOp", "{} forward allocated {}", this->name, ym.dimensions());
   forward(xm, ym);
   return y;
 }
@@ -77,47 +77,47 @@ template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &
   OutCMap  ym(y.data(), oshape);
   InTensor x(ishape);
   InMap    xm(x.data(), ishape);
-  Log::Debug("TOp {} adjoint allocated {}", this->name, xm.dimensions());
+  Log::Debug("TOp", "{} adjoint allocated {}", this->name, xm.dimensions());
   adjoint(ym, xm);
   return x;
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const &, OutMap &) const
 {
-  Log::Fail("In place {} not implemented", this->name);
+  Log::Fail("TOp", "In place {} not implemented", this->name);
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &, InMap &) const
 {
-  Log::Fail("In place {} not implemented", this->name);
+  Log::Fail("TOp", "In place {} not implemented", this->name);
 }
 
 template <typename S, int I, int O>
 auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time
 {
-  if (x.dimensions() != ishape) { Log::Fail("TOp {} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
-  if (y.dimensions() != oshape) { Log::Fail("TOp {} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
-  Log::Debug("TOp{} {} forward {}->{} |x| {}", ip ? "-Add" : "", this->name, this->ishape, this->oshape, Norm(x));
+  if (x.dimensions() != ishape) { Log::Fail("TOp", "{} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
+  if (y.dimensions() != oshape) { Log::Fail("TOp", "{} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
+  Log::Debug("TOp", "{} forward {}->{} |x| {}", ip ? "-Add" : "", this->name, this->ishape, this->oshape, Norm(x));
   return Log::Now();
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap const &y, Time const start, bool const ip) const
 {
-  Log::Debug("TOp{} {} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(y));
+  Log::Debug("TOp", "{} forward finished in {} |y| {}.", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(y));
 }
 
 template <typename S, int I, int O>
 auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time
 {
-  if (y.dimensions() != oshape) { Log::Fail("TOp {} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
-  if (x.dimensions() != ishape) { Log::Fail("TOp {} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
-  Log::Debug("TOp{} {} adjoint {}->{} |y| {}", ip ? "-Add" : "", this->name, this->oshape, this->ishape, Norm(y));
+  if (y.dimensions() != oshape) { Log::Fail("TOp", "{} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
+  if (x.dimensions() != ishape) { Log::Fail("TOp", "{} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
+  Log::Debug("TOp", "{} adjoint {}->{} |y| {}", ip ? "-Add" : "", this->name, this->oshape, this->ishape, Norm(y));
   return Log::Now();
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Time const start, bool const ip) const
 {
-  Log::Debug("TOp{} {} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(x));
+  Log::Debug("TOp", "{} adjoint finished in {} |x| {}", ip ? "-Add" : "", this->name, Log::ToNow(start), Norm(x));
 }
 
 // Yeah, this was likely a mistake

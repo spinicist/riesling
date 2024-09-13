@@ -44,7 +44,7 @@ auto Otsu(Eigen::ArrayXf::ConstMapType const &x, Index const nBins) -> OtsuRetur
       bestAbove = nAbove;
     }
   }
-  Log::Print("Otsu Threshold {} retains {}% of voxels", bestThresh, (100.f * bestAbove) / n);
+  Log::Print("Otsu", "Threshold {} retains {}% of voxels", bestThresh, (100.f * bestAbove) / n);
   return OtsuReturn{bestThresh, bestAbove};
 }
 

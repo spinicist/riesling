@@ -2,11 +2,11 @@
 
 #include "algo/stats.hpp"
 #include "fft.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/fft.hpp"
 #include "op/pad.hpp"
-#include "inputs.hpp"
 #include "sense/sense.hpp"
 
 using namespace rl;
@@ -19,7 +19,7 @@ void main_sense_calib(args::Subparser &parser)
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
@@ -31,9 +31,9 @@ void main_sense_calib(args::Subparser &parser)
   if (refname) {
     HD5::Reader refFile(refname.Get());
     Trajectory  refTraj(refFile, refFile.readInfo().voxel_size);
-    if (!refTraj.compatible(traj)) { Log::Fail("Reference data incompatible with multi-channel data"); }
+    if (!refTraj.compatible(traj)) { Log::Fail(cmd, "Reference data incompatible with multi-channel data"); }
     auto refNoncart = refFile.readTensor<Cx5>();
-    if (refNoncart.dimension(0) != 1) { Log::Fail("Reference data must be single channel"); }
+    if (refNoncart.dimension(0) != 1) { Log::Fail(cmd, "Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
     ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis.get()).chip<0>(0);
     // Normalize energy
@@ -45,5 +45,5 @@ void main_sense_calib(args::Subparser &parser)
   Cx5 const   kernels = SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), senseOpts.λ.Get());
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

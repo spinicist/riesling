@@ -97,5 +97,5 @@ void main_sake(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
   writer.writeInfo(info);
   writer.writeString("log", Log::Saved());
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

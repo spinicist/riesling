@@ -8,7 +8,7 @@ namespace rl {
 /* Temp Hack because .maximum() may be buggy on NEON */
 template <int ND> auto GuessMatrix(Re3 const &points) -> Sz<ND>
 {
-  if (points.dimension(0) != ND) { Log::Fail("Incorrect number of co-ordinates for GuessMatrix"); }
+  if (points.dimension(0) != ND) { Log::Fail("Traj", "Incorrect number of co-ordinates for GuessMatrix"); }
   Re1 max(ND);
   max.setZero();
   for (Index ii = 0; ii < points.dimension(1); ii++) {
@@ -59,7 +59,7 @@ template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const vo
 template <int ND> void TrajectoryN<ND>::init()
 {
   Index const nD = points_.dimension(0);
-  if (nD != ND) { Log::Fail("Trajectory points have {} co-ordinates, expected {}", nD, ND); }
+  if (nD != ND) { Log::Fail("Traj", "Points have {} co-ordinates, expected {}", nD, ND); }
 
   Index discarded = 0;
   Re1   mat(nD);
@@ -77,9 +77,9 @@ template <int ND> void TrajectoryN<ND>::init()
   if (discarded > 0) {
     Index const total = points_.dimension(1) * points_.dimension(2);
     float const percent = (100.f * discarded) / total;
-    Log::Warn("Discarded {} trajectory points ({:.2f}%) outside matrix", discarded, percent);
+    Log::Warn("Traj", "Discarded {} points ({:.2f}%) outside matrix", discarded, percent);
   }
-  Log::Print("{}D Trajectory Samples {} Traces {} Matrix {} FOV {}", ND, nSamples(), nTraces(), matrix_, FOV());
+  Log::Print("Traj", "{}D Samples {} Traces {} Matrix {} FOV {}", ND, nSamples(), nTraces(), matrix_, FOV());
 }
 
 template <int ND> void TrajectoryN<ND>::write(HD5::Writer &file) const
@@ -94,8 +94,8 @@ template <int ND> auto TrajectoryN<ND>::nTraces() const -> Index { return points
 
 template <int ND> void TrajectoryN<ND>::checkDims(SzN const dims) const
 {
-  if (dims[1] != nSamples()) { Log::Fail("Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
-  if (dims[2] != nTraces()) { Log::Fail("Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
+  if (dims[1] != nSamples()) { Log::Fail("Traj", "Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
+  if (dims[2] != nTraces()) { Log::Fail("Traj", "Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
 }
 
 template <int ND> auto TrajectoryN<ND>::compatible(TrajectoryN const &other) const -> bool
@@ -126,7 +126,7 @@ template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov, float cons
   for (Index ii = 0; ii < ND; ii++) {
     matrix[ii] = os * std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
   }
-  Log::Print("Trajectory FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
+  Log::Print("Traj", "FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
              fov.transpose(), os, matrix);
   return matrix;
 }
@@ -140,7 +140,7 @@ auto TrajectoryN<ND>::matrixForFOV(Array const fov, Index const nB, Index const 
   }
   matrix[0] = nB;
   matrix[ND + 1] = nT;
-  Log::Print("Trajectory FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
+  Log::Print("Traj", "FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
              fov.transpose(), os, matrix);
   return matrix;
 }
@@ -164,7 +164,7 @@ template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, 
   }
 
   Eigen::IndexPairList<Eigen::type2indexpair<0, 0>> zero2zero;
-  Log::Print("Shifting FOV by {} {} {}", delta[0], delta[1], delta[2]);
+  Log::Print("Traj", "Shifting FOV by {} {} {}", delta[0], delta[1], delta[2]);
 
   auto const shape = data.dimensions();
 
@@ -196,7 +196,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
 {
   Array ratios = voxel_size_ / tgtSize;
   if ((ratios > 1.f).any()) {
-    Log::Fail("Downsample voxel-size {} is larger than current voxel-size {}", tgtSize, voxel_size_);
+    Log::Fail("Traj", "Requested voxel-size {} is smaller than current {}", tgtSize, voxel_size_);
   }
   auto dsVox = voxel_size_;
   auto dsMatrix = matrix_;
@@ -211,7 +211,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
     }
     thresh(ii) = matrix_[ii] * ratios(ii) / 2.f;
   }
-  Log::Print("Downsample {}->{} mm, matrix {}, ratios {}", voxel_size_, tgtSize, dsMatrix, fmt::streamed(ratios.transpose()));
+  Log::Print("Traj", "Downsample {}->{} mm, matrix {}, ratios {}", voxel_size_, tgtSize, dsMatrix, fmt::streamed(ratios.transpose()));
 
   Index minSamp = nSamples(), maxSamp = 0;
   Re3   dsPoints(points_.dimensions());
@@ -233,10 +233,10 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
     }
   }
   Index const dsSamples = maxSamp + 1 - minSamp;
-  Log::Print("Retaining samples {}-{}", minSamp, maxSamp);
-  if (minSamp > maxSamp) { Log::Fail("No valid trajectory points remain after downsampling"); }
+  Log::Print("Traj", "Retaining samples {}-{}", minSamp, maxSamp);
+  if (minSamp > maxSamp) { Log::Fail("Traj", "No valid trajectory points remain after downsampling"); }
   dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{3, dsSamples, nTraces()}));
-  Log::Print("Downsampled trajectory dims {}", dsPoints.dimensions());
+  Log::Print("Traj", "Downsampled trajectory dims {}", dsPoints.dimensions());
   return std::make_tuple(TrajectoryN(dsPoints, dsMatrix, dsVox), minSamp, dsSamples);
 }
 

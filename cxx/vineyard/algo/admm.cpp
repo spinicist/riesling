@@ -26,7 +26,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     z_i = prox_λ/ρ(F_i * x + u_{i-1})
     u_i = F_i * x + u_{i-1} - z_i
     */
-  if (b.rows() != A->rows()) { Log::Fail("ADMM: b was size {} expected {}", b.rows(), A->rows()); }
+  if (b.rows() != A->rows()) { Log::Fail("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
 
   Index const                                      R = regs.size();
@@ -57,7 +57,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   bʹ.setZero();
   bʹ.head(A->rows()).device(dev) = b;
 
-  Log::Print("ADMM Abs ε {}", ε);
+  Log::Print("ADMM", "Abs ε {}", ε);
   Iterating::Starting();
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
@@ -89,7 +89,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       normu += nu * nu;
       pRes += nP * nP;
       dRes += nD * nD;
-      Log::Print("Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, nFx, nz, nu);
+      Log::Print("ADMM", "Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, nFx, nz, nu);
     }
     float const normx = x.stableNorm();
     normFx = std::sqrt(normFx);
@@ -98,11 +98,11 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM {:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", io,
+    Log::Print("ADMM", "{:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", io,
                normx, normFx, normz, normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
-      Log::Print("Primal and dual tolerances achieved, stopping");
+      Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");
       break;
     }
     if (io > 0) {
@@ -121,7 +121,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         }
       }
     }
-    if (Iterating::ShouldStop()) { break; }
+    if (Iterating::ShouldStop("ADMM")) { break; }
   }
   Iterating::Finished();
   return x;

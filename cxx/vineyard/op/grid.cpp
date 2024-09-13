@@ -1,10 +1,10 @@
 #include "grid.hpp"
 
+#include "grid-subgrid.hpp"
+#include "log.hpp"
+#include "sys/chunkfor.hpp"
 #include "sys/threads.hpp"
 #include "top.hpp"
-
-#include "sys/chunkfor.hpp"
-#include "grid-subgrid.hpp"
 
 #include <mutex>
 #include <numbers>
@@ -55,13 +55,13 @@ Grid<NDim, VCC>::Grid(
   oshape = AddFront(m.noncartDims, nC);
   nMutexes = std::ceil(m.cartDims[NDim - 1] / (float)subgridW);
   if (nMutexes < 4) { nMutexes = 1; } // Any less than this we only lock once
-  Log::Debug("Using {} mutexes", nMutexes);
+  Log::Debug("Grid", "Using {} mutexes", nMutexes);
   if constexpr (VCC) {
-    Log::Print("Adding VCC");
+    Log::Print("Grid", "Adding VCC");
     auto const conjTraj = TrajectoryN<NDim>(-traj.points(), traj.matrix(), traj.voxelSize());
     vccMapping = CalcMapping<NDim>(conjTraj, osamp, kernel->paddedWidth(), sgW).mappings;
   }
-  Log::Debug("Grid Dims {}", this->ishape);
+  Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }
 
 /* Needs to be a functor to avoid template errors */
@@ -137,7 +137,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
           std::scoped_lock lock(mutexes[0]);
           SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
         } else {
-          auto const im = currentSg[ND - 1];
+          auto const       im = currentSg[ND - 1];
           std::scoped_lock lock(mutexes[(im + nM - 1) % nM], mutexes[im], mutexes[(im + 1) % nM]);
           SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
         }
@@ -156,7 +156,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
       std::scoped_lock lock(mutexes[0]);
       SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
     } else {
-      auto const im = currentSg[ND - 1];
+      auto const       im = currentSg[ND - 1];
       std::scoped_lock lock(mutexes[(im + nM - 1) % nM], mutexes[im], mutexes[(im + 1) % nM]);
       SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
     }

@@ -22,6 +22,7 @@ void main_blend(args::Subparser &parser)
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Traces within basis for combination", {"tp", 't'},
                                                               {0});
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
 
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
@@ -32,19 +33,18 @@ void main_blend(args::Subparser &parser)
   auto const basis = LoadBasis(bname.Get());
 
   if (basis->nB() != images.dimension(0)) {
-    Log::Fail("Basis has {} vectors but image has {}", basis->nB(), images.dimension(0));
-  }\
+    Log::Fail(cmd, "Basis has {} vectors but image has {}", basis->nB(), images.dimension(0));
+  }
 
   auto const &sps = sp.Get();
   auto const &tps = tp.Get();
   if (sps.size() != tps.size()) {
-    Log::Fail("Must have same number of trace and sample points");
+    Log::Fail(cmd, "Must have same number of trace and sample points");
   }
   Index const nO = sps.size();
   Cx5         out(AddFront(LastN<4>(dims), nO));
 
   for (Index io = 0; io < nO; io++) {
-    Log::Print("Blending sample {} trace {}", sps[io], tps[io]);
     out.chip<0>(io).device(Threads::TensorDevice()) =
       basis->blend(images, sps[io], tps[io]);
   }

@@ -18,6 +18,7 @@ void main_basis_concat(args::Subparser &parser)
   args::Flag                    ortho(parser, "O", "Orthogonalize basis", {"ortho"});
 
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
   if (!iname1) { throw args::Error("Input file 1 not specified"); }
   if (!iname2) { throw args::Error("Input file 2 not specified"); }
   if (!oname) { throw args::Error("Output file not specified"); }
@@ -25,8 +26,8 @@ void main_basis_concat(args::Subparser &parser)
   auto const b1 = LoadBasis(iname1.Get());
   auto const b2 = LoadBasis(iname2.Get());
 
-  if (b1->nSample() != b1->nSample()) { Log::Fail("Number of samples in both bases must match"); }
-  if (b1->nTrace() != b1->nTrace()) { Log::Fail("Number of traces in both bases must match"); }
+  if (b1->nSample() != b1->nSample()) { Log::Fail(cmd, "Number of samples in both bases must match"); }
+  if (b1->nTrace() != b1->nTrace()) { Log::Fail(cmd, "Number of traces in both bases must match"); }
 
   auto const n1 = b1->nB();
   auto const n2 = b2->nB();
@@ -45,7 +46,7 @@ void main_basis_concat(args::Subparser &parser)
     auto const                h = bmap.cast<Cxd>().matrix().transpose().householderQr();
     Eigen::MatrixXcd const    I = Eigen::MatrixXcd::Identity(L, N);
     Eigen::MatrixXcd const    Q = h.householderQ() * I;
-    Eigen::MatrixXcf    R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
+    Eigen::MatrixXcf          R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
     R /= scale;
     bmap = Q.transpose().cast<Cx>() * scale;
     Basis b(nb, Tensorfy(R, Sz2{R.rows(), R.cols()}));
@@ -54,4 +55,5 @@ void main_basis_concat(args::Subparser &parser)
     Basis const b3(nb);
     b3.write(oname.Get());
   }
+  Log::Print(cmd, "Finished");
 }

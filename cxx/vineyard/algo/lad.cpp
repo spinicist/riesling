@@ -26,7 +26,7 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
   z.setZero();
   u.setZero();
 
-  Log::Print("LAD Abs ε {}", ε);
+  Log::Print("LAD", "Abs ε {}", ε);
   Iterating::Starting();
   for (Index ii = 0; ii < outerLimit; ii++) {
     bzu = b + z - u;
@@ -44,11 +44,11 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
     float const pRes = (Ax_sub_b - z).stableNorm() / std::max(normx, normz);
     float const dRes = (z - zprev).stableNorm() / normu;
 
-    Log::Print("LAD {:02d} |x| {:4.3E} |z| {:4.3E} |u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", ii, normx, normz,
+    Log::Print("LAD", "{:02d} |x| {:4.3E} |z| {:4.3E} |u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", ii, normx, normz,
                normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
-      Log::Print("Primal and dual tolerances achieved, stopping");
+      Log::Print("LAD", "Primal and dual tolerances achieved, stopping");
       break;
     }
     if (ii > 0) {
@@ -63,7 +63,7 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
         u *= τ;
       }
     }
-    if (Iterating::ShouldStop()) { break; }
+    if (Iterating::ShouldStop("LAD")) { break; }
   }
   Iterating::Finished();
   return x;

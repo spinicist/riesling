@@ -42,8 +42,7 @@ Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> con
     Cr_[ii] = sign * Cc_[N_ - 1 - ii];
     sign = -sign;
   }
-  Log::Debug("Wavelet dimensions: {}", dims_);
-  Log::Debug("Coeffs: {}", fmt::streamed(Transpose(Cc_)));
+  Log::Debug("Wave", "Dims {} Coeffs {}", dims_, fmt::streamed(Transpose(Cc_)));
 }
 
 template <int ND> void Wavelets<ND>::forward(InCMap const &x, OutMap &y) const
@@ -91,7 +90,7 @@ template <int ND> void Wavelets<ND>::dimLoops(InMap &x, bool const reverse) cons
     };
 
     Threads::For(wav_task, otherSz);
-    Log::Debug("Wavelets Encode Dimension {}", dim);
+    Log::Debug("Wave", "Encode dim {}", dim);
   }
 }
 

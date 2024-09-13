@@ -17,6 +17,7 @@ void main_merge(args::Subparser &parser)
   args::ValueFlag<float> scale2(parser, "S", "Scale 2", {"scale2"}, 1.f);
 
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
   if (!iname1) { throw args::Error("Input file 1 not specified"); }
   if (!iname2) { throw args::Error("Input file 2 not specified"); }
   if (!oname) { throw args::Error("Output file not specified"); }
@@ -26,7 +27,7 @@ void main_merge(args::Subparser &parser)
   Trajectory  traj1(reader1, reader1.readInfo().voxel_size);
   Trajectory  traj2(reader2, reader2.readInfo().voxel_size);
 
-  if (!traj1.compatible(traj2)) { Log::Fail("Trajectories are not compatible"); }
+  if (!traj1.compatible(traj2)) { Log::Fail(cmd, "Trajectories are not compatible"); }
 
   Cx5 ks1 = reader1.readTensor<Cx5>();
   Cx5 ks2 = reader2.readTensor<Cx5>();
@@ -44,12 +45,12 @@ void main_merge(args::Subparser &parser)
   Index const nT2 = ks2.dimension(2);
   Index const nSl2 = ks2.dimension(3);
   Index const nV2 = ks2.dimension(4);
-  if (nC1 != nC2) { Log::Fail("Datasets have {} and {} channels", nC1, nC2); }
-  if (nSl1 != nSl2) { Log::Fail("Datasets have {} and {} slabs", nSl1, nSl2); }
-  if (nV1 != nV2) { Log::Fail("Datasets have {} and {} volumes", nV1, nV2); }
+  if (nC1 != nC2) { Log::Fail(cmd, "Datasets have {} and {} channels", nC1, nC2); }
+  if (nSl1 != nSl2) { Log::Fail(cmd, "Datasets have {} and {} slabs", nSl1, nSl2); }
+  if (nV1 != nV2) { Log::Fail(cmd, "Datasets have {} and {} volumes", nV1, nV2); }
 
   if (nS1 != nS2) {
-    Log::Print("Datasets have unequal samples ({}, {}), pruning to shortest", nS1, nS2);
+    Log::Print(cmd, "Datasets have unequal samples ({}, {}), pruning to shortest", nS1, nS2);
     Index const minS = std::min(nS1, nS2);
     ks1 = Cx5(ks1.slice(Sz5{}, Sz5{nC1, minS, nT1, nSl1, nV1}));
     traj1 = Trajectory(traj1.points().slice(Sz3{}, Sz3{3, minS, nT1}), traj1.matrix(), traj1.voxelSize());
@@ -57,14 +58,13 @@ void main_merge(args::Subparser &parser)
     traj2 = Trajectory(traj2.points().slice(Sz3{}, Sz3{3, minS, nT2}), traj2.matrix(), traj2.voxelSize());
   }
 
-  Log::Print("Merging across traces");
+  Log::Print(cmd, "Merging across traces");
   Trajectory traj(traj1.points().concatenate(traj2.points(), 2), traj1.matrix(), traj1.voxelSize());
   Cx5 const  ks = ks1.concatenate(ks2, 2);
-  Log::Print("t1 {} ks1 {} t2 {} ks2 {} k {} ks {}", traj1.points().dimensions(), ks1.dimensions(), traj2.points().dimensions(),
-             ks2.dimensions(), traj.points().dimensions(), ks.dimensions());
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader1.readInfo());
   traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
+  Log::Print(cmd, "Finshed");
 }

@@ -18,7 +18,7 @@ template <int W> struct ExpSemi
   ExpSemi(float const osamp)
     : β{(float)M_PI * 0.98f * W * (1.f - 0.5f / osamp)}
   {
-    Log::Print("Exponential Semi-Circle kernel width {} β {}", W, β);
+    Log::Print("Kernel", "Exponential Semi-Circle width {} β {}", W, β);
   }
 
   inline auto operator()(float const z2) const -> float

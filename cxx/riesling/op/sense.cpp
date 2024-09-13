@@ -16,8 +16,9 @@ void main_op_sense(args::Subparser &parser)
   args::Flag                    fwd(parser, "F", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (image/channels)", {'d', "dset"});
   ParseCommand(parser, iname);
+  auto const cmd = parser.GetCommand().Name();
   HD5::Reader ireader(iname.Get());
-  if (!sname) { Log::Fail("No input SENSE map file specified"); }
+  if (!sname) { Log::Fail(cmd, "No input SENSE map file specified"); }
   HD5::Reader sreader(sname.Get());
   auto const  maps = sreader.readTensor<Cx5>();
 
@@ -29,7 +30,7 @@ void main_op_sense(args::Subparser &parser)
   if (fwd) {
     auto const images = ireader.readTensor<Cx5>();
     if (LastN<3>(maps.dimensions()) != MidN<1, 3>(images.dimensions())) {
-      Log::Fail("Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
+      Log::Fail(cmd, "Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
     }
     TOps::SENSE sense(maps);
     Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
@@ -41,7 +42,7 @@ void main_op_sense(args::Subparser &parser)
   } else {
     auto const channels = ireader.readTensor<Cx6>();
     if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
-      Log::Fail("Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
+      Log::Fail(cmd, "Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
     }
     TOps::SENSE sense(maps);
     Cx5         images(LastN<5>(channels.dimensions()));
@@ -50,4 +51,5 @@ void main_op_sense(args::Subparser &parser)
     }
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
   }
+  Log::Print(cmd, "Finished");
 }

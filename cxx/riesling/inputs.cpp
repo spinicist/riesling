@@ -2,8 +2,8 @@
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include <algorithm>
 #include <cstdlib>
@@ -71,10 +71,7 @@ void SetLogging(std::string const &name)
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
     Log::SetLevel(levelMap.at(std::atoi(env_p)));
   }
-
-  Log::Print("Welcome to RIESLING");
-  Log::Print("Command: {}", name);
-
+  Log::Print(name, "Welcome to RIESLING");
   if (debug) { Log::SetDebugFile(debug.Get()); }
 }
 
@@ -85,7 +82,6 @@ void SetThreadCount()
   } else if (char *const env_p = std::getenv("RL_THREADS")) {
     Threads::SetGlobalThreadCount(std::atoi(env_p));
   }
-  Log::Print("Using {} threads", Threads::GlobalThreadCount());
 }
 
 void ParseCommand(args::Subparser &parser)

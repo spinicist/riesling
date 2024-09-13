@@ -6,8 +6,8 @@
 #include "phantom/gradcubes.hpp"
 #include "phantom/shepp-logan.hpp"
 #include "sense/sense.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 #include "traj_spirals.hpp"
 #include "types.hpp"
 #include <filesystem>
@@ -16,7 +16,7 @@ using namespace rl;
 
 Trajectory LoadTrajectory(std::string const &file)
 {
-  Log::Print("Reading external trajectory from {}", file);
+  Log::Print("Phan", "Reading external trajectory from {}", file);
   HD5::Reader reader(file);
   return Trajectory(reader, reader.readInfo().voxel_size);
 }
@@ -26,9 +26,9 @@ CreateTrajectory(Index const matrix, float const voxSz, float const readOS, Inde
 {
   // Follow the GE definition where factor of PI is ignored
   Index spokes = sps * std::ceil(nex * matrix * matrix / sps);
-  Log::Print("Using {} hi-res spokes", spokes);
+  Log::Print("Phan", "Using {} hi-res spokes", spokes);
   auto points = phyllo ? Phyllotaxis(matrix, readOS, spokes, 7, sps, true) : ArchimedeanSpiral(matrix, readOS, spokes);
-  Log::Print("Samples: {} Traces: {}", points.dimension(1), points.dimension(2));
+  Log::Print("Phan", "Samples: {} Traces: {}", points.dimension(1), points.dimension(2));
   return Trajectory(points, Sz3{matrix, matrix, matrix}, Eigen::Array3f::Constant(voxSz));
 }
 
@@ -55,7 +55,7 @@ void main_phantom(args::Subparser &parser)
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
 
   ParseCommand(parser, iname);
-
+  auto const       cmd = parser.GetCommand().Name();
   Trajectory const traj = trajfile ? LoadTrajectory(trajfile.Get())
                                    : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), sps.Get(), nex.Get(), phyllo);
   Info const       info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
@@ -93,5 +93,5 @@ void main_phantom(args::Subparser &parser)
                                 centres, ha, angles, ints);
   }
   writer.writeTensor(HD5::Keys::Data, AddFront(AddBack(phantom.dimensions(), 1), 1), phantom.data(), HD5::Dims::Image);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

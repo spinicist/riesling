@@ -1,10 +1,10 @@
 #include "types.hpp"
 
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 
@@ -15,6 +15,7 @@ void main_diff(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "OUTPUT", "Output (B - A) file");
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name", {'d', "data"}, "data");
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
   if (!aname) { throw args::Error("No file A specified"); }
   if (!bname) { throw args::Error("No file B specified"); }
   if (!oname) { throw args::Error("No output file specified"); }
@@ -28,7 +29,7 @@ void main_diff(args::Subparser &parser)
   auto const orderB = readerB.order(dset.Get());
 
   if (orderA != orderB) {
-    Log::Fail("Dataset {} in file {} had order {} but in file {} it was {}", dset.Get(), aname.Get(), orderA, bname.Get(),
+    Log::Fail(cmd, "Dataset {} in file {} had order {} but in file {} it was {}", dset.Get(), aname.Get(), orderA, bname.Get(),
               orderB);
   }
 
@@ -36,7 +37,7 @@ void main_diff(args::Subparser &parser)
   auto const shapeB = readerB.dimensions(dset.Get());
 
   if (shapeA != shapeB) {
-    Log::Fail("Dataset {} in file {} had shape {} but in file {} it was {}", dset.Get(), aname.Get(), shapeA, bname.Get(),
+    Log::Fail(cmd, "Dataset {} in file {} had shape {} but in file {} it was {}", dset.Get(), aname.Get(), shapeA, bname.Get(),
               shapeB);
   }
 
@@ -59,6 +60,7 @@ void main_diff(args::Subparser &parser)
     Cx6 const diff = B - A;
     writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.dimensionNames<6>());
   } break;
-  default: Log::Fail("Data had order {}, I'm lazy", orderA);
+  default: Log::Fail(cmd, "Data had order {}, I'm lazy", orderA);
   }
+  Log::Print(cmd, "Finished");
 }

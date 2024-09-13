@@ -11,8 +11,8 @@
 #include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include <Eigen/Householder>
 
@@ -20,20 +20,20 @@ using namespace rl;
 
 template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf> plist)
 {
-  if (plist.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
+  if (plist.size() == 0) { Log::Fail("Sim", "Must specify at least one set of tissue parameters"); }
 
   T               seq{s};
   Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, plist.size());
   for (size_t ii = 0; ii < plist.size(); ii++) {
-    Log::Print("Parameter set {}", fmt::streamed(plist[ii].transpose()));
+    Log::Print("Sim", "Parameter set {}", fmt::streamed(plist[ii].transpose()));
     parameters.col(ii) = plist[ii];
   }
   Cx3        dynamics(parameters.cols(), seq.samples(), seq.traces());
   auto const start = Log::Now();
   auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
-  Log::Print("Simulation took {}", Log::ToNow(start));
+  Log::Print("Sim", "Simulation took {}", Log::ToNow(start));
   return std::make_tuple(parameters, dynamics);
 }
 
@@ -65,6 +65,7 @@ void main_basis_sim(args::Subparser &parser)
   args::Flag ortho(parser, "O", "Orthogonalize basis", {"ortho"});
 
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
   rl::Settings settings{.samplesPerSpoke = samp.Get(),
@@ -84,7 +85,7 @@ void main_basis_sim(args::Subparser &parser)
                         .TI = TI.Get(),
                         .Trec = Trec.Get(),
                         .TE = te.Get()};
-  Log::Print("{}", settings.format());
+  Log::Print(cmd, "{}", settings.format());
 
   Eigen::ArrayXXf pars;
   Cx3             dall;
@@ -117,5 +118,5 @@ void main_basis_sim(args::Subparser &parser)
     b.write(oname.Get());
   }
 
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

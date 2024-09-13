@@ -4,8 +4,6 @@
 
 #include <span>
 
-#include "log.hpp"
-
 namespace rl::Threads {
 
 template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vector<T> const &vv, Types &...args)
@@ -13,7 +11,6 @@ template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vec
   std::span<T const> v{vv};
   Index const        nT = GlobalThreadCount();
   if (v.size() == 0) {
-    Log::Debug("No work to do");
     return;
   } else {
     Index const    den = v.size() / nT;

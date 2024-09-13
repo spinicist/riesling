@@ -7,14 +7,14 @@ namespace rl {
 DIR::DIR(Settings const s)
   : Sequence{s}
 {
-  Log::Print("DIR Sequence");
+  Log::Print("Sim", "DIR Sequence");
 }
 
 Index DIR::traces() const { return settings.spokesPerSeg * settings.segsKeep; }
 
 auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
 {
-  if (p.size() != 4) { Log::Fail("Need 4 parameters T1 T2 Δf"); }
+  if (p.size() != 4) { Log::Fail("Sim", "Need 4 parameters T1 T2 Δf"); }
   float const T1 = p(0);
   float const T2 = p(1);
   float const Δf = p(2);
@@ -78,7 +78,7 @@ auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
     }
     Mz = Essi * Eramp * Mz;
   }
-  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Programmer error"); }
+  if (tp != settings.spokesPerSeg * settings.segsKeep) { Log::Fail("Sim", "Programmer error"); }
   return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
 

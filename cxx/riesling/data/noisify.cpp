@@ -1,6 +1,6 @@
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "tensors.hpp"
 #include "types.hpp"
 
@@ -13,7 +13,7 @@ void main_noisify(args::Subparser &parser)
   args::ValueFlag<float>        σ(parser, "S", "Noise standard deviation", {"std"}, 1.f);
 
   ParseCommand(parser, iname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
   Cx5         ks = reader.readTensor<Cx5>();
 
@@ -27,5 +27,5 @@ void main_noisify(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Trajectory traj(reader, info.voxel_size);
   traj.write(writer);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

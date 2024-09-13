@@ -16,7 +16,7 @@ SLR<NK>::SLR(float const l, Sz5 const sh, Sz<NK> const dims, Sz<NK> const kW, bo
   , H{shape, dims, kW, true, virt}
 {
   λ *= (std::sqrt(H.rows()) + std::sqrt(H.cols()));
-  Log::Print("Structured Low-Rank λ {} Scaled λ {} Shape {}", l, λ, shape);
+  Log::Print("Prox", "Structured Low-Rank λ {} Scaled λ {} Shape {}", l, λ, shape);
 }
 
 template <int NK> void SLR<NK>::apply(float const α, CMap const &xin, Map &zin) const
@@ -29,14 +29,14 @@ template <int NK> void SLR<NK>::apply(float const α, CMap const &xin, Map &zin)
 
   float const thresh = λ * α;
   auto        kMat = CollapseToMatrix(k);
-  Log::Debug("Hankel {} as matrix {} {} norm {}", k.dimensions(), kMat.rows(), kMat.cols(), kMat.stableNorm());
+  Log::Debug("Prox", "Hankel {} as matrix {} {} norm {}", k.dimensions(), kMat.rows(), kMat.cols(), kMat.stableNorm());
   auto const svd = SVD<Cx>(kMat);
-  Log::Debug("U {} {} S {} V {} {}", svd.U.rows(), svd.U.cols(), svd.S.rows(), svd.V.rows(), svd.V.cols());
+  Log::Debug("Prox", "U {} {} S {} V {} {}", svd.U.rows(), svd.U.cols(), svd.S.rows(), svd.V.rows(), svd.V.cols());
   Eigen::VectorXf const s = (svd.S.abs() > thresh).select(svd.S * (svd.S.abs() - thresh) / svd.S.abs(), 0.f);
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint());
   tmp = H.adjoint(k);
   z = F.adjoint(tmp);
-  Log::Print("SLR α {} λ {} t {} |x| {} |z| {} Retained {}/{}", α, λ, thresh, Norm(x), Norm(z), (svd.S.abs() > thresh).count(),
+  Log::Print("Prox", "SLR α {} λ {} t {} |x| {} |z| {} Retained {}/{}", α, λ, thresh, Norm(x), Norm(z), (svd.S.abs() > thresh).count(),
              svd.S.rows());
 }
 

@@ -30,7 +30,7 @@ auto GlobalPool() -> Eigen::ThreadPool *
 {
   if (gp == nullptr) {
     auto const nt = std::thread::hardware_concurrency();
-    Log::Debug("Creating default thread pool with {} threads", nt);
+    Log::Debug("Thread", "Creating default thread pool with {} threads", nt);
     gp = std::make_unique<Eigen::ThreadPool>(nt);
   }
   return gp.get();
@@ -41,7 +41,7 @@ auto GlobalThreadCount() -> Index { return GlobalPool()->NumThreads(); }
 void SetGlobalThreadCount(Index nt)
 {
   if (nt < 1) { nt = std::thread::hardware_concurrency(); }
-  Log::Debug("Creating thread pool with {} threads", nt);
+  Log::Debug("Thread", "Creating thread pool with {} threads", nt);
   gp = std::make_unique<Eigen::ThreadPool>(nt);
   coreDev = std::make_unique<Eigen::CoreThreadPoolDevice>(*gp, nt);
   tensorDev = std::make_unique<Eigen::ThreadPoolDevice>(gp.get(), nt);

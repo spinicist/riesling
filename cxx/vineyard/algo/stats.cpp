@@ -41,7 +41,7 @@ auto Percentiles(Eigen::Ref<Eigen::ArrayXf const> const &vals, std::vector<float
 
   std::vector<float> pvals;
   for (auto const p : ps) {
-    if (p < 0. || p > 100.) { Log::Fail("Requested percentile {} outside range 0-100", p); }
+    if (p < 0. || p > 100.) { Log::Fail("Stats", "Requested percentile {} outside range 0-100", p); }
     Index const ind = std::clamp(Index(p * (x.size() - 1)), 0L, Index(x.size() - 1));
     pvals.push_back(x[ind]);
   }

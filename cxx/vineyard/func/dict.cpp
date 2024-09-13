@@ -11,7 +11,7 @@ namespace rl {
 void LookupDictionary::operator()(Input x, Output y) const
 {
   assert(x.dimensions() == y.dimensions());
-  Log::Print("Dictionary projection. Dims {}", x.dimensions());
+  Log::Print("Dict", "Dims {}", x.dimensions());
   auto ztask = [&](Index const iz) {
     Eigen::VectorXcf pv(x.dimension(0));
     for (Index iy = 0; iy < x.dimension(2); iy++) {
@@ -33,7 +33,7 @@ BruteForceDictionary::BruteForceDictionary(Eigen::MatrixXf const &d)
   : LookupDictionary()
   , dictionary{d}
 {
-  Log::Print("Brute-Force Dictionary rows {} entries {}", d.rows(), d.cols());
+  Log::Print("Dict", "Brute-Force rows {} entries {}", d.rows(), d.cols());
 }
 
 auto BruteForceDictionary::project(Eigen::VectorXcf const &p) const -> Eigen::VectorXcf
@@ -134,9 +134,9 @@ BallTreeDictionary::BallTreeDictionary(Eigen::MatrixXf const &dict)
     }
     points.push_back(temp.normalized());
   }
-  Log::Print("Building Ball-Tree Dictionary rows {} entries {}", dict.rows(), dict.cols());
+  Log::Print("Dict", "Building Ball-Tree rows {} entries {}", dict.rows(), dict.cols());
   root = std::make_shared<TreeNode>(points);
-  Log::Print("Finished building tree");
+  Log::Print("Dict", "Finished building tree");
 }
 
 auto BallTreeDictionary::project(Eigen::VectorXcf const &p) const -> Eigen::VectorXcf

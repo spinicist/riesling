@@ -31,7 +31,7 @@ void main_prox(args::Subparser &parser)
   args::ValueFlag<Index> waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6);
 
   ParseCommand(parser);
-
+  auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5 const   images = input.readTensor<Cx5>() * Cx(scale.Get());
@@ -62,5 +62,5 @@ void main_prox(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
-  rl::Log::Print("Finished {}", parser.GetCommand().Name());
+  rl::Log::Print(cmd, "Finished");
 }

@@ -35,7 +35,7 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
       this->centers(ii) = ii + 0.5f - (Func::PadWidth / 2.f);
     }
     scale = 1. / Norm(FixedKernel<Scalar, ND, Func>::K(f, 1.f, Point::Zero()));
-    Log::Print("Kernel, scale {}", scale);
+  Log::Print("Kernel", "Scale {}", scale);
   }
 
   virtual auto paddedWidth() const -> int final { return Func::PadWidth; }
@@ -96,7 +96,7 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
       case 4: return std::make_shared<Kernel<Scalar, ND, ExpSemi<4>>>(osamp);
       case 5: return std::make_shared<Kernel<Scalar, ND, ExpSemi<5>>>(osamp);
       case 7: return std::make_shared<Kernel<Scalar, ND, ExpSemi<7>>>(osamp);
-      default: Log::Fail("Unsupported kernel width {}", W);
+      default: Log::Fail("Kernel", "Unsupported width {}", W);
       }
     } else if (type == "KB") {
       switch (W) {
@@ -104,12 +104,12 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
       case 4: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<4>>>(osamp);
       case 5: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<5>>>(osamp);
       case 7: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<7>>>(osamp);
-      default: Log::Fail("Unsupported kernel width {}", W);
+      default: Log::Fail("Kernel", "Unsupported width {}", W);
       }
     }
   }
 
-  Log::Fail("Unknown kernel type {}", kType);
+  Log::Fail("Kernel", "Unknown type {}", kType);
 }
 
 } // namespace rl

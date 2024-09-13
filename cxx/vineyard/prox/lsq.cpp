@@ -11,7 +11,7 @@ LeastSquares<S>::LeastSquares(float const λ_, Index const sz_)
   , λ{λ_}
   , y{nullptr, sz_}
 {
-  Log::Print("LeastSquares Prox λ {}", λ);
+  Log::Print("Prox", "LeastSquares Prox λ {}", λ);
 }
 
 template <typename S>
@@ -20,7 +20,7 @@ LeastSquares<S>::LeastSquares(float const λ_, CMap const bias)
   , λ{λ_}
   , y{bias}
 {
-  Log::Print("LeastSquares Prox λ {}", λ);
+  Log::Print("Prox", "LeastSquares Prox λ {}", λ);
 }
 
 template <typename S>
@@ -32,7 +32,7 @@ void LeastSquares<S>::apply(float const α, CMap const &x, Map &z) const
   } else {
     z = x / (1.f + t);
   }
-  Log::Debug("LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.stableNorm(), y.stableNorm(), z.stableNorm());
+  Log::Debug("Prox", "LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.stableNorm(), y.stableNorm(), z.stableNorm());
 }
 
 template <typename S>
@@ -44,7 +44,7 @@ void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x,
   } else {
     z = div->forward(x);
   }
-  Log::Debug("LeastSquares λ {} |x| {} |y| {} |z| {}", λ, x.stableNorm(), y.stableNorm(), z.stableNorm());
+  Log::Debug("Prox", "LeastSquares λ {} |x| {} |y| {} |z| {}", λ, x.stableNorm(), y.stableNorm(), z.stableNorm());
 }
 
 template <typename S>

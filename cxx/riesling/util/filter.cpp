@@ -1,10 +1,10 @@
 #include "types.hpp"
 
 #include "filter.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/fft.hpp"
-#include "inputs.hpp"
 #include "sys/threads.hpp"
 
 using namespace rl;
@@ -17,7 +17,7 @@ void main_filter(args::Subparser &parser)
   args::ValueFlag<float>        end(parser, "E", "Filter end in fractional k-space (default 1.0)", {"end"}, 1.f);
   args::ValueFlag<float>        height(parser, "H", "Filter end height (default 0.5)", {"height"}, 0.5f);
   ParseCommand(parser);
-
+  auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5         images = input.readTensor<Cx5>();
@@ -32,5 +32,5 @@ void main_filter(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
   writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

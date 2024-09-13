@@ -20,7 +20,7 @@ auto Scaling(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr
     float const max = x[x.size() - 1];
     float const p90 = x[x.size() * 0.9];
     scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
-    Log::Print("Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
+    Log::Print("Scale", "Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
   } else if (type == "otsu") {
     LSMR                 lsmr{A, P, 2};
     Eigen::ArrayXf const x = lsmr.run(b).array().abs();
@@ -30,13 +30,13 @@ auto Scaling(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr
     std::sort(vals.begin(), vals.end());
     float const med = vals[count * 0.5];
     scale = 1.f / med;
-    Log::Print("Otsu + median scaling = {}", scale);
+    Log::Print("Scale", "Otsu + median scaling = {}", scale);
   } else {
     if (auto result = scn::scan<float>(type, "{}")) {
       scale = result->value();
-      Log::Print("Scale: {}", scale);
+      Log::Print("Scale", "Scale: {}", scale);
     } else {
-      Log::Fail("Could not read number from scaling: ", type);
+      Log::Fail("Scale", "Could not read number from scaling: ", type);
     }
   }
   return scale;

@@ -27,6 +27,7 @@ void main_basis_img(args::Subparser &parser)
   args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
   args::Flag             normalize(parser, "N", "Normalize before SVD", {"normalize"});
   ParseCommand(parser, iname);
+  auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
   HD5::Reader reader(iname.Get());
@@ -89,5 +90,5 @@ void main_basis_img(args::Subparser &parser)
   SVDBasis const b(dynamics, nBasis.Get(), demean, rotate, normalize);
   HD5::Writer    writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

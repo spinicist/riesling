@@ -18,7 +18,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
   NearestNeighbour()
   {
     static_assert(ND < 4);
-    Log::Print("Nearest-neighbour FixedKernel");
+    Log::Print("Kernel", "Nearest-neighbour");
   }
 
   auto paddedWidth() const -> int final { return 1; }

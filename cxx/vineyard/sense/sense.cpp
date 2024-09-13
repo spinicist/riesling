@@ -32,7 +32,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   auto const nS = noncart.dimension(3);
   auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
-    Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);
+    Log::Fail("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
   }
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
@@ -54,7 +54,7 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
   auto const nC = noncart.dimension(0);
   auto const nV = noncart.dimension(4);
   if (opts.volume.Get() >= nV) {
-    Log::Fail("Specified SENSE volume {} is greater than number of volumes in data {}", opts.volume.Get(), nV);
+    Log::Fail("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
   }
 
   Sz3 kSz;
@@ -71,7 +71,7 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5
 {
   Sz5 const shape = channels.dimensions();
-  Log::Print("Normalizing SENSE. Dimensions {} λ {}", shape, λ);
+  Log::Print("SENSE", "Normalizing λ {}", λ);
   Cx5 normalized(shape);
   normalized.device(Threads::TensorDevice()) =
     channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
@@ -114,10 +114,10 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
 {
   Sz5 const cshape = channels.dimensions();
   if (LastN<3>(cshape) != LastN<3>(ref.dimensions())) {
-    Log::Fail("SENSE dimensions don't match channels {} reference {}", cshape, ref.dimensions());
+    Log::Fail("SENSE", "Dimensions don't match channels {} reference {}", cshape, ref.dimensions());
   }
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
-    Log::Fail("SENSE matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
+    Log::Fail("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
 
@@ -169,8 +169,11 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const fmat, Sz3 const cmat) -> Cx5
 auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
+  if (noncart.dimension(0) < 2) {
+    Log::Fail("SENSE", "Data is single-channel");
+  }
   if (opts.type.Get() == "auto") {
-    Log::Print("SENSE Self-Calibration");
+    Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<1>(c, c).sqrt();
     kernels = EstimateKernels(c, ref, opts.kWidth.Get(), opts.λ.Get());

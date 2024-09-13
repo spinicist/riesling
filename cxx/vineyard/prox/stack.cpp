@@ -49,7 +49,7 @@ void StackProx<S>::apply(std::shared_ptr<Ops::Op<S>> const αs1, CMap const &x, 
       st += p->sz;
     }
   } else {
-    Log::Fail("C++ is stupid");
+    Log::Fail("Prox", "C++ is stupid");
   }
 }
 

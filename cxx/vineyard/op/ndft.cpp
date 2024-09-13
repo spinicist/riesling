@@ -13,9 +13,9 @@ NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index const nC, Basis::CPt
   , basis{b}
 {
   static_assert(NDim < 4);
-  if (tr.dimension(0) != NDim) { Log::Fail("Requested {}D NDFT but trajectory is {}D", NDim, tr.dimension(0)); }
-  Log::Debug("NDFT Input Dims {} Output Dims {}", ishape, oshape);
-  Log::Debug("Calculating cartesian co-ords");
+  if (tr.dimension(0) != NDim) { Log::Fail("NDFT", "Requested {}D but trajectory is {}D", NDim, tr.dimension(0)); }
+  Log::Debug("NDFT", "ishape {} oshape {}", ishape, oshape);
+  Log::Debug("NDFT", "Calculating cartesian co-ords");
   nSamp = tr.dimension(1);
   nTrace = tr.dimension(2);
   N = Product(shape);
@@ -77,7 +77,7 @@ template <int NDim> void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> 
   for (Index ii = 1; ii < nSamp; ii++) {
     t[ii] = t[ii - 1] + t0;
   }
-  Log::Print("Off-resonance correction. f0 range is {} to {} Hz", Minimum(Δf), Maximum(Δf));
+  Log::Print("NDFT", "Off-resonance correction. f0 range is {} to {} Hz", Minimum(Δf), Maximum(Δf));
 }
 
 template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const

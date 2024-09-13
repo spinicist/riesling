@@ -21,7 +21,7 @@ void main_sense_maps(args::Subparser &parser)
                                                      Eigen::Array3f::Zero());
 
   ParseCommand(parser, iname, oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(tname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
 
@@ -30,5 +30,5 @@ void main_sense_maps(args::Subparser &parser)
   Cx5 const   maps = SENSE::KernelsToMaps(kernels, traj.matrix(osamp.Get()), traj.matrixForFOV(fov.Get()));
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

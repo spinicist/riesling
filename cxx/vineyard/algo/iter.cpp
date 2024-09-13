@@ -10,12 +10,12 @@ void Starting() { PushInterrupt(); }
 
 void Finished() { PopInterrupt(); }
 
-auto ShouldStop() -> bool
+auto ShouldStop(char const *name) -> bool
 {
   if (InterruptReceived()) {
     return true;
   } else if (std::filesystem::exists(".stop")) {
-    Log::Print(".stop file detected, halting iterations");
+    Log::Print(name, ".stop file detected, halting iterations");
     return true;
   } else {
     return false;

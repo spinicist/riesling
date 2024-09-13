@@ -24,7 +24,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
   auto const  cartDims = Mul(nomDims, nomOS);
   Sz2 const   noncartDims{traj.nSamples(), traj.nTraces()};
   float const osamp = cartDims[0] / (float)traj.matrix()[0];
-  Log::Print("Mapping samples {} traces {} OS {} Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomOS, nomDims, cartDims);
+  Log::Print("Grid", "Mapping samples {} traces {} OS {} Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomOS, nomDims, cartDims);
 
   std::fesetround(FE_TONEAREST);
   auto const               center = Div(cartDims, 2);
@@ -59,7 +59,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
       valid++;
     }
   }
-  Log::Print("Ignored {} invalid trajectory points, {} remaing", invalids, valid);
+  Log::Print("Grid", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);
 
   std::sort(mappings.begin(), mappings.end(), [](Mapping<ND> const &a, Mapping<ND> const &b) {
     // First compare on subgrids

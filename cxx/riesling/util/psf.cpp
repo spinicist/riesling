@@ -26,7 +26,7 @@ void main_psf(args::Subparser &parser)
                                                         {"phases", 'p'});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
@@ -58,10 +58,10 @@ void main_psf(args::Subparser &parser)
 
   if (mtf) {
     auto const fft = TOps::FFT<4, 3>(xm.dimensions());
-    Log::Print("Calculating MTF");
+    Log::Print(cmd, "Calculating MTF");
     xm *= xm.constant(std::sqrt(Product(shape)));
     fft.forward(xm);
     writer.writeTensor("mtf", xm.dimensions(), xm.data(), {"v", "i", "j", "k"});
   }
-  Log::Print("Finished");
+  Log::Print(cmd, "Finished");
 }

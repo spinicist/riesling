@@ -13,17 +13,16 @@ Writer::Writer(std::string const &fname)
   Init();
   handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (handle_ < 0) {
-    Log::Fail("Could not open file {} for writing", fname);
+    Log::Fail("HD5", "Could not open file {} for writing", fname);
   } else {
-    Log::Print("Opened file to write: {}", fname);
-    Log::Debug("Handle: {}", handle_);
+    Log::Print("HD5", "Writing {} id {}", fname, handle_);
   }
 }
 
 Writer::~Writer()
 {
   H5Fclose(handle_);
-  Log::Debug("Closed handle: {}", handle_);
+  Log::Debug("HD5", "Closed id {}", handle_);
 }
 
 void Writer::writeString(std::string const &label, std::string const &string)
@@ -39,7 +38,7 @@ void Writer::writeString(std::string const &label, std::string const &string)
   status = H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ptr);
   status = H5Dclose(dset);
   status = H5Sclose(space);
-  if (status) { Log::Fail("Could not write string {} into handle {}, code: {}", label, handle_, status); }
+  if (status) { Log::Fail("HD5", "Could not write string {} into handle {}, code: {}", label, handle_, status); }
 }
 
 void Writer::writeInfo(Info const &info)
@@ -48,32 +47,32 @@ void Writer::writeInfo(Info const &info)
   hsize_t     dims[1] = {1};
   auto const  space = H5Screate_simple(1, dims, NULL);
   hid_t const dset = H5Dcreate(handle_, Keys::Info.c_str(), info_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  if (dset < 0) { Log::Fail("Could not create info struct in file {}, code: {}", handle_, dset); }
+  if (dset < 0) { Log::Fail("HD5", "Could not create info struct in file {}, code: {}", handle_, dset); }
   herr_t status;
   status = H5Dwrite(dset, info_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &info);
   status = H5Sclose(space);
   status = H5Dclose(dset);
-  if (status != 0) { Log::Fail("Could not write info struct in file {}, code: {}", handle_, status); }
-  Log::Debug("Wrote info struct");
+  if (status != 0) { Log::Fail("HD5", "Could not write info struct in file {}, code: {}", handle_, status); }
+  Log::Debug("HD5", "Wrote info struct");
 }
 
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
-  Log::Debug("Writing meta data");
+  Log::Debug("HD5", "Writing meta data");
   auto m_group = H5Gcreate(handle_, Keys::Meta.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t    dims[1] = {1};
   auto const space = H5Screate_simple(1, dims, NULL);
   herr_t     status;
   for (auto const &kvp : meta) {
-    Log::Debug("Writing {}:{}", kvp.first, kvp.second);
+    Log::Debug("HD5", "Writing {}:{}", kvp.first, kvp.second);
     hid_t const dset = H5Dcreate(m_group, kvp.first.c_str(), H5T_NATIVE_FLOAT, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     status = H5Dwrite(dset, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &(kvp.second));
     status = H5Dclose(dset);
   }
   status = H5Sclose(space);
   status = H5Gclose(m_group);
-  if (status != 0) { Log::Fail("Exception occured storing meta-data in file {}", handle_); }
+  if (status != 0) { Log::Fail("HD5", "Exception occured storing meta-data in file {}", handle_); }
 }
 
 bool Writer::exists(std::string const &name) const { return HD5::Exists(handle_, name); }
@@ -82,7 +81,7 @@ template <typename Scalar, int N>
 void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar const *data, DimensionNames<N> const &labels)
 {
   for (Index ii = 0; ii < N; ii++) {
-    if (shape[ii] == 0) { Log::Fail("Tensor {} had a zero dimension. Dims: {}", name, shape); }
+    if (shape[ii] == 0) { Log::Fail("HD5", "Tensor {} had a zero dimension. Dims: {}", name, shape); }
   }
 
   hsize_t ds_dims[N], chunk_dims[N];
@@ -108,20 +107,20 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   if (dset < 0) {
-    Log::Fail("Could not create dataset {} dimensions {} error {}", name, shape, GetError());
+    Log::Fail("HD5", "Could not create dataset {} dimensions {} error {}", name, shape, GetError());
   }
   auto        l = labels.rbegin();
   for (Index ii = 0; ii < N; ii++) {
     CheckedCall(H5DSset_label(dset, ii, l->c_str()), fmt::format("dataset {} dimension {} label {}", name, ii, *l));
     l++;
   }
-  if (dset < 0) { Log::Fail("Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError()); }
+  if (dset < 0) { Log::Fail("HD5", "Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError()); }
   CheckedCall(H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data), "Writing data");
   CheckedCall(H5Pclose(plist), "closing plist");
   CheckedCall(H5Sclose(space), "closing space");
   CheckedCall(H5Dclose(dset), "closing dataset");
 
-  Log::Debug("Wrote tensor: {}", name);
+  Log::Debug("HD5", "Wrote tensor {}", name);
 }
 
 template void Writer::writeTensor<Index, 1>(std::string const &, Sz<1> const &, Index const *, DimensionNames<1> const &);
@@ -163,9 +162,9 @@ void Writer::writeMatrix(Eigen::DenseBase<Derived> const &mat, std::string const
   status = H5Sclose(space);
   status = H5Dclose(dset);
   if (status) {
-    Log::Fail("Could not write matrix {} into handle {}, code: {}", name, handle_, status);
+    Log::Fail("HD5", "Could not write matrix {} into handle {}, code: {}", name, handle_, status);
   } else {
-    Log::Debug("Wrote matrix: {}", name);
+    Log::Debug("HD5", "Wrote matrix: {}", name);
   }
 }
 

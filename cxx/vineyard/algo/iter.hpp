@@ -5,5 +5,5 @@
 namespace rl::Iterating {
 void Starting();
 void Finished();
-auto ShouldStop() -> bool;
+auto ShouldStop(char const *name) -> bool;
 } // namespace rl::Iterating

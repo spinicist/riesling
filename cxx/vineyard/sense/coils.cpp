@@ -9,11 +9,11 @@ auto birdcage(Sz3 const            &matrix,
               float const           coil_rad_mm, // Radius of the actual coil, i.e. where the channels should go
               float const           sense_rad_mm) -> Cx4
 {
-  Log::Print("Constructing bird-cage sensitivities with {} channels in {} rings", channels, nrings);
+  Log::Print("SENSE", "Constructing bird-cage sensitivities with {} channels in {} rings", channels, nrings);
   Cx4 all(channels, matrix[0], matrix[1], matrix[2]);
 
   if (channels < 1) {
-    Log::Fail("Must have at least one channel for birdcage sensitivities");
+    Log::Fail("SENSE", "Must have at least one channel for birdcage sensitivities");
   } else if (channels == 1) {
     all.setConstant(1.f);
   } else {

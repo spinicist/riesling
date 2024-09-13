@@ -14,11 +14,11 @@ bool received = false;
 void Handler(int sig)
 {
   if (sig == SIGINT) {
-    if (received) { Log::Fail("Second SIGINT received, terminating"); }
-    Log::Print("SIGINT received, will terminate when current iteration finishes. Press Ctrl-C again to terminate now.");
+    if (received) { Log::Fail("Signal", "Second SIGINT received, terminating"); }
+    Log::Print("Signal", "SIGINT received, will terminate when current iteration finishes. Press Ctrl-C again to terminate now.");
     received = true;
   } else {
-    Log::Fail("Unknown signal {} received, aborting", sig);
+    Log::Fail("Signal", "Unknown signal {} received, aborting", sig);
   }
 }
 

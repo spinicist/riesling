@@ -150,7 +150,7 @@ DiagRep<S>::DiagRep(Vector const &v, Index const repI, Index const repO)
   , rI{repI}
   , rO{repO}
 {
-  Log::Debug("Diagonal Repeat. Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
+  Log::Debug("Op", "Diagonal Repeat. Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
 }
 
 template <typename S> auto DiagRep<S>::inverse() const -> std::shared_ptr<Op<S>>
@@ -231,7 +231,7 @@ Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)
   , B{BB}
 {
   if (A->cols() != B->rows()) {
-    Log::Fail("Multiply Op mismatched dimensions [{},{}] and [{},{}]", A->rows(), A->cols(), B->rows(), B->cols());
+    Log::Fail("Op", "Multiply mismatched dimensions [{},{}] and [{},{}]", A->rows(), A->cols(), B->rows(), B->cols());
   }
 }
 
@@ -319,7 +319,7 @@ template <typename S> void VStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {
     if (ops[ii]->cols() != ops[ii + 1]->cols()) {
-      Log::Fail("VStack op {} {} had {} cols but op {} {} had {}", ii, ops[ii]->name, ops[ii]->cols(), ii + 1,
+      Log::Fail("Op", "VStack {} {} had {} cols but op {} {} had {}", ii, ops[ii]->name, ops[ii]->cols(), ii + 1,
                 ops[ii + 1]->name, ops[ii + 1]->cols());
     }
   }
@@ -415,7 +415,7 @@ template <typename S> void HStack<S>::check()
 {
   for (size_t ii = 0; ii < ops.size() - 1; ii++) {
     if (ops[ii]->rows() != ops[ii + 1]->rows()) {
-      Log::Fail("HStack op {} {} had {} rows but op {} {} had {}", ii, ops[ii]->name, ops[ii]->rows(), ii + 1,
+      Log::Fail("Op", "HStack {} {} had {} rows but op {} {} had {}", ii, ops[ii]->name, ops[ii]->rows(), ii + 1,
                 ops[ii + 1]->name, ops[ii + 1]->rows());
     }
   }

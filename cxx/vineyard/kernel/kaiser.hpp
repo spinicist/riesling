@@ -15,7 +15,7 @@ struct KaiserBessel
 
   // Use Fessler's approximate formula to avoid problems with apodization
   KaiserBessel(float const osamp) : β{(float)M_PI * 2.34f * Width * osamp / 2.f}
-{ Log::Print("Kaiser-Bessel kernel width {}", W); }
+{ Log::Print("Kernel", "Kaiser-Bessel width {}", W); }
 
   inline auto operator()(float const z2) const
   {

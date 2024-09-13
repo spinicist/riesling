@@ -15,11 +15,12 @@ void main_precon(args::Subparser &parser)
   args::Flag                    vcc(parser, "VCC", "Include VCC", {"vcc"});
   args::ValueFlag<std::string>  basisFile(parser, "BASIS", "File to read basis from", {"basis", 'b'});
   ParseCommand(parser, trajFile);
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(trajFile.Get());
   HD5::Writer writer(preFile.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
-  auto const basis = LoadBasis(basisFile.Get());
+  auto const  basis = LoadBasis(basisFile.Get());
   auto        M = KSpaceSingle(traj, basis.get(), vcc, preBias.Get());
   writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"sample", "trace"});
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

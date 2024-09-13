@@ -14,7 +14,7 @@ void main_fft(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    adj(parser, "R", "Adjoint transform", {"adj", 'a'});
   ParseCommand(parser);
-
+  auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   HD5::Writer writer(oname.Get());
@@ -51,5 +51,5 @@ void main_fft(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Channels);
   } break;
   }
-  rl::Log::Print("Finished {}", parser.GetCommand().Name());
+  rl::Log::Print(cmd, "Finished");
 }

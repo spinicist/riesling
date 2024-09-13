@@ -15,9 +15,9 @@ Interpolator::Interpolator()
 
 Interpolator::Interpolator(Eigen::ArrayXi const &x, Eigen::ArrayXf const &y, Eigen::Index const order, bool const c)
 {
-  if (x.size() != y.size()) { Log::Fail("Input vectors to spline must be same size"); }
-  if (x.size() == 0) { Log::Fail("Cannot create a spline with no control points"); }
-  if (order < 1) { Log::Fail("Interpolation order must be at least 1, was {}", order); }
+  if (x.size() != y.size()) { Log::Fail("Interp", "Input vectors to spline must be same size"); }
+  if (x.size() == 0) { Log::Fail("Interp", "Cannot create a spline with no control points"); }
+  if (order < 1) { Log::Fail("Interp", "Interpolation order must be at least 1, was {}", order); }
   m_min = x[0];
   m_width = x[x.size() - 1] - m_min;
   m_clamp = c;

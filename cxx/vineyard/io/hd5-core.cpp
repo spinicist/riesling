@@ -73,7 +73,7 @@ void Init()
     // hid_t errorStack;
     // err = H5Eget_auto(H5E_DEFAULT, &old_func, &old_client_data);
     err = H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
-    if (err < 0) { Log::Fail("Could not initialise HDF5, code: {}", err); }
+    if (err < 0) { Log::Fail("HD5", "Could not initialise HDF5, code: {}", err); }
     NeedsInit = false;
     hid_t fid = type_impl(type_tag<float>{});
 
@@ -97,9 +97,9 @@ void Init()
     CheckedCall(H5Tinsert(alternate_complex_did, "real", HOFFSET(complex_d, r), did), "inserting .real d");
     CheckedCall(H5Tinsert(alternate_complex_did, "imag", HOFFSET(complex_d, i), did), "inserting .imag d");
 
-    Log::Debug("Initialised HDF5");
+    Log::Debug("HD5", "Initialised HDF5");
   } else {
-    Log::Debug("HDF5 already initialised");
+    Log::Debug("HD5", "Already initialised");
   }
 }
 
@@ -120,7 +120,7 @@ std::string GetError()
 
 void CheckedCall(herr_t status, std::string const &msg)
 {
-  if (status) { Log::Fail("HD5 Error {}. Status {}. Error: {}\n", msg, status, GetError()); }
+  if (status) { Log::Fail("HD5", "Error {}. Status {}. Error: {}\n", msg, status, GetError()); }
 }
 
 hid_t InfoType()
@@ -143,7 +143,7 @@ void CheckInfoType(hid_t handle)
   // Also use vector instead of array so I don't forget to change the size if the members change
   std::vector<std::string> const names{"voxel_size", "origin", "direction", "tr"};
 
-  if (handle < 0) { Log::Fail("Info struct does not exist"); }
+  if (handle < 0) { Log::Fail("HD5", "Info struct does not exist"); }
   auto const dtype = H5Dget_type(handle);
   size_t     n_members = H5Tget_nmembers(dtype);
   // Re-ordered and extra fields are okay. Missing is not
@@ -156,7 +156,7 @@ void CheckInfoType(hid_t handle)
         break;
       }
     }
-    if (!found) { Log::Fail("Field {} not found in header info", check_name); }
+    if (!found) { Log::Fail("HD5", "Field {} not found in header info", check_name); }
   }
 }
 

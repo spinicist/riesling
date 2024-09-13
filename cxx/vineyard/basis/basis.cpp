@@ -52,14 +52,15 @@ void Basis::write(std::string const &basisFile) const
 
 void Basis::concat(Basis const &other)
 {
-  if (other.nSample() != nSample() || other.nTrace() != nTrace()) { Log::Fail("Incompatible basis dimensions"); }
+  if (other.nSample() != nSample() || other.nTrace() != nTrace()) { Log::Fail("Basis", "Incompatible basis dimensions"); }
   B = Cx3(B.concatenate(other.B, 0));
 }
 
 template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index const it) const -> CxN<ND - 1>
 {
-  if (is < 0 || is >= nSample()) { Log::Fail("Invalid sample point {}", is); }
-  if (it < 0 || it >= nTrace()) { Log::Fail("Invalid trace point {}", it); }
+  if (is < 0 || is >= nSample()) { Log::Fail("Basis", "Invalid sample point {}", is); }
+  if (it < 0 || it >= nTrace()) { Log::Fail("Basis", "Invalid trace point {}", it); }
+  Log::Print("Basis", "Blending sample {} trace {}", is, it);
   if (R.size()) {
     return B.chip<2>(it)
       .chip<1>(is)
@@ -67,7 +68,6 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
       .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
       .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   } else {
-    Log::Print("No R matrix");
     return B.chip<2>(it).chip<1>(is).conjugate().contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   }
 }
@@ -77,11 +77,11 @@ template auto Basis::blend(Cx5 const &, Index const, Index const) const -> Cx4;
 template <int ND> void Basis::applyR(CxN<ND> &data) const
 {
   if (R.size()) {
-    Log::Debug("Calculating R inverse");
+    Log::Debug("Basis", "Calculating R inverse");
     Eigen::MatrixXcf::ConstMapType Rm(R.data(), R.dimension(0), R.dimension(1));
     Eigen::MatrixXcf const         Rinv = Rm.inverse();
     auto const                     Rim = Tensorfy(Rinv, Sz2{Rinv.rows(), Rinv.cols()});
-    Log::Print("Apply R");
+    Log::Print("Basis", "Apply R");
     data.device(Threads::TensorDevice()) = CxN<ND>(Rim.contract(data, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()));
   }
 }

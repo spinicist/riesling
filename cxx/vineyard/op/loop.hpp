@@ -28,6 +28,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::InCMap xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
       typename Op::OutMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
+      Log::Debug("Op", "Loop {}/{}", ii, N_);
       op_->forward(xchip, ychip);
     }
     this->finishForward(y, time, false);
@@ -41,7 +42,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::OutCMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
       typename Op::InMap   xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
-      Log::Debug("Loop op {}/{}", ii, N_);
+      Log::Debug("Op", "Loop {}/{}", ii, N_);
       op_->adjoint(ychip, xchip);
     }
     this->finishAdjoint(x, time, false);
@@ -55,6 +56,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::InCMap xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
       typename Op::OutMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
+      Log::Debug("Op", "Loop {}/{}", ii, N_);
       op_->iforward(xchip, ychip);
     }
     this->finishForward(y, time, true);
@@ -68,7 +70,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     for (Index ii = 0; ii < N_; ii++) {
       typename Op::OutCMap ychip(y.data() + Product(op_->oshape) * ii, op_->oshape);
       typename Op::InMap   xchip(x.data() + Product(op_->ishape) * ii, op_->ishape);
-      Log::Debug("Loop op {}/{}", ii, N_);
+      Log::Debug("Op", "Loop {}/{}", ii, N_);
       op_->iadjoint(ychip, xchip);
     }
     this->finishAdjoint(x, time, true);

@@ -18,6 +18,7 @@ void main_basis_outer(args::Subparser &parser)
   args::Flag                    ortho(parser, "O", "Orthogonalize basis", {"ortho"});
 
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
   if (!iname1) { throw args::Error("Input file 1 not specified"); }
   if (!iname2) { throw args::Error("Input file 2 not specified"); }
   if (!oname) { throw args::Error("Output file not specified"); }
@@ -25,8 +26,8 @@ void main_basis_outer(args::Subparser &parser)
   auto b1 = LoadBasis(iname1.Get());
   auto b2 = LoadBasis(iname2.Get());
 
-  if (b1->nTrace() != 1) { Log::Fail("Expected 1st basis to have 1 trace"); }
-  if (b2->nSample() != 1) { Log::Fail("Expected 2nd basis to have 1 sample"); }
+  if (b1->nTrace() != 1) { Log::Fail(cmd, "Expected 1st basis to have 1 trace"); }
+  if (b2->nSample() != 1) { Log::Fail(cmd, "Expected 2nd basis to have 1 sample"); }
 
   auto const n1 = b1->nB();
   auto const n2 = b2->nB();
@@ -59,4 +60,5 @@ void main_basis_outer(args::Subparser &parser)
     Basis const b3(nb);
     b3.write(oname.Get());
   }
+  Log::Print(cmd, "Finished");
 }

@@ -13,7 +13,7 @@ Hermitian::Hermitian(float const l, Sz5 const sh)
   , F{shape}
 {
   λ *= std::sqrt(Product(LastN<4>(shape)));
-  Log::Print("Hermitian λ {} scaled λ {} Shape {}", l, λ, shape);
+  Log::Print("Prox", "Hermitian λ {} scaled λ {} Shape {}", l, λ, shape);
 }
 
 void Hermitian::apply(float const α, CMap const &xin, Map &zin) const
@@ -41,7 +41,7 @@ void Hermitian::apply(float const α, CMap const &xin, Map &zin) const
   }
   // z = F.adjoint(u);
   z = u;
-  Log::Debug("Hermitian α {} λ {} t {} |x| {} |z| {}", α, λ, t, Norm(x), Norm(z));
+  Log::Debug("Prox", "Hermitian α {} λ {} t {} |x| {} |z| {}", α, λ, t, Norm(x), Norm(z));
 }
 
 } // namespace rl::Proxs

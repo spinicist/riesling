@@ -39,7 +39,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   std::vector<Regularizer> regs;
 
   if (opts.tgv) {
-    if (opts.tgvl2) { Log::Fail("You tried to TGVL2 your TGV. Nope."); }
+    if (opts.tgvl2) { Log::Fail("Reg", "You tried to TGVL2 your TGV. Nope."); }
     auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3});
     ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
@@ -54,7 +54,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   }
 
   if (opts.tgvl2) {
-    if (opts.tgv) { Log::Fail("You tried to TGV your TGV-L2. Nope."); }
+    if (opts.tgv) { Log::Fail("Reg", "You tried to TGV your TGV-L2. Nope."); }
     auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3});
     ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
@@ -106,7 +106,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     regs.push_back({op, prox, grad->oshape});
   }
 
-  if (regs.size() == 0) { Log::Fail("Must specify at least one regularizer"); }
+  if (regs.size() == 0) { Log::Fail("Reg", "Must specify at least one regularizer"); }
 
   return {regs, A, ext_x};
 }

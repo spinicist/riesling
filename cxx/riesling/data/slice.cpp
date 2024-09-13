@@ -1,8 +1,8 @@
 #include "types.hpp"
 
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "tensors.hpp"
 
 using namespace rl;
@@ -37,11 +37,11 @@ void main_slice(args::Subparser &parser)
   args::ValueFlag<Index> slabStride(parser, "SZ", "Slab stride", {"slab-stride"}, 1);
 
   ParseCommand(parser, iname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
   auto const  info = reader.readInfo();
 
-  if (reader.order() != 5) { Log::Fail("Dataset does not appear to be non-cartesian with 5 dimensions"); }
+  if (reader.order() != 5) { Log::Fail(cmd, "Dataset does not appear to be non-cartesian with 5 dimensions"); }
   auto const shape = reader.dimensions();
 
   Index const cSt = Wrap(channelStart.Get(), shape[0]);
@@ -56,37 +56,37 @@ void main_slice(args::Subparser &parser)
   Index const sSz = slabSize ? slabSize.Get() : shape[3] - sSt;
   Index const vSz = volSize ? volSize.Get() : shape[4] - vSt;
 
-  if (cSt + cSz > shape[0]) { Log::Fail("Last sample point {} exceeded maximum {}", cSt + cSz, shape[0]); }
-  if (rSt + rSz > shape[1]) { Log::Fail("Last sample point {} exceeded maximum {}", rSt + rSz, shape[1]); }
+  if (cSt + cSz > shape[0]) { Log::Fail(cmd, "Last sample point {} exceeded maximum {}", cSt + cSz, shape[0]); }
+  if (rSt + rSz > shape[1]) { Log::Fail(cmd, "Last sample point {} exceeded maximum {}", rSt + rSz, shape[1]); }
   if (tracesPerSeg) {
     if (tSt + tSz > tracesPerSeg.Get()) {
-      Log::Fail("Last trace point {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
+      Log::Fail(cmd, "Last trace point {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
     }
   } else {
-    if (tSt + tSz > shape[2]) { Log::Fail("Last trace point {} exceeded maximum {}", tSt + tSz, shape[2]); }
+    if (tSt + tSz > shape[2]) { Log::Fail(cmd, "Last trace point {} exceeded maximum {}", tSt + tSz, shape[2]); }
   }
-  if (sSt + sSz > shape[3]) { Log::Fail("Last slab point {} exceeded maximum {}", sSt + sSz, shape[3]); }
-  if (vSt + vSz > shape[4]) { Log::Fail("Last volume point {} exceeded maximum {}", vSt + vSz, shape[4]); }
+  if (sSt + sSz > shape[3]) { Log::Fail(cmd, "Last slab point {} exceeded maximum {}", sSt + sSz, shape[3]); }
+  if (vSt + vSz > shape[4]) { Log::Fail(cmd, "Last volume point {} exceeded maximum {}", vSt + vSz, shape[4]); }
 
-  if (cSz < 1) { Log::Fail("Channel size was less than 1"); }
-  if (rSz < 1) { Log::Fail("Sample size was less than 1"); }
-  if (tSz < 1) { Log::Fail("Trace size was less than 1"); }
-  if (sSz < 1) { Log::Fail("Slab size was less than 1"); }
-  if (vSz < 1) { Log::Fail("Volume size was less than 1"); }
+  if (cSz < 1) { Log::Fail(cmd, "Channel size was less than 1"); }
+  if (rSz < 1) { Log::Fail(cmd, "Sample size was less than 1"); }
+  if (tSz < 1) { Log::Fail(cmd, "Trace size was less than 1"); }
+  if (sSz < 1) { Log::Fail(cmd, "Slab size was less than 1"); }
+  if (vSz < 1) { Log::Fail(cmd, "Volume size was less than 1"); }
 
-  Log::Print("Selected slice {}:{}, {}:{}, {}:{}, {}:{}, {}:{}", cSt, cSt + cSz - 1, rSt, rSt + rSz - 1, tSt, tSt + tSz - 1,
-             sSt, sSt + sSz - 1, vSt, vSt + vSz - 1);
+  Log::Print(cmd, "Selected slice {}:{}, {}:{}, {}:{}, {}:{}, {}:{}", cSt, cSt + cSz - 1, rSt, rSt + rSz - 1, tSt,
+             tSt + tSz - 1, sSt, sSt + sSz - 1, vSt, vSt + vSz - 1);
 
   Cx5        ks = reader.readTensor<Cx5>();
   Trajectory traj(reader, info.voxel_size);
 
   if (tracesPerSeg) {
     Index const tps = tracesPerSeg.Get();
-    if (tSt + tSz > tps) { Log::Fail("Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
+    if (tSt + tSz > tps) { Log::Fail(cmd, "Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
     Index const nSeg = shape[2] / tps; // Will lose spare traces
     Index const segSt = Wrap(traceSegStart.Get(), nSeg);
     Index const segSz = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg) : nSeg - segSt;
-    Log::Print("Segments {}-{}", segSt, segSt + segSz - 1);
+    Log::Print(cmd, "Segments {}-{}", segSt, segSt + segSz - 1);
     Sz5 const shape5{cSz, rSz, tSz * segSz, sSz, vSz};
     Sz6 const shape6{shape[0], shape[1], tps, nSeg, shape[3], shape[4]};
     ks =
@@ -109,5 +109,5 @@ void main_slice(args::Subparser &parser)
   writer.writeInfo(info);
   traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }

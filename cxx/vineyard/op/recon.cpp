@@ -21,7 +21,7 @@ auto SENSE(bool const        ndft,
            Cx5 const        &data) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (ndft) {
-    if (gridOpts.vcc) { Log::Warn("VCC and NDFT not supported yet"); }
+    if (gridOpts.vcc) { Log::Warn("Recon", "VCC and NDFT not supported yet"); }
     auto sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), b ? b->nB() : 1);
     auto nufft = TOps::NDFT<3>::Make(sense->mapDimensions(), traj.points(), sense->nChannels(), b);
     auto loop = TOps::MakeLoop(nufft, nSlab);

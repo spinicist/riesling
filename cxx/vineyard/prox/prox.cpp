@@ -38,7 +38,7 @@ template <typename S> auto Prox<S>::apply(float const α, Vector const &x) const
 
 template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const, CMap const &, Map &) const
 {
-  Log::Fail("Not implemented");
+  Log::Fail("Prox", "Not implemented");
 }
 
 template <typename S> auto Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector

@@ -4,8 +4,8 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "patches.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 
@@ -22,6 +22,7 @@ void main_autofocus(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::ValueFlag<Index>        patch(parser, "P", "Patch size", {"patch", 'p'}, 5);
   ParseCommand(parser, iname);
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
   Cx5 const   in = reader.readTensor<Cx5>();
   Index const nX = in.dimension(1);
@@ -32,9 +33,10 @@ void main_autofocus(args::Subparser &parser)
   Cx5Map      omap(out.data(), out.dimensions());
   auto const &all_start = Log::Now();
   Patches(patch.Get(), 1, false, Focus, in, omap);
-  Log::Print("All Volumes: {}", Log::ToNow(all_start));
+  Log::Print(cmd, "All Volumes: {}", Log::ToNow(all_start));
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
+  Log::Print(cmd, "Finished");
 }

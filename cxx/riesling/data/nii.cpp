@@ -15,7 +15,7 @@ void main_nii(args::Subparser &parser)
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (default image)", {'d', "dset"}, "data");
 
   ParseCommand(parser, iname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader input(iname.Get());
   Info const  info = input.readInfo();
 
@@ -29,7 +29,7 @@ void main_nii(args::Subparser &parser)
     Sz6 const sz = image.dimensions();
     output = image.shuffle(Sz6{2, 3, 4, 0, 1, 5}).reshape(Sz4{sz[2], sz[3], sz[4], sz[0] * sz[1] * sz[5]});
   } else {
-    Log::Fail("Dataset {} was order {}, needs to be 5 or 6", dset.Get(), input.order());
+    Log::Fail(cmd, "Dataset {} was order {}, needs to be 5 or 6", dset.Get(), input.order());
   }
 
   if (mag) {
@@ -37,4 +37,5 @@ void main_nii(args::Subparser &parser)
   } else {
     WriteNifti(info, output, oname.Get());
   }
+  Log::Print(cmd, "Finished");
 }

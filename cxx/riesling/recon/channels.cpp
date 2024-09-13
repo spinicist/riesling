@@ -16,11 +16,11 @@ void main_channels(args::Subparser &parser)
   LsqOpts    lsqOpts(parser);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   Cx5         noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
@@ -39,7 +39,7 @@ void main_channels(args::Subparser &parser)
 
   TOps::Crop<Cx, 6> oc(A->ishape, AddBack(AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]), nT));
   auto              out = oc.forward(xm);
-  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Channels, info, Log::Saved());
-  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Channels); }
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Channels, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Channels); }
+  Log::Print(cmd, "Finished");
 }

@@ -68,7 +68,7 @@ PDHG::PDHG(std::shared_ptr<Op>             A,
 
   debug = cb;
 
-  Log::Print("PDHG σ {:4.3E} τ {:4.3E}", fmt::join(σ, ","), τ);
+  Log::Print("PDHG", "σ {:4.3E} τ {:4.3E}", fmt::join(σ, ","), τ);
 }
 
 auto PDHG::run(Cx const *bdata, Index const iterLimit) -> Vector
@@ -82,7 +82,7 @@ auto PDHG::run(Cx const *bdata, Index const iterLimit) -> Vector
     xdiff = x - xold;
     x̅ = x + xdiff;
     float const normr = xdiff.stableNorm() / std::sqrt(τ);
-    Log::Print("PDHG {:02d}: |x| {:4.3E} |r| {:4.3E}", ii, x.stableNorm(), normr);
+    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |r| {:4.3E}", ii, x.stableNorm(), normr);
     if (debug) { debug(ii, x, x̅, xdiff); }
   }
   return x;

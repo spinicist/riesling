@@ -7,13 +7,15 @@
 
 namespace rl {
 template <int ND>
-void WriteOutput(std::string const             &fname,
+void WriteOutput(std::string const             &cmd,
+                 std::string const             &fname,
                  CxN<ND> const                 &img,
                  HD5::DimensionNames<ND> const &dims,
                  Info const                    &info,
                  std::string const             &log = "");
 template <int ND>
-void WriteResidual(std::string const                 &fname,
+void WriteResidual(std::string const                 &cmd,
+                   std::string const                 &fname,
                    Cx5                               &noncart,
                    CxNCMap<ND> const                 &x,
                    Info const                        &info,

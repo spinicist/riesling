@@ -32,7 +32,7 @@ void main_recon_lad(args::Subparser &parser)
   args::ValueFlag<float> τ(parser, "τ", "ADMM residual rescaling maximum (default 10)", {"tau"}, 10.f);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
@@ -54,7 +54,7 @@ void main_recon_lad(args::Subparser &parser)
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
-  WriteOutput(coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
-  if (coreOpts.residual) { WriteResidual(coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info, Log::Saved());
+  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
+  Log::Print(cmd, "Finished");
 }

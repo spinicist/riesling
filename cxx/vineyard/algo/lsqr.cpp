@@ -16,23 +16,18 @@ auto LSQR::run(Vector const &b, float const λ, Vector const &x0) const -> Vecto
  */
 auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
 {
-  Log::Print("LSQR λ {}", λ);
+  Log::Print("LSQR", "λ {}", λ);
+  if (iterLimit < 1) { Log::Fail("LSQR", "Requires at least 1 iteration"); }
   Index const rows = op->rows();
   Index const cols = op->cols();
-  if (rows < 1 || cols < 1) { Log::Fail("Invalid operator size rows {} cols {}", rows, cols); }
-  if (b.rows() != rows) { Log::Fail("LSQR: b had size {}, expected {}", b.rows(), rows); }
+  if (rows < 1 || cols < 1) { Log::Fail("LSQR", "Invalid operator size rows {} cols {}", rows, cols); }
+  if (b.rows() != rows) { Log::Fail("LSQR", "b had size {}, expected {}", b.rows(), rows); }
   Vector Mu(rows), u(rows);
   Vector x(cols), v(cols), w(cols);
 
   float α = 0.f, β = 0.f;
   BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
   w = v;
-
-  if (iterLimit == 0) { // Bug out and return v
-    x = v * (α * β);
-    Log::Print("LSMR 0 |x| {:4.3E}", x.stableNorm());
-    return x;
-  }
 
   float ρ̅ = α;
   float ɸ̅ = β;
@@ -41,8 +36,8 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
   float cs2 = -1.f;
   float sn2 = 0.f;
 
-  Log::Print("IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), β, std::fabs(α * β));
+  Log::Print("LSQR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
+  Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), β, std::fabs(α * β));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, M, Mu, u, v, α, β);
@@ -85,35 +80,35 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
     float const normr = std::sqrt(res1 + res2);
     float const normAr = α * std::abs(τ);
 
-    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
+    Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
     if (debug) { debug(ii, x); }
     if (1.f + (1.f / condA) <= 1.f) {
-      Log::Print("Cond(A) is very large");
+      Log::Print("LSQR", "Cond(A) is very large");
       break;
     }
     if ((1.f / condA) <= cTol) {
-      Log::Print("Cond(A) has exceeded limit");
+      Log::Print("LSQR", "Cond(A) has exceeded limit");
       break;
     }
 
     if (1.f + (normAr / (normA * normr)) <= 1.f) {
-      Log::Print("Least-squares solution reached machine precision");
+      Log::Print("LSQR", "Least-squares solution reached machine precision");
       break;
     }
     if ((normAr / (normA * normr)) <= aTol) {
-      Log::Print("Least-squares = {:4.3E} < {:4.3E}", normAr / (normA * normr), aTol);
+      Log::Print("LSQR", "Least-squares = {:4.3E} < {:4.3E}", normAr / (normA * normr), aTol);
       break;
     }
 
     if (normr <= (bTol * normb + aTol * normA * normx)) {
-      Log::Print("Ax - b <= aTol, bTol");
+      Log::Print("LSQR", "Ax - b <= aTol, bTol");
       break;
     }
     if ((1.f + normr / (normb + normA * normx)) <= 1.f) {
-      Log::Print("Ax - b reached machine precision");
+      Log::Print("LSQR", "Ax - b reached machine precision");
       break;
     }
-    if (Iterating::ShouldStop()) { break; }
+    if (Iterating::ShouldStop("LSQR")) { break; }
   }
   Iterating::Finished();
   return x;

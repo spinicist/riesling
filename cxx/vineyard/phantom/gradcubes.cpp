@@ -8,7 +8,7 @@ namespace rl {
 
 Cx3 GradCubes(Sz3 const &matrix, Eigen::Array3f const &voxel_size, float const hsz)
 {
-  Log::Print("Drawing Gradient Cubes Phantom");
+  Log::Print("Phan", "Drawing Gradient Cubes");
   Cx3 phan(matrix[0], matrix[1], matrix[2]);
   phan.setZero();
 

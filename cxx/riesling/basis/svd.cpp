@@ -22,25 +22,25 @@ auto Run(rl::Settings const                &s,
          std::vector<Eigen::ArrayXf> const &his,
          std::vector<Eigen::ArrayXi> const &Ns)
 {
-  if (los.size() != his.size()) { Log::Fail("Different number of parameter low bounds and high bounds"); }
-  if (los.size() == 0) { Log::Fail("Must specify at least one set of tissue parameters"); }
+  if (los.size() != his.size()) { Log::Fail("Sim", "Different number of parameter low bounds and high bounds"); }
+  if (los.size() == 0) { Log::Fail("Sim", "Must specify at least one set of tissue parameters"); }
 
   T               seq{s};
   Index const     nP = T::nParameters;
   Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
     auto const p = ParameterGrid(nP, los[ii], his[ii], Ns[ii]);
-    Log::Print("Parameter set {}/{}. Size {} Low {} High {}", ii + 1, los.size(), p.cols(), fmt::join(los[ii], "/"),
+    Log::Print("Sim", "Parameter set {}/{}. Size {} Low {} High {}", ii + 1, los.size(), p.cols(), fmt::join(los[ii], "/"),
                fmt::join(his[ii], "/"));
     parameters.conservativeResize(nP, parameters.cols() + p.cols());
     parameters.rightCols(p.cols()) = p;
   }
-  Log::Print("Total parameter sets {}", parameters.cols());
+  Log::Print("Sim", "Total parameter sets {}", parameters.cols());
   Cx3        dynamics(parameters.cols(), seq.samples(), seq.traces());
   auto const start = Log::Now();
   auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
   Threads::For(task, parameters.cols(), "Simulation");
-  Log::Print("Simulation took {}. Final size {}", Log::ToNow(start), dynamics.dimensions());
+  Log::Print("Sim", "Simulation took {}. Final size {}", Log::ToNow(start), dynamics.dimensions());
   return dynamics;
 }
 
@@ -75,6 +75,7 @@ void main_basis_svd(args::Subparser &parser)
   args::Flag save(parser, "S", "Save dynamics and projections", {"save"});
 
   ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
   rl::Settings settings{.samplesPerSpoke = samp.Get(),
@@ -94,7 +95,7 @@ void main_basis_svd(args::Subparser &parser)
                         .TI = TI.Get(),
                         .Trec = Trec.Get(),
                         .TE = te.Get()};
-  Log::Print("{}", settings.format());
+  Log::Print(cmd, "{}", settings.format());
 
   Cx3 dall;
   switch (seq.Get()) {
@@ -112,23 +113,23 @@ void main_basis_svd(args::Subparser &parser)
   Index const N = nRetain.Get();
 
   Eigen::MatrixXcf::MapType dmap(dall.data(), dshape[0], L);
-  Log::Print("Normalizing entries");
+  Log::Print(cmd, "Normalizing entries");
   auto ntask = [&](Index const ii) { dmap.row(ii) = dmap.row(ii).normalized(); };
   Threads::For(ntask, dmap.rows(), "Normalizing");
 
   Cx3                       basis(N, dshape[1], dshape[2]);
   Eigen::MatrixXcf::MapType bmap(basis.data(), N, L);
 
-  Log::Print("Computing SVD {}x{}", dmap.rows(), dmap.cols());
+  Log::Print(cmd, "Computing SVD {}x{}", dmap.rows(), dmap.cols());
   SVD<Cxd> svd(dmap.cast<Cxd>());
   bmap = svd.basis(nRetain.Get()).cast<Cx>();
-  Log::Print("Computing projection");
+  Log::Print(cmd, "Computing projection");
   Cx3                       proj(dshape);
   Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);
   Eigen::MatrixXcf          temp = bmap.conjugate() * dmap.transpose();
   pmap = (bmap.transpose() * temp).transpose();
   auto resid = Norm(dall - proj) / Norm(dall);
-  Log::Print("Residual {}%", 100 * resid);
+  Log::Print(cmd, "Residual {}%", 100 * resid);
 
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
   HD5::Writer writer(oname.Get());
@@ -137,5 +138,5 @@ void main_basis_svd(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
     writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);
   }
-  Log::Print("Finished {}", parser.GetCommand().Name());
+  Log::Print(cmd, "Finished");
 }
