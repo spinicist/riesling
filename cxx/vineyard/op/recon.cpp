@@ -31,7 +31,14 @@ auto SENSE(bool const        ndft,
     auto timeLoop = TOps::MakeLoop(compose2, nTime);
     return timeLoop;
   } else {
-    if (gridOpts.vcc) {
+    if (data.dimension(0) == 1) { // Single channel, no SENSE maps required
+      if (nSlab > 1) { throw Log::Failure("Recon", "Multislab and 1 channel not supported right now"); }
+      auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, 1, b);
+      auto ri = TOps::MakeReshapeInput(nufft, LastN<4>(nufft->ishape));
+      auto ro = TOps::MakeReshapeOutput(ri, AddBack(ri->oshape, 1));
+      auto timeLoop = TOps::MakeLoop(ro, nTime);
+      return timeLoop;
+    } else if (gridOpts.vcc) {
       auto sense = std::make_shared<TOps::VCCSENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), b ? b->nB() : 1);
       auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
       auto loop = TOps::MakeLoop(nufft, nSlab);

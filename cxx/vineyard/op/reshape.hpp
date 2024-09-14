@@ -11,12 +11,15 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
   TOP_INHERIT(typename Op::Scalar, Rank, Op::OutRank)
   using Parent::adjoint;
   using Parent::forward;
+  using Ptr = std::shared_ptr<ReshapeInput>;
 
   ReshapeInput(std::shared_ptr<Op> op, Sz<Rank> const ish)
     : Parent("ReshapeInput", ish, op->oshape)
     , op_{op}
   {
-    if (Product(ish) != Product(op->ishape)) { throw Log::Failure("TOp", "ReshapeInput shape {} does not match {}", ish, op->ishape); }
+    if (Product(ish) != Product(op->ishape)) {
+      throw Log::Failure("TOp", "ReshapeInput shape {} does not match {}", ish, op->ishape);
+    }
   }
 
   void forward(InCMap const &x, OutMap &y) const
@@ -58,18 +61,27 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
 private:
   std::shared_ptr<Op> op_;
 };
+
+template <typename Op, int Rank>
+auto MakeReshapeInput(std::shared_ptr<Op> op, Sz<Rank> const ish) -> ReshapeInput<Op, Rank>::Ptr
+{
+  return std::make_shared<ReshapeInput<Op, Rank>>(op, ish);
+}
 
 template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::Scalar, Op::InRank, Rank>
 {
   TOP_INHERIT(typename Op::Scalar, Op::InRank, Rank)
   using Parent::adjoint;
   using Parent::forward;
+  using Ptr = std::shared_ptr<ReshapeOutput>;
 
   ReshapeOutput(std::shared_ptr<Op> op, Sz<Rank> const osh)
     : Parent("ReshapeOutput", op->ishape, osh)
     , op_{op}
   {
-    if (Product(osh) != Product(op->oshape)) { throw Log::Failure("TOp", "ReshapeInput shape {} does not match {}", osh, op->oshape); }
+    if (Product(osh) != Product(op->oshape)) {
+      throw Log::Failure("TOp", "ReshapeInput shape {} does not match {}", osh, op->oshape);
+    }
   }
 
   void forward(InCMap const &x, OutMap &y) const
@@ -111,5 +123,11 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
 private:
   std::shared_ptr<Op> op_;
 };
+
+template <typename Op, int Rank>
+auto MakeReshapeOutput(std::shared_ptr<Op> op, Sz<Rank> const osh) -> ReshapeOutput<Op, Rank>::Ptr
+{
+  return std::make_shared<ReshapeOutput<Op, Rank>>(op, osh);
+}
 
 } // namespace rl::TOps

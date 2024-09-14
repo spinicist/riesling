@@ -20,18 +20,17 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
     auto grid =
       TOps::Grid<3, true>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis, gridOpts.subgridSize.Get());
     auto const ns = grid->ishape;
-    auto       reshape =
-      std::make_shared<TOps::ReshapeInput<TOps::Grid<3, true>, 5>>(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
-    auto loop = TOps::MakeLoop(reshape, nS);
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nS);
-    auto slabLoop = TOps::MakeCompose(slabToVol, loop);
-    auto timeLoop = TOps::MakeLoop(slabLoop, nT);
+    auto       reshape = TOps::MakeReshapeInput(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
+    auto       loop = TOps::MakeLoop(reshape, nS);
+    auto       slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nS);
+    auto       slabLoop = TOps::MakeCompose(slabToVol, loop);
+    auto       timeLoop = TOps::MakeLoop(slabLoop, nT);
     return timeLoop;
   } else {
     auto grid =
       TOps::Grid<3, false>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis, gridOpts.subgridSize.Get());
     if (nS == 1) {
-      auto rout = std::make_shared<TOps::ReshapeOutput<decltype(grid)::element_type, 4>>(grid, AddBack(grid->oshape, 1));
+      auto rout = TOps::MakeReshapeOutput(grid, AddBack(grid->oshape, 1));
       auto timeLoop = TOps::MakeLoop(rout, nT);
       return timeLoop;
     } else {
