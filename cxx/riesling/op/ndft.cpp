@@ -27,7 +27,7 @@ void main_ndft(args::Subparser &parser)
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(info);
 
-  Trajectory traj(reader, info.voxel_size);
+  Trajectory traj(reader, info.voxel_size, coreOpts.matrix.Get());
   auto const nC = reader.dimensions()[0];
   auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(coreOpts.fov.Get()), traj.points(), nC, basis.get());
 

@@ -44,10 +44,12 @@ TrajectoryN<ND>::TrajectoryN(Re3 const &points, SzN const matrix, Array const vo
   init();
 }
 
-template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const voxel_size)
+template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const voxel_size, SzN const matrix_size)
 {
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
-  if (file.exists(HD5::Keys::Trajectory, "matrix")) {
+  if (std::all_of(matrix_size.cbegin(), matrix_size.cend(), [](Index ii) { return ii > 0; })) {
+    matrix_ = matrix_size;
+  } else if (file.exists(HD5::Keys::Trajectory, "matrix")) {
     matrix_ = file.readAttributeSz<ND>(HD5::Keys::Trajectory, "matrix");
   } else {
     matrix_ = GuessMatrix<ND>(points_);

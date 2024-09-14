@@ -21,7 +21,7 @@ void main_recon_rss(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
-  Trajectory  traj(reader, info.voxel_size);
+  Trajectory  traj(reader, info.voxel_size, coreOpts.matrix.Get());
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   Cx5         noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));

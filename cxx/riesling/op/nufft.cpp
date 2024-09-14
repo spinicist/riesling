@@ -23,7 +23,7 @@ void main_nufft(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size);
+  Trajectory traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
 
   auto const nC = reader.dimensions()[1];

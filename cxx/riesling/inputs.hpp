@@ -23,6 +23,7 @@ struct CoreOpts
   args::Positional<std::string>                  iname, oname;
   args::ValueFlag<std::string>                   basisFile, residual;
   args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
+  args::ValueFlag<rl::Sz3, SzReader<3>>          matrix;
   args::Flag                                     ndft;
 };
 

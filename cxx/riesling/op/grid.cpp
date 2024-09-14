@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Index const nT, Basis::CPtr basis)
+auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
   -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   if (gridOpts.vcc) {
@@ -22,19 +22,25 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
     auto const ns = grid->ishape;
     auto       reshape =
       std::make_shared<TOps::ReshapeInput<TOps::Grid<3, true>, 5>>(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
-    auto loop = TOps::MakeLoop(reshape, nSlab);
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
+    auto loop = TOps::MakeLoop(reshape, nS);
+    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nS);
     auto slabLoop = TOps::MakeCompose(slabToVol, loop);
     auto timeLoop = TOps::MakeLoop(slabLoop, nT);
     return timeLoop;
   } else {
     auto grid =
       TOps::Grid<3, false>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis, gridOpts.subgridSize.Get());
-    auto loop = TOps::MakeLoop(grid, nSlab);
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nSlab);
-    auto compose1 = TOps::MakeCompose(slabToVol, loop);
-    auto timeLoop = TOps::MakeLoop(compose1, nT);
-    return timeLoop;
+    if (nS == 1) {
+      auto rout = std::make_shared<TOps::ReshapeOutput<decltype(grid)::element_type, 4>>(grid, AddBack(grid->oshape, 1));
+      auto timeLoop = TOps::MakeLoop(rout, nT);
+      return timeLoop;
+    } else {
+      auto loop = TOps::MakeLoop(grid, nS);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nS);
+      auto compose1 = TOps::MakeCompose(slabToVol, loop);
+      auto timeLoop = TOps::MakeLoop(compose1, nT);
+      return timeLoop;
+    }
   }
 }
 
@@ -50,7 +56,7 @@ void main_grid(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size);
+  Trajectory traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
 
   auto const  shape = reader.dimensions();

@@ -14,7 +14,7 @@ template <int ND> struct TrajectoryN
 
   TrajectoryN(Re3 const &points, Array const voxel_size = Array::Ones());
   TrajectoryN(Re3 const &points, SzN const matrix, Array const voxel_size = Array::Ones());
-  TrajectoryN(HD5::Reader &file, Array const voxel_size);
+  TrajectoryN(HD5::Reader &file, Array const voxel_size, SzN const matrix_size = SzN());
   void write(HD5::Writer &file) const;
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
