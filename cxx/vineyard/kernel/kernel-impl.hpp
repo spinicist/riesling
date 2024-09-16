@@ -14,16 +14,15 @@ namespace rl {
 
 template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBase<Scalar, ND>
 {
-  static constexpr int   Width = Func::Width;
-  static constexpr int   PadWidth = Func::PadWidth;
-  static constexpr float HalfWidth = Width / 2.f;
+  static constexpr int Width = Func::Width;
+  static constexpr int PadWidth = Func::PadWidth;
   using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<Func::PadWidth>>;
   using Tensor = typename FixedKernel<float, ND, Func>::Tensor;
   using Point = typename FixedKernel<float, ND, Func>::Point;
   using Pos = typename FixedKernel<float, ND, Func>::OneD;
 
   Func  f;
-  float β, scale;
+  float scale;
   OneD  centers;
 
   Kernel(float const osamp)
@@ -35,7 +34,7 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
       this->centers(ii) = ii + 0.5f - (Func::PadWidth / 2.f);
     }
     scale = 1. / Norm(FixedKernel<Scalar, ND, Func>::K(f, 1.f, Point::Zero()));
-  Log::Print("Kernel", "Scale {}", scale);
+    Log::Print("Kernel", "Width {} Padded-width {} Scale {}", Func::Width, Func::PadWidth, scale);
   }
 
   virtual auto paddedWidth() const -> int final { return Func::PadWidth; }
@@ -92,6 +91,7 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
     int const         W = std::stoi(kType.substr(2, 1));
     if (type == "ES") {
       switch (W) {
+      case 2: return std::make_shared<Kernel<Scalar, ND, ExpSemi<2>>>(osamp);
       case 3: return std::make_shared<Kernel<Scalar, ND, ExpSemi<3>>>(osamp);
       case 4: return std::make_shared<Kernel<Scalar, ND, ExpSemi<4>>>(osamp);
       case 5: return std::make_shared<Kernel<Scalar, ND, ExpSemi<5>>>(osamp);
@@ -100,6 +100,7 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
       }
     } else if (type == "KB") {
       switch (W) {
+      case 2: return std::make_shared<Kernel<Scalar, ND, ExpSemi<2>>>(osamp);
       case 3: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<3>>>(osamp);
       case 4: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<4>>>(osamp);
       case 5: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<5>>>(osamp);

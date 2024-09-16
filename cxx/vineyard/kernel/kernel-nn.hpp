@@ -10,7 +10,6 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
 {
   static constexpr int   Width = 1;
   static constexpr int   PadWidth = 1;
-  static constexpr float HalfWidth = 1;
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<ND, 1>::Type>;
   using Point = Eigen::Matrix<float, ND, 1>;
   using Pos = Eigen::TensorFixedSize<float, typename KernelSizes<ND, 1>::Type>;
