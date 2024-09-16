@@ -1,8 +1,8 @@
 #include "fft.hpp"
 
 #include "log.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include "ducc0/fft/fftnd_impl.h"
 
@@ -51,8 +51,7 @@ private:
 using Guard = ducc0::detail_threading::ScopedUseThreadPool;
 } // namespace internal
 
-template <int NFFT>
-auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
+template <int NFFT> auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
 {
   Eigen::Tensor<Cx, NFFT> x(shape);
   x.setConstant(1.f);
@@ -68,8 +67,7 @@ auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
   return x;
 }
 
-template <int ND, int NFFT>
-void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph, bool const fwd)
 {
   auto const shape = x.dimensions();
   /* For phase ramps */
@@ -90,95 +88,71 @@ void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> con
   std::transform(fftDims.begin(), fftDims.end(), duccDims.begin(), [](Index const d) { return ND - 1 - d; });
   float const scale = 1.f / std::sqrt(std::transform_reduce(duccDims.begin(), duccDims.end(), 1.f, std::multiplies{},
                                                             [duccShape](size_t const ii) { return duccShape[ii]; }));
-  rl::Log::Debug("FFT", "Shape {} dims {} scale {}", duccShape, duccDims, scale);
+  rl::Log::Debug("FFT", "{} Shape {} dims {} scale {}", fwd ? "Forward" : "Adjoint", duccShape, duccDims, scale);
   internal::ThreadPool pool(Threads::TensorDevice());
   internal::Guard      guard(pool);
-  auto t = Log::Now();
-  x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
+  auto                 t = Log::Now();
+  if (fwd) {
+    x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
+  } else {
+    x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
+  }
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
   t = Log::Now();
-  ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, true, scale, pool.nthreads());
-  rl::Log::Debug("FFT", "Forward took {}", Log::ToNow(t));
+  ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, fwd, scale, pool.nthreads());
+  rl::Log::Debug("FFT", "{} took {}", fwd ? "Forward" : "Adjoint", Log::ToNow(t));
   t = Log::Now();
-  x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
+  if (fwd) {
+    x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
+  } else {
+    x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
+  }
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
 }
 
-template <int ND>
-void Forward(Eigen::TensorMap<CxN<ND>> &x)
+template <int ND, int NFFT> void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+{
+  Run(x, fftDims, ph, true);
+}
+
+template <int ND, int NFFT> void Forward(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+{
+  Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
+  Forward(map, fftDims, ph);
+}
+
+template <int ND> void Forward(Eigen::TensorMap<CxN<ND>> &x)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
   Forward(x, dims, PhaseShift(x.dimensions()));
 }
 
-template <int ND, int NFFT>
-void Forward(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
-{
-  Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Forward(map, fftDims, ph);
-}
-
-template <int ND>
-void Forward(CxN<ND> &x)
+template <int ND> void Forward(CxN<ND> &x)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
   Forward(map);
 }
 
-template <int ND, int NFFT>
-void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+template <int ND, int NFFT> void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
 {
-  auto const shape = x.dimensions();
-  /* For phase ramps */
-  Sz<ND> rsh, brd;
-  rsh.fill(1);
-  brd.fill(1);
-  for (size_t ii = 0; ii < ND; ii++) {
-    if (std::find(fftDims.begin(), fftDims.end(), ii) == fftDims.end()) {
-      brd[ii] = shape[ii];
-    } else {
-      rsh[ii] = shape[ii];
-    }
-  }
-
-  /* DUCC is row-major, reverse dims */
-  std::vector<size_t> duccShape(ND), duccDims(NFFT);
-  std::copy(shape.rbegin(), shape.rend(), duccShape.begin());
-  std::transform(fftDims.begin(), fftDims.end(), duccDims.begin(), [](Index const d) { return ND - 1 - d; });
-  float const scale = 1.f / std::sqrt(std::transform_reduce(duccDims.begin(), duccDims.end(), 1.f, std::multiplies{},
-                                                            [duccShape](size_t const ii) { return duccShape[ii]; }));
-  rl::Log::Debug("FFT", "Shape {} dims {} scale {}", duccShape, duccDims, scale);
-  internal::ThreadPool pool(Threads::TensorDevice());
-  internal::Guard      guard(pool);
-  auto t = Log::Now();
-  x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
-  rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
-  t = Log::Now();
-  ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, false, scale, pool.nthreads());
-  rl::Log::Debug("FFT", "Adjoint took {}", duccShape, duccDims, scale, Log::ToNow(t));
-  t = Log::Now();
-  x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
-  rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
+  Run(x, fftDims, ph, false);
 }
 
-template <int ND>
-void Adjoint(Eigen::TensorMap<CxN<ND>> &x)
+template <int ND, int NFFT> void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+{
+  Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
+  Adjoint(map, fftDims, ph);
+}
+
+template <int ND> void Adjoint(Eigen::TensorMap<CxN<ND>> &x)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
   Adjoint(x, dims, PhaseShift(x.dimensions()));
 }
 
-template <int ND, int NFFT>
-void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
-{
-  Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Adjoint(map, fftDims, ph);
-}
-
-template <int ND>
-void Adjoint(CxN<ND> &x)
+template <int ND> void Adjoint(CxN<ND> &x)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
   Adjoint(map);
@@ -188,6 +162,8 @@ template auto PhaseShift<1>(Sz1 const) -> Cx1;
 template auto PhaseShift<2>(Sz2 const) -> Cx2;
 template auto PhaseShift<3>(Sz3 const) -> Cx3;
 
+template void Forward<4, 3>(Cx4Map &, Sz3 const, Cx3 const &ph);
+template void Forward<5, 3>(Cx5Map &, Sz3 const, Cx3 const &ph);
 template void Forward<1, 1>(Cx1 &, Sz1 const, Cx1 const &ph);
 template void Forward<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
 template void Forward<4, 1>(Cx4 &, Sz1 const, Cx1 const &ph);
@@ -199,6 +175,8 @@ template void Forward<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
 template void Forward<1>(Cx1 &);
 template void Forward<3>(Cx3 &);
 
+template void Adjoint<4, 3>(Cx4Map &, Sz3 const, Cx3 const &ph);
+template void Adjoint<5, 3>(Cx5Map &, Sz3 const, Cx3 const &ph);
 template void Adjoint<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
 template void Adjoint<3, 2>(Cx3 &, Sz2 const, Cx2 const &ph);
 template void Adjoint<4, 1>(Cx4 &, Sz1 const, Cx1 const &ph);
