@@ -31,4 +31,26 @@ template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vec
   }
 }
 
+template <typename F> void ChunkFor(F f, Index sz)
+{
+  Index const nT = GlobalThreadCount();
+  if (sz == 0) {
+    return;
+  } else {
+    Index const    den = sz / nT;
+    Index const    rem = sz % nT;
+    Index const    nC = std::min<Index>(sz, nT);
+    Eigen::Barrier barrier(nC);
+    for (Index it = 0; it < nC; it++) {
+      Index const lo = it * den + std::min(it, rem);
+      Index const hi = (it + 1) * den + std::min(it + 1, rem);
+      GlobalPool()->Schedule([&barrier, f, lo, hi] {
+        f(lo, hi);
+        barrier.Notify();
+      });
+    }
+    barrier.Wait();
+  }
+}
+
 } // namespace rl::Threads

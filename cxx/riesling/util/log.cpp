@@ -14,7 +14,7 @@ void main_log(args::Subparser &parser)
   if (reader.exists("log")) {
     auto const entries = reader.readStrings("log");
     for (auto const &entry : entries) {
-      if (!filter || (entry.substr(12, 6).find(filter.Get())) != std::string::npos) { fmt::print("{}\n", entry); }
+      if (!filter || (entry.substr(12, filter.Get().length()) == filter.Get())) { fmt::print("{}\n", entry); }
     }
   } else {
     throw Log::Failure(cmd, "File {} does not contain a log", iname.Get());

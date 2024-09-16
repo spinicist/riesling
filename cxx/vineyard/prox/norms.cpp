@@ -1,6 +1,8 @@
 #include "norms.hpp"
 
 #include "log.hpp"
+#include "sys/chunkfor.hpp"
+#include "sys/threads.hpp"
 #include "tensors.hpp"
 
 namespace rl::Proxs {
@@ -23,7 +25,8 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
 {
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float t = λ * realα->scale;
-    z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
+    z.device(Threads::CoreDevice()) =
+      x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
     Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
     throw Log::Failure("Prox", "C++ is stupid");
@@ -44,14 +47,18 @@ void L2::apply(float const α, CMap const &x, Map &z) const
 {
   float const t = α * λ;
   auto const  blks = x.rows() / blockSize;
-  for (Index ib = 0; ib < blks; ib++) {
-    auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
-    if (n > t) {
-      z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
-    } else {
-      z.segment(ib * blockSize, blockSize).setZero();
-    }
-  }
+  Threads::ChunkFor(
+    [&](Index lo, Index hi) {
+      for (Index ib = lo; ib < hi; ib++) {
+        auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
+        if (n > t) {
+          z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
+        } else {
+          z.segment(ib * blockSize, blockSize).setZero();
+        }
+      }
+    },
+    blks);
   Log::Debug("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.stableNorm(), z.stableNorm());
 }
 
@@ -60,14 +67,18 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float      t = λ * realα->scale;
     auto const blks = x.rows() / blockSize;
-    for (Index ib = 0; ib < blks; ib++) {
-      auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
-      if (n > t) {
-        z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
-      } else {
-        z.segment(ib * blockSize, blockSize).setZero();
-      }
-    }
+    Threads::ChunkFor(
+      [&](Index lo, Index hi) {
+        for (Index ib = lo; ib < hi; ib++) {
+          auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
+          if (n > t) {
+            z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
+          } else {
+            z.segment(ib * blockSize, blockSize).setZero();
+          }
+        }
+      },
+      blks);
     Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
   } else {
     throw Log::Failure("Prox", "C++ is stupid");
