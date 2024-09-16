@@ -1,6 +1,7 @@
 #include "fft.hpp"
-#include "../fft.hpp"
 
+#include "../fft.hpp"
+#include "op/top-impl.hpp"
 #include <fmt/format.h>
 
 namespace rl::TOps {
@@ -21,8 +22,7 @@ FFT<Rank, FFTRank>::FFT(InMap x)
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
 }
 
-template <int Rank, int FFTRank>
-auto FFT<Rank, FFTRank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Cx>>
+template <int Rank, int FFTRank> auto FFT<Rank, FFTRank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Cx>>
 {
   return std::make_shared<FFT<Rank, FFTRank>>(this->ishape, !this->adjoint_);
 }

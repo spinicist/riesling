@@ -20,7 +20,6 @@ TOp<S, I, O>::TOp(std::string const &n, InDims const xd, OutDims const yd)
   Log::Debug("TOp", "{} created. Input dims {} Output dims {}", this->name, ishape, oshape);
 }
 
-template <typename S, int I, int O> TOp<S, I, O>::~TOp(){};
 template <typename S, int I, int O> auto TOp<S, I, O>::rows() const -> Index { return Product(oshape); }
 template <typename S, int I, int O> auto TOp<S, I, O>::cols() const -> Index { return Product(ishape); }
 
@@ -119,35 +118,6 @@ template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const
 {
   Log::Debug("TOp", "{} {}adjoint finished in {} |x| {}", this->name, (ip ? "IP " : ""), Log::ToNow(start), Norm(x));
 }
-
-// Yeah, this was likely a mistake
-template struct TOp<Cx, 1, 1>;
-template struct TOp<Cx, 2, 2>;
-template struct TOp<Cx, 3, 3>;
-template struct TOp<Cx, 4, 3>;
-template struct TOp<Cx, 4, 4>;
-template struct TOp<Cx, 4, 5>;
-template struct TOp<Cx, 4, 6>;
-template struct TOp<Cx, 5, 3>;
-template struct TOp<Cx, 5, 4>;
-template struct TOp<Cx, 5, 5>;
-template struct TOp<Cx, 5, 6>;
-template struct TOp<Cx, 5, 7>;
-template struct TOp<Cx, 6, 3>;
-template struct TOp<Cx, 6, 4>;
-template struct TOp<Cx, 6, 5>;
-template struct TOp<Cx, 6, 6>;
-template struct TOp<Cx, 6, 7>;
-template struct TOp<Cx, 7, 4>;
-
-template struct TOp<float, 1, 1>;
-template struct TOp<float, 2, 2>;
-template struct TOp<float, 3, 3>;
-template struct TOp<float, 4, 3>;
-template struct TOp<float, 4, 4>;
-template struct TOp<float, 5, 3>;
-template struct TOp<float, 5, 5>;
-template struct TOp<float, 5, 7>;
 
 template <typename S, int R>
 Identity<S, R>::Identity(Sz<R> dims)

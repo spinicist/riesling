@@ -2,6 +2,7 @@
 
 #include "op/loop.hpp"
 #include "op/pad.hpp"
+#include "op/top-impl.hpp"
 
 using namespace std::complex_literals;
 

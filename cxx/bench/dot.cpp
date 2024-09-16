@@ -8,18 +8,26 @@ TEST_CASE("Tensor Dot", "[Dot]")
 {
   using Cx4 = Eigen::Tensor<std::complex<float>, 4>;
   int const sz = 256;
-  Cx4 grid(sz, sz, sz, 16);
-  grid.setRandom();
+  Cx4 a(sz, sz, sz, 16), b(sz, sz, sz, 16);
+  a.setRandom();
+  b.setRandom();
 
   Eigen::TensorFixedSize<std::complex<float>, Eigen::Sizes<>> d;
-  BENCHMARK("Naive")
+  BENCHMARK("Dot")
   {
-    d = (grid.conjugate() * grid).sum();
+    d = (a * b.conjugate()).sum();
   };
 
-  BENCHMARK("Threaded")
+  BENCHMARK("Threaded Dot")
   {
-    d.device(rl::Threads::TensorDevice()) = (grid.conjugate() * grid).sum();
+    d.device(rl::Threads::TensorDevice()) = (a * b.conjugate()).sum();
+  };
+
+  float n;
+  BENCHMARK("Norm")
+  {
+    d = (a * b.conjugate()).sum();
+    n = std::sqrt(std::abs(d()));
   };
 }
 

@@ -58,4 +58,7 @@ protected:
   auto rows() const -> Index;                                                                                                  \
   auto cols() const -> Index;
 
+template <typename S>
+auto Mul(typename Op<S>::Ptr &a, typename Op<S>::Ptr &b) -> typename Op<S>::Ptr; // Returns an Op representing A * B
+
 } // namespace rl::Ops

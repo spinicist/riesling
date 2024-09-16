@@ -1,5 +1,6 @@
 #include "op.hpp"
 
+#include "ops.hpp"
 #include "log.hpp"
 
 namespace rl::Ops {
@@ -138,5 +139,10 @@ template <typename S> auto Op<S>::operator+(S const) const -> std::shared_ptr<Op
 
 template struct Op<float>;
 template struct Op<Cx>;
+
+template <typename S>
+auto Mul(typename Op<S>::Ptr &a, typename Op<S>::Ptr &b) -> typename Op<S>::Ptr {
+  return std::make_shared<Ops::Multiply<S>>(a, b);
+}
 
 } // namespace rl::Ops

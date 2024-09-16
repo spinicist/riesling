@@ -1,9 +1,9 @@
 #include "sense.hpp"
 
-#include "tensors.hpp"
-#include "sys/threads.hpp"
-
 #include "log.hpp"
+#include "op/top-impl.hpp"
+#include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include <numbers>
 
@@ -12,9 +12,7 @@ constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
 namespace rl::TOps {
 
 SENSE::SENSE(Cx5 const &maps, Index const nB)
-  : Parent("SENSEOp",
-           AddFront(LastN<3>(maps.dimensions()), nB),
-           AddFront(LastN<3>(maps.dimensions()), nB, maps.dimension(1)))
+  : Parent("SENSEOp", AddFront(LastN<3>(maps.dimensions()), nB), AddFront(LastN<3>(maps.dimensions()), nB, maps.dimension(1)))
   , maps_{std::move(maps)}
 {
   resX.set(0, nB);
@@ -24,7 +22,7 @@ SENSE::SENSE(Cx5 const &maps, Index const nB)
   brdX.set(1, maps_.dimension(1));
 
   if (maps_.dimension(0) == 1) {
-    brdMaps.set(0,nB);
+    brdMaps.set(0, nB);
   } else if (maps_.dimension(0) == nB) {
     brdMaps.set(0, 1);
   } else {
@@ -108,9 +106,8 @@ auto EstimateKernels::nChannels() const -> Index { return oshape[1]; }
 auto EstimateKernels::mapDimensions() const -> Sz3 { return LastN<3>(ishape); }
 
 VCCSENSE::VCCSENSE(Cx5 const &maps, Index const nB)
-  : Parent("VCCSENSE",
-           AddFront(LastN<3>(maps.dimensions()), nB),
-           AddFront(LastN<3>(maps.dimensions()), nB, maps.dimension(1), 2))
+  : Parent(
+      "VCCSENSE", AddFront(LastN<3>(maps.dimensions()), nB), AddFront(LastN<3>(maps.dimensions()), nB, maps.dimension(1), 2))
   , maps_{std::move(maps)}
 {
   resX.set(0, nB);

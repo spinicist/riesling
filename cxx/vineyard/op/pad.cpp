@@ -1,6 +1,7 @@
 #include "pad.hpp"
 
 #include "log.hpp"
+#include "op/top-impl.hpp"
 #include "sys/threads.hpp"
 
 namespace rl::TOps {
@@ -10,7 +11,9 @@ Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
   : Parent(fmt::format("Pad {}D", Rank), is, os)
 {
   for (Index ii = 0; ii < Rank; ii++) {
-    if (ishape[ii] > oshape[ii]) { throw Log::Failure("Pad", "Padding input dims {} larger than output dims {}", ishape, oshape); }
+    if (ishape[ii] > oshape[ii]) {
+      throw Log::Failure("Pad", "Padding input dims {} larger than output dims {}", ishape, oshape);
+    }
   }
   std::transform(oshape.begin(), oshape.end(), ishape.begin(), left_.begin(),
                  [](Index big, Index small) { return (big - small + 1) / 2; });
@@ -20,8 +23,7 @@ Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <typename Scalar, int Rank>
-auto Pad<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
+template <typename Scalar, int Rank> auto Pad<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
 {
   return std::make_shared<Crop<Scalar, Rank>>(this->oshape, this->ishape);
 }
@@ -72,7 +74,9 @@ Crop<Scalar, Rank>::Crop(InDims const id, OutDims const od)
   : Parent(fmt::format("Crop {}D", Rank), id, od)
 {
   for (Index ii = 0; ii < Rank; ii++) {
-    if (ishape[ii] < oshape[ii]) { throw Log::Failure("Crop", "Crop input dims {} smaller than output dims {}", ishape, oshape); }
+    if (ishape[ii] < oshape[ii]) {
+      throw Log::Failure("Crop", "Crop input dims {} smaller than output dims {}", ishape, oshape);
+    }
   }
   std::transform(ishape.begin(), ishape.end(), oshape.begin(), left_.begin(),
                  [](Index big, Index small) { return (big - small + 1) / 2; });
@@ -81,8 +85,7 @@ Crop<Scalar, Rank>::Crop(InDims const id, OutDims const od)
   std::transform(left_.begin(), left_.end(), right_.begin(), paddings_.begin(),
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
-template <typename Scalar, int Rank>
-auto Crop<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
+template <typename Scalar, int Rank> auto Crop<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
 {
   return std::make_shared<Pad<Scalar, Rank>>(this->oshape, this->ishape);
 }
@@ -127,6 +130,5 @@ template struct Crop<Cx, 3>;
 template struct Crop<Cx, 4>;
 template struct Crop<Cx, 5>;
 template struct Crop<Cx, 6>;
-
 
 } // namespace rl::TOps

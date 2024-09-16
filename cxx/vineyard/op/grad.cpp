@@ -1,6 +1,7 @@
 #include "grad.hpp"
 
 #include "log.hpp"
+#include "op/top-impl.hpp"
 #include "sys/threads.hpp"
 
 namespace rl::TOps {

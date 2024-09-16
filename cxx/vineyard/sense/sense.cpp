@@ -10,8 +10,8 @@
 #include "op/recon.hpp"
 #include "op/sense.hpp"
 #include "precon.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 namespace SENSE {
@@ -31,9 +31,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
   auto const nV = noncart.dimension(4);
-  if (opts.volume.Get() >= nV) {
-    throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
-  }
+  if (opts.volume.Get() >= nV) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV); }
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
@@ -53,9 +51,7 @@ auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 
 {
   auto const nC = noncart.dimension(0);
   auto const nV = noncart.dimension(4);
-  if (opts.volume.Get() >= nV) {
-    throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV);
-  }
+  if (opts.volume.Get() >= nV) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV); }
 
   Sz3 kSz;
   kSz.fill(opts.kWidth.Get());
@@ -169,9 +165,7 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const fmat, Sz3 const cmat) -> Cx5
 auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
-  if (noncart.dimension(0) < 2) {
-    throw Log::Failure("SENSE", "Data is single-channel");
-  }
+  if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }
   if (opts.type.Get() == "auto") {
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);

@@ -27,7 +27,7 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   TOp(std::string const &n);
   TOp(std::string const &n, InDims const xd, OutDims const yd);
 
-  virtual ~TOp();
+  virtual ~TOp() = default;
 
   auto rows() const -> Index final;
   auto cols() const -> Index final;
