@@ -7,8 +7,8 @@ vcpkg_from_gitlab(
     GITLAB_URL https://gitlab.com
     OUT_SOURCE_PATH SOURCE_PATH
     REPO spinicist/eigen
-    REF 78cb63a5d465d708be850c011d450d92d44d8434
-    SHA512 97c2cc00d359e03308ebea5bbcf28dde5b654c23f8b55d623a955c06faaaad37f78d890dafdd5f2a0fe4b3e5ba18546290e7b2dcfd0b78fae3adfe4235c12c25
+    REF f713f9cdcef3160f7ed9d56647f233fc5b7ad096
+    SHA512 2f48bfa84768936b5f0ff145a95077240e04a2a6dab97dc70e8896f5cf975c089ea93148978d4aeaa1932de9b72708ebf7c3be2a9a3bf455e01cb639d50efada
     HEAD_REF master
     PATCHES
 )
