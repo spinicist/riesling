@@ -79,10 +79,7 @@ auto Now() -> Time;
 auto ToNow(Time const t) -> std::string;
 
 template <typename Scalar, int ND>
-void Tensor(std::string const             &name,
-            Sz<ND> const                  &shape,
-            Scalar const                  *data,
-            HD5::DimensionNames<ND> const &dims = HD5::DimensionNames<ND>());
+void Tensor(std::string const &name, Sz<ND> const &shape, Scalar const *data, HD5::DimensionNames<ND> const &dims);
 
 } // namespace Log
 } // namespace rl

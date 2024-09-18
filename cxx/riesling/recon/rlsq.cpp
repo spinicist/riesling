@@ -16,12 +16,14 @@ using namespace rl;
 
 void main_recon_rlsq(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PreconOpts  preOpts(parser);
-  SENSE::Opts senseOpts(parser);
-  RlsqOpts    rlsqOpts(parser);
-  RegOpts     regOpts(parser);
+  CoreOpts               coreOpts(parser);
+  GridOpts               gridOpts(parser);
+  PreconOpts             preOpts(parser);
+  SENSE::Opts            senseOpts(parser);
+  RlsqOpts               rlsqOpts(parser);
+  RegOpts                regOpts(parser);
+  args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (10)", {"debug-iters"}, 10);
+  args::Flag             debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -41,22 +43,19 @@ void main_recon_rlsq(args::Subparser &parser)
 
   auto [reg, A, ext_x] = Regularizers(regOpts, recon);
 
-  ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
-    Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
+  ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
+    if (ii % di == 0) { Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Image); }
   };
 
-  ADMM::DebugZ debug_z = [&](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
-                             ADMM::Vector const &u) {
-    if (std::holds_alternative<Sz4>(reg[ir].size)) {
-      auto const Fshape = std::get<Sz4>(reg[ir].size);
-      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
-      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
-      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
-    } else if (std::holds_alternative<Sz5>(reg[ir].size)) {
-      auto const Fshape = std::get<Sz5>(reg[ir].size);
-      Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data());
-      Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data());
-      Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data());
+  ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
+                                                    ADMM::Vector const &z, ADMM::Vector const &u) {
+    if (debugZ && (ii % di == 0)) {
+      if (std::holds_alternative<Sz5>(reg[ir].size)) {
+        auto const Fshape = std::get<Sz5>(reg[ir].size);
+        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Image);
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Image);
+        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Image);
+      }
     }
   };
 
