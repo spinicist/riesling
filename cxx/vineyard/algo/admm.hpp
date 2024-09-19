@@ -15,7 +15,7 @@ struct ADMM
   using DebugZ = std::function<void(Index const, Index const, Vector const &, Vector const &, Vector const &)>;
 
   Op::Ptr A; // Forward model
-  Op::Ptr M; // Pre-conditioner
+  Op::Ptr Minv; // Pre-conditioner
 
   std::vector<Regularizer> regs;
 

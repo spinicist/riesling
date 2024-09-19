@@ -18,7 +18,7 @@ struct LSQR
   using CMap = typename Op::CMap;
 
   std::shared_ptr<Op> op;
-  std::shared_ptr<Op> M = nullptr; // Pre-conditioner
+  std::shared_ptr<Op> Minv = nullptr; // Pre-conditioner
   Index               iterLimit = 4;
   float               aTol = 1.e-6f;
   float               bTol = 1.e-6f;

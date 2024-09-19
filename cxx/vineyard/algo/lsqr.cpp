@@ -26,7 +26,7 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
   Vector x(cols), v(cols), w(cols);
 
   float α = 0.f, β = 0.f;
-  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
+  BidiagInit(op, Minv, Mu, u, v, α, β, x, b, x0);
   w = v;
 
   float ρ̅ = α;
@@ -40,7 +40,7 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
   Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), β, std::fabs(α * β));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
-    Bidiag(op, M, Mu, u, v, α, β);
+    Bidiag(op, Minv, Mu, u, v, α, β);
 
     float c, s, ρ;
     float ψ = 0.f;

@@ -42,7 +42,7 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
 }
 
 void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
-                std::shared_ptr<Ops::Op<Cx>>           M,
+                std::shared_ptr<Ops::Op<Cx>>           Minv,
                 Eigen::VectorXcf                      &Mu,
                 Eigen::VectorXcf                      &u,
                 Eigen::VectorXcf                      &v,
@@ -60,8 +60,8 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
     x.setZero();
     Mu.device(Threads::CoreDevice()) = b;
   }
-  if (M) {
-    M->inverse(Mu, u);
+  if (Minv) {
+    Minv->forward(Mu, u);
   } else {
     u = Mu;
   }
@@ -74,7 +74,7 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
 }
 
 void Bidiag(std::shared_ptr<Ops::Op<Cx>> const A,
-            std::shared_ptr<Ops::Op<Cx>> const M,
+            std::shared_ptr<Ops::Op<Cx>> const Minv,
             Eigen::VectorXcf                  &Mu,
             Eigen::VectorXcf                  &u,
             Eigen::VectorXcf                  &v,
@@ -83,8 +83,8 @@ void Bidiag(std::shared_ptr<Ops::Op<Cx>> const A,
 {
   Mu.device(Threads::CoreDevice()) = -α * Mu;
   A->iforward(v, Mu);
-  if (M) {
-    M->inverse(Mu, u);
+  if (Minv) {
+    Minv->forward(Mu, u);
   } else {
     u = Mu;
   }

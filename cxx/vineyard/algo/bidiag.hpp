@@ -9,7 +9,7 @@ auto StableGivens(float const a, float const b) -> std::tuple<float, float, floa
 auto Rotation(float const a, float const b) -> std::tuple<float, float, float>;
 
 void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
-                std::shared_ptr<Ops::Op<Cx>>           M,
+                std::shared_ptr<Ops::Op<Cx>>           Minv,
                 Eigen::VectorXcf                      &Mu,
                 Eigen::VectorXcf                      &u,
                 Eigen::VectorXcf                      &v,
@@ -20,7 +20,7 @@ void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
                 Eigen::VectorXcf::ConstAlignedMapType &x0);
 
 void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
-            std::shared_ptr<Ops::Op<Cx>> const M,
+            std::shared_ptr<Ops::Op<Cx>> const Minv,
             Eigen::VectorXcf                  &Mu,
             Eigen::VectorXcf                  &u,
             Eigen::VectorXcf                  &v,

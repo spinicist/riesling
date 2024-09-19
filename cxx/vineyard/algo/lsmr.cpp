@@ -26,7 +26,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
   Vector v(cols), h(cols), h̅(cols), x(cols);
 
   float α = 0.f, β = 0.f;
-  BidiagInit(op, M, Mu, u, v, α, β, x, b, x0);
+  BidiagInit(op, Minv, Mu, u, v, α, β, x, b, x0);
   h = v;
   h̅.setZero();
 
@@ -57,7 +57,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
   Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), normb, std::fabs(ζ̅));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
-    Bidiag(op, M, Mu, u, v, α, β);
+    Bidiag(op, Minv, Mu, u, v, α, β);
 
     float const ρold = ρ;
     float       c, s, ĉ = 1.f, ŝ = 0.f;
