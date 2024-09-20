@@ -6,6 +6,10 @@
 
 #include "ducc0/fft/fftnd_impl.h"
 
+#include "experimental/mdspan"
+
+#include "fmt/std.h"
+
 namespace rl {
 namespace FFT {
 
@@ -67,6 +71,88 @@ template <int NFFT> auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
   return x;
 }
 
+void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
+{
+  for (auto const a : axes) {
+    if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }
+  }
+
+  auto const ND = x.ndim();
+
+  auto const                             N = 2 << (axes.size() - 1);
+  std::vector<std::vector<ducc0::slice>> lefts(N), rights(N);
+
+  for (Index in = 0; in < N; in++) {
+    std::vector<ducc0::slice> left(ND), right(ND);
+    for (Index ia = 0; ia < axes.size(); ia++) {
+      auto const a = axes[ia];
+      auto const mid = x.shape()[a] / 2;
+      if (in % (2 << ia) == 0) {
+        left[a].end = mid;
+        right[a].beg = mid;
+      } else {
+        left[a].beg = mid;
+        right[a].end = mid;
+      }
+    }
+  }
+}
+
+template <int D, typename MDSpan> void SwapImpl(MDSpan &left, MDSpan &right, std::array<Index, MDSpan::rank()> ind)
+{
+  for (Index ii = 0; ii < left.extent(D); ii++) {
+    ind[D] = ii;
+    if constexpr (D == 0) {
+      auto const temp = left[ind];
+      left[ind] = right[ind];
+      right[ind] = temp;
+    } else {
+      SwapImpl<D - 1>(left, right, ind);
+    }
+  }
+}
+
+template <typename MDSpan> void Swap(MDSpan &left, MDSpan &right)
+{
+  SwapImpl<MDSpan::rank() - 1>(left, right, std::array<Index, MDSpan::rank()>());
+}
+
+template <int ND, int NFFT> void Shift(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims)
+{
+  for (auto const d : fftDims) {
+    if (x.dimension(d) > 1 && x.dimension(d) % 2 != 0) {
+      throw Log::Failure("FFT", "Shape {} dim {} was not even", x.dimensions(), d);
+    }
+  }
+  using Extents = std::experimental::dextents<Index, ND>;
+  using MDSpan = std::experimental::mdspan<Cx, Extents, std::experimental::layout_left>;
+  MDSpan xs(x.data(), x.dimensions());
+  auto constexpr N = 1 << (NFFT - 1);
+  using Slice = std::experimental::strided_slice<Index, Index, Index>;
+
+  for (Index in = 0; in < N; in++) {
+    std::array<Slice, ND> lslice, rslice;
+    for (Index id = 0; id < ND; id++) {
+      lslice[id] = {.offset = 0, .extent = x.dimension(id), .stride = 1};
+      rslice[id] = {.offset = 0, .extent = x.dimension(id), .stride = 1};
+    }
+
+    for (Index id = 0; id < NFFT; id++) {
+      auto const d = fftDims[id];
+      auto const mid = x.dimension(id) / 2;
+      lslice[d].extent = rslice[d].extent = std::max(1L, mid);
+      if (in % (2 << id) == 0) {
+        rslice[d].offset = mid;
+      } else {
+        lslice[d].offset = mid;
+      }
+    }
+    auto left = std::apply([&](auto const &...args) { return std::experimental::submdspan(xs, args...); }, lslice);
+    auto right = std::apply([&](auto const &...args) { return std::experimental::submdspan(xs, args...); }, rslice);
+    Swap(left, right);
+  }
+}
+
 template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph, bool const fwd)
 {
   auto const shape = x.dimensions();
@@ -92,21 +178,13 @@ template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> cons
   internal::ThreadPool pool(Threads::TensorDevice());
   internal::Guard      guard(pool);
   auto                 t = Log::Now();
-  if (fwd) {
-    x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
-  } else {
-    x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
-  }
+  Shift(x, fftDims);
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
   t = Log::Now();
   ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, fwd, scale, pool.nthreads());
   rl::Log::Debug("FFT", "{} took {}", fwd ? "Forward" : "Adjoint", Log::ToNow(t));
   t = Log::Now();
-  if (fwd) {
-    x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
-  } else {
-    x.device(Threads::TensorDevice()) = x / ph.reshape(rsh).broadcast(brd);
-  }
+  Shift(x, fftDims);
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
 }
 

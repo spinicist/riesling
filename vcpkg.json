@@ -15,12 +15,13 @@
                 "zlib"
             ]
         },
+        "mdspan",
         "nifticlib",
         "scnlib",
         "tl-ranges",
         "zlib"
     ],
-    "builtin-baseline":"bce0dd5af22be5cd47d7b302671075e0cd2e04fb",
+    "builtin-baseline":"428b3e2a5ad75f87ea276068f2619963eea2eb1a",
     "overrides": [
         { "name": "hdf5", "version": "1.12.0" }
     ]

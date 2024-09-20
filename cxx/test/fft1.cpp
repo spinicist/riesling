@@ -11,7 +11,7 @@ using namespace Catch;
 
 TEST_CASE("FFT1","[FFT]")
 {
-  auto N = GENERATE(5);
+  auto N = GENERATE(8);
   SECTION("<1>")
   {
     Cx1 data(N);
