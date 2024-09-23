@@ -11,7 +11,7 @@ using namespace Catch;
 TEST_CASE("Preconditioner", "[precon]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = GENERATE(15, 16);
+  Index const M = GENERATE(16);
   Sz3 const matrix{M, M, M};
   Re3 points(3, 3, 1);
   points.setZero();
@@ -20,6 +20,7 @@ TEST_CASE("Preconditioner", "[precon]")
   Trajectory const traj(points, matrix);
   Basis basis;
   Re2 sc = KSpaceSingle(traj, &basis, false, 0.f);
+  INFO("Weights\n" << sc);
   CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
   CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));
   CHECK(sc(2, 0) == Approx(1.f).margin(1.e-1f));

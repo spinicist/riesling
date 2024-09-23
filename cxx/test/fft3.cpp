@@ -24,10 +24,10 @@ TEST_CASE("FFT3", "[FFT]")
     ref.setConstant(1.f);
     data.setZero();
     data(sx / 2, sy / 2, sz / 2) = sqrt(N); // Parseval's theorem
-    FFT::Forward(data);
+    FFT::Adjoint(data);
     INFO("data\n" << data << "\nref\n" << ref);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
-    FFT::Adjoint(data);
+    FFT::Forward(data);
     ref.setZero();
     ref(sx / 2, sy / 2, sz / 2) = sqrt(N);
     INFO("data\n" << data << "\nref\n" << ref);

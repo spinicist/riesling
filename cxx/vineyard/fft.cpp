@@ -6,7 +6,7 @@
 
 #include "ducc0/fft/fftnd_impl.h"
 
-#include "experimental/mdspan"
+// #include "experimental/mdspan"
 
 #include "fmt/std.h"
 
@@ -73,31 +73,30 @@ template <int NFFT> auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
 
 void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
 {
-  for (auto const a : axes) {
-    if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }
-  }
-
   auto const ND = x.ndim();
-
-  auto const                             N = 2 << (axes.size() - 1);
-  std::vector<std::vector<ducc0::slice>> lefts(N), rights(N);
+  auto const N = 1 << (axes.size() - 1);
 
   for (Index in = 0; in < N; in++) {
-    std::vector<ducc0::slice> left(ND), right(ND);
+    std::vector<ducc0::slice> lslice(ND), rslice(ND);
     for (Index ia = 0; ia < axes.size(); ia++) {
       auto const a = axes[ia];
-      auto const mid = x.shape()[a] / 2;
-      if (in % (2 << ia) == 0) {
-        left[a].end = mid;
-        right[a].beg = mid;
-      } else {
-        left[a].beg = mid;
-        right[a].end = mid;
+      if (x.shape()[a] > 1) {
+        if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }
+        auto const mid = x.shape()[a] / 2;
+        if (in % (2 << ia) == 0) {
+          lslice[a].end = mid;
+          rslice[a].beg = mid;
+        } else {
+          lslice[a].beg = mid;
+          rslice[a].end = mid;
+        }
       }
     }
+    ducc0::mav_apply([](Cx &a, Cx &b) { std::swap(a, b); }, 1, x.subarray(lslice), x.subarray(rslice));
   }
 }
 
+/*
 template <int D, typename MDSpan> void SwapImpl(MDSpan &left, MDSpan &right, std::array<Index, MDSpan::rank()> ind)
 {
   for (Index ii = 0; ii < left.extent(D); ii++) {
@@ -152,6 +151,7 @@ template <int ND, int NFFT> void Shift(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> co
     Swap(left, right);
   }
 }
+*/
 
 template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph, bool const fwd)
 {
@@ -177,14 +177,16 @@ template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> cons
   rl::Log::Debug("FFT", "{} Shape {} dims {} scale {}", fwd ? "Forward" : "Adjoint", duccShape, duccDims, scale);
   internal::ThreadPool pool(Threads::TensorDevice());
   internal::Guard      guard(pool);
+  ducc0::cfmav         xc(x.data(), duccShape);
+  ducc0::vfmav         xv(x.data(), duccShape);
   auto                 t = Log::Now();
-  Shift(x, fftDims);
+  Shift(xv, duccDims);
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
   t = Log::Now();
-  ducc0::c2c(ducc0::cfmav(x.data(), duccShape), ducc0::vfmav(x.data(), duccShape), duccDims, fwd, scale, pool.nthreads());
+  ducc0::c2c(xc, xv, duccDims, fwd, scale, pool.nthreads());
   rl::Log::Debug("FFT", "{} took {}", fwd ? "Forward" : "Adjoint", Log::ToNow(t));
   t = Log::Now();
-  Shift(x, fftDims);
+  Shift(xv, duccDims);
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
 }
 
