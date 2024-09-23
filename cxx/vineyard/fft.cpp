@@ -47,7 +47,7 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
   auto const ND = x.ndim();
   auto const N = 1 << (axes.size() - 1);
 
-  for (Index in = 0; in < N; in++) {
+  auto task = [&](Index const in) {
     std::vector<ducc0::slice> lslice(ND), rslice(ND);
     for (Index ia = 0; ia < axes.size(); ia++) {
       auto const a = axes[ia];
@@ -64,7 +64,8 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
       }
     }
     ducc0::mav_apply([](Cx &a, Cx &b) { std::swap(a, b); }, 1, x.subarray(lslice), x.subarray(rslice));
-  }
+  };
+  Threads::For(task, N);
 }
 
 template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, bool const fwd)
