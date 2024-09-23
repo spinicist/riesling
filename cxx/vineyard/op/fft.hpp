@@ -26,7 +26,6 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 
 private:
   Sz<FFTRank>  dims_;
-  CxN<FFTRank> ph_;
   bool adjoint_;
 };
 

@@ -30,10 +30,9 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
     TOps::Pad<Cx, 6> padX(ones.dimensions(), psf.dimensions());
     Cx6              xcorr(padX.oshape);
     xcorr.device(Threads::TensorDevice()) = padX.forward(ones);
-    auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
-    FFT::Forward(xcorr, Sz3{3, 4, 5}, ph);
+    FFT::Forward(xcorr, Sz3{3, 4, 5});
     xcorr.device(Threads::TensorDevice()) = xcorr * xcorr.conjugate();
-    FFT::Adjoint(xcorr, Sz3{3, 4, 5}, ph);
+    FFT::Adjoint(xcorr, Sz3{3, 4, 5});
     xcorr.device(Threads::TensorDevice()) = xcorr * psf;
     weights = nufft.forward(xcorr).abs().chip(0, 0);
     // I do not understand this scaling factor but it's in Frank's code and works
@@ -50,10 +49,9 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
     TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
     Cx5              xcorr(padX.oshape);
     xcorr.device(Threads::TensorDevice()) = padX.forward(ones);
-    auto const ph = FFT::PhaseShift(LastN<3>(xcorr.dimensions()));
-    FFT::Forward(xcorr, Sz3{2, 3, 4}, ph);
+    FFT::Forward(xcorr, Sz3{2, 3, 4});
     xcorr.device(Threads::TensorDevice()) = xcorr * xcorr.conjugate();
-    FFT::Adjoint(xcorr, Sz3{2, 3, 4}, ph);
+    FFT::Adjoint(xcorr, Sz3{2, 3, 4});
     xcorr.device(Threads::TensorDevice()) = xcorr * psf;
     weights = nufft.forward(xcorr).abs().chip(0, 0);
     // I do not understand this scaling factor but it's in Frank's code and works

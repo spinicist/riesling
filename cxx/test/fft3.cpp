@@ -42,15 +42,14 @@ TEST_CASE("FFT3", "[FFT]")
     Index const N = sx * sy * sz;
     Cx5         data(nb, nc, sx, sy, sz);
     Cx5         ref(nb, nc, sx, sy, sz);
-    auto const  ph = FFT::PhaseShift(Sz3{sx, sy, sz});
 
     ref.setConstant(1.f);
     data.setZero();
     data.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
-    FFT::Forward(data, Sz3{2, 3, 4}, ph);
+    FFT::Forward(data, Sz3{2, 3, 4});
     INFO("data\n" << data << "\nref\n" << ref);
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
-    FFT::Adjoint(data, Sz3{2, 3, 4}, ph);
+    FFT::Adjoint(data, Sz3{2, 3, 4});
     ref.setZero();
     ref.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));

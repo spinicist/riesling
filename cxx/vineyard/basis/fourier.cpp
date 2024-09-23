@@ -15,7 +15,7 @@ FourierBasis::FourierBasis(Index const N, Index const samples, Index const trace
     eye(ii, samples > 1 ? ii : 0, traces > 1 ? ii : 0) = Cx(energy);
   }
   Cx3 padded = Pad(eye, Sz3{N, (Index)(os * samples), (Index)(os * traces)});
-  FFT::Adjoint(padded, Sz2{1, 2}, FFT::PhaseShift(LastN<2>(padded.dimensions())));
+  FFT::Adjoint(padded, Sz2{1, 2});
   basis = Crop(padded, Sz3{N, samples, traces});
 }
 

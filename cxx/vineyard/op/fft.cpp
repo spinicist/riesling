@@ -12,7 +12,6 @@ FFT<Rank, FFTRank>::FFT(InDims const &dims, bool const adj)
   , adjoint_{adj}
 {
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
-  ph_ = rl::FFT::PhaseShift(LastN<FFTRank>(ishape));
 }
 
 template <int Rank, int FFTRank>
@@ -32,9 +31,9 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &
   auto const time = this->startForward(x, y, false);
   y = x;
   if (adjoint_) {
-    rl::FFT::Adjoint(y, dims_, ph_);
+    rl::FFT::Adjoint(y, dims_);
   } else {
-    rl::FFT::Forward(y, dims_, ph_);
+    rl::FFT::Forward(y, dims_);
   }
   this->finishForward(y, time, false);
 }
@@ -44,9 +43,9 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const 
   auto const time = this->startAdjoint(y, x, false);
   x = y;
   if (adjoint_) {
-    rl::FFT::Forward(x, dims_, ph_);
+    rl::FFT::Forward(x, dims_);
   } else {
-    rl::FFT::Adjoint(x, dims_, ph_);
+    rl::FFT::Adjoint(x, dims_);
   }
   this->finishAdjoint(x, time, false);
 }
@@ -56,9 +55,9 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap const 
   auto const time = this->startForward(x, y, true);
   InTensor   tmp = x;
   if (adjoint_) {
-    rl::FFT::Adjoint(tmp, dims_, ph_);
+    rl::FFT::Adjoint(tmp, dims_);
   } else {
-    rl::FFT::Forward(tmp, dims_, ph_);
+    rl::FFT::Forward(tmp, dims_);
   }
   y += tmp;
   this->finishForward(y, time, true);
@@ -69,9 +68,9 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const
   auto const time = this->startAdjoint(y, x, true);
   InTensor   tmp = y;
   if (adjoint_) {
-    rl::FFT::Forward(tmp, dims_, ph_);
+    rl::FFT::Forward(tmp, dims_);
   } else {
-    rl::FFT::Adjoint(tmp, dims_, ph_);
+    rl::FFT::Adjoint(tmp, dims_);
   }
   x += tmp;
   this->finishAdjoint(x, time, true);

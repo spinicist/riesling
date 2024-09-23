@@ -12,20 +12,7 @@
 
 namespace rl {
 namespace FFT {
-
 namespace internal {
-auto Phase1D(Index const sz) -> Cx1
-{
-  Index const  c = sz / 2;
-  double const shift = (double)c / sz;
-  Rd1          ii(sz);
-  std::iota(ii.data(), ii.data() + ii.size(), 0.);
-  auto const s = ((ii - ii.constant(c / 2.)) * ii.constant(shift));
-  Cxd1 const ph = ((s - s.floor()) * s.constant(2. * M_PI)).cast<Cxd>();
-  Cx1 const  factors = (ph * ph.constant(Cxd{0., 1.})).exp().cast<Cx>();
-  return factors;
-}
-
 /*
  *  Wrapper for DUCC. Adapted from https://github.com/tensorflow/tensorflow/blob/master/third_party/ducc/threading.h
  */
@@ -55,22 +42,6 @@ private:
 using Guard = ducc0::detail_threading::ScopedUseThreadPool;
 } // namespace internal
 
-template <int NFFT> auto PhaseShift(Sz<NFFT> const shape) -> CxN<NFFT>
-{
-  Eigen::Tensor<Cx, NFFT> x(shape);
-  x.setConstant(1.f);
-  for (size_t ii = 0; ii < NFFT; ii++) {
-    auto const ph = internal::Phase1D(shape[ii]);
-    Sz<NFFT>   rsh, brd;
-    rsh.fill(1);
-    brd = shape;
-    rsh[ii] = shape[ii];
-    brd[ii] = 1;
-    x.device(Threads::TensorDevice()) = x * ph.reshape(rsh).broadcast(brd);
-  }
-  return x;
-}
-
 void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
 {
   auto const ND = x.ndim();
@@ -96,64 +67,7 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
   }
 }
 
-/*
-template <int D, typename MDSpan> void SwapImpl(MDSpan &left, MDSpan &right, std::array<Index, MDSpan::rank()> ind)
-{
-  for (Index ii = 0; ii < left.extent(D); ii++) {
-    ind[D] = ii;
-    if constexpr (D == 0) {
-      auto const temp = left[ind];
-      left[ind] = right[ind];
-      right[ind] = temp;
-    } else {
-      SwapImpl<D - 1>(left, right, ind);
-    }
-  }
-}
-
-template <typename MDSpan> void Swap(MDSpan &left, MDSpan &right)
-{
-  SwapImpl<MDSpan::rank() - 1>(left, right, std::array<Index, MDSpan::rank()>());
-}
-
-template <int ND, int NFFT> void Shift(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims)
-{
-  for (auto const d : fftDims) {
-    if (x.dimension(d) > 1 && x.dimension(d) % 2 != 0) {
-      throw Log::Failure("FFT", "Shape {} dim {} was not even", x.dimensions(), d);
-    }
-  }
-  using Extents = std::experimental::dextents<Index, ND>;
-  using MDSpan = std::experimental::mdspan<Cx, Extents, std::experimental::layout_left>;
-  MDSpan xs(x.data(), x.dimensions());
-  auto constexpr N = 1 << (NFFT - 1);
-  using Slice = std::experimental::strided_slice<Index, Index, Index>;
-
-  for (Index in = 0; in < N; in++) {
-    std::array<Slice, ND> lslice, rslice;
-    for (Index id = 0; id < ND; id++) {
-      lslice[id] = {.offset = 0, .extent = x.dimension(id), .stride = 1};
-      rslice[id] = {.offset = 0, .extent = x.dimension(id), .stride = 1};
-    }
-
-    for (Index id = 0; id < NFFT; id++) {
-      auto const d = fftDims[id];
-      auto const mid = x.dimension(id) / 2;
-      lslice[d].extent = rslice[d].extent = std::max(1L, mid);
-      if (in % (2 << id) == 0) {
-        rslice[d].offset = mid;
-      } else {
-        lslice[d].offset = mid;
-      }
-    }
-    auto left = std::apply([&](auto const &...args) { return std::experimental::submdspan(xs, args...); }, lslice);
-    auto right = std::apply([&](auto const &...args) { return std::experimental::submdspan(xs, args...); }, rslice);
-    Swap(left, right);
-  }
-}
-*/
-
-template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph, bool const fwd)
+template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, bool const fwd)
 {
   auto const shape = x.dimensions();
   /* For phase ramps */
@@ -190,22 +104,19 @@ template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> cons
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
 }
 
-template <int ND, int NFFT> void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
-{
-  Run(x, fftDims, ph, true);
-}
+template <int ND, int NFFT> void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims) { Run(x, fftDims, true); }
 
-template <int ND, int NFFT> void Forward(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+template <int ND, int NFFT> void Forward(CxN<ND> &x, Sz<NFFT> const fftDims)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Forward(map, fftDims, ph);
+  Forward(map, fftDims);
 }
 
 template <int ND> void Forward(Eigen::TensorMap<CxN<ND>> &x)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
-  Forward(x, dims, PhaseShift(x.dimensions()));
+  Forward(x, dims);
 }
 
 template <int ND> void Forward(CxN<ND> &x)
@@ -214,22 +125,19 @@ template <int ND> void Forward(CxN<ND> &x)
   Forward(map);
 }
 
-template <int ND, int NFFT> void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
-{
-  Run(x, fftDims, ph, false);
-}
+template <int ND, int NFFT> void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims) { Run(x, fftDims, false); }
 
-template <int ND, int NFFT> void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims, CxN<NFFT> const &ph)
+template <int ND, int NFFT> void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims)
 {
   Eigen::TensorMap<CxN<ND>> map(x.data(), x.dimensions());
-  Adjoint(map, fftDims, ph);
+  Adjoint(map, fftDims);
 }
 
 template <int ND> void Adjoint(Eigen::TensorMap<CxN<ND>> &x)
 {
   Sz<ND> dims;
   std::iota(dims.begin(), dims.end(), 0);
-  Adjoint(x, dims, PhaseShift(x.dimensions()));
+  Adjoint(x, dims);
 }
 
 template <int ND> void Adjoint(CxN<ND> &x)
@@ -238,33 +146,29 @@ template <int ND> void Adjoint(CxN<ND> &x)
   Adjoint(map);
 }
 
-template auto PhaseShift<1>(Sz1 const) -> Cx1;
-template auto PhaseShift<2>(Sz2 const) -> Cx2;
-template auto PhaseShift<3>(Sz3 const) -> Cx3;
-
-template void Forward<4, 3>(Cx4Map &, Sz3 const, Cx3 const &ph);
-template void Forward<5, 3>(Cx5Map &, Sz3 const, Cx3 const &ph);
-template void Forward<1, 1>(Cx1 &, Sz1 const, Cx1 const &ph);
-template void Forward<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
-template void Forward<4, 1>(Cx4 &, Sz1 const, Cx1 const &ph);
-template void Forward<4, 2>(Cx4 &, Sz2 const, Cx2 const &ph);
-template void Forward<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
-template void Forward<5, 2>(Cx5 &, Sz2 const, Cx2 const &ph);
-template void Forward<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
-template void Forward<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
+template void Forward<4, 3>(Cx4Map &, Sz3 const);
+template void Forward<5, 3>(Cx5Map &, Sz3 const);
+template void Forward<1, 1>(Cx1 &, Sz1 const);
+template void Forward<3, 1>(Cx3 &, Sz1 const);
+template void Forward<4, 1>(Cx4 &, Sz1 const);
+template void Forward<4, 2>(Cx4 &, Sz2 const);
+template void Forward<4, 3>(Cx4 &, Sz3 const);
+template void Forward<5, 2>(Cx5 &, Sz2 const);
+template void Forward<5, 3>(Cx5 &, Sz3 const);
+template void Forward<6, 3>(Cx6 &, Sz3 const);
 template void Forward<1>(Cx1 &);
 template void Forward<3>(Cx3 &);
 
-template void Adjoint<4, 3>(Cx4Map &, Sz3 const, Cx3 const &ph);
-template void Adjoint<5, 3>(Cx5Map &, Sz3 const, Cx3 const &ph);
-template void Adjoint<3, 1>(Cx3 &, Sz1 const, Cx1 const &ph);
-template void Adjoint<3, 2>(Cx3 &, Sz2 const, Cx2 const &ph);
-template void Adjoint<4, 1>(Cx4 &, Sz1 const, Cx1 const &ph);
-template void Adjoint<4, 2>(Cx4 &, Sz2 const, Cx2 const &ph);
-template void Adjoint<4, 3>(Cx4 &, Sz3 const, Cx3 const &ph);
-template void Adjoint<5, 2>(Cx5 &, Sz2 const, Cx2 const &ph);
-template void Adjoint<5, 3>(Cx5 &, Sz3 const, Cx3 const &ph);
-template void Adjoint<6, 3>(Cx6 &, Sz3 const, Cx3 const &ph);
+template void Adjoint<4, 3>(Cx4Map &, Sz3 const);
+template void Adjoint<5, 3>(Cx5Map &, Sz3 const);
+template void Adjoint<3, 1>(Cx3 &, Sz1 const);
+template void Adjoint<3, 2>(Cx3 &, Sz2 const);
+template void Adjoint<4, 1>(Cx4 &, Sz1 const);
+template void Adjoint<4, 2>(Cx4 &, Sz2 const);
+template void Adjoint<4, 3>(Cx4 &, Sz3 const);
+template void Adjoint<5, 2>(Cx5 &, Sz2 const);
+template void Adjoint<5, 3>(Cx5 &, Sz3 const);
+template void Adjoint<6, 3>(Cx6 &, Sz3 const);
 template void Adjoint<1>(Eigen::TensorMap<Cx1> &);
 template void Adjoint<1>(Cx1 &);
 template void Adjoint<2>(Cx2 &);

@@ -43,7 +43,6 @@ NUFFT<NDim, VCC>::NUFFT(TrajectoryN<NDim> const &traj,
   oshape = gridder.oshape;
   oshape[0] = nChan;
   std::iota(fftDims.begin(), fftDims.end(), 2 + VCC);
-  fftPh = FFT::PhaseShift(LastN<NDim>(gridder.ishape));
   Log::Print("NUFFT", "ishape {} oshape {} grid {} batches {}", ishape, oshape, gridder.ishape, batches);
 
   // Calculate apodization correction
@@ -80,7 +79,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
-    FFT::Forward(workspace, fftDims, fftPh);
+    FFT::Forward(workspace, fftDims);
     gridder.forward(workspace, y);
   } else {
     OutTensor    yt(gridder.oshape);
@@ -92,7 +91,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
       x_start[1] = ic;
       y_start[0] = ic;
       wsm.device(Threads::TensorDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
-      FFT::Forward(workspace, fftDims, fftPh);
+      FFT::Forward(workspace, fftDims);
       gridder.forward(workspace, ytm);
       y.slice(y_start, yt.dimensions()).device(Threads::TensorDevice()) = yt;
     }
@@ -106,7 +105,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     gridder.adjoint(y, wsm);
-    FFT::Adjoint(workspace, fftDims, fftPh);
+    FFT::Adjoint(workspace, fftDims);
     x.device(Threads::TensorDevice()) = workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
   } else {
     OutTensor    yt(gridder.oshape);
@@ -118,7 +117,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
       y_start[0] = ic;
       yt.device(Threads::TensorDevice()) = y.slice(y_start, yt.dimensions());
       gridder.adjoint(yt, wsm);
-      FFT::Adjoint(workspace, fftDims, fftPh);
+      FFT::Adjoint(workspace, fftDims);
       x.slice(x_start, batchShape_).device(Threads::TensorDevice()) =
         workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
     }
@@ -132,7 +131,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, O
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
-    FFT::Forward(workspace, fftDims, fftPh);
+    FFT::Forward(workspace, fftDims);
     gridder.iforward(workspace, y);
   } else {
     OutTensor    yt(gridder.oshape);
@@ -144,7 +143,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, O
       x_start[1] = ic;
       y_start[0] = ic;
       wsm.device(Threads::TensorDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
-      FFT::Forward(workspace, fftDims, fftPh);
+      FFT::Forward(workspace, fftDims);
       gridder.forward(workspace, ytm);
       y.slice(y_start, yt.dimensions()).device(Threads::TensorDevice()) += yt;
     }
@@ -158,7 +157,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, 
   InMap      wsm(workspace.data(), gridder.ishape);
   if (batches == 1) {
     gridder.adjoint(y, wsm);
-    FFT::Adjoint(workspace, fftDims, fftPh);
+    FFT::Adjoint(workspace, fftDims);
     x.device(Threads::TensorDevice()) += workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
   } else {
     OutTensor    yt(gridder.oshape);
@@ -170,7 +169,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, 
       y_start[0] = ic;
       yt.device(Threads::TensorDevice()) = y.slice(y_start, yt.dimensions());
       gridder.adjoint(yt, wsm);
-      FFT::Adjoint(workspace, fftDims, fftPh);
+      FFT::Adjoint(workspace, fftDims);
       x.slice(x_start, batchShape_).device(Threads::TensorDevice()) +=
         workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
     }
