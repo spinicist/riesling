@@ -83,7 +83,7 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
       if (x.shape()[a] > 1) {
         if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }
         auto const mid = x.shape()[a] / 2;
-        if (in % (2 << ia) == 0) {
+        if ((in >> ia) & 1) {
           lslice[a].end = mid;
           rslice[a].beg = mid;
         } else {
