@@ -11,11 +11,12 @@ using namespace Catch;
 
 TEST_CASE("FFT3", "[FFT]")
 {
+  Log::SetLevel(Log::Level::Standard);
   auto sx = GENERATE(2, 4, 8);
-  auto sy = 4;
+  auto sy = GENERATE(2, 4, 8);
+  auto sz = GENERATE(2, 4, 8);
   SECTION("<3, 3>")
   {
-    auto sz = GENERATE(1, 2, 4);
     INFO("FFT shape: " << sx << "," << sy << "," << sz);
     Index const N = sx * sy * sz;
     Cx3         data(sx, sy, sz);
@@ -34,25 +35,24 @@ TEST_CASE("FFT3", "[FFT]")
     CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
   }
 
-  // SECTION("<5, 3>")
-  // {
-  //   auto        sz = GENERATE(4, 8, 16);
-  //   Index const N = sx * sy * sz;
-  //   Index const nc = 4;
-  //   Index const ne = 1;
-  //   Cx5         data(nc, ne, sx, sy, sz);
-  //   Cx5         ref(nc, ne, sx, sy, sz);
-  //   auto const  ph = FFT::PhaseShift(Sz3{sx, sy, sz});
+  auto        nc = GENERATE(1, 2, 4);
+  auto        nb = GENERATE(1, 2, 4);
+  SECTION("<5, 3>")
+  {
+    Index const N = sx * sy * sz;
+    Cx5         data(nb, nc, sx, sy, sz);
+    Cx5         ref(nb, nc, sx, sy, sz);
+    auto const  ph = FFT::PhaseShift(Sz3{sx, sy, sz});
 
-  //   ref.setConstant(1.f);
-  //   data.setZero();
-  //   data.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
-  //   FFT::Forward(data, Sz3{2, 3, 4}, ph);
-  //   INFO("data\n" << data << "\nref\n" << ref);
-  //   CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
-  //   FFT::Adjoint(data, Sz3{2, 3, 4}, ph);
-  //   ref.setZero();
-  //   ref.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
-  //   CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
-  // }
+    ref.setConstant(1.f);
+    data.setZero();
+    data.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
+    FFT::Forward(data, Sz3{2, 3, 4}, ph);
+    INFO("data\n" << data << "\nref\n" << ref);
+    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
+    FFT::Adjoint(data, Sz3{2, 3, 4}, ph);
+    ref.setZero();
+    ref.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
+    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
+  }
 }
