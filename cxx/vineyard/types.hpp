@@ -103,15 +103,6 @@ template <int N> auto Constant(Index const c) -> Sz<N>
   return C;
 }
 
-template <int N> auto Range(Index const st = 0, Index const mod = std::numeric_limits<Index>::max()) -> Sz<N>
-{
-  Sz<N> r;
-  for (Index ii = 0; ii < N; ii++) {
-    r[ii] = (st + ii) % mod;
-  }
-  return r;
-}
-
 template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
   static_assert(sizeof...(Args) > 0);
@@ -176,15 +167,6 @@ template <int N> Index Product(Sz<N> const &indices)
   return std::accumulate(indices.cbegin(), indices.cend(), 1L, std::multiplies<Index>());
 }
 
-template <typename T> T AMin(T const &a, T const &b)
-{
-  T m;
-  for (size_t ii = 0; ii < a.size(); ii++) {
-    m[ii] = std::min(a[ii], b[ii]);
-  }
-  return m;
-}
-
 template <int N> auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
@@ -192,17 +174,17 @@ template <int N> auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> E
   return result;
 }
 
-template <int N, typename T> auto Mul(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N>
+template <int N, typename T> auto MulToEven(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
-  std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return i * m; });
+  std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return 2*((Index)(i * m + 1) / 2); });
   return result;
 }
 
 template <int N, typename T> auto Div(Eigen::DSizes<Index, N> const &sz, T const d) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
-  std::transform(sz.begin(), sz.begin() + N, result.begin(), [d](Index const i) { return i / d; });
+  std::transform(sz.begin(), sz.begin() + N, result.begin(), [d](Index const i) { return std::floor(i / d); });
   return result;
 }
 

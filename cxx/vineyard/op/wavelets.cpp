@@ -1,6 +1,6 @@
 #include "wavelets.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include "log.hpp"
 
@@ -59,6 +59,15 @@ template <int ND> void Wavelets<ND>::adjoint(OutCMap const &y, InMap &x) const
   x = y;
   dimLoops(x, true);
   this->finishAdjoint(x, time, false);
+}
+
+template <int N> auto Range(Index const st = 0, Index const mod = std::numeric_limits<Index>::max()) -> Sz<N>
+{
+  Sz<N> r;
+  for (Index ii = 0; ii < N; ii++) {
+    r[ii] = (st + ii) % mod;
+  }
+  return r;
 }
 
 template <int ND> void Wavelets<ND>::dimLoops(InMap &x, bool const reverse) const

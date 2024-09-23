@@ -16,7 +16,7 @@ namespace rl {
  */
 auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, float const bias) -> Re2
 {
-  Trajectory  newTraj(traj.points() * 2.f, Mul(traj.matrix(), 2), traj.voxelSize() * 2.f);
+  Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
   float const osamp = 1.25;
   Re2         weights;
   Log::Print("Precon", "Starting preconditioner calculation");

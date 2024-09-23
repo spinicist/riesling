@@ -21,7 +21,7 @@ template <int ND>
 auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW, Index const sgSz) -> CalcMapping_t<ND>
 {
   auto const  nomDims = traj.matrix();
-  auto const  cartDims = Mul(nomDims, nomOS);
+  auto const  cartDims = MulToEven(nomDims, nomOS);
   Sz2 const   noncartDims{traj.nSamples(), traj.nTraces()};
   float const osamp = cartDims[0] / (float)traj.matrix()[0];
   Log::Print("Grid", "Mapping samples {} traces {} OS {} Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomOS, nomDims, cartDims);
