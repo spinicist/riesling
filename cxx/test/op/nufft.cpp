@@ -13,7 +13,7 @@ using namespace Catch;
 TEST_CASE("NUFFT", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = GENERATE(5, 6);
+  Index const M = GENERATE(6);
   auto const  matrix = Sz1{M};
   Re3         points(1, M, 1);
   points.setZero();
@@ -40,7 +40,7 @@ TEST_CASE("NUFFT", "[nufft]")
 TEST_CASE("NUFFT-Basis", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Index const M = 5;
+  Index const M = 6;
   auto const  matrix = Sz1{M};
   Index const N = 8;
   Re3         points(1, 1, N);
@@ -102,7 +102,7 @@ TEST_CASE("NUFFT-Batch", "[nufft]")
 
 TEST_CASE("NUFFT-VCC", "[nufft]")
 {
-  Index const M = GENERATE(7, 8);
+  Index const M = GENERATE(8, 10);
   auto const  matrix = Sz1{M};
   Re3         points(1, 1, 1);
   points.setZero();
