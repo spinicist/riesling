@@ -26,7 +26,7 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     }
     for (auto ii = FrontRank; ii < Rank - BackRank; ii++) {
       if (shape[ii] != s.dimension(ii - FrontRank)) {
-        throw Log::Failure("Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
+        throw Log::Failure("TOp", "Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
       }
       res[ii] = shape[ii];
       brd[ii] = 1;
@@ -40,14 +40,14 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
   void forward(InCMap const &x, OutMap &y) const
   {
     auto const time = this->startForward(x, y, false);
-    y.device(Threads::GlobalDevice()) = x * scales.reshape(res).broadcast(brd);
+    y.device(Threads::TensorDevice()) = x * scales.reshape(res).broadcast(brd);
     this->finishForward(y, time, false);
   }
 
   void adjoint(OutCMap const &y, InMap &x) const
   {
     auto const time = this->startAdjoint(y, x, false);
-    x.device(Threads::GlobalDevice()) = y * scales.reshape(res).broadcast(brd);
+    x.device(Threads::TensorDevice()) = y * scales.reshape(res).broadcast(brd);
     this->finishAdjoint(x, time, false);
   }
 

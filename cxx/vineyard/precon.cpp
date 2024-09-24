@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
-#include "op/ops.hpp"
+#include "op/tensorscale.hpp"
 #include "sys/threads.hpp"
 
 namespace rl {
@@ -77,14 +77,14 @@ auto MakeKspacePre(Trajectory const  &traj,
                    float const        bias,
                    bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>
 {
+  Sz4 const shape{nC, traj.nSamples(), traj.nTraces(), nT};
   if (type == "" || type == "none") {
     Log::Print("Precon", "Using no preconditioning");
-    return std::make_shared<Ops::Identity<Cx>>(nC * traj.nSamples() * traj.nTraces() * nT);
+    return std::make_shared<TOps::Identity<Cx, 4>>(shape);
   } else if (type == "kspace") {
     if (ndft) { Log::Warn("Precon", "Preconditioning for NDFT is not supported yet, using NUFFT preconditioner"); }
     Re2 const              w = KSpaceSingle(traj, basis, false, bias);
-    Eigen::VectorXcf const wv = CollapseToArray(w);
-    return std::make_shared<Ops::DiagRep<Cx>>(wv, nC, nT);
+    return std::make_shared<TOps::TensorScale<Cx, 4, 1, 1>>(shape, w.cast<Cx>());
   } else {
     HD5::Reader reader(type);
     Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
@@ -92,8 +92,7 @@ auto MakeKspacePre(Trajectory const  &traj,
       throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0), w.dimension(1),
                 traj.nSamples(), traj.nTraces());
     }
-    Eigen::VectorXcf const wv = CollapseToArray(w);
-    return std::make_shared<Ops::DiagRep<Cx>>(wv, nC, nT);
+    return std::make_shared<TOps::TensorScale<Cx, 4, 1, 1>>(shape, w.cast<Cx>());
   }
 }
 
