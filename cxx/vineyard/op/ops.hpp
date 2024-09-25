@@ -73,6 +73,7 @@ template <typename Scalar = Cx> struct Multiply final : Op<Scalar>
   void iadjoint(CMap const &y, Map &x) const;
 private:
   std::shared_ptr<Op<Scalar>> A, B;
+  Vector mutable temp;
 };
 
 //! Vertically stack operators, i.e. A = [B; C]
@@ -144,6 +145,7 @@ template <typename Scalar = Cx> struct Subtract final : Op<Scalar>
   void iadjoint(CMap const &y, Map &x) const;
 private:
   std::shared_ptr<Op<Scalar>> a, b;
+  Vector mutable temp;
 };
 
 } // namespace rl::Ops
