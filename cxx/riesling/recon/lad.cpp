@@ -43,7 +43,8 @@ void main_recon_lad(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
+  auto const A = (nC == 1) ? Recon::Single(gridOpts, traj, nS, nT, basis.get())
+                           : Recon::SENSE(gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),

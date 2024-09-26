@@ -31,8 +31,9 @@ void main_recon_lsq(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
-  auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto const A = (nC == 1) ? Recon::Single(gridOpts, traj, nS, nT, basis.get())
+                           : Recon::SENSE(gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
+  auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   Log::Debug(cmd, "A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
   auto debug = [shape = A->ishape](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image);
@@ -49,8 +50,8 @@ void main_recon_lsq(args::Subparser &parser)
   if (coreOpts.residual) {
     noncart -= A->forward(xm);
     Basis const id;
-    auto const  A1 = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, &id, noncart);
-    auto const  M1 = MakeKspacePre(traj, nC, nT, &id, preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+    auto const  A1 = Recon::SENSE(gridOpts, senseOpts, traj, nS, nT, &id, noncart);
+    auto const  M1 = MakeKspacePre(traj, nC, nT, &id, preOpts.type.Get(), preOpts.bias.Get());
     Log::Print(cmd, "A1 {} {} M1 {} {}", A1->ishape, A1->oshape, M1->rows(), M1->cols());
     Ops::Op<Cx>::Map  ncmap(noncart.data(), noncart.size());
     Ops::Op<Cx>::CMap nccmap(noncart.data(), noncart.size());

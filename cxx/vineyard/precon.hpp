@@ -15,7 +15,6 @@ auto MakeKspacePre(Trajectory const  &traj,
                    Index const        nT,
                    Basis::CPtr        basis,
                    std::string const &type = "kspace",
-                   float const        bias = 1.f,
-                   bool const         ndft = false) -> std::shared_ptr<Ops::Op<Cx>>;
+                   float const        bias = 1.f) -> std::shared_ptr<Ops::Op<Cx>>;
 
 } // namespace rl

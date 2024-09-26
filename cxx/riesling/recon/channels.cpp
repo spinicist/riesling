@@ -27,7 +27,7 @@ void main_channels(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
+  auto const A = Recon::Channels(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   auto       debug = [&A](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), A->ishape, x.data(), {"channel", "v", "i", "j", "k"});

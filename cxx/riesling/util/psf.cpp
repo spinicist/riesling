@@ -34,13 +34,8 @@ void main_psf(args::Subparser &parser)
   Index const nB = basis->nB();
   auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
 
-  std::shared_ptr<TOps::TOp<Cx, 5, 3>> A = nullptr;
-  if (coreOpts.ndft) {
-    A = TOps::NDFT<3>::Make(shape, traj.points(), nC, basis.get());
-  } else {
-    A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis.get(), shape);
-  }
-  auto const M = MakeKspacePre(traj, nC, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get(), coreOpts.ndft.Get());
+  auto const A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis.get(), shape);
+  auto const M = MakeKspacePre(traj, nC, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];

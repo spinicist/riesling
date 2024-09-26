@@ -6,8 +6,8 @@
 #include "op/recon.hpp"
 #include "precon.hpp"
 #include "sense/sense.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 
@@ -29,8 +29,9 @@ void main_eig(args::Subparser &parser)
   auto const  nC = noncart.dimension(0);
   auto const  nS = noncart.dimension(3);
   auto const  nT = noncart.dimension(4);
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const  A = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
+  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const  A = (nC == 1) ? Recon::Single(gridOpts, traj, nS, nT, basis.get())
+                            : Recon::SENSE(gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
   auto const  P = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
   if (adj) {

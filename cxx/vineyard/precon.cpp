@@ -64,33 +64,29 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
   if (!std::isfinite(norm)) {
     Log::Print("Precon", "Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
-    Log::Print("Precon", "Single-channel pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights), Maximum(weights));
+    Log::Print("Precon", "Single-channel pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights),
+               Maximum(weights));
   }
   return weights;
 }
 
-auto MakeKspacePre(Trajectory const  &traj,
-                   Index const        nC,
-                   Index const        nT,
-                   Basis::CPtr        basis,
-                   std::string const &type,
-                   float const        bias,
-                   bool const         ndft) -> std::shared_ptr<Ops::Op<Cx>>
+auto MakeKspacePre(
+  Trajectory const &traj, Index const nC, Index const nT, Basis::CPtr basis, std::string const &type, float const bias)
+  -> std::shared_ptr<Ops::Op<Cx>>
 {
   Sz4 const shape{nC, traj.nSamples(), traj.nTraces(), nT};
   if (type == "" || type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 4>>(shape);
   } else if (type == "kspace") {
-    if (ndft) { Log::Warn("Precon", "Preconditioning for NDFT is not supported yet, using NUFFT preconditioner"); }
-    Re2 const              w = KSpaceSingle(traj, basis, false, bias);
+    Re2 const w = KSpaceSingle(traj, basis, false, bias);
     return std::make_shared<TOps::TensorScale<Cx, 4, 1, 1>>(shape, w.cast<Cx>());
   } else {
     HD5::Reader reader(type);
     Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
-      throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0), w.dimension(1),
-                traj.nSamples(), traj.nTraces());
+      throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0),
+                         w.dimension(1), traj.nSamples(), traj.nTraces());
     }
     return std::make_shared<TOps::TensorScale<Cx, 4, 1, 1>>(shape, w.cast<Cx>());
   }
