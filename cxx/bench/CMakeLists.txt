@@ -5,6 +5,7 @@ if(${BUILD_BENCHMARKS})
         dot.cpp
         grid.cpp
         kernel.cpp
+        norm.cpp
         nufft.cpp
         rss.cpp
     )

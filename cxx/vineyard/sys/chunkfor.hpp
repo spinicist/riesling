@@ -13,9 +13,9 @@ template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vec
   if (v.size() == 0) {
     return;
   } else {
-    Index const    den = v.size() / nT;
-    Index const    rem = v.size() % nT;
     Index const    nC = std::min<Index>(v.size(), nT);
+    Index const    den = v.size() / nC;
+    Index const    rem = v.size() % nC;
     Eigen::Barrier barrier(nC);
     for (Index it = 0; it < nC; it++) {
       Index const        lo = it * den + std::min(it, rem);
