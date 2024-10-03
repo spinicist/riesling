@@ -43,6 +43,8 @@ void SetLevel(Level const l)
 
 void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
 
+auto IsDebugging() -> bool { return debug_file ? true: false; }
+
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string
 {
   return fmt::format("[{}] [{:<6}] {}", TheTime(), category, fmt::vformat(fmt, args));

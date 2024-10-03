@@ -32,8 +32,10 @@ template <typename S> void LeastSquares<S>::apply(float const α, CMap const &x,
   } else {
     z = x / (1.f + t);
   }
-  Log::Debug("Prox", "LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(y),
-             ParallelNorm(z));
+  if (Log::IsDebugging()) {
+    Log::Debug("Prox", "LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(y),
+               ParallelNorm(z));
+  }
 }
 
 template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) const
@@ -44,7 +46,9 @@ template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> co
   } else {
     z = div->forward(x);
   }
-  Log::Debug("Prox", "LeastSquares λ {} |x| {} |y| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(y), ParallelNorm(z));
+  if (Log::IsDebugging()) {
+    Log::Debug("Prox", "LeastSquares λ {} |x| {} |y| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(y), ParallelNorm(z));
+  }
 }
 
 template <typename S> void LeastSquares<S>::setBias(S const *data) { new (&this->y) CMap(data, this->sz); }

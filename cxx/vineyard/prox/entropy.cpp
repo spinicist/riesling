@@ -23,7 +23,9 @@ void Entropy::apply(float const α, CMap const &v, Map &z) const
     x = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   z = v.array() * (x / vabs);
-  Log::Debug("Prox", "Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, ParallelNorm(v), ParallelNorm(z));
+  if (Log::IsDebugging()) {
+    Log::Debug("Prox", "Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, ParallelNorm(v), ParallelNorm(z));
+  }
 }
 
 NMREntropy::NMREntropy(float const λ_, Index const sz_)
@@ -44,7 +46,9 @@ void NMREntropy::apply(float const α, CMap const &v, Map &z) const
     x = (x - (t / 2.f) * g).cwiseMax(0.f);
   }
   z = v.array() * (x / vabs);
-  Log::Debug("Prox", "NMR Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, ParallelNorm(v), ParallelNorm(z));
+  if (Log::IsDebugging()) {
+    Log::Debug("Prox", "NMR Entropy α {} λ {} t {} |v| {} |z| {}", α, λ, t, ParallelNorm(v), ParallelNorm(z));
+  }
 }
 
 } // namespace rl::Proxs

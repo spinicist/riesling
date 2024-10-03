@@ -94,29 +94,53 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &,
 template <typename S, int I, int O>
 auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time
 {
-  if (x.dimensions() != ishape) { throw Log::Failure("TOp", "{} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
-  if (y.dimensions() != oshape) { throw Log::Failure("TOp", "{} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
-  Log::Debug("TOp", "{} {}forward {}->{} |x| {}", this->name, (ip ? "IP " : ""), this->ishape, this->oshape, Norm(x));
+  if (x.dimensions() != ishape) {
+    throw Log::Failure("TOp", "{} forward x dims: {} expected: {}", this->name, x.dimensions(), ishape);
+  }
+  if (y.dimensions() != oshape) {
+    throw Log::Failure("TOp", "{} forward y dims: {} expected: {}", this->name, y.dimensions(), oshape);
+  }
+  if (Log::IsDebugging()) {
+    Log::Debug("TOp", "{} {}forward {}->{} |x| {}", this->name, (ip ? "IP " : ""), this->ishape, this->oshape, Norm(x));
+  } else {
+    Log::Debug("TOp", "{} {}forward {}->{}", this->name, (ip ? "IP " : ""), this->ishape, this->oshape);
+  }
   return Log::Now();
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap const &y, Time const start, bool const ip) const
 {
-  Log::Debug("TOp", "{} {}forward finished in {} |y| {}.", this->name, (ip ? "IP " : ""), Log::ToNow(start), Norm(y));
+  if (Log::IsDebugging()) {
+    Log::Debug("TOp", "{} {}forward finished in {} |y| {}", this->name, (ip ? "IP " : ""), Log::ToNow(start), Norm(y));
+  } else {
+    Log::Debug("TOp", "{} {}forward finished in {}", this->name, (ip ? "IP " : ""), Log::ToNow(start));
+  }
 }
 
 template <typename S, int I, int O>
 auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time
 {
-  if (y.dimensions() != oshape) { throw Log::Failure("TOp", "{} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape); }
-  if (x.dimensions() != ishape) { throw Log::Failure("TOp", "{} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape); }
-  Log::Debug("TOp", "{} {}adjoint {}->{} |y| {}", this->name, (ip ? "IP " : ""), this->oshape, this->ishape, Norm(y));
+  if (y.dimensions() != oshape) {
+    throw Log::Failure("TOp", "{} adjoint y dims: {} expected: {}", this->name, y.dimensions(), oshape);
+  }
+  if (x.dimensions() != ishape) {
+    throw Log::Failure("TOp", "{} adjoint x dims: {} expected: {}", this->name, x.dimensions(), ishape);
+  }
+  if (Log::IsDebugging()) {
+    Log::Debug("TOp", "{} {}adjoint {}->{} |y| {}", this->name, (ip ? "IP " : ""), this->oshape, this->ishape, Norm(y));
+  } else {
+    Log::Debug("TOp", "{} {}adjoint {}->{}", this->name, (ip ? "IP " : ""), this->oshape, this->ishape);
+  }
   return Log::Now();
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Time const start, bool const ip) const
 {
-  Log::Debug("TOp", "{} {}adjoint finished in {} |x| {}", this->name, (ip ? "IP " : ""), Log::ToNow(start), Norm(x));
+  if (Log::IsDebugging()) {
+    Log::Debug("TOp", "{} {}adjoint finished in {} |x| {}", this->name, (ip ? "IP " : ""), Log::ToNow(start), Norm(x));
+  } else {
+    Log::Debug("TOp", "{} {}adjoint finished in {}", this->name, (ip ? "IP " : ""), Log::ToNow(start));
+  }
 }
 
 template <typename S, int R>

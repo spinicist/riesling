@@ -28,34 +28,28 @@ enum struct Level
 
 using Time = std::chrono::high_resolution_clock::time_point;
 
-Level CurrentLevel();
-void  SetLevel(Level const l);
-void  SetDebugFile(std::string const &fname);
-auto  FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
-void  SaveEntry(std::string const &entry, fmt::terminal_color const color, Level const level);
-auto  Saved() -> std::vector<std::string> const &;
-void  End();
+void SetLevel(Level const l);
+void SetDebugFile(std::string const &fname);
+auto IsDebugging() -> bool;
+auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
+void SaveEntry(std::string const &entry, fmt::terminal_color const color, Level const level);
+auto Saved() -> std::vector<std::string> const &;
+void End();
 
 template <typename... Args> inline void Print(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  if (CurrentLevel() > Level::Testing) {
-    SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Ephemeral);
-  }
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Ephemeral);
 }
 
 template <typename... Args> inline void Debug(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  if (CurrentLevel() > Level::Testing) {
-    SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Debug);
-  }
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Debug);
 }
 
 template <typename... Args>
 inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  if (CurrentLevel() > Level::Testing) {
-    SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_red, Level::None);
-  }
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_red, Level::None);
 }
 
 struct Failure : std::runtime_error
@@ -69,7 +63,7 @@ struct Failure : std::runtime_error
 
 inline void Fail(Failure const &f)
 {
-  if (CurrentLevel() > Level::Testing) { SaveEntry(f.what(), fmt::terminal_color::bright_red, Level::None); }
+  SaveEntry(f.what(), fmt::terminal_color::bright_red, Level::None);
 }
 
 auto Now() -> Time;
