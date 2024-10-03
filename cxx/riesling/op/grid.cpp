@@ -50,6 +50,7 @@ void main_grid(args::Subparser &parser)
   PreconOpts preOpts(parser);
   LsqOpts    lsqOpts(parser);
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
+  args::Flag adj(parser, "", "Apply adjoint operation", {'a', "adj"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -70,9 +71,13 @@ void main_grid(args::Subparser &parser)
   traj.write(writer);
 
   if (fwd) {
-    Cx6 const cart = reader.readTensor<Cx6>();
-    Cx5       noncart = A->forward(cart);
+    auto const cart = reader.readTensor<Cx6>();
+    auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
+  } else if (adj) {
+    auto const noncart = reader.readTensor<Cx5>();
+    auto const cart = A->adjoint(noncart);
+    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
   } else {
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
