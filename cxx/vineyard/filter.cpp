@@ -1,8 +1,8 @@
 #include "filter.hpp"
 
 #include "log.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include <cmath>
 #include <functional>
@@ -30,20 +30,22 @@ template <typename Scalar, int D> void KSFilter(std::function<float(float const 
   auto const hy = sy / 2;
   auto const hx = sx / 2;
 
-  auto task = [&](Index const iz) {
-    for (Index iy = 0; iy < sy; iy++) {
-      for (Index ix = 0; ix < sx; ix++) {
-        float const rz = static_cast<float>(iz - hz) / hz;
-        float const ry = static_cast<float>(iy - hy) / hy;
-        float const rx = static_cast<float>(ix - hx) / hx;
-        float const r = sqrt(rx * rx + ry * ry + rz * rz);
-        float const val = f(r);
-        ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix) *=
-          ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix).constant(val);
+  auto task = [&](Index const zlo, Index const zhi) {
+    for (Index iz = zlo; iz < zhi; iz++) {
+      for (Index iy = 0; iy < sy; iy++) {
+        for (Index ix = 0; ix < sx; ix++) {
+          float const rz = static_cast<float>(iz - hz) / hz;
+          float const ry = static_cast<float>(iy - hy) / hy;
+          float const rx = static_cast<float>(ix - hx) / hx;
+          float const r = sqrt(rx * rx + ry * ry + rz * rz);
+          float const val = f(r);
+          ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix) *=
+            ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix).constant(val);
+        }
       }
     }
   };
-  Threads::For(task, sz, "Filtering");
+  Threads::ChunkFor(task, sz);
 }
 
 void CartesianTukey(float const &s, float const &e, float const &h, Cx4 &x)

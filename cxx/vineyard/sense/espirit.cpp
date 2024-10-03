@@ -129,7 +129,7 @@ Cx4 ESPIRIT(Cx4 const &grid, Sz3 const outShape, Index const kRad, Index const c
       }
     }
   };
-  Threads::For(slice_task, mix_kernels.dimension(3), "Covariance");
+  Threads::ChunkFor(slice_task, mix_kernels.dimension(3));
 
   Log::Print("Finished ESPIRIT");
   Cx4 const cropped = Crop(vecsImage, AddFront(outShape, nC));

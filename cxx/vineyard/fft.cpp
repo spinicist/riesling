@@ -47,25 +47,27 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
   auto const ND = x.ndim();
   auto const N = 1 << (axes.size() - 1);
 
-  auto task = [&](Index const in) {
-    std::vector<ducc0::slice> lslice(ND), rslice(ND);
-    for (Index ia = 0; ia < axes.size(); ia++) {
-      auto const a = axes[ia];
-      if (x.shape()[a] > 1) {
-        if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }
-        auto const mid = x.shape()[a] / 2;
-        if ((in >> ia) & 1) {
-          lslice[a].end = mid;
-          rslice[a].beg = mid;
-        } else {
-          lslice[a].beg = mid;
-          rslice[a].end = mid;
+  auto task = [&](Index const nlo, Index const nhi) {
+    for (Index in = nlo; in < nhi; in++) {
+      std::vector<ducc0::slice> lslice(ND), rslice(ND);
+      for (Index ia = 0; ia < axes.size(); ia++) {
+        auto const a = axes[ia];
+        if (x.shape()[a] > 1) {
+          if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }
+          auto const mid = x.shape()[a] / 2;
+          if ((in >> ia) & 1) {
+            lslice[a].end = mid;
+            rslice[a].beg = mid;
+          } else {
+            lslice[a].beg = mid;
+            rslice[a].end = mid;
+          }
         }
       }
+      ducc0::mav_apply([](Cx &a, Cx &b) { std::swap(a, b); }, 1, x.subarray(lslice), x.subarray(rslice));
     }
-    ducc0::mav_apply([](Cx &a, Cx &b) { std::swap(a, b); }, 1, x.subarray(lslice), x.subarray(rslice));
   };
-  Threads::For(task, N);
+  Threads::ChunkFor(task, N);
 }
 
 template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, bool const fwd)

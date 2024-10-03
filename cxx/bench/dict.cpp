@@ -33,7 +33,7 @@ TEST_CASE("Dictionaries", "[dict]")
   Eigen::ArrayXXf parameters = simulator.parameters(nsamp);
   Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
   auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
-  rl::Threads::For(task, parameters.cols(), "Simulation");
+  rl::Threads::ChunkFor(task, parameters.cols());
 
   rl::Basis basis(parameters, dynamics, 0.f, 3, false);
 

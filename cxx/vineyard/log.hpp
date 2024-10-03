@@ -72,9 +72,6 @@ inline void Fail(Failure const &f)
   if (CurrentLevel() > Level::Testing) { SaveEntry(f.what(), fmt::terminal_color::bright_red, Level::None); }
 }
 
-void StartProgress(Index const counst, std::string const &label);
-void StopProgress();
-void Tick();
 auto Now() -> Time;
 auto ToNow(Time const t) -> std::string;
 

@@ -15,9 +15,7 @@ namespace {
 Level                        log_level = Level::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;
 bool                         isTTY = false;
-Index                        progressTarget = -1, progressCurrent = 0, progressNext = 0;
-std::mutex                   progressMutex, logMutex;
-std::string                  progressMessage;
+std::mutex                   logMutex;
 std::vector<std::string>     savedEntries;
 
 auto TheTime() -> std::string
@@ -68,44 +66,6 @@ void End()
 {
   debug_file.reset();
   log_level = Level::None;
-}
-
-void StartProgress(Index const amount, std::string const &text)
-{
-  if (text.size() && CurrentLevel() >= Level::Standard) {
-    progressMessage = text;
-    fmt::print(stderr, "{} Starting {}\n", TheTime(), progressMessage);
-  }
-  if (isTTY && CurrentLevel() >= Level::Ephemeral) {
-    progressTarget = amount;
-    progressCurrent = 0;
-    progressNext = (Index)std::floor(progressTarget / 100.f);
-  }
-}
-
-void StopProgress()
-{
-  if (isTTY && CurrentLevel() >= Level::Ephemeral) {
-    std::scoped_lock lock(progressMutex);
-    progressTarget = -1;
-    fmt::print(stderr, "\r");
-  }
-  if (progressMessage.size() && CurrentLevel() >= Level::Standard) {
-    fmt::print(stderr, "{} Finished {}\n", TheTime(), progressMessage);
-  }
-}
-
-void Tick()
-{
-  if (isTTY && (progressTarget > 0)) {
-    std::scoped_lock lock(progressMutex);
-    progressCurrent++;
-    if (progressCurrent > progressNext) {
-      float const percent = (100.f * progressCurrent) / progressTarget;
-      fmt::print(stderr, "\x1b[2K\r{:02.0f}%", percent);
-      progressNext += static_cast<Index>(std::floor(progressTarget / 100.f));
-    }
-  }
 }
 
 Time Now() { return std::chrono::high_resolution_clock::now(); }

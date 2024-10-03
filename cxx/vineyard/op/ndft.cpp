@@ -88,19 +88,21 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
   Index const nV = ishape[1];
   auto const  xr = x.reshape(Sz3{nC, nV, N});
 
-  auto task = [&](Index const itr) {
-    for (Index isamp = 0; isamp < nSamp; isamp++) {
-      Cx1 const b = basis->B.chip<2>(itr % basis->nSample()).template chip<1>(isamp % basis->nTrace());
-      Re1       ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
-        xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-      if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
-      Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-      Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<2, 0>>())
-                         .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
-      y.template chip<2>(itr).template chip<1>(isamp) = samp * Cx(scale);
+  auto task = [&](Index const trlo, Index const trhi) {
+    for (Index itr = trlo; itr < trhi; itr++) {
+      for (Index isamp = 0; isamp < nSamp; isamp++) {
+        Cx1 const b = basis->B.chip<2>(itr % basis->nSample()).template chip<1>(isamp % basis->nTrace());
+        Re1       ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+          xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+        if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
+        Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+        Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<2, 0>>())
+                           .contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+        y.template chip<2>(itr).template chip<1>(isamp) = samp * Cx(scale);
+      }
     }
   };
-  Threads::For(task, nTrace, "NDFT Forward");
+  Threads::ChunkFor(task, nTrace);
   this->finishForward(y, time, false);
 }
 
@@ -113,25 +115,27 @@ template <int NDim> void NDFT<NDim>::adjoint(OutCMap const &yy, InMap &x) const
   Index const                            nV = ishape[1];
   Eigen::TensorMap<Eigen::Tensor<Cx, 3>> xm(x.data(), nC, nV, N);
 
-  auto task = [&](Index ii) {
-    Re1 const xf = xc.chip<1>(ii);
-    Cx2       vox(nC, nV);
-    vox.setZero();
-    for (Index itr = 0; itr < nTrace; itr++) {
-      Re1 ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-      if (Δf.size()) { ph -= Δf(ii) * t * 2.f * (float)M_PI; }
-      Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-      for (Index iv = 0; iv < nV; iv++) {
-        Cx1 const b = basis->B.template chip<2>(itr % basis->nTrace())
-                        .template chip<0>(iv)
-                        .conjugate()
-                        .broadcast(Sz1{nSamp / basis->nSample()});
-        vox.chip<1>(iv) += y.template chip<2>(itr).contract(eph * b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+  auto task = [&](Index const ilo, Index const ihi) {
+    for (Index ii = ilo; ii < ihi; ii++) {
+      Re1 const xf = xc.chip<1>(ii);
+      Cx2       vox(nC, nV);
+      vox.setZero();
+      for (Index itr = 0; itr < nTrace; itr++) {
+        Re1 ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+        if (Δf.size()) { ph -= Δf(ii) * t * 2.f * (float)M_PI; }
+        Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+        for (Index iv = 0; iv < nV; iv++) {
+          Cx1 const b = basis->B.template chip<2>(itr % basis->nTrace())
+                          .template chip<0>(iv)
+                          .conjugate()
+                          .broadcast(Sz1{nSamp / basis->nSample()});
+          vox.chip<1>(iv) += y.template chip<2>(itr).contract(eph * b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+        }
       }
+      xm.chip<2>(ii) = vox * Cx(scale);
     }
-    xm.chip<2>(ii) = vox * Cx(scale);
   };
-  Threads::For(task, N, "NDFT Adjoint");
+  Threads::ChunkFor(task, N);
   this->finishAdjoint(x, time, false);
 }
 

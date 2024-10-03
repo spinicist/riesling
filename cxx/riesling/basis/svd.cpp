@@ -11,8 +11,8 @@
 #include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 using namespace rl;
 
@@ -38,8 +38,12 @@ auto Run(rl::Settings const                &s,
   Log::Print("Sim", "Total parameter sets {}", parameters.cols());
   Cx3        dynamics(parameters.cols(), seq.samples(), seq.traces());
   auto const start = Log::Now();
-  auto       task = [&](Index const ii) { dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii)); };
-  Threads::For(task, parameters.cols(), "Simulation");
+  auto       task = [&](Index const ilo, Index const ihi) {
+    for (Index ii = ilo; ii < ihi; ii++) {
+      dynamics.chip<0>(ii) = seq.simulate(parameters.col(ii));
+    }
+  };
+  Threads::ChunkFor(task, parameters.cols());
   Log::Print("Sim", "Simulation took {}. Final size {}", Log::ToNow(start), dynamics.dimensions());
   return dynamics;
 }
@@ -114,8 +118,12 @@ void main_basis_svd(args::Subparser &parser)
 
   Eigen::MatrixXcf::MapType dmap(dall.data(), dshape[0], L);
   Log::Print(cmd, "Normalizing entries");
-  auto ntask = [&](Index const ii) { dmap.row(ii) = dmap.row(ii).normalized(); };
-  Threads::For(ntask, dmap.rows(), "Normalizing");
+  auto ntask = [&](Index const ilo, Index const ihi) {
+    for (Index ii = ilo; ii < ihi; ii++) {
+      dmap.row(ii) = dmap.row(ii).normalized();
+    }
+  };
+  Threads::ChunkFor(ntask, dmap.rows());
 
   Cx3                       basis(N, dshape[1], dshape[2]);
   Eigen::MatrixXcf::MapType bmap(basis.data(), N, L);

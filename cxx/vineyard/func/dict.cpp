@@ -1,8 +1,8 @@
 #include "dict.hpp"
 
 #include "log.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 #include <numeric>
 
@@ -12,21 +12,23 @@ void LookupDictionary::operator()(Input x, Output y) const
 {
   assert(x.dimensions() == y.dimensions());
   Log::Print("Dict", "Dims {}", x.dimensions());
-  auto ztask = [&](Index const iz) {
-    Eigen::VectorXcf pv(x.dimension(0));
-    for (Index iy = 0; iy < x.dimension(2); iy++) {
-      for (Index ix = 0; ix < x.dimension(1); ix++) {
-        for (Index ii = 0; ii < x.dimension(0); ii++) {
-          pv(ii) = x(ii, ix, iy, iz);
-        }
-        Eigen::VectorXcf const dv = this->project(pv);
-        for (Index ii = 0; ii < x.dimension(0); ii++) {
-          y(ii, ix, iy, iz) = dv(ii);
+  auto ztask = [&](Index const zlo, Index const zhi) {
+    for (Index iz = zlo; iz < zhi; iz++) {
+      Eigen::VectorXcf pv(x.dimension(0));
+      for (Index iy = 0; iy < x.dimension(2); iy++) {
+        for (Index ix = 0; ix < x.dimension(1); ix++) {
+          for (Index ii = 0; ii < x.dimension(0); ii++) {
+            pv(ii) = x(ii, ix, iy, iz);
+          }
+          Eigen::VectorXcf const dv = this->project(pv);
+          for (Index ii = 0; ii < x.dimension(0); ii++) {
+            y(ii, ix, iy, iz) = dv(ii);
+          }
         }
       }
     }
   };
-  Threads::For(ztask, x.dimension(3), "Dictionary Projection");
+  Threads::ChunkFor(ztask, x.dimension(3));
 }
 
 BruteForceDictionary::BruteForceDictionary(Eigen::MatrixXf const &d)

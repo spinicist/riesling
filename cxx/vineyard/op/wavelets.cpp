@@ -84,21 +84,22 @@ template <int ND> void Wavelets<ND>::dimLoops(InMap &x, bool const reverse) cons
     while ((minSz / 2) % 2 == 0 && minSz > 4) {
       minSz /= 2;
     }
-    auto wav_task = [&](Index const ii) {
-      Cx1 temp = x.shuffle(shuf).reshape(Sz2{maxSz, otherSz}).template chip<1>(ii);
-      if (reverse) {
-        for (Index sz = minSz; sz <= maxSz; sz *= 2) {
-          wav1(sz, reverse, temp);
+    auto wav_task = [&](Index const ilo, Index const ihi) {
+      for (Index ii = ilo; ii < ihi; ii++) {
+        Cx1 temp = x.shuffle(shuf).reshape(Sz2{maxSz, otherSz}).template chip<1>(ii);
+        if (reverse) {
+          for (Index sz = minSz; sz <= maxSz; sz *= 2) {
+            wav1(sz, reverse, temp);
+          }
+        } else {
+          for (Index sz = maxSz; sz >= minSz; sz /= 2) {
+            wav1(sz, reverse, temp);
+          }
         }
-      } else {
-        for (Index sz = maxSz; sz >= minSz; sz /= 2) {
-          wav1(sz, reverse, temp);
-        }
+        x.shuffle(shuf).reshape(Sz2{maxSz, otherSz}).template chip<1>(ii) = temp;
       }
-      x.shuffle(shuf).reshape(Sz2{maxSz, otherSz}).template chip<1>(ii) = temp;
     };
-
-    Threads::For(wav_task, otherSz);
+    Threads::ChunkFor(wav_task, otherSz);
     Log::Debug("Wave", "Encode dim {}", dim);
   }
 }
