@@ -37,7 +37,7 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
   float sn2 = 0.f;
 
   Log::Print("LSQR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), β, std::fabs(α * β));
+  Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), β, std::fabs(α * β));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, Minv, Mu, u, v, α, β);
@@ -71,7 +71,7 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
     std::tie(cs2, sn2, ɣ) = StableGivens(ɣ̅, θ);
     z = rhs / ɣ;
     xxnorm += z * z;
-    ddnorm = ddnorm + w.squaredNorm() / (ρ * ρ);
+    ddnorm = ddnorm + std::pow(ParallelNorm(w), 2) / (ρ * ρ);
 
     normA = std::sqrt(normA * normA + α * α + β * β + λ * λ);
     float const condA = normA * std::sqrt(ddnorm);

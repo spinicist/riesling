@@ -1,5 +1,6 @@
 #include "lsq.hpp"
 
+#include "algo/common.hpp"
 #include "log.hpp"
 #include "tensors.hpp"
 
@@ -23,8 +24,7 @@ LeastSquares<S>::LeastSquares(float const λ_, CMap const bias)
   Log::Print("Prox", "LeastSquares Prox λ {}", λ);
 }
 
-template <typename S>
-void LeastSquares<S>::apply(float const α, CMap const &x, Map &z) const
+template <typename S> void LeastSquares<S>::apply(float const α, CMap const &x, Map &z) const
 {
   float const t = α * λ;
   if (y.data()) {
@@ -32,11 +32,11 @@ void LeastSquares<S>::apply(float const α, CMap const &x, Map &z) const
   } else {
     z = x / (1.f + t);
   }
-  Log::Debug("Prox", "LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, x.stableNorm(), y.stableNorm(), z.stableNorm());
+  Log::Debug("Prox", "LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(y),
+             ParallelNorm(z));
 }
 
-template <typename S>
-void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) const
+template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) const
 {
   auto const div = α->inverse(1.f, λ);
   if (y.data()) {
@@ -44,14 +44,10 @@ void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x,
   } else {
     z = div->forward(x);
   }
-  Log::Debug("Prox", "LeastSquares λ {} |x| {} |y| {} |z| {}", λ, x.stableNorm(), y.stableNorm(), z.stableNorm());
+  Log::Debug("Prox", "LeastSquares λ {} |x| {} |y| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(y), ParallelNorm(z));
 }
 
-template <typename S>
-void LeastSquares<S>::setBias(S const *data)
-{
-  new (&this->y) CMap(data, this->sz);
-}
+template <typename S> void LeastSquares<S>::setBias(S const *data) { new (&this->y) CMap(data, this->sz); }
 
 template struct LeastSquares<float>;
 template struct LeastSquares<Cx>;

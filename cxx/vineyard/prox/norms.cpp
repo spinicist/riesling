@@ -1,5 +1,6 @@
 #include "norms.hpp"
 
+#include "algo/common.hpp"
 #include "log.hpp"
 #include "sys/chunkfor.hpp"
 #include "sys/threads.hpp"
@@ -18,7 +19,7 @@ void L1::apply(float const α, CMap const &x, Map &z) const
 {
   float t = α * λ;
   z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
-  Log::Debug("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.stableNorm(), z.stableNorm());
+  Log::Debug("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
 }
 
 void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
@@ -27,7 +28,7 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
     float t = λ * realα->scale;
     z.device(Threads::CoreDevice()) =
       x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
-    Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
+    Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
   } else {
     throw Log::Failure("Prox", "C++ is stupid");
   }
@@ -50,7 +51,7 @@ void L2::apply(float const α, CMap const &x, Map &z) const
   Threads::ChunkFor(
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {
-        auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
+        auto const n = PairwiseNorm(x.segment(ib * blockSize, blockSize));
         if (n > t) {
           z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
         } else {
@@ -59,7 +60,7 @@ void L2::apply(float const α, CMap const &x, Map &z) const
       }
     },
     blks);
-  Log::Debug("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, x.stableNorm(), z.stableNorm());
+  Log::Debug("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
 }
 
 void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
@@ -70,7 +71,7 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
     Threads::ChunkFor(
       [&](Index lo, Index hi) {
         for (Index ib = lo; ib < hi; ib++) {
-          auto const n = x.segment(ib * blockSize, blockSize).stableNorm();
+          auto const n = PairwiseNorm(x.segment(ib * blockSize, blockSize));
           if (n > t) {
             z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
           } else {
@@ -79,7 +80,7 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
         }
       },
       blks);
-    Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, x.stableNorm(), z.stableNorm());
+    Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
   } else {
     throw Log::Failure("Prox", "C++ is stupid");
   }

@@ -54,7 +54,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
   float const normb = β;
 
   Log::Print("LSMR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, x.stableNorm(), normb, std::fabs(ζ̅));
+  Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, std::fabs(ζ̅));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
     Bidiag(op, Minv, Mu, u, v, α, β);
@@ -114,7 +114,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
 
     // Convergence tests - go in pairs which check large/small values then the user tolerance
     float const normAr = abs(ζ̅);
-    float const normx = x.stableNorm();
+    float const normx = ParallelNorm(x);
 
     Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
     if (debug) { debug(ii, x); }

@@ -81,8 +81,8 @@ auto PDHG::run(Cx const *bdata, Index const iterLimit) -> Vector
     x = x - τ * Aʹ->adjoint(u);
     xdiff = x - xold;
     x̅ = x + xdiff;
-    float const normr = xdiff.stableNorm() / std::sqrt(τ);
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |r| {:4.3E}", ii, x.stableNorm(), normr);
+    float const normr = ParallelNorm(xdiff) / std::sqrt(τ);
+    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |r| {:4.3E}", ii, ParallelNorm(x), normr);
     if (debug) { debug(ii, x, x̅, xdiff); }
   }
   return x;

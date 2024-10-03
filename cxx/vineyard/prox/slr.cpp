@@ -1,5 +1,6 @@
 #include "slr.hpp"
 
+#include "algo/common.hpp"
 #include "algo/decomp.hpp"
 #include "log.hpp"
 #include "tensors.hpp"
@@ -29,7 +30,7 @@ template <int NK> void SLR<NK>::apply(float const α, CMap const &xin, Map &zin)
 
   float const thresh = λ * α;
   auto        kMat = CollapseToMatrix(k);
-  Log::Debug("Prox", "Hankel {} as matrix {} {} norm {}", k.dimensions(), kMat.rows(), kMat.cols(), kMat.stableNorm());
+  Log::Debug("Prox", "Hankel {} as matrix {} {}", k.dimensions(), kMat.rows(), kMat.cols());
   auto const svd = SVD<Cx>(kMat);
   Log::Debug("Prox", "U {} {} S {} V {} {}", svd.U.rows(), svd.U.cols(), svd.S.rows(), svd.V.rows(), svd.V.cols());
   Eigen::VectorXf const s = (svd.S.abs() > thresh).select(svd.S * (svd.S.abs() - thresh) / svd.S.abs(), 0.f);

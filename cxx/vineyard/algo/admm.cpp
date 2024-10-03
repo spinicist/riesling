@@ -1,5 +1,6 @@
 #include "admm.hpp"
 
+#include "common.hpp"
 #include "iter.hpp"
 #include "log.hpp"
 #include "lsmr.hpp"
@@ -79,11 +80,11 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
       u[ir].device(dev) = Fxpu - z[ir];
       if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-      float const nFx = Fx.stableNorm();
-      float const nz = z[ir].stableNorm();
-      float const nu = regs[ir].T->adjoint(u[ir]).stableNorm();
-      float const nP = (Fx - z[ir]).stableNorm();
-      float const nD = (regs[ir].T->adjoint(z[ir] - zprev)).stableNorm();
+      float const nFx = ParallelNorm(Fx);
+      float const nz = ParallelNorm(z[ir]);
+      float const nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
+      float const nP = ParallelNorm(Fx - z[ir]);
+      float const nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
       normFx += nFx * nFx;
       normz += nz * nz;
       normu += nu * nu;
@@ -91,15 +92,15 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       dRes += nD * nD;
       Log::Print("ADMM", "Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, nFx, nz, nu);
     }
-    float const normx = x.stableNorm();
+    float const normx = ParallelNorm(x);
     normFx = std::sqrt(normFx);
     normz = std::sqrt(normz);
     normu = std::sqrt(normu);
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM", "{:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}", io,
-               normx, normFx, normz, normu, ρ, pRes, dRes);
+    Log::Print("ADMM", "{:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}",
+               io, normx, normFx, normz, normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");

@@ -6,7 +6,7 @@
 
 namespace rl::Threads {
 
-template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vector<T> const &vv, Types &...args)
+template <typename F, typename T, typename... Types> void ChunkFor(F const &f, std::vector<T> const &vv, Types &...args)
 {
   std::span<T const> v{vv};
   Index const        nT = GlobalThreadCount();
@@ -31,7 +31,7 @@ template <typename F, typename T, typename... Types> void ChunkFor(F f, std::vec
   }
 }
 
-template <typename F> void ChunkFor(F f, Index sz)
+template <typename F> void ChunkFor(F const &f, Index sz)
 {
   Index const nT = GlobalThreadCount();
   if (sz == 0) {
