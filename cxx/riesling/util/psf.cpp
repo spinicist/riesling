@@ -19,8 +19,7 @@ void main_psf(args::Subparser &parser)
   PreconOpts preOpts(parser);
   LsqOpts    lsqOpts(parser);
 
-  args::Flag                        mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
-  args::ValueFlag<Sz3, SzReader<3>> matrix(parser, "M", "Output matrix size", {"matrix", 'm'});
+  args::Flag mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
 
   args::ValueFlag<Eigen::Array2f, Array2fReader> phases(parser, "P", "Phase accrued at start and end of spoke",
                                                         {"phases", 'p'});
@@ -28,21 +27,19 @@ void main_psf(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size);
+  Trajectory  traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   Index const nC = 1;
   Index const nB = basis->nB();
-  auto const  shape = matrix ? matrix.Get() : traj.matrixForFOV(coreOpts.fov.Get());
-
-  auto const A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis.get(), shape);
-  auto const M = MakeKspacePre(traj, nC, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
-  LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+  auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis.get());
+  auto const  M = MakeKspacePre(traj, nC, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  LSMR const  lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];
   float const endPhase = phases.Get()[1];
 
-  Eigen::VectorXcf const trace =
-    Eigen::ArrayXcf::LinSpaced(traj.nSamples(), startPhase * 1if, endPhase * 1if).exp() * std::sqrt(nB / (float)Product(shape));
+  Eigen::VectorXcf const trace = Eigen::ArrayXcf::LinSpaced(traj.nSamples(), startPhase * 1if, endPhase * 1if).exp() *
+                                 std::sqrt(nB / (float)Product(LastN<3>(A->ishape)));
   Eigen::TensorMap<Cx1 const> traceM(trace.data(), Sz1{traj.nSamples()});
 
   Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
@@ -54,7 +51,7 @@ void main_psf(args::Subparser &parser)
   if (mtf) {
     auto const fft = TOps::FFT<4, 3>(xm.dimensions());
     Log::Print(cmd, "Calculating MTF");
-    xm *= xm.constant(std::sqrt(Product(shape)));
+    xm *= xm.constant(std::sqrt(Product(LastN<3>(xm.dimensions()))));
     fft.forward(xm);
     writer.writeTensor("mtf", xm.dimensions(), xm.data(), {"v", "i", "j", "k"});
   }
