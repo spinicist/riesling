@@ -6,6 +6,7 @@
 #include "top.hpp"
 
 #include <args.hxx>
+#include <mutex>
 #include <optional>
 
 namespace rl {
@@ -35,9 +36,11 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   void iadjoint(OutCMap const &y, InMap &x) const;
 
   std::shared_ptr<KernelBase<Scalar, ND>> kernel;
+
 private:
-  Index                                   subgridW, nMutexes;
-  std::vector<Mapping<ND>>                mappings;
+  Index                    subgridW;
+  std::vector<Mapping<ND>> mappings;
+  std::vector<std::mutex> mutable mutexes;
   Basis::CPtr                             basis;
   std::optional<std::vector<Mapping<ND>>> vccMapping;
 };

@@ -5,7 +5,6 @@
 #include "op/top-impl.hpp"
 #include "sys/threads.hpp"
 
-#include <mutex>
 #include <numbers>
 
 namespace rl {
@@ -52,9 +51,7 @@ Grid<NDim, VCC>::Grid(
   mappings = m.mappings;
   ishape = AddVCC<VCC>(m.cartDims, nC, basis ? basis->nB() : 1);
   oshape = AddFront(m.noncartDims, nC);
-  nMutexes = std::ceil(m.cartDims[NDim - 1] / (float)subgridW);
-  if (nMutexes < 4) { nMutexes = 1; } // Any less than this we only lock once
-  Log::Debug("Grid", "Using {} mutexes", nMutexes);
+  mutexes = std::vector<std::mutex>(m.cartDims[NDim - 1]);
   if constexpr (VCC) {
     Log::Print("Grid", "Adding VCC");
     auto const conjTraj = TrajectoryN<NDim>(-traj.points(), traj.matrix(), traj.voxelSize());
@@ -128,18 +125,10 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
     Index const nB = basis ? basis->nB() : 1;
     CxN<ND + 2> sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
     sx.setZero();
-    Sz<ND>     currentSg = mappings.front().subgrid;
-    auto const nM = mutexes.size();
+    Sz<ND> currentSg = mappings.front().subgrid;
     for (auto const &m : mappings) {
       if (currentSg != m.subgrid) {
-        if (nM == 1) {
-          std::scoped_lock lock(mutexes[0]);
-          SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
-        } else {
-          auto const       im = currentSg[ND - 1];
-          std::scoped_lock lock(mutexes[(im + nM - 1) % nM], mutexes[im], mutexes[(im + 1) % nM]);
-          SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
-        }
+        SubgridToGrid<ND, hasVCC, isVCC>(mutexes, SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
         sx.setZero();
         currentSg = m.subgrid;
       }
@@ -150,15 +139,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
         kernel->spread(m.cart, m.offset, yy, sx);
       }
     }
-
-    if (nM == 1) {
-      std::scoped_lock lock(mutexes[0]);
-      SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
-    } else {
-      auto const       im = currentSg[ND - 1];
-      std::scoped_lock lock(mutexes[(im + nM - 1) % nM], mutexes[im], mutexes[(im + 1) % nM]);
-      SubgridToGrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
-    }
+    SubgridToGrid<ND, hasVCC, isVCC>(mutexes, SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
   }
 };
 
@@ -166,10 +147,9 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::adjoint(OutCMap const &y, In
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
-  std::vector<std::mutex> writeMutexes(nMutexes);
-  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutexes, subgridW, this->basis, this->kernel, y, x);
+  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, mutexes, subgridW, this->basis, this->kernel, y, x);
   if constexpr (VCC == true) {
-    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), writeMutexes, subgridW, this->basis,
+    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), mutexes, subgridW, this->basis,
                       this->kernel, y, x);
   }
   this->finishAdjoint(x, time, false);
@@ -178,10 +158,9 @@ template <int NDim, bool VCC> void Grid<NDim, VCC>::adjoint(OutCMap const &y, In
 template <int NDim, bool VCC> void Grid<NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const              time = this->startAdjoint(y, x, true);
-  std::vector<std::mutex> writeMutexes(nMutexes);
-  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, writeMutexes, subgridW, this->basis, this->kernel, y, x);
+  Threads::ChunkFor(adjointTask<NDim, VCC, false>(), this->mappings, mutexes, subgridW, this->basis, this->kernel, y, x);
   if constexpr (VCC == true) {
-    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), writeMutexes, subgridW, this->basis,
+    Threads::ChunkFor(adjointTask<NDim, VCC, true>(), this->vccMapping.value(), mutexes, subgridW, this->basis,
                       this->kernel, y, x);
   }
   this->finishAdjoint(x, time, true);
