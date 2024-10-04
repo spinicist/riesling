@@ -42,4 +42,13 @@ private:
   std::array<std::pair<Index, Index>, NDim + 2 + VCC> paddings_;
 };
 
+// Utility function to build a complete NUFFT pipeline over all slabs and timepoints
+auto NUFFTAll(GridOpts         &gridOpts,
+              Trajectory const &traj,
+              Index const       nC,
+              Index const       nS,
+              Index const       nT,
+              Basis::CPtr       basis,
+              Sz3 const         shape) -> TOps::TOp<Cx, 6, 5>::Ptr;
+
 } // namespace rl::TOps

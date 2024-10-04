@@ -5,6 +5,11 @@
 #include "log.hpp"
 #include "op/top-impl.hpp"
 
+#include "op/compose.hpp"
+#include "op/loop.hpp"
+#include "op/multiplex.hpp"
+#include "op/reshape.hpp"
+
 namespace rl::TOps {
 
 template <int NDim, bool VCC>
@@ -184,5 +189,44 @@ template struct NUFFT<3, false>;
 template struct NUFFT<1, true>;
 template struct NUFFT<2, true>;
 template struct NUFFT<3, true>;
+
+auto NUFFTAll(GridOpts         &gridOpts,
+              Trajectory const &traj,
+              Index const       nC,
+              Index const       nSlab,
+              Index const       nTime,
+              Basis::CPtr       basis,
+              Sz3 const         shape) -> TOps::TOp<Cx, 6, 5>::Ptr
+{
+  if (gridOpts.vcc) {
+    auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis, shape);
+    auto const ns = nufft->ishape;
+    auto       reshape = TOps::MakeReshapeInput(nufft, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
+    if (nSlab == 1) {
+      auto rout = TOps::MakeReshapeOutput(reshape, AddBack(reshape->oshape, 1));
+      auto timeLoop = TOps::MakeLoop(rout, nTime);
+      return timeLoop;
+    } else {
+      auto loop = TOps::MakeLoop(reshape, nSlab);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
+      auto compose2 = TOps::MakeCompose(slabToVol, loop);
+      auto timeLoop = TOps::MakeLoop(compose2, nTime);
+      return timeLoop;
+    }
+  } else {
+    auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis, shape);
+    if (nSlab == 1) {
+      auto reshape = TOps::MakeReshapeOutput(nufft, AddBack(nufft->oshape, 1));
+      auto timeLoop = TOps::MakeLoop(reshape, nTime);
+      return timeLoop;
+    } else {
+      auto loop = TOps::MakeLoop(nufft, nSlab);
+      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
+      auto compose1 = TOps::MakeCompose(slabToVol, loop);
+      auto timeLoop = TOps::MakeLoop(compose1, nTime);
+      return timeLoop;
+    }
+  }
+}
 
 } // namespace rl::TOps

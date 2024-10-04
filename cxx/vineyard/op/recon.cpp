@@ -55,46 +55,5 @@ auto SENSE(GridOpts         &gridOpts,
   }
 }
 
-auto Channels(GridOpts         &gridOpts,
-              Trajectory const &traj,
-              Index const       nC,
-              Index const       nSlab,
-              Index const       nTime,
-              Basis::CPtr       basis,
-              Sz3 const         shape) -> TOps::TOp<Cx, 6, 5>::Ptr
-{
-  if (gridOpts.vcc) {
-    auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis, shape);
-    auto const ns = nufft->ishape;
-    auto       reshape =
-      std::make_shared<TOps::ReshapeInput<TOps::NUFFT<3, true>, 5>>(nufft, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
-    if (nSlab == 1) {
-      auto rout =
-        std::make_shared<TOps::ReshapeOutput<decltype(reshape)::element_type, 4>>(reshape, AddBack(reshape->oshape, 1));
-      auto timeLoop = TOps::MakeLoop(rout, nTime);
-      return timeLoop;
-    } else {
-      auto loop = std::make_shared<TOps::Loop<TOps::TOp<Cx, 5, 3>>>(reshape, nSlab);
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nSlab);
-      auto compose2 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-      auto timeLoop = TOps::MakeLoop(compose2, nTime);
-      return timeLoop;
-    }
-  } else {
-    auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis, shape);
-    if (nSlab == 1) {
-      auto reshape = std::make_shared<TOps::ReshapeOutput<TOps::NUFFT<3, false>, 4>>(nufft, AddBack(nufft->oshape, 1));
-      auto timeLoop = TOps::MakeLoop(reshape, nTime);
-      return timeLoop;
-    } else {
-      auto loop = std::make_shared<TOps::Loop<TOps::NUFFT<3, false>>>(nufft, nSlab);
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
-      auto compose1 = std::make_shared<decltype(TOps::Compose(slabToVol, loop))>(slabToVol, loop);
-      auto timeLoop = TOps::MakeLoop(compose1, nTime);
-      return timeLoop;
-    }
-  }
-}
-
 } // namespace Recon
 } // namespace rl

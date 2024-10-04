@@ -1,3 +1,5 @@
+#pragma once
+
 #include "top.hpp"
 
 #include "log.hpp"

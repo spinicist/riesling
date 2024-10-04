@@ -4,7 +4,7 @@
 #include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "op/recon.hpp"
+#include "op/nufft.hpp"
 #include "outputs.hpp"
 #include "precon.hpp"
 
@@ -29,7 +29,7 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = Recon::Channels(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
+  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());

@@ -63,7 +63,6 @@ void main_grid(args::Subparser &parser)
   auto const  nC = shape[0];
   Index const nS = shape[shape.size() - 2];
   auto const  nT = shape[shape.size() - 1];
-
   auto const A = MakeGrid(gridOpts, traj, nC, nS, nT, basis.get());
 
   HD5::Writer writer(coreOpts.oname.Get());
@@ -81,10 +80,9 @@ void main_grid(args::Subparser &parser)
   } else {
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
-
     auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
     LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
-    auto       c = lsmr.run(CollapseToConstVector(noncart));
+    auto const c = lsmr.run(CollapseToConstVector(noncart));
     writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
   }
   Log::Print(cmd, "Finished");

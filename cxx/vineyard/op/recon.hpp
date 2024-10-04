@@ -13,8 +13,7 @@
 namespace rl {
 namespace Recon {
 
-auto Single(
-  GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr basis)
+auto Single(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr basis)
   -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 auto SENSE(GridOpts         &gridOpts,
@@ -24,14 +23,6 @@ auto SENSE(GridOpts         &gridOpts,
            Index const       nTime,
            Basis::CPtr       basis,
            Cx5 const        &data) -> TOps::TOp<Cx, 5, 5>::Ptr;
-
-auto Channels(GridOpts         &gridOpts,
-              Trajectory const &traj,
-              Index const       nC,
-              Index const       nSlab,
-              Index const       nTime,
-              Basis::CPtr       basis,
-              Sz3 const         shape = Sz3()) -> TOps::TOp<Cx, 6, 5>::Ptr;
 
 } // namespace Recon
 } // namespace rl
