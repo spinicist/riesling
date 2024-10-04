@@ -11,6 +11,26 @@
 namespace rl {
 namespace Recon {
 
+auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, Basis::CPtr b, Cx5 const &noncart)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
+{
+  Index const nC = noncart.dimension(0);
+  Index const nS = noncart.dimension(3);
+  Index const nT = noncart.dimension(4);
+
+  if (nC == 1) {
+    return Recon::Single(gridOpts, traj, nS, nT, b);
+  } else {
+    auto const kernels = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
+    if (senseOpts.decant) {
+      return Decant(gridOpts, traj, nS, nT, b, kernels);
+    } else {
+      return SENSE(gridOpts, traj, nS, nT, b,
+                   SENSE::KernelsToMaps(kernels, traj.matrix(gridOpts.osamp.Get()), traj.matrixForFOV(senseOpts.fov.Get())));
+    }
+  }
+}
+
 auto Single(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
@@ -22,16 +42,11 @@ auto Single(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index
   return timeLoop;
 }
 
-auto SENSE(GridOpts         &gridOpts,
-           SENSE::Opts      &senseOpts,
-           Trajectory const &traj,
-           Index const       nSlab,
-           Index const       nTime,
-           Basis::CPtr       b,
-           Cx5 const        &data) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &smaps)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (gridOpts.vcc) {
-    auto sense = std::make_shared<TOps::VCCSENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), b ? b->nB() : 1);
+    auto sense = std::make_shared<TOps::VCCSENSE>(smaps, b ? b->nB() : 1);
     auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
     auto slabLoop = TOps::MakeLoop(nufft, nSlab);
     if (nSlab > 1) {
@@ -42,7 +57,7 @@ auto SENSE(GridOpts         &gridOpts,
       return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
     }
   } else {
-    auto sense = std::make_shared<TOps::SENSE>(SENSE::Choose(senseOpts, gridOpts, traj, data), b ? b->nB() : 1);
+    auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
     auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
     auto slabLoop = TOps::MakeLoop(nufft, nSlab);
     if (nSlab > 1) {
@@ -53,6 +68,26 @@ auto SENSE(GridOpts         &gridOpts,
       return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
     }
   }
+}
+
+auto Decant(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &kernels)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
+{
+  // if (gridOpts.vcc) {
+  //   throw Log::Failure("Decant", "Not yet");
+  // } else {
+  //   auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
+  //   auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
+  //   auto slabLoop = TOps::MakeLoop(nufft, nSlab);
+  //   if (nSlab > 1) {
+  //     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
+  //     return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+  //   } else {
+  //     auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
+  //     return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+  //   }
+  // }
+  return nullptr;
 }
 
 } // namespace Recon

@@ -27,7 +27,7 @@ TEST_CASE("Recon-Basic", "[recon]")
 
   float const       osamp = GENERATE(2.f); //, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES3");
-  auto              nufft = std::make_shared<TOps::NUFFT<3>>(traj, ktype, osamp, nC, &basis);
+  auto              nufft = TOps::NUFFT<3>::Make(traj, ktype, osamp, nC, &basis, traj.matrix());
 
   Cx5 senseMaps(AddFront(traj.matrix(), 1, nC));
   senseMaps.setConstant(std::sqrt(1. / nC));

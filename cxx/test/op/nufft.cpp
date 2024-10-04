@@ -20,19 +20,19 @@ TEST_CASE("NUFFT", "[nufft]")
   for (Index ii = 0; ii < M; ii++) {
     points(0, ii, 0) = -0.5f * M + ii;
   }
-  TrajectoryN<1> const  traj(points, matrix);
-  Basis                 basis;
-  float const           osamp = GENERATE(2.f, 2.3f);
-  TOps::NUFFT<1, false> nufft(traj, "ES3", osamp, 1, &basis);
-  Cx3                   ks(nufft.oshape);
-  Cx3                   img(nufft.ishape);
+  TrajectoryN<1> const traj(points, matrix);
+  Basis                basis;
+  float const          osamp = GENERATE(2.f, 2.3f);
+  auto                 nufft = TOps::NUFFT<1, false>::Make(traj, "ES3", osamp, 1, &basis, traj.matrix());
+  Cx3                  ks(nufft->oshape);
+  Cx3                  img(nufft->ishape);
   img.setZero();
   img(0, 0, M / 2) = std::sqrt(M);
-  ks = nufft.forward(img);
+  ks = nufft->forward(img);
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(1.e-2f));
-  img = nufft.adjoint(ks);
+  img = nufft->adjoint(ks);
   INFO("IMG\n" << img);
   CHECK(Norm(img) == Approx(Norm(ks)).margin(1.e-2f));
 }
@@ -57,14 +57,14 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
     }
   }
 
-  float const    osamp = 2.f;
-  TOps::NUFFT<1> nufft(traj, "ES3", osamp, 1, &basis);
-  Cx3            ks(nufft.oshape);
+  float const osamp = 2.f;
+  auto        nufft = TOps::NUFFT<1>::Make(traj, "ES3", osamp, 1, &basis, traj.matrix());
+  Cx3         ks(nufft->oshape);
   ks.setConstant(1.f);
-  Cx3 img(nufft.ishape);
+  Cx3 img(nufft->ishape);
   img.setZero();
-  img = nufft.adjoint(ks);
-  ks = nufft.forward(img);
+  img = nufft->adjoint(ks);
+  ks = nufft->forward(img);
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }
 
@@ -89,14 +89,14 @@ TEST_CASE("NUFFT-Batch", "[nufft]")
     }
   }
 
-  float const    osamp = 2.f;
-  TOps::NUFFT<1> nufft(traj, "ES3", osamp, C, &basis, Sz1(), 32, 2);
-  Cx3            ks(nufft.oshape);
+  float const osamp = 2.f;
+  auto        nufft = TOps::NUFFT<1>::Make(traj, "ES3", osamp, C, &basis);
+  Cx3         ks(nufft->oshape);
   ks.setConstant(1.f);
-  Cx3 img(nufft.ishape);
+  Cx3 img(nufft->ishape);
   img.setZero();
-  img = nufft.adjoint(ks);
-  ks = nufft.forward(img);
+  img = nufft->adjoint(ks);
+  ks = nufft->forward(img);
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }
 
@@ -109,11 +109,11 @@ TEST_CASE("NUFFT-VCC", "[nufft]")
 
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
-  TOps::NUFFT<1, true> nufft(traj, "NN", 1.f, 1, &basis);
-  Cx3                  ks(nufft.oshape);
+  auto                 nufft = TOps::NUFFT<1, true>::Make(traj, "NN", 1.f, 1, &basis);
+  Cx3                  ks(nufft->oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));
-  Cx4 img = nufft.adjoint(ks);
+  Cx4 img = nufft->adjoint(ks);
   INFO("IMG\n" << img);
   INFO("dims " << img.dimensions());
   CHECK(Norm(img) == Approx(1.f).margin(1.e-2f));
@@ -121,7 +121,7 @@ TEST_CASE("NUFFT-VCC", "[nufft]")
     CHECK(img(0, 0, 0, ii).real() == Approx(-img(0, 0, 1, ii).real()).margin(1e-6f));
     CHECK(img(0, 0, 0, ii).imag() == Approx(-img(0, 0, 1, ii).imag()).margin(1e-6f));
   }
-  ks = nufft.forward(img);
+  ks = nufft->forward(img);
   INFO("KS\n" << ks);
   CHECK(Norm(ks) == Approx(1.f).margin(1.e-2f));
 }

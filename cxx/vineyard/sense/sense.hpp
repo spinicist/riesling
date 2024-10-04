@@ -1,10 +1,10 @@
 #pragma once
 
-#include "sys/args.hpp"
 #include "basis/basis.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grid.hpp"
+#include "sys/args.hpp"
 #include "trajectory.hpp"
 
 namespace rl {
@@ -17,6 +17,7 @@ struct Opts
   args::ValueFlag<Index>                         volume, kWidth;
   args::ValueFlag<Eigen::Array3f, Array3fReader> res, fov;
   args::ValueFlag<float>                         λ;
+  args::Flag                                     decant;
 };
 
 //! Convenience function to get low resolution multi-channel images

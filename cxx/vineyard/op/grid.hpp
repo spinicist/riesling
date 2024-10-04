@@ -24,14 +24,11 @@ namespace TOps {
 template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
 {
   TOP_INHERIT(Cx, ND + 2 + VCC, 3)
-  using Parent::adjoint;
-  using Parent::forward;
+  TOP_DECLARE(Grid)
   static auto
   Make(TrajectoryN<ND> const &t, std::string const kt, float const os, Index const nC, Basis::CPtr b, Index const sgW = 32)
     -> std::shared_ptr<Grid<ND, VCC>>;
   Grid(TrajectoryN<ND> const &traj, std::string const ktype, float const osamp, Index const nC, Basis::CPtr b, Index const sgW);
-  void forward(InCMap const &x, OutMap &y) const;
-  void adjoint(OutCMap const &y, InMap &x) const;
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
 

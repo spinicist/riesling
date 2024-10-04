@@ -23,36 +23,36 @@ float const os = 2.f;
 TEST_CASE("NUFFT", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
-  TOps::NUFFT<3> nufft(traj, "ES3", os, C, &basis);
-  Cx5            c(nufft.ishape);
-  Cx3            nc(nufft.oshape);
+  auto nufft = TOps::NUFFT<3>::Make(traj, "ES3", os, C, &basis);
+  Cx5            c(nufft->ishape);
+  Cx3            nc(nufft->oshape);
   c.setRandom();
   nc.setRandom();
   Cx5Map  mc(c.data(), c.dimensions());
   Cx3Map  mnc(nc.data(), nc.dimensions());
   Cx5CMap cc(c.data(), c.dimensions());
   Cx3CMap cnc(nc.data(), nc.dimensions());
-  BENCHMARK("forward") { nufft.forward(cc, mnc); };
-  BENCHMARK("iforward") { nufft.iforward(cc, mnc); };
-  BENCHMARK("adjoint") { nufft.adjoint(cnc, mc); };
-  BENCHMARK("iadjoint") { nufft.iadjoint(cnc, mc); };
+  BENCHMARK("forward") { nufft->forward(cc, mnc); };
+  BENCHMARK("iforward") { nufft->iforward(cc, mnc); };
+  BENCHMARK("adjoint") { nufft->adjoint(cnc, mc); };
+  BENCHMARK("iadjoint") { nufft->iadjoint(cnc, mc); };
 }
 
 TEST_CASE("NUFFT Basis", "[nufft]")
 {
   Index const    nB = 4;
   Basis          basis(nB, 1, 256);
-  TOps::NUFFT<3> nufft(traj, "ES3", os, C, &basis);
-  Cx5            c(nufft.ishape);
-  Cx3            nc(nufft.oshape);
+  auto nufft = TOps::NUFFT<3>::Make(traj, "ES3", os, C, &basis);
+  Cx5            c(nufft->ishape);
+  Cx3            nc(nufft->oshape);
   c.setRandom();
   nc.setRandom();
   Cx5Map  mc(c.data(), c.dimensions());
   Cx3Map  mnc(nc.data(), nc.dimensions());
   Cx5CMap cc(c.data(), c.dimensions());
   Cx3CMap cnc(nc.data(), nc.dimensions());
-  BENCHMARK("forward") { nufft.forward(cc, mnc); };
-  BENCHMARK("iforward") { nufft.iforward(cc, mnc); };
-  BENCHMARK("adjoint") { nufft.adjoint(cnc, mc); };
-  BENCHMARK("iadjoint") { nufft.iadjoint(cnc, mc); };
+  BENCHMARK("forward") { nufft->forward(cc, mnc); };
+  BENCHMARK("iforward") { nufft->iforward(cc, mnc); };
+  BENCHMARK("adjoint") { nufft->adjoint(cnc, mc); };
+  BENCHMARK("iadjoint") { nufft->iadjoint(cnc, mc); };
 }

@@ -6,8 +6,8 @@
 #include "filter.hpp"
 #include "io/hd5.hpp"
 #include "op/fft.hpp"
-#include "op/pad.hpp"
 #include "op/nufft.hpp"
+#include "op/pad.hpp"
 #include "op/sense.hpp"
 #include "precon.hpp"
 #include "sys/threads.hpp"
@@ -23,6 +23,7 @@ Opts::Opts(args::Subparser &parser)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
   , λ(parser, "L", "SENSE regularization (1e-3)", {"sense-lambda"}, 1.e-3f)
+  , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
 {
 }
 
@@ -175,7 +176,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
     HD5::Reader senseReader(opts.type.Get());
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
   }
-  return SENSE::KernelsToMaps(kernels, traj.matrix(gopts.osamp.Get()), traj.matrixForFOV(opts.fov.Get()));
+  return kernels;
 }
 
 } // namespace SENSE

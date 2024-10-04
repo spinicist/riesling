@@ -37,8 +37,7 @@ void main_recon_rlsq(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const recon = (nC == 1) ? Recon::Single(gridOpts, traj, nS, nT, basis.get())
-                               : Recon::SENSE(gridOpts, senseOpts, traj, nS, nT, basis.get(), noncart);
+  auto const recon = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
   auto const shape = recon->ishape;
   auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
