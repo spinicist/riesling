@@ -89,6 +89,7 @@ private:
   std::shared_ptr<Op2> op2_;
 };
 
+/* Applies Op2 * Op1 * x */
 template <typename Op1, typename Op2>
 auto MakeCompose(std::shared_ptr<Op1> op1, std::shared_ptr<Op2> op2) -> Compose<Op1, Op2>::Ptr
 {

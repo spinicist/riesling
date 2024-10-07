@@ -19,15 +19,7 @@ NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgrid
   , workspace{gridder->ishape}
   , batches{nBatch}
 {
-  // We need to take the minimum of the image dimensions, then stitch the right dimensions onto the front
-  // Strictly, the input shape should be the trajectory matrix size.
-  // However, for efficiency, we allow the input shape to be specified in order to match SENSE maps without needing
-  // an additional padding/cropping operation. Hence the rules are:
-  // 0 < matrix < grid size - use the matrix.
-  // matrix > grid size - error
-  if (std::all_of(matrix.cbegin(), matrix.cend(), [](Index ii) { return ii < 1; })) {
-    batchShape_ = gridder->ishape;
-  } else if (std::equal(matrix.cbegin(), matrix.cend(), gridder->ishape.cbegin() + 2 + VCC, std::less_equal())) {
+  if (std::equal(matrix.cbegin(), matrix.cend(), gridder->ishape.cbegin() + 2 + VCC, std::less_equal())) {
     batchShape_ = Concatenate(FirstN<2 + VCC>(gridder->ishape), matrix);
   } else {
     throw Log::Failure("NUFFT", "Requested matrix {} but grid size is {}", matrix, LastN<NDim>(gridder->ishape));

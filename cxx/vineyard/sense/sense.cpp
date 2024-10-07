@@ -19,7 +19,7 @@ namespace SENSE {
 Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
-  , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 21)
+  , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 10)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
   , λ(parser, "L", "SENSE regularization (1e-3)", {"sense-lambda"}, 1.e-3f)
@@ -31,37 +31,20 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
-  auto const nV = noncart.dimension(4);
-  if (opts.volume.Get() >= nV) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV); }
+  auto const nT = noncart.dimension(4);
+  if (opts.volume.Get() >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nT); }
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
   auto const shape1 = traj.matrix(gridOpts.osamp.Get());
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
-  auto const M = MakeKspacePre(traj, nC, 1, basis);
+  auto const M = MakeKspacePre(traj, nC, nS, 1, basis);
   LSMR const lsmr{A, M, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
   Cx5 const channels = Tensorfy(lsmr.run(CollapseToConstVector(lores)), A->ishape).chip<5>(0);
 
-  return channels;
-}
-
-auto LoresKernels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
-{
-  auto const nC = noncart.dimension(0);
-  auto const nV = noncart.dimension(4);
-  if (opts.volume.Get() >= nV) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nV); }
-
-  Sz3 kSz;
-  kSz.fill(opts.kWidth.Get());
-  Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
-  auto const [traj, lores] = inTraj.downsample(ncVol, kSz, 0, true, true);
-  auto const A = TOps::Grid<3>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis);
-  auto const M = MakeKspacePre(traj, nC, 1, basis);
-  LSMR const lsmr{A, M, 4};
-  Cx5 const  channels(Tensorfy(lsmr.run(CollapseToConstVector(lores)), A->ishape));
   return channels;
 }
 
@@ -117,7 +100,7 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
     throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
   Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
-
+  Log::Print("SENSE", "Kernel shape {}", kshape);
   // Set up operators
   auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW * kW * kW)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
@@ -171,7 +154,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<1>(c, c).sqrt();
-    kernels = EstimateKernels(c, ref, opts.kWidth.Get(), opts.λ.Get());
+    kernels = EstimateKernels(c, ref, std::floor(opts.kWidth.Get() * gopts.osamp.Get() / 2) * 2 + 1, opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);

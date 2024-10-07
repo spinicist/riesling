@@ -21,7 +21,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
   Re2         weights;
   Log::Print("Precon", "Starting preconditioner calculation");
   if (vcc) {
-    auto nufft = TOps::NUFFT<3, true>::Make(newTraj, "ES5", osamp, 1, basis);
+    auto nufft = TOps::NUFFT<3, true>::Make(newTraj, "ES5", osamp, 1, basis, newTraj.matrix());
     Cx3  W(nufft->oshape);
     W.setConstant(Cx(1.f, 0.f));
     Cx6 const psf = nufft->adjoint(W);
@@ -40,7 +40,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
       std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
     weights.device(Threads::TensorDevice()) = ((weights * scale) + bias).inverse();
   } else {
-    auto nufft = TOps::NUFFT<3, false>::Make(newTraj, "ES5", osamp, 1, basis);
+    auto nufft = TOps::NUFFT<3, false>::Make(newTraj, "ES5", osamp, 1, basis, newTraj.matrix());
     Cx3  W(nufft->oshape);
     W.setConstant(Cx(1.f, 0.f));
     Cx5 const psf = nufft->adjoint(W);
@@ -70,17 +70,21 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
   return weights;
 }
 
-auto MakeKspacePre(
-  Trajectory const &traj, Index const nC, Index const nT, Basis::CPtr basis, std::string const &type, float const bias)
-  -> std::shared_ptr<Ops::Op<Cx>>
+auto MakeKspacePre(Trajectory const  &traj,
+                   Index const        nC,
+                   Index const        nS,
+                   Index const        nT,
+                   Basis::CPtr        basis,
+                   std::string const &type,
+                   float const        bias) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  Sz4 const shape{nC, traj.nSamples(), traj.nTraces(), nT};
+  Sz5 const shape{nC, traj.nSamples(), traj.nTraces(), nS, nT};
   if (type == "" || type == "none") {
     Log::Print("Precon", "Using no preconditioning");
-    return std::make_shared<TOps::Identity<Cx, 4>>(shape);
+    return std::make_shared<TOps::Identity<Cx, 5>>(shape);
   } else if (type == "kspace") {
     Re2 const w = KSpaceSingle(traj, basis, false, bias);
-    return std::make_shared<TOps::TensorScale<Cx, 4, 1, 1>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
   } else {
     HD5::Reader reader(type);
     Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
@@ -88,7 +92,7 @@ auto MakeKspacePre(
       throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0),
                          w.dimension(1), traj.nSamples(), traj.nTraces());
     }
-    return std::make_shared<TOps::TensorScale<Cx, 4, 1, 1>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
   }
 }
 

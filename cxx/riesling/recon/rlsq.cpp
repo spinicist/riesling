@@ -39,7 +39,7 @@ void main_recon_rlsq(args::Subparser &parser)
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
   auto const recon = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
   auto const shape = recon->ishape;
-  auto const M = MakeKspacePre(traj, nC, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
   auto [reg, A, ext_x] = Regularizers(regOpts, recon);
 

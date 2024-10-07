@@ -90,7 +90,7 @@ TEST_CASE("NUFFT-Batch", "[nufft]")
   }
 
   float const osamp = 2.f;
-  auto        nufft = TOps::NUFFT<1>::Make(traj, "ES3", osamp, C, &basis);
+  auto        nufft = TOps::NUFFT<1>::Make(traj, "ES3", osamp, C, &basis, traj.matrix());
   Cx3         ks(nufft->oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft->ishape);
@@ -109,7 +109,7 @@ TEST_CASE("NUFFT-VCC", "[nufft]")
 
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
-  auto                 nufft = TOps::NUFFT<1, true>::Make(traj, "NN", 1.f, 1, &basis);
+  auto                 nufft = TOps::NUFFT<1, true>::Make(traj, "NN", 1.f, 1, &basis, traj.matrix());
   Cx3                  ks(nufft->oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));

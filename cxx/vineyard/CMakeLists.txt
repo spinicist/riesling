@@ -60,11 +60,14 @@ add_library(vineyard
     op/fft.cpp
     op/grad.cpp
     op/grid.cpp
+    op/grid-decant.cpp
+    op/grid-decant-subgrid.cpp
     op/grid-mapping.cpp
     op/grid-subgrid.cpp
     op/hankel.cpp
     op/ndft.cpp
     op/nufft.cpp
+    op/nufft-decant.cpp
     op/op.cpp
     op/ops.cpp
     op/pad.cpp

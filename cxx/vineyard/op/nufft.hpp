@@ -19,12 +19,11 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
                    float const              osamp,
                    Index const              nC,
                    Basis::CPtr              basis,
-                   Sz<NDim> const           matrix = Sz<NDim>(),
+                   Sz<NDim> const           matrix,
                    Index const              subgridSz = 32,
                    Index const              nBatches = 1) -> std::shared_ptr<NUFFT<NDim, VCC>>;
 
-  static auto
-  Make(TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis::CPtr basis, Sz<NDim> const matrix = Sz<NDim>())
+  static auto Make(TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis::CPtr basis, Sz<NDim> const matrix)
     -> std::shared_ptr<NUFFT<NDim, VCC>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;
@@ -33,14 +32,11 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
 private:
   GType::Ptr gridder;
   InTensor mutable workspace;
-
   Index const batches;
   InDims      batchShape_;
   Sz<NDim>    fftDims;
-  CxN<NDim>   fftPh;
-
-  InTensor apo_;
-  InDims   apoBrd_, padLeft_;
+  InTensor    apo_;
+  InDims      apoBrd_, padLeft_;
 
   std::array<std::pair<Index, Index>, NDim + 2 + VCC> paddings_;
 };

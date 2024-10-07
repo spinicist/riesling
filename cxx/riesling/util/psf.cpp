@@ -29,10 +29,9 @@ void main_psf(args::Subparser &parser)
   HD5::Reader reader(coreOpts.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
-  Index const nC = 1;
   Index const nB = basis->nB();
-  auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, nC, basis.get());
-  auto const  M = MakeKspacePre(traj, nC, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, 1, basis.get(), traj.matrix());
+  auto const  M = MakeKspacePre(traj, 1, 1, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const  lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];
