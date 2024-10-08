@@ -1,9 +1,9 @@
 #include "algo/decomp.hpp"
 #include "algo/stats.hpp"
 #include "compressor.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
-#include "inputs.hpp"
 #include "tensors.hpp"
 #include "types.hpp"
 
@@ -31,13 +31,19 @@ void main_compress(args::Subparser &parser)
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
-  HD5::Reader      reader(coreOpts.iname.Get());
-  Info const       info = reader.readInfo();
-  Trajectory       traj(reader, info.voxel_size);
-  Cx4 const        ks = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
-  Index const      channels = ks.dimension(0);
-  Index const      samples = ks.dimension(1);
-  Index const      traces = ks.dimension(2);
+  HD5::Reader reader(coreOpts.iname.Get());
+  Info const  info = reader.readInfo();
+  Trajectory  traj(reader, info.voxel_size);
+  Cx4 const   ks = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
+  Index const channels = ks.dimension(0);
+  Index const samples = ks.dimension(1);
+  Index const traces = ks.dimension(2);
+
+  if (nRetain.Get() > channels) {
+    throw Log::Failure("Compress", "Data had {} channels requested {}", channels, nRetain.Get());
+  };
+  Index const toKeep = nRetain.Get() > 0 ? nRetain.Get() : channels;
+
   Eigen::MatrixXcf psi;
   if (ccFile) {
     HD5::Reader matFile(ccFile.Get());
@@ -52,7 +58,7 @@ void main_compress(args::Subparser &parser)
                       .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
     auto const cov = Covariance(CollapseToConstMatrix(ref));
     auto const eig = Eig<Cx>(cov);
-    auto const nR = energy ? Threshold(eig.V, energy.Get()) : nRetain.Get();
+    auto const nR = energy ? Threshold(eig.V, energy.Get()) : toKeep;
     psi = eig.P.leftCols(nR);
   }
   Compressor  compressor{psi};
