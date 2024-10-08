@@ -159,32 +159,34 @@ template <> void DecantToGrid<2>(std::vector<std::mutex> &m, Sz2 const sg, Cx4 c
 
 template <> void DecantToGrid<3>(std::vector<std::mutex> &m, Sz3 const sg, Cx5 const &sk, Cx5CMap const &sx, Cx4Map &x)
 {
-  assert(sk.dimension(0) == sx.dimension(0));
+  assert(sk.dimension(0) == 1 || sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));
   assert(m.size() == x.dimension(3));
-  for (Index iz = 0; iz < sx.dimension(4); iz++) {
-    for (Index kz = 0; kz < sk.dimension(4); kz++) {
-      Index const kkz = sk.dimension(4) - 1 - kz;
-      Index const oz = kz - sk.dimension(4) / 2;
-      Index const iiz = Wrap(iz + oz + sg[2], x.dimension(3));
-      std::scoped_lock lock(m[iiz]);
-      for (Index iy = 0; iy < sx.dimension(3); iy++) {
-        for (Index ky = 0; ky < sk.dimension(3); ky++) {
-          Index const kky = sk.dimension(3) - 1 - ky;
-          Index const oy = ky - sk.dimension(3) / 2;
-          Index const iiy = Wrap(iy + oy + sg[1], x.dimension(2));
-          for (Index ix = 0; ix < sx.dimension(2); ix++) {
-            for (Index kx = 0; kx < sk.dimension(2); kx++) {
-              Index const kkx = sk.dimension(2) - 1 - kx; // Still reverse kernel as adjoint
-              Index const ox = kx - sk.dimension(2) / 2;
+  Index const nB = sx.dimension(0);
+  Index const nC = sx.dimension(1);
+  for (Index kz = 0; kz < sk.dimension(4); kz++) {
+    Index const kkz = sk.dimension(4) - 1 - kz;
+    Index const oz = kz - sk.dimension(4) / 2;
+    for (Index ky = 0; ky < sk.dimension(3); ky++) {
+      Index const kky = sk.dimension(3) - 1 - ky;
+      Index const oy = ky - sk.dimension(3) / 2;
+      for (Index kx = 0; kx < sk.dimension(2); kx++) {
+        Index const kkx = sk.dimension(2) - 1 - kx; // Still reverse kernel as adjoint
+        Index const ox = kx - sk.dimension(2) / 2;
+        for (Index iz = 0; iz < sx.dimension(4); iz++) {
+          Index const      iiz = Wrap(iz + oz + sg[2], x.dimension(3));
+          std::scoped_lock lock(m[iiz]);
+          for (Index iy = 0; iy < sx.dimension(3); iy++) {
+            Index const iiy = Wrap(iy + oy + sg[1], x.dimension(2));
+            for (Index ix = 0; ix < sx.dimension(2); ix++) {
               Index const iix = Wrap(ix + ox + sg[0], x.dimension(1));
-              for (Index ic = 0; ic < sx.dimension(1); ic++) {
+              for (Index ic = 0; ic < nC; ic++) {
                 if (sk.dimension(0) == 1) {
-                  for (Index ib = 0; ib < sx.dimension(0); ib++) {
+                  for (Index ib = 0; ib < nB; ib++) {
                     x(ib, iix, iiy, iiz) += sx(ib, ic, ix, iy, iz) * std::conj(sk(0, ic, kkx, kky, kkz));
                   }
                 } else {
-                  for (Index ib = 0; ib < sx.dimension(0); ib++) {
+                  for (Index ib = 0; ib < nB; ib++) {
                     x(ib, iix, iiy, iiz) += sx(ib, ic, ix, iy, iz) * std::conj(sk(ib, ic, kkx, kky, kkz));
                   }
                 }
