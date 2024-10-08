@@ -24,7 +24,7 @@ auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, 
   } else {
     auto const kernels = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (senseOpts.decant) {
-      return Decant(gridOpts, traj, nS, nT, b, kernels);
+      return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(senseOpts.fov.Get()));
     } else {
       return SENSE(gridOpts, traj, nS, nT, b,
                    SENSE::KernelsToMaps(kernels, traj.matrix(gridOpts.osamp.Get()), traj.matrixForFOV(senseOpts.fov.Get())));
@@ -71,13 +71,18 @@ auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index 
   }
 }
 
-auto Decant(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
-  -> TOps::TOp<Cx, 5, 5>::Ptr
+auto Decant(GridOpts         &gridOpts,
+            Trajectory const &traj,
+            Index const       nSlab,
+            Index const       nTime,
+            Basis::CPtr       b,
+            Cx5 const        &skern,
+            Sz3 const        &matrix) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (gridOpts.vcc) {
     throw Log::Failure("Decant", "Not yet");
   } else {
-    auto nufft = TOps::NUFFTDecant<3>::Make(traj, gridOpts, skern, b, traj.matrix());
+    auto nufft = TOps::NUFFTDecant<3>::Make(traj, gridOpts, skern, b, matrix);
     if (nSlab > 1) {
       throw Log::Failure("Decant", "Not yet");
     } else {

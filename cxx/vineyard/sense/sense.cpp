@@ -137,13 +137,15 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
 
 auto KernelsToMaps(Cx5 const &kernels, Sz3 const fmat, Sz3 const cmat) -> Cx5
 {
-  auto const        kshape = kernels.dimensions();
-  auto const        fshape = AddFront(fmat, kshape[0], kshape[1]);
-  auto const        cshape = AddFront(cmat, kshape[0], kshape[1]);
+  auto const  kshape = kernels.dimensions();
+  auto const  fshape = AddFront(fmat, kshape[0], kshape[1]);
+  auto const  cshape = AddFront(cmat, kshape[0], kshape[1]);
+  float const scale = std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape)));
+  Log::Print("SENSE", "Kernel Shape {} Full map shape {} Cropped map shape {} Scale {}", kshape, fshape, cshape, scale);
   TOps::Pad<Cx, 5>  P(kshape, fshape);
   TOps::FFT<5, 3>   F(fshape, false);
   TOps::Crop<Cx, 5> C(fshape, cshape);
-  return C.forward(F.adjoint(P.forward(kernels))) * Cx(std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape))));
+  return C.forward(F.adjoint(P.forward(kernels))) * Cx(scale);
 }
 
 auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5

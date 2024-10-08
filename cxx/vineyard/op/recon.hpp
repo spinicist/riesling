@@ -23,9 +23,13 @@ auto SENSE(
   GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr basis, Cx5 const &smaps)
   -> TOps::TOp<Cx, 5, 5>::Ptr;
 
-auto Decant(
-  GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr basis, Cx5 const &kernels)
-  -> TOps::TOp<Cx, 5, 5>::Ptr;
+auto Decant(GridOpts         &gridOpts,
+            Trajectory const &traj,
+            Index const       nSlab,
+            Index const       nTime,
+            Basis::CPtr       basis,
+            Cx5 const        &kernels,
+            Sz3 const        &matrix) -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 } // namespace Recon
 } // namespace rl
