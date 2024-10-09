@@ -12,42 +12,56 @@
 namespace rl {
 
 // Helper function to convert a floating-point vector-like expression to integer values
-template <typename T> inline decltype(auto) nearby(T &&x)
+template <typename T> inline decltype(auto) Nearby(T &&x)
 {
-  return x.array().unaryExpr([](float const &e) { return (Index)std::nearbyint(e); });
+  return x.array().unaryExpr([](float const &e) { return std::nearbyint(e); });
+}
+
+template <int ND> inline auto Sz2Vector(Sz<ND> const &sz) -> Eigen::Vector<float, ND>
+{
+  Eigen::Vector<float, ND> a;
+  for (Index ii = 0; ii < ND; ii++) {
+    a[ii] = sz[ii];
+  }
+  return a;
 }
 
 template <int ND>
 auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW, Index const sgSz) -> CalcMapping_t<ND>
 {
-  auto const  nomDims = traj.matrix();
-  auto const  cartDims = MulToEven(nomDims, nomOS);
-  Sz2 const   noncartDims{traj.nSamples(), traj.nTraces()};
-  float const osamp = cartDims[0] / (float)traj.matrix()[0];
-  Log::Print("Grid", "Mapping samples {} traces {} OS {} Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomOS, nomDims, cartDims);
-
   std::fesetround(FE_TONEAREST);
-  auto const               center = Div(cartDims, 2);
-  Index                  valid = 0;
-  Index                    invalids = 0;
   std::vector<Mapping<ND>> mappings;
+  auto const               nomDims = traj.matrix();
+  auto const               cartDims = MulToEven(nomDims, nomOS);
+  auto const               kd = Sz2Vector(cartDims);
+  Sz2 const                noncartDims{traj.nSamples(), traj.nTraces()};
+  float const              osamp = cartDims[0] / (float)traj.matrix()[0];
+  Log::Print("Grid", "Mapping samples {} traces {} OS {} Matrix {} Grid {}", traj.nSamples(), traj.nTraces(), nomOS, nomDims,
+             cartDims);
+
+  using Vec = Eigen::Vector<float, ND>;
+  Vec const k0 = Sz2Vector(cartDims) / 2;
+  Index     valid = 0;
+  Index     invalids = 0;
+
   for (int32_t it = 0; it < traj.nTraces(); it++) {
     for (int16_t is = 0; is < traj.nSamples(); is++) {
-      Re1 const p = traj.point(is, it);
-      if (!B0(p.isfinite().all())()) {
+      auto const p = traj.point(is, it);
+      if ((p.array() != p.array()).any()) {
         invalids++;
         continue;
       }
-      Eigen::Array<float, ND, 1> xyz;
-      for (Index ii = 0; ii < ND; ii++) {
-        xyz[ii] = p[ii] * osamp + center[(size_t)ii];
+      Vec const k = p * osamp + k0;
+      Vec const ki = Nearby(k);
+      Vec const ko = k - ki;
+      if ((ki.array() < 0.f).any() || (ki.array() >= kd.array()).any()) {
+        invalids++;
+        continue;
       }
-      auto const                       gp = nearby(xyz);
-      Eigen::Array<float, ND, 1> const off = xyz - gp.template cast<float>();
 
       std::array<int16_t, ND> ijk;
       for (int ii = 0; ii < ND; ii++) {
-        ijk[(size_t)ii] = static_cast<int16_t>(Wrap(gp[ii], cartDims[(size_t)ii]));
+        ijk[(size_t)ii] = static_cast<int16_t>(ki[ii]);
       }
 
       Sz<ND> subgrid;
@@ -55,7 +69,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
         subgrid[id] = ijk[id] / sgSz;
         ijk[id] -= (sgSz * subgrid[id]) - (kW / 2);
       }
-      mappings.push_back(Mapping<ND>{.cart = ijk, .sample = is, .trace = it, .offset = off, .subgrid = subgrid});
+      mappings.push_back(Mapping<ND>{.cart = ijk, .sample = is, .trace = it, .offset = ko, .subgrid = subgrid});
       valid++;
     }
   }
@@ -65,14 +79,20 @@ auto CalcMapping(TrajectoryN<ND> const &traj, float const nomOS, Index const kW,
     // First compare on subgrids
     for (size_t di = 0; di < ND; di++) {
       size_t id = ND - 1 - di;
-      if (a.subgrid[id] < b.subgrid[id]) { return true; }
-      else if (b.subgrid[id] < a.subgrid[id]) {return false; }
+      if (a.subgrid[id] < b.subgrid[id]) {
+        return true;
+      } else if (b.subgrid[id] < a.subgrid[id]) {
+        return false;
+      }
     }
     // Then compare on ijk location
     for (size_t di = 0; di < ND; di++) {
       size_t id = ND - 1 - di;
-      if (a.cart[id] < b.cart[id]) { return true; }
-      else if (b.cart[id] < a.cart[id]) {return false; }
+      if (a.cart[id] < b.cart[id]) {
+        return true;
+      } else if (b.cart[id] < a.cart[id]) {
+        return false;
+      }
     }
     return false;
   });

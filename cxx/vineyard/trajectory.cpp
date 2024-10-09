@@ -96,8 +96,12 @@ template <int ND> auto TrajectoryN<ND>::nTraces() const -> Index { return points
 
 template <int ND> void TrajectoryN<ND>::checkDims(SzN const dims) const
 {
-  if (dims[1] != nSamples()) { throw Log::Failure("Traj", "Number of samples in data {} does not match trajectory {}", dims[1], nSamples()); }
-  if (dims[2] != nTraces()) { throw Log::Failure("Traj", "Number of traces in data {} does not match trajectory {}", dims[2], nTraces()); }
+  if (dims[1] != nSamples()) {
+    throw Log::Failure("Traj", "Number of samples in data {} does not match trajectory {}", dims[1], nSamples());
+  }
+  if (dims[2] != nTraces()) {
+    throw Log::Failure("Traj", "Number of traces in data {} does not match trajectory {}", dims[2], nTraces());
+  }
 }
 
 template <int ND> auto TrajectoryN<ND>::compatible(TrajectoryN const &other) const -> bool
@@ -184,12 +188,16 @@ template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, 
                      data.constant(0.f));
 }
 
-template <int ND> Re3 const &TrajectoryN<ND>::points() const { return points_; }
+template <int ND> auto TrajectoryN<ND>::points() const -> Re3 const & { return points_; }
 
-template <int ND> Re1 TrajectoryN<ND>::point(int16_t const read, int32_t const spoke) const
+template <int ND> auto TrajectoryN<ND>::point(int16_t const read, int32_t const spoke) const -> Eigen::Vector<float, ND>
 {
-  Re1 const p = points_.template chip<2>(spoke).template chip<1>(read);
-  return p;
+  Re1 const                p = points_.template chip<2>(spoke).template chip<1>(read);
+  Eigen::Vector<float, ND> pv;
+  for (Index ii = 0; ii < ND; ii++) {
+    pv[ii] = p(ii);
+  }
+  return pv;
 }
 
 template <int ND>
@@ -213,7 +221,8 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
     }
     thresh(ii) = matrix_[ii] * ratios(ii) / 2.f;
   }
-  Log::Print("Traj", "Downsample {}->{} mm, matrix {}, ratios {}", voxel_size_, tgtSize, dsMatrix, fmt::streamed(ratios.transpose()));
+  Log::Print("Traj", "Downsample {}->{} mm, matrix {}, ratios {}", voxel_size_, tgtSize, dsMatrix,
+             fmt::streamed(ratios.transpose()));
 
   Index minSamp = nSamples(), maxSamp = 0;
   Re3   dsPoints(points_.dimensions());
