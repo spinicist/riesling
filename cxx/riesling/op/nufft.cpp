@@ -27,11 +27,7 @@ void main_nufft(args::Subparser &parser)
   Trajectory traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
 
-  auto const  shape = reader.dimensions();
-  auto const  nC = shape[0];
-  Index const nS = shape[shape.size() - 2];
-  auto const  nT = shape[shape.size() - 1];
-  auto const  A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
+  auto const shape = reader.dimensions();
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(reader.readInfo());
@@ -39,19 +35,27 @@ void main_nufft(args::Subparser &parser)
 
   if (fwd) {
     auto const cart = reader.readTensor<Cx6>();
+    auto const nC = shape[1];
+    auto const nS = 1;
+    auto const nT = shape[5];
+    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
-  } else if (adj) {
-    auto const noncart = reader.readTensor<Cx5>();
-    auto const cart = A->adjoint(noncart);
-    writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
   } else {
     auto const noncart = reader.readTensor<Cx5>();
-    traj.checkDims(FirstN<3>(noncart.dimensions()));
-    auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
-    LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
-    auto const c = lsmr.run(CollapseToConstVector(noncart));
-    writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
+    auto const nC = shape[0];
+    auto const nS = shape[3];
+    auto const nT = shape[4];
+    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
+    if (adj) {
+      auto const cart = A->adjoint(noncart);
+      writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
+    } else {
+      auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+      LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+      auto const c = lsmr.run(CollapseToConstVector(noncart));
+      writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
+    }
   }
   Log::Print(cmd, "Finished");
 }

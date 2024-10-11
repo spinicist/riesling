@@ -21,11 +21,14 @@ Trajectory LoadTrajectory(std::string const &file)
   return Trajectory(reader, reader.readInfo().voxel_size);
 }
 
-Trajectory
-CreateTrajectory(Index const matrix, float const voxSz, float const readOS, Index const sps, float const nex, bool const phyllo)
+Trajectory CreateTrajectory(Index const matrix,
+                            float const voxSz,
+                            float const readOS,
+                            Index const spokes,
+                            Index const sps,
+                            float const nex,
+                            bool const  phyllo)
 {
-  // Follow the GE definition where factor of PI is ignored
-  Index spokes = sps * std::ceil(nex * matrix * matrix / sps);
   Log::Print("Phan", "Using {} hi-res spokes", spokes);
   auto points = phyllo ? Phyllotaxis(matrix, readOS, spokes, 7, sps, true) : ArchimedeanSpiral(matrix, readOS, spokes);
   Log::Print("Phan", "Samples: {} Traces: {}", points.dimension(1), points.dimension(2));
@@ -50,19 +53,21 @@ void main_phantom(args::Subparser &parser)
   args::Flag             gmeans(parser, "N", "Golden-Means phyllotaxis", {"gmeans"});
 
   args::ValueFlag<float> readOS(parser, "S", "Read-out oversampling (2)", {'r', "read"}, 2);
+  args::ValueFlag<Index> spokes(parser, "S", "Spokes", {"spokes"}, 2048);
   args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
   args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
 
   ParseCommand(parser, iname);
   auto const       cmd = parser.GetCommand().Name();
-  Trajectory const traj = trajfile ? LoadTrajectory(trajfile.Get())
-                                   : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), sps.Get(), nex.Get(), phyllo);
-  Info const       info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
-                        .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
-                        .direction = Eigen::Matrix3f::Identity(),
-                        .tr = 1.f};
-  HD5::Writer      writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
+  Trajectory const traj =
+    trajfile ? LoadTrajectory(trajfile.Get())
+             : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), nex.Get(), phyllo);
+  Info const  info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
+                   .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
+                   .direction = Eigen::Matrix3f::Identity(),
+                   .tr = 1.f};
+  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
   writer.writeInfo(info);
   traj.write(writer);
 
