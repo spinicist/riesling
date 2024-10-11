@@ -22,11 +22,11 @@ TEST_CASE("Kernels", "[kernels]")
   b.setRandom();
   Cx5 x(B, C, 16, 16, 16);
   x.setRandom();
-  Cx1                          y(C);
-  Cx1Map                       ym(y.data(), Sz1{8});
-  std::array<int16_t, 3> const c{8, 8, 8};
+  Cx1                               y(C);
+  Cx1Map                            ym(y.data(), Sz1{8});
+  Eigen::Array<int16_t, 3, 1> const c{8, 8, 8};
 
-  BENCHMARK(fmt::format("ES3 Spread {}", B)) { es3.spread(c, p, b, y, x); };  
+  BENCHMARK(fmt::format("ES3 Spread {}", B)) { es3.spread(c, p, b, y, x); };
   BENCHMARK(fmt::format("ES3 Gather {}", B)) { es3.gather(c, p, b, x, ym); };
 
   BENCHMARK(fmt::format("ES5 Spread {}", B)) { es5.spread(c, p, b, y, x); };

@@ -46,24 +46,24 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
     return k;
   }
 
-  void spread(std::array<int16_t, ND> const   c,
-              Point const                    &p,
-              Eigen::Tensor<Scalar, 1> const &y,
-              Eigen::Tensor<Scalar, ND + 2>  &x) const final
+  void spread(Eigen::Array<int16_t, ND, 1> const c,
+              Point const                       &p,
+              Eigen::Tensor<Scalar, 1> const    &y,
+              Eigen::Tensor<Scalar, ND + 2>     &x) const final
   {
     FixedKernel<Scalar, ND, Func>::Spread(f, scale, c, p, y, x);
   }
 
-  void spread(std::array<int16_t, ND> const   c,
-              Point const                    &p,
-              Eigen::Tensor<Scalar, 1> const &b,
-              Eigen::Tensor<Scalar, 1> const &y,
-              Eigen::Tensor<Scalar, ND + 2>  &x) const final
+  void spread(Eigen::Array<int16_t, ND, 1> const c,
+              Point const                       &p,
+              Eigen::Tensor<Scalar, 1> const    &b,
+              Eigen::Tensor<Scalar, 1> const    &y,
+              Eigen::Tensor<Scalar, ND + 2>     &x) const final
   {
     FixedKernel<Scalar, ND, Func>::Spread(f, scale, c, p, b, y, x);
   }
 
-  void gather(std::array<int16_t, ND> const                                c,
+  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
               Point const                                                 &p,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
               Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
@@ -71,7 +71,7 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
     FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, x, y);
   }
 
-  void gather(std::array<int16_t, ND> const                                c,
+  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
               Point const                                                 &p,
               Eigen::Tensor<Scalar, 1> const                              &b,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,

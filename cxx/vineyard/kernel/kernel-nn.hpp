@@ -8,8 +8,8 @@ namespace rl {
 
 template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Scalar, ND>
 {
-  static constexpr int   Width = 1;
-  static constexpr int   PadWidth = 1;
+  static constexpr int Width = 1;
+  static constexpr int PadWidth = 1;
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<ND, 1>::Type>;
   using Point = Eigen::Matrix<float, ND, 1>;
   using Pos = Eigen::TensorFixedSize<float, typename KernelSizes<ND, 1>::Type>;
@@ -29,10 +29,10 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
     return z;
   }
 
-  void spread(std::array<int16_t, ND> const   c,
-              Point const                    &p,
-              Eigen::Tensor<Scalar, 1> const &y,
-              Eigen::Tensor<Scalar, ND + 2>  &x) const final
+  void spread(Eigen::Array<int16_t, ND, 1> const c,
+              Point const                       &p,
+              Eigen::Tensor<Scalar, 1> const    &y,
+              Eigen::Tensor<Scalar, ND + 2>     &x) const final
   {
     Index const nC = x.dimension(1);
     for (Index ic = 0; ic < nC; ic++) {
@@ -47,11 +47,11 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
     }
   }
 
-  void spread(std::array<int16_t, ND> const   c,
-              Point const                    &p,
-              Eigen::Tensor<Scalar, 1> const &b,
-              Eigen::Tensor<Scalar, 1> const &y,
-              Eigen::Tensor<Scalar, ND + 2>  &x) const final
+  void spread(Eigen::Array<int16_t, ND, 1> const c,
+              Point const                       &p,
+              Eigen::Tensor<Scalar, 1> const    &b,
+              Eigen::Tensor<Scalar, 1> const    &y,
+              Eigen::Tensor<Scalar, ND + 2>     &x) const final
   {
     Index const nC = x.dimension(1);
     Index const nB = b.size();
@@ -70,7 +70,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
     }
   }
 
-  void gather(std::array<int16_t, ND> const                                c,
+  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
               Point const                                                 &p,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
               Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
@@ -87,7 +87,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
     }
   }
 
-  void gather(std::array<int16_t, ND> const                                c,
+  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
               Point const                                                 &p,
               Eigen::Tensor<Scalar, 1> const                              &b,
               Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,

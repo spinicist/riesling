@@ -1,9 +1,9 @@
 #pragma once
 
 #include <complex>
-#include <fmt/std.h>
-#include <fmt/ranges.h>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
+#include <fmt/std.h>
 
 namespace rl {
 
@@ -49,12 +49,12 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
     return k;
   }
 
-  static inline void Spread(Func const                     &f,
-                            float const                     scale,
-                            std::array<int16_t, 1> const   &c,
-                            Point const                    &p,
-                            Eigen::Tensor<Scalar, 1> const &y,
-                            Eigen::Tensor<Scalar, 3>       &x)
+  static inline void Spread(Func const                        &f,
+                            float const                        scale,
+                            Eigen::Array<int16_t, 1, 1> const &c,
+                            Point const                       &p,
+                            Eigen::Tensor<Scalar, 1> const    &y,
+                            Eigen::Tensor<Scalar, 3>          &x)
   {
     Index const nC = x.dimension(1);
     for (Index i0 = 0; i0 < W; i0++) {
@@ -68,13 +68,13 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
     }
   }
 
-  static inline void Spread(Func const                     &f,
-                            float const                     scale,
-                            std::array<int16_t, 1> const   &c,
-                            Point const                    &p,
-                            Eigen::Tensor<Scalar, 1> const &b,
-                            Eigen::Tensor<Scalar, 1> const &y,
-                            Eigen::Tensor<Scalar, 3>       &x)
+  static inline void Spread(Func const                        &f,
+                            float const                        scale,
+                            Eigen::Array<int16_t, 1, 1> const &c,
+                            Point const                       &p,
+                            Eigen::Tensor<Scalar, 1> const    &b,
+                            Eigen::Tensor<Scalar, 1> const    &y,
+                            Eigen::Tensor<Scalar, 3>          &x)
   {
     assert(x.dimension(0) == b.dimension(0));
     assert(x.dimension(1) == y.dimension(0));
@@ -96,7 +96,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
 
   static inline void Gather(Func const                                             &f,
                             float const                                             scale,
-                            std::array<int16_t, 1> const                           &c,
+                            Eigen::Array<int16_t, 1, 1> const                      &c,
                             Point const                                            &p,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 3> const> const &x,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>             &y)
@@ -114,7 +114,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
 
   static inline void Gather(Func const                                             &f,
                             float const                                             scale,
-                            std::array<int16_t, 1> const                           &c,
+                            Eigen::Array<int16_t, 1, 1> const                      &c,
                             Point const                                            &p,
                             Eigen::Tensor<Scalar, 1> const                         &b,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 3> const> const &x,
@@ -159,12 +159,12 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
     return k;
   }
 
-  static inline void Spread(Func const                     &f,
-                            float const                     scale,
-                            std::array<int16_t, 2> const   &c,
-                            Point const                    &p,
-                            Eigen::Tensor<Scalar, 1> const &y,
-                            Eigen::Tensor<Scalar, 4>       &x)
+  static inline void Spread(Func const                        &f,
+                            float const                        scale,
+                            Eigen::Array<int16_t, 2, 1> const &c,
+                            Point const                       &p,
+                            Eigen::Tensor<Scalar, 1> const    &y,
+                            Eigen::Tensor<Scalar, 4>          &x)
   {
     Index const nC = x.dimension(1);
     for (Index i1 = 0; i1 < W; i1++) {
@@ -182,13 +182,13 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
     }
   }
 
-  static inline void Spread(Func const                     &f,
-                            float const                     scale,
-                            std::array<int16_t, 2> const   &c,
-                            Point const                    &p,
-                            Eigen::Tensor<Scalar, 1> const &b,
-                            Eigen::Tensor<Scalar, 1> const &y,
-                            Eigen::Tensor<Scalar, 4>       &x)
+  static inline void Spread(Func const                        &f,
+                            float const                        scale,
+                            Eigen::Array<int16_t, 2, 1> const &c,
+                            Point const                       &p,
+                            Eigen::Tensor<Scalar, 1> const    &b,
+                            Eigen::Tensor<Scalar, 1> const    &y,
+                            Eigen::Tensor<Scalar, 4>          &x)
   {
     assert(x.dimension(0) == b.dimension(0));
     assert(x.dimension(1) == y.dimension(0));
@@ -214,7 +214,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
 
   static inline void Gather(Func const                                             &f,
                             float const                                             scale,
-                            std::array<int16_t, 2> const                           &c,
+                            Eigen::Array<int16_t, 2, 1> const                      &c,
                             Point const                                            &p,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 4> const> const &x,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>             &y)
@@ -236,7 +236,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
 
   static inline void Gather(Func const                                             &f,
                             float const                                             scale,
-                            std::array<int16_t, 2> const                           &c,
+                            Eigen::Array<int16_t, 2, 1> const                      &c,
                             Point const                                            &p,
                             Eigen::Tensor<Scalar, 1> const                         &b,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 4> const> const &x,
@@ -288,12 +288,12 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
     return k;
   }
 
-  static inline void Spread(Func const                     &f,
-                            float const                     scale,
-                            std::array<int16_t, 3> const   &c,
-                            Point const                    &p,
-                            Eigen::Tensor<Scalar, 1> const &y,
-                            Eigen::Tensor<Scalar, 5>       &x)
+  static inline void Spread(Func const                        &f,
+                            float const                        scale,
+                            Eigen::Array<int16_t, 3, 1> const &c,
+                            Point const                       &p,
+                            Eigen::Tensor<Scalar, 1> const    &y,
+                            Eigen::Tensor<Scalar, 5>          &x)
   {
     Index const nC = x.dimension(1);
     for (Index i2 = 0; i2 < W; i2++) {
@@ -315,13 +315,13 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
     }
   }
 
-  static inline void Spread(Func const                     &f,
-                            float const                     scale,
-                            std::array<int16_t, 3> const   &c,
-                            Point const                    &p,
-                            Eigen::Tensor<Scalar, 1> const &b,
-                            Eigen::Tensor<Scalar, 1> const &y,
-                            Eigen::Tensor<Scalar, 5>       &x)
+  static inline void Spread(Func const                        &f,
+                            float const                        scale,
+                            Eigen::Array<int16_t, 3, 1> const &c,
+                            Point const                       &p,
+                            Eigen::Tensor<Scalar, 1> const    &b,
+                            Eigen::Tensor<Scalar, 1> const    &y,
+                            Eigen::Tensor<Scalar, 5>          &x)
   {
     assert(x.dimension(0) == b.dimension(0));
     assert(x.dimension(1) == y.dimension(0));
@@ -351,7 +351,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
 
   static inline void Gather(Func const                                             &f,
                             float const                                             scale,
-                            std::array<int16_t, 3> const                           &c,
+                            Eigen::Array<int16_t, 3, 1> const                      &c,
                             Point const                                            &p,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 5> const> const &x,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>             &y)
@@ -377,7 +377,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
 
   static inline void Gather(Func const                                             &f,
                             float const                                             scale,
-                            std::array<int16_t, 3> const                           &c,
+                            Eigen::Array<int16_t, 3, 1> const                      &c,
                             Point const                                            &p,
                             Eigen::Tensor<Scalar, 1> const                         &b,
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 5> const> const &x,

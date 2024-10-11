@@ -75,11 +75,11 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
     Index const nC = y.dimension(0);
     Index const nB = basis ? basis->nB() : 1;
     CxN<ND + 2> sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
-    Sz<ND>      currentSg = mappings.front().subgrid;
+    auto        currentSg = mappings.front().subgrid;
     GridToSubgrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), x, sx);
     for (Index im = lo; im < hi; im++) {
       auto const &m = mappings[im];
-      if (currentSg != m.subgrid) {
+      if ((currentSg != m.subgrid).any()) {
         currentSg = m.subgrid;
         GridToSubgrid<ND, hasVCC, isVCC>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), x, sx);
       }
@@ -126,15 +126,15 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
                   CxNCMap<3> const               &y,
                   CxNMap<ND + 2 + hasVCC>        &x) const
   {
-    Index const nC = y.dimensions()[0];
-    Index const nB = basis ? basis->nB() : 1;
-    CxN<ND + 2> sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
+    Index const          nC = y.dimensions()[0];
+    Index const          nB = basis ? basis->nB() : 1;
+    CxN<ND + 2>          sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
     Eigen::Tensor<Cx, 1> yy(nC);
     sx.setZero();
-    Sz<ND> currentSg = mappings[lo].subgrid;
+    auto currentSg = mappings[lo].subgrid;
     for (Index im = lo; im < hi; im++) {
       auto const &m = mappings[im];
-      if (currentSg != m.subgrid) {
+      if ((currentSg != m.subgrid).any()) {
         SubgridToGrid<ND, hasVCC, isVCC>(mutexes, SubgridCorner(currentSg, sgW, kernel->paddedWidth()), sx, x);
         sx.setZero();
         currentSg = m.subgrid;

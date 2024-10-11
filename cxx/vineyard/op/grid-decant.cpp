@@ -65,11 +65,11 @@ template <int ND> struct forwardTask
     Index const nC = y.dimension(0);
     Index const nB = basis ? basis->nB() : 1;
     CxN<ND + 2> sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
-    Sz<ND>      currentSg = mappings.front().subgrid;
+    auto        currentSg = mappings.front().subgrid;
     GridToDecant<ND>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), skern, x, sx);
     for (Index im = lo; im < hi; im++) {
       auto const &m = mappings[im];
-      if (currentSg != m.subgrid) {
+      if ((currentSg != m.subgrid).any()) {
         currentSg = m.subgrid;
         GridToDecant<ND>(SubgridCorner(currentSg, sgW, kernel->paddedWidth()), skern, x, sx);
       }
@@ -116,10 +116,10 @@ template <int ND> struct adjointTask
     CxN<ND + 2>          sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
     Eigen::Tensor<Cx, 1> yy(nC);
     sx.setZero();
-    Sz<ND> currentSg = mappings[lo].subgrid;
+    auto currentSg = mappings[lo].subgrid;
     for (Index im = lo; im < hi; im++) {
       auto const &m = mappings[im];
-      if (currentSg != m.subgrid) {
+      if ((currentSg != m.subgrid).any()) {
         DecantToGrid<ND>(mutexes, SubgridCorner(currentSg, sgW, kernel->paddedWidth()), skern, sx, x);
         sx.setZero();
         currentSg = m.subgrid;
