@@ -24,11 +24,11 @@ TEST_CASE("Grid", "[grid]")
   points(0, 2, 0) = 0.4f * M;
   points(1, 2, 0) = 0.4f * M;
   TrajectoryN<2> const traj(points, matrix);
-  Basis basis;
+  Basis                basis;
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              grid = TOps::Grid<2, false>::Make(traj, ktype, osamp, 1, &basis);
+  auto              grid = TOps::Grid<2, false>::Make(traj, osamp, ktype, 1, &basis);
   Cx3               noncart(grid->oshape);
   Cx4               cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -37,10 +37,10 @@ TEST_CASE("Grid", "[grid]")
   // INFO("noncart\n" << noncart);
   // INFO("cart\n" << cart);
   auto const cs = std::sqrt(cart.size());
-  CHECK((Norm(cart) - Norm(noncart))/cs == Approx(0.f).margin(2e-4f));
+  CHECK((Norm(cart) - Norm(noncart)) / cs == Approx(0.f).margin(2e-4f));
   noncart = grid->forward(cart);
   // INFO("noncart\n" << noncart);
-  CHECK((Norm(cart) - Norm(noncart))/cs == Approx(0.f).margin(2e-4f));
+  CHECK((Norm(cart) - Norm(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 
 TEST_CASE("Grid-Basis-Sample", "[grid]")
@@ -69,7 +69,7 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   basis.B(1, 3, 0) = 1.f;
   basis.B(1, 4, 0) = 1.f;
   basis.B(1, 5, 0) = 1.f;
-  auto grid = TOps::Grid<1, false>::Make(traj, ktype, osamp, 1, &basis);
+  auto grid = TOps::Grid<1, false>::Make(traj, osamp, ktype, 1, &basis);
   Cx3  noncart(grid->oshape);
   noncart.setConstant(1.f);
   Cx3 cart = grid->adjoint(noncart);
@@ -102,9 +102,9 @@ TEST_CASE("Grid VCC", "[grid]")
     points(0, ii, 0) = ii;
   }
   TrajectoryN<1> const traj(points, matrix);
-  Basis basis;
+  Basis                basis;
 
-  auto grid = TOps::Grid<1, true>::Make(traj, "NN", 1.f, 1, &basis, true);
+  auto grid = TOps::Grid<1, true>::Make(traj, 1.f, "NN", 1, &basis, true);
   Cx3  noncart(grid->oshape);
   Cx4  cart(grid->ishape);
   noncart.setConstant(Cx(0.f, 1.f));

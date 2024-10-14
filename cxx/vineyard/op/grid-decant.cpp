@@ -13,19 +13,19 @@ namespace TOps {
 
 template <int ND>
 auto GridDecant<ND>::Make(TrajectoryN<ND> const &traj,
-                          std::string const      ktype,
                           float const            osamp,
+                          std::string const      ktype,
                           CxN<ND + 2> const     &sk,
                           Basis::CPtr            b,
                           Index const            sgW) -> std::shared_ptr<GridDecant<ND>>
 {
-  return std::make_shared<GridDecant<ND>>(traj, ktype, osamp, sk, b, sgW);
+  return std::make_shared<GridDecant<ND>>(traj, osamp, ktype, sk, b, sgW);
 }
 
 template <int ND>
 GridDecant<ND>::GridDecant(TrajectoryN<ND> const &traj,
-                           std::string const      ktype,
                            float const            osamp,
+                           std::string const      ktype,
                            CxN<ND + 2> const     &sk,
                            Basis::CPtr            b,
                            Index const            sgW)
@@ -36,13 +36,11 @@ GridDecant<ND>::GridDecant(TrajectoryN<ND> const &traj,
   , skern{sk}
 {
   static_assert(ND < 4);
-
-  auto const m = CalcMapping(traj, osamp, kernel->paddedWidth(), sgW);
-  mappings = m.mappings;
-  ishape = AddFront(m.cartDims, basis ? basis->nB() : 1);
-  oshape = AddFront(m.noncartDims, skern.dimension(1));
-  mutexes = std::vector<std::mutex>(m.cartDims[ND - 1]);
-
+  auto const omatrix = MulToEven(traj.matrix(), osamp);
+  mappings = CalcMapping(traj, omatrix, osamp, kernel->paddedWidth(), sgW);
+  ishape = AddFront(omatrix, basis ? basis->nB() : 1);
+  oshape = Sz3{skern.dimension(1), traj.nSamples(), traj.nTraces()};
+  mutexes = std::vector<std::mutex>(omatrix[ND - 1]);
   float const scale = std::sqrt(Product(LastN<3>(ishape)) / (float)Product(LastN<3>(skern.dimensions())));
   skern /= skern.constant(scale);
 

@@ -36,7 +36,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
-  auto const shape1 = traj.matrixForFOV(opts.fov.Get(), gridOpts.osamp.Get());
+  auto const shape1 = traj.matrixForFOV(opts.fov.Get());
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
   auto const M = MakeKspacePre(traj, nC, nS, 1, basis);
   LSMR const lsmr{A, M, 4};
@@ -134,11 +134,11 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
   return kernels;
 }
 
-auto KernelsToMaps(Cx5 const &kernels, Sz3 const fmat, Sz3 const cmat) -> Cx5
+auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5
 {
   auto const  kshape = kernels.dimensions();
-  auto const  fshape = AddFront(fmat, kshape[0], kshape[1]);
-  auto const  cshape = AddFront(cmat, kshape[0], kshape[1]);
+  auto const  fshape = AddFront(MulToEven(mat, os), kshape[0], kshape[1]);
+  auto const  cshape = AddFront(mat, kshape[0], kshape[1]);
   float const scale = std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape)));
   Log::Print("SENSE", "Kernel Shape {} Full map shape {} Cropped map shape {} Scale {}", kshape, fshape, cshape, scale);
   TOps::Pad<Cx, 5>  P(kshape, fshape);

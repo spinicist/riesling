@@ -16,15 +16,9 @@ template <int ND> struct Mapping
   Array<int16_t> subgrid;
 };
 
-template <int ND> struct CalcMapping_t
-{
-  std::vector<Mapping<ND>> mappings;
-  Sz2                      noncartDims;
-  Sz<ND>                   cartDims;
-};
-
 template <int ND>
-auto CalcMapping(TrajectoryN<ND> const &t, float const nomOSamp, Index const kW, Index const subgridSize) -> CalcMapping_t<ND>;
+auto CalcMapping(TrajectoryN<ND> const &t, Sz<ND> const &omat, float const os, Index const kW, Index const subgridSize)
+  -> std::vector<Mapping<ND>>;
 
 inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }
 

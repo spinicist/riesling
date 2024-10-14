@@ -27,7 +27,7 @@ void main_sense_maps(args::Subparser &parser)
 
   HD5::Reader kreader(iname.Get());
   Cx5 const   kernels = kreader.readTensor<Cx5>();
-  Cx5 const   maps = SENSE::KernelsToMaps(kernels, traj.matrix(osamp.Get()), traj.matrixForFOV(fov.Get()));
+  Cx5 const   maps = SENSE::KernelsToMaps(kernels, traj.matrixForFOV(fov.Get()), osamp.Get());
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   Log::Print(cmd, "Finished");

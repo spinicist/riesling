@@ -113,42 +113,22 @@ template <int ND> auto TrajectoryN<ND>::compatible(TrajectoryN const &other) con
   }
 }
 
-template <int ND> auto TrajectoryN<ND>::matrix(float const os) const -> SzN
-{
-  if (os == 1.f) {
-    return matrix_;
-  } else {
-    SzN om;
-    for (Index ii = 0; ii < ND; ii++) {
-      om[ii] = os * matrix_[ii];
-    }
-    return om;
-  }
-}
+template <int ND> auto TrajectoryN<ND>::matrix() const -> SzN { return matrix_; }
 
-template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov, float const os) const -> SzN
+template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov) const -> SzN
 {
   SzN matrix;
   for (Index ii = 0; ii < ND; ii++) {
-    matrix[ii] = os * std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
+    matrix[ii] = std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
   }
-  Log::Print("Traj", "FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
-             fov.transpose(), os, matrix);
+  Log::Print("Traj", "FOV {} matrix {}. Requested FOV {} matrix {}", FOV().transpose(), matrix_, fov.transpose(), matrix);
   return matrix;
 }
 
-template <int ND>
-auto TrajectoryN<ND>::matrixForFOV(Array const fov, Index const nB, Index const nT, float const os) const -> Sz<ND + 2>
+template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov, Index const nB, Index const nT) const -> Sz<ND + 2>
 {
-  Sz<ND + 2> matrix;
-  for (Index ii = 0; ii < ND; ii++) {
-    matrix[ii + 1] = os * std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
-  }
-  matrix[0] = nB;
-  matrix[ND + 1] = nT;
-  Log::Print("Traj", "FOV {} matrix {}. Requested FOV {} oversampling {} matrix {}", FOV().transpose(), matrix_,
-             fov.transpose(), os, matrix);
-  return matrix;
+  auto const m = this->matrixForFOV(fov);
+  return AddBack(AddFront(m, nB), nT);
 }
 
 template <int ND> auto TrajectoryN<ND>::voxelSize() const -> Array { return voxel_size_; }

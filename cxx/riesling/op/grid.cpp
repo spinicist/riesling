@@ -18,7 +18,7 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
 {
   if (gridOpts.vcc) {
     auto grid =
-      TOps::Grid<3, true>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis, gridOpts.subgridSize.Get());
+      TOps::Grid<3, true>::Make(traj, gridOpts.osamp.Get(), gridOpts.ktype.Get(), nC, basis, gridOpts.subgridSize.Get());
     auto const ns = grid->ishape;
     auto       reshape = TOps::MakeReshapeInput(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
     auto       loop = TOps::MakeLoop(reshape, nS);
@@ -28,7 +28,7 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
     return timeLoop;
   } else {
     auto grid =
-      TOps::Grid<3, false>::Make(traj, gridOpts.ktype.Get(), gridOpts.osamp.Get(), nC, basis, gridOpts.subgridSize.Get());
+      TOps::Grid<3, false>::Make(traj, gridOpts.osamp.Get(), gridOpts.ktype.Get(), nC, basis, gridOpts.subgridSize.Get());
     if (nS == 1) {
       auto rout = TOps::MakeReshapeOutput(grid, AddBack(grid->oshape, 1));
       auto timeLoop = TOps::MakeLoop(rout, nT);
@@ -63,7 +63,7 @@ void main_grid(args::Subparser &parser)
   auto const  nC = shape[0];
   Index const nS = shape[shape.size() - 2];
   auto const  nT = shape[shape.size() - 1];
-  auto const A = MakeGrid(gridOpts, traj, nC, nS, nT, basis.get());
+  auto const  A = MakeGrid(gridOpts, traj, nC, nS, nT, basis.get());
 
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(reader.readInfo());

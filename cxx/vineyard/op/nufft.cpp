@@ -63,7 +63,7 @@ auto NUFFT<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
   if (nChan % nBatch != 0) {
     throw Log::Failure("NUFFT", "Batch size {} does not cleanly divide number of channels {}", nBatch, nChan);
   }
-  auto g = TOps::Grid<NDim, VCC>::Make(traj, ktype, osamp, nChan / nBatch, basis);
+  auto g = TOps::Grid<NDim, VCC>::Make(traj, osamp, ktype, nChan / nBatch, basis);
   return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, subgridSz, nBatch);
 }
 
@@ -76,7 +76,7 @@ auto NUFFT<NDim, VCC>::Make(
   if (nChan % nBatch != 0) {
     throw Log::Failure("NUFFT", "Batch size {} does not cleanly divide number of channels {}", nBatch, nChan);
   }
-  auto g = TOps::Grid<NDim, VCC>::Make(traj, opts.ktype.Get(), opts.osamp.Get(), nChan / nBatch, basis);
+  auto g = TOps::Grid<NDim, VCC>::Make(traj, opts.osamp.Get(), opts.ktype.Get(), nChan / nBatch, basis);
   return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, opts.subgridSize.Get(), nBatch);
 }
 

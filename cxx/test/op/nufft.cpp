@@ -12,7 +12,7 @@ using namespace Catch;
 
 TEST_CASE("NUFFT", "[nufft]")
 {
-  Log::SetLevel(Log::Level::Testing);
+  Log::SetLevel(Log::Level::Debug);
   Index const M = GENERATE(6);
   auto const  matrix = Sz1{M};
   Re3         points(1, M, 1);
