@@ -22,7 +22,7 @@ Opts::Opts(args::Subparser &parser)
   , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 10)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
   , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
-  , λ(parser, "L", "SENSE regularization (1e-3)", {"sense-lambda"}, 1.e-3f)
+  , λ(parser, "L", "SENSE regularization (1e-6)", {"sense-lambda"}, 1.e-6f)
   , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
 {
 }
@@ -36,7 +36,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
-  auto const shape1 = traj.matrix(gridOpts.osamp.Get());
+  auto const shape1 = traj.matrixForFOV(opts.fov.Get(), gridOpts.osamp.Get());
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
   auto const M = MakeKspacePre(traj, nC, nS, 1, basis);
   LSMR const lsmr{A, M, 4};
@@ -99,15 +99,16 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
     throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
-  Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
-  Log::Print("SENSE", "Kernel shape {}", kshape);
+  Sz5 const   kshape{cshape[0], cshape[1], kW, kW, kW};
+  float const scale = Norm(ref);
+  Log::Print("SENSE", "Kernel shape {} scale {}", kshape, scale);
   // Set up operators
   auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW * kW * kW)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<Ops::Multiply<Cx>>(F, P), D);
   auto FPinv = FP->inverse();
-  auto S = std::make_shared<TOps::EstimateKernels>(ref, cshape[1]);
+  auto S = std::make_shared<TOps::EstimateKernels>(ref / Cx(scale), cshape[1]);
   auto SFP = std::make_shared<Ops::Multiply<Cx>>(S, FP);
   auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
 
@@ -120,11 +121,9 @@ auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float 
   auto       A = std::make_shared<Ops::VStack<Cx>>(PFSFP, R);
 
   // Data
-  Ops::Op<Cx>::CMap c(channels.data(), SFP->rows());
-  auto const        ck = FPinv->forward(c);
-
+  Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
   Ops::Op<Cx>::Vector cʹ(A->rows());
-  cʹ.head(FPinv->rows()) = ck;
+  cʹ.head(FPinv->rows()) = FPinv->forward(c) / Cx(scale);
   cʹ.tail(R->rows()).setZero();
 
   LSQR lsqr{A};

@@ -27,7 +27,8 @@ auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, 
       return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(senseOpts.fov.Get()));
     } else {
       return SENSE(gridOpts, traj, nS, nT, b,
-                   SENSE::KernelsToMaps(kernels, traj.matrix(gridOpts.osamp.Get()), traj.matrixForFOV(senseOpts.fov.Get())));
+                   SENSE::KernelsToMaps(kernels, traj.matrix(gridOpts.osamp.Get()),
+                                        traj.matrixForFOV(senseOpts.fov.Get(), gridOpts.osamp.Get())));
     }
   }
 }
