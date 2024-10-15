@@ -49,7 +49,7 @@ void main_recon_lad(args::Subparser &parser)
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
 
-  auto const x = lad.run(noncart.data(), ρ.Get());
+  auto x = lad.run(noncart.data(), ρ.Get());
   auto const xm = Tensorfy(x, A->ishape);
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));

@@ -21,15 +21,14 @@ WriteOutput<5>(std::string const &, std::string const &, Cx5 const &, HD5::Dimen
 template void
 WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::DimensionNames<6> const &, Info const &);
 
-template <int ND>
-void WriteResidual(std::string const                 &cmd,
-                   std::string const                 &fname,
-                   Cx5                               &noncart,
-                   CxNCMap<ND> const                 &x,
-                   Info const                        &info,
-                   typename TOps::TOp<Cx, ND, 5>::Ptr A,
-                   Ops::Op<Cx>::Ptr                   M,
-                   HD5::DimensionNames<ND> const     &dims)
+void WriteResidual(std::string const                &cmd,
+                   std::string const                &fname,
+                   Cx5                              &noncart,
+                   Cx5Map const                     &x,
+                   Info const                       &info,
+                   typename TOps::TOp<Cx, 5, 5>::Ptr A,
+                   Ops::Op<Cx>::Ptr                  M,
+                  HD5::DimensionNames<5> const     &dims)
 {
   Log::Print(cmd, "Calculating residual...");
   noncart -= A->forward(x);
@@ -45,22 +44,5 @@ void WriteResidual(std::string const                 &cmd,
   writer.writeTensor(HD5::Keys::Data, r.dimensions(), r.data(), dims);
   Log::Print(cmd, "Wrote residual file {}", fname);
 }
-
-template void WriteResidual<5>(std::string const &,
-                               std::string const &,
-                               Cx5 &,
-                               Cx5CMap const &,
-                               Info const &,
-                               TOps::TOp<Cx, 5, 5>::Ptr,
-                               Ops::Op<Cx>::Ptr,
-                               HD5::DimensionNames<5> const &);
-template void WriteResidual<6>(std::string const &,
-                               std::string const &,
-                               Cx5 &,
-                               Cx6CMap const &,
-                               Info const &,
-                               TOps::TOp<Cx, 6, 5>::Ptr,
-                               Ops::Op<Cx>::Ptr,
-                               HD5::DimensionNames<6> const &);
 
 } // namespace rl

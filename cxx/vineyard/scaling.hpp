@@ -4,6 +4,7 @@
 
 namespace rl {
 
-auto Scaling(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr const P, Ops::Op<Cx>::CMap const b) -> float;
+auto ScaleData(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr const P, Ops::Op<Cx>::Map b) -> float;
+void UnscaleData(float const scale, Ops::Op<Cx>::Vector &b);
 
 } // namespace rl

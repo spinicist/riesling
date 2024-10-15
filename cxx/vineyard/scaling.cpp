@@ -9,10 +9,12 @@
 
 namespace rl {
 
-auto Scaling(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr const P, Ops::Op<Cx>::CMap const b) -> float
+auto ScaleData(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr const P, Ops::Op<Cx>::Map b) -> float
 {
   float scale;
-  if (type == "bart") {
+  if (type == "none") {
+    return 1.f;
+  } else if (type == "bart") {
     LSMR           lsmr{A, P, 2};
     Eigen::ArrayXf x = lsmr.run(b).array().abs();
     std::sort(x.begin(), x.end());
@@ -39,7 +41,16 @@ auto Scaling(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr
       throw Log::Failure("Scale", "Could not read number from scaling: ", type);
     }
   }
+  b.device(Threads::CoreDevice()) = b * Cx(scale);
   return scale;
+}
+
+void UnscaleData(float const scale, Ops::Op<Cx>::Vector &b)
+{
+  if (scale != 1.f) {
+    b.device(Threads::CoreDevice()) = b / Cx(scale);
+  }
+  return;
 }
 
 } // namespace rl

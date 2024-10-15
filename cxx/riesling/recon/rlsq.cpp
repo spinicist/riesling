@@ -36,10 +36,11 @@ void main_recon_rlsq(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const recon = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
-  auto const shape = recon->ishape;
-  auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const  recon = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
+  auto const  shape = recon->ishape;
+  auto const  M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  float const scale = ScaleData(rlsqOpts.scaling.Get(), recon, M, CollapseToVector(noncart));
 
   auto [reg, A, ext_x] = Regularizers(regOpts, recon);
 
@@ -74,7 +75,8 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  auto const x = ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()));
+  auto x = ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()));
+  UnscaleData(scale, x);
   auto const xm = Tensorfy(x, recon->ishape);
 
   TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(gridOpts.fov.Get(), recon->ishape[0], nT));
