@@ -64,5 +64,23 @@ template <typename F, typename T, typename... Types> void ChunkFor(F const &f, s
   }
 }
 
+template <typename F, typename T, typename... Types> void StridedFor(F const &f, std::vector<T> const &v, Types &...args)
+{
+  Index const nT = GlobalThreadCount();
+  if (v.size() == 0) {
+    return;
+  } else {
+    Index const    nC = std::min<Index>(v.size(), nT);
+    Eigen::Barrier barrier(nC);
+    for (Index it = 0; it < nC; it++) {
+      GlobalPool()->Schedule([&, f, it, nC] {
+        f(v, it, nC, args...);
+        barrier.Notify();
+      });
+    }
+    barrier.Wait();
+  }
+}
+
 } // namespace Threads
 } // namespace rl

@@ -5,7 +5,7 @@
 
 namespace rl {
 
-template <> void GridToDecant<1>(Sz1 const sg, Cx3 const &sk, Cx2CMap const &x, Cx3 &sx)
+template <> void GridToDecant<1>(Eigen::Array<int16_t, 1, 1> const sg, Cx3 const &sk, Cx2CMap const &x, Cx3 &sx)
 {
   assert(sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));
@@ -29,7 +29,7 @@ template <> void GridToDecant<1>(Sz1 const sg, Cx3 const &sk, Cx2CMap const &x, 
   }
 }
 
-template <> void GridToDecant<2>(Sz2 const sg, Cx4 const &sk, Cx3CMap const &x, Cx4 &sx)
+template <> void GridToDecant<2>(Eigen::Array<int16_t, 2, 1> const sg, Cx4 const &sk, Cx3CMap const &x, Cx4 &sx)
 {
   assert(sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));
@@ -60,7 +60,7 @@ template <> void GridToDecant<2>(Sz2 const sg, Cx4 const &sk, Cx3CMap const &x, 
   }
 }
 
-template <> void GridToDecant<3>(Sz3 const sg, Cx5 const &sk, Cx4CMap const &x, Cx5 &sx)
+template <> void GridToDecant<3>(Eigen::Array<int16_t, 3, 1> const sg, Cx5 const &sk, Cx4CMap const &x, Cx5 &sx)
 {
   assert(sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));
@@ -98,7 +98,9 @@ template <> void GridToDecant<3>(Sz3 const sg, Cx5 const &sk, Cx4CMap const &x, 
   }
 }
 
-template <> void DecantToGrid<1>(std::vector<std::mutex> &m, Sz1 const sg, Cx3 const &sk, Cx3CMap const &sx, Cx2Map &x)
+template <>
+void DecantToGrid<1>(
+  std::vector<std::mutex> &m, Eigen::Array<int16_t, 1, 1> const sg, Cx3 const &sk, Cx3CMap const &sx, Cx2Map &x)
 {
   assert(sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));
@@ -124,7 +126,9 @@ template <> void DecantToGrid<1>(std::vector<std::mutex> &m, Sz1 const sg, Cx3 c
   }
 }
 
-template <> void DecantToGrid<2>(std::vector<std::mutex> &m, Sz2 const sg, Cx4 const &sk, Cx4CMap const &sx, Cx3Map &x)
+template <>
+void DecantToGrid<2>(
+  std::vector<std::mutex> &m, Eigen::Array<int16_t, 2, 1> const sg, Cx4 const &sk, Cx4CMap const &sx, Cx3Map &x)
 {
   assert(sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));
@@ -157,7 +161,9 @@ template <> void DecantToGrid<2>(std::vector<std::mutex> &m, Sz2 const sg, Cx4 c
   }
 }
 
-template <> void DecantToGrid<3>(std::vector<std::mutex> &m, Sz3 const sg, Cx5 const &sk, Cx5CMap const &sx, Cx4Map &x)
+template <>
+void DecantToGrid<3>(
+  std::vector<std::mutex> &m, Eigen::Array<int16_t, 3, 1> const sg, Cx5 const &sk, Cx5CMap const &sx, Cx4Map &x)
 {
   assert(sk.dimension(0) == 1 || sk.dimension(0) == sx.dimension(0));
   assert(sk.dimension(1) == sx.dimension(1));

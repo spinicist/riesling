@@ -29,7 +29,7 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   TOP_INHERIT(Cx, ND + 2 + VCC, 3)
   TOP_DECLARE(Grid)
   static auto
-  Make(TrajectoryN<ND> const &t, float const os, std::string const kt, Index const nC, Basis::CPtr b, Index const sgW = 32)
+  Make(TrajectoryN<ND> const &t, float const os, std::string const kt, Index const nC, Basis::CPtr b, Index const sgW = 8)
     -> std::shared_ptr<Grid<ND, VCC>>;
   Grid(TrajectoryN<ND> const &traj, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW);
   void iforward(InCMap const &x, OutMap &y) const;
@@ -38,11 +38,11 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   std::shared_ptr<KernelBase<Scalar, ND>> kernel;
 
 private:
-  Index                    subgridW;
-  std::vector<Mapping<ND>> mappings;
+  Index                           subgridW;
+  std::vector<SubgridMapping<ND>> subs;
   std::vector<std::mutex> mutable mutexes;
-  Basis::CPtr                             basis;
-  std::optional<std::vector<Mapping<ND>>> vccMapping;
+  Basis::CPtr                                    basis;
+  std::optional<std::vector<SubgridMapping<ND>>> vccSubs;
 };
 
 } // namespace TOps

@@ -11,7 +11,7 @@ using namespace Catch;
 
 constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
 
-TEST_CASE("Grid", "[grid]")
+TEST_CASE("Grid-Basic", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);

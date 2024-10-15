@@ -33,6 +33,7 @@ inline auto SubgridIndex(Eigen::Array<int16_t, ND, 1> const &sg, Eigen::Array<in
   Index stride = 1;
   for (Index ii = 0; ii < ND; ii++) {
     ind += stride * sg[ii];
+    // fmt::print(stderr, "ii {} ind {} stride {} sg[ii] {}\n", ii, ind, stride, sg[ii]);
     stride *= ngrids[ii];
   }
   return ind;
@@ -40,7 +41,7 @@ inline auto SubgridIndex(Eigen::Array<int16_t, ND, 1> const &sg, Eigen::Array<in
 
 template <int ND>
 auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &oshape, Index const kW, Index const sgSz)
-  -> std::vector<Mapping<ND>>
+  -> std::vector<SubgridMapping<ND>>
 {
   std::fesetround(FE_TONEAREST);
   std::vector<Mapping<ND>> mappings;
@@ -50,7 +51,6 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &oshape, Index const 
 
   Arrayf const mat = Sz2Array(traj.matrix());
   Arrayf const omat = Sz2Array(oshape);
-  Arrayf const pmax = mat / 2;
   Arrayf const osamp = omat / mat;
   Log::Print("Grid", "Mapping matrix {} over-sampled matrix {} over-sampling {}", mat.transpose(), omat.transpose(),
              osamp.transpose());
@@ -58,62 +58,63 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &oshape, Index const 
   Arrayf const k0 = omat / 2;
   Index        valid = 0;
   Index        invalids = 0;
-  // Arrayi const nSubgrids = (omat / sgSz).ceil().template cast<int16_t>();
-  // Index const  nTotal = nSubgrids.prod();
+  Arrayi const nSubgrids = (omat / sgSz).ceil().template cast<int16_t>();
+  Index const  nTotal = nSubgrids.prod();
 
+  std::vector<SubgridMapping<ND>> subs(nTotal);
   for (int32_t it = 0; it < traj.nTraces(); it++) {
     for (int16_t is = 0; is < traj.nSamples(); is++) {
       Arrayf const p = traj.point(is, it);
-      if ((p.array() != p.array()).any() || (p.array().abs() > pmax).any()) {
+      if ((p != p).any()) {
         invalids++;
         continue;
       }
       Arrayf const k = p * osamp + k0;
       Arrayf const ki = Nearby(k);
+      if ((ki < 0.f).any() || (ki >= omat).any()) {
+        invalids++;
+        continue;
+      }
       Arrayf const ko = k - ki;
-
-      Arrayi const ksub = (ki / sgSz).template cast<int16_t>();
+      Arrayi const ksub = (ki / sgSz).floor().template cast<int16_t>();
       Arrayi const kint = ki.template cast<int16_t>() - (ksub * sgSz) + (kW / 2);
-
-      // Index const sgind = SubgridIndex(ksub, nSubgrids);
-      // fmt::print(stderr, "sg {}/{}\n", sgind, nTotal);
-      mappings.push_back(Mapping<ND>{.cart = kint, .sample = is, .trace = it, .offset = ko, .subgrid = ksub});
+      Index const sgind = SubgridIndex(ksub, nSubgrids);
+      subs[sgind].corner = ksub;
+      subs[sgind].mappings.push_back(Mapping<ND>{.cart = kint, .sample = is, .trace = it, .offset = ko});
       valid++;
     }
   }
   Log::Print("Grid", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);
-
-  std::sort(mappings.begin(), mappings.end(), [](Mapping<ND> const &a, Mapping<ND> const &b) {
-    // First compare on subgrids
-    for (size_t di = 0; di < ND; di++) {
-      size_t id = ND - 1 - di;
-      if (a.subgrid[id] < b.subgrid[id]) {
-        return true;
-      } else if (b.subgrid[id] < a.subgrid[id]) {
-        return false;
+  auto const eraseCount = std::erase_if(subs, [](auto const &s) { return s.mappings.empty(); });
+  Log::Print("Grid", "Removed {} empty subgrids, {} remaining", eraseCount, subs.size());
+  Log::Print("Grid", "Sorting subgrids");
+  std::sort(subs.begin(), subs.end(),
+            [](SubgridMapping<ND> const &a, SubgridMapping<ND> const &b) { return a.mappings.size() > b.mappings.size(); });
+  Log::Print("Grid", "Sorting mappings");
+  for (auto &s : subs) {
+    std::sort(s.mappings.begin(), s.mappings.end(), [](Mapping<ND> const &a, Mapping<ND> const &b) {
+      // Compare on ijk location
+      for (size_t di = 0; di < ND; di++) {
+        size_t id = ND - 1 - di;
+        if (a.cart[id] < b.cart[id]) {
+          return true;
+        } else if (b.cart[id] < a.cart[id]) {
+          return false;
+        }
       }
-    }
-    // Then compare on ijk location
-    for (size_t di = 0; di < ND; di++) {
-      size_t id = ND - 1 - di;
-      if (a.cart[id] < b.cart[id]) {
-        return true;
-      } else if (b.cart[id] < a.cart[id]) {
-        return false;
-      }
-    }
-    return false;
-  });
+      return false;
+    });
+  }
 
-  return mappings;
+  return subs;
 }
 
 template struct Mapping<1>;
 template struct Mapping<2>;
 template struct Mapping<3>;
 
-template auto CalcMapping<1>(TrajectoryN<1> const &, Sz<1> const &, Index const, Index const) -> std::vector<Mapping<1>>;
-template auto CalcMapping<2>(TrajectoryN<2> const &, Sz<2> const &, Index const, Index const) -> std::vector<Mapping<2>>;
-template auto CalcMapping<3>(TrajectoryN<3> const &, Sz<3> const &, Index const, Index const) -> std::vector<Mapping<3>>;
+template auto CalcMapping<1>(TrajectoryN<1> const &, Sz<1> const &, Index const, Index const) -> std::vector<SubgridMapping<1>>;
+template auto CalcMapping<2>(TrajectoryN<2> const &, Sz<2> const &, Index const, Index const) -> std::vector<SubgridMapping<2>>;
+template auto CalcMapping<3>(TrajectoryN<3> const &, Sz<3> const &, Index const, Index const) -> std::vector<SubgridMapping<3>>;
 
 } // namespace rl

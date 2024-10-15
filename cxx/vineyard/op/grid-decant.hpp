@@ -27,8 +27,8 @@ template <int ND> struct GridDecant final : TOp<Cx, ND + 1, 3>
   std::shared_ptr<KernelBase<Scalar, ND>> kernel;
 
 private:
-  Index                    subgridW;
-  std::vector<Mapping<ND>> mappings;
+  Index                           subgridW;
+  std::vector<SubgridMapping<ND>> subs;
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;
   CxN<ND + 2> skern;
