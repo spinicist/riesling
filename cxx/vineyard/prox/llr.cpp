@@ -37,7 +37,7 @@ void LLR::apply(float const α, CMap const &xin, Map &zin) const
     // Soft-threhold svals
     Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-    Cx5 yp = Tensorfy(patch, xp.dimensions());
+    Cx5 yp = AsTensorMap(patch, xp.dimensions());
     return yp;
   };
   Patches(patchSize, windowSize, shift, softLLR, x, z);
@@ -57,7 +57,7 @@ void LLR::apply(std::shared_ptr<Op> const α, CMap const &xin, Map &zin) const
       // Soft-threhold svals
       Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
       patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-      Cx5 yp = Tensorfy(patch, xp.dimensions());
+      Cx5 yp = AsTensorMap(patch, xp.dimensions());
       return yp;
     };
     Patches(patchSize, windowSize, shift, softLLR, x, z);

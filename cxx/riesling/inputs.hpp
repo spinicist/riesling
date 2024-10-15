@@ -20,15 +20,9 @@ void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname,
 struct CoreOpts
 {
   CoreOpts(args::Subparser &parser);
-  args::Positional<std::string>                  iname, oname;
-  args::ValueFlag<std::string>                   basisFile, residual;
-};
-
-struct PreconOpts
-{
-  PreconOpts(args::Subparser &parser);
-  args::ValueFlag<std::string> type;
-  args::ValueFlag<float>       bias;
+  args::Positional<std::string> iname, oname;
+  args::ValueFlag<std::string>  basisFile;
+  args::Flag                    residual;
 };
 
 struct LsqOpts

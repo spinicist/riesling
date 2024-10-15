@@ -50,7 +50,7 @@ void main_ndft(args::Subparser &parser)
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::TensorDevice()) = Tensorfy(lsmr.run(CollapseToArray(noncart)), ndft->ishape);
+      output.chip<5>(ii).device(Threads::TensorDevice()) = AsTensorMap(lsmr.run(CollapseToArray(noncart)), ndft->ishape);
     }
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
   }

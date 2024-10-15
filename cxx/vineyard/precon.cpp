@@ -10,6 +10,12 @@
 
 namespace rl {
 
+PreconOpts::PreconOpts(args::Subparser &parser)
+  : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"precon"}, "kspace")
+  , bias(parser, "BIAS", "Pre-conditioner Bias (1)", {"precon-bias"}, 1.f)
+{
+}
+
 /*
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)

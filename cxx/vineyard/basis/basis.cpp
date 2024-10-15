@@ -80,7 +80,7 @@ template <int ND> void Basis::applyR(CxN<ND> &data) const
     Log::Debug("Basis", "Calculating R inverse");
     Eigen::MatrixXcf::ConstMapType Rm(R.data(), R.dimension(0), R.dimension(1));
     Eigen::MatrixXcf const         Rinv = Rm.inverse();
-    auto const                     Rim = Tensorfy(Rinv, Sz2{Rinv.rows(), Rinv.cols()});
+    auto const                     Rim = AsTensorMap(Rinv, Sz2{Rinv.rows(), Rinv.cols()});
     Log::Print("Basis", "Apply R");
     data.device(Threads::TensorDevice()) = CxN<ND>(Rim.contract(data, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()));
   }

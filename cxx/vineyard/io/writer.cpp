@@ -8,12 +8,17 @@
 namespace rl {
 namespace HD5 {
 
-Writer::Writer(std::string const &fname)
+Writer::Writer(std::string const &fname, bool const append)
 {
   Init();
-  handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  if (append) {
+    if (!std::filesystem::exists(fname)) { throw Log::Failure("HD5", "File does not exist: {}", fname); }
+    handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+  } else {
+    handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  }
   if (handle_ < 0) {
-    throw Log::Failure("HD5", "Could not open file {} for writing", fname);
+    throw Log::Failure("HD5", "Could not open file {} for writing because: {}", fname, GetError());
   } else {
     Log::Print("HD5", "Writing {} id {}", fname, handle_);
   }
@@ -125,15 +130,15 @@ void Writer::writeTensor(std::string const &name, Sz<N> const &shape, Scalar con
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
-  if (dset < 0) {
-    throw Log::Failure("HD5", "Could not create dataset {} dimensions {} error {}", name, shape, GetError());
-  }
-  auto        l = labels.rbegin();
+  if (dset < 0) { throw Log::Failure("HD5", "Could not create dataset {} dimensions {} error {}", name, shape, GetError()); }
+  auto l = labels.rbegin();
   for (Index ii = 0; ii < N; ii++) {
     CheckedCall(H5DSset_label(dset, ii, l->c_str()), fmt::format("dataset {} dimension {} label {}", name, ii, *l));
     l++;
   }
-  if (dset < 0) { throw Log::Failure("HD5", "Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError()); }
+  if (dset < 0) {
+    throw Log::Failure("HD5", "Could not create tensor {}. Dims {}. Error {}", name, fmt::join(shape, ","), HD5::GetError());
+  }
   CheckedCall(H5Dwrite(dset, tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, data), "Writing data");
   CheckedCall(H5Pclose(plist), "closing plist");
   CheckedCall(H5Sclose(space), "closing space");
@@ -154,8 +159,7 @@ template void Writer::writeTensor<Cx, 4>(std::string const &, Sz<4> const &, Cx 
 template void Writer::writeTensor<Cx, 5>(std::string const &, Sz<5> const &, Cx const *, DimensionNames<5> const &);
 template void Writer::writeTensor<Cx, 6>(std::string const &, Sz<6> const &, Cx const *, DimensionNames<6> const &);
 
-template <typename Derived>
-void Writer::writeMatrix(Eigen::DenseBase<Derived> const &mat, std::string const &name)
+template <typename Derived> void Writer::writeMatrix(Eigen::DenseBase<Derived> const &mat, std::string const &name)
 {
   herr_t        status;
   hsize_t       ds_dims[2], chunk_dims[2];
@@ -193,11 +197,9 @@ template void Writer::writeMatrix<Eigen::MatrixXcf>(Eigen::DenseBase<Eigen::Matr
 template void Writer::writeMatrix<Eigen::ArrayXf>(Eigen::DenseBase<Eigen::ArrayXf> const &, std::string const &);
 template void Writer::writeMatrix<Eigen::ArrayXXf>(Eigen::DenseBase<Eigen::ArrayXXf> const &, std::string const &);
 
-template <typename T>
-auto writeAttribute(std::string const &dataset, std::string const &attribute, T const &val);
+template <typename T> auto writeAttribute(std::string const &dataset, std::string const &attribute, T const &val);
 
-template <int N>
-void Writer::writeAttribute(std::string const &dset, std::string const &attr, Sz<N> const &val)
+template <int N> void Writer::writeAttribute(std::string const &dset, std::string const &attr, Sz<N> const &val)
 {
   hsize_t const szN[1] = {N}, sz1[1] = {1};
   hid_t const   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, szN);
@@ -210,8 +212,6 @@ void Writer::writeAttribute(std::string const &dset, std::string const &attr, Sz
 template void Writer::writeAttribute<1>(std::string const &dset, std::string const &attr, Sz<1> const &val);
 template void Writer::writeAttribute<2>(std::string const &dset, std::string const &attr, Sz<2> const &val);
 template void Writer::writeAttribute<3>(std::string const &dset, std::string const &attr, Sz<3> const &val);
-
-
 
 } // namespace HD5
 } // namespace rl

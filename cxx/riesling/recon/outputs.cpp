@@ -1,7 +1,10 @@
 #include "outputs.hpp"
 
+#include "algo/lsmr.hpp"
+#include "basis/basis.hpp"
 #include "io/writer.hpp"
 #include "log.hpp"
+#include "op/recon.hpp"
 
 namespace rl {
 
@@ -21,28 +24,31 @@ WriteOutput<5>(std::string const &, std::string const &, Cx5 const &, HD5::Dimen
 template void
 WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::DimensionNames<6> const &, Info const &);
 
-void WriteResidual(std::string const                &cmd,
-                   std::string const                &fname,
-                   Cx5                              &noncart,
-                   Cx5Map const                     &x,
-                   Info const                       &info,
-                   typename TOps::TOp<Cx, 5, 5>::Ptr A,
-                   Ops::Op<Cx>::Ptr                  M,
-                  HD5::DimensionNames<5> const     &dims)
+void WriteResidual(std::string const              &cmd,
+                   std::string const              &fname,
+                   GridOpts                       &gridOpts,
+                   SENSE::Opts                    &senseOpts,
+                   PreconOpts                     &preOpts,
+                   Trajectory const               &traj,
+                   Cx5CMap const                  &x,
+                   TOps::TOp<Cx, 5, 5>::Ptr const &A,
+                   Cx5                            &noncart)
 {
-  Log::Print(cmd, "Calculating residual...");
+  Log::Print(cmd, "Creating recon operator without basis");
+  Index const nC = noncart.dimension(0);
+  Index const nS = noncart.dimension(3);
+  Index const nT = noncart.dimension(4);
+  Basis const id;
+  auto const  A1 = Recon::Choose(gridOpts, senseOpts, traj, &id, noncart);
+  auto const  M1 = MakeKspacePre(traj, nC, nS, nT, &id, preOpts.type.Get(), preOpts.bias.Get());
+  Log::Print(cmd, "Calculating K-space residual");
   noncart -= A->forward(x);
-  if (M) {
-    Ops::Op<Cx>::Map  ncmap(noncart.data(), noncart.size());
-    Ops::Op<Cx>::CMap nccmap(noncart.data(), noncart.size());
-    M->inverse(nccmap, ncmap);
-  }
-  auto r = A->adjoint(noncart);
+  Log::Print(cmd, "Calculating image residual");
+  LSMR       lsmr{A1, M1, 2};
+  auto const r = lsmr.run(CollapseToConstVector(noncart));
   Log::Print(cmd, "Finished calculating residual");
-  HD5::Writer writer(fname);
-  writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Data, r.dimensions(), r.data(), dims);
-  Log::Print(cmd, "Wrote residual file {}", fname);
+  HD5::Writer writer(fname, true);
+  writer.writeTensor(HD5::Keys::Residual, A->ishape, r.data(), HD5::Dims::Image);
 }
 
 } // namespace rl

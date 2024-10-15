@@ -33,7 +33,7 @@ void main_recon_rss(args::Subparser &parser)
   auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
-  auto       xm = Tensorfy(x, A->ishape);
+  auto       xm = AsTensorMap(x, A->ishape);
 
   Cx5 const         rss = DimDot<1>(xm, xm).sqrt();
   TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));

@@ -42,7 +42,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const channels = Tensorfy(lsmr.run(CollapseToConstVector(lores)), A->ishape).chip<5>(0);
+  Cx5 const channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape).chip<5>(0);
 
   return channels;
 }
@@ -142,7 +142,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   lsqr.iterLimit = 16;
   auto const kʹ = lsqr.run(cʹ);
 
-  Cx5 const kernels = Tensorfy(kʹ, kshape);
+  Cx5 const kernels = AsTensorMap(kʹ, kshape);
   return kernels;
 }
 

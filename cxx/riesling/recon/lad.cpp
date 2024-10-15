@@ -49,12 +49,12 @@ void main_recon_lad(args::Subparser &parser)
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
 
-  auto x = lad.run(noncart.data(), ρ.Get());
-  auto const xm = Tensorfy(x, A->ishape);
+  auto const x = lad.run(noncart.data(), ρ.Get());
+  auto const xm = AsTensorMap(x, A->ishape);
 
   TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
-  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }
+  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, A, noncart); }
   Log::Print(cmd, "Finished");
 }

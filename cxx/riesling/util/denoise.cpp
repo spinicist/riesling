@@ -32,7 +32,7 @@ void main_denoise(args::Subparser &parser)
     // Soft-threhold svals
     Eigen::VectorXf const s = (svd.S.array().abs() > λ).select(svd.S, 0.f);
     patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-    Cx5 yp = Tensorfy(patch, xp.dimensions());
+    Cx5 yp = AsTensorMap(patch, xp.dimensions());
     return yp;
   };
 

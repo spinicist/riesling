@@ -61,7 +61,7 @@ void main_pdhg(args::Subparser &parser)
 
   for (Index iv = 0; iv < nV; iv++) {
     auto x = pdhg.run(&noncart(0, 0, 0, 0, iv), its.Get());
-    auto xm = Tensorfy(x, recon->ishape);
+    auto xm = AsTensorMap(x, recon->ishape);
     out.chip<4>(iv) = oc.forward(xm) / out.chip<4>(iv).constant(scale);
   }
   WriteOutput(cmd, coreOpts.oname.Get(), out, info);

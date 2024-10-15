@@ -71,25 +71,32 @@ template <int D, typename T, typename U> inline decltype(auto) DimDot(T const &x
   return (x * y.conjugate()).sum(dim);
 }
 
-template <typename Scalar, int N> inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> const &shape)
+template <typename Scalar, int N>
+inline decltype(auto) AsTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> const &shape)
 {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N>>(x.data(), shape);
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) Tensorfy(Eigen::Vector<Scalar, Eigen::Dynamic> const &x, Sz<N> const &shape)
+inline decltype(auto) AsTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> const &x, Sz<N> const &shape)
 {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) Tensorfy(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> &x, Sz<N> const &shape)
+inline decltype(auto) AsConstTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> const &shape)
+{
+  return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
+}
+
+template <typename Scalar, int N>
+inline decltype(auto) AsTensorMap(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> &x, Sz<N> const &shape)
 {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N>>(x.data(), shape);
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) Tensorfy(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const &x, Sz<N> const &shape)
+inline decltype(auto) AsTensorMap(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const &x, Sz<N> const &shape)
 {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }

@@ -77,12 +77,12 @@ void main_recon_rlsq(args::Subparser &parser)
 
   auto x = ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()));
   UnscaleData(scale, x);
-  auto const xm = Tensorfy(x, recon->ishape);
+  auto const xm = AsConstTensorMap(x, recon->ishape);
 
   TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(gridOpts.fov.Get(), recon->ishape[0], nT));
   auto              out = oc.forward(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
-  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, recon, M, HD5::Dims::Image); }
+if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, recon, noncart); }
   Log::Print(cmd, "Finished");
 }

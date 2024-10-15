@@ -54,7 +54,7 @@ void main_basis_outer(args::Subparser &parser)
     Eigen::MatrixXcd const    Q = h.householderQ() * I;
     Eigen::MatrixXcf const    R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
     bmap = Q.transpose().cast<Cx>() * std::sqrt(M);
-    Basis b(nb, Tensorfy(R, Sz2{R.rows(), R.cols()}));
+    Basis b(nb, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
     Basis const b3(nb);

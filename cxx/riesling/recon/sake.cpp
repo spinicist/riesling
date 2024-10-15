@@ -90,7 +90,7 @@ void main_sake(args::Subparser &parser)
   Cx5               out(AddBack(LastN<4>(outFOV.ishape), nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = admm.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get());
-    auto const cropped = outFOV.adjoint(Tensorfy(channels, A->ishape));
+    auto const cropped = outFOV.adjoint(AsTensorMap(channels, A->ishape));
     out.chip<4>(iv) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt() / cropped.constant(scale);
   }
   HD5::Writer writer(coreOpts.oname.Get());
