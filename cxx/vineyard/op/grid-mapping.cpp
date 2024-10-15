@@ -40,7 +40,7 @@ inline auto SubgridIndex(Eigen::Array<int16_t, ND, 1> const &sg, Eigen::Array<in
 }
 
 template <int ND>
-auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &oshape, Index const kW, Index const sgSz)
+auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &shape, Sz<ND> const &oshape, Index const kW, Index const sgSz)
   -> std::vector<SubgridMapping<ND>>
 {
   std::fesetround(FE_TONEAREST);
@@ -78,7 +78,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &oshape, Index const 
       Arrayf const ko = k - ki;
       Arrayi const ksub = (ki / sgSz).floor().template cast<int16_t>();
       Arrayi const kint = ki.template cast<int16_t>() - (ksub * sgSz) + (kW / 2);
-      Index const sgind = SubgridIndex(ksub, nSubgrids);
+      Index const  sgind = SubgridIndex(ksub, nSubgrids);
       subs[sgind].corner = ksub;
       subs[sgind].mappings.push_back(Mapping<ND>{.cart = kint, .sample = is, .trace = it, .offset = ko});
       valid++;
@@ -113,8 +113,11 @@ template struct Mapping<1>;
 template struct Mapping<2>;
 template struct Mapping<3>;
 
-template auto CalcMapping<1>(TrajectoryN<1> const &, Sz<1> const &, Index const, Index const) -> std::vector<SubgridMapping<1>>;
-template auto CalcMapping<2>(TrajectoryN<2> const &, Sz<2> const &, Index const, Index const) -> std::vector<SubgridMapping<2>>;
-template auto CalcMapping<3>(TrajectoryN<3> const &, Sz<3> const &, Index const, Index const) -> std::vector<SubgridMapping<3>>;
+template auto CalcMapping<1>(TrajectoryN<1> const &, Sz<1> const &, Sz<1> const &, Index const, Index const)
+  -> std::vector<SubgridMapping<1>>;
+template auto CalcMapping<2>(TrajectoryN<2> const &, Sz<2> const &, Sz<2> const &, Index const, Index const)
+  -> std::vector<SubgridMapping<2>>;
+template auto CalcMapping<3>(TrajectoryN<3> const &, Sz<3> const &, Sz<3> const &, Index const, Index const)
+  -> std::vector<SubgridMapping<3>>;
 
 } // namespace rl

@@ -30,7 +30,7 @@ template <int ND> struct SubgridMapping
 };
 
 template <int ND>
-auto CalcMapping(TrajectoryN<ND> const &t, Sz<ND> const &omat, Index const kW, Index const subgridSize)
+auto CalcMapping(TrajectoryN<ND> const &t, Sz<ND> const &mat, Sz<ND> const &omat, Index const kW, Index const subgridSize)
   -> std::vector<SubgridMapping<ND>>;
 
 inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }

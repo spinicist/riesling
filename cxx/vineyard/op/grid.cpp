@@ -24,10 +24,10 @@ namespace TOps {
 
 template <int ND, bool VCC>
 auto Grid<ND, VCC>::Make(
-  TrajectoryN<ND> const &traj, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW)
+  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW)
   -> std::shared_ptr<Grid<ND, VCC>>
 {
-  return std::make_shared<Grid<ND, VCC>>(traj, osamp, ktype, nC, b, sgW);
+  return std::make_shared<Grid<ND, VCC>>(traj, matrix, osamp, ktype, nC, b, sgW);
 }
 
 template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index const nB) -> Sz<ND + 2 + VCC>
@@ -41,22 +41,22 @@ template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index
 
 template <int ND, bool VCC>
 Grid<ND, VCC>::Grid(
-  TrajectoryN<ND> const &traj, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW)
+  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW)
   : Parent(fmt::format("{}D GridOp{}", ND, VCC ? " VCC" : ""))
   , kernel{KernelBase<Scalar, ND>::Make(ktype, osamp)}
   , subgridW{sgW}
   , basis{b}
 {
   static_assert(ND < 4);
-  auto const omatrix = MulToEven(traj.matrix(), osamp);
-  subs = CalcMapping(traj, omatrix, kernel->paddedWidth(), sgW);
+  auto const omatrix = MulToEven(matrix, osamp);
+  subs = CalcMapping(traj, matrix, omatrix, kernel->paddedWidth(), sgW);
   ishape = AddVCC<VCC>(omatrix, nC, basis ? basis->nB() : 1);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(omatrix[ND - 1]);
   if constexpr (VCC) {
     Log::Print("Grid", "Adding VCC");
     auto const conjTraj = TrajectoryN<ND>(-traj.points(), traj.matrix(), traj.voxelSize());
-    vccSubs = CalcMapping<ND>(conjTraj, omatrix, kernel->paddedWidth(), sgW);
+    vccSubs = CalcMapping<ND>(conjTraj, matrix, omatrix, kernel->paddedWidth(), sgW);
   }
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }

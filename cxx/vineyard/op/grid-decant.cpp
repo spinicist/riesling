@@ -13,17 +13,19 @@ namespace TOps {
 
 template <int ND>
 auto GridDecant<ND>::Make(TrajectoryN<ND> const &traj,
+                          Sz<ND> const          &matrix,
                           float const            osamp,
                           std::string const      ktype,
                           CxN<ND + 2> const     &sk,
                           Basis::CPtr            b,
                           Index const            sgW) -> std::shared_ptr<GridDecant<ND>>
 {
-  return std::make_shared<GridDecant<ND>>(traj, osamp, ktype, sk, b, sgW);
+  return std::make_shared<GridDecant<ND>>(traj, matrix, osamp, ktype, sk, b, sgW);
 }
 
 template <int ND>
 GridDecant<ND>::GridDecant(TrajectoryN<ND> const &traj,
+                           Sz<ND> const          &matrix,
                            float const            osamp,
                            std::string const      ktype,
                            CxN<ND + 2> const     &sk,
@@ -36,8 +38,8 @@ GridDecant<ND>::GridDecant(TrajectoryN<ND> const &traj,
   , skern{sk}
 {
   static_assert(ND < 4);
-  auto const omatrix = MulToEven(traj.matrix(), osamp);
-  subs = CalcMapping(traj, omatrix, kernel->paddedWidth(), sgW);
+  auto const omatrix = MulToEven(matrix, osamp);
+  subs = CalcMapping(traj, matrix, omatrix, kernel->paddedWidth(), sgW);
   ishape = AddFront(omatrix, basis ? basis->nB() : 1);
   oshape = Sz3{skern.dimension(1), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(omatrix[ND - 1]);

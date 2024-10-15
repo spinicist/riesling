@@ -48,7 +48,7 @@ auto NUFFTDecant<ND>::Make(TrajectoryN<ND> const &traj,
                            Sz<ND> const           matrix,
                            Index const            subgridSz) -> std::shared_ptr<NUFFTDecant<ND>>
 {
-  auto g = TOps::GridDecant<ND>::Make(traj, osamp, ktype, skern, basis);
+  auto g = TOps::GridDecant<ND>::Make(traj, matrix, osamp, ktype, skern, basis);
   return std::make_shared<NUFFTDecant<ND>>(g, matrix, subgridSz);
 }
 
@@ -57,7 +57,7 @@ auto NUFFTDecant<ND>::Make(
   TrajectoryN<ND> const &traj, GridOpts &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)
   -> std::shared_ptr<NUFFTDecant<ND>>
 {
-  auto g = TOps::GridDecant<ND>::Make(traj, opts.osamp.Get(), opts.ktype.Get(), skern, basis);
+  auto g = TOps::GridDecant<ND>::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), skern, basis);
   return std::make_shared<NUFFTDecant<ND>>(g, matrix, opts.subgridSize.Get());
 }
 

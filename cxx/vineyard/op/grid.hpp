@@ -28,10 +28,20 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
 {
   TOP_INHERIT(Cx, ND + 2 + VCC, 3)
   TOP_DECLARE(Grid)
-  static auto
-  Make(TrajectoryN<ND> const &t, float const os, std::string const kt, Index const nC, Basis::CPtr b, Index const sgW = 8)
-    -> std::shared_ptr<Grid<ND, VCC>>;
-  Grid(TrajectoryN<ND> const &traj, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW);
+  static auto Make(TrajectoryN<ND> const &t,
+                   Sz<ND> const          &mat,
+                   float const            os,
+                   std::string const      kt,
+                   Index const            nC,
+                   Basis::CPtr            b,
+                   Index const            sgW = 8) -> std::shared_ptr<Grid<ND, VCC>>;
+  Grid(TrajectoryN<ND> const &traj,
+       Sz<ND> const          &mat,
+       float const            osamp,
+       std::string const      ktype,
+       Index const            nC,
+       Basis::CPtr            b,
+       Index const            sgW);
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
 

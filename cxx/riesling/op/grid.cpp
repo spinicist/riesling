@@ -17,8 +17,8 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
   -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   if (gridOpts.vcc) {
-    auto grid =
-      TOps::Grid<3, true>::Make(traj, gridOpts.osamp.Get(), gridOpts.ktype.Get(), nC, basis, gridOpts.subgridSize.Get());
+    auto       grid = TOps::Grid<3, true>::Make(traj, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get(),
+                                                gridOpts.ktype.Get(), nC, basis, gridOpts.subgridSize.Get());
     auto const ns = grid->ishape;
     auto       reshape = TOps::MakeReshapeInput(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
     auto       loop = TOps::MakeLoop(reshape, nS);
@@ -27,8 +27,8 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
     auto       timeLoop = TOps::MakeLoop(slabLoop, nT);
     return timeLoop;
   } else {
-    auto grid =
-      TOps::Grid<3, false>::Make(traj, gridOpts.osamp.Get(), gridOpts.ktype.Get(), nC, basis, gridOpts.subgridSize.Get());
+    auto grid = TOps::Grid<3, false>::Make(traj, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get(),
+                                           gridOpts.ktype.Get(), nC, basis, gridOpts.subgridSize.Get());
     if (nS == 1) {
       auto rout = TOps::MakeReshapeOutput(grid, AddBack(grid->oshape, 1));
       auto timeLoop = TOps::MakeLoop(rout, nT);

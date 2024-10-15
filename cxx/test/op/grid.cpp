@@ -28,7 +28,7 @@ TEST_CASE("Grid-Basic", "[grid]")
 
   float const       osamp = GENERATE(2.f, 2.7f, 3.f);
   std::string const ktype = GENERATE("ES7");
-  auto              grid = TOps::Grid<2, false>::Make(traj, osamp, ktype, 1, &basis);
+  auto              grid = TOps::Grid<2, false>::Make(traj, traj.matrix(), osamp, ktype, 1, &basis);
   Cx3               noncart(grid->oshape);
   Cx4               cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -69,7 +69,7 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   basis.B(1, 3, 0) = 1.f;
   basis.B(1, 4, 0) = 1.f;
   basis.B(1, 5, 0) = 1.f;
-  auto grid = TOps::Grid<1, false>::Make(traj, osamp, ktype, 1, &basis);
+  auto grid = TOps::Grid<1, false>::Make(traj, traj.matrix(), osamp, ktype, 1, &basis);
   Cx3  noncart(grid->oshape);
   noncart.setConstant(1.f);
   Cx3 cart = grid->adjoint(noncart);
@@ -104,7 +104,7 @@ TEST_CASE("Grid VCC", "[grid]")
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
 
-  auto grid = TOps::Grid<1, true>::Make(traj, 1.f, "NN", 1, &basis, true);
+  auto grid = TOps::Grid<1, true>::Make(traj, traj.matrix(), 1.f, "NN", 1, &basis, true);
   Cx3  noncart(grid->oshape);
   Cx4  cart(grid->ishape);
   noncart.setConstant(Cx(0.f, 1.f));
