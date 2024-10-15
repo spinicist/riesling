@@ -21,7 +21,6 @@ Opts::Opts(args::Subparser &parser)
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 10)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
-  , fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero())
   , λ(parser, "L", "SENSE regularization (1e-6)", {"sense-lambda"}, 1.e-6f)
   , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
 {
@@ -36,7 +35,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
-  auto const shape1 = traj.matrixForFOV(opts.fov.Get());
+  auto const shape1 = traj.matrixForFOV(gridOpts.fov.Get());
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
   auto const M = MakeKspacePre(traj, nC, nS, 1, basis);
   LSMR const lsmr{A, M, 4};
@@ -89,13 +88,26 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
  *      [       0 ]   [          λW ]
  * A = [ Pt Ft S F P ]
  *     [          λW ]
+ * 
+ * Images need to be zero-padded to the correct oversampled grid matrix
+ * 
+ * The kernel width is specified on the nominal grid, i.e. will be multiplied up by the oversampling (and made odd)
+ * 
  */
-auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5
+auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const λ) -> Cx5
 {
-  Sz5 const cshape = channels.dimensions();
-  if (LastN<3>(cshape) != LastN<3>(ref.dimensions())) {
-    throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", cshape, ref.dimensions());
+  if (LastN<3>(nomChan.dimensions()) != LastN<3>(nomRef.dimensions())) {
+    throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
   }
+
+  Index const kW = std::floor(nomKW * osamp / 2) * 2 + 1;
+  Sz3 const osshape = MulToEven(LastN<3>(nomChan.dimensions()), osamp);
+  Sz5 const cshape = AddFront(osshape, nomChan.dimension(0), nomChan.dimension(1));
+  Sz4 const rshape = AddFront(osshape, nomRef.dimension(0));
+  
+  Cx5 const channels = TOps::Pad<Cx, 5>(nomChan.dimensions(), cshape).forward(nomChan);
+  Cx4 const ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef);
+
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
     throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
@@ -155,7 +167,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<1>(c, c).sqrt();
-    kernels = EstimateKernels(c, ref, std::floor(opts.kWidth.Get() * gopts.osamp.Get() / 2) * 2 + 1, opts.λ.Get());
+    kernels = EstimateKernels(c, ref, opts.kWidth.Get(), gopts.osamp.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);

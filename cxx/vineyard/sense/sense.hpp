@@ -15,7 +15,7 @@ struct Opts
   Opts(args::Subparser &parser);
   args::ValueFlag<std::string>                   type;
   args::ValueFlag<Index>                         volume, kWidth;
-  args::ValueFlag<Eigen::Array3f, Array3fReader> res, fov;
+  args::ValueFlag<Eigen::Array3f, Array3fReader> res;
   args::ValueFlag<float>                         λ;
   args::Flag                                     decant;
 };
@@ -25,7 +25,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   -> Cx5;
 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
-auto EstimateKernels(Cx5 const &channels, Cx4 const &ref, Index const kW, float const λ) -> Cx5;
+auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const λ) -> Cx5;
 auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps

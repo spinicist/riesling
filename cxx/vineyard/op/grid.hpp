@@ -3,6 +3,7 @@
 #include "basis/basis.hpp"
 #include "grid-mapping.hpp"
 #include "kernel/kernel.hpp"
+#include "sys/args.hpp"
 #include "top.hpp"
 
 #include <args.hxx>
@@ -14,10 +15,12 @@ namespace rl {
 struct GridOpts
 {
   GridOpts(args::Subparser &parser);
-  args::ValueFlag<std::string> ktype;
-  args::ValueFlag<float>       osamp;
-  args::Flag                   vcc;
-  args::ValueFlag<Index>       batches, subgridSize;
+  args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
+  args::ValueFlag<rl::Sz3, SzReader<3>>          matrix;
+  args::ValueFlag<float>                         osamp;
+  args::ValueFlag<std::string>                   ktype;
+  args::Flag                                     vcc;
+  args::ValueFlag<Index>                         batches, subgridSize;
 };
 
 namespace TOps {

@@ -10,8 +10,10 @@
 namespace rl {
 
 GridOpts::GridOpts(args::Subparser &parser)
-  : ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
+  : fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
+  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz3())
   , osamp(parser, "O", "Grid oversampling factor (2)", {"osamp"}, 2.f)
+  , ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
   , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
   , batches(parser, "B", "Channel batch size (1)", {"batches"}, 1)
   , subgridSize(parser, "B", "Gridding subgrid size (32)", {"subgrid-size"}, 32)
@@ -21,12 +23,9 @@ GridOpts::GridOpts(args::Subparser &parser)
 namespace TOps {
 
 template <int ND, bool VCC>
-auto Grid<ND, VCC>::Make(TrajectoryN<ND> const &traj,
-                         float const            osamp,
-                         std::string const      ktype,
-                         Index const            nC,
-                         Basis::CPtr            b,
-                         Index const            sgW) -> std::shared_ptr<Grid<ND, VCC>>
+auto Grid<ND, VCC>::Make(
+  TrajectoryN<ND> const &traj, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW)
+  -> std::shared_ptr<Grid<ND, VCC>>
 {
   return std::make_shared<Grid<ND, VCC>>(traj, osamp, ktype, nC, b, sgW);
 }
@@ -41,12 +40,8 @@ template <bool VCC, int ND> auto AddVCC(Sz<ND> const cart, Index const nC, Index
 }
 
 template <int ND, bool VCC>
-Grid<ND, VCC>::Grid(TrajectoryN<ND> const &traj,
-                    float const            osamp,
-                    std::string const      ktype,
-                    Index const            nC,
-                    Basis::CPtr            b,
-                    Index const            sgW)
+Grid<ND, VCC>::Grid(
+  TrajectoryN<ND> const &traj, float const osamp, std::string const ktype, Index const nC, Basis::CPtr b, Index const sgW)
   : Parent(fmt::format("{}D GridOp{}", ND, VCC ? " VCC" : ""))
   , kernel{KernelBase<Scalar, ND>::Make(ktype, osamp)}
   , subgridW{sgW}

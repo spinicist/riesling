@@ -24,10 +24,10 @@ auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, 
   } else {
     auto const kernels = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (senseOpts.decant) {
-      return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(senseOpts.fov.Get()));
+      return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(gridOpts.fov.Get()));
     } else {
       return SENSE(gridOpts, traj, nS, nT, b,
-                   SENSE::KernelsToMaps(kernels, traj.matrixForFOV(senseOpts.fov.Get()), gridOpts.osamp.Get()));
+                   SENSE::KernelsToMaps(kernels, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get()));
     }
   }
 }

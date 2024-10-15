@@ -22,8 +22,6 @@ CoreOpts::CoreOpts(args::Subparser &parser)
   , oname(parser, "FILE", "Output HD5 file")
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
   , residual(parser, "R", "Write out residual to file", {"residual", 'r'})
-  , fov(parser, "FOV", "Final FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
-  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz3())
 {
 }
 

@@ -35,7 +35,7 @@ void main_recon_lad(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
-  Trajectory  traj(reader, info.voxel_size, coreOpts.matrix.Get());
+  Trajectory  traj(reader, info.voxel_size, gridOpts.matrix.Get());
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
@@ -52,7 +52,7 @@ void main_recon_lad(args::Subparser &parser)
   auto const x = lad.run(noncart.data(), ρ.Get());
   auto const xm = Tensorfy(x, A->ishape);
 
-  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(coreOpts.fov.Get(), A->ishape[0], nT));
+  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   if (coreOpts.residual) { WriteResidual(cmd, coreOpts.residual.Get(), noncart, xm, info, A, M, HD5::Dims::Image); }

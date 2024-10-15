@@ -27,7 +27,7 @@ void main_psf(args::Subparser &parser)
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
+  Trajectory  traj(reader, reader.readInfo().voxel_size, gridOpts.matrix.Get());
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   Index const nB = basis->nB();
   auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, 1, basis.get(), traj.matrix());

@@ -43,7 +43,7 @@ void main_sense_calib(args::Subparser &parser)
     ref = DimDot<1>(channels, channels).sqrt();
   }
   Cx5 const kernels = SENSE::EstimateKernels(
-    channels, ref, std::floor(senseOpts.kWidth.Get() * gridOpts.osamp.Get() / 2) * 2 + 1, senseOpts.λ.Get());
+    channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.λ.Get());
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   Log::Print(cmd, "Finished");

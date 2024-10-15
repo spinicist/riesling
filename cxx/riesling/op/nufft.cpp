@@ -24,7 +24,7 @@ void main_nufft(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
+  Trajectory traj(reader, reader.readInfo().voxel_size, gridOpts.matrix.Get());
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
 
   auto const shape = reader.dimensions();
@@ -38,7 +38,7 @@ void main_nufft(args::Subparser &parser)
     auto const nC = shape[1];
     auto const nS = 1;
     auto const nT = shape[5];
-    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
+    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(gridOpts.fov.Get()));
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
   } else {
@@ -46,7 +46,7 @@ void main_nufft(args::Subparser &parser)
     auto const nC = shape[0];
     auto const nS = shape[3];
     auto const nT = shape[4];
-    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(coreOpts.fov.Get()));
+    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(gridOpts.fov.Get()));
     if (adj) {
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);

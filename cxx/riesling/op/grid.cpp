@@ -56,7 +56,7 @@ void main_grid(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreOpts.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size, coreOpts.matrix.Get());
+  Trajectory traj(reader, reader.readInfo().voxel_size, gridOpts.matrix.Get());
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
 
   auto const  shape = reader.dimensions();
