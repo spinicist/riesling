@@ -49,14 +49,14 @@ Grid<ND, VCC>::Grid(
 {
   static_assert(ND < 4);
   auto const omatrix = MulToEven(traj.matrix(), osamp);
-  mappings = CalcMapping(traj, omatrix, osamp, kernel->paddedWidth(), sgW);
+  mappings = CalcMapping(traj, omatrix, kernel->paddedWidth(), sgW);
   ishape = AddVCC<VCC>(omatrix, nC, basis ? basis->nB() : 1);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(omatrix[ND - 1]);
   if constexpr (VCC) {
     Log::Print("Grid", "Adding VCC");
     auto const conjTraj = TrajectoryN<ND>(-traj.points(), traj.matrix(), traj.voxelSize());
-    vccMapping = CalcMapping<ND>(conjTraj, omatrix, osamp, kernel->paddedWidth(), sgW);
+    vccMapping = CalcMapping<ND>(conjTraj, omatrix, kernel->paddedWidth(), sgW);
   }
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }

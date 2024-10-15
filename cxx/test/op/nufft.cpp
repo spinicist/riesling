@@ -12,7 +12,7 @@ using namespace Catch;
 
 TEST_CASE("NUFFT", "[nufft]")
 {
-  Log::SetLevel(Log::Level::Debug);
+  Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(6);
   auto const  matrix = Sz1{M};
   Re3         points(1, M, 1);
@@ -29,6 +29,7 @@ TEST_CASE("NUFFT", "[nufft]")
   img.setZero();
   img(0, 0, M / 2) = std::sqrt(M);
   ks = nufft->forward(img);
+  INFO("OSAMP " << osamp);
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
   CHECK(Norm(ks) == Approx(Norm(img)).margin(1.e-2f));
