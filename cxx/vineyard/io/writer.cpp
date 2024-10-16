@@ -2,6 +2,7 @@
 
 #include "io/hd5-core.hpp"
 #include "log.hpp"
+#include <filesystem>
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
