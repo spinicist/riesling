@@ -39,7 +39,7 @@ def _cmap(component):
         cmap = 'cmr.iceburn'
     elif component == 'pha':
         cmap = 'cet_colorwheel'
-    elif component == 'x':
+    elif component == 'i':
         cmap = 'cet_colorwheel'
     elif component == 'xlog':
         cmap = 'cet_colorwheel'
@@ -60,7 +60,7 @@ def _clim(component, climp, data):
         clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
     elif component == 'imag':
         clim = _symmetrize(np.nanpercentile(np.abs(data), climp))
-    elif component == 'x':
+    elif component == 'i':
         clim = np.nanpercentile(np.abs(data), climp)
     elif component == 'xlog':
         clim = np.nanpercentile(np.log1p(np.abs(data)), climp)
@@ -71,7 +71,7 @@ def _clim(component, climp, data):
     return clim
 
 def _comp(data, component, cmap, clim, climp):
-    if component == 'x':
+    if component == 'i':
         pass
     elif component == 'xlog':
         pass
@@ -127,12 +127,12 @@ def planes(fname, pos=0.5, zoom=(slice(None), slice(None)), others={},
            rotates=(0, 0, 0), fliplr=False, title=None,
            basis_file=None, basis_tp=0):
     D = _apply_basis(io.read_data(fname), basis_file, basis_tp)
-    posx = int(np.floor(len(D['x'])*pos))
-    posy = int(np.floor(len(D['y'])*pos))
-    posz = int(np.floor(len(D['z'])*pos))
-    data_x, cmap, clim = _comp(D.isel(_indexers(D, ('x', 'y'), zoom, 'z', posz, others)), component, cmap, clim, climp)
-    data_y, _, _ = _comp(D.isel(_indexers(D, ('x', 'z'), zoom, 'y', posy, others)), component, cmap, clim, climp)
-    data_z, _, _ = _comp(D.isel(_indexers(D, ('y', 'z'), zoom, 'x', posx, others)), component, cmap, clim, climp)
+    posx = int(np.floor(len(D['i'])*pos))
+    posy = int(np.floor(len(D['j'])*pos))
+    posz = int(np.floor(len(D['k'])*pos))
+    data_x, cmap, clim = _comp(D.isel(_indexers(D, ('i', 'j'), zoom, 'k', posz, others)), component, cmap, clim, climp)
+    data_y, _, _ = _comp(D.isel(_indexers(D, ('i', 'k'), zoom, 'j', posy, others)), component, cmap, clim, climp)
+    data_z, _, _ = _comp(D.isel(_indexers(D, ('j', 'k'), zoom, 'i', posx, others)), component, cmap, clim, climp)
     fig, ax = plt.subplots(1, 3, figsize=(rc['figsize']*3, rc['figsize']*1), facecolor='black')
 
     im_x = _draw(ax[0], _orient(data_x, rotates[0], fliplr), component, clim, cmap)
@@ -143,8 +143,8 @@ def planes(fname, pos=0.5, zoom=(slice(None), slice(None)), others={},
     plt.close()
     return fig
 
-def slices(fname, image=('x', 'y'), zoom=(slice(None), slice(None)),
-           sl='z', n=None, lim=None, others={},
+def slices(fname, image=('i', 'j'), zoom=(slice(None), slice(None)),
+           sl='k', n=None, lim=None, others={},
            component='mag', clim=None, climp=None, cmap=None, cbar=True,
            rows=1, rotates=0, fliplr=False, title=None,
            basis_file=None, basis_tp=0):
@@ -175,7 +175,7 @@ def slices(fname, image=('x', 'y'), zoom=(slice(None), slice(None)),
     return fig
 
 def sense(fname, **kwargs):
-    return slices(fname, component='x', sl='channel', **kwargs)
+    return slices(fname, component='i', sl='channel', **kwargs)
 
 def noncart(fname, sample=slice(None), trace=slice(None), **kwargs):
     return slices(fname, component='xlog', sl='channel', image=('sample', 'trace'), zoom=(sample, trace), **kwargs)
@@ -199,7 +199,7 @@ def weights(fname, sl_read=slice(None, None, 1), sl_spoke=slice(None, None, 1), 
     plt.close()
     return fig
 
-def _diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
+def _diff(fnames, titles=None, image=('i', 'j'), zoom=(slice(None), slice(None)), sl='k', pos=0.5, others={},
          component='mag', clim=None, climp=None, cmap=None, cbar=False,
          difflim=None, diffmap=None, diffbar=True, alldiffs=True, percentdiffs=True,
          rotates=0, fliplr=False, title=None,
@@ -229,8 +229,8 @@ def _diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None))
     diffs = []
     ref = abs(data.isel(sl=-1)).max()
 
-    if component == 'x':
-        diffcomp = 'x'
+    if component == 'i':
+        diffcomp = 'i'
     elif component == 'xlog':
         diffcomp = 'xlog'
     elif component == 'pha':
@@ -261,7 +261,7 @@ def _diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None))
     return n, data, diffs, cmaps[0], clims[0], diffcomp, diffmap, difflim
 
 
-def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
+def diff(fnames, titles=None, image=('i', 'j'), zoom=(slice(None), slice(None)), sl='k', pos=0.5, others={},
          component='mag', clim=None, climp=None, cmap=None, cbar=False,
          difflim=None, diffmap=None, diffbar=True, percentdiffs=True,
          rotates=0, fliplr=False, title=None,
@@ -290,7 +290,7 @@ def diff(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)),
     plt.close()
     return fig
 
-def diff_matrix(fnames, titles=None, image=('x', 'y'), zoom=(slice(None), slice(None)), sl='z', pos=0.5, others={},
+def diff_matrix(fnames, titles=None, image=('i', 'j'), zoom=(slice(None), slice(None)), sl='k', pos=0.5, others={},
          component='mag', clim=None, climp=None, cmap=None, cbar=False,
          difflim=None, diffmap=None, diffbar=True, percentdiffs=True,
          rotates=0, fliplr=False, title=None,
@@ -324,7 +324,7 @@ def _add_colorbar(cbar, component, fig, im, clim, title, ax=None, cax=None, vpos
     if not cbar:
         if title is not None:
             fig.text(0.5, 0.95, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
-    elif component == 'x' or component == 'xlog':
+    elif component == 'i' or component == 'xlog':
         _add_colorball(clim, ax=ax, cax=cax)
         if title is not None:
             fig.text(0.5, 0.95, title, color='white', ha='center', fontsize=rc['fontsize'], path_effects=rc['effects'])
@@ -401,7 +401,7 @@ def _get_axes(ax, ir, ic):
         return ax
 
 def _draw(ax, img, component, clim, cmap):
-    if component == 'x':
+    if component == 'i':
         _draw_x(ax, img, clim, cmap)
         return None
     elif component == 'xlog':
@@ -463,7 +463,7 @@ def traj3d(filename, sample=slice(None), trace=slice(None), color='trace', seg_l
             ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
         ax.scatter(traj[:, :, 0], traj[:, :, 1], traj[:, :, 2],
                 c=c, s=3, cmap='cmr.ember')
-        ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='z')
+        ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='k')
         fig.tight_layout()
         plt.close()
     return fig
