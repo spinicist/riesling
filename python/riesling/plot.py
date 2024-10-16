@@ -463,7 +463,7 @@ def traj3d(filename, sample=slice(None), trace=slice(None), color='trace', seg_l
             ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
         ax.scatter(traj[:, :, 0], traj[:, :, 1], traj[:, :, 2],
                 c=c, s=3, cmap='cmr.ember')
-        ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='k')
+        ax.view_init(elev=angles[0], azim=angles[1], vertical_axis='z')
         fig.tight_layout()
         plt.close()
     return fig

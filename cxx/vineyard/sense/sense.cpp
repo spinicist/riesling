@@ -19,7 +19,7 @@ namespace SENSE {
 Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
-  , kWidth(parser, "K", "SENSE kernel width (21)", {"sense-width"}, 10)
+  , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
   , λ(parser, "L", "SENSE regularization (1e-6)", {"sense-lambda"}, 1.e-6f)
   , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
