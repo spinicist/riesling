@@ -5,6 +5,7 @@
 #include "op/multiplex.hpp"
 #include "op/ndft.hpp"
 #include "op/nufft-decant.hpp"
+#include "op/nufft-lowmem.hpp"
 #include "op/nufft.hpp"
 #include "op/reshape.hpp"
 #include "op/sense.hpp"
@@ -26,8 +27,7 @@ auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, 
     if (senseOpts.decant) {
       return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(gridOpts.fov.Get()));
     } else {
-      return SENSE(gridOpts, traj, nS, nT, b,
-                   SENSE::KernelsToMaps(kernels, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get()));
+      return SENSE(gridOpts, traj, nS, nT, b, kernels);
     }
   }
 }
@@ -43,30 +43,41 @@ auto Single(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index
   return timeLoop;
 }
 
-auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &smaps)
+auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  if (gridOpts.vcc) {
-    auto sense = std::make_shared<TOps::VCCSENSE>(smaps, b ? b->nB() : 1);
-    auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
-    auto slabLoop = TOps::MakeLoop(nufft, nSlab);
+  if (gridOpts.lowmem) {
+    auto nufft = TOps::NUFFTLowmem<3>::Make(traj, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts, skern, b);
     if (nSlab > 1) {
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 6>>(sense->oshape, nSlab);
-      return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+      throw Log::Failure("Recon", "Lowmem and multislab not supported yet");
     } else {
-      auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
-      return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+      auto rn = TOps::MakeReshapeOutput(nufft, AddBack(nufft->oshape, 1));
+      return TOps::MakeLoop(rn, nTime);
     }
   } else {
-    auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
-    auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
-    auto slabLoop = TOps::MakeLoop(nufft, nSlab);
-    if (nSlab > 1) {
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
-      return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+    Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get());
+    if (gridOpts.vcc) {
+      auto sense = std::make_shared<TOps::VCCSENSE>(smaps, b ? b->nB() : 1);
+      auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
+      auto slabLoop = TOps::MakeLoop(nufft, nSlab);
+      if (nSlab > 1) {
+        auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 6>>(sense->oshape, nSlab);
+        return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+      } else {
+        auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
+        return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+      }
     } else {
-      auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
-      return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+      auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
+      auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
+      auto slabLoop = TOps::MakeLoop(nufft, nSlab);
+      if (nSlab > 1) {
+        auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
+        return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+      } else {
+        auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
+        return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+      }
     }
   }
 }

@@ -11,7 +11,7 @@ template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   using GType = GridDecant<ND>;
-  NUFFTDecant(GType::Ptr grid, Sz<ND> const matrix = Sz<ND>(), Index const subgridSz = 32);
+  NUFFTDecant(GType::Ptr grid, Sz<ND> const matrix = Sz<ND>());
   TOP_DECLARE(NUFFTDecant)
 
   static auto Make(TrajectoryN<ND> const &traj,
@@ -20,7 +20,7 @@ template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
                    CxN<ND + 2> const     &skern,
                    Basis::CPtr            basis,
                    Sz<ND> const           matrix,
-                   Index const            subgridSz = 32) -> std::shared_ptr<NUFFTDecant<ND>>;
+                   Index const            subgridSz = 8) -> std::shared_ptr<NUFFTDecant<ND>>;
 
   static auto
   Make(TrajectoryN<ND> const &traj, GridOpts &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)

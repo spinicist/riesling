@@ -68,6 +68,7 @@ add_library(vineyard
     op/ndft.cpp
     op/nufft.cpp
     op/nufft-decant.cpp
+    op/nufft-lowmem.cpp
     op/op.cpp
     op/ops.cpp
     op/pad.cpp

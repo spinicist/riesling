@@ -11,7 +11,7 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
 {
   TOP_INHERIT(Cx, NDim + 2 + VCC, 3)
   using GType = Grid<NDim, VCC>;
-  NUFFT(GType::Ptr grid, Sz<NDim> const matrix = Sz<NDim>(), Index const subgridSz = 32, Index const nBatches = 1);
+  NUFFT(GType::Ptr grid, Sz<NDim> const matrix = Sz<NDim>(), Index const subgridSz = 8, Index const nBatches = 1);
   TOP_DECLARE(NUFFT)
 
   static auto Make(TrajectoryN<NDim> const &traj,
@@ -20,7 +20,7 @@ template <int NDim, bool VCC = false> struct NUFFT final : TOp<Cx, NDim + 2 + VC
                    Index const              nC,
                    Basis::CPtr              basis,
                    Sz<NDim> const           matrix,
-                   Index const              subgridSz = 32,
+                   Index const              subgridSz = 8,
                    Index const              nBatches = 1) -> std::shared_ptr<NUFFT<NDim, VCC>>;
 
   static auto Make(TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nC, Basis::CPtr basis, Sz<NDim> const matrix)

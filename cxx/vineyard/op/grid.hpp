@@ -19,7 +19,7 @@ struct GridOpts
   args::ValueFlag<rl::Sz3, SzReader<3>>          matrix;
   args::ValueFlag<float>                         osamp;
   args::ValueFlag<std::string>                   ktype;
-  args::Flag                                     vcc;
+  args::Flag                                     vcc, lowmem;
   args::ValueFlag<Index>                         batches, subgridSize;
 };
 
