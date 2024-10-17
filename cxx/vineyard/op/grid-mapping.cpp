@@ -27,13 +27,12 @@ template <int ND> inline auto Sz2Array(Sz<ND> const &sz) -> Eigen::Array<float, 
 }
 
 template <int ND>
-inline auto SubgridIndex(Eigen::Array<int16_t, ND, 1> const &sg, Eigen::Array<int16_t, ND, 1> const &ngrids) -> Index
+inline auto SubgridIndex(Eigen::Array<Index, ND, 1> const &sg, Eigen::Array<Index, ND, 1> const &ngrids) -> Index
 {
   Index ind = 0;
   Index stride = 1;
   for (Index ii = 0; ii < ND; ii++) {
     ind += stride * sg[ii];
-    // fmt::print(stderr, "ii {} ind {} stride {} sg[ii] {}\n", ii, ind, stride, sg[ii]);
     stride *= ngrids[ii];
   }
   return ind;
@@ -47,7 +46,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &shape, Sz<ND> const 
   std::vector<Mapping<ND>> mappings;
 
   using Arrayf = Mapping<ND>::template Array<float>;
-  using Arrayi = Mapping<ND>::template Array<int16_t>;
+  using Arrayi = Mapping<ND>::template Array<Index>;
 
   Arrayf const mat = Sz2Array(traj.matrix());
   Arrayf const omat = Sz2Array(oshape);
@@ -58,7 +57,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &shape, Sz<ND> const 
   Arrayf const k0 = omat / 2;
   Index        valid = 0;
   Index        invalids = 0;
-  Arrayi const nSubgrids = (omat / sgSz).ceil().template cast<int16_t>();
+  Arrayi const nSubgrids = (omat / sgSz).ceil().template cast<Index>();
   Index const  nTotal = nSubgrids.prod();
 
   std::vector<SubgridMapping<ND>> subs(nTotal);
@@ -76,11 +75,11 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &shape, Sz<ND> const 
         continue;
       }
       Arrayf const ko = k - ki;
-      Arrayi const ksub = (ki / sgSz).floor().template cast<int16_t>();
-      Arrayi const kint = ki.template cast<int16_t>() - (ksub * sgSz) + (kW / 2);
+      Arrayi const ksub = (ki / sgSz).floor().template cast<Index>();
+      Arrayi const kint = ki.template cast<Index>() - (ksub * sgSz) + (kW / 2);
       Index const  sgind = SubgridIndex(ksub, nSubgrids);
-      subs[sgind].corner = ksub;
-      subs[sgind].mappings.push_back(Mapping<ND>{.cart = kint, .sample = is, .trace = it, .offset = ko});
+      subs[sgind].corner = ksub.template cast<int16_t>();
+      subs[sgind].mappings.push_back(Mapping<ND>{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko});
       valid++;
     }
   }
