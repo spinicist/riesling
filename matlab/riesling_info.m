@@ -1,6 +1,5 @@
 function info = riesling_info()
 
-info.matrix = ones(3, 1);     % Nominal matrix size
 info.voxel_size = ones(3, 1); % Nominal voxel-size, should be in mm
 info.origin = zeros(3, 1);    % Physical space co-ordinate of 0,0,0 voxel (ITK convention)
 info.direction = eye(3, 3);   % Direction matrix (ITK convention)
