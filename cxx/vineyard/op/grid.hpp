@@ -20,7 +20,7 @@ struct GridOpts
   args::ValueFlag<float>                         osamp;
   args::ValueFlag<std::string>                   ktype;
   args::Flag                                     vcc, lowmem;
-  args::ValueFlag<Index>                         batches, subgridSize;
+  args::ValueFlag<Index>                         subgridSize;
 };
 
 namespace TOps {

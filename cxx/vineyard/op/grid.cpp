@@ -16,7 +16,6 @@ GridOpts::GridOpts(args::Subparser &parser)
   , ktype(parser, "K", "Choose kernel - NN/KBn/ESn (ES3)", {'k', "kernel"}, "ES3")
   , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
   , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
-  , batches(parser, "B", "Channel batch size (1)", {"batches"}, 1)
   , subgridSize(parser, "B", "Gridding subgrid size (8)", {"subgrid-size"}, 8)
 {
 }

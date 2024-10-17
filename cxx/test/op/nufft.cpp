@@ -69,38 +69,6 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }
 
-TEST_CASE("NUFFT-Batch", "[nufft]")
-{
-  Log::SetLevel(Log::Level::Testing);
-  Index const C = 8;
-  Index const M = 8;
-  auto const  matrix = Sz1{M};
-  Index const N = 8;
-  Re3         points(1, 1, N);
-  points.setZero();
-  TrajectoryN<1> const traj(points, matrix);
-
-  Index const O = 4;
-  Basis       basis(O, 1, N);
-  basis.B.setZero();
-  Index const P = N / O;
-  for (Index ii = 0; ii < O; ii++) {
-    for (Index ij = 0; ij < P; ij++) {
-      basis.B(ii, 0, (ii * P) + ij) = std::pow(-1.f, ii) / std::sqrt(P);
-    }
-  }
-
-  float const osamp = 2.f;
-  auto        nufft = TOps::NUFFT<1>::Make(traj, "ES3", osamp, C, &basis, traj.matrix());
-  Cx3         ks(nufft->oshape);
-  ks.setConstant(1.f);
-  Cx3 img(nufft->ishape);
-  img.setZero();
-  img = nufft->adjoint(ks);
-  ks = nufft->forward(img);
-  CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
-}
-
 TEST_CASE("NUFFT-VCC", "[nufft]")
 {
   Index const M = GENERATE(8, 10);

@@ -13,23 +13,19 @@
 namespace rl::TOps {
 
 template <int NDim, bool VCC>
-NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgridSz, Index const nBatch)
+NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgridSz)
   : Parent("NUFFT")
   , gridder{g}
   , workspace{gridder->ishape}
-  , batches{nBatch}
 {
   if (std::equal(matrix.cbegin(), matrix.cend(), gridder->ishape.cbegin() + 2 + VCC, std::less_equal())) {
-    batchShape_ = Concatenate(FirstN<2 + VCC>(gridder->ishape), matrix);
+    ishape = Concatenate(FirstN<2 + VCC>(gridder->ishape), matrix);
   } else {
     throw Log::Failure("NUFFT", "Requested matrix {} but grid size is {}", matrix, LastN<NDim>(gridder->ishape));
   }
-  ishape = batchShape_;
-  ishape[1] *= batches;
   oshape = gridder->oshape;
-  oshape[0] *= batches;
   std::iota(fftDims.begin(), fftDims.end(), 2 + VCC);
-  Log::Print("NUFFT", "ishape {} oshape {} grid {} batches {}", ishape, oshape, gridder->ishape, batches);
+  Log::Print("NUFFT", "ishape {} oshape {} grid {}", ishape, oshape, gridder->ishape);
 
   // Calculate apodization correction
   auto apo_shape = ishape;
@@ -57,14 +53,10 @@ auto NUFFT<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
                             Index const              nChan,
                             Basis::CPtr              basis,
                             Sz<NDim> const           matrix,
-                            Index const              subgridSz,
-                            Index const              nBatch) -> std::shared_ptr<NUFFT<NDim, VCC>>
+                            Index const              subgridSz) -> std::shared_ptr<NUFFT<NDim, VCC>>
 {
-  if (nChan % nBatch != 0) {
-    throw Log::Failure("NUFFT", "Batch size {} does not cleanly divide number of channels {}", nBatch, nChan);
-  }
-  auto g = TOps::Grid<NDim, VCC>::Make(traj, matrix, osamp, ktype, nChan / nBatch, basis);
-  return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, subgridSz, nBatch);
+  auto g = TOps::Grid<NDim, VCC>::Make(traj, matrix, osamp, ktype, nChan, basis);
+  return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, subgridSz);
 }
 
 template <int NDim, bool VCC>
@@ -72,37 +64,17 @@ auto NUFFT<NDim, VCC>::Make(
   TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nChan, Basis::CPtr basis, Sz<NDim> const matrix)
   -> std::shared_ptr<NUFFT<NDim, VCC>>
 {
-  auto const nBatch = opts.batches.Get();
-  if (nChan % nBatch != 0) {
-    throw Log::Failure("NUFFT", "Batch size {} does not cleanly divide number of channels {}", nBatch, nChan);
-  }
-  auto g = TOps::Grid<NDim, VCC>::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), nChan / nBatch, basis);
-  return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, opts.subgridSize.Get(), nBatch);
+  auto g = TOps::Grid<NDim, VCC>::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), nChan, basis);
+  return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, opts.subgridSize.Get());
 }
 
 template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder->ishape);
-  if (batches == 1) {
-    wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
-    FFT::Forward(workspace, fftDims);
-    gridder->forward(workspace, y);
-  } else {
-    OutTensor    yt(gridder->oshape);
-    OutMap       ytm(yt.data(), yt.dimensions());
-    Sz<NDim + 3> x_start;
-    Sz3          y_start;
-    for (Index ib = 0; ib < batches; ib++) {
-      Index const ic = ib * gridder->ishape[1];
-      x_start[1] = ic;
-      y_start[0] = ic;
-      wsm.device(Threads::TensorDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
-      FFT::Forward(workspace, fftDims);
-      gridder->forward(workspace, ytm);
-      y.slice(y_start, yt.dimensions()).device(Threads::TensorDevice()) = yt;
-    }
-  }
+  wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
+  FFT::Forward(workspace, fftDims);
+  gridder->forward(workspace, y);
   this->finishForward(y, time, false);
 }
 
@@ -110,25 +82,9 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder->ishape);
-  if (batches == 1) {
-    gridder->adjoint(y, wsm);
-    FFT::Adjoint(workspace, fftDims);
-    x.device(Threads::TensorDevice()) = workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
-  } else {
-    OutTensor    yt(gridder->oshape);
-    Sz<NDim + 3> x_start;
-    Sz3          y_start;
-    for (Index ib = 0; ib < batches; ib++) {
-      Index const ic = ib * gridder->ishape[1];
-      x_start[1] = ic;
-      y_start[0] = ic;
-      yt.device(Threads::TensorDevice()) = y.slice(y_start, yt.dimensions());
-      gridder->adjoint(yt, wsm);
-      FFT::Adjoint(workspace, fftDims);
-      x.slice(x_start, batchShape_).device(Threads::TensorDevice()) =
-        workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
-    }
-  }
+  gridder->adjoint(y, wsm);
+  FFT::Adjoint(workspace, fftDims);
+  x.device(Threads::TensorDevice()) = workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
   this->finishAdjoint(x, time, false);
 }
 
@@ -136,25 +92,9 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, O
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder->ishape);
-  if (batches == 1) {
-    wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
-    FFT::Forward(workspace, fftDims);
-    gridder->iforward(workspace, y);
-  } else {
-    OutTensor    yt(gridder->oshape);
-    OutMap       ytm(yt.data(), yt.dimensions());
-    Sz<NDim + 3> x_start;
-    Sz3          y_start;
-    for (Index ib = 0; ib < batches; ib++) {
-      Index const ic = ib * gridder->ishape[1];
-      x_start[1] = ic;
-      y_start[0] = ic;
-      wsm.device(Threads::TensorDevice()) = (x.slice(x_start, batchShape_) * apo_.broadcast(apoBrd_)).pad(paddings_);
-      FFT::Forward(workspace, fftDims);
-      gridder->forward(workspace, ytm);
-      y.slice(y_start, yt.dimensions()).device(Threads::TensorDevice()) += yt;
-    }
-  }
+  wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
+  FFT::Forward(workspace, fftDims);
+  gridder->iforward(workspace, y);
   this->finishForward(y, time, true);
 }
 
@@ -162,25 +102,9 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, 
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder->ishape);
-  if (batches == 1) {
-    gridder->adjoint(y, wsm);
-    FFT::Adjoint(workspace, fftDims);
-    x.device(Threads::TensorDevice()) += workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
-  } else {
-    OutTensor    yt(gridder->oshape);
-    Sz<NDim + 3> x_start;
-    Sz3          y_start;
-    for (Index ib = 0; ib < batches; ib++) {
-      Index const ic = ib * gridder->ishape[1];
-      x_start[1] = ic;
-      y_start[0] = ic;
-      yt.device(Threads::TensorDevice()) = y.slice(y_start, yt.dimensions());
-      gridder->adjoint(yt, wsm);
-      FFT::Adjoint(workspace, fftDims);
-      x.slice(x_start, batchShape_).device(Threads::TensorDevice()) +=
-        workspace.slice(padLeft_, batchShape_) * apo_.broadcast(apoBrd_);
-    }
-  }
+  gridder->adjoint(y, wsm);
+  FFT::Adjoint(workspace, fftDims);
+  x.device(Threads::TensorDevice()) += workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
   this->finishAdjoint(x, time, true);
 }
 
