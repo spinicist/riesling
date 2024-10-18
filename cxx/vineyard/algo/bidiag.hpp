@@ -8,23 +8,23 @@ namespace rl {
 auto StableGivens(float const a, float const b) -> std::tuple<float, float, float>;
 auto Rotation(float const a, float const b) -> std::tuple<float, float, float>;
 
-void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           op,
-                std::shared_ptr<Ops::Op<Cx>>           Minv,
-                Eigen::VectorXcf                      &Mu,
-                Eigen::VectorXcf                      &u,
-                Eigen::VectorXcf                      &v,
-                float                                 &α,
-                float                                 &β,
-                Eigen::VectorXcf                      &x,
-                Eigen::VectorXcf::ConstAlignedMapType &b,
-                Eigen::VectorXcf::ConstAlignedMapType &x0);
+struct Bidiag
+{
+  using Op = Ops::Op<Cx>;
+  using Ptr = Op::Ptr;
+  using Vector = Op::Vector;
+  using Map = Op::Map;
+  using CMap = typename Op::CMap;
 
-void Bidiag(std::shared_ptr<Ops::Op<Cx>> const op,
-            std::shared_ptr<Ops::Op<Cx>> const Minv,
-            Eigen::VectorXcf                  &Mu,
-            Eigen::VectorXcf                  &u,
-            Eigen::VectorXcf                  &v,
-            float                             &α,
-            float                             &β);
+  Bidiag(Ptr A, Ptr Minv, Ptr Ninv, Vector &x, CMap &b, CMap &x0);
+
+  std::shared_ptr<Op> A;
+  std::shared_ptr<Op> Minv, Ninv;
+  Eigen::VectorXcf    u, Mu, v, Nv;
+  float               α;
+  float               β;
+
+  void next();
+};
 
 } // namespace rl

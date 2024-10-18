@@ -58,7 +58,7 @@ void main_compress(args::Subparser &parser)
                       .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
     auto const cov = Covariance(CollapseToConstMatrix(ref));
     auto const eig = Eig<Cx>(cov);
-    auto const nR = energy ? Threshold(eig.V, energy.Get()) : toKeep;
+    auto const nR = energy ? CountBelow(eig.V, energy.Get()) : toKeep;
     psi = eig.P.leftCols(nR);
   }
   Compressor  compressor{psi};

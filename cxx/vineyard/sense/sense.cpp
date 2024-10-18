@@ -2,6 +2,8 @@
 
 #include "algo/lsmr.hpp"
 #include "algo/lsqr.hpp"
+#include "algo/otsu.hpp"
+#include "algo/stats.hpp"
 #include "fft.hpp"
 #include "filter.hpp"
 #include "io/hd5.hpp"
@@ -9,6 +11,7 @@
 #include "op/nufft.hpp"
 #include "op/pad.hpp"
 #include "op/sense.hpp"
+#include "op/tensorscale.hpp"
 #include "precon.hpp"
 #include "sys/threads.hpp"
 #include "tensors.hpp"
@@ -21,6 +24,7 @@ Opts::Opts(args::Subparser &parser)
   , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
+  , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
   , λ(parser, "L", "SENSE regularization (1e-6)", {"sense-lambda"}, 1.e-6f)
   , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
 {
@@ -38,7 +42,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   auto const shape1 = traj.matrixForFOV(gridOpts.fov.Get());
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
   auto const M = MakeKspacePre(traj, nC, nS, 1, basis);
-  LSMR const lsmr{A, M, 4};
+  LSMR const lsmr{A, M, nullptr, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
@@ -74,6 +78,78 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
   return W;
 }
 
+auto SobolevWeights(Sz3 const shape, Index const l) -> Re3
+{
+  Re3 W(shape);
+  for (Index ik = 0; ik < shape[2]; ik++) {
+    float const kk = (ik - (shape[2] / 2));
+    for (Index ij = 0; ij < shape[1]; ij++) {
+      float const kj = (ij - (shape[1] / 2));
+      for (Index ii = 0; ii < shape[0]; ii++) {
+        float const ki = (ii - (shape[0] / 2));
+        float const k2 = (ki * ki + kj * kj + kk * kk);
+        W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
+      }
+    }
+  }
+  return W;
+}
+
+/* We want to solve:
+ * c = R s
+ *
+ * Where c is the channel images, s is SENSE maps, R is multiply by reference image
+ *
+ * We need to add the regularizer from nlinv / ENLIVE. This is a Sobolev weights in k-space
+ * P is padding, F is FT
+ * Hence solve the modified system
+ *
+ * c' = [ c ] = [ R    ]  s = A s
+ *      [ 0 ]   [ λW F ]
+ * A = [ R    ]
+ *     [ λW F ]
+ *
+ * Needs a pre-conditioner. Use a right preconditioner N = [ I + R ]
+ */
+auto EstimateMaps(Cx5 const &ichan, Cx4 const &ref, float const l, float const λ) -> Cx5
+{
+  if (LastN<3>(ichan.dimensions()) != LastN<3>(ref.dimensions())) {
+    throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", ichan.dimensions(), ref.dimensions());
+  }
+  float const scale = Norm(ref);
+  // Need to swap channel and basis dimensions to make TensorScale work
+  Cx5 const  chan = ichan.shuffle(Sz5{1, 0, 2, 3, 4});
+  auto const mapshape = chan.dimensions();
+  Log::Print("SENSE", "Map shape {} scale {}", mapshape, scale);
+  // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
+  Cx3 const sw = SobolevWeights(LastN<3>(mapshape), l).cast<Cx>();
+  // Set up operators
+  auto R = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(mapshape, ref / Cx(scale));
+  auto F = std::make_shared<TOps::FFT<5, 3>>(mapshape);
+  auto W = std::make_shared<TOps::TensorScale<Cx, 5, 2, 0>>(mapshape, sw);
+  auto L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
+  auto LWF = Ops::Mul<Cx>(L, Ops::Mul<Cx>(W, F));
+  auto A = std::make_shared<Ops::VStack<Cx>>(R, LWF);
+  // Data
+  Ops::Op<Cx>::CMap   c(chan.data(), chan.size());
+  Ops::Op<Cx>::Vector cʹ(A->rows());
+  cʹ.head(c.size()) = c / Cx(scale);
+  cʹ.tail(LWF->rows()).setZero();
+  // Preconditioner
+  Ops::Op<Cx>::Vector m(A->rows());
+  m.setConstant(1.f);
+  m = (A->forward(A->adjoint(m)).array().abs() + 1.e-3f).inverse();
+  auto Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
+
+  LSMR solve{A, Minv, nullptr};
+  solve.aTol = 1e-6;
+  solve.iterLimit = 100;
+  auto const s = solve.run(cʹ);
+  auto const r = LWF->forward(s);
+  Cx5        maps = AsTensorMap(s, mapshape);
+  return maps.shuffle(Sz5{1, 0, 2, 3, 4});
+}
+
 /* We want to solve:
  * Pt Ft c = Pt Ft S F P k
  *
@@ -88,23 +164,24 @@ auto SobolevWeights(Index const kW, Index const l) -> Re3
  *      [       0 ]   [          λW ]
  * A = [ Pt Ft S F P ]
  *     [          λW ]
- * 
+ *
  * Images need to be zero-padded to the correct oversampled grid matrix
- * 
+ *
  * The kernel width is specified on the nominal grid, i.e. will be multiplied up by the oversampling (and made odd)
- * 
+ *
  */
-auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const λ) -> Cx5
+auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+  -> Cx5
 {
   if (LastN<3>(nomChan.dimensions()) != LastN<3>(nomRef.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
   }
 
   Index const kW = std::floor(nomKW * osamp / 2) * 2 + 1;
-  Sz3 const osshape = MulToEven(LastN<3>(nomChan.dimensions()), osamp);
-  Sz5 const cshape = AddFront(osshape, nomChan.dimension(0), nomChan.dimension(1));
-  Sz4 const rshape = AddFront(osshape, nomRef.dimension(0));
-  
+  Sz3 const   osshape = MulToEven(LastN<3>(nomChan.dimensions()), osamp);
+  Sz5 const   cshape = AddFront(osshape, nomChan.dimension(0), nomChan.dimension(1));
+  Sz4 const   rshape = AddFront(osshape, nomRef.dimension(0));
+
   Cx5 const channels = TOps::Pad<Cx, 5>(nomChan.dimensions(), cshape).forward(nomChan);
   Cx4 const ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef);
 
@@ -125,7 +202,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   auto PFSFP = std::make_shared<Ops::Multiply<Cx>>(FPinv, SFP);
 
   // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-  Cx3 const  sw = SobolevWeights(kW, 4).cast<Cx>();
+  Cx3 const  sw = SobolevWeights(kW, l).cast<Cx>();
   auto const swv = CollapseToConstVector(sw);
   auto       W = std::make_shared<Ops::DiagRep<Cx>>(swv, kshape[0] * kshape[1], 1);
   auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
@@ -139,7 +216,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   cʹ.tail(R->rows()).setZero();
 
   LSQR lsqr{A};
-  lsqr.iterLimit = 16;
+  lsqr.iterLimit = 999;
   auto const kʹ = lsqr.run(cʹ);
 
   Cx5 const kernels = AsTensorMap(kʹ, kshape);
@@ -167,7 +244,7 @@ auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &nonc
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<1>(c, c).sqrt();
-    kernels = EstimateKernels(c, ref, opts.kWidth.Get(), gopts.osamp.Get(), opts.λ.Get());
+    kernels = EstimateKernels(c, ref, opts.kWidth.Get(), gopts.osamp.Get(), opts.l.Get(), opts.λ.Get());
   } else {
     HD5::Reader senseReader(opts.type.Get());
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);

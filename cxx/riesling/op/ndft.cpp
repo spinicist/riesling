@@ -46,7 +46,7 @@ void main_ndft(args::Subparser &parser)
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
     auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
-    LSMR const lsmr{ndft, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+    LSMR const lsmr{ndft, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));
     for (auto ii = 0; ii < noncart.dimension(4); ii++) {

@@ -49,7 +49,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   std::shared_ptr<Op> I = std::make_shared<Ops::Identity<Cx>>(reg->rows());
   std::shared_ptr<Op> Minvʹ = std::make_shared<Ops::DStack<Cx>>(Minv, I);
 
-  LSMR lsmr{Aʹ, Minvʹ, iters0, aTol, bTol, cTol};
+  LSMR lsmr{Aʹ, Minvʹ, nullptr, iters0, aTol, bTol, cTol};
 
   Vector x(A->cols());
   x.setZero();

@@ -18,7 +18,7 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
   Vector      u(rows), z(rows), zprev(rows), Ax_sub_b(rows), bzu(rows);
   CMap const  b(bdata, A->rows());
 
-  LSMR inner{A, M, iters0, aTol, bTol, cTol};
+  LSMR inner{A, M, nullptr, iters0, aTol, bTol, cTol};
 
   Proxs::L1 S(1.f, A->rows());
 

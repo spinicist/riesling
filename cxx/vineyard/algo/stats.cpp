@@ -22,7 +22,7 @@ auto Correlation(Eigen::Ref<Eigen::MatrixXcf const> const &X, bool const demean)
   return c;
 }
 
-auto Threshold(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh) -> Index
+auto CountBelow(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh) -> Index
 {
   Index nRetain = vals.rows();
   if ((thresh > 0.f) && (thresh <= 1.f)) {
@@ -35,6 +35,20 @@ auto Threshold(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh)
 }
 
 auto Percentiles(Eigen::Ref<Eigen::ArrayXf const> const &vals, std::vector<float> const &ps) -> std::vector<float>
+{
+  Eigen::ArrayXf x = vals;
+  std::sort(x.begin(), x.end());
+
+  std::vector<float> pvals;
+  for (auto const p : ps) {
+    if (p < 0. || p > 100.) { throw Log::Failure("Stats", "Requested percentile {} outside range 0-100", p); }
+    Index const ind = std::clamp(Index(p * (x.size() - 1)), 0L, Index(x.size() - 1));
+    pvals.push_back(x[ind]);
+  }
+  return pvals;
+}
+
+auto PercentilesAbove(float const thresh, Eigen::Ref<Eigen::ArrayXf const> const &vals, std::vector<float> const &ps) -> std::vector<float>
 {
   Eigen::ArrayXf x = vals;
   std::sort(x.begin(), x.end());
