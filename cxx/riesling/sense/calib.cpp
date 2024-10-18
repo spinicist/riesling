@@ -42,9 +42,14 @@ void main_sense_calib(args::Subparser &parser)
   } else {
     ref = DimDot<1>(channels, channels).sqrt();
   }
-  Cx5 const kernels = SENSE::EstimateKernels(
-    channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.λ.Get());
+  Cx5 const kernels =
+    SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.l.Get(),
+    senseOpts.λ.Get());
+  // Cx5 const   maps = SENSE::EstimateMaps(channels, ref, gridOpts.osamp.Get(), senseOpts.l.Get(), senseOpts.λ.Get());
+  // Cx5 const   kernels = SENSE::MapsToKernels(maps, senseOpts.kWidth.Get(), gridOpts.osamp.Get());
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
+  writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
+  writer.writeTensor("ref", ref.dimensions(), ref.data(), {"b", "i", "j", "k"});
   Log::Print(cmd, "Finished");
 }

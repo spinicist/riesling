@@ -17,16 +17,17 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
   using Parent::forward;
 
   TensorScale(InDims const shape, TScales const &s)
-    : Parent("TensorDiag", shape, shape)
+    : Parent("TensorScale", shape, shape)
     , scales{s}
   {
     for (auto ii = 0; ii < FrontRank; ii++) {
-      res[0] = 1;
-      brd[0] = shape[ii];
+      res[ii] = 1;
+      brd[ii] = shape[ii];
     }
     for (auto ii = FrontRank; ii < Rank - BackRank; ii++) {
       if (shape[ii] != s.dimension(ii - FrontRank)) {
-        throw Log::Failure("TOp", "Scales had shape {} expected {}", s.dimensions(), MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
+        throw Log::Failure("TOp", "Scales had shape {} expected {}", s.dimensions(),
+                           MidN<FrontRank, Rank - BackRank - FrontRank>(shape));
       }
       res[ii] = shape[ii];
       brd[ii] = 1;
@@ -35,6 +36,7 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
       res[ii] = 1;
       brd[ii] = shape[ii];
     }
+    Log::Debug("TOp", "TensorScale weights {} reshape {} broadcast {}", scales.dimensions(), res, brd);
   }
 
   void forward(InCMap const &x, OutMap &y) const
@@ -44,10 +46,24 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     this->finishForward(y, time, false);
   }
 
+  void iforward(InCMap const &x, OutMap &y) const
+  {
+    auto const time = this->startForward(x, y, true);
+    y.device(Threads::TensorDevice()) += x * scales.reshape(res).broadcast(brd);
+    this->finishForward(y, time, false);
+  }
+
   void adjoint(OutCMap const &y, InMap &x) const
   {
     auto const time = this->startAdjoint(y, x, false);
     x.device(Threads::TensorDevice()) = y * scales.reshape(res).broadcast(brd);
+    this->finishAdjoint(x, time, false);
+  }
+
+  void iadjoint(OutCMap const &y, InMap &x) const
+  {
+    auto const time = this->startAdjoint(y, x, true);
+    x.device(Threads::TensorDevice()) += y * scales.reshape(res).broadcast(brd);
     this->finishAdjoint(x, time, false);
   }
 

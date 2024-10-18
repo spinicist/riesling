@@ -52,7 +52,7 @@ void main_nufft(args::Subparser &parser)
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
     } else {
       auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
-      LSMR const lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+      LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
       auto const c = lsmr.run(CollapseToConstVector(noncart));
       writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
     }

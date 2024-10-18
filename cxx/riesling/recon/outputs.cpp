@@ -44,7 +44,7 @@ void WriteResidual(std::string const              &cmd,
   Log::Print(cmd, "Calculating K-space residual");
   noncart -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");
-  LSMR       lsmr{A1, M1, 2};
+  LSMR       lsmr{A1, M1, nullptr, 2};
   auto const r = lsmr.run(CollapseToConstVector(noncart));
   Log::Print(cmd, "Finished calculating residual");
   HD5::Writer writer(fname, true);

@@ -272,7 +272,7 @@ void Printify(float const printPixWidth, bool const interp, Magick::Image &img)
   if (interp) {
     img.resize(Magick::Geometry(printPixWidth, scale * img.size().height()));
   } else {
-    img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
+    // img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
   }
   img.density(Magick::Geometry(72, 72));
 }

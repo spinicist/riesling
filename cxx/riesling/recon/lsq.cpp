@@ -37,7 +37,7 @@ void main_recon_lsq(args::Subparser &parser)
   auto debug = [shape = A->ishape](Index const i, LSMR::Vector const &x) {
     Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image);
   };
-  LSMR lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
+  LSMR lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
   auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto const xm = AsTensorMap(x, A->ishape);

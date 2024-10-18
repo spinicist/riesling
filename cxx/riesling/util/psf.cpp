@@ -32,7 +32,7 @@ void main_psf(args::Subparser &parser)
   Index const nB = basis->nB();
   auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, 1, basis.get(), traj.matrix());
   auto const  M = MakeKspacePre(traj, 1, 1, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
-  LSMR const  lsmr{A, M, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+  LSMR const  lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];
   float const endPhase = phases.Get()[1];

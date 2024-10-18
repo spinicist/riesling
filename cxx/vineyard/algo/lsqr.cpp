@@ -18,48 +18,45 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
 {
   Log::Print("LSQR", "λ {}", λ);
   if (iterLimit < 1) { throw Log::Failure("LSQR", "Requires at least 1 iteration"); }
-  Index const rows = op->rows();
-  Index const cols = op->cols();
+  Index const rows = A->rows();
+  Index const cols = A->cols();
   if (rows < 1 || cols < 1) { throw Log::Failure("LSQR", "Invalid operator size rows {} cols {}", rows, cols); }
   if (b.rows() != rows) { throw Log::Failure("LSQR", "b had size {}, expected {}", b.rows(), rows); }
-  Vector Mu(rows), u(rows);
-  Vector x(cols), v(cols), w(cols);
+  Vector x(cols), w(cols);
+  Bidiag bd(A, Minv, Ninv, x, b, x0);
+  w = bd.v;
 
-  float α = 0.f, β = 0.f;
-  BidiagInit(op, Minv, Mu, u, v, α, β, x, b, x0);
-  w = v;
-
-  float ρ̅ = α;
-  float ɸ̅ = β;
-  float normb = β, xxnorm = 0.f, ddnorm = 0.f, res2 = 0.f, z = 0.f;
+  float ρ̅ = bd.α;
+  float ɸ̅ = bd.β;
+  float normb = bd.β, xxnorm = 0.f, ddnorm = 0.f, res2 = 0.f, z = 0.f;
   float normA = 0.f;
   float cs2 = -1.f;
   float sn2 = 0.f;
 
   Log::Print("LSQR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), β, std::fabs(α * β));
+  Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), bd.β, std::fabs(bd.α * bd.β));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
-    Bidiag(op, Minv, Mu, u, v, α, β);
+    bd.next();
 
     float c, s, ρ;
     float ψ = 0.f;
     if (λ == 0.f) {
-      std::tie(c, s, ρ) = StableGivens(ρ̅, β);
+      std::tie(c, s, ρ) = StableGivens(ρ̅, bd.β);
     } else {
       // Deal with regularization
       auto [c1, s1, ρ̅1] = StableGivens(ρ̅, λ);
       ψ = s1 * ɸ̅;
       ɸ̅ = c1 * ɸ̅;
-      std::tie(c, s, ρ) = StableGivens(ρ̅1, β);
+      std::tie(c, s, ρ) = StableGivens(ρ̅1, bd.β);
     }
     float const ɸ = c * ɸ̅;
     ɸ̅ = s * ɸ̅;
     float const τ = s * ɸ;
-    float const θ = s * α;
-    ρ̅ = -c * α;
+    float const θ = s * bd.α;
+    ρ̅ = -c * bd.α;
     x = x + w * (ɸ / ρ);
-    w = v - w * (θ / ρ);
+    w = bd.v - w * (θ / ρ);
 
     // Estimate norms
     float const δ = sn2 * ρ;
@@ -73,12 +70,12 @@ auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
     xxnorm += z * z;
     ddnorm = ddnorm + std::pow(ParallelNorm(w), 2) / (ρ * ρ);
 
-    normA = std::sqrt(normA * normA + α * α + β * β + λ * λ);
+    normA = std::sqrt(normA * normA + bd.α * bd.α + bd.β * bd.β + λ * λ);
     float const condA = normA * std::sqrt(ddnorm);
     float const res1 = ɸ̅ * ɸ̅;
     res2 = res2 + ψ * ψ;
     float const normr = std::sqrt(res1 + res2);
-    float const normAr = α * std::abs(τ);
+    float const normAr = bd.α * std::abs(τ);
 
     Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
     if (debug) { debug(ii, x); }

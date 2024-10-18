@@ -18,28 +18,25 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
 {
   Log::Print("LSMR", "λ {}", λ);
   if (iterLimit < 1) { throw Log::Failure("LSMR", "Requires at least 1 iteration"); }
-  Index const rows = op->rows();
-  Index const cols = op->cols();
+  Index const rows = A->rows();
+  Index const cols = A->cols();
   if (rows < 1 || cols < 1) { throw Log::Failure("LSMR", "Invalid operator size rows {} cols {}", rows, cols); }
   if (b.rows() != rows) { throw Log::Failure("LSMR", "b had size {} expected {}", b.rows(), rows); }
-  Vector Mu(rows), u(rows);
-  Vector v(cols), h(cols), h̅(cols), x(cols);
-
-  float α = 0.f, β = 0.f;
-  BidiagInit(op, Minv, Mu, u, v, α, β, x, b, x0);
-  h = v;
+  Vector h(cols), h̅(cols), x(cols);
+  Bidiag bd(A, Minv, Ninv, x, b, x0);
+  h = bd.v;
   h̅.setZero();
 
   // Initialize transformation variables. There are a lot
-  float ζ̅ = α * β;
-  float α̅ = α;
+  float ζ̅ = bd.α * bd.β;
+  float α̅ = bd.α;
   float ρ = 1;
   float ρ̅ = 1;
   float c̅ = 1;
   float s̅ = 0;
 
   // Initialize variables for ||r||
-  float β̈ = β;
+  float β̈ = bd.β;
   float β̇ = 0;
   float ρ̇old = 1;
   float τ̃old = 0;
@@ -48,28 +45,28 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
   float d = 0;
 
   // Initialize variables for estimation of ||A|| and cond(A)
-  float       normA2 = α * α;
+  float       normA2 = bd.α * bd.α;
   float       maxρ̅ = 0;
   float       minρ̅ = std::numeric_limits<float>::max();
-  float const normb = β;
+  float const normb = bd.β;
 
   Log::Print("LSMR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
   Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, std::fabs(ζ̅));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
-    Bidiag(op, Minv, Mu, u, v, α, β);
+    bd.next();
 
     float const ρold = ρ;
     float       c, s, ĉ = 1.f, ŝ = 0.f;
     if (λ == 0.f) {
-      std::tie(c, s, ρ) = StableGivens(α̅, β);
+      std::tie(c, s, ρ) = StableGivens(α̅, bd.β);
     } else {
       float α̂;
       std::tie(ĉ, ŝ, α̂) = StableGivens(α̅, λ);
-      std::tie(c, s, ρ) = StableGivens(α̂, β);
+      std::tie(c, s, ρ) = StableGivens(α̂, bd.β);
     }
-    float θnew = s * α;
-    α̅ = c * α;
+    float θnew = s * bd.α;
+    α̅ = c * bd.α;
 
     // Use a plane rotation (Qbar_i) to turn R_i^T to R_i^bar
     float ρ̅old = ρ̅;
@@ -83,7 +80,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
     // Update h, h̅, x.
     h̅.device(Threads::CoreDevice()) = h - (θ̅ * ρ / (ρold * ρ̅old)) * h̅;
     x.device(Threads::CoreDevice()) = x + (ζ / (ρ * ρ̅)) * h̅;
-    h.device(Threads::CoreDevice()) = v - (θnew / ρ) * h;
+    h.device(Threads::CoreDevice()) = bd.v - (θnew / ρ) * h;
 
     // Estimate of |r|.
     float const β́ = ĉ * β̈;
@@ -103,9 +100,9 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
     d = d + β̆ * β̆;
     float const normr = std::sqrt(d + std::pow(β̇ - τ̇, 2) + β̈ * β̈);
     // Estimate ||A||.
-    normA2 += β * β;
+    normA2 += bd.β * bd.β;
     float const normA = std::sqrt(normA2);
-    normA2 += α * α;
+    normA2 += bd.α * bd.α;
 
     // Estimate cond(A).
     maxρ̅ = std::max(maxρ̅, ρ̅old);
@@ -147,7 +144,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
     if (Iterating::ShouldStop("LSMR")) { break; }
   }
   Iterating::Finished();
-  return x;
+    return x;
 }
 
 } // namespace rl

@@ -18,8 +18,9 @@ struct LSMR
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
 
-  Op::Ptr op;
-  Op::Ptr Minv = nullptr; // Pre-conditioner
+  Op::Ptr A;
+  Op::Ptr Minv = nullptr; // Left Pre-conditioner
+  Op::Ptr Ninv = nullptr; // Right Pre-conditioner
   Index   iterLimit = 4;
   float   aTol = 1.e-6f;
   float   bTol = 1.e-6f;

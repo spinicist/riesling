@@ -48,4 +48,31 @@ auto Otsu(Eigen::ArrayXf::ConstMapType const &x, Index const nBins) -> OtsuRetur
   return OtsuReturn{bestThresh, bestAbove};
 }
 
+auto OtsuMask(Eigen::ArrayXf const &x, Index const nBins) -> Eigen::ArrayXf
+{
+  Eigen::ArrayXf::ConstAlignedMapType xm(x.data(), x.size());
+  return OtsuMask(xm, nBins);
+}
+
+auto OtsuMask(Eigen::ArrayXf::ConstAlignedMapType const &x, Index const nBins) -> Eigen::ArrayXf
+{
+  auto const [thresh, count] = Otsu(x, nBins);
+  Eigen::ArrayXf masked(count);
+  std::copy_if(x.data(), x.data() + x.size(), masked.begin(), [thresh = thresh](float const f) { return f > thresh; });
+  return masked;
+}
+
+auto OtsuMasked(Eigen::ArrayXf const &x, Index const nBins) -> Eigen::ArrayXf
+{
+  Eigen::ArrayXf::ConstAlignedMapType xm(x.data(), x.size());
+  return OtsuMasked(xm, nBins);
+}
+
+auto OtsuMasked(Eigen::ArrayXf::ConstAlignedMapType const &x, Index const nBins) -> Eigen::ArrayXf
+{
+  auto const [thresh, count] = Otsu(x, nBins);
+  Eigen::ArrayXf m = (x > thresh).select(Eigen::ArrayXf::Ones(x.size()), Eigen::ArrayXf::Zero(x.size()));
+  return m;
+}
+
 } // namespace rl

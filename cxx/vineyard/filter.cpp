@@ -55,6 +55,13 @@ void CartesianTukey(float const &s, float const &e, float const &h, Cx4 &x)
   KSFilter(f, x);
 }
 
+void CartesianTukey(float const &s, float const &e, float const &h, Cx5 &x)
+{
+  Log::Print("Filt", "Tukey width {}-{} height {}", s, e, h);
+  auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
+  KSFilter(f, x);
+}
+
 void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const &coords, Cx4 &x)
 {
   auto const nC = x.dimension(0);

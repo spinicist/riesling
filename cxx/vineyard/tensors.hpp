@@ -84,6 +84,12 @@ inline decltype(auto) AsTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> const &x
 }
 
 template <typename Scalar, int N>
+inline decltype(auto) AsConstTensorMap(Eigen::Array<Scalar, Eigen::Dynamic, 1> const &x, Sz<N> const &shape)
+{
+  return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
+}
+
+template <typename Scalar, int N>
 inline decltype(auto) AsConstTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> const &shape)
 {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);

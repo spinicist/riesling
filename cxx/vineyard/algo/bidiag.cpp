@@ -41,60 +41,79 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
   return std::make_tuple(c, s, ρ);
 }
 
-void BidiagInit(std::shared_ptr<Ops::Op<Cx>>           A,
-                std::shared_ptr<Ops::Op<Cx>>           Minv,
-                Eigen::VectorXcf                      &Mu,
-                Eigen::VectorXcf                      &u,
-                Eigen::VectorXcf                      &v,
-                float                                 &α,
-                float                                 &β,
-                Eigen::VectorXcf                      &x,
-                Eigen::VectorXcf::ConstAlignedMapType &b,
-                Eigen::VectorXcf::ConstAlignedMapType &x0)
+Bidiag::Bidiag(Ptr A_, Ptr Minv_, Ptr Ninv_, Vector &x, CMap &b, CMap &x0)
+  : A{A_}
+  , Minv{Minv_}
+  , Ninv{Ninv_}
 {
+  u.resize(A->rows());
+  if (Minv) { Mu.resize(A->rows()); }
+  v.resize(A->cols());
+  if (Ninv) { Nv.resize(A->cols()); }
+
   if (x0.size()) {
     x = x0;
     A->forward(x, u); // Reuse u to save space
-    Mu.device(Threads::CoreDevice()) = b - u;
+    if (Minv) {
+      Mu.device(Threads::CoreDevice()) = b - u;
+    } else {
+      u.device(Threads::CoreDevice()) = b - u;
+    }
   } else {
     x.setZero();
-    Mu.device(Threads::CoreDevice()) = b;
+    if (Minv) {
+      Mu.device(Threads::CoreDevice()) = b;
+    } else {
+      u.device(Threads::CoreDevice()) = b;
+    }
   }
   if (Minv) {
     Minv->forward(Mu, u);
+    β = std::sqrt(CheckedDot(Mu, u));
+    Mu.device(Threads::CoreDevice()) = Mu * (1.f / β);
   } else {
-    u = Mu;
+    β = std::sqrt(CheckedDot(u, u));
   }
-  β = std::sqrt(CheckedDot(Mu, u));
-  Mu /= β;
-  u /= β;
-  A->adjoint(u, v);
-  α = std::sqrt(CheckedDot(v, v));
-  v /= α;
+  u.device(Threads::CoreDevice()) = u * (1.f / β);
+  if (Ninv) {
+    Nv = A->adjoint(u);
+    Ninv->forward(Nv, v);
+    α = std::sqrt(CheckedDot(v, v));
+    Nv.device(Threads::CoreDevice()) = v * (1.f / α);
+  } else {
+    A->adjoint(u, v);
+    α = std::sqrt(CheckedDot(v, v));
+  }
+  v.device(Threads::CoreDevice()) = v * (1.f / α);
 }
 
-void Bidiag(std::shared_ptr<Ops::Op<Cx>> const A,
-            std::shared_ptr<Ops::Op<Cx>> const Minv,
-            Eigen::VectorXcf                  &Mu,
-            Eigen::VectorXcf                  &u,
-            Eigen::VectorXcf                  &v,
-            float                             &α,
-            float                             &β)
+void Bidiag::next()
 {
-  Mu.device(Threads::CoreDevice()) = -α * Mu;
-  A->iforward(v, Mu);
   if (Minv) {
+    Mu.device(Threads::CoreDevice()) = -α * Mu;
+    A->iforward(v, Mu);
     Minv->forward(Mu, u);
+    β = std::sqrt(CheckedDot(Mu, u));
+    Mu.device(Threads::CoreDevice()) = Mu / β;
   } else {
-    u = Mu;
+    u.device(Threads::CoreDevice()) = -α * u;
+    A->iforward(v, u);
+    β = std::sqrt(CheckedDot(u, u));
   }
-  β = std::sqrt(CheckedDot(Mu, u));
-  Mu.device(Threads::CoreDevice()) = Mu / β;
-  u.device(Threads::CoreDevice()) = u / β;
-  v.device(Threads::CoreDevice()) = -β * v;
-  A->iadjoint(u, v);
-  α = std::sqrt(CheckedDot(v, v));
-  v.device(Threads::CoreDevice()) = v / α;
+  u.device(Threads::CoreDevice()) = u * (1.f / β);
+
+  if (Ninv) {
+    Nv.device(Threads::CoreDevice()) = -β * Nv;
+    A->iadjoint(u, Nv);
+    Ninv->forward(Nv, v);
+    α = std::sqrt(CheckedDot(Nv, v));
+    Nv.device(Threads::CoreDevice()) = Nv * (1.f / α);
+  } else {
+    v.device(Threads::CoreDevice()) = -β * v;
+    A->iadjoint(u, v);
+    α = std::sqrt(CheckedDot(v, v));
+  }
+  v.device(Threads::CoreDevice()) = v * (1.f / α);
 }
 
 } // namespace rl
