@@ -26,8 +26,8 @@ Commands
 
 RIESLING is provided as a single executable file. The ``riesling`` executable provides multiple individual commands, which are grouped into reconstruction, data manipulation, sensitivity map estimation, basis creation, linear operators, and utilities. To see a full list of commands currently available, run ``riesling`` with no arguments. Detailed help for commands can be found in the category pages: :doc:`recon`, :doc:`op` and :doc:`util`. The most useful are:
 
-- ``riesling recon-rlsq`` Regularized least-squares reconstruction, similar to ``bart pics``. *You probably want this one*.
-- ``riesling recon-rss`` Unregularized least-squares reconstruction with root-sum-squares channel combination.
+- ``riesling recon-lsq``  Least-squares reconstruction including sensitivity maps.
+- ``riesling recon-rlsq`` Regularized least-squares reconstruction, similar to ``bart pics``.
 - ``riesling h5`` Prints information about compatible ``.h5`` files
 
 RIESLING exploits the inherent oversampling of most non-Cartesian trajectories at the center of k-space to generate SENSE maps directly from the input data, but utilities are provided to explicitly extract sensitivities if desired. Further details can be found in :doc:`util`.

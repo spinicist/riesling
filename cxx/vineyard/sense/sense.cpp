@@ -21,11 +21,11 @@ namespace SENSE {
 
 Opts::Opts(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
-  , volume(parser, "V", "SENSE calibration volume (first)", {"sense-vol"}, 0)
+  , tp(parser, "T", "SENSE calibration timepoint (first)", {"sense-tp"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
-  , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 2.f)
-  , λ(parser, "L", "SENSE regularization (1e-6)", {"sense-lambda"}, 1.e-3f)
+  , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
+  , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
   , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
 {
 }
@@ -35,9 +35,9 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
   auto const nT = noncart.dimension(4);
-  if (opts.volume.Get() >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.volume.Get(), nT); }
+  if (opts.tp.Get() >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp.Get(), nT); }
 
-  Cx4 const ncVol = noncart.chip<4>(opts.volume.Get());
+  Cx4 const ncVol = noncart.chip<4>(opts.tp.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
   auto const shape1 = traj.matrixForFOV(gridOpts.fov.Get());
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
@@ -110,6 +110,9 @@ auto SobolevWeights(Sz3 const shape, Index const l) -> Re3
  *     [ λW F ]
  *
  * Needs a pre-conditioner. Use a right preconditioner N = [ I + R ]
+ * 
+ * Leaving this here for posterity, but it's easier to estimate the kernels directly due to oversampling
+ * 
  */
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float const l, float const λ) -> Cx5
 {
@@ -163,19 +166,22 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
 }
 
 /* We want to solve:
- * Pt Ft c = Pt Ft S F P k
+ * c = R F P k
  *
  * Where c is the channel images, k is the SENSE kernels
- * P is padding, F is FT, S is SENSE (but multiply by the reference image)
+ * P is padding, F is FT, R is multiply by the reference image
  * This is a circular convolution done via FFT
  *
- * We need to add the regularizer from nlinv / ENLIVE. This is a Sobolev weights in k-space
+ * We need to add:
+ * 1 - the regularizer from nlinv / ENLIVE. This is Sobolev Norm / weighted k-space
+ * 2 - a mask/weights (M) to exclude the background region. Define this as 1s/0s then
+ *     don't need to worry about the sqrt() in the system matrix.
  * Hence solve the modified system
  *
- * c' = [ Pt Ft c ] = [ Pt Ft S F P ]  k
- *      [       0 ]   [          λW ]
- * A = [ Pt Ft S F P ]
- *     [          λW ]
+ * c' = [ c ] = [ M R F P ]  k
+ *      [ 0 ]   [      λW ]
+ * A = [ M R F P ]
+ *     [      λW ]
  *
  * Images need to be zero-padded to the correct oversampled grid matrix
  *
@@ -214,7 +220,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
 
   // Weights (mask)
   auto const            r = CollapseToArray(ref);
-  Eigen::ArrayXf const  ra = r.abs().log1p();
+  Eigen::ArrayXf const  ra = r.abs();
   Eigen::ArrayXcf const rm = OtsuMasked(ra).cast<Cx>();
   auto const            om = AsConstTensorMap(rm, rshape);
   auto                  M = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(cshape, om);
@@ -256,16 +262,13 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     m = (MSFP->forward(MSFP->adjoint(m)).array().abs() + 1.e-3f).inverse();
     auto Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
     Ops::Op<Cx>::CMap c(channels.data(), MSFP->rows());
-
+    Ops::Op<Cx>::Vector cʹ = M->forward(c);
     LSMR solve{MSFP, Minv};
     solve.iterLimit = 256;
     solve.aTol = 1.e-4f;
-    auto const k = solve.run(c);
+    auto const k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
-  // Cx5 kernels = channels;
-  // kernels.chip<0>(0) = ref;
-  // kernels.chip<0>(1) = om;
   return kernels.shuffle(Sz5{1, 0, 2, 3, 4});
 }
 

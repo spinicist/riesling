@@ -92,19 +92,15 @@ auto KernelBase<Scalar, ND>::Make(std::string const &kType, float const osamp) -
     if (type == "ES") {
       switch (W) {
       case 2: return std::make_shared<Kernel<Scalar, ND, ExpSemi<2>>>(osamp);
-      case 3: return std::make_shared<Kernel<Scalar, ND, ExpSemi<3>>>(osamp);
       case 4: return std::make_shared<Kernel<Scalar, ND, ExpSemi<4>>>(osamp);
-      case 5: return std::make_shared<Kernel<Scalar, ND, ExpSemi<5>>>(osamp);
-      case 7: return std::make_shared<Kernel<Scalar, ND, ExpSemi<7>>>(osamp);
+      case 6: return std::make_shared<Kernel<Scalar, ND, ExpSemi<6>>>(osamp);
       default: throw Log::Failure("Kernel", "Unsupported width {}", W);
       }
     } else if (type == "KB") {
       switch (W) {
       case 2: return std::make_shared<Kernel<Scalar, ND, ExpSemi<2>>>(osamp);
-      case 3: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<3>>>(osamp);
       case 4: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<4>>>(osamp);
-      case 5: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<5>>>(osamp);
-      case 7: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<7>>>(osamp);
+      case 6: return std::make_shared<Kernel<Scalar, ND, KaiserBessel<6>>>(osamp);
       default: throw Log::Failure("Kernel", "Unsupported width {}", W);
       }
     }

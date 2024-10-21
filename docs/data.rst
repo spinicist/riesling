@@ -6,7 +6,7 @@ RIESLING uses `HDF5 <https://www.hdfgroup.org/solutions/hdf5>`_ to store input, 
 Complex Numbers
 ---------------
 
-All data in RIESLING is complex-valued. HDF5 does not have a native complex-valued datatype, hence a compound datatype with ``r`` and ``i`` members corresponding to the real and imaginary parts must be used.
+All data in RIESLING is complex-valued. HDF5 did not have a native complex-valued datatype until version 1.14, hence a compound datatype with ``r`` and ``i`` members corresponding to the real and imaginary parts must be used. A future version of RIESLING will use the native HDF5 complex data-type.
 
 Dimension Order
 ---------------
@@ -19,11 +19,11 @@ Dimensions
 Previous versions of RIESLING used name datasets within the .h5 file, now the expected dataset name is simply ``data``. However, the RIESLING commands require input data to have the correct order (number of dimensions) and will output data with a fixed number of dimensions. We reserve the right to change the number of dimensions in future versions. RIESLING will output the dimension names using NetCDF format, these names are not required on input datasets. Below are the list of current data orders and names:
 
 1. Noncartesian k-space data. 5D - (channel, sample, trace, slab, time)
-2. Cartesian k-space (after gridding). 6D - (channel, V, X, Y, Z, time)
-3. Reconstructed images. 5D - (V, X, Y, Z, time)
-4. SENSE maps. 5D - (channel, V, X, Y, Z)
+2. Cartesian k-space (after gridding). 6D - (channel, b, i, j, k, time)
+3. Reconstructed images. 5D - (b, i, j, k, time)
+4. SENSE maps. 5D - (channel, b, i, j, k)
 
-In the above, ``V`` refers to the index for a basis vector (subspace or time-resolved reconstruction), while the ``time`` dimension refers to discrete timepoints which are reconstructed individually (e.g. fMRI type acquisition).
+In the above, ``b`` refers to the index for a basis vector (subspace or time-resolved reconstruction), while the ``time`` dimension refers to discrete timepoints which are reconstructed individually (e.g. fMRI type acquisition). A ``trace`` refers to a single spoke, spiral, or line of k-space, ``sample`` refers to individual sample/data points with a ``trace``.
 
 Geometry
 --------
@@ -39,9 +39,9 @@ To be considered valid RIESLING input, the HDF5 file must contain the image geom
     float tr;
   };
 
-* ``voxel_size`` The nominal voxel-size. Should be specified in millimeters as per NIfTI/ITK convention.
-* ``origin`` The physical-space location of the center of the voxel at index 0,0,0, as per ITK convention.
-* ``direction`` The physical-space axes directions, as per ITK convention.
+* ``voxel_size`` The nominal voxel-size. Various default values in RIESLING are specified in mm.
+* ``origin`` The physical-space location of the center of the voxel at index 0,0,0.
+* ``direction`` The physical-space axes directions.
 * ``tr`` The repetition time. Should be specified in milliseconds as per NIfTI convention.
 
 Trajectory

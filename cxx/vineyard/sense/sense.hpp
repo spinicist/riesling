@@ -14,7 +14,7 @@ struct Opts
 {
   Opts(args::Subparser &parser);
   args::ValueFlag<std::string>                   type;
-  args::ValueFlag<Index>                         volume, kWidth;
+  args::ValueFlag<Index>                         tp, kWidth;
   args::ValueFlag<Eigen::Array3f, Array3fReader> res;
   args::ValueFlag<float>                         l, λ;
   args::Flag                                     decant;
