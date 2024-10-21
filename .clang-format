@@ -23,6 +23,7 @@ AllowShortFunctionsOnASingleLine: All
 AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
+AllowShortLambdasOnASingleLine: true
 AlignAfterOpenBracket: Align
 AlignConsecutiveDeclarations: Consecutive
 BreakConstructorInitializers: BeforeComma

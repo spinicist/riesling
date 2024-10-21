@@ -32,9 +32,10 @@ private:
   GType::Ptr gridder;
   Cx3 mutable nc1;
   CxN<ND + 2> mutable workspace;
+  CxN<ND + 2> skern;
   CxN<ND + 2> mutable smap;
-  CxN<ND + 2>           skern;
   TOps::Pad<Cx, ND + 2> spad;
+  Sz<ND + 2>            sbrd;
   Sz<ND>                fftDims;
   InTensor              apo_;
   InDims                apoBrd_, padLeft_;

@@ -173,7 +173,7 @@ To ensure the maps are smooth and have support in the background region, the for
         λW
     \end{bmatrix}
 
-This problem is badly conditioned, and even with a preconditioner can take approximately 100 iterations to converge. However due to the small matrix sizes this should only take a few seconds.
+This problem is badly conditioned, and even with a preconditioner can take approximately 100 iterations to converge. However due to the small matrix sizes this should only take a few seconds. See `H. C. M. Holme, S. Rosenzweig, F. Ong, R. N. Wilke, M. Lustig, and M. Uecker, ‘ENLIVE: An Efficient Nonlinear Method for Calibrationless and Robust Parallel Imaging’, Scientific Reports, vol. 9, no. 1, Dec. 2019, <http://www.nature.com/articles/s41598-019-39888-7>`_ for the regularizer.
 
 *Usage*
 

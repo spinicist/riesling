@@ -16,8 +16,8 @@ void main_sense_maps(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file"),
     tname(parser, "FILE", "Target HD5 file for reconstruction"), oname(parser, "FILE", "Output HD5 file");
 
-  args::ValueFlag<float> osamp(parser, "O", "Grid oversampling factor (2)", {"osamp"}, 2.f);
-  Array3fFlag            fov(parser, "SENSE-FOV", "SENSE FOV (default header FOV)", {"sense-fov"}, Eigen::Array3f::Zero());
+  args::ValueFlag<float> osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f);
+  Array3fFlag            fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, iname, oname);
   auto const  cmd = parser.GetCommand().Name();
