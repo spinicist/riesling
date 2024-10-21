@@ -27,7 +27,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
   float const osamp = 1.25;
   Re2         weights;
   if (vcc) {
-    auto nufft = TOps::NUFFT<3, true>::Make(newTraj, "ES5", osamp, 1, basis, newTraj.matrix());
+    auto nufft = TOps::NUFFT<3, true>::Make(newTraj, "ES6", osamp, 1, basis, newTraj.matrix());
     Cx3  W(nufft->oshape);
     W.setConstant(Cx(1.f, 0.f));
     Cx6 const psf = nufft->adjoint(W);
@@ -46,7 +46,7 @@ auto KSpaceSingle(Trajectory const &traj, Basis::CPtr basis, bool const vcc, flo
       std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
     weights.device(Threads::TensorDevice()) = ((weights * scale) + bias).inverse();
   } else {
-    auto nufft = TOps::NUFFT<3, false>::Make(newTraj, "ES5", osamp, 1, basis, newTraj.matrix());
+    auto nufft = TOps::NUFFT<3, false>::Make(newTraj, "ES6", osamp, 1, basis, newTraj.matrix());
     Cx3  W(nufft->oshape);
     W.setConstant(Cx(1.f, 0.f));
     Cx5 const psf = nufft->adjoint(W);

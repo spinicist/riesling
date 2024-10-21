@@ -18,10 +18,10 @@ Basis       basis;
 Trajectory  traj(points);
 float const os = 2.f;
 
-TEST_CASE("Grid ES3", "[grid]")
+TEST_CASE("Grid ES4", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
-  auto grid = TOps::Grid<3>::Make(traj, traj.matrix(), os, "ES3", C, &basis);
+  auto grid = TOps::Grid<3>::Make(traj, traj.matrix(), os, "ES4", C, &basis);
   Cx5  c(grid->ishape);
   Cx3  nc(grid->oshape);
   c.setRandom();
@@ -54,11 +54,11 @@ TEST_CASE("Grid ES5", "[grid]")
   BENCHMARK("iadjoint") { grid->iadjoint(cnc, mc); };
 }
 
-TEST_CASE("GridBasis ES3", "[grid]")
+TEST_CASE("GridBasis ES4", "[grid]")
 {
   Index const nB = 4;
   Basis       basis(nB, 1, 256);
-  auto        grid = TOps::Grid<3>::Make(traj, traj.matrix(), os, "ES3", C, &basis);
+  auto        grid = TOps::Grid<3>::Make(traj, traj.matrix(), os, "ES4", C, &basis);
   Cx5         c(grid->ishape);
   Cx3         nc(grid->oshape);
   c.setRandom();

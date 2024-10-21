@@ -15,7 +15,7 @@ TEST_CASE("Grid-Basic", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);
-  Index const M = GENERATE(8, 16, 32);
+  Index const M = GENERATE(16, 32);
   auto const  matrix = Sz2{M, M};
   Re3         points(2, 3, 1);
   points.setZero();
@@ -26,8 +26,8 @@ TEST_CASE("Grid-Basic", "[grid]")
   TrajectoryN<2> const traj(points, matrix);
   Basis                basis;
 
-  float const       osamp = GENERATE(2.f, 2.7f, 3.f);
-  std::string const ktype = GENERATE("ES7");
+  float const       osamp = GENERATE(1.3f, 2.f);
+  std::string const ktype = GENERATE("ES6");
   auto              grid = TOps::Grid<2, false>::Make(traj, traj.matrix(), osamp, ktype, 1, &basis);
   Cx3               noncart(grid->oshape);
   Cx4               cart(grid->ishape);

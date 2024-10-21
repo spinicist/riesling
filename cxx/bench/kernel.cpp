@@ -12,7 +12,7 @@ using namespace rl;
 TEST_CASE("Kernels", "[kernels]")
 {
   Log::SetLevel(Log::Level::Testing);
-  Kernel<Cx, 3, ExpSemi<3>> es3(2.f);
+  Kernel<Cx, 3, ExpSemi<3>> ES4(2.f);
   Kernel<Cx, 3, ExpSemi<5>> es5(2.f);
   auto const                p = Kernel<Cx, 3, ExpSemi<3>>::Point::Constant(0.5f);
 
@@ -26,8 +26,8 @@ TEST_CASE("Kernels", "[kernels]")
   Cx1Map                            ym(y.data(), Sz1{8});
   Eigen::Array<int16_t, 3, 1> const c{8, 8, 8};
 
-  BENCHMARK(fmt::format("ES3 Spread {}", B)) { es3.spread(c, p, b, y, x); };
-  BENCHMARK(fmt::format("ES3 Gather {}", B)) { es3.gather(c, p, b, x, ym); };
+  BENCHMARK(fmt::format("ES4 Spread {}", B)) { ES4.spread(c, p, b, y, x); };
+  BENCHMARK(fmt::format("ES4 Gather {}", B)) { ES4.gather(c, p, b, x, ym); };
 
   BENCHMARK(fmt::format("ES5 Spread {}", B)) { es5.spread(c, p, b, y, x); };
   BENCHMARK(fmt::format("ES5 Gather {}", B)) { es5.gather(c, p, b, x, ym); };

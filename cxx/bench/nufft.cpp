@@ -23,7 +23,7 @@ float const os = 2.f;
 TEST_CASE("NUFFT", "[nufft]")
 {
   Log::SetLevel(Log::Level::Testing);
-  auto nufft = TOps::NUFFT<3>::Make(traj, "ES3", os, C, &basis, traj.matrix());
+  auto nufft = TOps::NUFFT<3>::Make(traj, "ES4", os, C, &basis, traj.matrix());
   Cx5            c(nufft->ishape);
   Cx3            nc(nufft->oshape);
   c.setRandom();
@@ -42,7 +42,7 @@ TEST_CASE("NUFFT Basis", "[nufft]")
 {
   Index const    nB = 4;
   Basis          basis(nB, 1, 256);
-  auto nufft = TOps::NUFFT<3>::Make(traj, "ES3", os, C, &basis, traj.matrix());
+  auto nufft = TOps::NUFFT<3>::Make(traj, "ES4", os, C, &basis, traj.matrix());
   Cx5            c(nufft->ishape);
   Cx3            nc(nufft->oshape);
   c.setRandom();
