@@ -1,11 +1,11 @@
 #include "algo/admm.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/compose.hpp"
 #include "op/fft.hpp"
 #include "op/hankel.hpp"
 #include "op/recon.hpp"
-#include "inputs.hpp"
 #include "precon.hpp"
 #include "prox/hermitian.hpp"
 #include "prox/slr.hpp"
@@ -23,8 +23,7 @@ void main_sake(args::Subparser &parser)
   args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 1e-1)", {"lambda"}, 1.e-1f);
   args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 5)", {"kernel-size"}, 5);
 
-  args::ValueFlag<Eigen::Array3f, Array3fReader> ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"},
-                                                      Eigen::Array3f::Constant(256.f));
+  Array3fFlag ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"}, Eigen::Array3f::Constant(256.f));
 
   args::Flag sep(parser, "S", "Separable kernels", {'s', "seperable"});
   args::Flag virtChan(parser, "V", "Use virtual conjugate channels", {"virtual"});

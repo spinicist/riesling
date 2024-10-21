@@ -13,11 +13,11 @@ namespace SENSE {
 struct Opts
 {
   Opts(args::Subparser &parser);
-  args::ValueFlag<std::string>                   type;
-  args::ValueFlag<Index>                         tp, kWidth;
-  args::ValueFlag<Eigen::Array3f, Array3fReader> res;
-  args::ValueFlag<float>                         l, λ;
-  args::Flag                                     decant;
+  args::ValueFlag<std::string> type;
+  args::ValueFlag<Index>       tp, kWidth;
+  Array3fFlag                  res;
+  args::ValueFlag<float>       l, λ;
+  args::Flag                   decant;
 };
 
 //! Convenience function to get low resolution multi-channel images

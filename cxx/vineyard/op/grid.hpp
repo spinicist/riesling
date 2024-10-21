@@ -15,7 +15,7 @@ namespace rl {
 struct GridOpts
 {
   GridOpts(args::Subparser &parser);
-  args::ValueFlag<Eigen::Array3f, Array3fReader> fov;
+  Array3fFlag fov;
   args::ValueFlag<rl::Sz3, SzReader<3>>          matrix;
   args::ValueFlag<float>                         osamp;
   args::ValueFlag<std::string>                   ktype;

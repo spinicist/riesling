@@ -12,10 +12,11 @@ using namespace rl;
 
 void main_recon_rss(args::Subparser &parser)
 {
-  CoreOpts   coreOpts(parser);
-  GridOpts   gridOpts(parser);
-  PreconOpts preOpts(parser);
-  LsqOpts    lsqOpts(parser);
+  CoreOpts    coreOpts(parser);
+  GridOpts    gridOpts(parser);
+  PreconOpts  preOpts(parser);
+  LsqOpts     lsqOpts(parser);
+  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -36,7 +37,7 @@ void main_recon_rss(args::Subparser &parser)
   auto       xm = AsTensorMap(x, A->ishape);
 
   Cx5 const         rss = DimDot<1>(xm, xm).sqrt();
-  TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));
+  TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(rss);
 
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);

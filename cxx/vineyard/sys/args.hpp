@@ -14,6 +14,8 @@ struct Array3fReader
   void operator()(std::string const &name, std::string const &value, Eigen::Array3f &x);
 };
 
+using Array3fFlag = args::ValueFlag<Eigen::Array3f, Array3fReader>;
+
 struct ArrayXfReader
 {
   void operator()(std::string const &name, std::string const &value, Eigen::ArrayXf &x);

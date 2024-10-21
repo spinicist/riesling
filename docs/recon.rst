@@ -158,9 +158,9 @@ The algorithm used by RIESLING consists of these steps:
 
 1. Reconstruct low-resolution images for each channel from a fully-sampled calibration region (inverse NUFFT).
 2. Obtain a reference image either from fully-sampled single channel data or by taking the root-sum-squares across the multi-channel images.
-3. Solve the inverse problem ``c = R F P s`` where ``s`` are the sensitivity kernels in k-space, ``c`` are the channel images, ``P`` is a padding operator, ``F`` is an FT, and ``R`` is an operator that multiplies each channel by the reference image.
+3. Solve the inverse problem :math:`c = RFPs` where :math:`s` are the sensitivity kernels in k-space, :math:`c` are the channel images, :math:`P` is a padding operator, :math:`F` is an FT, and :math:`R` is an operator that multiplies each channel by the reference image.
 
-To ensure the maps are smooth and have support in the background region, the forward model is modified to incorporate regularization with a Sobolev Norm term :math:`λW = (1 + |k|^2)^{l/2}` (where ``k`` is k-space co-ordinate, i.e. penalises high frequency terms) and a mask ``M`` over the object:
+To ensure the maps are smooth and have support in the background region, the forward model is modified to incorporate regularization with a Sobolev Norm term :math:`λW = (1 + |k|^2)^{l/2}` (where :math:`k` is k-space co-ordinate, i.e. penalises high frequency terms) and a mask :math:`M` over the object:
 
 .. math::
     c' = A s\\

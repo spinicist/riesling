@@ -4,10 +4,10 @@
 #include "algo/stats.hpp"
 #include "basis/basis.hpp"
 #include "compressor.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "inputs.hpp"
 #include "tensors.hpp"
 #include "types.hpp"
 
@@ -25,10 +25,9 @@ void main_rovir(args::Subparser &parser)
   args::ValueFlag<Index> nRetain(parser, "C", "Retain N channels (8)", {"channels"}, 8);
   args::ValueFlag<float> energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
 
-  args::ValueFlag<Eigen::Array3f, Array3fReader> res(parser, "R", "ROVIR calibration res (12 mm)", {"rovir-res"},
-                                                     Eigen::Array3f::Constant(12.f));
-  args::ValueFlag<float>                         fov(parser, "F", "ROVIR Signal FoV", {"rovir-fov"}, 1024.f);
-  args::ValueFlag<Index>                         gap(parser, "G", "ROVIR gap in voxels", {"rovir-gap"}, 0);
+  Array3fFlag            res(parser, "R", "ROVIR calibration res (12 mm)", {"rovir-res"}, Eigen::Array3f::Constant(12.f));
+  args::ValueFlag<float> fov(parser, "F", "ROVIR Signal FoV", {"rovir-fov"}, 1024.f);
+  args::ValueFlag<Index> gap(parser, "G", "ROVIR gap in voxels", {"rovir-gap"}, 0);
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 

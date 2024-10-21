@@ -18,6 +18,7 @@ void main_recon_lsq(args::Subparser &parser)
   PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
   LsqOpts     lsqOpts(parser);
+  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -42,7 +43,7 @@ void main_recon_lsq(args::Subparser &parser)
   auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto const xm = AsTensorMap(x, A->ishape);
 
-  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));
+  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);

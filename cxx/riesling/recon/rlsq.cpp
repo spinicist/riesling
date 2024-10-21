@@ -24,6 +24,7 @@ void main_recon_rlsq(args::Subparser &parser)
   RegOpts                regOpts(parser);
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (10)", {"debug-iters"}, 10);
   args::Flag             debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
+  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -79,7 +80,7 @@ void main_recon_rlsq(args::Subparser &parser)
   UnscaleData(scale, x);
   auto const xm = AsConstTensorMap(x, recon->ishape);
 
-  TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(gridOpts.fov.Get(), recon->ishape[0], nT));
+  TOps::Crop<Cx, 5> oc(recon->ishape, traj.matrixForFOV(cropFov.Get(), recon->ishape[0], nT));
   auto              out = oc.forward(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);

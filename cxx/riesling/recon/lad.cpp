@@ -18,6 +18,7 @@ void main_recon_lad(args::Subparser &parser)
   GridOpts    gridOpts(parser);
   PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
+  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   args::ValueFlag<Index> inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4);
   args::ValueFlag<Index> inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1);
@@ -52,7 +53,7 @@ void main_recon_lad(args::Subparser &parser)
   auto const x = lad.run(noncart.data(), ρ.Get());
   auto const xm = AsTensorMap(x, A->ishape);
 
-  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(gridOpts.fov.Get(), A->ishape[0], nT));
+  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT));
   auto              out = oc.forward(xm);
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, A, noncart); }
