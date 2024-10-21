@@ -146,23 +146,6 @@ Perform a basic reconstruction using root-sum-of-squares channel combination. Ve
 sense-calib
 -----------
 
-Perform a basic reconstruction using SENSE channel combination.
-
-*Usage*
-
-.. code-block:: bash
-
-    riesling sense file.h5
-
-*Important Options*
-
-* ``--fwd``
-
-    Apply the forward operation, i.e. sample through to non-cartesian k-space. Useful for sampling phantoms.
-
-sense-calib
------------
-
 Sensitivity maps are an integral part of any reconstruction from a multi-channel coil. Calculating high quality sensitivity maps is a difficult and open research question for two reasons. First, the multi-channel reconstruction problem is ill-posed as there is no unique solution (if the sensitivities are multiplied and the image divided by an arbitrary field the same data will result), and second because sensitivities exist in the background of the image where we cannot acquire signal.
 
 RIESLING estimates sensitivities assuming that a fully-sampled calibration region with consistent contrast has been acquired in the data. This is true for the majority of non-cartesian sequences, see `E. N. Yeh et al., ‘Inherently self-calibrating non-cartesian parallel imaging’, Magnetic Resonance in Medicine, vol. 54, no. 1, pp. 1–8, Jul. 2005, <http://doi.wiley.com/10.1002/mrm.20517>`_, and this step is hence incorporated into the reconstruction commands. However, there are many situations where it is beneficial to calculate the sensitivities up-front, potentially from alternate data. There is hence an explicit ``sense-calib`` command for this. All the relevant options to this command are also exposed for the reconstruction commands.
@@ -170,6 +153,27 @@ RIESLING estimates sensitivities assuming that a fully-sampled calibration regio
 Note that RIESLING calculates and stores the sensitivity kernels in k-space, not the maps themselves. If you want to see the maps, a separate ``sense-maps`` command is provided to convert between them.
 
 The FOV and oversampling used in the calibration must match your reconstruction.
+
+The algorithm used by RIESLING consists of these steps:
+
+1. Reconstruct low-resolution images for each channel from a fully-sampled calibration region (inverse NUFFT).
+2. Obtain a reference image either from fully-sampled single channel data or by taking the root-sum-squares across the multi-channel images.
+3. Solve the inverse problem ``c = R F P s`` where ``s`` are the sensitivity kernels in k-space, ``c`` are the channel images, ``P`` is a padding operator, ``F`` is an FT, and ``R`` is an operator that multiplies each channel by the reference image.
+
+To ensure the maps are smooth and have support in the background region, the forward model is modified to incorporate regularization with a Sobolev Norm term :math:`λW = (1 + |k|^2)^{l/2}` (where ``k`` is k-space co-ordinate, i.e. penalises high frequency terms) and a mask ``M`` over the object:
+
+.. math::
+    c' = A s\\
+    c' = \begin{bmatrix}
+        c\\
+        0
+    \end{bmatrix}\\
+    A = \begin{bmatrix}
+        M R F P\\
+        λW
+    \end{bmatrix}
+
+This problem is badly conditioned, and even with a preconditioner can take approximately 100 iterations to converge. However due to the small matrix sizes this should only take a few seconds.
 
 *Usage*
 
