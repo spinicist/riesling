@@ -16,12 +16,10 @@ template <int N> auto Apodize(Sz<N> const shape, Sz<N> const gshape, std::shared
   fmt::print(stderr, "t {} |t| {}\n", temp.dimensions(), Norm(temp));
   FFT::Adjoint(temp);
   fmt::print(stderr, "f {} |f| {}\n", temp.dimensions(), Norm(temp));
-  CxN<N> a = TOps::Pad<Cx, N>(shape, temp.dimensions()).adjoint(temp);
-  fmt::print(stderr, "a {} |a| {}\n", a.dimensions(), Norm(a));
-  a.device(Threads::TensorDevice()) = a.inverse();
+  ReN<N> a = TOps::Pad<Cx, N>(shape, temp.dimensions()).adjoint(temp).abs().real().cwiseMax(1.e-3f).inverse();
+  fmt::print(stderr, "a {} |a| {} Min {} Max {}\n", a.dimensions(), Norm(a), Minimum(a.real()), Maximum(a.real()));
   if constexpr (N == 3) { Log::Tensor("apodiz", a.dimensions(), a.data(), HD5::DimensionNames<3>{"i", "j", "k"}); }
-  fmt::print(stderr, "i {} |i| {}\n", a.dimensions(), Norm(a));
-  return a;
+  return a.template cast<Cx>();
 }
 
 template auto Apodize<1>(Sz1 const shape, Sz1 const gshape, std::shared_ptr<KernelBase<Cx, 1>> const &k) -> Cx1;
