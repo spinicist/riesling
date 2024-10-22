@@ -16,7 +16,7 @@ FourierBasis::FourierBasis(Index const N, Index const samples, Index const trace
   }
   Cx3 padded = TOps::Pad<Cx, 3>(eye.dimensions(), Sz3{N, (Index)(os * samples), (Index)(os * traces)}).forward(eye);
   FFT::Adjoint(padded, Sz2{1, 2});
-  basis = TOps::Crop<Cx, 3>(padded.dimensions(), Sz3{N, samples, traces}).forward(padded);
+  basis = TOps::Pad<Cx, 3>(Sz3{N, samples, traces}, padded.dimensions()).adjoint(padded);
 }
 
 } // namespace rl

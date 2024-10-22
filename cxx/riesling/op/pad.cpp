@@ -28,8 +28,8 @@ void main_pad(args::Subparser &parser)
     TOps::Pad<Cx, 6> pad(inDims, outDims);
     outImages = pad.forward(inImages);
   } else {
-    TOps::Crop<Cx, 6> crop(inDims, outDims);
-    outImages = crop.forward(inImages);
+    TOps::Pad<Cx, 6> crop(outDims, inDims);
+    outImages = crop.adjoint(inImages);
   }
   writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data(), HD5::Dims::Channels);
 }
