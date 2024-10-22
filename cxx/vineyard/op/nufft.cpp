@@ -126,6 +126,9 @@ auto NUFFTAll(GridOpts         &gridOpts,
               Basis::CPtr       basis,
               Sz3 const         shape) -> TOps::TOp<Cx, 6, 5>::Ptr
 {
+  if (gridOpts.lowmem) {
+    throw Log::Failure("NUFFT", "Low memory option requires sensitivities");
+  }
   if (gridOpts.vcc) {
     auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis, shape);
     auto const ns = nufft->ishape;
