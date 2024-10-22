@@ -110,9 +110,9 @@ auto SobolevWeights(Sz3 const shape, Index const l) -> Re3
  *     [ λW F ]
  *
  * Needs a pre-conditioner. Use a right preconditioner N = [ I + R ]
- * 
+ *
  * Leaving this here for posterity, but it's easier to estimate the kernels directly due to oversampling
- * 
+ *
  */
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float const l, float const λ) -> Cx5
 {
@@ -202,13 +202,13 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Sz4 const   rshape = AddFront(osshape, nomRef.dimension(0));
 
   float const scale = Norm(nomRef);
-  Cx5 const channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(scale);
-  Cx4 const ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(scale);
+  Cx5 const   channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(scale);
+  Cx4 const   ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(scale);
 
   if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
     throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
   }
-  Sz5 const   kshape{cshape[0], cshape[1], kW, kW, kW};
+  Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
   Log::Print("SENSE", "Kernel shape {} scale {}", kshape, scale);
   // Set up operators
   auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW * kW * kW)));
@@ -260,10 +260,10 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     Ops::Op<Cx>::Vector m(MSFP->rows());
     m.setConstant(1.f);
     m = (MSFP->forward(MSFP->adjoint(m)).array().abs() + 1.e-3f).inverse();
-    auto Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
-    Ops::Op<Cx>::CMap c(channels.data(), MSFP->rows());
+    auto                Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
+    Ops::Op<Cx>::CMap   c(channels.data(), MSFP->rows());
     Ops::Op<Cx>::Vector cʹ = M->forward(c);
-    LSMR solve{MSFP, Minv};
+    LSMR                solve{MSFP, Minv};
     solve.iterLimit = 256;
     solve.aTol = 1.e-4f;
     auto const k = solve.run(cʹ);
@@ -279,10 +279,10 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5
   auto const  cshape = AddFront(mat, kshape[0], kshape[1]);
   float const scale = std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape)));
   Log::Print("SENSE", "Kernel Shape {} Full map shape {} Cropped map shape {} Scale {}", kshape, fshape, cshape, scale);
-  TOps::Pad<Cx, 5>  P(kshape, fshape);
-  TOps::FFT<5, 3>   F(fshape, false);
-  TOps::Crop<Cx, 5> C(fshape, cshape);
-  return C.forward(F.adjoint(P.forward(kernels))) * Cx(scale);
+  TOps::Pad<Cx, 5> P(kshape, fshape);
+  TOps::FFT<5, 3>  F(fshape, false);
+  TOps::Pad<Cx, 5> C(cshape, fshape);
+  return C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
 }
 
 auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
@@ -293,10 +293,10 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   auto const  kshape = Sz5{mshape[0], mshape[1], kW, kW, kW};
   float const scale = std::sqrt(Product(LastN<3>(oshape)) / (float)Product(LastN<3>(mshape)));
   Log::Print("SENSE", "Map Shape {} Oversampled map shape {} Kernel shape {} Scale {}", mshape, oshape, kshape, scale);
-  TOps::Pad<Cx, 5>  P(mshape, oshape);
-  TOps::FFT<5, 3>   F(oshape, true);
-  TOps::Crop<Cx, 5> C(oshape, kshape);
-  return C.forward(F.adjoint(P.forward(maps))) * Cx(scale);
+  TOps::Pad<Cx, 5> P(mshape, oshape);
+  TOps::FFT<5, 3>  F(oshape, true);
+  TOps::Pad<Cx, 5> C(kshape, oshape);
+  return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
 auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5

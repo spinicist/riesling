@@ -16,7 +16,6 @@ add_library(vineyard
     filter.cpp
     interp.cpp
     log.cpp
-    pad.cpp
     patches.cpp
     precon.cpp
     regularizers.cpp
@@ -126,7 +125,6 @@ set_target_properties(vineyard PROPERTIES
     CXX_VISIBILITY_PRESET hidden
 )
 set_source_files_properties(
-    precon.cpp
     op/ops.cpp
     op/grid.cpp
     op/grid-subgrid.cpp

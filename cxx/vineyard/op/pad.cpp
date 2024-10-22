@@ -4,6 +4,8 @@
 #include "op/top-impl.hpp"
 #include "sys/threads.hpp"
 
+#include "fmt/std.h"
+
 namespace rl::TOps {
 
 template <typename Scalar, int Rank>
@@ -23,11 +25,6 @@ Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <typename Scalar, int Rank> auto Pad<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
-{
-  return std::make_shared<Crop<Scalar, Rank>>(this->oshape, this->ishape);
-}
-
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
@@ -38,7 +35,10 @@ template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap cons
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
+  fmt::print(stderr, "|x| {} |y| {}\n", Norm(x), Norm(y));
+  x = y.slice(left_, ishape);
+  fmt::print(stderr, "Pad adjoint y {} left {} ishape {} x {}\n", y.dimensions(), left_, ishape, x.dimensions());
+  fmt::print(stderr, "x {}\n", x.data()[0]);
   this->finishAdjoint(x, time, false);
 }
 
@@ -68,67 +68,5 @@ template struct Pad<Cx, 3>;
 template struct Pad<Cx, 4>;
 template struct Pad<Cx, 5>;
 template struct Pad<Cx, 6>;
-
-template <typename Scalar, int Rank>
-Crop<Scalar, Rank>::Crop(InDims const id, OutDims const od)
-  : Parent(fmt::format("Crop {}D", Rank), id, od)
-{
-  for (Index ii = 0; ii < Rank; ii++) {
-    if (ishape[ii] < oshape[ii]) {
-      throw Log::Failure("Crop", "Crop input dims {} smaller than output dims {}", ishape, oshape);
-    }
-  }
-  std::transform(ishape.begin(), ishape.end(), oshape.begin(), left_.begin(),
-                 [](Index big, Index small) { return (big - small + 1) / 2; });
-  std::transform(ishape.begin(), ishape.end(), oshape.begin(), right_.begin(),
-                 [](Index big, Index small) { return (big - small) / 2; });
-  std::transform(left_.begin(), left_.end(), right_.begin(), paddings_.begin(),
-                 [](Index left, Index right) { return std::make_pair(left, right); });
-}
-template <typename Scalar, int Rank> auto Crop<Scalar, Rank>::inverse() const -> std::shared_ptr<rl::Ops::Op<Scalar>>
-{
-  return std::make_shared<Pad<Scalar, Rank>>(this->oshape, this->ishape);
-}
-
-template <typename Scalar, int Rank> void Crop<Scalar, Rank>::forward(InCMap const &x, OutMap &y) const
-{
-  auto const time = this->startForward(x, y, false);
-  y.device(Threads::TensorDevice()) = x.slice(left_, oshape);
-  this->finishForward(y, time, false);
-}
-
-template <typename Scalar, int Rank> void Crop<Scalar, Rank>::adjoint(OutCMap const &y, InMap &x) const
-{
-  auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y.pad(paddings_);
-  this->finishAdjoint(x, time, false);
-}
-
-template <typename Scalar, int Rank> void Crop<Scalar, Rank>::iforward(InCMap const &x, OutMap &y) const
-{
-  auto const time = this->startForward(x, y, true);
-  y.device(Threads::TensorDevice()) += x.slice(left_, oshape);
-  this->finishForward(y, time, true);
-}
-
-template <typename Scalar, int Rank> void Crop<Scalar, Rank>::iadjoint(OutCMap const &y, InMap &x) const
-{
-  auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += y.pad(paddings_);
-  this->finishAdjoint(x, time, true);
-}
-
-template struct Crop<float, 1>;
-template struct Crop<float, 2>;
-template struct Crop<float, 3>;
-template struct Crop<float, 4>;
-template struct Crop<float, 5>;
-
-template struct Crop<Cx, 1>;
-template struct Crop<Cx, 2>;
-template struct Crop<Cx, 3>;
-template struct Crop<Cx, 4>;
-template struct Crop<Cx, 5>;
-template struct Crop<Cx, 6>;
 
 } // namespace rl::TOps

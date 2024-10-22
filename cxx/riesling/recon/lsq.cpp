@@ -43,8 +43,8 @@ void main_recon_lsq(args::Subparser &parser)
   auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto const xm = AsTensorMap(x, A->ishape);
 
-  TOps::Crop<Cx, 5> oc(A->ishape, traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT));
-  auto              out = oc.forward(xm);
+  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), A->ishape);
+  auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, A, noncart); }

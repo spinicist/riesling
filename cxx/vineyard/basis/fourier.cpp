@@ -2,7 +2,7 @@
 
 #include "../fft.hpp"
 #include "io/writer.hpp"
-#include "pad.hpp"
+#include "op/pad.hpp"
 
 namespace rl {
 
@@ -14,9 +14,9 @@ FourierBasis::FourierBasis(Index const N, Index const samples, Index const trace
   for (Index ii = 0; ii < N; ii++) {
     eye(ii, samples > 1 ? ii : 0, traces > 1 ? ii : 0) = Cx(energy);
   }
-  Cx3 padded = Pad(eye, Sz3{N, (Index)(os * samples), (Index)(os * traces)});
+  Cx3 padded = TOps::Pad<Cx, 3>(eye.dimensions(), Sz3{N, (Index)(os * samples), (Index)(os * traces)}).forward(eye);
   FFT::Adjoint(padded, Sz2{1, 2});
-  basis = Crop(padded, Sz3{N, samples, traces});
+  basis = TOps::Pad<Cx, 3>(Sz3{N, samples, traces}, padded.dimensions()).adjoint(padded);
 }
 
 } // namespace rl

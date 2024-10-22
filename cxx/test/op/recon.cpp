@@ -1,4 +1,5 @@
 #include "op/nufft.hpp"
+#include "op/nufft-lowmem.hpp"
 #include "op/sense.hpp"
 #include "op/compose.hpp"
 #include "basis/basis.hpp"
@@ -25,7 +26,7 @@ TEST_CASE("Recon-Basic", "[recon]")
   Trajectory const traj(points, matrix);
   Basis basis;
 
-  float const       osamp = GENERATE(2.f); //, 2.7f, 3.f);
+  float const       osamp = GENERATE(1.3f);
   std::string const ktype = GENERATE("ES4");
   auto              nufft = TOps::NUFFT<3>::Make(traj, ktype, osamp, nC, &basis, traj.matrix());
 
@@ -63,7 +64,7 @@ TEST_CASE("Recon-Lowmem", "[recon]")
   Trajectory const traj(points, matrix);
   Basis basis;
 
-  float const       osamp = GENERATE(2.f);
+  float const       osamp = GENERATE(1.3f);
   std::string const ktype = GENERATE("ES4");
   auto              nufft = TOps::NUFFT<3>::Make(traj, ktype, osamp, nC, &basis, traj.matrix());
 

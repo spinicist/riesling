@@ -36,9 +36,9 @@ void main_recon_rss(args::Subparser &parser)
   auto       x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto       xm = AsTensorMap(x, A->ishape);
 
-  Cx5 const         rss = DimDot<1>(xm, xm).sqrt();
-  TOps::Crop<Cx, 5> oc(rss.dimensions(), traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT));
-  auto              out = oc.forward(rss);
+  Cx5 const        rss = DimDot<1>(xm, xm).sqrt();
+  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), rss.dimensions());
+  auto             out = oc.forward(rss);
 
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
   Log::Print(cmd, "Finished");
