@@ -1,22 +1,24 @@
 #include "apodize.hpp"
 #include "fft.hpp"
-#include "pad.hpp"
-
-#include <cmath>
-
-#include <fmt/ranges.h>
-#include <fmt/ostream.h>
-
+#include "log.hpp"
+#include "op/pad.hpp"
+#include "tensors.hpp"
 namespace rl {
 
 template <int N> auto Apodize(Sz<N> const shape, Sz<N> const gshape, std::shared_ptr<KernelBase<Cx, N>> const &kernel) -> CxN<N>
 {
   CxN<N>      k = kernel->operator()(KernelBase<Cx, N>::Point::Zero()).template cast<Cx>();
   float const scale = std::sqrt(static_cast<float>(Product(shape)));
+  Log::Debug("Apodiz", "Shape {} Grid shape {} Scale {}", shape, gshape, scale);
   k = k * k.constant(scale);
-  auto temp = Pad(k, gshape);
+  fmt::print(stderr, "k {} |k| {}\n", k.dimensions(), Norm(k));
+  CxN<N> temp = TOps::Pad<Cx, N>(k.dimensions(), gshape).forward(k);
+  fmt::print(stderr, "t {} |t| {}\n", temp.dimensions(), Norm(temp));
   FFT::Adjoint(temp);
-  return Crop(temp, shape).inverse();
+  fmt::print(stderr, "f {} |f| {}\n", temp.dimensions(), Norm(temp));
+  CxN<N> a = TOps::Crop<Cx, N>(temp.dimensions(), shape).forward(temp);
+  a.device(Threads::TensorDevice()) = a.inverse();
+  return a;
 }
 
 template auto Apodize<1>(Sz1 const shape, Sz1 const gshape, std::shared_ptr<KernelBase<Cx, 1>> const &k) -> Cx1;

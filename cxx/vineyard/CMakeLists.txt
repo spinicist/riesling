@@ -16,7 +16,6 @@ add_library(vineyard
     filter.cpp
     interp.cpp
     log.cpp
-    pad.cpp
     patches.cpp
     precon.cpp
     regularizers.cpp

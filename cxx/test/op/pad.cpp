@@ -9,19 +9,29 @@ using namespace Catch;
 
 TEST_CASE("ops-pad", "[pad]")
 {
-  Index const fullSz = 16;
+  Index const fullSz = 6;
 
   SECTION("Dot Test")
   {
-    Index const cropSz = 7;
+    Index const cropSz = 3;
     Cx3 y(fullSz, fullSz, fullSz), yx(cropSz, cropSz, cropSz), x(cropSz, cropSz, cropSz), xy(fullSz, fullSz, fullSz);
 
     x.setRandom();
     y.setRandom();
 
-    TOps::Pad<Cx, 3> crop(x.dimensions(), y.dimensions());
-    xy = crop.forward(x);
-    yx = crop.adjoint(y);
+    TOps::Pad<Cx, 3> pad(x.dimensions(), y.dimensions());
+    xy = pad.forward(x);
+    yx = pad.adjoint(y);
+
+    INFO("xy\n" << xy);
+
+    CHECK(std::abs(xy(0, 0, 0)) == 0.f);
+    CHECK(std::abs(xy(fullSz - 1, fullSz - 1, fullSz - 1)) == 0.f);
+
+    Index lC = (fullSz / 2) - (cropSz / 2);
+    Index rC = (fullSz / 2) + (cropSz / 2);
+    CHECK(xy(lC, lC, lC) == x(0, 0, 0));
+    CHECK(xy(rC, rC, rC) == x(cropSz - 1, cropSz - 1, cropSz - 1));
 
     // Don't forget conjugate on second dot argument
     auto const xx = Dot(x, yx);

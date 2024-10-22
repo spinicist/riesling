@@ -1,4 +1,5 @@
 #include "op/nufft.hpp"
+#include "op/nufft-lowmem.hpp"
 #include "op/sense.hpp"
 #include "op/compose.hpp"
 #include "basis/basis.hpp"
