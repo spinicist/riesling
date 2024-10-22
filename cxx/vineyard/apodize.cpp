@@ -17,7 +17,9 @@ template <int N> auto Apodize(Sz<N> const shape, Sz<N> const gshape, std::shared
   FFT::Adjoint(temp);
   fmt::print(stderr, "f {} |f| {}\n", temp.dimensions(), Norm(temp));
   CxN<N> a = TOps::Crop<Cx, N>(temp.dimensions(), shape).forward(temp);
+  fmt::print(stderr, "a {} |a| {}\n", a.dimensions(), Norm(a));
   a.device(Threads::TensorDevice()) = a.inverse();
+  fmt::print(stderr, "i {} |i| {}\n", a.dimensions(), Norm(a));
   return a;
 }
 
