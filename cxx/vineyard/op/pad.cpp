@@ -34,6 +34,7 @@ template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap con
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
+  fmt::print(stderr, "Pad adjoint y {} left {} ishape {} x {}\n", y.dimensions(), left_, ishape, x.dimensions());
   this->finishAdjoint(x, time, false);
 }
 
