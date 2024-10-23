@@ -13,26 +13,44 @@ public:
   }
 };
 
-void Array2fReader::operator()(std::string const &name, std::string const &value, Eigen::Array2f &v)
+template <int N> void SzReader<N>::operator()(std::string const &name, std::string const &value, rl::Sz<N> &sz)
 {
-  if (auto result = scn::scan<float, float>(value, "{},{}")) {
-    v[0] = std::get<0>(result->values());
-    v[1] = std::get<1>(result->values());
+  size_t ind = 0;
+  if (auto result = scn::scan<Index>(value, "{}")) {
+    sz[ind] = result->value();
+    for (ind = 1; ind < N; ind++) {
+      result = scn::scan<Index>(result->range(), ",{}");
+      if (!result) { throw(ArgsError(fmt::format("Could not read {} from '{}'", name, value))); }
+      sz[ind] = result->value();
+    }
   } else {
-    throw(ArgsError(fmt::format("Could not read vector for {} from value {}", name, value)));
+    throw(ArgsError(fmt::format("Could not read {} from '{}'", name, value)));
   }
 }
 
-void Array3fReader::operator()(std::string const &name, std::string const &value, Eigen::Array3f &v)
+template struct SzReader<2>;
+template struct SzReader<3>;
+template struct SzReader<4>;
+
+template <typename T, int ND>
+void ArrayReader<T, ND>::operator()(std::string const &name, std::string const &value, Eigen::Array<T, ND, 1> &v)
 {
-  if (auto result = scn::scan<float, float, float>(value, "{},{},{}")) {
-    v[0] = std::get<0>(result->values());
-    v[1] = std::get<1>(result->values());
-    v[2] = std::get<2>(result->values());
+  size_t ind = 0;
+  if (auto result = scn::scan<T>(value, "{}")) {
+    v[ind] = result->value();
+    for (ind = 1; ind < ND; ind++) {
+      result = scn::scan<T>(result->range(), ",{}");
+      if (!result) { throw(ArgsError(fmt::format("Could not read {} from '{}'", name, value))); }
+      v[ind] = result->value();
+    }
   } else {
-    throw(ArgsError(fmt::format("Could not read vector for {} from value {}", name, value)));
+    throw(ArgsError(fmt::format("Could not read {} from '{}'", name, value)));
   }
 }
+
+template struct ArrayReader<float, 1>;
+template struct ArrayReader<float, 2>;
+template struct ArrayReader<float, 3>;
 
 void Vector3fReader::operator()(std::string const &name, std::string const &value, Eigen::Vector3f &v)
 {
@@ -99,22 +117,3 @@ void VectorReader<T>::operator()(std::string const &name, std::string const &inp
 
 template struct VectorReader<float>;
 template struct VectorReader<Index>;
-
-template <int N> void SzReader<N>::operator()(std::string const &name, std::string const &value, rl::Sz<N> &sz)
-{
-  size_t ind = 0;
-  if (auto result = scn::scan<Index>(value, "{}")) {
-    sz[ind] = result->value();
-    for (ind = 1; ind < N; ind++) {
-      result = scn::scan<Index>(result->range(), ",{}");
-      if (!result) { throw(ArgsError(fmt::format("Could not read {} from '{}'", name, value))); }
-      sz[ind] = result->value();
-    }
-  } else {
-    throw(ArgsError(fmt::format("Could not read {} from '{}'", name, value)));
-  }
-}
-
-template struct SzReader<2>;
-template struct SzReader<3>;
-template struct SzReader<4>;

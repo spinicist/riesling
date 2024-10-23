@@ -9,17 +9,6 @@
 
 namespace rl {
 
-GridOpts::GridOpts(args::Subparser &parser)
-  : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero())
-  , matrix(parser, "M", "Grid matrix size", {"matrix", 'm'}, Sz3())
-  , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
-  , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
-  , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
-  , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
-  , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
-{
-}
-
 namespace TOps {
 
 template <int ND, bool VCC>

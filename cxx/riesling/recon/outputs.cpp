@@ -26,7 +26,7 @@ WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::Dimen
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &fname,
-                   GridOpts                       &gridOpts,
+                   GridOpts<3>                    &gridOpts,
                    SENSE::Opts                    &senseOpts,
                    PreconOpts                     &preOpts,
                    Trajectory const               &traj,

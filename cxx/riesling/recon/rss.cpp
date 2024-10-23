@@ -12,11 +12,11 @@ using namespace rl;
 
 void main_recon_rss(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PreconOpts  preOpts(parser);
-  LsqOpts     lsqOpts(parser);
-  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  CoreOpts            coreOpts(parser);
+  GridOpts<3>         gridOpts(parser);
+  PreconOpts          preOpts(parser);
+  LsqOpts             lsqOpts(parser);
+  ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -30,7 +30,7 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get(), traj.matrixForFOV(gridOpts.fov.Get()));
+  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get());
   auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());

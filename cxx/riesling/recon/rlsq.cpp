@@ -17,14 +17,14 @@ using namespace rl;
 void main_recon_rlsq(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
-  GridOpts               gridOpts(parser);
+  GridOpts<3>            gridOpts(parser);
   PreconOpts             preOpts(parser);
   SENSE::Opts            senseOpts(parser);
   RlsqOpts               rlsqOpts(parser);
   RegOpts                regOpts(parser);
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (10)", {"debug-iters"}, 10);
   args::Flag             debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
-  Array3fFlag            cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();

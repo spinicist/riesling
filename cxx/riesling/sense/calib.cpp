@@ -14,7 +14,7 @@ using namespace rl;
 void main_sense_calib(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
-  GridOpts                     gridOpts(parser);
+  GridOpts<3>                  gridOpts(parser);
   SENSE::Opts                  senseOpts(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
 
@@ -43,8 +43,7 @@ void main_sense_calib(args::Subparser &parser)
     ref = DimDot<1>(channels, channels).sqrt();
   }
   Cx5 const kernels =
-    SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.l.Get(),
-    senseOpts.λ.Get());
+    SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.l.Get(), senseOpts.λ.Get());
   // Cx5 const   maps = SENSE::EstimateMaps(channels, ref, gridOpts.osamp.Get(), senseOpts.l.Get(), senseOpts.λ.Get());
   // Cx5 const   kernels = SENSE::MapsToKernels(maps, senseOpts.kWidth.Get(), gridOpts.osamp.Get());
   HD5::Writer writer(coreOpts.oname.Get());

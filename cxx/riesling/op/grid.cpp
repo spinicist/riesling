@@ -13,7 +13,7 @@
 
 using namespace rl;
 
-auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
+auto MakeGrid(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
   -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   if (gridOpts.vcc) {
@@ -45,12 +45,12 @@ auto MakeGrid(GridOpts &gridOpts, Trajectory const &traj, Index const nC, Index 
 
 void main_grid(args::Subparser &parser)
 {
-  CoreOpts   coreOpts(parser);
-  GridOpts   gridOpts(parser);
-  PreconOpts preOpts(parser);
-  LsqOpts    lsqOpts(parser);
-  args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  args::Flag adj(parser, "", "Apply adjoint operation", {'a', "adj"});
+  CoreOpts    coreOpts(parser);
+  GridOpts<3> gridOpts(parser);
+  PreconOpts  preOpts(parser);
+  LsqOpts     lsqOpts(parser);
+  args::Flag  fwd(parser, "", "Apply forward operation", {'f', "fwd"});
+  args::Flag  adj(parser, "", "Apply adjoint operation", {'a', "adj"});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();

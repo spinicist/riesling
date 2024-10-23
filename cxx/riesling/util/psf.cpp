@@ -14,15 +14,14 @@ using namespace std::literals::complex_literals;
 
 void main_psf(args::Subparser &parser)
 {
-  CoreOpts   coreOpts(parser);
-  GridOpts   gridOpts(parser);
-  PreconOpts preOpts(parser);
-  LsqOpts    lsqOpts(parser);
+  CoreOpts    coreOpts(parser);
+  GridOpts<3> gridOpts(parser);
+  PreconOpts  preOpts(parser);
+  LsqOpts     lsqOpts(parser);
 
   args::Flag mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
 
-  args::ValueFlag<Eigen::Array2f, Array2fReader> phases(parser, "P", "Phase accrued at start and end of spoke",
-                                                        {"phases", 'p'});
+  ArrayFlag<float, 2> phases(parser, "P", "Phase accrued at start and end of spoke", {"phases", 'p'});
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -30,7 +29,7 @@ void main_psf(args::Subparser &parser)
   Trajectory  traj(reader, reader.readInfo().voxel_size, gridOpts.matrix.Get());
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   Index const nB = basis->nB();
-  auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, 1, basis.get(), traj.matrix());
+  auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts, 1, basis.get());
   auto const  M = MakeKspacePre(traj, 1, 1, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   LSMR const  lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 

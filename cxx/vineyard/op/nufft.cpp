@@ -12,8 +12,8 @@
 
 namespace rl::TOps {
 
-template <int NDim, bool VCC>
-NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgridSz)
+template <int ND, bool VCC>
+NUFFT<ND, VCC>::NUFFT(GType::Ptr g, Sz<ND> const matrix, Index const subgridSz)
   : Parent("NUFFT")
   , gridder{g}
   , workspace{gridder->ishape}
@@ -21,7 +21,7 @@ NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgrid
   if (std::equal(matrix.cbegin(), matrix.cend(), gridder->ishape.cbegin() + 2 + VCC, std::less_equal())) {
     ishape = Concatenate(FirstN<2 + VCC>(gridder->ishape), matrix);
   } else {
-    throw Log::Failure("NUFFT", "Requested matrix {} but grid size is {}", matrix, LastN<NDim>(gridder->ishape));
+    throw Log::Failure("NUFFT", "Requested matrix {} but grid size is {}", matrix, LastN<ND>(gridder->ishape));
   }
   oshape = gridder->oshape;
   std::iota(fftDims.begin(), fftDims.end(), 2 + VCC);
@@ -34,7 +34,7 @@ NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgrid
     apo_shape[ii] = 1;
     apoBrd_[ii] = gridder->ishape[ii];
   }
-  apo_ = Apodize(LastN<NDim>(ishape), LastN<NDim>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
+  apo_ = Apodize(LastN<ND>(ishape), LastN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
@@ -46,29 +46,29 @@ NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgrid
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int NDim, bool VCC>
-auto NUFFT<NDim, VCC>::Make(TrajectoryN<NDim> const &traj,
-                            std::string const       &ktype,
-                            float const              osamp,
-                            Index const              nChan,
-                            Basis::CPtr              basis,
-                            Sz<NDim> const           matrix,
-                            Index const              subgridSz) -> std::shared_ptr<NUFFT<NDim, VCC>>
+template <int ND, bool VCC>
+auto NUFFT<ND, VCC>::Make(TrajectoryN<ND> const &traj,
+                          std::string const     &ktype,
+                          float const            osamp,
+                          Index const            nChan,
+                          Basis::CPtr            basis,
+                          Sz<ND> const           matrix,
+                          Index const            subgridSz) -> std::shared_ptr<NUFFT<ND, VCC>>
 {
-  auto g = TOps::Grid<NDim, VCC>::Make(traj, matrix, osamp, ktype, nChan, basis);
-  return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, subgridSz);
+  auto g = TOps::Grid<ND, VCC>::Make(traj, matrix, osamp, ktype, nChan, basis);
+  return std::make_shared<NUFFT<ND, VCC>>(g, matrix, subgridSz);
 }
 
-template <int NDim, bool VCC>
-auto NUFFT<NDim, VCC>::Make(
-  TrajectoryN<NDim> const &traj, GridOpts &opts, Index const nChan, Basis::CPtr basis, Sz<NDim> const matrix)
-  -> std::shared_ptr<NUFFT<NDim, VCC>>
+template <int ND, bool VCC>
+auto NUFFT<ND, VCC>::Make(TrajectoryN<ND> const &traj, GridOpts<ND> &opts, Index const nChan, Basis::CPtr basis)
+  -> std::shared_ptr<NUFFT<ND, VCC>>
 {
-  auto g = TOps::Grid<NDim, VCC>::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), nChan, basis);
-  return std::make_shared<NUFFT<NDim, VCC>>(g, matrix, opts.subgridSize.Get());
+  auto const matrix = traj.matrixForFOV(opts.fov.Get());
+  auto       g = TOps::Grid<ND, VCC>::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), nChan, basis);
+  return std::make_shared<NUFFT<ND, VCC>>(g, matrix, opts.subgridSize.Get());
 }
 
-template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, OutMap &y) const
+template <int ND, bool VCC> void NUFFT<ND, VCC>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -78,7 +78,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::forward(InCMap const &x, Ou
   this->finishForward(y, time, false);
 }
 
-template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, bool VCC> void NUFFT<ND, VCC>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -88,7 +88,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
   this->finishAdjoint(x, time, false);
 }
 
-template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, bool VCC> void NUFFT<ND, VCC>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -98,7 +98,7 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iforward(InCMap const &x, O
   this->finishForward(y, time, true);
 }
 
-template <int NDim, bool VCC> void NUFFT<NDim, VCC>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, bool VCC> void NUFFT<ND, VCC>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -116,19 +116,13 @@ template struct NUFFT<1, true>;
 template struct NUFFT<2, true>;
 template struct NUFFT<3, true>;
 
-auto NUFFTAll(GridOpts         &gridOpts,
-              Trajectory const &traj,
-              Index const       nC,
-              Index const       nSlab,
-              Index const       nTime,
-              Basis::CPtr       basis,
-              Sz3 const         shape) -> TOps::TOp<Cx, 6, 5>::Ptr
+auto NUFFTAll(
+  GridOpts<3> &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr basis)
+  -> TOps::TOp<Cx, 6, 5>::Ptr
 {
-  if (gridOpts.lowmem) {
-    throw Log::Failure("NUFFT", "Low memory option requires sensitivities");
-  }
+  if (gridOpts.lowmem) { throw Log::Failure("NUFFT", "Low memory option requires sensitivities"); }
   if (gridOpts.vcc) {
-    auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis, shape);
+    auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis);
     auto const ns = nufft->ishape;
     auto       reshape = TOps::MakeReshapeInput(nufft, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
     if (nSlab == 1) {
@@ -143,7 +137,7 @@ auto NUFFTAll(GridOpts         &gridOpts,
       return timeLoop;
     }
   } else {
-    auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis, shape);
+    auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, nC, basis);
     if (nSlab == 1) {
       auto reshape = TOps::MakeReshapeOutput(nufft, AddBack(nufft->oshape, 1));
       auto timeLoop = TOps::MakeLoop(reshape, nTime);

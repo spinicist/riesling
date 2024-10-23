@@ -14,7 +14,7 @@ using namespace rl;
 void main_ndft(args::Subparser &parser)
 {
   CoreOpts   coreOpts(parser);
-  GridOpts   gridOpts(parser);
+  GridOpts<3>   gridOpts(parser);
   PreconOpts preOpts(parser);
   LsqOpts    lsqOpts(parser);
 

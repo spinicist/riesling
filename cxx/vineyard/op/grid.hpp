@@ -12,15 +12,25 @@
 
 namespace rl {
 
-struct GridOpts
+template <int ND> struct GridOpts
 {
-  GridOpts(args::Subparser &parser);
-  Array3fFlag fov;
-  args::ValueFlag<rl::Sz3, SzReader<3>>          matrix;
-  args::ValueFlag<float>                         osamp;
-  args::ValueFlag<std::string>                   ktype;
-  args::Flag                                     vcc, lowmem;
-  args::ValueFlag<Index>                         subgridSize;
+  ArrayFlag<float, ND>         fov;
+  SzFlag<ND>                   matrix;
+  args::ValueFlag<float>       osamp;
+  args::ValueFlag<std::string> ktype;
+  args::Flag                   vcc, lowmem;
+  args::ValueFlag<Index>       subgridSize;
+
+  GridOpts(args::Subparser &parser)
+    : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
+    , matrix(parser, "M", "Grid matrix size", {"matrix", 'm'}, Sz<ND>())
+    , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
+    , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
+    , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
+    , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
+    , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
+  {
+  }
 };
 
 namespace TOps {

@@ -13,12 +13,12 @@ using namespace rl;
 
 void main_recon_lsq(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PreconOpts  preOpts(parser);
-  SENSE::Opts senseOpts(parser);
-  LsqOpts     lsqOpts(parser);
-  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  CoreOpts            coreOpts(parser);
+  GridOpts<3>         gridOpts(parser);
+  PreconOpts          preOpts(parser);
+  SENSE::Opts         senseOpts(parser);
+  LsqOpts             lsqOpts(parser);
+  ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
   auto const  cmd = parser.GetCommand().Name();

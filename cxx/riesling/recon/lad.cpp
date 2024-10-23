@@ -14,11 +14,11 @@ using namespace rl;
 
 void main_recon_lad(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridOpts    gridOpts(parser);
-  PreconOpts  preOpts(parser);
-  SENSE::Opts senseOpts(parser);
-  Array3fFlag cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  CoreOpts            coreOpts(parser);
+  GridOpts<3>         gridOpts(parser);
+  PreconOpts          preOpts(parser);
+  SENSE::Opts         senseOpts(parser);
+  ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   args::ValueFlag<Index> inner_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4);
   args::ValueFlag<Index> inner_its1(parser, "ITS", "Subsequenct inner iterations (1)", {"max-its"}, 1);

@@ -30,7 +30,7 @@ Opts::Opts(args::Subparser &parser)
 {
 }
 
-auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+auto LoresChannels(Opts &opts, GridOpts<3> &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
@@ -39,8 +39,7 @@ auto LoresChannels(Opts &opts, GridOpts &gridOpts, Trajectory const &inTraj, Cx5
 
   Cx4 const ncVol = noncart.chip<4>(opts.tp.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
-  auto const shape1 = traj.matrixForFOV(gridOpts.fov.Get());
-  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis, shape1);
+  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis);
   auto const M = MakeKspacePre(traj, nC, nS, 1, basis);
   LSMR const lsmr{A, M, nullptr, 4};
 
@@ -299,7 +298,7 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
-auto Choose(Opts &opts, GridOpts &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+auto Choose(Opts &opts, GridOpts<3> &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }

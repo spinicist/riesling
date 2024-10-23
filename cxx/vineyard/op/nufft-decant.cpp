@@ -54,7 +54,7 @@ auto NUFFTDecant<ND>::Make(TrajectoryN<ND> const &traj,
 
 template <int ND>
 auto NUFFTDecant<ND>::Make(
-  TrajectoryN<ND> const &traj, GridOpts &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)
+  TrajectoryN<ND> const &traj, GridOpts<ND> &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)
   -> std::shared_ptr<NUFFTDecant<ND>>
 {
   auto g = GType::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), skern, basis);

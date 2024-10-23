@@ -13,7 +13,7 @@
 namespace rl {
 namespace Recon {
 
-auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, Basis::CPtr b, Cx5 const &noncart)
+auto Choose(GridOpts<3> &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, Basis::CPtr b, Cx5 const &noncart)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Index const nC = noncart.dimension(0);
@@ -32,18 +32,18 @@ auto Choose(GridOpts &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, 
   }
 }
 
-auto Single(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
+auto Single(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (nSlab > 1) { throw Log::Failure("Recon", "Multislab and 1 channel not supported right now"); }
-  auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, 1, b, traj.matrix());
+  auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, 1, b);
   auto ri = TOps::MakeReshapeInput(nufft, LastN<4>(nufft->ishape));
   auto ro = TOps::MakeReshapeOutput(ri, AddBack(ri->oshape, 1));
   auto timeLoop = TOps::MakeLoop(ro, nTime);
   return timeLoop;
 }
 
-auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
+auto SENSE(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (gridOpts.lowmem) {
@@ -58,7 +58,7 @@ auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index 
     Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get());
     if (gridOpts.vcc) {
       auto sense = std::make_shared<TOps::VCCSENSE>(smaps, b ? b->nB() : 1);
-      auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
+      auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b);
       auto slabLoop = TOps::MakeLoop(nufft, nSlab);
       if (nSlab > 1) {
         auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 6>>(sense->oshape, nSlab);
@@ -69,7 +69,7 @@ auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index 
       }
     } else {
       auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
-      auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), b, sense->mapDimensions());
+      auto nufft = TOps::NUFFT<3, false>::Make(traj, gridOpts, sense->nChannels(), b);
       auto slabLoop = TOps::MakeLoop(nufft, nSlab);
       if (nSlab > 1) {
         auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
@@ -82,7 +82,7 @@ auto SENSE(GridOpts &gridOpts, Trajectory const &traj, Index const nSlab, Index 
   }
 }
 
-auto Decant(GridOpts         &gridOpts,
+auto Decant(GridOpts<3>      &gridOpts,
             Trajectory const &traj,
             Index const       nSlab,
             Index const       nTime,

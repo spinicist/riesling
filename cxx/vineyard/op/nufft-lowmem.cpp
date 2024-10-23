@@ -37,7 +37,7 @@ auto NUFFTLowmem<ND>::Make(TrajectoryN<ND> const &traj,
 
 template <int ND>
 auto NUFFTLowmem<ND>::Make(
-  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
+  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
   -> std::shared_ptr<NUFFTLowmem<ND>>
 {
   auto g = GType::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), 1, basis);
