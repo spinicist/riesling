@@ -60,12 +60,12 @@ auto NUFFT<ND, VCC>::Make(TrajectoryN<ND> const &traj,
 }
 
 template <int ND, bool VCC>
-auto NUFFT<ND, VCC>::Make(TrajectoryN<ND> const &traj, GridOpts<ND> &opts, Index const nChan, Basis::CPtr basis)
+auto NUFFT<ND, VCC>::Make(TrajectoryN<ND> const &traj, GridOpts<ND> const &opts, Index const nChan, Basis::CPtr basis)
   -> std::shared_ptr<NUFFT<ND, VCC>>
 {
-  auto const matrix = traj.matrixForFOV(opts.fov.Get());
-  auto       g = TOps::Grid<ND, VCC>::Make(traj, matrix, opts.osamp.Get(), opts.ktype.Get(), nChan, basis);
-  return std::make_shared<NUFFT<ND, VCC>>(g, matrix, opts.subgridSize.Get());
+  auto const matrix = traj.matrixForFOV(opts.fov);
+  auto       g = TOps::Grid<ND, VCC>::Make(traj, matrix, opts.osamp, opts.ktype, nChan, basis);
+  return std::make_shared<NUFFT<ND, VCC>>(g, matrix, opts.subgridSize);
 }
 
 template <int ND, bool VCC> void NUFFT<ND, VCC>::forward(InCMap const &x, OutMap &y) const
@@ -117,10 +117,9 @@ template struct NUFFT<2, true>;
 template struct NUFFT<3, true>;
 
 auto NUFFTAll(
-  GridOpts<3> &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr basis)
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr basis)
   -> TOps::TOp<Cx, 6, 5>::Ptr
 {
-  if (gridOpts.lowmem) { throw Log::Failure("NUFFT", "Low memory option requires sensitivities"); }
   if (gridOpts.vcc) {
     auto       nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, nC, basis);
     auto const ns = nufft->ishape;

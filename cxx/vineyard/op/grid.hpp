@@ -3,10 +3,8 @@
 #include "basis/basis.hpp"
 #include "grid-mapping.hpp"
 #include "kernel/kernel.hpp"
-#include "sys/args.hpp"
 #include "top.hpp"
 
-#include <args.hxx>
 #include <mutex>
 #include <optional>
 
@@ -14,23 +12,13 @@ namespace rl {
 
 template <int ND> struct GridOpts
 {
-  ArrayFlag<float, ND>         fov;
-  SzFlag<ND>                   matrix;
-  args::ValueFlag<float>       osamp;
-  args::ValueFlag<std::string> ktype;
-  args::Flag                   vcc, lowmem;
-  args::ValueFlag<Index>       subgridSize;
-
-  GridOpts(args::Subparser &parser)
-    : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
-    , matrix(parser, "M", "Grid matrix size", {"matrix", 'm'}, Sz<ND>())
-    , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
-    , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
-    , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
-    , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
-    , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
-  {
-  }
+  using Arrayf = Eigen::Array<float, ND, 1>;
+  Arrayf      fov;
+  Sz<ND>      matrix;
+  float       osamp;
+  std::string ktype;
+  bool        vcc, lowmem;
+  Index       subgridSize;
 };
 
 namespace TOps {

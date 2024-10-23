@@ -23,7 +23,7 @@ template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
                    Index const            subgridSz = 8) -> std::shared_ptr<NUFFTDecant<ND>>;
 
   static auto
-  Make(TrajectoryN<ND> const &traj, GridOpts<ND> &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)
+  Make(TrajectoryN<ND> const &traj, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)
     -> std::shared_ptr<NUFFTDecant<ND>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;

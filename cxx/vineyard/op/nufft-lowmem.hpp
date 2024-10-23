@@ -22,7 +22,7 @@ template <int ND> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
                    Sz<ND> const           matrix) -> std::shared_ptr<NUFFTLowmem<ND>>;
 
   static auto
-  Make(TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
+  Make(TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
     -> std::shared_ptr<NUFFTLowmem<ND>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;

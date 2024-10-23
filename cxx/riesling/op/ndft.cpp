@@ -13,17 +13,17 @@ using namespace rl;
 
 void main_ndft(args::Subparser &parser)
 {
-  CoreOpts   coreOpts(parser);
-  GridOpts<3>   gridOpts(parser);
-  PreconOpts preOpts(parser);
-  LsqOpts    lsqOpts(parser);
+  CoreOpts    coreOpts(parser);
+  GridArgs<3> gridOpts(parser);
+  PreconOpts  preOpts(parser);
+  LsqOpts     lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   ParseCommand(parser, coreOpts.iname, coreOpts.oname);
 
   HD5::Reader reader(coreOpts.iname.Get());
   Info const  info = reader.readInfo();
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
   HD5::Writer writer(coreOpts.oname.Get());
   writer.writeInfo(info);
 

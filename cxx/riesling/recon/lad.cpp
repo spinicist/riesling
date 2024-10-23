@@ -15,7 +15,7 @@ using namespace rl;
 void main_recon_lad(args::Subparser &parser)
 {
   CoreOpts            coreOpts(parser);
-  GridOpts<3>         gridOpts(parser);
+  GridArgs<3>         gridOpts(parser);
   PreconOpts          preOpts(parser);
   SENSE::Opts         senseOpts(parser);
   ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
@@ -44,7 +44,7 @@ void main_recon_lad(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
+  auto const A = Recon::Choose(gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
   auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
@@ -56,6 +56,6 @@ void main_recon_lad(args::Subparser &parser)
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), A->ishape);
   auto             out = oc.adjoint(xm);
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
-  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, A, noncart); }
+  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts.Get(), senseOpts, preOpts, traj, xm, A, noncart); }
   Log::Print(cmd, "Finished");
 }

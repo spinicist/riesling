@@ -13,7 +13,7 @@ using namespace rl;
 void main_nufft(args::Subparser &parser)
 {
   CoreOpts    coreOpts(parser);
-  GridOpts<3> gridOpts(parser);
+  GridArgs<3> gridOpts(parser);
   PreconOpts  preOpts(parser);
   LsqOpts     lsqOpts(parser);
 
@@ -38,7 +38,7 @@ void main_nufft(args::Subparser &parser)
     auto const nC = shape[1];
     auto const nS = 1;
     auto const nT = shape[5];
-    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get());
+    auto const A = TOps::NUFFTAll(gridOpts.Get(), traj, nC, nS, nT, basis.get());
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
   } else {
@@ -46,7 +46,7 @@ void main_nufft(args::Subparser &parser)
     auto const nC = shape[0];
     auto const nS = shape[3];
     auto const nT = shape[4];
-    auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, nT, basis.get());
+    auto const A = TOps::NUFFTAll(gridOpts.Get(), traj, nC, nS, nT, basis.get());
     if (adj) {
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);

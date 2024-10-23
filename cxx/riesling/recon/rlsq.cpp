@@ -17,7 +17,7 @@ using namespace rl;
 void main_recon_rlsq(args::Subparser &parser)
 {
   CoreOpts               coreOpts(parser);
-  GridOpts<3>            gridOpts(parser);
+  GridArgs<3>            gridOpts(parser);
   PreconOpts             preOpts(parser);
   SENSE::Opts            senseOpts(parser);
   RlsqOpts               rlsqOpts(parser);
@@ -38,7 +38,7 @@ void main_recon_rlsq(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const  recon = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
+  auto const  recon = Recon::Choose(gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
   auto const  shape = recon->ishape;
   auto const  M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   float const scale = ScaleData(rlsqOpts.scaling.Get(), recon, M, CollapseToVector(noncart));
@@ -84,6 +84,8 @@ void main_recon_rlsq(args::Subparser &parser)
   auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
-  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, recon, noncart); }
+  if (coreOpts.residual) {
+    WriteResidual(cmd, coreOpts.oname.Get(), gridOpts.Get(), senseOpts, preOpts, traj, xm, recon, noncart);
+  }
   Log::Print(cmd, "Finished");
 }

@@ -14,7 +14,7 @@ using namespace rl;
 void main_sense_calib(args::Subparser &parser)
 {
   CoreOpts                     coreOpts(parser);
-  GridOpts<3>                  gridOpts(parser);
+  GridArgs<3>                  gridOpts(parser);
   SENSE::Opts                  senseOpts(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
 
@@ -26,7 +26,7 @@ void main_sense_calib(args::Subparser &parser)
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
 
-  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts, traj, noncart, basis.get());
+  Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts.Get(), traj, noncart, basis.get());
   Cx4 ref;
   if (refname) {
     HD5::Reader refFile(refname.Get());
@@ -35,7 +35,7 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { throw Log::Failure(cmd, "Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    ref = SENSE::LoresChannels(senseOpts, gridOpts, refTraj, refNoncart, basis.get()).chip<0>(0);
+    ref = SENSE::LoresChannels(senseOpts, gridOpts.Get(), refTraj, refNoncart, basis.get()).chip<0>(0);
     // Normalize energy
     channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
     ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));

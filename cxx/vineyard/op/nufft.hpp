@@ -22,7 +22,7 @@ template <int ND, bool VCC = false> struct NUFFT final : TOp<Cx, ND + 2 + VCC, 3
                    Sz<ND> const           matrix,
                    Index const            subgridSz = 8) -> std::shared_ptr<NUFFT<ND, VCC>>;
 
-  static auto Make(TrajectoryN<ND> const &traj, GridOpts<ND> &opts, Index const nC, Basis::CPtr basis)
+  static auto Make(TrajectoryN<ND> const &traj, GridOpts<ND> const &opts, Index const nC, Basis::CPtr basis)
     -> std::shared_ptr<NUFFT<ND, VCC>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;
@@ -39,7 +39,8 @@ private:
 };
 
 // Utility function to build a complete NUFFT pipeline over all slabs and timepoints
-auto NUFFTAll(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
+auto NUFFTAll(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
   -> TOps::TOp<Cx, 6, 5>::Ptr;
 
 } // namespace rl::TOps

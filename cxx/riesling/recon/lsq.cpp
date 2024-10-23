@@ -14,7 +14,7 @@ using namespace rl;
 void main_recon_lsq(args::Subparser &parser)
 {
   CoreOpts            coreOpts(parser);
-  GridOpts<3>         gridOpts(parser);
+  GridArgs<3>         gridOpts(parser);
   PreconOpts          preOpts(parser);
   SENSE::Opts         senseOpts(parser);
   LsqOpts             lsqOpts(parser);
@@ -32,7 +32,7 @@ void main_recon_lsq(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::Choose(gridOpts, senseOpts, traj, basis.get(), noncart);
+  auto const A = Recon::Choose(gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
   auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
   Log::Debug(cmd, "A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
   auto debug = [shape = A->ishape](Index const i, LSMR::Vector const &x) {
@@ -47,6 +47,6 @@ void main_recon_lsq(args::Subparser &parser)
   auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
-  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts, senseOpts, preOpts, traj, xm, A, noncart); }
+  if (coreOpts.residual) { WriteResidual(cmd, coreOpts.oname.Get(), gridOpts.Get(), senseOpts, preOpts, traj, xm, A, noncart); }
   Log::Print(cmd, "Finished");
 }

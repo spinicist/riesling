@@ -13,7 +13,7 @@
 namespace rl {
 namespace Recon {
 
-auto Choose(GridOpts<3> &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, Basis::CPtr b, Cx5 const &noncart)
+auto Choose(GridOpts<3> const &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, Basis::CPtr b, Cx5 const &noncart)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Index const nC = noncart.dimension(0);
@@ -25,14 +25,14 @@ auto Choose(GridOpts<3> &gridOpts, SENSE::Opts &senseOpts, Trajectory const &tra
   } else {
     auto const kernels = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (senseOpts.decant) {
-      return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(gridOpts.fov.Get()));
+      return Decant(gridOpts, traj, nS, nT, b, kernels, traj.matrixForFOV(gridOpts.fov));
     } else {
       return SENSE(gridOpts, traj, nS, nT, b, kernels);
     }
   }
 }
 
-auto Single(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
+auto Single(GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (nSlab > 1) { throw Log::Failure("Recon", "Multislab and 1 channel not supported right now"); }
@@ -43,11 +43,12 @@ auto Single(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, In
   return timeLoop;
 }
 
-auto SENSE(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
+auto SENSE(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (gridOpts.lowmem) {
-    auto nufft = TOps::NUFFTLowmem<3>::Make(traj, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts, skern, b);
+    auto nufft = TOps::NUFFTLowmem<3>::Make(traj, traj.matrixForFOV(gridOpts.fov), gridOpts, skern, b);
     if (nSlab > 1) {
       throw Log::Failure("Recon", "Lowmem and multislab not supported yet");
     } else {
@@ -55,7 +56,7 @@ auto SENSE(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, Ind
       return TOps::MakeLoop(rn, nTime);
     }
   } else {
-    Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov.Get()), gridOpts.osamp.Get());
+    Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
     if (gridOpts.vcc) {
       auto sense = std::make_shared<TOps::VCCSENSE>(smaps, b ? b->nB() : 1);
       auto nufft = TOps::NUFFT<3, true>::Make(traj, gridOpts, sense->nChannels(), b);
@@ -82,13 +83,13 @@ auto SENSE(GridOpts<3> &gridOpts, Trajectory const &traj, Index const nSlab, Ind
   }
 }
 
-auto Decant(GridOpts<3>      &gridOpts,
-            Trajectory const &traj,
-            Index const       nSlab,
-            Index const       nTime,
-            Basis::CPtr       b,
-            Cx5 const        &skern,
-            Sz3 const        &matrix) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto Decant(GridOpts<3> const &gridOpts,
+            Trajectory const  &traj,
+            Index const        nSlab,
+            Index const        nTime,
+            Basis::CPtr        b,
+            Cx5 const         &skern,
+            Sz3 const         &matrix) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (gridOpts.vcc) {
     throw Log::Failure("Decant", "Not yet");
