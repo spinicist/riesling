@@ -51,7 +51,7 @@ auto CalcMapping(TrajectoryN<ND> const &traj, Sz<ND> const &oshape, Index const 
   Arrayf const mat = Sz2Array(traj.matrix());
   Arrayf const omat = Sz2Array(oshape);
   Arrayf const osamp = omat / mat;
-  Log::Print("Grid", "Mapping matrix {} over-sampled matrix {} over-sampling {}", mat.transpose(), omat.transpose(),
+  Log::Print("Grid", "Nominal matrix {} grid matrix {} over-sampling {}", mat.transpose(), omat.transpose(),
              osamp.transpose());
 
   Arrayf const k0 = omat / 2;
