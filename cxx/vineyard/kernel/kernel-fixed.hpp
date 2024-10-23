@@ -61,7 +61,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<1, PW>::Type>;
   using Point = Eigen::Matrix<float, 1, 1>;
 
-  static inline auto K(Func const &f, float const scale, Point const &p) -> Tensor
+  static inline auto Kernel(Func const &f, float const scale, Point const &p) -> Tensor
   {
     Tensor      k;
     Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
@@ -163,7 +163,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<2, PW>::Type>;
   using Point = Eigen::Matrix<float, 2, 1>;
 
-  static inline auto K(Func const &f, float const scale, Point const &p) -> Tensor
+  static inline auto Kernel(Func const &f, float const scale, Point const &p) -> Tensor
   {
     Tensor      k;
     Array const k1 = K<W, PW, Func>(f, p[1]);
@@ -288,7 +288,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<3, PW>::Type>;
   using Point = Eigen::Matrix<float, 3, 1>;
 
-  static inline auto K(Func const &f, float const scale, Point const &p) -> Tensor
+  static inline auto Kernel(Func const &f, float const scale, Point const &p) -> Tensor
   {
     Tensor      k;
     Array const k2 = K<W, PW, Func>(f, p[2]);

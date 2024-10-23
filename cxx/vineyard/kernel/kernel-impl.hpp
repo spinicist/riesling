@@ -27,7 +27,7 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
     , scale{1.f}
   {
     static_assert(ND < 4);
-    scale = 1. / Norm(FixedKernel<Scalar, ND, Func>::K(f, 1.f, Point::Zero()));
+    scale = 1. / Norm(FixedKernel<Scalar, ND, Func>::Kernel(f, 1.f, Point::Zero()));
     Log::Print("Kernel", "Width {} Scale {}", Func::Width, scale);
   }
 
@@ -35,7 +35,7 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
 
   inline auto operator()(Point const p) const -> Eigen::Tensor<float, ND> final
   {
-    Tensor                   k = FixedKernel<Scalar, ND, Func>::K(f, scale, p);
+    Tensor                   k = FixedKernel<Scalar, ND, Func>::Kernel(f, scale, p);
     Eigen::Tensor<float, ND> k2 = k;
     return k;
   }
