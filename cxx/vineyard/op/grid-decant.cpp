@@ -39,7 +39,7 @@ GridDecant<ND>::GridDecant(TrajectoryN<ND> const &traj,
 {
   static_assert(ND < 4);
   auto const omatrix = MulToEven(matrix, osamp);
-  subs = CalcMapping(traj, matrix, omatrix, kernel->paddedWidth(), sgW);
+  subs = CalcMapping(traj, omatrix, kernel->paddedWidth(), sgW);
   ishape = AddFront(omatrix, basis ? basis->nB() : 1);
   oshape = Sz3{skern.dimension(1), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(omatrix[ND - 1]);
