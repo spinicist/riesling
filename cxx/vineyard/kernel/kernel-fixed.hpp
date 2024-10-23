@@ -64,7 +64,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
   static inline auto K(Func const &f, float const scale, Point const &p) -> Tensor
   {
     Tensor      k;
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i0 = 0; i0 < PW; i0++) {
       k(i0) = k0[i0];
     }
@@ -79,7 +79,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
                             Eigen::Tensor<Scalar, 3>          &x)
   {
     Index const nC = x.dimension(1);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i0 = 0; i0 < PW; i0++) {
       Index const ii0 = i0 + c[0] - PW / 2;
       for (Index ic = 0; ic < nC; ic++) {
@@ -101,7 +101,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
     assert(x.dimension(1) == y.dimension(0));
     Index const nB = x.dimension(0);
     Index const nC = x.dimension(1);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i0 = 0; i0 < PW; i0++) {
       Index const ii0 = i0 + c[0] - PW / 2;
       for (Index ic = 0; ic < nC; ic++) {
@@ -122,7 +122,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>             &y)
   {
     Index const nC = x.dimension(1);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i0 = 0; i0 < PW; i0++) {
       Index const ii0 = i0 + c[0] - (PW - 1) / 2;
       for (Index ic = 0; ic < nC; ic++) {
@@ -143,7 +143,7 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
     assert(x.dimension(1) == y.dimension(0));
     Index const nB = x.dimension(0);
     Index const nC = x.dimension(1);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i0 = 0; i0 < PW; i0++) {
       Index const ii0 = i0 + c[0] - (PW - 1) / 2;
       for (Index ic = 0; ic < nC; ic++) {
@@ -166,8 +166,8 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
   static inline auto K(Func const &f, float const scale, Point const &p) -> Tensor
   {
     Tensor      k;
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i1 = 0; i1 < PW; i1++) {
       for (Index i0 = 0; i0 < PW; i0++) {
         k(i0, i1) = k0[i0] * k1[i1];
@@ -184,8 +184,8 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
                             Eigen::Tensor<Scalar, 4>          &x)
   {
     Index const nC = x.dimension(1);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i1 = 0; i1 < PW; i1++) {
       Index const ii1 = i1 + c[1] - PW / 2;
       for (Index i0 = 0; i0 < PW; i0++) {
@@ -211,8 +211,8 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
     assert(x.dimension(1) == y.dimension(0));
     Index const nB = x.dimension(0);
     Index const nC = x.dimension(1);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i1 = 0; i1 < PW; i1++) {
       Index const ii1 = i1 + c[1] - PW / 2;
       for (Index i0 = 0; i0 < PW; i0++) {
@@ -237,8 +237,8 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>             &y)
   {
     Index const nC = x.dimension(1);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i1 = 0; i1 < PW; i1++) {
       Index const ii1 = i1 + c[1] - (PW - 1) / 2;
       for (Index i0 = 0; i0 < PW; i0++) {
@@ -263,8 +263,8 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 2, Func>
     assert(x.dimension(1) == y.dimension(0));
     Index const nB = x.dimension(0);
     Index const nC = x.dimension(1);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i1 = 0; i1 < PW; i1++) {
       Index const ii1 = i1 + c[1] - (PW - 1) / 2;
       for (Index i0 = 0; i0 < PW; i0++) {
@@ -291,9 +291,9 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
   static inline auto K(Func const &f, float const scale, Point const &p) -> Tensor
   {
     Tensor      k;
-    Array const k2 = K<W, PW>(f, p[2]);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k2 = K<W, PW, Func>(f, p[2]);
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i2 = 0; i2 < PW; i2++) {
       for (Index i1 = 0; i1 < PW; i1++) {
         float const k12 = k1[i1] * k2[i2];
@@ -313,9 +313,9 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
                             Eigen::Tensor<Scalar, 5>          &x)
   {
     Index const nC = x.dimension(1);
-    Array const k2 = K<W, PW>(f, p[2]);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k2 = K<W, PW, Func>(f, p[2]);
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i2 = 0; i2 < PW; i2++) {
       Index const ii2 = i2 + c[2] - PW / 2;
       for (Index i1 = 0; i1 < PW; i1++) {
@@ -345,9 +345,9 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
     assert(x.dimension(1) == y.dimension(0));
     Index const nB = x.dimension(0);
     Index const nC = x.dimension(1);
-    Array const k2 = K<W, PW>(f, p[2]);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k2 = K<W, PW, Func>(f, p[2]);
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i2 = 0; i2 < PW; i2++) {
       Index const ii2 = i2 + c[2] - PW / 2;
       for (Index i1 = 0; i1 < PW; i1++) {
@@ -376,9 +376,9 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
                             Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>             &y)
   {
     Index const nC = x.dimension(1);
-    Array const k2 = K<W, PW>(f, p[2]);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k2 = K<W, PW, Func>(f, p[2]);
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i2 = 0; i2 < PW; i2++) {
       Index const ii2 = i2 + c[2] - (PW - 1) / 2;
       for (Index i1 = 0; i1 < PW; i1++) {
@@ -407,9 +407,9 @@ template <typename Scalar, typename Func> struct FixedKernel<Scalar, 3, Func>
     assert(x.dimension(1) == y.dimension(0));
     Index const nB = x.dimension(0);
     Index const nC = x.dimension(1);
-    Array const k2 = K<W, PW>(f, p[2]);
-    Array const k1 = K<W, PW>(f, p[1]);
-    Array const k0 = K<W, PW>(f, p[0]) * scale;
+    Array const k2 = K<W, PW, Func>(f, p[2]);
+    Array const k1 = K<W, PW, Func>(f, p[1]);
+    Array const k0 = K<W, PW, Func>(f, p[0]) * scale;
     for (Index i2 = 0; i2 < PW; i2++) {
       Index const ii2 = i2 + c[2] - (PW - 1) / 2;
       for (Index i1 = 0; i1 < PW; i1++) {
