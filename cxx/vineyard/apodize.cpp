@@ -11,14 +11,10 @@ template <int N> auto Apodize(Sz<N> const shape, Sz<N> const gshape, std::shared
   float const scale = std::sqrt(static_cast<float>(Product(shape)));
   Log::Debug("Apodiz", "Shape {} Grid shape {} Scale {}", shape, gshape, scale);
   k = k * k.constant(scale);
-  fmt::print(stderr, "k {} |k| {}\n", k.dimensions(), Norm(k));
   CxN<N> temp = TOps::Pad<Cx, N>(k.dimensions(), gshape).forward(k);
-  fmt::print(stderr, "t {} |t| {}\n", temp.dimensions(), Norm(temp));
   FFT::Adjoint(temp);
-  fmt::print(stderr, "f {} |f| {}\n", temp.dimensions(), Norm(temp));
   ReN<N> a = TOps::Pad<Cx, N>(shape, temp.dimensions()).adjoint(temp).abs().real().cwiseMax(1.e-3f).inverse();
-  fmt::print(stderr, "a {} |a| {} Min {} Max {}\n", a.dimensions(), Norm(a), Minimum(a.real()), Maximum(a.real()));
-  if constexpr (N == 3) { Log::Tensor("apodiz", a.dimensions(), a.data(), HD5::DimensionNames<3>{"i", "j", "k"}); }
+  // if constexpr (N == 3) { Log::Tensor("apodiz", a.dimensions(), a.data(), HD5::DimensionNames<3>{"i", "j", "k"}); }
   return a.template cast<Cx>();
 }
 

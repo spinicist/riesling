@@ -15,29 +15,23 @@ namespace rl {
 template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBase<Scalar, ND>
 {
   static constexpr int Width = Func::Width;
-  static constexpr int PadWidth = Func::PadWidth;
-  using OneD = Eigen::TensorFixedSize<float, Eigen::Sizes<Func::PadWidth>>;
+  static constexpr int PadWidth = (((Width + 1) / 2) * 2) + 1;
   using Tensor = typename FixedKernel<float, ND, Func>::Tensor;
   using Point = typename FixedKernel<float, ND, Func>::Point;
-  using Pos = typename FixedKernel<float, ND, Func>::OneD;
 
   Func  f;
   float scale;
-  OneD  centers;
 
   Kernel(float const osamp)
     : f(osamp)
     , scale{1.f}
   {
     static_assert(ND < 4);
-    for (int ii = 0; ii < Func::PadWidth; ii++) {
-      this->centers(ii) = ii + 0.5f - (Func::PadWidth / 2.f);
-    }
     scale = 1. / Norm(FixedKernel<Scalar, ND, Func>::K(f, 1.f, Point::Zero()));
-    Log::Print("Kernel", "Width {} Padded-width {} Scale {}", Func::Width, Func::PadWidth, scale);
+    Log::Print("Kernel", "Width {} Scale {}", Func::Width, scale);
   }
 
-  virtual auto paddedWidth() const -> int final { return Func::PadWidth; }
+  virtual auto paddedWidth() const -> int final { return PadWidth; }
 
   inline auto operator()(Point const p) const -> Eigen::Tensor<float, ND> final
   {

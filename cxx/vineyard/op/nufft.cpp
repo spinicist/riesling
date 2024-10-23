@@ -35,7 +35,6 @@ NUFFT<NDim, VCC>::NUFFT(GType::Ptr g, Sz<NDim> const matrix, Index const subgrid
     apoBrd_[ii] = gridder->ishape[ii];
   }
   apo_ = Apodize(LastN<NDim>(ishape), LastN<NDim>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
-  fmt::print(stderr, "|apo_| {}\n", Norm(apo_));
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
@@ -86,7 +85,6 @@ template <int NDim, bool VCC> void NUFFT<NDim, VCC>::adjoint(OutCMap const &y, I
   gridder->adjoint(y, wsm);
   FFT::Adjoint(workspace, fftDims);
   x.device(Threads::TensorDevice()) = workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
-  fmt::print(stderr, "x {} ishape {} |x| {} |apo| {}\n", x.dimensions(), ishape, Norm(x), Norm(apo_));
   this->finishAdjoint(x, time, false);
 }
 
