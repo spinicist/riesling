@@ -27,19 +27,19 @@ TEST_CASE("Grid-Basic", "[grid]")
   Basis                basis;
 
   float const       osamp = GENERATE(1.3f, 2.f);
-  std::string const ktype = GENERATE("ES6");
+  std::string const ktype = "ES6";
   auto              grid = TOps::Grid<2, false>::Make(traj, traj.matrix(), osamp, ktype, 1, &basis);
   Cx3               noncart(grid->oshape);
   Cx4               cart(grid->ishape);
   noncart.setConstant(1.f);
   cart = grid->adjoint(noncart);
   INFO("M " << M << " OS " << osamp << " " << ktype);
-  // INFO("noncart\n" << noncart);
-  // INFO("cart\n" << cart);
+  INFO("noncart\n" << noncart);
+  INFO("cart\n" << cart);
   auto const cs = std::sqrt(cart.size());
   CHECK((Norm(cart) - Norm(noncart)) / cs == Approx(0.f).margin(2e-4f));
   noncart = grid->forward(cart);
-  // INFO("noncart\n" << noncart);
+  INFO("noncart\n" << noncart);
   CHECK((Norm(cart) - Norm(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 

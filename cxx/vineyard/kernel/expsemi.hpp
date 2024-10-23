@@ -21,7 +21,8 @@ template <int W> struct ExpSemi
 
   inline auto operator()(float const z) const -> float
   {
-    return std::max(0.f, std::exp(β * std::sqrt(1.f - z*z) - 1.f));
+    float const z2 = z*z;
+    return z2 > 1.f ? 0.f : std::exp(β * std::sqrt(1.f - z2) - 1.f);
   }
 };
 
