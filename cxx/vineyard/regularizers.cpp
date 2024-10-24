@@ -15,10 +15,11 @@ RegOpts::RegOpts(args::Subparser &parser)
   , nmrent(parser, "E", "NMR Entropy", {"nmrent"})
 
   , tv(parser, "TV", "Total Variation", {"tv"})
+  , tvl2(parser, "TV-L2", "Total Variation with L2 norm across b", {"tvl2"})
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
-  , tgvl2(parser, "TGV-L2", "TGV with voxel-wise L2 norm", {"tgvl2"})
+  , tgvl2(parser, "TGV-L2", "TGV with L2 norm across b", {"tgvl2"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
   , llrPatch(parser, "S", "Patch size for LLR (default 5)", {"llr-patch"}, 5)
@@ -96,6 +97,13 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3});
     auto op = std::make_shared<Ops::Multiply<Cx>>(grad, ext_x);
     auto prox = std::make_shared<Proxs::L1>(opts.tv.Get(), op->rows());
+    regs.push_back({op, prox, grad->oshape});
+  }
+
+  if (opts.tvl2) {
+    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3});
+    auto op = std::make_shared<Ops::Multiply<Cx>>(grad, ext_x);
+    auto prox = std::make_shared<Proxs::L2>(opts.tvl2.Get(), op->rows(), shape[0]);
     regs.push_back({op, prox, grad->oshape});
   }
 
