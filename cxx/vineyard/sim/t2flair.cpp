@@ -44,7 +44,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   A << cosa, 0.f, 0.f, 1.f;
 
   // Get steady state before first read-out
-  Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(settings.spokesPerSeg + settings.spokesSpoil) * Eramp);
+  Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(settings.spokesPerSeg) * E1.pow(settings.spokesSpoil) * Eramp);
   Eigen::Matrix2f const SS =
     Essi * E2 * inv * grp.pow(settings.segsPerPrep - settings.segsPrep2) * Essi * E2 * grp.pow(settings.segsPrep2);
   float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
@@ -56,7 +56,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   for (Index ig = 0; ig < settings.segsPrep2; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
-      Mz = E1 * A * Mz;
+      Mz = E1 * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
       s0(tp++) = Mz(0) * sina;
@@ -68,7 +68,7 @@ auto T2FLAIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
   for (Index ig = 0; ig < (settings.segsKeep - settings.segsPrep2); ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
-      Mz = E1 * A * Mz;
+      Mz = E1 * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
       s0(tp++) = Mz(0) * sina;

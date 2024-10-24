@@ -38,7 +38,7 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
 
   // Get steady state after prep-pulse for first segment
   Eigen::Matrix2f const seg =
-    (Essi * Eramp * (E1 * A).pow(settings.spokesPerSeg + settings.spokesSpoil) * Eramp).pow(settings.segsPerPrep);
+    (Essi * Eramp * (E1 * A).pow(settings.spokesPerSeg) * E1.pow(settings.spokesSpoil) * Eramp).pow(settings.segsPerPrep);
   Eigen::Matrix2f const SS = Essi * E2 * Erec * seg;
   float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
@@ -49,7 +49,7 @@ auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
   for (Index ig = 0; ig < settings.segsPerPrep; ig++) {
     Mz = Eramp * Mz;
     for (Index ii = 0; ii < settings.spokesSpoil; ii++) {
-      Mz = E1 * A * Mz;
+      Mz = E1 * Mz;
     }
     for (Index ii = 0; ii < settings.spokesPerSeg; ii++) {
       s0(tp++) = Mz(0) * sina;
