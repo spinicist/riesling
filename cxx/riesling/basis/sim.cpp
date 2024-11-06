@@ -66,6 +66,7 @@ void main_basis_sim(args::Subparser &parser)
 
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> plist(parser, "P", "Parameters", {"par"});
 
+  args::Flag norm(parser, "N", "Normalize basis", {"norm", 'n'});
   args::Flag ortho(parser, "O", "Orthogonalize basis", {"ortho"});
 
   ParseCommand(parser);
@@ -106,7 +107,10 @@ void main_basis_sim(args::Subparser &parser)
   Sz3 const                 dshape = dall.dimensions();
   Index const               M = dshape[1] * dshape[2];
   Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], M);
-  dmap.rowwise().normalize();
+
+  if (norm) {
+    dmap.rowwise().normalize();
+  }
 
   if (ortho) {
     auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
