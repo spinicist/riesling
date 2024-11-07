@@ -7,22 +7,20 @@
 
 namespace rl {
 
-struct IR final : Sequence
+struct IR final : SegmentedZTE
 {
   static const Index nParameters = 3;
-  IR(Settings const &s);
+  IR(Parameters const &s);
 
-  auto traces() const -> Index;
-  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
+  auto simulate(Eigen::ArrayXf const &p) const -> Sim;
 };
 
-struct IR2 final : Sequence
+struct IR2 final : SegmentedZTE
 {
   static const Index nParameters = 4;
-  IR2(Settings const &s);
+  IR2(Parameters const &s);
 
-  auto traces() const -> Index;
-  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
+  auto simulate(Eigen::ArrayXf const &p) const -> Sim;
 };
 
 } // namespace rl

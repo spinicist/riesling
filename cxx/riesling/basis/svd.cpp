@@ -17,7 +17,7 @@
 using namespace rl;
 
 template <typename T>
-auto Run(rl::Settings const                &s,
+auto Run(rl::Parameters const                &s,
          std::vector<Eigen::ArrayXf> const &los,
          std::vector<Eigen::ArrayXf> const &his,
          std::vector<Eigen::ArrayXi> const &Ns)
@@ -52,7 +52,7 @@ void main_basis_svd(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
+  args::MapFlag<std::string, Sequences> seq(parser, "T", "SegmentedZTE type (default T1T2)", {"seq"}, SequenceMap);
   args::ValueFlag<Index>                samp(parser, "S", "Samples per spoke", {"samples"}, 1);
   args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 0);
   args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
@@ -82,7 +82,7 @@ void main_basis_svd(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
-  rl::Settings settings{.samplesPerSpoke = samp.Get(),
+  rl::Parameters p{.samplesPerSpoke = samp.Get(),
                         .samplesGap = gap.Get(),
                         .spokesPerSeg = sps.Get(),
                         .spokesSpoil = spoil.Get(),
@@ -99,18 +99,18 @@ void main_basis_svd(args::Subparser &parser)
                         .TI = TI.Get(),
                         .Trec = Trec.Get(),
                         .TE = te.Get()};
-  Log::Print(cmd, "{}", settings.format());
+  Log::Print(cmd, "{}", p.format());
 
   Cx3 dall;
   switch (seq.Get()) {
-  case Sequences::NoPrep: dall = Run<rl::NoPrep>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::Prep: dall = Run<rl::Prep>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::Prep2: dall = Run<rl::Prep2>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::IR: dall = Run<rl::IR>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::IR2: dall = Run<rl::IR2>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::DIR: dall = Run<rl::DIR>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::T2Prep: dall = Run<rl::T2Prep>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::T2FLAIR: dall = Run<rl::T2FLAIR>(settings, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::NoPrep: dall = Run<rl::NoPrep>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::Prep: dall = Run<rl::Prep>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::Prep2: dall = Run<rl::Prep2>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::IR: dall = Run<rl::IR>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::IR2: dall = Run<rl::IR2>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::DIR: dall = Run<rl::DIR>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::T2Prep: dall = Run<rl::T2Prep>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::T2FLAIR: dall = Run<rl::T2FLAIR>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
   }
   Sz3 const   dshape = dall.dimensions();
   Index const L = dshape[1] * dshape[2];

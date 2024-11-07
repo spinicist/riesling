@@ -7,13 +7,13 @@
 
 namespace rl {
 
-struct DIR final : Sequence
+struct DIR final : SegmentedZTE
 {
   static const Index nParameters = 4;
-  DIR(Settings const s);
+  DIR(Parameters const s);
 
   auto traces() const -> Index;
-  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
+  auto simulate(Eigen::ArrayXf const &p) const -> Sim;
 };
 
 } // namespace rl

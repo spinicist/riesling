@@ -18,7 +18,7 @@
 
 using namespace rl;
 
-template <typename T> auto Run(rl::Settings const &s, std::vector<Eigen::ArrayXf> plist)
+template <typename T> auto Run(rl::Parameters const &s, std::vector<Eigen::ArrayXf> plist)
 {
   if (plist.size() == 0) { throw Log::Failure("Sim", "Must specify at least one set of tissue parameters"); }
 
@@ -45,7 +45,7 @@ void main_basis_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default T1T2)", {"seq"}, SequenceMap);
+  args::MapFlag<std::string, Sequences> seq(parser, "T", "SegmentedZTE type (default T1T2)", {"seq"}, SequenceMap);
   args::ValueFlag<Index>                samp(parser, "S", "Samples per spoke", {"samples"}, 64);
   args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 3);
   args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
@@ -73,7 +73,7 @@ void main_basis_sim(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
-  rl::Settings settings{.samplesPerSpoke = samp.Get(),
+  rl::Parameters p{.samplesPerSpoke = samp.Get(),
                         .samplesGap = gap.Get(),
                         .spokesPerSeg = sps.Get(),
                         .spokesSpoil = spoil.Get(),
@@ -90,19 +90,19 @@ void main_basis_sim(args::Subparser &parser)
                         .TI = TI.Get(),
                         .Trec = Trec.Get(),
                         .TE = te.Get()};
-  Log::Print(cmd, "{}", settings.format());
+  Log::Print(cmd, "{}", p.format());
 
   Eigen::ArrayXXf pars;
   Cx3             dall;
   switch (seq.Get()) {
-  case Sequences::NoPrep: std::tie(pars, dall) = Run<rl::NoPrep>(settings, plist.Get()); break;
-  case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(settings, plist.Get()); break;
-  case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(settings, plist.Get()); break;
-  case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(settings, plist.Get()); break;
-  case Sequences::IR2: std::tie(pars, dall) = Run<rl::IR2>(settings, plist.Get()); break;
-  case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(settings, plist.Get()); break;
-  case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(settings, plist.Get()); break;
-  case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(settings, plist.Get()); break;
+  case Sequences::NoPrep: std::tie(pars, dall) = Run<rl::NoPrep>(p, plist.Get()); break;
+  case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(p, plist.Get()); break;
+  case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(p, plist.Get()); break;
+  case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(p, plist.Get()); break;
+  case Sequences::IR2: std::tie(pars, dall) = Run<rl::IR2>(p, plist.Get()); break;
+  case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(p, plist.Get()); break;
+  case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(p, plist.Get()); break;
+  case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(p, plist.Get()); break;
   }
   Sz3 const                 dshape = dall.dimensions();
   Index const               M = dshape[1] * dshape[2];

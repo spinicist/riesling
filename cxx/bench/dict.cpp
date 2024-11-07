@@ -15,7 +15,7 @@ TEST_CASE("Dictionaries", "[dict]")
 {
   rl::Log::SetLevel(rl::Log::Level::Testing);
 
-  rl::Settings const settings{
+  rl::Parameters const p{
     .spg = 256,
     .gps = 6,
     .gprep2 = 2,
@@ -29,7 +29,7 @@ TEST_CASE("Dictionaries", "[dict]")
     .TE = 80.e-3f};
   Index const nsamp = 8192;
 
-  rl::T2FLAIR simulator{settings};
+  rl::T2FLAIR simulator{p};
   Eigen::ArrayXXf parameters = simulator.parameters(nsamp);
   Eigen::ArrayXXf dynamics(simulator.length(), parameters.cols());
   auto task = [&](Index const ii) { dynamics.col(ii) = simulator.simulate(parameters.col(ii)); };
