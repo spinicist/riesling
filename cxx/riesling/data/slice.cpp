@@ -12,15 +12,15 @@ void main_slice(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
+  args::ValueFlag<Index> channelStart(parser, "T", "Channel to start slice", {"channel-start"}, 0);
   args::ValueFlag<Index> channelSize(parser, "T", "Number of channels to keep", {"channel-size"}, 0);
-  args::ValueFlag<Index> channelStart(parser, "T", "Channel to start split", {"channel-start"}, 0);
   args::ValueFlag<Index> channelStride(parser, "SZ", "Channel stride", {"channel-stride"}, 1);
 
+  args::ValueFlag<Index> sampleStart(parser, "T", "Read sample to start slice", {"sample-start"}, 0);
   args::ValueFlag<Index> sampleSize(parser, "T", "Number of read samples to keep", {"sample-size"}, 0);
-  args::ValueFlag<Index> sampleStart(parser, "T", "Read sample to start split", {"sample-start"}, 0);
   args::ValueFlag<Index> sampleStride(parser, "SZ", "Read sample stride", {"sample-stride"}, 1);
 
-  args::ValueFlag<Index> traceStart(parser, "T", "Trace to start split", {"trace-start"}, 0);
+  args::ValueFlag<Index> traceStart(parser, "T", "Trace to start slice", {"trace-start"}, 0);
   args::ValueFlag<Index> traceSize(parser, "SZ", "Number of traces to keep", {"trace-size"}, 0);
   args::ValueFlag<Index> traceStride(parser, "S", "Trace Stride", {"trace-stride"}, 1);
 
@@ -28,12 +28,12 @@ void main_slice(args::Subparser &parser)
   args::ValueFlag<Index> traceSegStart(parser, "S", "Trace segment start", {"seg-start"}, 0);
   args::ValueFlag<Index> traceSegments(parser, "S", "Trace segments", {"seg-size"});
 
+  args::ValueFlag<Index> volStart(parser, "T", "Volume to start slice", {"vol-start"}, 0);
   args::ValueFlag<Index> volSize(parser, "T", "Number of volumes to keep", {"vol-size"}, 0);
-  args::ValueFlag<Index> volStart(parser, "T", "Volume to start split", {"vol-start"}, 0);
   args::ValueFlag<Index> volStride(parser, "SZ", "Volume stride", {"vol-stride"}, 1);
 
+  args::ValueFlag<Index> slabStart(parser, "T", "Slab to start slice", {"slab-start"}, 0);
   args::ValueFlag<Index> slabSize(parser, "T", "Number of slabs to keep", {"slab-size"}, 0);
-  args::ValueFlag<Index> slabStart(parser, "T", "Slab to start split", {"slab-start"}, 0);
   args::ValueFlag<Index> slabStride(parser, "SZ", "Slab stride", {"slab-stride"}, 1);
 
   ParseCommand(parser, iname);
@@ -56,17 +56,17 @@ void main_slice(args::Subparser &parser)
   Index const sSz = slabSize ? slabSize.Get() : shape[3] - sSt;
   Index const vSz = volSize ? volSize.Get() : shape[4] - vSt;
 
-  if (cSt + cSz > shape[0]) { throw Log::Failure(cmd, "Last sample point {} exceeded maximum {}", cSt + cSz, shape[0]); }
-  if (rSt + rSz > shape[1]) { throw Log::Failure(cmd, "Last sample point {} exceeded maximum {}", rSt + rSz, shape[1]); }
+  if (cSt + cSz > shape[0]) { throw Log::Failure(cmd, "Last channel {} exceeded maximum {}", cSt + cSz, shape[0]); }
+  if (rSt + rSz > shape[1]) { throw Log::Failure(cmd, "Last sample {} exceeded maximum {}", rSt + rSz, shape[1]); }
   if (tracesPerSeg) {
     if (tSt + tSz > tracesPerSeg.Get()) {
-      throw Log::Failure(cmd, "Last trace point {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
+      throw Log::Failure(cmd, "Last trace {} exceeded segment size {}", tSt + tSz, tracesPerSeg.Get());
     }
   } else {
-    if (tSt + tSz > shape[2]) { throw Log::Failure(cmd, "Last trace point {} exceeded maximum {}", tSt + tSz, shape[2]); }
+    if (tSt + tSz > shape[2]) { throw Log::Failure(cmd, "Last trace {} exceeded maximum {}", tSt + tSz, shape[2]); }
   }
-  if (sSt + sSz > shape[3]) { throw Log::Failure(cmd, "Last slab point {} exceeded maximum {}", sSt + sSz, shape[3]); }
-  if (vSt + vSz > shape[4]) { throw Log::Failure(cmd, "Last volume point {} exceeded maximum {}", vSt + vSz, shape[4]); }
+  if (sSt + sSz > shape[3]) { throw Log::Failure(cmd, "Last slab {} exceeded maximum {}", sSt + sSz, shape[3]); }
+  if (vSt + vSz > shape[4]) { throw Log::Failure(cmd, "Last volume {} exceeded maximum {}", vSt + vSz, shape[4]); }
 
   if (cSz < 1) { throw Log::Failure(cmd, "Channel size was less than 1"); }
   if (rSz < 1) { throw Log::Failure(cmd, "Sample size was less than 1"); }
