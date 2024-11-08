@@ -1,64 +1,52 @@
 #include "t2prep.hpp"
 
+#include "log.hpp"
 #include "unsupported/Eigen/MatrixFunctions"
 
 namespace rl {
 
-T2Prep::T2Prep(Parameters const &s)
-  : SegmentedZTE{s}
+T2Prep::T2Prep(Pars const &s, bool const pt)
+  : SegmentedZTE(s, pt)
 {
 }
 
-auto T2Prep::simulate(Eigen::ArrayXf const &p) const -> Cx2
+auto T2Prep::nTissueParameters() const -> Index { return 3; }
+
+auto T2Prep::simulate(Eigen::ArrayXf const &pars) const -> Cx2
 {
-  if (p.size() != 3) { throw Log::Failure("Sim", "Must have 3 parameters T1 T2 Δf"); }
-  float const R1 = 1.f / p(0);
-  float const R2 = 1.f / p(1);
-  float const Δf = p(2);
+  if (pars.size() != nTissueParameters()) {
+    throw Log::Failure("Sim", "Must have {} parameters T1 T2 Δf B1", nTissueParameters());
+  }
+  float const R1 = 1.f / pars(0);
+  float const R2 = 1.f / pars(1);
+  float const Δf = pars(2);
   float const B1 = 1.f;
 
-  Eigen::Matrix2f E1, E2, Eramp, Essi, Erec;
-  float const     e1 = exp(-R1 * p.TR);
-  float const     eramp = exp(-R1 * p.Tramp);
-  float const     essi = exp(-R1 * p.Tssi);
-  float const     erec = exp(-R1 * p.Trec);
-  E1 << e1, 1 - e1, 0.f, 1.f;
-  E2 << exp(-R2 * p.TE), 0.f, 0.f, 1.f;
-  Eramp << eramp, 1 - eramp, 0.f, 1.f;
-  Essi << essi, 1 - essi, 0.f, 1.f;
-  Erec << erec, 1 - erec, 0.f, 1.f;
-
-  float const cosa = cos(B1 * p.alpha * M_PI / 180.f);
-  float const sina = sin(B1 * p.alpha * M_PI / 180.f);
-
-  Eigen::Matrix2f A;
-  A << cosa, 0.f, 0.f, 1.f;
-
-  // Get steady state after prep-pulse for first segment
-  Eigen::Matrix2f const seg =
-    (Essi * Eramp * (E1 * A).pow(p.spokesPerSeg) * E1.pow(p.spokesSpoil) * Eramp).pow(p.segsPerPrep);
-  Eigen::Matrix2f const SS = Essi * E2 * Erec * seg;
+  Eigen::Matrix2f const E2 = ET2p(R2, p.TE), R = E(R1, p.Trec), seg = Eseg(R1, 1.f);
+  Eigen::Matrix2f const SS = E2 * R * seg.pow(p.segsPerPrep);
   float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
 
   // Now fill in dynamic
-  Index           tp = 0;
   Eigen::Vector2f Mz{m_ss, 1.f};
   Cx1             s0(traces());
+  Index           tp = 0;
   for (Index ig = 0; ig < p.segsPerPrep; ig++) {
-    Mz = Eramp * Mz;
-    for (Index ii = 0; ii < p.spokesSpoil; ii++) {
-      Mz = E1 * Mz;
-    }
-    for (Index ii = 0; ii < p.spokesPerSeg; ii++) {
-      s0(tp++) = Mz(0) * sina;
-      Mz = E1 * A * Mz;
-    }
-    Mz = Essi * Eramp * Mz;
-    if (!std::isfinite(std::abs(s0(tp - 1)))) { throw Log::Failure("Sim", "R1 {} R2 {}", R1, R2); }
+    segment(tp, Mz, s0, R1, 1.f);
   }
+  if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
+  return readout(pars(1), Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
+}
 
-  if (tp != p.spokesPerSeg * p.segsPerPrep) { throw Log::Failure("Sim", "Programmer error"); }
-  return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
+auto T2Prep::timepoints() const -> Re1
+{
+  Re1   ts(traces());
+  Index tp = 0;
+  float t = 0.f;
+  for (Index ig = 0; ig < p.segsPerPrep; ig++) {
+    segmentTimepoints(tp, t, ts);
+  }
+  if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
+  return ts;
 }
 
 } // namespace rl

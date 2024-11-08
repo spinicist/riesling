@@ -1,85 +1,58 @@
 #include "dir.hpp"
 
+#include "log.hpp"
 #include "unsupported/Eigen/MatrixFunctions"
 
 namespace rl {
 
-DIR::DIR(Parameters const s)
-  : SegmentedZTE{s}
+DIR::DIR(Pars const s, bool const pt)
+  : SegmentedZTE(s, pt)
 {
   Log::Print("Sim", "DIR SegmentedZTE");
 }
 
-Index DIR::traces() const { return p.spokesPerSeg * p.segsKeep; }
+auto DIR::nTissueParameters() const -> Index { return 4; }
 
-auto DIR::simulate(Eigen::ArrayXf const &p) const -> Cx2
+auto DIR::simulate(Eigen::ArrayXf const &pars) const -> Cx2
 {
-  if (p.size() != 4) { throw Log::Failure("Sim", "Need 4 parameters T1 T2 Δf"); }
-  float const T1 = p(0);
-  float const T2 = p(1);
-  float const Δf = p(2);
-  float const Q = p(3);
+  if (pars.size() != nTissueParameters()) { throw Log::Failure("Sim", "Need {} parameters T1 T2 Δf Q", nTissueParameters()); }
+  float const R1 = 1.f / pars(0);
+  float const R2 = 1.f / pars(1);
+  float const Δf = pars(2);
+  float const Q = pars(3);
 
-  Eigen::Matrix2f inv;
-  inv << -1, 0.f, 0.f, 1.f;
-
-  float const     R1 = 1.f / T1;
-  float const     R2 = 1.f / T2;
-  Eigen::Matrix2f E1, E2, Einv, Eramp, Essi, Erec;
-  float const     e1 = exp(-R1 * p.TR);
-  float const     e2 = exp(-R2 * p.TE);
-  float const     einv = exp(-R1 * p.TI);
-  float const     eramp = exp(-R1 * p.Tramp);
-  float const     essi = exp(-R1 * p.Tssi);
-  float const     erec = exp(-R1 * p.Trec);
-  E1 << e1, 1.f - e1, 0.f, 1.f;
-  Einv << einv, 1.f - einv, 0.f, 1.f;
-  E2 << -Q * e2, 0.f, 0.f, 1.f;
-  Eramp << eramp, 1.f - eramp, 0.f, 1.f;
-  Essi << essi, 1.f - essi, 0.f, 1.f;
-  Erec << erec, 1.f - erec, 0.f, 1.f;
-
-  float const cosa = cos(p.alpha * M_PI / 180.f);
-  float const sina = sin(p.alpha * M_PI / 180.f);
-
-  Eigen::Matrix2f A;
-  A << cosa, 0.f, 0.f, 1.f;
-
-  // Get steady state after prep-pulse for first segment
-  Eigen::Matrix2f const grp = (Essi * Eramp * (E1 * A).pow(p.spokesPerSeg) * E1.pow(p.spokesSpoil) * Eramp);
-  Eigen::Matrix2f const SS =
-    Einv * inv * Erec * grp.pow(p.segsPerPrep - p.segsPrep2) * E2 * grp.pow(p.segsPrep2);
-  float const m_ss = SS(0, 1) / (1.f - SS(0, 0));
-
-  // Now fill in dynamic
-  Index           tp = 0;
+  Eigen::Matrix2f const E2 = ET2p(R2, p.TE), Ei = E(R1, p.TI), Er = E(R1, p.Trec), V1 = inv(1.f), V2 = inv(Q), seg = Eseg(R1, 1.f);
+  Eigen::Matrix2f const SS = Ei * V1 * Er * seg.pow(p.segsPerPrep - p.segsPrep2) * V2 * E2 * seg.pow(p.segsPrep2);
+  float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
+  fmt::print(stderr, "m_ss {}\n", m_ss);
   Eigen::Vector2f Mz{m_ss, 1.f};
   Cx1             s0(traces());
+  Index           tp = 0;
   for (Index ig = 0; ig < p.segsPrep2; ig++) {
-    Mz = Eramp * Mz;
-    for (Index ii = 0; ii < p.spokesSpoil; ii++) {
-      Mz = E1 * Mz;
-    }
-    for (Index ii = 0; ii < p.spokesPerSeg; ii++) {
-      s0(tp++) = Mz(0) * sina;
-      Mz = E1 * A * Mz;
-    }
-    Mz = Essi * Eramp * Mz;
+    segment(tp, Mz, s0, R1, 1.f);
   }
-  Mz = E2 * Mz;
-  for (Index ig = 0; ig < p.segsKeep - p.segsPrep2; ig++) {
-    Mz = Eramp * Mz;
-    for (Index ii = 0; ii < p.spokesSpoil; ii++) {
-      Mz = E1 * Mz;
-    }
-    for (Index ii = 0; ii < p.spokesPerSeg; ii++) {
-      s0(tp++) = Mz(0) * sina;
-      Mz = E1 * A * Mz;
-    }
-    Mz = Essi * Eramp * Mz;
+  Mz = V2 * E2 * Mz;
+  for (Index ig = 0; ig < (p.segsPerPrep - p.segsPrep2); ig++) {
+    segment(tp, Mz, s0, R1, 1.f);
   }
-  if (tp != p.spokesPerSeg * p.segsKeep) { throw Log::Failure("Sim", "Programmer error"); }
-  return offres(Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
+  if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
+  return readout(pars(1), Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
+}
+
+auto DIR::timepoints() const -> Re1
+{
+  Re1   ts(traces());
+  Index tp = 0;
+  float t = 0.f;
+  for (Index ig = 0; ig < p.segsPrep2; ig++) {
+    segmentTimepoints(tp, t, ts);
+  }
+  t += p.TE;
+  for (Index ig = 0; ig < (p.segsPerPrep - p.segsPrep2); ig++) {
+    segmentTimepoints(tp, t, ts);
+  }
+  if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
+  return ts;
 }
 
 } // namespace rl

@@ -49,10 +49,10 @@ void main_basis_concat(args::Subparser &parser)
     Eigen::MatrixXcf          R = h.matrixQR().topRows(N).cast<Cx>().triangularView<Eigen::Upper>();
     R /= scale;
     bmap = Q.transpose().cast<Cx>() * scale;
-    Basis b(nb, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
+    Basis b(nb, b1->t, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
-    Basis const b3(nb);
+    Basis const b3(nb, b1->t);
     b3.write(oname.Get());
   }
   Log::Print(cmd, "Finished");

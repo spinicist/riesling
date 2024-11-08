@@ -7,17 +7,52 @@
 #include "log.hpp"
 #include "sim/dir.hpp"
 #include "sim/ir.hpp"
-#include "sim/parameter.hpp"
-#include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
+#include "sim/zte.hpp"
 #include "sys/threads.hpp"
 #include "tensors.hpp"
 
 using namespace rl;
 
-template <typename T>
-auto Run(rl::Parameters const                &s,
+auto ParameterGrid(Index const nPar, Eigen::ArrayXf const &lo, Eigen::ArrayXf const &hi, Eigen::ArrayXi const &N)
+  -> Eigen::ArrayXXf
+{
+  if (lo.size() != nPar) { throw Log::Failure("Pars", "Low values had {} elements, expected {}", lo.size(), nPar); }
+  if (hi.size() != nPar) { throw Log::Failure("Pars", "High values had {} elements, expected {}", hi.size(), nPar); }
+  if (N.size() != nPar) { throw Log::Failure("Pars", "N had {} elements, expected {}", N.size(), nPar); }
+
+  Eigen::ArrayXf delta(nPar);
+  Index          nTotal = 1;
+  for (int ii = 0; ii < nPar; ii++) {
+    if (N[ii] < 1) {
+      throw Log::Failure("Pars", "{} N was less than 1", ii);
+    } else if (N[ii] == 1) {
+      delta[ii] = 0.f;
+    } else {
+      delta[ii] = (hi[ii] - lo[ii]) / (N[ii] - 1);
+    }
+    nTotal *= N[ii];
+  }
+
+  Eigen::ArrayXXf p(nPar, nTotal);
+  Index           ind = 0;
+
+  std::function<void(Index, Eigen::ArrayXf)> dimLoop = [&](Index dim, Eigen::ArrayXf pars) {
+    for (Index id = 0; id < N[dim]; id++) {
+      pars[dim] = lo[dim] + id * delta[dim];
+      if (dim > 0) {
+        dimLoop(dim - 1, pars);
+      } else {
+        p.col(ind++) = pars;
+      }
+    }
+  };
+  dimLoop(nPar - 1, Eigen::ArrayXf::Zero(nPar));
+  return p;
+}
+
+auto Run(rl::SegmentedZTE const            &seq,
          std::vector<Eigen::ArrayXf> const &los,
          std::vector<Eigen::ArrayXf> const &his,
          std::vector<Eigen::ArrayXi> const &Ns)
@@ -25,8 +60,7 @@ auto Run(rl::Parameters const                &s,
   if (los.size() != his.size()) { throw Log::Failure("Sim", "Different number of parameter low bounds and high bounds"); }
   if (los.size() == 0) { throw Log::Failure("Sim", "Must specify at least one set of tissue parameters"); }
 
-  T               seq{s};
-  Index const     nP = T::nParameters;
+  Index const     nP = seq.nTissueParameters();
   Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
     auto const p = ParameterGrid(nP, los[ii], his[ii], Ns[ii]);
@@ -45,7 +79,7 @@ auto Run(rl::Parameters const                &s,
   };
   Threads::ChunkFor(task, parameters.cols());
   Log::Print("Sim", "Simulation took {}. Final size {}", Log::ToNow(start), dynamics.dimensions());
-  return dynamics;
+  return std::make_tuple(seq.timepoints(), dynamics);
 }
 
 void main_basis_svd(args::Subparser &parser)
@@ -57,7 +91,6 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 0);
   args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
   args::ValueFlag<Index>                spp(parser, "SPP", "Segments per prep", {'g', "spp"}, 1);
-  args::ValueFlag<Index>                sk(parser, "sk", "Segments per prep to keep", {"sk"}, 1);
   args::ValueFlag<Index>                sp2(parser, "G", "Segments before prep 2", {"sp2"}, 0);
   args::ValueFlag<float>                alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
   args::ValueFlag<float>                ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
@@ -70,7 +103,7 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlag<float>                TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float>                Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float>                te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
-
+  args::Flag                            pt(parser, "P", "Pre-segment traces", {"pt"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pLo(parser, "LO", "Low values for parameters", {"lo"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
   args::ValueFlagList<Eigen::ArrayXi, std::vector, ArrayXiReader> pN(parser, "N", "Grid N for parameters", {"N"});
@@ -82,35 +115,32 @@ void main_basis_svd(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
-  rl::Parameters p{.samplesPerSpoke = samp.Get(),
-                        .samplesGap = gap.Get(),
-                        .spokesPerSeg = sps.Get(),
-                        .spokesSpoil = spoil.Get(),
-                        .k0 = k0.Get(),
-                        .segsPerPrep = spp.Get(),
-                        .segsKeep = sk ? sk.Get() : spp.Get(),
-                        .segsPrep2 = sp2.Get(),
-                        .alpha = alpha.Get(),
-                        .ascale = ascale.Get(),
-                        .Tsamp = tsamp.Get(),
-                        .TR = TR.Get(),
-                        .Tramp = Tramp.Get(),
-                        .Tssi = Tssi.Get(),
-                        .TI = TI.Get(),
-                        .Trec = Trec.Get(),
-                        .TE = te.Get()};
+  rl::SegmentedZTE::Pars p{.samplesPerSpoke = samp.Get(),
+                           .samplesGap = gap.Get(),
+                           .spokesPerSeg = sps.Get(),
+                           .spokesSpoil = spoil.Get(),
+                           .k0 = k0.Get(),
+                           .segsPerPrep = spp.Get(),
+                           .segsPrep2 = sp2.Get(),
+                           .alpha = alpha.Get() * (float)M_PI / 180.f,
+                           .ascale = ascale.Get(),
+                           .Tsamp = tsamp.Get(),
+                           .TR = TR.Get(),
+                           .Tramp = Tramp.Get(),
+                           .Tssi = Tssi.Get(),
+                           .TI = TI.Get(),
+                           .Trec = Trec.Get(),
+                           .TE = te.Get()};
   Log::Print(cmd, "{}", p.format());
 
+  Re1 time;
   Cx3 dall;
   switch (seq.Get()) {
-  case Sequences::NoPrep: dall = Run<rl::NoPrep>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::Prep: dall = Run<rl::Prep>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::Prep2: dall = Run<rl::Prep2>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::IR: dall = Run<rl::IR>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::IR2: dall = Run<rl::IR2>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::DIR: dall = Run<rl::DIR>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::T2Prep: dall = Run<rl::T2Prep>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::T2FLAIR: dall = Run<rl::T2FLAIR>(p, pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::ZTE: std::tie(time, dall) = Run(rl::SegmentedZTE(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::IR: std::tie(time, dall) = Run(rl::IR(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::DIR: std::tie(time, dall) = Run(rl::DIR(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::T2Prep: std::tie(time, dall) = Run(rl::T2Prep(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::T2FLAIR: std::tie(time, dall) = Run(rl::T2FLAIR(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
   }
   Sz3 const   dshape = dall.dimensions();
   Index const L = dshape[1] * dshape[2];
@@ -142,6 +172,7 @@ void main_basis_svd(args::Subparser &parser)
   bmap *= std::sqrt(L); // This is the correct scaling during the recon
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
+  writer.writeTensor("time", time.dimensions(), time.data(), {"t"});
   if (save) {
     writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
     writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);

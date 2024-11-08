@@ -76,7 +76,7 @@ void main_phantom(args::Subparser &parser)
   if (gradCubes) {
     phantom = GradCubes(traj.matrix(), traj.voxelSize(), size.Get());
   } else {
-    // Parameters for the 10 elipsoids in the 3D Shepp-Logan phantom from Cheng et al.
+    // Pars for the 10 elipsoids in the 3D Shepp-Logan phantom from Cheng et al.
     std::vector<Eigen::Vector3f> const centres{{0, 0, 0},
                                                {0, 0, 0},
                                                {-0.22, 0, -0.25},

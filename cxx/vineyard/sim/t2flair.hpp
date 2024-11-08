@@ -1,16 +1,17 @@
 #pragma once
 
-#include "sequence.hpp"
+#include "zte.hpp"
 #include "types.hpp"
 
 namespace rl {
 
 struct T2FLAIR final : SegmentedZTE
 {
-  static const Index nParameters = 4;
-  T2FLAIR(Parameters const &s, bool const prepTraces);
+  T2FLAIR(Pars const &s, bool const prepTraces);
 
-  auto simulate(Eigen::ArrayXf const &p) const -> Sim;
+  auto nTissueParameters() const -> Index;
+  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
+  auto timepoints() const -> Re1;
 };
 
 } // namespace rl

@@ -3,8 +3,8 @@
 #include "algo/decomp.hpp"
 #include "algo/stats.hpp"
 #include "io/hd5.hpp"
-#include "tensors.hpp"
 #include "sys/threads.hpp"
+#include "tensors.hpp"
 
 namespace rl {
 
@@ -14,14 +14,16 @@ Basis::Basis()
   B.setConstant(1.f);
 }
 
-Basis::Basis(Cx3 const &Bb)
+Basis::Basis(Cx3 const &Bb, Re1 const &tt)
   : B{Bb}
+  , t{tt}
 {
 }
 
-Basis::Basis(Cx3 const &Bb, Cx2 const &Rr)
+Basis::Basis(Cx3 const &Bb, Re1 const &tt, Cx2 const &Rr)
   : B{Bb}
   , R{Rr}
+  , t{tt}
 {
 }
 
@@ -35,11 +37,13 @@ auto Basis::nB() const -> Index { return B.dimension(0); }
 auto Basis::nSample() const -> Index { return B.dimension(1); }
 auto Basis::nTrace() const -> Index { return B.dimension(2); }
 
-auto Basis::entry(Index const s, Index const t) const -> Cx1 {
+auto Basis::entry(Index const s, Index const t) const -> Cx1
+{
   return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
 }
 
-auto Basis::entryConj(Index const s, Index const t) const -> Cx1 {
+auto Basis::entryConj(Index const s, Index const t) const -> Cx1
+{
   return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)).conjugate();
 }
 
@@ -48,11 +52,14 @@ void Basis::write(std::string const &basisFile) const
   HD5::Writer writer(basisFile);
   writer.writeTensor(HD5::Keys::Basis, B.dimensions(), B.data(), HD5::Dims::Basis);
   if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), {"v2", "v1"}); }
+  if (t.size()) { writer.writeTensor("time", t.dimensions(), t.data(), {"t"}); }
 }
 
 void Basis::concat(Basis const &other)
 {
-  if (other.nSample() != nSample() || other.nTrace() != nTrace()) { throw Log::Failure("Basis", "Incompatible basis dimensions"); }
+  if (other.nSample() != nSample() || other.nTrace() != nTrace()) {
+    throw Log::Failure("Basis", "Incompatible basis dimensions");
+  }
   B = Cx3(B.concatenate(other.B, 0));
 }
 
@@ -95,11 +102,12 @@ auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>
   } else {
     HD5::Reader basisReader(basisFile);
     Cx3 const   B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
+    Re1 const   t = basisReader.readTensor<Re1>("time");
     if (basisReader.exists("R")) {
       Cx2 const R = basisReader.readTensor<Cx2>("R");
-      return std::make_unique<Basis>(B, R);
+      return std::make_unique<Basis>(B, t, R);
     } else {
-      return std::make_unique<Basis>(B);
+      return std::make_unique<Basis>(B, t);
     }
   }
 }

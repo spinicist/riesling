@@ -8,7 +8,6 @@ if(${BUILD_TESTS})
         fft3.cpp
         io.cpp
         kernel.cpp
-        parameters.cpp
         precon.cpp
         op/fft.cpp
         op/grid.cpp

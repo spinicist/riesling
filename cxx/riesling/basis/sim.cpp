@@ -7,10 +7,9 @@
 #include "log.hpp"
 #include "sim/dir.hpp"
 #include "sim/ir.hpp"
-#include "sim/parameter.hpp"
-#include "sim/prep.hpp"
 #include "sim/t2flair.hpp"
 #include "sim/t2prep.hpp"
+#include "sim/zte.hpp"
 #include "sys/threads.hpp"
 #include "tensors.hpp"
 
@@ -18,12 +17,11 @@
 
 using namespace rl;
 
-template <typename T> auto Run(rl::Parameters const &s, std::vector<Eigen::ArrayXf> plist)
+auto Run(rl::SegmentedZTE const &seq, std::vector<Eigen::ArrayXf> plist)
 {
   if (plist.size() == 0) { throw Log::Failure("Sim", "Must specify at least one set of tissue parameters"); }
 
-  T               seq{s};
-  Index const     nP = T::nParameters;
+  Index const     nP = seq.nTissueParameters();
   Eigen::ArrayXXf parameters(nP, plist.size());
   for (size_t ii = 0; ii < plist.size(); ii++) {
     Log::Print("Sim", "Parameter set {}", fmt::streamed(plist[ii].transpose()));
@@ -38,7 +36,7 @@ template <typename T> auto Run(rl::Parameters const &s, std::vector<Eigen::Array
   };
   Threads::ChunkFor(task, parameters.cols());
   Log::Print("Sim", "Simulation took {}", Log::ToNow(start));
-  return std::make_tuple(parameters, dynamics);
+  return std::make_tuple(seq.timepoints(), dynamics);
 }
 
 void main_basis_sim(args::Subparser &parser)
@@ -50,7 +48,6 @@ void main_basis_sim(args::Subparser &parser)
   args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 3);
   args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
   args::ValueFlag<Index>                spp(parser, "SPP", "Segments per prep", {'g', "spp"}, 1);
-  args::ValueFlag<Index>                sk(parser, "sk", "Segments per prep to keep", {"sk"}, 1);
   args::ValueFlag<Index>                sp2(parser, "G", "Segments before prep 2", {"sp2"}, 0);
   args::ValueFlag<float>                alpha(parser, "FLIP ANGLE", "Read-out flip-angle", {'a', "alpha"}, 1.);
   args::ValueFlag<float>                ascale(parser, "A", "Flip-angle scaling", {"ascale"}, 1.);
@@ -63,8 +60,8 @@ void main_basis_sim(args::Subparser &parser)
   args::ValueFlag<float>                TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float>                Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float>                te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
-
-  args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> plist(parser, "P", "Parameters", {"par"});
+  args::Flag                            pt(parser, "P", "Pre-segment traces", {"pt"});
+  args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> plist(parser, "P", "Pars", {"par"});
 
   args::Flag norm(parser, "N", "Normalize basis", {"norm", 'n'});
   args::Flag ortho(parser, "O", "Orthogonalize basis", {"ortho"});
@@ -73,44 +70,38 @@ void main_basis_sim(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
-  rl::Parameters p{.samplesPerSpoke = samp.Get(),
-                        .samplesGap = gap.Get(),
-                        .spokesPerSeg = sps.Get(),
-                        .spokesSpoil = spoil.Get(),
-                        .k0 = k0.Get(),
-                        .segsPerPrep = spp.Get(),
-                        .segsKeep = sk ? sk.Get() : spp.Get(),
-                        .segsPrep2 = sp2.Get(),
-                        .alpha = alpha.Get(),
-                        .ascale = ascale.Get(),
-                        .Tsamp = tsamp.Get(),
-                        .TR = TR.Get(),
-                        .Tramp = Tramp.Get(),
-                        .Tssi = Tssi.Get(),
-                        .TI = TI.Get(),
-                        .Trec = Trec.Get(),
-                        .TE = te.Get()};
+  rl::SegmentedZTE::Pars p{.samplesPerSpoke = samp.Get(),
+                           .samplesGap = gap.Get(),
+                           .spokesPerSeg = sps.Get(),
+                           .spokesSpoil = spoil.Get(),
+                           .k0 = k0.Get(),
+                           .segsPerPrep = spp.Get(),
+                           .segsPrep2 = sp2.Get(),
+                           .alpha = alpha.Get() * (float)M_PI / 180.f,
+                           .ascale = ascale.Get(),
+                           .Tsamp = tsamp.Get(),
+                           .TR = TR.Get(),
+                           .Tramp = Tramp.Get(),
+                           .Tssi = Tssi.Get(),
+                           .TI = TI.Get(),
+                           .Trec = Trec.Get(),
+                           .TE = te.Get()};
   Log::Print(cmd, "{}", p.format());
 
-  Eigen::ArrayXXf pars;
-  Cx3             dall;
+  Re1 time;
+  Cx3 dall;
   switch (seq.Get()) {
-  case Sequences::NoPrep: std::tie(pars, dall) = Run<rl::NoPrep>(p, plist.Get()); break;
-  case Sequences::Prep: std::tie(pars, dall) = Run<rl::Prep>(p, plist.Get()); break;
-  case Sequences::Prep2: std::tie(pars, dall) = Run<rl::Prep2>(p, plist.Get()); break;
-  case Sequences::IR: std::tie(pars, dall) = Run<rl::IR>(p, plist.Get()); break;
-  case Sequences::IR2: std::tie(pars, dall) = Run<rl::IR2>(p, plist.Get()); break;
-  case Sequences::DIR: std::tie(pars, dall) = Run<rl::DIR>(p, plist.Get()); break;
-  case Sequences::T2Prep: std::tie(pars, dall) = Run<rl::T2Prep>(p, plist.Get()); break;
-  case Sequences::T2FLAIR: std::tie(pars, dall) = Run<rl::T2FLAIR>(p, plist.Get()); break;
+  case Sequences::ZTE: std::tie(time, dall) = Run(rl::SegmentedZTE(p, pt), plist.Get()); break;
+  case Sequences::IR: std::tie(time, dall) = Run(rl::IR(p, pt), plist.Get()); break;
+  case Sequences::DIR: std::tie(time, dall) = Run(rl::DIR(p, pt), plist.Get()); break;
+  case Sequences::T2Prep: std::tie(time, dall) = Run(rl::T2Prep(p, pt), plist.Get()); break;
+  case Sequences::T2FLAIR: std::tie(time, dall) = Run(rl::T2FLAIR(p, pt), plist.Get()); break;
   }
   Sz3 const                 dshape = dall.dimensions();
   Index const               M = dshape[1] * dshape[2];
   Eigen::ArrayXXcf::MapType dmap(dall.data(), dshape[0], M);
 
-  if (norm) {
-    dmap.rowwise().normalize();
-  }
+  if (norm) { dmap.rowwise().normalize(); }
 
   if (ortho) {
     auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
@@ -118,11 +109,11 @@ void main_basis_sim(args::Subparser &parser)
     Eigen::MatrixXcd const Q = h.householderQ() * I;
     Eigen::MatrixXcf const R = h.matrixQR().topRows(dshape[0]).cast<Cx>().triangularView<Eigen::Upper>();
     dmap = Q.transpose().cast<Cx>() * std::sqrt(M);
-    Basis b(dall, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
+    Basis b(dall, time, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
     dmap *= std::sqrt(M);
-    Basis b(dall);
+    Basis b(dall, time);
     b.write(oname.Get());
   }
 

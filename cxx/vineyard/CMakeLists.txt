@@ -94,13 +94,11 @@ add_library(vineyard
     # sense/espirit.cpp
     sense/sense.cpp
 
-    sim/parameter.cpp
-    sim/sequence.cpp
-    sim/prep.cpp
     sim/ir.cpp
     sim/dir.cpp
     sim/t2flair.cpp
     sim/t2prep.cpp
+    sim/zte.cpp
 
     sys/args.cpp
     sys/signals.cpp

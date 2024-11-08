@@ -1,19 +1,16 @@
 #pragma once
 
-#include "log.hpp"
-#include "parameter.hpp"
-#include "sequence.hpp"
-#include "types.hpp"
+#include "zte.hpp"
 
 namespace rl {
 
 struct T2Prep final : SegmentedZTE
 {
-  static const Index nParameters = 3;
-  T2Prep(Parameters const &s);
+  T2Prep(Pars const &s, bool const pt);
 
-  auto traces() const -> Index;
-  auto simulate(Eigen::ArrayXf const &p) const -> Sim;
+  auto nTissueParameters() const -> Index;
+  auto simulate(Eigen::ArrayXf const &p) const -> Cx2;
+  auto timepoints() const -> Re1;
 };
 
 } // namespace rl

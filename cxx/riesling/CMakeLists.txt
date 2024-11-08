@@ -7,6 +7,7 @@ add_executable(riesling
     basis/img.cpp
     basis/outer.cpp
     basis/sim.cpp
+    basis/slice.cpp
     basis/svd.cpp
     basis/frames.cpp
 

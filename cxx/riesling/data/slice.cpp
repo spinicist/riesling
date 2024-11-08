@@ -83,7 +83,10 @@ void main_slice(args::Subparser &parser)
   if (tracesPerSeg) {
     Index const tps = tracesPerSeg.Get();
     if (tSt + tSz > tps) { throw Log::Failure(cmd, "Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
-    Index const nSeg = shape[2] / tps; // Will lose spare traces
+    Index const nSeg = shape[2] / tps;
+    if (nSeg * tps != shape[2]) {
+      throw Log::Failure(cmd, "Traces per seg {} does not cleanly divide traces {}", tps, shape[2]);
+    }
     Index const segSt = Wrap(traceSegStart.Get(), nSeg);
     Index const segSz = traceSegments ? std::clamp(traceSegments.Get(), 1L, nSeg) : nSeg - segSt;
     Log::Print(cmd, "Segments {}-{}", segSt, segSt + segSz - 1);
