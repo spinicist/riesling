@@ -17,7 +17,6 @@ struct Opts
   args::ValueFlag<Index>       tp, kWidth;
   ArrayFlag<float, 3>          res;
   args::ValueFlag<float>       l, λ;
-  args::Flag                   decant;
 };
 
 //! Convenience function to get low resolution multi-channel images

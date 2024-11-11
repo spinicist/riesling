@@ -17,7 +17,7 @@ template <int ND> struct GridOpts
   Sz<ND>      matrix;
   float       osamp;
   std::string ktype;
-  bool        vcc, lowmem;
+  bool        vcc;
   Index       subgridSize;
 };
 

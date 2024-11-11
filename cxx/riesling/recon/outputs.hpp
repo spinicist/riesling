@@ -3,6 +3,7 @@
 #include "info.hpp"
 #include "io/hd5-core.hpp"
 #include "op/grid.hpp"
+#include "op/recon.hpp"
 #include "op/top.hpp"
 #include "precon.hpp"
 #include "sense/sense.hpp"
@@ -15,6 +16,7 @@ void WriteOutput(
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &writer,
+                   Recon::Opts const              &reconOpts,
                    GridOpts<3> const              &gridOpts,
                    SENSE::Opts                    &senseOpts,
                    PreconOpts                     &preOpts,

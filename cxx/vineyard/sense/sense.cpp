@@ -26,7 +26,6 @@ Opts::Opts(args::Subparser &parser)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
   , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
   , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
-  , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
 {
 }
 

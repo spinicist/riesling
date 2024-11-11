@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "op/grid.hpp"
+#include "op/recon.hpp"
 #include "sys/args.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
@@ -32,7 +33,7 @@ template <int ND> struct GridArgs
   SzFlag<ND>                   matrix;
   args::ValueFlag<float>       osamp;
   args::ValueFlag<std::string> ktype;
-  args::Flag                   vcc, lowmem;
+  args::Flag                   vcc;
   args::ValueFlag<Index>       subgridSize;
 
   GridArgs(args::Subparser &parser)
@@ -41,7 +42,6 @@ template <int ND> struct GridArgs
     , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
     , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
     , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
-    , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
     , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
   {
   }
@@ -53,9 +53,21 @@ template <int ND> struct GridArgs
                         .osamp = osamp.Get(),
                         .ktype = ktype.Get(),
                         .vcc = vcc.Get(),
-                        .lowmem = lowmem.Get(),
                         .subgridSize = subgridSize.Get()};
   }
+};
+
+struct ReconArgs
+{
+  args::Flag decant, lowmem;
+
+  ReconArgs(args::Subparser &parser)
+    : decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
+    , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
+  {
+  }
+
+  auto Get() -> rl::Recon::Opts { return rl::Recon::Opts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
 };
 
 struct LsqOpts

@@ -26,6 +26,7 @@ WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::Dimen
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &fname,
+                   Recon::Opts const              &reconOpts,
                    GridOpts<3> const              &gridOpts,
                    SENSE::Opts                    &senseOpts,
                    PreconOpts                     &preOpts,
@@ -39,7 +40,7 @@ void WriteResidual(std::string const              &cmd,
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
   Basis const id;
-  auto const  A1 = Recon::Choose(gridOpts, senseOpts, traj, &id, noncart);
+  auto const  A1 = Recon::Choose(reconOpts, gridOpts, senseOpts, traj, &id, noncart);
   auto const  M1 = MakeKspacePre(traj, nC, nS, nT, &id, preOpts.type.Get(), preOpts.bias.Get());
   Log::Print(cmd, "Calculating K-space residual");
   noncart -= A->forward(x);

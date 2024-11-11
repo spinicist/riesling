@@ -16,6 +16,7 @@ void main_eig(args::Subparser &parser)
   CoreOpts               coreOpts(parser);
   GridArgs<3>            gridOpts(parser);
   PreconOpts             preOpts(parser);
+  ReconArgs              reconArgs(parser);
   SENSE::Opts            senseOpts(parser);
   args::Flag             adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
@@ -30,7 +31,7 @@ void main_eig(args::Subparser &parser)
   auto const  nS = noncart.dimension(3);
   auto const  nT = noncart.dimension(4);
   auto const  basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const  A = Recon::Choose(gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
+  auto const  A = Recon::Choose(reconArgs.Get(), gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
   auto const  P = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
 
   if (adj) {
