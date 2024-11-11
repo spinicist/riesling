@@ -289,7 +289,7 @@ inline auto SubgridIndex(Eigen::Array<Index, ND, 1> const &sg, Eigen::Array<Inde
 }
 
 template <int ND>
-auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index const sgSz) const
+auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index const sgSz, bool const conj) const
   -> std::vector<CoordList>
 {
   std::fesetround(FE_TONEAREST);
@@ -313,7 +313,7 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
   std::vector<CoordList> subs(nTotal);
   for (int32_t it = 0; it < this->nTraces(); it++) {
     for (int16_t is = 0; is < this->nSamples(); is++) {
-      Arrayf const p = this->point(is, it);
+      Arrayf const p = this->point(is, it) * (conj ? -1.f : 1.f);
       if ((p != p).any()) {
         invalids++;
         continue;

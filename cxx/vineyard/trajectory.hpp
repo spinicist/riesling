@@ -53,7 +53,8 @@ template <int ND> struct TrajectoryN
   auto downsample(Cx5 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx5>;
 
-  auto toCoordLists(Sz<ND> const &omat, Index const kW, Index const subgridSize) const -> std::vector<CoordList>;
+  auto toCoordLists(Sz<ND> const &omat, Index const kW, Index const subgridSize, bool const conj) const
+    -> std::vector<CoordList>;
 
 private:
   void init();
