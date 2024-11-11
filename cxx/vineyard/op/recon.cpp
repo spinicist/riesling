@@ -48,7 +48,7 @@ auto SENSE(
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (gridOpts.lowmem) {
-    auto nufft = TOps::NUFFTLowmem<3>::Make(traj, traj.matrixForFOV(gridOpts.fov), gridOpts, skern, b);
+    auto nufft = TOps::NUFFTLowmem<3>::Make(traj, gridOpts, skern, b);
     if (nSlab > 1) {
       throw Log::Failure("Recon", "Lowmem and multislab not supported yet");
     } else {

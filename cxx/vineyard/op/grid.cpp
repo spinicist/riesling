@@ -62,7 +62,7 @@ Grid<ND, VCC>::Grid(TrajectoryN<ND> const &traj,
 template <int ND, bool hasVCC, bool isVCC> struct forwardTask
 {
   using CoordList = typename TrajectoryN<ND>::CoordList;
-  void operator()(std::vector<CoordList> const      &subs,
+  void operator()(std::vector<CoordList> const   &subs,
                   Index const                     start,
                   Index const                     stride,
                   Index const                     sgW,
@@ -113,7 +113,7 @@ template <int ND, bool VCC> void Grid<ND, VCC>::iforward(InCMap const &x, OutMap
 template <int ND, bool hasVCC, bool isVCC> struct adjointTask
 {
   using CoordList = typename TrajectoryN<ND>::CoordList;
-  void operator()(std::vector<CoordList> const     &subs,
+  void operator()(std::vector<CoordList> const  &subs,
                   Index const                    start,
                   Index const                    stride,
                   std::vector<std::mutex>       &mutexes,

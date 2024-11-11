@@ -24,29 +24,22 @@ template <int ND> auto NoChannels(Sz<ND> shape) -> Sz<ND - 1>
 } // namespace
 
 template <int ND>
-auto NUFFTLowmem<ND>::Make(
-  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
+auto NUFFTLowmem<ND>::Make(TrajectoryN<ND> const &traj, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
   -> std::shared_ptr<NUFFTLowmem<ND>>
 {
-  return std::make_shared<NUFFTLowmem<ND>>(traj, matrix, opts, skern, basis);
+  return std::make_shared<NUFFTLowmem<ND>>(traj, opts, skern, basis);
 }
 
 template <int ND>
-NUFFTLowmem<ND>::NUFFTLowmem(
-  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &sk, Basis::CPtr basis)
+NUFFTLowmem<ND>::NUFFTLowmem(TrajectoryN<ND> const &traj, GridOpts<ND> const &opts, CxN<ND + 2> const &sk, Basis::CPtr basis)
   : Parent("NUFFTLowmem")
-  , gridder{GType::Make(traj, matrix, opts.osamp, opts.ktype, 1, basis)}
+  , gridder{GType::Make(traj, traj.matrixForFOV(opts.fov), opts.osamp, opts.ktype, 1, basis)}
   , nc1{AddFront(LastN<2>(gridder->oshape), 1)}
   , workspace{OneChannel(gridder->ishape)}
   , skern{sk}
   , smap{Concatenate(FirstN<1>(skern.dimensions()), LastN<ND + 1>(gridder->ishape))}
   , spad{OneChannel(skern.dimensions()), smap.dimensions()}
 {
-  if (std::equal(matrix.cbegin(), matrix.cend(), gridder->ishape.cbegin() + 2, std::less_equal())) {
-    ishape = Concatenate(FirstN<1>(gridder->ishape), matrix);
-  } else {
-    throw Log::Failure("NUFFTLowmem", "Requested matrix {} but grid size is {}", matrix, LastN<ND>(gridder->ishape));
-  }
   oshape = gridder->oshape;
   oshape[0] = skern.dimension(1);
   std::iota(fftDims.begin(), fftDims.end(), 2);
