@@ -29,8 +29,9 @@ template <int ND> struct GridDecant final : TOp<Cx, ND + 1, 3>
   std::shared_ptr<KernelBase<Scalar, ND>> kernel;
 
 private:
-  Index                           subgridW;
-  std::vector<SubgridMapping<ND>> subs;
+  using CoordList = typename TrajectoryN<ND>::CoordList;
+  Index               subgridW;
+  std::vector<CoordList> subs;
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;
   CxN<ND + 2> skern;

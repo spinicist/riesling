@@ -1,9 +1,9 @@
 #pragma once
 
 #include "basis/basis.hpp"
-#include "grid-mapping.hpp"
 #include "kernel/kernel.hpp"
 #include "top.hpp"
+#include "trajectory.hpp"
 
 #include <mutex>
 #include <optional>
@@ -20,6 +20,15 @@ template <int ND> struct GridOpts
   bool        vcc, lowmem;
   Index       subgridSize;
 };
+
+template <int ND>
+inline auto SubgridCorner(Eigen::Array<int16_t, ND, 1> const sgInd, Index const sgSz, Index const kW)
+  -> Eigen::Array<int16_t, ND, 1>
+{
+  return (sgInd * sgSz) - (kW / 2);
+}
+
+inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }
 
 namespace TOps {
 template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
@@ -46,11 +55,12 @@ template <int ND, bool VCC = false> struct Grid final : TOp<Cx, ND + 2 + VCC, 3>
   std::shared_ptr<KernelBase<Scalar, ND>> kernel;
 
 private:
-  Index                           subgridW;
-  std::vector<SubgridMapping<ND>> subs;
+  using CoordList = typename TrajectoryN<ND>::CoordList;
+  Index                  subgridW;
+  std::vector<CoordList> subs;
   std::vector<std::mutex> mutable mutexes;
-  Basis::CPtr                                    basis;
-  std::optional<std::vector<SubgridMapping<ND>>> vccSubs;
+  Basis::CPtr                           basis;
+  std::optional<std::vector<CoordList>> vccSubs;
 };
 
 } // namespace TOps

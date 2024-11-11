@@ -47,14 +47,14 @@ Grid<ND, VCC>::Grid(TrajectoryN<ND> const &traj,
 {
   static_assert(ND < 4);
   auto const omatrix = MulToEven(matrix, osamp);
-  subs = CalcMapping(traj, omatrix, kernel->paddedWidth(), sgW);
+  subs = traj.toCoordLists(omatrix, kernel->paddedWidth(), sgW);
   ishape = AddVCC<VCC>(omatrix, nC, basis ? basis->nB() : 1);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(omatrix[ND - 1]);
   if constexpr (VCC) {
     Log::Print("Grid", "Adding VCC");
     auto const conjTraj = TrajectoryN<ND>(-traj.points(), traj.matrix(), traj.voxelSize());
-    vccSubs = CalcMapping<ND>(conjTraj, omatrix, kernel->paddedWidth(), sgW);
+    vccSubs = conjTraj.toCoordLists(omatrix, kernel->paddedWidth(), sgW);
   }
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }
@@ -62,14 +62,15 @@ Grid<ND, VCC>::Grid(TrajectoryN<ND> const &traj,
 /* Needs to be a functor to avoid template errors */
 template <int ND, bool hasVCC, bool isVCC> struct forwardTask
 {
-  void operator()(std::vector<SubgridMapping<ND>> const &subs,
-                  Index const                            start,
-                  Index const                            stride,
-                  Index const                            sgW,
-                  Basis::CPtr const                     &basis,
-                  KernelBase<Cx, ND>::Ptr const         &kernel,
-                  CxNCMap<ND + 2 + hasVCC> const        &x,
-                  CxNMap<3>                             &y) const
+  using CoordList = typename TrajectoryN<ND>::CoordList;
+  void operator()(std::vector<CoordList> const      &subs,
+                  Index const                     start,
+                  Index const                     stride,
+                  Index const                     sgW,
+                  Basis::CPtr const              &basis,
+                  KernelBase<Cx, ND>::Ptr const  &kernel,
+                  CxNCMap<ND + 2 + hasVCC> const &x,
+                  CxNMap<3>                      &y) const
   {
     Index const nC = y.dimension(0);
     Index const nB = basis ? basis->nB() : 1;
@@ -77,7 +78,7 @@ template <int ND, bool hasVCC, bool isVCC> struct forwardTask
     for (Index is = start; is < subs.size(); is += stride) {
       auto const &sub = subs[is];
       GridToSubgrid<ND, hasVCC, isVCC>(SubgridCorner(sub.corner, sgW, kernel->paddedWidth()), x, sx);
-      for (auto const &m : sub.mappings) {
+      for (auto const &m : sub.coords) {
         Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
         if (basis) {
           kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
@@ -112,15 +113,16 @@ template <int ND, bool VCC> void Grid<ND, VCC>::iforward(InCMap const &x, OutMap
 
 template <int ND, bool hasVCC, bool isVCC> struct adjointTask
 {
-  void operator()(std::vector<SubgridMapping<ND>> const &subs,
-                  Index const                            start,
-                  Index const                            stride,
-                  std::vector<std::mutex>               &mutexes,
-                  Index const                            sgW,
-                  Basis::CPtr const                     &basis,
-                  KernelBase<Cx, ND>::Ptr const         &kernel,
-                  CxNCMap<3> const                      &y,
-                  CxNMap<ND + 2 + hasVCC>               &x) const
+  using CoordList = typename TrajectoryN<ND>::CoordList;
+  void operator()(std::vector<CoordList> const     &subs,
+                  Index const                    start,
+                  Index const                    stride,
+                  std::vector<std::mutex>       &mutexes,
+                  Index const                    sgW,
+                  Basis::CPtr const             &basis,
+                  KernelBase<Cx, ND>::Ptr const &kernel,
+                  CxNCMap<3> const              &y,
+                  CxNMap<ND + 2 + hasVCC>       &x) const
   {
     Index const          nC = y.dimensions()[0];
     Index const          nB = basis ? basis->nB() : 1;
@@ -129,7 +131,7 @@ template <int ND, bool hasVCC, bool isVCC> struct adjointTask
     for (Index is = start; is < subs.size(); is += stride) {
       auto const &sub = subs[is];
       sx.setZero();
-      for (auto const &m : sub.mappings) {
+      for (auto const &m : sub.coords) {
         yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
         if (basis) {
           kernel->spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace), yy, sx);

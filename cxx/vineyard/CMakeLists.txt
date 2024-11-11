@@ -61,7 +61,6 @@ add_library(vineyard
     op/grid.cpp
     op/grid-decant.cpp
     op/grid-decant-subgrid.cpp
-    op/grid-mapping.cpp
     op/grid-subgrid.cpp
     op/hankel.cpp
     op/ndft.cpp

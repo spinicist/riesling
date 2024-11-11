@@ -11,15 +11,9 @@ template <int ND> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   using GType = Grid<ND>;
-  NUFFTLowmem(GType::Ptr grid, CxN<ND + 2> const &skern, Sz<ND> const matrix = Sz<ND>());
+  NUFFTLowmem(
+    TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis);
   TOP_DECLARE(NUFFTLowmem)
-
-  static auto Make(TrajectoryN<ND> const &traj,
-                   std::string const     &ktype,
-                   float const            osamp,
-                   CxN<ND + 2> const     &skern,
-                   Basis::CPtr            basis,
-                   Sz<ND> const           matrix) -> std::shared_ptr<NUFFTLowmem<ND>>;
 
   static auto
   Make(TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)

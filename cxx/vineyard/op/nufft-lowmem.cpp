@@ -24,30 +24,18 @@ template <int ND> auto NoChannels(Sz<ND> shape) -> Sz<ND - 1>
 } // namespace
 
 template <int ND>
-auto NUFFTLowmem<ND>::Make(TrajectoryN<ND> const &traj,
-                           std::string const     &ktype,
-                           float const            osamp,
-                           CxN<ND + 2> const     &skern,
-                           Basis::CPtr            basis,
-                           Sz<ND> const           matrix) -> std::shared_ptr<NUFFTLowmem<ND>>
-{
-  auto g = GType::Make(traj, matrix, osamp, ktype, 1, basis);
-  return std::make_shared<NUFFTLowmem<ND>>(g, skern, matrix);
-}
-
-template <int ND>
 auto NUFFTLowmem<ND>::Make(
   TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis)
   -> std::shared_ptr<NUFFTLowmem<ND>>
 {
-  auto g = GType::Make(traj, matrix, opts.osamp, opts.ktype, 1, basis);
-  return std::make_shared<NUFFTLowmem<ND>>(g, skern, matrix);
+  return std::make_shared<NUFFTLowmem<ND>>(traj, matrix, opts, skern, basis);
 }
 
 template <int ND>
-NUFFTLowmem<ND>::NUFFTLowmem(GType::Ptr g, CxN<ND + 2> const &sk, Sz<ND> const matrix)
+NUFFTLowmem<ND>::NUFFTLowmem(
+  TrajectoryN<ND> const &traj, Sz<ND> const &matrix, GridOpts<ND> const &opts, CxN<ND + 2> const &sk, Basis::CPtr basis)
   : Parent("NUFFTLowmem")
-  , gridder{g}
+  , gridder{GType::Make(traj, matrix, opts.osamp, opts.ktype, 1, basis)}
   , nc1{AddFront(LastN<2>(gridder->oshape), 1)}
   , workspace{OneChannel(gridder->ishape)}
   , skern{sk}

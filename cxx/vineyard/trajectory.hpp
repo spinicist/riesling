@@ -12,6 +12,22 @@ template <int ND> struct TrajectoryN
   using SzN = Sz<ND>;
   using Array = Eigen::Array<float, ND, 1>;
 
+  struct Coord
+  {
+    template <typename T> using Array = Eigen::Array<T, ND, 1>;
+    Array<int16_t> cart;
+    int16_t        sample;
+    int32_t        trace;
+    Array<float>   offset;
+  };
+
+  struct CoordList
+  {
+    template <typename T> using Array = Eigen::Array<T, ND, 1>;
+    Array<int16_t>     corner;
+    std::vector<Coord> coords;
+  };
+
   TrajectoryN(Re3 const &points, Array const voxel_size = Array::Ones());
   TrajectoryN(Re3 const &points, SzN const matrix, Array const voxel_size = Array::Ones());
   TrajectoryN(HD5::Reader &file, Array const voxel_size, SzN const matrix_size = SzN());
@@ -28,16 +44,16 @@ template <int ND> struct TrajectoryN
   void shiftInFOV(Eigen::Vector3f const, Cx5 &data);
   auto point(int16_t const sample, int32_t const trace) const -> Eigen::Vector<float, ND>;
   auto points() const -> Re3 const &;
-  auto downsample(Array const tgtSize,
-                  Index const fullResTraces,
-                  bool const  shrink,
-                  bool const  corners) const -> std::tuple<TrajectoryN, Index, Index>;
+  auto downsample(Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+    -> std::tuple<TrajectoryN, Index, Index>;
   auto downsample(Cx4 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx4>;
   auto downsample(Cx4 const &ks, Sz3 const tgtMat, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx4>;
   auto downsample(Cx5 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx5>;
+
+  auto toCoordLists(Sz<ND> const &omat, Index const kW, Index const subgridSize) const -> std::vector<CoordList>;
 
 private:
   void init();

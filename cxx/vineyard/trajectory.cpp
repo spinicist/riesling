@@ -3,6 +3,8 @@
 #include "log.hpp"
 #include "tensors.hpp"
 
+#include <cfenv>
+
 namespace rl {
 
 /* Temp Hack because .maximum() may be buggy on NEON */
@@ -264,6 +266,99 @@ auto TrajectoryN<ND>::downsample(
   Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
   return std::make_tuple(dsTraj, dsKs);
 }
+
+template <int ND> inline auto Sz2Array(Sz<ND> const &sz) -> Eigen::Array<float, ND, 1>
+{
+  Eigen::Array<float, ND, 1> a;
+  for (Index ii = 0; ii < ND; ii++) {
+    a[ii] = sz[ii];
+  }
+  return a;
+}
+
+template <int ND>
+inline auto SubgridIndex(Eigen::Array<Index, ND, 1> const &sg, Eigen::Array<Index, ND, 1> const &ngrids) -> Index
+{
+  Index ind = 0;
+  Index stride = 1;
+  for (Index ii = 0; ii < ND; ii++) {
+    ind += stride * sg[ii];
+    stride *= ngrids[ii];
+  }
+  return ind;
+}
+
+template <int ND>
+auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index const sgSz) const
+  -> std::vector<CoordList>
+{
+  std::fesetround(FE_TONEAREST);
+  std::vector<Coord> coords;
+
+  using Arrayf = Coord::template Array<float>;
+  using Arrayi = Coord::template Array<Index>;
+
+  Arrayf const mat = Sz2Array(this->matrix());
+  Arrayf const omat = Sz2Array(oshape);
+  Arrayf const osamp = omat / mat;
+  Log::Print("Grid", "Nominal matrix {} grid matrix {} over-sampling {}", mat.transpose(), omat.transpose(),
+             osamp.transpose());
+
+  Arrayf const k0 = omat / 2;
+  Index        valid = 0;
+  Index        invalids = 0;
+  Arrayi const nSubgrids = (omat / sgSz).ceil().template cast<Index>();
+  Index const  nTotal = nSubgrids.prod();
+
+  std::vector<CoordList> subs(nTotal);
+  for (int32_t it = 0; it < this->nTraces(); it++) {
+    for (int16_t is = 0; is < this->nSamples(); is++) {
+      Arrayf const p = this->point(is, it);
+      if ((p != p).any()) {
+        invalids++;
+        continue;
+      }
+      Arrayf const k = p * osamp + k0;
+      Arrayf const ki = k.unaryExpr([](float const &e) { return std::nearbyint(e); });
+      if ((ki < 0.f).any() || (ki >= omat).any()) {
+        invalids++;
+        continue;
+      }
+      Arrayf const ko = k - ki;
+      Arrayi const ksub = (ki / sgSz).floor().template cast<Index>();
+      Arrayi const kint = ki.template cast<Index>() - (ksub * sgSz) + (kW / 2);
+      Index const  sgind = SubgridIndex(ksub, nSubgrids);
+      subs[sgind].corner = ksub.template cast<int16_t>();
+      subs[sgind].coords.push_back(
+        Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko});
+      valid++;
+    }
+  }
+  Log::Print("Grid", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);
+  auto const eraseCount = std::erase_if(subs, [](auto const &s) { return s.coords.empty(); });
+  Log::Print("Grid", "Removed {} empty subgrids, {} remaining", eraseCount, subs.size());
+  Log::Print("Grid", "Sorting subgrids");
+  std::sort(subs.begin(), subs.end(),
+            [](CoordList const &a, CoordList const &b) { return a.coords.size() > b.coords.size(); });
+  Log::Print("Grid", "Sorting coords");
+  for (auto &s : subs) {
+    std::sort(s.coords.begin(), s.coords.end(), [](Coord const &a, Coord const &b) {
+      // Compare on ijk location
+      for (size_t di = 0; di < ND; di++) {
+        size_t id = ND - 1 - di;
+        if (a.cart[id] < b.cart[id]) {
+          return true;
+        } else if (b.cart[id] < a.cart[id]) {
+          return false;
+        }
+      }
+      return false;
+    });
+  }
+
+  return subs;
+}
+
 
 template struct TrajectoryN<1>;
 template struct TrajectoryN<2>;
