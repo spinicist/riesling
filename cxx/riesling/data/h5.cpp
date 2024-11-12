@@ -15,7 +15,7 @@ void main_h5(args::Subparser &parser)
   args::Flag                       all(parser, "META", "Print all meta data", {"all", 'a'});
 
   ParseCommand(parser, iname);
-  auto const cmd = parser.GetCommand().Name();
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
 
   if (keys) {

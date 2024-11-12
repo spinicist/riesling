@@ -14,9 +14,9 @@ using namespace rl;
 
 void main_recon_lad(args::Subparser &parser)
 {
-  CoreOpts            coreOpts(parser);
-  GridArgs<3>         gridOpts(parser);
-  PreconOpts          preOpts(parser);
+  CoreArgs            coreArgs(parser);
+  GridArgs<3>         gridArgs(parser);
+  PreconArgs          preArgs(parser);
   ReconArgs           reconArgs(parser);
   SENSE::Opts         senseOpts(parser);
   ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
@@ -33,20 +33,20 @@ void main_recon_lad(args::Subparser &parser)
   args::ValueFlag<float> μ(parser, "μ", "ADMM residual rescaling tolerance (default 1.2)", {"mu"}, 1.2f);
   args::ValueFlag<float> τ(parser, "τ", "ADMM residual rescaling maximum (default 10)", {"tau"}, 10.f);
 
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readInfo();
-  Trajectory  traj(reader, info.voxel_size, gridOpts.matrix.Get());
+  Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const A = Recon::Choose(reconArgs.Get(), gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
-  auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  auto const basis = LoadBasis(coreArgs.basisFile.Get());
+  auto const A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
+  auto const M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
 
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
@@ -56,9 +56,9 @@ void main_recon_lad(args::Subparser &parser)
 
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), A->ishape);
   auto             out = oc.adjoint(xm);
-  WriteOutput(cmd, coreOpts.oname.Get(), out, HD5::Dims::Image, info);
-  if (coreOpts.residual) {
-    WriteResidual(cmd, coreOpts.oname.Get(), reconArgs.Get(), gridOpts.Get(), senseOpts, preOpts, traj, xm, A, noncart);
+  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
+  if (coreArgs.residual) {
+    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseOpts, preArgs.Get(), traj, xm, A, noncart);
   }
   Log::Print(cmd, "Finished");
 }

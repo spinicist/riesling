@@ -13,23 +13,23 @@ using namespace rl;
 
 void main_ndft(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridArgs<3> gridOpts(parser);
-  PreconOpts  preOpts(parser);
+  CoreArgs    coreArgs(parser);
+  GridArgs<3> gridArgs(parser);
+  PreconArgs  preArgs(parser);
   LsqOpts     lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readInfo();
-  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
-  HD5::Writer writer(coreOpts.oname.Get());
+  auto const  basis = LoadBasis(coreArgs.basisFile.Get());
+  HD5::Writer writer(coreArgs.oname.Get());
   writer.writeInfo(info);
 
-  Trajectory traj(reader, info.voxel_size, gridOpts.matrix.Get());
+  Trajectory traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto const nC = reader.dimensions()[0];
-  auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(gridOpts.fov.Get()), traj.points(), nC, basis.get());
+  auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, basis.get());
 
   if (fwd) {
     auto channels = reader.readTensor<Cx6>();
@@ -45,7 +45,7 @@ void main_ndft(args::Subparser &parser)
     Index const nT = noncart.dimension(4);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-    auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+    auto const M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
     LSMR const lsmr{ndft, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));

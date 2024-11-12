@@ -9,20 +9,11 @@ template <int ND> struct GridDecant final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   TOP_DECLARE(GridDecant)
-  static auto Make(TrajectoryN<ND> const &t,
-                   Sz<ND> const          &matrix,
-                   float const            os,
-                   std::string const      kt,
-                   CxN<ND + 2> const     &skern,
-                   Basis::CPtr            b,
-                   Index const            sgW = 32) -> std::shared_ptr<GridDecant<ND>>;
-  GridDecant(TrajectoryN<ND> const &traj,
-             Sz<ND> const          &matrix,
-             float const            osamp,
-             std::string const      ktype,
-             CxN<ND + 2> const     &skern,
-             Basis::CPtr            b,
-             Index const            sgW);
+
+  GridDecant(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr b);
+  static auto Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
+    -> std::shared_ptr<GridDecant<ND>>;
+
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
 
@@ -30,7 +21,7 @@ template <int ND> struct GridDecant final : TOp<Cx, ND + 1, 3>
 
 private:
   using CoordList = typename TrajectoryN<ND>::CoordList;
-  Index               subgridW;
+  Index                  subgridW;
   std::vector<CoordList> subs;
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;

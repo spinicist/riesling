@@ -15,7 +15,7 @@ using namespace rl;
 
 void main_sake(args::Subparser &parser)
 {
-  CoreOpts   coreOpts(parser);
+  CoreArgs   coreArgs(parser);
   GridOpts   gridOpts(parser);
   PreconOpts preOpts(parser);
   RlsqOpts   rlsqOpts(parser);
@@ -28,19 +28,19 @@ void main_sake(args::Subparser &parser)
   args::Flag sep(parser, "S", "Separable kernels", {'s', "seperable"});
   args::Flag virtChan(parser, "V", "Use virtual conjugate channels", {"virtual"});
 
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
-  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
+  auto const  basis = ReadBasis(coreArgs.basisFile.Get());
   Cx5         noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const  A = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, basis);
+  auto const  A = Recon::Channels(coreArgs.ndft, gridOpts, traj, nC, nS, basis);
   auto const  M = make_kspace_pre(traj, nC, basis, gridOpts.vcc, preOpts.type.Get(), preOpts.bias.Get());
   float const scale = Scaling(rlsqOpts.scaling, A, M, &noncart(0, 0, 0, 0, 0));
   noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
@@ -85,14 +85,14 @@ void main_sake(args::Subparser &parser)
             debug_x,
             debug_z};
 
-  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), A->ishape[0], A->ishape[1]));
+  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreArgs.fov.Get()), A->ishape[0], A->ishape[1]));
   Cx5               out(AddBack(LastN<4>(outFOV.ishape), nV));
   for (Index iv = 0; iv < nV; iv++) {
     auto const channels = admm.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get());
     auto const cropped = outFOV.adjoint(AsTensorMap(channels, A->ishape));
     out.chip<4>(iv) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt() / cropped.constant(scale);
   }
-  HD5::Writer writer(coreOpts.oname.Get());
+  HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
   writer.writeInfo(info);
   writer.writeString("log");

@@ -13,38 +13,38 @@ using namespace rl;
 
 void main_eig(args::Subparser &parser)
 {
-  CoreOpts               coreOpts(parser);
-  GridArgs<3>            gridOpts(parser);
-  PreconOpts             preOpts(parser);
+  CoreArgs               coreArgs(parser);
+  GridArgs<3>            gridArgs(parser);
+  PreconArgs             preArgs(parser);
   ReconArgs              reconArgs(parser);
   SENSE::Opts            senseOpts(parser);
   args::Flag             adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::Flag             recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
   args::Flag             savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   auto const  nC = noncart.dimension(0);
   auto const  nS = noncart.dimension(3);
   auto const  nT = noncart.dimension(4);
-  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
-  auto const  A = Recon::Choose(reconArgs.Get(), gridOpts.Get(), senseOpts, traj, basis.get(), noncart);
-  auto const  P = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  auto const  basis = LoadBasis(coreArgs.basisFile.Get());
+  auto const  A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
+  auto const  P = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());
     if (savevec) {
-      HD5::Writer writer(coreOpts.oname.Get());
+      HD5::Writer writer(coreArgs.oname.Get());
       writer.writeTensor("evec", A->ishape, vec.data(), {"v", "i", "j", "k"});
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   } else {
     auto const [val, vec] = PowerMethodForward(A, P, its.Get());
     if (savevec) {
-      HD5::Writer writer(coreOpts.oname.Get());
+      HD5::Writer writer(coreArgs.oname.Get());
       writer.writeTensor("evec", A->ishape, vec.data(), {"v", "i", "j", "k"});
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);

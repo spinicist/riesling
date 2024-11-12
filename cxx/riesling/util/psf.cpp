@@ -14,23 +14,23 @@ using namespace std::literals::complex_literals;
 
 void main_psf(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridArgs<3> gridOpts(parser);
-  PreconOpts  preOpts(parser);
+  CoreArgs    coreArgs(parser);
+  GridArgs<3> gridArgs(parser);
+  PreconArgs  preArgs(parser);
   LsqOpts     lsqOpts(parser);
 
   args::Flag mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
 
   ArrayFlag<float, 2> phases(parser, "P", "Phase accrued at start and end of spoke", {"phases", 'p'});
 
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
-  HD5::Reader reader(coreOpts.iname.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size, gridOpts.matrix.Get());
-  auto const  basis = LoadBasis(coreOpts.basisFile.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
+  Trajectory  traj(reader, reader.readInfo().voxel_size, coreArgs.matrix.Get());
+  auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   Index const nB = basis->nB();
-  auto const  A = TOps::NUFFT<3>::Make(traj, gridOpts.Get(), 1, basis.get());
-  auto const  M = MakeKspacePre(traj, 1, 1, 1, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+  auto const  A = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, 1, basis.get());
+  auto const  M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, 1, 1, 1, basis.get());
   LSMR const  lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];
@@ -43,7 +43,7 @@ void main_psf(args::Subparser &parser)
   Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
   auto        x = lsmr.run(CollapseToConstVector(ks));
   auto        xm = AsTensorMap(x, LastN<4>(A->ishape));
-  HD5::Writer writer(coreOpts.oname.Get());
+  HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "i", "j", "k"});
 
   if (mtf) {

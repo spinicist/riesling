@@ -42,7 +42,7 @@ template <typename F> void ChunkFor(F const &f, Index const sz)
   }
 }
 
-template <typename F, typename T, typename... Types> void ChunkFor(F const &f, std::vector<T> const &v, Types &...args)
+template <typename F, typename T, typename... Types> void ChunkFor(F const &f, std::vector<T> const &v, Types const &...args)
 {
   Index const nT = GlobalThreadCount();
   if (v.size() == 0) {
@@ -64,17 +64,17 @@ template <typename F, typename T, typename... Types> void ChunkFor(F const &f, s
   }
 }
 
-template <typename F, typename T, typename... Types> void StridedFor(F const &f, std::vector<T> const &v, Types &...args)
+template <typename F> void StridedFor(Index const sz, F const &f)
 {
   Index const nT = GlobalThreadCount();
-  if (v.size() == 0) {
+  if (sz == 0) {
     return;
   } else {
-    Index const    nC = std::min<Index>(v.size(), nT);
-    Eigen::Barrier barrier(nC);
-    for (Index it = 0; it < nC; it++) {
-      GlobalPool()->Schedule([&, f, it, nC] {
-        f(v, it, nC, args...);
+    Index const    st = std::min<Index>(sz, nT);
+    Eigen::Barrier barrier(st);
+    for (Index it = 0; it < st; it++) {
+      GlobalPool()->Schedule([&, f, it, st] {
+        f(it, st);
         barrier.Notify();
       });
     }

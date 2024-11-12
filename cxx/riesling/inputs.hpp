@@ -7,6 +7,7 @@
 
 #include "op/grid.hpp"
 #include "op/recon.hpp"
+#include "precon.hpp"
 #include "sys/args.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
@@ -19,10 +20,11 @@ void ParseCommand(args::Subparser &parser);
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname, args::Positional<std::string> &oname);
 
-struct CoreOpts
+struct CoreArgs
 {
-  CoreOpts(args::Subparser &parser);
+  CoreArgs(args::Subparser &parser);
   args::Positional<std::string> iname, oname;
+  SzFlag<3>                     matrix;
   args::ValueFlag<std::string>  basisFile;
   args::Flag                    residual;
 };
@@ -30,7 +32,6 @@ struct CoreOpts
 template <int ND> struct GridArgs
 {
   ArrayFlag<float, ND>         fov;
-  SzFlag<ND>                   matrix;
   args::ValueFlag<float>       osamp;
   args::ValueFlag<std::string> ktype;
   args::Flag                   vcc;
@@ -38,7 +39,6 @@ template <int ND> struct GridArgs
 
   GridArgs(args::Subparser &parser)
     : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
-    , matrix(parser, "M", "Grid matrix size", {"matrix", 'm'}, rl::Sz<ND>())
     , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
     , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
     , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
@@ -46,14 +46,10 @@ template <int ND> struct GridArgs
   {
   }
 
-  auto Get() -> rl::GridOpts<ND>
+  auto Get() -> rl::TOps::Grid<ND>::Opts
   {
-    return rl::GridOpts{.fov = fov.Get(),
-                        .matrix = matrix.Get(),
-                        .osamp = osamp.Get(),
-                        .ktype = ktype.Get(),
-                        .vcc = vcc.Get(),
-                        .subgridSize = subgridSize.Get()};
+    return typename rl::TOps::Grid<ND>::Opts{
+      .fov = fov.Get(), .osamp = osamp.Get(), .ktype = ktype.Get(), .vcc = vcc.Get(), .subgridSize = subgridSize.Get()};
   }
 };
 
@@ -68,6 +64,20 @@ struct ReconArgs
   }
 
   auto Get() -> rl::Recon::Opts { return rl::Recon::Opts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
+};
+
+struct PreconArgs
+{
+  args::ValueFlag<std::string> type;
+  args::ValueFlag<float>       bias;
+
+  PreconArgs(args::Subparser &parser)
+    : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"precon"}, "kspace")
+    , bias(parser, "BIAS", "Pre-conditioner Bias (1)", {"precon-bias"}, 1.f)
+  {
+  }
+
+  auto Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .bias = bias.Get()}; }
 };
 
 struct LsqOpts

@@ -13,18 +13,18 @@ using namespace rl;
 
 void main_sense_calib(args::Subparser &parser)
 {
-  CoreOpts                     coreOpts(parser);
+  CoreArgs                     coreArgs(parser);
   GridArgs<3>                  gridOpts(parser);
   SENSE::Opts                  senseOpts(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
 
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  auto const basis = LoadBasis(coreArgs.basisFile.Get());
 
   Cx5 channels = SENSE::LoresChannels(senseOpts, gridOpts.Get(), traj, noncart, basis.get());
   Cx4 ref;
@@ -46,7 +46,7 @@ void main_sense_calib(args::Subparser &parser)
     SENSE::EstimateKernels(channels, ref, senseOpts.kWidth.Get(), gridOpts.osamp.Get(), senseOpts.l.Get(), senseOpts.λ.Get());
   // Cx5 const   maps = SENSE::EstimateMaps(channels, ref, gridOpts.osamp.Get(), senseOpts.l.Get(), senseOpts.λ.Get());
   // Cx5 const   kernels = SENSE::MapsToKernels(maps, senseOpts.kWidth.Get(), gridOpts.osamp.Get());
-  HD5::Writer writer(coreOpts.oname.Get());
+  HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
   writer.writeTensor("ref", ref.dimensions(), ref.data(), {"b", "i", "j", "k"});

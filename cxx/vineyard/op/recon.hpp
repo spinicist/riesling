@@ -13,12 +13,17 @@
 namespace rl {
 namespace Recon {
 
-struct Opts {
+struct Opts
+{
   bool decant, lowmem;
 };
 
-auto Choose(Recon::Opts const &rOpts, GridOpts<3> const &gridOpts, SENSE::Opts &senseOpts, Trajectory const &traj, Basis::CPtr basis, Cx5 const &data)
-  -> TOps::TOp<Cx, 5, 5>::Ptr;
+auto Choose(Recon::Opts const         &rOpts,
+            TOps::Grid<3>::Opts const &gridOpts,
+            SENSE::Opts               &senseOpts,
+            Trajectory const          &traj,
+            Basis::CPtr                basis,
+            Cx5 const                 &data) -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 // auto Single(GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr basis)
 //   -> TOps::TOp<Cx, 5, 5>::Ptr;

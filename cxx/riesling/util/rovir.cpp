@@ -17,7 +17,7 @@ using namespace rl;
 
 void main_rovir(args::Subparser &parser)
 {
-  CoreOpts coreOpts(parser);
+  CoreArgs coreArgs(parser);
   GridOpts gridOpts(parser);
 
   args::ValueFlag<Index> refVol(parser, "V", "Use this volume (default first)", {"vol"}, 0);
@@ -29,16 +29,16 @@ void main_rovir(args::Subparser &parser)
   args::ValueFlag<float> fov(parser, "F", "ROVIR Signal FoV", {"rovir-fov"}, 1024.f);
   args::ValueFlag<Index> gap(parser, "G", "ROVIR gap in voxels", {"rovir-gap"}, 0);
 
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   Cx4         data = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
   if (res) { std::tie(traj, data) = traj.downsample(data, res.Get(), 0, true, true); }
   Index const nC = data.dimension(0);
   Index const nS = data.dimension(3);
-  auto        nufft = Recon::Channels(coreOpts.ndft, gridOpts, traj, nC, nS, IdBasis());
+  auto        nufft = Recon::Channels(coreArgs.ndft, gridOpts, traj, nC, nS, IdBasis());
 
   auto const sz = LastN<3>(nufft->ishape);
   Cx4 const  channelImages = nufft->adjoint(data).chip<1>(0);
@@ -105,6 +105,6 @@ void main_rovir(args::Subparser &parser)
   cholB.matrixU().solveInPlace(vecs);
   auto const psi = GramSchmidt(vecs);
 
-  HD5::Writer matfile(coreOpts.oname.Get());
+  HD5::Writer matfile(coreArgs.oname.Get());
   matfile.writeMatrix(psi, HD5::Keys::CompressionMatrix);
 }

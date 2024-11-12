@@ -19,9 +19,9 @@ TEST_CASE("Preconditioner", "[precon]")
   points(0, 2, 0) = 0.25f * M;
   Trajectory const traj(points, matrix);
   Basis basis;
-  Re2 sc = KSpaceSingle(traj, &basis, false, 0.f);
+  auto const sc = KSpaceSingle(TOps::Grid<3>::Opts(), traj, &basis, 0., 1, 1, 1);
   INFO("Weights\n" << sc);
-  CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
-  CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));
-  CHECK(sc(2, 0) == Approx(1.f).margin(1.e-1f));
+  CHECK(std::abs(sc->weights()(0, 0)) == Approx(1.f).margin(1.e-1f));
+  CHECK(std::abs(sc->weights()(1, 0)) == Approx(1.f).margin(1.e-1f));
+  CHECK(std::abs(sc->weights()(2, 0)) == Approx(1.f).margin(1.e-1f));
 }

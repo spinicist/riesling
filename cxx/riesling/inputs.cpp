@@ -17,9 +17,10 @@ std::unordered_map<int, Log::Level> levelMap{
   {0, Log::Level::None}, {1, Log::Level::Ephemeral}, {2, Log::Level::Standard}, {3, Log::Level::Debug}};
 }
 
-CoreOpts::CoreOpts(args::Subparser &parser)
+CoreArgs::CoreArgs(args::Subparser &parser)
   : iname(parser, "FILE", "Input HD5 file")
   , oname(parser, "FILE", "Output HD5 file")
+  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz3())
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
   , residual(parser, "R", "Write out residual to file", {"residual", 'r'})
 {

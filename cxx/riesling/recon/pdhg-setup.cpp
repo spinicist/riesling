@@ -15,23 +15,23 @@ using namespace rl;
 
 void main_pdhg_setup(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
+  CoreArgs    coreArgs(parser);
   GridOpts    gridOpts(parser);
   PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
   RegOpts     regOpts(parser);
 
-  ParseCommand(parser, coreOpts.iname);
+  ParseCommand(parser, coreArgs.iname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Trajectory  traj(reader, reader.readInfo().voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   auto const  nS = noncart.dimension(3);
   auto const  nT = noncart.dimension(4);
-  auto const  basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const  recon = Recon::SENSE(coreOpts.ndft, gridOpts, senseOpts, traj, nS, nT, basis, noncart);
+  auto const  basis = ReadBasis(coreArgs.basisFile.Get());
+  auto const  recon = Recon::SENSE(coreArgs.ndft, gridOpts, senseOpts, traj, nS, nT, basis, noncart);
   auto const  shape = recon->ishape;
-  auto const  P = make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreOpts.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
+  auto const  P = make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
                                   preOpts.bias.Get());
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A

@@ -20,8 +20,11 @@ struct Opts
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(
-  Opts &opts, GridOpts<3> const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis = nullptr) -> Cx5;
+auto LoresChannels(Opts                      &opts,
+                   TOps::Grid<3>::Opts const &gridOpts,
+                   Trajectory const          &inTraj,
+                   Cx5 const                 &noncart,
+                   Basis::CPtr                basis = nullptr) -> Cx5;
 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &ref, float const os, float const l, float const λ) -> Cx5;
@@ -31,7 +34,7 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5;
 auto MapsToKernels(Cx5 const &maps, Index const kW, float const os) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps
-auto Choose(Opts &opts, GridOpts<3> const &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;
+auto Choose(Opts &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;
 
 } // namespace SENSE
 } // namespace rl

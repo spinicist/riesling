@@ -10,27 +10,18 @@ namespace rl::TOps {
 template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
-  using GType = GridDecant<ND>;
-  NUFFTDecant(GType::Ptr grid, Sz<ND> const matrix = Sz<ND>());
   TOP_DECLARE(NUFFTDecant)
 
-  static auto Make(TrajectoryN<ND> const &traj,
-                   std::string const     &ktype,
-                   float const            osamp,
-                   CxN<ND + 2> const     &skern,
-                   Basis::CPtr            basis,
-                   Sz<ND> const           matrix,
-                   Index const            subgridSz = 8) -> std::shared_ptr<NUFFTDecant<ND>>;
+  NUFFTDecant(TOps::Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
 
-  static auto
-  Make(TrajectoryN<ND> const &traj, GridOpts<ND> const &opts, CxN<ND + 2> const &skern, Basis::CPtr basis, Sz<ND> const matrix)
+  static auto Make(TOps::Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
     -> std::shared_ptr<NUFFTDecant<ND>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;
   void iforward(InCMap const &x, OutMap &y) const;
 
 private:
-  GType::Ptr gridder;
+  GridDecant<ND> gridder;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
   InTensor apo_;

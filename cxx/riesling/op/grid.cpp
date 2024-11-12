@@ -14,59 +14,46 @@
 using namespace rl;
 
 auto MakeGrid(
-  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
+  TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
   -> TOps::TOp<Cx, 6, 5>::Ptr
 {
-  if (gridOpts.vcc) {
-    auto grid = TOps::Grid<3, true>::Make(traj, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp, gridOpts.ktype, nC, basis,
-                                          gridOpts.subgridSize);
-    auto const ns = grid->ishape;
-    auto       reshape = TOps::MakeReshapeInput(grid, Sz5{ns[0] * ns[1], ns[2], ns[3], ns[4], ns[5]});
-    auto       loop = TOps::MakeLoop(reshape, nS);
-    auto       slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(reshape->ishape, nS);
-    auto       slabLoop = TOps::MakeCompose(slabToVol, loop);
-    auto       timeLoop = TOps::MakeLoop(slabLoop, nT);
+  auto grid = TOps::Grid<3>::Make(gridOpts, traj, nC, basis);
+  if (nS == 1) {
+    auto rout = TOps::MakeReshapeOutput(grid, AddBack(grid->oshape, 1));
+    auto timeLoop = TOps::MakeLoop(rout, nT);
     return timeLoop;
   } else {
-    auto grid = TOps::Grid<3, false>::Make(traj, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp, gridOpts.ktype, nC, basis,
-                                           gridOpts.subgridSize);
-    if (nS == 1) {
-      auto rout = TOps::MakeReshapeOutput(grid, AddBack(grid->oshape, 1));
-      auto timeLoop = TOps::MakeLoop(rout, nT);
-      return timeLoop;
-    } else {
-      auto loop = TOps::MakeLoop(grid, nS);
-      auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nS);
-      auto compose1 = TOps::MakeCompose(slabToVol, loop);
-      auto timeLoop = TOps::MakeLoop(compose1, nT);
-      return timeLoop;
-    }
+    auto loop = TOps::MakeLoop(grid, nS);
+    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nS);
+    auto compose1 = TOps::MakeCompose(slabToVol, loop);
+    auto timeLoop = TOps::MakeLoop(compose1, nT);
+    return timeLoop;
   }
 }
 
 void main_grid(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
-  GridArgs<3> gridOpts(parser);
-  PreconOpts  preOpts(parser);
+  CoreArgs    coreArgs(parser);
+  GridArgs<3> gridArgs(parser);
+  PreconArgs  preArgs(parser);
   LsqOpts     lsqOpts(parser);
   args::Flag  fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::Flag  adj(parser, "", "Apply adjoint operation", {'a', "adj"});
 
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size, gridOpts.matrix.Get());
-  auto const basis = LoadBasis(coreOpts.basisFile.Get());
+  Trajectory traj(reader, reader.readInfo().voxel_size, coreArgs.matrix.Get());
+  auto const basis = LoadBasis(coreArgs.basisFile.Get());
 
   auto const  shape = reader.dimensions();
   auto const  nC = shape[0];
   Index const nS = shape[shape.size() - 2];
   auto const  nT = shape[shape.size() - 1];
-  auto const  A = MakeGrid(gridOpts.Get(), traj, nC, nS, nT, basis.get());
+  auto const  A = MakeGrid(gridArgs.Get(), traj, nC, nS, nT, basis.get());
 
-  HD5::Writer writer(coreOpts.oname.Get());
+  HD5::Writer writer(coreArgs.oname.Get());
   writer.writeInfo(reader.readInfo());
   traj.write(writer);
 
@@ -81,7 +68,7 @@ void main_grid(args::Subparser &parser)
   } else {
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
-    auto const M = MakeKspacePre(traj, nC, nS, nT, basis.get(), preOpts.type.Get(), preOpts.bias.Get());
+    auto const M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
     LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
     auto const c = lsmr.run(CollapseToConstVector(noncart));
     writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);

@@ -15,7 +15,7 @@ using namespace rl;
 
 void main_pdhg(args::Subparser &parser)
 {
-  CoreOpts    coreOpts(parser);
+  CoreArgs    coreArgs(parser);
   GridOpts    gridOpts(parser);
   PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);
@@ -25,9 +25,9 @@ void main_pdhg(args::Subparser &parser)
   args::ValueFlag<Index>       its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
   args::ValueFlag<std::vector<float>, VectorReader<float>> σin(parser, "σ", "Pre-computed dual step sizes", {"sigma"});
   args::ValueFlag<float>                                   τin(parser, "τ", "Pre-computed primal step size", {"tau"}, -1.f);
-  ParseCommand(parser, coreOpts.iname, coreOpts.oname);
+  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
-  HD5::Reader reader(coreOpts.iname.Get());
+  HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
@@ -35,10 +35,10 @@ void main_pdhg(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nV = noncart.dimension(4);
 
-  auto const basis = ReadBasis(coreOpts.basisFile.Get());
-  auto const recon = Recon::SENSE(coreOpts, gridOpts, senseOpts, traj, nS, basis, noncart);
+  auto const basis = ReadBasis(coreArgs.basisFile.Get());
+  auto const recon = Recon::SENSE(coreArgs, gridOpts, senseOpts, traj, nS, basis, noncart);
   auto const shape = recon->ishape;
-  auto const P = make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreOpts.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
+  auto const P = make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
                                  preOpts.bias.Get());
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
@@ -53,7 +53,7 @@ void main_pdhg(args::Subparser &parser)
 
   PDHG        pdhg(A, P, reg.regs, σin.Get(), τin.Get(), debug_x);
   
-  TOps::Crop<Cx, 4> oc(recon->ishape, AddFront(traj.matrixForFOV(coreOpts.fov.Get()), recon->ishape[0]));
+  TOps::Crop<Cx, 4> oc(recon->ishape, AddFront(traj.matrixForFOV(coreArgs.fov.Get()), recon->ishape[0]));
   Cx5               out(AddBack(oc.oshape, nV));
 
   float const scale = Scaling(scaling, recon, P, &noncart(0, 0, 0, 0, 0));
@@ -64,6 +64,6 @@ void main_pdhg(args::Subparser &parser)
     auto xm = AsTensorMap(x, recon->ishape);
     out.chip<4>(iv) = oc.forward(xm) / out.chip<4>(iv).constant(scale);
   }
-  WriteOutput(cmd, coreOpts.oname.Get(), out, info);
+  WriteOutput(cmd, coreArgs.oname.Get(), out, info);
   rl::Log::Print(cmd, "Finished");
 }

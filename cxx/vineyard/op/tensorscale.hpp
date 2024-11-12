@@ -15,6 +15,7 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
   using TScales = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
   using Parent::adjoint;
   using Parent::forward;
+  using Ptr = std::shared_ptr<TensorScale>;
 
   TensorScale(InDims const shape, TScales const &s)
     : Parent("TensorScale", shape, shape)
@@ -78,6 +79,8 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     TScales p = scales + s;
     return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, p);
   }
+
+  auto weights() const -> TScales const & { return scales; }
 
 private:
   TScales  scales;

@@ -26,14 +26,13 @@ TEST_CASE("Grid-Basic", "[grid]")
   TrajectoryN<2> const traj(points, matrix);
   Basis                basis;
 
-  float const       osamp = GENERATE(1.3f, 2.f);
-  std::string const ktype = "ES6";
-  auto              grid = TOps::Grid<2, false>::Make(traj, traj.matrix(), osamp, ktype, 1, &basis);
-  Cx3               noncart(grid->oshape);
-  Cx4               cart(grid->ishape);
+  float const osamp = GENERATE(1.3f, 2.f);
+  auto        grid = TOps::Grid<2>::Make(TOps::Grid<2>::Opts{.ktype = "ES6", .osamp = osamp}, traj, 1, &basis);
+  Cx3         noncart(grid->oshape);
+  Cx4         cart(grid->ishape);
   noncart.setConstant(1.f);
   cart = grid->adjoint(noncart);
-  INFO("M " << M << " OS " << osamp << " " << ktype);
+  INFO("M " << M << " OS " << osamp);
   INFO("noncart\n" << noncart);
   INFO("cart\n" << cart);
   auto const cs = std::sqrt(cart.size());
@@ -59,9 +58,8 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   points(0, 5, 0) = 2.f;
   TrajectoryN<1> const traj(points, matrix);
 
-  float const       osamp = 1;
-  std::string const ktype = GENERATE("NN");
-  Basis             basis(2, 6, 1);
+  float const osamp = 1;
+  Basis       basis(2, 6, 1);
   basis.B.setZero();
   basis.B(0, 0, 0) = 1.f;
   basis.B(0, 1, 0) = 1.f;
@@ -69,7 +67,7 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   basis.B(1, 3, 0) = 1.f;
   basis.B(1, 4, 0) = 1.f;
   basis.B(1, 5, 0) = 1.f;
-  auto grid = TOps::Grid<1, false>::Make(traj, traj.matrix(), osamp, ktype, 1, &basis);
+  auto grid = TOps::Grid<1>::Make(TOps::Grid<1>::Opts{.ktype = "NN", .osamp = 1.f}, traj, 1, &basis);
   Cx3  noncart(grid->oshape);
   noncart.setConstant(1.f);
   Cx3 cart = grid->adjoint(noncart);
@@ -91,11 +89,11 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   CHECK(Norm(nc2 - noncart) == Approx(0.f).margin(1e-2f));
 }
 
-TEST_CASE("Grid VCC", "[grid]")
+TEST_CASE("GridVCC", "[grid]")
 {
   Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(0);
-  Index const M = GENERATE(16);
+  Index const M = 8;
   auto const  matrix = Sz1{M};
   Re3         points(1, M / 2, 1);
   for (Index ii = 0; ii < M / 2; ii++) {
@@ -104,26 +102,26 @@ TEST_CASE("Grid VCC", "[grid]")
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
 
-  auto grid = TOps::Grid<1, true>::Make(traj, traj.matrix(), 1.f, "NN", 1, &basis, true);
+  auto grid = TOps::Grid<1>::Make(TOps::Grid<1>::Opts{.ktype = "NN", .osamp = 1.f, .vcc = true}, traj, 1, &basis);
   Cx3  noncart(grid->oshape);
-  Cx4  cart(grid->ishape);
+  Cx3  cart(grid->ishape);
   noncart.setConstant(Cx(0.f, 1.f));
   cart = grid->adjoint(noncart);
   INFO("M " << M << " cart" << '\n' << cart);
   CHECK(Norm(cart) == Approx(Norm(noncart)).margin(1e-2f));
-  CHECK(cart(0, 0, 0, M / 2).real() == Approx(0.f).margin(1e-6f));
-  CHECK(cart(0, 0, 0, M / 2).imag() == Approx(inv_sqrt2).margin(1e-6f));
-  CHECK(cart(0, 0, 1, M / 2).real() == Approx(0.f).margin(1e-6f));
-  CHECK(cart(0, 0, 1, M / 2).imag() == Approx(-inv_sqrt2).margin(1e-6f));
+  CHECK(cart(0, 0, M / 2).real() == Approx(0.f).margin(1e-6f));
+  CHECK(cart(0, 0, M / 2).imag() == Approx(inv_sqrt2).margin(1e-6f));
+  CHECK(cart(0, 1, M / 2).real() == Approx(0.f).margin(1e-6f));
+  CHECK(cart(0, 1, M / 2).imag() == Approx(-inv_sqrt2).margin(1e-6f));
   for (Index ii = 1; ii < M / 2; ii++) {
-    CHECK(cart(0, 0, 0, M / 2 - ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, 0, M / 2 - ii).imag() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, 0, M / 2 + ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, 0, M / 2 + ii).imag() == Approx(inv_sqrt2).margin(1e-6f));
-    CHECK(cart(0, 0, 1, M / 2 - ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, 1, M / 2 - ii).imag() == Approx(-inv_sqrt2).margin(1e-6f));
-    CHECK(cart(0, 0, 1, M / 2 + ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, 1, M / 2 + ii).imag() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(0, 0, M / 2 - ii).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(0, 0, M / 2 - ii).imag() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(0, 0, M / 2 + ii).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(0, 0, M / 2 + ii).imag() == Approx(inv_sqrt2).margin(1e-6f));
+    CHECK(cart(0, 1, M / 2 - ii).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(0, 1, M / 2 - ii).imag() == Approx(-inv_sqrt2).margin(1e-6f));
+    CHECK(cart(0, 1, M / 2 + ii).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(0, 1, M / 2 + ii).imag() == Approx(0.f).margin(1e-6f));
   }
   noncart = grid->forward(cart);
   INFO("noncart" << '\n' << noncart);

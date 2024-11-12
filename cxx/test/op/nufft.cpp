@@ -23,7 +23,7 @@ TEST_CASE("NUFFT", "[nufft]")
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
   float const          osamp = GENERATE(2.f, 2.3f);
-  auto                 nufft = TOps::NUFFT<1, false>::Make(traj, "ES4", osamp, 1, &basis, traj.matrix());
+  auto                 nufft = TOps::NUFFT<1>::Make(TOps::Grid<1>::Opts{.osamp = osamp, .ktype = "ES4"}, traj, 1, &basis);
   Cx3                  ks(nufft->oshape);
   Cx3                  img(nufft->ishape);
   img.setZero();
@@ -58,9 +58,8 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
     }
   }
 
-  float const osamp = 2.f;
-  auto        nufft = TOps::NUFFT<1>::Make(traj, "ES4", osamp, 1, &basis, traj.matrix());
-  Cx3         ks(nufft->oshape);
+  auto nufft = TOps::NUFFT<1>::Make(TOps::Grid<1>::Opts{.osamp = 2.f, .ktype = "ES4"}, traj, 1, &basis);
+  Cx3  ks(nufft->oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft->ishape);
   img.setZero();
@@ -71,6 +70,7 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
 
 TEST_CASE("NUFFT-VCC", "[nufft]")
 {
+  Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(8, 10);
   auto const  matrix = Sz1{M};
   Re3         points(1, 1, 1);
@@ -78,17 +78,17 @@ TEST_CASE("NUFFT-VCC", "[nufft]")
 
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
-  auto                 nufft = TOps::NUFFT<1, true>::Make(traj, "NN", 1.f, 1, &basis, traj.matrix());
-  Cx3                  ks(nufft->oshape);
+  auto nufft = TOps::NUFFT<1>::Make(TOps::Grid<1>::Opts{.osamp = 1.f, .ktype = "NN", .vcc = true}, traj, 1, &basis);
+  Cx3  ks(nufft->oshape);
   // Purely imaginary, odd symmetric
   ks.setConstant(Cx(0.f, 1.f));
-  Cx4 img = nufft->adjoint(ks);
+  Cx3 img = nufft->adjoint(ks);
   INFO("IMG\n" << img);
   INFO("dims " << img.dimensions());
   CHECK(Norm(img) == Approx(1.f).margin(1.e-2f));
   for (Index ii = 0; ii < M; ii++) {
-    CHECK(img(0, 0, 0, ii).real() == Approx(-img(0, 0, 1, ii).real()).margin(1e-6f));
-    CHECK(img(0, 0, 0, ii).imag() == Approx(-img(0, 0, 1, ii).imag()).margin(1e-6f));
+    CHECK(img(0, 0, ii).real() == Approx(-img(0, 1, ii).real()).margin(1e-6f));
+    CHECK(img(0, 0, ii).imag() == Approx(-img(0, 1, ii).imag()).margin(1e-6f));
   }
   ks = nufft->forward(img);
   INFO("KS\n" << ks);
