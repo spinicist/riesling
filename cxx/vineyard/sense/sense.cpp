@@ -39,8 +39,10 @@ auto LoresChannels(
 
   Cx4 const ncVol = noncart.chip<4>(opts.tp.Get());
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
-  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, basis);
-  auto const M = KSpaceSingle(gridOpts, traj, basis, 1.f, nC, nS, 1);
+  auto sgOpts = gridOpts;
+  sgOpts.vcc = false; // Ensure we don't calculate the extra channels
+  auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, basis);
+  auto const M = KSpaceSingle(sgOpts, traj, basis, 1.f, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());

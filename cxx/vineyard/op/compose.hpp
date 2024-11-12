@@ -20,8 +20,8 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
   {
     static_assert(Op1::OutRank == Op2::InRank);
     if (op1_->oshape != op2_->ishape) {
-      throw(std::runtime_error(
-        fmt::format("{} op1 output: {} did not match op2 input: {}", this->name, op1_->oshape, op2_->ishape)));
+      throw(std::runtime_error(fmt::format("{}: {} oshape {} did not match {} ishape {}", this->name, op1_->name, op1_->oshape,
+                                           op2_->name, op2_->ishape)));
     }
   }
 

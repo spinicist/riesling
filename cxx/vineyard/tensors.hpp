@@ -59,12 +59,6 @@ template <typename T, typename U> inline decltype(auto) Dot(T const &a, U const 
 
 template <typename T> inline decltype(auto) Norm(T const &a) { return std::sqrt(std::real(Dot(a, a))); }
 
-template <int D, typename T, typename U> inline decltype(auto) Sum(T const &x, U const &y)
-{
-  Eigen::IndexList<Eigen::type2index<D>> dim;
-  return (x * y).sum(dim);
-}
-
 template <int D, typename T, typename U> inline decltype(auto) DimDot(T const &x, U const &y)
 {
   Eigen::IndexList<Eigen::type2index<D>> dim;

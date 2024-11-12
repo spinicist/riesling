@@ -32,7 +32,7 @@ void main_op_sense(args::Subparser &parser)
     if (LastN<3>(maps.dimensions()) != MidN<1, 3>(images.dimensions())) {
       throw Log::Failure(cmd, "Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
     }
-    TOps::SENSE sense(maps);
+    TOps::SENSE sense(maps, false, 1);
     Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
     for (auto ii = 0; ii < images.dimension(4); ii++) {
       auto const temp = sense.forward(CChipMap(images, ii));
@@ -44,7 +44,7 @@ void main_op_sense(args::Subparser &parser)
     if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
       throw Log::Failure(cmd, "Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
     }
-    TOps::SENSE sense(maps);
+    TOps::SENSE sense(maps, false, 1);
     Cx5         images(LastN<5>(channels.dimensions()));
     for (auto ii = 0; ii < channels.dimension(5); ii++) {
       images.chip<4>(ii).device(Threads::TensorDevice()) = sense.adjoint(CChipMap(channels, ii));

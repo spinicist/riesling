@@ -48,8 +48,8 @@ auto SENSE(TOps::Grid<3>::Opts const &gridOpts,
            Cx5 const                 &skern) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
-  auto      sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
-  auto      nufft = TOps::NUFFT<3>::Make(gridOpts, traj, sense->nChannels(), b);
+  auto      sense = std::make_shared<TOps::SENSE>(smaps, gridOpts.vcc, b ? b->nB() : 1);
+  auto      nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
   auto      slabLoop = TOps::MakeLoop(nufft, nSlab);
   if (nSlab > 1) {
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
