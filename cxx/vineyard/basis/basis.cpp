@@ -102,7 +102,18 @@ auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>
   } else {
     HD5::Reader basisReader(basisFile);
     Cx3 const   B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
-    Re1 const   t = basisReader.readTensor<Re1>("time");
+    Re1         t;
+    if (basisReader.exists("time")) {
+      t = basisReader.readTensor<Re1>("time");
+      if (t.dimension(0) != B.dimension(2)) {
+        throw Log::Failure("basis", "{} had {} traces but {} timepoints", basisFile, B.dimension(2), t.dimension(0));
+      }
+    } else {
+      t.reshape(Sz1{B.dimension(2)});
+      for (Index it = 0; it < t.dimension(0); it++) {
+        t(it) = it;
+      }
+    }
     if (basisReader.exists("R")) {
       Cx2 const R = basisReader.readTensor<Cx2>("R");
       return std::make_unique<Basis>(B, t, R);
