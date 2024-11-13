@@ -6,7 +6,6 @@
 #include "tensors.hpp"
 
 #include <numbers>
-
 constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
 
 namespace rl::TOps {
