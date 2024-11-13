@@ -13,15 +13,6 @@
 namespace rl::TOps {
 
 template <int ND>
-auto NUFFT<ND>::Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
-  -> std::shared_ptr<NUFFT<ND>>
-{
-  auto const matrix = traj.matrixForFOV(opts.fov);
-  auto       g = TOps::Grid<ND>::Make(opts, traj, nChan, basis);
-  return std::make_shared<NUFFT<ND>>(opts, traj, nChan, basis);
-}
-
-template <int ND>
 NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
   : Parent("NUFFT")
   , gridder{Grid<ND>::Make(opts, traj, nChan, basis)}
@@ -49,6 +40,13 @@ NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index 
   }
   std::transform(padLeft_.cbegin(), padLeft_.cend(), padRight.cbegin(), paddings_.begin(),
                  [](Index left, Index right) { return std::make_pair(left, right); });
+}
+
+template <int ND>
+auto NUFFT<ND>::Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
+  -> std::shared_ptr<NUFFT<ND>>
+{
+  return std::make_shared<NUFFT<ND>>(opts, traj, nChan, basis);
 }
 
 template <int ND> void NUFFT<ND>::forward(InCMap const &x, OutMap &y) const
