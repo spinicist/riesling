@@ -134,7 +134,7 @@ void SegmentedZTE::segmentTimepoints(Index &tp, float &t, Re1 &ts) const
   t += p.Tramp + p.Tssi;
 }
 
-auto SegmentedZTE::nTissueParameters() const -> Index { return 3; }
+auto SegmentedZTE::nTissueParameters() const -> Index { return 4; }
 
 auto SegmentedZTE::simulate(Eigen::ArrayXf const &pars) const -> Cx2
 {
@@ -142,16 +142,17 @@ auto SegmentedZTE::simulate(Eigen::ArrayXf const &pars) const -> Cx2
   float const R1 = 1.f / pars(0);
   float const R2s = 1.f / pars(1);
   float const Δf = pars(2);
+  float const B1 = pars(3);
 
   // Get steady state before first read-out
-  Eigen::Matrix2f const seg = Eseg(R1, 1.f);
+  Eigen::Matrix2f const seg = Eseg(R1, B1);
   float const           m_ss = seg(0, 1) / (1.f - seg(0, 0));
 
   // Now fill in dynamic
   Index           tp = 0;
   Cx1             s0(traces());
   Eigen::Vector2f Mz{m_ss, 1.f};
-  segment(tp, Mz, s0, R1, 1.f);
+  segment(tp, Mz, s0, R1, B1);
   if (tp != traces()) { throw Log::Failure("Sim", "Programmer error"); }
   return readout(pars(1), Δf).contract(s0, Eigen::array<Eigen::IndexPair<Index>, 0>());
 }
