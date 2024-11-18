@@ -32,7 +32,7 @@ add_executable(riesling
     op/wavelets.cpp
 
     recon/outputs.cpp
-    recon/lad.cpp
+    # recon/lad.cpp
     recon/lsq.cpp
     # recon/pdhg.cpp
     # recon/pdhg-setup.cpp
@@ -47,7 +47,7 @@ add_executable(riesling
     util/autofocus.cpp
     util/denoise.cpp
     util/downsamp.cpp
-    util/eig.cpp
+    # util/eig.cpp
     util/log.cpp
     util/filter.cpp
     util/phantom.cpp

@@ -3,6 +3,7 @@
 #include "io/reader.hpp"
 #include "op/compose.hpp"
 #include "op/nufft.hpp"
+#include "precon.hpp"
 #include "sense/sense.hpp"
 #include "sys/args.hpp"
 
@@ -11,37 +12,20 @@
  */
 
 namespace rl {
-namespace Recon {
-
-struct Opts
+struct Recon
 {
-  bool decant, lowmem;
+  struct Opts
+  {
+    bool decant, lowmem;
+  };
+
+  Recon(Opts const                &rOpts,
+        PreconOpts const          &pOpts,
+        TOps::Grid<3>::Opts const &gridOpts,
+        SENSE::Opts               &senseOpts,
+        Trajectory const          &traj,
+        Basis::CPtr                basis,
+        Cx5 const                 &data);
+  TOps::TOp<Cx, 5, 5>::Ptr A, M;
 };
-
-auto Choose(Recon::Opts const         &rOpts,
-            TOps::Grid<3>::Opts const &gridOpts,
-            SENSE::Opts               &senseOpts,
-            Trajectory const          &traj,
-            Basis::CPtr                basis,
-            Cx5 const                 &data) -> TOps::TOp<Cx, 5, 5>::Ptr;
-
-// auto Single(GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr basis)
-//   -> TOps::TOp<Cx, 5, 5>::Ptr;
-
-// auto SENSE(GridOpts<3> const &gridOpts,
-//            Trajectory const  &traj,
-//            Index const        nSlab,
-//            Index const        nTime,
-//            Basis::CPtr        basis,
-//            Cx5 const         &smaps) -> TOps::TOp<Cx, 5, 5>::Ptr;
-
-// auto Decant(GridOpts<3> const &gridOpts,
-//             Trajectory const  &traj,
-//             Index const        nSlab,
-//             Index const        nTime,
-//             Basis::CPtr        basis,
-//             Cx5 const         &kernels,
-//             Sz3 const         &matrix) -> TOps::TOp<Cx, 5, 5>::Ptr;
-
-} // namespace Recon
 } // namespace rl

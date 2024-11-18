@@ -28,28 +28,24 @@ void main_recon_lsq(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  Index const nC = noncart.dimension(0);
-  Index const nS = noncart.dimension(3);
-  Index const nT = noncart.dimension(4);
 
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
-  auto const A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
-  auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
-  Log::Debug(cmd, "A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
-  auto debug = [shape = A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
+  auto const R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
+  Log::Debug(cmd, "A {} {} M {}", R.A->ishape, R.A->oshape, R.M->ishape);
+  auto debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
     if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image); }
   };
-  LSMR lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
+  LSMR lsmr{R.A, R.M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
   auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
-  auto const xm = AsTensorMap(x, A->ishape);
+  auto const xm = AsTensorMap(x, R.A->ishape);
 
-  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), A->ishape);
+  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), R.A->ishape[0], R.A->ishape[4]), R.A->ishape);
   auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
   if (coreArgs.residual) {
-    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseOpts, preArgs.Get(), traj, xm, A, noncart);
+    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseOpts, preArgs.Get(), traj, xm, R.A, noncart);
   }
   Log::Print(cmd, "Finished");
 }

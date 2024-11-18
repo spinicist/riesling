@@ -40,16 +40,15 @@ void WriteResidual(std::string const              &cmd,
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
   Basis const id;
-  auto const  A1 = Recon::Choose(reconOpts, gridOpts, senseOpts, traj, &id, noncart);
-  auto const  M1 = MakeKSpaceSingle(preOpts, gridOpts, traj, nC, nS, nT, &id);
+  auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, noncart);
   Log::Print(cmd, "Calculating K-space residual");
   noncart -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");
-  LSMR       lsmr{A1, M1, nullptr, 2};
+  LSMR       lsmr{R1.A, R1.M, nullptr, 2};
   auto const r = lsmr.run(CollapseToConstVector(noncart));
   Log::Print(cmd, "Finished calculating residual");
   HD5::Writer writer(fname, true);
-  writer.writeTensor(HD5::Keys::Residual, A1->ishape, r.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Residual, R1.A->ishape, r.data(), HD5::Dims::Image);
 }
 
 } // namespace rl
