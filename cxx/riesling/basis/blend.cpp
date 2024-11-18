@@ -36,8 +36,11 @@ void main_blend(args::Subparser &parser)
     throw Log::Failure(cmd, "Basis has {} vectors but image has {}", basis->nB(), images.dimension(0));
   }
 
-  auto const &sps = sp.Get();
-  auto const &tps = tp.Get();
+  auto sps = sp.Get();
+  auto tps = tp.Get();
+  if (sps.size() == 1) {
+    sps.resize(tps.size());
+  }
   if (sps.size() != tps.size()) {
     throw Log::Failure(cmd, "Must have same number of trace and sample points");
   }
