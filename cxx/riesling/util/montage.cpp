@@ -150,7 +150,7 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
   for (auto const &slice : slices) {
     rl::RGBImage clr;
     switch (component) {
-    case 'p': clr = rl::ColorizeComplex(slice / slice.abs().cast<rl::Cx>(), 1.f, 1.f); break;
+    case 'p': clr = rl::ColorizePhase(slice / slice.abs().cast<rl::Cx>(), 1.f, 1.f); break;
     case 'x': clr = rl::ColorizeComplex(slice, win / 2.f, ɣ); break;
     case 'r': clr = rl::ColorizeReal(slice.real(), win, ɣ); break;
     case 'i': clr = rl::ColorizeReal(slice.imag(), win, ɣ); break;
@@ -272,7 +272,7 @@ void Printify(float const printPixWidth, bool const interp, Magick::Image &img)
   if (interp) {
     img.resize(Magick::Geometry(printPixWidth, scale * img.size().height()));
   } else {
-    // img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
+    img.scale(Magick::Geometry(printPixWidth, scale * img.size().height()));
   }
   img.density(Magick::Geometry(72, 72));
 }
@@ -304,7 +304,7 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<Index>                slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
   args::ValueFlag<Index>                slStart(parser, "S", "Start slice", {"start"}, 0);
   args::ValueFlag<Index>                slEnd(parser, "S", "End slice", {"end"});
-  args::ValueFlag<Index>                slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);
+  args::ValueFlag<Index>                slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 2);
   args::ValueFlag<rl::Sz2, SzReader<2>> sl0(parser, "S", "Dim 0 slice (start, size)", {"sl0"}, rl::Sz2{0, 1024});
   args::ValueFlag<rl::Sz2, SzReader<2>> sl1(parser, "S", "Dim 1 slice (start, size)", {"sl1"}, rl::Sz2{0, 1024});
   args::ValueFlag<Index>                cols(parser, "C", "Output columns", {"cols"}, 8);

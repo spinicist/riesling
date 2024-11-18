@@ -374,6 +374,26 @@ auto ColorizeComplex(Cx2 const &img, float const max, float const ɣ) -> RGBImag
   return rgb;
 }
 
+auto ColorizePhase(Cx2 const &img, float const max, float const ɣ) -> RGBImage
+{
+  auto const nX = img.dimension(0);
+  auto const nY = img.dimension(1);
+  auto       rgb = RGBImage(3, nX, nY);
+  rgb.setZero();
+  for (int iy = 0; iy < nY; iy++) {
+    for (int ix = 0; ix < nX; ix++) {
+      float const pha = std::arg(img(ix, iy));
+      Index const index = ((pha + M_PI) / (2.f * M_PI)) * (phase.size() - 1);
+
+      RGBf const &color = phase[index];
+      rgb(0, ix, iy) = (uint8_t)std::clamp(color[0] * 255.f, 0.f, 255.f);
+      rgb(1, ix, iy) = (uint8_t)std::clamp(color[1] * 255.f, 0.f, 255.f);
+      rgb(2, ix, iy) = (uint8_t)std::clamp(color[2] * 255.f, 0.f, 255.f);
+    }
+  }
+  return rgb;
+}
+
 auto ColorizeReal(Re2 const &img, float const max, float const ɣ) -> RGBImage
 {
   auto const nX = img.dimension(0);
