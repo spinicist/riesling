@@ -13,14 +13,14 @@ using namespace rl;
 
 void main_recon_lsq(args::Subparser &parser)
 {
-  CoreArgs            coreArgs(parser);
-  GridArgs<3>         gridArgs(parser);
-  PreconArgs          preArgs(parser);
-  ReconArgs           reconArgs(parser);
-  SENSE::Opts         senseOpts(parser);
-  LsqOpts             lsqOpts(parser);
-  ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
-
+  CoreArgs               coreArgs(parser);
+  GridArgs<3>            gridArgs(parser);
+  PreconArgs             preArgs(parser);
+  ReconArgs              reconArgs(parser);
+  SENSE::Opts            senseOpts(parser);
+  LsqOpts                lsqOpts(parser);
+  ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N iterations (1)", {"debug-iters"}, 1);
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
@@ -36,8 +36,8 @@ void main_recon_lsq(args::Subparser &parser)
   auto const A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
   auto const M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
   Log::Debug(cmd, "A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
-  auto debug = [shape = A->ishape](Index const i, LSMR::Vector const &x) {
-    Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image);
+  auto debug = [shape = A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
+    if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image); }
   };
   LSMR lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
 
