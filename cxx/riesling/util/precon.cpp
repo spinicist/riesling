@@ -25,11 +25,11 @@ void main_precon(args::Subparser &parser)
     HD5::Reader senseReader(sfile.Get());
     Cx5 const   skern = senseReader.readTensor<Cx5>(HD5::Keys::Data);
     Cx5 const   smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridArgs.fov.Get()), gridArgs.osamp.Get());
-    auto        M = KSpaceMulti(smaps, gridArgs.Get(), traj, basis.get(), preλ.Get(), 1, 1);
-    writer.writeTensor(HD5::Keys::Weights, M->weights().dimensions(), M->weights().data(), {"channel", "sample", "trace"});
+    auto const  M = KSpaceMulti(smaps, gridArgs.Get(), traj, basis.get(), preλ.Get());
+    writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"channel", "sample", "trace"});
   } else {
-    auto M = KSpaceSingle(gridArgs.Get(), traj, basis.get(), preλ.Get(), 1, 1, 1);
-    writer.writeTensor(HD5::Keys::Weights, M->weights().dimensions(), M->weights().data(), {"sample", "trace"});
+    auto const M = KSpaceSingle(gridArgs.Get(), traj, basis.get(), preλ.Get());
+    writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"sample", "trace"});
   }
 
   Log::Print(cmd, "Finished");

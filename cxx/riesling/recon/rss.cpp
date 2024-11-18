@@ -31,7 +31,7 @@ void main_recon_rss(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const A = TOps::NUFFTAll(gridArgs.Get(), traj, nC, nS, nT, basis.get());
-  auto const M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
+  auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
   LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
   auto       xm = AsTensorMap(x, A->ishape);

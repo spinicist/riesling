@@ -34,7 +34,7 @@ void main_recon_lsq(args::Subparser &parser)
 
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
   auto const A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
-  auto const M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
+  auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
   Log::Debug(cmd, "A {} {} M {} {}", A->ishape, A->oshape, M->rows(), M->cols());
   auto debug = [shape = A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
     if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image); }

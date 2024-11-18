@@ -12,16 +12,16 @@ TEST_CASE("Preconditioner", "[precon]")
 {
   Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(16);
-  Sz3 const matrix{M, M, M};
-  Re3 points(3, 3, 1);
+  Sz3 const   matrix{M, M, M};
+  Re3         points(3, 3, 1);
   points.setZero();
   points(0, 0, 0) = -0.25f * M;
   points(0, 2, 0) = 0.25f * M;
   Trajectory const traj(points, matrix);
-  Basis basis;
-  auto const sc = KSpaceSingle(TOps::Grid<3>::Opts(), traj, &basis, 0., 1, 1, 1);
+  Basis            basis;
+  auto const       sc = KSpaceSingle(TOps::Grid<3>::Opts(), traj, &basis, 0.);
   INFO("Weights\n" << sc);
-  CHECK(std::abs(sc->weights()(0, 0)) == Approx(1.f).margin(1.e-1f));
-  CHECK(std::abs(sc->weights()(1, 0)) == Approx(1.f).margin(1.e-1f));
-  CHECK(std::abs(sc->weights()(2, 0)) == Approx(1.f).margin(1.e-1f));
+  CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
+  CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));
+  CHECK(sc(2, 0) == Approx(1.f).margin(1.e-1f));
 }

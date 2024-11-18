@@ -42,7 +42,7 @@ auto LoresChannels(
   auto sgOpts = gridOpts;
   sgOpts.vcc = false; // Ensure we don't calculate the extra channels
   auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, basis);
-  auto const M = KSpaceSingle(sgOpts, traj, basis, 1.f, nC, nS, 1);
+  auto const M = MakeKSpaceSingle(PreconOpts(), sgOpts, traj, nC, nS, nT, basis);
   LSMR const lsmr{A, M, nullptr, 4};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());

@@ -41,7 +41,7 @@ void WriteResidual(std::string const              &cmd,
   Index const nT = noncart.dimension(4);
   Basis const id;
   auto const  A1 = Recon::Choose(reconOpts, gridOpts, senseOpts, traj, &id, noncart);
-  auto const  M1 = MakeKspacePre(preOpts, gridOpts, traj, nC, nS, nT, &id);
+  auto const  M1 = MakeKSpaceSingle(preOpts, gridOpts, traj, nC, nS, nT, &id);
   Log::Print(cmd, "Calculating K-space residual");
   noncart -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");

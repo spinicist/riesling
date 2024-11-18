@@ -41,7 +41,7 @@ void main_recon_rlsq(args::Subparser &parser)
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   auto const  recon = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
   auto const  shape = recon->ishape;
-  auto const  M = MakeKspacePre(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
+  auto const  M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
   float const scale = ScaleData(rlsqOpts.scaling.Get(), recon, M, CollapseToVector(noncart));
 
   auto [reg, A, ext_x] = Regularizers(regOpts, recon);
