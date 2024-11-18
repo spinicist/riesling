@@ -83,7 +83,7 @@ template <int ND> void TrajectoryN<ND>::init()
     float const percent = (100.f * discarded) / total;
     Log::Warn("Traj", "Discarded {} points ({:.2f}%) outside matrix", discarded, percent);
   }
-  Log::Print("Traj", "{}D Samples {} Traces {} Matrix {} FOV {}", ND, nSamples(), nTraces(), matrix_, FOV());
+  Log::Print("Traj", "{}D Samples {} Traces {} Matrix {} FOV {::.2f}", ND, nSamples(), nTraces(), matrix_, FOV());
 }
 
 template <int ND> void TrajectoryN<ND>::write(HD5::Writer &file) const
@@ -123,7 +123,7 @@ template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov) const -> S
   for (Index ii = 0; ii < ND; ii++) {
     matrix[ii] = std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
   }
-  Log::Print("Traj", "FOV {} matrix {}. Requested FOV {} matrix {}", FOV().transpose(), matrix_, fov.transpose(), matrix);
+  Log::Print("Traj", "FOV {::.2f} matrix {}. Requested FOV {::.2f} matrix {}", FOV().transpose(), matrix_, fov.transpose(), matrix);
   return matrix;
 }
 
@@ -301,7 +301,7 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
   Arrayf const mat = Sz2Array(this->matrix());
   Arrayf const omat = Sz2Array(oshape);
   Arrayf const osamp = omat / mat;
-  Log::Print("Grid", "Nominal matrix {} grid matrix {} over-sampling {}", mat.transpose(), omat.transpose(),
+  Log::Print("Traj", "Nominal matrix {} grid matrix {} over-sampling {::.2f}", mat.transpose(), omat.transpose(),
              osamp.transpose());
 
   Arrayf const k0 = omat / 2;
@@ -329,8 +329,7 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
       Arrayi const kint = ki.template cast<Index>() - (ksub * sgSz) + (kW / 2);
       Index const  sgind = SubgridIndex(ksub, nSubgrids);
       subs[sgind].corner = ksub.template cast<int16_t>();
-      subs[sgind].coords.push_back(
-        Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko});
+      subs[sgind].coords.push_back(Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko});
       valid++;
     }
   }
@@ -338,8 +337,7 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
   auto const eraseCount = std::erase_if(subs, [](auto const &s) { return s.coords.empty(); });
   Log::Print("Grid", "Removed {} empty subgrids, {} remaining", eraseCount, subs.size());
   Log::Print("Grid", "Sorting subgrids");
-  std::sort(subs.begin(), subs.end(),
-            [](CoordList const &a, CoordList const &b) { return a.coords.size() > b.coords.size(); });
+  std::sort(subs.begin(), subs.end(), [](CoordList const &a, CoordList const &b) { return a.coords.size() > b.coords.size(); });
   Log::Print("Grid", "Sorting coords");
   for (auto &s : subs) {
     std::sort(s.coords.begin(), s.coords.end(), [](Coord const &a, Coord const &b) {
@@ -358,7 +356,6 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
 
   return subs;
 }
-
 
 template struct TrajectoryN<1>;
 template struct TrajectoryN<2>;

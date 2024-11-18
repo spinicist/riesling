@@ -24,7 +24,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts,
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  Re2        weights;
+  Re2        weights(traj.nSamples(), traj.nTraces());
   auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, basis);
   Cx3        W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
@@ -52,6 +52,61 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts,
                Maximum(weights));
   }
   return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(Sz5{nC, traj.nSamples(), traj.nTraces(), nS, nT}, weights.cast<Cx>());
+}
+
+/*
+ * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
+ * (without SENSE maps)
+ */
+auto KSpaceMulti(Cx5 const                     &smaps,
+                 rl::TOps::Grid<3>::Opts const &gridOpts,
+                 Trajectory const              &traj,
+                 Basis::CPtr                    basis,
+                 float const                    λ,
+                 Index const                    nS,
+                 Index const                    nT) -> typename TOps::TensorScale<Cx, 5, 0, 2>::Ptr
+{
+  Log::Print("Precon", "Starting preconditioner calculation");
+  Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
+  Index const nC = smaps.dimension(1);
+  Index const nSamp = traj.nSamples();
+  Index const nTrace = traj.nTraces();
+  Re3         weights(nC, nSamp, nTrace);
+
+  auto nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, basis);
+  Cx3  W(nufft.oshape);
+  W.setConstant(Cx(1.f, 0.f));
+  Cx5 const psf = nufft.adjoint(W);
+
+  Sz5 smapShape = smaps.dimensions();
+  smapShape[1] = 1;
+  TOps::Pad<Cx, 5> padXC(smapShape, nufft.ishape);
+  Cx5              xcorrChan(nufft.ishape);
+  for (Index si = 0; si < nC; si++) {
+    float const ni = Norm2(smaps.chip<1>(si));
+    xcorrChan.setZero();
+    for (Index sj = 0; sj < nC; sj++) {
+      Cx5 xcorrImage = smaps.slice(Sz5{0, si, 0, 0, 0}, smapShape) * smaps.slice(Sz5{0, sj, 0, 0, 0}, smapShape).conjugate();
+      Cx5 xcorr = padXC.forward(xcorrImage);
+      FFT::Forward(xcorr, Sz3{2, 3, 4});
+      xcorrChan.device(Threads::TensorDevice()) += xcorr * xcorr.conjugate();
+    }
+    FFT::Adjoint(xcorrChan, Sz3{2, 3, 4});
+    xcorrChan.device(Threads::TensorDevice()) = xcorrChan * psf;
+    weights.slice(Sz3{si, 0, 0}, Sz3{1, nSamp, nTrace}) = nufft.forward(xcorrChan).abs();
+  }
+
+  // I do not understand this scaling factor but it's in Frank's code and works
+  float scale = std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(smapShape));
+  weights.device(Threads::TensorDevice()) = (1.f + λ) / ((weights * scale) + λ);
+
+  float const norm = Norm(weights);
+  if (!std::isfinite(norm)) {
+    Log::Print("Precon", "Pre-conditioner norm was not finite ({})", norm);
+  } else {
+    Log::Print("Precon", "Pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights), Maximum(weights));
+  }
+  return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(Sz5{nC, traj.nSamples(), traj.nTraces(), nS, nT}, weights.cast<Cx>());
 }
 
 auto MakeKspacePre(PreconOpts const              &opts,

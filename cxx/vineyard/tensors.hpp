@@ -57,7 +57,8 @@ template <typename T, typename U> inline decltype(auto) Dot(T const &a, U const 
   return d;
 }
 
-template <typename T> inline decltype(auto) Norm(T const &a) { return std::sqrt(std::real(Dot(a, a))); }
+template <typename T> inline decltype(auto) Norm2(T const &a) { return std::real(Dot(a, a)); }
+template <typename T> inline decltype(auto) Norm(T const &a) { return std::sqrt(Norm2(a)); }
 
 template <int D, typename T, typename U> inline decltype(auto) DimDot(T const &x, U const &y)
 {

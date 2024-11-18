@@ -279,7 +279,7 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5
   auto const  fshape = AddFront(MulToEven(mat, os), kshape[0], kshape[1]);
   auto const  cshape = AddFront(mat, kshape[0], kshape[1]);
   float const scale = std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape)));
-  Log::Print("SENSE", "Kernel Shape {} Full map shape {} Cropped map shape {} Scale {}", kshape, fshape, cshape, scale);
+  Log::Print("SENSE", "Kernels {} Full maps {} Cropped maps {} Scale {}", kshape, fshape, cshape, scale);
   TOps::Pad<Cx, 5> P(kshape, fshape);
   TOps::FFT<5, 3>  F(fshape, false);
   TOps::Pad<Cx, 5> C(cshape, fshape);
