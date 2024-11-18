@@ -304,7 +304,7 @@ void main_montage(args::Subparser &parser)
   args::ValueFlag<Index>                slN(parser, "N", "Number of slices (0 for all)", {"num", 'n'}, 8);
   args::ValueFlag<Index>                slStart(parser, "S", "Start slice", {"start"}, 0);
   args::ValueFlag<Index>                slEnd(parser, "S", "End slice", {"end"});
-  args::ValueFlag<Index>                slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 2);
+  args::ValueFlag<Index>                slDim(parser, "S", "Slice dimension (0/1/2)", {"dim"}, 0);
   args::ValueFlag<rl::Sz2, SzReader<2>> sl0(parser, "S", "Dim 0 slice (start, size)", {"sl0"}, rl::Sz2{0, 1024});
   args::ValueFlag<rl::Sz2, SzReader<2>> sl1(parser, "S", "Dim 1 slice (start, size)", {"sl1"}, rl::Sz2{0, 1024});
   args::ValueFlag<Index>                cols(parser, "C", "Output columns", {"cols"}, 8);

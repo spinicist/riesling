@@ -11,13 +11,13 @@ namespace rl {
 struct PreconOpts
 {
   std::string type;
-  float       bias;
+  float       λ;
 };
 
 auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts,
                   Trajectory const              &traj,
                   Basis::CPtr                    basis,
-                  float const                    bias,
+                  float const                    λ,
                   Index const                    nC,
                   Index const                    nS,
                   Index const                    nT) -> typename TOps::TensorScale<Cx, 5, 1, 2>::Ptr;

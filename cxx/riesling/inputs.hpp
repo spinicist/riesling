@@ -69,15 +69,15 @@ struct ReconArgs
 struct PreconArgs
 {
   args::ValueFlag<std::string> type;
-  args::ValueFlag<float>       bias;
+  args::ValueFlag<float>       λ;
 
   PreconArgs(args::Subparser &parser)
     : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"precon"}, "kspace")
-    , bias(parser, "BIAS", "Pre-conditioner Bias (1)", {"precon-bias"}, 1.f)
+    , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.f)
   {
   }
 
-  auto Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .bias = bias.Get()}; }
+  auto Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .λ = λ.Get()}; }
 };
 
 struct LsqOpts

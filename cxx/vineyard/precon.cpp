@@ -17,7 +17,7 @@ namespace rl {
 auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts,
                   Trajectory const              &traj,
                   Basis::CPtr                    basis,
-                  float const                    bias,
+                  float const                    λ,
                   Index const                    nC,
                   Index const                    nS,
                   Index const                    nT) -> typename TOps::TensorScale<Cx, 5, 1, 2>::Ptr
@@ -42,7 +42,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts,
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
-  weights.device(Threads::TensorDevice()) = ((weights * scale) + bias).inverse();
+  weights.device(Threads::TensorDevice()) = (1.f + λ) / ((weights * scale) + λ);
 
   float const norm = Norm(weights);
   if (!std::isfinite(norm)) {
@@ -67,15 +67,15 @@ auto MakeKspacePre(PreconOpts const              &opts,
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 5>>(shape);
   } else if (opts.type == "kspace") {
-    return KSpaceSingle(gridOpts, traj, basis, opts.bias, nC, nS, nT);
+    return KSpaceSingle(gridOpts, traj, basis, opts.λ, nC, nS, nT);
   } else {
     HD5::Reader reader(opts.type);
-    Re2         w = reader.readTensor<Re2>(HD5::Keys::Weights);
+    Cx2 const   w = reader.readTensor<Cx2>(HD5::Keys::Weights);
     if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
       throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(0),
                          w.dimension(1), traj.nSamples(), traj.nTraces());
     }
-    return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w);
   }
 }
 
