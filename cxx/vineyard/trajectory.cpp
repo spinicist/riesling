@@ -333,12 +333,12 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
       valid++;
     }
   }
-  Log::Print("Grid", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);
+  Log::Print("Traj", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);
   auto const eraseCount = std::erase_if(subs, [](auto const &s) { return s.coords.empty(); });
-  Log::Print("Grid", "Removed {} empty subgrids, {} remaining", eraseCount, subs.size());
-  Log::Print("Grid", "Sorting subgrids");
+  Log::Debug("Traj", "Removed {} empty subgrids, {} remaining", eraseCount, subs.size());
+  Log::Debug("Traj", "Sorting subgrids");
   std::sort(subs.begin(), subs.end(), [](CoordList const &a, CoordList const &b) { return a.coords.size() > b.coords.size(); });
-  Log::Print("Grid", "Sorting coords");
+  Log::Debug("Traj", "Sorting coords");
   for (auto &s : subs) {
     std::sort(s.coords.begin(), s.coords.end(), [](Coord const &a, Coord const &b) {
       // Compare on ijk location
