@@ -27,4 +27,12 @@ auto MakeKSpaceSingle(PreconOpts const              &opts,
                       Index const                    nT,
                       Basis::CPtr                    basis) -> TOps::TOp<Cx, 5, 5>::Ptr;
 
+auto MakeKSpaceMulti(PreconOpts const              &opts,
+                     rl::TOps::Grid<3>::Opts const &gridOpts,
+                     Trajectory const              &traj,
+                     Cx5 const                     &smaps,
+                     Index const                    nS,
+                     Index const                    nT,
+                     Basis::CPtr                    basis) -> TOps::TOp<Cx, 5, 5>::Ptr;
+
 } // namespace rl

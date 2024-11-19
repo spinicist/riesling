@@ -42,7 +42,7 @@ void WriteResidual(std::string const              &cmd,
   Basis const id;
   auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, noncart);
   Log::Print(cmd, "Calculating K-space residual");
-  noncart -= A->forward(x);
+  noncart.device(Threads::TensorDevice()) -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");
   LSMR       lsmr{R1.A, R1.M, nullptr, 2};
   auto const r = lsmr.run(CollapseToConstVector(noncart));

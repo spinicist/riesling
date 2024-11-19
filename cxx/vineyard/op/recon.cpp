@@ -44,9 +44,8 @@ auto SENSERecon(TOps::Grid<3>::Opts const &gridOpts,
                 Index const                nSlab,
                 Index const                nTime,
                 Basis::CPtr                b,
-                Cx5 const                 &skern) -> TOps::TOp<Cx, 5, 5>::Ptr
+                Cx5 const                 &smaps) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
   auto      sense = std::make_shared<TOps::SENSE>(smaps, gridOpts.vcc, b ? b->nB() : 1);
   auto      nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
   auto      slabLoop = TOps::MakeLoop(nufft, nSlab);
@@ -92,16 +91,20 @@ Recon::Recon(Opts const                &rOpts,
   if (nC == 1) {
     A = Single(gridOpts, traj, nS, nT, b);
   } else {
-    auto const kernels = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
+    auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
-      A = Decant(gridOpts, traj, nS, nT, b, kernels);
+      A = Decant(gridOpts, traj, nS, nT, b, skern);
+      M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT, b);
     } else if (rOpts.lowmem) {
-      A = LowmemSENSE(gridOpts, traj, nS, nT, b, kernels);
+      A = LowmemSENSE(gridOpts, traj, nS, nT, b, skern);
+      M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT, b);
     } else {
-      A = SENSERecon(gridOpts, traj, nS, nT, b, kernels);
+      Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
+      M = MakeKSpaceMulti(pOpts, gridOpts, traj, smaps, nS, nT, b); // In case the SENSE op does move
+      A = SENSERecon(gridOpts, traj, nS, nT, b, smaps);
     }
   }
-  M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT, b);
+  
 }
 
 } // namespace rl
