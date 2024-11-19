@@ -83,6 +83,24 @@ template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &
   return x;
 }
 
+template <typename S, int I, int O> void TOp<S, I, O>::forward(InTensor const &x, OutTensor &y) const
+{
+  assert(x.dimensions() == ishape);
+  assert(y.dimensions() == oshape);
+  InCMap    xm(x.data(), ishape);
+  OutMap    ym(y.data(), oshape);
+  forward(xm, ym);
+}
+
+template <typename S, int I, int O> void TOp<S, I, O>::adjoint(OutTensor const &y, InTensor &x) const
+{
+  assert(x.dimensions() == ishape);
+  assert(y.dimensions() == oshape);
+  OutCMap  ym(y.data(), oshape);
+  InMap    xm(x.data(), ishape);
+  adjoint(ym, xm);
+}
+
 template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const &, OutMap &) const
 {
   throw Log::Failure("TOp", "In place {} not implemented", this->name);

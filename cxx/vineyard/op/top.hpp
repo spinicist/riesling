@@ -44,6 +44,8 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
 
   virtual auto forward(InTensor const &x) const -> OutTensor;
   virtual auto adjoint(OutTensor const &y) const -> InTensor;
+  virtual void forward(InTensor const &x, OutTensor &y) const;
+  virtual void adjoint(OutTensor const &y, InTensor &x) const;
 
   virtual void forward(InCMap const &x, OutMap &y) const = 0;
   virtual void adjoint(OutCMap const &y, InMap &x) const = 0;
