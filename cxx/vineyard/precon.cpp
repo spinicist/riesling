@@ -123,9 +123,11 @@ auto MakeKSpaceSingle(PreconOpts const              &opts,
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 5>>(shape);
-  } else if (opts.type == "kspace") {
+  } else if (opts.type == "single") {
     Re2 const w = KSpaceSingle(gridOpts, traj, basis, opts.λ);
     return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
+  } else if (opts.type == "multi") {
+    throw Log::Failure("Precon", "Multichannel preconditioner requested without SENSE maps");
   } else {
     HD5::Reader reader(opts.type);
     Re2 const   w = reader.readTensor<Re2>(HD5::Keys::Weights);
@@ -149,20 +151,35 @@ auto MakeKSpaceMulti(PreconOpts const              &opts,
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 5>>(shape);
-  } else if (opts.type == "kspace") {
+  } else if (opts.type == "single") {
+    Re2 const w = KSpaceSingle(gridOpts, traj, basis, opts.λ);
+    return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
+  } else if (opts.type == "multi") {
     Re3 const w = KSpaceMulti(smaps, gridOpts, traj, basis, opts.λ);
     return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, w.cast<Cx>());
   } else {
     HD5::Reader reader(opts.type);
-    Re3 const   w = reader.readTensor<Re3>(HD5::Keys::Weights);
-    if (w.dimension(0) != smaps.dimension(1)) {
-      throw Log::Failure("Precon", "Preconditioner on disk had {} channels, expected {}", w.dimension(0), smaps.dimension(1));
+    Index const o = reader.order(HD5::Keys::Weights);
+    if (o == 2) {
+      Re2 const w = reader.readTensor<Re2>(HD5::Keys::Weights);
+      if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
+        throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(1),
+                           w.dimension(2), traj.nSamples(), traj.nTraces());
+      }
+      return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
+    } else if (o == 3) {
+      Re3 const w = reader.readTensor<Re3>(HD5::Keys::Weights);
+      if (w.dimension(0) != smaps.dimension(1)) {
+        throw Log::Failure("Precon", "Preconditioner on disk had {} channels, expected {}", w.dimension(0), smaps.dimension(1));
+      }
+      if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
+        throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(1),
+                           w.dimension(2), traj.nSamples(), traj.nTraces());
+      }
+      return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, w.cast<Cx>());
+    } else {
+      throw Log::Failure("Precon", "On-disk weights had order {}, expected 2 or 3", o);
     }
-    if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
-      throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(1),
-                         w.dimension(2), traj.nSamples(), traj.nTraces());
-    }
-    return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, w.cast<Cx>());
   }
 }
 

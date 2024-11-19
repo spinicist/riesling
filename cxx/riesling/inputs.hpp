@@ -72,7 +72,7 @@ struct PreconArgs
   args::ValueFlag<float>       λ;
 
   PreconArgs(args::Subparser &parser)
-    : type(parser, "P", "Pre-conditioner (none/kspace/filename)", {"precon"}, "kspace")
+    : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon"}, "single")
     , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.f)
   {
   }
