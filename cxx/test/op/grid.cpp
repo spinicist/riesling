@@ -27,7 +27,7 @@ TEST_CASE("Grid-Basic", "[grid]")
   Basis                basis;
 
   float const osamp = GENERATE(1.3f, 2.f);
-  auto        grid = TOps::Grid<2>::Make(TOps::Grid<2>::Opts{.ktype = "ES6", .osamp = osamp}, traj, 1, &basis);
+  auto        grid = TOps::Grid<2>::Make(TOps::Grid<2>::Opts{.osamp = osamp, .ktype = "ES6"}, traj, 1, &basis);
   Cx3         noncart(grid->oshape);
   Cx4         cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -67,7 +67,7 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   basis.B(1, 3, 0) = 1.f;
   basis.B(1, 4, 0) = 1.f;
   basis.B(1, 5, 0) = 1.f;
-  auto grid = TOps::Grid<1>::Make(TOps::Grid<1>::Opts{.ktype = "NN", .osamp = 1.f}, traj, 1, &basis);
+  auto grid = TOps::Grid<1>::Make(TOps::Grid<1>::Opts{.osamp = 1.f, .ktype = "NN"}, traj, 1, &basis);
   Cx3  noncart(grid->oshape);
   noncart.setConstant(1.f);
   Cx3 cart = grid->adjoint(noncart);
@@ -102,7 +102,7 @@ TEST_CASE("GridVCC", "[grid]")
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
 
-  auto grid = TOps::Grid<1>::Make(TOps::Grid<1>::Opts{.ktype = "NN", .osamp = 1.f, .vcc = true}, traj, 1, &basis);
+  auto grid = TOps::Grid<1>::Make(TOps::Grid<1>::Opts{.osamp = 1.f, .ktype = "NN", .vcc = true}, traj, 1, &basis);
   Cx3  noncart(grid->oshape);
   Cx3  cart(grid->ishape);
   noncart.setConstant(Cx(0.f, 1.f));
