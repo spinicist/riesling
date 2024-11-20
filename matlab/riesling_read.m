@@ -16,16 +16,18 @@ function varargout = riesling_read(fname, dset)
 % David Leitao, King's College London, 2024
 
 if nargin < 2
-    dset = 'data'
+    dset = 'data';
 end
 
 file_info = h5info(fname);
 data = h5read(fname, strcat('/', dset));
-data = data.r + 1j*data.i;
-varargout{1} = data
+if strcmpi(dset,'data')
+    data = data.r + 1j*data.i;
+end
+varargout{1} = data;
 
 info = h5read(fname, '/info');
-varargout{2} = info
+varargout{2} = info;
 
 has_trajectory = any(contains({file_info.Datasets.Name}, 'trajectory'));
 if has_trajectory

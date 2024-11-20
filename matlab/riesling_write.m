@@ -35,8 +35,16 @@ filetype = H5T.create ('H5T_COMPOUND', sum(sz));
 H5T.insert(filetype, 'r', offset(1), floatType);
 H5T.insert(filetype, 'i', offset(2), floatType);
 
-dims = fliplr(size(data));
-space = H5S.create_simple(ndims(data), dims, []);
+Ndims = 5;
+if ndims(data) == 5
+    dims = size(data);
+else
+    dims = ones(1, 5);
+    dims(1:ndims(data)) = size(data);
+end
+dims = fliplr(dims);
+
+space = H5S.create_simple(Ndims, dims, []);
 ncart = H5D.create(file, '/data', filetype, space, 'H5P_DEFAULT');
 H5D.write(ncart, filetype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', wdata);
 
@@ -53,12 +61,12 @@ H5S.close(space);
 H5T.close(filetype);
 H5F.close(file);
 
-% To make life a bit easier we use the high-level functions to save the rest
-h5create(fname, '/trajectory', size(traj));
-h5write(fname, '/trajectory', traj);
-
 % Add matrix attribute to trajectory dataset (if supplied within info)
-if nargin > 3
+if nargin > 3 && ~isempty(traj)
+    % To make life a bit easier we use the high-level functions to save the rest
+    h5create(fname, '/trajectory', size(traj));
+    h5write(fname, '/trajectory', traj);
+
     % Reopen the file and the dataset
     file_id = H5F.open(fname, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
     dataset_id = H5D.open(file_id, '/trajectory');
@@ -88,6 +96,7 @@ else
         error("Header fields are incorrect. Use riesling_info to generate template header");
     end
     % Check info data sizes
+    ref_info = riesling_info();
     for i=1:length(check_fields)
         size_in = size(info.(check_fields{i}));
         size_ref = size(ref_info.(check_fields{i}));
