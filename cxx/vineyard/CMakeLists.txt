@@ -1,5 +1,4 @@
 find_package(Threads REQUIRED)
-find_package(args CONFIG REQUIRED)
 find_package(ducc CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
@@ -18,7 +17,6 @@ add_library(vineyard
     log.cpp
     patches.cpp
     precon.cpp
-    regularizers.cpp
     scaling.cpp
     trajectory.cpp
     traj_spirals.cpp
@@ -99,7 +97,6 @@ add_library(vineyard
     sim/t2prep.cpp
     sim/zte.cpp
 
-    sys/args.cpp
     sys/signals.cpp
     sys/threads.cpp
 )

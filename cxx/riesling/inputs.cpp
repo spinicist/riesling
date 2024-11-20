@@ -26,7 +26,7 @@ CoreArgs::CoreArgs(args::Subparser &parser)
 {
 }
 
-LsqOpts::LsqOpts(args::Subparser &parser)
+LsqArgs::LsqArgs(args::Subparser &parser)
   : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4)
   , atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f)
   , btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f)

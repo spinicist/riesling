@@ -4,7 +4,6 @@
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/grid.hpp"
-#include "sys/args.hpp"
 #include "trajectory.hpp"
 
 namespace rl {
@@ -12,15 +11,14 @@ namespace SENSE {
 
 struct Opts
 {
-  Opts(args::Subparser &parser);
-  args::ValueFlag<std::string> type;
-  args::ValueFlag<Index>       tp, kWidth;
-  ArrayFlag<float, 3>          res;
-  args::ValueFlag<float>       l, λ;
+  std::string    type;
+  Index          tp, kWidth;
+  Eigen::Array3f res;
+  float          l, λ;
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(Opts                      &opts,
+auto LoresChannels(Opts const                &opts,
                    TOps::Grid<3>::Opts const &gridOpts,
                    Trajectory const          &inTraj,
                    Cx5 const                 &noncart,
@@ -34,7 +32,7 @@ auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5;
 auto MapsToKernels(Cx5 const &maps, Index const kW, float const os) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps
-auto Choose(Opts &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;
+auto Choose(Opts const &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;
 
 } // namespace SENSE
 } // namespace rl

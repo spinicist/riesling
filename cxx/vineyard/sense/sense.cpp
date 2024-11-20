@@ -19,26 +19,16 @@
 namespace rl {
 namespace SENSE {
 
-Opts::Opts(args::Subparser &parser)
-  : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
-  , tp(parser, "T", "SENSE calibration timepoint (first)", {"sense-tp"}, 0)
-  , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
-  , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
-  , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
-  , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
-{
-}
-
 auto LoresChannels(
-  Opts &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+  Opts const &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
   auto const nT = noncart.dimension(4);
-  if (opts.tp.Get() >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp.Get(), nT); }
+  if (opts.tp >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nT); }
 
-  Cx4 const ncVol = noncart.chip<4>(opts.tp.Get());
-  auto [traj, lores] = inTraj.downsample(ncVol, opts.res.Get(), 0, true, false);
+  Cx4 const ncVol = noncart.chip<4>(opts.tp);
+  auto [traj, lores] = inTraj.downsample(ncVol, opts.res, 0, true, false);
   auto sgOpts = gridOpts;
   sgOpts.vcc = false; // Ensure we don't calculate the extra channels
   auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, basis);
@@ -300,19 +290,17 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
-auto Choose(Opts &opts, TOps::Grid<3>::Opts const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+auto Choose(Opts const &opts, TOps::Grid<3>::Opts const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }
-  if (opts.type.Get() == "auto") {
+  if (opts.type == "auto") {
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<1>(c, c).sqrt();
-    // Cx5 const maps = EstimateMaps(c, ref, gopts.osamp.Get(), opts.l.Get(), opts.λ.Get());
-    // kernels = MapsToKernels(maps, opts.kWidth.Get(), gopts.osamp.Get());
-    kernels = EstimateKernels(c, ref, opts.kWidth.Get(), gopts.osamp, opts.l.Get(), opts.λ.Get());
+    kernels = EstimateKernels(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
   } else {
-    HD5::Reader senseReader(opts.type.Get());
+    HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
   }
   return kernels;

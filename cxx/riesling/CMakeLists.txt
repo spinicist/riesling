@@ -1,3 +1,5 @@
+find_package(args CONFIG REQUIRED)
+
 add_executable(riesling
     basis/blend.cpp
     basis/bernstein.cpp
@@ -56,11 +58,14 @@ add_executable(riesling
     # util/rovir.cpp
     util/version.cpp
 
+    args.cpp
     inputs.cpp
     main.cpp
+    regularizers.cpp
 )
 target_link_libraries(riesling PRIVATE
     vineyard
+    taywee::args
 )
 target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 set_target_properties(riesling PROPERTIES

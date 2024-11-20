@@ -1,8 +1,7 @@
 #pragma once
 
-#include "sys/args.hpp"
-#include "op/top.hpp"
-#include "prox/prox.hpp"
+#include "args.hpp"
+#include "algo/regularizer.hpp"
 
 #include <variant>
 
@@ -30,14 +29,6 @@ struct RegOpts
   args::ValueFlag<float>                                   wavelets;
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> waveDims;
   args::ValueFlag<Index>                                   waveWidth;
-};
-
-struct Regularizer
-{
-  using SizeN = std::variant<Sz4, Sz5, Sz6>;
-  Ops::Op<Cx>::Ptr     T;
-  Proxs::Prox<Cx>::Ptr P;
-  SizeN                size;
 };
 
 struct Regularizers_t

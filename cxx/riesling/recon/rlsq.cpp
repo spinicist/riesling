@@ -20,7 +20,7 @@ void main_recon_rlsq(args::Subparser &parser)
   GridArgs<3>            gridArgs(parser);
   PreconArgs             preArgs(parser);
   ReconArgs              reconArgs(parser);
-  SENSE::Opts            senseOpts(parser);
+  SENSEArgs              senseArgs(parser);
   RlsqOpts               rlsqOpts(parser);
   RegOpts                regOpts(parser);
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (10)", {"debug-iters"}, 10);
@@ -36,7 +36,7 @@ void main_recon_rlsq(args::Subparser &parser)
   traj.checkDims(FirstN<3>(noncart.dimensions()));
 
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
-  auto const  R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
+  auto const  R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
   auto const  shape = R.A->ishape;
   float const scale = ScaleData(rlsqOpts.scaling.Get(), R.A, R.M, CollapseToVector(noncart));
 
@@ -82,7 +82,8 @@ void main_recon_rlsq(args::Subparser &parser)
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
   if (coreArgs.residual) {
-    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseOpts, preArgs.Get(), traj, xm, R.A, noncart);
+    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseArgs.Get(), preArgs.Get(), traj, xm, R.A,
+                  noncart);
   }
   Log::Print(cmd, "Finished");
 }

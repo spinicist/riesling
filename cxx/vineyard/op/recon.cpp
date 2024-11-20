@@ -46,9 +46,9 @@ auto SENSERecon(TOps::Grid<3>::Opts const &gridOpts,
                 Basis::CPtr                b,
                 Cx5 const                 &smaps) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  auto      sense = std::make_shared<TOps::SENSE>(smaps, gridOpts.vcc, b ? b->nB() : 1);
-  auto      nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
-  auto      slabLoop = TOps::MakeLoop(nufft, nSlab);
+  auto sense = std::make_shared<TOps::SENSE>(smaps, gridOpts.vcc, b ? b->nB() : 1);
+  auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
+  auto slabLoop = TOps::MakeLoop(nufft, nSlab);
   if (nSlab > 1) {
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
     return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
@@ -78,11 +78,10 @@ auto Decant(TOps::Grid<3>::Opts const &gridOpts,
 Recon::Recon(Opts const                &rOpts,
              PreconOpts const          &pOpts,
              TOps::Grid<3>::Opts const &gridOpts,
-             SENSE::Opts               &senseOpts,
-
-             Trajectory const &traj,
-             Basis::CPtr       b,
-             Cx5 const        &noncart)
+             SENSE::Opts const         &senseOpts,
+             Trajectory const          &traj,
+             Basis::CPtr                b,
+             Cx5 const                 &noncart)
 {
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
@@ -104,7 +103,6 @@ Recon::Recon(Opts const                &rOpts,
       A = SENSERecon(gridOpts, traj, nS, nT, b, smaps);
     }
   }
-  
 }
 
 } // namespace rl

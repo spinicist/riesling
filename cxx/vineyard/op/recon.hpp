@@ -5,7 +5,6 @@
 #include "op/nufft.hpp"
 #include "precon.hpp"
 #include "sense/sense.hpp"
-#include "sys/args.hpp"
 
 /*
  *  Full recon operators
@@ -22,7 +21,7 @@ struct Recon
   Recon(Opts const                &rOpts,
         PreconOpts const          &pOpts,
         TOps::Grid<3>::Opts const &gridOpts,
-        SENSE::Opts               &senseOpts,
+        SENSE::Opts const         &senseOpts,
         Trajectory const          &traj,
         Basis::CPtr                basis,
         Cx5 const                 &data);

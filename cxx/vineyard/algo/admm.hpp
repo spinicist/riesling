@@ -1,7 +1,7 @@
 #pragma once
 
 #include "op/ops.hpp"
-#include "regularizers.hpp"
+#include "regularizer.hpp"
 
 namespace rl {
 

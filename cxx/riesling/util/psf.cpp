@@ -17,7 +17,7 @@ void main_psf(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LsqOpts     lsqOpts(parser);
+  LsqArgs     lsqOpts(parser);
 
   args::Flag mtf(parser, "M", "Save Modulation Transfer Function", {"mtf"});
 

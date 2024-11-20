@@ -15,7 +15,7 @@ void main_recon_rss(args::Subparser &parser)
   CoreArgs            coreArgs(parser);
   GridArgs<3>         gridArgs(parser);
   PreconArgs          preArgs(parser);
-  LsqOpts             lsqOpts(parser);
+  LsqArgs             lsqOpts(parser);
   ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);

@@ -17,8 +17,8 @@ void main_recon_lsq(args::Subparser &parser)
   GridArgs<3>            gridArgs(parser);
   PreconArgs             preArgs(parser);
   ReconArgs              reconArgs(parser);
-  SENSE::Opts            senseOpts(parser);
-  LsqOpts                lsqOpts(parser);
+  SENSEArgs              senseArgs(parser);
+  LsqArgs                lsqOpts(parser);
   ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N iterations (1)", {"debug-iters"}, 1);
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -30,7 +30,7 @@ void main_recon_lsq(args::Subparser &parser)
   traj.checkDims(FirstN<3>(noncart.dimensions()));
 
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
-  auto const R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
+  auto const R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
   Log::Debug(cmd, "A {} {} M {}", R.A->ishape, R.A->oshape, R.M->ishape);
   auto debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
     if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image); }
@@ -45,7 +45,8 @@ void main_recon_lsq(args::Subparser &parser)
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
   if (coreArgs.residual) {
-    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseOpts, preArgs.Get(), traj, xm, R.A, noncart);
+    WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseArgs.Get(), preArgs.Get(), traj, xm, R.A,
+                  noncart);
   }
   Log::Print(cmd, "Finished");
 }

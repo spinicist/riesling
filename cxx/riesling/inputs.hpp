@@ -5,10 +5,10 @@
 #include <optional>
 #include <vector>
 
+#include "args.hpp"
 #include "op/grid.hpp"
 #include "op/recon.hpp"
 #include "precon.hpp"
-#include "sys/args.hpp"
 #include "trajectory.hpp"
 #include "types.hpp"
 
@@ -80,9 +80,9 @@ struct PreconArgs
   auto Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .λ = λ.Get()}; }
 };
 
-struct LsqOpts
+struct LsqArgs
 {
-  LsqOpts(args::Subparser &parser);
+  LsqArgs(args::Subparser &parser);
   args::ValueFlag<Index> its;
   args::ValueFlag<float> atol;
   args::ValueFlag<float> btol;
@@ -106,4 +106,28 @@ struct RlsqOpts
   args::ValueFlag<float> ε;
   args::ValueFlag<float> μ;
   args::ValueFlag<float> τ;
+};
+
+struct SENSEArgs
+{
+  args::ValueFlag<std::string> type;
+  args::ValueFlag<Index>       tp, kWidth;
+  ArrayFlag<float, 3>          res;
+  args::ValueFlag<float>       l, λ;
+
+  SENSEArgs(args::Subparser &parser)
+    : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
+    , tp(parser, "T", "SENSE calibration timepoint (first)", {"sense-tp"}, 0)
+    , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
+    , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
+    , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
+    , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
+  {
+  }
+
+  auto Get() -> rl::SENSE::Opts
+  {
+    return rl::SENSE::Opts{
+      .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
+  }
 };

@@ -4,7 +4,7 @@
 #include "prox/lsq.hpp"
 #include "prox/prox.hpp"
 #include "prox/stack.hpp"
-#include "regularizers.hpp"
+#include "regularizer.hpp"
 
 namespace rl {
 
