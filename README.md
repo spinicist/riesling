@@ -56,8 +56,10 @@ image looks good, then the `recon-rlsq` command contains options for a
 regularized least-squares reconstruction (e.g. Total Variation or Total
 Generalized Variation).
 
-To view the images, the `nii` command will convert from the output .h5 file
-format to Nifti.
+To view the output images in `.h5` format requires an HDF5 viewer, for instace
+the H5Web plugin for VSCode. If you compile `riesling` yourself the `montage`
+command can show images in your terminal. Otherwise the `nii` command will
+convert from riesling format to Nifti. 
 
 A separate examples repository https://github.com/spinicist/riesling-examples
 contains Jupyter notebooks demonstrating most functionality.
@@ -69,7 +71,6 @@ Further documentation is available at https://riesling.readthedocs.io.
 If you can't find an answer there or in the help strings, 
 you can open an [issue](https://github.com/spinicist/riesling/issues), or
 e-mail tobias.wood@kcl.ac.uk.
-
 
 ## Compilation
 
