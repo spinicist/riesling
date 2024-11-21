@@ -80,14 +80,14 @@ auto KSpaceMulti(
   Sz5 const xcor1Shape = AddFront(LastN<3>(psfShape), smapShape[0], 1);
 
   auto padXC = TOps::Pad<Cx, 5>(smap1Shape, xcor1Shape);
-  Cx5  smap1(smapShape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
+  Cx5  smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
   for (Index si = 0; si < nC; si++) {
     float const ni = Norm2(smaps.chip<1>(si));
     xcor1.setZero();
     for (Index sj = 0; sj < nC; sj++) {
       // Log::Print("Precon", "Cross-correlation channel {}-{}", si, sj);
       smap1.device(Threads::TensorDevice()) =
-        smaps.slice(Sz5{0, si, 0, 0, 0}, smapShape) * smaps.slice(Sz5{0, sj, 0, 0, 0}, smapShape).conjugate();
+        smaps.slice(Sz5{0, si, 0, 0, 0}, smap1Shape) * smaps.slice(Sz5{0, sj, 0, 0, 0}, smap1Shape).conjugate();
       padXC.forward(smap1, xcorTemp);
       FFT::Forward(xcorTemp, Sz3{2, 3, 4});
       xcor1.device(Threads::TensorDevice()) += xcorTemp * xcorTemp.conjugate();
@@ -100,7 +100,7 @@ auto KSpaceMulti(
       xcor.device(Threads::TensorDevice()) = xcor1 * psf;
     }
     weights.slice(Sz3{si, 0, 0}, Sz3{1, nSamp, nTrace}).device(Threads::TensorDevice()) =
-      (1.f + λ) / (nufft.forward(xcor1).abs() * scale / ni + λ);
+      (1.f + λ) / (nufft.forward(xcor).abs() * scale / ni + λ);
   }
   float const norm = Norm(weights);
   if (!std::isfinite(norm)) {

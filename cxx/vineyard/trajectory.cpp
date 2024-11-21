@@ -123,7 +123,7 @@ template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov) const -> S
   for (Index ii = 0; ii < ND; ii++) {
     matrix[ii] = std::max(matrix_[ii], 2 * (Index)(fov[ii] / voxel_size_[ii] / 2.f));
   }
-  Log::Print("Traj", "FOV {::.2f} matrix {}. Requested FOV {::.2f} matrix {}", FOV().transpose(), matrix_, fov.transpose(), matrix);
+  Log::Print("Traj", "Requested FOV {::.1f}, matrix {}", fov.transpose(), matrix);
   return matrix;
 }
 
