@@ -90,7 +90,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       normu += nu * nu;
       pRes += nP * nP;
       dRes += nD * nD;
-      Log::Print("ADMM", "Reg {:02d} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E}", ir, nFx, nz, nu);
+      Log::Print("ADMM", "Reg {:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E}", ir, nFx, nz, nu);
     }
     float const normx = ParallelNorm(x);
     normFx = std::sqrt(normFx);
@@ -99,7 +99,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM", "{:02d} |x| {:4.3E} |Fx| {:4.3E} |z| {:4.3E} |F'u| {:4.3E} ρ {:4.3E} |Primal| {:4.3E} |Dual| {:4.3E}",
+    Log::Print("ADMM", "{:02d} |x| {:3.2E} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}",
                io, normx, normFx, normz, normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
