@@ -11,11 +11,12 @@ namespace HD5 {
 Writer::Writer(std::string const &fname, bool const append)
 {
   Init();
+  auto const p = std::filesystem::path(fname).replace_extension(".h5");
   if (append) {
-    if (!std::filesystem::exists(fname)) { throw Log::Failure("HD5", "File does not exist: {}", fname); }
-    handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+    if (!std::filesystem::exists(p)) { throw Log::Failure("HD5", "File does not exist: {}", p.string()); }
+    handle_ = H5Fopen(p.string().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
   } else {
-    handle_ = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    handle_ = H5Fcreate(p.string().c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   }
   if (handle_ < 0) {
     throw Log::Failure("HD5", "Could not open file {} for writing because: {}", fname, GetError());

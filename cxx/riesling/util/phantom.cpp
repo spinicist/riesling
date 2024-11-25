@@ -67,7 +67,7 @@ void main_phantom(args::Subparser &parser)
                    .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
                    .direction = Eigen::Matrix3f::Identity(),
                    .tr = 1.f};
-  HD5::Writer writer(std::filesystem::path(iname.Get()).replace_extension(".h5").string());
+  HD5::Writer writer(iname.Get());
   writer.writeInfo(info);
   traj.write(writer);
 
