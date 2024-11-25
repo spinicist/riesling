@@ -111,10 +111,12 @@ compressor.hpp
 fft.hpp
 filter.hpp
 interp.hpp
+info.hpp
 log.hpp
 patches.hpp
 precon.hpp
 scaling.hpp
+tensors.hpp
 trajectory.hpp
 traj_spirals.hpp
 
