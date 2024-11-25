@@ -1,11 +1,12 @@
-#include "algo/decomp.hpp"
-#include "algo/stats.hpp"
-#include "compressor.hpp"
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "tensors.hpp"
-#include "types.hpp"
+
+#include "rl/algo/decomp.hpp"
+#include "rl/algo/stats.hpp"
+#include "rl/compressor.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/tensors.hpp"
+#include "rl/types.hpp"
 
 #include <Eigen/Eigenvalues>
 

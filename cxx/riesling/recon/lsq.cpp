@@ -1,13 +1,13 @@
-#include "types.hpp"
-
-#include "algo/lsmr.hpp"
 #include "inputs.hpp"
-#include "log.hpp"
-#include "op/recon.hpp"
 #include "outputs.hpp"
-#include "precon.hpp"
-#include "scaling.hpp"
-#include "sense/sense.hpp"
+
+#include "rl/algo/lsmr.hpp"
+#include "rl/log.hpp"
+#include "rl/op/recon.hpp"
+#include "rl/precon.hpp"
+#include "rl/scaling.hpp"
+#include "rl/sense/sense.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 

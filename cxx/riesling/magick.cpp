@@ -1,7 +1,7 @@
 #include "magick.hpp"
 
-#include "log.hpp"
-#include "tensors.hpp"
+#include "rl/log.hpp"
+#include "rl/tensors.hpp"
 
 #include <fmt/format.h>
 #include <ranges>

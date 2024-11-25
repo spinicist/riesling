@@ -1,11 +1,11 @@
-#include "types.hpp"
-
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "op/grad.hpp"
-#include "op/wavelets.hpp"
-#include "sys/threads.hpp"
+
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/op/grad.hpp"
+#include "rl/op/wavelets.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 

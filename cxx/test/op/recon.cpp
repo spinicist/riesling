@@ -1,10 +1,11 @@
-#include "basis/basis.hpp"
-#include "fft.hpp"
-#include "log.hpp"
-#include "op/compose.hpp"
-#include "op/nufft-lowmem.hpp"
-#include "op/nufft.hpp"
-#include "op/sense.hpp"
+#include "rl/basis/basis.hpp"
+#include "rl/fft.hpp"
+#include "rl/log.hpp"
+#include "rl/op/compose.hpp"
+#include "rl/op/nufft-lowmem.hpp"
+#include "rl/op/nufft.hpp"
+#include "rl/op/sense.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>

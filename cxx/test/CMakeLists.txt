@@ -19,7 +19,7 @@ if(${BUILD_TESTS})
         op/wavelets.cpp
     )
     target_link_libraries(riesling-tests PUBLIC
-        vineyard
+        rl
         Catch2::Catch2WithMain
     )
     target_compile_definitions(riesling-tests PRIVATE

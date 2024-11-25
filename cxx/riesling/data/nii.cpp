@@ -1,9 +1,9 @@
-#include "types.hpp"
-
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "io/nifti.hpp"
-#include "log.hpp"
+
+#include "rl/io/hd5.hpp"
+#include "rl/io/nifti.hpp"
+#include "rl/log.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 

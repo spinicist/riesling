@@ -1,8 +1,8 @@
-#include "op/wavelets.hpp"
-#include "tensors.hpp"
+#include "rl/op/wavelets.hpp"
+#include "rl/tensors.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/ostream.h>
 
 using namespace rl;
 using namespace Catch;

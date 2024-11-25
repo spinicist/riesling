@@ -1,12 +1,12 @@
 #include "regularizers.hpp"
 
-#include "algo/eig.hpp"
-#include "op/fft.hpp"
-#include "op/grad.hpp"
-#include "prox/entropy.hpp"
-#include "prox/l1-wavelets.hpp"
-#include "prox/llr.hpp"
-#include "prox/norms.hpp"
+#include "rl/log.hpp"
+#include "rl/op/fft.hpp"
+#include "rl/op/grad.hpp"
+#include "rl/prox/entropy.hpp"
+#include "rl/prox/l1-wavelets.hpp"
+#include "rl/prox/llr.hpp"
+#include "rl/prox/norms.hpp"
 
 namespace rl {
 
@@ -27,7 +27,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   , llrShift(parser, "S", "Enable random LLR shifting", {"llr-shift"})
 
   , wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"})
-  , waveDims(parser, "W", "Wavelet transform dimensions (b,x,y,z 0/1)", {"wavelet-dims"}, std::vector<Index>{1,2,3})
+  , waveDims(parser, "W", "Wavelet transform dimensions (b,x,y,z 0/1)", {"wavelet-dims"}, std::vector<Index>{1, 2, 3})
   , waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6)
 {
 }

@@ -1,10 +1,10 @@
-#include "types.hpp"
-
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "op/sense.hpp"
 #include "inputs.hpp"
-#include "sys/threads.hpp"
+
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/op/sense.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 
@@ -16,7 +16,7 @@ void main_op_sense(args::Subparser &parser)
   args::Flag                    fwd(parser, "F", "Apply forward operation", {'f', "fwd"});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (image/channels)", {'d', "dset"});
   ParseCommand(parser, iname);
-  auto const cmd = parser.GetCommand().Name();
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader ireader(iname.Get());
   if (!sname) { throw Log::Failure(cmd, "No input SENSE map file specified"); }
   HD5::Reader sreader(sname.Get());

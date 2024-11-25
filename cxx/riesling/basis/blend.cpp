@@ -1,12 +1,11 @@
-#include "types.hpp"
+#include "rl/basis/basis.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/tensors.hpp"
+#include "rl/types.hpp"
 
-#include "basis/basis.hpp"
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "sys/threads.hpp"
-
-#include "tensors.hpp"
 
 using namespace rl;
 
@@ -38,18 +37,13 @@ void main_blend(args::Subparser &parser)
 
   auto sps = sp.Get();
   auto tps = tp.Get();
-  if (sps.size() == 1) {
-    sps.resize(tps.size());
-  }
-  if (sps.size() != tps.size()) {
-    throw Log::Failure(cmd, "Must have same number of trace and sample points");
-  }
+  if (sps.size() == 1) { sps.resize(tps.size()); }
+  if (sps.size() != tps.size()) { throw Log::Failure(cmd, "Must have same number of trace and sample points"); }
   Index const nO = sps.size();
   Cx5         out(AddFront(LastN<4>(dims), nO));
 
   for (Index io = 0; io < nO; io++) {
-    out.chip<0>(io).device(Threads::TensorDevice()) =
-      basis->blend(images, sps[io], tps[io]);
+    out.chip<0>(io).device(Threads::TensorDevice()) = basis->blend(images, sps[io], tps[io]);
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());

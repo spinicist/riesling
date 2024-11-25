@@ -1,7 +1,7 @@
-#include "op/nufft.hpp"
-#include "basis/fourier.hpp"
-#include "log.hpp"
-#include "op/grid.hpp"
+#include "rl/op/nufft.hpp"
+#include "rl/basis/fourier.hpp"
+#include "rl/log.hpp"
+#include "rl/op/grid.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

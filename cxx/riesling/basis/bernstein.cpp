@@ -1,8 +1,8 @@
-#include "types.hpp"
+#include "rl/basis/bernstein.hpp"
+#include "rl/io/writer.hpp"
+#include "rl/log.hpp"
+#include "rl/types.hpp"
 
-#include "basis/bernstein.hpp"
-#include "io/writer.hpp"
-#include "log.hpp"
 #include "inputs.hpp"
 
 void main_bernstein(args::Subparser &parser)

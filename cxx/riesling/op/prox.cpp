@@ -1,15 +1,15 @@
-#include "types.hpp"
-
-#include "func/dict.hpp"
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "op/pad.hpp"
-#include "op/wavelets.hpp"
-#include "prox/entropy.hpp"
-#include "prox/l1-wavelets.hpp"
-#include "prox/llr.hpp"
-#include "sys/threads.hpp"
+
+#include "rl/func/dict.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/op/pad.hpp"
+#include "rl/op/wavelets.hpp"
+#include "rl/prox/entropy.hpp"
+#include "rl/prox/l1-wavelets.hpp"
+#include "rl/prox/llr.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 
@@ -39,8 +39,8 @@ void main_prox(args::Subparser &parser)
 
   using Map = Proxs::Prox<Cx>::Map;
   using CMap = Proxs::Prox<Cx>::CMap;
-  CMap        im(images.data(), images.size());
-  Map         om(output.data(), output.size());
+  CMap im(images.data(), images.size());
+  Map  om(output.data(), output.size());
 
   Sz5 const                        shape = images.dimensions();
   Index const                      nvox = Product(shape);

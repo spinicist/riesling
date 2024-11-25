@@ -1,10 +1,10 @@
-#include "fft.hpp"
-#include "log.hpp"
-#include "tensors.hpp"
+#include "rl/fft.hpp"
+#include "rl/log.hpp"
+#include "rl/tensors.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
-#include <fmt/format.h>
 
 using namespace rl;
 using namespace Catch;

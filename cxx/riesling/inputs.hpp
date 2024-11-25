@@ -1,16 +1,16 @@
 #pragma once
 
-#include <args.hxx>
+#include "args.hpp"
+
+#include "rl/op/grid.hpp"
+#include "rl/op/recon.hpp"
+#include "rl/precon.hpp"
+#include "rl/trajectory.hpp"
+#include "rl/types.hpp"
+
 #include <map>
 #include <optional>
 #include <vector>
-
-#include "args.hpp"
-#include "op/grid.hpp"
-#include "op/recon.hpp"
-#include "precon.hpp"
-#include "trajectory.hpp"
-#include "types.hpp"
 
 extern args::Group    global_group;
 extern args::HelpFlag help;

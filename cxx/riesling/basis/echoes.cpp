@@ -1,8 +1,8 @@
-#include "types.hpp"
+#include "rl/basis/basis.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/types.hpp"
 
-#include "basis/basis.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
 #include "inputs.hpp"
 
 void main_echoes(args::Subparser &parser)
@@ -25,7 +25,8 @@ void main_echoes(args::Subparser &parser)
   }
 
   Index sampPerEcho = nS.Get() / nE.Get();
-  rl::Log::Print(cmd, "Echoes {} Samples {} Keep {}-{} Samples-per-echo {}", nE.Get(), nS.Get(), nG.Get(), nG.Get() + sz, sampPerEcho);
+  rl::Log::Print(cmd, "Echoes {} Samples {} Keep {}-{} Samples-per-echo {}", nE.Get(), nS.Get(), nG.Get(), nG.Get() + sz,
+                 sampPerEcho);
   rl::Re3 basis(nE.Get(), sz, 1);
   basis.setZero();
   float const scale = std::sqrt(nE.Get());

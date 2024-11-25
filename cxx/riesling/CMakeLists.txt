@@ -64,7 +64,7 @@ add_executable(riesling
     regularizers.cpp
 )
 target_link_libraries(riesling PRIVATE
-    vineyard
+    rl
     taywee::args
 )
 target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_LIST_DIR})

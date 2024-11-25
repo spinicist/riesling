@@ -1,10 +1,10 @@
 #include "outputs.hpp"
 
-#include "algo/lsmr.hpp"
-#include "basis/basis.hpp"
-#include "io/writer.hpp"
-#include "log.hpp"
-#include "op/recon.hpp"
+#include "rl/algo/lsmr.hpp"
+#include "rl/basis/basis.hpp"
+#include "rl/io/writer.hpp"
+#include "rl/log.hpp"
+#include "rl/op/recon.hpp"
 
 namespace rl {
 

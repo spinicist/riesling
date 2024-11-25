@@ -1,5 +1,6 @@
-#include "op/sense.hpp"
-#include "tensors.hpp"
+#include "rl/op/sense.hpp"
+#include "rl/tensors.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 

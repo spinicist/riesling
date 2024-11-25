@@ -1,21 +1,24 @@
-#include "types.hpp"
-
-#include "algo/lsmr.hpp"
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "op/compose.hpp"
-#include "op/grid.hpp"
-#include "op/loop.hpp"
-#include "op/multiplex.hpp"
-#include "op/reshape.hpp"
-#include "precon.hpp"
+
+#include "rl/algo/lsmr.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/op/compose.hpp"
+#include "rl/op/grid.hpp"
+#include "rl/op/loop.hpp"
+#include "rl/op/multiplex.hpp"
+#include "rl/op/reshape.hpp"
+#include "rl/precon.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 
-auto MakeGrid(
-  TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
-  -> TOps::TOp<Cx, 6, 5>::Ptr
+auto MakeGrid(TOps::Grid<3>::Opts const &gridOpts,
+              Trajectory const          &traj,
+              Index const                nC,
+              Index const                nS,
+              Index const                nT,
+              Basis::CPtr                basis) -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   auto grid = TOps::Grid<3>::Make(gridOpts, traj, nC, basis);
   if (nS == 1) {

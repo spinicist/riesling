@@ -1,9 +1,9 @@
-#include "algo/decomp.hpp"
-#include "algo/stats.hpp"
-#include "tensors.hpp"
+#include "rl/algo/decomp.hpp"
+#include "rl/algo/stats.hpp"
+#include "rl/tensors.hpp"
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
-#include <fmt/ostream.h>
 
 using namespace rl;
 using namespace Catch;

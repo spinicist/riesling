@@ -1,6 +1,6 @@
 #pragma once
 
-#include "colors.hpp"
+#include "rl/colors.hpp"
 
 #include "Magick++.h"
 

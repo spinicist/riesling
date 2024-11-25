@@ -1,10 +1,10 @@
-#include "types.hpp"
-
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "op/pad.hpp"
 #include "inputs.hpp"
-#include "sys/threads.hpp"
+
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/op/pad.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 
@@ -19,10 +19,10 @@ void main_pad(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
 
-  Cx6 const  inImages = reader.readTensor<Cx6>();
-  Sz6        inDims = inImages.dimensions();
-  Sz6        outDims(inDims[0], inDims[1], padDims.Get()[0], padDims.Get()[1], padDims.Get()[2], inDims[5]);
-  Cx6        outImages(outDims);
+  Cx6 const inImages = reader.readTensor<Cx6>();
+  Sz6       inDims = inImages.dimensions();
+  Sz6       outDims(inDims[0], inDims[1], padDims.Get()[0], padDims.Get()[1], padDims.Get()[2], inDims[5]);
+  Cx6       outImages(outDims);
 
   if (fwd) {
     TOps::Pad<Cx, 6> pad(inDims, outDims);
@@ -33,4 +33,3 @@ void main_pad(args::Subparser &parser)
   }
   writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data(), HD5::Dims::Channels);
 }
-

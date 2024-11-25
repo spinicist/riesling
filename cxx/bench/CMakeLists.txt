@@ -16,7 +16,7 @@ if(${BUILD_BENCHMARKS})
         PROPERTIES COMPILE_FLAGS "-ffinite-math-only -funsafe-math-optimizations"
     )
     target_link_libraries(riesling-bench PUBLIC
-        vineyard
+        rl
         Catch2::Catch2WithMain
     )
     set_target_properties(riesling-bench PROPERTIES

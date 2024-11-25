@@ -1,7 +1,8 @@
 #pragma once
 
 #include "args.hpp"
-#include "algo/regularizer.hpp"
+
+#include "rl/algo/regularizer.hpp"
 
 #include <variant>
 

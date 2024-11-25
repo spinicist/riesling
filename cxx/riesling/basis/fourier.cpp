@@ -1,10 +1,10 @@
-#include "types.hpp"
+#include "rl/basis/fourier.hpp"
+#include "rl/algo/gs.hpp"
+#include "rl/io/writer.hpp"
+#include "rl/log.hpp"
+#include "rl/types.hpp"
 
-#include "algo/gs.hpp"
-#include "basis/fourier.hpp"
 #include "inputs.hpp"
-#include "io/writer.hpp"
-#include "log.hpp"
 
 #include <complex>
 #include <numbers>

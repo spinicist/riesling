@@ -1,12 +1,12 @@
-#include "kernel/expsemi.hpp"
-#include "kernel/kaiser.hpp"
-#include "kernel/kernel-impl.hpp"
-#include "kernel/kernel-nn.hpp"
+#include "rl/kernel/expsemi.hpp"
+#include "rl/kernel/kaiser.hpp"
+#include "rl/kernel/kernel-impl.hpp"
+#include "rl/kernel/kernel-nn.hpp"
+#include "rl/log.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
-
-#include "log.hpp"
 
 using namespace Catch;
 

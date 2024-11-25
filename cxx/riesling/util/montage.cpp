@@ -1,18 +1,19 @@
-#include "basis/basis.hpp"
-#include "colors.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "../magick.hpp"
 #include "inputs.hpp"
-#include "tensors.hpp"
-#include "types.hpp"
+#include "magick.hpp"
+
+#include "rl/basis/basis.hpp"
+#include "rl/colors.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/tensors.hpp"
+#include "rl/types.hpp"
 
 #include <scn/scan.h>
 
 struct NameIndex
 {
   std::string name;
-  Index index;
+  Index       index;
 };
 
 struct NameIndexReader
@@ -23,7 +24,8 @@ struct NameIndexReader
       ni.name = std::get<0>(result->values());
       ni.index = std::get<1>(result->values());
     } else {
-      throw rl::Log::Failure("montage", "Could not read NameIndex for {} from value {}, error {}", name, value, result.error().msg());
+      throw rl::Log::Failure("montage", "Could not read NameIndex for {} from value {}, error {}", name, value,
+                             result.error().msg());
     }
   }
 };
@@ -73,20 +75,24 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
   } else {
     std::vector<rl::HD5::IndexPair> chips;
     if (!namedChips.size()) {
-      if (dset == "data") { chips = std::vector<rl::HD5::IndexPair>{{0, 0}, {4, 0}}; }
-      else { throw rl::Log::Failure("montage", "No chips specified"); }
+      if (dset == "data") {
+        chips = std::vector<rl::HD5::IndexPair>{{0, 0}, {4, 0}};
+      } else {
+        throw rl::Log::Failure("montage", "No chips specified");
+      }
     } else {
       if (diskOrder - namedChips.size() != 3) {
-        throw rl::Log::Failure("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping", namedChips.size(), dset, diskOrder);
+        throw rl::Log::Failure("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping",
+                               namedChips.size(), dset, diskOrder);
       }
       auto const names = reader.listNames(dset);
-      for (auto const &nc: namedChips) {
+      for (auto const &nc : namedChips) {
         if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
           auto const d = std::distance(names.cbegin(), id);
           if (nc.index >= diskDims[d]) {
             throw rl::Log::Failure("montage", "Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
           }
-          chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d]  / 2});
+          chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d] / 2});
         } else {
           throw rl::Log::Failure("montage", "Could find dimension named {}", nc.name);
         }
@@ -111,13 +117,9 @@ auto CrossSections(rl::Cx3 const &data) -> std::vector<rl::Cx2>
   return {X, Y, Z};
 }
 
-auto SliceData(rl::Cx3 const &data,
-               Index const    slDim,
-               Index const    slStart,
-               Index const    slEnd,
-               Index const    slN,
-               rl::Sz2        sl0,
-               rl::Sz2        sl1) -> std::vector<rl::Cx2>
+auto SliceData(
+  rl::Cx3 const &data, Index const slDim, Index const slStart, Index const slEnd, Index const slN, rl::Sz2 sl0, rl::Sz2 sl1)
+  -> std::vector<rl::Cx2>
 {
   if (slDim < 0 || slDim > 2) { throw rl::Log::Failure("montage", "Slice dim was {}, must be 0-2", slDim); }
   auto const shape = data.dimensions();

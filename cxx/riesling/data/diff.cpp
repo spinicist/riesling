@@ -1,10 +1,10 @@
-#include "types.hpp"
-
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "sys/threads.hpp"
-#include "tensors.hpp"
+
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/tensors.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 
@@ -29,16 +29,16 @@ void main_diff(args::Subparser &parser)
   auto const orderB = readerB.order(dset.Get());
 
   if (orderA != orderB) {
-    throw Log::Failure(cmd, "Dataset {} in file {} had order {} but in file {} it was {}", dset.Get(), aname.Get(), orderA, bname.Get(),
-              orderB);
+    throw Log::Failure(cmd, "Dataset {} in file {} had order {} but in file {} it was {}", dset.Get(), aname.Get(), orderA,
+                       bname.Get(), orderB);
   }
 
   auto const shapeA = readerA.dimensions(dset.Get());
   auto const shapeB = readerB.dimensions(dset.Get());
 
   if (shapeA != shapeB) {
-    throw Log::Failure(cmd, "Dataset {} in file {} had shape {} but in file {} it was {}", dset.Get(), aname.Get(), shapeA, bname.Get(),
-              shapeB);
+    throw Log::Failure(cmd, "Dataset {} in file {} had shape {} but in file {} it was {}", dset.Get(), aname.Get(), shapeA,
+                       bname.Get(), shapeB);
   }
 
   switch (orderA) {

@@ -1,13 +1,13 @@
-#include "types.hpp"
-
-#include "algo/decomp.hpp"
-#include "filter.hpp"
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "patches.hpp"
-#include "sys/threads.hpp"
-#include "tensors.hpp"
+
+#include "rl/algo/decomp.hpp"
+#include "rl/filter.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/patches.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/tensors.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 

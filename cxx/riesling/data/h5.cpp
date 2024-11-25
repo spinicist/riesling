@@ -1,8 +1,9 @@
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
-#include "trajectory.hpp"
-#include "types.hpp"
+
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/trajectory.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 

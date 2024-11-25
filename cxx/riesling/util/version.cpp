@@ -1,6 +1,7 @@
 #include "version.h"
-#include "log.hpp"
 #include "inputs.hpp"
+
+#include "rl/log.hpp"
 
 void main_version(args::Subparser &parser)
 {

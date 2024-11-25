@@ -1,6 +1,7 @@
-#include "precon.hpp"
-#include "basis/basis.hpp"
-#include "log.hpp"
+#include "rl/precon.hpp"
+#include "rl/basis/basis.hpp"
+#include "rl/log.hpp"
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>

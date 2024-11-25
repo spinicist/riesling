@@ -1,8 +1,8 @@
-#include "types.hpp"
+#include "rl/basis/basis.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/types.hpp"
 
-#include "basis/basis.hpp"
-#include "io/hd5.hpp"
-#include "log.hpp"
 #include "inputs.hpp"
 
 void main_frames(args::Subparser &parser)
@@ -33,9 +33,7 @@ void main_frames(args::Subparser &parser)
     if (incFrame) { index += incFrame.Get() * tracesPerFrame.Get(); }
   }
 
-  if (retain) {
-    basis = rl::Re3(basis.slice(rl::Sz3{0, 0, 0}, rl::Sz3{retain.Get(), 1, nT}));
-  }
+  if (retain) { basis = rl::Re3(basis.slice(rl::Sz3{0, 0, 0}, rl::Sz3{retain.Get(), 1, nT})); }
 
   rl::HD5::Writer writer(oname.Get());
   writer.writeTensor(rl::HD5::Keys::Basis, basis.dimensions(), basis.data(), rl::HD5::Dims::Basis);
