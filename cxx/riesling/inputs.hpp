@@ -73,7 +73,7 @@ struct PreconArgs
 
   PreconArgs(args::Subparser &parser)
     : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon"}, "single")
-    , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.f)
+    , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.e-3f)
   {
   }
 
