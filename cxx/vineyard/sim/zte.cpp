@@ -91,7 +91,7 @@ auto SegmentedZTE::A(float const a) const -> Eigen::Matrix2f
 auto SegmentedZTE::Eseg(float const R1, float const B1) const -> Eigen::Matrix2f
 {
   Eigen::Matrix2f const E1 = E(R1, p.TR), Eramp = E(R1, p.Tramp), Essi = E(R1, p.Tssi), A1 = A(p.alpha * B1);
-  return (Essi * Eramp * (E1 * A1).pow(p.spokesPerSeg) * E1.pow(p.spokesSpoil) * Eramp);
+  return (Essi * (E1 * A1).pow(p.k0) * Eramp * (E1 * A1).pow(p.spokesPerSeg) * E1.pow(p.spokesSpoil) * Eramp);
 }
 
 auto SegmentedZTE::inv(float const Q) const -> Eigen::Matrix2f
@@ -117,7 +117,12 @@ void SegmentedZTE::segment(Index &tp, Eigen::Vector2f &Mz, Cx1 &s0, float const 
     s0(tp++) = Mz(0) * sina;
     Mz = E1 * A1 * Mz;
   }
-  Mz = Essi * Eramp * Mz;
+  Mz = Eramp * Mz;
+  for (Index ii = 0; ii < p.k0; ii++) {
+    s0(tp++) = Mz(0) * sina;
+    Mz = E1 * A1 * Mz;
+  }
+  Mz = Essi * Mz;
 }
 
 void SegmentedZTE::segmentTimepoints(Index &tp, float &t, Re1 &ts) const
@@ -131,7 +136,12 @@ void SegmentedZTE::segmentTimepoints(Index &tp, float &t, Re1 &ts) const
     ts(tp++) = t;
     t += p.TR;
   }
-  t += p.Tramp + p.Tssi;
+  t += p.Tramp;
+  for (Index ii = 0; ii < p.k0; ii++) {
+    ts(tp++) = t;
+    t += p.TR;
+  }
+  t += p.Tssi;
 }
 
 auto SegmentedZTE::nTissueParameters() const -> Index { return 4; }
