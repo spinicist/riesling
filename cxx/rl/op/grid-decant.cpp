@@ -59,9 +59,9 @@ void forwardTask(std::vector<typename TrajectoryN<ND>::CoordList> const &subs,
     for (auto const &m : sub.coords) {
       Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
       if (basis) {
-        kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
+        kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace) * m.weight, sx, yy);
       } else {
-        kernel->gather(m.cart, m.offset, sx, yy);
+        kernel->gather(m.cart, m.offset, m.weight, sx, yy);
       }
     }
   }
@@ -106,9 +106,9 @@ void adjointTask(std::vector<typename TrajectoryN<ND>::CoordList> const &subs,
     for (auto const &m : sub.coords) {
       yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
       if (basis) {
-        kernel->spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace), yy, sx);
+        kernel->spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace) * m.weight, yy, sx);
       } else {
-        kernel->spread(m.cart, m.offset, yy, sx);
+        kernel->spread(m.cart, m.offset, m.weight, yy, sx);
       }
     }
     DecantToGrid<ND>(mutexes, SubgridCorner(sub.corner, sgW, kernel->paddedWidth()), skern, sx, x);

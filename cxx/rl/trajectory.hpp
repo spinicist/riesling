@@ -19,6 +19,7 @@ template <int ND> struct TrajectoryN
     int16_t        sample;
     int32_t        trace;
     Array<float>   offset;
+    Cx weight;
   };
 
   struct CoordList
@@ -59,7 +60,8 @@ template <int ND> struct TrajectoryN
 private:
   void init();
 
-  Re3   points_;
+  Re3   points_, profilePoints_;
+  Cx1   profile_;
   SzN   matrix_;
   Array voxel_size_ = Array::Ones();
 };

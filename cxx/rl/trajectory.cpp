@@ -329,7 +329,8 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
       Arrayi const kint = ki.template cast<Index>() - (ksub * sgSz) + (kW / 2);
       Index const  sgind = SubgridIndex(ksub, nSubgrids);
       subs[sgind].corner = ksub.template cast<int16_t>();
-      subs[sgind].coords.push_back(Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko});
+      subs[sgind].coords.push_back(
+        Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko, .weight = Cx{1.f}});
       valid++;
     }
   }

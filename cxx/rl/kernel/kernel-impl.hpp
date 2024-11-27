@@ -16,8 +16,10 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
 {
   static constexpr int Width = Func::Width;
   static constexpr int PadWidth = (((Width + 1) / 2) * 2) + 1;
-  using Tensor = typename FixedKernel<float, ND, Func>::Tensor;
   using Point = typename FixedKernel<float, ND, Func>::Point;
+  template <int TND> using Tensor = Eigen::Tensor<Scalar, TND>;
+  template <int TND> using MMap = Eigen::TensorMap<Eigen::Tensor<Scalar, TND>>;
+  template <int TND> using CMap = Eigen::TensorMap<Eigen::Tensor<Scalar, TND> const>;
 
   Func  f;
   float scale;
@@ -35,43 +37,31 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
 
   inline auto operator()(Point const p) const -> Eigen::Tensor<float, ND> final
   {
-    Tensor                   k = FixedKernel<Scalar, ND, Func>::Kernel(f, scale, p);
-    Eigen::Tensor<float, ND> k2 = k;
-    return k;
+    return FixedKernel<Scalar, ND, Func>::Kernel(f, scale, p);
   }
 
-  void spread(Eigen::Array<int16_t, ND, 1> const c,
-              Point const                       &p,
-              Eigen::Tensor<Scalar, 1> const    &y,
-              Eigen::Tensor<Scalar, ND + 2>     &x) const final
+  void spread(
+    Eigen::Array<int16_t, ND, 1> const c, Point const &p, Scalar const w, Tensor<1> const &y, Tensor<ND + 2> &x) const final
   {
-    FixedKernel<Scalar, ND, Func>::Spread(f, scale, c, p, y, x);
+    FixedKernel<Scalar, ND, Func>::Spread(f, c, p, scale * w, y, x);
   }
 
-  void spread(Eigen::Array<int16_t, ND, 1> const c,
-              Point const                       &p,
-              Eigen::Tensor<Scalar, 1> const    &b,
-              Eigen::Tensor<Scalar, 1> const    &y,
-              Eigen::Tensor<Scalar, ND + 2>     &x) const final
+  void spread(
+    Eigen::Array<int16_t, ND, 1> const c, Point const &p, Tensor<1> const &b, Tensor<1> const &y, Tensor<ND + 2> &x) const final
   {
-    FixedKernel<Scalar, ND, Func>::Spread(f, scale, c, p, b, y, x);
+    FixedKernel<Scalar, ND, Func>::Spread(f, c, p, scale * b, y, x);
   }
 
-  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
-              Point const                                                 &p,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
+  void
+  gather(Eigen::Array<int16_t, ND, 1> const c, Point const &p, Scalar const w, CMap<ND + 2> const &x, MMap<1> &y) const final
   {
-    FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, x, y);
+    FixedKernel<Scalar, ND, Func>::Gather(f, c, p, scale * w, x, y);
   }
 
-  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
-              Point const                                                 &p,
-              Eigen::Tensor<Scalar, 1> const                              &b,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
+  void gather(
+    Eigen::Array<int16_t, ND, 1> const c, Point const &p, Tensor<1> const &b, CMap<ND + 2> const &x, MMap<1> &y) const final
   {
-    FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, b, x, y);
+    FixedKernel<Scalar, ND, Func>::Gather(f, c, p, scale * b, x, y);
   }
 };
 
