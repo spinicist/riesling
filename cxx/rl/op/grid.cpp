@@ -106,9 +106,9 @@ void Grid<ND>::adjointTask(Index const                   start,
     for (auto const &m : list.coords) {
       yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
       if (basis) {
-        kernel->spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace) * m.weight, yy, sx);
+        kernel->spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace) * std::conj(m.weight), yy, sx);
       } else {
-        kernel->spread(m.cart, m.offset, m.weight, yy, sx);
+        kernel->spread(m.cart, m.offset, std::conj(m.weight), yy, sx);
       }
     }
     SubgridToGrid<ND>(mutexes, SubgridCorner(list.corner, subgridW, kernel->paddedWidth()), vccLists.has_value(), isVCC, sx, x);
