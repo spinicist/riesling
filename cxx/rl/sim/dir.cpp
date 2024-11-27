@@ -26,7 +26,6 @@ auto DIR::simulate(Eigen::ArrayXf const &pars) const -> Cx2
                         seg = Eseg(R1, B1);
   Eigen::Matrix2f const SS = Ei * V1 * Er * seg.pow(p.segsPerPrep - p.segsPrep2) * V2 * E2 * seg.pow(p.segsPrep2);
   float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
-  fmt::print(stderr, "m_ss {}\n", m_ss);
   Eigen::Vector2f Mz{m_ss, 1.f};
   Cx1             s0(traces());
   Index           tp = 0;
