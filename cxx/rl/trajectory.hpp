@@ -60,8 +60,8 @@ template <int ND> struct TrajectoryN
 private:
   void init();
 
-  Re3   points_, profilePoints_;
-  Cx1   profile_;
+  Re3   points_, pulsePoints_;
+  Cx1   pulse_;
   SzN   matrix_;
   Array voxel_size_ = Array::Ones();
 };

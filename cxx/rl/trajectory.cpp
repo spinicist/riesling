@@ -7,6 +7,25 @@
 
 namespace rl {
 
+template <int ND> inline auto Sz2Array(Sz<ND> const &sz) -> Eigen::Array<float, ND, 1>
+{
+  Eigen::Array<float, ND, 1> a;
+  for (Index ii = 0; ii < ND; ii++) {
+    a[ii] = sz[ii];
+  }
+  return a;
+}
+
+template <int ND> inline auto Tensor2Array(Re1 const &t) -> Eigen::Array<float, ND, 1>
+{
+  assert(ND == t.dimension(0));
+  Eigen::Array<float, ND, 1> a;
+  for (Index ii = 0; ii < ND; ii++) {
+    a[ii] = t[ii];
+  }
+  return a;
+}
+
 /* Temp Hack because .maximum() may be buggy on NEON */
 template <int ND> auto GuessMatrix(Re3 const &points) -> Sz<ND>
 {
@@ -34,6 +53,10 @@ TrajectoryN<ND>::TrajectoryN(Re3 const &points, Array const voxel_size)
   , matrix_{GuessMatrix<ND>(points_)}
   , voxel_size_{voxel_size}
 {
+  pulsePoints_.resize(Sz3{ND, 1, 1});
+  pulsePoints_.setZero();
+  pulse_.resize(Sz1{1});
+  pulse_.setConstant(1.f);
   init();
 }
 
@@ -43,6 +66,10 @@ TrajectoryN<ND>::TrajectoryN(Re3 const &points, SzN const matrix, Array const vo
   , matrix_{matrix}
   , voxel_size_{voxel_size}
 {
+  pulsePoints_.resize(Sz3{ND, 1, 1});
+  pulsePoints_.setZero();
+  pulse_.resize(Sz1{1});
+  pulse_.setConstant(1.f);
   init();
 }
 
@@ -51,10 +78,19 @@ template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const vo
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
   if (std::all_of(matrix_size.cbegin(), matrix_size.cend(), [](Index ii) { return ii > 0; })) {
     matrix_ = matrix_size;
-  } else if (file.exists(HD5::Keys::Trajectory, "matrix")) {
+  } else if (file.existsAttr(HD5::Keys::Trajectory, "matrix")) {
     matrix_ = file.readAttributeSz<ND>(HD5::Keys::Trajectory, "matrix");
   } else {
     matrix_ = GuessMatrix<ND>(points_);
+  }
+  if (file.exists("pulses")) {
+    pulsePoints_ = file.readTensor<Re3>("pulses/points");
+    pulse_ = file.readTensor<Cx1>("pulses/pulse");
+  } else {
+    pulsePoints_.resize(Sz3{ND, 1, 1});
+    pulsePoints_.setZero();
+    pulse_.resize(Sz1{1});
+    pulse_.setConstant(1.f);
   }
   voxel_size_ = voxel_size;
   init();
@@ -65,6 +101,18 @@ template <int ND> void TrajectoryN<ND>::init()
   Index const nD = points_.dimension(0);
   if (nD != ND) { throw Log::Failure("Traj", "Points have {} co-ordinates, expected {}", nD, ND); }
 
+  if (pulsePoints_.dimension(0) != ND) {
+    throw Log::Failure("Traj", "Pulse points have {} co-ordinates, expected {}", pulsePoints_.dimension(0), ND);
+  }
+
+  if (pulsePoints_.dimension(1) != pulse_.dimension(0)) {
+    throw Log::Failure("Traj", "Pulse has {} points but {} weights", pulsePoints_.dimension(1), pulse_.dimension(0));
+  }
+
+  if ((pulsePoints_.dimension(2) > 1) && (pulsePoints_.dimension(2) != points_.dimension(2))) {
+    throw Log::Failure("Traj", "Pulse points has {} traces but trajectory has {}", pulsePoints_.dimension(2),
+                       points_.dimension(2));
+  }
   Index discarded = 0;
   Re1   mat(nD);
   for (Index ii = 0; ii < ND; ii++) {
@@ -81,7 +129,7 @@ template <int ND> void TrajectoryN<ND>::init()
   if (discarded > 0) {
     Index const total = points_.dimension(1) * points_.dimension(2);
     float const percent = (100.f * discarded) / total;
-    Log::Warn("Traj", "Discarded {} points ({:.2f}%) outside matrix", discarded, percent);
+    Log::Warn("Traj", "{} points ({:.2f}%) outside matrix", discarded, percent);
   }
   Log::Print("Traj", "{}D Samples {} Traces {} Matrix {} FOV {::.2f}", ND, nSamples(), nTraces(), matrix_, FOV());
 }
@@ -174,12 +222,8 @@ template <int ND> auto TrajectoryN<ND>::points() const -> Re3 const & { return p
 
 template <int ND> auto TrajectoryN<ND>::point(int16_t const read, int32_t const spoke) const -> Eigen::Vector<float, ND>
 {
-  Re1 const                p = points_.template chip<2>(spoke).template chip<1>(read);
-  Eigen::Vector<float, ND> pv;
-  for (Index ii = 0; ii < ND; ii++) {
-    pv[ii] = p(ii);
-  }
-  return pv;
+  Re1 const p = points_.template chip<2>(spoke).template chip<1>(read);
+  return Tensor2Array<ND>(p);
 }
 
 template <int ND>
@@ -267,15 +311,6 @@ auto TrajectoryN<ND>::downsample(
   return std::make_tuple(dsTraj, dsKs);
 }
 
-template <int ND> inline auto Sz2Array(Sz<ND> const &sz) -> Eigen::Array<float, ND, 1>
-{
-  Eigen::Array<float, ND, 1> a;
-  for (Index ii = 0; ii < ND; ii++) {
-    a[ii] = sz[ii];
-  }
-  return a;
-}
-
 template <int ND>
 inline auto SubgridIndex(Eigen::Array<Index, ND, 1> const &sg, Eigen::Array<Index, ND, 1> const &ngrids) -> Index
 {
@@ -313,25 +348,30 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
   std::vector<CoordList> subs(nTotal);
   for (int32_t it = 0; it < this->nTraces(); it++) {
     for (int16_t is = 0; is < this->nSamples(); is++) {
-      Arrayf const p = this->point(is, it) * (conj ? -1.f : 1.f);
-      if ((p != p).any()) {
+      Arrayf const pp = this->point(is, it) * (conj ? -1.f : 1.f);
+      if ((pp != pp).any()) {
         invalids++;
         continue;
       }
-      Arrayf const k = p * osamp + k0;
-      Arrayf const ki = k.unaryExpr([](float const &e) { return std::nearbyint(e); });
-      if ((ki < 0.f).any() || (ki >= omat).any()) {
-        invalids++;
-        continue;
+
+      for (Index ip = 0; ip < pulse_.dimension(0); ip++) {
+        Arrayf const p =
+          pp + Tensor2Array<ND>(pulsePoints_.template chip<2>(it % pulsePoints_.dimension(2)).template chip<1>(ip));
+        Arrayf const k = p * osamp + k0;
+        Arrayf const ki = k.unaryExpr([](float const &e) { return std::nearbyint(e); });
+        if ((ki < 0.f).any() || (ki >= omat).any()) {
+          invalids++;
+          continue;
+        }
+        Arrayf const ko = k - ki;
+        Arrayi const ksub = (ki / sgSz).floor().template cast<Index>();
+        Arrayi const kint = ki.template cast<Index>() - (ksub * sgSz) + (kW / 2);
+        Index const  sgind = SubgridIndex(ksub, nSubgrids);
+        subs[sgind].corner = ksub.template cast<int16_t>();
+        subs[sgind].coords.push_back(
+          Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko, .weight = pulse_(ip)});
+        valid++;
       }
-      Arrayf const ko = k - ki;
-      Arrayi const ksub = (ki / sgSz).floor().template cast<Index>();
-      Arrayi const kint = ki.template cast<Index>() - (ksub * sgSz) + (kW / 2);
-      Index const  sgind = SubgridIndex(ksub, nSubgrids);
-      subs[sgind].corner = ksub.template cast<int16_t>();
-      subs[sgind].coords.push_back(
-        Coord{.cart = kint.template cast<int16_t>(), .sample = is, .trace = it, .offset = ko, .weight = Cx{1.f}});
-      valid++;
     }
   }
   Log::Print("Traj", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);

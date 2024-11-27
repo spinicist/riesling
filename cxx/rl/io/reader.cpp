@@ -111,6 +111,7 @@ template auto Reader::readTensor<I1>(std::string const &) const -> I1;
 template auto Reader::readTensor<Re1>(std::string const &) const -> Re1;
 template auto Reader::readTensor<Re2>(std::string const &) const -> Re2;
 template auto Reader::readTensor<Re3>(std::string const &) const -> Re3;
+template auto Reader::readTensor<Cx1>(std::string const &) const -> Cx1;
 template auto Reader::readTensor<Cx2>(std::string const &) const -> Cx2;
 template auto Reader::readTensor<Cx3>(std::string const &) const -> Cx3;
 template auto Reader::readTensor<Cx4>(std::string const &) const -> Cx4;
@@ -296,7 +297,7 @@ auto Reader::readInfo() const -> Info
 }
 
 auto Reader::exists(std::string const &label) const -> bool { return Exists(handle_, label); }
-auto Reader::exists(std::string const &dset, std::string const &attr) const -> bool
+auto Reader::existsAttr(std::string const &dset, std::string const &attr) const -> bool
 {
   return H5Aexists_by_name(handle_, dset.c_str(), attr.c_str(), H5P_DEFAULT);
 }
