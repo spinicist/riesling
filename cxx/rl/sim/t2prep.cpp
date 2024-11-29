@@ -22,7 +22,7 @@ auto T2Prep::simulate(Eigen::ArrayXf const &pars) const -> Cx2
   float const Δf = pars(2);
   float const B1 = pars(3);
 
-  Eigen::Matrix2f const E2 = ET2p(R2, p.TE), R = E(R1, p.Trec), seg = Eseg(R1, B1);
+  Eigen::Matrix2f const E2 = ET2p(R2, p.TE, false, 1.f), R = E(R1, p.Trec), seg = Eseg(R1, B1);
   Eigen::Matrix2f const SS = E2 * R * seg.pow(p.segsPerPrep);
   float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
 

@@ -38,10 +38,10 @@ struct SegmentedZTE
 
 protected:
   auto E(float const R, float const t) const -> Eigen::Matrix2f;
-  auto ET2p(float const R2, float const t) const -> Eigen::Matrix2f;
+  auto ET2p(float const R2, float const t, bool const inv, float const q) const -> Eigen::Matrix2f;
   auto A(float const a) const -> Eigen::Matrix2f;
   auto Eseg(float const R1, float const B1) const -> Eigen::Matrix2f;
-  auto inv(float const Q) const -> Eigen::Matrix2f;
+  auto inv(float const q) const -> Eigen::Matrix2f;
   void segment(Index &tp, Eigen::Vector2f &Mz, Cx1 &s0, float const R1, float const B1) const;
   void segmentTimepoints(Index &tp, float &t, Re1 &ts) const;
 };

@@ -71,11 +71,13 @@ auto SegmentedZTE::E(float const R, float const t) const -> Eigen::Matrix2f
   return Et;
 }
 
-auto SegmentedZTE::ET2p(float const R2, float const t) const -> Eigen::Matrix2f
+auto SegmentedZTE::ET2p(float const R2, float const t, bool const inv, float const q) const -> Eigen::Matrix2f
 {
-  float const     e = exp(-R2 * t);
+  float const e = (inv ? -1.f : 1.f) * exp(-R2 * t);
+  float const qq = (q + 1.f) / 2.f; // q is defined as -1 to 1, need to convert to 0 to 1
+  float const eq = e * qq + 1.f * (1.f - qq);
   Eigen::Matrix2f Et;
-  Et << e, 0.f, 0.f, 1.f;
+  Et << eq, 0.f, 0.f, 1.f;
   return Et;
 }
 
@@ -92,10 +94,10 @@ auto SegmentedZTE::Eseg(float const R1, float const B1) const -> Eigen::Matrix2f
   return (Essi * Eramp * (E1 * A1).pow(p.spokesPerSeg) * E1.pow(p.spokesSpoil) * Eramp);
 }
 
-auto SegmentedZTE::inv(float const Q) const -> Eigen::Matrix2f
+auto SegmentedZTE::inv(float const q) const -> Eigen::Matrix2f
 {
   Eigen::Matrix2f inv;
-  inv << -Q, 0.f, 0.f, 1.f;
+  inv << -q, 0.f, 0.f, 1.f;
   return inv;
 }
 

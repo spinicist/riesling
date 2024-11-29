@@ -22,17 +22,16 @@ auto DIR::simulate(Eigen::ArrayXf const &pars) const -> Cx2
   float const Q = pars(3);
   float const B1 = pars(4);
 
-  Eigen::Matrix2f const E2 = ET2p(R2, p.TE), Ei = E(R1, p.TI), Er = E(R1, p.Trec), V1 = inv(1.f), V2 = inv(Q),
-                        seg = Eseg(R1, B1);
-  Eigen::Matrix2f const SS = Ei * V1 * Er * seg.pow(p.segsPerPrep - p.segsPrep2) * V2 * E2 * seg.pow(p.segsPrep2);
+  Eigen::Matrix2f const E2 = ET2p(R2, p.TE, true, Q), Ei = E(R1, p.TI), Er = E(R1, p.Trec), V1 = inv(Q), seg = Eseg(R1, B1);
+  Eigen::Matrix2f const SS = Ei * V1 * Er * seg.pow(p.segsPerPrep - p.segsPrep2) * E2 * seg.pow(p.segsPrep2);
   float const           m_ss = SS(0, 1) / (1.f - SS(0, 0));
-  Eigen::Vector2f Mz{m_ss, 1.f};
-  Cx1             s0(traces());
-  Index           tp = 0;
+  Eigen::Vector2f       Mz{m_ss, 1.f};
+  Cx1                   s0(traces());
+  Index                 tp = 0;
   for (Index ig = 0; ig < p.segsPrep2; ig++) {
     segment(tp, Mz, s0, R1, B1);
   }
-  Mz = V2 * E2 * Mz;
+  Mz = E2 * Mz;
   for (Index ig = 0; ig < (p.segsPerPrep - p.segsPrep2); ig++) {
     segment(tp, Mz, s0, R1, B1);
   }
