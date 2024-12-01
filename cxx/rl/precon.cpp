@@ -131,9 +131,9 @@ auto MakeKSpaceSingle(PreconOpts const              &opts,
   } else {
     HD5::Reader reader(opts.type);
     Re2 const   w = reader.readTensor<Re2>(HD5::Keys::Weights);
-    if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
-      throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(1),
-                         w.dimension(2), traj.nSamples(), traj.nTraces());
+    if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
+      throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(0),
+                         w.dimension(1), traj.nSamples(), traj.nTraces());
     }
     return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
   }
@@ -163,7 +163,7 @@ auto MakeKSpaceMulti(PreconOpts const              &opts,
     if (o == 2) {
       Re2 const w = reader.readTensor<Re2>(HD5::Keys::Weights);
       if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
-        throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(1),
+        throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(1),
                            w.dimension(2), traj.nSamples(), traj.nTraces());
       }
       return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
@@ -173,7 +173,7 @@ auto MakeKSpaceMulti(PreconOpts const              &opts,
         throw Log::Failure("Precon", "Preconditioner on disk had {} channels, expected {}", w.dimension(0), smaps.dimension(1));
       }
       if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
-        throw Log::Failure("Precon", "Preconditioner dimensions on disk {} did not match trajectory {}x{}", w.dimension(1),
+        throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(1),
                            w.dimension(2), traj.nSamples(), traj.nTraces());
       }
       return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, w.cast<Cx>());
