@@ -87,5 +87,9 @@ void main_basis_slice(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, B.dimensions(), B.data(), HD5::Dims::Basis);
   writer.writeTensor("time", t.dimensions(), t.data(), {"t"});
+  if (reader.exists("scales")) {
+    Re1 const scales = reader.readTensor<Re1>("scales");
+    writer.writeTensor("scales", scales.dimensions(), scales.data(), {"b"});
+  }
   Log::Print(cmd, "Finished");
 }

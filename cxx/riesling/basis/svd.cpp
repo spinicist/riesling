@@ -108,8 +108,8 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
   args::ValueFlagList<Eigen::ArrayXi, std::vector, ArrayXiReader> pN(parser, "N", "Grid N for parameters", {"N"});
   args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
-
-  args::Flag save(parser, "S", "Save dynamics and projections", {"save"});
+  args::Flag             scale(parser, "S", "Scale vectors by variance", {"scale"});
+  args::Flag             save(parser, "S", "Save dynamics and projections", {"save"});
 
   ParseCommand(parser);
   auto const cmd = parser.GetCommand().Name();
@@ -159,7 +159,7 @@ void main_basis_svd(args::Subparser &parser)
   Eigen::MatrixXcf::MapType bmap(basis.data(), N, L);
 
   Log::Print(cmd, "Computing SVD {}x{}", dmap.rows(), dmap.cols());
-  SVD<Cxd> svd(dmap.cast<Cxd>());
+  SVD<Cxd>       svd(dmap.cast<Cxd>());
   bmap = svd.basis(nRetain.Get()).cast<Cx>();
   Log::Print(cmd, "Computing projection");
   Cx3                       proj(dshape);
@@ -173,6 +173,12 @@ void main_basis_svd(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
   writer.writeTensor("time", time.dimensions(), time.data(), {"t"});
+  if (scale) {
+    Eigen::ArrayXf const scales = svd.S.head(nRetain.Get()).sqrt().cast<float>();
+    Log::Print(cmd, "Scales {}", scales.transpose());
+    writer.writeTensor("scales", Sz1{scales.rows()}, scales.data(), {"b"});
+  } else {
+  }
   if (save) {
     writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
     writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);

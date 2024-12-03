@@ -33,18 +33,53 @@ Basis::Basis(Index const nB, Index const nSample, Index const nTrace)
   B.setConstant(1.f);
 }
 
+Basis::Basis(std::string const &fname)
+{
+  HD5::Reader basisReader(fname);
+  B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
+  if (basisReader.exists("time")) {
+    t = basisReader.readTensor<Re1>("time");
+    if (t.dimension(0) != B.dimension(2)) {
+      throw Log::Failure("basis", "{} traces but {} timepoints", B.dimension(2), t.dimension(0));
+    }
+  } else {
+    t.reshape(Sz1{B.dimension(2)});
+    for (Index it = 0; it < t.dimension(0); it++) {
+      t(it) = it;
+    }
+  }
+  if (basisReader.exists("R")) { R = basisReader.readTensor<Cx2>("R"); }
+  if (basisReader.exists("scales")) {
+    scales = basisReader.readTensor<Re1>("scales");
+    if (scales.dimension(0) != B.dimension(0)) {
+      throw Log::Failure("basis", "scales had size {} expected {}", scales.dimension(0), B.dimension(0));
+    }
+    Log::Print("basis", "Loaded basis scales");
+  }
+}
+
 auto Basis::nB() const -> Index { return B.dimension(0); }
 auto Basis::nSample() const -> Index { return B.dimension(1); }
 auto Basis::nTrace() const -> Index { return B.dimension(2); }
 
 auto Basis::entry(Index const s, Index const t) const -> Cx1
 {
-  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
+  if (scales.size()) {
+    Cx1 const e = B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)) * scales.cast<Cx>();
+    return e;
+  } else {
+    return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
+  }
 }
 
 auto Basis::entryConj(Index const s, Index const t) const -> Cx1
 {
-  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)).conjugate();
+  if (scales.size()) {
+    Cx1 const e = B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)).conjugate() * scales.cast<Cx>();
+    return e;
+  } else {
+    return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)).conjugate();
+  }
 }
 
 void Basis::write(std::string const &basisFile) const
@@ -67,15 +102,19 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
 {
   if (is < 0 || is >= nSample()) { throw Log::Failure("Basis", "Invalid sample point {}", is); }
   if (it < 0 || it >= nTrace()) { throw Log::Failure("Basis", "Invalid trace point {}", it); }
-  Log::Print("Basis", "Blending sample {} trace {}", is, it);
+  Log::Print("basis", "Blending sample {} trace {}", is, it);
+
+  Cx1 b;
+  if (scales.size()) {
+    b = B.chip<2>(it).chip<1>(is).conjugate() * scales.cast<Cx>();
+  } else {
+    b = B.chip<2>(it).chip<1>(is).conjugate();
+  }
   if (R.size()) {
-    return B.chip<2>(it)
-      .chip<1>(is)
-      .conjugate()
-      .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
+    return b.contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
       .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   } else {
-    return B.chip<2>(it).chip<1>(is).conjugate().contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+    return b.contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
   }
 }
 
@@ -100,26 +139,7 @@ auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>
   if (basisFile.empty()) {
     return nullptr;
   } else {
-    HD5::Reader basisReader(basisFile);
-    Cx3 const   B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
-    Re1         t;
-    if (basisReader.exists("time")) {
-      t = basisReader.readTensor<Re1>("time");
-      if (t.dimension(0) != B.dimension(2)) {
-        throw Log::Failure("basis", "{} had {} traces but {} timepoints", basisFile, B.dimension(2), t.dimension(0));
-      }
-    } else {
-      t.reshape(Sz1{B.dimension(2)});
-      for (Index it = 0; it < t.dimension(0); it++) {
-        t(it) = it;
-      }
-    }
-    if (basisReader.exists("R")) {
-      Cx2 const R = basisReader.readTensor<Cx2>("R");
-      return std::make_unique<Basis>(B, t, R);
-    } else {
-      return std::make_unique<Basis>(B, t);
-    }
+    return std::make_unique<Basis>(basisFile);
   }
 }
 

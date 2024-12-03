@@ -11,12 +11,13 @@ struct Basis {
     using CPtr = Basis const *;
     Cx3 B;
     Cx2 R;
-    Re1 t;
+    Re1 t, scales;
 
     Basis();
     Basis(Cx3 const &B, Re1 const &t);
     Basis(Cx3 const &B, Re1 const &t, Cx2 const &R);
     Basis(Index const nB, Index const nSample, Index const nTrace);
+    Basis(std::string const &fname);
 
     auto nB() const -> Index;
     auto nSample() const -> Index;
