@@ -30,7 +30,7 @@ void main_psf(args::Subparser &parser)
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   Index const nB = basis->nB();
   auto const  A = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, 1, basis.get());
-  auto const  M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, 1, 1, 1, basis.get());
+  auto const  M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, 1, 1, 1);
   LSMR const  lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
 
   float const startPhase = phases.Get()[0];

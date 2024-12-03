@@ -14,11 +14,11 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, Basis::CPtr basis, float const λ) -> Re2
+auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re2
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, basis);
+  auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, nullptr);
   Cx3        W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
@@ -52,7 +52,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &tra
  * (without SENSE maps)
  */
 auto KSpaceMulti(
-  Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, Basis::CPtr basis, float const λ) -> Re3
+  Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re3
 {
   Log::Print("Precon", "Calculating multichannel-preconditioner");
   Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
@@ -61,7 +61,7 @@ auto KSpaceMulti(
   Index const nTrace = traj.nTraces();
   Re3         weights(nC, nSamp, nTrace);
 
-  auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, basis);
+  auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, nullptr);
   Sz5 const psfShape = nufft.ishape;
   Sz5 const smapShape = smaps.dimensions();
   if (smapShape[0] > 1 && smapShape[0] != psfShape[0]) {
@@ -116,15 +116,14 @@ auto MakeKSpaceSingle(PreconOpts const              &opts,
                       Trajectory const              &traj,
                       Index const                    nC,
                       Index const                    nS,
-                      Index const                    nT,
-                      Basis::CPtr                    basis) -> TOps::TOp<Cx, 5, 5>::Ptr
+                      Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Sz5 const shape{nC, traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 5>>(shape);
   } else if (opts.type == "single") {
-    Re2 const w = KSpaceSingle(gridOpts, traj, basis, opts.λ);
+    Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
     return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
     throw Log::Failure("Precon", "Multichannel preconditioner requested without SENSE maps");
@@ -144,18 +143,17 @@ auto MakeKSpaceMulti(PreconOpts const              &opts,
                      Trajectory const              &traj,
                      Cx5 const                     &smaps,
                      Index const                    nS,
-                     Index const                    nT,
-                     Basis::CPtr                    basis) -> TOps::TOp<Cx, 5, 5>::Ptr
+                     Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Sz5 const shape{smaps.dimension(1), traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 5>>(shape);
   } else if (opts.type == "single") {
-    Re2 const w = KSpaceSingle(gridOpts, traj, basis, opts.λ);
+    Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
     return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
-    Re3 const w = KSpaceMulti(smaps, gridOpts, traj, basis, opts.λ);
+    Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.λ);
     return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, w.cast<Cx>());
   } else {
     HD5::Reader reader(opts.type);

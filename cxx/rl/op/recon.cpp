@@ -93,13 +93,13 @@ Recon::Recon(Opts const                &rOpts,
     auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
       A = Decant(gridOpts, traj, nS, nT, b, skern);
-      M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT, b);
+      M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT);
     } else if (rOpts.lowmem) {
       A = LowmemSENSE(gridOpts, traj, nS, nT, b, skern);
-      M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT, b);
+      M = MakeKSpaceSingle(pOpts, gridOpts, traj, nC, nS, nT);
     } else {
       Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
-      M = MakeKSpaceMulti(pOpts, gridOpts, traj, smaps, nS, nT, b); // In case the SENSE op does move
+      M = MakeKSpaceMulti(pOpts, gridOpts, traj, smaps, nS, nT); // In case the SENSE op does move
       A = SENSERecon(gridOpts, traj, nS, nT, b, smaps);
     }
   }
