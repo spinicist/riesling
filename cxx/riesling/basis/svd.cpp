@@ -108,8 +108,8 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
   args::ValueFlagList<Eigen::ArrayXi, std::vector, ArrayXiReader> pN(parser, "N", "Grid N for parameters", {"N"});
   args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
-
-  args::Flag save(parser, "S", "Save dynamics and projections", {"save"});
+  args::Flag             norm(parser, "N", "Normalize dynamics", {"norm"});
+  args::Flag             save(parser, "S", "Save dynamics and projections", {"save"});
 
   ParseCommand(parser);
   auto const cmd = parser.GetCommand().Name();
@@ -147,13 +147,16 @@ void main_basis_svd(args::Subparser &parser)
   Index const N = nRetain.Get();
 
   Eigen::MatrixXcf::MapType dmap(dall.data(), dshape[0], L);
-  Log::Print(cmd, "Normalizing entries");
-  auto ntask = [&](Index const ilo, Index const ihi) {
-    for (Index ii = ilo; ii < ihi; ii++) {
-      dmap.row(ii) = dmap.row(ii).normalized();
-    }
-  };
-  Threads::ChunkFor(ntask, dmap.rows());
+
+  if (norm) {
+    Log::Print(cmd, "Normalizing entries");
+    auto ntask = [&](Index const ilo, Index const ihi) {
+      for (Index ii = ilo; ii < ihi; ii++) {
+        dmap.row(ii) = dmap.row(ii).normalized();
+      }
+    };
+    Threads::ChunkFor(ntask, dmap.rows());
+  }
 
   Cx3                       basis(N, dshape[1], dshape[2]);
   Eigen::MatrixXcf::MapType bmap(basis.data(), N, L);
