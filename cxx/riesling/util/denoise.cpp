@@ -11,7 +11,6 @@ void main_denoise(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
-
   RlsqOpts rlsqOpts(parser);
   RegOpts  regOpts(parser);
 
@@ -19,9 +18,8 @@ void main_denoise(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
-
-  Cx5  in = input.readTensor<Cx5>();
-  auto A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
+  Cx5         in = input.readTensor<Cx5>();
+  auto        A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
   auto [reg, B, ext_x] = Regularizers(regOpts, A);
   ADMM opt{B,
            nullptr,
