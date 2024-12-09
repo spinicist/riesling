@@ -3,6 +3,12 @@ if(${BUILD_BIN})
     find_package(args CONFIG REQUIRED)
 
     add_executable(riesling
+        main.cpp
+        args.cpp
+        inputs.cpp
+        outputs.cpp
+        regularizers.cpp
+
         basis/blend.cpp
         basis/bernstein.cpp
         basis/concat.cpp
@@ -35,7 +41,6 @@ if(${BUILD_BIN})
         op/rss.cpp
         op/wavelets.cpp
 
-        recon/outputs.cpp
         # recon/lad.cpp
         recon/lsq.cpp
         # recon/pdhg.cpp
@@ -59,11 +64,6 @@ if(${BUILD_BIN})
         util/psf.cpp
         # util/rovir.cpp
         util/version.cpp
-
-        args.cpp
-        inputs.cpp
-        main.cpp
-        regularizers.cpp
     )
     target_link_libraries(riesling PRIVATE
         rl

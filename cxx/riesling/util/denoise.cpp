@@ -1,13 +1,9 @@
 #include "inputs.hpp"
-
-#include "rl/algo/decomp.hpp"
-#include "rl/filter.hpp"
-#include "rl/io/hd5.hpp"
+#include "outputs.hpp"
+#include "regularizers.hpp"
+#include "rl/algo/admm.hpp"
 #include "rl/log.hpp"
-#include "rl/patches.hpp"
-#include "rl/sys/threads.hpp"
-#include "rl/tensors.hpp"
-#include "rl/types.hpp"
+#include "rl/op/top.hpp"
 
 using namespace rl;
 
@@ -16,33 +12,37 @@ void main_denoise(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
-  args::Flag             llr(parser, "L", "LLR denoising", {"llr"});
-  args::ValueFlag<Index> llrPatch(parser, "SZ", "Patch size for LLR (default 4)", {"llr-patch"}, 5);
-  args::ValueFlag<Index> llrWin(parser, "SZ", "Patch size for LLR (default 4)", {"llr-win"}, 3);
-  args::ValueFlag<float> λ(parser, "λ", "Threshold", {"lambda"}, 1.f);
+  RlsqOpts rlsqOpts(parser);
+  RegOpts  regOpts(parser);
 
   ParseCommand(parser);
   auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
 
-  auto hardLLR = [λ = λ.Get()](Cx5 const &xp) {
-    Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-    auto const       svd = SVD<Cx>(patch.transpose());
-    // Soft-threhold svals
-    Eigen::VectorXf const s = (svd.S.array().abs() > λ).select(svd.S, 0.f);
-    patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-    Cx5 yp = AsTensorMap(patch, xp.dimensions());
-    return yp;
-  };
+  Cx5  in = input.readTensor<Cx5>();
+  auto A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
+  auto [reg, B, ext_x] = Regularizers(regOpts, A);
+  ADMM opt{B,
+           nullptr,
+           reg,
+           rlsqOpts.inner_its0.Get(),
+           rlsqOpts.inner_its1.Get(),
+           rlsqOpts.atol.Get(),
+           rlsqOpts.btol.Get(),
+           rlsqOpts.ctol.Get(),
+           rlsqOpts.outer_its.Get(),
+           rlsqOpts.ε.Get(),
+           rlsqOpts.μ.Get(),
+           rlsqOpts.τ.Get(),
+           nullptr,
+           nullptr};
 
-  Cx5    images = input.readTensor<Cx5>();
-  Cx5    out(images.dimensions());
-  Cx5Map outmap(out.data(), out.dimensions());
-  Patches(llrPatch.Get(), llrWin.Get(), false, hardLLR, ConstMap(images), outmap);
+  auto       x = ext_x->forward(opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get()));
+  auto const xm = AsConstTensorMap(x, in.dimensions());
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), HD5::Dims::Image);
   Log::Print(cmd, "Finished");
 }

@@ -3,14 +3,12 @@
 #include "regularizers.hpp"
 
 #include "rl/algo/admm.hpp"
-#include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/precon.hpp"
 #include "rl/scaling.hpp"
 #include "rl/sense/sense.hpp"
-#include "rl/types.hpp"
 
 using namespace rl;
 
