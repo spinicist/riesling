@@ -70,27 +70,25 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   }
 
   if (opts.wavelets) {
-    regs.push_back({std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 5>>(shape), ext_x),
+    regs.push_back({nullptr,
                     std::make_shared<Proxs::L1Wavelets>(opts.wavelets.Get(), shape, opts.waveWidth.Get(), opts.waveDims.Get()),
                     shape});
   }
 
   if (opts.llr) {
-    regs.push_back({std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 5>>(shape), ext_x),
+    regs.push_back({nullptr,
                     std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape),
                     shape});
   }
 
   if (opts.l1) {
-    auto op = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 5>>(shape), ext_x);
-    auto p = std::make_shared<Proxs::L1>(opts.l1.Get(), op->rows());
-    regs.push_back({op, p, shape});
+    auto p = std::make_shared<Proxs::L1>(opts.l1.Get(), ext_x->rows());
+    regs.push_back({nullptr, p, shape});
   }
 
   if (opts.nmrent) {
-    auto op = std::make_shared<Ops::Multiply<Cx>>(std::make_shared<TOps::Identity<Cx, 5>>(shape), ext_x);
-    auto p = std::make_shared<Proxs::NMREntropy>(opts.nmrent.Get(), op->rows());
-    regs.push_back({op, p, shape});
+    auto p = std::make_shared<Proxs::NMREntropy>(opts.nmrent.Get(), ext_x->rows());
+    regs.push_back({nullptr, p, shape});
   }
 
   if (opts.tv) {

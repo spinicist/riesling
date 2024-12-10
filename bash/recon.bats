@@ -19,19 +19,29 @@
 }
 
 @test "Run lowmem reconstruction" {
-    riesling recon-lsq basic-kspace.h5 lowmem-lsq.h5 --lowmem --sense=calib-k.h5
+    riesling recon-lsq basic-kspace.h5 lowmem-lsq.h5 --sense=calib-k.h5 --lowmem
 }
 
 @test "Run VCC reconstruction" {
-    riesling recon-lsq basic-kspace.h5 vcc-lsq.h5 --vcc
+    riesling recon-lsq basic-kspace.h5 vcc-lsq.h5 --sense=calib-k.h5 --vcc 
 }
 
 @test "Run lowmem VCC reconstruction" {
-    riesling recon-lsq basic-kspace.h5 lowvcc-lsq.h5 --vcc --lowmem
+    riesling recon-lsq basic-kspace.h5 lowvcc-lsq.h5 --sense=calib-k.h5 --vcc --lowmem
 }
 
 @test "Run frames reconstruction" {
     PREFIX="frames"
     riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5
-    riesling recon-lsq basic-kspace.h5 frames-lsq.h5 --basis=${PREFIX}.h5
+    riesling recon-lsq basic-kspace.h5 frames-lsq.h5 --sense=calib-k.h5 --basis=${PREFIX}.h5
+}
+
+@test "Run wavelets reconstruction" {
+    PREFIX="frames"
+    riesling recon-rlsq basic-kspace.h5 frames-lsq.h5 --sense=calib-k.h5 --wavelets=1e-3
+}
+
+@test "Run TV reconstruction" {
+    PREFIX="frames"
+    riesling recon-rlsq basic-kspace.h5 frames-lsq.h5 --sense=calib-k.h5 --tv=1e-3
 }

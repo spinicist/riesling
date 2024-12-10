@@ -30,6 +30,7 @@ using Time = std::chrono::high_resolution_clock::time_point;
 
 void SetLevel(Level const l);
 void SetDebugFile(std::string const &fname);
+auto CurrentLevel() -> Level;
 auto IsDebugging() -> bool;
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
 void SaveEntry(std::string const &entry, fmt::terminal_color const color, Level const level);

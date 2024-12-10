@@ -18,7 +18,7 @@ void L1::apply(float const α, CMap const &x, Map &z) const
 {
   float t = α * λ;
   z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
-  if (Log::IsDebugging()) {
+  if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
@@ -29,7 +29,7 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
     float t = λ * realα->scale;
     z.device(Threads::CoreDevice()) =
       x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
-    if (Log::IsDebugging()) {
+    if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
     }
   } else {
@@ -63,7 +63,7 @@ void L2::apply(float const α, CMap const &x, Map &z) const
       }
     },
     blks);
-  if (Log::IsDebugging()) {
+  if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
@@ -85,7 +85,9 @@ void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
         }
       },
       blks);
-    if (Log::IsDebugging()) { Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z)); }
+    if (Log::CurrentLevel() == Log::Level::Debug) {
+      Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
+    }
   } else {
     throw Log::Failure("Prox", "C++ is stupid");
   }

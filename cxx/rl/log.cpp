@@ -25,7 +25,7 @@ auto TheTime() -> std::string
 }
 } // namespace
 
-Level CurrentLevel() { return log_level; }
+auto CurrentLevel() -> Level { return log_level; }
 
 void SetLevel(Level const l)
 {

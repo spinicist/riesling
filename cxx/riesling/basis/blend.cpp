@@ -15,7 +15,7 @@ void main_blend(args::Subparser &parser)
   args::Positional<std::string> bname(parser, "BASIS", "h5 file containing basis");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
-  args::ValueFlag<std::string>  oftype(parser, "OUT FILETYPE", "File type of output (nii/nii.gz/img/h5)", {"oft"}, "h5");
+  args::ValueFlag<std::string>  dset(parser, "D", "Input dataset", {"dset"}, "data");
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> sp(parser, "SP", "Samples within basis for combination", {"sp", 's'},
                                                               {0});
   args::ValueFlag<std::vector<Index>, VectorReader<Index>> tp(parser, "TP", "Traces within basis for combination", {"tp", 't'},
@@ -25,7 +25,7 @@ void main_blend(args::Subparser &parser)
 
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
-  Cx5         images = input.readTensor<Cx5>();
+  Cx5         images = input.readTensor<Cx5>(dset.Get());
   Sz5 const   dims = images.dimensions();
 
   if (!iname) { throw args::Error("No basis file specified"); }

@@ -18,6 +18,7 @@ void main_prox(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   HD5::Writer output(oname.Get());
+  output.writeInfo(input.readInfo());
   Cx5 const   x = input.readTensor<Cx5>();
   auto        A = std::make_shared<TOps::Identity<Cx, 5>>(x.dimensions());
   auto [regs, B, ext_x] = Regularizers(regOpts, A);

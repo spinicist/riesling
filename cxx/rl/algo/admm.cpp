@@ -35,13 +35,15 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
   std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
   for (Index ir = 0; ir < R; ir++) {
-    Index const sz = regs[ir].T->rows();
+    Index const sz = regs[ir].T ? regs[ir].T->rows() : A->cols();
     z[ir].resize(sz);
     z[ir].setZero();
     u[ir].resize(sz);
     u[ir].setZero();
     ρdiags[ir] = std::make_shared<Ops::DiagScale<Cx>>(sz, std::sqrt(ρ));
-    scaled_ops[ir] = std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], regs[ir].T);
+    scaled_ops[ir] = regs[ir].T
+                       ? std::static_pointer_cast<Ops::Op<Cx>>(std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], regs[ir].T))
+                       : std::static_pointer_cast<Ops::Op<Cx>>(ρdiags[ir]);
   }
 
   std::shared_ptr<Op> reg = std::make_shared<Ops::VStack<Cx>>(scaled_ops);
@@ -67,7 +69,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   for (Index io = 0; io < outerLimit; io++) {
     Index start = A->rows();
     for (Index ir = 0; ir < R; ir++) {
-      Index rr = regs[ir].T->rows();
+      Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
       bʹ.segment(start, rr).device(dev) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
       ρdiags[ir]->scale = std::sqrt(ρ);
@@ -78,7 +80,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
     for (Index ir = 0; ir < R; ir++) {
-      Vector const Fx = regs[ir].T->forward(x);
+      Vector const Fx = regs[ir].T ? regs[ir].T->forward(x) : x;
       Vector const Fxpu = Fx + u[ir];
       Vector const zprev = z[ir];
       regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
@@ -86,9 +88,9 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
       float const nFx = ParallelNorm(Fx);
       float const nz = ParallelNorm(z[ir]);
-      float const nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
+      float const nu = regs[ir].T ? ParallelNorm(regs[ir].T->adjoint(u[ir])) : ParallelNorm(u[ir]);
       float const nP = ParallelNorm(Fx - z[ir]);
-      float const nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
+      float const nD = regs[ir].T ? ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev)) : ParallelNorm(z[ir] - zprev);
       normFx += nFx * nFx;
       normz += nz * nz;
       normu += nu * nu;

@@ -9,8 +9,8 @@ template <typename Scalar = Cx>
 struct Prox
 {
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = Eigen::Map<Vector>;
-  using CMap = Eigen::Map<Vector const>;
+  using Map = typename Vector::AlignedMapType;
+  using CMap = typename Vector::ConstAlignedMapType;
   using Op = Ops::Op<Scalar>;
   using Ptr = std::shared_ptr<Prox>;
 

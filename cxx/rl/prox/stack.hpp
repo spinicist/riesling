@@ -8,9 +8,9 @@ namespace rl::Proxs {
 template <typename Scalar = Cx>
 struct StackProx final : Prox<Scalar>
 {
-  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
-  using Map = Eigen::Map<Vector>;
-  using CMap = Eigen::Map<Vector const>;
+  using Vector = Prox<Scalar>::Vector;
+  using Map = Prox<Scalar>::Map;
+  using CMap = Prox<Scalar>::CMap;
 
   StackProx(std::vector<std::shared_ptr<Prox<Scalar>>> p);
   StackProx(std::shared_ptr<Prox<Scalar>> p1, std::vector<std::shared_ptr<Prox<Scalar>>> const p);

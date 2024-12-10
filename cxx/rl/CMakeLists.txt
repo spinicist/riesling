@@ -32,7 +32,7 @@ algo/lad.cpp
 algo/lsmr.cpp
 algo/lsqr.cpp
 algo/otsu.cpp
-algo/pdhg.cpp
+# algo/pdhg.cpp
 algo/stats.cpp
 
 basis/basis.cpp
@@ -81,7 +81,7 @@ phantom/shepp-logan.cpp
 prox/entropy.cpp
 prox/hermitian.cpp
 prox/l1-wavelets.cpp
-prox/lsq.cpp
+# prox/lsq.cpp
 prox/llr.cpp
 prox/norms.cpp
 prox/prox.cpp
@@ -130,7 +130,7 @@ algo/lad.hpp
 algo/lsmr.hpp
 algo/lsqr.hpp
 algo/otsu.hpp
-algo/pdhg.hpp
+# algo/pdhg.hpp
 algo/stats.hpp
 
 basis/basis.hpp
@@ -170,7 +170,7 @@ phantom/shepp-logan.hpp
 prox/entropy.hpp
 prox/hermitian.hpp
 prox/l1-wavelets.hpp
-prox/lsq.hpp
+# prox/lsq.hpp
 prox/llr.hpp
 prox/norms.hpp
 prox/prox.hpp
