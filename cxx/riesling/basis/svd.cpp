@@ -109,6 +109,7 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlagList<Eigen::ArrayXi, std::vector, ArrayXiReader> pN(parser, "N", "Grid N for parameters", {"N"});
   args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
   args::Flag             norm(parser, "N", "Normalize dynamics", {"norm"});
+  args::Flag equalize(parser, "E", "Rotate basis to equalize variance", {"equalize"});
   args::Flag             save(parser, "S", "Save dynamics and projections", {"save"});
 
   ParseCommand(parser);
@@ -163,7 +164,7 @@ void main_basis_svd(args::Subparser &parser)
 
   Log::Print(cmd, "Computing SVD {}x{}", dmap.rows(), dmap.cols());
   SVD<Cxd> svd(dmap.cast<Cxd>());
-  bmap = svd.basis(nRetain.Get()).cast<Cx>();
+  bmap = equalize ? svd.equalized(nRetain.Get()).cast<Cx>() : svd.basis(nRetain.Get()).cast<Cx>();
   Log::Print(cmd, "Computing projection");
   Cx3                       proj(dshape);
   Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);

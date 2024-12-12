@@ -61,10 +61,7 @@ template <typename Scalar> auto SVD<Scalar>::equalized(Index const N) const -> M
     v(maxInd) = μ;
     v(minInd) = maxVal + minVal - μ;
   }
-  RealArray cumv(v.rows());
-  std::partial_sum(v.begin(), v.end(), cumv.begin());
-  cumv = 100.f * cumv / cumv.tail(1)[0];
-  return V.leftCols(N) * R.cast<Scalar>();
+  return (V.leftCols(N) * R.cast<Scalar>()).adjoint();
 }
 
 template struct SVD<float>;
