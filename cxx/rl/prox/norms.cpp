@@ -17,7 +17,14 @@ L1::L1(float const λ_, Index const sz_)
 void L1::apply(float const α, CMap const &x, Map &z) const
 {
   float t = α * λ;
-  z = x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
+  Threads::ChunkFor(
+    [t, &x, &z](Index lo, Index hi) {
+      for (Index ii = lo; ii < hi; ii++) {
+        float const ax = std::abs(x[ii]);
+        z[ii] = ax < t ? 0.f : (1.f - t / ax) * x[ii];
+      }
+    },
+    x.size());
   if (Log::CurrentLevel() == Log::Level::Debug) {
     Log::Debug("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
@@ -27,8 +34,14 @@ void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
 {
   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
     float t = λ * realα->scale;
-    z.device(Threads::CoreDevice()) =
-      x.cwiseAbs().cwiseTypedGreater(t).select(x.array() * (x.array().abs() - t) / x.array().abs(), 0.f);
+    Threads::ChunkFor(
+      [t, &x, &z](Index lo, Index hi) {
+        for (Index ii = lo; ii < hi; ii++) {
+          float const ax = std::abs(x[ii]);
+          z[ii] = ax < t ? 0.f : (1.f - t / ax) * x[ii];
+        }
+      },
+      x.size());
     if (Log::CurrentLevel() == Log::Level::Debug) {
       Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
     }
