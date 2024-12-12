@@ -4,8 +4,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
-#include "kernel/kernel-impl.hpp"
-#include "log.hpp"
+#include "rl/kernel/kernel-impl.hpp"
+#include "rl/log.hpp"
 
 using namespace rl;
 

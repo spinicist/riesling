@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
-#include "algo/common.hpp"
-#include "sys/threads.hpp"
+#include "rl/algo/common.hpp"
+#include "rl/sys/threads.hpp"
 #include <catch2/benchmark/catch_benchmark_all.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
