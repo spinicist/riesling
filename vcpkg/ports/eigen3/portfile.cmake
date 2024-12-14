@@ -6,9 +6,9 @@ set(VCPKG_BUILD_TYPE release) # header-only
 vcpkg_from_gitlab(
     GITLAB_URL https://gitlab.com
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO spinicist/eigen
-    REF f713f9cdcef3160f7ed9d56647f233fc5b7ad096
-    SHA512 2f48bfa84768936b5f0ff145a95077240e04a2a6dab97dc70e8896f5cf975c089ea93148978d4aeaa1932de9b72708ebf7c3be2a9a3bf455e01cb639d50efada
+    REPO libeigen/eigen
+    REF af59ada0accc722ebd930ec65340156dbe62ffa1
+    SHA512 e8de25f3e1760ee48dee30a25a869cdb584303a2cd18cbcb00f23c922d7786ab5a281d1c20db61617aa95dd932054461e2d2459c95bbf332c719a6b1b4acf4c9
     HEAD_REF master
     PATCHES
 )
@@ -25,12 +25,16 @@ vcpkg_cmake_configure(
         -DBUILD_TESTING=OFF
         -DEIGEN_BUILD_DOC=OFF
         -DEIGEN_BUILD_PKGCONFIG=ON
+        -DEIGEN_BUILD_BLAS=OFF
+        -DEIGEN_BUILD_LAPACK=OFF
+        -DEIGEN_BUILD_DEMOS=OFF
         "-DCMAKEPACKAGE_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/share/eigen3"
         "-DPKGCONFIG_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/lib/pkgconfig"
 )
 
 vcpkg_cmake_install()
 vcpkg_cmake_config_fixup()
+vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/eigen3/Eigen3Config.cmake" "if (NOT TARGET eigen)" "if (NOT TARGET Eigen3::Eigen)")
 endblock()
 
 if(NOT VCPKG_BUILD_TYPE)
