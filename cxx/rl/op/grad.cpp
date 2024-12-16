@@ -58,9 +58,12 @@ template struct Grad<5>;
 
 template <int ND>
 GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> const &dims)
-  : Parent("GradVec", ishape, AddBack(FirstN<ND - 1>(ishape), ND * (ND - 1) / 2))
+  : Parent("GradVec", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))
   , dims_{dims}
 {
+  if (dims.size() != ishape[ND - 1]) {
+    throw(Log::Failure("gradv", "Symmetrized gradient only, dims were {} and {}", dims.size(), ishape[ND - 1]));
+  }
 }
 
 template <int ND> void GradVec<ND>::forward(InCMap const &x, OutMap &y) const
