@@ -20,12 +20,13 @@ TEMPLATE_TEST_CASE(
   Index const C = 8;
   Cx1         b(B);
   b.setRandom();
-  Cx5 x(B, C, 16, 16, 16);
+  Cx5 x(16, 16, 16, C, B);
   x.setRandom();
-  Cx1                               y(C);
-  Cx1Map                            ym(y.data(), Sz1{8});
-  Eigen::Array<int16_t, 3, 1> const c{8, 8, 8};
+  Cx1 y(C);
+  y.setRandom();
+  Cx1Map ym(y.data(), Sz1{8});
 
+  Eigen::Array<int16_t, 3, 1> const c{8, 8, 8};
   BENCHMARK(fmt::format("ES{} Spread {}", TestType::Width, B)) { k.spread(c, p, b, y, x); };
   BENCHMARK(fmt::format("ES{} Gather {}", TestType::Width, B)) { k.gather(c, p, b, x, ym); };
 }
