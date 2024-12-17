@@ -16,7 +16,7 @@ TEMPLATE_TEST_CASE(
   TestType   k(2.f);
   auto const p = TestType::Point::Constant(0.5f);
 
-  Index const B = GENERATE(1, 128);
+  Index const B = GENERATE(1, 8);
   Index const C = 8;
   Cx1         b(B);
   b.setRandom();
