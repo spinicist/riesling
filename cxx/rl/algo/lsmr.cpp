@@ -50,8 +50,8 @@ auto LSMR::run(CMap const b, CMap x0) const -> Vector
   float       minρ̅ = std::numeric_limits<float>::max();
   float const normb = bd.β;
 
-  Log::Print("LSMR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, std::fabs(ζ̅));
+  Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol        |A|       cond(A)");
+  Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, 0.f, std::fabs(ζ̅), 0.f);
   Iterating::Starting();
   for (Index ii = 0; ii < opts.imax; ii++) {
     bd.next();
@@ -112,9 +112,18 @@ auto LSMR::run(CMap const b, CMap x0) const -> Vector
     // Convergence tests - go in pairs which check large/small values then the user tolerance
     float const normAr = abs(ζ̅);
     float const normx = ParallelNorm(x);
-
-    Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
+    float const thresh1 = opts.bTol * normb + opts.aTol * normA * normx;
+    float const thresh2 = opts.aTol * (normA * normr);
+    Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, thresh1, normAr, thresh2, normA, condA);
     if (debug) { debug(ii, x); }
+    if (normr <= thresh1) {
+      Log::Print("LSMR", "Ax - b <= aTol, bTol");
+      break;
+    }
+    if (normAr <= thresh2) {
+      Log::Print("LSMR", "Least-squares = {:4.3E} < aTol = {:4.3E}", normAr, thresh2);
+      break;
+    }
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("LSMR", "Cond(A) is very large");
       break;
@@ -123,18 +132,8 @@ auto LSMR::run(CMap const b, CMap x0) const -> Vector
       Log::Print("LSMR", "Cond(A) has exceeded limit");
       break;
     }
-
     if (1.f + (normAr / (normA * normr)) <= 1.f) {
       Log::Print("LSMR", "Least-squares solution reached machine precision");
-      break;
-    }
-    if ((normAr / (normA * normr)) <= opts.aTol) {
-      Log::Print("LSMR", "Least-squares = {:4.3E} < aTol = {:4.3E}", normAr / (normA * normr), opts.aTol);
-      break;
-    }
-
-    if (normr <= (opts.bTol * normb + opts.aTol * normA * normx)) {
-      Log::Print("LSMR", "Ax - b <= aTol, bTol");
       break;
     }
     if ((1.f + normr / (normb + normA * normx)) <= 1.f) {
