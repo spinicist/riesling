@@ -38,11 +38,11 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
     for (Index ic = 0; ic < nC; ic++) {
       Scalar const yval = y(ic);
       if constexpr (ND == 1) {
-        x(0, ic, c[0]) += yval;
+        x(c[0], ic, 0) += yval;
       } else if constexpr (ND == 2) {
-        x(0, ic, c[0], c[1]) += yval;
+        x(c[0], c[1], ic, 0) += yval;
       } else if constexpr (ND == 3) {
-        x(0, ic, c[0], c[1], c[2]) += yval;
+        x(c[0], c[1], c[2], ic, 0) += yval;
       }
     }
   }
@@ -60,38 +60,38 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
       for (Index ib = 0; ib < nB; ib++) {
         Scalar const bval = b(ib) * yval;
         if constexpr (ND == 1) {
-          x(ib, ic, c[0]) += bval;
+          x(c[0], ic, ib) += bval;
         } else if constexpr (ND == 2) {
-          x(ib, ic, c[0], c[1]) += bval;
+          x(c[0], c[1], ic, ib) += bval;
         } else if constexpr (ND == 3) {
-          x(ib, ic, c[0], c[1], c[2]) += bval;
+          x(c[0], c[1], c[2], ic, ib) += bval;
         }
       }
     }
   }
 
-  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
-              Point const                                                 &p,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
+  void gather(Eigen::Array<int16_t, ND, 1> const   c,
+              Point const                         &p,
+              Eigen::Tensor<Scalar, ND + 2> const &x,
+              Eigen::Tensor<Scalar, 1>            &y) const final
   {
     Index const nC = x.dimension(1);
     for (Index ic = 0; ic < nC; ic++) {
       if constexpr (ND == 1) {
-        y(ic) += x(0, ic, c[0]);
+        y(ic) += x(c[0], ic, 0);
       } else if constexpr (ND == 2) {
-        y(ic) += x(0, ic, c[0], c[1]);
+        y(ic) += x(c[0], c[1], ic, 0);
       } else if constexpr (ND == 3) {
-        y(ic) += x(0, ic, c[0], c[1], c[2]);
+        y(ic) += x(c[0], c[1], c[2], ic, 0);
       }
     }
   }
 
-  void gather(Eigen::Array<int16_t, ND, 1> const                           c,
-              Point const                                                 &p,
-              Eigen::Tensor<Scalar, 1> const                              &b,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
+  void gather(Eigen::Array<int16_t, ND, 1> const   c,
+              Point const                         &p,
+              Eigen::Tensor<Scalar, 1> const      &b,
+              Eigen::Tensor<Scalar, ND + 2> const &x,
+              Eigen::Tensor<Scalar, 1>            &y) const final
   {
     Index const nC = x.dimension(1);
     Index const nB = b.size();
@@ -99,11 +99,11 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
       for (Index ib = 0; ib < nB; ib++) {
         Scalar const bval = b(ib);
         if constexpr (ND == 1) {
-          y(ic) += x(ib, ic, c[0]) * bval;
+          y(ic) += x(c[0], ic, ib) * bval;
         } else if constexpr (ND == 2) {
-          y(ic) += x(ib, ic, c[0], c[1]) * bval;
+          y(ic) += x(c[0], c[1], ic, ib) * bval;
         } else if constexpr (ND == 3) {
-          y(ic) += x(ib, ic, c[0], c[1], c[2]) * bval;
+          y(ic) += x(c[0], c[1], c[2], ic, ib) * bval;
         }
       }
     }

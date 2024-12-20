@@ -27,7 +27,7 @@ Grid<ND>::Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Ba
   static_assert(ND < 4);
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
   gridLists = traj.toCoordLists(osMatrix, kernel->paddedWidth(), subgridW, false);
-  ishape = AddFront(osMatrix, basis ? basis->nB() : 1, nC);
+  ishape = AddBack(osMatrix, nC, basis ? basis->nB() : 1);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
   if (opts.vcc) {
@@ -49,17 +49,19 @@ void Grid<ND>::forwardTask(Index const                   start,
 {
   Index const nC = y.dimension(0);
   Index const nB = basis ? basis->nB() : 1;
-  CxN<ND + 2> sx(AddFront(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nB, nC));
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nC, nB));
+  Eigen::Tensor<Cx, 1> yy(Sz1{nC});
   for (Index is = start; is < lists.size(); is += stride) {
     auto const &list = lists[is];
     GridToSubgrid<ND>(SubgridCorner(list.corner, subgridW, kernel->paddedWidth()), vccLists.has_value(), isVCC, x, sx);
     for (auto const &m : list.coords) {
-      Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
+      yy.setZero();
       if (basis) {
         kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
       } else {
         kernel->gather(m.cart, m.offset, sx, yy);
       }
+      y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
     }
   }
 }
@@ -98,7 +100,7 @@ void Grid<ND>::adjointTask(Index const                   start,
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddFront(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nB, nC));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
   for (Index is = start; is < lists.size(); is += stride) {
     auto const &list = lists[is];

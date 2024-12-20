@@ -22,7 +22,7 @@ GridDecant<ND>::GridDecant(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &tr
   static_assert(ND < 4);
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
   subs = traj.toCoordLists(osMatrix, kernel->paddedWidth(), subgridW, false);
-  ishape = AddFront(osMatrix, basis ? basis->nB() : 1);
+  ishape = AddBack(osMatrix, basis ? basis->nB() : 1);
   oshape = Sz3{skern.dimension(1), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
   float const scale = std::sqrt(Product(LastN<3>(ishape)) / (float)Product(LastN<3>(skern.dimensions())));
@@ -50,19 +50,21 @@ void forwardTask(std::vector<typename TrajectoryN<ND>::CoordList> const &subs,
                  CxNCMap<ND + 1> const                                  &x,
                  CxNMap<3>                                              &y)
 {
-  Index const nC = y.dimension(0);
-  Index const nB = basis ? basis->nB() : 1;
-  CxN<ND + 2> sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
+  Index const          nC = y.dimension(0);
+  Index const          nB = basis ? basis->nB() : 1;
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nC, nB));
+  Eigen::Tensor<Cx, 1> yy(Sz1{nC});
   for (Index is = start; is < subs.size(); is += stride) {
     auto const &sub = subs[is];
     GridToDecant<ND>(SubgridCorner(sub.corner, sgW, kernel->paddedWidth()), skern, x, sx);
     for (auto const &m : sub.coords) {
-      Eigen::TensorMap<Eigen::Tensor<Cx, 1>> yy(&y(0, m.sample, m.trace), Sz1{nC});
+      yy.setZero();
       if (basis) {
         kernel->gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
       } else {
         kernel->gather(m.cart, m.offset, sx, yy);
       }
+      y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
     }
   }
 }
@@ -98,7 +100,7 @@ void adjointTask(std::vector<typename TrajectoryN<ND>::CoordList> const &subs,
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddFront(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nB, nC));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(sgW, kernel->paddedWidth())), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
   for (Index is = start; is < subs.size(); is += stride) {
     auto const &sub = subs[is];

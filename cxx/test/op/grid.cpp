@@ -74,17 +74,17 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   Cx3 cart = grid->adjoint(noncart);
   INFO("GRID\n" << cart);
   CHECK(cart(0, 0, 0).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 0, 1).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 0, 2).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(0, 0, 3).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 0, 4).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 0, 5).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(1, 0, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(1, 0, 0).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(2, 0, 0).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(3, 0, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(4, 0, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(5, 0, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(0, 0, 1).real() == Approx(0.f).margin(1e-2f));
   CHECK(cart(1, 0, 1).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(1, 0, 2).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(1, 0, 3).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(1, 0, 4).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(1, 0, 5).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(2, 0, 1).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(3, 0, 1).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(4, 0, 1).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(5, 0, 1).real() == Approx(1.f).margin(1e-2f));
   Cx3 nc2 = grid->forward(cart);
   INFO("NC\n" << nc2);
   CHECK(Norm<false>(nc2 - noncart) == Approx(0.f).margin(1e-2f));
@@ -110,25 +110,25 @@ TEST_CASE("GridVCC", "[grid]")
   cart = grid->adjoint(noncart);
   INFO("M " << M << " cart" << '\n' << cart);
   CHECK(Norm<false>(cart) == Approx(Norm<false>(noncart)).margin(1e-2f));
-  CHECK(cart(0, 0, M / 2).real() == Approx(0.f).margin(1e-6f));
-  CHECK(cart(0, 0, M / 2).imag() == Approx(inv_sqrt2).margin(1e-6f));
-  CHECK(cart(0, 1, M / 2).real() == Approx(0.f).margin(1e-6f));
-  CHECK(cart(0, 1, M / 2).imag() == Approx(-inv_sqrt2).margin(1e-6f));
+  CHECK(cart(M / 2, 0, 0).real() == Approx(0.f).margin(1e-6f));
+  CHECK(cart(M / 2, 0, 0).imag() == Approx(inv_sqrt2).margin(1e-6f));
+  CHECK(cart(M / 2, 1, 0).real() == Approx(0.f).margin(1e-6f));
+  CHECK(cart(M / 2, 1, 0).imag() == Approx(-inv_sqrt2).margin(1e-6f));
   for (Index ii = 1; ii < M / 2; ii++) {
-    CHECK(cart(0, 0, M / 2 - ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, M / 2 - ii).imag() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, M / 2 + ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 0, M / 2 + ii).imag() == Approx(inv_sqrt2).margin(1e-6f));
-    CHECK(cart(0, 1, M / 2 - ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 1, M / 2 - ii).imag() == Approx(-inv_sqrt2).margin(1e-6f));
-    CHECK(cart(0, 1, M / 2 + ii).real() == Approx(0.f).margin(1e-6f));
-    CHECK(cart(0, 1, M / 2 + ii).imag() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(M / 2 - ii, 0, 0).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(M / 2 - ii, 0, 0).imag() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(M / 2 + ii, 0, 0).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(M / 2 + ii, 0, 0).imag() == Approx(inv_sqrt2).margin(1e-6f));
+    CHECK(cart(M / 2 - ii, 1, 0).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(M / 2 - ii, 1, 0).imag() == Approx(-inv_sqrt2).margin(1e-6f));
+    CHECK(cart(M / 2 + ii, 1, 0).real() == Approx(0.f).margin(1e-6f));
+    CHECK(cart(M / 2 + ii, 1, 0).imag() == Approx(0.f).margin(1e-6f));
   }
   noncart = grid->forward(cart);
   INFO("noncart" << '\n' << noncart);
   CHECK(Norm<false>(noncart) == Approx(Norm<false>(cart)).margin(1e-2f));
   for (Index ii = 0; ii < M / 2; ii++) {
-    CHECK(noncart(0, ii, 0).real() == Approx(0.f).margin(1e-6f));
-    CHECK(noncart(0, ii, 0).imag() == Approx(1.f).margin(1e-6f));
+    CHECK(noncart(ii, 0, 0).real() == Approx(0.f).margin(1e-6f));
+    CHECK(noncart(ii, 0, 0).imag() == Approx(1.f).margin(1e-6f));
   }
 }

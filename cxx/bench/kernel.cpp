@@ -16,7 +16,7 @@ TEMPLATE_TEST_CASE(
   TestType   k(2.f);
   auto const p = TestType::Point::Constant(0.5f);
 
-  Index const B = GENERATE(1, 8);
+  Index const B = 8;
   Index const C = 8;
   Cx1         b(B);
   b.setRandom();
@@ -24,9 +24,12 @@ TEMPLATE_TEST_CASE(
   x.setRandom();
   Cx1 y(C);
   y.setRandom();
-  Cx1Map ym(y.data(), Sz1{8});
 
   Eigen::Array<int16_t, 3, 1> const c{8, 8, 8};
+
+  BENCHMARK(fmt::format("ES{} Spread", TestType::Width, B)) { k.spread(c, p, y, x); };
+  BENCHMARK(fmt::format("ES{} Gather", TestType::Width, B)) { k.gather(c, p, x, y); };
+
   BENCHMARK(fmt::format("ES{} Spread {}", TestType::Width, B)) { k.spread(c, p, b, y, x); };
-  BENCHMARK(fmt::format("ES{} Gather {}", TestType::Width, B)) { k.gather(c, p, b, x, ym); };
+  BENCHMARK(fmt::format("ES{} Gather {}", TestType::Width, B)) { k.gather(c, p, b, x, y); };
 }
