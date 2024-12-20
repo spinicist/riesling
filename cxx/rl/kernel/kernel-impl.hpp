@@ -59,8 +59,8 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
 
   void gather(Eigen::Array<int16_t, ND, 1> const                           c,
               Point const                                                 &p,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
+              Eigen::Tensor<Scalar, ND + 2>  const &x,
+              Eigen::Tensor<Scalar, 1>                  &y) const final
   {
     FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, x, y);
   }
@@ -68,8 +68,8 @@ template <typename Scalar, int ND, typename Func> struct Kernel final : KernelBa
   void gather(Eigen::Array<int16_t, ND, 1> const                           c,
               Point const                                                 &p,
               Eigen::Tensor<Scalar, 1> const                              &b,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-              Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const final
+              Eigen::Tensor<Scalar, ND + 2>  const &x,
+              Eigen::Tensor<Scalar, 1>                  &y) const final
   {
     FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, b, x, y);
   }

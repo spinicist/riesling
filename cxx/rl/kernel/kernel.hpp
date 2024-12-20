@@ -19,15 +19,15 @@ template <typename Scalar, int ND> struct KernelBase
                       Eigen::Tensor<Scalar, 1> const    &b,
                       Eigen::Tensor<Scalar, 1> const    &y,
                       Eigen::Tensor<Scalar, ND + 2>     &x) const = 0;
-  virtual void gather(Eigen::Array<int16_t, ND, 1> const                           c,
-                      Point const                                                 &p,
-                      Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-                      Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const = 0;
-  virtual void gather(Eigen::Array<int16_t, ND, 1> const                           c,
-                      Point const                                                 &p,
-                      Eigen::Tensor<Scalar, 1> const                              &b,
-                      Eigen::TensorMap<Eigen::Tensor<Scalar, ND + 2> const> const &x,
-                      Eigen::TensorMap<Eigen::Tensor<Scalar, 1>>                  &y) const = 0;
+  virtual void gather(Eigen::Array<int16_t, ND, 1> const   c,
+                      Point const                         &p,
+                      Eigen::Tensor<Scalar, ND + 2> const &x,
+                      Eigen::Tensor<Scalar, 1>            &y) const = 0;
+  virtual void gather(Eigen::Array<int16_t, ND, 1> const   c,
+                      Point const                         &p,
+                      Eigen::Tensor<Scalar, 1> const      &b,
+                      Eigen::Tensor<Scalar, ND + 2> const &x,
+                      Eigen::Tensor<Scalar, 1>            &y) const = 0;
 
   static auto Make(std::string const &type, float const osamp) -> std::shared_ptr<KernelBase<Scalar, ND>>;
 };
