@@ -1,0 +1,42 @@
+#include "inputs.hpp"
+
+#include "rl/fft.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/sys/threads.hpp"
+#include "rl/types.hpp"
+
+using namespace rl;
+
+void main_resamp(args::Subparser &parser)
+{
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
+  ArrayFlag<float, 3>           res(parser, "R", "Target resolution (4 mm)", {"res"}, Eigen::Array3f::Constant(4.f));
+
+  ParseCommand(parser);
+  auto const cmd = parser.GetCommand().Name();
+  if (!iname) { throw args::Error("No input file specified"); }
+  HD5::Reader ifile(iname.Get());
+  auto        input = ifile.readTensor<Cx5>();
+  auto const  ishape = input.dimensions();
+  auto const  inFo = ifile.readInfo();
+
+  Eigen::Array3f ratios = res.Get() / inFo.voxel_size;
+  auto           oshape = ishape;
+  auto           oFo = inFo;
+  for (int ii = 0; ii < 3; ii++) {
+    oshape[1 + ii] = ishape[1 + ii] / ratios[ii];
+    oFo.voxel_size[ii] = inFo.voxel_size[ii] * ishape[1 + ii] / (1.f * oshape[1 + ii]);
+  }
+
+  FFT::Forward(input, Sz3{1, 2, 3});
+  TOps::Pad<Cx, 5> pad(ishape, oshape);
+  auto             output = pad.forward(input);
+  FFT::Adjoint(output, Sz3{1, 2, 3});
+
+  HD5::Writer writer(oname.Get());
+  writer.writeInfo(oFo);
+  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
+  rl::Log::Print(cmd, "Finished");
+}

@@ -62,6 +62,7 @@ if(${BUILD_BIN})
         util/phantom.cpp
         util/precon.cpp
         util/psf.cpp
+        util/resamp.cpp
         # util/rovir.cpp
         util/version.cpp
     )
