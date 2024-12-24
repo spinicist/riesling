@@ -80,17 +80,33 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
     for (Index ir = 0; ir < R; ir++) {
-      Vector const Fx = regs[ir].T ? regs[ir].T->forward(x) : x;
-      Vector const Fxpu = Fx + u[ir];
-      Vector const zprev = z[ir];
-      regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
-      u[ir].device(dev) = Fxpu - z[ir];
-      if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-      float const nFx = ParallelNorm(Fx);
-      float const nz = ParallelNorm(z[ir]);
-      float const nu = regs[ir].T ? ParallelNorm(regs[ir].T->adjoint(u[ir])) : ParallelNorm(u[ir]);
-      float const nP = ParallelNorm(Fx - z[ir]);
-      float const nD = regs[ir].T ? ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev)) : ParallelNorm(z[ir] - zprev);
+      float nFx, nz, nu, nP, nD;
+      if (regs[ir].T) {
+        Vector Fx(u[ir].size()), Fxpu(u[ir].size()), zprev(z[ir].size());
+        regs[ir].T->forward(x, Fx);
+        Fxpu.device(dev) = Fx + u[ir];
+        zprev.device(dev) = z[ir];
+        regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
+        u[ir].device(dev) = Fxpu - z[ir];
+        if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
+        nFx = ParallelNorm(Fx);
+        nz = ParallelNorm(z[ir]);
+        nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
+        nP = ParallelNorm(Fx - z[ir]);
+        nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
+      } else {
+        Vector xpu(x.size()), zprev(x.size());
+        xpu.device(dev) = x + u[ir];
+        zprev.device(dev) = z[ir];
+        regs[ir].P->apply(1.f / ρ, xpu, z[ir]);
+        u[ir].device(dev) = xpu - z[ir];
+        if (debug_z) { debug_z(io, ir, x, z[ir], u[ir]); }
+        nFx = ParallelNorm(x);
+        nz = ParallelNorm(z[ir]);
+        nu = ParallelNorm(u[ir]);
+        nP = ParallelNorm(x - z[ir]);
+        nD = ParallelNorm(z[ir] - zprev);
+      }
       normFx += nFx * nFx;
       normz += nz * nz;
       normu += nu * nu;
@@ -119,12 +135,12 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       if (pRes > μ * dRes) {
         ρ *= τ;
         for (Index ir = 0; ir < R; ir++) {
-          u[ir] /= τ;
+          u[ir].device(dev) = u[ir] / τ;
         }
       } else if (dRes > μ * pRes) {
         ρ /= τ;
         for (Index ir = 0; ir < R; ir++) {
-          u[ir] *= τ;
+          u[ir].device(dev) = u[ir] * τ;
         }
       }
     }
