@@ -197,7 +197,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
     if (shrink) {
       // Account for rounding
       dsMatrix[ii] = matrix_[ii] * ratios[ii];
-      float const scale = static_cast<float>(matrix_[0]) / dsMatrix[0];
+      float const scale = static_cast<float>(matrix_[ii]) / dsMatrix[ii];
       ratios(ii) = 1.f / scale;
       dsVox[ii] = voxel_size_[ii] * scale;
     }
