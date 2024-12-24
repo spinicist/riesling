@@ -15,6 +15,7 @@ struct RegOpts
   args::ValueFlag<float> l1;
   args::ValueFlag<float> nmrent;
 
+  args::ValueFlag<int>   diffOrder;
   args::ValueFlag<float> tv;
   args::ValueFlag<float> tvl2;
   args::ValueFlag<float> tvt;

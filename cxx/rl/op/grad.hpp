@@ -8,22 +8,24 @@ template<int ND>
 struct Grad final : TOp<Cx, ND, ND + 1>
 {
   TOP_INHERIT(Cx, ND, ND + 1)
-  Grad(InDims const ishape, std::vector<Index> const &gradDims);
+  Grad(InDims const ishape, std::vector<Index> const &gradDims, int const order);
   TOP_DECLARE(Grad)
 
 private:
   std::vector<Index> dims_;
+  int order_;
 };
 
 template<int ND>
 struct GradVec final : TOp<Cx, ND, ND>
 {
   TOP_INHERIT(Cx, ND, ND)
-  GradVec(InDims const ishape, std::vector<Index> const &gradDims);
+  GradVec(InDims const ishape, std::vector<Index> const &gradDims, int const order);
   TOP_DECLARE(GradVec)
 
 private:
   std::vector<Index> dims_;
+  int order_;
 };
 
 } // namespace rl::TOps
