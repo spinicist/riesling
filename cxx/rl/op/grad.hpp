@@ -13,7 +13,7 @@ struct Grad final : TOp<Cx, ND, ND + 1>
 
 private:
   std::vector<Index> dims_;
-  int order_;
+  int mode_;
 };
 
 template<int ND>
@@ -25,7 +25,7 @@ struct GradVec final : TOp<Cx, ND, ND>
 
 private:
   std::vector<Index> dims_;
-  int order_;
+  int mode_;
 };
 
 } // namespace rl::TOps
