@@ -119,6 +119,34 @@ template <int ND> void Grad<ND>::adjoint(OutCMap const &y, InMap &x) const
   }
 }
 
+template <int ND> void Grad<ND>::iforward(InCMap const &x, OutMap &y) const
+{
+  auto const time = this->startForward(x, y, false);
+  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+    switch (mode_) {
+    case 0: ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii]); break;
+    case 1: BackwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii]); break;
+    case 2: CentralDiff0<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii]); break;
+    case 3: CentralDiff1<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii]); break; 
+    }
+  }
+  this->finishForward(y, time, true);
+}
+
+template <int ND> void Grad<ND>::iadjoint(OutCMap const &y, InMap &x) const
+{
+  auto const time = this->startAdjoint(y, x, false);
+  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+    switch (mode_) {
+    case 0: ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii]); break;
+    case 1: BackwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii]); break;
+    case 2: CentralDiff0<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii]); break;
+    case 3: CentralDiff1<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii]); break;
+    }
+    this->finishAdjoint(x, time, true);
+  }
+}
+
 template struct Grad<5>;
 
 template <int ND>

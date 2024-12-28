@@ -71,7 +71,8 @@ void main_recon_rlsq(args::Subparser &parser)
            debug_x,
            debug_z};
 
-  auto x = ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()));
+  auto x = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()))
+                 : opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get());
   UnscaleData(scale, x);
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 

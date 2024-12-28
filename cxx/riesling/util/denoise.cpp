@@ -42,7 +42,8 @@ void main_denoise(args::Subparser &parser)
              rlsqOpts.τ.Get(),
              nullptr,
              nullptr};
-    xm = ext_x->forward(opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get()));
+    xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get()))
+               : opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get());
   }
   WriteOutput(cmd, oname.Get(), x, HD5::Dims::Image, input.readInfo());
   Log::Print(cmd, "Finished");

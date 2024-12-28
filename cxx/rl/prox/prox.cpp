@@ -12,8 +12,8 @@ Prox<S>::Prox(Index const s)
 
 template <typename S> void Prox<S>::apply(float const α, Vector const &x, Vector &z) const
 {
-  assert(x.size() == sz);
-  assert(z.size() == sz);
+  if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
+  if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
   CMap xm(x.data(), sz);
   Map  zm(z.data(), sz);
   this->apply(α, xm, zm);
@@ -21,8 +21,8 @@ template <typename S> void Prox<S>::apply(float const α, Vector const &x, Vecto
 
 template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const
 {
-  assert(x.size() == sz);
-  assert(z.size() == sz);
+  if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
+  if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
   CMap xm(x.data(), sz);
   Map  zm(z.data(), sz);
   this->apply(α, xm, zm);
@@ -30,7 +30,7 @@ template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const α, Vector c
 
 template <typename S> auto Prox<S>::apply(float const α, Vector const &x) const -> Vector
 {
-  assert(x.size() == sz);
+  if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
   this->apply(α, x, z);
   return z;
@@ -43,7 +43,7 @@ template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const, CMap const 
 
 template <typename S> auto Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector
 {
-  assert(x.size() == sz);
+  if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
   this->apply(α, x, z);
   return z;

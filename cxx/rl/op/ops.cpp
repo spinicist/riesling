@@ -643,7 +643,6 @@ Subtract<S>::Subtract(std::shared_ptr<Op<S>> aa, std::shared_ptr<Op<S>> bb)
   : Op<S>("Subtract")
   , a{aa}
   , b{bb}
-  , temp(std::max(aa->rows(), aa->cols()))
 {
   if (a->rows() != b->rows()) {
     throw Log::Failure("Op", "Subtract operands must have same dimensions a [{},{}] b [{},{}]", //
@@ -659,42 +658,40 @@ template <typename S> auto Subtract<S>::rows() const -> Index { return a->rows()
 template <typename S> auto Subtract<S>::cols() const -> Index { return a->cols(); }
 
 template <typename S> void Subtract<S>::forward(CMap const &x, Map &y) const
-{
+{ // Perform gymnastics to save memory
   auto const time = this->startForward(x, y, false);
-  a->forward(x, y);
-  Map tm(temp.data(), rows());
-  b->forward(x, tm);
-  y.device(Threads::CoreDevice()) -= tm;
+  b->forward(x, y);
+  y.device(Threads::CoreDevice()) = -y;
+  a->iforward(x, y);
   this->finishForward(y, time, false);
 }
 
 template <typename S> void Subtract<S>::adjoint(CMap const &y, Map &x) const
-{
+{ // Perform gymnastics to save memory
   auto const time = this->startAdjoint(y, x, false);
-  a->adjoint(y, x);
-  Map tm(temp.data(), cols());
-  b->adjoint(y, tm);
-  x.device(Threads::CoreDevice()) -= tm;
+  b->adjoint(y, x);
+  x.device(Threads::CoreDevice()) = -x;
+  a->iadjoint(y, x);
   this->finishAdjoint(x, time, false);
 }
 
 template <typename S> void Subtract<S>::iforward(CMap const &x, Map &y) const
-{
+{ // Perform gymnastics to save memory
   auto const time = this->startForward(x, y, true);
+  y.device(Threads::CoreDevice()) = -y;
+  b->iforward(x, y);
+  y.device(Threads::CoreDevice()) = -y;
   a->iforward(x, y);
-  Map tm(temp.data(), temp.rows());
-  b->forward(x, tm);
-  y.device(Threads::CoreDevice()) -= tm;
   this->finishForward(y, time, true);
 }
 
 template <typename S> void Subtract<S>::iadjoint(CMap const &y, Map &x) const
-{
+{ // Perform gymnastics to save memory
   auto const time = this->startAdjoint(y, x, true);
+  x.device(Threads::CoreDevice()) = -x;
+  b->iadjoint(y, x);
+  x.device(Threads::CoreDevice()) = -x;
   a->iadjoint(y, x);
-  Map tm(temp.data(), temp.rows());
-  b->adjoint(y, tm);
-  x.device(Threads::CoreDevice()) -= tm;
   this->finishAdjoint(x, time, true);
 }
 

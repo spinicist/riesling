@@ -10,6 +10,8 @@ struct Grad final : TOp<Cx, ND, ND + 1>
   TOP_INHERIT(Cx, ND, ND + 1)
   Grad(InDims const ishape, std::vector<Index> const &gradDims, int const order);
   TOP_DECLARE(Grad)
+  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const &y, InMap &x) const;
 
 private:
   std::vector<Index> dims_;

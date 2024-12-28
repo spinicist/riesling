@@ -145,7 +145,6 @@ template <typename Scalar = Cx> struct Subtract final : Op<Scalar>
   void iadjoint(CMap const &y, Map &x) const;
 private:
   std::shared_ptr<Op<Scalar>> a, b;
-  Vector mutable temp;
 };
 
 } // namespace rl::Ops
