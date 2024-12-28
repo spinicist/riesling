@@ -82,47 +82,43 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     for (Index ir = 0; ir < R; ir++) {
       float nFx, nz, nu, nP, nD;
       if (regs[ir].T) {
-        Vector Fx(u[ir].size()), Fxpu(u[ir].size()), zprev(z[ir].size());
+        Vector Fx(u[ir].size()), zprev(z[ir].size());
         regs[ir].T->forward(x, Fx);
-        Fxpu.device(dev) = Fx + u[ir];
+        u[ir].device(dev) = Fx + u[ir];
         zprev.device(dev) = z[ir];
-        regs[ir].P->apply(1.f / ρ, Fxpu, z[ir]);
-        u[ir].device(dev) = Fxpu - z[ir];
+        regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
+        u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-        nFx = ParallelNorm(Fx);
         nz = ParallelNorm(z[ir]);
         nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
         nP = ParallelNorm(Fx - z[ir]);
         nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
       } else {
-        Vector xpu(x.size()), zprev(x.size());
-        xpu.device(dev) = x + u[ir];
+        Vector zprev(x.size());
+        u[ir].device(dev) += x;
         zprev.device(dev) = z[ir];
-        regs[ir].P->apply(1.f / ρ, xpu, z[ir]);
-        u[ir].device(dev) = xpu - z[ir];
+        regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
+        u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, x, z[ir], u[ir]); }
-        nFx = ParallelNorm(x);
         nz = ParallelNorm(z[ir]);
         nu = ParallelNorm(u[ir]);
         nP = ParallelNorm(x - z[ir]);
         nD = ParallelNorm(z[ir] - zprev);
       }
-      normFx += nFx * nFx;
       normz += nz * nz;
       normu += nu * nu;
       pRes += nP * nP;
       dRes += nD * nD;
-      Log::Print("ADMM", "Reg {:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E}", ir, nFx, nz, nu);
+      Log::Print("ADMM", "Reg {:02d} |z| {:3.2E} |F'u| {:3.2E}", ir, nz, nu);
     }
     float const normx = ParallelNorm(x);
-    normFx = std::sqrt(normFx);
     normz = std::sqrt(normz);
     normu = std::sqrt(normu);
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM", "{:02d} |x| {:3.2E} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}", io,
-               normx, normFx, normz, normu, ρ, pRes, dRes);
+    Log::Print("ADMM", "{:02d} |x| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}", io,
+               normx, normz, normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");
