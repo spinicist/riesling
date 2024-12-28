@@ -44,8 +44,6 @@ void main_denoise(args::Subparser &parser)
              nullptr};
     xm = ext_x->forward(opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get()));
   }
-  HD5::Writer writer(oname.Get());
-  writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Data, x.dimensions(), x.data(), HD5::Dims::Image);
+  WriteOutput(cmd, oname.Get(), x, HD5::Dims::Image, input.readInfo());
   Log::Print(cmd, "Finished");
 }
