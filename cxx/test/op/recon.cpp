@@ -45,10 +45,10 @@ TEST_CASE("Recon-Basic", "[recon]")
   // Super loose tolerance
   // INFO("ks\n" << ks);
   // INFO("img\n" << img);
-  CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-1f));
+  CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-1f));
   ks = recon.forward(img);
   // INFO("ks\n" << ks);
-  CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-1f));
+  CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }
 
 TEST_CASE("Recon-Lowmem", "[recon]")
@@ -78,8 +78,8 @@ TEST_CASE("Recon-Lowmem", "[recon]")
   // Super loose tolerance
   INFO("ks\n" << ks);
   INFO("img\n" << img);
-  CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-1f));
+  CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-1f));
   ks = recon->forward(img);
   INFO("ks\n" << ks);
-  CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-1f));
+  CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }

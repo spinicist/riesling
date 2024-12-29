@@ -48,17 +48,21 @@ template <typename T> typename T::Scalar Maximum(T const &a)
   return m();
 }
 
-template <typename T, typename U> inline decltype(auto) Dot(T const &a, U const &b)
+template <bool threads, typename T, typename U> inline decltype(auto) Dot(T const &a, U const &b)
 {
   using Scalar = typename std::remove_reference<T>::type::Scalar;
   Eigen::TensorFixedSize<Scalar, Eigen::Sizes<>> d0;
-  d0.device(rl::Threads::TensorDevice()) = (a * b.conjugate()).sum();
+  if constexpr (threads) {
+    d0.device(rl::Threads::TensorDevice()) = (a * b.conjugate()).sum();
+  } else {
+    d0 = (a * b.conjugate()).sum();
+  }
   Scalar const d = d0();
   return d;
 }
 
-template <typename T> inline decltype(auto) Norm2(T const &a) { return std::real(Dot(a, a)); }
-template <typename T> inline decltype(auto) Norm(T const &a) { return std::sqrt(Norm2(a)); }
+template <bool threads, typename T> inline decltype(auto) Norm2(T const &a) { return std::real(Dot<threads>(a, a)); }
+template <bool threads, typename T> inline decltype(auto) Norm(T const &a) { return std::sqrt(Norm2<threads>(a)); }
 
 template <int D, typename T, typename U> inline decltype(auto) DimDot(T const &x, U const &y)
 {

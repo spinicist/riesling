@@ -17,11 +17,11 @@ struct RegOpts
 
   args::ValueFlag<int>   diffOrder;
   args::ValueFlag<float> tv;
-  args::ValueFlag<float> tvl2;
+  args::ValueFlag<float> itv;
   args::ValueFlag<float> tvt;
 
   args::ValueFlag<float> tgv;
-  args::ValueFlag<float> tgvl2;
+  args::ValueFlag<float> itgv;
 
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;

@@ -16,11 +16,11 @@ RegOpts::RegOpts(args::Subparser &parser)
 
   , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
   , tv(parser, "TV", "Total Variation", {"tv"})
-  , tvl2(parser, "TV-L2", "Total Variation with L2 norm across b", {"tvl2"})
+  , itv(parser, "ITV", "Isotropic Total Variation", {"itv"})
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
-  , tgvl2(parser, "TGV-L2", "TGV with L2 norm across b", {"tgvl2"})
+  , itgv(parser, "ITGV", "Isotropic TGV", {"itgv"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
   , llrPatch(parser, "S", "Patch size for LLR (default 5)", {"llr-patch"}, 5)
@@ -54,15 +54,15 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     return {regs, A, ext_x};
   }
 
-  if (opts.tgvl2) {
+  if (opts.itgv) {
     auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
     auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<Proxs::L2>(opts.tgvl2.Get(), op1->rows(), shape[0]);
+    auto prox1 = std::make_shared<Proxs::L2<6, 2>>(opts.itgv.Get(), grad_x->oshape, Sz2{0, 5});
     auto grad_v = std::make_shared<TOps::GradVec<6>>(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<Proxs::L2>(opts.tgvl2.Get(), op2->rows(), shape[0]);
+    auto prox2 = std::make_shared<Proxs::L2<6, 2>>(opts.itgv.Get(), grad_v->oshape, Sz2{0, 5});
     regs.push_back({op1, prox1, grad_x->oshape});
     regs.push_back({op2, prox2, grad_v->oshape});
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
@@ -97,9 +97,9 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     regs.push_back({grad, prox, grad->oshape});
   }
 
-  if (opts.tvl2) {
+  if (opts.itv) {
     auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto prox = std::make_shared<Proxs::L2>(opts.tvl2.Get(), grad->rows(), shape[0]);
+    auto prox = std::make_shared<Proxs::L2<6, 2>>(opts.itv.Get(), grad->oshape, Sz2{0, 5});
     regs.push_back({grad, prox, grad->oshape});
   }
 

@@ -44,9 +44,9 @@ TEST_CASE("IO", "[io]")
 
     CHECK_NOTHROW(reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 0}}));
     auto const check0 = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 0}});
-    CHECK(Norm(check0 - refData.chip<4>(0)) == Approx(0.f).margin(1.e-9));
+    CHECK(Norm<false>(check0 - refData.chip<4>(0)) == Approx(0.f).margin(1.e-9));
     auto const check1 = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, 1}});
-    CHECK(Norm(check1 - refData.chip<4>(1)) == Approx(0.f).margin(1.e-9));
+    CHECK(Norm<false>(check1 - refData.chip<4>(1)) == Approx(0.f).margin(1.e-9));
     std::filesystem::remove(fname);
   }
 

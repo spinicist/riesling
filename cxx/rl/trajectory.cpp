@@ -211,7 +211,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, Index const fullResTraces,
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {
       Re1 p = points_.template chip<2>(it).template chip<1>(is);
-      if ((corners && B0((p.abs() <= thresh).all())()) || Norm(p / thresh) <= 1.f) {
+      if ((corners && B0((p.abs() <= thresh).all())()) || Norm<false>(p / thresh) <= 1.f) {
         dsPoints.chip<2>(it).chip<1>(is) = p;
         for (int ii = 0; ii < 3; ii++) {
           p(ii) /= ratios(ii);

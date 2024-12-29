@@ -122,7 +122,7 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
   auto const mapshape = chan.dimensions();
   Log::Print("SENSE", "Map shape {}", mapshape);
   // Need various scaling factors
-  float const nref = Norm(ref);
+  float const nref = Norm<true>(ref);
   float const median = Percentiles(OtsuMask(CollapseToArray(ref).abs()), {0.5}).front();
   Cx4 const   w = (ref / Cx(median) + Cx(1.f)).log();
   // Weighted Least Squares
@@ -192,7 +192,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Sz5 const   cshape = AddFront(osshape, schan.dimension(0), schan.dimension(1));
   Sz4 const   rshape = AddFront(osshape, nomRef.dimension(0));
 
-  float const scale = Norm(nomRef);
+  float const scale = Norm<true>(nomRef);
   Cx5 const   channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(scale);
   Cx4 const   ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(scale);
 

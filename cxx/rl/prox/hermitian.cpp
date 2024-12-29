@@ -32,7 +32,7 @@ void Hermitian::apply(float const α, CMap const &xin, Map &zin) const
   u.slice(Sz5{0, 0, 1, 1, 1}, sz) = (x.slice(Sz5{0, 0, 1, 1, 1}, sz) + x.slice(Sz5{0, 0, 1, 1, 1}, sz).reverse(Eigen::array<bool, 5>{false, false, true, true, true}).conjugate()) / x.constant(2.f);
   for (Index ii = 0; ii < u.dimension(0); ii++) {
     auto uc = u.chip<0>(ii);
-    auto const normuc = Norm(uc);
+    auto const normuc = Norm<true>(uc);
     if (normuc > t) {
       uc = uc * uc.constant(1.f - t / normuc);
     } else {
@@ -41,7 +41,7 @@ void Hermitian::apply(float const α, CMap const &xin, Map &zin) const
   }
   // z = F.adjoint(u);
   z = u;
-  Log::Debug("Prox", "Hermitian α {} λ {} t {} |x| {} |z| {}", α, λ, t, Norm(x), Norm(z));
+  Log::Debug("Prox", "Hermitian α {} λ {} t {} |x| {} |z| {}", α, λ, t, Norm<true>(x), Norm<true>(z));
 }
 
 } // namespace rl::Proxs

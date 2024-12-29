@@ -170,7 +170,7 @@ void main_basis_svd(args::Subparser &parser)
   Eigen::MatrixXcf::MapType pmap(proj.data(), dshape[0], L);
   Eigen::MatrixXcf          temp = bmap.conjugate() * dmap.transpose();
   pmap = (bmap.transpose() * temp).transpose();
-  auto resid = Norm(dall - proj) / Norm(dall);
+  auto resid = Norm<true>(dall - proj) / Norm<true>(dall);
   Log::Print(cmd, "Residual {}%", 100 * resid);
 
   bmap *= std::sqrt(L); // This is the correct scaling during the recon

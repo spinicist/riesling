@@ -31,7 +31,7 @@ TEMPLATE_TEST_CASE("1D-ExpSemi", "[kernels]", (rl::Kernel<float, 1, rl::ExpSemi<
   p.setConstant(0.f);
   auto const k0 = kernel(p);
   INFO("W" << TestType::Width << " β " << kernel.f.β << " k0 " << rl::Transpose(k0));
-  CHECK(rl::Norm(k0) == Approx(1.f).margin(1.e-9));
+  CHECK(rl::Norm<false>(k0) == Approx(1.f).margin(1.e-9));
   CHECK(k0(0) < 1.e-2f);
   CHECK(k0(0) == Approx(k0(TestType::PadWidth - 1)).margin(1.e-5));
 
@@ -49,7 +49,7 @@ TEMPLATE_TEST_CASE("2D-ExpSemi", "[kernels]", (rl::Kernel<float, 2, rl::ExpSemi<
   p.setConstant(0.f);
   auto const k0 = kernel(p);
   INFO(k0);
-  CHECK(rl::Norm(k0) == Approx(1.f).margin(1.e-9));
+  CHECK(rl::Norm<false>(k0) == Approx(1.f).margin(1.e-9));
   CHECK(k0(0, 0) == Approx(k0(TestType::PadWidth - 1, TestType::PadWidth - 1)).margin(1.e-5));
   p.setConstant(0.5f);
   auto const k1 = kernel(p);
@@ -65,7 +65,7 @@ TEMPLATE_TEST_CASE("3D-ExpSemi", "[kernels]", (rl::Kernel<float, 3, rl::ExpSemi<
   p.setConstant(0.f);
   auto const k0 = kernel(p);
   INFO(k0);
-  CHECK(rl::Norm(k0) == Approx(1.f).margin(1.e-9));
+  CHECK(rl::Norm<false>(k0) == Approx(1.f).margin(1.e-9));
   CHECK(k0(0, 0, 0) == Approx(k0(TestType::PadWidth - 1, TestType::PadWidth - 1, TestType::PadWidth - 1)).margin(1.e-5));
   p.setConstant(0.5f);
   auto const k1 = kernel(p);

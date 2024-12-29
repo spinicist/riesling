@@ -25,7 +25,7 @@ TEST_CASE("Wavelets", "[tform]")
 
     INFO("y\n" << y);
     INFO("xx\n" << xx);
-    CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
+    CHECK(Norm<false>(x - xx) == Approx(0).margin(1.e-6f));
   }
 
   SECTION("2D")
@@ -42,7 +42,7 @@ TEST_CASE("Wavelets", "[tform]")
 
     INFO("y\n" << y);
     INFO("xx\n" << xx);
-    CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
+    CHECK(Norm<false>(x - xx) == Approx(0).margin(1.e-6f));
   }
 
   SECTION("3D")
@@ -59,6 +59,6 @@ TEST_CASE("Wavelets", "[tform]")
 
     INFO("y\n" << y);
     INFO("xx\n" << xx);
-    CHECK(Norm(x - xx) == Approx(0).margin(1.e-6f));
+    CHECK(Norm<false>(x - xx) == Approx(0).margin(1.e-6f));
   }
 }

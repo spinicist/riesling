@@ -11,18 +11,24 @@ struct L1 final : Prox<Cx>
 
   L1(float const λ, Index const sz);
   void apply(float const α, CMap const &x, Map &z) const;
-  void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
+  // void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
 };
 
+template<int O, int D>
 struct L2 final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
   float λ;
   Index blockSize;
 
-  L2(float const λ, Index const sz, Index const blk);
+  L2(float const λ, Sz<O> const &shape, Sz<D> const &dims);
   void apply(float const α, CMap const &x, Map &z) const;
-  void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
+  // void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
+
+private:
+  Sz<O> shape;
+  Sz<D> normDims;
+  Sz<O - D> otherDims;
 };
 
 } // namespace rl::Proxs

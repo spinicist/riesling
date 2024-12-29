@@ -15,10 +15,10 @@ inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim)
   fp1[dim] = 1;
   sz[dim] -= 1;
   if constexpr (fwd) {
-    Log::Debug("Grad", "Forward forward differences dim {} |x| {:3.2E}", dim, Norm(a));
+    Log::Debug("Grad", "Forward forward differences dim {}", dim, dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz));
   } else {
-    Log::Debug("Grad", "Adjoint forward differences dim {} |x| {:3.2E}", dim, Norm(a));
+    Log::Debug("Grad", "Adjoint forward differences dim {}", dim, dim);
     b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz));
   }
 }
@@ -31,10 +31,10 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim)
   fp1[dim] = 1;
   sz[dim] -= 1;
   if constexpr (fwd) {
-    Log::Debug("Grad", "Forward backward differences dim {} |x| {:3.2E}", dim, Norm(a));
+    Log::Debug("Grad", "Forward backward differences dim {}", dim);
     b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz));
   } else {
-    Log::Debug("Grad", "Adjoint backward differences dim {} |x| {:3.2E}", dim, Norm(a));
+    Log::Debug("Grad", "Adjoint backward differences dim {}", dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz));
   }
 }
@@ -49,10 +49,10 @@ inline auto CentralDiff0(T1 const &a, T2 &&b, SzT const dims, Index const dim)
   f0[dim] = 1;
   sz[dim] -= 2;
   if constexpr (fwd) {
-    Log::Debug("Grad", "Forward central differences dim {} |x| {:3.2E}", dim, Norm(a));
+    Log::Debug("Grad", "Forward central differences dim {}", dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(fm1, sz)) / b.slice(f0, sz).constant(2.f);
   } else {
-    Log::Debug("Grad", "Adjoint central differences dim {} |x| {:3.2E}", dim, Norm(a));
+    Log::Debug("Grad", "Adjoint central differences dim {}", dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fm1, sz) - a.slice(fp1, sz)) / b.slice(f0, sz).constant(2.f);
   }
 }

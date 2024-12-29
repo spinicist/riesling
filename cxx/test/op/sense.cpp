@@ -28,8 +28,8 @@ TEST_CASE("SENSE", "[SENSE]")
     y = sense.forward(u);
     x = sense.adjoint(v);
 
-    auto const yy = Dot(y, v);
-    auto const xx = Dot(u, x);
+    auto const yy = Dot<false>(y, v);
+    auto const xx = Dot<false>(u, x);
     CHECK(std::abs((yy - xx) / (yy + xx + 1.e-15f)) == Approx(0).margin(1.e-6));
   }
 }

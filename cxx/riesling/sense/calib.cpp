@@ -37,8 +37,8 @@ void main_sense_calib(args::Subparser &parser)
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
     ref = SENSE::LoresChannels(senseArgs.Get(), gridOpts.Get(), refTraj, refNoncart, basis.get()).chip<0>(0);
     // Normalize energy
-    channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm(channels));
-    ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm(ref));
+    channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm<true>(channels));
+    ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm<true>(ref));
   } else {
     ref = DimDot<1>(channels, channels).sqrt();
   }

@@ -37,10 +37,10 @@ TEST_CASE("Grid-Basic", "[grid]")
   INFO("noncart\n" << noncart);
   INFO("cart\n" << cart);
   auto const cs = std::sqrt(cart.size());
-  CHECK((Norm(cart) - Norm(noncart)) / cs == Approx(0.f).margin(2e-4f));
+  CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
   noncart = grid->forward(cart);
   INFO("noncart\n" << noncart);
-  CHECK((Norm(cart) - Norm(noncart)) / cs == Approx(0.f).margin(2e-4f));
+  CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 
 TEST_CASE("Grid-Basis-Sample", "[grid]")
@@ -87,7 +87,7 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   CHECK(cart(1, 0, 5).real() == Approx(1.f).margin(1e-2f));
   Cx3 nc2 = grid->forward(cart);
   INFO("NC\n" << nc2);
-  CHECK(Norm(nc2 - noncart) == Approx(0.f).margin(1e-2f));
+  CHECK(Norm<false>(nc2 - noncart) == Approx(0.f).margin(1e-2f));
 }
 
 TEST_CASE("GridVCC", "[grid]")
@@ -109,7 +109,7 @@ TEST_CASE("GridVCC", "[grid]")
   noncart.setConstant(Cx(0.f, 1.f));
   cart = grid->adjoint(noncart);
   INFO("M " << M << " cart" << '\n' << cart);
-  CHECK(Norm(cart) == Approx(Norm(noncart)).margin(1e-2f));
+  CHECK(Norm<false>(cart) == Approx(Norm<false>(noncart)).margin(1e-2f));
   CHECK(cart(0, 0, M / 2).real() == Approx(0.f).margin(1e-6f));
   CHECK(cart(0, 0, M / 2).imag() == Approx(inv_sqrt2).margin(1e-6f));
   CHECK(cart(0, 1, M / 2).real() == Approx(0.f).margin(1e-6f));
@@ -126,7 +126,7 @@ TEST_CASE("GridVCC", "[grid]")
   }
   noncart = grid->forward(cart);
   INFO("noncart" << '\n' << noncart);
-  CHECK(Norm(noncart) == Approx(Norm(cart)).margin(1e-2f));
+  CHECK(Norm<false>(noncart) == Approx(Norm<false>(cart)).margin(1e-2f));
   for (Index ii = 0; ii < M / 2; ii++) {
     CHECK(noncart(0, ii, 0).real() == Approx(0.f).margin(1e-6f));
     CHECK(noncart(0, ii, 0).imag() == Approx(1.f).margin(1e-6f));

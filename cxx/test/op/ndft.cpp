@@ -26,10 +26,10 @@ TEST_CASE("NDFT", "[tform]")
   ks = ndft.forward(img);
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
-  CHECK(Norm(ks) == Approx(Norm(img)).margin(2.e-2f));
+  CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-2f));
   img = ndft.adjoint(ks);
   INFO("IMG\n" << img);
-  CHECK(Norm(img) == Approx(Norm(ks)).margin(2.e-2f));
+  CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-2f));
 }
 
 TEST_CASE("NDFT Basis", "[tform]")

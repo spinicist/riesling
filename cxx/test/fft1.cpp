@@ -22,11 +22,11 @@ TEST_CASE("FFT1", "[FFT]")
     INFO("Ref " << ref << "\nData " << data);
     FFT::Forward(data);
     INFO("Ref " << ref << "\nData " << data);
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<false>(data - ref) == Approx(0.f).margin(1.e-3f));
     FFT::Adjoint(data);
     INFO("Ref " << ref << "\nData " << data);
     ref.setConstant(1.f);
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<false>(data - ref) == Approx(0.f).margin(1.e-3f));
   }
 
   SECTION("Spatial Impulse Left")
@@ -40,14 +40,14 @@ TEST_CASE("FFT1", "[FFT]")
     INFO("Before " << data);
     FFT::Forward(data);
     INFO("After  " << data << "\nRef    " << ref << "\n");
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<false>(data - ref) == Approx(0.f).margin(1.e-3f));
 
     INFO("Before " << data);
     FFT::Adjoint(data);
     INFO("After  " << data << "\nRef    " << ref << "\n");
     ref.setZero();
     ref(0) = sqrt(N); // Parseval's theorem
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<false>(data - ref) == Approx(0.f).margin(1.e-3f));
   }
 
   SECTION("Spatial Impulse Mid")
@@ -58,13 +58,13 @@ TEST_CASE("FFT1", "[FFT]")
     INFO("Before " << data);
     FFT::Forward(data);
     INFO("After  " << data << "\nRef    " << ref << "\n");
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<false>(data - ref) == Approx(0.f).margin(1.e-3f));
 
     INFO("Before " << data);
     FFT::Adjoint(data);
     INFO("After  " << data << "\nRef    " << ref << "\n");
     ref.setZero();
     ref(N / 2) = sqrt(N); // Parseval's theorem
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<false>(data - ref) == Approx(0.f).margin(1.e-3f));
   }
 }

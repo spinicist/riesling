@@ -37,7 +37,7 @@ template <int NK> void SLR<NK>::apply(float const α, CMap const &xin, Map &zin)
   kMat = (svd.U * s.asDiagonal() * svd.V.adjoint());
   tmp = H.adjoint(k);
   z = F.adjoint(tmp);
-  Log::Print("Prox", "SLR α {} λ {} t {} |x| {} |z| {} Retained {}/{}", α, λ, thresh, Norm(x), Norm(z),
+  Log::Print("Prox", "SLR α {} λ {} t {} |x| {} |z| {} Retained {}/{}", α, λ, thresh, Norm<true>(x), Norm<true>(z),
              (svd.S.abs() > thresh).count(), svd.S.rows());
 }
 

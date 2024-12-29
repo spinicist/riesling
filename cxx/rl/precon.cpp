@@ -37,7 +37,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &tra
     std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
   weights.device(Threads::TensorDevice()) = (1.f + λ) / ((weights * scale) + λ);
 
-  float const norm = Norm(weights);
+  float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
     Log::Print("Precon", "Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
@@ -81,7 +81,7 @@ auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Traj
   auto padXC = TOps::Pad<Cx, 5>(smap1Shape, xcor1Shape);
   Cx5  smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
   for (Index si = 0; si < nC; si++) {
-    float const ni = Norm2(smaps.chip<1>(si));
+    float const ni = Norm2<true>(smaps.chip<1>(si));
     xcor1.setZero();
     for (Index sj = 0; sj < nC; sj++) {
       // Log::Print("Precon", "Cross-correlation channel {}-{}", si, sj);
@@ -101,7 +101,7 @@ auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Traj
     weights.slice(Sz3{si, 0, 0}, Sz3{1, nSamp, nTrace}).device(Threads::TensorDevice()) =
       (1.f + λ) / (nufft.forward(xcor).abs() * scale / ni + λ);
   }
-  float const norm = Norm(weights);
+  float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
     Log::Print("Precon", "Pre-conditioner norm was not finite ({})", norm);
   } else {

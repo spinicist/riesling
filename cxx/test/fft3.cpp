@@ -27,12 +27,12 @@ TEST_CASE("FFT3", "[FFT]")
     data(sx / 2, sy / 2, sz / 2) = sqrt(N); // Parseval's theorem
     FFT::Adjoint(data);
     INFO("data\n" << data << "\nref\n" << ref);
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<true>(data - ref) == Approx(0.f).margin(1.e-3f));
     FFT::Forward(data);
     ref.setZero();
     ref(sx / 2, sy / 2, sz / 2) = sqrt(N);
     INFO("data\n" << data << "\nref\n" << ref);
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-3f));
+    CHECK(Norm<true>(data - ref) == Approx(0.f).margin(1.e-3f));
   }
 
   auto        nc = GENERATE(1, 2, 4);
@@ -48,10 +48,10 @@ TEST_CASE("FFT3", "[FFT]")
     data.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
     FFT::Forward(data, Sz3{2, 3, 4});
     INFO("data\n" << data << "\nref\n" << ref);
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
+    CHECK(Norm<true>(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
     FFT::Adjoint(data, Sz3{2, 3, 4});
     ref.setZero();
     ref.chip(sz / 2, 4).chip(sy / 2, 3).chip(sx / 2, 2).setConstant(sqrt(N));
-    CHECK(Norm(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
+    CHECK(Norm<true>(data - ref) == Approx(0.f).margin(1.e-6f * N * nc));
   }
 }
