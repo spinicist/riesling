@@ -30,26 +30,6 @@ void L1::apply(float const α, CMap const &x, Map &z) const
   }
 }
 
-// void L1::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
-// {
-//   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
-//     float t = λ * realα->scale;
-//     Threads::ChunkFor(
-//       [t, &x, &z](Index lo, Index hi) {
-//         for (Index ii = lo; ii < hi; ii++) {
-//           float const ax = std::abs(x[ii]);
-//           z[ii] = ax < t ? 0.f : (1.f - t / ax) * x[ii];
-//         }
-//       },
-//       x.size());
-//     if (Log::CurrentLevel() == Log::Level::Debug) {
-//       Log::Debug("Prox", "Soft Threshold λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
-//     }
-//   } else {
-//     throw Log::Failure("Prox", "C++ is stupid");
-//   }
-// }
-
 template <int O, int D>
 L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> const &d)
   : Prox<Cx>(Product(s))
@@ -86,7 +66,7 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap const &x, Map 
         auto       zblk = zm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
         auto const norm = Norm<false>(xblk);
         if (norm > t) {
-          zblk = xblk * xblk.constant(1.f - t / n);
+          zblk = xblk * xblk.constant(1.f - t / norm);
         } else {
           zblk.setZero();
         }
@@ -97,31 +77,6 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap const &x, Map 
     Log::Debug("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
-
-// void L2::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
-// {
-//   if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
-//     float      t = λ * realα->scale;
-//     auto const blks = x.rows() / blockSize;
-//     Threads::ChunkFor(
-//       [&](Index lo, Index hi) {
-//         for (Index ib = lo; ib < hi; ib++) {
-//           auto const n = PairwiseNorm(x.segment(ib * blockSize, blockSize));
-//           if (n > t) {
-//             z.segment(ib * blockSize, blockSize) = x.segment(ib * blockSize, blockSize) * (1.f - t / n);
-//           } else {
-//             z.segment(ib * blockSize, blockSize).setZero();
-//           }
-//         }
-//       },
-//       blks);
-//     if (Log::CurrentLevel() == Log::Level::Debug) {
-//       Log::Debug("Prox", "L2 Prox λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
-//     }
-//   } else {
-//     throw Log::Failure("Prox", "C++ is stupid");
-//   }
-// }
 
 template struct L2<6, 2>;
 
