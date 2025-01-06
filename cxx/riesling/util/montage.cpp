@@ -150,13 +150,14 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
 {
   std::vector<rl::RGBImage> colorized;
   for (auto const &slice : slices) {
+    float const sliceWin = win < 0.f ? 0.9f * rl::Maximum(slice.abs()) : win;
     rl::RGBImage clr;
     switch (component) {
     case 'p': clr = rl::ColorizePhase(slice / slice.abs().cast<rl::Cx>(), 1.f, 1.f); break;
-    case 'x': clr = rl::ColorizeComplex(slice, win / 2.f, ɣ); break;
-    case 'r': clr = rl::ColorizeReal(slice.real(), win, ɣ); break;
-    case 'i': clr = rl::ColorizeReal(slice.imag(), win, ɣ); break;
-    case 'm': clr = rl::Greyscale(slice.abs(), 0, win, ɣ); break;
+    case 'x': clr = rl::ColorizeComplex(slice, sliceWin / 2.f, ɣ); break;
+    case 'r': clr = rl::ColorizeReal(slice.real(), sliceWin, ɣ); break;
+    case 'i': clr = rl::ColorizeReal(slice.imag(), sliceWin, ɣ); break;
+    case 'm': clr = rl::Greyscale(slice.abs(), 0, sliceWin, ɣ); break;
     default: throw rl::Log::Failure("montage", "Uknown component type {}", component);
     }
     colorized.push_back(clr);
