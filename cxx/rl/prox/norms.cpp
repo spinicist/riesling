@@ -78,6 +78,7 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap const &x, Map 
   }
 }
 
+template struct L2<6, 1>;
 template struct L2<6, 2>;
 
 } // namespace rl::Proxs

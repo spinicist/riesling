@@ -20,6 +20,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
+  , ctgv(parser, "CTGV", "Color TGV", {"ctgv"})
   , itgv(parser, "ITGV", "Isotropic TGV", {"itgv"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
@@ -54,15 +55,30 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     return {regs, A, ext_x};
   }
 
+  if (opts.ctgv) {
+    auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
+    auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
+    auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
+    auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
+    auto prox1 = std::make_shared<Proxs::L2<6, 1>>(opts.ctgv.Get(), grad_x->oshape, Sz1{0});
+    auto grad_v = std::make_shared<TOps::GradVec<6>>(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
+    auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
+    auto prox2 = std::make_shared<Proxs::L2<6, 1>>(opts.ctgv.Get(), grad_v->oshape, Sz1{0});
+    regs.push_back({op1, prox1, grad_x->oshape});
+    regs.push_back({op2, prox2, grad_v->oshape});
+    A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
+    return {regs, A, ext_x};
+  }
+
   if (opts.itgv) {
     auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
     auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<Proxs::L2<6, 2>>(opts.itgv.Get(), grad_x->oshape, Sz2{0, 5});
+    auto prox1 = std::make_shared<Proxs::L2<6, 1>>(opts.itgv.Get(), grad_x->oshape, Sz1{5});
     auto grad_v = std::make_shared<TOps::GradVec<6>>(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
     auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<Proxs::L2<6, 2>>(opts.itgv.Get(), grad_v->oshape, Sz2{0, 5});
+    auto prox2 = std::make_shared<Proxs::L2<6, 1>>(opts.itgv.Get(), grad_v->oshape, Sz1{5});
     regs.push_back({op1, prox1, grad_x->oshape});
     regs.push_back({op2, prox2, grad_v->oshape});
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
