@@ -47,6 +47,7 @@ RlsqOpts::RlsqOpts(args::Subparser &parser)
   , balance(parser, "B", "Use Wohlberg's residual balancing scheme", {"balance"})
   , μ(parser, "μ", "Residual balancing tolerance (default 1.2)", {"mu"}, 1.2f)
   , τ(parser, "τ", "Residual balancing ratio limit (default 10)", {"tau"}, 10.f)
+  , ɑ(parser, "ɑ", "Over-relaxation parameter (choose 1<ɑ<2)", {"alpha"}, 0.f)
 {
 }
 

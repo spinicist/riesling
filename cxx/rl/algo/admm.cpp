@@ -81,11 +81,16 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
     for (Index ir = 0; ir < R; ir++) {
       float nFx, nz, nu, nP, nD;
+      Vector zprev(z[ir].size());
+      zprev.device(dev) = z[ir];
       if (regs[ir].T) {
-        Vector Fx(u[ir].size()), zprev(z[ir].size());
+        Vector Fx(u[ir].size());
         regs[ir].T->forward(x, Fx);
-        u[ir].device(dev) = Fx + u[ir];
-        zprev.device(dev) = z[ir];
+        if (ɑ > 0.f) {
+          u[ir].device(dev) += ɑ * Fx + (1.f - ɑ) * zprev;
+        } else {
+          u[ir].device(dev) += Fx;
+        }
         regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
         u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
@@ -94,9 +99,11 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         nP = ParallelNorm(Fx - z[ir]);
         nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
       } else {
-        Vector zprev(x.size());
-        u[ir].device(dev) += x;
-        zprev.device(dev) = z[ir];
+        if (ɑ > 0.f) {
+          u[ir].device(dev) += ɑ * x + (1.f - ɑ) * zprev;
+        } else {
+          u[ir].device(dev) += x;
+        }
         regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
         u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, x, z[ir], u[ir]); }
@@ -117,8 +124,8 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     pRes = std::sqrt(pRes) / std::max(normFx, normz);
     dRes = std::sqrt(dRes) / normu;
 
-    Log::Print("ADMM", "{:02d} |x| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}", io,
-               normx, normz, normu, ρ, pRes, dRes);
+    Log::Print("ADMM", "{:02d} |x| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}", io, normx, normz,
+               normu, ρ, pRes, dRes);
 
     if ((pRes < ε) && (dRes < ε)) {
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");

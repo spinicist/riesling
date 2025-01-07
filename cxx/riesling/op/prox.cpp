@@ -28,10 +28,10 @@ void main_prox(args::Subparser &parser)
   for (Index ir = 0; ir < regs.size(); ir++) {
     auto const Fx = regs[ir].T->forward(xx);
     auto const z = regs[ir].P->apply(1.f / ρ.Get(), Fx);
-    if (std::holds_alternative<Sz5>(regs[ir].size)) {
-      output.writeTensor(fmt::format("prox{:02d}", ir), std::get<Sz5>(regs[ir].size), z.data(), HD5::Dims::Image);
-    } else if (std::holds_alternative<Sz6>(regs[ir].size)) {
-      output.writeTensor(fmt::format("prox{:02d}", ir), std::get<Sz6>(regs[ir].size), z.data(),
+    if (std::holds_alternative<Sz5>(regs[ir].shape)) {
+      output.writeTensor(fmt::format("prox{:02d}", ir), std::get<Sz5>(regs[ir].shape), z.data(), HD5::Dims::Image);
+    } else if (std::holds_alternative<Sz6>(regs[ir].shape)) {
+      output.writeTensor(fmt::format("prox{:02d}", ir), std::get<Sz6>(regs[ir].shape), z.data(),
                          {"b", "i", "j", "k", "t", "g"});
     }
   }

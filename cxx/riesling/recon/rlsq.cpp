@@ -47,11 +47,17 @@ void main_recon_rlsq(args::Subparser &parser)
   ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
                                                     ADMM::Vector const &z, ADMM::Vector const &u) {
     if (debugZ && (ii % di == 0)) {
-      if (std::holds_alternative<Sz5>(reg[ir].size)) {
-        auto const Fshape = std::get<Sz5>(reg[ir].size);
+      if (std::holds_alternative<Sz5>(reg[ir].shape)) {
+        auto const Fshape = std::get<Sz5>(reg[ir].shape);
         Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Image);
         Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Image);
         Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Image);
+      }
+      if (std::holds_alternative<Sz6>(reg[ir].shape)) {
+        auto const Fshape = std::get<Sz6>(reg[ir].shape);
+        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), {"b", "i", "j", "k", "t", "g"});
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), {"b", "i", "j", "k", "t", "g"});
+        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), {"b", "i", "j", "k", "t", "g"});
       }
     }
   };
@@ -69,6 +75,7 @@ void main_recon_rlsq(args::Subparser &parser)
            rlsqOpts.balance.Get(),
            rlsqOpts.μ.Get(),
            rlsqOpts.τ.Get(),
+           rlsqOpts.ɑ.Get(),
            debug_x,
            debug_z};
 

@@ -108,6 +108,8 @@ struct RlsqOpts
   args::Flag             balance;
   args::ValueFlag<float> μ;
   args::ValueFlag<float> τ;
+
+  args::ValueFlag<float> ɑ;
 };
 
 struct SENSEArgs

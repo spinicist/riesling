@@ -19,18 +19,20 @@ struct ADMM
 
   std::vector<Regularizer> regs;
 
-  Index iters0 = 4;
-  Index iters1 = 1;
-  float aTol = 1.e-6f;
+  Index iters0 = 4;    // Number of inner iterations on first outer iteration
+  Index iters1 = 1;    // Number of inner iterations on subsequent outer iterations
+  float aTol = 1.e-6f; // LSMR tolerance parameters
   float bTol = 1.e-6f;
   float cTol = 1.e-6f;
 
-  Index outerLimit;
-  float ε;
+  Index outerLimit;    // Number of outer iterations
+  float ε;             // Combined primal/dual tolerance parameter
 
-  bool balance;
-  float μ;
+  bool balance;        // Apply residual balancing scheme
+  float μ;             // Residual balancing parameters
   float τmax;
+
+  float ɑ = 0.f;       // Over-relaxation parameter, set 1 < ɑ < 2
 
   DebugX debug_x = nullptr;
   DebugZ debug_z = nullptr;
