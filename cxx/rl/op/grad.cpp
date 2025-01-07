@@ -198,7 +198,7 @@ template <int ND> void GradVec<ND>::forward(InCMap const &x, OutMap &y) const
         CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij]);
         break;
       }
-      y.template chip<ND - 1>(yind) /= y.template chip<ND - 1>(yind).constant(2.f);
+      y.template chip<ND - 1>(yind) /= y.template chip<ND - 1>(yind).constant(std::sqrt(2.f));
       yind++;
     }
   }
@@ -216,7 +216,6 @@ template <int ND> void GradVec<ND>::adjoint(OutCMap const &y, InMap &x) const
   Index yind = dims_.size();
   for (Index ii = 0; ii < dims_.size(); ii++) {
     switch (mode_) {
-
     case 0: BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
     case 1: ForwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
     case 2: CentralDiff0<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
@@ -243,6 +242,9 @@ template <int ND> void GradVec<ND>::adjoint(OutCMap const &y, InMap &x) const
       }
       yind++;
     }
+  }
+  for (Index ii = 0; ii < dims_.size(); ii++) {
+    x.template chip<ND - 1>(ii) /= x.template chip<ND - 1>(ii).constant(std::sqrt(2.f));
   }
   this->finishAdjoint(x, time, false);
 }
