@@ -104,6 +104,8 @@ struct RlsqOpts
   args::ValueFlag<Index> outer_its;
   args::ValueFlag<float> ρ;
   args::ValueFlag<float> ε;
+
+  args::Flag             balance;
   args::ValueFlag<float> μ;
   args::ValueFlag<float> τ;
 };

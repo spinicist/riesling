@@ -124,7 +124,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");
       break;
     }
-    if (io > 0) {
+    if (balance && io > 0) {
       // ADMM Penalty Parameter Selection by Residual Balancing, Wohlberg 2017
       float const ratio = std::sqrt(pRes / dRes);
       float const τ = (ratio < 1.f) ? std::max(1.f / τmax, 1.f / ratio) : std::min(τmax, ratio);

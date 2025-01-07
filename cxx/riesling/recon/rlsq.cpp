@@ -21,7 +21,7 @@ void main_recon_rlsq(args::Subparser &parser)
   SENSEArgs              senseArgs(parser);
   RlsqOpts               rlsqOpts(parser);
   RegOpts                regOpts(parser);
-  args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (10)", {"debug-iters"}, 10);
+  args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag             debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
@@ -66,6 +66,7 @@ void main_recon_rlsq(args::Subparser &parser)
            rlsqOpts.ctol.Get(),
            rlsqOpts.outer_its.Get(),
            rlsqOpts.ε.Get(),
+           rlsqOpts.balance.Get(),
            rlsqOpts.μ.Get(),
            rlsqOpts.τ.Get(),
            debug_x,

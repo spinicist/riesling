@@ -27,6 +27,8 @@ struct ADMM
 
   Index outerLimit;
   float ε;
+
+  bool balance;
   float μ;
   float τmax;
 

@@ -44,8 +44,9 @@ RlsqOpts::RlsqOpts(args::Subparser &parser)
   , outer_its(parser, "ITS", "ADMM max iterations (20)", {"max-outer-its"}, 20)
   , ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f)
   , ε(parser, "ε", "ADMM convergence tolerance (1e-2)", {"eps"}, 1.e-2f)
-  , μ(parser, "μ", "ADMM residual rescaling tolerance (default 1.2)", {"mu"}, 1.2f)
-  , τ(parser, "τ", "ADMM residual rescaling maximum (default 10)", {"tau"}, 10.f)
+  , balance(parser, "B", "Use Wohlberg's residual balancing scheme", {"balance"})
+  , μ(parser, "μ", "Residual balancing tolerance (default 1.2)", {"mu"}, 1.2f)
+  , τ(parser, "τ", "Residual balancing ratio limit (default 10)", {"tau"}, 10.f)
 {
 }
 
