@@ -162,12 +162,4 @@ template <typename S> auto Op<S>::operator+(S const) const -> std::shared_ptr<Op
 template struct Op<float>;
 template struct Op<Cx>;
 
-template <typename S> auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr
-{
-  return std::make_shared<Ops::Multiply<S>>(a, b);
-}
-
-template auto Mul<float>(typename Op<float>::Ptr a, typename Op<float>::Ptr b) -> typename Op<float>::Ptr;
-template auto Mul<Cx>(typename Op<Cx>::Ptr a, typename Op<Cx>::Ptr b) -> typename Op<Cx>::Ptr;
-
 } // namespace rl::Ops

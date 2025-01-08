@@ -89,6 +89,11 @@ Grad<ND>::Grad(InDims const ish, std::vector<Index> const &d, int const o)
   }
 }
 
+template <int ND>
+auto Grad<ND>::Make(InDims const ish, std::vector<Index> const &d, int const o) -> std::shared_ptr<Grad> {
+  return std::make_shared<Grad>(ish, d, o);
+}
+
 template <int ND> void Grad<ND>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
@@ -161,6 +166,11 @@ GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> const &dims, int co
   if (mode_ < 0 || mode_ > 3) {
     throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_));
   }
+}
+
+template <int ND>
+auto GradVec<ND>::Make(InDims const ish, std::vector<Index> const &d, int const o) -> std::shared_ptr<GradVec> {
+  return std::make_shared<GradVec>(ish, d, o);
 }
 
 template <int ND> void GradVec<ND>::forward(InCMap const &x, OutMap &y) const

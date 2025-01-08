@@ -17,12 +17,9 @@ struct RegOpts
 
   args::ValueFlag<int>   diffOrder;
   args::ValueFlag<float> tv;
-  args::ValueFlag<float> itv;
-  args::ValueFlag<float> tvt;
-
   args::ValueFlag<float> tgv;
-  args::ValueFlag<float> ctgv;
-  args::ValueFlag<float> itgv;
+  args::ValueFlag<std::string> iso;
+  args::ValueFlag<float> tvt;
 
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;

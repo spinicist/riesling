@@ -76,6 +76,10 @@ private:
   Vector mutable temp;
 };
 
+// Returns an Op representing A * B
+template <typename S = Cx>
+auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr;
+
 //! Vertically stack operators, i.e. A = [B; C]
 template <typename Scalar = Cx> struct VStack final : Op<Scalar>
 {
@@ -146,5 +150,9 @@ template <typename Scalar = Cx> struct Subtract final : Op<Scalar>
 private:
   std::shared_ptr<Op<Scalar>> a, b;
 };
+
+// Returns an Op representing A - B
+template <typename S = Cx>
+auto Sub(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr;
 
 } // namespace rl::Ops

@@ -287,6 +287,15 @@ template <typename S> void Multiply<S>::iadjoint(CMap const &y, Map &x) const
 template struct Multiply<float>;
 template struct Multiply<Cx>;
 
+template <typename S> auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr
+{
+  return std::make_shared<Ops::Multiply<S>>(a, b);
+}
+
+template auto Mul<float>(typename Op<float>::Ptr a, typename Op<float>::Ptr b) -> typename Op<float>::Ptr;
+template auto Mul<Cx>(typename Op<Cx>::Ptr a, typename Op<Cx>::Ptr b) -> typename Op<Cx>::Ptr;
+
+
 template <typename S>
 VStack<S>::VStack(std::vector<std::shared_ptr<Op<S>>> const &o)
   : Op<S>{"VStack"}
@@ -697,5 +706,14 @@ template <typename S> void Subtract<S>::iadjoint(CMap const &y, Map &x) const
 
 template struct Subtract<float>;
 template struct Subtract<Cx>;
+
+template <typename S> auto Sub(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr
+{
+  return std::make_shared<Ops::Subtract<S>>(a, b);
+}
+
+template auto Sub<float>(typename Op<float>::Ptr a, typename Op<float>::Ptr b) -> typename Op<float>::Ptr;
+template auto Sub<Cx>(typename Op<Cx>::Ptr a, typename Op<Cx>::Ptr b) -> typename Op<Cx>::Ptr;
+
 
 } // namespace rl::Ops

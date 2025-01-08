@@ -16,12 +16,9 @@ RegOpts::RegOpts(args::Subparser &parser)
 
   , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
   , tv(parser, "TV", "Total Variation", {"tv"})
-  , itv(parser, "ITV", "Isotropic Total Variation", {"itv"})
-  , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
-
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
-  , ctgv(parser, "CTGV", "Color TGV", {"ctgv"})
-  , itgv(parser, "ITGV", "Isotropic TGV", {"itgv"})
+  , iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
+  , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
   , llrPatch(parser, "S", "Patch size for LLR (default 5)", {"llr-patch"}, 5)
@@ -41,48 +38,62 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   std::vector<Regularizer> regs;
 
   if (opts.tgv) {
-    auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
+    auto grad_x = TOps::Grad<5>::Make(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
     auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
-    auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<Proxs::L1>(opts.tgv.Get(), op1->rows());
-    auto grad_v = std::make_shared<TOps::GradVec<6>>(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<Proxs::L1>(opts.tgv.Get(), op2->rows());
-    regs.push_back({op1, prox1, grad_x->oshape});
-    regs.push_back({op2, prox2, grad_v->oshape});
+    auto op1 = Ops::Sub(Ops::Mul(grad_x, ext_x), ext_v);
+
+    auto grad_v = TOps::GradVec<6>::Make(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
+    auto op2 = Ops::Mul(grad_v, ext_v);
+
+    Proxs::Prox<Cx>::Ptr prox_x, prox_v;
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{0});
+        prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{0});
+      } else if (opts.iso.Get() == "g") {
+        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{5});
+        prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{5});
+      } else if (opts.iso.Get() == "bg") {
+        prox_x = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_x->oshape, Sz2{0, 5});
+        prox_v = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_v->oshape, Sz2{0, 5});
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      prox_x = std::make_shared<Proxs::L1>(opts.tgv.Get(), op1->rows());
+      prox_v = std::make_shared<Proxs::L1>(opts.tgv.Get(), op2->rows());
+    }
+    regs.push_back({op1, prox_x, grad_x->oshape});
+    regs.push_back({op2, prox_v, grad_v->oshape});
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
     return {regs, A, ext_x};
   }
 
-  if (opts.ctgv) {
-    auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
-    auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
-    auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<Proxs::L2<6, 1>>(opts.ctgv.Get(), grad_x->oshape, Sz1{0});
-    auto grad_v = std::make_shared<TOps::GradVec<6>>(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<Proxs::L2<6, 1>>(opts.ctgv.Get(), grad_v->oshape, Sz1{0});
-    regs.push_back({op1, prox1, grad_x->oshape});
-    regs.push_back({op2, prox2, grad_v->oshape});
-    A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
-    return {regs, A, ext_x};
+  if (opts.tv) {
+    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
+
+    Proxs::Prox<Cx>::Ptr prox;
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{0});
+      } else if (opts.iso.Get() == "g") {
+        prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{5});
+      } else if (opts.iso.Get() == "bg") {
+        prox = std::make_shared<Proxs::L2<6, 2>>(opts.tv.Get(), grad->oshape, Sz2{0, 5});
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      prox = std::make_shared<Proxs::L1>(opts.tv.Get(), grad->rows());
+    }
+    regs.push_back({grad, prox, grad->oshape});
   }
 
-  if (opts.itgv) {
-    auto grad_x = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
-    auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
-    auto op1 = std::make_shared<Ops::Subtract<Cx>>(std::make_shared<Ops::Multiply<Cx>>(grad_x, ext_x), ext_v);
-    auto prox1 = std::make_shared<Proxs::L2<6, 1>>(opts.itgv.Get(), grad_x->oshape, Sz1{5});
-    auto grad_v = std::make_shared<TOps::GradVec<6>>(grad_x->oshape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto op2 = std::make_shared<Ops::Multiply<Cx>>(grad_v, ext_v);
-    auto prox2 = std::make_shared<Proxs::L2<6, 1>>(opts.itgv.Get(), grad_v->oshape, Sz1{5});
-    regs.push_back({op1, prox1, grad_x->oshape});
-    regs.push_back({op2, prox2, grad_v->oshape});
-    A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
-    return {regs, A, ext_x};
+  if (opts.tvt) {
+    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0}, opts.diffOrder.Get());
+    auto prox = std::make_shared<Proxs::L1>(opts.tvt.Get(), grad->rows());
+    regs.push_back({grad, prox, grad->oshape});
   }
 
   if (opts.wavelets) {
@@ -105,24 +116,6 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   if (opts.nmrent) {
     auto p = std::make_shared<Proxs::NMREntropy>(opts.nmrent.Get(), A->cols());
     regs.push_back({nullptr, p, shape});
-  }
-
-  if (opts.tv) {
-    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto prox = std::make_shared<Proxs::L1>(opts.tv.Get(), grad->rows());
-    regs.push_back({grad, prox, grad->oshape});
-  }
-
-  if (opts.itv) {
-    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{1, 2, 3}, opts.diffOrder.Get());
-    auto prox = std::make_shared<Proxs::L2<6, 2>>(opts.itv.Get(), grad->oshape, Sz2{0, 5});
-    regs.push_back({grad, prox, grad->oshape});
-  }
-
-  if (opts.tvt) {
-    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0}, opts.diffOrder.Get());
-    auto prox = std::make_shared<Proxs::L1>(opts.tvt.Get(), grad->rows());
-    regs.push_back({grad, prox, grad->oshape});
   }
 
   if (regs.size() == 0) { throw Log::Failure("Reg", "Must specify at least one regularizer"); }
