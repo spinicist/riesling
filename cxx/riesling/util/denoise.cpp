@@ -67,7 +67,7 @@ void main_denoise(args::Subparser &parser)
              rlsqOpts.ctol.Get(),
              rlsqOpts.outer_its.Get(),
              rlsqOpts.ε.Get(),
-             rlsqOpts.balance.Get(),
+             !rlsqOpts.ρ,
              rlsqOpts.μ.Get(),
              rlsqOpts.τ.Get(),
              rlsqOpts.ɑ.Get(),
