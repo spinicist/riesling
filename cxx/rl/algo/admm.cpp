@@ -87,6 +87,10 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         Vector Fx(u[ir].size());
         regs[ir].T->forward(x, Fx);
         if (ɑ > 0.f) {
+          // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c)
+          // but this comes from the constraint that Ax + Bz = c
+          // Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign becomes a plus in this line
+          // below, which matches the code examples on Boyd's website
           u[ir].device(dev) += ɑ * Fx + (1.f - ɑ) * zprev;
         } else {
           u[ir].device(dev) += Fx;
