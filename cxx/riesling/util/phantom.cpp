@@ -26,7 +26,6 @@ Trajectory CreateTrajectory(Index const matrix,
                             float const readOS,
                             Index const spokes,
                             Index const sps,
-                            float const nex,
                             bool const  phyllo)
 {
   Log::Print("Phan", "Using {} hi-res spokes", spokes);
@@ -55,14 +54,13 @@ void main_phantom(args::Subparser &parser)
   args::ValueFlag<float> readOS(parser, "S", "Read-out oversampling (2)", {'r', "read"}, 2);
   args::ValueFlag<Index> spokes(parser, "S", "Spokes", {"spokes"}, 2048);
   args::ValueFlag<Index> sps(parser, "S", "Spokes per segment", {"sps"}, 256);
-  args::ValueFlag<float> nex(parser, "N", "NEX (Spoke sampling rate)", {'n', "nex"}, 1);
   args::ValueFlag<float> snr(parser, "SNR", "Add noise (specified as SNR)", {'n', "snr"}, 0);
 
   ParseCommand(parser, iname);
   auto const       cmd = parser.GetCommand().Name();
   Trajectory const traj =
     trajfile ? LoadTrajectory(trajfile.Get())
-             : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), nex.Get(), phyllo);
+             : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), phyllo);
   Info const  info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
                    .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
                    .direction = Eigen::Matrix3f::Identity(),
