@@ -5,11 +5,11 @@
 #include "rl/log.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/phantom/gradcubes.hpp"
+#include "rl/phantom/radial.hpp"
 #include "rl/phantom/shepp-logan.hpp"
 #include "rl/sense/sense.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/tensors.hpp"
-#include "rl/traj_spirals.hpp"
 #include "rl/types.hpp"
 
 using namespace rl;
@@ -21,15 +21,11 @@ Trajectory LoadTrajectory(std::string const &file)
   return Trajectory(reader, reader.readInfo().voxel_size);
 }
 
-Trajectory CreateTrajectory(Index const matrix,
-                            float const voxSz,
-                            float const readOS,
-                            Index const spokes,
-                            Index const sps,
-                            bool const  phyllo)
+Trajectory CreateTrajectory(
+  Index const matrix, float const voxSz, float const readOS, Index const spokes, Index const sps, bool const phyllo)
 {
   Log::Print("Phan", "Using {} hi-res spokes", spokes);
-  auto points = phyllo ? Phyllotaxis(matrix, readOS, spokes, 7, sps, true) : ArchimedeanSpiral(matrix, readOS, spokes);
+  auto points = phyllo ? Phyllotaxis(matrix, readOS, spokes, 7, sps) : ArchimedeanSpiral(matrix, readOS, spokes);
   Log::Print("Phan", "Samples: {} Traces: {}", points.dimension(1), points.dimension(2));
   return Trajectory(points, Sz3{matrix, matrix, matrix}, Eigen::Array3f::Constant(voxSz));
 }
@@ -58,14 +54,14 @@ void main_phantom(args::Subparser &parser)
 
   ParseCommand(parser, iname);
   auto const       cmd = parser.GetCommand().Name();
-  Trajectory const traj =
-    trajfile ? LoadTrajectory(trajfile.Get())
-             : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), phyllo);
-  Info const  info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
-                   .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
-                   .direction = Eigen::Matrix3f::Identity(),
-                   .tr = 1.f};
-  HD5::Writer writer(iname.Get());
+  Trajectory const traj = trajfile
+                            ? LoadTrajectory(trajfile.Get())
+                            : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), phyllo);
+  Info const       info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
+                        .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
+                        .direction = Eigen::Matrix3f::Identity(),
+                        .tr = 1.f};
+  HD5::Writer      writer(iname.Get());
   writer.writeInfo(info);
   traj.write(writer);
 

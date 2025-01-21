@@ -3,7 +3,7 @@
 #include "rl/op/grid.hpp"
 #include "rl/info.hpp"
 #include "rl/log.hpp"
-#include "rl/traj_spirals.hpp"
+#include "rl/phantom/radial.hpp"
 
 #include <catch2/benchmark/catch_benchmark_all.hpp>
 #include <catch2/catch_test_macros.hpp>

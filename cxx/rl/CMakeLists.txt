@@ -20,7 +20,6 @@ patches.cpp
 precon.cpp
 scaling.cpp
 trajectory.cpp
-traj_spirals.cpp
 
 algo/admm.cpp
 algo/bidiag.cpp
@@ -77,6 +76,7 @@ op/wavelets.cpp
 phantom/gradcubes.cpp
 phantom/sphere.cpp
 phantom/shepp-logan.cpp
+phantom/radial.cpp
 
 prox/entropy.cpp
 prox/hermitian.cpp
@@ -118,7 +118,6 @@ precon.hpp
 scaling.hpp
 tensors.hpp
 trajectory.hpp
-traj_spirals.hpp
 
 algo/admm.hpp
 algo/bidiag.hpp

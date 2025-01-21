@@ -1,7 +1,7 @@
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
+#include "rl/phantom/radial.hpp"
 #include "rl/tensors.hpp"
-#include "rl/traj_spirals.hpp"
 #include "rl/trajectory.hpp"
 
 #include <filesystem>
