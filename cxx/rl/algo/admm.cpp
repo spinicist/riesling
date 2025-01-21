@@ -80,17 +80,16 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
     for (Index ir = 0; ir < R; ir++) {
-      float nFx, nz, nu, nP, nD;
+      float  nz, nu, nP, nD;
       Vector zprev(z[ir].size());
       zprev.device(dev) = z[ir];
+      // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c) but this comes from the
+      // constraint that Ax + Bz = c Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign
+      // becomes a plus in this line below, which matches the code examples on Boyd's website
       if (regs[ir].T) {
         Vector Fx(u[ir].size());
         regs[ir].T->forward(x, Fx);
         if (ɑ > 0.f) {
-          // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c)
-          // but this comes from the constraint that Ax + Bz = c
-          // Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign becomes a plus in this line
-          // below, which matches the code examples on Boyd's website
           u[ir].device(dev) += ɑ * Fx + (1.f - ɑ) * zprev;
         } else {
           u[ir].device(dev) += Fx;
@@ -98,10 +97,12 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
         u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
+        float const nFx = ParallelNorm(Fx);
         nz = ParallelNorm(z[ir]);
         nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
         nP = ParallelNorm(Fx - z[ir]);
         nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
+        Log::Print("ADMM", "Reg {:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E}", ir, nFx, nz, nu);
       } else {
         if (ɑ > 0.f) {
           u[ir].device(dev) += ɑ * x + (1.f - ɑ) * zprev;
@@ -115,12 +116,12 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         nu = ParallelNorm(u[ir]);
         nP = ParallelNorm(x - z[ir]);
         nD = ParallelNorm(z[ir] - zprev);
+        Log::Print("ADMM", "Reg {:02d} |z| {:3.2E} |F'u| {:3.2E}", ir, nz, nu);
       }
       normz += nz * nz;
       normu += nu * nu;
       pRes += nP * nP;
       dRes += nD * nD;
-      Log::Print("ADMM", "Reg {:02d} |z| {:3.2E} |F'u| {:3.2E}", ir, nz, nu);
     }
     float const normx = ParallelNorm(x);
     normz = std::sqrt(normz);
