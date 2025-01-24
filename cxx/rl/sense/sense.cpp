@@ -147,7 +147,7 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
   m = (A->forward(A->adjoint(m)).array().abs() + 1.e-3f).inverse();
   auto Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
 
-  LSMR solve{A, Minv, nullptr, LSMR::Opts{.aTol = 1e-6f, .imax = 256}};
+  LSMR solve{A, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-6f}};
   auto const s = solve.run(cʹ);
   Cx5        maps = AsTensorMap(s, mapshape);
   return maps.shuffle(Sz5{1, 0, 2, 3, 4});
@@ -237,7 +237,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     cʹ.head(MSFP->rows()) = M->forward(c);
     cʹ.tail(L->rows()).setZero();
 
-    LSMR solve{A, Minv, nullptr, LSMR::Opts{.aTol = 1e-4f, .imax = 256}};
+    LSMR solve{A, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
     auto const kʹ = solve.run(cʹ);
 
     kernels = AsTensorMap(kʹ, kshape);
@@ -249,7 +249,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     auto                Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
     Ops::Op<Cx>::CMap   c(channels.data(), MSFP->rows());
     Ops::Op<Cx>::Vector cʹ = M->forward(c);
-    LSMR                solve{MSFP, Minv, nullptr, LSMR::Opts{.aTol = 1e-4f, .imax = 256}};
+    LSMR                solve{MSFP, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
     auto const k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
