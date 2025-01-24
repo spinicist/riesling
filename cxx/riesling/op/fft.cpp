@@ -21,6 +21,17 @@ void main_fft(args::Subparser &parser)
   writer.writeInfo(input.readInfo());
   auto const order = input.order();
   switch (order) {
+  case 4: {
+    Cx4        images = input.readTensor<Cx4>();
+    auto const fft = TOps::FFT<4, 3>(FirstN<4>(images.dimensions()));
+    if (adj) {
+      images = fft.adjoint(images);
+    } else {
+      images = fft.forward(images);
+    }
+    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), {"b", "i", "j", "k"});
+  } break;
+
   case 5: {
     Cx5        images = input.readTensor<Cx5>();
     auto const fft = TOps::FFT<4, 3>(FirstN<4>(images.dimensions()));
@@ -50,6 +61,7 @@ void main_fft(args::Subparser &parser)
     }
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Channels);
   } break;
+  default: Log::Warn(cmd, "No valid dataset to transform");
   }
   rl::Log::Print(cmd, "Finished");
 }
