@@ -4,6 +4,7 @@
 #include "rl/algo/admm.hpp"
 #include "rl/log.hpp"
 #include "rl/op/top.hpp"
+#include "rl/scaling.hpp"
 
 using namespace rl;
 
@@ -12,6 +13,7 @@ void main_denoise(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   ADMMArgs                      admmArgs(parser);
+  args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
   args::ValueFlag<Index>        debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                    debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   RegOpts                       regOpts(parser);
@@ -21,7 +23,9 @@ void main_denoise(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5         in = input.readTensor<Cx5>();
-  auto        A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
+  float const scale = ScaleImages(scaling.Get(), in);
+  if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
+  auto A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
   auto [regs, B, ext_x] = Regularizers(regOpts, A);
   Cx5  x(in.dimensions());
   auto xm = CollapseToVector(x);
@@ -60,6 +64,7 @@ void main_denoise(args::Subparser &parser)
     ADMM opt{B, nullptr, regs, admmArgs.Get(), debug_x, debug_z};
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   }
+  if (scale != 1.f) { x.device(Threads::TensorDevice()) = x / Cx(scale); }
   WriteOutput(cmd, oname.Get(), x, HD5::Dims::Image, input.readInfo());
   Log::Print(cmd, "Finished");
 }

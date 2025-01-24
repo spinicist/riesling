@@ -38,7 +38,7 @@ void main_recon_rlsq(args::Subparser &parser)
   auto const  R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
   auto const  shape = R.A->ishape;
   float const scale = ScaleData(scaling.Get(), R.A, R.M, CollapseToVector(noncart));
-
+  if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart * Cx(scale); }
   auto [reg, A, ext_x] = Regularizers(regOpts, R.A);
 
   ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
@@ -66,7 +66,7 @@ void main_recon_rlsq(args::Subparser &parser)
   ADMM opt{A, R.M, reg, admmArgs.Get(), debug_x, debug_z};
 
   auto x = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(noncart))) : opt.run(CollapseToConstVector(noncart));
-  UnscaleData(scale, x);
+  if (scale != 1.f) { x.device(Threads::CoreDevice()) = x / Cx(scale); }
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), shape[0], shape[4]), R.A->ishape);
