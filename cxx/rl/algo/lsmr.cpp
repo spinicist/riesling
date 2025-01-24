@@ -1,9 +1,9 @@
 #include "lsmr.hpp"
 
+#include "../log.hpp"
 #include "bidiag.hpp"
 #include "common.hpp"
 #include "iter.hpp"
-#include "../log.hpp"
 
 namespace rl {
 
@@ -144,7 +144,7 @@ auto LSMR::run(CMap const b, CMap x0) const -> Vector
     if (Iterating::ShouldStop("LSMR")) { break; }
   }
   Iterating::Finished();
-    return x;
+  return x;
 }
 
 } // namespace rl

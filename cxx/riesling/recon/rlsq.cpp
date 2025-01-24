@@ -14,16 +14,17 @@ using namespace rl;
 
 void main_recon_rlsq(args::Subparser &parser)
 {
-  CoreArgs               coreArgs(parser);
-  GridArgs<3>            gridArgs(parser);
-  PreconArgs             preArgs(parser);
-  ReconArgs              reconArgs(parser);
-  SENSEArgs              senseArgs(parser);
-  RlsqOpts               rlsqOpts(parser);
-  RegOpts                regOpts(parser);
-  args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
-  args::Flag             debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
-  ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  CoreArgs                     coreArgs(parser);
+  GridArgs<3>                  gridArgs(parser);
+  PreconArgs                   preArgs(parser);
+  ReconArgs                    reconArgs(parser);
+  SENSEArgs                    senseArgs(parser);
+  ADMMArgs                     admmArgs(parser);
+  RegOpts                      regOpts(parser);
+  args::ValueFlag<std::string> scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
+  args::ValueFlag<Index>       debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
+  args::Flag                   debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
+  ArrayFlag<float, 3>          cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -36,7 +37,7 @@ void main_recon_rlsq(args::Subparser &parser)
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   auto const  R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
   auto const  shape = R.A->ishape;
-  float const scale = ScaleData(rlsqOpts.scaling.Get(), R.A, R.M, CollapseToVector(noncart));
+  float const scale = ScaleData(scaling.Get(), R.A, R.M, CollapseToVector(noncart));
 
   auto [reg, A, ext_x] = Regularizers(regOpts, R.A);
 
@@ -62,25 +63,9 @@ void main_recon_rlsq(args::Subparser &parser)
     }
   };
 
-  ADMM opt{A,
-           R.M,
-           reg,
-           rlsqOpts.inner_its0.Get(),
-           rlsqOpts.inner_its1.Get(),
-           rlsqOpts.atol.Get(),
-           rlsqOpts.btol.Get(),
-           rlsqOpts.ctol.Get(),
-           rlsqOpts.outer_its.Get(),
-           rlsqOpts.ε.Get(),
-           !rlsqOpts.ρ,
-           rlsqOpts.μ.Get(),
-           rlsqOpts.τ.Get(),
-           rlsqOpts.ɑ.Get(),
-           debug_x,
-           debug_z};
+  ADMM opt{A, R.M, reg, admmArgs.Get(), debug_x, debug_z};
 
-  auto x = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get()))
-                 : opt.run(CollapseToConstVector(noncart), rlsqOpts.ρ.Get());
+  auto x = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(noncart))) : opt.run(CollapseToConstVector(noncart));
   UnscaleData(scale, x);
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 

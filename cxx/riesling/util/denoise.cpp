@@ -11,7 +11,7 @@ void main_denoise(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
-  RlsqOpts                      rlsqOpts(parser);
+  ADMMArgs                      admmArgs(parser);
   args::ValueFlag<Index>        debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                    debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   RegOpts                       regOpts(parser);
@@ -28,7 +28,7 @@ void main_denoise(args::Subparser &parser)
   if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
     // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
     // be the identity operator
-    regs[0].P->apply(1.f / rlsqOpts.ρ.Get(), CollapseToConstVector(in), xm);
+    regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
   } else {
     ADMM::DebugX debug_x = [shape = x.dimensions(), ext_x, di = debugIters.Get()](Index const ii, ADMM::Vector const &xi) {
       if (ii % di == 0) {
@@ -57,24 +57,8 @@ void main_denoise(args::Subparser &parser)
         }
       }
     };
-    ADMM opt{B,
-             nullptr,
-             regs,
-             rlsqOpts.inner_its0.Get(),
-             rlsqOpts.inner_its1.Get(),
-             rlsqOpts.atol.Get(),
-             rlsqOpts.btol.Get(),
-             rlsqOpts.ctol.Get(),
-             rlsqOpts.outer_its.Get(),
-             rlsqOpts.ε.Get(),
-             !rlsqOpts.ρ,
-             rlsqOpts.μ.Get(),
-             rlsqOpts.τ.Get(),
-             rlsqOpts.ɑ.Get(),
-             debug_x,
-             debug_z};
-    xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get()))
-               : opt.run(CollapseToConstVector(in), rlsqOpts.ρ.Get());
+    ADMM opt{B, nullptr, regs, admmArgs.Get(), debug_x, debug_z};
+    xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   }
   WriteOutput(cmd, oname.Get(), x, HD5::Dims::Image, input.readInfo());
   Log::Print(cmd, "Finished");

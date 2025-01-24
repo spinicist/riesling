@@ -2,6 +2,7 @@
 
 #include "args.hpp"
 
+#include "rl/algo/admm.hpp"
 #include "rl/algo/lsmr.hpp"
 #include "rl/op/grid.hpp"
 #include "rl/op/recon.hpp"
@@ -67,18 +68,17 @@ struct LSMRArgs
   auto                   Get() -> rl::LSMR::Opts;
 };
 
-struct RlsqOpts
+struct ADMMArgs
 {
-  RlsqOpts(args::Subparser &parser);
-  args::ValueFlag<std::string> scaling;
+  ADMMArgs(args::Subparser &parser);
 
-  args::ValueFlag<Index> inner_its0;
-  args::ValueFlag<Index> inner_its1;
+  args::ValueFlag<Index> in_its0;
+  args::ValueFlag<Index> in_its1;
   args::ValueFlag<float> atol;
   args::ValueFlag<float> btol;
   args::ValueFlag<float> ctol;
 
-  args::ValueFlag<Index> outer_its;
+  args::ValueFlag<Index> out_its;
   args::ValueFlag<float> ρ;
   args::ValueFlag<float> ε;
 
@@ -86,6 +86,8 @@ struct RlsqOpts
   args::ValueFlag<float> τ;
 
   args::ValueFlag<float> ɑ;
+
+  auto Get() -> rl::ADMM::Opts;
 };
 
 struct SENSEArgs

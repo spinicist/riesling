@@ -9,9 +9,9 @@
 
 namespace rl {
 
-auto ADMM::run(Vector const &b, float const ρ) const -> Vector { return run(CMap{b.data(), b.rows()}, ρ); }
+auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
-auto ADMM::run(CMap const b, float ρ) const -> Vector
+auto ADMM::run(CMap const b) const -> Vector
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
    * For the least squares part we are solving:
@@ -34,6 +34,8 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   std::vector<Vector>                              z(R), u(R);
   std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
   std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
+
+  float ρ = opts.ρ;
   for (Index ir = 0; ir < R; ir++) {
     Index const sz = regs[ir].T ? regs[ir].T->rows() : A->cols();
     z[ir].resize(sz);
@@ -55,7 +57,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     std::shared_ptr<Op> I = std::make_shared<Ops::Identity<Cx>>(reg->rows());
     Minvʹ = std::make_shared<Ops::DStack<Cx>>(Minv, I);
   }
-  LSMR lsmr{Aʹ, Minvʹ, nullptr, iters0, aTol, bTol, cTol};
+  LSMR lsmr{Aʹ, Minvʹ, nullptr, LSMR::Opts{opts.iters0, opts.aTol, opts.bTol, opts.cTol}};
 
   Vector x(A->cols());
   x.setZero();
@@ -64,9 +66,9 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
   bʹ.setZero();
   bʹ.head(A->rows()).device(dev) = b;
 
-  Log::Print("ADMM", "Abs ε {}", ε);
+  Log::Print("ADMM", "Abs ε {}", opts.ε);
   Iterating::Starting();
-  for (Index io = 0; io < outerLimit; io++) {
+  for (Index io = 0; io < opts.outerLimit; io++) {
     Index start = A->rows();
     for (Index ir = 0; ir < R; ir++) {
       Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
@@ -75,7 +77,7 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       ρdiags[ir]->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ, x);
-    lsmr.opts.imax = iters1;
+    lsmr.opts.imax = opts.iters1;
     if (debug_x) { debug_x(io, x); }
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
@@ -89,8 +91,8 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       if (regs[ir].T) {
         Vector Fx(u[ir].size());
         regs[ir].T->forward(x, Fx);
-        if (ɑ > 0.f) {
-          u[ir].device(dev) += ɑ * Fx + (1.f - ɑ) * zprev;
+        if (opts.ɑ > 0.f) {
+          u[ir].device(dev) += opts.ɑ * Fx + (1.f - opts.ɑ) * zprev;
         } else {
           u[ir].device(dev) += Fx;
         }
@@ -104,8 +106,8 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
         nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
         Log::Print("ADMM", "Reg {:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E}", ir, nFx, nz, nu);
       } else {
-        if (ɑ > 0.f) {
-          u[ir].device(dev) += ɑ * x + (1.f - ɑ) * zprev;
+        if (opts.ɑ > 0.f) {
+          u[ir].device(dev) += opts.ɑ * x + (1.f - opts.ɑ) * zprev;
         } else {
           u[ir].device(dev) += x;
         }
@@ -132,20 +134,20 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
     Log::Print("ADMM", "{:02d} |x| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}", io, normx, normz,
                normu, ρ, pRes, dRes);
 
-    if ((pRes < ε) && (dRes < ε)) {
+    if ((pRes < opts.ε) && (dRes < opts.ε)) {
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");
       break;
     }
-    if (balance && io > 0) {
+    if (opts.balance && io > 0) {
       // ADMM Penalty Parameter Selection by Residual Balancing, Wohlberg 2017
       float const ratio = std::sqrt(pRes / dRes);
-      float const τ = (ratio < 1.f) ? std::max(1.f / τmax, 1.f / ratio) : std::min(τmax, ratio);
-      if (pRes > μ * dRes) {
+      float const τ = (ratio < 1.f) ? std::max(1.f / opts.τmax, 1.f / ratio) : std::min(opts.τmax, ratio);
+      if (pRes > opts.μ * dRes) {
         ρ *= τ;
         for (Index ir = 0; ir < R; ir++) {
           u[ir].device(dev) = u[ir] / τ;
         }
-      } else if (dRes > μ * pRes) {
+      } else if (dRes > opts.μ * pRes) {
         ρ /= τ;
         for (Index ir = 0; ir < R; ir++) {
           u[ir].device(dev) = u[ir] * τ;
