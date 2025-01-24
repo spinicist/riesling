@@ -17,19 +17,26 @@ struct LSMR
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
+  using DbgFunc = typename std::function<void(Index const iter, Vector const &)>;
+
+  struct Opts
+  {
+    Index imax = 4;
+    float aTol = 1.e-6f;
+    float bTol = 1.e-6f;
+    float cTol = 1.e-6f;
+    float λ = 0.f;
+  };
 
   Op::Ptr A;
   Op::Ptr Minv = nullptr; // Left Pre-conditioner
   Op::Ptr Ninv = nullptr; // Right Pre-conditioner
-  Index   iterLimit = 4;
-  float   aTol = 1.e-6f;
-  float   bTol = 1.e-6f;
-  float   cTol = 1.e-6f;
 
-  std::function<void(Index const iter, Vector const &)> debug = nullptr;
+  Opts    opts;
+  DbgFunc debug = nullptr;
 
-  auto run(Vector const &b, float const λ = 0.f, Vector const &x0 = Vector()) const -> Vector;
-  auto run(CMap const b, float const λ = 0.f, CMap x0 = CMap(nullptr, 0)) const -> Vector;
+  auto run(Vector const &b, Vector const &x0 = Vector()) const -> Vector;
+  auto run(CMap const b, CMap x0 = CMap(nullptr, 0)) const -> Vector;
 };
 
 } // namespace rl

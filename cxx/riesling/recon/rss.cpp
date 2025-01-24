@@ -15,7 +15,7 @@ void main_recon_rss(args::Subparser &parser)
   CoreArgs            coreArgs(parser);
   GridArgs<3>         gridArgs(parser);
   PreconArgs          preArgs(parser);
-  LsqArgs             lsqOpts(parser);
+  LSMRArgs             lsqOpts(parser);
   ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -32,8 +32,8 @@ void main_recon_rss(args::Subparser &parser)
 
   auto const A = TOps::NUFFTAll(gridArgs.Get(), traj, nC, nS, nT, basis.get());
   auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
-  LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
-  auto       x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
+  LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), lsqOpts.λ.Get()};
+  auto       x = lsmr.run(CollapseToConstVector(noncart));
   auto       xm = AsTensorMap(x, A->ishape);
 
   Cx5 const        rss = DimDot<1>(xm, xm).sqrt();

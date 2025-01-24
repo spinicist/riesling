@@ -25,13 +25,53 @@ CoreArgs::CoreArgs(args::Subparser &parser)
 {
 }
 
-LsqArgs::LsqArgs(args::Subparser &parser)
+template <int ND>
+GridArgs<ND>::GridArgs(args::Subparser &parser)
+  : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
+  , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
+  , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
+  , vcc(parser, "V", "Virtual Conjugate Coils", {"vcc"})
+  , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
+{
+}
+
+template <int ND> auto GridArgs<ND>::Get() -> rl::TOps::Grid<ND>::Opts
+{
+  return typename rl::TOps::Grid<ND>::Opts{
+    .fov = fov.Get(), .osamp = osamp.Get(), .ktype = ktype.Get(), .vcc = vcc.Get(), .subgridSize = subgridSize.Get()};
+}
+
+template struct GridArgs<2>;
+template struct GridArgs<3>;
+
+ReconArgs::ReconArgs(args::Subparser &parser)
+  : decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
+  , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
+{
+}
+
+auto ReconArgs::Get() -> rl::Recon::Opts { return rl::Recon::Opts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
+
+PreconArgs::PreconArgs(args::Subparser &parser)
+  : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon"}, "single")
+  , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.e-3f)
+{
+}
+
+auto PreconArgs::Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .λ = λ.Get()}; }
+
+LSMRArgs::LSMRArgs(args::Subparser &parser)
   : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4)
   , atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f)
   , btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f)
   , ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f)
   , λ(parser, "λ", "Tikhonov parameter (default 0)", {"lambda"}, 0.f)
 {
+}
+
+auto LSMRArgs::Get() -> rl::LSMR::Opts
+{
+  return rl::LSMR::Opts{.imax = its.Get(), .aTol = atol.Get(), .bTol = btol.Get(), .cTol = ctol.Get(), .λ = λ.Get()};
 }
 
 RlsqOpts::RlsqOpts(args::Subparser &parser)

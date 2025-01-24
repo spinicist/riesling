@@ -16,7 +16,7 @@ void main_ndft(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LsqArgs     lsqOpts(parser);
+  LSMRArgs     lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);

@@ -17,7 +17,7 @@ void main_psf(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LsqArgs     lsqOpts(parser);
+  LSMRArgs     lsqOpts(parser);
 
   ArrayFlag<float, 2> phases(parser, "P", "Phase accrued at start and end of spoke", {"phases", 'p'});
 

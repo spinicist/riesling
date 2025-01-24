@@ -7,17 +7,17 @@
 
 namespace rl {
 
-auto LSMR::run(Vector const &b, float const λ, Vector const &x0) const -> Vector
+auto LSMR::run(Vector const &b, Vector const &x0) const -> Vector
 {
-  return run(CMap{b.data(), b.rows()}, λ, CMap{x0.data(), x0.rows()});
+  return run(CMap{b.data(), b.rows()}, CMap{x0.data(), x0.rows()});
 }
 
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
-auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
+auto LSMR::run(CMap const b, CMap x0) const -> Vector
 {
-  Log::Print("LSMR", "λ {}", λ);
-  if (iterLimit < 1) { throw Log::Failure("LSMR", "Requires at least 1 iteration"); }
+  Log::Print("LSMR", "λ {}", opts.λ);
+  if (opts.imax < 1) { throw Log::Failure("LSMR", "Requires at least 1 iteration"); }
   Index const rows = A->rows();
   Index const cols = A->cols();
   if (rows < 1 || cols < 1) { throw Log::Failure("LSMR", "Invalid operator size rows {} cols {}", rows, cols); }
@@ -53,16 +53,16 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
   Log::Print("LSMR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
   Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, std::fabs(ζ̅));
   Iterating::Starting();
-  for (Index ii = 0; ii < iterLimit; ii++) {
+  for (Index ii = 0; ii < opts.imax; ii++) {
     bd.next();
 
     float const ρold = ρ;
     float       c, s, ĉ = 1.f, ŝ = 0.f;
-    if (λ == 0.f) {
+    if (opts.λ == 0.f) {
       std::tie(c, s, ρ) = StableGivens(α̅, bd.β);
     } else {
       float α̂;
-      std::tie(ĉ, ŝ, α̂) = StableGivens(α̅, λ);
+      std::tie(ĉ, ŝ, α̂) = StableGivens(α̅, opts.λ);
       std::tie(c, s, ρ) = StableGivens(α̂, bd.β);
     }
     float θnew = s * bd.α;
@@ -119,7 +119,7 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
       Log::Print("LSMR", "Cond(A) is very large");
       break;
     }
-    if ((1.f / condA) <= cTol) {
+    if ((1.f / condA) <= opts.cTol) {
       Log::Print("LSMR", "Cond(A) has exceeded limit");
       break;
     }
@@ -128,12 +128,12 @@ auto LSMR::run(CMap const b, float const λ, CMap x0) const -> Vector
       Log::Print("LSMR", "Least-squares solution reached machine precision");
       break;
     }
-    if ((normAr / (normA * normr)) <= aTol) {
-      Log::Print("LSMR", "Least-squares = {:4.3E} < aTol = {:4.3E}", normAr / (normA * normr), aTol);
+    if ((normAr / (normA * normr)) <= opts.aTol) {
+      Log::Print("LSMR", "Least-squares = {:4.3E} < aTol = {:4.3E}", normAr / (normA * normr), opts.aTol);
       break;
     }
 
-    if (normr <= (bTol * normb + aTol * normA * normx)) {
+    if (normr <= (opts.bTol * normb + opts.aTol * normA * normx)) {
       Log::Print("LSMR", "Ax - b <= aTol, bTol");
       break;
     }

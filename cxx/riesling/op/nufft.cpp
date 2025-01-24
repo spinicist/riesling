@@ -15,7 +15,7 @@ void main_nufft(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LsqArgs     lsqOpts(parser);
+  LSMRArgs     lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operator", {'f', "fwd"});
   args::Flag adj(parser, "", "Apply adjoint operator", {'a', "adj"});

@@ -18,7 +18,7 @@ void main_recon_lsq(args::Subparser &parser)
   PreconArgs             preArgs(parser);
   ReconArgs              reconArgs(parser);
   SENSEArgs              senseArgs(parser);
-  LsqArgs                lsqOpts(parser);
+  LSMRArgs               lsqOpts(parser);
   ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N iterations (1)", {"debug-iters"}, 1);
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -35,9 +35,9 @@ void main_recon_lsq(args::Subparser &parser)
   auto debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
     if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Image); }
   };
-  LSMR lsmr{R.A, R.M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), debug};
+  LSMR lsmr{R.A, R.M, nullptr, lsqOpts.Get(), debug};
 
-  auto const x = lsmr.run(CollapseToConstVector(noncart), lsqOpts.λ.Get());
+  auto const x = lsmr.run(CollapseToConstVector(noncart));
   auto const xm = AsTensorMap(x, R.A->ishape);
 
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), R.A->ishape[0], R.A->ishape[4]), R.A->ishape);

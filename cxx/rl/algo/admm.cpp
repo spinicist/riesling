@@ -74,8 +74,8 @@ auto ADMM::run(CMap const b, float ρ) const -> Vector
       start += rr;
       ρdiags[ir]->scale = std::sqrt(ρ);
     }
-    x = lsmr.run(bʹ, 0.f, x);
-    lsmr.iterLimit = iters1;
+    x = lsmr.run(bʹ, x);
+    lsmr.opts.imax = iters1;
     if (debug_x) { debug_x(io, x); }
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
