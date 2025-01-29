@@ -1,6 +1,7 @@
 #include "compressor.hpp"
 
 #include "tensors.hpp"
+#include "sys/threads.hpp"
 
 namespace rl {
 
@@ -15,7 +16,7 @@ Cx4 Compressor::compress(Cx4 const &source)
   }
   Cx4        dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3));
   auto       destmat = CollapseToMatrix(dest);
-  destmat.noalias() = psi.transpose() * sourcemat;
+  destmat.device(Threads::CoreDevice()).noalias() = psi.transpose() * sourcemat;
   return dest;
 }
 
@@ -28,7 +29,7 @@ Cx5 Compressor::compress(Cx5 const &source)
   }
   Cx5        dest(psi.cols(), source.dimension(1), source.dimension(2), source.dimension(3), source.dimension(4));
   auto       destmat = CollapseToMatrix(dest);
-  destmat.noalias() = psi.transpose() * sourcemat;
+  destmat.device(Threads::CoreDevice()).noalias() = psi.transpose() * sourcemat;
   return dest;
 }
 } // namespace rl
