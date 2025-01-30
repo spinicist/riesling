@@ -111,3 +111,11 @@ auto SENSEArgs::Get() -> rl::SENSE::Opts
   return rl::SENSE::Opts{
     .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
 }
+
+f0Args::f0Args(args::Subparser &parser)
+  : fname(parser, "F", "Frequency map", {"f0-map"})
+  , τ(parser, "τ", "Timepoints", {"tau"})
+{
+}
+
+auto f0Args::Get() -> rl::Recon::f0Opts { return rl::Recon::f0Opts{.fname = fname.Get(), .τ = τ.Get()}; }

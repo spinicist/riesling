@@ -22,6 +22,7 @@ void main_recon_rlsq(args::Subparser &parser)
   SENSEArgs                    senseArgs(parser);
   ADMMArgs                     admmArgs(parser);
   RegOpts                      regOpts(parser);
+  f0Args                       f0Args(parser);
   args::ValueFlag<std::string> scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
   args::ValueFlag<Index>       debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                   debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
@@ -35,8 +36,9 @@ void main_recon_rlsq(args::Subparser &parser)
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-  auto const  basis = LoadBasis(coreArgs.basisFile.Get());
-  auto const  R = Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
+  auto const basis = LoadBasis(coreArgs.basisFile.Get());
+  auto const R =
+    Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), f0Args.Get(), noncart);
   auto const  shape = R.A->ishape;
   float const scale = ScaleData(scaling.Get(), R.A, R.M, CollapseToVector(noncart));
   if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart * Cx(scale); }
