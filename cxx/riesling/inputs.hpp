@@ -97,19 +97,15 @@ struct SENSEArgs
   ArrayFlag<float, 3>          res;
   args::ValueFlag<float>       l, λ;
 
-  SENSEArgs(args::Subparser &parser)
-    : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
-    , tp(parser, "T", "SENSE calibration timepoint (first)", {"sense-tp"}, 0)
-    , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
-    , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array3f::Constant(6.f))
-    , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
-    , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
-  {
-  }
+  SENSEArgs(args::Subparser &parser);
+  auto Get() -> rl::SENSE::Opts;
+};
 
-  auto Get() -> rl::SENSE::Opts
-  {
-    return rl::SENSE::Opts{
-      .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
-  }
+struct f0Args
+{
+  args::ValueFlag<std::string> fname;
+  VectorFlag<float>            τ;
+
+  f0Args(args::Subparser &parser);
+  auto Get() -> rl::Recon::f0Opts;
 };

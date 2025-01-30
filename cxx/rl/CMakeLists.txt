@@ -54,6 +54,7 @@ kernel/kernel-cx1.cpp
 kernel/kernel-cx2.cpp
 kernel/kernel-cx3.cpp
 
+op/f0.cpp
 op/fft.cpp
 op/grad.cpp
 op/grid.cpp
@@ -145,6 +146,7 @@ io/nifti.hpp
 io/reader.hpp
 io/writer.hpp
 
+op/f0.hpp
 op/fft.hpp
 op/grad.hpp
 op/grid.hpp

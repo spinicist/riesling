@@ -40,7 +40,7 @@ void WriteResidual(std::string const              &cmd,
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
   Basis const id;
-  auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, noncart);
+  auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, Recon::f0Opts(), noncart);
   Log::Print(cmd, "Calculating K-space residual");
   noncart.device(Threads::TensorDevice()) -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");
