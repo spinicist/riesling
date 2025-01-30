@@ -2,8 +2,6 @@
 
 #include "top.hpp"
 
-#include "../basis/basis.hpp"
-
 namespace rl::TOps {
 
 struct SENSE final : TOp<Cx, 4, 5>

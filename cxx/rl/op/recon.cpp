@@ -1,6 +1,7 @@
 #include "recon.hpp"
 
 #include "compose.hpp"
+#include "f0.hpp"
 #include "loop.hpp"
 #include "multiplex.hpp"
 #include "ndft.hpp"
@@ -53,6 +54,34 @@ auto SENSERecon(
   }
 }
 
+auto SENSEf0Recon(GridOpts<3> const   &gridOpts,
+                  Trajectory const    &traj,
+                  Index const          nSlab,
+                  Index const          nTime,
+                  Basis::CPtr          b,
+                  Recon::f0Opts const &f0Opts,
+                  Cx5 const           &smaps) -> TOps::TOp<Cx, 5, 5>::Ptr
+{
+  if (!b) { throw Log::Failure("f0Recon", "A basis is required for f0 correction"); }
+  if (b->nB() != f0Opts.τ.size()) {
+    throw Log::Failure("f0Recon", "Basis size {} did not match τ {}", b->nB(), f0Opts.τ.size());
+  }
+
+  HD5::Reader f0_file(f0Opts.fname);
+  auto const  f0_map = f0_file.readTensor<Re3>("f0");
+  auto        f0 = std::make_shared<TOps::f0Segment>(f0_map, f0Opts.τ);
+  auto        sense = std::make_shared<TOps::SENSE>(smaps, b->nB());
+  auto        nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
+  auto        slabLoop = TOps::MakeLoop(nufft, nSlab);
+  if (nSlab > 1) {
+    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
+    return TOps::MakeLoop(TOps::MakeCompose(TOps::MakeCompose(f0, sense), TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+  } else {
+    auto reshape = TOps::MakeReshapeOutput(TOps::MakeCompose(f0, sense), AddBack(sense->oshape, 1));
+    return TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+  }
+}
+
 auto Decant(
   GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
   -> TOps::TOp<Cx, 5, 5>::Ptr
@@ -73,6 +102,7 @@ Recon::Recon(Opts const        &rOpts,
              SENSE::Opts const &senseOpts,
              Trajectory const  &traj,
              Basis::CPtr        b,
+             f0Opts const      &f0Opts,
              Cx5 const         &noncart)
 {
   Index const nC = noncart.dimension(0);
@@ -91,7 +121,11 @@ Recon::Recon(Opts const        &rOpts,
     } else {
       Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
       M = MakeKSpacePrecon(pOpts, gridOpts, traj, smaps, nS, nT); // In case the SENSE op does move
-      A = SENSERecon(gridOpts, traj, nS, nT, b, smaps);
+      if (f0Opts.fname.size()) {
+        A = SENSEf0Recon(gridOpts, traj, nS, nT, b, f0Opts, smaps);
+      } else {
+        A = SENSERecon(gridOpts, traj, nS, nT, b, smaps);
+      }
     }
   }
 }

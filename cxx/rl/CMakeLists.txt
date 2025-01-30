@@ -48,6 +48,7 @@ io/nifti.cpp
 io/reader.cpp
 io/writer.cpp
 
+op/f0.cpp
 op/fft.cpp
 op/grad.cpp
 op/grid.cpp
@@ -140,6 +141,7 @@ io/nifti.hpp
 io/reader.hpp
 io/writer.hpp
 
+op/f0.hpp
 op/fft.hpp
 op/grad.hpp
 op/grid.hpp

@@ -93,3 +93,12 @@ struct SENSEArgs
   SENSEArgs(args::Subparser &parser);
   auto Get() -> rl::SENSE::Opts;
 };
+
+struct f0Args
+{
+  args::ValueFlag<std::string> fname;
+  VectorFlag<float>            τ;
+
+  f0Args(args::Subparser &parser);
+  auto Get() -> rl::Recon::f0Opts;
+};
