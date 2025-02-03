@@ -15,7 +15,7 @@ using namespace Catch;
 
 TEST_CASE("Recon-Basic", "[recon]")
 {
-  Log::SetLevel(Log::Level::Testing);
+  Log::SetLevel(Log::Level::Debug);
   Index const M = GENERATE(7); //, 15, 16);
   Index const nC = 4;
   auto const  matrix = Sz3{M, M, M};
@@ -32,7 +32,7 @@ TEST_CASE("Recon-Basic", "[recon]")
   std::string const ktype = GENERATE("ES4");
   auto              nufft = TOps::NUFFT<3>::Make(TOps::Grid<3>::Opts{.osamp = osamp, .ktype = ktype}, traj, nC, &basis);
 
-  Cx5 senseMaps(AddFront(traj.matrix(), 1, nC));
+  Cx5 senseMaps(AddBack(traj.matrix(), nC, 1));
   senseMaps.setConstant(std::sqrt(1. / nC));
   auto sense = std::make_shared<TOps::SENSE>(senseMaps, 1);
 
@@ -43,11 +43,11 @@ TEST_CASE("Recon-Basic", "[recon]")
   ks.setConstant(1.f);
   img = recon.adjoint(ks);
   // Super loose tolerance
-  // INFO("ks\n" << ks);
-  // INFO("img\n" << img);
+  INFO("ks\n" << ks);
+  INFO("img\n" << img);
   CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-1f));
   ks = recon.forward(img);
-  // INFO("ks\n" << ks);
+  INFO("ks\n" << ks);
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }
 
@@ -66,7 +66,7 @@ TEST_CASE("Recon-Lowmem", "[recon]")
   Trajectory const traj(points, matrix);
   Basis            basis;
 
-  Cx5 sKern(AddFront(traj.matrix(), 1, nC));
+  Cx5 sKern(AddBack(traj.matrix(), nC, 1));
   sKern.setConstant(std::sqrt(1. / nC));
   FFT::Forward(sKern, Sz3{2, 3, 4});
   auto recon = TOps::NUFFTLowmem<3>::Make(TOps::Grid<3>::Opts(), traj, sKern, &basis);
