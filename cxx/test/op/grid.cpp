@@ -109,7 +109,7 @@ TEST_CASE("GridVCC", "[grid]")
   noncart.setConstant(Cx(0.f, 1.f));
   cart = grid->adjoint(noncart);
   INFO("M " << M << " cart" << '\n' << cart);
-  CHECK(Norm<false>(cart) == Approx(Norm(<false>noncart)).margin(1e-2f));
+  CHECK(Norm<false>(cart) == Approx(Norm<false>(noncart)).margin(1e-2f));
   CHECK(cart(M / 2, 0, 0).real() == Approx(0.f).margin(1e-6f));
   CHECK(cart(M / 2, 0, 0).imag() == Approx(inv_sqrt2).margin(1e-6f));
   CHECK(cart(M / 2, 1, 0).real() == Approx(0.f).margin(1e-6f));
