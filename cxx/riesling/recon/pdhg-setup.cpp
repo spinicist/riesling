@@ -31,8 +31,8 @@ void main_pdhg_setup(args::Subparser &parser)
   auto const  basis = ReadBasis(coreArgs.basisFile.Get());
   auto const  recon = Recon::SENSE(coreArgs.ndft, gridOpts, senseOpts, traj, nS, nT, basis, noncart);
   auto const  shape = recon->ishape;
-  auto const  P = make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
-                                  preOpts.bias.Get());
+  auto const  P =
+    make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);

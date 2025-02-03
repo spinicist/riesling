@@ -22,14 +22,6 @@
     riesling recon-lsq basic-kspace.h5 lowmem-lsq.h5 --sense=calib-k.h5 --lowmem
 }
 
-@test "Run VCC reconstruction" {
-    riesling recon-lsq basic-kspace.h5 vcc-lsq.h5 --sense=calib-k.h5 --vcc 
-}
-
-@test "Run lowmem VCC reconstruction" {
-    riesling recon-lsq basic-kspace.h5 lowvcc-lsq.h5 --sense=calib-k.h5 --vcc --lowmem
-}
-
 @test "Run frames reconstruction" {
     PREFIX="frames"
     riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5

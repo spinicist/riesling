@@ -67,30 +67,3 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
   ks = nufft.forward(img);
   CHECK(std::real(ks(0, 0, 0)) == Approx(1.f).margin(2.e-2f));
 }
-
-TEST_CASE("NUFFT-VCC", "[nufft]")
-{
-  Log::SetLevel(Log::Level::Testing);
-  Index const M = GENERATE(8, 10);
-  auto const  matrix = Sz1{M};
-  Re3         points(1, 1, 1);
-  points.setZero();
-
-  TrajectoryN<1> const traj(points, matrix);
-  Basis                basis;
-  auto nufft = TOps::NUFFT<1>(TOps::Grid<1>::Opts{.osamp = 1.f, .ktype = "NN", .vcc = true}, traj, 1, &basis);
-  Cx3  ks(nufft.oshape);
-  // Purely imaginary, odd symmetric
-  ks.setConstant(Cx(0.f, 1.f));
-  Cx3 img = nufft.adjoint(ks);
-  INFO("IMG\n" << img);
-  INFO("dims " << img.dimensions());
-  CHECK(Norm<false>(img) == Approx(1.f).margin(1.e-2f));
-  for (Index ii = 0; ii < M; ii++) {
-    CHECK(img(0, 0, ii).real() == Approx(-img(0, 1, ii).real()).margin(1e-6f));
-    CHECK(img(0, 0, ii).imag() == Approx(-img(0, 1, ii).imag()).margin(1e-6f));
-  }
-  ks = nufft.forward(img);
-  INFO("KS\n" << ks);
-  CHECK(Norm<false>(ks) == Approx(1.f).margin(1.e-2f));
-}

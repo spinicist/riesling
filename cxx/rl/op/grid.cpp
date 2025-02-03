@@ -30,30 +30,20 @@ Grid<ND>::Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Ba
   ishape = AddBack(osMatrix, nC, basis ? basis->nB() : 1);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
-  if (opts.vcc) {
-    Log::Print("Grid", "Adding VCC");
-    ishape[1] *= 2;
-    vccLists = traj.toCoordLists(osMatrix, kernel->paddedWidth(), subgridW, true);
-  }
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }
 
 /* Needs to be a functor to avoid template errors */
 template <int ND>
-void Grid<ND>::forwardTask(Index const                   start,
-                           Index const                   stride,
-                           std::vector<CoordList> const &lists,
-                           bool const                    isVCC,
-                           CxNCMap<ND + 2> const        &x,
-                           CxNMap<3>                    &y) const
+void Grid<ND>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const
 {
-  Index const nC = y.dimension(0);
-  Index const nB = basis ? basis->nB() : 1;
-  CxN<ND + 2> sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nC, nB));
+  Index const          nC = y.dimension(0);
+  Index const          nB = basis ? basis->nB() : 1;
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nC, nB));
   Eigen::Tensor<Cx, 1> yy(Sz1{nC});
-  for (Index is = start; is < lists.size(); is += stride) {
-    auto const &list = lists[is];
-    GridToSubgrid<ND>(SubgridCorner(list.corner, subgridW, kernel->paddedWidth()), vccLists.has_value(), isVCC, x, sx);
+  for (Index is = start; is < gridLists.size(); is += stride) {
+    auto const &list = gridLists[is];
+    GridToSubgrid<ND>(SubgridCorner(list.corner, subgridW, kernel->paddedWidth()), x, sx);
     for (auto const &m : list.coords) {
       yy.setZero();
       if (basis) {
@@ -70,40 +60,27 @@ template <int ND> void Grid<ND>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, gridLists, false, x, y); });
-  if (vccLists) {
-    Threads::StridedFor(vccLists.value().size(),
-                        [&](Index const st, Index const sz) { forwardTask(st, sz, vccLists.value(), true, x, y); });
-  }
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
   this->finishForward(y, time, false);
 }
 
 template <int ND> void Grid<ND>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, gridLists, false, x, y); });
-  if (vccLists) {
-    Threads::StridedFor(vccLists.value().size(),
-                        [&](Index const st, Index const sz) { forwardTask(st, sz, vccLists.value(), true, x, y); });
-  }
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
   this->finishForward(y, time, true);
 }
 
 template <int ND>
-void Grid<ND>::adjointTask(Index const                   start,
-                           Index const                   stride,
-                           std::vector<CoordList> const &lists,
-                           bool const                    isVCC,
-                           CxNCMap<3> const             &y,
-                           CxNMap<ND + 2>               &x) const
+void Grid<ND>::adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const
 
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
   CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel->paddedWidth())), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
-  for (Index is = start; is < lists.size(); is += stride) {
-    auto const &list = lists[is];
+  for (Index is = start; is < gridLists.size(); is += stride) {
+    auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {
       yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
@@ -113,7 +90,7 @@ void Grid<ND>::adjointTask(Index const                   start,
         kernel->spread(m.cart, m.offset, yy, sx);
       }
     }
-    SubgridToGrid<ND>(mutexes, SubgridCorner(list.corner, subgridW, kernel->paddedWidth()), vccLists.has_value(), isVCC, sx, x);
+    SubgridToGrid<ND>(mutexes, SubgridCorner(list.corner, subgridW, kernel->paddedWidth()), sx, x);
   }
 }
 
@@ -121,22 +98,14 @@ template <int ND> void Grid<ND>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, gridLists, false, y, x); });
-  if (vccLists) {
-    Threads::StridedFor(vccLists.value().size(),
-                        [&](Index const st, Index const sz) { adjointTask(st, sz, vccLists.value(), true, y, x); });
-  }
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });
   this->finishAdjoint(x, time, false);
 }
 
 template <int ND> void Grid<ND>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, gridLists, false, y, x); });
-  if (vccLists) {
-    Threads::StridedFor(vccLists.value().size(),
-                        [&](Index const st, Index const sz) { adjointTask(st, sz, vccLists.value(), true, y, x); });
-  }
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });
   this->finishAdjoint(x, time, true);
 }
 
