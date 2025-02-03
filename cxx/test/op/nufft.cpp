@@ -27,7 +27,7 @@ TEST_CASE("NUFFT", "[nufft]")
   Cx3                  ks(nufft.oshape);
   Cx3                  img(nufft.ishape);
   img.setZero();
-  img(0, 0, M / 2) = std::sqrt(M);
+  img(M / 2, 0, 0) = std::sqrt(M);
   ks = nufft.forward(img);
   INFO("OSAMP " << osamp);
   INFO("IMG\n" << img);
