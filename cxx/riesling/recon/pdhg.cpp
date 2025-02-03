@@ -2,10 +2,10 @@
 
 #include "algo/eig.hpp"
 #include "algo/pdhg.hpp"
+#include "inputs.hpp"
 #include "io/hd5.hpp"
 #include "log.hpp"
 #include "op/recon.hpp"
-#include "inputs.hpp"
 #include "precon.hpp"
 #include "regularizers.hpp"
 #include "scaling.hpp"
@@ -38,8 +38,8 @@ void main_pdhg(args::Subparser &parser)
   auto const basis = ReadBasis(coreArgs.basisFile.Get());
   auto const recon = Recon::SENSE(coreArgs, gridOpts, senseOpts, traj, nS, basis, noncart);
   auto const shape = recon->ishape;
-  auto const P = make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), gridOpts.vcc, preOpts.type.Get(),
-                                 preOpts.bias.Get());
+  auto const P =
+    make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
 
   std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);
@@ -51,8 +51,8 @@ void main_pdhg(args::Subparser &parser)
       Log::Tensor(fmt::format("pdhg-xdiff-{:02d}", ii), shape, xdiff.data());
     };
 
-  PDHG        pdhg(A, P, reg.regs, σin.Get(), τin.Get(), debug_x);
-  
+  PDHG pdhg(A, P, reg.regs, σin.Get(), τin.Get(), debug_x);
+
   TOps::Crop<Cx, 4> oc(recon->ishape, AddFront(traj.matrixForFOV(coreArgs.fov.Get()), recon->ishape[0]));
   Cx5               out(AddBack(oc.oshape, nV));
 

@@ -24,7 +24,7 @@ TEST_CASE("SENSE", "[SENSE]")
     maps =
       maps / DimDot<1>(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{1, channels, 1, 1, 1});
 
-    TOps::SENSE sense(maps, false, 1);
+    TOps::SENSE sense(maps, 1);
     y = sense.forward(u);
     x = sense.adjoint(v);
 

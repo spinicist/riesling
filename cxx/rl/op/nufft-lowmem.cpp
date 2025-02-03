@@ -98,14 +98,7 @@ template <int ND> void NUFFTLowmem<ND>::forward(InCMap const &x, OutMap &y) cons
   y.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);
-    if (workspace.dimension(1) == 2) { // VCC
-      workspace.template chip<1>(0).device(Threads::TensorDevice()) =
-        (x * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2)).pad(paddings_) * smap.broadcast(sbrd);
-      workspace.template chip<1>(1).device(Threads::TensorDevice()) =
-        (x * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2)).pad(paddings_) * smap.conjugate().broadcast(sbrd);
-    } else {
-      ws1m.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * smap.broadcast(sbrd);
-    }
+    ws1m.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * smap.broadcast(sbrd);
     FFT::Forward(workspace, fftDims);
     gridder->forward(workspace, nc1m);
     y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)}).device(Threads::TensorDevice()) = nc1;
@@ -122,14 +115,7 @@ template <int ND> void NUFFTLowmem<ND>::iforward(InCMap const &x, OutMap &y) con
   ws1m.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);
-    if (workspace.dimension(1) == 2) { // VCC
-      workspace.template chip<1>(0).device(Threads::TensorDevice()) =
-        (x * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2)).pad(paddings_) * smap.broadcast(sbrd);
-      workspace.template chip<1>(1).device(Threads::TensorDevice()) =
-        (x * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2)).pad(paddings_) * smap.conjugate().broadcast(sbrd);
-    } else {
-      ws1m.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * smap.broadcast(sbrd);
-    }
+    ws1m.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * smap.broadcast(sbrd);
     FFT::Forward(workspace, fftDims);
     gridder->forward(workspace, nc1m);
     y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)}).device(Threads::TensorDevice()) += nc1;
@@ -148,19 +134,9 @@ template <int ND> void NUFFTLowmem<ND>::adjoint(OutCMap const &y, InMap &x) cons
     nc1.device(Threads::TensorDevice()) = y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)});
     gridder->adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
-    if (workspace.dimension(1) == 2) { // VCC
-      workspace.template chip<1>(0).device(Threads::TensorDevice()) =
-        workspace.template chip<1>(0) * smap.conjugate().broadcast(sbrd);
-      workspace.template chip<1>(1).device(Threads::TensorDevice()) = workspace.template chip<1>(1) * smap.broadcast(sbrd);
-      x.device(Threads::TensorDevice()) +=
-        workspace.template chip<1>(0).slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2);
-      x.device(Threads::TensorDevice()) +=
-        workspace.template chip<1>(1).slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2);
-    } else {
-      CxNMap<ND + 1> ws1m(workspace.data(), NoChannels(workspace.dimensions()));
-      ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
-      x.device(Threads::TensorDevice()) += ws1m.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
-    }
+    CxNMap<ND + 1> ws1m(workspace.data(), NoChannels(workspace.dimensions()));
+    ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
+    x.device(Threads::TensorDevice()) += ws1m.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
   }
   this->finishAdjoint(x, time, false);
 }
@@ -176,19 +152,9 @@ template <int ND> void NUFFTLowmem<ND>::iadjoint(OutCMap const &y, InMap &x) con
     nc1.device(Threads::TensorDevice()) = y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)});
     gridder->adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
-    if (workspace.dimension(1) == 2) { // VCC
-      workspace.template chip<1>(0).device(Threads::TensorDevice()) =
-        workspace.template chip<1>(0) * smap.conjugate().broadcast(sbrd);
-      workspace.template chip<1>(1).device(Threads::TensorDevice()) = workspace.template chip<1>(1) * smap.broadcast(sbrd);
-      x.device(Threads::TensorDevice()) +=
-        workspace.template chip<1>(0).slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2);
-      x.device(Threads::TensorDevice()) +=
-        workspace.template chip<1>(1).slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * Cx(inv_sqrt2);
-    } else {
-      CxNMap<ND + 1> ws1m(workspace.data(), NoChannels(workspace.dimensions()));
-      ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
-      x.device(Threads::TensorDevice()) += ws1m.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
-    }
+    CxNMap<ND + 1> ws1m(workspace.data(), NoChannels(workspace.dimensions()));
+    ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
+    x.device(Threads::TensorDevice()) += ws1m.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
   }
   this->finishAdjoint(x, time, true);
 }

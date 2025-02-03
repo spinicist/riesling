@@ -46,7 +46,7 @@ auto SENSERecon(TOps::Grid<3>::Opts const &gridOpts,
                 Basis::CPtr                b,
                 Cx5 const                 &smaps) -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  auto sense = std::make_shared<TOps::SENSE>(smaps, gridOpts.vcc, b ? b->nB() : 1);
+  auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
   auto slabLoop = TOps::MakeLoop(nufft, nSlab);
   if (nSlab > 1) {

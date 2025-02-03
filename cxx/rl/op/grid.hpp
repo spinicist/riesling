@@ -31,7 +31,6 @@ template <int ND> struct Grid final : TOp<Cx, ND + 2, 3>
     Arrayf      fov = Arrayf::Zero();
     float       osamp = 1.3f;
     std::string ktype = "ES4";
-    bool        vcc = false;
     Index       subgridSize = 8;
   };
 
@@ -47,22 +46,11 @@ private:
   Index                  subgridW;
   std::vector<CoordList> gridLists;
   std::vector<std::mutex> mutable mutexes;
-  Basis::CPtr                           basis;
-  std::optional<std::vector<CoordList>> vccLists;
+  Basis::CPtr basis;
 
-  void forwardTask(Index const                   start,
-                   Index const                   stride,
-                   std::vector<CoordList> const &gridLists,
-                   bool const                    isVCC,
-                   CxNCMap<ND + 2> const        &x,
-                   CxNMap<3>                    &y) const;
+  void forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const;
 
-  void adjointTask(Index const                   start,
-                   Index const                   stride,
-                   std::vector<CoordList> const &list,
-                   bool const                    isVCC,
-                   CxNCMap<3> const             &y,
-                   CxNMap<ND + 2>               &x) const;
+  void adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const;
 };
 
 } // namespace TOps
