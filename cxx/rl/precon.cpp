@@ -22,7 +22,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &tra
   Cx3        W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
-  Cx5       ones(AddFront(traj.matrix(), psf.dimension(0), psf.dimension(1)));
+  Cx5       ones(AddBack(traj.matrix(), psf.dimension(3), psf.dimension(4)));
   ones.setConstant(1.f);
   TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
   Cx5              xcor(padX.oshape);

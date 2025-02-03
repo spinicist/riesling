@@ -18,9 +18,9 @@ struct SENSE final : TOp<Cx, 4, 5>
 
 private:
   Cx5                                                   maps_;
-  Eigen::IndexList<int, FixOne, int, int, int>          resX;
-  Eigen::IndexList<FixOne, int, FixOne, FixOne, FixOne> brdX;
-  Eigen::IndexList<int, FixOne, FixOne, FixOne, FixOne> brdMaps;
+  Eigen::IndexList<int, int, int, FixOne, int>          resX;
+  Eigen::IndexList<FixOne, FixOne, FixOne, int, FixOne> brdX;
+  Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, int> brdMaps;
 };
 
 } // namespace rl::TOps

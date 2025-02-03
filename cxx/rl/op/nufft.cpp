@@ -17,23 +17,23 @@ NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index 
   , gridder{Grid<ND>::Make(opts, traj, nChan, basis)}
   , workspace{gridder->ishape}
 {
-  ishape = Concatenate(FirstN<2>(gridder->ishape), traj.matrixForFOV(opts.fov));
+  ishape = Concatenate(traj.matrixForFOV(opts.fov), LastN<2>(gridder->ishape));
   oshape = gridder->oshape;
-  std::iota(fftDims.begin(), fftDims.end(), 2);
+  std::iota(fftDims.begin(), fftDims.end(), 0);
   Log::Print("NUFFT", "ishape {} oshape {} grid {}", ishape, oshape, gridder->ishape);
 
   // Calculate apodization correction
   auto apo_shape = ishape;
   apoBrd_.fill(1);
   for (int ii = 0; ii < 2; ii++) {
-    apo_shape[ii] = 1;
-    apoBrd_[ii] = gridder->ishape[ii];
+    apo_shape[ND + ii] = 1;
+    apoBrd_[ND + ii] = gridder->ishape[ND + ii];
   }
-  apo_ = Apodize(LastN<ND>(ishape), LastN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
+  apo_ = Apodize(FirstN<ND>(ishape), FirstN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
-  for (int ii = 2; ii < InRank; ii++) {
+  for (int ii = 0; ii < ND; ii++) {
     padLeft_[ii] = (gridder->ishape[ii] - ishape[ii] + 1) / 2;
     padRight[ii] = (gridder->ishape[ii] - ishape[ii]) / 2;
   }
