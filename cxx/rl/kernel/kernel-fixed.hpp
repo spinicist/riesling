@@ -1,9 +1,6 @@
 #pragma once
 
-#include <complex>
-#include <fmt/ostream.h>
-#include <fmt/ranges.h>
-#include <fmt/std.h>
+#include "../types.hpp"
 
 namespace rl {
 

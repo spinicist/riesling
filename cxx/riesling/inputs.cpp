@@ -29,7 +29,6 @@ template <int ND>
 GridArgs<ND>::GridArgs(args::Subparser &parser)
   : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
   , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
-  , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
   , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
 {
 }

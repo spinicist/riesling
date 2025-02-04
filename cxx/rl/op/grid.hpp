@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../basis/basis.hpp"
-#include "../kernel/kernel.hpp"
+#include "../kernel/kernel-impl.hpp"
 #include "../trajectory.hpp"
 #include "top.hpp"
 
@@ -20,17 +20,16 @@ inline auto SubgridCorner(Eigen::Array<int16_t, ND, 1> const sgInd, Index const 
 inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }
 
 namespace TOps {
-template <int ND> struct Grid final : TOp<Cx, ND + 2, 3>
+template <int ND_, typename GType = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct Grid final : TOp<Cx, ND_ + 2, 3>
 {
-  TOP_INHERIT(Cx, ND + 2, 3)
+  TOP_INHERIT(Cx, ND_ + 2, 3)
   TOP_DECLARE(Grid)
-
+  static const int ND = ND_;
   struct Opts
   {
     using Arrayf = Eigen::Array<float, ND, 1>;
     Arrayf      fov = Arrayf::Zero();
     float       osamp = 1.3f;
-    std::string ktype = "ES4";
     Index       subgridSize = 8;
   };
 
@@ -38,8 +37,7 @@ template <int ND> struct Grid final : TOp<Cx, ND + 2, 3>
   Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b);
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
-
-  std::shared_ptr<KernelBase<Scalar, ND>> kernel;
+  GType kernel;
 
 private:
   using CoordList = typename TrajectoryN<ND>::CoordList;
@@ -49,7 +47,6 @@ private:
   Basis::CPtr basis;
 
   void forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const;
-
   void adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const;
 };
 

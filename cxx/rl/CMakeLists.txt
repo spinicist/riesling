@@ -47,13 +47,6 @@ io/nifti.cpp
 io/reader.cpp
 io/writer.cpp
 
-kernel/kernel-f1.cpp
-kernel/kernel-f2.cpp
-kernel/kernel-f3.cpp
-kernel/kernel-cx1.cpp
-kernel/kernel-cx2.cpp
-kernel/kernel-cx3.cpp
-
 op/fft.cpp
 op/grad.cpp
 op/grid.cpp

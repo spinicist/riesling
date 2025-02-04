@@ -35,7 +35,6 @@ template <int ND> struct GridArgs
 {
   ArrayFlag<float, ND>         fov;
   args::ValueFlag<float>       osamp;
-  args::ValueFlag<std::string> ktype;
   args::ValueFlag<Index>       subgridSize;
   GridArgs(args::Subparser &parser);
   auto Get() -> rl::TOps::Grid<ND>::Opts;

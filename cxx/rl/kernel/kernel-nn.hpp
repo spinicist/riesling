@@ -1,12 +1,11 @@
 #pragma once
 
-#include "kernel.hpp"
-
 #include "../log.hpp"
+#include "../tensors.hpp"
 
 namespace rl {
 
-template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Scalar, ND>
+template <typename Scalar, int ND> struct NearestNeighbour final
 {
   static constexpr int Width = 1;
   static constexpr int PadWidth = 1;
@@ -20,9 +19,9 @@ template <typename Scalar, int ND> struct NearestNeighbour final : KernelBase<Sc
     Log::Print("Kernel", "Nearest-neighbour");
   }
 
-  auto paddedWidth() const -> int final { return 1; }
+  auto paddedWidth() const -> int { return 1; }
 
-  auto operator()(Point const) const -> Eigen::Tensor<float, ND> final
+  auto operator()(Point const) const -> Eigen::Tensor<float, ND>
   {
     Tensor z;
     z.setConstant(1.f);

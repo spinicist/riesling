@@ -28,7 +28,7 @@ TEST_CASE("Grid2", "[grid]")
   Basis                basis;
 
   float const osamp = GENERATE(1.3f, 2.f);
-  auto        grid = TOps::Grid<2>::Make(TOps::Grid<2>::Opts{.osamp = osamp, .ktype = "ES6"}, traj, 1, &basis);
+  auto        grid = TOps::Grid<2>::Make(TOps::Grid<2>::Opts{.osamp = osamp}, traj, 1, &basis);
   Cx3         noncart(grid->oshape);
   Cx4         cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -61,7 +61,7 @@ TEST_CASE("Grid3", "[grid]")
   Basis                basis;
 
   float const osamp = GENERATE(1.3f, 2.f);
-  auto        grid = TOps::Grid<3>::Make(TOps::Grid<3>::Opts{.osamp = osamp, .ktype = "ES6"}, traj, 1, &basis);
+  auto        grid = TOps::Grid<3>::Make(TOps::Grid<3>::Opts{.osamp = osamp}, traj, 1, &basis);
   Cx3         noncart(grid->oshape);
   Cx5         cart(grid->ishape);
   noncart.setConstant(1.f);

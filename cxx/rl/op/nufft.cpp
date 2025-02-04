@@ -29,7 +29,7 @@ NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index 
     apo_shape[ND + ii] = 1;
     apoBrd_[ND + ii] = gridder->ishape[ND + ii];
   }
-  apo_ = Apodize(FirstN<ND>(ishape), FirstN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
+  apo_ = Apodize(FirstN<ND>(ishape), gridder)FirstN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
