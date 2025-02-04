@@ -12,8 +12,8 @@
 using namespace rl;
 
 namespace {
-std::unordered_map<int, Log::Level> levelMap{
-  {0, Log::Level::None}, {1, Log::Level::Ephemeral}, {2, Log::Level::Standard}, {3, Log::Level::Debug}};
+std::unordered_map<int, Log::Display> levelMap{
+  {0, Log::Display::None}, {1, Log::Display::Ephemeral}, {2, Log::Display::Low}, {3, Log::Display::Mid}, {4, Log::Display::High}};
 }
 
 CoreArgs::CoreArgs(args::Subparser &parser)
@@ -104,19 +104,18 @@ auto ADMMArgs::Get() -> rl::ADMM::Opts
                         .ɑ = ɑ.Get()};
 }
 
-args::Group    global_group("GLOBAL OPTIONS");
-args::HelpFlag help(global_group, "H", "Show this help message", {'h', "help"});
-args::MapFlag<int, Log::Level>
-                             verbosity(global_group, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Level::Standard);
-args::ValueFlag<std::string> debug(global_group, "F", "Write debug images to file", {"debug"});
-args::ValueFlag<Index>       nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
+args::Group                    global_group("GLOBAL OPTIONS");
+args::HelpFlag                 help(global_group, "H", "Show this help message", {'h', "help"});
+args::MapFlag<int, Log::Display> verbosity(global_group, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
+args::ValueFlag<std::string>   debug(global_group, "F", "Write debug images to file", {"debug"});
+args::ValueFlag<Index>         nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
 void SetLogging(std::string const &name)
 {
   if (verbosity) {
-    Log::SetLevel(verbosity.Get());
+    Log::SetDisplayLevel(verbosity.Get());
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
-    Log::SetLevel(levelMap.at(std::atoi(env_p)));
+    Log::SetDisplayLevel(levelMap.at(std::atoi(env_p)));
   }
   Log::Print(name, "Welcome to RIESLING");
   if (debug) { Log::SetDebugFile(debug.Get()); }

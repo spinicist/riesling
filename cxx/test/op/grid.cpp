@@ -12,9 +12,9 @@ using namespace Catch;
 
 constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
 
-TEST_CASE("Grid-Basic", "[grid]")
+TEST_CASE("Grid2", "[grid]")
 {
-  Log::SetLevel(Log::Level::Testing);
+  Log::SetDisplayLevel(Log::Display::High);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(16, 32);
   auto const  matrix = Sz2{M, M};
@@ -34,18 +34,50 @@ TEST_CASE("Grid-Basic", "[grid]")
   noncart.setConstant(1.f);
   cart = grid->adjoint(noncart);
   INFO("M " << M << " OS " << osamp);
-  INFO("noncart\n" << noncart);
-  INFO("cart\n" << cart);
+  // INFO("noncart\n" << noncart);
+  // INFO("cart\n" << cart);
   auto const cs = std::sqrt(cart.size());
   CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
   noncart = grid->forward(cart);
-  INFO("noncart\n" << noncart);
+  // INFO("noncart\n" << noncart);
+  CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
+}
+
+TEST_CASE("Grid3", "[grid]")
+{
+  Log::SetDisplayLevel(Log::Display::High);
+  Threads::SetGlobalThreadCount(1);
+  Index const M = GENERATE(16, 32);
+  auto const  matrix = Sz3{M, M, M};
+  Re3         points(3, 3, 1);
+  points.setZero();
+  points(0, 0, 0) = -0.4f * M;
+  points(1, 0, 0) = -0.4f * M;
+  points(2, 0, 0) = -0.4f * M;
+  points(0, 2, 0) = 0.4f * M;
+  points(1, 2, 0) = 0.4f * M;
+  points(2, 2, 0) = 0.4f * M;
+  TrajectoryN<3> const traj(points, matrix);
+  Basis                basis;
+
+  float const osamp = GENERATE(1.3f, 2.f);
+  auto        grid = TOps::Grid<3>::Make(TOps::Grid<3>::Opts{.osamp = osamp, .ktype = "ES6"}, traj, 1, &basis);
+  Cx3         noncart(grid->oshape);
+  Cx5         cart(grid->ishape);
+  noncart.setConstant(1.f);
+  cart = grid->adjoint(noncart);
+  INFO("M " << M << " OS " << osamp);
+  // INFO("noncart\n" << noncart);
+  // INFO("cart\n" << cart);
+  auto const cs = std::sqrt(cart.size());
+  CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
+  noncart = grid->forward(cart);
+  // INFO("noncart\n" << noncart);
   CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 
 TEST_CASE("Grid-Basis-Sample", "[grid]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);
   Index const M = 6;
   auto const  matrix = Sz1{M};

@@ -25,8 +25,8 @@ void L1::apply(float const α, CMap const &x, Map &z) const
       }
     },
     x.size());
-  if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+  if (Log::IsDebugging()) {
+    Log::Print("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
 
@@ -73,8 +73,8 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap const &x, Map 
       }
     },
     nBlocks);
-  if (Log::CurrentLevel() == Log::Level::Debug) {
-    Log::Debug("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+  if (Log::IsDebugging()) {
+    Log::Print("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
 

@@ -11,7 +11,6 @@ using namespace Catch;
 
 TEST_CASE("Preconditioner", "[precon]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(16);
   Sz3 const   matrix{M, M, M};
   Re3         points(3, 3, 1);

@@ -12,7 +12,6 @@ using namespace Catch;
 
 TEST_CASE("NUFFT", "[nufft]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(6);
   auto const  matrix = Sz1{M};
   Re3         points(1, M, 1);
@@ -40,7 +39,6 @@ TEST_CASE("NUFFT", "[nufft]")
 
 TEST_CASE("NUFFT-Basis", "[nufft]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const M = 6;
   auto const  matrix = Sz1{M};
   Index const N = 8;

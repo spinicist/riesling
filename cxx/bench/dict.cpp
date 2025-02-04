@@ -13,8 +13,6 @@
 
 TEST_CASE("Dictionaries", "[dict]")
 {
-  rl::Log::SetLevel(rl::Log::Level::Testing);
-
   rl::Pars const p{
     .spg = 256,
     .gps = 6,
