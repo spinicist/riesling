@@ -12,8 +12,11 @@
 using namespace rl;
 
 namespace {
-std::unordered_map<int, Log::Display> levelMap{
-  {0, Log::Display::None}, {1, Log::Display::Ephemeral}, {2, Log::Display::Low}, {3, Log::Display::Mid}, {4, Log::Display::High}};
+std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
+                                               {1, Log::Display::Ephemeral},
+                                               {2, Log::Display::Low},
+                                               {3, Log::Display::Mid},
+                                               {4, Log::Display::High}};
 }
 
 CoreArgs::CoreArgs(args::Subparser &parser)
@@ -29,15 +32,13 @@ template <int ND>
 GridArgs<ND>::GridArgs(args::Subparser &parser)
   : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
   , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
-  , ktype(parser, "K", "Grid kernel - NN/KBn/ESn (ES4)", {'k', "kernel"}, "ES4")
   , subgridSize(parser, "B", "Subgrid size (8)", {"subgrid-size"}, 8)
 {
 }
 
-template <int ND> auto GridArgs<ND>::Get() -> rl::TOps::Grid<ND>::Opts
+template <int ND> auto GridArgs<ND>::Get() -> rl::GridOpts<ND>
 {
-  return typename rl::TOps::Grid<ND>::Opts{
-    .fov = fov.Get(), .osamp = osamp.Get(), .ktype = ktype.Get(), .subgridSize = subgridSize.Get()};
+  return typename rl::GridOpts<ND>{.fov = fov.Get(), .osamp = osamp.Get(), .subgridSize = subgridSize.Get()};
 }
 
 template struct GridArgs<2>;
@@ -104,11 +105,11 @@ auto ADMMArgs::Get() -> rl::ADMM::Opts
                         .ɑ = ɑ.Get()};
 }
 
-args::Group                    global_group("GLOBAL OPTIONS");
-args::HelpFlag                 help(global_group, "H", "Show this help message", {'h', "help"});
+args::Group                      global_group("GLOBAL OPTIONS");
+args::HelpFlag                   help(global_group, "H", "Show this help message", {'h', "help"});
 args::MapFlag<int, Log::Display> verbosity(global_group, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
-args::ValueFlag<std::string>   debug(global_group, "F", "Write debug images to file", {"debug"});
-args::ValueFlag<Index>         nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
+args::ValueFlag<std::string>     debug(global_group, "F", "Write debug images to file", {"debug"});
+args::ValueFlag<Index>           nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
 
 void SetLogging(std::string const &name)
 {

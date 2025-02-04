@@ -27,7 +27,7 @@ WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::Dimen
 void WriteResidual(std::string const              &cmd,
                    std::string const              &fname,
                    Recon::Opts const              &reconOpts,
-                   TOps::Grid<3>::Opts const      &gridOpts,
+                   GridOpts<3> const              &gridOpts,
                    SENSE::Opts const              &senseOpts,
                    PreconOpts const               &preOpts,
                    Trajectory const               &traj,
@@ -36,15 +36,12 @@ void WriteResidual(std::string const              &cmd,
                    Cx5                            &noncart)
 {
   Log::Print(cmd, "Creating recon operator without basis");
-  Index const nC = noncart.dimension(0);
-  Index const nS = noncart.dimension(3);
-  Index const nT = noncart.dimension(4);
   Basis const id;
   auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, noncart);
   Log::Print(cmd, "Calculating K-space residual");
   noncart.device(Threads::TensorDevice()) -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");
-  LSMR       lsmr{R1.A, R1.M, nullptr, 2};
+  LSMR       lsmr{R1.A, R1.M, nullptr, {2}};
   auto const r = lsmr.run(CollapseToConstVector(noncart));
   Log::Print(cmd, "Finished calculating residual");
   HD5::Writer writer(fname, true);

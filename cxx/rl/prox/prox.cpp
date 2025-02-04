@@ -36,7 +36,7 @@ template <typename S> auto Prox<S>::apply(float const α, Vector const &x) const
   return z;
 }
 
-template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const, CMap const &, Map &) const
+template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const, CMap const , Map ) const
 {
   throw Log::Failure("Prox", "Not implemented");
 }
@@ -59,7 +59,7 @@ ConjugateProx<S>::ConjugateProx(std::shared_ptr<Prox<S>> pp)
 {
 }
 
-template <typename S> void ConjugateProx<S>::apply(float const α, CMap const &x, Map &z) const
+template <typename S> void ConjugateProx<S>::apply(float const α, CMap const x, Map z) const
 {
   Vector x1 = x / α;
   CMap   x1m(x1.data(), x1.size());
@@ -68,7 +68,7 @@ template <typename S> void ConjugateProx<S>::apply(float const α, CMap const &x
   z += x;
 }
 
-template <typename S> void ConjugateProx<S>::apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const
+template <typename S> void ConjugateProx<S>::apply(std::shared_ptr<Op> const α, CMap const x, Map z) const
 {
   auto   αinv = α->inverse();
   Vector x1 = αinv->forward(x);

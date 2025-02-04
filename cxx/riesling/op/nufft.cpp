@@ -15,7 +15,7 @@ void main_nufft(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LSMRArgs     lsqOpts(parser);
+  LSMRArgs    lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operator", {'f', "fwd"});
   args::Flag adj(parser, "", "Apply adjoint operator", {'a', "adj"});
@@ -52,7 +52,7 @@ void main_nufft(args::Subparser &parser)
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
     } else {
       auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
-      LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+      LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
       auto const c = lsmr.run(CollapseToConstVector(noncart));
       writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
     }

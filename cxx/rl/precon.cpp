@@ -6,6 +6,7 @@
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "op/tensorscale.hpp"
+#include "op/top-id.hpp"
 #include "sys/threads.hpp"
 
 namespace rl {
@@ -14,7 +15,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re2
+auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re2
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
@@ -27,14 +28,14 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &tra
   TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
   Cx5              xcor(padX.oshape);
   xcor.device(Threads::TensorDevice()) = padX.forward(ones);
-  FFT::Forward(xcor, Sz3{2, 3, 4});
+  FFT::Forward(xcor, Sz3{0, 1, 2});
   xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
-  FFT::Adjoint(xcor, Sz3{2, 3, 4});
+  FFT::Adjoint(xcor, Sz3{0, 1, 2});
   xcor.device(Threads::TensorDevice()) = xcor * psf;
   Re3 weights = nufft->forward(xcor).abs();
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
-    std::pow(Product(LastN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(LastN<3>(ones.dimensions()));
+    std::pow(Product(FirstN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<3>(ones.dimensions()));
   weights.device(Threads::TensorDevice()) = (1.f + λ) / ((weights * scale) + λ);
 
   float const norm = Norm<true>(weights);
@@ -51,7 +52,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &tra
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re3
+auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re3
 {
   Log::Print("Precon", "Calculating multichannel-preconditioner");
   Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
@@ -63,8 +64,8 @@ auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Traj
   auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, nullptr);
   Sz5 const psfShape = nufft.ishape;
   Sz5 const smapShape = smaps.dimensions();
-  if (smapShape[0] > 1 && smapShape[0] != psfShape[0]) {
-    throw Log::Failure("Precon", "SENSE maps had basis dimension {}, expected {}", smapShape[0], psfShape[0]);
+  if (smapShape[4] > 1 && smapShape[4] != psfShape[4]) {
+    throw Log::Failure("Precon", "SENSE maps had basis dimension {}, expected {}", smapShape[4], psfShape[4]);
   }
   Cx3 W(nufft.oshape);
   Cx5 psf(psfShape);
@@ -72,11 +73,11 @@ auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Traj
   nufft.adjoint(W, psf);
 
   // I do not understand this scaling factor but it's in Frank's code and works
-  float scale = std::pow(Product(LastN<3>(psfShape)), 1.5f) / Product(traj.matrix());
+  float scale = std::pow(Product(FirstN<3>(psfShape)), 1.5f) / Product(traj.matrix());
   Log::Print("Precon", "Map shape {} scale {}", smapShape, scale);
 
-  Sz5 const smap1Shape = AddFront(LastN<3>(smapShape), smapShape[0], 1);
-  Sz5 const xcor1Shape = AddFront(LastN<3>(psfShape), smapShape[0], 1);
+  Sz5 const smap1Shape = AddBack(FirstN<3>(smapShape), 1, smapShape[4]);
+  Sz5 const xcor1Shape = AddBack(FirstN<3>(psfShape), 1, smapShape[4]);
 
   auto padXC = TOps::Pad<Cx, 5>(smap1Shape, xcor1Shape);
   Cx5  smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
@@ -86,15 +87,15 @@ auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Traj
     for (Index sj = 0; sj < nC; sj++) {
       // Log::Print("Precon", "Cross-correlation channel {}-{}", si, sj);
       smap1.device(Threads::TensorDevice()) =
-        smaps.slice(Sz5{0, si, 0, 0, 0}, smap1Shape) * smaps.slice(Sz5{0, sj, 0, 0, 0}, smap1Shape).conjugate();
+        smaps.slice(Sz5{0, 0, 0, si, 0}, smap1Shape) * smaps.slice(Sz5{0, 0, 0, sj, 0}, smap1Shape).conjugate();
       padXC.forward(smap1, xcorTemp);
-      FFT::Forward(xcorTemp, Sz3{2, 3, 4});
+      FFT::Forward(xcorTemp, Sz3{0, 1, 2});
       xcor1.device(Threads::TensorDevice()) += xcorTemp * xcorTemp.conjugate();
     }
     Log::Print("Precon", "Channel {} map squared norm {}", si, ni);
-    FFT::Adjoint(xcor1, Sz3{2, 3, 4});
-    if (smapShape[0] == 1) {
-      xcor.device(Threads::TensorDevice()) = xcor1.broadcast(Sz5{psfShape[0], 1, 1, 1, 1}) * psf;
+    FFT::Adjoint(xcor1, Sz3{0, 1, 2});
+    if (smapShape[4] == 1) {
+      xcor.device(Threads::TensorDevice()) = xcor1.broadcast(Sz5{1, 1, 1, 1, psfShape[4]}) * psf;
     } else {
       xcor.device(Threads::TensorDevice()) = xcor1 * psf;
     }
@@ -136,12 +137,9 @@ auto LoadKSpacePrecon(std::string const &fname, Trajectory const &traj, Sz5 cons
   }
 }
 
-auto MakeKSpaceSingle(PreconOpts const              &opts,
-                      rl::TOps::Grid<3>::Opts const &gridOpts,
-                      Trajectory const              &traj,
-                      Index const                    nC,
-                      Index const                    nS,
-                      Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto MakeKSpaceSingle(
+  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Sz5 const shape{nC, traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {
@@ -157,12 +155,9 @@ auto MakeKSpaceSingle(PreconOpts const              &opts,
   }
 }
 
-auto MakeKSpaceMulti(PreconOpts const              &opts,
-                     rl::TOps::Grid<3>::Opts const &gridOpts,
-                     Trajectory const              &traj,
-                     Cx5 const                     &smaps,
-                     Index const                    nS,
-                     Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto MakeKSpaceMulti(
+  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Cx5 const &smaps, Index const nS, Index const nT)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Sz5 const shape{smaps.dimension(1), traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {

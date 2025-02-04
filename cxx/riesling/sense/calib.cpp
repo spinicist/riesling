@@ -35,12 +35,12 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { throw Log::Failure(cmd, "Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    ref = SENSE::LoresChannels(senseArgs.Get(), gridOpts.Get(), refTraj, refNoncart, basis.get()).chip<0>(0);
+    ref = SENSE::LoresChannels(senseArgs.Get(), gridOpts.Get(), refTraj, refNoncart, basis.get()).chip<4>(0);
     // Normalize energy
     channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm<true>(channels));
     ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm<true>(ref));
   } else {
-    ref = DimDot<1>(channels, channels).sqrt();
+    ref = DimDot<3>(channels, channels).sqrt();
   }
   Cx5 const kernels =
     SENSE::EstimateKernels(channels, ref, senseArgs.kWidth.Get(), gridOpts.osamp.Get(), senseArgs.l.Get(), senseArgs.λ.Get());

@@ -5,21 +5,23 @@
 
 namespace rl::TOps {
 
-template <int ND> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
+template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
-  using GType = Grid<ND>;
-  NUFFTLowmem(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
   TOP_DECLARE(NUFFTLowmem)
+  NUFFTLowmem(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
 
-  static auto Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
-    -> std::shared_ptr<NUFFTLowmem<ND>>;
+  static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
+    -> std::shared_ptr<NUFFTLowmem<ND, KF>>;
 
-  void iadjoint(OutCMap const &y, InMap &x) const;
-  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const y, InMap x) const;
+  void iforward(InCMap const x, OutMap y) const;
 
 private:
-  GType::Ptr gridder;
+  constexpr static int DC = ND;     // Coils dimension
+  constexpr static int DB = ND + 1; // Basis dimension
+
+  Grid<ND, KF>::Ptr gridder;
   Cx3 mutable nc1;
   CxN<ND + 2> mutable workspace;
   CxN<ND + 2> skern;

@@ -18,7 +18,7 @@ TEST_CASE("Preconditioner", "[precon]")
   points(0, 0, 0) = -0.25f * M;
   points(0, 2, 0) = 0.25f * M;
   Trajectory const traj(points, matrix);
-  auto const       sc = KSpaceSingle(TOps::Grid<3>::Opts(), traj, 0.);
+  auto const       sc = KSpaceSingle(GridOpts<3>(), traj, 0.);
   INFO("Weights\n" << sc);
   CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
   CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));

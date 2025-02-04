@@ -39,7 +39,7 @@ template <> void GridToSubgrid<3>(Eigen::Array<int16_t, 3, 1> const sg, Cx5CMap 
   }
 
   if (inBounds) {
-    fmt::print(stderr, "Fast path sg {} sx {} x {}\n", sg, sx.dimensions(), x.dimensions());
+    // fmt::print(stderr, "Fast path sg {} sx {} x {}\n", sg, sx.dimensions(), x.dimensions());
     for (Index ib = 0; ib < sx.dimension(4); ib++) {
       for (Index ic = 0; ic < sx.dimension(3); ic++) {
         for (Index iz = 0; iz < sx.dimension(2); iz++) {
@@ -55,7 +55,7 @@ template <> void GridToSubgrid<3>(Eigen::Array<int16_t, 3, 1> const sg, Cx5CMap 
       }
     }
   } else {
-    fmt::print(stderr, "Slow path sg {} sx {} x {}\n", sg, sx.dimensions(), x.dimensions());
+    // fmt::print(stderr, "Slow path sg {} sx {} x {}\n", sg, sx.dimensions(), x.dimensions());
     for (Index ib = 0; ib < sx.dimension(4); ib++) {
       for (Index ic = 0; ic < sx.dimension(3); ic++) {
         for (Index iz = 0; iz < sx.dimension(2); iz++) {

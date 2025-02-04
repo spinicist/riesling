@@ -42,9 +42,9 @@ auto Basis::entry(Index const s, Index const t) const -> Cx1
   return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
 }
 
-auto Basis::entryConj(Index const s, Index const t) const -> Cx1
+auto Basis::entry(Index const b, Index const s, Index const t) const -> Cx
 {
-  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)).conjugate();
+  return B(b, s % B.dimension(1), t % B.dimension(2));
 }
 
 void Basis::write(std::string const &basisFile) const

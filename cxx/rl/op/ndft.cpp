@@ -81,7 +81,7 @@ template <int NDim> void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> 
   Log::Print("NDFT", "Off-resonance correction. f0 range is {} to {} Hz", Minimum(Δf), Maximum(Δf));
 }
 
-template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
+template <int NDim> void NDFT<NDim>::forward(InCMap const x, OutMap y) const
 {
   auto const  time = this->startForward(x, y, false);
   Index const nC = ishape[0];
@@ -106,7 +106,7 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, false);
 }
 
-template <int NDim> void NDFT<NDim>::adjoint(OutCMap const &yy, InMap &x) const
+template <int NDim> void NDFT<NDim>::adjoint(OutCMap const yy, InMap x) const
 {
   auto const                             time = this->startAdjoint(yy, x, false);
   OutTensor                              sy;

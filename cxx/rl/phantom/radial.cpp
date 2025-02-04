@@ -57,7 +57,6 @@ Re3 ArchimedeanSpiral(Index const matrix, float const OS, Index const nSpoke)
     z += dz;
     double const cos_z2 = z * z;
     double const sin_z2 = 1. - cos_z2;
-    double const sin_t = std::sqrt(sin_z2);
     double const d_phi = 0.5 * dz * std::sqrt((1. / sin_z2) * (c2 - (1. / sin_z2)));
     phi += d_phi;
     double const t = std::asin(z);
@@ -87,13 +86,9 @@ Re3 Phyllotaxis(Index const matrix, float const OS, Index const ntraces, Index c
   }
   Index           nInterleaves = ntraces / spi;
   constexpr float phi_gold = 2.399963229728653;
-  constexpr float phi_gm1 = 0.465571231876768;
-  constexpr float phi_gm2 = 0.682327803828019;
-
-  float dphi = phi_gold * Fib(smoothness);
-
-  Index const nRead = OS * matrix / 2.f;
-  Re2 const   read = Spoke(nRead);
+  float           dphi = phi_gold * Fib(smoothness);
+  Index const     nRead = OS * matrix / 2.f;
+  Re2 const       read = Spoke(nRead);
 
   Re3 traj(3, nRead, ntraces);
   Re1 endPoint(3);

@@ -19,7 +19,7 @@ namespace rl {
 namespace SENSE {
 
 auto LoresChannels(
-  Opts const &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+  Opts const &opts, GridOpts<3> const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
@@ -31,7 +31,7 @@ auto LoresChannels(
   auto       sgOpts = gridOpts;
   auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, nullptr);
   auto const M = MakeKSpaceSingle(PreconOpts(), sgOpts, traj, nC, nS, nT);
-  LSMR const lsmr{A, M, nullptr, 4};
+  LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
@@ -105,16 +105,16 @@ auto SobolevWeights(Sz3 const shape, Index const l) -> Re3
  */
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float const l, float const λ) -> Cx5
 {
-  if (LastN<3>(ichan.dimensions()) != LastN<3>(iref.dimensions())) {
+  if (FirstN<3>(ichan.dimensions()) != FirstN<3>(iref.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", ichan.dimensions(), iref.dimensions());
   }
 
-  Sz3 const osshape = MulToEven(LastN<3>(ichan.dimensions()), osamp);
-  Sz5 const cshape = AddFront(osshape, ichan.dimension(0), ichan.dimension(1));
-  Sz4 const rshape = AddFront(osshape, iref.dimension(0));
+  Sz3 const osshape = MulToEven(FirstN<3>(ichan.dimensions()), osamp);
+  Sz5 const cshape = AddBack(osshape, ichan.dimension(3), ichan.dimension(4));
+  Sz4 const rshape = AddBack(osshape, iref.dimension(3));
 
   // Need to swap channel and basis dimensions to make TensorScale work
-  Cx5 const chan = TOps::Pad<Cx, 5>(ichan.dimensions(), cshape).forward(ichan).shuffle(Sz5{1, 0, 2, 3, 4});
+  Cx5 const chan = TOps::Pad<Cx, 5>(ichan.dimensions(), cshape).forward(ichan).shuffle(Sz5{0, 1, 2, 4, 3});
   Cx4 const ref = TOps::Pad<Cx, 4>(iref.dimensions(), rshape).forward(iref);
 
   auto const mapshape = chan.dimensions();
@@ -124,13 +124,13 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
   float const median = Percentiles(OtsuMask(CollapseToArray(ref).abs()), {0.5}).front();
   Cx4 const   w = (ref / Cx(median) + Cx(1.f)).log();
   // Weighted Least Squares
-  auto R = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(mapshape, ref / Cx(nref));
-  auto W = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(mapshape, w);
-  auto Wr = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(mapshape, w.sqrt());
+  auto R = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(mapshape, ref / Cx(nref));
+  auto W = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(mapshape, w);
+  auto Wr = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(mapshape, w.sqrt());
   auto WrR = Ops::Mul<Cx>(Wr, R);
   // Smoothness regularizer (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-  auto F = std::make_shared<TOps::FFT<5, 3>>(mapshape);
-  auto K = std::make_shared<TOps::TensorScale<Cx, 5, 2, 0>>(mapshape, SobolevWeights(LastN<3>(mapshape), l).cast<Cx>());
+  auto F = std::make_shared<TOps::FFT<5, 3>>(mapshape, Sz3{0, 1, 2});
+  auto K = std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(mapshape, SobolevWeights(FirstN<3>(mapshape), l).cast<Cx>());
   auto L = std::make_shared<Ops::DiagScale<Cx>>(K->rows(), λ);
   auto LKF = Ops::Mul<Cx>(L, Ops::Mul<Cx>(K, F));
   // Combine operators
@@ -149,7 +149,7 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
   LSMR       solve{A, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-6f}};
   auto const s = solve.run(cʹ);
   Cx5        maps = AsTensorMap(s, mapshape);
-  return maps.shuffle(Sz5{1, 0, 2, 3, 4});
+  return maps.shuffle(Sz5{0, 1, 2, 4, 3});
 }
 
 /* We want to solve:
@@ -178,31 +178,31 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
 auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
   -> Cx5
 {
-  if (LastN<3>(nomChan.dimensions()) != LastN<3>(nomRef.dimensions())) {
+  if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
   }
-  Cx5 const schan = nomChan.shuffle(Sz5{1, 0, 2, 3, 4});
+  Cx5 const schan = nomChan.shuffle(Sz5{0, 1, 2, 4, 3});
 
   Index const kW = std::floor(nomKW * osamp / 2) * 2 + 1;
-  Sz3 const   osshape = MulToEven(LastN<3>(schan.dimensions()), osamp);
-  Sz5 const   cshape = AddFront(osshape, schan.dimension(0), schan.dimension(1));
-  Sz4 const   rshape = AddFront(osshape, nomRef.dimension(0));
+  Sz3 const   osshape = MulToEven(FirstN<3>(schan.dimensions()), osamp);
+  Sz5 const   cshape = AddBack(osshape, schan.dimension(3), schan.dimension(4));
+  Sz4 const   rshape = AddBack(osshape, nomRef.dimension(3));
 
   float const scale = Norm<true>(nomRef);
   Cx5 const   channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(scale);
   Cx4 const   ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(scale);
 
-  if (cshape[2] < (2 * kW) || cshape[3] < (2 * kW) || cshape[4] < (2 * kW)) {
-    throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", LastN<3>(cshape), kW);
+  if (cshape[0] < (2 * kW) || cshape[1] < (2 * kW) || cshape[2] < (2 * kW)) {
+    throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", FirstN<3>(cshape), kW);
   }
-  Sz5 const kshape{cshape[0], cshape[1], kW, kW, kW};
+  Sz5 const kshape{kW, kW, kW, cshape[3], cshape[4]};
   Log::Print("SENSE", "Kernel shape {} scale {}", kshape, scale);
   // Set up operators
-  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(LastN<3>(cshape)) / (float)(kW * kW * kW)));
+  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(FirstN<3>(cshape)) / (float)(kW * kW * kW)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
   auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
   auto FP = Ops::Mul<Cx>(Ops::Mul<Cx>(F, P), D);
-  auto S = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(cshape, ref);
+  auto S = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(cshape, ref);
   auto SFP = Ops::Mul<Cx>(S, FP);
 
   // Weights (mask)
@@ -210,7 +210,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Eigen::ArrayXf const  ra = r.abs();
   Eigen::ArrayXcf const rm = OtsuMasked(ra).cast<Cx>();
   auto const            om = AsConstTensorMap(rm, rshape);
-  auto                  M = std::make_shared<TOps::TensorScale<Cx, 5, 1, 0>>(cshape, om);
+  auto                  M = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(cshape, om);
   auto                  MSFP = Ops::Mul<Cx>(M, SFP);
 
   Cx5 kernels;
@@ -218,7 +218,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
     Cx3 const  sw = SobolevWeights(kW, l).cast<Cx>();
     auto const swv = CollapseToConstVector(sw);
-    auto       W = std::make_shared<Ops::DiagRep<Cx>>(swv, kshape[0] * kshape[1], 1);
+    auto       W = std::make_shared<Ops::DiagRep<Cx>>(swv, 1, kshape[3] * kshape[4]);
     auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
 
     // Combine
@@ -252,15 +252,15 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     auto const          k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
-  return kernels.shuffle(Sz5{1, 0, 2, 3, 4});
+  return kernels.shuffle(Sz5{0, 1, 2, 4, 3});
 }
 
 auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5
 {
   auto const  kshape = kernels.dimensions();
-  auto const  fshape = AddFront(MulToEven(mat, os), kshape[0], kshape[1]);
-  auto const  cshape = AddFront(mat, kshape[0], kshape[1]);
-  float const scale = std::sqrt(Product(LastN<3>(fshape)) / (float)Product(LastN<3>(kshape)));
+  auto const  fshape = AddBack(MulToEven(mat, os), kshape[3], kshape[4]);
+  auto const  cshape = AddBack(mat, kshape[3], kshape[4]);
+  float const scale = std::sqrt(Product(FirstN<3>(fshape)) / (float)Product(FirstN<3>(kshape)));
   Log::Print("SENSE", "Kernels {} Full maps {} Cropped maps {} Scale {}", kshape, fshape, cshape, scale);
   TOps::Pad<Cx, 5> P(kshape, fshape);
   TOps::FFT<5, 3>  F(fshape, false);
@@ -272,9 +272,9 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
 {
   Index const kW = std::floor(nomKW * os / 2) * 2 + 1;
   auto const  mshape = maps.dimensions();
-  auto const  oshape = AddFront(MulToEven(LastN<3>(mshape), os), mshape[0], mshape[1]);
-  auto const  kshape = Sz5{mshape[0], mshape[1], kW, kW, kW};
-  float const scale = std::sqrt(Product(LastN<3>(oshape)) / (float)Product(LastN<3>(mshape)));
+  auto const  oshape = AddBack(MulToEven(FirstN<3>(mshape), os), mshape[3], mshape[4]);
+  auto const  kshape = Sz5{kW, kW, kW, mshape[3], mshape[4]};
+  float const scale = std::sqrt(Product(FirstN<3>(oshape)) / (float)Product(FirstN<3>(mshape)));
   Log::Print("SENSE", "Map Shape {} Oversampled map shape {} Kernel shape {} Scale {}", mshape, oshape, kshape, scale);
   TOps::Pad<Cx, 5> P(mshape, oshape);
   TOps::FFT<5, 3>  F(oshape, true);
@@ -282,7 +282,7 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
-auto Choose(Opts const &opts, TOps::Grid<3>::Opts const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+auto Choose(Opts const &opts, GridOpts<3> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }

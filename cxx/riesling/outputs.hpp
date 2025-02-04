@@ -17,7 +17,7 @@ void WriteOutput(
 void WriteResidual(std::string const              &cmd,
                    std::string const              &writer,
                    Recon::Opts const              &reconOpts,
-                   TOps::Grid<3>::Opts const      &gridOpts,
+                   GridOpts<3> const              &gridOpts,
                    SENSE::Opts const              &senseOpts,
                    PreconOpts const               &preOpts,
                    Trajectory const               &traj,

@@ -20,7 +20,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
   {
   }
 
-  void forward(InCMap const &x, OutMap &y) const
+  void forward(InCMap const x, OutMap y) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -34,7 +34,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap const &y, InMap &x) const
+  void adjoint(OutCMap const y, InMap x) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -48,7 +48,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap const &x, OutMap &y) const
+  void iforward(InCMap const x, OutMap y) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -62,7 +62,7 @@ template <typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank +
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap const &y, InMap &x) const
+  void iadjoint(OutCMap const y, InMap x) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);

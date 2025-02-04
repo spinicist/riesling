@@ -19,35 +19,33 @@ void main_op_sense(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader ireader(iname.Get());
   if (!sname) { throw Log::Failure(cmd, "No input SENSE map file specified"); }
-  HD5::Reader sreader(sname.Get());
-  auto const  maps = sreader.readTensor<Cx5>();
-
+  HD5::Reader      sreader(sname.Get());
+  auto const       maps = sreader.readTensor<Cx5>();
+  auto const       shape = FirstN<3>(maps.dimensions());
+  auto const       nC = maps.dimension(3);
   Trajectory const traj(ireader, ireader.readInfo().voxel_size);
   HD5::Writer      writer(oname.Get());
   writer.writeInfo(ireader.readInfo());
   traj.write(writer);
 
   if (fwd) {
-    auto const images = ireader.readTensor<Cx5>();
-    if (LastN<3>(maps.dimensions()) != MidN<1, 3>(images.dimensions())) {
-      throw Log::Failure(cmd, "Image dimensions {} did not match SENSE maps {}", images.dimensions(), maps.dimensions());
-    }
-    TOps::SENSE sense(maps, 1);
-    Cx6         channels(AddBack(maps.dimensions(), images.dimension(4)));
-    for (auto ii = 0; ii < images.dimension(4); ii++) {
-      auto const temp = sense.forward(CChipMap(images, ii));
-      channels.chip<5>(ii).device(Threads::TensorDevice()) = temp;
+    auto const  images = ireader.readTensor<Cx5>();
+    auto const  nB = images.dimension(3);
+    auto const  nT = images.dimension(4);
+    TOps::SENSE sense(maps, nB);
+    Cx6         channels(AddBack(shape, nC, nB, nT));
+    for (auto it = 0; it < nT; it++) {
+      sense.forward(CChipMap(images, it), ChipMap(channels, it));
     }
     writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::Channels);
   } else {
-    auto const channels = ireader.readTensor<Cx6>();
-    if (maps.dimensions() != FirstN<5>(channels.dimensions())) {
-      throw Log::Failure(cmd, "Channel dimensions {} did not match SENSE maps {}", channels.dimensions(), maps.dimensions());
-    }
-    TOps::SENSE sense(maps, 1);
-    Cx5         images(LastN<5>(channels.dimensions()));
-    for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      images.chip<4>(ii).device(Threads::TensorDevice()) = sense.adjoint(CChipMap(channels, ii));
+    auto const  channels = ireader.readTensor<Cx6>();
+    auto const  nB = channels.dimension(4);
+    auto const  nT = channels.dimension(5);
+    TOps::SENSE sense(maps, nB);
+    Cx5         images(AddBack(shape, nB, nT));
+    for (auto it = 0; it < nT; it++) {
+      sense.adjoint(CChipMap(channels, it), ChipMap(images, it));
     }
     writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
   }

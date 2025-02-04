@@ -13,7 +13,7 @@ Op<S>::Op(std::string const &n)
 {
 }
 
-template <typename S> void Op<S>::inverse(CMap const &, Map &) const
+template <typename S> void Op<S>::inverse(CMap const , Map ) const
 {
   throw Log::Failure("Op", "{} does not have an inverse defined", name);
 }

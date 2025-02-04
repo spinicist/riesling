@@ -11,10 +11,10 @@
 
 namespace rl::TOps {
 
-template <int ND>
-NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
+template <int ND, typename KF>
+NUFFT<ND, KF>::NUFFT(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
   : Parent("NUFFT")
-  , gridder{Grid<ND>::Make(opts, traj, nChan, basis)}
+  , gridder{Grid<ND, KF>::Make(opts, traj, nChan, basis)}
   , workspace{gridder->ishape}
 {
   ishape = Concatenate(traj.matrixForFOV(opts.fov), LastN<2>(gridder->ishape));
@@ -29,7 +29,7 @@ NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index 
     apo_shape[ND + ii] = 1;
     apoBrd_[ND + ii] = gridder->ishape[ND + ii];
   }
-  apo_ = Apodize(FirstN<ND>(ishape), FirstN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
+  apo_ = Apodize<ND, KF>(FirstN<ND>(ishape), FirstN<ND>(gridder->ishape), opts.osamp).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
@@ -41,14 +41,14 @@ NUFFT<ND>::NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index 
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int ND>
-auto NUFFT<ND>::Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
-  -> std::shared_ptr<NUFFT<ND>>
+template <int ND, typename KF>
+auto NUFFT<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
+  -> std::shared_ptr<NUFFT<ND, KF>>
 {
-  return std::make_shared<NUFFT<ND>>(opts, traj, nChan, basis);
+  return std::make_shared<NUFFT<ND, KF>>(opts, traj, nChan, basis);
 }
 
-template <int ND> void NUFFT<ND>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFT<ND, KF>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -58,7 +58,7 @@ template <int ND> void NUFFT<ND>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, false);
 }
 
-template <int ND> void NUFFT<ND>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFT<ND, KF>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -68,7 +68,7 @@ template <int ND> void NUFFT<ND>::adjoint(OutCMap const &y, InMap &x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND> void NUFFT<ND>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFT<ND, KF>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -78,7 +78,7 @@ template <int ND> void NUFFT<ND>::iforward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, true);
 }
 
-template <int ND> void NUFFT<ND>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFT<ND, KF>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -92,12 +92,9 @@ template struct NUFFT<1>;
 template struct NUFFT<2>;
 template struct NUFFT<3>;
 
-auto NUFFTAll(Grid<3>::Opts const &gridOpts,
-              Trajectory const    &traj,
-              Index const          nC,
-              Index const          nSlab,
-              Index const          nTime,
-              Basis::CPtr          basis) -> TOps::TOp<Cx, 6, 5>::Ptr
+auto NUFFTAll(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr basis)
+  -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, nC, basis);
   if (nSlab == 1) {

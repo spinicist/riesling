@@ -11,8 +11,8 @@ struct Grad final : TOp<Cx, ND, ND + 1>
   Grad(InDims const ishape, std::vector<Index> const &gradDims, int const order);
   static auto Make(InDims const ishape, std::vector<Index> const &gradDims, int const order) -> std::shared_ptr<Grad>;
   TOP_DECLARE(Grad)
-  void iforward(InCMap const &x, OutMap &y) const;
-  void iadjoint(OutCMap const &y, InMap &x) const;
+  void iforward(InCMap const x, OutMap y) const;
+  void iadjoint(OutCMap const y, InMap x) const;
 
 private:
   std::vector<Index> dims_;

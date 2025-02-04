@@ -5,94 +5,100 @@
 #include "../log.hpp"
 #include "top-impl.hpp"
 
-#include <numbers>
-constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
-
 namespace rl::TOps {
 
 namespace {
-template <int ND> auto OneChannel(Sz<ND> shape) -> Sz<ND>
+template <int NDp2> auto OneChannel(Sz<NDp2> shape) -> Sz<NDp2 - 1>
 {
-  shape[1] = 1;
-  return shape;
+  Sz<NDp2 - 1> out;
+  std::copy_n(shape.begin(), NDp2 - 2, out.begin());
+  out[NDp2 - 2] = 1;
+  return out;
 }
 
-template <int ND> auto NoChannels(Sz<ND> shape) -> Sz<ND - 1>
+template <int NDp2> auto NoChannels(Sz<NDp2> shape) -> Sz<NDp2 - 1>
 {
-  Sz<ND - 1> out;
-  out[0] = shape[0];
-  std::copy_n(shape.begin() + 2, ND - 2, out.begin() + 1);
+  Sz<NDp2 - 1> out;
+  std::copy_n(shape.begin(), NDp2 - 2, out.begin());
+  out[NDp2 - 2] = shape[NDp2 - 1];
   return out;
 }
 } // namespace
 
-template <int ND>
-NUFFTLowmem<ND>::NUFFTLowmem(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &sk, Basis::CPtr basis)
+template <int ND, typename KF>
+NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> const    &opts,
+                                 TrajectoryN<ND> const &traj,
+                                 CxN<ND + 2> const     &sk,
+                                 Basis::CPtr            basis)
   : Parent("NUFFTLowmem")
-  , gridder{GType::Make(opts, traj, 1, basis)}
+  , gridder{Grid<ND, KF>::Make(opts, traj, 1, basis)}
   , nc1{AddFront(LastN<2>(gridder->oshape), 1)}
   , workspace{gridder->ishape}
   , skern{sk}
-  , smap{Concatenate(FirstN<1>(skern.dimensions()), LastN<ND>(gridder->ishape))}
-  , spad{NoChannels(skern.dimensions()), smap.dimensions()}
+  , smap{AddBack(FirstN<ND>(gridder->ishape), skern.dimension(DB))}
+  , spad{OneChannel(skern.dimensions()), smap.dimensions()}
 {
-  ishape = Concatenate(FirstN<1>(gridder->ishape), traj.matrixForFOV(opts.fov));
+  auto const nB = gridder->ishape[DB];
+  auto const nC = skern.dimension(DC);
+  ishape = AddBack(traj.matrixForFOV(opts.fov), nB);
   oshape = gridder->oshape;
-  oshape[0] = skern.dimension(1);
-  std::iota(fftDims.begin(), fftDims.end(), 2);
-  Log::Print("NUFFTLowmem", "ishape {} oshape {} grid {}", ishape, oshape, gridder->ishape);
+  oshape[0] = nC;
+  std::iota(fftDims.begin(), fftDims.end(), 0);
+  Log::Print(this->name, "ishape {} oshape {} grid {} fft {} ws {}", ishape, oshape, gridder->ishape, fftDims, workspace.dimensions());
 
   // Broadcast SENSE across basis if needed
   sbrd.fill(1);
-  if (skern.dimension(0) == 1) {
-    sbrd[0] = ishape[0];
-  } else if (skern.dimension(0) == ishape[0]) {
-    sbrd[0] = 1;
+  if (skern.dimension(4) == 1) {
+    sbrd[DC] = nB;
+  } else if (skern.dimension(0) == nB) {
+    sbrd[DC] = 1;
   } else {
-    throw Log::Failure("TOp", "SENSE kernels had basis dimension {}, expected 1 or {}", skern.dimension(0), ishape[0]);
+    throw Log::Failure(this->name, "SENSE kernels had basis dimension {}, expected 1 or {}", skern.dimension(0), ishape[0]);
   }
   // Calculate apodization correction
   auto apo_shape = ishape;
   apoBrd_.fill(1);
-  apo_shape[0] = 1;
-  apoBrd_[0] = gridder->ishape[0];
-  apo_ = Apodize(LastN<ND>(ishape), LastN<ND>(gridder->ishape), gridder->kernel).reshape(apo_shape); // Padding stuff
+  apo_shape[DC] = 1;
+  apoBrd_[DC] = gridder->ishape[DC];
+  apo_ = Apodize<ND, KF>(FirstN<ND>(ishape), FirstN<ND>(gridder->ishape), opts.osamp).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
-  for (int ii = 1; ii < InRank; ii++) {
-    padLeft_[ii] = (gridder->ishape[ii + 1] - ishape[ii] + 1) / 2;
-    padRight[ii] = (gridder->ishape[ii + 1] - ishape[ii]) / 2;
+  for (int ii = 0; ii < ND; ii++) {
+    padLeft_[ii] = (gridder->ishape[ii] - ishape[ii] + 1) / 2;
+    padRight[ii] = (gridder->ishape[ii] - ishape[ii]) / 2;
   }
   std::transform(padLeft_.cbegin(), padLeft_.cend(), padRight.cbegin(), paddings_.begin(),
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int ND>
-auto NUFFTLowmem<ND>::Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
-  -> std::shared_ptr<NUFFTLowmem<ND>>
+template <int ND, typename KF>
+auto NUFFTLowmem<ND, KF>::Make(GridOpts<ND> const    &opts,
+                               TrajectoryN<ND> const &traj,
+                               CxN<ND + 2> const     &skern,
+                               Basis::CPtr            basis) -> std::shared_ptr<NUFFTLowmem<ND, KF>>
 {
-  return std::make_shared<NUFFTLowmem<ND>>(opts, traj, skern, basis);
+  return std::make_shared<NUFFTLowmem<ND, KF>>(opts, traj, skern, basis);
 }
 
-template <int ND> void NUFFTLowmem<ND>::kernToMap(Index const c) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::kernToMap(Index const c) const
 {
-  float const scale = std::sqrt(Product(LastN<ND>(smap.dimensions())) / (float)Product(LastN<ND>(skern.dimensions())));
+  float const scale = std::sqrt(Product(FirstN<ND>(smap.dimensions())) / (float)Product(FirstN<ND>(skern.dimensions())));
   smap.setZero();
-  CxN<ND + 1> const     sk1 = skern.template chip<1>(c) * Cx(scale);
+  CxN<ND + 1> const     sk1 = skern.template chip<DC>(c) * Cx(scale);
   CxNCMap<ND + 1> const sk1map(sk1.data(), sk1.dimensions());
   CxNMap<ND + 1>        smapmap(smap.data(), smap.dimensions());
   spad.forward(sk1map, smapmap);
   Sz<ND> ftd;
-  std::iota(ftd.begin(), ftd.end(), 1);
+  std::iota(ftd.begin(), ftd.end(), 0);
   FFT::Adjoint(smap, ftd);
 }
 
-template <int ND> void NUFFTLowmem<ND>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap const x, OutMap y) const
 {
   auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddFront(LastN<ND>(workspace.dimensions()), workspace.dimension(0)));
+  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(DC)));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
   ws1m.setZero();
   y.setZero();
@@ -106,11 +112,11 @@ template <int ND> void NUFFTLowmem<ND>::forward(InCMap const &x, OutMap &y) cons
   this->finishForward(y, time, false);
 }
 
-template <int ND> void NUFFTLowmem<ND>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap const x, OutMap y) const
 {
   auto const     time = this->startForward(x, y, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddFront(LastN<ND>(workspace.dimensions()), workspace.dimension(0)));
+  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(0)));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
   ws1m.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
@@ -123,7 +129,7 @@ template <int ND> void NUFFTLowmem<ND>::iforward(InCMap const &x, OutMap &y) con
   this->finishForward(y, time, true);
 }
 
-template <int ND> void NUFFTLowmem<ND>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap const y, InMap x) const
 {
   auto const     time = this->startAdjoint(y, x, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -141,11 +147,11 @@ template <int ND> void NUFFTLowmem<ND>::adjoint(OutCMap const &y, InMap &x) cons
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND> void NUFFTLowmem<ND>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const     time = this->startAdjoint(y, x, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddFront(LastN<ND>(workspace.dimensions()), workspace.dimension(0)));
+  CxNMap<ND + 1> ws1m(workspace.data(), AddFront(FirstN<ND>(workspace.dimensions()), workspace.dimension(0)));
   OutCMap        nc1m(nc1.data(), nc1.dimensions());
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);

@@ -36,21 +36,21 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   using Base::forward;
   using Base::inverse;
 
-  void forward(typename Base::CMap const &x, typename Base::Map &y) const final;
-  void adjoint(typename Base::CMap const &y, typename Base::Map &x) const final;
+  void forward(typename Base::CMap const x, typename Base::Map y) const final;
+  void adjoint(typename Base::CMap const y, typename Base::Map x) const final;
 
-  void iforward(typename Base::CMap const &x, typename Base::Map &y) const final;
-  void iadjoint(typename Base::CMap const &y, typename Base::Map &x) const final;
+  void iforward(typename Base::CMap const x, typename Base::Map y) const final;
+  void iadjoint(typename Base::CMap const y, typename Base::Map x) const final;
 
   virtual auto forward(InTensor const &x) const -> OutTensor;
   virtual auto adjoint(OutTensor const &y) const -> InTensor;
   virtual void forward(InTensor const &x, OutTensor &y) const;
   virtual void adjoint(OutTensor const &y, InTensor &x) const;
 
-  virtual void forward(InCMap const &x, OutMap &y) const = 0;
-  virtual void adjoint(OutCMap const &y, InMap &x) const = 0;
-  virtual void iforward(InCMap const &x, OutMap &y) const;
-  virtual void iadjoint(OutCMap const &y, InMap &x) const;
+  virtual void forward(InCMap const x, OutMap y) const = 0;
+  virtual void adjoint(OutCMap const y, InMap x) const = 0;
+  virtual void iforward(InCMap const x, OutMap y) const;
+  virtual void iadjoint(OutCMap const y, InMap x) const;
 
 protected:
   auto startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time;
@@ -78,21 +78,9 @@ protected:
 
 #define TOP_DECLARE(SELF)                                                                                                      \
   using Ptr = std::shared_ptr<SELF>;                                                                                           \
-  void forward(InCMap const &x, OutMap &y) const;                                                                              \
-  void adjoint(OutCMap const &y, InMap &x) const;                                                                              \
+  void forward(InCMap const x, OutMap y) const;                                                                              \
+  void adjoint(OutCMap const y, InMap x) const;                                                                              \
   using Parent::forward;                                                                                                       \
   using Parent::adjoint;
-
-template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
-{
-  TOP_INHERIT(Scalar_, Rank, Rank)
-  Identity(Sz<Rank> dims);
-
-  void forward(InCMap const &x, OutMap &y) const;
-  void adjoint(OutCMap const &y, InMap &x) const;
-
-  void iforward(InCMap const &x, OutMap &y) const;
-  void iadjoint(OutCMap const &y, InMap &x) const;
-};
 
 } // namespace rl::TOps

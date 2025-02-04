@@ -5,21 +5,21 @@
 
 namespace rl::TOps {
 
-template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
+template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   TOP_DECLARE(NUFFTDecant)
 
-  NUFFTDecant(TOps::Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
+  NUFFTDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
 
-  static auto Make(TOps::Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
+  static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
     -> std::shared_ptr<NUFFTDecant<ND>>;
 
-  void iadjoint(OutCMap const &y, InMap &x) const;
-  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const y, InMap x) const;
+  void iforward(InCMap const x, OutMap y) const;
 
 private:
-  GridDecant<ND> gridder;
+  GridDecant<ND, KF> gridder;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
   InTensor apo_;

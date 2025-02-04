@@ -3,7 +3,7 @@
 #include "regularizers.hpp"
 #include "rl/algo/admm.hpp"
 #include "rl/log.hpp"
-#include "rl/op/top.hpp"
+#include "rl/op/top-id.hpp"
 #include "rl/scaling.hpp"
 
 using namespace rl;

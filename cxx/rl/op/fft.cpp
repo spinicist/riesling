@@ -6,11 +6,19 @@
 namespace rl::TOps {
 
 template <int Rank, int FFTRank>
-FFT<Rank, FFTRank>::FFT(InDims const &dims, bool const adj)
-  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), dims, dims)
+FFT<Rank, FFTRank>::FFT(InDims const &shape, bool const adj)
+  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), shape, shape)
   , adjoint_{adj}
 {
-  std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
+  std::iota(dims_.begin(), dims_.end(), 0);
+}
+
+template <int Rank, int FFTRank>
+FFT<Rank, FFTRank>::FFT(InDims const &shape, Sz<FFTRank> const dims, bool const adj)
+  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), shape, shape)
+  , dims_{dims}
+  , adjoint_{adj}
+{
 }
 
 template <int Rank, int FFTRank>
@@ -25,7 +33,7 @@ template <int Rank, int FFTRank> auto FFT<Rank, FFTRank>::inverse() const -> std
   return std::make_shared<FFT<Rank, FFTRank>>(this->ishape, !this->adjoint_);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &x, OutMap &y) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y = x;
@@ -37,7 +45,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap const &
   this->finishForward(y, time, false);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const &y, InMap &x) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x = y;
@@ -49,7 +57,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap const 
   this->finishAdjoint(x, time, false);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap const &x, OutMap &y) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   InTensor   tmp = x;
@@ -62,7 +70,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap const 
   this->finishForward(y, time, true);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const &y, InMap &x) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InTensor   tmp = y;

@@ -12,6 +12,7 @@ using namespace Catch;
 
 TEST_CASE("NUFFT", "[nufft]")
 {
+  // Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(6);
   auto const  matrix = Sz1{M};
   Re3         points(1, M, 1);
@@ -22,7 +23,7 @@ TEST_CASE("NUFFT", "[nufft]")
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
   float const          osamp = GENERATE(2.f, 2.3f);
-  auto                 nufft = TOps::NUFFT<1>(TOps::Grid<1>::Opts{.osamp = osamp}, traj, 1, &basis);
+  auto                 nufft = TOps::NUFFT<1>(GridOpts<1>{.osamp = osamp}, traj, 1, &basis);
   Cx3                  ks(nufft.oshape);
   Cx3                  img(nufft.ishape);
   img.setZero();
@@ -32,12 +33,13 @@ TEST_CASE("NUFFT", "[nufft]")
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(1.e-2f));
-  img = nufft.adjoint(ks);
-  INFO("IMG\n" << img);
-  CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(1.e-2f));
+  Cx3 img2 = nufft.adjoint(ks);
+  INFO("IMG2\n" << img2);
+  CHECK(Norm<false>(img2) == Approx(Norm<false>(ks)).margin(1.e-2f));
+  CHECK(Norm<false>(img - img2) == Approx(0).margin(1.e-2f));
 }
 
-TEST_CASE("NUFFT-Basis", "[nufft]")
+TEST_CASE("NUFFTB", "[nufft]")
 {
   Index const M = 6;
   auto const  matrix = Sz1{M};
@@ -56,7 +58,7 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
     }
   }
 
-  auto nufft = TOps::NUFFT<1>(TOps::Grid<1>::Opts{.osamp = 2.f}, traj, 1, &basis);
+  auto nufft = TOps::NUFFT<1>(GridOpts<1>{.osamp = 2.f}, traj, 1, &basis);
   Cx3  ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);

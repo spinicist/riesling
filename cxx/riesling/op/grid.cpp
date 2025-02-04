@@ -13,12 +13,9 @@
 
 using namespace rl;
 
-auto MakeGrid(TOps::Grid<3>::Opts const &gridOpts,
-              Trajectory const          &traj,
-              Index const                nC,
-              Index const                nS,
-              Index const                nT,
-              Basis::CPtr                basis) -> TOps::TOp<Cx, 6, 5>::Ptr
+auto MakeGrid(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
+  -> TOps::TOp<Cx, 6, 5>::Ptr
 {
   auto grid = TOps::Grid<3>::Make(gridOpts, traj, nC, basis);
   if (nS == 1) {
@@ -39,7 +36,7 @@ void main_grid(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LSMRArgs     lsqOpts(parser);
+  LSMRArgs    lsqOpts(parser);
   args::Flag  fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   args::Flag  adj(parser, "", "Apply adjoint operation", {'a', "adj"});
 
@@ -72,7 +69,7 @@ void main_grid(args::Subparser &parser)
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
     auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
-    LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get()};
+    LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
     auto const c = lsmr.run(CollapseToConstVector(noncart));
     writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
   }

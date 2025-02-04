@@ -5,9 +5,6 @@
 #include "../tensors.hpp"
 #include "top-impl.hpp"
 
-#include <numbers>
-constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
-
 namespace rl::TOps {
 
 SENSE::SENSE(Cx5 const &maps, Index const nB)
@@ -31,28 +28,28 @@ SENSE::SENSE(Cx5 const &maps, Index const nB)
   }
 }
 
-void SENSE::forward(InCMap const &x, OutMap &y) const
+void SENSE::forward(InCMap const x, OutMap y) const
 {
   auto const time = startForward(x, y, false);
   y.device(Threads::TensorDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
   finishForward(y, time, false);
 }
 
-void SENSE::iforward(InCMap const &x, OutMap &y) const
+void SENSE::iforward(InCMap const x, OutMap y) const
 {
   auto const time = startForward(x, y, true);
   y.device(Threads::TensorDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
   finishForward(y, time, true);
 }
 
-void SENSE::adjoint(OutCMap const &y, InMap &x) const
+void SENSE::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3});
   finishAdjoint(x, time, false);
 }
 
-void SENSE::iadjoint(OutCMap const &y, InMap &x) const
+void SENSE::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = startAdjoint(y, x, true);
   x.device(Threads::TensorDevice()) += (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3});

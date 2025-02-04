@@ -140,7 +140,7 @@ auto SegmentedZTE::simulate(Eigen::ArrayXf const &pars) const -> Cx2
 {
   if (pars.size() != 3) { throw Log::Failure("Sim", "Need 3 parameters T1 T2 Δf"); }
   float const R1 = 1.f / pars(0);
-  float const R2s = 1.f / pars(1);
+  // float const R2s = 1.f / pars(1);
   float const Δf = pars(2);
   float const B1 = pars(3);
 
