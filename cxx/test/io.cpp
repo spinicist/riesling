@@ -16,7 +16,6 @@ void Dummy(std::filesystem::path const &fname) { HD5::Reader reader(fname); }
 
 TEST_CASE("IO", "[io]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const      M = 4;
   auto const       matrix = Sz3{M, M, M};
   Index const      channels = 1, traces = 64, slices = 1, volumes = 2;

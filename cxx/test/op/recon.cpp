@@ -15,7 +15,7 @@ using namespace Catch;
 
 TEST_CASE("Recon-Basic", "[recon]")
 {
-  Log::SetLevel(Log::Level::Debug);
+  Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(7); //, 15, 16);
   Index const nC = 4;
   auto const  matrix = Sz3{M, M, M};
@@ -43,17 +43,16 @@ TEST_CASE("Recon-Basic", "[recon]")
   ks.setConstant(1.f);
   img = recon.adjoint(ks);
   // Super loose tolerance
-  INFO("ks\n" << ks);
-  INFO("img\n" << img);
+  // INFO("ks\n" << ks);
+  // INFO("img\n" << img);
   CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-1f));
   ks = recon.forward(img);
-  INFO("ks\n" << ks);
+  // INFO("ks\n" << ks);
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }
 
 TEST_CASE("Recon-Lowmem", "[recon]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const M = GENERATE(8); //, 15, 16);
   Index const nC = 4;
   auto const  matrix = Sz3{M, M, M};

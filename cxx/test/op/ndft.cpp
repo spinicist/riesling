@@ -9,7 +9,6 @@ using namespace Catch;
 
 TEST_CASE("NDFT", "[tform]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(5, 6);
   Re3         points(1, M, 1);
@@ -34,7 +33,6 @@ TEST_CASE("NDFT", "[tform]")
 
 TEST_CASE("NDFT Basis", "[tform]")
 {
-  Log::SetLevel(Log::Level::Testing);
   Index const M = 8;
   Index const N = 5;
   Re3         points(1, 1, M);

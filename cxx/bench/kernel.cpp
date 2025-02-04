@@ -12,7 +12,6 @@ using namespace rl;
 TEMPLATE_TEST_CASE(
   "Kernels", "[kernels]", (Kernel<Cx, 3, ExpSemi<2>>), (Kernel<Cx, 3, ExpSemi<4>>), (Kernel<Cx, 3, ExpSemi<6>>))
 {
-  Log::SetLevel(Log::Level::Testing);
   TestType   k(2.f);
   auto const p = TestType::Point::Constant(0.5f);
 

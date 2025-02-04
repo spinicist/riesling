@@ -21,7 +21,6 @@ float const os = 2.f;
 TEST_CASE("Grid", "[grid]")
 {
   auto ktype = GENERATE("ES2", "ES4", "ES6");
-  Log::SetLevel(Log::Level::Testing);
   auto grid = TOps::Grid<3>(TOps::Grid<3>::Opts{.osamp = os, .ktype = ktype}, traj, C, nullptr);
   Cx5  c(grid.ishape);
   Cx3  nc(grid.oshape);

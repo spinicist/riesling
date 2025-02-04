@@ -12,9 +12,9 @@ namespace rl {
 namespace Log {
 
 namespace {
-Level                        log_level = Level::None;
+Display                      displayLevel = Display::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;
-bool                         isTTY = false;
+bool                         isDebugging = false, isTTY = false;
 std::mutex                   logMutex;
 std::vector<std::string>     savedEntries;
 
@@ -25,11 +25,9 @@ auto TheTime() -> std::string
 }
 } // namespace
 
-auto CurrentLevel() -> Level { return log_level; }
-
-void SetLevel(Level const l)
+void SetDisplayLevel(Display const l)
 {
-  log_level = l;
+  displayLevel = l;
   if (char *const env_p = std::getenv("RL_NOT_TTY")) {
     isTTY = false;
   } else if (isatty(fileno(stdin))) {
@@ -38,26 +36,35 @@ void SetLevel(Level const l)
     isTTY = false;
   }
   // Move the cursor one more line down so we don't erase command names etc.
-  if (CurrentLevel() == Level::Ephemeral) { fmt::print(stderr, "\n"); }
+  if (displayLevel == Display::Ephemeral) { fmt::print(stderr, "\n"); }
+  if (displayLevel == Display::High) {
+    isDebugging = true;
+  } else if (!debug_file) {
+    isDebugging = false;
+  }
 }
 
-void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
+void SetDebugFile(std::string const &fname)
+{
+  debug_file = std::make_shared<HD5::Writer>(fname);
+  isDebugging = true;
+}
 
-auto IsDebugging() -> bool { return debug_file ? true: false; }
+auto IsDebugging() -> bool { return isDebugging; }
 
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string
 {
   return fmt::format("[{}] [{:<6}] {}", TheTime(), category, fmt::vformat(fmt, args));
 }
 
-void SaveEntry(std::string const &s, fmt::terminal_color const color, Level const level)
+void SaveEntry(std::string const &s, fmt::terminal_color const color, Display const level)
 {
   {
     std::scoped_lock lock(logMutex);
     savedEntries.push_back(s); // This is not thread-safe
   }
-  if (CurrentLevel() >= level) {
-    if (CurrentLevel() == Level::Ephemeral) { fmt::print(stderr, "\033[A\33[2K\r"); }
+  if (displayLevel >= level) {
+    if (displayLevel == Display::Ephemeral) { fmt::print(stderr, "\033[A\33[2K\r"); }
     fmt::print(stderr, fmt::fg(color), "{}\n", s);
   }
 }
@@ -67,7 +74,7 @@ auto Saved() -> std::vector<std::string> const & { return savedEntries; }
 void End()
 {
   debug_file.reset();
-  log_level = Level::None;
+  displayLevel = Display::None;
 }
 
 Time Now() { return std::chrono::high_resolution_clock::now(); }

@@ -11,46 +11,42 @@
 #include "io/hd5-core.hpp"
 #include "types.hpp"
 
-#define LOG_DEBUG(...)                                                                                                         \
-  if (rl::Log::CurrentLevel() == rl::Log::Level::Debug) { rl::Log::Print<Log::Level::High>(__VA_ARGS__); }
-
 namespace rl {
 namespace Log {
 
-enum struct Level
+enum struct Display
 {
-  Testing = -1, // Suppress everything, even failures
   None = 0,
   Ephemeral = 1,
-  Standard = 2,
-  Debug = 3
+  Low = 2,
+  Mid = 3,
+  High = 4
 };
 
 using Time = std::chrono::high_resolution_clock::time_point;
 
-void SetLevel(Level const l);
+void SetDisplayLevel(Display const l);
 void SetDebugFile(std::string const &fname);
-auto CurrentLevel() -> Level;
 auto IsDebugging() -> bool;
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
-void SaveEntry(std::string const &entry, fmt::terminal_color const color, Level const level);
+void SaveEntry(std::string const &entry, fmt::terminal_color const color, Display const level);
 auto Saved() -> std::vector<std::string> const &;
 void End();
 
 template <typename... Args> inline void Print(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Ephemeral);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Display::Ephemeral);
 }
 
 template <typename... Args> inline void Debug(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Level::Debug);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Display::Mid);
 }
 
 template <typename... Args>
 inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_red, Level::None);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_red, Display::None);
 }
 
 struct Failure : std::runtime_error
@@ -64,7 +60,7 @@ struct Failure : std::runtime_error
 
 inline void Fail(Failure const &f)
 {
-  SaveEntry(f.what(), fmt::terminal_color::bright_red, Level::None);
+  SaveEntry(f.what(), fmt::terminal_color::bright_red, Display::None);
 }
 
 auto Now() -> Time;

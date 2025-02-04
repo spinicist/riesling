@@ -11,7 +11,6 @@ using namespace Catch;
 
 TEST_CASE("FFT3", "[FFT]")
 {
-  Log::SetLevel(Log::Level::Standard);
   auto sx = GENERATE(2, 4, 8);
   auto sy = GENERATE(2, 4, 8);
   auto sz = GENERATE(2, 4, 8);
