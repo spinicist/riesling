@@ -6,10 +6,10 @@
 
 namespace rl::TOps {
 
-template <int ND> struct NUFFT final : TOp<Cx, ND + 2, 3>
+template <int ND, typename KType = Kernel<Cx, ND, rl::ExpSemi<4>>> struct NUFFT final : TOp<Cx, ND + 2, 3>
 {
   TOP_INHERIT(Cx, ND + 2, 3)
-  NUFFT(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr basis);
+  NUFFT(Grid<ND, KType>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr basis);
   TOP_DECLARE(NUFFT)
 
   static auto Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr basis)
@@ -19,7 +19,7 @@ template <int ND> struct NUFFT final : TOp<Cx, ND + 2, 3>
   void iforward(InCMap const &x, OutMap &y) const;
 
 private:
-  Grid<ND>::Ptr gridder;
+  Grid<ND, KType>::Ptr gridder;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
   InTensor apo_;

@@ -19,6 +19,12 @@ template <typename Scalar, int ND> struct NearestNeighbour final
     Log::Print("Kernel", "Nearest-neighbour");
   }
 
+  NearestNeighbour(float const) /* Need to have this one to instantiate within grid */
+  {
+    static_assert(ND < 4);
+    Log::Print("Kernel", "Nearest-neighbour");
+  }
+
   auto paddedWidth() const -> int { return 1; }
 
   auto operator()(Point const) const -> Eigen::Tensor<float, ND>
@@ -31,7 +37,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final
   void spread(Eigen::Array<int16_t, ND, 1> const c,
               Point const                       &p,
               Eigen::Tensor<Scalar, 1> const    &y,
-              Eigen::Tensor<Scalar, ND + 2>     &x) const final
+              Eigen::Tensor<Scalar, ND + 2>     &x) const
   {
     Index const nC = x.dimension(1);
     for (Index ic = 0; ic < nC; ic++) {
@@ -50,7 +56,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final
               Point const                       &p,
               Eigen::Tensor<Scalar, 1> const    &b,
               Eigen::Tensor<Scalar, 1> const    &y,
-              Eigen::Tensor<Scalar, ND + 2>     &x) const final
+              Eigen::Tensor<Scalar, ND + 2>     &x) const
   {
     Index const nC = x.dimension(1);
     Index const nB = b.size();
@@ -72,7 +78,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final
   void gather(Eigen::Array<int16_t, ND, 1> const   c,
               Point const                         &p,
               Eigen::Tensor<Scalar, ND + 2> const &x,
-              Eigen::Tensor<Scalar, 1>            &y) const final
+              Eigen::Tensor<Scalar, 1>            &y) const
   {
     Index const nC = x.dimension(1);
     for (Index ic = 0; ic < nC; ic++) {
@@ -90,7 +96,7 @@ template <typename Scalar, int ND> struct NearestNeighbour final
               Point const                         &p,
               Eigen::Tensor<Scalar, 1> const      &b,
               Eigen::Tensor<Scalar, ND + 2> const &x,
-              Eigen::Tensor<Scalar, 1>            &y) const final
+              Eigen::Tensor<Scalar, 1>            &y) const
   {
     Index const nC = x.dimension(1);
     Index const nB = b.size();

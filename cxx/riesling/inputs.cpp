@@ -36,7 +36,7 @@ GridArgs<ND>::GridArgs(args::Subparser &parser)
 template <int ND> auto GridArgs<ND>::Get() -> rl::TOps::Grid<ND>::Opts
 {
   return typename rl::TOps::Grid<ND>::Opts{
-    .fov = fov.Get(), .osamp = osamp.Get(), .ktype = ktype.Get(), .subgridSize = subgridSize.Get()};
+    .fov = fov.Get(), .osamp = osamp.Get(), .subgridSize = subgridSize.Get()};
 }
 
 template struct GridArgs<2>;

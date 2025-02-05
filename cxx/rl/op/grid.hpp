@@ -20,24 +20,28 @@ inline auto SubgridCorner(Eigen::Array<int16_t, ND, 1> const sgInd, Index const 
 inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }
 
 namespace TOps {
-template <int ND_, typename GType = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct Grid final : TOp<Cx, ND_ + 2, 3>
+template <int ND_, typename KType_ = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct Grid final : TOp<Cx, ND_ + 2, 3>
 {
-  TOP_INHERIT(Cx, ND_ + 2, 3)
-  TOP_DECLARE(Grid)
   static const int ND = ND_;
+  using KType = KType_;
+
+  TOP_INHERIT(Cx, ND + 2, 3)
+  TOP_DECLARE(Grid)
+
   struct Opts
   {
     using Arrayf = Eigen::Array<float, ND, 1>;
-    Arrayf      fov = Arrayf::Zero();
-    float       osamp = 1.3f;
-    Index       subgridSize = 8;
+    Arrayf fov = Arrayf::Zero();
+    float  osamp = 1.3f;
+    Index  subgridSize = 8;
   };
 
-  static auto Make(Opts const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b) -> std::shared_ptr<Grid<ND>>;
+  static auto Make(Opts const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b)
+    -> std::shared_ptr<Grid<ND, KType>>;
   Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b);
-  void iforward(InCMap const &x, OutMap &y) const;
-  void iadjoint(OutCMap const &y, InMap &x) const;
-  GType kernel;
+  void  iforward(InCMap const &x, OutMap &y) const;
+  void  iadjoint(OutCMap const &y, InMap &x) const;
+  KType kernel;
 
 private:
   using CoordList = typename TrajectoryN<ND>::CoordList;

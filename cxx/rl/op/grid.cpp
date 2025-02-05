@@ -1,5 +1,6 @@
 #include "grid.hpp"
 
+#include "../kernel/kernel-nn.hpp"
 #include "../log.hpp"
 #include "../sys/threads.hpp"
 #include "grid-subgrid.hpp"
@@ -11,14 +12,15 @@ namespace rl {
 
 namespace TOps {
 
-template <int ND, typename GT>
-auto Grid<ND, GT>::Make(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b) -> std::shared_ptr<Grid<ND>>
+template <int ND, typename KT>
+auto Grid<ND, KT>::Make(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b)
+  -> std::shared_ptr<Grid<ND, KT>>
 {
-  return std::make_shared<Grid<ND>>(opts, traj, nC, b);
+  return std::make_shared<Grid<ND, KT>>(opts, traj, nC, b);
 }
 
-template <int ND, typename GT>
-Grid<ND, GT>::Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b)
+template <int ND, typename KT>
+Grid<ND, KT>::Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b)
   : Parent(fmt::format("{}D GridOp", ND))
   , kernel(opts.osamp)
   , subgridW{opts.subgridSize}
@@ -33,8 +35,8 @@ Grid<ND, GT>::Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }
 
-template <int ND, typename GT>
-void Grid<ND, GT>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const
+template <int ND, typename KT>
+void Grid<ND, KT>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const
 {
   Index const          nC = y.dimension(0);
   Index const          nB = basis ? basis->nB() : 1;
@@ -55,7 +57,7 @@ void Grid<ND, GT>::forwardTask(Index const start, Index const stride, CxNCMap<ND
   }
 }
 
-template <int ND, typename GT> void Grid<ND, GT>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KT> void Grid<ND, KT>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
@@ -64,15 +66,15 @@ template <int ND, typename GT> void Grid<ND, GT>::forward(InCMap const &x, OutMa
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename GT> void Grid<ND, GT>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KT> void Grid<ND, KT>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename GT>
-void Grid<ND, GT>::adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const
+template <int ND, typename KT>
+void Grid<ND, KT>::adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const
 
 {
   Index const          nC = y.dimensions()[0];
@@ -94,7 +96,7 @@ void Grid<ND, GT>::adjointTask(Index const start, Index const stride, CxNCMap<3>
   }
 }
 
-template <int ND, typename GT> void Grid<ND, GT>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KT> void Grid<ND, KT>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
@@ -102,16 +104,20 @@ template <int ND, typename GT> void Grid<ND, GT>::adjoint(OutCMap const &y, InMa
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename GT> void Grid<ND, GT>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KT> void Grid<ND, KT>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });
   this->finishAdjoint(x, time, true);
 }
 
-template struct Grid<1>;
-template struct Grid<2>;
-template struct Grid<3>;
+template struct Grid<1, Kernel<Cx, 1, rl::ExpSemi<4>>>;
+template struct Grid<2, Kernel<Cx, 2, rl::ExpSemi<4>>>;
+template struct Grid<3, Kernel<Cx, 3, rl::ExpSemi<4>>>;
+
+template struct Grid<1, NearestNeighbour<Cx, 1>>;
+template struct Grid<2, NearestNeighbour<Cx, 2>>;
+template struct Grid<3, NearestNeighbour<Cx, 3>>;
 
 } // namespace TOps
 } // namespace rl

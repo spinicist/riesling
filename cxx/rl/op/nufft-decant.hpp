@@ -5,7 +5,7 @@
 
 namespace rl::TOps {
 
-template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
+template <int ND, typename KType = Kernel<Cx, ND, rl::ExpSemi<4>>> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   TOP_DECLARE(NUFFTDecant)
@@ -19,7 +19,7 @@ template <int ND> struct NUFFTDecant final : TOp<Cx, ND + 1, 3>
   void iforward(InCMap const &x, OutMap &y) const;
 
 private:
-  GridDecant<ND> gridder;
+  GridDecant<ND, KType> gridder;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
   InTensor apo_;

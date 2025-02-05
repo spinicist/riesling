@@ -5,11 +5,13 @@
 namespace rl {
 
 namespace TOps {
-template <int ND_, typename GType = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
+template <int ND_, typename KType_ = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
 {
-  TOP_INHERIT(Cx, ND_ + 1, 3)
-  TOP_DECLARE(GridDecant)
   static const int ND = ND_;
+  using KType = KType_;
+
+  TOP_INHERIT(Cx, ND + 1, 3)
+  TOP_DECLARE(GridDecant)
 
   GridDecant(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr b);
   static auto Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
@@ -18,7 +20,7 @@ template <int ND_, typename GType = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct Grid
   void iforward(InCMap const &x, OutMap &y) const;
   void iadjoint(OutCMap const &y, InMap &x) const;
 
-  GType kernel;
+  KType kernel;
 
 private:
   using CoordList = typename TrajectoryN<ND>::CoordList;
