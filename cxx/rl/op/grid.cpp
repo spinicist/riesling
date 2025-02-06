@@ -1,6 +1,6 @@
 #include "grid.hpp"
 
-#include "../kernel/kernel-nn.hpp"
+#include "../kernel/tophat.hpp"
 #include "../log.hpp"
 #include "../sys/threads.hpp"
 #include "grid-subgrid.hpp"
@@ -115,9 +115,9 @@ template struct Grid<1, Kernel<Cx, 1, rl::ExpSemi<4>>>;
 template struct Grid<2, Kernel<Cx, 2, rl::ExpSemi<4>>>;
 template struct Grid<3, Kernel<Cx, 3, rl::ExpSemi<4>>>;
 
-template struct Grid<1, NearestNeighbour<Cx, 1>>;
-template struct Grid<2, NearestNeighbour<Cx, 2>>;
-template struct Grid<3, NearestNeighbour<Cx, 3>>;
+template struct Grid<1, Kernel<Cx, 1, rl::TopHat<1>>>;
+template struct Grid<2, Kernel<Cx, 2, rl::TopHat<1>>>;
+template struct Grid<3, Kernel<Cx, 3, rl::TopHat<1>>>;
 
 } // namespace TOps
 } // namespace rl

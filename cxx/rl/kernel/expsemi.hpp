@@ -11,6 +11,7 @@ namespace rl {
 template <int W> struct ExpSemi
 {
   static constexpr int Width = W;
+  static constexpr int FullWidth = (((W + 1) / 2) * 2) + 1;
   float β;
 
   ExpSemi(float const osamp)

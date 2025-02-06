@@ -53,7 +53,7 @@ template <typename Scalar, int ND, typename Func> struct FixedKernel
 template <typename Scalar, typename Func> struct FixedKernel<Scalar, 1, Func>
 {
   constexpr static int W = Func::Width;
-  static constexpr int PW = (((W + 1) / 2) * 2) + 1;
+  static constexpr int PW = Func::FullWidth;
   using Array = Eigen::Array<float, PW, 1>;
   using Tensor = Eigen::TensorFixedSize<float, typename KernelSizes<1, PW>::Type>;
   using Point = Eigen::Matrix<float, 1, 1>;
