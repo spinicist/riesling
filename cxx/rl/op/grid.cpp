@@ -28,7 +28,7 @@ Grid<ND, KT>::Grid(Opts const &opts, TrajectoryN<ND> const &traj, Index const nC
 {
   static_assert(ND < 4);
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
-  gridLists = traj.toCoordLists(osMatrix, kernel.PadWidth, subgridW, false);
+  gridLists = traj.toCoordLists(osMatrix, kernel.FullWidth, subgridW, false);
   ishape = AddBack(osMatrix, nC, basis ? basis->nB() : 1);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
@@ -40,19 +40,37 @@ void Grid<ND, KT>::forwardTask(Index const start, Index const stride, CxNCMap<ND
 {
   Index const          nC = y.dimension(0);
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel.PadWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel.FullWidth)), nC, nB));
   Eigen::Tensor<Cx, 1> yy(Sz1{nC});
+  Sz<ND + 2>           st, ksz;
+  st.fill(0);
+  ksz.fill(KT::FullWidth);
+  ksz[ND - 1] = 1;
+  ksz[ND - 2] = 1;
   for (Index is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
-    GridToSubgrid<ND>(SubgridCorner(list.corner, subgridW, kernel.PadWidth), x, sx);
+    GridToSubgrid<ND>(SubgridCorner(list.corner, subgridW, kernel.FullWidth), x, sx);
     for (auto const &m : list.coords) {
       yy.setZero();
+      auto const k = kernel(m.offset);
+      std::copy_n(m.cart.begin(), ND, st.begin());
       if (basis) {
-        kernel.gather(m.cart, m.offset, basis->entry(m.sample, m.trace), sx, yy);
+        for (Index ib = 0; ib < basis->nB(); ib++) {
+          auto const b = basis->entry(m.sample, m.trace, ib);
+          st[ND - 1] = ib;
+          for (Index ic = 0; ic < nC; ic++) {
+            st[ND - 2] = ic;
+            Cx0 const cc = (sx.slice(st, ksz) * k.template cast<Cx>() * b).sum();
+            yy(ic) = cc();
+          }
+        }
       } else {
-        kernel.gather(m.cart, m.offset, sx, yy);
+        for (Index ic = 0; ic < nC; ic++) {
+          st[ND - 2] = ic;
+          yy(ic) = Cx0((sx.slice(st, ksz) * k.template cast<Cx>()).sum())();
+        }
       }
-      y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
+    y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
     }
   }
 }
@@ -79,20 +97,38 @@ void Grid<ND, KT>::adjointTask(Index const start, Index const stride, CxNCMap<3>
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel.PadWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel.FullWidth)), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
+  Sz<ND + 2>           st, ksz;
+  st.fill(0);
+  ksz.fill(KT::FullWidth);
+  ksz[ND - 1] = 1;
+  ksz[ND - 2] = 1;
+
   for (Index is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {
       yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
+      auto const k = kernel(m.offset);
+      std::copy_n(m.cart.begin(), ND, st.begin());
       if (basis) {
-        kernel.spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace), yy, sx);
+        for (Index ib = 0; ib < basis->nB(); ib++) {
+          auto const b = std::conj(basis->entry(m.sample, m.trace, ib));
+          st[ND - 1] = ib;
+          for (Index ic = 0; ic < nC; ic++) {
+            st[ND - 2] = ic;
+            sx.slice(st, ksz) = k.template cast<Cx>() * b * yy(ic);
+          }
+        }
       } else {
-        kernel.spread(m.cart, m.offset, yy, sx);
+        for (Index ic = 0; ic < nC; ic++) {
+          st[ND - 2] = ic;
+          sx.slice(st, ksz) = k.template cast<Cx>() * yy(ic);
+        }
       }
+      SubgridToGrid<ND>(mutexes, SubgridCorner(list.corner, subgridW, kernel.FullWidth), sx, x);
     }
-    SubgridToGrid<ND>(mutexes, SubgridCorner(list.corner, subgridW, kernel.PadWidth), sx, x);
   }
 }
 

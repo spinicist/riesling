@@ -105,7 +105,7 @@ void GridDecant<ND, GT>::adjointTask(std::vector<typename TrajectoryN<ND>::Coord
     for (auto const &m : sub.coords) {
       yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
       if (basis) {
-        kernel.spread(m.cart, m.offset, basis->entryConj(m.sample, m.trace), yy, sx);
+        kernel.spread(m.cart, m.offset, basis->entry(m.sample, m.trace).conjugate(), yy, sx);
       } else {
         kernel.spread(m.cart, m.offset, yy, sx);
       }

@@ -9,7 +9,7 @@ template <int W>
 struct KaiserBessel
 {
   static constexpr int Width = W;
-  static constexpr int PadWidth = (((W + 1) / 2) * 2) + 1;
+  static constexpr int FullWidth = (((W + 1) / 2) * 2) + 1;
 
   float β;
 

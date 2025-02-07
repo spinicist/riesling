@@ -14,7 +14,7 @@ namespace rl {
 template <typename Scalar, int ND, typename Func> struct Kernel final
 {
   static constexpr int Width = Func::Width;
-  static constexpr int PadWidth = (((Width + 1) / 2) * 2) + 1;
+  static constexpr int FullWidth = Func::FullWidth;
   using Tensor = typename FixedKernel<float, ND, Func>::Tensor;
   using Point = typename FixedKernel<float, ND, Func>::Point;
 
@@ -30,7 +30,7 @@ template <typename Scalar, int ND, typename Func> struct Kernel final
     Log::Print("Kernel", "Width {} Scale {}", Func::Width, scale);
   }
 
-  virtual auto paddedWidth() const -> int final { return PadWidth; }
+  virtual auto paddedWidth() const -> int final { return FullWidth; }
 
   inline auto operator()(Point const p = Point::Zero()) const -> Eigen::Tensor<float, ND>
   {

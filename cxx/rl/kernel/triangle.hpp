@@ -10,7 +10,7 @@ namespace rl {
 template <int W> struct Triangle
 {
   static constexpr int Width = W;
-  static constexpr int PadWidth = W;
+  static constexpr int FullWidth = W;
 
   Triangle(float const) {}
 

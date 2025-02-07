@@ -24,7 +24,7 @@ struct Basis
   auto nTrace() const -> Index;
 
   auto entry(Index const sample, Index const trace) const -> Cx1;
-  auto entryConj(Index const sample, Index const trace) const -> Cx1;
+  auto entry(Index const sample, Index const trace, Index const b) const -> Cx;
 
   void write(std::string const &basisFile) const;
   void concat(Basis const &other);
