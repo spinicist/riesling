@@ -1,5 +1,5 @@
 #include "rl/kernel/expsemi.hpp"
-#include "rl/kernel/kernel-impl.hpp"
+#include "rl/kernel/kernel.hpp"
 #include "rl/kernel/tophat.hpp"
 #include "rl/log.hpp"
 

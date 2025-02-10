@@ -3,7 +3,7 @@
 #include "log.hpp"
 #include "op/pad.hpp"
 #include "tensors.hpp"
-#include "kernel/kernel-impl.hpp"
+#include "kernel/kernel.hpp"
 
 namespace rl {
 

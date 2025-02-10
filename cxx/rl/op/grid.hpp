@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../basis/basis.hpp"
-#include "../kernel/kernel-impl.hpp"
+#include "../kernel/kernel.hpp"
 #include "../trajectory.hpp"
 #include "top.hpp"
 
