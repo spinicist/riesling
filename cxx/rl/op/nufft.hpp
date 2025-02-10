@@ -6,7 +6,7 @@
 
 namespace rl::TOps {
 
-template <int ND, typename KType = Kernel<Cx, ND, rl::ExpSemi<4>>> struct NUFFT final : TOp<Cx, ND + 2, 3>
+template <int ND, typename KType = Kernel<ND, rl::ExpSemi<4>>> struct NUFFT final : TOp<Cx, ND + 2, 3>
 {
   TOP_INHERIT(Cx, ND + 2, 3)
   NUFFT(Grid<ND, KType>::Opts const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr basis);

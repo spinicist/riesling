@@ -5,7 +5,7 @@
 
 namespace rl::TOps {
 
-template <int ND, typename KType = Kernel<Cx, ND, rl::ExpSemi<4>>> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
+template <int ND, typename KType = Kernel<ND, rl::ExpSemi<4>>> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   TOP_DECLARE(NUFFTLowmem)

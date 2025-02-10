@@ -20,7 +20,7 @@ inline auto SubgridCorner(Eigen::Array<int16_t, ND, 1> const sgInd, Index const 
 inline auto SubgridFullwidth(Index const sgSize, Index const kW) { return sgSize + 2 * (kW / 2); }
 
 namespace TOps {
-template <int ND_, typename KType_ = Kernel<Cx, ND_, rl::ExpSemi<4>>> struct Grid final : TOp<Cx, ND_ + 2, 3>
+template <int ND_, typename KType_ = Kernel<ND_, rl::ExpSemi<4>>> struct Grid final : TOp<Cx, ND_ + 2, 3>
 {
   static const int ND = ND_;
   using KType = KType_;

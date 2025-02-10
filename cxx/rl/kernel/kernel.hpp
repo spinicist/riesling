@@ -1,9 +1,7 @@
 #pragma once
 
-#include "kernel-fixed.hpp"
-
 #include "expsemi.hpp"
-#include "kaiser.hpp"
+#include "tophat.hpp"
 
 #include "../tensors.hpp"
 
@@ -11,12 +9,60 @@
 
 namespace rl {
 
-template <typename Scalar, int ND, typename Func> struct Kernel final
+namespace {
+template <int ND, int W> struct FixedSize
+{
+};
+
+template <int W> struct FixedSize<1, W>
+{
+  using T = Eigen::Sizes<W>;
+};
+
+template <int W> struct FixedSize<2, W>
+{
+  using T = Eigen::Sizes<W, W>;
+};
+
+template <int W> struct FixedSize<3, W>
+{
+  using T = Eigen::Sizes<W, W, W>;
+};
+
+template <int ND, typename F> using FixedTensor = Eigen::TensorFixedSize<float, typename FixedSize<ND, F::FullWidth>::T>;
+
+template <typename Func> inline auto K(Func const f, float const p) -> FixedTensor<1, Func>
+{
+  constexpr float      HW = Func::Width / 2.f;
+  constexpr float      L = 0.5f - Func::FullWidth / 2.f;
+  FixedTensor<1, Func> k;
+  for (Index ii = 0; ii < Func::FullWidth; ii++) {
+    k[ii] = f(((ii + L) - p) / HW);
+  }
+  return k;
+}
+
+template <typename Func> inline auto KS(Func const f, float const p, float const s) -> FixedTensor<1, Func>
+{
+  constexpr float      HW = Func::Width / 2.f;
+  constexpr float      L = 0.5f - Func::FullWidth / 2.f;
+  FixedTensor<1, Func> k;
+  for (Index ii = 0; ii < Func::FullWidth; ii++) {
+    k[ii] = f(((ii + L) - p) / HW) * s;
+  }
+  return k;
+}
+
+} // namespace
+
+template <int ND, typename Func> struct Kernel
 {
   static constexpr int Width = Func::Width;
   static constexpr int FullWidth = Func::FullWidth;
-  using Tensor = typename FixedKernel<float, ND, Func>::Tensor;
-  using Point = typename FixedKernel<float, ND, Func>::Point;
+
+  using Array = Eigen::Array<float, FullWidth, 1>;
+  using Tensor = FixedTensor<ND, Func>;
+  using Point = Eigen::Matrix<float, ND, 1>;
 
   Func  f;
   float scale;
@@ -26,51 +72,37 @@ template <typename Scalar, int ND, typename Func> struct Kernel final
     , scale{1.f}
   {
     static_assert(ND < 4);
-    scale = 1. / Norm<false>(FixedKernel<Scalar, ND, Func>::Kernel(f, 1.f, Point::Zero()));
+    scale = 1. / Norm<false>(this->operator()());
     Log::Print("Kernel", "Width {} Scale {}", Func::Width, scale);
   }
 
-  virtual auto paddedWidth() const -> int final { return FullWidth; }
-
-  inline auto operator()(Point const p = Point::Zero()) const -> Eigen::Tensor<float, ND>
+  inline auto operator()(Point const p = Point::Zero()) const -> Tensor
   {
-    Tensor                   k = FixedKernel<Scalar, ND, Func>::Kernel(f, scale, p);
-    Eigen::Tensor<float, ND> k2 = k;
-    return k;
-  }
-
-  void spread(Eigen::Array<int16_t, ND, 1> const c,
-              Point const                       &p,
-              Eigen::Tensor<Scalar, 1> const    &y,
-              Eigen::Tensor<Scalar, ND + 2>     &x) const
-  {
-    FixedKernel<Scalar, ND, Func>::Spread(f, scale, c, p, y, x);
-  }
-
-  void spread(Eigen::Array<int16_t, ND, 1> const c,
-              Point const                       &p,
-              Eigen::Tensor<Scalar, 1> const    &b,
-              Eigen::Tensor<Scalar, 1> const    &y,
-              Eigen::Tensor<Scalar, ND + 2>     &x) const
-  {
-    FixedKernel<Scalar, ND, Func>::Spread(f, scale, c, p, b, y, x);
-  }
-
-  void gather(Eigen::Array<int16_t, ND, 1> const   c,
-              Point const                         &p,
-              Eigen::Tensor<Scalar, ND + 2> const &x,
-              Eigen::Tensor<Scalar, 1>            &y) const
-  {
-    FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, x, y);
-  }
-
-  void gather(Eigen::Array<int16_t, ND, 1> const   c,
-              Point const                         &p,
-              Eigen::Tensor<Scalar, 1> const      &b,
-              Eigen::Tensor<Scalar, ND + 2> const &x,
-              Eigen::Tensor<Scalar, 1>            &y) const
-  {
-    FixedKernel<Scalar, ND, Func>::Gather(f, scale, c, p, b, x, y);
+    auto const k0 = KS<Func>(f, p[0], scale);
+    if constexpr (ND == 1) {
+      return k0;
+    } else {
+      Tensor     k;
+      auto const k1 = K<Func>(f, p[1]);
+      if constexpr (ND == 2) {
+        for (Index i1 = 0; i1 < Func::FullWidth; i1++) {
+          for (Index i0 = 0; i0 < Func::FullWidth; i0++) {
+            k(i0, i1) = k0(i0) * k1(i1);
+          }
+        }
+      } else if constexpr (ND == 3) {
+        auto const k2 = K<Func>(f, p[2]);
+        for (Index i2 = 0; i2 < Func::FullWidth; i2++) {
+          for (Index i1 = 0; i1 < Func::FullWidth; i1++) {
+            float const k12 = k1(i1) * k2(i2);
+            for (Index i0 = 0; i0 < Func::FullWidth; i0++) {
+              k(i0, i1, i2) = k0(i0) * k12;
+            }
+          }
+        }
+      }
+      return k;
+    }
   }
 };
 

@@ -1,7 +1,7 @@
 #include "rl/op/grid.hpp"
+#include "rl/kernel/tophat.hpp"
 #include "rl/log.hpp"
 #include "rl/tensors.hpp"
-#include "rl/kernel/tophat.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -101,7 +101,7 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   basis.B(1, 3, 0) = 1.f;
   basis.B(1, 4, 0) = 1.f;
   basis.B(1, 5, 0) = 1.f;
-  using KType = rl::Kernel<Cx, 1, rl::TopHat<1>>;
+  using KType = rl::Kernel<1, rl::TopHat<1>>;
   using GType = TOps::Grid<1, KType>;
   auto grid = GType::Make(GType::Opts{.osamp = 1.f}, traj, 1, &basis);
   Cx3  noncart(grid->oshape);

@@ -21,8 +21,8 @@ template <int ND, typename KType> auto Apodize(Sz<ND> const shape, Sz<ND> const 
   return a.template cast<Cx>();
 }
 
-template auto Apodize<1, Kernel<Cx, 1, rl::ExpSemi<4>>>(Sz1 const, Sz1 const, float const ) -> Cx1;
-template auto Apodize<2, Kernel<Cx, 2, rl::ExpSemi<4>>>(Sz2 const, Sz2 const, float const ) -> Cx2;
-template auto Apodize<3, Kernel<Cx, 3, rl::ExpSemi<4>>>(Sz3 const, Sz3 const, float const) -> Cx3;
+template auto Apodize<1, Kernel<1, rl::ExpSemi<4>>>(Sz1 const, Sz1 const, float const ) -> Cx1;
+template auto Apodize<2, Kernel<2, rl::ExpSemi<4>>>(Sz2 const, Sz2 const, float const ) -> Cx2;
+template auto Apodize<3, Kernel<3, rl::ExpSemi<4>>>(Sz3 const, Sz3 const, float const) -> Cx3;
 
 } // namespace rl

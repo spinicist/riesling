@@ -1,5 +1,5 @@
-#include "rl/kernel/expsemi.hpp"
 #include "rl/kernel/kernel.hpp"
+#include "rl/kernel/expsemi.hpp"
 #include "rl/kernel/tophat.hpp"
 #include "rl/log.hpp"
 
@@ -9,7 +9,7 @@
 
 using namespace Catch;
 
-TEMPLATE_TEST_CASE("TopHat-1D", "[kernels]", (rl::Kernel<float, 1, rl::TopHat<1>>))
+TEMPLATE_TEST_CASE("TopHat-1D", "[kernels]", (rl::Kernel<1, rl::TopHat<1>>))
 {
   TestType                 kernel(2.f);
   typename TestType::Point p;
@@ -25,7 +25,7 @@ TEMPLATE_TEST_CASE("TopHat-1D", "[kernels]", (rl::Kernel<float, 1, rl::TopHat<1>
   if (TestType::FullWidth > 1) { CHECK(k1(1) == Approx(k1(TestType::FullWidth - 1)).margin(1.e-5)); }
 }
 
-TEMPLATE_TEST_CASE("TopHat-2D", "[kernels]", (rl::Kernel<float, 2, rl::TopHat<1>>))
+TEMPLATE_TEST_CASE("TopHat-2D", "[kernels]", (rl::Kernel<2, rl::TopHat<1>>))
 {
   TestType                 kernel(2.f);
   typename TestType::Point p;
@@ -40,7 +40,7 @@ TEMPLATE_TEST_CASE("TopHat-2D", "[kernels]", (rl::Kernel<float, 2, rl::TopHat<1>
   CHECK(k1(0, 0) == Approx(1.f).margin(1.e-6));
 }
 
-TEMPLATE_TEST_CASE("TopHat-3D", "[kernels]", (rl::Kernel<float, 3, rl::TopHat<1>>))
+TEMPLATE_TEST_CASE("TopHat-3D", "[kernels]", (rl::Kernel<3, rl::TopHat<1>>))
 {
   TestType                 kernel(2.f);
   typename TestType::Point p;
@@ -55,7 +55,7 @@ TEMPLATE_TEST_CASE("TopHat-3D", "[kernels]", (rl::Kernel<float, 3, rl::TopHat<1>
   CHECK(k1(0, 0, 0) == Approx(1.f).margin(1.e-6));
 }
 
-TEMPLATE_TEST_CASE("ExpSemi-1D", "[kernels]", (rl::Kernel<float, 1, rl::ExpSemi<2>>), (rl::Kernel<float, 1, rl::ExpSemi<4>>))
+TEMPLATE_TEST_CASE("ExpSemi-1D", "[kernels]", (rl::Kernel<1, rl::ExpSemi<2>>), (rl::Kernel<1, rl::ExpSemi<4>>))
 {
   TestType                 kernel(2.f);
   typename TestType::Point p;
@@ -72,7 +72,7 @@ TEMPLATE_TEST_CASE("ExpSemi-1D", "[kernels]", (rl::Kernel<float, 1, rl::ExpSemi<
   CHECK(k1(1) == Approx(k1(TestType::FullWidth - 1)).margin(1.e-5));
 }
 
-TEMPLATE_TEST_CASE("ExpSemi-2D", "[kernels]", (rl::Kernel<float, 2, rl::ExpSemi<2>>), (rl::Kernel<float, 2, rl::ExpSemi<4>>))
+TEMPLATE_TEST_CASE("ExpSemi-2D", "[kernels]", (rl::Kernel<2, rl::ExpSemi<2>>), (rl::Kernel<2, rl::ExpSemi<4>>))
 {
   TestType                 kernel(2.f);
   typename TestType::Point p;
@@ -89,7 +89,7 @@ TEMPLATE_TEST_CASE("ExpSemi-2D", "[kernels]", (rl::Kernel<float, 2, rl::ExpSemi<
   CHECK(k1(1, 1) == Approx(k1(TestType::FullWidth - 1, TestType::FullWidth - 1)).margin(1.e-5));
 }
 
-TEMPLATE_TEST_CASE("ExpSemi-3D", "[kernels]", (rl::Kernel<float, 3, rl::ExpSemi<2>>), (rl::Kernel<float, 3, rl::ExpSemi<4>>))
+TEMPLATE_TEST_CASE("ExpSemi-3D", "[kernels]", (rl::Kernel<3, rl::ExpSemi<2>>), (rl::Kernel<3, rl::ExpSemi<4>>))
 {
   TestType                 kernel(2.f);
   typename TestType::Point p;

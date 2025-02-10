@@ -1,6 +1,5 @@
 #include "grid.hpp"
 
-#include "../kernel/tophat.hpp"
 #include "../log.hpp"
 #include "../sys/threads.hpp"
 #include "grid-subgrid.hpp"
@@ -70,7 +69,7 @@ void Grid<ND, KT>::forwardTask(Index const start, Index const stride, CxNCMap<ND
           yy(ic) = Cx0((sx.slice(st, ksz) * k.template cast<Cx>()).sum())();
         }
       }
-    y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
+      y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
     }
   }
 }
@@ -147,13 +146,13 @@ template <int ND, typename KT> void Grid<ND, KT>::iadjoint(OutCMap const &y, InM
   this->finishAdjoint(x, time, true);
 }
 
-template struct Grid<1, Kernel<Cx, 1, rl::ExpSemi<4>>>;
-template struct Grid<2, Kernel<Cx, 2, rl::ExpSemi<4>>>;
-template struct Grid<3, Kernel<Cx, 3, rl::ExpSemi<4>>>;
+template struct Grid<1, Kernel<1, rl::ExpSemi<4>>>;
+template struct Grid<2, Kernel<2, rl::ExpSemi<4>>>;
+template struct Grid<3, Kernel<3, rl::ExpSemi<4>>>;
 
-template struct Grid<1, Kernel<Cx, 1, rl::TopHat<1>>>;
-template struct Grid<2, Kernel<Cx, 2, rl::TopHat<1>>>;
-template struct Grid<3, Kernel<Cx, 3, rl::TopHat<1>>>;
+template struct Grid<1, Kernel<1, rl::TopHat<1>>>;
+template struct Grid<2, Kernel<2, rl::TopHat<1>>>;
+template struct Grid<3, Kernel<3, rl::TopHat<1>>>;
 
 } // namespace TOps
 } // namespace rl
