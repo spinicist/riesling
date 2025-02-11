@@ -22,7 +22,7 @@ float const os = 2.f;
 
 TEST_CASE("NUFFT", "[nufft]")
 {
-  auto nufft = TOps::NUFFT<3>(TOps::Grid<3>::Opts{.osamp = os}, traj, C, &basis);
+  auto nufft = TOps::NUFFT<3>(GridOpts<3>{.osamp = os}, traj, C, &basis);
   Cx5  c(nufft.ishape);
   Cx3  nc(nufft.oshape);
   c.setRandom();
@@ -41,7 +41,7 @@ TEST_CASE("NUFFT Basis", "[nufft]")
 {
   Index const nB = 4;
   Basis       basis(nB, 1, 256);
-  auto        nufft = TOps::NUFFT<3>(TOps::Grid<3>::Opts{.osamp = os}, traj, C, &basis);
+  auto        nufft = TOps::NUFFT<3>(GridOpts<3>{.osamp = os}, traj, C, &basis);
   Cx5         c(nufft.ishape);
   Cx3         nc(nufft.oshape);
   c.setRandom();

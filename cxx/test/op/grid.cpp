@@ -15,7 +15,7 @@ constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
 
 TEST_CASE("Grid2", "[grid]")
 {
-  Log::SetDisplayLevel(Log::Display::High);
+  // Log::SetDisplayLevel(Log::Display::High);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(16, 32);
   auto const  matrix = Sz2{M, M};
@@ -29,7 +29,7 @@ TEST_CASE("Grid2", "[grid]")
   Basis                basis;
 
   float const osamp = GENERATE(1.3f, 2.f);
-  auto        grid = TOps::Grid<2>::Make(TOps::Grid<2>::Opts{.osamp = osamp}, traj, 1, &basis);
+  auto        grid = TOps::Grid<2, ExpSemi<6>>::Make(GridOpts<2>{.osamp = osamp}, traj, 1, &basis);
   Cx3         noncart(grid->oshape);
   Cx4         cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -46,7 +46,7 @@ TEST_CASE("Grid2", "[grid]")
 
 TEST_CASE("Grid3", "[grid]")
 {
-  Log::SetDisplayLevel(Log::Display::High);
+  // Log::SetDisplayLevel(Log::Display::High);
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(16, 32);
   auto const  matrix = Sz3{M, M, M};
@@ -62,7 +62,7 @@ TEST_CASE("Grid3", "[grid]")
   Basis                basis;
 
   float const osamp = GENERATE(1.3f, 2.f);
-  auto        grid = TOps::Grid<3>::Make(TOps::Grid<3>::Opts{.osamp = osamp}, traj, 1, &basis);
+  auto        grid = TOps::Grid<3>::Make(GridOpts<3>{.osamp = osamp}, traj, 1, &basis);
   Cx3         noncart(grid->oshape);
   Cx5         cart(grid->ishape);
   noncart.setConstant(1.f);
@@ -77,7 +77,7 @@ TEST_CASE("Grid3", "[grid]")
   CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 
-TEST_CASE("Grid-Basis-Sample", "[grid]")
+TEST_CASE("GridB", "[grid]")
 {
   Threads::SetGlobalThreadCount(1);
   Index const M = 6;
@@ -101,9 +101,8 @@ TEST_CASE("Grid-Basis-Sample", "[grid]")
   basis.B(1, 3, 0) = 1.f;
   basis.B(1, 4, 0) = 1.f;
   basis.B(1, 5, 0) = 1.f;
-  using KType = rl::Kernel<1, rl::TopHat<1>>;
-  using GType = TOps::Grid<1, KType>;
-  auto grid = GType::Make(GType::Opts{.osamp = 1.f}, traj, 1, &basis);
+  using GType = TOps::Grid<1, rl::TopHat<1>>;
+  auto grid = GType::Make(GridOpts<1>{.osamp = 1.f}, traj, 1, &basis);
   Cx3  noncart(grid->oshape);
   noncart.setConstant(1.f);
   Cx3 cart = grid->adjoint(noncart);

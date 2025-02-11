@@ -11,8 +11,8 @@ namespace rl {
 
 namespace TOps {
 
-template <int ND, typename GT>
-GridDecant<ND, GT>::GridDecant(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &sk, Basis::CPtr b)
+template <int ND, typename KF>
+GridDecant<ND, KF>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &sk, Basis::CPtr b)
   : Parent(fmt::format("{}D Decant", ND))
   , kernel(opts.osamp)
   , subgridW{opts.subgridSize}
@@ -31,8 +31,8 @@ GridDecant<ND, GT>::GridDecant(Grid<ND>::Opts const &opts, TrajectoryN<ND> const
   Log::Print("Decant", "ishape {} oshape {} scale {}", this->ishape, this->oshape, scale);
 }
 
-template <int ND, typename GT>
-auto GridDecant<ND, GT>::Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
+template <int ND, typename KF>
+auto GridDecant<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
   -> std::shared_ptr<GridDecant<ND>>
 {
   return std::make_shared<GridDecant<ND>>(opts, t, skern, b);

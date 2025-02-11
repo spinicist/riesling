@@ -14,7 +14,7 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re2
+auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re2
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
@@ -51,7 +51,7 @@ auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &tra
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re3
+auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re3
 {
   Log::Print("Precon", "Calculating multichannel-preconditioner");
   Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
@@ -136,12 +136,9 @@ auto LoadKSpacePrecon(std::string const &fname, Trajectory const &traj, Sz5 cons
   }
 }
 
-auto MakeKSpaceSingle(PreconOpts const              &opts,
-                      rl::TOps::Grid<3>::Opts const &gridOpts,
-                      Trajectory const              &traj,
-                      Index const                    nC,
-                      Index const                    nS,
-                      Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto MakeKSpaceSingle(
+  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Sz5 const shape{nC, traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {
@@ -157,12 +154,9 @@ auto MakeKSpaceSingle(PreconOpts const              &opts,
   }
 }
 
-auto MakeKSpaceMulti(PreconOpts const              &opts,
-                     rl::TOps::Grid<3>::Opts const &gridOpts,
-                     Trajectory const              &traj,
-                     Cx5 const                     &smaps,
-                     Index const                    nS,
-                     Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto MakeKSpaceMulti(
+  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Cx5 const &smaps, Index const nS, Index const nT)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   Sz5 const shape{smaps.dimension(1), traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {

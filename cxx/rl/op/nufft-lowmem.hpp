@@ -5,20 +5,20 @@
 
 namespace rl::TOps {
 
-template <int ND, typename KType = Kernel<ND, rl::ExpSemi<4>>> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
+template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
 {
   TOP_INHERIT(Cx, ND + 1, 3)
   TOP_DECLARE(NUFFTLowmem)
-  NUFFTLowmem(Grid<ND, KType>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
+  NUFFTLowmem(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
 
-  static auto Make(Grid<ND, KType>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
-    -> std::shared_ptr<NUFFTLowmem<ND, KType>>;
+  static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
+    -> std::shared_ptr<NUFFTLowmem<ND, KF>>;
 
   void iadjoint(OutCMap const &y, InMap &x) const;
   void iforward(InCMap const &x, OutMap &y) const;
 
 private:
-  Grid<ND, KType>::Ptr gridder;
+  Grid<ND, KF>::Ptr gridder;
   Cx3 mutable nc1;
   CxN<ND + 2> mutable workspace;
   CxN<ND + 2> skern;

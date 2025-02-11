@@ -29,7 +29,7 @@ TEST_CASE("Recon-Basic", "[recon]")
   Basis            basis;
 
   float const       osamp = GENERATE(1.3f);
-  auto              nufft = TOps::NUFFT<3>::Make(TOps::Grid<3>::Opts{.osamp = osamp}, traj, nC, &basis);
+  auto              nufft = TOps::NUFFT<3>::Make(GridOpts<3>{.osamp = osamp}, traj, nC, &basis);
 
   Cx5 senseMaps(AddBack(traj.matrix(), nC, 1));
   senseMaps.setConstant(std::sqrt(1. / nC));
@@ -67,7 +67,7 @@ TEST_CASE("Recon-Lowmem", "[recon]")
   Cx5 sKern(AddBack(traj.matrix(), nC, 1));
   sKern.setConstant(std::sqrt(1. / nC));
   FFT::Forward(sKern, Sz3{2, 3, 4});
-  auto recon = TOps::NUFFTLowmem<3>::Make(TOps::Grid<3>::Opts(), traj, sKern, &basis);
+  auto recon = TOps::NUFFTLowmem<3>::Make(GridOpts<3>(), traj, sKern, &basis);
 
   Cx3 ks(recon->oshape);
   Cx4 img(recon->ishape);

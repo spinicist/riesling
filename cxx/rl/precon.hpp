@@ -13,22 +13,16 @@ struct PreconOpts
   float       λ = 1.e-3f;
 };
 
-auto KSpaceSingle(rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re2;
+auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re2;
 
-auto KSpaceMulti(Cx5 const &smaps, rl::TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, float const λ) -> Re3;
+auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re3;
 
-auto MakeKSpaceSingle(PreconOpts const              &opts,
-                      rl::TOps::Grid<3>::Opts const &gridOpts,
-                      Trajectory const              &traj,
-                      Index const                    nC,
-                      Index const                    nS,
-                      Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr;
+auto MakeKSpaceSingle(
+  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT)
+  -> TOps::TOp<Cx, 5, 5>::Ptr;
 
-auto MakeKSpaceMulti(PreconOpts const              &opts,
-                     rl::TOps::Grid<3>::Opts const &gridOpts,
-                     Trajectory const              &traj,
-                     Cx5 const                     &smaps,
-                     Index const                    nS,
-                     Index const                    nT) -> TOps::TOp<Cx, 5, 5>::Ptr;
+auto MakeKSpaceMulti(
+  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Cx5 const &smaps, Index const nS, Index const nT)
+  -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 } // namespace rl

@@ -12,7 +12,7 @@
 
 namespace rl {
 
-auto Single(TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
+auto Single(GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   if (nSlab > 1) { throw Log::Failure("Recon", "Multislab and 1 channel not supported right now"); }
@@ -23,12 +23,9 @@ auto Single(TOps::Grid<3>::Opts const &gridOpts, Trajectory const &traj, Index c
   return timeLoop;
 }
 
-auto LowmemSENSE(TOps::Grid<3>::Opts const &gridOpts,
-                 Trajectory const          &traj,
-                 Index const                nSlab,
-                 Index const                nTime,
-                 Basis::CPtr                b,
-                 Cx5 const                 &skern) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto LowmemSENSE(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   auto nufft = TOps::NUFFTLowmem<3>::Make(gridOpts, traj, skern, b);
   if (nSlab > 1) {
@@ -39,12 +36,9 @@ auto LowmemSENSE(TOps::Grid<3>::Opts const &gridOpts,
   }
 }
 
-auto SENSERecon(TOps::Grid<3>::Opts const &gridOpts,
-                Trajectory const          &traj,
-                Index const                nSlab,
-                Index const                nTime,
-                Basis::CPtr                b,
-                Cx5 const                 &smaps) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto SENSERecon(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &smaps)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(1), b);
@@ -58,12 +52,9 @@ auto SENSERecon(TOps::Grid<3>::Opts const &gridOpts,
   }
 }
 
-auto Decant(TOps::Grid<3>::Opts const &gridOpts,
-            Trajectory const          &traj,
-            Index const                nSlab,
-            Index const                nTime,
-            Basis::CPtr                b,
-            Cx5 const                 &skern) -> TOps::TOp<Cx, 5, 5>::Ptr
+auto Decant(
+  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
+  -> TOps::TOp<Cx, 5, 5>::Ptr
 {
   auto nufft = TOps::NUFFTDecant<3>::Make(gridOpts, traj, skern, b);
   if (nSlab > 1) {
@@ -75,13 +66,13 @@ auto Decant(TOps::Grid<3>::Opts const &gridOpts,
   return nullptr;
 }
 
-Recon::Recon(Opts const                &rOpts,
-             PreconOpts const          &pOpts,
-             TOps::Grid<3>::Opts const &gridOpts,
-             SENSE::Opts const         &senseOpts,
-             Trajectory const          &traj,
-             Basis::CPtr                b,
-             Cx5 const                 &noncart)
+Recon::Recon(Opts const        &rOpts,
+             PreconOpts const  &pOpts,
+             GridOpts<3> const &gridOpts,
+             SENSE::Opts const &senseOpts,
+             Trajectory const  &traj,
+             Basis::CPtr        b,
+             Cx5 const         &noncart)
 {
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);

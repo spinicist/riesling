@@ -5,16 +5,16 @@
 namespace rl {
 
 namespace TOps {
-template <int ND_, typename KType_ = Kernel<ND_, rl::ExpSemi<4>>> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
 {
   static const int ND = ND_;
-  using KType = KType_;
+  using KType = Kernel<ND, KF>;
 
   TOP_INHERIT(Cx, ND + 1, 3)
   TOP_DECLARE(GridDecant)
 
-  GridDecant(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr b);
-  static auto Make(Grid<ND>::Opts const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
+  GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr b);
+  static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
     -> std::shared_ptr<GridDecant<ND>>;
 
   void iforward(InCMap const &x, OutMap &y) const;

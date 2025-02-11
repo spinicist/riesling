@@ -7,11 +7,11 @@
 
 namespace rl::TOps {
 
-template<int ND, typename KType>
-NUFFTDecant<ND, KType>::NUFFTDecant(TOps::Grid<ND>::Opts const &opts,
-                             TrajectoryN<ND> const      &traj,
-                             CxN<ND + 2> const          &skern,
-                             Basis::CPtr                 basis)
+template <int ND, typename KF>
+NUFFTDecant<ND, KF>::NUFFTDecant(GridOpts<ND> const    &opts,
+                                 TrajectoryN<ND> const &traj,
+                                 CxN<ND + 2> const     &skern,
+                                 Basis::CPtr            basis)
   : Parent("NUFFTDecant")
   , gridder(opts, traj, skern, basis)
   , workspace{gridder.ishape}
@@ -26,7 +26,7 @@ NUFFTDecant<ND, KType>::NUFFTDecant(TOps::Grid<ND>::Opts const &opts,
   apoBrd_.fill(1);
   apo_shape[0] = 1;
   apoBrd_[0] = gridder.ishape[0];
-  apo_ = Apodize<ND, KType>(LastN<ND>(ishape), LastN<ND>(gridder.ishape), opts.osamp).reshape(apo_shape); // Padding stuff
+  apo_ = Apodize<ND, KF>(LastN<ND>(ishape), LastN<ND>(gridder.ishape), opts.osamp).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
@@ -38,16 +38,16 @@ NUFFTDecant<ND, KType>::NUFFTDecant(TOps::Grid<ND>::Opts const &opts,
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template<int ND, typename KType>
-auto NUFFTDecant<ND, KType>::Make(TOps::Grid<ND>::Opts const &opts,
-                           TrajectoryN<ND> const      &traj,
-                           CxN<ND + 2> const          &skern,
-                           Basis::CPtr                 basis) -> std::shared_ptr<NUFFTDecant<ND>>
+template <int ND, typename KF>
+auto NUFFTDecant<ND, KF>::Make(GridOpts<ND> const    &opts,
+                               TrajectoryN<ND> const &traj,
+                               CxN<ND + 2> const     &skern,
+                               Basis::CPtr            basis) -> std::shared_ptr<NUFFTDecant<ND>>
 {
   return std::make_shared<NUFFTDecant<ND>>(opts, traj, skern, basis);
 }
 
-template<int ND, typename KType> void NUFFTDecant<ND, KType>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::forward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -57,7 +57,7 @@ template<int ND, typename KType> void NUFFTDecant<ND, KType>::forward(InCMap con
   this->finishForward(y, time, false);
 }
 
-template<int ND, typename KType> void NUFFTDecant<ND, KType>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -67,7 +67,7 @@ template<int ND, typename KType> void NUFFTDecant<ND, KType>::adjoint(OutCMap co
   this->finishAdjoint(x, time, false);
 }
 
-template<int ND, typename KType> void NUFFTDecant<ND, KType>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -77,7 +77,7 @@ template<int ND, typename KType> void NUFFTDecant<ND, KType>::iforward(InCMap co
   this->finishForward(y, time, true);
 }
 
-template<int ND, typename KType> void NUFFTDecant<ND, KType>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder.ishape);

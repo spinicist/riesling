@@ -20,7 +20,7 @@ float const os = 2.f;
 
 TEST_CASE("Grid", "[grid]")
 {
-  auto grid = TOps::Grid<3>(TOps::Grid<3>::Opts{.osamp = os}, traj, C, nullptr);
+  auto grid = TOps::Grid<3>(GridOpts<3>{.osamp = os}, traj, C, nullptr);
   Cx5  c(grid.ishape);
   Cx3  nc(grid.oshape);
   c.setRandom();
@@ -39,7 +39,7 @@ TEST_CASE("Grid-Basis", "[grid]")
 {
   Index const nB = 4;
   Basis       basis(nB, 1, 256);
-  auto        grid = TOps::Grid<3>(TOps::Grid<3>::Opts{.osamp = os}, traj, C, &basis);
+  auto        grid = TOps::Grid<3>(GridOpts<3>{.osamp = os}, traj, C, &basis);
   Cx5         c(grid.ishape);
   Cx3         nc(grid.oshape);
   c.setRandom();

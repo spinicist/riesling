@@ -22,7 +22,7 @@ TEST_CASE("NUFFT", "[nufft]")
   TrajectoryN<1> const traj(points, matrix);
   Basis                basis;
   float const          osamp = GENERATE(2.f, 2.3f);
-  auto                 nufft = TOps::NUFFT<1>(TOps::Grid<1>::Opts{.osamp = osamp}, traj, 1, &basis);
+  auto                 nufft = TOps::NUFFT<1>(GridOpts<1>{.osamp = osamp}, traj, 1, &basis);
   Cx3                  ks(nufft.oshape);
   Cx3                  img(nufft.ishape);
   img.setZero();
@@ -56,7 +56,7 @@ TEST_CASE("NUFFT-Basis", "[nufft]")
     }
   }
 
-  auto nufft = TOps::NUFFT<1>(TOps::Grid<1>::Opts{.osamp = 2.f}, traj, 1, &basis);
+  auto nufft = TOps::NUFFT<1>(GridOpts<1>{.osamp = 2.f}, traj, 1, &basis);
   Cx3  ks(nufft.oshape);
   ks.setConstant(1.f);
   Cx3 img(nufft.ishape);

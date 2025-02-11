@@ -42,7 +42,7 @@ auto Basis::entry(Index const s, Index const t) const -> Cx1
   return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
 }
 
-auto Basis::entry(Index const s, Index const t, Index const b) const -> Cx
+auto Basis::entry(Index const b, Index const s, Index const t) const -> Cx
 {
   return B(b, s % B.dimension(1), t % B.dimension(2));
 }

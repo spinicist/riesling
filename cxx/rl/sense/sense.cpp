@@ -19,7 +19,7 @@ namespace rl {
 namespace SENSE {
 
 auto LoresChannels(
-  Opts const &opts, TOps::Grid<3>::Opts const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+  Opts const &opts, GridOpts<3> const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
@@ -282,7 +282,7 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
-auto Choose(Opts const &opts, TOps::Grid<3>::Opts const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+auto Choose(Opts const &opts, GridOpts<3> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }

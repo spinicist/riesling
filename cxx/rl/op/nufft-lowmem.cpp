@@ -26,13 +26,13 @@ template <int ND> auto NoChannels(Sz<ND> shape) -> Sz<ND - 1>
 }
 } // namespace
 
-template <int ND, typename KT>
-NUFFTLowmem<ND, KT>::NUFFTLowmem(Grid<ND, KT>::Opts const &opts,
-                                 TrajectoryN<ND> const    &traj,
-                                 CxN<ND + 2> const        &sk,
-                                 Basis::CPtr               basis)
+template <int ND, typename KF>
+NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> const    &opts,
+                                 TrajectoryN<ND> const &traj,
+                                 CxN<ND + 2> const     &sk,
+                                 Basis::CPtr            basis)
   : Parent("NUFFTLowmem")
-  , gridder{Grid<ND, KT>::Make(opts, traj, 1, basis)}
+  , gridder{Grid<ND, KF>::Make(opts, traj, 1, basis)}
   , nc1{AddFront(LastN<2>(gridder->oshape), 1)}
   , workspace{gridder->ishape}
   , skern{sk}
@@ -59,7 +59,7 @@ NUFFTLowmem<ND, KT>::NUFFTLowmem(Grid<ND, KT>::Opts const &opts,
   apoBrd_.fill(1);
   apo_shape[0] = 1;
   apoBrd_[0] = gridder->ishape[0];
-  apo_ = Apodize<ND, KT>(LastN<ND>(ishape), LastN<ND>(gridder->ishape), opts.osamp).reshape(apo_shape); // Padding stuff
+  apo_ = Apodize<ND, KF>(LastN<ND>(ishape), LastN<ND>(gridder->ishape), opts.osamp).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
@@ -71,16 +71,16 @@ NUFFTLowmem<ND, KT>::NUFFTLowmem(Grid<ND, KT>::Opts const &opts,
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int ND, typename KT>
-auto NUFFTLowmem<ND, KT>::Make(Grid<ND, KT>::Opts const  &opts,
+template <int ND, typename KF>
+auto NUFFTLowmem<ND, KF>::Make(GridOpts<ND> const    &opts,
                                TrajectoryN<ND> const &traj,
                                CxN<ND + 2> const     &skern,
-                               Basis::CPtr            basis) -> std::shared_ptr<NUFFTLowmem<ND, KT>>
+                               Basis::CPtr            basis) -> std::shared_ptr<NUFFTLowmem<ND, KF>>
 {
-  return std::make_shared<NUFFTLowmem<ND, KT>>(opts, traj, skern, basis);
+  return std::make_shared<NUFFTLowmem<ND, KF>>(opts, traj, skern, basis);
 }
 
-template <int ND, typename KT> void NUFFTLowmem<ND, KT>::kernToMap(Index const c) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::kernToMap(Index const c) const
 {
   float const scale = std::sqrt(Product(LastN<ND>(smap.dimensions())) / (float)Product(LastN<ND>(skern.dimensions())));
   smap.setZero();
@@ -93,7 +93,7 @@ template <int ND, typename KT> void NUFFTLowmem<ND, KT>::kernToMap(Index const c
   FFT::Adjoint(smap, ftd);
 }
 
-template <int ND, typename KT> void NUFFTLowmem<ND, KT>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap const &x, OutMap &y) const
 {
   auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -111,7 +111,7 @@ template <int ND, typename KT> void NUFFTLowmem<ND, KT>::forward(InCMap const &x
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KT> void NUFFTLowmem<ND, KT>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap const &x, OutMap &y) const
 {
   auto const     time = this->startForward(x, y, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -128,7 +128,7 @@ template <int ND, typename KT> void NUFFTLowmem<ND, KT>::iforward(InCMap const &
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KT> void NUFFTLowmem<ND, KT>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap const &y, InMap &x) const
 {
   auto const     time = this->startAdjoint(y, x, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -146,7 +146,7 @@ template <int ND, typename KT> void NUFFTLowmem<ND, KT>::adjoint(OutCMap const &
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KT> void NUFFTLowmem<ND, KT>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap const &y, InMap &x) const
 {
   auto const     time = this->startAdjoint(y, x, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
