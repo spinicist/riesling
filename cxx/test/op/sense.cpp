@@ -13,16 +13,15 @@ TEST_CASE("SENSE", "[SENSE]")
   // With credit to PyLops
   SECTION("Dot Test")
   {
-    Cx4 x(1, mapSz, mapSz, mapSz), u(1, mapSz, mapSz, mapSz);
-    Cx5 maps(1, channels, mapSz, mapSz, mapSz);
-    Cx5 y(1, channels, mapSz, mapSz, mapSz), v(1, channels, mapSz, mapSz, mapSz);
+    Cx4 x(mapSz, mapSz, mapSz, 1), u(mapSz, mapSz, mapSz, 1);
+    Cx5 maps(mapSz, mapSz, mapSz, channels, 1);
+    Cx5 y(mapSz, mapSz, mapSz, channels, 1), v(mapSz, mapSz, mapSz, channels, 1);
 
     v.setRandom();
     u.setRandom();
     // The maps need to be normalized for the Dot test
     maps.setRandom();
-    maps =
-      maps / DimDot<1>(maps, maps).sqrt().reshape(Sz5{1, 1, mapSz, mapSz, mapSz}).broadcast(Sz5{1, channels, 1, 1, 1});
+    maps = maps / DimDot<3>(maps, maps).sqrt().reshape(Sz5{mapSz, mapSz, mapSz, 1, 1}).broadcast(Sz5{1, 1, 1, channels, 1});
 
     TOps::SENSE sense(maps, 1);
     y = sense.forward(u);

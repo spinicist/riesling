@@ -16,7 +16,7 @@ auto IR::simulate(Eigen::ArrayXf const &pars) const -> Cx2
 {
   if (pars.size() != nTissueParameters()) { throw Log::Failure("Sim", "Need {} parameters T1 T2 Δf Q", nTissueParameters()); }
   float const R1 = 1.f / pars(0);
-  float const R2 = 1.f / pars(1);
+  // float const R2 = 1.f / pars(1);
   float const Δf = pars(2);
   float const Q = pars(3);
   float const B1 = pars(4);

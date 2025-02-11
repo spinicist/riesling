@@ -32,7 +32,7 @@ void main_recon_rss(args::Subparser &parser)
 
   auto const A = TOps::NUFFTAll(gridArgs.Get(), traj, nC, nS, nT, basis.get());
   auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
-  LSMR const lsmr{A, M, nullptr, lsqOpts.its.Get(), lsqOpts.atol.Get(), lsqOpts.btol.Get(), lsqOpts.ctol.Get(), lsqOpts.λ.Get()};
+  LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart));
   auto       xm = AsTensorMap(x, A->ishape);
 

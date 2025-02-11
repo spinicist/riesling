@@ -18,6 +18,9 @@ template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTLowmem final : TOp<C
   void iforward(InCMap const &x, OutMap &y) const;
 
 private:
+  constexpr static int DC = ND;     // Coils dimension
+  constexpr static int DB = ND + 1; // Basis dimension
+
   Grid<ND, KF>::Ptr gridder;
   Cx3 mutable nc1;
   CxN<ND + 2> mutable workspace;

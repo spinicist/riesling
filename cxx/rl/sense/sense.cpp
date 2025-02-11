@@ -31,7 +31,7 @@ auto LoresChannels(
   auto       sgOpts = gridOpts;
   auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, nullptr);
   auto const M = MakeKSpaceSingle(PreconOpts(), sgOpts, traj, nC, nS, nT);
-  LSMR const lsmr{A, M, nullptr, 4};
+  LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
@@ -105,11 +105,11 @@ auto SobolevWeights(Sz3 const shape, Index const l) -> Re3
  */
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float const l, float const λ) -> Cx5
 {
-  if (LastN<3>(ichan.dimensions()) != LastN<3>(iref.dimensions())) {
+  if (FirstN<3>(ichan.dimensions()) != FirstN<3>(iref.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", ichan.dimensions(), iref.dimensions());
   }
 
-  Sz3 const osshape = MulToEven(LastN<3>(ichan.dimensions()), osamp);
+  Sz3 const osshape = MulToEven(FirstN<3>(ichan.dimensions()), osamp);
   Sz5 const cshape = AddFront(osshape, ichan.dimension(0), ichan.dimension(1));
   Sz4 const rshape = AddFront(osshape, iref.dimension(0));
 

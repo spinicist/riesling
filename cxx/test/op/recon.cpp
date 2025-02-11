@@ -13,9 +13,9 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Recon-Basic", "[recon]")
+TEST_CASE("Recon", "[recon]")
 {
-  Log::SetDisplayLevel(Log::Display::High);
+  // Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(7); //, 15, 16);
   Index const nC = 4;
   auto const  matrix = Sz3{M, M, M};
@@ -50,8 +50,9 @@ TEST_CASE("Recon-Basic", "[recon]")
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }
 
-TEST_CASE("Recon-Lowmem", "[recon]")
+TEST_CASE("ReconLowmem", "[recon]")
 {
+  // Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(8); //, 15, 16);
   Index const nC = 4;
   auto const  matrix = Sz3{M, M, M};
@@ -66,7 +67,7 @@ TEST_CASE("Recon-Lowmem", "[recon]")
 
   Cx5 sKern(AddBack(traj.matrix(), nC, 1));
   sKern.setConstant(std::sqrt(1. / nC));
-  FFT::Forward(sKern, Sz3{2, 3, 4});
+  FFT::Forward(sKern, Sz3{0, 1, 2});
   auto recon = TOps::NUFFTLowmem<3>::Make(GridOpts<3>(), traj, sKern, &basis);
 
   Cx3 ks(recon->oshape);
@@ -74,10 +75,10 @@ TEST_CASE("Recon-Lowmem", "[recon]")
   ks.setConstant(1.f);
   img = recon->adjoint(ks);
   // Super loose tolerance
-  INFO("ks\n" << ks);
-  INFO("img\n" << img);
+  // INFO("ks\n" << ks);
+  // INFO("img\n" << img);
   CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-1f));
   ks = recon->forward(img);
-  INFO("ks\n" << ks);
+  // INFO("ks\n" << ks);
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }

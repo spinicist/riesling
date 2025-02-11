@@ -6,12 +6,9 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
-#include <numbers>
 
 using namespace rl;
 using namespace Catch;
-
-constexpr float inv_sqrt2 = 1.f / std::numbers::sqrt2;
 
 TEST_CASE("Grid2", "[grid]")
 {
@@ -92,7 +89,6 @@ TEST_CASE("GridB", "[grid]")
   points(0, 5, 0) = 2.f;
   TrajectoryN<1> const traj(points, matrix);
 
-  float const osamp = 1;
   Basis       basis(2, 6, 1);
   basis.B.setZero();
   basis.B(0, 0, 0) = 1.f;
