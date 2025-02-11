@@ -20,7 +20,7 @@ auto Grid<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, I
 
 template <int ND, typename KF>
 Grid<ND, KF>::Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b)
-  : Parent(fmt::format("{}D GridOp", ND))
+  : Parent(fmt::format("Grid{}D", ND))
   , kernel(opts.osamp)
   , subgridW{opts.subgridSize}
   , basis{b}
@@ -108,12 +108,12 @@ void Grid<ND, KF>::adjointTask(Index const start, Index const stride, CxNCMap<3>
         for (Index ib = 0; ib < basis->nB(); ib++) {
           auto const b = std::conj(basis->entry(ib, m.sample, m.trace));
           for (Index ic = 0; ic < nC; ic++) {
-            sx.template chip<ND + 1>(ib).template chip<ND>(ic).slice(st, sz) = k.template cast<Cx>() * b * yy(ic);
+            sx.template chip<ND + 1>(ib).template chip<ND>(ic).slice(st, sz) += k.template cast<Cx>() * b * yy(ic);
           }
         }
       } else {
         for (Index ic = 0; ic < nC; ic++) {
-          sx.template chip<ND + 1>(0).template chip<ND>(ic).slice(st, sz) = k.template cast<Cx>() * yy(ic);
+          sx.template chip<ND + 1>(0).template chip<ND>(ic).slice(st, sz) += k.template cast<Cx>() * yy(ic);
         }
       }
     }
