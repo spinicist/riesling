@@ -6,11 +6,19 @@
 namespace rl::TOps {
 
 template <int Rank, int FFTRank>
-FFT<Rank, FFTRank>::FFT(InDims const &dims, bool const adj)
-  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), dims, dims)
+FFT<Rank, FFTRank>::FFT(InDims const &shape, bool const adj)
+  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), shape, shape)
   , adjoint_{adj}
 {
-  std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
+  std::iota(dims_.begin(), dims_.end(), 0);
+}
+
+template <int Rank, int FFTRank>
+FFT<Rank, FFTRank>::FFT(InDims const &shape, Sz<FFTRank> const dims, bool const adj)
+  : Parent(fmt::format("FFT{}", adj ? " Inverse" : ""), shape, shape)
+  , dims_{dims}
+  , adjoint_{adj}
+{
 }
 
 template <int Rank, int FFTRank>

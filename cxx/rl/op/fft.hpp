@@ -12,7 +12,8 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 {
   TOP_INHERIT(Cx, Rank, Rank)
 
-  FFT(InDims const &dims, bool const adjoint = false);
+  FFT(InDims const &shape, bool const adjoint = false);
+  FFT(InDims const &shape, Sz<FFTRank> const dims, bool const adjoint = false);
   FFT(InMap x);
   auto inverse() const -> std::shared_ptr<rl::Ops::Op<Cx>> final;
 

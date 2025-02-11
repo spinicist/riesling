@@ -54,10 +54,10 @@ struct DimensionNames : std::array<std::string, N> {};
 
 namespace Dims {
 DimensionNames<3> const Basis = {"b", "sample", "trace"};
-DimensionNames<6> const Channels = {"b", "channel", "i", "j", "k", "t"};
-DimensionNames<5> const Image = {"b", "i", "j", "k", "t"};
+DimensionNames<6> const Channels = {"i", "j", "k", "channel", "b", "t"};
+DimensionNames<5> const Image = {"i", "j", "k", "b", "t"};
 DimensionNames<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
-DimensionNames<5> const SENSE = {"b", "channel", "i", "j", "k"};
+DimensionNames<5> const SENSE = {"i", "j", "k", "channel", "b"};
 DimensionNames<3> const Trajectory = {"k", "sample", "trace"};
 } // namespace Dims
 

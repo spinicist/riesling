@@ -5,9 +5,6 @@
 #include "../tensors.hpp"
 #include "top-impl.hpp"
 
-#include <numbers>
-constexpr float inv_sqrt2 = std::numbers::sqrt2 / 2;
-
 namespace rl::TOps {
 
 SENSE::SENSE(Cx5 const &maps, Index const nB)
