@@ -38,14 +38,20 @@ void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMa
 {
   Index const          nC = y.dimension(0);
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(SGSZ, kernel.FullWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SGFW), nC, nB));
   Eigen::Tensor<Cx, 1> yy(Sz1{nC});
   Sz<ND>               st, sz;
   st.fill(0);
   sz.fill(KF::FullWidth);
   for (Index is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
-    GridToSubgrid<ND>(SubgridCorner(list.corner, SGSZ, kernel.FullWidth), x, sx);
+
+    auto const corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
+    if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()))) {
+      GridToSubgrid<ND, SGFW>::FastCopy(corner, x, sx);
+    } else {
+      GridToSubgrid<ND, SGFW>::SlowCopy(corner, x, sx);
+    }
     for (auto const &m : list.coords) {
       yy.setZero();
       auto const k = kernel(m.offset);
@@ -89,7 +95,7 @@ void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, CxNCMa
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(SGSZ, kernel.FullWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SGFW), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
   Sz<ND>               st, sz;
   st.fill(0);
@@ -114,7 +120,12 @@ void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, CxNCMa
         }
       }
     }
-    SubgridToGrid<ND>(mutexes, SubgridCorner(list.corner, SGSZ, kernel.FullWidth), sx, x);
+    auto const corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
+    if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()))) {
+      SubgridToGrid<ND, SGFW>::FastCopy(mutexes, corner, sx, x);
+    } else {
+      SubgridToGrid<ND, SGFW>::SlowCopy(mutexes, corner, sx, x);
+    }
   }
 }
 

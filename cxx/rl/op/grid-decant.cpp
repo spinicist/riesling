@@ -9,6 +9,13 @@
 
 namespace rl {
 
+template <int ND>
+inline auto SubgridCorner(Eigen::Array<int16_t, ND, 1> const sgInd, Index const sgSz, Index const kW)
+  -> Eigen::Array<int16_t, ND, 1>
+{
+  return (sgInd * sgSz) - (kW / 2);
+}
+
 namespace TOps {
 
 template <int ND, typename KF, int SG>
@@ -42,7 +49,7 @@ void GridDecant<ND, KF, SG>::forwardTask(Index const start, Index const stride, 
 {
   Index const          nC = y.dimension(0);
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(SGSZ, kernel.FullWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SGFW), nC, nB));
   Eigen::Tensor<Cx, 1> yy(Sz1{nC});
   Sz<ND + 2>           st, ksz;
   st.fill(0);
@@ -98,7 +105,7 @@ void GridDecant<ND, KF, SG>::adjointTask(Index const start, Index const stride, 
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(SGSZ, kernel.FullWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SGFW), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
   Sz<ND + 2>           st, ksz;
   st.fill(0);

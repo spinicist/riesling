@@ -3,7 +3,7 @@
 #include "../basis/basis.hpp"
 #include "../io/hd5.hpp"
 #include "../log.hpp"
-#include "../op/grid.hpp"
+#include "../op/grid-opts.hpp"
 #include "../trajectory.hpp"
 
 namespace rl {

@@ -9,6 +9,7 @@ template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecan
 {
   static constexpr int ND = ND_;
   static constexpr int SGSZ = SGSZ_;
+  static constexpr int SGFW = SGSZ + 2 * (KF::FullWidth / 2);
   using KType = Kernel<ND, KF>;
 
   TOP_INHERIT(Cx, ND + 1, 3)

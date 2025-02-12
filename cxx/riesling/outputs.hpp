@@ -2,7 +2,7 @@
 
 #include "rl/info.hpp"
 #include "rl/io/hd5-core.hpp"
-#include "rl/op/grid.hpp"
+#include "rl/op/grid-opts.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/op/top.hpp"
 #include "rl/precon.hpp"

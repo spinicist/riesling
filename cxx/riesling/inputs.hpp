@@ -4,7 +4,7 @@
 
 #include "rl/algo/admm.hpp"
 #include "rl/algo/lsmr.hpp"
-#include "rl/op/grid.hpp"
+#include "rl/op/grid-opts.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/precon.hpp"
 #include "rl/trajectory.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "basis/basis.hpp"
-#include "op/grid.hpp"
+#include "op/grid-opts.hpp"
 #include "op/tensorscale.hpp"
 #include "trajectory.hpp"
 
