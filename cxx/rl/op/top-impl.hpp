@@ -27,8 +27,8 @@ template <typename S, int I, int O> auto TOp<S, I, O>::cols() const -> Index { r
 
 template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CMap const x, typename Base::Map y) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   InCMap xm(x.data(), ishape);
   OutMap ym(y.data(), oshape);
   forward(xm, ym);
@@ -36,8 +36,8 @@ template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CM
 
 template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CMap const y, typename Base::Map x) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
   adjoint(ym, xm);
@@ -45,8 +45,8 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CM
 
 template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap const x, typename Base::Map y) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   InCMap xm(x.data(), ishape);
   OutMap ym(y.data(), oshape);
   iforward(xm, ym);
@@ -54,8 +54,8 @@ template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::C
 
 template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::CMap const y, typename Base::Map x) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
   iadjoint(ym, xm);
@@ -63,7 +63,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::C
 
 template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x) const -> OutTensor
 {
-  assert(x.dimensions() == ishape);
+  if (x.dimensions() != ishape) { throw Log::Failure(this->name, "xshape {} != ishape {}", x.dimensions(), ishape); };
   InCMap    xm(x.data(), ishape);
   OutTensor y(oshape);
   OutMap    ym(y.data(), oshape);
@@ -74,7 +74,7 @@ template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x
 
 template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &y) const -> InTensor
 {
-  assert(y.dimensions() == oshape);
+  if (y.dimensions() != oshape) { throw Log::Failure(this->name, "yshape {} != oshape {}", y.dimensions(), oshape); };
   OutCMap  ym(y.data(), oshape);
   InTensor x(ishape);
   InMap    xm(x.data(), ishape);
@@ -85,8 +85,8 @@ template <typename S, int I, int O> auto TOp<S, I, O>::adjoint(OutTensor const &
 
 template <typename S, int I, int O> void TOp<S, I, O>::forward(InTensor const &x, OutTensor &y) const
 {
-  assert(x.dimensions() == ishape);
-  assert(y.dimensions() == oshape);
+  if (x.dimensions() != ishape) { throw Log::Failure(this->name, "xshape {} != ishape {}", x.dimensions(), ishape); };
+  if (y.dimensions() != oshape) { throw Log::Failure(this->name, "yshape {} != oshape {}", y.dimensions(), oshape); };
   InCMap xm(x.data(), ishape);
   OutMap ym(y.data(), oshape);
   forward(xm, ym);
@@ -94,19 +94,19 @@ template <typename S, int I, int O> void TOp<S, I, O>::forward(InTensor const &x
 
 template <typename S, int I, int O> void TOp<S, I, O>::adjoint(OutTensor const &y, InTensor &x) const
 {
-  assert(x.dimensions() == ishape);
-  assert(y.dimensions() == oshape);
+  if (x.dimensions() != ishape) { throw Log::Failure(this->name, "xshape {} != ishape {}", x.dimensions(), ishape); };
+  if (y.dimensions() != oshape) { throw Log::Failure(this->name, "yshape {} != oshape {}", y.dimensions(), oshape); };
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const , OutMap ) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const, OutMap) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const , InMap ) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const, InMap) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
