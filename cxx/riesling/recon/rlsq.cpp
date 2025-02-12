@@ -69,7 +69,7 @@ void main_recon_rlsq(args::Subparser &parser)
   if (scale != 1.f) { x.device(Threads::CoreDevice()) = x / Cx(scale); }
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 
-  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), shape[0], shape[4]), R.A->ishape);
+  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), shape[3], shape[4]), R.A->ishape);
   auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);

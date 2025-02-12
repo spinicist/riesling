@@ -45,7 +45,7 @@ void main_ndft(args::Subparser &parser)
     Index const nT = noncart.dimension(4);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-    auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
+    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
     LSMR const lsmr{ndft, M, nullptr, lsqOpts.Get()};
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));

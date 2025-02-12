@@ -76,26 +76,26 @@ auto ReadData(std::string const &iname, std::string const &dset, std::vector<Nam
     std::vector<rl::HD5::IndexPair> chips;
     if (!namedChips.size()) {
       if (dset == "data") {
-        chips = std::vector<rl::HD5::IndexPair>{{0, 0}, {4, 0}};
+        namedChips.push_back({"b", 0});
+        namedChips.push_back({"t", 0});
       } else {
         throw rl::Log::Failure("montage", "No chips specified");
       }
-    } else {
-      if (diskOrder - namedChips.size() != 3) {
-        throw rl::Log::Failure("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping",
-                               namedChips.size(), dset, diskOrder);
-      }
-      auto const names = reader.listNames(dset);
-      for (auto const &nc : namedChips) {
-        if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
-          auto const d = std::distance(names.cbegin(), id);
-          if (nc.index >= diskDims[d]) {
-            throw rl::Log::Failure("montage", "Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
-          }
-          chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d] / 2});
-        } else {
-          throw rl::Log::Failure("montage", "Could find dimension named {}", nc.name);
+    }
+    if (diskOrder - namedChips.size() != 3) {
+      throw rl::Log::Failure("montage", "Incorrect chipping dimensions {}. Dataset {} has order {}, must be 3 after chipping",
+                             namedChips.size(), dset, diskOrder);
+    }
+    auto const names = reader.listNames(dset);
+    for (auto const &nc : namedChips) {
+      if (auto const id = std::find(names.cbegin(), names.cend(), nc.name); id != names.cend()) {
+        auto const d = std::distance(names.cbegin(), id);
+        if (nc.index >= diskDims[d]) {
+          throw rl::Log::Failure("montage", "Dimension {} has {} slices asked for {}", nc.name, diskDims[d], nc.index);
         }
+        chips.push_back({d, nc.index >= 0 ? nc.index : diskDims[d] / 2});
+      } else {
+        throw rl::Log::Failure("montage", "Could find dimension named {}", nc.name);
       }
     }
     data = reader.readSlab<rl::Cx3>(dset, chips);
@@ -150,7 +150,7 @@ auto Colorize(std::vector<rl::Cx2> const &slices, char const component, float co
 {
   std::vector<rl::RGBImage> colorized;
   for (auto const &slice : slices) {
-    float const sliceWin = win < 0.f ? 0.9f * rl::Maximum(slice.abs()) : win;
+    float const  sliceWin = win < 0.f ? 0.9f * rl::Maximum(slice.abs()) : win;
     rl::RGBImage clr;
     switch (component) {
     case 'p': clr = rl::ColorizePhase(slice / slice.abs().cast<rl::Cx>(), 1.f, 1.f); break;

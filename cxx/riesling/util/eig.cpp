@@ -32,7 +32,7 @@ void main_eig(args::Subparser &parser)
   auto const  nT = noncart.dimension(4);
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   auto const  A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
-  auto const  P = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
+  auto const  P = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(A, P, its.Get());

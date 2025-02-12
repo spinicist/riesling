@@ -74,7 +74,6 @@ template <int ND, typename KF> void Grid<ND, KF>::forward(InCMap const x, OutMap
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
-  Log::Print("FWD", "Forward size {}", gridLists.size());
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
   this->finishForward(y, time, false);
 }

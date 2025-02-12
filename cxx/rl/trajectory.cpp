@@ -130,7 +130,7 @@ template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov) const -> S
 template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov, Index const nB, Index const nT) const -> Sz<ND + 2>
 {
   auto const m = this->matrixForFOV(fov);
-  return AddBack(AddFront(m, nB), nT);
+  return AddBack(m, nB, nT);
 }
 
 template <int ND> auto TrajectoryN<ND>::voxelSize() const -> Array { return voxel_size_; }

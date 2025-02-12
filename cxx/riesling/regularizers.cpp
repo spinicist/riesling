@@ -26,7 +26,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   , llrShift(parser, "S", "Enable random LLR shifting", {"llr-shift"})
 
   , wavelets(parser, "L", "L1 Wavelet denoising", {"wavelets"})
-  , waveDims(parser, "W", "Wavelet transform dimensions (b,x,y,z 0/1)", {"wavelet-dims"}, std::vector<Index>{1, 2, 3})
+  , waveDims(parser, "W", "Wavelet transform dimensions (b,x,y,z 0/1)", {"wavelet-dims"}, std::vector<Index>{0, 1, 2})
   , waveWidth(parser, "W", "Wavelet width (4/6/8)", {"wavelet-width"}, 6)
 {
 }

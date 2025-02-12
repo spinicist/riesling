@@ -10,7 +10,7 @@ template <int ND> auto Wavelets<ND>::PaddedShape(Sz<ND> const shape, std::vector
 {
   Sz<ND> padded = shape;
   for (auto const d : dims) {
-    if (d < 0 || d >= ND) { throw(std::runtime_error(fmt::format("Invalid wavelet dimensions {}", dims))); }
+    if (d < 0 || d >= ND) { throw Log::Failure("Waves", "Invalid wavelet dimensions {}", dims); }
     padded[d] = ((shape[d] + 1) / 2) * 2;
   }
   return padded;
@@ -18,13 +18,13 @@ template <int ND> auto Wavelets<ND>::PaddedShape(Sz<ND> const shape, std::vector
 
 template <int ND>
 Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> const dims)
-  : Parent("WaveletsOp", shape, shape)
+  : Parent("Waves", shape, shape)
   , N_{N}
   , dims_{dims}
 {
   // Check image is adequately padded and bug out if not
   auto const padded = PaddedShape(shape, dims);
-  if (shape != padded) { throw(std::runtime_error(fmt::format("Wavelets had dimensions {}, required {}", shape, padded))); }
+  if (shape != padded) { throw Log::Failure(this->name, "Wavelets had dimensions {}, minimum {}", shape, padded); }
   // Daubechie's coeffs courtesy of Wikipedia
   Cc_.resize(N_);
   Cr_.resize(N_);

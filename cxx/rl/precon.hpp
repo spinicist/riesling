@@ -17,11 +17,11 @@ auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float con
 
 auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re3;
 
-auto MakeKSpaceSingle(
+auto MakeKSpacePrecon(
   PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT)
   -> TOps::TOp<Cx, 5, 5>::Ptr;
 
-auto MakeKSpaceMulti(
+auto MakeKSpacePrecon(
   PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Cx5 const &smaps, Index const nS, Index const nT)
   -> TOps::TOp<Cx, 5, 5>::Ptr;
 
