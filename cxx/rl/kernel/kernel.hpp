@@ -9,7 +9,6 @@
 
 namespace rl {
 
-namespace {
 template <int ND, int W> struct FixedSize
 {
 };
@@ -29,24 +28,27 @@ template <int W> struct FixedSize<3, W>
   using T = Eigen::Sizes<W, W, W>;
 };
 
-template <int ND, typename F> using FixedTensor = Eigen::TensorFixedSize<float, typename FixedSize<ND, F::FullWidth>::T>;
+template <typename T, int ND, int SZ> using FixedTensor = Eigen::TensorFixedSize<T, typename FixedSize<ND, SZ>::T>;
 
-template <typename Func> inline auto K(Func const f, float const p) -> FixedTensor<1, Func>
+namespace {
+template <typename Func> inline auto K(Func const f, float const p) -> FixedTensor<float, 1, Func::FullWidth>
 {
-  constexpr float      HW = Func::Width / 2.f;
-  constexpr float      L = 0.5f - Func::FullWidth / 2.f;
-  FixedTensor<1, Func> k;
+  constexpr float HW = Func::Width / 2.f;
+  constexpr float L = 0.5f - Func::FullWidth / 2.f;
+
+  FixedTensor<float, 1, Func::FullWidth> k;
   for (Index ii = 0; ii < Func::FullWidth; ii++) {
     k[ii] = f(((ii + L) - p) / HW);
   }
   return k;
 }
 
-template <typename Func> inline auto KS(Func const f, float const p, float const s) -> FixedTensor<1, Func>
+template <typename Func> inline auto KS(Func const f, float const p, float const s) -> FixedTensor<float, 1, Func::FullWidth>
 {
-  constexpr float      HW = Func::Width / 2.f;
-  constexpr float      L = 0.5f - Func::FullWidth / 2.f;
-  FixedTensor<1, Func> k;
+  constexpr float HW = Func::Width / 2.f;
+  constexpr float L = 0.5f - Func::FullWidth / 2.f;
+
+  FixedTensor<float, 1, Func::FullWidth> k;
   for (Index ii = 0; ii < Func::FullWidth; ii++) {
     k[ii] = f(((ii + L) - p) / HW) * s;
   }
@@ -61,7 +63,7 @@ template <int ND, typename Func> struct Kernel
   static constexpr int FullWidth = Func::FullWidth;
 
   using Array = Eigen::Array<float, FullWidth, 1>;
-  using Tensor = FixedTensor<ND, Func>;
+  using Tensor = FixedTensor<float, ND, Func::FullWidth>;
   using Point = Eigen::Matrix<float, ND, 1>;
 
   Func  f;

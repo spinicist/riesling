@@ -24,13 +24,13 @@ template <int ND> struct GridOpts
   using Arrayf = Eigen::Array<float, ND, 1>;
   Arrayf fov = Arrayf::Zero();
   float  osamp = 1.3f;
-  Index  subgridSize = 8;
 };
 
 namespace TOps {
-template <int ND_, typename KF = rl::ExpSemi<4>> struct Grid final : TOp<Cx, ND_ + 2, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct Grid final : TOp<Cx, ND_ + 2, 3>
 {
-  static const int ND = ND_;
+  static constexpr int ND = ND_;
+  static constexpr int SGSZ = SGSZ_;
   using KType = Kernel<ND, KF>;
 
   TOP_INHERIT(Cx, ND + 2, 3)
@@ -45,7 +45,6 @@ template <int ND_, typename KF = rl::ExpSemi<4>> struct Grid final : TOp<Cx, ND_
 
 private:
   using CoordList = typename TrajectoryN<ND>::CoordList;
-  Index                  subgridW;
   std::vector<CoordList> gridLists;
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;

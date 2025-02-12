@@ -11,17 +11,16 @@ namespace rl {
 
 namespace TOps {
 
-template <int ND, typename KF>
-GridDecant<ND, KF>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &sk, Basis::CPtr b)
+template <int ND, typename KF, int SG>
+GridDecant<ND, KF, SG>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &sk, Basis::CPtr b)
   : Parent(fmt::format("{}D Decant", ND))
   , kernel(opts.osamp)
-  , subgridW{opts.subgridSize}
   , basis{b}
   , skern{sk}
 {
   static_assert(ND < 4);
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
-  gridLists = traj.toCoordLists(osMatrix, kernel.FullWidth, subgridW, false);
+  gridLists = traj.toCoordLists(osMatrix, kernel.FullWidth, SGSZ, false);
   ishape = AddBack(osMatrix, basis ? basis->nB() : 1);
   oshape = Sz3{skern.dimension(1), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
@@ -31,28 +30,28 @@ GridDecant<ND, KF>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &
   Log::Print("Decant", "ishape {} oshape {} scale {}", this->ishape, this->oshape, scale);
 }
 
-template <int ND, typename KF>
-auto GridDecant<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
+template <int ND, typename KF, int SG>
+auto GridDecant<ND, KF, SG>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
   -> std::shared_ptr<GridDecant<ND>>
 {
   return std::make_shared<GridDecant<ND>>(opts, t, skern, b);
 }
 
-template <int ND, typename KT>
-void GridDecant<ND, KT>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 1> const &x, CxNMap<3> &y) const
+template <int ND, typename KF, int SG>
+void GridDecant<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 1> const &x, CxNMap<3> &y) const
 {
   Index const          nC = y.dimension(0);
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel.FullWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(SGSZ, kernel.FullWidth)), nC, nB));
   Eigen::Tensor<Cx, 1> yy(Sz1{nC});
   Sz<ND + 2>           st, ksz;
   st.fill(0);
-  ksz.fill(KT::FullWidth);
+  ksz.fill(KF::FullWidth);
   ksz[ND - 1] = 1;
   ksz[ND - 2] = 1;
   for (Index is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
-    GridToDecant<ND>(SubgridCorner(list.corner, subgridW, kernel.FullWidth), skern, x, sx);
+    GridToDecant<ND>(SubgridCorner(list.corner, SGSZ, kernel.FullWidth), skern, x, sx);
     for (auto const &m : list.coords) {
       yy.setZero();
       auto const k = kernel(m.offset);
@@ -78,7 +77,7 @@ void GridDecant<ND, KT>::forwardTask(Index const start, Index const stride, CxNC
   }
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::forward(InCMap const x, OutMap y) const
+template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
@@ -86,24 +85,24 @@ template <int ND, typename KT> void GridDecant<ND, KT>::forward(InCMap const x, 
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::iforward(InCMap const x, OutMap y) const
+template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KT>
-void GridDecant<ND, KT>::adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 1> &x) const
+template <int ND, typename KF, int SG>
+void GridDecant<ND, KF, SG>::adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 1> &x) const
 
 {
   Index const          nC = y.dimensions()[0];
   Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(subgridW, kernel.FullWidth)), nC, nB));
+  CxN<ND + 2>          sx(AddBack(Constant<ND>(SubgridFullwidth(SGSZ, kernel.FullWidth)), nC, nB));
   Eigen::Tensor<Cx, 1> yy(nC);
   Sz<ND + 2>           st, ksz;
   st.fill(0);
-  ksz.fill(KT::FullWidth);
+  ksz.fill(KF::FullWidth);
   ksz[ND - 1] = 1;
   ksz[ND - 2] = 1;
 
@@ -129,12 +128,12 @@ void GridDecant<ND, KT>::adjointTask(Index const start, Index const stride, CxNC
           sx.slice(st, ksz) = k.template cast<Cx>() * yy(ic);
         }
       }
-      DecantToGrid<ND>(mutexes, SubgridCorner(list.corner, subgridW, kernel.FullWidth), skern, sx, x);
+      DecantToGrid<ND>(mutexes, SubgridCorner(list.corner, SGSZ, kernel.FullWidth), skern, sx, x);
     }
   }
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::adjoint(OutCMap const y, InMap x) const
+template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
@@ -142,7 +141,7 @@ template <int ND, typename KT> void GridDecant<ND, KT>::adjoint(OutCMap const y,
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::iadjoint(OutCMap const y, InMap x) const
+template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });
