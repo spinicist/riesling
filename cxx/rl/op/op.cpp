@@ -20,8 +20,8 @@ template <typename S> void Op<S>::inverse(CMap const , Map ) const
 
 template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   CMap xm(x.data(), x.size());
   Map  ym(y.data(), y.size());
   this->forward(xm, ym);
@@ -29,8 +29,8 @@ template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
 
 template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
   this->adjoint(ym, xm);
@@ -38,8 +38,8 @@ template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
 
 template <typename S> void Op<S>::inverse(Vector const &y, Vector &x) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
   this->inverse(ym, xm);
@@ -47,7 +47,7 @@ template <typename S> void Op<S>::inverse(Vector const &y, Vector &x) const
 
 template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
 {
-  assert(x.rows() == cols());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   Vector y(this->rows());
   Map    ym(y.data(), y.size());
   y.setZero();
@@ -58,7 +58,7 @@ template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
 
 template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
 {
-  assert(y.rows() == rows());
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   Vector x(this->cols());
   Map    xm(x.data(), x.size());
   x.setZero();
@@ -69,8 +69,8 @@ template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
 
 template <typename S> void Op<S>::iforward(Vector const &x, Vector &y) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   CMap xm(x.data(), x.size());
   Map  ym(y.data(), y.size());
   this->iforward(xm, ym);
@@ -78,8 +78,8 @@ template <typename S> void Op<S>::iforward(Vector const &x, Vector &y) const
 
 template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x) const
 {
-  assert(x.rows() == cols());
-  assert(y.rows() == rows());
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
   this->iadjoint(ym, xm);
