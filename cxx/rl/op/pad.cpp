@@ -33,7 +33,7 @@ template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap cons
 template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x = y.slice(left_, ishape);
+  x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
   this->finishAdjoint(x, time, false);
 }
 

@@ -5,9 +5,11 @@
 namespace rl {
 
 namespace TOps {
-template <int ND_, typename KF = rl::ExpSemi<4>> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
 {
-  static const int ND = ND_;
+  static constexpr int ND = ND_;
+  static constexpr int SGSZ = SGSZ_;
+  static constexpr int SGFW = SGSZ + 2 * (KF::FullWidth / 2);
   using KType = Kernel<ND, KF>;
 
   TOP_INHERIT(Cx, ND + 1, 3)
@@ -24,7 +26,6 @@ template <int ND_, typename KF = rl::ExpSemi<4>> struct GridDecant final : TOp<C
 
 private:
   using CoordList = typename TrajectoryN<ND>::CoordList;
-  Index                  subgridW;
   std::vector<CoordList> gridLists;
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;

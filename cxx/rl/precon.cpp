@@ -137,7 +137,7 @@ auto LoadKSpacePrecon(std::string const &fname, Trajectory const &traj, Sz5 cons
   }
 }
 
-auto MakeKSpaceSingle(
+auto MakeKSpacePrecon(
   PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
@@ -155,11 +155,11 @@ auto MakeKSpaceSingle(
   }
 }
 
-auto MakeKSpaceMulti(
+auto MakeKSpacePrecon(
   PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Cx5 const &smaps, Index const nS, Index const nT)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  Sz5 const shape{smaps.dimension(1), traj.nSamples(), traj.nTraces(), nS, nT};
+  Sz5 const shape{smaps.dimension(3), traj.nSamples(), traj.nTraces(), nS, nT};
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return std::make_shared<TOps::Identity<Cx, 5>>(shape);

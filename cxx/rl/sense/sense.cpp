@@ -30,7 +30,7 @@ auto LoresChannels(
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res, 0, true, false);
   auto       sgOpts = gridOpts;
   auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, nullptr);
-  auto const M = MakeKSpaceSingle(PreconOpts(), sgOpts, traj, nC, nS, nT);
+  auto const M = MakeKSpacePrecon(PreconOpts(), sgOpts, traj, nC, nS, nT);
   LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
@@ -289,7 +289,7 @@ auto Choose(Opts const &opts, GridOpts<3> const &gopts, Trajectory const &traj, 
   if (opts.type == "auto") {
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
-    Cx4 const ref = DimDot<1>(c, c).sqrt();
+    Cx4 const ref = DimDot<3>(c, c).sqrt();
     kernels = EstimateKernels(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
   } else {
     HD5::Reader senseReader(opts.type);

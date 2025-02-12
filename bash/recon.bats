@@ -25,15 +25,15 @@
 @test "Run frames reconstruction" {
     PREFIX="frames"
     riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5
-    riesling recon-lsq basic-kspace.h5 frames-lsq.h5 --sense=calib-k.h5 --basis=${PREFIX}.h5
+    riesling recon-lsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --basis=${PREFIX}.h5
 }
 
 @test "Run wavelets reconstruction" {
-    PREFIX="frames"
-    riesling recon-rlsq basic-kspace.h5 frames-lsq.h5 --sense=calib-k.h5 --wavelets=1e-3
+    PREFIX="waves"
+    riesling recon-rlsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --wavelets=1e-3
 }
 
 @test "Run TV reconstruction" {
-    PREFIX="frames"
-    riesling recon-rlsq basic-kspace.h5 frames-lsq.h5 --sense=calib-k.h5 --tv=1e-3
+    PREFIX="tv"
+    riesling recon-rlsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --tv=1e-3
 }

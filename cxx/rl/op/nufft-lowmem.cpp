@@ -98,7 +98,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap const x,
 {
   auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(DC)));
+  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(ND + 1)));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
   ws1m.setZero();
   y.setZero();
@@ -116,7 +116,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap const x
 {
   auto const     time = this->startForward(x, y, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(0)));
+  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(ND + 1)));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
   ws1m.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {

@@ -3,7 +3,6 @@
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
-#include "rl/op/grid.hpp"
 #include "rl/op/ndft.hpp"
 #include "rl/precon.hpp"
 #include "rl/sys/threads.hpp"
@@ -16,7 +15,7 @@ void main_ndft(args::Subparser &parser)
   CoreArgs    coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
-  LSMRArgs     lsqOpts(parser);
+  LSMRArgs    lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -45,7 +44,7 @@ void main_ndft(args::Subparser &parser)
     Index const nT = noncart.dimension(4);
     traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-    auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
+    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
     LSMR const lsmr{ndft, M, nullptr, lsqOpts.Get()};
 
     Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));

@@ -31,13 +31,13 @@ void main_recon_rss(args::Subparser &parser)
   Index const nT = noncart.dimension(4);
 
   auto const A = TOps::NUFFTAll(gridArgs.Get(), traj, nC, nS, nT, basis.get());
-  auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
+  auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
   LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart));
   auto       xm = AsTensorMap(x, A->ishape);
 
   Cx5 const        rss = DimDot<1>(xm, xm).sqrt();
-  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), rss.dimensions());
+  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[3], nT), rss.dimensions());
   auto             out = oc.forward(rss);
 
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);

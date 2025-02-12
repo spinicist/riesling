@@ -46,7 +46,7 @@ void main_recon_lad(args::Subparser &parser)
 
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
   auto const A = Recon::Choose(reconArgs.Get(), gridArgs.Get(), senseOpts, traj, basis.get(), noncart);
-  auto const M = MakeKSpaceSingle(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
+  auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT, basis.get());
 
   LAD lad{A,       M,       inner_its0.Get(), inner_its1.Get(), atol.Get(), btol.Get(), ctol.Get(), outer_its.Get(),
           ε.Get(), μ.Get(), τ.Get()};
@@ -54,7 +54,7 @@ void main_recon_lad(args::Subparser &parser)
   auto const x = lad.run(noncart.data(), ρ.Get());
   auto const xm = AsTensorMap(x, A->ishape);
 
-  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[0], nT), A->ishape);
+  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[3], nT), A->ishape);
   auto             out = oc.adjoint(xm);
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
   if (coreArgs.residual) {
