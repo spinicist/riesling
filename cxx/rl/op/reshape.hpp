@@ -22,7 +22,7 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
     }
   }
 
-  void forward(InCMap const &x, OutMap &y) const
+  void forward(InCMap const x, OutMap y) const
   {
     auto const                time = this->startForward(x, y, false);
     typename Op::InCMap const xm(x.data(), op_->ishape);
@@ -31,7 +31,7 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap const &y, InMap &x) const
+  void adjoint(OutCMap const y, InMap x) const
   {
     auto const                 time = this->startAdjoint(y, x, false);
     typename Op::OutCMap const ym(y.data(), op_->oshape);
@@ -40,7 +40,7 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap const &x, OutMap &y) const
+  void iforward(InCMap const x, OutMap y) const
   {
     auto const                time = this->startForward(x, y, true);
     typename Op::InCMap const xm(x.data(), op_->ishape);
@@ -49,7 +49,7 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap const &y, InMap &x) const
+  void iadjoint(OutCMap const y, InMap x) const
   {
     auto const                 time = this->startAdjoint(y, x, true);
     typename Op::OutCMap const ym(y.data(), op_->oshape);
@@ -84,7 +84,7 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
     }
   }
 
-  void forward(InCMap const &x, OutMap &y) const
+  void forward(InCMap const x, OutMap y) const
   {
     auto const                time = this->startForward(x, y, false);
     typename Op::InCMap const xm(x.data(), op_->ishape);
@@ -93,7 +93,7 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap const &y, InMap &x) const
+  void adjoint(OutCMap const y, InMap x) const
   {
     auto const                 time = this->startAdjoint(y, x, false);
     typename Op::OutCMap const ym(y.data(), op_->oshape);
@@ -102,7 +102,7 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap const &x, OutMap &y) const
+  void iforward(InCMap const x, OutMap y) const
   {
     auto const                time = this->startForward(x, y, true);
     typename Op::InCMap const xm(x.data(), op_->ishape);
@@ -111,7 +111,7 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap const &y, InMap &x) const
+  void iadjoint(OutCMap const y, InMap x) const
   {
     auto const                 time = this->startAdjoint(y, x, true);
     typename Op::OutCMap const ym(y.data(), op_->oshape);

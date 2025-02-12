@@ -39,8 +39,8 @@ template <int ND_, typename KF = rl::ExpSemi<4>> struct Grid final : TOp<Cx, ND_
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b)
     -> std::shared_ptr<Grid<ND, KF>>;
   Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b);
-  void  iforward(InCMap const &x, OutMap &y) const;
-  void  iadjoint(OutCMap const &y, InMap &x) const;
+  void  iforward(InCMap const x, OutMap y) const;
+  void  iadjoint(OutCMap const y, InMap x) const;
   KType kernel;
 
 private:

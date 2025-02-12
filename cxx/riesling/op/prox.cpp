@@ -2,7 +2,7 @@
 #include "outputs.hpp"
 
 #include "regularizers.hpp"
-#include "rl/op/op.hpp"
+#include "rl/op/top-id.hpp"
 
 using namespace rl;
 

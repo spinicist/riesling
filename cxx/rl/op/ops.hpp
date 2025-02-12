@@ -8,11 +8,12 @@ template <typename Scalar = Cx> struct Identity final : Op<Scalar>
 {
   OP_INHERIT
   Identity(Index const s);
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void inverse(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   Index sz;
 };
@@ -22,10 +23,11 @@ template <typename Scalar = Cx> struct MatMul final : Op<Scalar>
   OP_INHERIT
   using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   MatMul(Matrix const m);
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   Matrix mat;
 };
@@ -36,11 +38,12 @@ template <typename Scalar = Cx> struct DiagScale final : Op<Scalar>
   OP_INHERIT
   DiagScale(Index const sz, float const s);
   auto  inverse() const -> std::shared_ptr<Op<Scalar>>;
-  void forward(CMap const &, Map &) const;
-  void adjoint(CMap const &, Map &) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void  forward(CMap const, Map) const;
+  void  adjoint(CMap const, Map) const;
+  void  iforward(CMap const x, Map y) const;
+  void  iadjoint(CMap const y, Map x) const;
   float scale;
+
 private:
   Index sz;
 };
@@ -50,11 +53,12 @@ template <typename Scalar = Cx> struct DiagRep final : Op<Scalar>
   OP_INHERIT
   DiagRep(Vector const &s, Index const repInner, Index const repOuter);
   auto inverse() const -> std::shared_ptr<Op<Scalar>> final;
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void inverse(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   Vector s;
   Index  rI, rO;
@@ -67,18 +71,18 @@ template <typename Scalar = Cx> struct Multiply final : Op<Scalar>
   OP_INHERIT
   Multiply(std::shared_ptr<Op<Scalar>> A, std::shared_ptr<Op<Scalar>> B);
   auto inverse() const -> std::shared_ptr<Op<Scalar>> final;
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   std::shared_ptr<Op<Scalar>> A, B;
   Vector mutable temp;
 };
 
 // Returns an Op representing A * B
-template <typename S = Cx>
-auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr;
+template <typename S = Cx> auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr;
 
 //! Vertically stack operators, i.e. A = [B; C]
 template <typename Scalar = Cx> struct VStack final : Op<Scalar>
@@ -87,10 +91,11 @@ template <typename Scalar = Cx> struct VStack final : Op<Scalar>
   VStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
   VStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
   VStack(std::shared_ptr<Op<Scalar>> op1, std::vector<std::shared_ptr<Op<Scalar>>> const &others);
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   void                                     check();
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
@@ -103,10 +108,11 @@ template <typename Scalar = Cx> struct HStack final : Op<Scalar>
   HStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
   HStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
   HStack(std::shared_ptr<Op<Scalar>> op1, std::vector<std::shared_ptr<Op<Scalar>>> const &others);
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   void                                     check();
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
@@ -118,12 +124,12 @@ template <typename Scalar = Cx> struct DStack final : Op<Scalar>
   OP_INHERIT
   DStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
   DStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
-  auto inverse() const -> std::shared_ptr<Op<Scalar>> final;
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void inverse(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  auto                                     inverse() const -> std::shared_ptr<Op<Scalar>> final;
+  void                                     forward(CMap const x, Map y) const;
+  void                                     adjoint(CMap const y, Map x) const;
+  void                                     inverse(CMap const y, Map x) const;
+  void                                     iforward(CMap const x, Map y) const;
+  void                                     iadjoint(CMap const y, Map x) const;
   std::vector<std::shared_ptr<Op<Scalar>>> ops;
 };
 
@@ -131,10 +137,11 @@ template <typename Scalar = Cx> struct Extract final : Op<Scalar>
 {
   OP_INHERIT
   Extract(Index const cols, Index const st, Index const rows);
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   Index r, c, start;
 };
@@ -143,16 +150,16 @@ template <typename Scalar = Cx> struct Subtract final : Op<Scalar>
 {
   OP_INHERIT
   Subtract(std::shared_ptr<Op<Scalar>> a, std::shared_ptr<Op<Scalar>> b);
-  void forward(CMap const &x, Map &y) const;
-  void adjoint(CMap const &y, Map &x) const;
-  void iforward(CMap const &x, Map &y) const;
-  void iadjoint(CMap const &y, Map &x) const;
+  void forward(CMap const x, Map y) const;
+  void adjoint(CMap const y, Map x) const;
+  void iforward(CMap const x, Map y) const;
+  void iadjoint(CMap const y, Map x) const;
+
 private:
   std::shared_ptr<Op<Scalar>> a, b;
 };
 
 // Returns an Op representing A - B
-template <typename S = Cx>
-auto Sub(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr;
+template <typename S = Cx> auto Sub(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> typename Op<S>::Ptr;
 
 } // namespace rl::Ops

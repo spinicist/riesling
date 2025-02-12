@@ -25,7 +25,7 @@ TOp<S, I, O>::TOp(std::string const &n, InDims const xd, OutDims const yd)
 template <typename S, int I, int O> auto TOp<S, I, O>::rows() const -> Index { return Product(oshape); }
 template <typename S, int I, int O> auto TOp<S, I, O>::cols() const -> Index { return Product(ishape); }
 
-template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CMap const &x, typename Base::Map &y) const
+template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CMap const x, typename Base::Map y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -34,7 +34,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CM
   forward(xm, ym);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CMap const &y, typename Base::Map &x) const
+template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CMap const y, typename Base::Map x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -43,7 +43,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CM
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap const &x, typename Base::Map &y) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap const x, typename Base::Map y) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -52,7 +52,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::C
   iforward(xm, ym);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::CMap const &y, typename Base::Map &x) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::CMap const y, typename Base::Map x) const
 {
   assert(x.rows() == cols());
   assert(y.rows() == rows());
@@ -101,12 +101,12 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(OutTensor const &
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const &, OutMap &) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const , OutMap ) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const &, InMap &) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const , InMap ) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
@@ -154,42 +154,5 @@ template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const
     Log::Debug(this->name, "{}Adjoint finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
   }
 }
-
-template <typename S, int R>
-Identity<S, R>::Identity(Sz<R> dims)
-  : Parent("Identity", dims, dims)
-{
-}
-
-template <typename S, int R> void Identity<S, R>::forward(InCMap const &x, OutMap &y) const
-{
-  auto const time = Parent::startForward(x, y, false);
-  y.device(Threads::TensorDevice()) = x;
-  Parent::finishAdjoint(y, time, false);
-}
-
-template <typename S, int R> void Identity<S, R>::adjoint(OutCMap const &y, InMap &x) const
-{
-  auto const time = Parent::startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y;
-  Parent::finishAdjoint(x, time, false);
-}
-
-template <typename S, int R> void Identity<S, R>::iforward(InCMap const &x, OutMap &y) const
-{
-  auto const time = Parent::startForward(x, y, true);
-  y.device(Threads::TensorDevice()) += x;
-  Parent::finishAdjoint(y, time, true);
-}
-
-template <typename S, int R> void Identity<S, R>::iadjoint(OutCMap const &y, InMap &x) const
-{
-  auto const time = Parent::startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += y;
-  Parent::finishAdjoint(x, time, true);
-}
-
-template struct Identity<Cx, 4>;
-template struct Identity<Cx, 5>;
 
 } // namespace rl::TOps

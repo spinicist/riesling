@@ -19,8 +19,8 @@ struct LLR final : Prox<Cx>
   bool  shift;
   LLR(float const, Index const, Index const, bool const, Sz5 const);
 
-  void apply(float const α, CMap const &x, Map &z) const;
-  void apply(std::shared_ptr<Op> const α, CMap const &x, Map &z) const;
+  void apply(float const α, CMap const x, Map z) const;
+  void apply(std::shared_ptr<Op> const α, CMap const x, Map z) const;
 };
 
 } // namespace rl::Proxs

@@ -94,7 +94,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::kernToMap(Index const c
   FFT::Adjoint(smap, ftd);
 }
 
-template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap const x, OutMap y) const
 {
   auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -112,7 +112,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap const &x
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap const x, OutMap y) const
 {
   auto const     time = this->startForward(x, y, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -129,7 +129,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap const &
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap const y, InMap x) const
 {
   auto const     time = this->startAdjoint(y, x, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -147,7 +147,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap const &
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const     time = this->startAdjoint(y, x, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());

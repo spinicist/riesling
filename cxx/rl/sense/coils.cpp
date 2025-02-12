@@ -12,7 +12,7 @@ auto birdcage(Sz3 const            &matrix,
               float const           sense_rad_mm) -> Cx4
 {
   Log::Print("SENSE", "Constructing bird-cage sensitivities with {} channels in {} rings", channels, nrings);
-  Cx4 all(channels, matrix[0], matrix[1], matrix[2]);
+  Cx4 all(matrix[0], matrix[1], matrix[2], channels);
 
   if (channels < 1) {
     throw Log::Failure("SENSE", "Must have at least one channel for birdcage sensitivities");
@@ -37,7 +37,7 @@ auto birdcage(Sz3 const            &matrix,
               Eigen::Vector3f const pos(px, py, pz);
               Eigen::Vector3f const vec = pos - chan_pos;
               float const           r = vec.norm() < avoid_div_zero ? 0.f : sense_rad_mm / vec.norm();
-              all(ic + ir * chan_per_ring, ix, iy, iz) = std::polar(r, atan2(vec(0), vec(1)) + coil_phs);
+              all(ix, iy, iz, ic + ir * chan_per_ring) = std::polar(r, atan2(vec(0), vec(1)) + coil_phs);
             }
           }
         }

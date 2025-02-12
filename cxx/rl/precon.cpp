@@ -6,6 +6,7 @@
 #include "op/ndft.hpp"
 #include "op/nufft.hpp"
 #include "op/tensorscale.hpp"
+#include "op/top-id.hpp"
 #include "sys/threads.hpp"
 
 namespace rl {

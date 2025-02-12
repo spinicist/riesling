@@ -24,7 +24,7 @@ LeastSquares<S>::LeastSquares(float const λ_, CMap const bias)
   Log::Print("Prox", "LeastSquares Prox λ {}", λ);
 }
 
-template <typename S> void LeastSquares<S>::apply(float const α, CMap const &x, Map &z) const
+template <typename S> void LeastSquares<S>::apply(float const α, CMap const x, Map z) const
 {
   float const t = α * λ;
   if (y.data()) {
@@ -38,7 +38,7 @@ template <typename S> void LeastSquares<S>::apply(float const α, CMap const &x,
   }
 }
 
-template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const &x, Map &z) const
+template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const x, Map z) const
 {
   auto const div = α->inverse(1.f, λ);
   if (y.data()) {

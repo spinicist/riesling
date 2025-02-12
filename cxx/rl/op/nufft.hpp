@@ -15,8 +15,8 @@ template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFT final : TOp<Cx, ND 
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr basis)
     -> std::shared_ptr<NUFFT<ND, KF>>;
 
-  void iadjoint(OutCMap const &y, InMap &x) const;
-  void iforward(InCMap const &x, OutMap &y) const;
+  void iadjoint(OutCMap const y, InMap x) const;
+  void iforward(InCMap const x, OutMap y) const;
 
 private:
   Grid<ND, KF>::Ptr gridder;

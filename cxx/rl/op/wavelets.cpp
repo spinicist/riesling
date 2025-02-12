@@ -45,7 +45,7 @@ Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> con
   Log::Debug("Wave", "Dims {} Coeffs {}", dims_, fmt::streamed(Transpose(Cc_)));
 }
 
-template <int ND> void Wavelets<ND>::forward(InCMap const &x, OutMap &y) const
+template <int ND> void Wavelets<ND>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y = x;
@@ -53,7 +53,7 @@ template <int ND> void Wavelets<ND>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, false);
 }
 
-template <int ND> void Wavelets<ND>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND> void Wavelets<ND>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x = y;

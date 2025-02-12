@@ -48,7 +48,7 @@ auto NUFFT<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, 
   return std::make_shared<NUFFT<ND, KF>>(opts, traj, nChan, basis);
 }
 
-template <int ND, typename KF> void NUFFT<ND, KF>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFT<ND, KF>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -58,7 +58,7 @@ template <int ND, typename KF> void NUFFT<ND, KF>::forward(InCMap const &x, OutM
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KF> void NUFFT<ND, KF>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFT<ND, KF>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -68,7 +68,7 @@ template <int ND, typename KF> void NUFFT<ND, KF>::adjoint(OutCMap const &y, InM
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KF> void NUFFT<ND, KF>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFT<ND, KF>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder->ishape);
@@ -78,7 +78,7 @@ template <int ND, typename KF> void NUFFT<ND, KF>::iforward(InCMap const &x, Out
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KF> void NUFFT<ND, KF>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFT<ND, KF>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder->ishape);

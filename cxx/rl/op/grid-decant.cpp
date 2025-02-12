@@ -78,7 +78,7 @@ void GridDecant<ND, KT>::forwardTask(Index const start, Index const stride, CxNC
   }
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KT> void GridDecant<ND, KT>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
@@ -87,7 +87,7 @@ template <int ND, typename KT> void GridDecant<ND, KT>::forward(InCMap const &x,
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KT> void GridDecant<ND, KT>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
@@ -135,7 +135,7 @@ void GridDecant<ND, KT>::adjointTask(Index const start, Index const stride, CxNC
   }
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KT> void GridDecant<ND, KT>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
@@ -143,7 +143,7 @@ template <int ND, typename KT> void GridDecant<ND, KT>::adjoint(OutCMap const &y
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KT> void GridDecant<ND, KT>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KT> void GridDecant<ND, KT>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });

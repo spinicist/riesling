@@ -11,8 +11,8 @@ struct SENSE final : TOp<Cx, 4, 5>
   TOP_INHERIT(Cx, 4, 5)
   SENSE(Cx5 const &maps, Index const nB);
   TOP_DECLARE(SENSE)
-  void iforward(InCMap const &x, OutMap &y) const;
-  void iadjoint(OutCMap const &y, InMap &x) const;
+  void iforward(InCMap const x, OutMap y) const;
+  void iadjoint(OutCMap const y, InMap x) const;
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
 

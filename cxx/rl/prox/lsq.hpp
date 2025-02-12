@@ -14,8 +14,8 @@ struct LeastSquares final : Prox<Scalar>
 
   LeastSquares(float const λ, Index const sz);
   LeastSquares(float const λ, CMap const bias);
-  void apply(float const α, CMap const &x, Map &z) const;
-  void apply(std::shared_ptr<Ops::Op<Scalar>> const α, CMap const &x, Map &z) const;
+  void apply(float const α, CMap const x, Map z) const;
+  void apply(std::shared_ptr<Ops::Op<Scalar>> const α, CMap const x, Map z) const;
   void setBias(Scalar const *data);
 };
 

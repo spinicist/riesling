@@ -94,7 +94,7 @@ auto Grad<ND>::Make(InDims const ish, std::vector<Index> const &d, int const o) 
   return std::make_shared<Grad>(ish, d, o);
 }
 
-template <int ND> void Grad<ND>::forward(InCMap const &x, OutMap &y) const
+template <int ND> void Grad<ND>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y.setZero();
@@ -109,7 +109,7 @@ template <int ND> void Grad<ND>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, false);
 }
 
-template <int ND> void Grad<ND>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND> void Grad<ND>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.setZero();
@@ -124,7 +124,7 @@ template <int ND> void Grad<ND>::adjoint(OutCMap const &y, InMap &x) const
   }
 }
 
-template <int ND> void Grad<ND>::iforward(InCMap const &x, OutMap &y) const
+template <int ND> void Grad<ND>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
@@ -138,7 +138,7 @@ template <int ND> void Grad<ND>::iforward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, true);
 }
 
-template <int ND> void Grad<ND>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND> void Grad<ND>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
@@ -173,7 +173,7 @@ auto GradVec<ND>::Make(InDims const ish, std::vector<Index> const &d, int const 
   return std::make_shared<GradVec>(ish, d, o);
 }
 
-template <int ND> void GradVec<ND>::forward(InCMap const &x, OutMap &y) const
+template <int ND> void GradVec<ND>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   auto const sz = FirstN<ND - 1>(x.dimensions());
@@ -215,7 +215,7 @@ template <int ND> void GradVec<ND>::forward(InCMap const &x, OutMap &y) const
   this->finishForward(y, time, false);
 }
 
-template <int ND> void GradVec<ND>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND> void GradVec<ND>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   auto const sz = FirstN<ND - 1>(x.dimensions());

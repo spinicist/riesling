@@ -47,7 +47,7 @@ auto NUFFTDecant<ND, KF>::Make(GridOpts<ND> const    &opts,
   return std::make_shared<NUFFTDecant<ND>>(opts, traj, skern, basis);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::forward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::forward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -57,7 +57,7 @@ template <int ND, typename KF> void NUFFTDecant<ND, KF>::forward(InCMap const &x
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -67,7 +67,7 @@ template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap const &
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::iforward(InCMap const &x, OutMap &y) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::iforward(InCMap const x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder.ishape);
@@ -77,7 +77,7 @@ template <int ND, typename KF> void NUFFTDecant<ND, KF>::iforward(InCMap const &
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::iadjoint(OutCMap const &y, InMap &x) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder.ishape);
