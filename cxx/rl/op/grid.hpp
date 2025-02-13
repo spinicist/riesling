@@ -27,7 +27,7 @@ template <int ND, int SGSZ> inline auto InBounds(Eigen::Array<int16_t, ND, 1> co
 }
 
 namespace TOps {
-template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct Grid final : TOp<Cx, ND_ + 2, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 8> struct Grid final : TOp<Cx, ND_ + 2, 3>
 {
   static constexpr int ND = ND_;
   static constexpr int SGSZ = SGSZ_;
