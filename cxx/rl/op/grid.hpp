@@ -50,8 +50,8 @@ private:
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;
 
-  void forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const;
-  void adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const;
+  void forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const x, Cx3Map y) const;
+  void adjointTask(Index const start, Index const stride, Cx3CMap const y, CxNMap<ND + 2> x) const;
 };
 
 } // namespace TOps

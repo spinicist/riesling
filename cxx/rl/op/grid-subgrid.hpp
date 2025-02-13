@@ -11,7 +11,7 @@ template <int ND, int SGSZ> struct GridToSubgrid
 
 template <int SGSZ> struct GridToSubgrid<1, SGSZ>
 {
-  inline static void FastCopy(Eigen::Array<int16_t, 1, 1> const sg, Cx3CMap const &x, Cx3 &sx)
+  inline static void FastCopy(Eigen::Array<int16_t, 1, 1> const sg, Cx3CMap const x, Cx3 &sx)
   {
     for (Index ib = 0; ib < sx.dimension(2); ib++) {
       for (Index ic = 0; ic < sx.dimension(1); ic++) {
@@ -23,7 +23,7 @@ template <int SGSZ> struct GridToSubgrid<1, SGSZ>
     }
   }
 
-  inline static void SlowCopy(Eigen::Array<int16_t, 1, 1> const sg, Cx3CMap const &x, Cx3 &sx)
+  inline static void SlowCopy(Eigen::Array<int16_t, 1, 1> const sg, Cx3CMap const x, Cx3 &sx)
   {
     for (Index ib = 0; ib < sx.dimension(2); ib++) {
       for (Index ic = 0; ic < sx.dimension(1); ic++) {
@@ -38,7 +38,7 @@ template <int SGSZ> struct GridToSubgrid<1, SGSZ>
 
 template <int SGSZ> struct GridToSubgrid<2, SGSZ>
 {
-  inline static void FastCopy(Eigen::Array<int16_t, 2, 1> const sg, Cx4CMap const &x, Cx4 &sx)
+  inline static void FastCopy(Eigen::Array<int16_t, 2, 1> const sg, Cx4CMap const x, Cx4 &sx)
   {
     for (Index ib = 0; ib < sx.dimension(3); ib++) {
       for (Index ic = 0; ic < sx.dimension(2); ic++) {
@@ -53,7 +53,7 @@ template <int SGSZ> struct GridToSubgrid<2, SGSZ>
     }
   }
 
-  inline static void SlowCopy(Eigen::Array<int16_t, 2, 1> const sg, Cx4CMap const &x, Cx4 &sx)
+  inline static void SlowCopy(Eigen::Array<int16_t, 2, 1> const sg, Cx4CMap const x, Cx4 &sx)
   {
     for (Index ib = 0; ib < sx.dimension(3); ib++) {
       for (Index ic = 0; ic < sx.dimension(2); ic++) {
@@ -71,7 +71,7 @@ template <int SGSZ> struct GridToSubgrid<2, SGSZ>
 
 template <int SGSZ> struct GridToSubgrid<3, SGSZ>
 {
-  inline static void FastCopy(Eigen::Array<int16_t, 3, 1> const sg, Cx5CMap const &x, Cx5 &sx)
+  inline static void FastCopy(Eigen::Array<int16_t, 3, 1> const sg, Cx5CMap const x, Cx5 &sx)
   {
     for (Index ib = 0; ib < sx.dimension(4); ib++) {
       for (Index ic = 0; ic < sx.dimension(3); ic++) {
@@ -89,7 +89,7 @@ template <int SGSZ> struct GridToSubgrid<3, SGSZ>
     }
   }
 
-  inline static void SlowCopy(Eigen::Array<int16_t, 3, 1> const sg, Cx5CMap const &x, Cx5 &sx)
+  inline static void SlowCopy(Eigen::Array<int16_t, 3, 1> const sg, Cx5CMap const x, Cx5 &sx)
   {
     for (Index ib = 0; ib < sx.dimension(4); ib++) {
       for (Index ic = 0; ic < sx.dimension(3); ic++) {
@@ -114,8 +114,7 @@ template <int ND, int SGSZ> struct SubgridToGrid
 
 template <int SGSZ> struct SubgridToGrid<1, SGSZ>
 {
-  inline static void
-  FastCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 1, 1> const corner, CxNCMap<3> const &sx, CxNMap<3> &x)
+  inline static void FastCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 1, 1> const corner, Cx3CMap const sx, Cx3Map x)
   {
     assert(m.size() == x.dimension(0));
     for (Index ib = 0; ib < sx.dimension(2); ib++) {
@@ -129,8 +128,7 @@ template <int SGSZ> struct SubgridToGrid<1, SGSZ>
     }
   }
 
-  inline static void
-  SlowCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 1, 1> const corner, CxNCMap<3> const &sx, CxNMap<3> &x)
+  inline static void SlowCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 1, 1> const corner, Cx3CMap const sx, Cx3Map x)
   {
     assert(m.size() == x.dimension(0));
     for (Index ib = 0; ib < sx.dimension(2); ib++) {
@@ -147,8 +145,7 @@ template <int SGSZ> struct SubgridToGrid<1, SGSZ>
 
 template <int SGSZ> struct SubgridToGrid<2, SGSZ>
 {
-  inline static void
-  FastCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 2, 1> const corner, CxNCMap<4> const &sx, CxNMap<4> &x)
+  inline static void FastCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 2, 1> const corner, Cx4CMap const sx, Cx4Map x)
   {
     assert(m.size() == x.dimension(1));
     for (Index ib = 0; ib < sx.dimension(3); ib++) {
@@ -165,8 +162,7 @@ template <int SGSZ> struct SubgridToGrid<2, SGSZ>
     }
   }
 
-  inline static void
-  SlowCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 2, 1> const corner, CxNCMap<4> const &sx, CxNMap<4> &x)
+  inline static void SlowCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 2, 1> const corner, Cx4CMap const sx, Cx4Map x)
   {
     assert(m.size() == x.dimension(1));
     for (Index ib = 0; ib < sx.dimension(3); ib++) {
@@ -186,8 +182,7 @@ template <int SGSZ> struct SubgridToGrid<2, SGSZ>
 
 template <int SGSZ> struct SubgridToGrid<3, SGSZ>
 {
-  inline static void
-  FastCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 3, 1> const corner, CxNCMap<5> const &sx, CxNMap<5> &x)
+  inline static void FastCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 3, 1> const corner, Cx5CMap const sx, Cx5Map x)
   {
     assert(m.size() == x.dimension(2));
     for (Index ib = 0; ib < sx.dimension(4); ib++) {
@@ -207,8 +202,7 @@ template <int SGSZ> struct SubgridToGrid<3, SGSZ>
     }
   }
 
-  inline static void
-  SlowCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 3, 1> const corner, CxNCMap<5> const &sx, CxNMap<5> &x)
+  inline static void SlowCopy(std::vector<std::mutex> &m, Eigen::Array<int16_t, 3, 1> const corner, Cx5CMap const sx, Cx5Map x)
   {
     assert(m.size() == x.dimension(2));
     for (Index ib = 0; ib < sx.dimension(4); ib++) {

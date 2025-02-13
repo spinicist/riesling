@@ -2,6 +2,7 @@
 
 #include "../log.hpp"
 #include "../sys/threads.hpp"
+#include "grid-func.hpp"
 #include "grid-subgrid.hpp"
 #include "top-impl.hpp"
 
@@ -34,42 +35,24 @@ Grid<ND, KF, SG>::Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, In
 }
 
 template <int ND, typename KF, int SG>
-void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const &x, CxNMap<3> &y) const
+void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const x, Cx3Map y) const
 {
-  Index const          nC = y.dimension(0);
-  Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SGFW), nC, nB));
-  Eigen::Tensor<Cx, 1> yy(Sz1{nC});
-  Sz<ND>               st, sz;
-  st.fill(0);
-  sz.fill(KF::FullWidth);
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
   for (Index is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
-
-    auto const corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
+    auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
     if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()))) {
       GridToSubgrid<ND, SGFW>::FastCopy(corner, x, sx);
     } else {
       GridToSubgrid<ND, SGFW>::SlowCopy(corner, x, sx);
     }
     for (auto const &m : list.coords) {
-      yy.setZero();
       auto const k = kernel(m.offset);
-      std::transform(m.cart.begin(), m.cart.end(), st.begin(), [a = kernel.FullWidth / 2](auto const i) { return i - a; });
       if (basis) {
-        for (Index ib = 0; ib < basis->nB(); ib++) {
-          auto const b = basis->entry(ib, m.sample, m.trace);
-          for (Index ic = 0; ic < nC; ic++) {
-            Cx0 const cc = (sx.template chip<ND + 1>(ib).template chip<ND>(ic).slice(st, sz) * k.template cast<Cx>() * b).sum();
-            yy(ic) += cc();
-          }
-        }
+        GFunc<ND, KF::FullWidth>::Gather(basis, m.cart, m.sample, m.trace, k, sx, y);
       } else {
-        for (Index ic = 0; ic < nC; ic++) {
-          yy(ic) = Cx0((sx.template chip<ND + 1>(0).template chip<ND>(ic).slice(st, sz) * k.template cast<Cx>()).sum())();
-        }
+        GFunc<ND, KF::FullWidth>::Gather(m.cart, m.sample, m.trace, k, sx, y);
       }
-      y.template chip<2>(m.trace).template chip<1>(m.sample) += yy;
     }
   }
 }
@@ -90,34 +73,19 @@ template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iforward(InCMap co
 }
 
 template <int ND, typename KF, int SG>
-void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 2> &x) const
+void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMap const y, CxNMap<ND + 2> x) const
 
 {
-  Index const          nC = y.dimensions()[0];
-  Index const          nB = basis ? basis->nB() : 1;
-  CxN<ND + 2>          sx(AddBack(Constant<ND>(SGFW), nC, nB));
-  Eigen::Tensor<Cx, 1> yy(nC);
-  Sz<ND>               st, sz;
-  st.fill(0);
-  sz.fill(KF::FullWidth);
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
   for (Index is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {
-      yy = y.template chip<2>(m.trace).template chip<1>(m.sample);
       auto const k = kernel(m.offset);
-      std::transform(m.cart.begin(), m.cart.end(), st.begin(), [a = kernel.FullWidth / 2](auto const i) { return i - a; });
       if (basis) {
-        for (Index ib = 0; ib < basis->nB(); ib++) {
-          auto const b = std::conj(basis->entry(ib, m.sample, m.trace));
-          for (Index ic = 0; ic < nC; ic++) {
-            sx.template chip<ND + 1>(ib).template chip<ND>(ic).slice(st, sz) += k.template cast<Cx>() * b * yy(ic);
-          }
-        }
+        GFunc<ND, KF::FullWidth>::Scatter(basis, m.cart, m.sample, m.trace, k, y, sx);
       } else {
-        for (Index ic = 0; ic < nC; ic++) {
-          sx.template chip<ND + 1>(0).template chip<ND>(ic).slice(st, sz) += k.template cast<Cx>() * yy(ic);
-        }
+        GFunc<ND, KF::FullWidth>::Scatter(m.cart, m.sample, m.trace, k, y, sx);
       }
     }
     auto const corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
