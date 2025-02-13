@@ -1,6 +1,6 @@
 #pragma once
 
-#include "op/grid.hpp"
+#include "types.hpp"
 
 namespace rl {
 
