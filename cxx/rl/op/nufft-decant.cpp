@@ -16,21 +16,21 @@ NUFFTDecant<ND, KF>::NUFFTDecant(GridOpts<ND> const    &opts,
   , gridder(opts, traj, skern, basis)
   , workspace{gridder.ishape}
 {
-  ishape = Concatenate(FirstN<1>(gridder.ishape), traj.matrixForFOV(opts.fov));
+  ishape = Concatenate(traj.matrixForFOV(opts.fov), LastN<1>(gridder.ishape));
   oshape = gridder.oshape;
-  std::iota(fftDims.begin(), fftDims.end(), 1);
+  std::iota(fftDims.begin(), fftDims.end(), 0);
   Log::Print("NUFFTDecant", "ishape {} oshape {} grid {}", ishape, oshape, gridder.ishape);
 
   // Calculate apodization correction
   auto apo_shape = ishape;
   apoBrd_.fill(1);
-  apo_shape[0] = 1;
-  apoBrd_[0] = gridder.ishape[0];
-  apo_ = Apodize<ND, KF>(LastN<ND>(ishape), LastN<ND>(gridder.ishape), opts.osamp).reshape(apo_shape); // Padding stuff
+  apo_shape[ND] = 1;
+  apoBrd_[ND] = ishape[ND];
+  apo_ = Apodize<ND, KF>(FirstN<ND>(ishape), FirstN<ND>(gridder.ishape), opts.osamp).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
-  for (int ii = 1; ii < InRank; ii++) {
+  for (int ii = 0; ii < ND; ii++) {
     padLeft_[ii] = (gridder.ishape[ii] - ishape[ii] + 1) / 2;
     padRight[ii] = (gridder.ishape[ii] - ishape[ii]) / 2;
   }

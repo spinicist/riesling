@@ -5,6 +5,31 @@
 
 namespace rl {
 
+template <int ND, int SGSZ, int KW>
+inline auto SubgridCorner(Eigen::Array<int16_t, ND, 1> const sgInd) -> Eigen::Array<int16_t, ND, 1>
+{
+  return (sgInd * SGSZ) - (KW / 2);
+}
+
+template <int ND, int SGSZ> inline auto InBounds(Eigen::Array<int16_t, ND, 1> const corner, Sz<ND> const gSz)
+{
+  bool inBounds = true;
+  for (Index ii = 0; ii < ND; ii++) {
+    if (corner[ii] < 0 || (corner[ii] + SGSZ >= gSz[ii])) { inBounds = false; }
+  }
+  return inBounds;
+}
+
+template <int ND, int SGSZ>
+inline auto InBounds(Eigen::Array<int16_t, ND, 1> const corner, Sz<ND> const gSz, Sz<ND> const kernSz)
+{
+  bool inBounds = true;
+  for (Index ii = 0; ii < ND; ii++) {
+    if (corner[ii] - kernSz[ii] / 2 < 0 || (corner[ii] + SGSZ + kernSz[ii] / 2 >= gSz[ii])) { inBounds = false; }
+  }
+  return inBounds;
+}
+
 template <int ND, int FW> struct GFunc
 {
 };

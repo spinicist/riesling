@@ -22,6 +22,10 @@
     riesling recon-lsq basic-kspace.h5 lowmem-lsq.h5 --sense=calib-k.h5 --lowmem
 }
 
+@test "Run DECANTER reconstruction" {
+    riesling recon-lsq basic-kspace.h5 decant-lsq.h5 --sense=calib-k.h5 --decant -v3
+}
+
 @test "Run frames reconstruction" {
     PREFIX="frames"
     riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5
@@ -36,4 +40,8 @@
 @test "Run TV reconstruction" {
     PREFIX="tv"
     riesling recon-rlsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --tv=1e-3
+}
+
+@test "Run TGV denoising" {
+    riesling denoise naive-lsq.h5 naive-tgv.h5 --tgv=1e-3
 }

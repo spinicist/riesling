@@ -6,8 +6,6 @@
 #include "grid-subgrid.hpp"
 #include "top-impl.hpp"
 
-#include <numbers>
-
 namespace rl {
 
 namespace TOps {

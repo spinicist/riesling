@@ -14,7 +14,7 @@ namespace Log {
 namespace {
 Display                      displayLevel = Display::None;
 std::shared_ptr<HD5::Writer> debug_file = nullptr;
-bool                         isDebugging = false, isTTY = false;
+bool                         isDebugging = false;
 std::mutex                   logMutex;
 std::vector<std::string>     savedEntries;
 
@@ -28,13 +28,6 @@ auto TheTime() -> std::string
 void SetDisplayLevel(Display const l)
 {
   displayLevel = l;
-  if (char *const env_p = std::getenv("RL_NOT_TTY")) {
-    isTTY = false;
-  } else if (isatty(fileno(stdin))) {
-    isTTY = true;
-  } else {
-    isTTY = false;
-  }
   // Move the cursor one more line down so we don't erase command names etc.
   if (displayLevel == Display::Ephemeral) { fmt::print(stderr, "\n"); }
   if (displayLevel == Display::High) {

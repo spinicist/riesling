@@ -19,7 +19,7 @@ template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFT final : TOp<Cx, ND 
   void iforward(InCMap const x, OutMap y) const;
 
 private:
-  Grid<ND, KF>::Ptr gridder;
+  Grid<ND, KF> gridder;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
   InTensor apo_;
