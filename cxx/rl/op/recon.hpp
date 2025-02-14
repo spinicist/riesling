@@ -2,7 +2,6 @@
 
 #include "../io/reader.hpp"
 #include "../op/compose.hpp"
-#include "../op/nufft.hpp"
 #include "../precon.hpp"
 #include "../sense/sense.hpp"
 

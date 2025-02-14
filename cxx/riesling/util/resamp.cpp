@@ -3,6 +3,7 @@
 #include "rl/fft.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
+#include "rl/op/pad.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/types.hpp"
 
@@ -32,7 +33,7 @@ void main_resamp(args::Subparser &parser)
 
   FFT::Forward(input, Sz3{1, 2, 3});
   TOps::Pad<Cx, 5> pad(ishape, oshape);
-  Cx5 output(oshape);
+  Cx5              output(oshape);
   pad.forward(input, output);
   float const scale = std::sqrt(Product(oshape) / Product(ishape));
   Log::Print(cmd, "Scale {:3.2E}", scale);
