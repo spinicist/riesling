@@ -30,7 +30,7 @@ auto LoresChannels(
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res, 0, true, false);
   auto       sgOpts = gridOpts;
   auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, nullptr);
-  auto const M = MakeKSpacePrecon(PreconOpts(), sgOpts, traj, nC, nS, nT);
+  auto const M = MakeKSpacePrecon(PreconOpts(), sgOpts, traj, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
