@@ -50,7 +50,7 @@ auto LSMR::run(CMap const b, CMap x0) const -> Vector
   float       minρ̅ = std::numeric_limits<float>::max();
   float const normb = bd.β;
 
-  Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol        |A|       cond(A)");
+  Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol       |A|       cond(A)");
   Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, 0.f, std::fabs(ζ̅), 0.f);
   Iterating::Starting();
   for (Index ii = 0; ii < opts.imax; ii++) {

@@ -40,9 +40,8 @@ void main_psf(args::Subparser &parser)
 
   Cx3         ks = traceM.reshape(Sz3{1, traj.nSamples(), 1}).broadcast(Sz3{1, 1, traj.nTraces()});
   auto        x = lsmr.run(CollapseToConstVector(ks));
-  auto        xm = AsTensorMap(x, LastN<4>(A->ishape));
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeInfo(input.readInfo());
-  writer.writeTensor(HD5::Keys::Data, xm.dimensions(), xm.data(), {"v", "i", "j", "k"});
+  writer.writeTensor(HD5::Keys::Data, FirstN<4>(A->ishape), x.data(), {"i", "j", "k", "b"});
   Log::Print(cmd, "Finished");
 }

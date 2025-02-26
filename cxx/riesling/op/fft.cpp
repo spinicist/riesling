@@ -29,7 +29,7 @@ void main_fft(args::Subparser &parser)
     } else {
       images = fft.forward(images);
     }
-    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), {"b", "i", "j", "k"});
+    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), {"i", "j", "k", "b"});
   } break;
 
   case 5: {
