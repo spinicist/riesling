@@ -28,9 +28,8 @@ auto LoresChannels(
 
   Cx4 const ncVol = noncart.chip<4>(opts.tp);
   auto [traj, lores] = inTraj.downsample(ncVol, opts.res, 0, true, false);
-  auto       sgOpts = gridOpts;
-  auto const A = TOps::NUFFTAll(sgOpts, traj, nC, nS, 1, nullptr);
-  auto const M = MakeKSpacePrecon(PreconOpts(), sgOpts, traj, nC, nS, 1);
+  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, nullptr);
+  auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
@@ -188,15 +187,14 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Sz5 const   cshape = AddBack(osshape, schan.dimension(3), schan.dimension(4));
   Sz4 const   rshape = AddBack(osshape, nomRef.dimension(3));
 
-  float const scale = Norm<true>(nomRef);
-  Cx5 const   channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(scale);
-  Cx4 const   ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(scale);
+  Cx5 const   channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
+  Cx4 const   ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
 
   if (cshape[0] < (2 * kW) || cshape[1] < (2 * kW) || cshape[2] < (2 * kW)) {
     throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", FirstN<3>(cshape), kW);
   }
   Sz5 const kshape{kW, kW, kW, cshape[3], cshape[4]};
-  Log::Print("SENSE", "Kernel shape {} scale {}", kshape, scale);
+  Log::Print("SENSE", "Kernel shape {}", kshape);
   // Set up operators
   auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(FirstN<3>(cshape)) / (float)(kW * kW * kW)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);

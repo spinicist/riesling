@@ -35,20 +35,15 @@ void main_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { throw Log::Failure(cmd, "Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    ref = SENSE::LoresChannels(senseArgs.Get(), gridOpts.Get(), refTraj, refNoncart, basis.get()).chip<4>(0);
-    // Normalize energy
-    channels = channels * channels.constant(std::sqrt(Product(ref.dimensions())) / Norm<true>(channels));
-    ref = ref * ref.constant(std::sqrt(Product(ref.dimensions())) / Norm<true>(ref));
+    ref = SENSE::LoresChannels(senseArgs.Get(), gridOpts.Get(), refTraj, refNoncart, basis.get()).chip<4>(0).abs().cast<Cx>();
   } else {
     ref = DimDot<3>(channels, channels).sqrt();
   }
   Cx5 const kernels =
     SENSE::EstimateKernels(channels, ref, senseArgs.kWidth.Get(), gridOpts.osamp.Get(), senseArgs.l.Get(), senseArgs.λ.Get());
-  // Cx5 const   maps = SENSE::EstimateMaps(channels, ref, gridOpts.osamp.Get(), senseArgs.l.Get(), senseArgs.λ.Get());
-  // Cx5 const   kernels = SENSE::MapsToKernels(maps, senseArgs.kWidth.Get(), gridOpts.osamp.Get());
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
-  writer.writeTensor("ref", ref.dimensions(), ref.data(), {"b", "i", "j", "k"});
+  writer.writeTensor("ref", ref.dimensions(), ref.data(), {"i", "j", "k", "b"});
   Log::Print(cmd, "Finished");
 }
