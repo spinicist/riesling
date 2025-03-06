@@ -7,6 +7,7 @@
 #include "../filter.hpp"
 #include "../io/hd5.hpp"
 #include "../op/fft.hpp"
+#include "../op/mask.hpp"
 #include "../op/nufft.hpp"
 #include "../op/pad.hpp"
 #include "../op/sense.hpp"
@@ -180,15 +181,23 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
   }
+  if (nomChan.dimension(4) != nomRef.dimension(3)) {
+    throw Log::Failure("SENSE", "Basis dimension doesn't match channels {} reference {}", nomChan.dimension(4),
+                       nomRef.dimension(4));
+  }
+  Index const nC = nomChan.dimension(3);
+  Index const nB = nomChan.dimension(4);
+
+  // Dims are i,j,k,c,b need them to be i,j,k,b,c
   Cx5 const schan = nomChan.shuffle(Sz5{0, 1, 2, 4, 3});
 
   Index const kW = std::floor(nomKW * osamp / 2) * 2 + 1;
   Sz3 const   osshape = MulToEven(FirstN<3>(schan.dimensions()), osamp);
-  Sz5 const   cshape = AddBack(osshape, schan.dimension(3), schan.dimension(4));
-  Sz4 const   rshape = AddBack(osshape, nomRef.dimension(3));
+  Sz5 const   cshape = AddBack(osshape, nB, nC);
+  Sz4 const   rshape = AddBack(osshape, nB);
 
-  Cx5 const   channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
-  Cx4 const   ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
+  Cx5 const channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
+  Cx4 const ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
 
   if (cshape[0] < (2 * kW) || cshape[1] < (2 * kW) || cshape[2] < (2 * kW)) {
     throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", FirstN<3>(cshape), kW);
@@ -204,12 +213,11 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   auto SFP = Ops::Mul<Cx>(S, FP);
 
   // Weights (mask)
-  auto const            r = CollapseToArray(ref);
-  Eigen::ArrayXf const  ra = r.abs();
-  Eigen::ArrayXcf const rm = OtsuMasked(ra).cast<Cx>();
-  auto const            om = AsConstTensorMap(rm, rshape);
-  auto                  M = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(cshape, om);
-  auto                  MSFP = Ops::Mul<Cx>(M, SFP);
+  auto const           r = CollapseToArray(ref);
+  Eigen::ArrayXf const ra = r.abs();
+  Eigen::ArrayXf const rm = OtsuMasked(ra);
+  auto                 M = std::make_shared<Ops::Mask<Cx>>(rm, nB * nC);
+  auto                 MSFP = Ops::Mul<Cx>(M, SFP);
 
   Cx5 kernels;
   if (λ > 0.f) {

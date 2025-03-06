@@ -52,6 +52,7 @@ op/grad.cpp
 op/grid.cpp
 op/grid-decant.cpp
 op/hankel.cpp
+op/mask.cpp
 op/ndft.cpp
 op/nufft.cpp
 op/nufft-decant.cpp
