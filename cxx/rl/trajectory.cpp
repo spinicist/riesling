@@ -7,6 +7,11 @@
 
 namespace rl {
 
+namespace {
+  constexpr Eigen::IndexPairList<Eigen::type2indexpair<0, 0>> matMul;
+  constexpr Eigen::IndexPairList<Eigen::type2indexpair<1, 0>> matMulT;
+}
+
 /* Temp Hack because .maximum() may be buggy on NEON */
 template <int ND> auto GuessMatrix(Re3 const &points) -> Sz<ND>
 {
@@ -144,14 +149,13 @@ template <int ND> auto TrajectoryN<ND>::FOV() const -> Array
   return fov;
 }
 
-template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, Cx5 &data)
+template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, Cx5 &data) const 
 {
   Re1 delta(ND);
   for (Index ii = 0; ii < ND; ii++) {
     delta[ii] = shift[ii] / (voxel_size_[ii] * matrix_[ii]);
   }
 
-  Eigen::IndexPairList<Eigen::type2indexpair<0, 0>> zero2zero;
   Log::Print("Traj", "Shifting FOV by {} {} {}", delta[0], delta[1], delta[2]);
 
   auto const shape = data.dimensions();
@@ -163,11 +167,18 @@ template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, 
              .isfinite()
              .reshape(Sz5{1, shape[1], shape[2], 1, 1})
              .broadcast(Sz5{shape[0], 1, 1, 1, shape[4]})
-             .select((points_.contract(delta, zero2zero).template cast<Cx>() * Cx(0.f, 2.f * M_PI))
+             .select((points_.contract(delta, matMul).template cast<Cx>() * Cx(0.f, 2.f * M_PI))
                        .exp()
                        .reshape(Sz5{1, shape[1], shape[2], 1, 1})
                        .broadcast(Sz5{shape[0], 1, 1, shape[3], shape[4]}),
                      data.constant(0.f));
+}
+
+template <int ND> void TrajectoryN<ND>::moveInFOV(Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const shift, Cx5 &data)
+{
+  Re2CMap const Rt(R.data(), Sz2{ND, ND});
+  points_.device(Threads::TensorDevice()) = Rt.contract(points_, matMulT);
+  shiftInFOV(shift, data);
 }
 
 template <int ND> auto TrajectoryN<ND>::points() const -> Re3 const & { return points_; }

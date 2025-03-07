@@ -44,6 +44,9 @@ using Re2 = ReN<2>;
 using Re3 = ReN<3>;
 using Re4 = ReN<4>;
 using Re5 = ReN<5>;
+template <int N> using ReNMap = Eigen::TensorMap<ReN<N>>;
+template <int N> using ReNCMap = Eigen::TensorMap<ReN<N> const>;
+using Re2CMap = ReNCMap<2>;
 
 using Rd1 = Eigen::Tensor<double, 1>;
 using Rd4 = Eigen::Tensor<double, 4>;

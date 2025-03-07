@@ -122,6 +122,24 @@ void Vector3fReader::operator()(std::string const &name, std::string const &valu
   }
 }
 
+void Matrix3fReader::operator()(std::string const &name, std::string const &value, Eigen::Matrix3f &m)
+{
+  if (auto result =
+        scn::scan<float, float, float, float, float, float, float, float, float>(value, "{},{},{},{},{},{},{},{},{}")) {
+    m(0, 0) = std::get<0>(result->values());
+    m(0, 1) = std::get<1>(result->values());
+    m(0, 2) = std::get<2>(result->values());
+    m(1, 0) = std::get<3>(result->values());
+    m(1, 1) = std::get<4>(result->values());
+    m(1, 2) = std::get<5>(result->values());
+    m(2, 0) = std::get<6>(result->values());
+    m(2, 1) = std::get<7>(result->values());
+    m(2, 2) = std::get<8>(result->values());
+  } else {
+    throw(ArgsError(fmt::format("Could not read vector for {} from value {}", name, value)));
+  }
+}
+
 void ArrayXfReader::operator()(std::string const &name, std::string const &input, Eigen::ArrayXf &val)
 {
   auto               result = scn::scan<float>(input, "{}");
