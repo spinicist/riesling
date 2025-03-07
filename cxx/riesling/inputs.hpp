@@ -14,14 +14,6 @@
 #include <optional>
 #include <vector>
 
-extern args::Group    global_group;
-extern args::HelpFlag help;
-extern args::Flag     verbose;
-
-void ParseCommand(args::Subparser &parser);
-void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname);
-void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname, args::Positional<std::string> &oname);
-
 struct CoreArgs
 {
   args::Positional<std::string> iname, oname;

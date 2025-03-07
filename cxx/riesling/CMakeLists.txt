@@ -1,4 +1,4 @@
-option(BUILD_BIN "Build the binaries" ON)
+option(BUILD_BIN "Build the binary" ON)
 if(${BUILD_BIN})
     find_package(args CONFIG REQUIRED)
 
@@ -27,7 +27,6 @@ if(${BUILD_BIN})
         data/merge.cpp
         data/nii.cpp
         data/noisify.cpp
-        data/shift.cpp
         data/slice.cpp
 
         op/fft.cpp

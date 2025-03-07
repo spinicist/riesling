@@ -1,13 +1,14 @@
-#include "inputs.hpp"
+#include "args.hpp"
 
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
 #include "rl/tensors.hpp"
 #include "rl/types.hpp"
+#include "rl/trajectory.hpp"
 
 using namespace rl;
 
-void main_shift(args::Subparser &parser)
+void main_move(args::Subparser &parser)
 {
   args::Positional<std::string>                    iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string>                    oname(parser, "FILE", "Output HD5 file");

@@ -19,10 +19,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
   COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
   COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
-  // COMMAND(recon, recon_lad, "recon-lad", "Least Absolute Deviations");
-  // COMMAND(recon, pdhg, "recon-pdhg", "Primal-Dual Hybrid Gradient");
-  // COMMAND(recon, pdhg_setup, "recon-pdhg-setup", "Calculate PDHG step sizes");
-  // COMMAND(recon, sake, "recon-sake", "SAKE");
 
   args::Group data(parser, "DATA");
   COMMAND(data, h5, "h5", "Probe an H5 file");
@@ -32,7 +28,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
-  COMMAND(data, shift, "shift", "Shift non-cartesian data in FOV");
   COMMAND(data, slice, "slice", "Slice non-cartesian data");
 
   args::Group sense(parser, "SENSE");
