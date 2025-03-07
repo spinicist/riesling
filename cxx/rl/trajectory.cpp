@@ -177,7 +177,7 @@ template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, 
 template <int ND> void TrajectoryN<ND>::moveInFOV(Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const shift, Cx5 &data)
 {
   Re2CMap const Rt(R.data(), Sz2{ND, ND});
-  points_.device(Threads::TensorDevice()) = Rt.contract(points_, matMulT);
+  points_.device(Threads::TensorDevice()) = Rt.contract(points_, matMul);
   shiftInFOV(shift, data);
 }
 
