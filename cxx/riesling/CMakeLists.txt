@@ -15,6 +15,7 @@ if(${BUILD_BIN})
         basis/echoes.cpp
         basis/fourier.cpp
         basis/img.cpp
+        basis/navs.cpp
         basis/outer.cpp
         basis/sim.cpp
         basis/slice.cpp
@@ -25,6 +26,7 @@ if(${BUILD_BIN})
         data/compress.cpp
         data/diff.cpp
         data/merge.cpp
+        data/move.cpp
         data/nii.cpp
         data/noisify.cpp
         data/slice.cpp

@@ -41,6 +41,11 @@ struct Vector3fReader
   void operator()(std::string const &name, std::string const &value, Eigen::Vector3f &x);
 };
 
+struct Matrix3fReader
+{
+  void operator()(std::string const &name, std::string const &value, Eigen::Matrix3f &x);
+};
+
 template <typename T> struct VectorReader
 {
   void operator()(std::string const &name, std::string const &value, std::vector<T> &x);

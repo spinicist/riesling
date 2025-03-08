@@ -26,6 +26,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, compress, "compress", "Compress non-cartesian channels");
   COMMAND(data, diff, "diff", "Take the difference of two datasets");
   COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
+  COMMAND(data, move, "move", "Shift and rotate data within FOV");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
   COMMAND(data, slice, "slice", "Slice non-cartesian data");
@@ -43,6 +44,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
   COMMAND(basis, basis_img, "basis-img", "Basis from image data + SVD");
+  COMMAND(basis, navs, "basis-navs", "Basis for navigator images");
   COMMAND(basis, basis_outer, "basis-outer", "Outer product of bases");
   COMMAND(basis, basis_sim, "basis-sim", "Basis from simulations");
   COMMAND(basis, basis_slice, "basis-slice", "Slice a basis");
