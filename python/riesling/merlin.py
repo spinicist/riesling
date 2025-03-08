@@ -12,8 +12,35 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from .dataIO import create_image, read_image_h5, read_navigator_frame_h5
-from .utils import versor_to_euler
+from . import io
+
+
+
+def versor_to_euler(versor):
+    """
+    Calculates the intrinsic euler angles from a 3 or 4 element versor
+
+    Args:
+        versor (array): 3 or 4 element versor
+
+    Returns:
+        array: rotation angles (rx, ry, rz)
+    """
+
+    if len(versor) == 4:
+        q0, q1, q2, q3 = versor
+
+    elif len(versor) == 3:
+        q1, q2, q3 = versor
+        q0 = np.sqrt(1 - q1**2 - q2**2 - q3**2)
+    else:
+        return TypeError("Versor must be of lenfth 3 or 4")
+
+    rz = np.arctan2(2*(q0*q1+q2*q3), (1-2*(q1**2+q2**2)))
+    ry = np.arcsin(2*(q0*q2 - q3*q1))
+    rx = np.arctan2(2*(q0*q3+q1*q2), 1-2*(q2**2+q3**2))
+
+    return rx, ry, rz
 
 def otsu_filter(image):
     """Applies an Otsu filter
