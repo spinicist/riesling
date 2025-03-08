@@ -35,6 +35,8 @@ setup(
     keywords='neuroimaging nifti',
     packages=find_packages(),
     entry_points={
-        # 'console_scripts': [ ],
-    },
+        'console_scripts': [
+            'merlin=riesling.main_merlin:main'
+        ]
+    }
 )
