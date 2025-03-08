@@ -70,6 +70,7 @@ template <int FW> struct GFunc<1, FW>
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
       auto const b = basis->entry(ib, sample, trace);
+      if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index ix = 0; ix < FW; ix++) {
           Index const iix = ix + c[0] - FW / 2;
@@ -89,6 +90,7 @@ template <int FW> struct GFunc<1, FW>
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
       auto const b = basis->entry(ib, sample, trace);
+      if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index ix = 0; ix < FW; ix++) {
           Index const iix = ix + c[0] - FW / 2;
@@ -141,6 +143,7 @@ template <int FW> struct GFunc<2, FW>
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
       auto const b = basis->entry(ib, sample, trace);
+      if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index iy = 0; iy < FW; iy++) {
           Index const iiy = iy + c[1] - FW / 2;
@@ -163,6 +166,7 @@ template <int FW> struct GFunc<2, FW>
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
       auto const b = basis->entry(ib, sample, trace);
+      if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index iy = 0; iy < FW; iy++) {
           Index const iiy = iy + c[1] - FW / 2;
@@ -224,6 +228,7 @@ template <int FW> struct GFunc<3, FW>
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
       auto const b = basis->entry(ib, sample, trace);
+      if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index iz = 0; iz < FW; iz++) {
           Index const iiz = iz + c[2] - FW / 2;
@@ -249,6 +254,7 @@ template <int FW> struct GFunc<3, FW>
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
       auto const b = basis->entry(ib, sample, trace);
+      if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index iz = 0; iz < FW; iz++) {
           Index const iiz = iz + c[2] - FW / 2;
