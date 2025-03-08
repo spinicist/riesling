@@ -28,7 +28,7 @@ auto LoresChannels(
   if (opts.tp >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nT); }
 
   Cx4 const ncVol = noncart.chip<4>(opts.tp);
-  auto [traj, lores] = inTraj.downsample(ncVol, opts.res, 0, true, false);
+  auto [traj, lores] = inTraj.downsample(ncVol, opts.res, true, true, false);
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, nullptr);
   auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, {4}};

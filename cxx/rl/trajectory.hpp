@@ -45,13 +45,13 @@ template <int ND> struct TrajectoryN
   void moveInFOV(Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Cx5 &data); // Will modify trajectory
   auto point(int16_t const sample, int32_t const trace) const -> Eigen::Vector<float, ND>;
   auto points() const -> Re3 const &;
-  auto downsample(Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+  auto downsample(Array const tgtSize, bool const trim, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Index, Index>;
-  auto downsample(Cx4 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+  auto downsample(Cx4 const &ks, Array const tgtSize, bool const trim, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx4>;
-  auto downsample(Cx4 const &ks, Sz3 const tgtMat, Index const fullResTraces, bool const shrink, bool const corners) const
+  auto downsample(Cx4 const &ks, Sz3 const tgtMat, bool const trim, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx4>;
-  auto downsample(Cx5 const &ks, Array const tgtSize, Index const fullResTraces, bool const shrink, bool const corners) const
+  auto downsample(Cx5 const &ks, Array const tgtSize, bool const trim, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx5>;
 
   auto toCoordLists(Sz<ND> const &omat, Index const kW, Index const subgridSize, bool const conj) const

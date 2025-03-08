@@ -35,7 +35,7 @@ void main_rovir(args::Subparser &parser)
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   Cx4         data = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
-  if (res) { std::tie(traj, data) = traj.downsample(data, res.Get(), 0, true, true); }
+  if (res) { std::tie(traj, data) = traj.downsample(data, res.Get(), true, true, true); }
   Index const nC = data.dimension(0);
   Index const nS = data.dimension(3);
   auto        nufft = Recon::Channels(coreArgs.ndft, gridOpts, traj, nC, nS, IdBasis());
