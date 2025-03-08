@@ -15,6 +15,43 @@ import pandas as pd
 from . import io
 
 
+def create_itk_image(img_array, info, max_image_value=None, dtype=None):
+    """Create an ITK image object from array"""
+    # Handle 5D navigator data
+    if img_array.ndim != 3:
+        raise ValueError("Image data must be 3D")
+
+    # Create ITK image with magnitude data
+    img = itk.image_from_array(np.abs(np.ascontiguousarray(img_array)))
+    img.SetSpacing(info['voxel_size'].astype(float))
+    img.SetOrigin([-img_array.shape[i]/2*info['voxel_size'][i]
+                  for i in range(3)])
+    img.SetDirection(info['direction'])
+
+    if max_image_value:
+        RescaleFilterType = itk.RescaleIntensityImageFilter[type(
+            img), type(img)]
+        rescaleFilter = RescaleFilterType.New()
+        rescaleFilter.SetInput(img)
+        rescaleFilter.SetOutputMinimum(0)
+        rescaleFilter.SetOutputMaximum(max_image_value)
+        rescaleFilter.Update()
+        img_out = rescaleFilter.GetOutput()
+    else:
+        img_out = img
+
+    if dtype:
+        InputPixelType = itk.template(img_out)[1][0]
+        InputImageType = itk.Image[InputPixelType, 3]
+        OutputImageType = itk.Image[dtype, 3]
+        cast_filter = itk.CastImageFilter[InputImageType, OutputImageType].New(
+        )
+        cast_filter.SetInput(img_out)
+        cast_filter.Update()
+        img_out = cast_filter.GetOutput()
+
+    return img_out
+
 
 def versor_to_euler(versor):
     """
@@ -42,6 +79,7 @@ def versor_to_euler(versor):
 
     return rx, ry, rz
 
+
 def otsu_filter(image):
     """Applies an Otsu filter
 
@@ -60,6 +98,7 @@ def otsu_filter(image):
     filt.Update()
 
     return filt
+
 
 def versor_reg_summary(registrations, reg_outs, names=None, doprint=True, show_legend=True):
     """Summarise results from one or more versor registration experiments
@@ -183,6 +222,7 @@ def versor_reg_summary(registrations, reg_outs, names=None, doprint=True, show_l
 
     return df
 
+
 def versor_watcher(reg_out, optimizer):
     """Logging for registration
 
@@ -220,6 +260,7 @@ def versor_watcher(reg_out, optimizer):
 
     return opt_watcher
 
+
 def winsorize_image(image, p_low, p_high):
     """Applies winsorize filter to image
 
@@ -256,6 +297,7 @@ def winsorize_image(image, p_low, p_high):
 
     return filt
 
+
 def threshold_image(image, low_lim):
     """Threshold image at given value
 
@@ -278,6 +320,7 @@ def threshold_image(image, low_lim):
     thresh_filt.Update()
 
     return thresh_filt.GetOutput()
+
 
 def resample_image(registration, moving_image, fixed_image):
     """Resample image with registration parameters
@@ -340,12 +383,8 @@ def get_versor_factors(registration):
     regParameters = registration.GetOutput().Get().GetParameters()
 
     corrections = {'R': matrix,
-                   'vx': regParameters[0],
-                   'vy': regParameters[1],
-                   'vz': regParameters[2],
-                   'dx': regParameters[3],
-                   'dy': regParameters[4],
-                   'dz': regParameters[5]
+                   'v': np.array([regParameters[0], regParameters[1], regParameters[2],]),
+                   'shift': np.array([regParameters[3], regParameters[4], regParameters[5]])
                    }
 
     return corrections
@@ -403,29 +442,25 @@ def setup_optimizer(PixelType, opt_range, relax_factor, nit=250, learning_rate=0
     return optimizer
 
 
-def versor3D_registration(fixed_image_fname,
-                         moving_image_fname,
-                         moco_output_name=None,
-                         fixed_output_name=None,
-                         fixed_mask_fname=None,
-                         reg_par_name=None,
-                         iteration_log_fname=None,
-                         opt_range=[np.deg2rad(1), 10],
-                         init_angle=0,
-                         init_axis=[0, 0, 1],
-                         relax_factor=0.5,
-                         winsorize=None,
-                         threshold=None,
-                         sigmas=[0],
-                         shrink=[1],
-                         metric='MS',
-                         learning_rate=5,
-                         convergence_window_size=10,
-                         convergence_value=1E-6,
-                         min_step_length=1E-6,
-                         nit=250,
-                         verbose=2,
-                         frame_index=0):
+def versor3D_registration(fixed_image,
+                          moving_image,
+                          mask_image=None,
+                          opt_range=[np.deg2rad(1), 10],
+                          init_angle=0,
+                          init_axis=[0, 0, 1],
+                          relax_factor=0.5,
+                          winsorize=None,
+                          threshold=None,
+                          sigmas=[0],
+                          shrink=[1],
+                          metric='MS',
+                          learning_rate=5,
+                          convergence_window_size=10,
+                          convergence_value=1E-6,
+                          min_step_length=1E-6,
+                          nit=250,
+                          verbose=2,
+                          frame_index=0):
     """Multi-scale rigid body registration
 
     ITK registration framework inspired by ANTs which performs a multi-scale 3D versor registration 
@@ -469,34 +504,27 @@ def versor3D_registration(fixed_image_fname,
     """
     # Logging setup
     log_level = {0: None, 1: logging.INFO, 2: logging.DEBUG}
-    logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s", level=log_level[verbose],datefmt="%I:%M:%S")
+    logging.basicConfig(format="[%(asctime)s] %(levelname)s: %(message)s",
+                        level=log_level[verbose], datefmt="%I:%M:%S")
 
     # Global settings
     PixelType = itk.D
     ImageType = itk.Image[PixelType, 3]
+
+    itk.VersorRigid3DTransform.GetTypes()
 
     # Validate inputs
     if len(sigmas) != len(shrink):
         logging.error("Sigma and Shrink arrays not the same length")
         raise ValueError("Sigma and Shrink arrays must be same length")
 
-    frame_index = int(frame_index)
-    
-    logging.info(f"Reading fixed image (reference frame 0): {fixed_image_fname}")
-    data_fix, spacing_fix = read_navigator_frame_h5(fixed_image_fname, vol=0)
-    logging.info(f"Reading moving frame {frame_index}: {moving_image_fname}")
-    data_move, spacing_move = read_navigator_frame_h5(moving_image_fname, vol=frame_index)
-
-
-    # Create ITK images
-    fixed_image = create_image(data_fix, spacing_fix, dtype=itk.D, max_image_value=1E3)
-    moving_image = create_image(data_move, spacing_move, dtype=itk.D, max_image_value=1E3)
-
     # Apply Winsorize filter if requested
     if winsorize:
         logging.info("Winsorising images")
-        fixed_win_filter = winsorize_image(fixed_image, winsorize[0], winsorize[1])
-        moving_win_filter = winsorize_image(moving_image, winsorize[0], winsorize[1])
+        fixed_win_filter = winsorize_image(
+            fixed_image, winsorize[0], winsorize[1])
+        moving_win_filter = winsorize_image(
+            moving_image, winsorize[0], winsorize[1])
         fixed_image = fixed_win_filter.GetOutput()
         moving_image = moving_win_filter.GetOutput()
 
@@ -505,7 +533,8 @@ def versor3D_registration(fixed_image_fname,
         logging.info("Calculating Otsu filter")
         filt = otsu_filter(fixed_image)
         otsu_threshold = filt.GetThreshold()
-        logging.info(f"Applying thresholding at Otsu threshold of {otsu_threshold}")
+        logging.info(
+            f"Applying thresholding at Otsu threshold of {otsu_threshold}")
         fixed_image = threshold_image(fixed_image, otsu_threshold)
         moving_image = threshold_image(moving_image, otsu_threshold)
     elif threshold is not None:
@@ -516,19 +545,23 @@ def versor3D_registration(fixed_image_fname,
     # Setup image metric
     if metric == 'MI':
         nbins = 16
-        logging.info(f"Using Mattes Mutual Information image metric with {nbins} bins")
-        metric = itk.MattesMutualInformationImageToImageMetricv4[ImageType, ImageType].New()
+        logging.info(
+            f"Using Mattes Mutual Information image metric with {nbins} bins")
+        metric = itk.MattesMutualInformationImageToImageMetricv4[ImageType, ImageType].New(
+        )
         metric.SetNumberOfHistogramBins(nbins)
         metric.SetUseMovingImageGradientFilter(False)
         metric.SetUseFixedImageGradientFilter(False)
     else:
         logging.info("Using Mean Squares image metric")
-        metric = itk.MeanSquaresImageToImageMetricv4[ImageType, ImageType].New()
+        metric = itk.MeanSquaresImageToImageMetricv4[ImageType, ImageType].New(
+        )
 
     # Setup versor transform
     logging.info("Initialising Versor Rigid 3D Transform")
     TransformType = itk.VersorRigid3DTransform[PixelType]
-    TransformInitializerType = itk.CenteredTransformInitializer[TransformType, ImageType, ImageType]
+    TransformInitializerType = itk.CenteredTransformInitializer[TransformType,
+                                                                ImageType, ImageType]
 
     initialTransform = TransformType.New()
     initializer = TransformInitializerType.New()
@@ -551,10 +584,11 @@ def versor3D_registration(fixed_image_fname,
 
     # Setup optimizer
     optimizer = setup_optimizer(PixelType, opt_range, relax_factor, nit=int(nit),
-                              learning_rate=learning_rate, 
-                              convergence_window_size=int(convergence_window_size),
-                              convergence_value=convergence_value, 
-                              min_step_length=min_step_length)
+                                learning_rate=learning_rate,
+                                convergence_window_size=int(
+                                    convergence_window_size),
+                                convergence_value=convergence_value,
+                                min_step_length=min_step_length)
 
     # Setup registration
     registration = itk.ImageRegistrationMethodv4[ImageType, ImageType].New()
@@ -580,13 +614,10 @@ def versor3D_registration(fixed_image_fname,
     registration.SetShrinkFactorsPerLevel(shrinkFactorsPerLevel)
 
     # Apply mask if provided
-    if fixed_mask_fname:
-        logging.info(f"Loading fixed mask from file: {fixed_mask_fname}")
+    if mask_image:
         MaskType = itk.ImageMaskSpatialObject[3]
         mask = MaskType.New()
-        data_mask_fix, spacing_mask_fix = read_image_h5(fixed_mask_fname)
-        mask_img = create_image(data_mask_fix, spacing_mask_fix, dtype=itk.UC)
-        mask.SetImage(mask_img)
+        mask.SetImage(mask_image)
         mask.Update()
         metric.SetFixedImageMask(mask)
 
@@ -603,42 +634,14 @@ def versor3D_registration(fixed_image_fname,
 
     # Get and log results
     corrections = get_versor_factors(registration)
-    rot_x, rot_y, rot_z = versor_to_euler(
-        [corrections['vx'], corrections['vy'], corrections['vz']])
+    rot_x, rot_y, rot_z = versor_to_euler(corrections['v'])
 
     logging.info(f"Frame {frame_index} registration results:")
     logging.info("Rotation: (%.2f, %.2f, %.2f) deg" %
-                (np.rad2deg(rot_x), np.rad2deg(rot_y), np.rad2deg(rot_z)))
-    logging.info("Translation: (%.2f, %.2f, %.2f) mm" %
-                (corrections['dx'], corrections['dy'], corrections['dz']))
+                 (np.rad2deg(rot_x), np.rad2deg(rot_y), np.rad2deg(rot_z)))
+    logging.info(f"Translation: {corrections['shift']} mm")
 
-    # Generate output filenames if not provided
-    if not reg_par_name:
-        reg_par_name = f"reg_frame0_2_frame{frame_index}.p"
-
-    # Save outputs
-    if moco_output_name:
-        resampler = resample_image(registration, moving_image, fixed_image)
-        writer = itk.ImageFileWriter[ImageType].New()
-        writer.SetFileName(moco_output_name)
-        writer.SetInput(resampler.GetOutput())
-        writer.Update()
-
-    if fixed_output_name:
-        writer = itk.ImageFileWriter[ImageType].New()
-        writer.SetFileName(fixed_output_name)
-        writer.SetInput(fixed_image)
-        writer.Update()
-
-    if iteration_log_fname:
-        with open(iteration_log_fname, 'wb') as f:
-            pickle.dump(reg_out, f)
-
-    with open(reg_par_name, 'wb') as f:
-        pickle.dump(corrections, f)
-
-    return registration, reg_out, reg_par_name
-    
+    return corrections
 
 
 def histogram_threshold_estimator(img, plot=False, nbins=200):
@@ -687,16 +690,15 @@ def histogram_threshold_estimator(img, plot=False, nbins=200):
         """
 
         if x.ndim != 1:
-            raise(ValueError, "smooth only accepts 1 dimension arrays.")
+            raise (ValueError, "smooth only accepts 1 dimension arrays.")
 
         if x.size < window_len:
-            raise(ValueError, "Input vector needs to be bigger than window size.")
+            raise (ValueError, "Input vector needs to be bigger than window size.")
 
         if window_len < 3:
             return x
 
         s = np.r_[x[window_len-1:0:-1], x, x[-2:-window_len-1:-1]]
-        # print(len(s))
         if window == 'flat':  # moving average
             w = np.ones(window_len, 'd')
         else:
