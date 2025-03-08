@@ -384,7 +384,7 @@ def get_versor_factors(registration):
 
     corrections = {'R': matrix,
                    'v': np.array([regParameters[0], regParameters[1], regParameters[2],]),
-                   'shift': np.array([regParameters[3], regParameters[4], regParameters[5]])
+                   'delta': np.array([regParameters[3], regParameters[4], regParameters[5]])
                    }
 
     return corrections
@@ -639,7 +639,7 @@ def versor3D_registration(fixed_image,
     logging.info(f"Frame {frame_index} registration results:")
     logging.info("Rotation: (%.2f, %.2f, %.2f) deg" %
                  (np.rad2deg(rot_x), np.rad2deg(rot_y), np.rad2deg(rot_z)))
-    logging.info(f"Translation: {corrections['shift']} mm")
+    logging.info(f"Translation: {corrections['delta']} mm")
 
     return corrections
 

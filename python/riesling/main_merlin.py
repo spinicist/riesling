@@ -31,6 +31,9 @@ import numpy as np
 from . import io
 from .merlin import create_itk_image, versor3D_registration, histogram_threshold_estimator
 
+REG_FIELDS = ['R', 'delta']
+REG_FORMAT = [('<f4', (3,3)), ('<f4', (3,))]
+REG_DTYPE = np.dtype({'names': REG_FIELDS, 'formats': REG_FORMAT})
 
 class Merlin_parser(object):
     """
@@ -104,20 +107,22 @@ class Merlin_parser(object):
                 args.mask), io.read_info(args.mask), dtype=itk.D)
         else:
             mask_image = None
-        reg = list()
-        for ij in range(0, nT):
-            for ii in range(0, nNav):
-                moving_image = create_itk_image(
-                    inavs[ij, ii, :, :, :], info, dtype=itk.D)
-                reg = versor3D_registration(fixed_image=fixed_image,
-                                            moving_image=moving_image,
-                                            mask_image=mask_image,
-                                            sigmas=args.sigma,
-                                            shrink=args.shrink,
-                                            metric=args.metric,
-                                            verbose=args.verbose,
-                                            **more_args)
-                print(reg)
+        with h5py.File(args.output, 'w') as ofile:
+            for ij in range(0, nT):
+                grp = ofile.create_group(f'{ij:03d}')
+                for ii in range(0, nNav):
+                    moving_image = create_itk_image(
+                        inavs[ij, ii, :, :, :], info, dtype=itk.D)
+                    reg = versor3D_registration(fixed_image=fixed_image,
+                                                moving_image=moving_image,
+                                                mask_image=mask_image,
+                                                sigmas=args.sigma,
+                                                shrink=args.shrink,
+                                                metric=args.metric,
+                                                verbose=args.verbose,
+                                                **more_args)
+                
+                    grp.create_dataset(f'{ii:03d}', data=np.array([tuple([reg[f] for f in REG_FIELDS])], dtype=REG_DTYPE))
 
 
 def main():
