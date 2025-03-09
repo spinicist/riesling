@@ -175,23 +175,23 @@ template <int ND> void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, 
 }
 
 template <int ND>
-void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, Index const it, Index const tst, Index const tsz, Cx5 &data) const
+void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, Index const tst, Index const tsz, Cx5 &data) const
 {
   Re1 delta(ND);
   for (Index ii = 0; ii < ND; ii++) {
     delta[ii] = shift[ii] / (voxel_size_[ii] * matrix_[ii]);
   }
 
-  Log::Print("Traj", "Shifting time {} traces {},{} FOV by {} {} {}", it, tst, tsz, delta[0], delta[1], delta[2]);
+  Log::Print("Traj", "Shifting traces {}-{} by {} {} {}", tst, tst + tsz - 1, delta[0], delta[1], delta[2]);
 
   auto const shape = data.dimensions();
 
   // Check for NaNs (trajectory points that should be ignored) and zero the corresponding data points. Otherwise they become
   // NaN, and cause problems in iterative recons
-  Sz4 const dst{0, 0, tst, 0};
-  Sz4 const dsz = AddBack(FirstN<2>(data.dimensions()), tsz, data.dimension(3));
-  auto d = data.chip<4>(it).slice(dst, dsz);
-  auto p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, shape[1], tsz});
+  Sz5 const dst{0, 0, tst, 0, 0};
+  Sz5 const dsz = AddBack(FirstN<2>(data.dimensions()), tsz, data.dimension(3), data.dimension(4));
+  auto      d = data.slice(dst, dsz);
+  auto      p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, shape[1], tsz});
   d.device(Threads::TensorDevice()) = d * p.sum(Sz1{0})
                                             .isfinite()
                                             .reshape(Sz4{1, shape[1], tsz, 1})
@@ -212,12 +212,13 @@ template <int ND> void TrajectoryN<ND>::moveInFOV(Eigen::Matrix<float, ND, ND> c
 
 template <int ND>
 void TrajectoryN<ND>::moveInFOV(
-  Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Index const it, Index const tst, Index const tsz, Cx5 &data)
+  Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Index const tst, Index const tsz, Cx5 &data)
 {
   Re2CMap const Rt(R.data(), Sz2{ND, ND});
-  points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz}).device(Threads::TensorDevice()) =
-    Re3(Rt.contract(points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz}), matMul));
-  shiftInFOV(s, it, tst, tsz, data);
+  auto          p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz});
+  Log::Print("Traj", "Rotating traces {}-{} by\n{}", tst, tst + tsz - 1, fmt::streamed(Rt));
+  p.device(Threads::TensorDevice()) = Re3(Rt.contract(p, matMul));
+  shiftInFOV(s, tst, tsz, data);
 }
 
 template <int ND> auto TrajectoryN<ND>::points() const -> Re3 const & { return points_; }

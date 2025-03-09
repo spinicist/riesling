@@ -26,17 +26,10 @@ void main_move(args::Subparser &parser)
   if (tname && tpnav) {
     HD5::Reader tfile(tname.Get());
     auto const  ts = tfile.list();
-    if (ts.size() != ks.dimension(4)) {
-      throw Log::Failure(cmd, "Transform file timepoints {} does not match data {}", ts.size(), ks.dimension(4));
-    }
-    for (auto const &tstr : ts) {
-      auto const it = std::stol(tstr);
-      auto const navs = tfile.list(tstr);
-      for (auto const &nav : navs) {
-        auto const tfm = tfile.readTransform(tstr + "/" + nav);
-        auto const inav = std::stol(nav);
-        traj.moveInFOV(tfm.R, tfm.δ, it, inav * tpnav.Get(), tpnav.Get(), ks);
-      }
+    for (auto const &t : ts) {
+      auto const tfm = tfile.readTransform(t);
+      auto const inav = std::stol(t);
+      traj.moveInFOV(tfm.R, tfm.δ, inav * tpnav.Get(), tpnav.Get(), ks);
     }
   } else {
     traj.moveInFOV(R.Get(), info.direction.inverse() * shift.Get(), ks);

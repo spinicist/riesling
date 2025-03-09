@@ -42,11 +42,10 @@ template <int ND> struct TrajectoryN
   auto voxelSize() const -> Array;
   auto FOV() const -> Array;
   void shiftInFOV(Eigen::Vector3f const s, Cx5 &data) const;
-  void shiftInFOV(Eigen::Vector3f const s, Index const it, Index const tst, Index const tsz, Cx5 &data) const;
+  void shiftInFOV(Eigen::Vector3f const s, Index const tst, Index const tsz, Cx5 &data) const;
   void moveInFOV(Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Cx5 &data); // Will modify trajectory
   void moveInFOV(Eigen::Matrix<float, ND, ND> const R,
                  Eigen::Vector3f const              s,
-                 Index const                        it,
                  Index const                        tst,
                  Index const                        tsz,
                  Cx5                               &data); // Will modify trajectory
