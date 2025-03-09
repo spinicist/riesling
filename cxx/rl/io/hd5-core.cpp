@@ -138,6 +138,18 @@ hid_t InfoType()
   return info_id;
 }
 
+hid_t TransformType()
+{
+  hid_t   tfm_id = H5Tcreate(H5T_COMPOUND, sizeof(Transform));
+  hsize_t sz3[1] = {3};
+  hid_t   float3_id = H5Tarray_create(H5T_NATIVE_FLOAT, 1, sz3);
+  hsize_t sz33[2] = {3, 3};
+  hid_t   float33_id = H5Tarray_create(H5T_NATIVE_FLOAT, 2, sz33);
+  CheckedCall(H5Tinsert(tfm_id, "R", HOFFSET(Transform, R), float33_id), "inserting R field");
+  CheckedCall(H5Tinsert(tfm_id, "delta", HOFFSET(Transform, δ), float3_id), "inserting delta size field");
+  return tfm_id;
+}
+
 void CheckInfoType(hid_t handle)
 {
   // Hard code for now until the fields in InfoType are replaced with some kind of auto-gen
@@ -175,11 +187,11 @@ std::vector<std::string> List(Handle h)
   std::vector<std::string> names;
   H5Literate(h, H5_INDEX_NAME, H5_ITER_INC, NULL, AddName, &names);
 
-  std::erase_if(names, [h](std::string const &name) {
-    H5O_info_t info;
-    H5Oget_info_by_name(h, name.c_str(), &info, H5O_INFO_BASIC, H5P_DEFAULT);
-    return info.type != H5O_TYPE_DATASET;
-  });
+  // std::erase_if(names, [h](std::string const &name) {
+  //   H5O_info_t info;
+  //   H5Oget_info_by_name(h, name.c_str(), &info, H5O_INFO_BASIC, H5P_DEFAULT);
+  //   return info.type != H5O_TYPE_DATASET;
+  // });
 
   return names;
 }

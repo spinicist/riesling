@@ -25,7 +25,7 @@ struct Reader
   Reader(Handle const fid, bool const altComplex = false);
   ~Reader();
 
-  auto list() const -> std::vector<std::string>;                                           // List all datasets
+  auto list(std::string const &id = "") const -> std::vector<std::string>;                 // List all datasets
   auto exists(std::string const &label = Keys::Data) const -> bool;                        // Does a data-set exist?
   auto exists(std::string const &dset, std::string const &attr) const -> bool;             // Check an attribute exists
   auto order(std::string const &label = Keys::Data) const -> Index;                        // Determine order of tensor dataset
@@ -34,8 +34,9 @@ struct Reader
 
   auto readString(std::string const &label) const -> std::string; // Read a string dataset
   auto readStrings(std::string const &label) const -> std::vector<std::string>;
-  auto readInfo() const -> Info;                                  // Read the info struct from a file
-  auto readMeta() const -> std::map<std::string, float>;          // Read meta-data group
+  auto readInfo() const -> Info; // Read the info struct from a file
+  auto readTransform(std::string const &id) const -> Transform;
+  auto readMeta() const -> std::map<std::string, float>; // Read meta-data group
 
   auto                  readAttributeFloat(std::string const &dataset, std::string const &attribute) const -> float;
   auto                  readAttributeInt(std::string const &dataset, std::string const &attribute) const -> long;

@@ -36,7 +36,17 @@ Reader::~Reader()
   }
 }
 
-auto Reader::list() const -> std::vector<std::string> { return List(handle_); }
+auto Reader::list(std::string const &id) const -> std::vector<std::string>
+{
+  if (id == "") {
+    return List(handle_);
+  } else {
+    hid_t      grp = H5Gopen(handle_, id.c_str(), H5P_DEFAULT);
+    auto const l = List(grp);
+    H5Gclose(grp);
+    return l;
+  }
+}
 
 auto Reader::order(std::string const &name) const -> Index
 {
@@ -156,9 +166,12 @@ template <typename T> auto Reader::readSlab(std::string const &label, std::vecto
   std::reverse(diskShape.begin(), diskShape.end()); // HD5=row-major, Eigen=col-major
   for (size_t ii = 0; ii < chips.size(); ii++) {
     auto const chip = chips[ii];
-    if (DiskOrder <= chip.dim) { throw Log::Failure("HD5", "Tensor {} has order {} requested chip dim {}", label, DiskOrder, chip.dim); }
+    if (DiskOrder <= chip.dim) {
+      throw Log::Failure("HD5", "Tensor {} has order {} requested chip dim {}", label, DiskOrder, chip.dim);
+    }
     if (diskShape[chip.dim] <= (hsize_t)chip.index) {
-      throw Log::Failure("HD5", "Tensor {} dim {} has size {} requested index {}", label, chip.dim, diskShape[chip.dim], chip.index);
+      throw Log::Failure("HD5", "Tensor {} dim {} has size {} requested index {}", label, chip.dim, diskShape[chip.dim],
+                         chip.index);
     }
   }
   std::vector<hsize_t> diskStart(DiskOrder), diskStride(DiskOrder), diskCount(DiskOrder), diskBlock(DiskOrder);
@@ -245,7 +258,8 @@ template auto Reader::readMatrix<Eigen::MatrixXcd>(std::string const &) const ->
 template auto Reader::readMatrix<Eigen::ArrayXf>(std::string const &) const -> Eigen::ArrayXf;
 template auto Reader::readMatrix<Eigen::ArrayXXf>(std::string const &) const -> Eigen::ArrayXXf;
 
-auto Reader::readString(std::string const &name) const -> std::string {
+auto Reader::readString(std::string const &name) const -> std::string
+{
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (dset < 0) { throw Log::Failure("HD5", "Could not open dataset '{}'", name); }
   hid_t      ds = H5Dget_space(dset);
@@ -263,7 +277,8 @@ auto Reader::readString(std::string const &name) const -> std::string {
   return std::string(rdata[0]);
 }
 
-auto Reader::readStrings(std::string const &name) const -> std::vector<std::string> {
+auto Reader::readStrings(std::string const &name) const -> std::vector<std::string>
+{
   hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (dset < 0) { throw Log::Failure("HD5", "Could not open dataset '{}'", name); }
   hid_t      ds = H5Dget_space(dset);
@@ -295,6 +310,17 @@ auto Reader::readInfo() const -> Info
   return info;
 }
 
+auto Reader::readTransform(std::string const &id) const -> Transform
+{
+  hid_t const tfm_id = TransformType();
+  hid_t const dset = H5Dopen(handle_, id.c_str(), H5P_DEFAULT);
+  hid_t const space = H5Dget_space(dset);
+  Transform        t;
+  CheckedCall(H5Dread(dset, tfm_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &t), "Could not read transform struct");
+  CheckedCall(H5Dclose(dset), "Could not close transform dataset");
+  return t;
+}
+
 auto Reader::exists(std::string const &label) const -> bool { return Exists(handle_, label); }
 auto Reader::exists(std::string const &dset, std::string const &attr) const -> bool
 {
@@ -319,7 +345,7 @@ auto Reader::readMeta() const -> std::map<std::string, float>
     meta[name] = value;
   }
   status = H5Gclose(meta_group);
-if (status != 0) { throw Log::Failure("HD5", "Could not load meta-data, code: {}", status); }
+  if (status != 0) { throw Log::Failure("HD5", "Could not load meta-data, code: {}", status); }
   return meta;
 }
 

@@ -10,22 +10,17 @@ namespace HD5 {
 
 using Handle = int64_t;
 
-template <typename T>
-struct type_tag
+template <typename T> struct type_tag
 {
 };
 
-template <typename T>
-Handle type_impl(type_tag<T>, bool const alt = false);
+template <typename T> Handle type_impl(type_tag<T>, bool const alt = false);
 
-template <typename T>
-Handle type(bool const alt = false)
-{
-  return type_impl(type_tag<T>{}, alt);
-}
+template <typename T> Handle type(bool const alt = false) { return type_impl(type_tag<T>{}, alt); }
 
 void                     Init();
 Handle                   InfoType();
+Handle                   TransformType();
 void                     CheckInfoType(Handle h);
 auto                     Exists(Handle const h, std::string const &name) -> bool;
 void                     CheckedCall(int status, std::string const &msg);
@@ -49,8 +44,9 @@ std::string const Weights = "weights";
 } // namespace Keys
 
 // Horrible hack due to DSizes shenanigans
-template <int N>
-struct DimensionNames : std::array<std::string, N> {};
+template <int N> struct DimensionNames : std::array<std::string, N>
+{
+};
 
 namespace Dims {
 DimensionNames<3> const Basis = {"b", "sample", "trace"};

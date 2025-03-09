@@ -3,8 +3,8 @@
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
 #include "rl/tensors.hpp"
-#include "rl/types.hpp"
 #include "rl/trajectory.hpp"
+#include "rl/types.hpp"
 
 using namespace rl;
 
@@ -12,6 +12,8 @@ void main_move(args::Subparser &parser)
 {
   args::Positional<std::string>                    iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string>                    oname(parser, "FILE", "Output HD5 file");
+  args::ValueFlag<std::string>                     tname(parser, "FILE", "Transforms HD5 file", {"transforms"});
+  args::ValueFlag<Index>                           tpnav(parser, "T", "Traces per navigator", {"traces-per-nav"});
   args::ValueFlag<Eigen::Matrix3f, Matrix3fReader> R(parser, "R", "Rotation matrix", {'R', "R"}, Eigen::Matrix3f::Identity());
   args::ValueFlag<Eigen::Vector3f, Vector3fReader> shift(parser, "S", "Shift in mm", {"shift"});
   ParseCommand(parser, iname);
@@ -20,7 +22,25 @@ void main_move(args::Subparser &parser)
   Info const  info = reader.readInfo();
   Trajectory  traj(reader, info.voxel_size);
   Cx5         ks = reader.readTensor<Cx5>();
-  traj.moveInFOV(R.Get(), info.direction.inverse() * shift.Get(), ks);
+
+  if (tname && tpnav) {
+    HD5::Reader tfile(tname.Get());
+    auto const  ts = tfile.list();
+    if (ts.size() != ks.dimension(4)) {
+      throw Log::Failure(cmd, "Transform file timepoints {} does not match data {}", ts.size(), ks.dimension(4));
+    }
+    for (auto const &tstr : ts) {
+      auto const it = std::stol(tstr);
+      auto const navs = tfile.list(tstr);
+      for (auto const &nav : navs) {
+        auto const tfm = tfile.readTransform(tstr + "/" + nav);
+        auto const inav = std::stol(nav);
+        traj.moveInFOV(tfm.R, tfm.δ, it, inav * tpnav.Get(), tpnav.Get(), ks);
+      }
+    }
+  } else {
+    traj.moveInFOV(R.Get(), info.direction.inverse() * shift.Get(), ks);
+  }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(info);
   traj.write(writer);
