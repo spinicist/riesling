@@ -15,42 +15,20 @@ import pandas as pd
 from . import io
 
 
-def create_itk_image(img_array, info, max_image_value=None, dtype=None):
-    """Create an ITK image object from array"""
-    # Handle 5D navigator data
-    if img_array.ndim != 3:
-        raise ValueError("Image data must be 3D")
-
-    # Create ITK image with magnitude data
-    img = itk.image_from_array(np.abs(np.ascontiguousarray(img_array)))
-    img.SetSpacing(info['voxel_size'].astype(float))
-    img.SetOrigin([-img_array.shape[i]/2*info['voxel_size'][i]
-                  for i in range(3)])
-    img.SetDirection(info['direction'])
-
-    if max_image_value:
-        RescaleFilterType = itk.RescaleIntensityImageFilter[type(
-            img), type(img)]
-        rescaleFilter = RescaleFilterType.New()
-        rescaleFilter.SetInput(img)
-        rescaleFilter.SetOutputMinimum(0)
-        rescaleFilter.SetOutputMaximum(max_image_value)
-        rescaleFilter.Update()
-        img_out = rescaleFilter.GetOutput()
-    else:
-        img_out = img
-
-    if dtype:
-        InputPixelType = itk.template(img_out)[1][0]
-        InputImageType = itk.Image[InputPixelType, 3]
-        OutputImageType = itk.Image[dtype, 3]
-        cast_filter = itk.CastImageFilter[InputImageType, OutputImageType].New(
-        )
-        cast_filter.SetInput(img_out)
-        cast_filter.Update()
-        img_out = cast_filter.GetOutput()
-
-    return img_out
+def extract_nav(navs, ii):
+    PixelType = itk.D
+    ImageType3 = itk.Image[PixelType, 3]
+    ImageType4 = itk.Image[PixelType, 4]
+    sz = navs.GetLargestPossibleRegion().GetSize()
+    region = itk.ImageRegion[4]()
+    region.SetIndex([0, 0, 0, ii])
+    region.SetSize([sz[0], sz[1], sz[2], 0])
+    extract = itk.ExtractImageFilter[ImageType4, ImageType3].New()
+    extract.SetDirectionCollapseToSubmatrix()
+    extract.SetExtractionRegion(region)
+    extract.SetInput(navs)
+    extract.Update()
+    return extract.GetOutput()
 
 
 def versor_to_euler(versor):
@@ -449,7 +427,7 @@ def versor3D_registration(fixed_image,
                           init_angle=0,
                           init_axis=[0, 0, 1],
                           relax_factor=0.5,
-                          winsorize=None,
+                          winsorize=False,
                           threshold=None,
                           sigmas=[0],
                           shrink=[1],
@@ -521,10 +499,8 @@ def versor3D_registration(fixed_image,
     # Apply Winsorize filter if requested
     if winsorize:
         logging.info("Winsorising images")
-        fixed_win_filter = winsorize_image(
-            fixed_image, winsorize[0], winsorize[1])
-        moving_win_filter = winsorize_image(
-            moving_image, winsorize[0], winsorize[1])
+        fixed_win_filter = winsorize_image(fixed_image, 0.05, 0.95)
+        moving_win_filter = winsorize_image(moving_image, 0.05, 0.95)
         fixed_image = fixed_win_filter.GetOutput()
         moving_image = moving_win_filter.GetOutput()
 
