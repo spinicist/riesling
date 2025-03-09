@@ -23,11 +23,11 @@ void main_nii(args::Subparser &parser)
   if (input.order() == 5) {
     Cx5 const image = input.readTensor<Cx5>(dset.Get());
     Sz5 const sz = image.dimensions();
-    output = image.shuffle(Sz5{1, 2, 3, 0, 4}).reshape(Sz4{sz[1], sz[2], sz[3], sz[0] * sz[4]});
+    output = image.reshape(Sz4{sz[0], sz[1], sz[2], sz[3] * sz[4]});
   } else if (input.order() == 6) {
     Cx6 const image = input.readTensor<Cx6>(dset.Get());
     Sz6 const sz = image.dimensions();
-    output = image.shuffle(Sz6{2, 3, 4, 0, 1, 5}).reshape(Sz4{sz[2], sz[3], sz[4], sz[0] * sz[1] * sz[5]});
+    output = image.reshape(Sz4{sz[0], sz[1], sz[2], sz[3] * sz[4] * sz[5]});
   } else {
     throw Log::Failure(cmd, "Dataset {} was order {}, needs to be 5 or 6", dset.Get(), input.order());
   }
