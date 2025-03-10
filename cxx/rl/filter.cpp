@@ -20,48 +20,6 @@ inline float Tukey(float const &r, float const &sw, float const &ew, float const
   }
 }
 
-template <typename Scalar, int D> void KSFilter(std::function<float(float const &)> const &f, Eigen::Tensor<Scalar, D> &ks)
-{
-  auto const sz = ks.dimension(D - 1);
-  auto const sy = ks.dimension(D - 2);
-  auto const sx = ks.dimension(D - 3);
-
-  auto const hz = sz / 2;
-  auto const hy = sy / 2;
-  auto const hx = sx / 2;
-
-  auto task = [&](Index const zlo, Index const zhi) {
-    for (Index iz = zlo; iz < zhi; iz++) {
-      for (Index iy = 0; iy < sy; iy++) {
-        for (Index ix = 0; ix < sx; ix++) {
-          float const rz = static_cast<float>(iz - hz) / hz;
-          float const ry = static_cast<float>(iy - hy) / hy;
-          float const rx = static_cast<float>(ix - hx) / hx;
-          float const r = sqrt(rx * rx + ry * ry + rz * rz);
-          float const val = f(r);
-          ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix) *=
-            ks.template chip<D - 1>(iz).template chip<D - 2>(iy).template chip<D - 3>(ix).constant(val);
-        }
-      }
-    }
-  };
-  Threads::ChunkFor(task, sz);
-}
-
-void CartesianTukey(float const &s, float const &e, float const &h, Cx4 &x)
-{
-  Log::Print("Filt", "Tukey width {}-{} height {}", s, e, h);
-  auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  KSFilter(f, x);
-}
-
-void CartesianTukey(float const &s, float const &e, float const &h, Cx5 &x)
-{
-  Log::Print("Filt", "Tukey width {}-{} height {}", s, e, h);
-  auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
-  KSFilter(f, x);
-}
-
 void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const &coords, Cx4 &x)
 {
   auto const nC = x.dimension(0);
@@ -72,8 +30,9 @@ void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const
   assert(coords.dimension(2) == nT);
   Log::Print("Traj", "NC Tukey width {}-{} height {}", s, e, h);
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
+  Re2 const   r = coords.square().sum(Sz1{0}).sqrt();
   x.device(Threads::TensorDevice()) =
-    x * coords.square().sum(Sz1{0}).sqrt().unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice});
+    r.isfinite().select(x * r.unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice}), x.constant(0.f));
 }
 
 void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const &coords, Cx5 &x)

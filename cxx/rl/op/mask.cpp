@@ -25,7 +25,6 @@ template <typename S> void Mask<S>::forward(CMap const x, Map y) const
 {
   auto const time = this->startForward(x, y, false);
   Index      ix = 0, iy = 0;
-  fmt::print(stderr, "mask forward x {} y {} isz {} osz {} repeats {} rows {} cols {}\n", x.rows(), y.rows(), isz, osz, repeats, rows(), cols());
   for (Index ir = 0; ir < repeats; ir++) {
     for (Index im = 0; im < isz; im++, ix++) {
       if (mask[im]) { y[iy++] = x[ix]; }

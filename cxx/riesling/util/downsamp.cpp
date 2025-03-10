@@ -13,8 +13,7 @@ void main_downsamp(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "INPUT", "Input file name");
   args::Positional<std::string> oname(parser, "OUTPUT", "Output file name");
   ArrayFlag<float, 3>           res(parser, "R", "Target resolution (4 mm)", {"res"}, Eigen::Array3f::Constant(4.f));
-  args::ValueFlag<float>        filterStart(parser, "T", "Tukey filter start", {"filter-start"}, 0.5f);
-  args::ValueFlag<float>        filterEnd(parser, "T", "Tukey filter end", {"filter-end"}, 1.0f);
+  ArrayFlag<float, 3>           filter(parser, "F", "Filter start,end,height", {'f', "filter"});
   args::Flag                    noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
   args::Flag                    trim(parser, "T", "Trim non-cartesian", {"trim"});
   args::Flag                    corners(parser, "C", "Keep corners", {"corners"});
@@ -25,9 +24,10 @@ void main_downsamp(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto const  ks1 = reader.readTensor<Cx5>();
   auto [dsTraj, ks2] = traj.downsample(ks1, res.Get(), trim, !noShrink, corners);
-
-  if (filterStart || filterEnd) {
-    NoncartesianTukey(filterStart.Get() * 0.5, filterEnd.Get() * 0.5, 0.f, dsTraj.points(), ks2);
+  float const M = *std::max_element(dsTraj.matrix().cbegin(), dsTraj.matrix().cend()) / 2.f;
+  if (filter) {
+    auto const f = filter.Get();
+    NoncartesianTukey(f[0] * M, f[1] * M, f[2], dsTraj.points(), ks2);
   }
 
   HD5::Writer writer(oname.Get());
