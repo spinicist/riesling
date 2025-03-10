@@ -15,11 +15,11 @@ namespace rl {
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re2
+auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ, Basis::CPtr basis) -> Re2
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, nullptr);
+  auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, basis);
   Cx3        W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
   Cx5 const psf = nufft->adjoint(W);
@@ -52,7 +52,7 @@ auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float con
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
  * (without SENSE maps)
  */
-auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re3
+auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ, Basis::CPtr basis) -> Re3
 {
   Log::Print("Precon", "Calculating multichannel-preconditioner");
   Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
@@ -61,7 +61,7 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   Index const nTrace = traj.nTraces();
   Re3         weights(nC, nSamp, nTrace);
 
-  auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, nullptr);
+  auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, basis);
   Sz5 const psfShape = nufft.ishape;
   Sz5 const smapShape = smaps.dimensions();
   if (smapShape[4] > 1 && smapShape[4] != psfShape[4]) {
@@ -117,7 +117,7 @@ auto LoadKSpacePrecon(std::string const &fname, Trajectory const &traj, Sz5 cons
   Index const o = reader.order(HD5::Keys::Weights);
   if (o == 2) {
     Re2 const w = reader.readTensor<Re2>(HD5::Keys::Weights);
-    if (w.dimension(1) != traj.nSamples() || w.dimension(2) != traj.nTraces()) {
+    if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
       throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(1),
                          w.dimension(2), traj.nSamples(), traj.nTraces());
     }

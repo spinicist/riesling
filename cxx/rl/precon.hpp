@@ -13,9 +13,9 @@ struct PreconOpts
   float       λ = 1.e-3f;
 };
 
-auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re2;
-
-auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ) -> Re3;
+auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ, Basis::CPtr basis = nullptr) -> Re2;
+auto KSpaceMulti(
+  Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ, Basis::CPtr basis = nullptr) -> Re3;
 
 auto MakeKSpacePrecon(
   PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT)
