@@ -29,7 +29,8 @@ if(${BUILD_BIN})
         data/move.cpp
         data/nii.cpp
         data/noisify.cpp
-        data/slice.cpp
+        data/slicenc.cpp
+        data/sliceimg.cpp
 
         op/fft.cpp
         op/grad.cpp
