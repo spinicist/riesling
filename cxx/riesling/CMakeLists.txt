@@ -61,6 +61,7 @@ if(${BUILD_BIN})
         # util/eig.cpp
         util/log.cpp
         util/filter.cpp
+        util/mask.cpp
         util/phantom.cpp
         util/precon.cpp
         util/psf.cpp
