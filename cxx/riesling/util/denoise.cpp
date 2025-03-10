@@ -18,9 +18,8 @@ void main_denoise(args::Subparser &parser)
   args::Flag                    debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   RegOpts                       regOpts(parser);
 
-  ParseCommand(parser);
+  ParseCommand(parser, iname, oname);
   auto const cmd = parser.GetCommand().Name();
-  if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5         in = input.readTensor<Cx5>();
   float const scale = ScaleImages(scaling.Get(), in);

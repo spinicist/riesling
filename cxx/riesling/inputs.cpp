@@ -66,14 +66,14 @@ auto LSMRArgs::Get() -> rl::LSMR::Opts
 }
 
 ADMMArgs::ADMMArgs(args::Subparser &parser)
-  : in_its0(parser, "ITS", "Initial inner iterations (4)", {"max-its0"}, 4)
-  , in_its1(parser, "ITS", "Subsequent inner iterations (1)", {"max-its"}, 1)
+  : in_its0(parser, "ITS", "Initial inner iterations (64)", {"max-its0"}, 64)
+  , in_its1(parser, "ITS", "Subsequent inner iterations (64)", {"max-its"}, 64)
   , atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f)
   , btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f)
   , ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f)
-  , out_its(parser, "ITS", "ADMM max iterations (20)", {"max-outer-its"}, 20)
+  , out_its(parser, "ITS", "ADMM max iterations (64)", {"max-outer-its"}, 64)
   , ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f)
-  , ε(parser, "ε", "ADMM convergence tolerance (1e-2)", {"eps"}, 1.e-2f)
+  , ε(parser, "ε", "ADMM convergence tolerance (1e-3)", {"eps"}, 1.e-3f)
   , μ(parser, "μ", "Residual balancing tolerance (default 1.2)", {"mu"}, 1.2f)
   , τ(parser, "τ", "Residual balancing ratio limit (default 10)", {"tau"}, 10.f)
   , ɑ(parser, "ɑ", "Over-relaxation parameter (choose 1<ɑ<2)", {"alpha"}, 0.f)
