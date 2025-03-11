@@ -48,19 +48,18 @@ NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> const    &opts,
 
   // Broadcast SENSE across basis if needed
   sbrd.fill(1);
-  if (skern.dimension(4) == 1) {
-    sbrd[DC] = nB;
-  } else if (skern.dimension(0) == nB) {
-    sbrd[DC] = 1;
+  if (skern.dimension(ND + 1) == 1) {
+    sbrd[ND] = nB;
+  } else if (skern.dimension(ND + 1) == nB) {
+    sbrd[ND] = 1;
   } else {
-    throw Log::Failure(this->name, "SENSE kernels had basis dimension {}, expected 1 or {}", skern.dimension(0), ishape[0]);
+    throw Log::Failure(this->name, "SENSE kernels had basis dimension {}, expected 1 or {}", skern.dimension(ND + 2), nB);
   }
   // Calculate apodization correction
-  auto apo_shape = ishape;
+  auto apo_shape = FirstN<ND>(ishape);
   apoBrd_.fill(1);
-  apo_shape[DC] = 1;
-  apoBrd_[DC] = gridder->ishape[DC];
-  apo_ = Apodize<ND, KF>(FirstN<ND>(ishape), FirstN<ND>(gridder->ishape), opts.osamp).reshape(apo_shape); // Padding stuff
+  apoBrd_[ND] = nB;
+  apo_ = Apodize<ND, KF>(apo_shape, FirstN<ND>(gridder->ishape), opts.osamp).reshape(AddBack(apo_shape, 1)); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);

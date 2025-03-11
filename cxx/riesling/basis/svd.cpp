@@ -97,7 +97,7 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlag<float>                tsamp(parser, "T", "Sample time", {"tsamp"}, 10e-6);
   args::ValueFlag<float>                TR(parser, "TR", "Read-out repetition time", {"tr"}, 0.002f);
   args::ValueFlag<float>                Tramp(parser, "Tramp", "Ramp up/down times", {"tramp"}, 0.f);
-  args::ValueFlag<Index>                spoil(parser, "N", "Spoil periods", {"spoil"}, 0);
+  args::ValueFlag<Index>                spoil(parser, "SpoilTRs", "Spoil periods", {"spoil"}, 0);
   args::ValueFlag<Index>                k0(parser, "k0", "k0 navs", {"k0"}, 0);
   args::ValueFlag<float>                Tssi(parser, "Tssi", "Inter-segment time", {"tssi"}, 0.f);
   args::ValueFlag<float>                TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
