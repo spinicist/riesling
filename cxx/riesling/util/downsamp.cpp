@@ -6,6 +6,8 @@
 #include "rl/tensors.hpp"
 #include "rl/types.hpp"
 
+#include <flux.hpp>
+
 using namespace rl;
 
 void main_downsamp(args::Subparser &parser)
@@ -24,9 +26,9 @@ void main_downsamp(args::Subparser &parser)
   Trajectory  traj(reader, info.voxel_size);
   auto const  ks1 = reader.readTensor<Cx5>();
   auto [dsTraj, ks2] = traj.downsample(ks1, res.Get(), trim, !noShrink, corners);
-  float const M = *std::max_element(dsTraj.matrix().cbegin(), dsTraj.matrix().cend()) / 2.f;
   if (filter) {
     auto const f = filter.Get();
+    auto const M = *flux::max(dsTraj.matrix()) / 2.f;
     NoncartesianTukey(f[0] * M, f[1] * M, f[2], dsTraj.points(), ks2);
   }
 
