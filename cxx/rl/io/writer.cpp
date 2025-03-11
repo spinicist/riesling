@@ -81,6 +81,21 @@ void Writer::writeInfo(Info const &info)
   Log::Debug("HD5", "Wrote info struct");
 }
 
+void Writer::writeTransform(Transform const &tfm, std::string const &lbl)
+{
+  hid_t       tfm_id = TransformType();
+  hsize_t     dims[1] = {1};
+  auto const  space = H5Screate_simple(1, dims, NULL);
+  hid_t const dset = H5Dcreate(handle_, lbl.c_str(), tfm_id, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  if (dset < 0) { throw Log::Failure("HD5", "Could not create transform struct in file {}, code: {}", handle_, dset); }
+  herr_t status;
+  status = H5Dwrite(dset, tfm_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &tfm);
+  status = H5Sclose(space);
+  status = H5Dclose(dset);
+  if (status != 0) { throw Log::Failure("HD5", "Could not write info struct in file {}, code: {}", handle_, status); }
+  Log::Debug("HD5", "Wrote info struct");
+}
+
 void Writer::writeMeta(std::map<std::string, float> const &meta)
 {
   Log::Debug("HD5", "Writing meta data");

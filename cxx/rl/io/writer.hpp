@@ -15,6 +15,7 @@ struct Writer
   void writeString(std::string const &label, std::string const &string);
   void writeStrings(std::string const &label, std::vector<std::string> const &string);
   void writeInfo(Info const &info);
+  void writeTransform(Transform const &tfm, std::string const &lbl);
   void writeMeta(std::map<std::string, float> const &meta);
 
   template <typename Scalar, int N>

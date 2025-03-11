@@ -1,5 +1,5 @@
 option(BUILD_BIN "Build the binary" ON)
-if(${BUILD_BIN})
+if(BUILD_BIN)
     find_package(args CONFIG REQUIRED)
 
     add_executable(riesling
@@ -83,7 +83,7 @@ if(${BUILD_BIN})
     install(TARGETS riesling RUNTIME DESTINATION bin)
 
     option(BUILD_MONTAGE "Build the montage command. Requires ImageMagick" OFF)
-    if (${BUILD_MONTAGE})
+    if (BUILD_MONTAGE)
         target_sources(riesling PRIVATE magick.cpp util/montage.cpp)
         target_compile_definitions(riesling PRIVATE -DBUILD_MONTAGE)
         find_package(ImageMagick COMPONENTS Magick++ MagickCore)
@@ -93,4 +93,33 @@ if(${BUILD_BIN})
             target_link_libraries(riesling PRIVATE OpenMP::OpenMP_CXX)
         endif()
     endif()
+endif()
+
+# Option for this one is in main CMakeLists.txt so it is present for the VCPKG call before Project
+if(BUILD_MERLIN)
+    find_package(args CONFIG REQUIRED)
+    find_package(ITK 5.3.0 REQUIRED
+    COMPONENTS
+      ITKCommon
+      ITKImageFilterBase
+      ITKIOTransformInsightLegacy
+      ITKOptimizers
+    )
+    add_executable(merlin
+        main_merlin.cpp
+        args.cpp
+    )
+    target_link_libraries(merlin PRIVATE
+        rl
+        taywee::args
+        ${ITK_LIBRARIES}
+    )
+    target_include_directories(merlin PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+    set_target_properties(merlin PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+        CXX_VISIBILITY_PRESET hidden
+    )
+    install(TARGETS merlin RUNTIME DESTINATION bin)
 endif()

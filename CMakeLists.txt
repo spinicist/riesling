@@ -15,7 +15,10 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF) # Why not? Because it takes forever,
 # Thanks to Deniz Bahadir on the CMake Discourse
 add_link_options("$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>")
 link_libraries("$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>")
-
+option(BUILD_MERLIN "Build MERLIN tool" OFF)
+if(BUILD_MERLIN)
+  list(APPEND VCPKG_MANIFEST_FEATURES "merlin")
+endif()
 project(riesling LANGUAGES CXX)
 include(Version)
 add_definitions(-DEIGEN_USE_THREADS) # Ensure this is always defined across all .cpp files

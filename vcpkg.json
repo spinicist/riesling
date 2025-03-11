@@ -1,4 +1,3 @@
-
 {
     "name": "riesling",
     "version-string": "1.0",
@@ -21,8 +20,19 @@
         "tl-ranges",
         "zlib"
     ],
-    "builtin-baseline":"428b3e2a5ad75f87ea276068f2619963eea2eb1a",
+    "features": {
+        "merlin": {
+            "description": "Build the MERLIN registration tool",
+            "dependencies": [
+                "itk"
+            ]
+        }
+    },
+    "builtin-baseline": "428b3e2a5ad75f87ea276068f2619963eea2eb1a",
     "overrides": [
-        { "name": "hdf5", "version": "1.12.0" }
+        {
+            "name": "hdf5",
+            "version": "1.12.0"
+        }
     ]
 }

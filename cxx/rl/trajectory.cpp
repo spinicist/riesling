@@ -9,7 +9,6 @@ namespace rl {
 
 namespace {
 constexpr Eigen::IndexPairList<Eigen::type2indexpair<0, 0>> matMul;
-constexpr Eigen::IndexPairList<Eigen::type2indexpair<1, 0>> matMulT;
 } // namespace
 
 /* Temp Hack because .maximum() may be buggy on NEON */
