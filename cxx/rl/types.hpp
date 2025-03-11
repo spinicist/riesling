@@ -47,6 +47,7 @@ using Re5 = ReN<5>;
 template <int N> using ReNMap = Eigen::TensorMap<ReN<N>>;
 template <int N> using ReNCMap = Eigen::TensorMap<ReN<N> const>;
 using Re2CMap = ReNCMap<2>;
+using Re3Map = ReNMap<3>;
 using Re3CMap = ReNCMap<3>;
 
 using Rd1 = Eigen::Tensor<double, 1>;
@@ -181,7 +182,7 @@ template <int N> auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> E
 template <int N, typename T> auto MulToEven(Eigen::DSizes<Index, N> const &sz, T const m) -> Eigen::DSizes<Index, N>
 {
   Eigen::DSizes<Index, N> result;
-  std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return 2*((Index)(i * m + 1) / 2); });
+  std::transform(sz.begin(), sz.begin() + N, result.begin(), [m](Index const i) { return 2 * ((Index)(i * m + 1) / 2); });
   return result;
 }
 

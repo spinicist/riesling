@@ -3,6 +3,7 @@
 #include "rl/log.hpp"
 #include "rl/tensors.hpp"
 
+#include <itkCenteredTransformInitializer.h>
 #include <itkImageRegistrationMethod.h>
 #include <itkImportImageFilter.h>
 #include <itkLinearInterpolateImageFunction.h>
@@ -21,9 +22,10 @@ using TImage = itk::Image<float, 3>;
 using TOpt = itk::RegularStepGradientDescentOptimizer;
 using TMetric = itk::MeanSquaresImageToImageMetric<TImage, TImage>;
 using TInterp = itk::LinearInterpolateImageFunction<TImage, double>;
+using TInit = itk::CenteredTransformInitializer<TTfm, TImage, TImage>;
 using TReg = itk::ImageRegistrationMethod<TImage, TImage>;
 
-auto Import(Re3CMap const data, Info const info) -> TImage::Pointer
+auto Import(Re3Map const data, Info const info) -> TImage::Pointer
 {
   using TImport = itk::ImportImageFilter<float, 3>;
 
@@ -48,9 +50,11 @@ auto Import(Re3CMap const data, Info const info) -> TImage::Pointer
 
   auto import = TImport::New();
   import->SetRegion(region);
+  fmt::print(stderr, "region\n{}\n", fmt::streamed(region));
   import->SetSpacing(s);
   import->SetOrigin(o);
   import->SetDirection(d);
+  import->SetImportPointer(data.data(), data.size(), false);
   import->Update();
   return import->GetOutput();
 }
@@ -61,7 +65,14 @@ auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> Transform
   auto transform = TTfm::New();
   auto optimizer = TOpt::New();
   auto interpolator = TInterp::New();
+  auto init = TInit::New();
   auto registration = TReg::New();
+
+  init->SetTransform(transform);
+  init->SetFixedImage(fixed);
+  init->SetMovingImage(moving);
+  init->GeometryOn();
+  init->InitializeTransform();
 
   registration->SetMetric(metric);
   registration->SetOptimizer(optimizer);
@@ -70,13 +81,7 @@ auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> Transform
   registration->SetFixedImage(fixed);
   registration->SetMovingImage(moving);
   registration->SetFixedImageRegion(fixed->GetLargestPossibleRegion());
-
-  //  Initialize the transform
-  using TPar = TReg::ParametersType;
-  TPar initialParameters(transform->GetNumberOfParameters());
-  initialParameters.Fill(0);
-  initialParameters[5] = 1.0; // Axis of versor
-  registration->SetInitialTransformParameters(initialParameters);
+  registration->SetInitialTransformParameters(transform->GetParameters());
   optimizer->SetMaximumStepLength(4.00);
   optimizer->SetMinimumStepLength(0.01);
   optimizer->SetNumberOfIterations(200);
@@ -95,7 +100,7 @@ auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> Transform
   final->SetParameters(registration->GetLastTransformParameters());
   auto const m = final->GetMatrix();
   auto const o = final->GetOffset();
-  Transform t;
+  Transform  t;
   for (Index ii = 0; ii < 3; ii++) {
     for (Index ij = 0; ij < 3; ij++) {
       t.R(ii, ij) = m(ii, ij);
@@ -119,11 +124,13 @@ int main(int const argc, char const *const argv[])
     if (!oname) { throw args::Error("No output file specified"); }
     HD5::Reader ifile(iname.Get());
     HD5::Writer ofile(oname.Get());
-    Re4 const   idata = ifile.readTensor<Cx5>().abs().chip<4>(0);
-    auto const  info = ifile.readInfo();
-    auto const  fixed = Import(CChipMap(idata, 0), info);
+    // ITK does not like this being const
+    Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0);
+    auto const info = ifile.readInfo();
+    auto const fixed = Import(ChipMap(idata, 0), info);
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
-      auto const moving = Import(CChipMap(idata, ii), info);
+      auto const moving = Import(ChipMap(idata, ii), info);
+      fmt::print(stderr, "Calling Register\n");
       ofile.writeTransform(Register(fixed, moving), fmt::format("{:02d}", ii));
     }
     Log::End();
