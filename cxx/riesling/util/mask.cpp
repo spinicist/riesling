@@ -10,7 +10,7 @@ void main_mask(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
-  args::ValueFlag<float> thresh(parser, "T", "Use simple threshold instead of Otsu", {"thresh"});
+  args::ValueFlag<float> thresh(parser, "T", "Use simple threshold instead of Otsu", {'t', "thresh"});
   args::Flag k(parser, "K", "Crop bottom half in k direction", {'k'});
 
   ParseCommand(parser, iname, oname);

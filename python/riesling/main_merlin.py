@@ -30,7 +30,7 @@ import nibabel as nib
 import numpy as np
 
 from . import io
-from .merlin import versor3D_registration, extract_nav
+from .merlin import versor3D_registration, extract_nav, get_R_delta, versor_to_euler
 
 REG_FIELDS = ['R', 'delta']
 REG_FORMAT = [('<f4', (3, 3)), ('<f4', (3,))]
@@ -67,6 +67,7 @@ class Merlin_parser(object):
         PixelType = itk.D
         inavs = itk.imread(args.input, PixelType)
         fixed_image = extract_nav(inavs, 0)
+        reg = None
         if args.mask:
             mask_image = itk.imread(args.mask, itk.UC)
         else:
@@ -77,14 +78,16 @@ class Merlin_parser(object):
                 reg = versor3D_registration(fixed_image=fixed_image,
                                             moving_image=moving_image,
                                             mask_image=mask_image,
+                                            init=reg,
                                             sigmas=args.sigma,
                                             shrink=args.shrink,
                                             metric=args.metric,
                                             verbose=args.verbose,
                                             winsorize=args.winsorize)
-
-                ofile.create_dataset(f'{ii:03d}', data=np.array(
-                    [tuple([reg[f] for f in REG_FIELDS])], dtype=REG_DTYPE))
+                # Get and log results
+                p = get_R_delta(reg)
+                # logging.info(f"R:{p['R']} deg T: {p['delta']} mm")
+                ofile.create_dataset(f'{ii:03d}', data=np.array([tuple([p[f] for f in REG_FIELDS])], dtype=REG_DTYPE))
 
 
 def main():

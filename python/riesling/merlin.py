@@ -55,7 +55,7 @@ def versor_to_euler(versor):
     ry = np.arcsin(2*(q0*q2 - q3*q1))
     rx = np.arctan2(2*(q0*q3+q1*q2), 1-2*(q2**2+q3**2))
 
-    return rx, ry, rz
+    return np.rad2deg(np.array([rx, ry, rz]))
 
 
 def otsu_filter(image):
@@ -78,129 +78,6 @@ def otsu_filter(image):
     return filt
 
 
-def versor_reg_summary(registrations, reg_outs, names=None, doprint=True, show_legend=True):
-    """Summarise results from one or more versor registration experiments
-
-    Args:
-        registrations (list): List of registration objects
-        reg_outs (list): List of dictionaries of registration outputs
-        names (list, optional): Labels for each registration. Defaults to None.
-        doprint (bool, optional): Print output. Defaults to True.
-        show_legend (bool, optional): Show plot legend. Defaults to True.
-
-    Returns:
-        pandas.DataFrame: Summary of registrations
-    """
-
-    df_dict = {}
-    index = ['Trans X', 'Trans Y', 'Trans Z',
-             'Versor X', 'Versor Y', 'Versor Z',
-             'Iterations', 'Metric Value']
-    if doprint:
-        fig, axes = plt.subplots(ncols=3, nrows=3, figsize=(12, 8))
-
-    if not names:
-        names = ['Int %d' % x for x in range(len(registrations))]
-
-    for (reg, reg_out, name) in zip(registrations, reg_outs, names):
-        # Examine the result
-        transform = reg.GetTransform()
-        optimizer = reg.GetOptimizer()
-        final_parameters = transform.GetParameters()
-
-        versorX = final_parameters[0]
-        versorY = final_parameters[1]
-        versorZ = final_parameters[2]
-        transX = final_parameters[3]
-        transY = final_parameters[4]
-        transZ = final_parameters[5]
-        nits = optimizer.GetCurrentIteration()
-        best_val = optimizer.GetValue()
-
-        # Summarise data and store in dictionary
-        reg_data = [transX, transY, transZ,
-                    versorX, versorY, versorZ,
-                    nits, best_val]
-        df_dict[name] = reg_data
-
-        # Creat plots
-        if doprint:
-            ax = axes[0, 0]
-            ax.plot(reg_out['cv'], '-o')
-            ax.set_ylabel('')
-            ax.set_title('Optimizer Value')
-            ax.grid('on')
-
-            ax = axes[0, 1]
-            ax.plot(reg_out['lrr'], '-o')
-            ax.set_ylabel('')
-            ax.set_title('Learning Rate Relaxation')
-            ax.grid('on')
-
-            ax = axes[0, 2]
-            ax.plot(reg_out['sl'], '-o', label=name)
-            ax.set_ylabel('')
-            ax.set_title('Step Length')
-            ax.grid('on')
-            if show_legend:
-                ax.legend()
-
-            ax = axes[1, 0]
-            ax.plot(reg_out['tX'], '-o')
-            ax.set_ylabel('[mm]')
-            ax.set_title('Translation X')
-            ax.grid('on')
-
-            ax = axes[1, 1]
-            ax.plot(reg_out['tY'], '-o')
-            ax.set_ylabel('[mm]')
-            ax.set_title('Translation Y')
-            ax.grid('on')
-
-            ax = axes[1, 2]
-            ax.plot(reg_out['tZ'], '-o')
-            ax.set_ylabel('[mm]')
-            ax.set_title('Translation Z')
-            ax.grid('on')
-
-            ax = axes[2, 0]
-            ax.plot(reg_out['vX'], '-o')
-            ax.set_xlabel('Itteration')
-            ax.set_ylabel('')
-            ax.set_title('Versor X')
-            ax.grid('on')
-
-            ax = axes[2, 1]
-            ax.plot(reg_out['vY'], '-o')
-            ax.set_xlabel('Itteration')
-            ax.set_ylabel('')
-            ax.set_title('Versor Y')
-            ax.grid('on')
-
-            ax = axes[2, 2]
-            ax.plot(reg_out['vZ'], '-o')
-            ax.set_xlabel('Itteration')
-            ax.set_ylabel('')
-            ax.set_title('Versor Z')
-            ax.grid('on')
-
-    if doprint:
-        plt.tight_layout()
-        plt.show()
-
-    # Create Dataframe with output data
-    df = pd.DataFrame(df_dict, index=index)
-
-    # Determine if running in notebook or shell to get right print function
-    env = os.environ
-    program = os.path.basename(env['_'])
-
-    if doprint:
-        print(df)
-
-    return df
-
-
 def versor_watcher(reg_out, optimizer):
     """Logging for registration
 
@@ -213,7 +90,7 @@ def versor_watcher(reg_out, optimizer):
     """
 
     logging.debug("{:s} \t {:6s} \t {:6s} \t {:6s} \t {:6s} \t {:6s} \t {:6s} \t {:6s}".format(
-        'Itt', 'Value', 'vX', 'vY', 'vZ', 'tX', 'tY', 'tZ'))
+        'It', 'Value', 'vX', 'vY', 'vZ', 'tX', 'tY', 'tZ'))
 
     def opt_watcher():
         cv = optimizer.GetValue()
@@ -300,72 +177,22 @@ def threshold_image(image, low_lim):
     return thresh_filt.GetOutput()
 
 
-def resample_image(registration, moving_image, fixed_image):
-    """Resample image with registration parameters
-
-    Args:
-        registration (itk.ImageRegistrationMethodv4): Registration object
-        moving_image (itk.Image): Moving image
-        fixed_image (itk.Image): Fixed image
-
-    Returns:
-        itk.ResampleImageFilter: Resampler filter
-    """
-    logging.info("Resampling moving image")
-    transform = registration.GetTransform()
-    final_parameters = transform.GetParameters()
-
-    TransformType = itk.VersorRigid3DTransform[itk.D]
-    finalTransform = TransformType.New()
-    finalTransform.SetFixedParameters(
-        registration.GetOutput().Get().GetFixedParameters())
-    finalTransform.SetParameters(final_parameters)
-
-    ResampleFilterType = itk.ResampleImageFilter[type(moving_image),
-                                                 type(moving_image)]
-    resampler = ResampleFilterType.New()
-    resampler.SetTransform(finalTransform)
-    resampler.SetInput(moving_image)
-
-    resampler.SetSize(fixed_image.GetLargestPossibleRegion().GetSize())
-    resampler.SetOutputOrigin(fixed_image.GetOrigin())
-    resampler.SetOutputSpacing(fixed_image.GetSpacing())
-    resampler.SetOutputDirection(fixed_image.GetDirection())
-    resampler.SetDefaultPixelValue(0)
-    resampler.Update()
-
-    return resampler
-
-
-def get_versor_factors(registration):
+def get_R_delta(transform):
     """Calculate correction factors from Versor object
 
     Args:
-        registration (itk.ImageRegistrationMethodv4): Registration object
+        transform object from output of optimizer
 
     Returns:
         dict: Correction factors
     """
+    tfm2 = itk.VersorRigid3DTransform[itk.D].New()
+    # tfm2.SetFixedParameters(transform.GetFixedParameters())
+    tfm2.SetParameters(transform.GetParameters())
+    matrix = itk.array_from_matrix(tfm2.GetMatrix())
+    offset = np.array(tfm2.GetOffset())
 
-    transform = registration.GetTransform()
-    final_parameters = transform.GetParameters()
-
-    TransformType = itk.VersorRigid3DTransform[itk.D]
-    finalTransform = TransformType.New()
-    finalTransform.SetFixedParameters(
-        registration.GetOutput().Get().GetFixedParameters())
-    finalTransform.SetParameters(final_parameters)
-
-    matrix = itk.array_from_matrix(finalTransform.GetMatrix())
-    offset = np.array(finalTransform.GetOffset())
-    regParameters = registration.GetOutput().Get().GetParameters()
-
-    corrections = {'R': matrix,
-                   'v': np.array([regParameters[0], regParameters[1], regParameters[2],]),
-                   'delta': np.array([regParameters[3], regParameters[4], regParameters[5]])
-                   }
-
-    return corrections
+    return {'R': matrix, 'delta': offset}
 
 
 def setup_optimizer(PixelType, opt_range, relax_factor, nit=250, learning_rate=0.1, convergence_window_size=10, convergence_value=1E-6, min_step_length=1E-4):
@@ -404,7 +231,7 @@ def setup_optimizer(PixelType, opt_range, relax_factor, nit=250, learning_rate=0
 
     logging.info("Setting up optimizer")
     logging.info("Rot/Trans scales: {}/{}".format(opt_range[0], opt_range[1]))
-    logging.info("Number of itterations: %d" % nit)
+    logging.info("Number of iterations: %d" % nit)
     logging.info("Learning rate: %.2f" % learning_rate)
     logging.info("Relaxation factor: %.2f" % relax_factor)
     logging.info("Convergence window size: %d" % convergence_window_size)
@@ -423,9 +250,8 @@ def setup_optimizer(PixelType, opt_range, relax_factor, nit=250, learning_rate=0
 def versor3D_registration(fixed_image,
                           moving_image,
                           mask_image=None,
-                          opt_range=[np.deg2rad(1), 10],
-                          init_angle=0,
-                          init_axis=[0, 0, 1],
+                          opt_range=[0.1, 10],
+                          init=None,
                           relax_factor=0.5,
                           winsorize=False,
                           threshold=None,
@@ -437,8 +263,7 @@ def versor3D_registration(fixed_image,
                           convergence_value=1E-6,
                           min_step_length=1E-6,
                           nit=250,
-                          verbose=2,
-                          frame_index=0):
+                          verbose=2):
     """Multi-scale rigid body registration
 
     ITK registration framework inspired by ANTs which performs a multi-scale 3D versor registration 
@@ -475,7 +300,6 @@ def versor3D_registration(fixed_image,
         min_step_length (float, optional): Minimum step length. Defaults to 1E-6.
         nit (int, optional): Maximum number of iterations per scale. Defaults to 250.
         verbose (int, optional): Level of debugging (0/1/2). Defaults to 2.
-        frame_index (int, optional): Index of frame to register. Defaults to 0.
 
     Returns:
         tuple: (registration, reg_out, reg_par_name)
@@ -536,27 +360,32 @@ def versor3D_registration(fixed_image,
     # Setup versor transform
     logging.info("Initialising Versor Rigid 3D Transform")
     TransformType = itk.VersorRigid3DTransform[PixelType]
-    TransformInitializerType = itk.CenteredTransformInitializer[TransformType,
-                                                                ImageType, ImageType]
+    if init is None:
+        init_angle=0
+        init_axis=[0, 0, 1]
+        TransformInitializerType = itk.CenteredTransformInitializer[TransformType,
+                                                                    ImageType, ImageType]
 
-    initialTransform = TransformType.New()
-    initializer = TransformInitializerType.New()
-    initializer.SetTransform(initialTransform)
-    initializer.SetFixedImage(fixed_image)
-    initializer.SetMovingImage(moving_image)
-    initializer.GeometryOn()
-    initializer.InitializeTransform()
+        initialTransform = TransformType.New()
+        initializer = TransformInitializerType.New()
+        initializer.SetTransform(initialTransform)
+        initializer.SetFixedImage(fixed_image)
+        initializer.SetMovingImage(moving_image)
+        initializer.GeometryOn()
+        initializer.InitializeTransform()
 
-    VersorType = itk.Versor[itk.D]
-    VectorType = itk.Vector[itk.D, 3]
-    rotation = VersorType()
-    axis = VectorType()
-    axis[0] = init_axis[0]
-    axis[1] = init_axis[1]
-    axis[2] = init_axis[2]
-    angle = init_angle
-    rotation.Set(axis, angle)
-    initialTransform.SetRotation(rotation)
+        VersorType = itk.Versor[itk.D]
+        VectorType = itk.Vector[itk.D, 3]
+        rotation = VersorType()
+        axis = VectorType()
+        axis[0] = init_axis[0]
+        axis[1] = init_axis[1]
+        axis[2] = init_axis[2]
+        angle = init_angle
+        rotation.Set(axis, angle)
+        initialTransform.SetRotation(rotation)
+    else:
+        initialTransform = init
 
     # Setup optimizer
     optimizer = setup_optimizer(PixelType, opt_range, relax_factor, nit=int(nit),
@@ -607,146 +436,4 @@ def versor3D_registration(fixed_image,
 
     # Run registration
     registration.Update()
-
-    # Get and log results
-    corrections = get_versor_factors(registration)
-    rot_x, rot_y, rot_z = versor_to_euler(corrections['v'])
-
-    logging.info(f"Frame {frame_index} registration results:")
-    logging.info("Rotation: (%.2f, %.2f, %.2f) deg" %
-                 (np.rad2deg(rot_x), np.rad2deg(rot_y), np.rad2deg(rot_z)))
-    logging.info(f"Translation: {corrections['delta']} mm")
-
-    return corrections
-
-
-def histogram_threshold_estimator(img, plot=False, nbins=200):
-    """Estimate background intensity using histogram.
-
-    Initially used to reduce streaking in background but found to make little difference.
-
-    Args:
-        img (np.array): Image
-        plot (bool, optional): Plot result. Defaults to False.
-        nbins (int, optional): Number of histogram bins. Defaults to 200.
-    """
-    def smooth(x, window_len=10, window='hanning'):
-        """smooth the data using a window with requested size.
-
-        This method is based on the convolution of a scaled window with the signal.
-        The signal is prepared by introducing reflected copies of the signal 
-        (with the window size) in both ends so that transient parts are minimized
-        in the begining and end part of the output signal.
-
-        input:
-            x: the input signal 
-            window_len: the dimension of the smoothing window; should be an odd integer
-            window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
-                flat window will produce a moving average smoothing.
-
-        output:
-            the smoothed signal
-
-        example:
-
-        t=linspace(-2,2,0.1)
-        x=sin(t)+randn(len(t))*0.1
-        y=smooth(x)
-
-        see also: 
-
-        numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
-        scipy.signal.lfilter
-
-        TODO: the window parameter could be the window itself if an array instead of a string
-        NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
-
-        -> Obtained from the scipy cookbook at: https://scipy-cookbook.readthedocs.io/items/SignalSmooth.html
-        Modified to use np instead of numpy
-        """
-
-        if x.ndim != 1:
-            raise (ValueError, "smooth only accepts 1 dimension arrays.")
-
-        if x.size < window_len:
-            raise (ValueError, "Input vector needs to be bigger than window size.")
-
-        if window_len < 3:
-            return x
-
-        s = np.r_[x[window_len-1:0:-1], x, x[-2:-window_len-1:-1]]
-        if window == 'flat':  # moving average
-            w = np.ones(window_len, 'd')
-        else:
-            w = eval('np.'+window+'(window_len)')
-
-        y = np.convolve(w/w.sum(), s, mode='valid')
-
-        return y[int(window_len/2-1):-int(window_len/2)]
-
-    y, x = np.histogram(abs(img.flatten()), bins=nbins)
-    x = (x[1:]+x[:-1])/2
-    y = smooth(y)
-
-    dx = (x[1:]+x[:-1])/2
-    dx2 = (dx[1:]+dx[:-1])/2
-    dy = np.diff(y)
-    dy2 = np.diff(smooth(dy))
-
-    # Peak of histogram
-    imax = np.argmax(y)
-
-    # Find max of second derivative after this peak
-    dy2max = np.argmax(dy2[imax:])
-    thr = int(dx2[imax+dy2max])
-
-    if plot:
-        plt.figure()
-        plt.plot(x, y/max(y), label='H')
-        plt.plot(dx, dy/np.max(dy), label='dH/dx')
-        ldy2 = plt.plot(dx2, dy2/max(abs(dy2)), label=r'$dH^2/dx^2$')
-        plt.axis([0, 1500, -1, 1])
-
-        thr = int(dx2[imax+dy2max])
-        plt.plot([dx2[imax+dy2max], dx2[imax+dy2max]], [-1, 1], '--',
-                 color=ldy2[0].get_color(), label='Thr=%d' % thr)
-        plt.legend()
-        plt.show()
-
-    return thr
-
-    #################################################################
-    # Legacy functions
-    #################################################################
-
-
-def versor_resample(registration, moving_image, fixed_image):
-
-    Dimension = 3
-    PixelType = itk.D
-    FixedImageType = itk.Image[PixelType, Dimension]
-    MovingImageType = itk.Image[PixelType, Dimension]
-
-    transform = registration.GetTransform()
-    final_parameters = transform.GetParameters()
-
-    TransformType = itk.VersorRigid3DTransform[itk.D]
-    finalTransform = TransformType.New()
-    finalTransform.SetFixedParameters(
-        registration.GetOutput().Get().GetFixedParameters())
-    finalTransform.SetParameters(final_parameters)
-
-    ResampleFilterType = itk.ResampleImageFilter[MovingImageType,
-                                                 FixedImageType]
-    resampler = ResampleFilterType.New()
-    resampler.SetTransform(finalTransform)
-    resampler.SetInput(moving_image)
-
-    resampler.SetSize(fixed_image.GetLargestPossibleRegion().GetSize())
-    resampler.SetOutputOrigin(fixed_image.GetOrigin())
-    resampler.SetOutputSpacing(fixed_image.GetSpacing())
-    resampler.SetOutputDirection(fixed_image.GetDirection())
-    resampler.SetDefaultPixelValue(0)
-    resampler.Update()
-
-    return resampler.GetOutput()
+    return registration.GetOutput().Get()
