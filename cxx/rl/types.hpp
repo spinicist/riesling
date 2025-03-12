@@ -31,7 +31,10 @@ using FixZero = Eigen::type2index<0>; // Fix a dimension to zero in reshape/broa
 using FixOne = Eigen::type2index<1>;  // Fix a dimension to one in reshape/broadcast
 
 using B0 = Eigen::TensorFixedSize<bool, Eigen::Sizes<>>;
-using B3 = Eigen::Tensor<bool, 3>;
+template <int N> using BN = Eigen::Tensor<bool, N>;
+using B3 = BN<3>;
+using B4 = BN<4>;
+using B5 = BN<5>;
 
 using I0 = Eigen::TensorFixedSize<Index, Eigen::Sizes<>>;
 using I1 = Eigen::Tensor<Index, 1>;

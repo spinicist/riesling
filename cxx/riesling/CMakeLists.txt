@@ -100,12 +100,12 @@ endif()
 # Option for this one is in main CMakeLists.txt so it is present for the VCPKG call before Project
 if(BUILD_MERLIN)
     find_package(args CONFIG REQUIRED)
-    find_package(ITK 5.3.0 REQUIRED
+    find_package(ITK 5.4.0 REQUIRED
     COMPONENTS
       ITKCommon
       ITKImageFilterBase
-      ITKIOTransformInsightLegacy
-      ITKOptimizers
+      ITKRegistrationMethodsv4
+      ITKOptimizersv4
     )
     add_executable(merlin
         main_merlin.cpp

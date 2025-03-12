@@ -15,7 +15,7 @@ struct Info
 struct Transform
 {
   Eigen::Matrix3f R = Eigen::Matrix3f::Identity();
-  Eigen::Array3f  δ = Eigen::Array3f::Zero();
+  Eigen::Vector3f δ = Eigen::Vector3f::Zero();
 };
 
 } // namespace rl

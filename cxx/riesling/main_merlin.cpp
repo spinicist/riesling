@@ -4,6 +4,7 @@
 #include "rl/tensors.hpp"
 
 #include <itkCenteredTransformInitializer.h>
+#include <itkCommand.h>
 #include <itkImageRegistrationMethod.h>
 #include <itkImportImageFilter.h>
 #include <itkLinearInterpolateImageFunction.h>
@@ -58,42 +59,80 @@ auto Import(Re3Map const data, Info const info) -> TImage::Pointer
   return import->GetOutput();
 }
 
-auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> Transform
+class OptLog : public itk::Command
 {
-  auto metric = TMetric::New();
-  auto transform = TTfm::New();
-  auto optimizer = TOpt::New();
-  auto interpolator = TInterp::New();
-  auto init = TInit::New();
-  auto registration = TReg::New();
+protected:
+  OptLog() = default;
 
-  init->SetTransform(transform);
+public:
+  using Self = OptLog;
+  using Superclass = itk::Command;
+  using Pointer = itk::SmartPointer<Self>;
+  itkNewMacro(Self);
+
+  void Execute(itk::Object *caller, const itk::EventObject &event) override { Execute((const itk::Object *)caller, event); }
+
+  void Execute(const itk::Object *object, const itk::EventObject &event) override
+  {
+    auto opt = dynamic_cast<TOpt const *>(object);
+    if (!(itk::IterationEvent().CheckEvent(&event))) { return; }
+    Log::Debug("Reg", "{:02d}: {:.3f} [{:.3f}]", opt->GetCurrentIteration(), opt->GetValue(),
+               fmt::join(opt->GetCurrentPosition(), ","));
+  }
+};
+
+auto ITKToRIESLING(TTfm::Pointer tfm) -> Transform
+{
+  auto const m = tfm->GetMatrix();
+  auto const o = tfm->GetTranslation();
+  Transform  t;
+  for (Index ii = 0; ii < 3; ii++) {
+    for (Index ij = 0; ij < 3; ij++) {
+      t.R(ij, ii) = m(ii, ij); // Seem to need a transpose here. Not clear why.
+    }
+    t.δ(ii) = o[ii];
+  }
+  return t;
+}
+
+auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> TTfm::Pointer
+{
+  auto tfm = TTfm::New();
+
+  auto init = TInit::New();
+  init->SetTransform(tfm);
   init->SetFixedImage(fixed);
   init->SetMovingImage(moving);
   init->GeometryOn();
   init->InitializeTransform();
 
+  TOpt::ScalesType scales(tfm->GetNumberOfParameters());
+  auto const       rotScale = 1. / (0.1 * M_PI / 180.);
+  auto const       transScale = 1. / 10.;
+  scales[0] = scales[1] = scales[2] = rotScale;
+  scales[3] = scales[4] = scales[5] = transScale;
+  auto observer = OptLog::New();
+
+  auto optimizer = TOpt::New();
+  optimizer->SetScales(scales);
+  optimizer->AddObserver(itk::IterationEvent(), observer);
+  optimizer->SetRelaxationFactor(0.5);
+  optimizer->SetMaximumStepLength(1);
+  optimizer->SetMinimumStepLength(1e-4);
+  optimizer->SetGradientMagnitudeTolerance(1e-4);
+  optimizer->SetNumberOfIterations(200);
+
+  auto metric = TMetric::New();
+  auto interpolator = TInterp::New();
+  auto registration = TReg::New();
   registration->SetMetric(metric);
   registration->SetOptimizer(optimizer);
-  registration->SetTransform(transform);
+  registration->SetTransform(tfm);
   registration->SetInterpolator(interpolator);
   registration->SetFixedImage(fixed);
   registration->SetMovingImage(moving);
   registration->SetFixedImageRegion(fixed->GetLargestPossibleRegion());
-  registration->SetInitialTransformParameters(transform->GetParameters());
-  
-  TOpt::ScalesType scales(transform->GetNumberOfParameters());
-  auto const rotScale = 1.0/(0.5 * M_PI/180);
-  scales[0] = scales[1] = scales[2] = rotScale;
-  scales[3] = scales[4] = scales[5] = 1.0; // Translation
-  optimizer->SetMaximumStepLength(4.00);
-  optimizer->SetMinimumStepLength(0.01);
-  optimizer->SetNumberOfIterations(200);
-  optimizer->SetScales(scales);
-
-  // Connect an observer
-  // auto observer = CommandIterationUpdate::New();
-  // optimizer->AddObserver( itk::IterationEvent(), observer );
+  registration->SetInitialTransformParameters(tfm->GetParameters());
 
   try {
     registration->Update();
@@ -101,18 +140,8 @@ auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> Transform
     throw Log::Failure("Reg", "{}", err.what());
   }
 
-  auto final = TTfm::New();
-  final->SetParameters(registration->GetLastTransformParameters());
-  auto const m = final->GetMatrix();
-  auto const o = final->GetOffset();
-  Transform  t;
-  for (Index ii = 0; ii < 3; ii++) {
-    for (Index ij = 0; ij < 3; ij++) {
-      t.R(ii, ij) = m(ii, ij);
-    }
-    t.δ(ii) = o[ii];
-  }
-  return t;
+  tfm->SetParameters(registration->GetLastTransformParameters());
+  return tfm;
 }
 
 int main(int const argc, char const *const argv[])
@@ -125,6 +154,7 @@ int main(int const argc, char const *const argv[])
 
   try {
     parser.ParseCLI(argc, argv);
+    SetLogging("MERLIN");
     if (!iname) { throw args::Error("No input file specified"); }
     if (!oname) { throw args::Error("No output file specified"); }
     HD5::Reader ifile(iname.Get());
@@ -132,11 +162,15 @@ int main(int const argc, char const *const argv[])
     // ITK does not like this being const
     Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0);
     auto const info = ifile.readInfo();
+    auto       tfm = TTfm::New();
     auto const fixed = Import(ChipMap(idata, 0), info);
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = Import(ChipMap(idata, ii), info);
-      ofile.writeTransform(Register(fixed, moving), fmt::format("{:02d}", ii));
+      Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
+      auto tfm = Register(fixed, moving);
+      ofile.writeTransform(ITKToRIESLING(tfm), fmt::format("{:02d}", ii));
     }
+    Log::Print("MERLIN", "Finished");
     Log::End();
   } catch (args::Help &) {
     fmt::print(stderr, "{}\n", parser.Help());

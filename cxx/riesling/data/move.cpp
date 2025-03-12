@@ -29,7 +29,8 @@ void main_move(args::Subparser &parser)
     for (auto const &t : ts) {
       auto const tfm = tfile.readTransform(t);
       auto const inav = std::stol(t);
-      traj.moveInFOV(tfm.R, tfm.δ, inav * tpnav.Get(), tpnav.Get(), ks);
+      Log::Print(cmd, "Moving navigator {}", t);
+      traj.moveInFOV(tfm.R, info.direction.inverse() * tfm.δ, inav * tpnav.Get(), tpnav.Get(), ks);
     }
   } else {
     traj.moveInFOV(R.Get(), info.direction.inverse() * shift.Get(), ks);
