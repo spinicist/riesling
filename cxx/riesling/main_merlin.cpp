@@ -50,7 +50,6 @@ auto Import(Re3Map const data, Info const info) -> TImage::Pointer
 
   auto import = TImport::New();
   import->SetRegion(region);
-  fmt::print(stderr, "region\n{}\n", fmt::streamed(region));
   import->SetSpacing(s);
   import->SetOrigin(o);
   import->SetDirection(d);
@@ -82,9 +81,15 @@ auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> Transform
   registration->SetMovingImage(moving);
   registration->SetFixedImageRegion(fixed->GetLargestPossibleRegion());
   registration->SetInitialTransformParameters(transform->GetParameters());
+  
+  TOpt::ScalesType scales(transform->GetNumberOfParameters());
+  auto const rotScale = 1.0/(0.5 * M_PI/180);
+  scales[0] = scales[1] = scales[2] = rotScale;
+  scales[3] = scales[4] = scales[5] = 1.0; // Translation
   optimizer->SetMaximumStepLength(4.00);
   optimizer->SetMinimumStepLength(0.01);
   optimizer->SetNumberOfIterations(200);
+  optimizer->SetScales(scales);
 
   // Connect an observer
   // auto observer = CommandIterationUpdate::New();
@@ -130,7 +135,6 @@ int main(int const argc, char const *const argv[])
     auto const fixed = Import(ChipMap(idata, 0), info);
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = Import(ChipMap(idata, ii), info);
-      fmt::print(stderr, "Calling Register\n");
       ofile.writeTransform(Register(fixed, moving), fmt::format("{:02d}", ii));
     }
     Log::End();
