@@ -37,6 +37,6 @@ void main_autofocus(args::Subparser &parser)
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
-  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
   Log::Print(cmd, "Finished");
 }

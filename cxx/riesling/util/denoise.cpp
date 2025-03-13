@@ -37,9 +37,9 @@ void main_denoise(args::Subparser &parser)
       if (ii % di == 0) {
         if (ext_x) {
           auto const xit = ext_x->forward(xi);
-          Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Image);
+          Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
         } else {
-          Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xi.data(), HD5::Dims::Image);
+          Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xi.data(), HD5::Dims::Images);
         }
       }
     };
@@ -48,9 +48,9 @@ void main_denoise(args::Subparser &parser)
       if (debugZ && (ii % di == 0)) {
         if (std::holds_alternative<Sz5>(regs[ir].shape)) {
           auto const Fshape = std::get<Sz5>(regs[ir].shape);
-          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Image);
-          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Image);
-          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Image);
+          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Images);
         }
         if (std::holds_alternative<Sz6>(regs[ir].shape)) {
           auto const Fshape = std::get<Sz6>(regs[ir].shape);
@@ -64,6 +64,6 @@ void main_denoise(args::Subparser &parser)
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   }
   if (scale != 1.f) { x.device(Threads::TensorDevice()) = x / Cx(scale); }
-  WriteOutput(cmd, oname.Get(), x, HD5::Dims::Image, input.readInfo());
+  WriteOutput(cmd, oname.Get(), x, HD5::Dims::Images, input.readInfo());
   Log::Print(cmd, "Finished");
 }

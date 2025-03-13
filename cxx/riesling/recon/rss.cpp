@@ -40,6 +40,6 @@ void main_recon_rss(args::Subparser &parser)
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), rss.dimension(3), nT), rss.dimensions());
   auto             out = oc.forward(rss);
 
-  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
+  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   Log::Print(cmd, "Finished");
 }

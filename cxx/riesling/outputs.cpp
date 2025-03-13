@@ -45,7 +45,7 @@ void WriteResidual(std::string const              &cmd,
   auto const r = lsmr.run(CollapseToConstVector(noncart));
   Log::Print(cmd, "Finished calculating residual");
   HD5::Writer writer(fname, true);
-  writer.writeTensor(HD5::Keys::Residual, R1.A->ishape, r.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Residual, R1.A->ishape, r.data(), HD5::Dims::Images);
 }
 
 } // namespace rl

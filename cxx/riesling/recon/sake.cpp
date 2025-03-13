@@ -93,7 +93,7 @@ void main_sake(args::Subparser &parser)
     out.chip<4>(iv) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt() / cropped.constant(scale);
   }
   HD5::Writer writer(coreArgs.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
   writer.writeInfo(info);
   writer.writeString("log");
   Log::Print(cmd, "Finished");

@@ -40,6 +40,6 @@ void main_slice_img(args::Subparser &parser)
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Data, imgs.dimensions(), imgs.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, imgs.dimensions(), imgs.data(), HD5::Dims::Images);
   Log::Print(cmd, "Finished");
 }

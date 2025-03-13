@@ -95,7 +95,7 @@ auto ITKToRIESLING(TTfm::Pointer tfm) -> Transform
   return t;
 }
 
-auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> TTfm::Pointer
+auto Register(TImage::Pointer fixed, TImage::Pointer moving, TImage::Pointer mask) -> TTfm::Pointer
 {
   auto tfm = TTfm::New();
 
@@ -129,11 +129,10 @@ auto Register(TImage::Pointer fixed, TImage::Pointer moving) -> TTfm::Pointer
   registration->SetOptimizer(optimizer);
   registration->SetTransform(tfm);
   registration->SetInterpolator(interpolator);
-  registration->SetFixedImage(fixed);
-  registration->SetMovingImage(moving);
   registration->SetFixedImageRegion(fixed->GetLargestPossibleRegion());
   registration->SetInitialTransformParameters(tfm->GetParameters());
-
+  registration->SetFixedImage(fixed);
+  registration->SetMovingImage(moving);
   try {
     registration->Update();
   } catch (const itk::ExceptionObject &err) {
@@ -157,17 +156,23 @@ int main(int const argc, char const *const argv[])
     SetLogging("MERLIN");
     if (!iname) { throw args::Error("No input file specified"); }
     if (!oname) { throw args::Error("No output file specified"); }
+    TImage::Pointer mask = nullptr;
+    Re3 mdata;
+    if (mname) {
+      HD5::Reader mfile(mname.Get());
+      mdata = mfile.readTensor<Re3>();
+      mask = Import(mdata, mfile.readInfo());
+    }
     HD5::Reader ifile(iname.Get());
     HD5::Writer ofile(oname.Get());
-    // ITK does not like this being const
-    Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0);
+    Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0); // ITK does not like this being const
     auto const info = ifile.readInfo();
     auto       tfm = TTfm::New();
     auto const fixed = Import(ChipMap(idata, 0), info);
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = Import(ChipMap(idata, ii), info);
       Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
-      auto tfm = Register(fixed, moving);
+      auto tfm = Register(fixed, moving, mask);
       ofile.writeTransform(ITKToRIESLING(tfm), fmt::format("{:02d}", ii));
     }
     Log::Print("MERLIN", "Finished");

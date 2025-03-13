@@ -43,7 +43,7 @@ void main_recon_rlsq(args::Subparser &parser)
   auto [reg, A, ext_x] = Regularizers(regOpts, R.A);
 
   ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
-    if (ii % di == 0) { Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Image); }
+    if (ii % di == 0) { Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images); }
   };
 
   ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
@@ -51,9 +51,9 @@ void main_recon_rlsq(args::Subparser &parser)
     if (debugZ && (ii % di == 0)) {
       if (std::holds_alternative<Sz5>(reg[ir].shape)) {
         auto const Fshape = std::get<Sz5>(reg[ir].shape);
-        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Image);
-        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Image);
-        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Image);
+        Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Images);
+        Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Images);
+        Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Images);
       }
       if (std::holds_alternative<Sz6>(reg[ir].shape)) {
         auto const Fshape = std::get<Sz6>(reg[ir].shape);
@@ -73,7 +73,7 @@ void main_recon_rlsq(args::Subparser &parser)
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), shape[3], shape[4]), R.A->ishape);
   auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
-  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
+  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   if (coreArgs.residual) {
     WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseArgs.Get(), preArgs.Get(), traj, xm, R.A,
                   noncart);

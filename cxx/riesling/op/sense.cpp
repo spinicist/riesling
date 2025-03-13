@@ -47,7 +47,7 @@ void main_op_sense(args::Subparser &parser)
     for (auto it = 0; it < nT; it++) {
       sense.adjoint(CChipMap(channels, it), ChipMap(images, it));
     }
-    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
+    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Images);
   }
   Log::Print(cmd, "Finished");
 }

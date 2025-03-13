@@ -32,5 +32,5 @@ void main_wavelets(args::Subparser &parser)
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(reader.readInfo());
-  writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Images);
 }

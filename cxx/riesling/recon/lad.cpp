@@ -56,7 +56,7 @@ void main_recon_lad(args::Subparser &parser)
 
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[3], nT), A->ishape);
   auto             out = oc.adjoint(xm);
-  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Image, info);
+  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   if (coreArgs.residual) {
     WriteResidual(cmd, coreArgs.oname.Get(), reconArgs.Get(), gridArgs.Get(), senseOpts, preArgs.Get(), traj, xm, A, noncart);
   }

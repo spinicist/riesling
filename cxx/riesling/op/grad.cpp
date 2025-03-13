@@ -48,7 +48,7 @@ void main_grad(args::Subparser &parser)
       auto const    shape = input.dimensions();
       TOps::Grad<5> g(FirstN<5>(shape), std::vector<Index>{1, 2, 3}, diffOrder.Get());
       auto const    output = g.adjoint(input);
-      writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
+      writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Images);
     }
   }
 }

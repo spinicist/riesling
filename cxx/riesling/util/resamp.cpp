@@ -42,6 +42,6 @@ void main_resamp(args::Subparser &parser)
 
   HD5::Writer writer(oname.Get());
   writer.writeInfo(oFo);
-  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Image);
+  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Images);
   rl::Log::Print(cmd, "Finished");
 }

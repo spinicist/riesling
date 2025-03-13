@@ -44,7 +44,7 @@ void main_fft(args::Subparser &parser)
       }
       images.chip<4>(iv) = img;
     }
-    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Image);
+    writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Images);
   } break;
 
   case 6: {
