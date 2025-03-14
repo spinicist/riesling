@@ -109,6 +109,7 @@ if(BUILD_MERLIN)
     )
     add_executable(merlin
         main_merlin.cpp
+        merlin.cpp
         args.cpp
     )
     target_link_libraries(merlin PRIVATE

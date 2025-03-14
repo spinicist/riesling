@@ -43,7 +43,7 @@ void main_basis_sim(args::Subparser &parser)
 {
   args::Positional<std::string> oname(parser, "OUTPUT", "Name for the basis file");
 
-  args::MapFlag<std::string, Sequences> seq(parser, "T", "SegmentedZTE type (default T1T2)", {"seq"}, SequenceMap);
+  args::MapFlag<std::string, Sequences> seq(parser, "T", "Sequence type (default ZTE)", {"seq"}, SequenceMap);
   args::ValueFlag<Index>                samp(parser, "S", "Samples per spoke", {"samples"}, 64);
   args::ValueFlag<Index>                gap(parser, "G", "Samples in gap", {"gap"}, 3);
   args::ValueFlag<Index>                sps(parser, "SPS", "Spokes per segment", {'s', "sps"}, 128);
