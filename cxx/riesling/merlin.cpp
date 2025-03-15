@@ -110,13 +110,12 @@ void AlignMoments(ImageType::Pointer fixed, ImageType::Pointer moving, Transform
   t->SetTranslation(translation);
 
   /** Solve Wahba's problem --- http://en.wikipedia.org/wiki/Wahba%27s_problem */
-
   vnl_matrix<double> B;
 
-  auto fixedPrimaryEigenVector = fixedPA.GetVnlMatrix().get_row(2).as_ref();
-  auto fixedSecondaryEigenVector = fixedPA.GetVnlMatrix().get_row(1).as_ref();
-  auto movingPrimaryEigenVector = movingPA.GetVnlMatrix().get_row(2).as_ref();
-  auto movingSecondaryEigenVector = movingPA.GetVnlMatrix().get_row(1).as_ref();
+  auto fixedPrimaryEigenVector = fixedPA.GetVnlMatrix().get_row(2).as_vector();
+  auto fixedSecondaryEigenVector = fixedPA.GetVnlMatrix().get_row(1).as_vector();
+  auto movingPrimaryEigenVector = movingPA.GetVnlMatrix().get_row(2).as_vector();
+  auto movingSecondaryEigenVector = movingPA.GetVnlMatrix().get_row(1).as_vector();
 
   B = outer_product(movingPrimaryEigenVector, fixedPrimaryEigenVector) +
       outer_product(movingSecondaryEigenVector, fixedSecondaryEigenVector);
@@ -148,7 +147,7 @@ auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType:
   metric->SetUseMovingImageGradientFilter(true);
   metric->SetUseFixedImageGradientFilter(true);
   metric->SetFixedImage(fixed);
-  metric->SetVirtualDomainFromImage(fixed);
+  // metric->SetVirtualDomainFromImage(fixed);
   metric->SetMovingImage(moving);
   metric->SetUseSampledPointSet(false);
 
@@ -169,6 +168,7 @@ auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType:
   using SamplePointType = typename MetricSamplePointSetType::PointType;
   Index const     stride = 8;
   Index           index = 0;
+  Index           id = 0;
   SamplePointType point;
   auto            samplePointSet = MetricSamplePointSetType::New();
   samplePointSet->Initialize();
@@ -178,16 +178,18 @@ auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType:
     if (index % stride == 0) {
       fixed->TransformIndexToPhysicalPoint(It.GetIndex(), point);
       if (!fixedMask || fixedMask->IsInsideInWorldSpace(point)) {
-        samplePointSet->SetPoint(index, point);
-      } else {
-        index--;
+        samplePointSet->SetPoint(id++, point);
+        index++;
       }
+    } else {
+      index++;
     }
-    index++;
   }
-  metric->Initialize();
+  fmt::print(stderr, "index {} stride {}\n", index, stride);
+  fmt::print(stderr, "samplepoints {}\n", samplePointSet->GetNumberOfPoints());
   metric->SetMovingTransform(t);
-  fmt::print(stderr, "metric\n{}\n", fmt::streamed(metric));
+  metric->Initialize();
+  fmt::print(stderr, "m\n{}\n", fmt::streamed(metric->GetVirtualImage()->GetBufferPointer()));
   return metric;
 }
 
@@ -238,8 +240,12 @@ public:
         rl::Log::Debug("MERLIN", "{:02d} {:.3f} [{:3f}]", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","));
       }
     } else if (typeid(event) == typeid(itk::EndEvent)) {
-      rl::Log::Debug("MERLIN", "Optimizer finished. Best metric {:.3f}",
-                     opt_->GetMetricValuesList()[opt_->GetBestParametersIndex()]);
+      if (opt_->GetMetricValuesList().size()) {
+        rl::Log::Debug("MERLIN", "Optimizer finished. Best metric {:.3f}",
+                       opt_->GetMetricValuesList()[opt_->GetBestParametersIndex()]);
+      } else {
+        rl::Log::Debug("MERLIN", "Optimizer contained no metric values");
+      }
     }
   }
 };
@@ -252,7 +258,6 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Opt
   scalesEstimator->SetTransformForward(true);
 
   RegistrationParameterScalesFromPhysicalShiftType::ScalesType scale(t->GetNumberOfParameters());
-  fmt::print(stderr, "scales\n{}\n", fmt::streamed(scalesEstimator));
   scalesEstimator->EstimateScales(scale);
 
   using LocalOptimizerType = itk::ConjugateGradientLineSearchOptimizerv4;
@@ -263,7 +268,7 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Opt
   localOptimizer->SetMaximumLineSearchIterations(10);
   localOptimizer->SetLearningRate(0.1);
   localOptimizer->SetMaximumStepSizeInPhysicalUnits(0.1);
-  localOptimizer->SetNumberOfIterations(8);
+  localOptimizer->SetNumberOfIterations(10);
   localOptimizer->SetMinimumConvergenceValue(1e-6);
   localOptimizer->SetConvergenceWindowSize(5);
   localOptimizer->SetDoEstimateLearningRateOnce(true);
@@ -276,10 +281,10 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Opt
 
   int          trialCounter = 0;
   auto         parametersList = multiStartOptimizer->GetParametersList();
-  double const aMax = M_PI / 4;
-  double const aStep = M_PI / 4;
-  double const tMax = 50.;
-  double const tStep = 50.;
+  double const aMax = 0;
+  double const aStep = 1;
+  double const tMax = 0;
+  double const tStep = 1;
   double const eps = 1e-6;
   using AffineTransformType = itk::AffineTransform<double, 3>;
   auto                   affine = AffineTransformType::New();
@@ -333,11 +338,11 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Po
   auto t = TransformType::New();
   InitializeTransform(fixed, moving, t);
   AlignMoments(fixed, moving, t);
-  auto              metric = SetupMetric(fixed, moving, mask, t);
-  auto              optimizer = SetupOptimizer(metric, t);
-  Observer::Pointer o = Observer::New();
-  o->SetOptimizer(optimizer);
+  auto metric = SetupMetric(fixed, moving, mask, t);
+  auto optimizer = SetupOptimizer(metric, t);
   try {
+    Observer::Pointer o = Observer::New();
+    o->SetOptimizer(optimizer);
     optimizer->StartOptimization();
   } catch (const itk::ExceptionObject &err) {
     throw rl::Log::Failure("Reg", "{}", err.what());
