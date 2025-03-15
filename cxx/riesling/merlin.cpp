@@ -11,17 +11,9 @@
 #include <itkCenteredTransformInitializer.h>
 #include <itkCommand.h>
 #include <itkConjugateGradientLineSearchOptimizerv4.h>
-#include <itkCorrelationImageToImageMetricv4.h>
-#include <itkImageMaskSpatialObject.h>
-#include <itkImageMomentsCalculator.h>
 #include <itkImageToImageMetricv4.h>
 #include <itkImportImageFilter.h>
-#include <itkJointHistogramMutualInformationImageToImageMetricv4.h>
-#include <itkLandmarkBasedTransformInitializer.h>
-#include <itkLinearInterpolateImageFunction.h>
 #include <itkMattesMutualInformationImageToImageMetricv4.h>
-#include <itkMersenneTwisterRandomVariateGenerator.h>
-#include <itkMultiStartOptimizerv4.h>
 #include <itkRegistrationParameterScalesFromPhysicalShift.h>
 
 #include "vnl/vnl_cross.h"
@@ -139,7 +131,7 @@ void AlignMoments(ImageType::Pointer fixed, ImageType::Pointer moving, Transform
 }
 
 using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
-auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Pointer mask, TransformType::Pointer t)
+auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::RegionType region, TransformType::Pointer t)
   -> MetricType::Pointer
 {
   auto metric = MetricType::New();
@@ -147,22 +139,11 @@ auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType:
   metric->SetUseMovingImageGradientFilter(true);
   metric->SetUseFixedImageGradientFilter(true);
   metric->SetFixedImage(fixed);
-  // metric->SetVirtualDomainFromImage(fixed);
+  if (flux::all(region.GetSize(), [](int i) { return i > 0; })) {
+    metric->SetVirtualDomain(fixed->GetSpacing(), fixed->GetOrigin(), fixed->GetDirection(), region);
+  }
   metric->SetMovingImage(moving);
   metric->SetUseSampledPointSet(false);
-
-  using ImageMaskSpatialObjectType = itk::ImageMaskSpatialObject<3>;
-  ImageMaskSpatialObjectType::Pointer fixedMask = nullptr;
-  if (mask.IsNotNull()) {
-    using MaskImageType = typename ImageMaskSpatialObjectType::ImageType;
-    using CastFilterType = itk::CastImageFilter<ImageType, MaskImageType>;
-    auto cast = CastFilterType::New();
-    cast->SetInput(mask);
-    cast->Update();
-    fixedMask = ImageMaskSpatialObjectType::New();
-    fixedMask->SetImage(cast->GetOutput());
-    metric->SetFixedImageMask(fixedMask);
-  }
 
   using MetricSamplePointSetType = typename MetricType::FixedSampledPointSetType;
   using SamplePointType = typename MetricSamplePointSetType::PointType;
@@ -177,23 +158,16 @@ auto SetupMetric(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType:
   for (It.GoToBegin(); !It.IsAtEnd(); ++It) {
     if (index % stride == 0) {
       fixed->TransformIndexToPhysicalPoint(It.GetIndex(), point);
-      if (!fixedMask || fixedMask->IsInsideInWorldSpace(point)) {
-        samplePointSet->SetPoint(id++, point);
-        index++;
-      }
-    } else {
-      index++;
+      samplePointSet->SetPoint(id++, point);
     }
+    index++;
   }
-  fmt::print(stderr, "index {} stride {}\n", index, stride);
-  fmt::print(stderr, "samplepoints {}\n", samplePointSet->GetNumberOfPoints());
   metric->SetMovingTransform(t);
   metric->Initialize();
-  fmt::print(stderr, "m\n{}\n", fmt::streamed(metric->GetVirtualImage()->GetBufferPointer()));
   return metric;
 }
 
-using OptimizerType = itk::MultiStartOptimizerv4;
+using OptimizerType = itk::ConjugateGradientLineSearchOptimizerv4;
 class Observer : public itk::Command
 {
 private:
@@ -240,12 +214,12 @@ public:
         rl::Log::Debug("MERLIN", "{:02d} {:.3f} [{:3f}]", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","));
       }
     } else if (typeid(event) == typeid(itk::EndEvent)) {
-      if (opt_->GetMetricValuesList().size()) {
-        rl::Log::Debug("MERLIN", "Optimizer finished. Best metric {:.3f}",
-                       opt_->GetMetricValuesList()[opt_->GetBestParametersIndex()]);
-      } else {
-        rl::Log::Debug("MERLIN", "Optimizer contained no metric values");
-      }
+      // if (opt_->GetMetricValuesList().size()) {
+      //   rl::Log::Debug("MERLIN", "Optimizer finished. Best metric {:.3f}",
+      //                  opt_->GetMetricValuesList()[opt_->GetBestParametersIndex()]);
+      // } else {
+      //   rl::Log::Debug("MERLIN", "Optimizer contained no metric values");
+      // }
     }
   }
 };
@@ -260,84 +234,28 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Opt
   RegistrationParameterScalesFromPhysicalShiftType::ScalesType scale(t->GetNumberOfParameters());
   scalesEstimator->EstimateScales(scale);
 
-  using LocalOptimizerType = itk::ConjugateGradientLineSearchOptimizerv4;
-  auto localOptimizer = LocalOptimizerType::New();
+  auto localOptimizer = OptimizerType::New();
   localOptimizer->SetLowerLimit(0);
   localOptimizer->SetUpperLimit(2);
   localOptimizer->SetEpsilon(0.1);
   localOptimizer->SetMaximumLineSearchIterations(10);
   localOptimizer->SetLearningRate(0.1);
   localOptimizer->SetMaximumStepSizeInPhysicalUnits(0.1);
-  localOptimizer->SetNumberOfIterations(10);
-  localOptimizer->SetMinimumConvergenceValue(1e-6);
+  localOptimizer->SetNumberOfIterations(64);
+  localOptimizer->SetMinimumConvergenceValue(1e-5);
   localOptimizer->SetConvergenceWindowSize(5);
   localOptimizer->SetDoEstimateLearningRateOnce(true);
   localOptimizer->SetScales(scale);
   localOptimizer->SetMetric(metric);
 
-  auto multiStartOptimizer = OptimizerType::New();
-  multiStartOptimizer->SetScales(scale);
-  multiStartOptimizer->SetMetric(metric);
-
-  int          trialCounter = 0;
-  auto         parametersList = multiStartOptimizer->GetParametersList();
-  double const aMax = 0;
-  double const aStep = 1;
-  double const tMax = 0;
-  double const tStep = 1;
-  double const eps = 1e-6;
-  using AffineTransformType = itk::AffineTransform<double, 3>;
-  auto                   affine = AffineTransformType::New();
-  auto                   search = TransformType::New();
-  itk::Vector<double, 3> axis1(0.0);
-  itk::Vector<double, 3> axis2(0.0);
-  axis1[0] = 1.0;
-  axis2[1] = 1.0;
-  for (double a1 = -aMax; a1 <= aMax + eps; a1 += aStep) {
-    for (double a2 = -aMax; a2 <= aMax + eps; a2 += aStep) {
-      for (double a3 = -aMax; a3 <= aMax + eps; a3 += aStep) {
-        for (double t1 = -tMax; t1 <= tMax + eps; t1 += tStep) {
-          for (double t2 = -tMax; t2 <= tMax + eps; t2 += tStep) {
-            for (double t3 = -tMax; t3 <= tMax + eps; t3 += tStep) {
-              AffineTransformType::OutputVectorType st;
-              st[0] = t1;
-              st[1] = t2;
-              st[2] = t3;
-
-              affine->SetIdentity();
-              affine->SetCenter(t->GetCenter());
-              affine->SetOffset(t->GetOffset());
-              affine->SetMatrix(t->GetMatrix());
-              affine->Translate(st, 0);
-              affine->Rotate3D(axis1, a1, 1);
-              affine->Rotate3D(axis2, a2, 1);
-              affine->Rotate3D(axis1, a3, 1);
-
-              search->SetIdentity();
-              search->SetCenter(t->GetCenter());
-              search->SetOffset(t->GetOffset());
-              search->SetMatrix(affine->GetMatrix());
-              search->Translate(st, 0);
-              parametersList.push_back(search->GetParameters());
-            }
-            trialCounter++;
-          }
-        }
-      }
-    }
-  }
-
-  multiStartOptimizer->SetParametersList(parametersList);
-  multiStartOptimizer->SetLocalOptimizer(localOptimizer);
-  rl::Log::Debug("MERLIN", "Search list has {} entries", trialCounter);
-  return multiStartOptimizer;
+  return localOptimizer;
 }
 
-auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Pointer mask) -> TransformType::Pointer
+auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::RegionType mask) -> TransformType::Pointer
 {
   auto t = TransformType::New();
   InitializeTransform(fixed, moving, t);
-  AlignMoments(fixed, moving, t);
+  // AlignMoments(fixed, moving, t);
   auto metric = SetupMetric(fixed, moving, mask, t);
   auto optimizer = SetupOptimizer(metric, t);
   try {
@@ -349,7 +267,7 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Po
   }
 
   auto tfm = TransformType::New();
-  tfm->SetParameters(optimizer->GetBestParameters());
+  tfm->SetParameters(optimizer->GetCurrentPosition());
   return tfm;
 }
 } // namespace merlin

@@ -1,8 +1,8 @@
 #include "args.hpp"
+#include "merlin.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
 #include "rl/tensors.hpp"
-#include "merlin.hpp"
 
 extern args::Group    global_group;
 extern args::HelpFlag help;
@@ -16,7 +16,7 @@ int main(int const argc, char const *const argv[])
   args::GlobalOptions           globals(parser, global_group);
   args::Positional<std::string> iname(parser, "INPUT", "ifile HD5 file");
   args::Positional<std::string> oname(parser, "OUTPUT", "Output HD5 file");
-  args::ValueFlag<std::string>  mname(parser, "MASK", "Mask HD5 file", {'m', "mask"});
+  SzFlag<6>                     mask(parser, "MASK", "Mask HD5 file", {'m', "mask"});
 
   try {
     parser.ParseCLI(argc, argv);
@@ -24,15 +24,23 @@ int main(int const argc, char const *const argv[])
     if (!iname) { throw args::Error("No input file specified"); }
     if (!oname) { throw args::Error("No output file specified"); }
 
+    merlin::ImageType::RegionType maskRegion;
+    if (mask) {
+      auto const                               m = mask.Get();
+      merlin::ImageType::RegionType::SizeType  sz;
+      merlin::ImageType::RegionType::IndexType ind;
+      for (Index ii = 0; ii < 3; ii++) {
+        ind[ii] = m[ii * 2];
+        sz[ii] = m[ii * 2 + 1];
+      }
+      maskRegion.SetSize(sz);
+      maskRegion.SetIndex(ind);
+    }
+
+
     HD5::Reader ifile(iname.Get());
     HD5::Writer ofile(oname.Get());
-    merlin::ImageType::Pointer mask = nullptr;
-    Re3 mdata;
-    if (mname) {
-      HD5::Reader mfile(mname.Get());
-      mdata = mfile.readTensor<Re3>();
-      mask = merlin::Import(mdata, mfile.readInfo());
-    }
+
     Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0); // ITK does not like this being const
     auto const info = ifile.readInfo();
     auto       tfm = merlin::TransformType::New();
@@ -40,7 +48,7 @@ int main(int const argc, char const *const argv[])
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = merlin::Import(ChipMap(idata, ii), info);
       Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
-      auto tfm = merlin::Register(fixed, moving, mask);
+      auto tfm = merlin::Register(fixed, moving, maskRegion);
       ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:02d}", ii));
     }
     Log::Print("MERLIN", "Finished");

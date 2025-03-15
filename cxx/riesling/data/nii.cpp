@@ -20,7 +20,13 @@ void main_nii(args::Subparser &parser)
   Info const  info = input.readInfo();
 
   Cx4 output;
-  if (input.order() == 5) {
+  if (input.order() == 3) {
+    Cx3 const image = input.readTensor<Cx3>(dset.Get());
+    Sz3 const sz = image.dimensions();
+    output = image.reshape(Sz4{sz[0], sz[1], sz[2], 1});
+  } else if (input.order() == 4) {
+    output = input.readTensor<Cx4>(dset.Get());
+  } else if (input.order() == 5) {
     Cx5 const image = input.readTensor<Cx5>(dset.Get());
     Sz5 const sz = image.dimensions();
     output = image.reshape(Sz4{sz[0], sz[1], sz[2], sz[3] * sz[4]});

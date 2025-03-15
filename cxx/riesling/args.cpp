@@ -90,6 +90,8 @@ template <int N> void SzReader<N>::operator()(std::string const &name, std::stri
 template struct SzReader<2>;
 template struct SzReader<3>;
 template struct SzReader<4>;
+template struct SzReader<5>;
+template struct SzReader<6>;
 
 template <typename T, int ND>
 void ArrayReader<T, ND>::operator()(std::string const &name, std::string const &value, Eigen::Array<T, ND, 1> &v)

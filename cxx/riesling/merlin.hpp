@@ -12,6 +12,6 @@ using TransformType = itk::VersorRigid3DTransform<double>;
 
 auto Import(rl::Re3Map const data, rl::Info const info) -> ImageType::Pointer;
 auto ITKToRIESLING(TransformType::Pointer t) -> rl::Transform;
-auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Pointer mask) -> TransformType::Pointer;
+auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::RegionType mask) -> TransformType::Pointer;
 
 } // namespace merlin
