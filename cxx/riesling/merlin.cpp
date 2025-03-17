@@ -13,6 +13,7 @@
 #include <itkConjugateGradientLineSearchOptimizerv4.h>
 #include <itkImageToImageMetricv4.h>
 #include <itkImportImageFilter.h>
+#include <itkMeanSquaresImageToImageMetricv4.h>
 #include <itkMattesMutualInformationImageToImageMetricv4.h>
 #include <itkMultiStartOptimizerv4.h>
 #include <itkRegistrationParameterScalesFromPhysicalShift.h>
@@ -131,14 +132,15 @@ void AlignMoments(ImageType::Pointer fixed, ImageType::Pointer moving, Transform
   t->SetMatrix(TransformType::MatrixType(A));
 }
 
-using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
+using MetricType = itk::MeanSquaresImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
+// using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
 auto SetupMetric(ImageType::Pointer     fixed,
                  ImageType::Pointer     moving,
                  ImageType::RegionType  maskRegion,
                  TransformType::Pointer t) -> MetricType::Pointer
 {
   auto metric = MetricType::New();
-  metric->SetNumberOfHistogramBins(64);
+  // metric->SetNumberOfHistogramBins(64);
   metric->SetUseMovingImageGradientFilter(true);
   metric->SetUseFixedImageGradientFilter(true);
   metric->SetFixedImage(fixed);
@@ -205,21 +207,12 @@ public:
   {
     if (typeid(event) == typeid(itk::StartEvent)) {
       this->total_ = opt_->GetNumberOfIterations();
-
-      // if (interval_ == 0) {
-      //   if (total_ > 10) {
-      //     interval_ = total_ / 10;
-      //   } else {
-      //     interval_ = 1;
-      //   }
-      // }
       interval_ = 1;
-
-      rl::Log::Debug("LOCAL", "Local optimizer start [{:.3f}]", fmt::join(opt_->GetCurrentPosition(), ","));
+      rl::Log::Debug("LOCAL", "Local optimizer start [{:.3f}] LR {}", fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
     } else if (typeid(event) == typeid(itk::IterationEvent)) {
       auto const ii = opt_->GetCurrentIteration();
       if (ii % interval_ == 0) {
-        rl::Log::Debug("LOCAL", "{:02d} {:.3f} [{:3f}]", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","));
+        rl::Log::Debug("LOCAL", "{:02d} {:.3f} [{:.3f}] LR {}", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
       }
     } else if (typeid(event) == typeid(itk::EndEvent)) {
       rl::Log::Debug("LOCAL", "Local Optimizer finished [{:.3f}]", fmt::join(opt_->GetCurrentPosition(), ","));
@@ -272,7 +265,7 @@ public:
     } else if (typeid(event) == typeid(itk::IterationEvent)) {
       auto const ii = opt_->GetCurrentIteration();
       if (ii % interval_ == 0) {
-        rl::Log::Debug("MERLIN", "{:02d} {:.3f} [{:3f}]", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","));
+        rl::Log::Debug("MERLIN", "{:02d} {:.3f} [{:.3f}]", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","));
       }
     } else if (typeid(event) == typeid(itk::EndEvent)) {
       if (opt_->GetMetricValuesList().size()) {
@@ -309,7 +302,7 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Bot
   localOptimizer->SetNumberOfIterations(64);
   localOptimizer->SetMinimumConvergenceValue(1e-5);
   localOptimizer->SetConvergenceWindowSize(5);
-  localOptimizer->SetDoEstimateLearningRateOnce(true);
+  localOptimizer->SetDoEstimateLearningRateOnce(false);
   localOptimizer->SetScales(scale);
   localOptimizer->SetMetric(metric);
 
@@ -383,12 +376,23 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Re
   // AlignMoments(fixed, moving, t);
   auto metric = SetupMetric(fixed, moving, mask, t);
   auto opts = SetupOptimizer(metric, t);
+  TransformType::ParametersType tp = t->GetParameters();
   try {
-    auto mso = MultiStartObserver::New();
-    auto lo = LocalObserver::New();
-    mso->SetOptimizer(opts.mso);
-    lo->SetOptimizer(opts.lo);
-    opts.mso->StartOptimization();
+    auto lobs = LocalObserver::New();
+    lobs->SetOptimizer(opts.lo);
+    metric->SetParameters(tp);
+    opts.lo->SetLearningRate(0.1);
+    opts.lo->StartOptimization();
+    metric->SetParameters(tp);
+    opts.lo->SetLearningRate(0.1);
+    opts.lo->StartOptimization();
+    metric->SetParameters(tp);
+    opts.lo->StartOptimization();
+    // auto mso = MultiStartObserver::New();
+    
+    // mso->SetOptimizer(opts.mso);
+    
+    // opts.mso->StartOptimization();
     exit(EXIT_SUCCESS);
   } catch (const itk::ExceptionObject &err) {
     throw rl::Log::Failure("Reg", "{}", err.what());
