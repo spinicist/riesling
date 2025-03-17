@@ -29,7 +29,7 @@
             ]
         }
     },
-    "builtin-baseline": "428b3e2a5ad75f87ea276068f2619963eea2eb1a",
+    "builtin-baseline": "043abf2fa419c288d594a6b96b98a811457bd9b5",
     "overrides": [
         {
             "name": "hdf5",
