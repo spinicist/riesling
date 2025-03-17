@@ -11,7 +11,7 @@ void main_noisify(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
-  args::ValueFlag<float>        σ(parser, "S", "Noise standard deviation", {"std"}, 1.f);
+  args::ValueFlag<float>        σ(parser, "S", "Noise standard deviation (1.0)", {"std"}, 1.f);
 
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
