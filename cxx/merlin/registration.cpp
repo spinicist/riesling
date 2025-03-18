@@ -1,6 +1,9 @@
-#include "merlin.hpp"
+#include "registration.hpp"
 
 #include "rl/log.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/tensors.hpp"
+#include "../args.hpp"
 
 #include <flux.hpp>
 
@@ -20,6 +23,8 @@
 
 #include "vnl/vnl_cross.h"
 #include "vnl/vnl_inverse.h"
+
+using namespace rl;
 
 namespace merlin {
 auto Import(rl::Re3Map const data, rl::Info const info) -> ImageType::Pointer
@@ -283,3 +288,40 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Re
   return t;
 }
 } // namespace merlin
+
+void main_reg(args::Subparser &parser)
+{
+  args::Positional<std::string> iname(parser, "INPUT", "ifile HD5 file");
+  args::Positional<std::string> oname(parser, "OUTPUT", "Output HD5 file");
+  SzFlag<6>                     mask(parser, "MASK", "Mask HD5 file", {'m', "mask"});
+  ParseCommand(parser, iname, oname);
+
+    merlin::ImageType::RegionType maskRegion;
+    if (mask) {
+      auto const                               m = mask.Get();
+      merlin::ImageType::RegionType::SizeType  sz;
+      merlin::ImageType::RegionType::IndexType ind;
+      for (Index ii = 0; ii < 3; ii++) {
+        ind[ii] = m[ii * 2];
+        sz[ii] = m[ii * 2 + 1];
+      }
+      maskRegion.SetSize(sz);
+      maskRegion.SetIndex(ind);
+    }
+
+
+    HD5::Reader ifile(iname.Get());
+    HD5::Writer ofile(oname.Get());
+
+    Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0); // ITK does not like this being const
+    auto const info = ifile.readInfo();
+    auto       tfm = merlin::TransformType::New();
+    auto const fixed = merlin::Import(ChipMap(idata, 0), info);
+    for (Index ii = 1; ii < idata.dimension(3); ii++) {
+      auto const moving = merlin::Import(ChipMap(idata, ii), info);
+      Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
+      auto tfm = merlin::Register(fixed, moving, maskRegion);
+      ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:02d}", ii));
+    }
+    Log::Print("MERLIN", "Finished");
+}
