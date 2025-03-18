@@ -132,15 +132,15 @@ void AlignMoments(ImageType::Pointer fixed, ImageType::Pointer moving, Transform
   t->SetMatrix(TransformType::MatrixType(A));
 }
 
-using MetricType = itk::MeanSquaresImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
-// using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
+// using MetricType = itk::MeanSquaresImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
+using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
 auto SetupMetric(ImageType::Pointer     fixed,
                  ImageType::Pointer     moving,
                  ImageType::RegionType  maskRegion,
                  TransformType::Pointer t) -> MetricType::Pointer
 {
   auto metric = MetricType::New();
-  // metric->SetNumberOfHistogramBins(64);
+  metric->SetNumberOfHistogramBins(64);
   metric->SetUseMovingImageGradientFilter(true);
   metric->SetUseFixedImageGradientFilter(true);
   metric->SetFixedImage(fixed);
@@ -255,12 +255,17 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Re
   obs->SetOptimizer(opt);
   double                               bestMetricValue = std::numeric_limits<double>::max();
   TransformType::ParametersType        bestParameters;
-  std::array<std::array<double, 3>, 7> starts = {
-    std::array<double, 3>{0, 0, 0}, {0, 0, -10}, {0, 0, 10}, {0, -10, 0}, {0, 10, 0}, {-10, 0, 0}, {10, 0, 0}};
+  // std::array<std::array<double, 3>, 7> starts = {
+  //   std::array<double, 3>{0, 0, 0}, {0, 0, -10}, {0, 0, 10}, {0, -10, 0}, {0, 10, 0}, {-10, 0, 0}, {10, 0, 0}};
   // std::array<std::array<double, 3>, 1> starts = {std::array<double, 3>{0, 0, 0}};
-  for (auto const &st : starts) {
+
+  std::array<std::array<double, 3>, 7> axes{std::array<double, 3>{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}, {1, 0, 0}, {1, 0, 0}};
+  std::array<double, 7> angles{0, -M_PI/6, M_PI/6, -M_PI/6, M_PI/6, -M_PI/6, M_PI/6};
+
+  for (Index ii = 0; ii < 7; ii++) {
     auto tt = t->Clone();
-    tt->Translate(TransformType::OutputVectorType(st));
+    // tt->Translate(TransformType::OutputVectorType(st));
+    tt->SetRotation(TransformType::AxisType(axes[ii]), angles[ii]);
     metric->SetTransform(tt);
     opt->SetLearningRate(1);
     try {
