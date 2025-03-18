@@ -1,7 +1,6 @@
 option(BUILD_BIN "Build the binary" ON)
 if(BUILD_BIN)
     find_package(args CONFIG REQUIRED)
-    find_package(flux CONFIG REQUIRED)
 
     add_executable(riesling
         main.cpp
@@ -73,7 +72,6 @@ if(BUILD_BIN)
     target_link_libraries(riesling PRIVATE
         rl
         taywee::args
-        flux::flux
     )
     target_include_directories(riesling PRIVATE ${CMAKE_CURRENT_LIST_DIR})
     set_target_properties(riesling PROPERTIES

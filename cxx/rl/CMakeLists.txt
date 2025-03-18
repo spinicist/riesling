@@ -1,6 +1,7 @@
 find_package(Threads REQUIRED)
 find_package(ducc CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
+find_package(flux CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
@@ -199,6 +200,7 @@ target_link_libraries(rl PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
     ducc::ducc
     Eigen3::Eigen
+    flux::flux
     fmt::fmt
     hdf5::hdf5-static
     hdf5::hdf5_hl-static
