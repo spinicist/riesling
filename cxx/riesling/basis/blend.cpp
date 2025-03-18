@@ -27,7 +27,7 @@ void main_blend(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   Cx5         images = input.readTensor<Cx5>(dset.Get());
-  Sz5 const   dims = images.dimensions();
+  Sz5 const   ishape = images.dimensions();
 
   if (!iname) { throw args::Error("No basis file specified"); }
   auto const basis = LoadBasis(bname.Get());
@@ -41,10 +41,11 @@ void main_blend(args::Subparser &parser)
   if (sps.size() == 1) { sps.resize(tps.size()); }
   if (sps.size() != tps.size()) { throw Log::Failure(cmd, "Must have same number of trace and sample points"); }
   Index const nO = sps.size();
-  Cx5         out(AddFront(LastN<4>(dims), nO));
+  Index const nT = ishape[4];
+  Cx5         out(AddBack(FirstN<3>(ishape), nO, nT));
 
   for (Index io = 0; io < nO; io++) {
-    out.chip<0>(io).device(Threads::TensorDevice()) = basis->blend(images, sps[io], tps[io], nr.Get());
+    out.chip<3>(io).device(Threads::TensorDevice()) = basis->blend(images, sps[io], tps[io], nr.Get());
   }
   HD5::Writer writer(oname.Get());
   writer.writeInfo(input.readInfo());

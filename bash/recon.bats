@@ -30,6 +30,7 @@
     PREFIX="frames"
     riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5
     riesling recon-lsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --basis=${PREFIX}.h5
+    riesling basis-blend ${PREFIX}-lsq.h5 ${PREFIX}.h5 ${PREFIX}-blend.h5
 }
 
 @test "Run wavelets reconstruction" {

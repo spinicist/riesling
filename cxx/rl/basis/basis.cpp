@@ -64,7 +64,7 @@ void Basis::concat(Basis const &other)
 }
 
 template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index const it, Index nr) const -> CxN<ND - 1>
-{
+{ // Here ND will the order of the full images including the basis and time dimensions
   if (is < 0 || is >= nSample()) { throw Log::Failure("Basis", "Invalid sample point {}", is); }
   if (it < 0 || it >= nTrace()) { throw Log::Failure("Basis", "Invalid trace point {}", it); }
   if (nr > nB()) { throw Log::Failure("Basis", "Requested {} basis vectors but there are only {}", nB(), nr); }
@@ -76,13 +76,13 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
       .conjugate()
       .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
       .slice(Sz1{0}, Sz1{nr})
-      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>());
   } else {
     return B.chip<2>(it)
       .chip<1>(is)
       .slice(Sz1{0}, Sz1{nr})
       .conjugate()
-      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>());
   }
 }
 
