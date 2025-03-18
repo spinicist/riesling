@@ -13,8 +13,8 @@
 #include <itkConjugateGradientLineSearchOptimizerv4.h>
 #include <itkImageToImageMetricv4.h>
 #include <itkImportImageFilter.h>
-#include <itkMeanSquaresImageToImageMetricv4.h>
 #include <itkMattesMutualInformationImageToImageMetricv4.h>
+#include <itkMeanSquaresImageToImageMetricv4.h>
 #include <itkMultiStartOptimizerv4.h>
 #include <itkRegistrationParameterScalesFromPhysicalShift.h>
 
@@ -148,11 +148,7 @@ auto SetupMetric(ImageType::Pointer     fixed,
 
   using MetricSamplePointSetType = typename MetricType::FixedSampledPointSetType;
   using SamplePointType = typename MetricSamplePointSetType::PointType;
-  Index const     stride = 1;
-  Index           index = 0;
-  Index           id = 0;
-  SamplePointType point;
-  auto            samplePointSet = MetricSamplePointSetType::New();
+  auto samplePointSet = MetricSamplePointSetType::New();
   samplePointSet->Initialize();
   ImageType::RegionType sampleRegion;
   if (flux::all(maskRegion.GetSize(), [](int i) { return i > 0; })) {
@@ -162,12 +158,11 @@ auto SetupMetric(ImageType::Pointer     fixed,
   }
 
   itk::ImageRegionConstIteratorWithIndex<ImageType> It(fixed, sampleRegion);
+  Index                                             id = 0;
+  SamplePointType                                   point;
   for (It.GoToBegin(); !It.IsAtEnd(); ++It) {
-    if (index % stride == 0) {
-      fixed->TransformIndexToPhysicalPoint(It.GetIndex(), point);
-      samplePointSet->SetPoint(id++, point);
-    }
-    index++;
+    fixed->TransformIndexToPhysicalPoint(It.GetIndex(), point);
+    samplePointSet->SetPoint(id++, point);
   }
   metric->SetFixedSampledPointSet(samplePointSet);
   metric->SetUseSampledPointSet(true);
@@ -208,81 +203,22 @@ public:
     if (typeid(event) == typeid(itk::StartEvent)) {
       this->total_ = opt_->GetNumberOfIterations();
       interval_ = 1;
-      rl::Log::Debug("LOCAL", "Local optimizer start [{:.3f}] LR {}", fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
+      rl::Log::Debug("LOCAL", "Start {:5.3e} [{:5.3e}] LR {}", opt_->GetMetric()->GetValue(),
+                     fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
     } else if (typeid(event) == typeid(itk::IterationEvent)) {
-      auto const ii = opt_->GetCurrentIteration();
-      if (ii % interval_ == 0) {
-        rl::Log::Debug("LOCAL", "{:02d} {:.3f} [{:.3f}] LR {}", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
-      }
-    } else if (typeid(event) == typeid(itk::EndEvent)) {
-      rl::Log::Debug("LOCAL", "Local Optimizer finished [{:.3f}]", fmt::join(opt_->GetCurrentPosition(), ","));
-    }
-  }
-};
-
-using OptimizerType = itk::MultiStartOptimizerv4;
-class MultiStartObserver : public itk::Command
-{
-private:
-  itk::WeakPointer<OptimizerType> opt_;
-
-  int total_ = 0, interval_ = 0;
-
-protected:
-  MultiStartObserver(){};
-
-public:
-  using Self = MultiStartObserver;
-  using Superclass = itk::Command;
-  using Pointer = itk::SmartPointer<Self>;
-  using ConstPointer = itk::SmartPointer<const Self>;
-
-  itkOverrideGetNameOfClassMacro(Self);
-  itkNewMacro(Self);
-  void SetOptimizer(OptimizerType *optimizer)
-  {
-    opt_ = optimizer;
-    opt_->AddObserver(itk::IterationEvent(), this);
-    opt_->AddObserver(itk::StartEvent(), this);
-    opt_->AddObserver(itk::EndEvent(), this);
-  }
-  void Execute(itk::Object *caller, const itk::EventObject &event) override { Execute((const itk::Object *)caller, event); }
-  void Execute(const itk::Object *, const itk::EventObject &event) override
-  {
-    if (typeid(event) == typeid(itk::StartEvent)) {
-      this->total_ = opt_->GetNumberOfIterations();
-
-      // if (interval_ == 0) {
-      //   if (total_ > 10) {
-      //     interval_ = total_ / 10;
-      //   } else {
-      //     interval_ = 1;
-      //   }
+      // auto const ii = opt_->GetCurrentIteration();
+      // if (ii % interval_ == 0) {
+      //   rl::Log::Debug("LOCAL", "{:02d} {:5.3e} [{:5.3e}] LR {}", ii, opt_->GetValue(),
+      //                  fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
       // }
-      interval_ = 1;
-
-      rl::Log::Debug("MERLIN", "Optimizer start");
-    } else if (typeid(event) == typeid(itk::IterationEvent)) {
-      auto const ii = opt_->GetCurrentIteration();
-      if (ii % interval_ == 0) {
-        rl::Log::Debug("MERLIN", "{:02d} {:.3f} [{:.3f}]", ii, opt_->GetValue(), fmt::join(opt_->GetCurrentPosition(), ","));
-      }
     } else if (typeid(event) == typeid(itk::EndEvent)) {
-      if (opt_->GetMetricValuesList().size()) {
-        rl::Log::Debug("MERLIN", "Optimizer finished. Best metric {:.3f} Best Parameters [{:.3f}]",
-                       opt_->GetMetricValuesList()[opt_->GetBestParametersIndex()], fmt::join(opt_->GetBestParameters(), ","));
-      } else {
-        rl::Log::Debug("MERLIN", "Optimizer contained no metric values");
-      }
+      rl::Log::Debug("LOCAL", "End   {:5.3e} [{:5.3e}]", opt_->GetMetric()->GetValue(),
+                     fmt::join(opt_->GetCurrentPosition(), ","));
     }
   }
 };
 
-struct Both {
-  OptimizerType::Pointer mso;
-  LocalOptimizerType::Pointer lo;
-};
-auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Both
+auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> LocalOptimizerType::Pointer
 {
   using RegistrationParameterScalesFromPhysicalShiftType = itk::RegistrationParameterScalesFromPhysicalShift<MetricType>;
   auto scalesEstimator = RegistrationParameterScalesFromPhysicalShiftType::New();
@@ -300,73 +236,12 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Bot
   localOptimizer->SetLearningRate(0.1);
   localOptimizer->SetMaximumStepSizeInPhysicalUnits(0.1);
   localOptimizer->SetNumberOfIterations(64);
-  localOptimizer->SetMinimumConvergenceValue(1e-5);
+  localOptimizer->SetMinimumConvergenceValue(1e-4);
   localOptimizer->SetConvergenceWindowSize(5);
   localOptimizer->SetDoEstimateLearningRateOnce(false);
   localOptimizer->SetScales(scale);
   localOptimizer->SetMetric(metric);
-
-  auto multiStartOptimizer = OptimizerType::New();
-  multiStartOptimizer->SetScales(scale);
-  multiStartOptimizer->SetMetric(metric);
-  int          trialCounter = 0;
-  auto         parametersList = multiStartOptimizer->GetParametersList();
-  double const aMax = 0;
-  double const aStep = 1;
-  double const tMax = 50;
-  double const tStep = 50;
-  double const eps = 1e-6;
-  using AffineTransformType = itk::AffineTransform<double, 3>;
-  auto affine = AffineTransformType::New();
-
-  itk::Vector<double, 3> axis1(0.0);
-  itk::Vector<double, 3> axis2(0.0);
-  axis1[0] = 1.0;
-  axis2[1] = 1.0;
-  parametersList.push_back(t->GetParameters());
-  parametersList.push_back(t->GetParameters());
-  fmt::print(stderr, "t\n{}\n", fmt::streamed(t->GetParameters()));
-  for (double a1 = -aMax; a1 <= aMax + eps; a1 += aStep) {
-    for (double a2 = -aMax; a2 <= aMax + eps; a2 += aStep) {
-      for (double a3 = -aMax; a3 <= aMax + eps; a3 += aStep) {
-        for (double t1 = -tMax; t1 <= tMax + eps; t1 += tStep) {
-          for (double t2 = -tMax; t2 <= tMax + eps; t2 += tStep) {
-            for (double t3 = -tMax; t3 <= tMax + eps; t3 += tStep) {
-              AffineTransformType::OutputVectorType st;
-              st[0] = t1;
-              st[1] = t2;
-              st[2] = t3;
-
-              // affine->SetIdentity();
-              // affine->SetCenter(t->GetCenter());
-              // affine->SetOffset(t->GetOffset());
-              // affine->SetMatrix(t->GetMatrix());
-              // affine->Translate(st, 0);
-              // affine->Rotate3D(axis1, a1, 1);
-              // affine->Rotate3D(axis2, a2, 1);
-              // affine->Rotate3D(axis1, a3, 1);
-
-              auto search = TransformType::New();
-              // search->SetParameters(t->GetParameters());
-              search->SetFixedParameters(t->GetFixedParameters());
-              // search->SetIdentity();
-              // search->SetCenter(t->GetCenter());
-              // search->SetOffset(t->GetOffset());
-              // search->SetMatrix(affine->GetMatrix());
-              search->Translate(st, 0);
-              fmt::print(stderr, "search {} {}\n", trialCounter, fmt::streamed(search->GetParameters()));
-              parametersList.push_back(search->GetParameters());
-              trialCounter++;
-            }
-          }
-        }
-      }
-    }
-  }
-  multiStartOptimizer->SetParametersList(parametersList);
-  multiStartOptimizer->SetLocalOptimizer(localOptimizer);
-  rl::Log::Debug("MERLIN", "Search list has {} entries", trialCounter);
-  return {multiStartOptimizer, localOptimizer};
+  return localOptimizer;
 }
 
 auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::RegionType mask) -> TransformType::Pointer
@@ -375,31 +250,31 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Re
   InitializeTransform(fixed, moving, t);
   // AlignMoments(fixed, moving, t);
   auto metric = SetupMetric(fixed, moving, mask, t);
-  auto opts = SetupOptimizer(metric, t);
-  TransformType::ParametersType tp = t->GetParameters();
-  try {
-    auto lobs = LocalObserver::New();
-    lobs->SetOptimizer(opts.lo);
-    metric->SetParameters(tp);
-    opts.lo->SetLearningRate(0.1);
-    opts.lo->StartOptimization();
-    metric->SetParameters(tp);
-    opts.lo->SetLearningRate(0.1);
-    opts.lo->StartOptimization();
-    metric->SetParameters(tp);
-    opts.lo->StartOptimization();
-    // auto mso = MultiStartObserver::New();
-    
-    // mso->SetOptimizer(opts.mso);
-    
-    // opts.mso->StartOptimization();
-    exit(EXIT_SUCCESS);
-  } catch (const itk::ExceptionObject &err) {
-    throw rl::Log::Failure("Reg", "{}", err.what());
+  auto opt = SetupOptimizer(metric, t);
+  auto obs = LocalObserver::New();
+  obs->SetOptimizer(opt);
+  double                               bestMetricValue = std::numeric_limits<double>::max();
+  TransformType::ParametersType        bestParameters;
+  std::array<std::array<double, 3>, 7> starts = {
+    std::array<double, 3>{0, 0, 0}, {0, 0, -10}, {0, 0, 10}, {0, -10, 0}, {0, 10, 0}, {-10, 0, 0}, {10, 0, 0}};
+  // std::array<std::array<double, 3>, 1> starts = {std::array<double, 3>{0, 0, 0}};
+  for (auto const &st : starts) {
+    auto tt = t->Clone();
+    tt->Translate(TransformType::OutputVectorType(st));
+    metric->SetTransform(tt);
+    opt->SetLearningRate(1);
+    try {
+      opt->StartOptimization();
+    } catch (const itk::ExceptionObject &err) {
+      rl::Log::Warn("MERLIN", "{}", err.what());
+    }
+    auto const thisValue = opt->GetValue();
+    if (thisValue < bestMetricValue) {
+      bestMetricValue = thisValue;
+      bestParameters = opt->GetCurrentPosition(); }
   }
-
-  auto tfm = TransformType::New();
-  tfm->SetParameters(opts.mso->GetBestParameters());
-  return tfm;
+  t->SetParameters(bestParameters);
+  rl::Log::Debug("MERLIN", "Final {:5.3e} [{:5.3e}]", bestMetricValue, fmt::join(bestParameters, ","));
+  return t;
 }
 } // namespace merlin
