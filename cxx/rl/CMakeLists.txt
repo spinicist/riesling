@@ -8,7 +8,6 @@ find_package(NIFTI CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
 find_package(tl-ranges CONFIG REQUIRED)
 
-
 set(SRC_FILES
 apodize.cpp
 colors.cpp
@@ -236,5 +235,15 @@ install(EXPORT rl-targets
 )
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rl-config.cmake "
 include(\${CMAKE_CURRENT_LIST_DIR}/rl-targets.cmake)
+
+find_package(Threads REQUIRED)
+find_package(ducc CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(flux CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(hdf5 CONFIG REQUIRED)
+find_package(NIFTI CONFIG REQUIRED)
+find_package(scn CONFIG REQUIRED)
+find_package(tl-ranges CONFIG REQUIRED)
 ")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/rl-config.cmake DESTINATION share/rl)
