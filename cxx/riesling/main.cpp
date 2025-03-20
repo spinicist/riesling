@@ -29,6 +29,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, move, "move", "Shift and rotate data within FOV");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");
+  COMMAND(data, real, "real", "Make complex images real valued");
   COMMAND(data, slice_nc, "slice", "Slice non-cartesian data");
   COMMAND(data, slice_img, "slice-img", "Slice images");
 

@@ -29,6 +29,7 @@ if(BUILD_BIN)
         data/move.cpp
         data/nii.cpp
         data/noisify.cpp
+        data/real.cpp
         data/slicenc.cpp
         data/sliceimg.cpp
 

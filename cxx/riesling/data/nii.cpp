@@ -11,7 +11,8 @@ void main_nii(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output nii file");
-  args::Flag                    mag(parser, "MAGNITUDE", "Output magnitude images only", {"mag", 'm'});
+  args::Flag                    real(parser, "REAL", "Write magnitude images", {"real", 'r'});
+  args::Flag                    mag(parser, "MAGNITUDE", "Write magnitude images", {"mag", 'm'});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (default image)", {'d', "dset"}, "data");
 
   ParseCommand(parser, iname);
@@ -40,6 +41,8 @@ void main_nii(args::Subparser &parser)
 
   if (mag) {
     WriteNifti(info, Re4(output.abs()), oname.Get());
+  } else if (real) {
+    WriteNifti(info, Re4(output.real()), oname.Get());
   } else {
     WriteNifti(info, output, oname.Get());
   }
