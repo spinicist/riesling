@@ -27,5 +27,5 @@ AllowShortLambdasOnASingleLine: true
 AlignAfterOpenBracket: Align
 AlignConsecutiveDeclarations: Consecutive
 BreakConstructorInitializers: BeforeComma
-BreakTemplateDeclarations: BTDS_No
+BreakTemplateDeclarations: No
 ColumnLimit: 128
