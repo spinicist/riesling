@@ -15,6 +15,7 @@ int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("MERLIN");
 
+  COMMAND(parser, apply, "apply", "Apply transforms to navigators");
   COMMAND(parser, reg, "reg", "Register navigators");
 
   args::GlobalOptions globals(parser, global_group);

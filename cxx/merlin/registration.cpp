@@ -1,9 +1,9 @@
 #include "registration.hpp"
 
-#include "rl/log.hpp"
-#include "rl/io/hd5.hpp"
-#include "rl/tensors.hpp"
 #include "../args.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log.hpp"
+#include "rl/tensors.hpp"
 
 #include <flux.hpp>
 
@@ -137,15 +137,15 @@ void AlignMoments(ImageType::Pointer fixed, ImageType::Pointer moving, Transform
   t->SetMatrix(TransformType::MatrixType(A));
 }
 
-// using MetricType = itk::MeanSquaresImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
-using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
+using MetricType = itk::MeanSquaresImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
+// using MetricType = itk::MattesMutualInformationImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
 auto SetupMetric(ImageType::Pointer     fixed,
                  ImageType::Pointer     moving,
                  ImageType::RegionType  maskRegion,
                  TransformType::Pointer t) -> MetricType::Pointer
 {
   auto metric = MetricType::New();
-  metric->SetNumberOfHistogramBins(64);
+  // metric->SetNumberOfHistogramBins(64);
   metric->SetUseMovingImageGradientFilter(true);
   metric->SetUseFixedImageGradientFilter(true);
   metric->SetFixedImage(fixed);
@@ -211,13 +211,13 @@ public:
       rl::Log::Debug("LOCAL", "Start {:5.3e} [{:5.3e}] LR {}", opt_->GetMetric()->GetValue(),
                      fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
     } else if (typeid(event) == typeid(itk::IterationEvent)) {
-      // auto const ii = opt_->GetCurrentIteration();
-      // if (ii % interval_ == 0) {
-      //   rl::Log::Debug("LOCAL", "{:02d} {:5.3e} [{:5.3e}] LR {}", ii, opt_->GetValue(),
-      //                  fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
-      // }
+      auto const ii = opt_->GetCurrentIteration();
+      if (ii % interval_ == 0) {
+        rl::Log::Debug("LOCAL", "{:02d} {:5.3e} [{:5.3e}] LR {}", ii, opt_->GetValue(),
+                       fmt::join(opt_->GetCurrentPosition(), ","), opt_->GetLearningRate());
+      }
     } else if (typeid(event) == typeid(itk::EndEvent)) {
-      rl::Log::Debug("LOCAL", "End   {:5.3e} [{:5.3e}]", opt_->GetMetric()->GetValue(),
+      rl::Log::Debug("LOCAL", "End {} {:5.3e} [{:5.3e}]", opt_->GetCurrentIteration(), opt_->GetMetric()->GetValue(),
                      fmt::join(opt_->GetCurrentPosition(), ","));
     }
   }
@@ -237,11 +237,11 @@ auto SetupOptimizer(MetricType::Pointer metric, TransformType::Pointer t) -> Loc
   localOptimizer->SetLowerLimit(0);
   localOptimizer->SetUpperLimit(2);
   localOptimizer->SetEpsilon(0.1);
-  localOptimizer->SetMaximumLineSearchIterations(10);
-  localOptimizer->SetLearningRate(0.1);
-  localOptimizer->SetMaximumStepSizeInPhysicalUnits(0.1);
-  localOptimizer->SetNumberOfIterations(64);
-  localOptimizer->SetMinimumConvergenceValue(1e-4);
+  localOptimizer->SetMaximumLineSearchIterations(16);
+  localOptimizer->SetLearningRate(1);
+  localOptimizer->SetMaximumStepSizeInPhysicalUnits(1);
+  localOptimizer->SetNumberOfIterations(128);
+  localOptimizer->SetMinimumConvergenceValue(1e-5);
   localOptimizer->SetConvergenceWindowSize(5);
   localOptimizer->SetDoEstimateLearningRateOnce(false);
   localOptimizer->SetScales(scale);
@@ -258,21 +258,22 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Re
   auto opt = SetupOptimizer(metric, t);
   auto obs = LocalObserver::New();
   obs->SetOptimizer(opt);
-  double                               bestMetricValue = std::numeric_limits<double>::max();
-  TransformType::ParametersType        bestParameters;
+  double                        bestMetricValue = std::numeric_limits<double>::max();
+  TransformType::ParametersType bestParameters;
   // std::array<std::array<double, 3>, 7> starts = {
   //   std::array<double, 3>{0, 0, 0}, {0, 0, -10}, {0, 0, 10}, {0, -10, 0}, {0, 10, 0}, {-10, 0, 0}, {10, 0, 0}};
   // std::array<std::array<double, 3>, 1> starts = {std::array<double, 3>{0, 0, 0}};
+  std::array<std::array<double, 3>, 7> axes{
+    std::array<double, 3>{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}, {1, 0, 0}, {1, 0, 0}};
+  double const          angle = M_PI / 12;
+  std::array<double, 7> angles{0, -angle, angle, -angle, angle, -angle, angle};
 
-  std::array<std::array<double, 3>, 7> axes{std::array<double, 3>{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}, {1, 0, 0}, {1, 0, 0}};
-  std::array<double, 7> angles{0, -M_PI/6, M_PI/6, -M_PI/6, M_PI/6, -M_PI/6, M_PI/6};
-
-  for (Index ii = 0; ii < 7; ii++) {
+  for (Index ii = 0; ii < 1; ii++) {
     auto tt = t->Clone();
     // tt->Translate(TransformType::OutputVectorType(st));
     tt->SetRotation(TransformType::AxisType(axes[ii]), angles[ii]);
     metric->SetTransform(tt);
-    opt->SetLearningRate(1);
+    opt->SetLearningRate(0.1);
     try {
       opt->StartOptimization();
     } catch (const itk::ExceptionObject &err) {
@@ -281,9 +282,11 @@ auto Register(ImageType::Pointer fixed, ImageType::Pointer moving, ImageType::Re
     auto const thisValue = opt->GetValue();
     if (thisValue < bestMetricValue) {
       bestMetricValue = thisValue;
-      bestParameters = opt->GetCurrentPosition(); }
+      bestParameters = opt->GetCurrentPosition();
+    }
   }
   t->SetParameters(bestParameters);
+
   rl::Log::Debug("MERLIN", "Final {:5.3e} [{:5.3e}]", bestMetricValue, fmt::join(bestParameters, ","));
   return t;
 }
@@ -294,34 +297,44 @@ void main_reg(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "INPUT", "ifile HD5 file");
   args::Positional<std::string> oname(parser, "OUTPUT", "Output HD5 file");
   SzFlag<6>                     mask(parser, "MASK", "Mask HD5 file", {'m', "mask"});
+  args::ValueFlag<Index>        nav(parser, "NAV", "Only register one navigator", {'n', "nav"});
   ParseCommand(parser, iname, oname);
+  auto const cmd = parser.GetCommand().Name();
 
-    merlin::ImageType::RegionType maskRegion;
-    if (mask) {
-      auto const                               m = mask.Get();
-      merlin::ImageType::RegionType::SizeType  sz;
-      merlin::ImageType::RegionType::IndexType ind;
-      for (Index ii = 0; ii < 3; ii++) {
-        ind[ii] = m[ii * 2];
-        sz[ii] = m[ii * 2 + 1];
-      }
-      maskRegion.SetSize(sz);
-      maskRegion.SetIndex(ind);
+  merlin::ImageType::RegionType maskRegion;
+  if (mask) {
+    auto const                               m = mask.Get();
+    merlin::ImageType::RegionType::SizeType  sz;
+    merlin::ImageType::RegionType::IndexType ind;
+    for (Index ii = 0; ii < 3; ii++) {
+      ind[ii] = m[ii * 2];
+      sz[ii] = m[ii * 2 + 1];
     }
+    maskRegion.SetSize(sz);
+    maskRegion.SetIndex(ind);
+  }
 
+  HD5::Reader ifile(iname.Get());
+  HD5::Writer ofile(oname.Get());
 
-    HD5::Reader ifile(iname.Get());
-    HD5::Writer ofile(oname.Get());
-
-    Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0); // ITK does not like this being const
-    auto const info = ifile.readInfo();
-    auto       tfm = merlin::TransformType::New();
-    auto const fixed = merlin::Import(ChipMap(idata, 0), info);
+  Re4        idata = ifile.readTensor<Cx5>().abs().chip<4>(0); // ITK does not like this being const
+  auto const info = ifile.readInfo();
+  auto       tfm = merlin::TransformType::New();
+  auto const fixed = merlin::Import(ChipMap(idata, 0), info);
+  if (nav) {
+    Index inav = nav.Get();
+    if (inav < 0 || inav >= idata.dimension(3)) { throw Log::Failure(cmd, "Specified navigator {} outside valid range", inav); }
+    auto const moving = merlin::Import(ChipMap(idata, inav), info);
+    Log::Print("MERLIN", "Register navigator {} to {}", inav, 0);
+    auto tfm = merlin::Register(fixed, moving, maskRegion);
+    ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:02d}", inav));
+  } else {
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = merlin::Import(ChipMap(idata, ii), info);
       Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
       auto tfm = merlin::Register(fixed, moving, maskRegion);
       ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:02d}", ii));
     }
-    Log::Print("MERLIN", "Finished");
+  }
+  Log::Print("MERLIN", "Finished");
 }

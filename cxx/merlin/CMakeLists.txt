@@ -8,10 +8,12 @@ if(BUILD_MERLIN)
       ITKRegistrationMethodsv4
       ITKOptimizersv4
     )
+    include(${ITK_USE_FILE})
     add_executable(merlin
         main.cpp
         ../args.cpp
 
+        apply.cpp
         registration.cpp
     )
     target_link_libraries(merlin PRIVATE
