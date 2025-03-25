@@ -54,9 +54,9 @@ template <typename T, int ND> void WriteNifti(rl::Info const &info, Eigen::Tenso
   mat44 matrix = nifti_make_orthog_mat44(info.direction(0, 0), info.direction(0, 1), info.direction(0, 2), info.direction(1, 0),
                                          info.direction(1, 1), info.direction(1, 2), info.direction(2, 0), info.direction(2, 1),
                                          info.direction(2, 2));
-  matrix.m[0][3] = -info.origin(0);
-  matrix.m[1][3] = -info.origin(1);
-  matrix.m[2][3] = -info.origin(2);
+  matrix.m[0][3] = info.origin(0);
+  matrix.m[1][3] = info.origin(1);
+  matrix.m[2][3] = info.origin(2);
 
   nifti_mat44_to_quatern(matrix, &(ptr->quatern_b), &(ptr->quatern_c), &(ptr->quatern_d), &(ptr->qoffset_x), &(ptr->qoffset_y),
                          &(ptr->qoffset_z), nullptr, nullptr, nullptr, &(ptr->qfac));
