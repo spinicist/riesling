@@ -150,14 +150,13 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap const 
 {
   auto const     time = this->startAdjoint(y, x, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddFront(FirstN<ND>(workspace.dimensions()), workspace.dimension(0)));
+  CxNMap<ND + 1> ws1m(workspace.data(), NoChannels(workspace.dimensions()));
   OutCMap        nc1m(nc1.data(), nc1.dimensions());
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);
     nc1.device(Threads::TensorDevice()) = y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)});
     gridder->adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
-    CxNMap<ND + 1> ws1m(workspace.data(), NoChannels(workspace.dimensions()));
     ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
     x.device(Threads::TensorDevice()) += ws1m.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
   }

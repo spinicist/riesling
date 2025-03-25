@@ -58,7 +58,7 @@ auto OtsuMask(Eigen::ArrayXf::ConstAlignedMapType const &x, Index const nBins) -
 {
   auto const [thresh, count] = Otsu(x, nBins);
   Eigen::ArrayXf masked(count);
-  std::copy_if(x.data(), x.data() + x.size(), masked.begin(), [thresh = thresh](float const f) { return f > thresh; });
+  std::copy_if(x.data(), x.data() + x.size(), masked.begin(), [t = thresh](float const f) { return f > t; });
   return masked;
 }
 

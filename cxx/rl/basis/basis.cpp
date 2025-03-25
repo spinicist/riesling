@@ -16,14 +16,14 @@ Basis::Basis()
 
 Basis::Basis(Cx3 const &Bb, Re1 const &tt)
   : B{Bb}
-  , t{tt}
+  , time{tt}
 {
 }
 
 Basis::Basis(Cx3 const &Bb, Re1 const &tt, Cx2 const &Rr)
   : B{Bb}
   , R{Rr}
-  , t{tt}
+  , time{tt}
 {
 }
 
@@ -52,7 +52,7 @@ void Basis::write(std::string const &basisFile) const
   HD5::Writer writer(basisFile);
   writer.writeTensor(HD5::Keys::Basis, B.dimensions(), B.data(), HD5::Dims::Basis);
   if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), {"v2", "v1"}); }
-  if (t.size()) { writer.writeTensor("time", t.dimensions(), t.data(), {"t"}); }
+  if (time.size()) { writer.writeTensor("time", time.dimensions(), time.data(), {"t"}); }
 }
 
 void Basis::concat(Basis const &other)

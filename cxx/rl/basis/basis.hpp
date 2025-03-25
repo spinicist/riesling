@@ -12,7 +12,7 @@ struct Basis
   using CPtr = Basis const *;
   Cx3 B;
   Cx2 R;
-  Re1 t;
+  Re1 time;
 
   Basis();
   Basis(Cx3 const &B, Re1 const &t);

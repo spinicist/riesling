@@ -14,6 +14,7 @@ if(BUILD_MERLIN)
         ../args.cpp
 
         apply.cpp
+        merlin.cpp
         register.cpp
         util.cpp
     )

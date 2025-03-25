@@ -49,12 +49,12 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap const x, Map z
   Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
 
   Index const     nElems = std::transform_reduce(normDims.cbegin(), normDims.cend(), 1L, std::multiplies{},
-                                                 [shape = this->shape](Index const id) { return shape[id]; });
+                                                 [sh = this->shape](Index const id) { return sh[id]; });
   Index const     nBlocks = std::transform_reduce(otherDims.cbegin(), otherDims.cend(), 1L, std::multiplies{},
-                                                  [shape = this->shape](Index const id) { return shape[id]; });
+                                                  [sh = this->shape](Index const id) { return sh[id]; });
   Sz<O> const     shuff = Concatenate(normDims, otherDims);
   Sz<D + 1> rsh;
-  std::transform(normDims.cbegin(), normDims.cend(), rsh.begin(), [shape = this->shape](Index const id) { return shape[id]; });
+  std::transform(normDims.cbegin(), normDims.cend(), rsh.begin(), [sh = this->shape](Index const id) { return sh[id]; });
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
 

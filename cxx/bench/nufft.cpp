@@ -15,14 +15,13 @@ Index const M = 64;
 Index const C = 8;
 Index const traces = M * M;
 auto const  points = ArchimedeanSpiral(M, 1.f, traces);
-Basis       basis;
 Trajectory  traj(points);
 float const os = 2.f;
 } // namespace
 
 TEST_CASE("NUFFT", "[nufft]")
 {
-  auto nufft = TOps::NUFFT<3>(GridOpts<3>{.osamp = os}, traj, C, &basis);
+  auto nufft = TOps::NUFFT<3>(GridOpts<3>{.osamp = os}, traj, C, nullptr);
   Cx5  c(nufft.ishape);
   Cx3  nc(nufft.oshape);
   c.setRandom();
