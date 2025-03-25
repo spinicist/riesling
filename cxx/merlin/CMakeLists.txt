@@ -14,7 +14,8 @@ if(BUILD_MERLIN)
         ../args.cpp
 
         apply.cpp
-        registration.cpp
+        register.cpp
+        util.cpp
     )
     target_link_libraries(merlin PRIVATE
         rl
