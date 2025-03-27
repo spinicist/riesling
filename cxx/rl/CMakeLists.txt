@@ -19,6 +19,7 @@ log.cpp
 patches.cpp
 precon.cpp
 scaling.cpp
+slice.cpp
 trajectory.cpp
 
 algo/admm.cpp
@@ -109,6 +110,7 @@ log.hpp
 patches.hpp
 precon.hpp
 scaling.hpp
+slice.hpp
 tensors.hpp
 trajectory.hpp
 
