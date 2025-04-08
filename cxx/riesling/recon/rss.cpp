@@ -38,7 +38,7 @@ void main_recon_rss(args::Subparser &parser)
 
   Cx5 const        rss = DimDot<3>(xm, xm).sqrt();
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), rss.dimension(3), nT), rss.dimensions());
-  auto             out = oc.forward(rss);
+  auto             out = oc.adjoint(rss);
 
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   Log::Print(cmd, "Finished");
