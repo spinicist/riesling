@@ -127,10 +127,11 @@ auto SliceData(
   if (slStart < 0 || slStart >= shape[slDim]) { throw rl::Log::Failure("montage", "Slice start invalid"); }
   if (slEnd && slEnd >= shape[slDim]) { throw rl::Log::Failure("montage", "Slice end invalid"); }
   if (slN < 0) { throw rl::Log::Failure("montage", "Requested negative number of slices"); }
-  if (sl0[0] < 0) { sl0[0] = 0; }
-  if (sl1[0] < 0) { sl1[0] = 0; }
+  sl0[0] = rl::Wrap(sl0[0], shape1[0]);
+  sl1[0] = rl::Wrap(sl1[0], shape1[1]);
   if (sl0[0] + sl0[1] >= shape1[0]) { sl0[1] = shape1[0] - sl0[0]; }
   if (sl1[0] + sl1[1] >= shape1[1]) { sl1[1] = shape1[1] - sl1[0]; }
+  rl::Log::Print("montage", "Slicing {}:{}, {}:{}", sl0[0], sl0[0] + sl0[1] - 1, sl1[0], sl1[0] + sl1[1] - 1);
   auto const start = slStart;
   auto const end = slEnd ? slEnd : shape[slDim] - 1;
   auto const maxN = end - start + 1;
