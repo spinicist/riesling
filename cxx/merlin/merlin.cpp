@@ -130,10 +130,13 @@ MERLIN::MERLIN(ImageType::Pointer f, ImageType::RegionType mask)
   localObserver->SetOptimizer(localOptimizer);
 }
 
-auto MERLIN::registerMoving(ImageType::Pointer moving) -> TransformType::Pointer
+auto MERLIN::registerMoving(ImageType::Pointer moving, TransformType::Pointer init) -> TransformType::Pointer
 {
+  if (init.IsNull()) {
+    init = initTransform(moving);
+  }
   metric->SetMovingImage(moving);
-  metric->SetMovingTransform(initTransform(moving));
+  metric->SetMovingTransform(init);
   metric->Initialize();
   localOptimizer->SetMetric(metric);
   // localOptimizer->SetLearningRate(0.1);

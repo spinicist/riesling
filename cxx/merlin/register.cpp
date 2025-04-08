@@ -37,6 +37,7 @@ void main_reg(args::Subparser &parser)
   auto const fixed = merlin::Import(rl::ChipMap(idata, 0), info);
 
   merlin::MERLIN wizard(fixed, maskRegion);
+  merlin::TransformType::Pointer tfm = nullptr;
   if (nav) {
     Index inav = nav.Get();
     if (inav < 0 || inav >= idata.dimension(3)) {
@@ -44,13 +45,13 @@ void main_reg(args::Subparser &parser)
     }
     auto const moving = merlin::Import(rl::ChipMap(idata, inav), info);
     rl::Log::Print("MERLIN", "Register navigator {} to {}", inav, 0);
-    auto tfm = wizard.registerMoving(moving);
+    tfm = wizard.registerMoving(moving, tfm);
     ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:02d}", inav));
   } else {
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = merlin::Import(rl::ChipMap(idata, ii), info);
       rl::Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
-      auto tfm = wizard.registerMoving(moving);
+      tfm = wizard.registerMoving(moving, tfm);
       ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:04d}", ii));
     }
   }

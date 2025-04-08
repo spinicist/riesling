@@ -15,7 +15,7 @@ namespace merlin {
 struct MERLIN {
     MERLIN(ImageType::Pointer fixed, ImageType::RegionType mask);
 
-    auto registerMoving(ImageType::Pointer moving) -> TransformType::Pointer; // Register is a keyword, dummy
+    auto registerMoving(ImageType::Pointer moving, TransformType::Pointer init) -> TransformType::Pointer; // Register is a keyword, dummy
 
 private:
     using MetricType = itk::MeanSquaresImageToImageMetricv4<ImageType, ImageType, ImageType, double>;
