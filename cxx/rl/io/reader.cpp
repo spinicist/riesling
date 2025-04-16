@@ -270,11 +270,13 @@ auto Reader::readString(std::string const &name) const -> std::string
   hid_t const tid = H5Tcopy(H5T_C_S1);
   H5Tset_size(tid, H5T_VARIABLE);
   H5Tset_cset(tid, H5T_CSET_UTF8);
-  std::vector<char> rdata(dims[0]);
-  CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata.data()), "Could not read string");
+  char **rdata = new char *[1];
+  CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata), "Could not read string");
   CheckedCall(H5Dclose(dset), "Could not close string dataset");
+  std::string const r(rdata[0]);
+  delete[] rdata;
   Log::Debug("HD5", "Read string {}", name);
-  return std::string(rdata.data());
+  return r;
 }
 
 auto Reader::readStrings(std::string const &name) const -> std::vector<std::string>
@@ -289,11 +291,12 @@ auto Reader::readStrings(std::string const &name) const -> std::vector<std::stri
   hid_t const tid = H5Tcopy(H5T_C_S1);
   H5Tset_size(tid, H5T_VARIABLE);
   H5Tset_cset(tid, H5T_CSET_UTF8);
-  char *rdata[dims[0]];
+  char **rdata = new char *[dims[0]];
   CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata), "Could not read string");
   CheckedCall(H5Dclose(dset), "Could not close string dataset");
-  std::vector<std::string> strings(rdata, rdata + dims[0]);
+  std::vector<std::string> const strings(rdata, rdata + dims[0]);
   Log::Debug("HD5", "Read strings {}", name);
+  delete[] rdata;
   return strings;
 }
 
@@ -315,7 +318,7 @@ auto Reader::readTransform(std::string const &id) const -> Transform
   hid_t const tfm_id = TransformType();
   hid_t const dset = H5Dopen(handle_, id.c_str(), H5P_DEFAULT);
   hid_t const space = H5Dget_space(dset);
-  Transform        t;
+  Transform   t;
   CheckedCall(H5Dread(dset, tfm_id, space, H5S_ALL, H5P_DATASET_XFER_DEFAULT, &t), "Could not read transform struct");
   CheckedCall(H5Dclose(dset), "Could not close transform dataset");
   return t;
