@@ -270,11 +270,11 @@ auto Reader::readString(std::string const &name) const -> std::string
   hid_t const tid = H5Tcopy(H5T_C_S1);
   H5Tset_size(tid, H5T_VARIABLE);
   H5Tset_cset(tid, H5T_CSET_UTF8);
-  char *rdata[dims[0]];
-  CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata), "Could not read string");
+  std::vector<char> rdata(dims[0]);
+  CheckedCall(H5Dread(dset, tid, ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, rdata.data()), "Could not read string");
   CheckedCall(H5Dclose(dset), "Could not close string dataset");
   Log::Debug("HD5", "Read string {}", name);
-  return std::string(rdata[0]);
+  return std::string(rdata.data());
 }
 
 auto Reader::readStrings(std::string const &name) const -> std::vector<std::string>
