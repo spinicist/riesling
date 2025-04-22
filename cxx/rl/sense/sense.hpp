@@ -18,11 +18,8 @@ struct Opts
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(Opts const        &opts,
-                   GridOpts<3> const &gridOpts,
-                   Trajectory const  &inTraj,
-                   Cx5 const         &noncart,
-                   Basis::CPtr        basis = nullptr) -> Cx5;
+auto LoresChannels(
+  Opts const &opts, GridOpts<3> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis = nullptr) -> Cx5;
 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &ref, float const os, float const l, float const λ) -> Cx5;

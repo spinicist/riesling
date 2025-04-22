@@ -19,8 +19,7 @@
 namespace rl {
 namespace SENSE {
 
-auto LoresChannels(
-  Opts const &opts, GridOpts<3> const &gridOpts, Trajectory const &inTraj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+auto LoresChannels(Opts const &opts, GridOpts<3> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
@@ -28,7 +27,8 @@ auto LoresChannels(
   if (opts.tp >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nT); }
 
   Cx4 const ncVol = noncart.chip<4>(opts.tp);
-  auto [traj, lores] = inTraj.downsample(ncVol, opts.res, true, true, false);
+  traj.downsample(opts.res, true, false);
+  auto       lores = traj.trim(ncVol);
   auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, nullptr);
   auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, {4}};
