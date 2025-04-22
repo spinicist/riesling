@@ -52,7 +52,7 @@ template <int ND> struct TrajectoryN
   auto point(int16_t const sample, int32_t const trace) const -> Eigen::Vector<float, ND>;
   auto points() const -> Re3 const &;
   auto downsample(Array const tgtSize, bool const trim, bool const shrink, bool const corners) const
-    -> std::tuple<TrajectoryN, Index, Index>;
+    -> std::tuple<TrajectoryN, Index, Index, Index, Index>;
   auto downsample(Cx4 const &ks, Array const tgtSize, bool const trim, bool const shrink, bool const corners) const
     -> std::tuple<TrajectoryN, Cx4>;
   auto downsample(Cx4 const &ks, Sz3 const tgtMat, bool const trim, bool const shrink, bool const corners) const

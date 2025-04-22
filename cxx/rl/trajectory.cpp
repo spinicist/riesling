@@ -190,9 +190,7 @@ template <int ND>
 void TrajectoryN<ND>::moveInFOV(
   Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Index const tst, Index const tsz, Cx5 &data)
 {
-  if (tst + tsz > nTraces()) {
-    throw Log::Failure("Traj", "Max trace {} exceeded number of traces {}", tst + tsz, nTraces());
-  }
+  if (tst + tsz > nTraces()) { throw Log::Failure("Traj", "Max trace {} exceeded number of traces {}", tst + tsz, nTraces()); }
   Re2CMap const Rt(R.data(), Sz2{ND, ND});
   auto          p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz});
   Log::Debug("Traj", "Rotating traces {}-{}", tst, tst + tsz - 1);
@@ -212,43 +210,51 @@ template <int ND> auto TrajectoryN<ND>::point(int16_t const read, int32_t const 
   return pv;
 }
 
-auto FindFirstValidSample(Re3 const &traj)
+auto FindFirstValidTrace(Re3 const &traj) -> Index
+{
+  for (Index it = 0; it < traj.dimension(2); it++) {
+    for (Index is = 0; is < traj.dimension(1); is++) {
+      if (std::isfinite(Sum(traj.chip<2>(it).chip<1>(is)))) { return it; }
+    }
+  }
+  throw Log::Failure("traj", "No valid trace found");
+}
+
+auto FindLastValidTrace(Re3 const &traj) -> Index
+{
+  for (Index it = traj.dimension(2) - 1; it >= 0; it--) {
+    for (Index is = 0; is < traj.dimension(1); is++) {
+      if (std::isfinite(Sum(traj.chip<2>(it).chip<1>(is)))) { return it; }
+    }
+  }
+  throw Log::Failure("traj", "No valid trace found");
+}
+
+auto FindFirstValidSample(Re3 const &traj, Index const minT, Index const maxT) -> Index
 {
   for (Index is = 0; is < traj.dimension(1); is++) {
-    bool cont = false;
-    for (Index it = 0; it < traj.dimension(2); it++) {
-      for (Index id = 0; id < traj.dimension(0); id++) {
-        if (traj(id, is, it) != traj(id, is, it)) {
-          // Found an invalid trajectory point
-          cont = true;
-        }
-      }
+    for (Index it = minT; it <= maxT; it++) {
+      if (std::isfinite(Sum(traj.chip<2>(it).chip<1>(is)))) { return is; }
     }
-    if (!cont) { return is; }
   }
   throw Log::Failure("traj", "No valid samples found");
 }
 
-auto FindLastValidSample(Re3 const &traj)
+auto FindLastValidSample(Re3 const &traj, Index const minT, Index const maxT) -> Index
 {
   for (Index is = traj.dimension(1) - 1; is >= 0; is--) {
-    bool cont = false;
-    for (Index it = 0; it < traj.dimension(2); it++) {
+    for (Index it = minT; it <= maxT; it++) {
       for (Index id = 0; id < traj.dimension(0); id++) {
-        if (traj(id, is, it) != traj(id, is, it)) {
-          // Found an invalid trajectory point
-          cont = true;
-        }
+        if (std::isfinite(Sum(traj.chip<2>(it).chip<1>(is)))) { return is; }
       }
     }
-    if (!cont) { return is; }
   }
   throw Log::Failure("traj", "No valid samples found");
 }
 
 template <int ND>
 auto TrajectoryN<ND>::downsample(Array const tgtSize, bool const trim, bool const shrink, bool const corners) const
-  -> std::tuple<TrajectoryN, Index, Index>
+  -> std::tuple<TrajectoryN, Index, Index, Index, Index>
 {
   Array ratios = voxel_size_ / tgtSize;
   if ((ratios > 1.f).any()) {
@@ -267,8 +273,7 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, bool const trim, bool cons
     }
     thresh(ii) = matrix_[ii] * ratios(ii) / 2.f;
   }
-  Log::Print("Traj", "Downsample {}->{} mm, matrix {}, ratios {}", voxel_size_, tgtSize, dsMatrix,
-             fmt::streamed(ratios.transpose()));
+  Log::Print("Traj", "Downsample {}->{} mm, matrix {}", voxel_size_, tgtSize, dsMatrix);
 
   Re3 dsPoints(points_.dimensions());
   for (Index it = 0; it < nTraces(); it++) {
@@ -276,35 +281,35 @@ auto TrajectoryN<ND>::downsample(Array const tgtSize, bool const trim, bool cons
       Re1 p = points_.template chip<2>(it).template chip<1>(is);
       if ((corners && B0((p.abs() <= thresh).all())()) || Norm<false>(p / thresh) <= 1.f) {
         dsPoints.chip<2>(it).chip<1>(is) = p;
-        for (int ii = 0; ii < 3; ii++) {
-          p(ii) /= ratios(ii);
-        }
       } else {
         dsPoints.chip<2>(it).chip<1>(is).setConstant(std::numeric_limits<float>::quiet_NaN());
       }
     }
   }
 
-  Index minSamp = 0;
-  Index dsSamples = dsPoints.dimension(1);
+  Index minSamp = 0, dsSamples = dsPoints.dimension(1);
+  Index minTrace = 0, dsTraces = dsPoints.dimension(2);
   if (trim) {
-    minSamp = FindFirstValidSample(dsPoints);
-    Index const maxSamp = FindLastValidSample(dsPoints);
-    dsSamples = maxSamp + 1 - minSamp;
-    Log::Print("Traj", "Retaining samples {}-{}", minSamp, maxSamp);
+    minTrace = FindFirstValidTrace(dsPoints);
+    Index const maxTrace = FindLastValidTrace(dsPoints);
+    minSamp = FindFirstValidSample(dsPoints, minTrace, maxTrace);
+    Index const maxSamp = FindLastValidSample(dsPoints, minTrace, maxTrace);
     if (minSamp > maxSamp) { throw Log::Failure("Traj", "No valid trajectory points remain after downsampling"); }
-    dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, 0}, Sz3{3, dsSamples, nTraces()}));
+    dsTraces = maxTrace + 1 - minTrace;
+    dsSamples = maxSamp + 1 - minSamp;
+    Log::Print("Traj", "Retaining samples {}-{} traces {}-{}", minSamp, maxSamp, minTrace, maxTrace);
+    dsPoints = Re3(dsPoints.slice(Sz3{0, minSamp, minTrace}, Sz3{ND, dsSamples, dsTraces}));
   }
   Log::Print("Traj", "Downsampled trajectory dims {}", dsPoints.dimensions());
-  return std::make_tuple(TrajectoryN(dsPoints, dsMatrix, dsVox), minSamp, dsSamples);
+  return std::make_tuple(TrajectoryN(dsPoints, dsMatrix, dsVox), minSamp, dsSamples, minTrace, dsTraces);
 }
 
 template <int ND>
 auto TrajectoryN<ND>::downsample(Cx5 const &ks, Array const tgt, bool const trim, bool const shrink, bool const corners) const
   -> std::tuple<TrajectoryN, Cx5>
 {
-  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, trim, shrink, corners);
-  Cx5 dsKs = ks.slice(Sz5{0, minSamp, 0, 0, 0}, Sz5{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3), ks.dimension(4)});
+  auto const [dsTraj, minSamp, nSamp, minT, nT] = downsample(tgt, trim, shrink, corners);
+  Cx5 dsKs = ks.slice(Sz5{0, minSamp, minT, 0, 0}, Sz5{ks.dimension(0), nSamp, nT, ks.dimension(3), ks.dimension(4)});
   return std::make_tuple(dsTraj, dsKs);
 }
 
@@ -312,8 +317,8 @@ template <int ND>
 auto TrajectoryN<ND>::downsample(Cx4 const &ks, Array const tgt, bool const trim, bool const shrink, bool const corners) const
   -> std::tuple<TrajectoryN, Cx4>
 {
-  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, trim, shrink, corners);
-  Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
+  auto const [dsTraj, minSamp, nSamp, minT, nT] = downsample(tgt, trim, shrink, corners);
+  Cx4 dsKs = ks.slice(Sz4{0, minSamp, minT, 0}, Sz4{ks.dimension(0), nSamp, nT, ks.dimension(3)});
   return std::make_tuple(dsTraj, dsKs);
 }
 
@@ -325,8 +330,8 @@ auto TrajectoryN<ND>::downsample(Cx4 const &ks, Sz3 const tgtMat, bool const tri
   for (Index ii = 0; ii < ND; ii++) {
     tgt[ii] = (voxel_size_[ii] * matrix_[ii]) / tgtMat[ii];
   }
-  auto const [dsTraj, minSamp, nSamp] = downsample(tgt, trim, shrink, corners);
-  Cx4 dsKs = ks.slice(Sz4{0, minSamp, 0, 0}, Sz4{ks.dimension(0), nSamp, ks.dimension(2), ks.dimension(3)});
+  auto const [dsTraj, minSamp, nSamp, minT, nT] = downsample(tgt, trim, shrink, corners);
+  Cx4 dsKs = ks.slice(Sz4{0, minSamp, minT, 0}, Sz4{ks.dimension(0), nSamp, nT, ks.dimension(3)});
   return std::make_tuple(dsTraj, dsKs);
 }
 
