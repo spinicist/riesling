@@ -63,6 +63,18 @@ herr_t ConvertFloatComplex(hid_t, hid_t, H5T_cdata_t *, size_t n, size_t, size_t
   return 0;
 }
 
+herr_t ConvertDoubleComplex(hid_t, hid_t, H5T_cdata_t *, size_t n, size_t, size_t, void *buf, void *, hid_t)
+{
+  // HDF5 wants the conversion in place
+  // Cheat heavily and convert going backwards so we don't overwrite any values
+  double *src = (double *)buf;
+  Cx     *tgt = (Cx *)buf;
+  for (Index ii = n - 1; ii >= 0; ii--) {
+    tgt[ii] = Cx(src[ii]);
+  }
+  return 0;
+}
+
 void Init()
 {
   static bool NeedsInit = true;
@@ -81,22 +93,28 @@ void Init()
     complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
     CheckedCall(H5Tinsert(complex_fid, "r", HOFFSET(complex_f, r), fid), "inserting .r");
     CheckedCall(H5Tinsert(complex_fid, "i", HOFFSET(complex_f, i), fid), "inserting .i");
-    H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, complex_fid, ConvertFloatComplex);
+    CheckedCall(H5Tregister(H5T_PERS_HARD, "freal->fcomplex", H5T_NATIVE_FLOAT, complex_fid, ConvertFloatComplex),
+                "registering float real->complex");
 
     alternate_complex_fid = H5Tcreate(H5T_COMPOUND, sizeof(complex_f));
     CheckedCall(H5Tinsert(alternate_complex_fid, "real", HOFFSET(complex_f, r), fid), "inserting .real ");
     CheckedCall(H5Tinsert(alternate_complex_fid, "imag", HOFFSET(complex_f, i), fid), "inserting .imag");
-    H5Tregister(H5T_PERS_HARD, "real->complex", H5T_NATIVE_FLOAT, alternate_complex_fid, ConvertFloatComplex);
+    CheckedCall(H5Tregister(H5T_PERS_HARD, "freal->fcomplex", H5T_NATIVE_FLOAT, alternate_complex_fid, ConvertFloatComplex),
+                "registering float real->complex");
 
     hid_t did = type_impl(type_tag<double>{});
 
     complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
     CheckedCall(H5Tinsert(complex_did, "r", HOFFSET(complex_d, r), did), "inserting .r d");
     CheckedCall(H5Tinsert(complex_did, "i", HOFFSET(complex_d, i), did), "inserting .i d");
+    CheckedCall(H5Tregister(H5T_PERS_HARD, "dreal->fcomplex", H5T_IEEE_F64LE, complex_fid, ConvertDoubleComplex),
+                "registering double real->complex");
 
     alternate_complex_did = H5Tcreate(H5T_COMPOUND, sizeof(complex_d));
     CheckedCall(H5Tinsert(alternate_complex_did, "real", HOFFSET(complex_d, r), did), "inserting .real d");
     CheckedCall(H5Tinsert(alternate_complex_did, "imag", HOFFSET(complex_d, i), did), "inserting .imag d");
+    CheckedCall(H5Tregister(H5T_PERS_HARD, "dreal->fcomplex", H5T_IEEE_F64LE, alternate_complex_fid, ConvertDoubleComplex),
+                "registering double real->complex");
 
     Log::Debug("HD5", "Initialised HDF5");
   } else {
@@ -108,7 +126,8 @@ void Init()
 herr_t ErrorWalker(unsigned n, const H5E_error2_t *err_desc, void *data)
 {
   std::string *str = (std::string *)data;
-  if (n == 0) { *str = fmt::format("{}\n", err_desc->desc); }
+  str->append(fmt::format("{}\n", err_desc->desc));
+  // if (n == 0) { *str = fmt::format("{}\n", err_desc->desc); }
   return 0;
 }
 
