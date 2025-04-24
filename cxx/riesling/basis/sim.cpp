@@ -109,11 +109,11 @@ void main_basis_sim(args::Subparser &parser)
     Eigen::MatrixXcd const Q = h.householderQ() * I;
     Eigen::MatrixXcf const R = h.matrixQR().topRows(dshape[0]).cast<Cx>().triangularView<Eigen::Upper>();
     dmap = Q.transpose().cast<Cx>() * std::sqrt(M);
-    Basis b(dall, time, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
+    Basis b(dall, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
   } else {
     dmap *= std::sqrt(M);
-    Basis b(dall, time);
+    Basis b(dall);
     b.write(oname.Get());
   }
 

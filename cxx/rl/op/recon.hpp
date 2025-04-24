@@ -19,8 +19,8 @@ struct Recon
 
   struct f0Opts
   {
-    std::string        fname;
-    std::vector<float> τ;
+    float        τacq;
+    Index Nτ;
   };
 
   Recon(Opts const        &rOpts,
@@ -29,8 +29,16 @@ struct Recon
         SENSE::Opts const &senseOpts,
         Trajectory const  &traj,
         Basis::CPtr        basis,
-        f0Opts const      &f0Opts,
         Cx5 const         &data);
+
+  Recon(Opts const        &rOpts,
+        PreconOpts const  &pOpts,
+        GridOpts<3> const &gridOpts,
+        SENSE::Opts const &senseOpts,
+        Trajectory const  &traj,
+        f0Opts const      &f0Opts,
+        Cx5 const         &data,
+        Re3 const         &f0map);
   TOps::TOp<Cx, 5, 5>::Ptr A, M;
 };
 } // namespace rl
