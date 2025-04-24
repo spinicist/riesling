@@ -14,16 +14,14 @@ Basis::Basis()
   B.setConstant(1.f);
 }
 
-Basis::Basis(Cx3 const &Bb, Re1 const &tt)
+Basis::Basis(Cx3 const &Bb)
   : B{Bb}
-  , time{tt}
 {
 }
 
-Basis::Basis(Cx3 const &Bb, Re1 const &tt, Cx2 const &Rr)
+Basis::Basis(Cx3 const &Bb, Cx2 const &Rr)
   : B{Bb}
   , R{Rr}
-  , time{tt}
 {
 }
 
@@ -52,7 +50,6 @@ void Basis::write(std::string const &basisFile) const
   HD5::Writer writer(basisFile);
   writer.writeTensor(HD5::Keys::Basis, B.dimensions(), B.data(), HD5::Dims::Basis);
   if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), {"v2", "v1"}); }
-  if (time.size()) { writer.writeTensor("time", time.dimensions(), time.data(), {"t"}); }
 }
 
 void Basis::concat(Basis const &other)
@@ -109,23 +106,11 @@ auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>
   } else {
     HD5::Reader basisReader(basisFile);
     Cx3 const   B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
-    Re1         t;
-    if (basisReader.exists("time")) {
-      t = basisReader.readTensor<Re1>("time");
-      if (t.dimension(0) != B.dimension(2)) {
-        throw Log::Failure("basis", "{} had {} traces but {} timepoints", basisFile, B.dimension(2), t.dimension(0));
-      }
-    } else {
-      t.reshape(Sz1{B.dimension(2)});
-      for (Index it = 0; it < t.dimension(0); it++) {
-        t(it) = it;
-      }
-    }
     if (basisReader.exists("R")) {
       Cx2 const R = basisReader.readTensor<Cx2>("R");
-      return std::make_unique<Basis>(B, t, R);
+      return std::make_unique<Basis>(B, R);
     } else {
-      return std::make_unique<Basis>(B, t);
+      return std::make_unique<Basis>(B);
     }
   }
 }

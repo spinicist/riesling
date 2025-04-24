@@ -20,8 +20,7 @@ CoreArgs::CoreArgs(args::Subparser &parser)
 {
 }
 
-template <int ND>
-GridArgs<ND>::GridArgs(args::Subparser &parser)
+template <int ND> GridArgs<ND>::GridArgs(args::Subparser &parser)
   : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
   , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
 {
@@ -113,9 +112,9 @@ auto SENSEArgs::Get() -> rl::SENSE::Opts
 }
 
 f0Args::f0Args(args::Subparser &parser)
-  : fname(parser, "F", "Frequency map", {"f0-map"})
-  , τ(parser, "τ", "Timepoints", {"tau"})
+  : τacq(parser, "τ", "Total ACQ time", {"tacq"})
+  , Nτ(parser, "N", "Number of timesteps for f0 correction", {"Nt"})
 {
 }
 
-auto f0Args::Get() -> rl::Recon::f0Opts { return rl::Recon::f0Opts{.fname = fname.Get(), .τ = τ.Get()}; }
+auto f0Args::Get() -> rl::Recon::f0Opts { return rl::Recon::f0Opts{.τacq = τacq.Get(), .Nτ = Nτ.Get()}; }

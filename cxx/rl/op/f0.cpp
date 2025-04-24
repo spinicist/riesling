@@ -7,27 +7,43 @@
 
 namespace rl::TOps {
 
-f0Segment::f0Segment(Re3 const &f0in, std::vector<float> const &τin)
-  : Parent("f0SegmentOp", AddFront(f0in.dimensions(), 1), AddFront(f0in.dimensions(), (Index)τin.size()))
+f0Segment::f0Segment(Re3 const &f0in, float const τacq, Index const Nτ, Index const Nacq)
+  : Parent("f0SegmentOp", AddBack(f0in.dimensions(), 1), AddBack(f0in.dimensions(), Nτ))
   , f0{f0in}
+  , τ(Nτ)
 {
-  Index const N = τin.size();
-  τ.resize(Sz1{N});
-  for (Index ii = 0; ii < N; ii++) {
-    τ(ii) = τin[ii] * Cx(0.f, 2.f * M_PI);
-  }
+  if (τacq == 0.f) { throw Log::Failure("f0", "τacq must be non-zero for f0 correction"); }
+  if (Nτ < 2) { throw Log::Failure("f0", "Must have more than 1 time segment for f0 correction"); }
+  float const dτ = τacq / (Nτ - 1);
+  Index const N = 2 * Nacq / (Nτ - 1);
+  Cx3         basis(Nτ, Nacq, 1);
+  basis.setZero();
+  for (Index ii = 0; ii < Nτ; ii++) {
+    τ(ii) = -ii * dτ * Cx(0.f, 2.f * M_PI);
 
-  v0f123.set(0, N);
-  f0v123.set(1, f0.dimension(0));
-  f0v123.set(2, f0.dimension(1));
-  f0v123.set(3, f0.dimension(2));
+    Index const start = ii * N / 2 - N / 2;
+    for (Index ij = 0; ij < N; ij++) {
+      Index const io = start + ij;
+      if (io >= 0 && io < Nacq) {
+        basis(ii, io, 0) = std::pow(std::sin(M_PI * ij / N), 2);
+      }
+    }
+  }
+  Log::Tensor("f0basis", basis.dimensions(), basis.data(), {"b", "samp", "trace"});
+  b = Basis(basis);
+  f012v3.set(3, Nτ);
+  v012f3.set(0, f0.dimension(0));
+  v012f3.set(1, f0.dimension(1));
+  v012f3.set(2, f0.dimension(2));
 }
+
+auto f0Segment::basis() const -> Basis::CPtr { return &this->b; }
 
 void f0Segment::forward(InCMap const x, OutMap y) const
 {
   auto const time = startForward(x, y, false);
   y.device(Threads::TensorDevice()) =
-    x.broadcast(v0f123) * (f0.reshape(f0v123).broadcast(v0f123).cast<Cx>() * τ.reshape(v0f123).broadcast(f0v123)).exp();
+    x.broadcast(f012v3) * (f0.reshape(v012f3).broadcast(f012v3).cast<Cx>() * τ.reshape(f012v3).broadcast(v012f3)).exp();
   finishForward(y, time, false);
 }
 
@@ -35,23 +51,31 @@ void f0Segment::iforward(InCMap const x, OutMap y) const
 {
   auto const time = startForward(x, y, true);
   y.device(Threads::TensorDevice()) +=
-    x.broadcast(v0f123) * (f0.reshape(f0v123).broadcast(v0f123).cast<Cx>() * τ.reshape(v0f123).broadcast(f0v123)).exp();
+    x.broadcast(f012v3) * (f0.reshape(v012f3).broadcast(f012v3).cast<Cx>() * τ.reshape(f012v3).broadcast(v012f3)).exp();
   finishForward(y, time, true);
 }
 
 void f0Segment::adjoint(OutCMap const y, InMap x) const
 {
   auto const time = startAdjoint(y, x, false);
+  Log::Tensor("f0adj-y", y.dimensions(), y.data(), {"i", "j", "k", "b"});
   x.device(Threads::TensorDevice()) =
-    (y * (f0.reshape(f0v123).broadcast(v0f123).cast<Cx>() * τ.reshape(v0f123).broadcast(f0v123).conjugate()).exp()).sum(Sz1{0});
+    (y * (f0.reshape(v012f3).broadcast(f012v3).cast<Cx>() * τ.reshape(f012v3).broadcast(v012f3)).exp().conjugate())
+      .sum(Sz1{3})
+      .reshape(v012f3);
+  Log::Tensor("f0adj-x", x.dimensions(), x.data(), {"i", "j", "k", "b"});
   finishAdjoint(x, time, false);
 }
 
 void f0Segment::iadjoint(OutCMap const y, InMap x) const
 {
   auto const time = startAdjoint(y, x, true);
+  Log::Tensor("f0adj-y", y.dimensions(), y.data(), {"i", "j", "k", "b"});
   x.device(Threads::TensorDevice()) +=
-    (y * (f0.reshape(f0v123).broadcast(v0f123).cast<Cx>() * τ.reshape(v0f123).broadcast(f0v123).conjugate()).exp()).sum(Sz1{0});
+    (y * (f0.reshape(v012f3).broadcast(f012v3).cast<Cx>() * τ.reshape(f012v3).broadcast(v012f3)).exp().conjugate())
+      .sum(Sz1{3})
+      .reshape(v012f3);
+  Log::Tensor("f0adj-x", x.dimensions(), x.data(), {"i", "j", "k", "b"});
   finishAdjoint(x, time, true);
 }
 

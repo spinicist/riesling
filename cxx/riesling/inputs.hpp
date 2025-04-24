@@ -96,8 +96,8 @@ struct SENSEArgs
 
 struct f0Args
 {
-  args::ValueFlag<std::string> fname;
-  VectorFlag<float>            τ;
+  args::ValueFlag<float> τacq;
+  args::ValueFlag<Index> Nτ;
 
   f0Args(args::Subparser &parser);
   auto Get() -> rl::Recon::f0Opts;

@@ -37,7 +37,7 @@ void WriteResidual(std::string const              &cmd,
 {
   Log::Print(cmd, "Creating recon operator without basis");
   Basis const id;
-  auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, Recon::f0Opts(), noncart);
+  auto const  R1 = Recon(reconOpts, preOpts, gridOpts, senseOpts, traj, &id, noncart);
   Log::Print(cmd, "Calculating K-space residual");
   noncart.device(Threads::TensorDevice()) -= A->forward(x);
   Log::Print(cmd, "Calculating image residual");
