@@ -219,6 +219,7 @@ set_target_properties(rl PROPERTIES
 )
 set_source_files_properties(
     op/ops.cpp
+    op/ndft.cpp
     op/grid.cpp
     op/grid-subgrid.cpp
     kernel/kernel-f1.cpp
