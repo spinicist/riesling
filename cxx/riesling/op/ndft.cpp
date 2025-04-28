@@ -18,39 +18,39 @@ void main_ndft(args::Subparser &parser)
   LSMRArgs    lsqOpts(parser);
 
   args::Flag fwd(parser, "", "Apply forward operation", {'f', "fwd"});
+  args::Flag adj(parser, "", "Apply adjoint operation", {'a', "adj"});
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readInfo();
+  auto const  shape = reader.dimensions();
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeInfo(info);
 
   Trajectory traj(reader, info.voxel_size, coreArgs.matrix.Get());
-  auto const nC = reader.dimensions()[0];
-  auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, basis.get());
-
   if (fwd) {
-    auto channels = reader.readTensor<Cx6>();
-    Cx5  noncart(AddBack(ndft->oshape, 1, channels.dimension(5)));
-    for (auto ii = 0; ii < channels.dimension(5); ii++) {
-      noncart.chip<4>(ii).chip<3>(0).device(Threads::TensorDevice()) = ndft->forward(CChipMap(channels, ii));
-    }
+    auto const cart = reader.readTensor<Cx6>();
+    auto const nC = shape[3];
+    auto const nS = 1;
+    auto const nT = shape[5];
+    auto const A = TOps::NDFTAll(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, nS, nT, basis.get());
+    auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
-    traj.write(writer);
   } else {
-    auto        noncart = reader.readTensor<Cx5>();
-    Index const nS = noncart.dimension(3);
-    Index const nT = noncart.dimension(4);
-    traj.checkDims(FirstN<3>(noncart.dimensions()));
-
-    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
-    LSMR const lsmr{ndft, M, nullptr, lsqOpts.Get()};
-
-    Cx6 output(AddBack(ndft->ishape, noncart.dimension(3)));
-    for (auto ii = 0; ii < noncart.dimension(4); ii++) {
-      output.chip<5>(ii).device(Threads::TensorDevice()) = AsTensorMap(lsmr.run(CollapseToArray(noncart)), ndft->ishape);
+    auto const noncart = reader.readTensor<Cx5>();
+    auto const nC = shape[0];
+    auto const nS = shape[3];
+    auto const nT = shape[4];
+    auto const A = TOps::NDFTAll(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, nS, nT, basis.get());
+    if (adj) {
+      auto const cart = A->adjoint(noncart);
+      writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
+    } else {
+      auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
+      LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
+      auto const c = lsmr.run(CollapseToConstVector(noncart));
+      writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
     }
-    writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
   }
 }

@@ -23,4 +23,7 @@ private:
   Basis::CPtr basis;
 };
 
+auto NDFTAll(Sz3 const shape, Re3 const &tr, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr b)
+  -> TOps::TOp<Cx, 6, 5>::Ptr;
+
 } // namespace rl::TOps
