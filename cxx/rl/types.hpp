@@ -172,7 +172,7 @@ template <size_t F, size_t N, typename T> auto MidN(T const &sz) -> Eigen::DSize
 
 template <int N> Index Product(Sz<N> const &indices)
 {
-  return std::accumulate(indices.cbegin(), indices.cend(), 1L, std::multiplies<Index>());
+  return std::accumulate(indices.begin(), indices.end(), 1L, std::multiplies<Index>());
 }
 
 template <int N> auto Add(Eigen::DSizes<Index, N> const &sz, Index const a) -> Eigen::DSizes<Index, N>
