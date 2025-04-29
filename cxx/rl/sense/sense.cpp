@@ -7,6 +7,7 @@
 #include "../filter.hpp"
 #include "../io/hd5.hpp"
 #include "../op/fft.hpp"
+#include "../op/loopify.hpp"
 #include "../op/mask.hpp"
 #include "../op/nufft.hpp"
 #include "../op/pad.hpp"
@@ -29,7 +30,8 @@ auto LoresChannels(Opts const &opts, GridOpts<3> const &gridOpts, Trajectory tra
   Cx4 const ncVol = noncart.chip<4>(opts.tp);
   traj.downsample(opts.res, true, false);
   auto       lores = traj.trim(ncVol);
-  auto const A = TOps::NUFFTAll(gridOpts, traj, nC, nS, 1, nullptr);
+  auto const nufft = TOps::NUFFT<3>::Make(gridOpts, traj, nC, nullptr);
+  auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, 1);
   auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, {4}};
 

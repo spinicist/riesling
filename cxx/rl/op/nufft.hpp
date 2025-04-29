@@ -28,9 +28,4 @@ private:
   std::array<std::pair<Index, Index>, ND + 2> paddings_;
 };
 
-// Utility function to build a complete NUFFT pipeline over all slabs and timepoints
-auto NUFFTAll(
-  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
-  -> TOps::TOp<Cx, 6, 5>::Ptr;
-
 } // namespace rl::TOps

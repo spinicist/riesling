@@ -3,10 +3,6 @@
 #include "../apodize.hpp"
 #include "../fft.hpp"
 #include "../log.hpp"
-#include "compose.hpp"
-#include "loop.hpp"
-#include "multiplex.hpp"
-#include "reshape.hpp"
 #include "top-impl.hpp"
 
 namespace rl::TOps {
@@ -91,23 +87,5 @@ template <int ND, typename KF> void NUFFT<ND, KF>::iadjoint(OutCMap const y, InM
 template struct NUFFT<1>;
 template struct NUFFT<2>;
 template struct NUFFT<3>;
-
-auto NUFFTAll(
-  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr basis)
-  -> TOps::TOp<Cx, 6, 5>::Ptr
-{
-  auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, nC, basis);
-  if (nSlab == 1) {
-    auto reshape = TOps::MakeReshapeOutput(nufft, AddBack(nufft->oshape, 1));
-    auto timeLoop = TOps::MakeLoop(reshape, nTime);
-    return timeLoop;
-  } else {
-    auto loop = TOps::MakeLoop(nufft, nSlab);
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(nufft->ishape, nSlab);
-    auto compose1 = TOps::MakeCompose(slabToVol, loop);
-    auto timeLoop = TOps::MakeLoop(compose1, nTime);
-    return timeLoop;
-  }
-}
 
 } // namespace rl::TOps
