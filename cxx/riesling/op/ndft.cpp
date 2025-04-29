@@ -3,6 +3,7 @@
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
+#include "rl/op/loopify.hpp"
 #include "rl/op/ndft.hpp"
 #include "rl/precon.hpp"
 #include "rl/sys/threads.hpp"
@@ -34,7 +35,8 @@ void main_ndft(args::Subparser &parser)
     auto const nC = shape[3];
     auto const nS = 1;
     auto const nT = shape[5];
-    auto const A = TOps::NDFTAll(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, nS, nT, basis.get());
+    auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, basis.get());
+    auto const A = Loopify<TOps::NDFT<3>>(ndft, nS, nT);
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
   } else {
@@ -42,7 +44,8 @@ void main_ndft(args::Subparser &parser)
     auto const nC = shape[0];
     auto const nS = shape[3];
     auto const nT = shape[4];
-    auto const A = TOps::NDFTAll(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, nS, nT, basis.get());
+    auto const ndft = TOps::NDFT<3>::Make(traj.matrixForFOV(gridArgs.fov.Get()), traj.points(), nC, basis.get());
+    auto const A = Loopify<TOps::NDFT<3>>(ndft, nS, nT);
     if (adj) {
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);

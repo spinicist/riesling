@@ -14,21 +14,25 @@ TEST_CASE("NDFT", "[tform]")
   Re3         points(1, M, 1);
   points.setZero();
   for (Index ii = 0; ii < M; ii++) {
-    points(0, ii, 0) = -0.5f + ii / (float)M;
+    points(0, ii, 0) = -(float)M / 2 + ii;
   }
-  Basis basis;
-  TOps::NDFT<1> ndft(Sz1{M}, points, 1, &basis);
+  TOps::NDFT<1> ndft(Sz1{M}, points, 1, nullptr);
   Cx3           ks(ndft.oshape);
   Cx3           img(ndft.ishape);
   img.setZero();
-  img(0, 0, M / 2) = std::sqrt(M);
+  img(M / 2, 0, 0) = std::sqrt(M);
   ks = ndft.forward(img);
   INFO("IMG\n" << img);
   INFO("KS\n" << ks);
-  CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-2f));
-  img = ndft.adjoint(ks);
-  INFO("IMG\n" << img);
-  CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-2f));
+  CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(1.e-6f));
+  for (Index ii = 0; ii < M; ii++) {
+    CHECK(ks(0, ii, 0).real() == Approx(1.0).margin(1.e-6f));
+    CHECK(ks(0, ii, 0).imag() == Approx(0.0).margin(1.e-6f));
+  }
+  Cx3 img2 = ndft.adjoint(ks);
+  INFO("IMG2\n" << img2);
+  CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(1.e-6f));
+  CHECK(Norm<false>(img - img2) == Approx(0.0).margin(1.e-6f));
 }
 
 TEST_CASE("NDFT Basis", "[tform]")
@@ -38,7 +42,7 @@ TEST_CASE("NDFT Basis", "[tform]")
   Re3         points(1, 1, M);
   points.setZero();
   Index const O = 4;
-  Basis basis(O, 1, M);
+  Basis       basis(O, 1, M);
   basis.B.setZero();
   Index const P = M / O;
   for (Index ii = 0; ii < O; ii++) {

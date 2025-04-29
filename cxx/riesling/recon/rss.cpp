@@ -4,6 +4,7 @@
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
+#include "rl/op/loopify.hpp"
 #include "rl/op/nufft.hpp"
 #include "rl/precon.hpp"
 #include "rl/types.hpp"
@@ -15,7 +16,7 @@ void main_recon_rss(args::Subparser &parser)
   CoreArgs            coreArgs(parser);
   GridArgs<3>         gridArgs(parser);
   PreconArgs          preArgs(parser);
-  LSMRArgs             lsqOpts(parser);
+  LSMRArgs            lsqOpts(parser);
   ArrayFlag<float, 3> cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -30,7 +31,8 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const A = TOps::NUFFTAll(gridArgs.Get(), traj, nC, nS, nT, basis.get());
+  auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
+  auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, nT);
   auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
   LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
   auto       x = lsmr.run(CollapseToConstVector(noncart));

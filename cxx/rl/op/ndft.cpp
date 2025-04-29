@@ -1,10 +1,6 @@
 #include "ndft.hpp"
 
-#include "loop.hpp"
 #include "pad.hpp"
-#include "reshape.hpp"
-#include "compose.hpp"
-#include "multiplex.hpp"
 #include "top-impl.hpp"
 
 using namespace std::complex_literals;
@@ -63,8 +59,7 @@ template <int NDim> NDFT<NDim>::NDFT(Sz<NDim> const shape, Re3 const &tr, Index 
   }
 }
 
-template <int NDim> auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis::CPtr basis)
-  -> std::shared_ptr<NDFT<NDim>>
+template <int NDim> auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis::CPtr basis) -> Ptr
 {
   return std::make_shared<NDFT<NDim>>(matrix, traj, nC, basis);
 }
@@ -87,29 +82,43 @@ template <int NDim> void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> 
 template <int NDim> void NDFT<NDim>::forward(InCMap const x, OutMap y) const
 {
   auto const  time = this->startForward(x, y, false);
-  Index const nC = ishape[NDim - 2];
-  Index const nB = ishape[NDim - 1];
-  auto const  xr = x.reshape(Sz3{N, nC, nB});
+  Index const nC = ishape[InRank - 2];
 
-  auto task = [&](Index const trlo, Index const trhi) {
-    for (Index itr = trlo; itr < trhi; itr++) {
-      for (Index isamp = 0; isamp < nSamp; isamp++) {
-        Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
-          xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-        if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
-        Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-        Cx2 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-        if (basis) {
+  if (basis) {
+    Index const nB = ishape[InRank - 1];
+    auto const  xr = x.reshape(Sz3{N, nC, nB});
+    auto        task = [&](Index const trlo, Index const trhi) {
+      for (Index itr = trlo; itr < trhi; itr++) {
+        for (Index isamp = 0; isamp < nSamp; isamp++) {
+          Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+            xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+          if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
+          Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+          Cx2 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
           Cx1 const b = basis->B.chip<2>(itr % basis->nSample()).template chip<1>(isamp % basis->nTrace());
           y.template chip<2>(itr).template chip<1>(isamp) =
             samp.contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()) * Cx(scale);
-        } else {
+        }
+      }
+    };
+    Threads::ChunkFor(task, nTrace);
+  } else {
+    Index const nB = ishape[InRank - 1];
+    auto const  xr = x.reshape(Sz2{N, nC});
+    auto        task = [&](Index const trlo, Index const trhi) {
+      for (Index itr = trlo; itr < trhi; itr++) {
+        for (Index isamp = 0; isamp < nSamp; isamp++) {
+          Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+            xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+          if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
+          Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+          Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
           y.template chip<2>(itr).template chip<1>(isamp) = samp * Cx(scale);
         }
       }
-    }
-  };
-  Threads::ChunkFor(task, nTrace);
+    };
+    Threads::ChunkFor(task, nTrace);
+  }
   this->finishForward(y, time, false);
 }
 
@@ -153,22 +162,5 @@ template <int NDim> void NDFT<NDim>::adjoint(OutCMap const yy, InMap x) const
 template struct NDFT<1>;
 template struct NDFT<2>;
 template struct NDFT<3>;
-
-auto NDFTAll(Sz3 const shape, Re3 const &tr, Index const nC, Index const nSlab, Index const nTime, Basis::CPtr b)
-  -> TOps::TOp<Cx, 6, 5>::Ptr
-{
-  auto ndft = TOps::NDFT<3>::Make(shape, tr, nC, b);
-  if (nSlab == 1) {
-    auto reshape = TOps::MakeReshapeOutput(ndft, AddBack(ndft->oshape, 1));
-    auto timeLoop = TOps::MakeLoop(reshape, nTime);
-    return timeLoop;
-  } else {
-    auto loop = TOps::MakeLoop(ndft, nSlab);
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(ndft->ishape, nSlab);
-    auto compose1 = TOps::MakeCompose(slabToVol, loop);
-    auto timeLoop = TOps::MakeLoop(compose1, nTime);
-    return timeLoop;
-  }
-}
 
 } // namespace rl::TOps
