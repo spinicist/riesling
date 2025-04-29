@@ -7,6 +7,7 @@
 #include <fmt/color.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
+#include <fmt/std.h>
 
 #include "io/hd5-core.hpp"
 #include "types.hpp"
