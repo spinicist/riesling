@@ -1,6 +1,7 @@
 #include "ndft.hpp"
 
-#include "pad.hpp"
+#include "../log.hpp"
+#include "tensorscale.hpp"
 #include "top-impl.hpp"
 
 using namespace std::complex_literals;
@@ -64,13 +65,12 @@ template <int NDim> auto NDFT<NDim>::Make(Sz<NDim> const matrix, Re3 const &traj
   return std::make_shared<NDFT<NDim>>(matrix, traj, nC, basis);
 }
 
-template <int NDim> void NDFT<NDim>::addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const)
+template <int NDim> void NDFT<NDim>::addOffResonance(ReN<NDim> const &f0map, float const t0, float const)
 {
-  TOps::Pad<float, NDim> pad(f0map.dimensions(), LastN<NDim>(ishape));
-  Δf.resize(N);
-  assert(N == pad.rows());
-  typename TOps::Pad<float, NDim>::OutMap fm(Δf.data(), pad.oshape);
-  pad.forward(f0map, fm);
+  if (f0map.dimensions() != FirstN<NDim>(ishape)) {
+    throw Log::Failure("NDFT", "Off-resonance map dimensions were {} should be {}", f0map.dimensions(), FirstN<NDim>(ishape));
+  }
+  Δf = f0map.reshape(Sz1{N});
   t.resize(nSamp);
   t[0] = t0;
   for (Index ii = 1; ii < nSamp; ii++) {
@@ -103,9 +103,8 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const x, OutMap y) const
     };
     Threads::ChunkFor(task, nTrace);
   } else {
-    Index const nB = ishape[InRank - 1];
-    auto const  xr = x.reshape(Sz2{N, nC});
-    auto        task = [&](Index const trlo, Index const trhi) {
+    auto const xr = x.reshape(Sz2{N, nC});
+    auto       task = [&](Index const trlo, Index const trhi) {
       for (Index itr = trlo; itr < trhi; itr++) {
         for (Index isamp = 0; isamp < nSamp; isamp++) {
           Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
@@ -114,6 +113,48 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const x, OutMap y) const
           Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
           Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
           y.template chip<2>(itr).template chip<1>(isamp) = samp * Cx(scale);
+        }
+      }
+    };
+    Threads::ChunkFor(task, nTrace);
+  }
+  this->finishForward(y, time, false);
+}
+
+template <int NDim> void NDFT<NDim>::iforward(InCMap const x, OutMap y) const
+{
+  auto const  time = this->startForward(x, y, false);
+  Index const nC = ishape[InRank - 2];
+
+  if (basis) {
+    Index const nB = ishape[InRank - 1];
+    auto const  xr = x.reshape(Sz3{N, nC, nB});
+    auto        task = [&](Index const trlo, Index const trhi) {
+      for (Index itr = trlo; itr < trhi; itr++) {
+        for (Index isamp = 0; isamp < nSamp; isamp++) {
+          Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+            xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+          if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
+          Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+          Cx2 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+          Cx1 const b = basis->B.chip<2>(itr % basis->nSample()).template chip<1>(isamp % basis->nTrace());
+          y.template chip<2>(itr).template chip<1>(isamp) +=
+            samp.contract(b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()) * Cx(scale);
+        }
+      }
+    };
+    Threads::ChunkFor(task, nTrace);
+  } else {
+    auto const xr = x.reshape(Sz2{N, nC});
+    auto       task = [&](Index const trlo, Index const trhi) {
+      for (Index itr = trlo; itr < trhi; itr++) {
+        for (Index isamp = 0; isamp < nSamp; isamp++) {
+          Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
+            xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+          if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
+          Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+          Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+          y.template chip<2>(itr).template chip<1>(isamp) += samp * Cx(scale);
         }
       }
     };
@@ -157,6 +198,62 @@ template <int NDim> void NDFT<NDim>::adjoint(OutCMap const yy, InMap x) const
   };
   Threads::ChunkFor(task, N);
   this->finishAdjoint(x, time, false);
+}
+
+template <int NDim> void NDFT<NDim>::iadjoint(OutCMap const yy, InMap x) const
+{
+  auto const                             time = this->startAdjoint(yy, x, false);
+  OutTensor                              sy;
+  OutCMap                                y(yy);
+  Index const                            nC = ishape[InRank - 2];
+  Index const                            nB = ishape[InRank - 1];
+  Eigen::TensorMap<Eigen::Tensor<Cx, 3>> xm(x.data(), N, nC, nB);
+
+  auto task = [&](Index const ilo, Index const ihi) {
+    for (Index ii = ilo; ii < ihi; ii++) {
+      Re1 const xf = xc.chip<1>(ii);
+      Cx2       vox(nC, nB);
+      vox.setZero();
+      for (Index itr = 0; itr < nTrace; itr++) {
+        Re1 ph = traj.chip<2>(itr).contract(xf, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
+        if (Δf.size()) { ph -= Δf(ii) * t * 2.f * (float)M_PI; }
+        Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
+        if (basis) {
+          for (Index ib = 0; ib < nB; ib++) {
+            Cx1 const b = basis->B.template chip<2>(itr % basis->nTrace())
+                            .template chip<0>(ib)
+                            .conjugate()
+                            .broadcast(Sz1{nSamp / basis->nSample()});
+            vox.chip<1>(ib) += y.template chip<2>(itr).contract(eph * b, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+          }
+        } else {
+          vox.chip<1>(0) += y.template chip<2>(itr).contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>());
+        }
+      }
+      xm.chip<0>(ii) += vox * Cx(scale);
+    }
+  };
+  Threads::ChunkFor(task, N);
+  this->finishAdjoint(x, time, false);
+}
+
+template <int NDim> auto NDFT<NDim>::M(float const λ, Index const nS, Index const nT) const -> TOps::TOp<Cx, 5, 5>::Ptr
+{
+  Log::Print("NDFT", "Calculating preconditioner λ {}", λ);
+  Cx3 ones(this->oshape);
+  ones.setConstant(1.f);
+  auto xcor = this->adjoint(ones);
+  xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
+  Re3         weights = (1.f + λ) / (this->forward(xcor).abs() + λ);
+  float const norm = Norm<true>(weights);
+  if (!std::isfinite(norm)) {
+    throw Log::Failure("NDFT", "Pre-conditioner norm was not finite ({})", norm);
+  } else {
+    Log::Print("NDFT", "Pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights), Maximum(weights));
+  }
+
+  Sz5 const shape = AddBack(this->oshape, nS, nT);
+  return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, weights.cast<Cx>());
 }
 
 template struct NDFT<1>;

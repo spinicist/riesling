@@ -40,9 +40,9 @@ auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float con
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
-    Log::Print("Precon", "Single-channel pre-conditioner norm was not finite ({})", norm);
+    throw Log::Failure("Precon", "Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
-    Log::Print("Precon", "Single-channel pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights),
+    Log::Print("Precon", "Single-channel pre-conditioner finished, norm {} scale {} min {} max {}", norm, scale, Minimum(weights),
                Maximum(weights));
   }
   return weights.chip<0>(0);
@@ -104,7 +104,7 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   }
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
-    Log::Print("Precon", "Pre-conditioner norm was not finite ({})", norm);
+    throw Log::Failure("Precon", "Pre-conditioner norm was not finite ({})", norm);
   } else {
     Log::Print("Precon", "Pre-conditioner finished, norm {} min {} max {}", norm, Minimum(weights), Maximum(weights));
   }

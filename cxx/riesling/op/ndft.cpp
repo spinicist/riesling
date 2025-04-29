@@ -5,7 +5,6 @@
 #include "rl/log.hpp"
 #include "rl/op/loopify.hpp"
 #include "rl/op/ndft.hpp"
-#include "rl/precon.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/types.hpp"
 
@@ -50,7 +49,7 @@ void main_ndft(args::Subparser &parser)
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
     } else {
-      auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
+      auto const M = ndft->M(preArgs.λ.Get(), nS, nT);
       LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
       auto const c = lsmr.run(CollapseToConstVector(noncart));
       writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);
