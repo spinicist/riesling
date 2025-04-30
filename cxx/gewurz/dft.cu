@@ -28,6 +28,9 @@ template <int N> using CxSN = cuda::std::mdspan<cuda::std::complex<float>, ExtN<
 using CxS3 = CxSN<3>;
 using CxS4 = CxSN<4>;
 
+using ReVec = thrust::universal_vector<float>;
+using CxVec = thrust::universal_vector<cuda::std::complex<float>>;
+
 void ForwardDFT(CxS4 imgs, ReS3 traj, CxS3 ks)
 {
   Log::Print("gewurz", "Forward DFT");
@@ -63,14 +66,15 @@ void ForwardDFT(CxS4 imgs, ReS3 traj, CxS3 ks)
 
 void AdjointDFT(CxS3 ks, ReS3 traj, CxS4 imgs)
 {
-  Log::Print("gewurz", "Adjoint DFT");
   int const nI = imgs.extent(0);
   int const nJ = imgs.extent(1);
   int const nK = imgs.extent(2);
   int const nIJ = nI * nJ;
   int const nIJK = nIJ * nK;
 
-  thrust::for_each_n(thrust::host, thrust::make_counting_iterator(0), nIJK, [imgs, traj, ks] __host__ (int ijk) {
+  Log::Print("gewurz", "Adjoint DFT {} {} {} {}", nI, nJ, nK, nIJK);
+
+  thrust::for_each_n(thrust::cuda::par, thrust::make_counting_iterator(0), nIJK, [imgs, traj, ks] __device__(int ijk) {
     int const nI = imgs.extent(0);
     int const nJ = imgs.extent(1);
     int const nK = imgs.extent(2);
@@ -91,6 +95,7 @@ void AdjointDFT(CxS3 ks, ReS3 traj, CxS4 imgs)
         // fmt::print(stderr, "ijk {} {} {} st {} {} p {} ep {} {}\n", ii, ij, ik, is, it, p, ep.real(), ep.imag());
         for (int ic = 0; ic < ks.extent(0); ic++) {
           imgs(ii, ij, ik, ic) += ep * ks(ic, is, it);
+          // imgs(ii, ij, ik, ic) = ic + 1;
         }
       }
     }
@@ -111,20 +116,26 @@ void main_dft(args::Subparser &parser)
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto const  mat = traj.matrix();
+  Cx5 const   input = reader.readTensor<Cx5>();
 
   Log::Print("gewurz", "Create universal vectors");
-  thrust::universal_vector<cuda::std::complex<float>> vKS(nC * nS * nT);
-  auto                                                sKS = CxS3(thrust::raw_pointer_cast(vKS.data()), nC, nS, nT);
-  thrust::universal_vector<cuda::std::complex<float>> vImg(mat[0] * mat[1] * mat[2] * nC);
-  cuda::std::fill_n(vImg.data(), vImg.size(), 0.f);
-  auto sImg = CxS4(thrust::raw_pointer_cast(vImg.data()), mat[0], mat[1], mat[2], nC);
+  CxVec vKS(nC * nS * nT);
+  auto  sKS = CxS3(thrust::raw_pointer_cast(vKS.data()), nC, nS, nT);
+  thrust::copy_n(input.data(), nC * nS * nT, vKS.begin());
 
-  thrust::universal_vector<float> T(3 * nS * nT);
+  CxVec vImg(mat[0] * mat[1] * mat[2] * nC);
+  auto  sImg = CxS4(thrust::raw_pointer_cast(vImg.data()), mat[0], mat[1], mat[2], nC);
+  cuda::std::fill_n(vImg.data(), vImg.size(), 0.f);
+
+  ReVec T(3 * nS * nT);
   thrust::copy_n(traj.points().data(), T.size(), T.data());
   auto sT = ReS3(thrust::raw_pointer_cast(T.data()), 3, nS, nT);
   Log::Print("gewurz", "Copy trajectory to device");
   AdjointDFT(sKS, sT, sImg);
+
+  Cx6 output(mat[0], mat[1], mat[2], nC, 1, 1);
+  thrust::copy_n(vImg.begin(), vImg.size(), output.data());
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeInfo(info);
-  writer.writeTensor(HD5::Keys::Data, AddBack(mat, nC, 1, 1), (Cx *)thrust::raw_pointer_cast(vImg.data()), HD5::Dims::Channels);
+  writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Channels);
 }
