@@ -103,16 +103,42 @@ template <int NDim> void NDFT<NDim>::forward(InCMap const x, OutMap y) const
     };
     Threads::ChunkFor(task, nTrace);
   } else {
-    auto const xr = x.reshape(Sz2{N, nC});
-    auto       task = [&](Index const trlo, Index const trhi) {
+    auto task = [&](Index const trlo, Index const trhi) {
       for (Index itr = trlo; itr < trhi; itr++) {
         for (Index isamp = 0; isamp < nSamp; isamp++) {
-          Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
-            xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-          if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
-          Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-          Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-          y.template chip<2>(itr).template chip<1>(isamp) = samp * Cx(scale);
+          for (Index ic = 0; ic < nC; ic++) {
+            y(ic, isamp, itr) = 0.f;
+          }
+          Index const s0 = ishape[NDim - 1];
+          for (Index i0 = 0; i0 < s0; i0++) {
+            float const p0 = -traj(0, isamp, itr) * (2.f * M_PI * (i0 - s0 / 2)) / s0;
+            if constexpr (NDim == 1) {
+              Cx const f(std::cos(p0), std::sin(p0));
+              for (Index ic = 0; ic < nC; ic++) {
+                y(ic, isamp, itr) += f * x(i0, ic, 0);
+              }
+            } else {
+              Index const s1 = ishape[NDim - 2];
+              for (Index i1 = 0; i1 < s1; i1++) {
+                float const p1 = p0 - traj(1, isamp, itr) * (2.f * M_PI * (i1 - s1 / 2)) / s1;
+                if constexpr (NDim == 2) {
+                  Cx const f(std::cos(p1), std::sin(p1));
+                  for (Index ic = 0; ic < nC; ic++) {
+                    y(ic, isamp, itr) += f * x(i0, i1, ic, 0);
+                  }
+                } else {
+                  Index const s2 = ishape[NDim - 3];
+                  for (Index i2 = 0; i2 < s2; i2++) {
+                    float const p2 = p1 - traj(2, isamp, itr) * (2.f * M_PI * (i2 - s2 / 2)) / s2;
+                    Cx const    f(std::cos(p2), std::sin(p2));
+                    for (Index ic = 0; ic < nC; ic++) {
+                      y(ic, isamp, itr) += f * x(i0, i1, i2, ic, 0);
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     };
@@ -145,16 +171,39 @@ template <int NDim> void NDFT<NDim>::iforward(InCMap const x, OutMap y) const
     };
     Threads::ChunkFor(task, nTrace);
   } else {
-    auto const xr = x.reshape(Sz2{N, nC});
-    auto       task = [&](Index const trlo, Index const trhi) {
+    auto task = [&](Index const trlo, Index const trhi) {
       for (Index itr = trlo; itr < trhi; itr++) {
         for (Index isamp = 0; isamp < nSamp; isamp++) {
-          Re1 ph = -traj.template chip<2>(itr).template chip<1>(isamp).broadcast(Sz2{1, N}).contract(
-            xc, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-          if (Δf.size()) { ph += Δf * t[isamp] * 2.f * (float)M_PI; }
-          Cx1 const eph = ph.unaryExpr([](float const p) { return std::polar(1.f, p); });
-          Cx1 const samp = xr.contract(eph, Eigen::IndexPairList<Eigen::type2indexpair<0, 0>>());
-          y.template chip<2>(itr).template chip<1>(isamp) += samp * Cx(scale);
+          Index const s0 = ishape[NDim - 1];
+          for (Index i0 = 0; i0 < s0; i0++) {
+            float const p0 = -traj(0, isamp, itr) * (2.f * M_PI * (i0 - s0 / 2)) / s0;
+            if constexpr (NDim == 1) {
+              Cx const f(std::cos(p0), std::sin(p0));
+              for (Index ic = 0; ic < nC; ic++) {
+                y(ic, isamp, itr) += f * x(i0, ic, 0);
+              }
+            } else {
+              Index const s1 = ishape[NDim - 2];
+              for (Index i1 = 0; i1 < s1; i1++) {
+                float const p1 = p0 - traj(1, isamp, itr) * (2.f * M_PI * (i1 - s1 / 2)) / s1;
+                if constexpr (NDim == 2) {
+                  Cx const f(std::cos(p1), std::sin(p1));
+                  for (Index ic = 0; ic < nC; ic++) {
+                    y(ic, isamp, itr) += f * x(i0, i1, ic, 0);
+                  }
+                } else {
+                  Index const s2 = ishape[NDim - 3];
+                  for (Index i2 = 0; i2 < s2; i2++) {
+                    float const p2 = p1 - traj(2, isamp, itr) * (2.f * M_PI * (i2 - s2 / 2)) / s2;
+                    Cx const    f(std::cos(p2), std::sin(p2));
+                    for (Index ic = 0; ic < nC; ic++) {
+                      y(ic, isamp, itr) += f * x(i0, i1, i2, ic, 0);
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     };
