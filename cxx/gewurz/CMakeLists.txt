@@ -2,8 +2,20 @@ option(BUILD_GEWURZ "Build the gewurz binary" OFF)
 if(BUILD_GEWURZ)
     enable_language(CUDA)
     find_package(args CONFIG REQUIRED)
-    find_package(Thrust REQUIRED CONFIG)
-    thrust_create_target(Thrust DEVICE CUDA)
+
+    set(CCCL_REPOSITORY "https://github.com/NVIDIA/cccl" CACHE STRING "Git repository to fetch CCCL from")
+    set(CCCL_TAG "main" CACHE STRING "Git tag/branch to fetch from CCCL repository")
+    
+    include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
+    # This will automatically clone CCCL from GitHub and make the exported cmake targets available
+    CPMAddPackage(
+        NAME CCCL
+        GIT_REPOSITORY "${CCCL_REPOSITORY}"
+        GIT_TAG ${CCCL_TAG}
+        GIT_SHALLOW ON
+        OPTIONS "CCCL_ENABLE_UNSTABLE" ON
+    )
+
     add_executable(gewurz
         main.cpp
         ../args.cpp
@@ -15,8 +27,10 @@ if(BUILD_GEWURZ)
         dft.cu
         PROPERTIES COMPILE_FLAGS --extended-lambda
     )
+    target_compile_features(gewurz PUBLIC cuda_std_17)
     target_link_libraries(gewurz PRIVATE
-        Thrust
+        CCCL::CCCL
+        cudax::cudax
         rl
         taywee::args
     )
