@@ -15,7 +15,6 @@
                 "zlib"
             ]
         },
-        "mdspan",
         "nifticlib",
         "scnlib",
         "tl-ranges",
