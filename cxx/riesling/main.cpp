@@ -65,7 +65,6 @@ int main(int const argc, char const *const argv[])
   COMMAND(op, nufft2, "op-nufft2", "Apply forward/adjoint 2D NUFFT");
   COMMAND(op, pad, "op-pad", "Pad/crop an image");
   COMMAND(op, prox, "op-prox", "Apply Proximal operators");
-  COMMAND(op, rss, "op-rss", "Take RSS across first dimension");
   COMMAND(op, op_sense, "op-sense", "Channel combine with SENSE");
   COMMAND(op, wavelets, "op-wavelets", "Apply wavelet transform");
 
@@ -80,6 +79,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(util, precon, "precon", "Precompute preconditioning weights");
   COMMAND(util, psf, "psf", "Estimate Point Spread Function");
   COMMAND(util, resamp, "resamp", "Resample images to desired resolution");
+  COMMAND(util, rss, "rss", "Take RSS across a dimension");
   // COMMAND(util, rovir, "rovir", "Calculate ROVIR compression matrix");
 #ifdef BUILD_MONTAGE
   COMMAND(util, montage, "montage", "Make beautiful output images");
