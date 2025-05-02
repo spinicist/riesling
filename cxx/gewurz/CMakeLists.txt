@@ -20,7 +20,6 @@ if(BUILD_GEWURZ)
         main.cpp
         ../args.cpp
         inputs.cpp
-        # outputs.cpp
         dft.cu
     )
     set_source_files_properties(
