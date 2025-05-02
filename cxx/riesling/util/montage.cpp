@@ -20,11 +20,11 @@ struct NameIndexReader
 {
   void operator()(std::string const &name, std::string const &value, NameIndex &ni)
   {
-    if (auto result = scn::scan<std::string, Index>(value, "{:[a-z]},{:d}")) {
+    if (auto result = scn::scan<std::string, Index>(value, "{:[a-z0-9]},{:d}")) {
       ni.name = std::get<0>(result->values());
       ni.index = std::get<1>(result->values());
     } else {
-      throw rl::Log::Failure("montage", "Could not read NameIndex for {} from value {}, error {}", name, value,
+      throw rl::Log::Failure("montage", "Could not read NameIndex for {} from value \"{}\" error {}", name, value,
                              result.error().msg());
     }
   }
