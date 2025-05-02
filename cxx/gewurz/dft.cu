@@ -5,6 +5,8 @@
 #include "rl/types.hpp"
 
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
+#include <cub/device/device_for.cuh>
+#include <cuda/experimental/stream.cuh>
 #include <cuda/std/complex>
 #include <cuda/std/mdspan>
 #include <cuda_fp16.h>
@@ -17,6 +19,7 @@
 #include "types.cuh"
 
 using namespace rl;
+namespace cudax = cuda::experimental;
 
 void ForwardDFT(CxS4 imgs, ReS3 traj, CxS3 ks)
 {
@@ -64,42 +67,42 @@ void AdjointDFT(CxS3 ks, ReS3 traj, CxS4 imgs)
   int const nI = imgs.extent(0);
   int const nJ = imgs.extent(1);
   int const nK = imgs.extent(2);
-  int const nIJ = nI * nJ;
-  int const nIJK = nIJ * nK;
 
   Log::Print("gewurz", "Adjoint DFT {} {} {} -> {} {} {} {} T {} {} {}", ks.extent(0), ks.extent(1), ks.extent(2), nI, nJ, nK,
              imgs.extent(3), traj.extent(0), traj.extent(1), traj.extent(2));
-  auto const start = Log::Now();
-  thrust::for_each_n(thrust::cuda::par, thrust::make_counting_iterator(0), nIJK, [imgs, traj, ks] __device__(int ijk) {
-    CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
+  auto const    start = Log::Now();
+  cudax::stream A;
 
-    int const nI = imgs.extent(0);
-    int const nJ = imgs.extent(1);
-    int const nK = imgs.extent(2);
-    int const nIJ = nI * nJ;
-    int const nS = ks.extent(1);
-    int const nT = ks.extent(2);
+  Ext3 const IJK(imgs.extent(0), imgs.extent(1), imgs.extent(2));
+  cub::DeviceFor::ForEachInExtents(
+    IJK,
+    [imgs, traj, ks] __device__(int ijk, int ii, int ij, int ik) {
+      CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
 
-    int const ik = ijk / nIJ;
-    int const ij = ijk % nIJ / nI;
-    int const ii = ijk % nIJ % nI;
+      int const nI = imgs.extent(0);
+      int const nJ = imgs.extent(1);
+      int const nK = imgs.extent(2);
+      int const nS = ks.extent(1);
+      int const nT = ks.extent(2);
 
-    for (int ic = 0; ic < ks.extent(0); ic++) {
-      imgs(ii, ij, ik, ic) = 0.f;
-    }
+      for (int ic = 0; ic < ks.extent(0); ic++) {
+        imgs(ii, ij, ik, ic) = 0.f;
+      }
 
-    for (int it = 0; it < nT; it++) {
-      for (int is = 0; is < nS; is++) {
-        float const p =
-          pi2 * (traj(0, is, it) * (CuReal)(ii - nI / 2) / (CuReal)nI + traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
-                 traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
-        CuCx const ep(cuda::std::cos(p), cuda::std::sin(p));
-        for (int ic = 0; ic < ks.extent(0); ic++) {
-          imgs(ii, ij, ik, ic) += ep * ks(ic, is, it);
+      for (int it = 0; it < nT; it++) {
+        for (int is = 0; is < nS; is++) {
+          float const p =
+            pi2 * (traj(0, is, it) * (CuReal)(ii - nI / 2) / (CuReal)nI + traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
+                   traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
+          CuCx const ep(cuda::std::cos(p), cuda::std::sin(p));
+          for (int ic = 0; ic < ks.extent(0); ic++) {
+            imgs(ii, ij, ik, ic) += ep * ks(ic, is, it);
+          }
         }
       }
-    }
-  });
+    },
+    A.get());
+  A.sync();
   Log::Print("gewurz", "Adjoint DFT finished in {}", Log::ToNow(start));
 }
 

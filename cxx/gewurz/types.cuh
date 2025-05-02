@@ -43,8 +43,6 @@ template <typename T, int N> struct DeviceTensor
     : vec((e * ...))
     , span(thrust::raw_pointer_cast(vec.data()), e...)
   {
-    fmt::print(stderr, "DT v {} {} s {} {}\n", (void *)thrust::raw_pointer_cast(vec.data()), vec.size(), (void *)span.data_handle(),
-               span.size());
   }
 
   auto size() -> size_t { return vec.size(); }
