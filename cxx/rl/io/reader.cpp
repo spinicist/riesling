@@ -127,6 +127,22 @@ template auto Reader::readTensor<Cx4>(std::string const &) const -> Cx4;
 template auto Reader::readTensor<Cx5>(std::string const &) const -> Cx5;
 template auto Reader::readTensor<Cx6>(std::string const &) const -> Cx6;
 
+template <typename Scalar> void Reader::readTo(Scalar *data, std::string const &name) const
+{
+  hid_t dset = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
+  if (dset < 0) { throw Log::Failure("HD5", "Could not open tensor '{}'", name); }
+  hid_t  ds = H5Dget_space(dset);
+  herr_t ret_value = H5Dread(dset, type<Scalar>(), ds, H5S_ALL, H5P_DATASET_XFER_DEFAULT, data);
+  if (ret_value < 0) {
+    throw Log::Failure("HD5", "Error reading from {} code {}", name, ret_value);
+  } else {
+    Log::Debug("HD5", "Read {}", name);
+  }
+}
+
+template void Reader::readTo<float>(float *, std::string const &) const;
+template void Reader::readTo<Cx>(Cx *, std::string const &) const;
+
 template <int N> auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
 {
   if (N != order(name)) { throw Log::Failure("HD5", "Asked for {} dimension names, but {} order tensor", N, order(name)); }

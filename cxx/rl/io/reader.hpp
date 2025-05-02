@@ -43,6 +43,7 @@ struct Reader
   template <int N> auto readAttributeSz(std::string const &dataset, std::string const &attribute) const -> Sz<N>;
 
   template <typename T> auto       readTensor(std::string const &label = Keys::Data) const -> T;
+  template <typename T> void       readTo(T *data, std::string const &label = Keys::Data) const;
   template <int N> auto            dimensionNames(std::string const &label = Keys::Data) const -> DimensionNames<N>;
   template <typename T> auto       readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T;
   template <typename Derived> auto readMatrix(std::string const &label) const -> Derived;
