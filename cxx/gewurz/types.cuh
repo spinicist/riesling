@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fmt/format.h>
+
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include <cuda/std/complex>
 #include <cuda/std/mdspan>
@@ -10,23 +12,23 @@
 #include <thrust/host_vector.h>
 #include <thrust/universal_vector.h>
 
-using RealType = float;
+using CuReal = float;
 
 template <int N> using ExtN = cuda::std::dextents<int, N>;
 using Ext3 = ExtN<3>;
 using Ext4 = ExtN<4>;
 
-template <int N> using ReSN = cuda::std::mdspan<RealType, ExtN<N>, cuda::std::layout_left>;
+template <int N> using ReSN = cuda::std::mdspan<CuReal, ExtN<N>, cuda::std::layout_left>;
 using ReS3 = ReSN<3>;
 using ReS4 = ReSN<4>;
 
-using CCx = cuda::std::complex<RealType>;
-template <int N> using CxSN = cuda::std::mdspan<CCx, ExtN<N>, cuda::std::layout_left>;
+using CuCx = cuda::std::complex<CuReal>;
+template <int N> using CxSN = cuda::std::mdspan<CuCx, ExtN<N>, cuda::std::layout_left>;
 using CxS3 = CxSN<3>;
 using CxS4 = CxSN<4>;
 
-using ReVec = thrust::universal_vector<RealType>;
-using CxVec = thrust::universal_vector<CCx>;
+using ReVec = thrust::universal_vector<CuReal>;
+using CxVec = thrust::universal_vector<CuCx>;
 
 template <typename T, int N> struct DeviceTensor
 {
@@ -37,11 +39,12 @@ template <typename T, int N> struct DeviceTensor
   Vector vec;
   Span   span;
 
-  template<typename... E>
-  DeviceTensor(E... e)
+  template <typename... E> DeviceTensor(E... e)
     : vec((e * ...))
     , span(thrust::raw_pointer_cast(vec.data()), e...)
   {
+    fmt::print(stderr, "DT v {} {} s {} {}\n", (void *)thrust::raw_pointer_cast(vec.data()), vec.size(), (void *)span.data_handle(),
+               span.size());
   }
 
   auto size() -> size_t { return vec.size(); }
@@ -56,9 +59,7 @@ template <typename T, int N> struct HostTensor
   Vector vec;
   Span   span;
 
-
-  template<typename... E>
-  HostTensor(E... e)
+  template <typename... E> HostTensor(E... e)
     : vec((e * ...))
     , span(thrust::raw_pointer_cast(vec.data()), e...)
   {

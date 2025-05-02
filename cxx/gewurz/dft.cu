@@ -26,9 +26,8 @@ void ForwardDFT(CxS4 imgs, ReS3 traj, CxS3 ks)
   int const  nT = ks.extent(2);
   int const  nST = nS * nT;
 
-  thrust::fill_n(ks.data_handle(), ks.size(), 0.f);
   thrust::for_each_n(thrust::cuda::par, thrust::make_counting_iterator(0), nST, [imgs, traj, ks] __device__(int st) {
-    RealType const pi2 = RealType(2.f * CUDART_PI_F);
+    CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
 
     int const nI = imgs.extent(0);
     int const nJ = imgs.extent(1);
@@ -39,13 +38,17 @@ void ForwardDFT(CxS4 imgs, ReS3 traj, CxS3 ks)
     int const it = st / nS;
     int const is = st % nS;
 
+    for (int ic = 0; ic < ks.extent(0); ic++) {
+      ks(ic, is, it) = 0.f;
+    }
+
     for (int ii = 0; ii < nI; ii++) {
       for (int ij = 0; ij < nJ; ij++) {
         for (int ik = 0; ik < nK; ik++) {
-          float const p = pi2 * (traj(0, is, it) * (RealType)(ii - nI / 2) / (RealType)nI +
-                                 traj(1, is, it) * (RealType)(ij - nJ / 2) / (RealType)nJ +
-                                 traj(2, is, it) * (RealType)(ik - nK / 2) / (RealType)nK);
-          CCx const   ep(cuda::std::cos(-p), cuda::std::sin(-p));
+          float const p =
+            pi2 * (traj(0, is, it) * (CuReal)(ii - nI / 2) / (CuReal)nI + traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
+                   traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
+          CuCx const ep(cuda::std::cos(-p), cuda::std::sin(-p));
           for (int ic = 0; ic < ks.extent(0); ic++) {
             ks(ic, is, it) += ep * imgs(ii, ij, ik, ic);
           }
@@ -64,11 +67,11 @@ void AdjointDFT(CxS3 ks, ReS3 traj, CxS4 imgs)
   int const nIJ = nI * nJ;
   int const nIJK = nIJ * nK;
 
-  Log::Print("gewurz", "Adjoint DFT {} {} {} {}", nI, nJ, nK, nIJK);
+  Log::Print("gewurz", "Adjoint DFT {} {} {} -> {} {} {} {} T {} {} {}", ks.extent(0), ks.extent(1), ks.extent(2), nI, nJ, nK,
+             imgs.extent(3), traj.extent(0), traj.extent(1), traj.extent(2));
   auto const start = Log::Now();
-  thrust::fill_n(imgs.data_handle(), imgs.size(), 0.f);
   thrust::for_each_n(thrust::cuda::par, thrust::make_counting_iterator(0), nIJK, [imgs, traj, ks] __device__(int ijk) {
-    RealType const pi2 = RealType(2.f * CUDART_PI_F);
+    CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
 
     int const nI = imgs.extent(0);
     int const nJ = imgs.extent(1);
@@ -81,12 +84,16 @@ void AdjointDFT(CxS3 ks, ReS3 traj, CxS4 imgs)
     int const ij = ijk % nIJ / nI;
     int const ii = ijk % nIJ % nI;
 
+    for (int ic = 0; ic < ks.extent(0); ic++) {
+      imgs(ii, ij, ik, ic) = 0.f;
+    }
+
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
-        float const p = pi2 * (traj(0, is, it) * (RealType)(ii - nI / 2) / (RealType)nI +
-                               traj(1, is, it) * (RealType)(ij - nJ / 2) / (RealType)nJ +
-                               traj(2, is, it) * (RealType)(ik - nK / 2) / (RealType)nK);
-        CCx const   ep(cuda::std::cos(p), cuda::std::sin(p));
+        float const p =
+          pi2 * (traj(0, is, it) * (CuReal)(ii - nI / 2) / (CuReal)nI + traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
+                 traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
+        CuCx const ep(cuda::std::cos(p), cuda::std::sin(p));
         for (int ic = 0; ic < ks.extent(0); ic++) {
           imgs(ii, ij, ik, ic) += ep * ks(ic, is, it);
         }
@@ -104,11 +111,11 @@ void AdjointDFT(CxS3 ks, ReS3 M, ReS3 traj, CxS4 imgs)
   int const nIJ = nI * nJ;
   int const nIJK = nIJ * nK;
 
-  Log::Print("gewurz", "Adjoint DFT {} {} {} {}", nI, nJ, nK, nIJK);
+  Log::Print("gewurz", "Adjoint DFT {} {} {} -> {} {} {} {} M {} {} {}", ks.extent(0), ks.extent(1), ks.extent(2), nI, nJ, nK,
+             imgs.extent(3), M.extent(0), M.extent(1), M.extent(2));
   auto const start = Log::Now();
-  thrust::fill_n(imgs.data_handle(), imgs.size(), 0.f);
   thrust::for_each_n(thrust::cuda::par, thrust::make_counting_iterator(0), nIJK, [ks, M, traj, imgs] __device__(int ijk) {
-    RealType const pi2 = RealType(2.f * CUDART_PI_F);
+    CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
 
     int const nI = imgs.extent(0);
     int const nJ = imgs.extent(1);
@@ -121,16 +128,18 @@ void AdjointDFT(CxS3 ks, ReS3 M, ReS3 traj, CxS4 imgs)
     int const ij = ijk % nIJ / nI;
     int const ii = ijk % nIJ % nI;
 
+    for (int ic = 0; ic < ks.extent(0); ic++) {
+      imgs(ii, ij, ik, ic) = 0.f;
+    }
+
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
-        float const p = pi2 * (traj(0, is, it) * (RealType)(ii - nI / 2) / (RealType)nI +
-                               traj(1, is, it) * (RealType)(ij - nJ / 2) / (RealType)nJ +
-                               traj(2, is, it) * (RealType)(ik - nK / 2) / (RealType)nK);
-        CCx const   ep(cuda::std::cos(p), cuda::std::sin(p));
-        // fmt::print(stderr, "ijk {} {} {} st {} {} p {} ep {} {}\n", ii, ij, ik, is, it, p, ep.real(), ep.imag());
+        float const p =
+          pi2 * (traj(0, is, it) * (CuReal)(ii - nI / 2) / (CuReal)nI + traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
+                 traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
+        CuCx const ep(cuda::std::cos(p), cuda::std::sin(p));
         for (int ic = 0; ic < ks.extent(0); ic++) {
           imgs(ii, ij, ik, ic) += ep * ks(ic, is, it) * M(0, is, it);
-          // imgs(ii, ij, ik, ic) = ic + 1;
         }
       }
     }
@@ -150,36 +159,33 @@ void main_dft(args::Subparser &parser)
   Index const nS = shape[1];
   Index const nT = shape[2];
 
-  HostTensor<RealType, 3> hKS(nC, nS, nT);
-  // reader.readTo(hKS.vec.data());
-  Trajectory traj(reader, info.voxel_size, coreArgs.matrix.Get());
-  auto const mat = traj.matrix();
-  Cx5 const  input = reader.readTensor<Cx5>();
-
-  Log::Print("gewurz", "Allocate device memory");
-  DeviceTensor<RealType, 3> T(3L, nS, nT);
-  thrust::copy_n(traj.points().data(), T.size(), T.vec.data());
-
-  DeviceTensor<CCx, 3>      ks(nC, nS, nT);
-  DeviceTensor<CCx, 4>      imgs(mat[0], mat[1], mat[2], nC);
-  DeviceTensor<RealType, 3> M({1L, nS, nT});
-  DeviceTensor<CCx, 3>      Mks({1L, nS, nT});
+  Log::Print("gewurz", "Read trajectory");
+  HostTensor<CuReal, 3> hT(3, nS, nT);
+  reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
+  auto const              mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
+  DeviceTensor<CuReal, 3> T(3L, nS, nT);
+  thrust::copy(hT.vec.begin(), hT.vec.end(), T.vec.data());
 
   Log::Print("gewurz", "Poor man's SDC");
+  DeviceTensor<CuReal, 3> M(1L, nS, nT);
+  DeviceTensor<CuCx, 3>   Mks(1L, nS, nT);
+  DeviceTensor<CuCx, 4>   Mimgs(mat[0], mat[1], mat[2], 1);
   thrust::fill(Mks.vec.begin(), Mks.vec.end(), 1.f);
-  AdjointDFT(Mks.span, T.span, imgs.span);
-  ForwardDFT(imgs.span, T.span, Mks.span);
+  AdjointDFT(Mks.span, T.span, Mimgs.span);
+  ForwardDFT(Mimgs.span, T.span, Mks.span);
   thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [] __device__(CCx x) { return (RealType)1 / cuda::std::abs(x); });
+                    [] __device__(CuCx x) { return (CuReal)1 / cuda::std::abs(x); });
 
   Log::Print("gewurz", "Recon");
-  thrust::copy_n(input.data(), ks.size(), ks.vec.begin());
+  HostTensor<CuCx, 3>   hKS(nC, nS, nT);
+  DeviceTensor<CuCx, 3> ks(nC, nS, nT);
+  reader.readTo((Cx *)hKS.vec.data());
+  thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
+  HostTensor<CuCx, 4>   hImgs(mat[0], mat[1], mat[2], nC);
+  DeviceTensor<CuCx, 4> imgs(mat[0], mat[1], mat[2], nC);
   AdjointDFT(ks.span, M.span, T.span, imgs.span);
-
-  HostTensor<CCx, 4> hImgs(mat[0], mat[1], mat[2], nC);
-  // thrust::transform(thrust::host, vImg.begin(), vImg.end(), output.data(), [](CCx x) { return Cx(x.real(), x.imag()); });
-  thrust::copy_n(imgs.vec.begin(), imgs.size(), hImgs.vec.begin());
+  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeInfo(info);
-  // writer.writeTensor(HD5::Keys::Data, hImgs.vec.data(), hImgs.span.extents(), HD5::Dims::Channels);
+  writer.writeTensor(HD5::Keys::Data, Sz6{mat[0], mat[1], mat[2], nC, 1, 1}, (Cx *)hImgs.vec.data(), HD5::Dims::Channels);
 }
