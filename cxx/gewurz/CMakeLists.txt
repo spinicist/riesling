@@ -17,12 +17,11 @@ if(BUILD_GEWURZ)
     )
 
     add_executable(gewurz
-        main.cpp
-        ../args.cpp
-        inputs.cpp
+        main.cu
         dft.cu
     )
     set_source_files_properties(
+        main.cu
         dft.cu
         PROPERTIES COMPILE_FLAGS --extended-lambda
     )
