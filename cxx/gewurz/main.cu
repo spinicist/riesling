@@ -59,20 +59,20 @@ int main(int const argc, char const *const argv[])
   dft.forward(Mimg.span, Mks.span);
   thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
                     [] __device__(CuCxF x) { return (CuReal)1 / cuda::std::abs(x); });
+  gw::MulPacked<CuCxF, CuReal, 3> Mop{M.span};
 
   Log::Print("gewurz", "Read k-space");
   HTensor<CuCxF, 3> hKS(nC, nS, nT);
   DTensor<CuCxF, 3> ks(nC, nS, nT);
   reader.readTo((Cx *)hKS.vec.data());
   thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
-  gw::MulPacked<CuCxF, CuReal, 3> Mop{M.span};
-  Log::Print("gewurz", "Apply SDC");
-  Mop.forward(ks.span, ks.span);
+
+  Log::Print("gewurz", "Recon");
+  gw::DFT::ThreeDPacked dftp{T.span};
+  gw::LSMR<CuCxF, 4, 3> lsmr{&dftp, &Mop};
   HTensor<CuCxF, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
   DTensor<CuCxF, 4>     imgs(nC, mat[0], mat[1], mat[2]);
-  gw::DFT::ThreeDPacked dftp{T.span};
-  Log::Print("gewurz", "Recon");
-  dftp.adjoint(ks.span, imgs.span);
+  lsmr.run(ks, imgs);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
   HD5::Writer writer(oname.Get());
   writer.writeInfo(info);
