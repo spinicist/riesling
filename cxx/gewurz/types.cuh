@@ -25,6 +25,12 @@ template <typename T, int N> struct DTensor
   {
   }
 
+  DTensor(Span const s) // Construct a new tensor with the same shape as the input tensor
+    : vec(s.size())
+    , span(thrust::raw_pointer_cast(vec.data()), s.extents())
+  {
+  }
+
   auto size() -> size_t { return vec.size(); }
 };
 

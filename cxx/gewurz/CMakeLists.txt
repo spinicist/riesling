@@ -18,10 +18,12 @@ if(BUILD_GEWURZ)
 
     add_executable(gewurz
         main.cu
+        bidiag.cu
         dft.cu
     )
     set_source_files_properties(
         main.cu
+        bidiag.cu
         dft.cu
         PROPERTIES COMPILE_FLAGS --extended-lambda
     )

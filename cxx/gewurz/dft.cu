@@ -93,7 +93,7 @@ void ThreeD::adjoint(DTensor<CuCxF, 2>::Span ks, DTensor<CuCxF, 3>::Span imgs) c
 
 void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span ks) const
 {
-  rl::Log::Print("gewurz", "Forward DFT");
+  rl::Log::Print("gewurz", "Forward Packed DFT");
   auto const start = rl::Log::Now();
   int const  nS = ks.extent(1);
   int const  nT = ks.extent(2);
@@ -102,7 +102,7 @@ void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span
   thrust::for_each_n(thrust::cuda::par, thrust::make_counting_iterator(0), nST,
                      [imgs, traj = this->traj, ks] __device__(int st) {
                        CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
-
+                       int const nC = imgs.extent(0);
                        int const nI = imgs.extent(1);
                        int const nJ = imgs.extent(2);
                        int const nK = imgs.extent(3);
@@ -112,7 +112,7 @@ void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span
                        int const it = st / nS;
                        int const is = st % nS;
 
-                       for (int ic = 0; ic < ks.extent(0); ic++) {
+                       for (int ic = 0; ic < nC; ic++) {
                          ks(ic, is, it) = 0.f;
                        }
 
@@ -123,14 +123,14 @@ void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span
                                                     traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
                                                     traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
                              CuCxF const ep(cuda::std::cos(-p), cuda::std::sin(-p));
-                             for (int ic = 0; ic < ks.extent(0); ic++) {
+                             for (int ic = 0; ic < nC; ic++) {
                                ks(ic, is, it) += ep * imgs(ic, ii, ij, ik);
                              }
                            }
                          }
                        }
                      });
-  rl::Log::Print("gewurz", "Forward DFT finished in {}", rl::Log::ToNow(start));
+  rl::Log::Print("gewurz", "Forward Packed DFT finished in {}", rl::Log::ToNow(start));
 }
 
 void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span imgs) const
@@ -141,13 +141,13 @@ void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span i
   int const nIJ = nI * nJ;
   int const nIJK = nIJ * nK;
 
-  rl::Log::Print("gewurz", "Adjoint DFT {} {} {} -> {} {} {} {}", ks.extent(0), ks.extent(1), ks.extent(2), nI, nJ, nK,
-                 imgs.extent(3));
+  rl::Log::Print("gewurz", "Adjoint Packed DFT {} {} {} -> {} {} {} {}", ks.extent(0), ks.extent(1), ks.extent(2),
+                 imgs.extent(0), nI, nJ, nK);
   auto const start = rl::Log::Now();
   auto       it = thrust::make_counting_iterator(0);
   thrust::for_each_n(thrust::cuda::par, it, nIJK, [ks, traj = this->traj, imgs] __device__(int ijk) {
     CuReal const pi2 = CuReal(2.f * CUDART_PI_F);
-
+    int const nC = imgs.extent(0);
     int const nI = imgs.extent(1);
     int const nJ = imgs.extent(2);
     int const nK = imgs.extent(3);
@@ -159,7 +159,7 @@ void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span i
     int const ij = ijk % nIJ / nI;
     int const ii = ijk % nIJ % nI;
 
-    for (int ic = 0; ic < ks.extent(0); ic++) {
+    for (int ic = 0; ic < nC; ic++) {
       imgs(ic, ii, ij, ik) = 0.f;
     }
 
@@ -169,12 +169,12 @@ void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span i
           pi2 * (traj(0, is, it) * (CuReal)(ii - nI / 2) / (CuReal)nI + traj(1, is, it) * (CuReal)(ij - nJ / 2) / (CuReal)nJ +
                  traj(2, is, it) * (CuReal)(ik - nK / 2) / (CuReal)nK);
         CuCxF const ep(cuda::std::cos(p), cuda::std::sin(p));
-        for (int ic = 0; ic < ks.extent(0); ic++) {
+        for (int ic = 0; ic < nC; ic++) {
           imgs(ic, ii, ij, ik) += ep * ks(ic, is, it);
         }
       }
     }
   });
-  rl::Log::Print("gewurz", "Adjoint DFT finished in {}", rl::Log::ToNow(start));
+  rl::Log::Print("gewurz", "Adjoint Packed DFT finished in {}", rl::Log::ToNow(start));
 }
 } // namespace gw::DFT
