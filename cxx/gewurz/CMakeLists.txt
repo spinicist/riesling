@@ -23,6 +23,7 @@ if(BUILD_GEWURZ)
     )
     set_source_files_properties(
         main.cu
+        test.cu
         bidiag.cu
         dft.cu
         PROPERTIES COMPILE_FLAGS --extended-lambda

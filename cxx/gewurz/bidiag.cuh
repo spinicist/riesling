@@ -46,18 +46,17 @@ template <typename T, int xRank, int yRank> struct Bidiag
     : A{Ain}
     , Minv{Mi}
     , Ninv{Ni}
-    , u(b)
-    , Mu(b)
-    , v(x)
-    , Nv(x)
+    , u(b.span)
+    , Mu(b.span)
+    , v(x.span)
+    , Nv(x.span)
   {
-    if (Minv) { Mu = DTensor<T, yRank>(u); }
-    if (Ninv) { Nv = DTensor<T, xRank>(v); }
-
     thrust::fill(x.vec.begin(), x.vec.end(), CuCxF(0.f));
     if (Minv) {
       thrust::copy(b.vec.begin(), b.vec.end(), Mu.vec.begin());
+      fmt::print(stderr, "Before |Mu| {} |u| {}\n", CuNorm(Mu.vec), CuNorm(u.vec));
       Minv->forward(Mu.span, u.span);
+      fmt::print(stderr, "After |Mu| {} |u| {}\n", CuNorm(Mu.vec), CuNorm(u.vec));
       β = std::sqrt(CuDot(Mu.vec, u.vec));
       CuScale(Mu.vec, 1.f / β);
     } else {
@@ -72,7 +71,9 @@ template <typename T, int xRank, int yRank> struct Bidiag
       α = std::sqrt(CuDot(Nv.vec, v.vec));
       CuScale(Nv.vec, 1.f / α);
     } else {
+      fmt::print(stderr, "Before |u| {} |v| {}\n", CuNorm(u.vec), CuNorm(v.vec));
       A->adjoint(u.span, v.span);
+      fmt::print(stderr, "After |u| {} |v| {}\n", CuNorm(u.vec), CuNorm(v.vec));
       α = std::sqrt(CuDot(v.vec, v.vec));
     }
     CuScale(v.vec, 1.f / α);
@@ -100,8 +101,11 @@ template <typename T, int xRank, int yRank> struct Bidiag
       α = std::sqrt(CuDot(Nv.vec, v.vec));
       CuScale(Nv.vec, 1.f / α);
     } else {
+      fmt::print(stderr, "Before |u| {} |v| {}\n", CuNorm(u.vec), CuNorm(v.vec));
       A->adjoint(u.span, Nv.span);
+      fmt::print(stderr, "Middle |u| {} |Nv| {}\n", CuNorm(u.vec), CuNorm(Nv.vec));
       CuAsubBC2B(Nv.vec, v.vec, β);
+      fmt::print(stderr, "After |Nv| {} |v| {}  β {}\n", CuNorm(u.vec), CuNorm(v.vec), β);
       α = std::sqrt(CuDot(v.vec, v.vec));
     }
     CuScale(v.vec, 1.f / α);
