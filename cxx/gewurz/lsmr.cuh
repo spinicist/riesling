@@ -2,9 +2,9 @@
 
 #include "bidiag.cuh"
 #include "op.cuh"
+#include "rl/algo/bidiag.hpp"
 #include "rl/algo/iter.hpp"
 #include "rl/log.hpp"
-#include "rl/algo/bidiag.hpp"
 
 namespace gw {
 
@@ -31,7 +31,9 @@ template <typename T, int xRank, int yRank> struct LSMR
     if (opts.imax < 1) { throw rl::Log::Failure("LSMR", "Requires at least 1 iteration"); }
     DTensor<T, xRank>       h(x.span), h̅(x.span);
     Bidiag<T, xRank, yRank> bd(A, Minv, Ninv, x, b);
-    h = bd.v;
+    fmt::print(stderr, "a {} b {} |x| {} |b| {} |u| {} |v| {}\n", bd.α, bd.β, CuNorm(x.vec), CuNorm(b.vec), CuNorm(bd.u.vec),
+               CuNorm(bd.v.vec));
+    thrust::copy(bd.v.vec.begin(), bd.v.vec.end(), h.vec.begin());
     thrust::fill(h̅.vec.begin(), h̅.vec.end(), 0.f);
 
     // Initialize transformation variables. There are a lot

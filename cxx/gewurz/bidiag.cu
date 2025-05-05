@@ -11,7 +11,7 @@ auto CuDot(thrust::device_vector<CuCxF> const &a, thrust::device_vector<CuCxF> c
     throw rl::Log::Failure("Algo", "Imaginary part of dot product {} exceeded {} times real part {}", dot.imag(), tol,
                            dot.real());
   } else if (!std::isfinite(dot.real())) {
-    throw rl::Log::Failure("Algo", "Dot product was not finite.");
+    throw rl::Log::Failure("Algo", "Dot product {} was not finite", dot);
   } else {
     return dot.real();
   }

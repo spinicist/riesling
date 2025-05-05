@@ -1,4 +1,3 @@
-#include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
 
 #include "dft.cuh"
@@ -18,13 +17,10 @@ std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
 
 int main(int const argc, char const *const argv[])
 {
-  args::ArgumentParser parser("GEWURZ");
+  args::ArgumentParser parser("GEWURZTestraminer");
 
   args::HelpFlag                   help(parser, "H", "Show this help message", {'h', "help"});
   args::MapFlag<int, Log::Display> verbosity(parser, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
-
-  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
-  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   parser.ParseCLI(argc, argv);
   if (verbosity) {
@@ -32,23 +28,25 @@ int main(int const argc, char const *const argv[])
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
     Log::SetDisplayLevel(levelMap.at(std::atoi(env_p)));
   }
-  Log::Print("gewurz", "Welcome!");
+  Log::Print("gewurztraminer", "Welcome!");
 
-  HD5::Reader reader(iname.Get());
-  Info const  info = reader.readInfo();
-  auto const  shape = reader.dimensions();
-  Index const nC = shape[0];
-  Index const nS = shape[1];
-  Index const nT = shape[2];
+  Index const nC = 2;
+  Index const nS = 4;
+  Index const nT = 3;
 
-  Log::Print("gewurz", "Read trajectory");
+  Log::Print("gewurztraminer", "Setup Trajectory");
   HTensor<CuReal, 3> hT(3, nS, nT);
-  reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
-  auto const         mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
+  for (int it = 0; it < nT; it++) {
+    for (int is = 0; is < nS; is++) {
+        hT.span(it % 3, is, it) = is;
+    }
+  }
   DTensor<CuReal, 3> T(3L, nS, nT);
   thrust::copy(hT.vec.begin(), hT.vec.end(), T.vec.data());
 
-  Log::Print("gewurz", "Preconditioner");
+  std::array<int, 3> mat{8, 8, 8};
+
+  Log::Print("gewurztraminer", "Poor man's SDC");
   DTensor<CuReal, 2> M(nS, nT);
   DTensor<CuCxF, 2>  Mks(nS, nT);
   DTensor<CuCxF, 3>  Mimg(mat[0], mat[1], mat[2]);
@@ -62,31 +60,21 @@ int main(int const argc, char const *const argv[])
   fmt::print(stderr, "|Mks| {} |M| {}\n", gw::CuNorm(Mks.vec), gw::CuNorm(M.vec));
   gw::MulPacked<CuCxF, CuReal, 3> Mop{M.span};
 
-  Log::Print("gewurz", "Read k-space");
+  Log::Print("gewurztraminer", "Setup k-space");
   HTensor<CuCxF, 3> hKS(nC, nS, nT);
-  DTensor<CuCxF, 3> ks(nC, nS, nT);
-  reader.readTo((Cx *)hKS.vec.data());
+  DTensor<CuCxF, 3> ks(nC, nS, nT);;
+  thrust::fill(hKS.vec.begin(), hKS.vec.end(), CuCxF(1.f));
   thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
 
-  Log::Print("gewurz", "Recon");
+  Log::Print("gewurztraminer", "Recon");
   gw::DFT::ThreeDPacked dftp{T.span};
+  gw::LSMR<CuCxF, 4, 3> lsmr{&dftp};
   HTensor<CuCxF, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
   DTensor<CuCxF, 4>     imgs(nC, mat[0], mat[1], mat[2]);
   fmt::print(stderr, "Before |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
-  Mop.forward(ks.span, ks.span);
-  fmt::print(stderr, "Middle |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
   dftp.adjoint(ks.span, imgs.span);
   fmt::print(stderr, "After |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
-  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
-  
-  HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
-  writer.writeTensor("adjoint", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
-
-  gw::LSMR<CuCxF, 4, 3> lsmr{&dftp, &Mop};
-  thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
   lsmr.run(ks, imgs);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
-  writer.writeTensor("inverse", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
   return EXIT_SUCCESS;
 }
