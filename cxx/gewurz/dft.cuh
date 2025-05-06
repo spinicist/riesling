@@ -11,7 +11,7 @@ struct ThreeD : Op<CuCxF, 3, 2>
 {
   using XT = DTensor<CuCxF, 3>::Span;
   using YT = DTensor<CuCxF, 2>::Span;
-  using TT = DTensor<float, 3>::Span;
+  using TT = DTensor<float3, 2>::Span;
   TT traj;
   ThreeD(TT t)
     : traj(t) {};
@@ -23,7 +23,7 @@ template <int NP> struct ThreeDPacked : Op<CuCxF, 4, 3>
 {
   using XT = DTensor<CuCxF, 4>::Span;
   using YT = DTensor<CuCxF, 3>::Span;
-  using TT = DTensor<float, 3>::Span;
+  using TT = DTensor<float3, 2>::Span;
   TT traj;
   ThreeDPacked(TT t)
     : traj(t) {};

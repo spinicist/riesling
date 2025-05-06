@@ -42,10 +42,10 @@ int main(int const argc, char const *const argv[])
   Index const nT = shape[2];
 
   Log::Print("gewurz", "Read trajectory");
-  HTensor<CuReal, 3> hT(3, nS, nT);
-  reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
+  HTensor<float3, 2> hT(nS, nT);
+  reader.readTo((float*)hT.vec.data(), HD5::Keys::Trajectory);
   auto const         mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
-  DTensor<CuReal, 3> T(3L, nS, nT);
+  DTensor<float3, 2> T(nS, nT);
   thrust::copy(hT.vec.begin(), hT.vec.end(), T.vec.data());
 
   Log::Print("gewurz", "Preconditioner");

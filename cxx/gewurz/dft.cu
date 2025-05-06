@@ -34,7 +34,7 @@ void ThreeD::forward(DTensor<CuCxF, 3>::Span imgs, DTensor<CuCxF, 2>::Span ks) c
                        int const    nT = ks.extent(1);
                        int const    it = st / nS;
                        int const    is = st % nS;
-                       float3 const k{traj(0, is, it), traj(1, is, it), traj(2, is, it)};
+                       float3 const k = traj(is, it);
                        ks(is, it) = 0.f;
 
                        int const nI = imgs.extent(0);
@@ -89,7 +89,7 @@ void ThreeD::adjoint(DTensor<CuCxF, 2>::Span ks, DTensor<CuCxF, 3>::Span imgs) c
 
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
-        float3 const k{traj(0, is, it), traj(1, is, it), traj(2, is, it)};
+        float3 const k = traj(is, it);
         float const  p = pi2 * (r.x * k.x + r.y * k.y + r.z * k.z);
         CuCxF const  ep(scale * cuda::std::cos(p), scale * cuda::std::sin(p));
         imgs(ii, ij, ik) += ep * ks(is, it);
@@ -100,7 +100,7 @@ void ThreeD::adjoint(DTensor<CuCxF, 2>::Span ks, DTensor<CuCxF, 3>::Span imgs) c
 }
 
 template <int NP>
-void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span ks) const
+void ThreeDPacked<NP>::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span ks) const
 {
   if (NP != imgs.extent(0) || NP != ks.extent(0)) {
     throw rl::Log::Failure("DFT", "Packing dimension size mismatch");
@@ -123,7 +123,7 @@ void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span
     int const    nT = ks.extent(2);
     int const    it = st / nS;
     int const    is = st % nS;
-    float3 const k{traj(0, is, it), traj(1, is, it), traj(2, is, it)};
+    float3 const k = traj(is, it);
 
     int const nI = imgs.extent(1);
     int const nJ = imgs.extent(2);
@@ -151,7 +151,7 @@ void ThreeDPacked::forward(DTensor<CuCxF, 4>::Span imgs, DTensor<CuCxF, 3>::Span
 }
 
 template<int NP>
-void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span imgs) const
+void ThreeDPacked<NP>::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span imgs) const
 {
   if (NP != imgs.extent(0) || NP != ks.extent(0)) {
     throw rl::Log::Failure("DFT", "Packing dimension size mismatch");
@@ -185,7 +185,7 @@ void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span i
     float3 const r{(ii - nI / 2.f) / (float)nI, (ij - nJ / 2.f) / (float)nJ, (ik - nK / 2.f) / (float)nK};
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
-        float3 const k{traj(0, is, it), traj(1, is, it), traj(2, is, it)};
+        float3 const k = traj(is, it);
         float const  p = pi2 * (r.x * k.x + r.y * k.y + r.z * k.z);
         CuCxF const  ep(scale * cuda::std::cos(p), scale * cuda::std::sin(p));
         for (int ic = 0; ic < NP; ic++) {
@@ -200,6 +200,6 @@ void ThreeDPacked::adjoint(DTensor<CuCxF, 3>::Span ks, DTensor<CuCxF, 4>::Span i
   rl::Log::Print("DFT", "Adjoint Packed DFT finished in {}", rl::Log::ToNow(start));
 }
 
-template struct DFT<8>;
+template struct ThreeDPacked<8>;
 
 } // namespace gw::DFT
