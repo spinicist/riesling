@@ -26,6 +26,23 @@ using TDev = float;
 #define ZERO 0.f
 #endif
 
+struct ConvertToCx
+{
+  __host__ __device__ CuCx<TDev> operator()(CuCx<THost> const z) const { return CuCx<TDev>(FLOAT_TO(z.real()), FLOAT_TO(z.imag())); }
+};
+
+struct ConvertFromCx
+{
+  __host__ __device__ CuCx<THost> operator()(CuCx<TDev> const z) const { return CuCx<THost>(FLOAT_FROM(z.real()), FLOAT_FROM(z.imag())); }
+};
+
+struct ConvertTo
+{
+  __host__ __device__ TDev operator()(float const f) const
+  {
+    return FLOAT_TO(f);
+  }
+};
 
 
 template <typename T, int N> struct DTensor
