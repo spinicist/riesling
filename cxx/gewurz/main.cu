@@ -69,7 +69,7 @@ int main(int const argc, char const *const argv[])
   thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
 
   Log::Print("gewurz", "Recon");
-  gw::DFT::ThreeDPacked dftp{T.span};
+  gw::DFT::ThreeDPacked<8> dftp{T.span};
   HTensor<CuCxF, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
   DTensor<CuCxF, 4>     imgs(nC, mat[0], mat[1], mat[2]);
   fmt::print(stderr, "Before |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
