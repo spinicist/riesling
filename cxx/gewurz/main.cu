@@ -17,19 +17,19 @@ std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
 
 struct CuCxFToCuCxH
 {
-  __host__ __device__ CuCxH operator()(CuCxF const z) const { return CuCxH(__float2half(z.real()), __float2half(z.imag())); }
+  __host__ __device__ CuCxH operator()(CuCxF const z) const { return CuCxH(__float2bfloat16(z.real()), __float2bfloat16(z.imag())); }
 };
 
 struct CuCxHToCuCxF
 {
-  __host__ __device__ CuCxF operator()(CuCxH const z) const { return CuCxF(__half2float(z.real()), __half2float(z.imag())); }
+  __host__ __device__ CuCxF operator()(CuCxH const z) const { return CuCxF(__bfloat162float(z.real()), __bfloat162float(z.imag())); }
 };
 
 struct FloatToHalf
 {
-  __host__ __device__ __half operator()(float const f) const
+  __host__ __device__ __nv_bfloat16 operator()(float const f) const
   {
-    return __float2half(f);
+    return __float2bfloat16(f);
   }
 };
 } // namespace
@@ -67,14 +67,14 @@ int main(int const argc, char const *const argv[])
   HTensor<float, 3> hT(3L, nS, nT);
   reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
   auto const        mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
-  HTensor<__half, 3> hhT(3L, nS, nT);
+  HTensor<__nv_bfloat16, 3> hhT(3L, nS, nT);
   thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), FloatToHalf());
-  DTensor<__half, 3> T(3L, nS, nT);
+  DTensor<__nv_bfloat16, 3> T(3L, nS, nT);
   thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
   
 
   Log::Print("gewurz", "Preconditioner");
-  DTensor<__half, 2>  M(nS, nT);
+  DTensor<__nv_bfloat16, 2>  M(nS, nT);
   DTensor<CuCxH, 2> Mks(nS, nT);
   DTensor<CuCxH, 3> Mimg(mat[0], mat[1], mat[2]);
   thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCxH(1));
@@ -83,8 +83,8 @@ int main(int const argc, char const *const argv[])
   dft.adjoint(Mks.span, Mimg.span);
   dft.forward(Mimg.span, Mks.span);
   thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [] __device__(CuCxH x) { return __half(1) / cuda::std::abs(x); });
-  gw::MulPacked<CuCxH, __half, 3> Mop{M.span};
+                    [] __device__(CuCxH x) { return __nv_bfloat16(1) / cuda::std::abs(x); });
+  gw::MulPacked<CuCxH, __nv_bfloat16, 3> Mop{M.span};
 
   Log::Print("gewurz", "Read k-space");
   HTensor<CuCxF, 3> hKS(nC, nS, nT);
