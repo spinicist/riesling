@@ -73,18 +73,18 @@ int main(int const argc, char const *const argv[])
   thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
   
 
-  Log::Print("gewurz", "Preconditioner");
-  DTensor<__nv_bfloat16, 2>  M(nS, nT);
-  DTensor<CuCxH, 2> Mks(nS, nT);
-  DTensor<CuCxH, 3> Mimg(mat[0], mat[1], mat[2]);
-  thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCxH(1));
+  // Log::Print("gewurz", "Preconditioner");
+  // DTensor<__nv_bfloat16, 2>  M(nS, nT);
+  // DTensor<CuCxH, 2> Mks(nS, nT);
+  // DTensor<CuCxH, 3> Mimg(mat[0], mat[1], mat[2]);
+  // thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCxH(1));
 
-  gw::DFT::ThreeD dft{T.span};
-  dft.adjoint(Mks.span, Mimg.span);
-  dft.forward(Mimg.span, Mks.span);
-  thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [] __device__(CuCxH x) { return __nv_bfloat16(1) / cuda::std::abs(x); });
-  gw::MulPacked<CuCxH, __nv_bfloat16, 3> Mop{M.span};
+  // gw::DFT::ThreeD dft{T.span};
+  // dft.adjoint(Mks.span, Mimg.span);
+  // dft.forward(Mimg.span, Mks.span);
+  // thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
+  //                   [] __device__(CuCxH x) { return __nv_bfloat16(1) / cuda::std::abs(x); });
+  // gw::MulPacked<CuCxH, __nv_bfloat16, 3> Mop{M.span};
 
   Log::Print("gewurz", "Read k-space");
   HTensor<CuCxF, 3> hKS(nC, nS, nT);
@@ -99,18 +99,18 @@ int main(int const argc, char const *const argv[])
   HTensor<CuCxF, 4>        hImgs(nC, mat[0], mat[1], mat[2]);
   HTensor<CuCxH, 4>        hhImgs(nC, mat[0], mat[1], mat[2]);
   DTensor<CuCxH, 4>        imgs(nC, mat[0], mat[1], mat[2]);
-  Mop.forward(ks.span, ks.span);
+  // Mop.forward(ks.span, ks.span);
   dftp.adjoint(ks.span, imgs.span);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
   std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
   writer.writeTensor("adjoint", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
 
-  gw::LSMR<CuCxH, 4, 3> lsmr{&dftp, &Mop};
-  thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
-  lsmr.run(ks, imgs);
-  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
-  std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
-  writer.writeTensor("inverse", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
+  // gw::LSMR<CuCxH, 4, 3> lsmr{&dftp, &Mop};
+  // thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
+  // lsmr.run(ks, imgs);
+  // thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
+  // std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
+  // writer.writeTensor("inverse", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
   } catch (Log::Failure &f) {
     Log::Fail(f);
     Log::End();
