@@ -209,7 +209,7 @@ template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks
         TDev const kx = traj(0, is, it);
         TDev const ky = traj(1, is, it);
         TDev const kz = traj(2, is, it);
-        auto const   p = pi2 * (rx * kx + ry * ky + rz * kz);
+        TDev const   p = pi2 * ((rx * kx) + (ry * ky) + (rz * kz));
         CuCx<TDev> const  ep(cuda::std::cos(p), cuda::std::sin(p));
         for (int ic = 0; ic < NP; ic++) {
           temp[ic] += ep * ks(ic, is, it);
