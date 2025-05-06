@@ -14,7 +14,25 @@ std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
                                                {2, Log::Display::Low},
                                                {3, Log::Display::Mid},
                                                {4, Log::Display::High}};
-}
+
+struct CuCxFToCuCxH
+{
+  __host__ __device__ CuCxH operator()(CuCxF const z) const { return CuCxH(__float2half(z.real()), __float2half(z.imag())); }
+};
+
+struct CuCxHToCuCxF
+{
+  __host__ __device__ CuCxF operator()(CuCxH const z) const { return CuCxF(__half2float(z.real()), __half2float(z.imag())); }
+};
+
+struct FloatToHalf
+{
+  __host__ __device__ __half operator()(float const f) const
+  {
+    return __float2half(f);
+  }
+};
+} // namespace
 
 int main(int const argc, char const *const argv[])
 {
@@ -42,51 +60,55 @@ int main(int const argc, char const *const argv[])
   Index const nT = shape[2];
 
   Log::Print("gewurz", "Read trajectory");
-  HTensor<float3, 2> hT(nS, nT);
-  reader.readTo((float*)hT.vec.data(), HD5::Keys::Trajectory);
-  auto const         mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
-  DTensor<float3, 2> T(nS, nT);
-  thrust::copy(hT.vec.begin(), hT.vec.end(), T.vec.data());
+  HTensor<float, 3> hT(3L, nS, nT);
+  reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
+  auto const        mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
+  HTensor<__half, 3> hhT(3L, nS, nT);
+  thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), FloatToHalf());
+  DTensor<__half, 3> T(3L, nS, nT);
+  thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
+  
 
   Log::Print("gewurz", "Preconditioner");
-  DTensor<CuReal, 2> M(nS, nT);
-  DTensor<CuCxF, 2>  Mks(nS, nT);
-  DTensor<CuCxF, 3>  Mimg(mat[0], mat[1], mat[2]);
-  thrust::fill(Mks.vec.begin(), Mks.vec.end(), 1.f);
+  DTensor<__half, 2>  M(nS, nT);
+  DTensor<CuCxH, 2> Mks(nS, nT);
+  DTensor<CuCxH, 3> Mimg(mat[0], mat[1], mat[2]);
+  thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCxH(1));
 
   gw::DFT::ThreeD dft{T.span};
   dft.adjoint(Mks.span, Mimg.span);
   dft.forward(Mimg.span, Mks.span);
   thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [] __device__(CuCxF x) { return (CuReal)1 / cuda::std::abs(x); });
-  fmt::print(stderr, "|Mks| {} |M| {}\n", gw::CuNorm(Mks.vec), gw::CuNorm(M.vec));
-  gw::MulPacked<CuCxF, CuReal, 3> Mop{M.span};
+                    [] __device__(CuCxH x) { return __half(1) / cuda::std::abs(x); });
+  gw::MulPacked<CuCxH, __half, 3> Mop{M.span};
 
   Log::Print("gewurz", "Read k-space");
   HTensor<CuCxF, 3> hKS(nC, nS, nT);
-  DTensor<CuCxF, 3> ks(nC, nS, nT);
   reader.readTo((Cx *)hKS.vec.data());
-  thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
+  HTensor<CuCxH, 3> hhKS(nC, nS, nT);
+  thrust::transform(hKS.vec.begin(), hKS.vec.end(), hhKS.vec.begin(), CuCxFToCuCxH());
+  DTensor<CuCxH, 3> ks(nC, nS, nT);
+  thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
 
   Log::Print("gewurz", "Recon");
   gw::DFT::ThreeDPacked<8> dftp{T.span};
-  HTensor<CuCxF, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
-  DTensor<CuCxF, 4>     imgs(nC, mat[0], mat[1], mat[2]);
-  fmt::print(stderr, "Before |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
+  HTensor<CuCxF, 4>        hImgs(nC, mat[0], mat[1], mat[2]);
+  HTensor<CuCxH, 4>        hhImgs(nC, mat[0], mat[1], mat[2]);
+  DTensor<CuCxH, 4>        imgs(nC, mat[0], mat[1], mat[2]);
   Mop.forward(ks.span, ks.span);
-  fmt::print(stderr, "Middle |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
   dftp.adjoint(ks.span, imgs.span);
-  fmt::print(stderr, "After |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
-  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
-  
+  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
+  thrust::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
+
   HD5::Writer writer(oname.Get());
   writer.writeInfo(info);
   writer.writeTensor("adjoint", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
 
-  gw::LSMR<CuCxF, 4, 3> lsmr{&dftp, &Mop};
-  thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
+  gw::LSMR<CuCxH, 4, 3> lsmr{&dftp, &Mop};
+  thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
   lsmr.run(ks, imgs);
-  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
+  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
+  // thrust::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
   writer.writeTensor("inverse", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
   return EXIT_SUCCESS;
 }

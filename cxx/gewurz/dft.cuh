@@ -7,11 +7,11 @@ namespace gw {
 
 namespace DFT {
 
-struct ThreeD : Op<CuCxF, 3, 2>
+struct ThreeD : Op<CuCxH, 3, 2>
 {
-  using XT = DTensor<CuCxF, 3>::Span;
-  using YT = DTensor<CuCxF, 2>::Span;
-  using TT = DTensor<float3, 2>::Span;
+  using XT = DTensor<CuCxH, 3>::Span;
+  using YT = DTensor<CuCxH, 2>::Span;
+  using TT = DTensor<__half, 3>::Span;
   TT traj;
   ThreeD(TT t)
     : traj(t) {};
@@ -19,11 +19,11 @@ struct ThreeD : Op<CuCxF, 3, 2>
   void adjoint(YT y, XT x) const override;
 };
 
-template <int NP> struct ThreeDPacked : Op<CuCxF, 4, 3>
+template <int NP> struct ThreeDPacked : Op<CuCxH, 4, 3>
 {
-  using XT = DTensor<CuCxF, 4>::Span;
-  using YT = DTensor<CuCxF, 3>::Span;
-  using TT = DTensor<float3, 2>::Span;
+  using XT = DTensor<CuCxH, 4>::Span;
+  using YT = DTensor<CuCxH, 3>::Span;
+  using TT = DTensor<__half, 3>::Span;
   TT traj;
   ThreeDPacked(TT t)
     : traj(t) {};

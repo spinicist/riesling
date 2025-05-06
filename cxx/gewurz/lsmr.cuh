@@ -31,10 +31,10 @@ template <typename T, int xRank, int yRank> struct LSMR
     if (opts.imax < 1) { throw rl::Log::Failure("LSMR", "Requires at least 1 iteration"); }
     DTensor<T, xRank>       h(x.span), h̅(x.span);
     Bidiag<T, xRank, yRank> bd(A, Minv, Ninv, x, b);
-    fmt::print(stderr, "a {} b {} |x| {} |b| {} |u| {} |v| {}\n", bd.α, bd.β, CuNorm(x.vec), CuNorm(b.vec), CuNorm(bd.u.vec),
-               CuNorm(bd.v.vec));
+    fmt::print(stderr, "a {} b {} |x| {} |b| {} |u| {} |v| {}\n", bd.α, bd.β, __half2float(CuNorm(x.vec)),
+               __half2float(CuNorm(b.vec)), __half2float(CuNorm(bd.u.vec)), __half2float(CuNorm(bd.v.vec)));
     thrust::copy(bd.v.vec.begin(), bd.v.vec.end(), h.vec.begin());
-    thrust::fill(h̅.vec.begin(), h̅.vec.end(), 0.f);
+    thrust::fill(h̅.vec.begin(), h̅.vec.end(), T(0));
 
     // Initialize transformation variables. There are a lot
     float ζ̅ = bd.α * bd.β;
@@ -56,12 +56,12 @@ template <typename T, int xRank, int yRank> struct LSMR
     // Initialize variables for estimation of ||A|| and cond(A)
     float       normA2 = bd.α * bd.α;
     float       maxρ̅ = 0;
-    float       minρ̅ = std::numeric_limits<float>::max();
+    float       minρ̅ = cuda::std::numeric_limits<float>::max();
     float const normb = bd.β;
 
     rl::Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol       |A|       cond(A)");
-    rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, gw::CuNorm(x.vec), normb, 0.f, std::fabs(ζ̅),
-                   0.f);
+    rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, __half2float(gw::CuNorm(x.vec)), normb, 0.f,
+                   cuda::std::fabs(ζ̅), 0.f);
     rl::Iterating::Starting();
     for (Index ii = 0; ii < opts.imax; ii++) {
       bd.next();
@@ -111,20 +111,20 @@ template <typename T, int xRank, int yRank> struct LSMR
       τ̃old = (ζold - θ̃old * τ̃old) / ρ̃old;
       float const τ̇ = (ζ - θ̃ * τ̃old) / ρ̇old;
       d = d + β̆ * β̆;
-      float const normr = std::sqrt(d + std::pow(β̇ - τ̇, 2) + β̈ * β̈);
+      float const normr = cuda::std::sqrt(d + cuda::std::pow(β̇ - τ̇, 2) + β̈ * β̈);
       // Estimate ||A||.
       normA2 += bd.β * bd.β;
-      float const normA = std::sqrt(normA2);
+      float const normA = cuda::std::sqrt(normA2);
       normA2 += bd.α * bd.α;
 
       // Estimate cond(A).
-      maxρ̅ = std::max(maxρ̅, ρ̅old);
-      if (ii > 1) { minρ̅ = std::min(minρ̅, ρ̅old); }
-      float const condA = std::max(maxρ̅, ρtemp) / std::min(minρ̅, ρtemp);
+      maxρ̅ = cuda::std::max(maxρ̅, ρ̅old);
+      if (ii > 1) { minρ̅ = cuda::std::min(minρ̅, ρ̅old); }
+      float const condA = cuda::std::max(maxρ̅, ρtemp) / cuda::std::min(minρ̅, ρtemp);
 
       // Convergence tests - go in pairs which check large/small values then the user tolerance
-      float const normAr = abs(ζ̅);
-      float const normx = gw::CuNorm(x.vec);
+      float const normAr = cuda::std::abs(ζ̅);
+      float const normx = __half2float(gw::CuNorm(x.vec));
       float const thresh1 = opts.bTol * normb + opts.aTol * normA * normx;
       float const thresh2 = opts.aTol * (normA * normr);
       rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, thresh1,
