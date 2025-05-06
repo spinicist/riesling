@@ -19,14 +19,6 @@ template <typename T, typename MT, int Rank> struct MulPacked : Op<T, Rank, Rank
   using FMTensor = DTensor<MT, 1>::Span;
   MTensor const m;
 
-  struct MulKernel {
-    int M, N;
-    __host__ __device__ __half operator()(float const f) const
-    {
-      return __float2half(f);
-    }
-  }
-
   MulPacked(MTensor mm)
     : m(mm) {};
   void forward(XTensor x, XTensor y) const override

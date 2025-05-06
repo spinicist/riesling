@@ -22,6 +22,7 @@ if(BUILD_GEWURZ)
         dft.cu
     )
     set_source_files_properties(
+        main.cu
         test.cu
         bidiag.cu
         dft.cu
