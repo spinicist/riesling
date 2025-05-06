@@ -7,8 +7,8 @@
 
 namespace gw {
 
-auto CuDot(thrust::device_vector<CuCxF> const &a, thrust::device_vector<CuCxF> const &b) -> float;
-auto CuNorm(thrust::device_vector<CuCxF> const &a) -> float;
+auto CuDot(thrust::device_vector<CuCxH> const &a, thrust::device_vector<CuCxH> const &b) -> __half;
+auto CuNorm(thrust::device_vector<CuCxH> const &a) -> __half;
 
 template <typename T, typename U> void CuScale(thrust::device_vector<T> &a, U const b)
 {
@@ -17,8 +17,7 @@ template <typename T, typename U> void CuScale(thrust::device_vector<T> &a, U co
 
 template <typename T, typename U> void CuAsubBC2B(thrust::device_vector<T> &a, thrust::device_vector<T> &b, U const c)
 {
-  thrust::transform(a.begin(), a.end(), b.begin(), b.begin(),
-                    [c] __device__(CuCxF const a, CuCxF const b) { return a - c * b; });
+  thrust::transform(a.begin(), a.end(), b.begin(), b.begin(), [c] __device__(T const a, T const b) { return a - c * b; });
 }
 
 struct RotationT
@@ -51,64 +50,60 @@ template <typename T, int xRank, int yRank> struct Bidiag
     , v(x.span)
     , Nv(x.span)
   {
-    thrust::fill(x.vec.begin(), x.vec.end(), CuCxF(0.f));
+    thrust::fill(x.vec.begin(), x.vec.end(), T(0));
     if (Minv) {
       thrust::copy(b.vec.begin(), b.vec.end(), Mu.vec.begin());
-      fmt::print(stderr, "Before |Mu| {} |u| {}\n", CuNorm(Mu.vec), CuNorm(u.vec));
       Minv->forward(Mu.span, u.span);
-      fmt::print(stderr, "After |Mu| {} |u| {}\n", CuNorm(Mu.vec), CuNorm(u.vec));
-      β = std::sqrt(CuDot(Mu.vec, u.vec));
-      CuScale(Mu.vec, 1.f / β);
+      β = __half2float(cuda::std::sqrt(CuDot(Mu.vec, u.vec)));
+      CuScale(Mu.vec, __float2half(1.f / β));
     } else {
       thrust::copy(b.vec.begin(), b.vec.end(), u.vec.begin());
-      β = std::sqrt(CuDot(Mu.vec, u.vec));
+      β = __half2float(cuda::std::sqrt(CuDot(Mu.vec, u.vec)));
     }
-    CuScale(u.vec, 1.f / β);
+    CuScale(u.vec, __float2half(1.f / β));
 
     if (Ninv) {
       A->adjoint(u.span, Nv.span);
       Ninv->forward(Nv.span, v.span);
-      α = std::sqrt(CuDot(Nv.vec, v.vec));
-      CuScale(Nv.vec, 1.f / α);
+      α = __half2float(cuda::std::sqrt(CuDot(Nv.vec, v.vec)));
+      CuScale(Nv.vec, __float2half(1 / α));
     } else {
-      fmt::print(stderr, "Before |u| {} |v| {}\n", CuNorm(u.vec), CuNorm(v.vec));
       A->adjoint(u.span, v.span);
-      fmt::print(stderr, "After |u| {} |v| {}\n", CuNorm(u.vec), CuNorm(v.vec));
-      α = std::sqrt(CuDot(v.vec, v.vec));
+      α = __half2float(cuda::std::sqrt(CuDot(v.vec, v.vec)));
     }
-    CuScale(v.vec, 1.f / α);
+    CuScale(v.vec, __float2half(1.f / α));
   }
 
   void next()
   {
     if (Minv) {
       A->forward(v.span, u.span);
-      CuAsubBC2B(u.vec, Mu.vec, α);
+      CuAsubBC2B(u.vec, Mu.vec, __float2half(α));
       Minv->forward(Mu.span, u.span);
-      β = std::sqrt(CuDot(Mu.vec, u.vec));
-      CuScale(Mu.vec, 1.f / β);
+      β = __half2float(cuda::std::sqrt(CuDot(Mu.vec, u.vec)));
+      CuScale(Mu.vec, __float2half(1.f / β));
     } else {
       A->forward(v.span, Mu.span);
-      CuAsubBC2B(Mu.vec, u.vec, α);
-      β = std::sqrt(CuDot(u.vec, u.vec));
+      CuAsubBC2B(Mu.vec, u.vec, __float2half(α));
+      β = __half2float(cuda::std::sqrt(CuDot(u.vec, u.vec)));
     }
-    CuScale(u.vec, 1.f / β);
+    CuScale(u.vec, __float2half(1.f / β));
 
     if (Ninv) {
       A->adjoint(u.span, v.span);
-      CuAsubBC2B(v.vec, Nv.vec, β);
+      CuAsubBC2B(v.vec, Nv.vec, __float2half(β));
       Ninv->forward(Nv.span, v.span);
-      α = std::sqrt(CuDot(Nv.vec, v.vec));
-      CuScale(Nv.vec, 1.f / α);
+      α = __half2float(cuda::std::sqrt(CuDot(Nv.vec, v.vec)));
+      CuScale(Nv.vec, __float2half(1.f / α));
     } else {
-      fmt::print(stderr, "Before |u| {} |v| {}\n", CuNorm(u.vec), CuNorm(v.vec));
+      fmt::print(stderr, "Before |u| {} |v| {}\n", __half2float(CuNorm(u.vec)), __half2float(CuNorm(v.vec)));
       A->adjoint(u.span, Nv.span);
-      fmt::print(stderr, "Middle |u| {} |Nv| {}\n", CuNorm(u.vec), CuNorm(Nv.vec));
-      CuAsubBC2B(Nv.vec, v.vec, β);
-      fmt::print(stderr, "After |Nv| {} |v| {}  β {}\n", CuNorm(u.vec), CuNorm(v.vec), β);
-      α = std::sqrt(CuDot(v.vec, v.vec));
+      fmt::print(stderr, "Middle |u| {} |Nv| {}\n", __half2float(CuNorm(u.vec)), __half2float(CuNorm(Nv.vec)));
+      CuAsubBC2B(Nv.vec, v.vec, __float2half(β));
+      fmt::print(stderr, "After |Nv| {} |v| {}  β {}\n", __half2float(CuNorm(u.vec)), __half2float(CuNorm(v.vec)), β);
+      α = __half2float(cuda::std::sqrt(CuDot(v.vec, v.vec)));
     }
-    CuScale(v.vec, 1.f / α);
+    CuScale(v.vec, __float2half(1.f / α));
   }
 };
 } // namespace gw

@@ -22,11 +22,10 @@ if(BUILD_GEWURZ)
         dft.cu
     )
     set_source_files_properties(
-        main.cu
         test.cu
         bidiag.cu
         dft.cu
-        PROPERTIES COMPILE_FLAGS --extended-lambda
+        PROPERTIES COMPILE_FLAGS "--extended-lambda"
     )
     target_compile_features(gewurz PUBLIC cuda_std_17)
     target_link_libraries(gewurz PRIVATE

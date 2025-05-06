@@ -7,7 +7,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
-using CuReal = float;
+using CuCxH = cuda::std::complex<__half>;
 using CuCxF = cuda::std::complex<float>;
 
 template <typename T, int N> struct DTensor
