@@ -3,11 +3,11 @@
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include <cuda/std/complex>
 #include <cuda/std/mdspan>
-#include <cuda_fp16.h>
+#include <cuda_bf16.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
-using CuCxH = cuda::std::complex<__half>;
+using CuCxH = cuda::std::complex<__nv_bfloat16>;
 using CuCxF = cuda::std::complex<float>;
 
 template <typename T, int N> struct DTensor

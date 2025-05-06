@@ -31,8 +31,8 @@ template <typename T, int xRank, int yRank> struct LSMR
     if (opts.imax < 1) { throw rl::Log::Failure("LSMR", "Requires at least 1 iteration"); }
     DTensor<T, xRank>       h(x.span), h̅(x.span);
     Bidiag<T, xRank, yRank> bd(A, Minv, Ninv, x, b);
-    fmt::print(stderr, "a {} b {} |x| {} |b| {} |u| {} |v| {}\n", bd.α, bd.β, __half2float(CuNorm(x.vec)),
-               __half2float(CuNorm(b.vec)), __half2float(CuNorm(bd.u.vec)), __half2float(CuNorm(bd.v.vec)));
+    fmt::print(stderr, "a {} b {} |x| {} |b| {} |u| {} |v| {}\n", bd.α, bd.β, __bfloat162float(CuNorm(x.vec)),
+               __bfloat162float(CuNorm(b.vec)), __bfloat162float(CuNorm(bd.u.vec)), __bfloat162float(CuNorm(bd.v.vec)));
     thrust::copy(bd.v.vec.begin(), bd.v.vec.end(), h.vec.begin());
     thrust::fill(h̅.vec.begin(), h̅.vec.end(), T(0));
 
@@ -60,7 +60,7 @@ template <typename T, int xRank, int yRank> struct LSMR
     float const normb = bd.β;
 
     rl::Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol       |A|       cond(A)");
-    rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, __half2float(gw::CuNorm(x.vec)), normb, 0.f,
+    rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, __bfloat162float(gw::CuNorm(x.vec)), normb, 0.f,
                    cuda::std::fabs(ζ̅), 0.f);
     rl::Iterating::Starting();
     for (Index ii = 0; ii < opts.imax; ii++) {
@@ -124,7 +124,7 @@ template <typename T, int xRank, int yRank> struct LSMR
 
       // Convergence tests - go in pairs which check large/small values then the user tolerance
       float const normAr = cuda::std::abs(ζ̅);
-      float const normx = __half2float(gw::CuNorm(x.vec));
+      float const normx = __bfloat162float(gw::CuNorm(x.vec));
       float const thresh1 = opts.bTol * normb + opts.aTol * normA * normx;
       float const thresh2 = opts.aTol * (normA * normr);
       rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, thresh1,
