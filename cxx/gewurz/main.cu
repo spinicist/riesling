@@ -54,18 +54,18 @@ int main(int const argc, char const *const argv[])
     DTensor<TDev, 3> T(3L, nS, nT);
     thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
 
-    // Log::Print("gewurz", "Preconditioner");
-    // DTensor<TDev, 2>  M(nS, nT);
-    // DTensor<CuCx<TDev>, 2> Mks(nS, nT);
-    // DTensor<CuCx<TDev>, 3> Mimg(mat[0], mat[1], mat[2]);
-    // thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
+    Log::Print("gewurz", "Preconditioner");
+    DTensor<TDev, 2>  M(nS, nT);
+    DTensor<CuCx<TDev>, 2> Mks(nS, nT);
+    DTensor<CuCx<TDev>, 3> Mimg(mat[0], mat[1], mat[2]);
+    thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
 
-    // gw::DFT::ThreeD dft{T.span};
-    // dft.adjoint(Mks.span, Mimg.span);
-    // dft.forward(Mimg.span, Mks.span);
-    // thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-    //                   [] __device__(CuCx<TDev> x) { return TDev(1) / cuda::std::abs(x); });
-    // gw::MulPacked<CuCx<TDev>, TDev, 3> Mop{M.span};
+    gw::DFT::ThreeD dft{T.span};
+    dft.adjoint(Mks.span, Mimg.span);
+    dft.forward(Mimg.span, Mks.span);
+    thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
+                      [] __device__(CuCx<TDev> x) { return TDev(1) / cuda::std::abs(x); });
+    gw::MulPacked<CuCx<TDev>, TDev, 3> Mop{M.span};
 
     Log::Print("gewurz", "Read k-space");
     HTensor<CuCx<THost>, 3> hKS(nC, nS, nT);
@@ -80,7 +80,7 @@ int main(int const argc, char const *const argv[])
     HTensor<CuCx<THost>, 4>  hImgs(nC, mat[0], mat[1], mat[2]);
     HTensor<CuCx<TDev>, 4>   hhImgs(nC, mat[0], mat[1], mat[2]);
     DTensor<CuCx<TDev>, 4>   imgs(nC, mat[0], mat[1], mat[2]);
-    // Mop.forward(ks.span, ks.span);
+    Mop.forward(ks.span, ks.span);
     dftp.adjoint(ks.span, imgs.span);
     thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
     std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), ConvertFromCx());
