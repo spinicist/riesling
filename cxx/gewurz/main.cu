@@ -59,6 +59,10 @@ int main(int const argc, char const *const argv[])
   Index const nS = shape[1];
   Index const nT = shape[2];
 
+  HD5::Writer writer(oname.Get());
+  writer.writeInfo(info);
+
+  try {
   Log::Print("gewurz", "Read trajectory");
   HTensor<float, 3> hT(3L, nS, nT);
   reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
@@ -86,7 +90,7 @@ int main(int const argc, char const *const argv[])
   HTensor<CuCxF, 3> hKS(nC, nS, nT);
   reader.readTo((Cx *)hKS.vec.data());
   HTensor<CuCxH, 3> hhKS(nC, nS, nT);
-  thrust::transform(hKS.vec.begin(), hKS.vec.end(), hhKS.vec.begin(), CuCxFToCuCxH());
+  std::transform(hKS.vec.begin(), hKS.vec.end(), hhKS.vec.begin(), CuCxFToCuCxH());
   DTensor<CuCxH, 3> ks(nC, nS, nT);
   thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
 
@@ -98,17 +102,24 @@ int main(int const argc, char const *const argv[])
   Mop.forward(ks.span, ks.span);
   dftp.adjoint(ks.span, imgs.span);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
-  thrust::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
-
-  HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
+  std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
   writer.writeTensor("adjoint", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
 
   gw::LSMR<CuCxH, 4, 3> lsmr{&dftp, &Mop};
   thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
   lsmr.run(ks, imgs);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
-  // thrust::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
+  std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), CuCxHToCuCxF());
   writer.writeTensor("inverse", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
+  } catch (Log::Failure &f) {
+    Log::Fail(f);
+    Log::End();
+    return EXIT_FAILURE;
+  } catch (std::exception const &e) {
+    Log::Fail(Log::Failure("None", "{}", e.what()));
+    Log::End();
+    return EXIT_FAILURE;
+  }
+  Log::End();
   return EXIT_SUCCESS;
 }
