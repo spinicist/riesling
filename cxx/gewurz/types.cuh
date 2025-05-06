@@ -7,8 +7,26 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
-using CuCxH = cuda::std::complex<__nv_bfloat16>;
-using CuCxF = cuda::std::complex<float>;
+template <typename T> using CuCx = cuda::std::complex<T>;
+using THost = float;
+
+#ifdef USE_BF16
+using TDev = __nv_bfloat16;
+#define FLOAT_TO __float2bfloat16
+#define FLOAT_FROM __bfloat162float
+#define SHORT_TO __short2bfloat16_rn
+#define ONE CUDART_ONE_BF16
+#define ZERO CUDART_ZERO_BF16
+#else
+using TDev = float;
+#define FLOAT_TO
+#define FLOAT_FROM
+#define SHORT_TO
+#define ONE 1.f
+#define ZERO 0.f
+#endif
+
+
 
 template <typename T, int N> struct DTensor
 {

@@ -48,29 +48,29 @@ int main(int const argc, char const *const argv[])
 
   Log::Print("gewurztraminer", "Poor man's SDC");
   DTensor<CuReal, 2> M(nS, nT);
-  DTensor<CuCxF, 2>  Mks(nS, nT);
-  DTensor<CuCxF, 3>  Mimg(mat[0], mat[1], mat[2]);
+  DTensor<CuCx<THost>, 2>  Mks(nS, nT);
+  DTensor<CuCx<THost>, 3>  Mimg(mat[0], mat[1], mat[2]);
   thrust::fill(Mks.vec.begin(), Mks.vec.end(), 1.f);
 
   gw::DFT::ThreeD dft{T.span};
   dft.adjoint(Mks.span, Mimg.span);
   dft.forward(Mimg.span, Mks.span);
   thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [] __device__(CuCxF x) { return (CuReal)1 / cuda::std::abs(x); });
+                    [] __device__(CuCx<THost> x) { return (CuReal)1 / cuda::std::abs(x); });
   fmt::print(stderr, "|Mks| {} |M| {}\n", gw::CuNorm(Mks.vec), gw::CuNorm(M.vec));
-  gw::MulPacked<CuCxF, CuReal, 3> Mop{M.span};
+  gw::MulPacked<CuCx<THost>, CuReal, 3> Mop{M.span};
 
   Log::Print("gewurztraminer", "Setup k-space");
-  HTensor<CuCxF, 3> hKS(nC, nS, nT);
-  DTensor<CuCxF, 3> ks(nC, nS, nT);;
-  thrust::fill(hKS.vec.begin(), hKS.vec.end(), CuCxF(1.f));
+  HTensor<CuCx<THost>, 3> hKS(nC, nS, nT);
+  DTensor<CuCx<THost>, 3> ks(nC, nS, nT);;
+  thrust::fill(hKS.vec.begin(), hKS.vec.end(), CuCx<THost>(1.f));
   thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
 
   Log::Print("gewurztraminer", "Recon");
   gw::DFT::ThreeDPacked dftp{T.span};
-  gw::LSMR<CuCxF, 4, 3> lsmr{&dftp};
-  HTensor<CuCxF, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
-  DTensor<CuCxF, 4>     imgs(nC, mat[0], mat[1], mat[2]);
+  gw::LSMR<CuCx<THost>, 4, 3> lsmr{&dftp};
+  HTensor<CuCx<THost>, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
+  DTensor<CuCx<THost>, 4>     imgs(nC, mat[0], mat[1], mat[2]);
   fmt::print(stderr, "Before |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
   dftp.adjoint(ks.span, imgs.span);
   fmt::print(stderr, "After |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
