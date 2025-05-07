@@ -25,7 +25,7 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
   int const  nK = imgs.extent(2);
   int const  nIJK = nI * nJ * nK;
   TDev const scale = FLOAT_TO(1.f / std::sqrt(nIJK));
-
+  fmt::print(stderr, "nST {} scale {}\n", nST, scale);
   auto it = thrust::make_counting_iterator(0);
   thrust::for_each_n(thrust::cuda::par, it, nST, [imgs, traj = this->traj, ks, scale] __device__(int st) {
     TDev const pi2 = FLOAT_TO(2.f * CUDART_PI_F);
@@ -51,7 +51,7 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
           TDev const       rx = FLOAT_TO((ii - nI / 2.f) / (float)nI);
           auto const       p = pi2 * (kx * rx + ky * ry + kz * rz);
           CuCx<TDev> const ep(cuda::std::cos(-p), cuda::std::sin(-p));
-          ks(is, it) += ep * imgs(ii, ij, ik);
+          temp += ep * imgs(ii, ij, ik);
         }
       }
     }
