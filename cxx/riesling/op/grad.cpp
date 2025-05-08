@@ -1,7 +1,7 @@
 #include "inputs.hpp"
 
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/grad.hpp"
 #include "rl/op/wavelets.hpp"
 #include "rl/sys/threads.hpp"

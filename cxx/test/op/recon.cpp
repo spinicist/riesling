@@ -1,6 +1,6 @@
 #include "rl/basis/basis.hpp"
 #include "rl/fft.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/compose.hpp"
 #include "rl/op/nufft-lowmem.hpp"
 #include "rl/op/nufft.hpp"

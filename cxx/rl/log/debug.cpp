@@ -1,7 +1,19 @@
-#include "logtensor.hpp"
+#include "debug.hpp"
+
+#include "../io/hd5.hpp"
 
 namespace rl {
 namespace Log {
+
+namespace {
+std::shared_ptr<HD5::Writer> debug_file = nullptr;
+}
+
+void SetDebugFile(std::string const &fname) { debug_file = std::make_shared<HD5::Writer>(fname); }
+
+auto IsDebugging() -> bool { return debug_file != nullptr; }
+
+void EndDebugging() { debug_file.reset(); }
 
 template <typename Scalar, int N>
 void Tensor(std::string const &nameIn, Sz<N> const &shape, Scalar const *data, HD5::DimensionNames<N> const &dimNames)

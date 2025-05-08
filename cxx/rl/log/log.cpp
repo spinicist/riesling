@@ -1,8 +1,7 @@
 #include "log.hpp"
 
 #include "fmt/chrono.h"
-#include "io/hd5.hpp"
-#include "tensors.hpp"
+#include "debug.hpp"
 
 #include <mutex>
 #include <stdio.h>
@@ -13,8 +12,6 @@ namespace Log {
 
 namespace {
 Display                      displayLevel = Display::None;
-std::shared_ptr<HD5::Writer> debug_file = nullptr;
-bool                         isDebugging = false;
 std::mutex                   logMutex;
 std::vector<std::string>     savedEntries;
 
@@ -30,20 +27,7 @@ void SetDisplayLevel(Display const l)
   displayLevel = l;
   // Move the cursor one more line down so we don't erase command names etc.
   if (displayLevel == Display::Ephemeral) { fmt::print(stderr, "\n"); }
-  if (displayLevel == Display::High) {
-    isDebugging = true;
-  } else if (!debug_file) {
-    isDebugging = false;
-  }
 }
-
-void SetDebugFile(std::string const &fname)
-{
-  debug_file = std::make_shared<HD5::Writer>(fname);
-  isDebugging = true;
-}
-
-auto IsDebugging() -> bool { return isDebugging; }
 
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string
 {
@@ -66,7 +50,7 @@ auto Saved() -> std::vector<std::string> const & { return savedEntries; }
 
 void End()
 {
-  debug_file.reset();
+  EndDebugging();
   displayLevel = Display::None;
 }
 
@@ -92,30 +76,6 @@ std::string ToNow(Log::Time const t1)
     return fmt::format("{} millisecond{}", diff, diff > 1 ? "s" : "");
   }
 }
-
-template <typename Scalar, int N>
-void Tensor(std::string const &nameIn, Sz<N> const &shape, Scalar const *data, HD5::DimensionNames<N> const &dimNames)
-{
-  if (debug_file) {
-    Index       count = 0;
-    std::string name = nameIn;
-    while (debug_file->exists(name)) {
-      count++;
-      name = fmt::format("{}-{}", nameIn, count);
-    }
-    debug_file->writeTensor(name, shape, data, dimNames);
-  }
-}
-
-template void Tensor(std::string const &, Sz<1> const &shape, float const *data, HD5::DimensionNames<1> const &);
-template void Tensor(std::string const &, Sz<2> const &shape, float const *data, HD5::DimensionNames<2> const &);
-template void Tensor(std::string const &, Sz<3> const &shape, float const *data, HD5::DimensionNames<3> const &);
-template void Tensor(std::string const &, Sz<4> const &shape, float const *data, HD5::DimensionNames<4> const &);
-template void Tensor(std::string const &, Sz<5> const &shape, float const *data, HD5::DimensionNames<5> const &);
-template void Tensor(std::string const &, Sz<3> const &shape, Cx const *data, HD5::DimensionNames<3> const &);
-template void Tensor(std::string const &, Sz<4> const &shape, Cx const *data, HD5::DimensionNames<4> const &);
-template void Tensor(std::string const &, Sz<5> const &shape, Cx const *data, HD5::DimensionNames<5> const &);
-template void Tensor(std::string const &, Sz<6> const &shape, Cx const *data, HD5::DimensionNames<6> const &);
 
 } // namespace Log
 } // namespace rl

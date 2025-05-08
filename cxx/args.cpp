@@ -1,6 +1,6 @@
 #include "args.hpp"
 
-#include "rl/log.hpp"
+#include "rl/log/debug.hpp"
 #include "rl/sys/threads.hpp"
 
 #include <exception>

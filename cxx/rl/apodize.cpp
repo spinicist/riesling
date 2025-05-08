@@ -1,7 +1,7 @@
 #include "apodize.hpp"
 #include "fft.hpp"
 #include "kernel/kernel.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 #include "op/pad.hpp"
 #include "tensors.hpp"
 

@@ -24,8 +24,6 @@ enum struct Display
 using Time = std::chrono::high_resolution_clock::time_point;
 
 void SetDisplayLevel(Display const l);
-void SetDebugFile(std::string const &fname);
-auto IsDebugging() -> bool;
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
 void SaveEntry(std::string const &entry, fmt::terminal_color const color, Display const level);
 auto Saved() -> std::vector<std::string> const &;

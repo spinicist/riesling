@@ -4,7 +4,7 @@
 #include "op.cuh"
 #include "rl/algo/bidiag.hpp"
 #include "rl/algo/iter.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 namespace gw {
 

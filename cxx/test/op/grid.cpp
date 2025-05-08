@@ -1,6 +1,6 @@
 #include "rl/op/grid.hpp"
 #include "rl/kernel/tophat.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/tensors.hpp"
 
 #include <catch2/catch_approx.hpp>

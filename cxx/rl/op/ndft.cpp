@@ -1,6 +1,6 @@
 #include "ndft.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "tensorscale.hpp"
 #include "top-impl.hpp"
 

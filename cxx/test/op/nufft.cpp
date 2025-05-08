@@ -1,6 +1,6 @@
 #include "rl/op/nufft.hpp"
 #include "rl/basis/fourier.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/grid.hpp"
 
 #include <catch2/catch_approx.hpp>

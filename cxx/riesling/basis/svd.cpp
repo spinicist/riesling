@@ -1,7 +1,7 @@
 #include "rl/basis/svd.hpp"
 #include "rl/algo/decomp.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/sim/dir.hpp"
 #include "rl/sim/ir.hpp"
 #include "rl/sim/t2flair.hpp"

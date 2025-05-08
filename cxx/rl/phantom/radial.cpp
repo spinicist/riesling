@@ -1,5 +1,5 @@
 #include "radial.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../tensors.hpp"
 
 namespace rl {

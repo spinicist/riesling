@@ -1,6 +1,6 @@
 #include "prox.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 
 namespace rl::Proxs {
 

@@ -1,6 +1,6 @@
 #include "trajectory.hpp"
 
-#include "log.hpp"
+#include "log/log.hpp"
 #include "tensors.hpp"
 
 #include <cfenv>

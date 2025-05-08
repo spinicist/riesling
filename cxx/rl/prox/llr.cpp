@@ -1,7 +1,7 @@
 #include "llr.hpp"
 
 #include "../algo/decomp.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../patches.hpp"
 #include "../tensors.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../types.hpp"
 
 // Statistical Utilities

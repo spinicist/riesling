@@ -1,6 +1,6 @@
 #include "hankel.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "top-impl.hpp"
 
 namespace rl::TOps {

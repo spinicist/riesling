@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../func/functor.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../op/ops.hpp"
 #include "../sys/threads.hpp"
 #include "../tensors.hpp"

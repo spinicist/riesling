@@ -1,6 +1,6 @@
 #include "lsqr.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "bidiag.hpp"
 #include "common.hpp"
 #include "iter.hpp"

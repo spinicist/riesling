@@ -2,7 +2,7 @@
 
 #include "../basis/basis.hpp"
 #include "../io/hd5.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../op/grid-opts.hpp"
 #include "../trajectory.hpp"
 

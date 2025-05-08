@@ -1,6 +1,6 @@
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 #include "dft.cuh"
 #include "dft2.cuh"

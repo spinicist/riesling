@@ -2,7 +2,7 @@
 
 #include "../args.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/tensors.hpp"
 
 #include "util.hpp"

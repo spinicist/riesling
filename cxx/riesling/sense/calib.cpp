@@ -3,7 +3,7 @@
 #include "rl/algo/stats.hpp"
 #include "rl/fft.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/fft.hpp"
 #include "rl/op/pad.hpp"
 #include "rl/sense/sense.hpp"

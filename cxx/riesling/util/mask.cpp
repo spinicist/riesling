@@ -1,7 +1,7 @@
 #include "inputs.hpp"
 #include "outputs.hpp"
 #include "rl/algo/otsu.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 #include <flux.hpp>
 

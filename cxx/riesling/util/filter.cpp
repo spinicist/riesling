@@ -2,7 +2,7 @@
 
 #include "rl/filter.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/fft.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/types.hpp"

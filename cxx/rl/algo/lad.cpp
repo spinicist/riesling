@@ -1,6 +1,6 @@
 #include "lad.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../op/top.hpp"
 #include "../prox/norms.hpp"
 #include "../tensors.hpp"

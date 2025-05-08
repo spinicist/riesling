@@ -1,6 +1,6 @@
 #include "zte.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "unsupported/Eigen/MatrixFunctions"
 
 using namespace std::literals::complex_literals;

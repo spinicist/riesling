@@ -1,6 +1,6 @@
 #include "magick.hpp"
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/tensors.hpp"
 
 #include <fmt/format.h>

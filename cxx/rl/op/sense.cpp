@@ -1,6 +1,6 @@
 #include "sense.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../sense/sense.hpp"
 #include "../sys/threads.hpp"
 #include "../tensors.hpp"

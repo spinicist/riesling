@@ -1,7 +1,7 @@
 #include "entropy.hpp"
 
 #include "../algo/common.hpp"
-#include "../log.hpp"
+#include "../log/debug.hpp"
 #include "../tensors.hpp"
 
 namespace rl::Proxs {

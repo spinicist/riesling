@@ -1,7 +1,7 @@
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include "dft.cuh"
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include <cub/device/device_for.cuh>
 #include <cuda/experimental/stream.cuh>
 #include <math_constants.h>
