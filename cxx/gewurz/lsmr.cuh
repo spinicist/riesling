@@ -90,11 +90,11 @@ template <typename T, int xRank, int yRank> struct LSMR
       // Update h, h̅, x.
       thrust::transform(
         h.vec.begin(), h.vec.end(), h̅.vec.begin(), h̅.vec.begin(),
-        [z = (θ̅ * ρ / (ρold * ρ̅old))] __device__(CuCx<TDev> const h, CuCx<TDev> const h̅) { return h - z * h̅; });
+        [z = FLOAT_TO(θ̅ * ρ / (ρold * ρ̅old))] __device__(CuCx<TDev> const h, CuCx<TDev> const h̅) { return h - z * h̅; });
       thrust::transform(x.vec.begin(), x.vec.end(), h̅.vec.begin(), x.vec.begin(),
-                        [z = (ζ / (ρ * ρ̅))] __device__(CuCx<TDev> const x, CuCx<TDev> const h̅) { return x + z * h̅; });
+                        [z = FLOAT_TO(ζ / (ρ * ρ̅))] __device__(CuCx<TDev> const x, CuCx<TDev> const h̅) { return x + z * h̅; });
       thrust::transform(bd.v.vec.begin(), bd.v.vec.end(), h.vec.begin(), h̅.vec.begin(),
-                        [z = (θnew / ρ)] __device__(CuCx<TDev> const v, CuCx<TDev> h) { return v - z * h; });
+                        [z = FLOAT_TO(θnew / ρ)] __device__(CuCx<TDev> const v, CuCx<TDev> h) { return v - z * h; });
 
       // Estimate of |r|.
       float const β́ = ĉ * β̈;

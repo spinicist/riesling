@@ -3,13 +3,25 @@
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include <cuda/std/complex>
 #include <cuda/std/mdspan>
+#include <cuda_fp16.h>
 #include <cuda_bf16.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
 template <typename T> using CuCx = cuda::std::complex<T>;
 
-#ifdef USE_BF16
+#define USE_BF16
+
+#if defined USE_FP16
+#warning "Enabled FP16"
+using TDev = __half;
+#define FLOAT_TO __float2half
+#define FLOAT_FROM __hald2float
+#define SHORT_TO __short2hald_rn
+#define ONE CUDART_ONE_FP16
+#define ZERO CUDART_ZERO_FP16
+#elif defined USE_BF16
+#warning "Enabled BF16"
 using TDev = __nv_bfloat16;
 #define FLOAT_TO __float2bfloat16
 #define FLOAT_FROM __bfloat162float
@@ -17,6 +29,7 @@ using TDev = __nv_bfloat16;
 #define ONE CUDART_ONE_BF16
 #define ZERO CUDART_ZERO_BF16
 #else
+#warning "Enabled float"
 using TDev = float;
 #define FLOAT_TO
 #define FLOAT_FROM

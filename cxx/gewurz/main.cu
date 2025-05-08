@@ -62,8 +62,11 @@ int main(int const argc, char const *const argv[])
     thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
 
     gw::DFT::ThreeD dft{T.span};
+    fmt::print(stderr, "Before |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)), FLOAT_FROM(gw::CuNorm(Mimg.vec)));
     dft.adjoint(Mks.span, Mimg.span);
+    fmt::print(stderr, "Middle |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)), FLOAT_FROM(gw::CuNorm(Mimg.vec)));
     dft.forward(Mimg.span, Mks.span);
+    fmt::print(stderr, "After |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)), FLOAT_FROM(gw::CuNorm(Mimg.vec)));
     thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
                       [] __device__(CuCx<TDev> x) { return TDev(1) / cuda::std::abs(x); });
     gw::MulPacked<CuCx<TDev>, TDev, 3> Mop{M.span};
