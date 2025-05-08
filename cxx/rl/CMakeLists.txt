@@ -16,6 +16,7 @@ fft.cpp
 filter.cpp
 interp.cpp
 log.cpp
+logtensor.cpp
 patches.cpp
 precon.cpp
 scaling.cpp
