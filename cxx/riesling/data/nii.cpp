@@ -18,7 +18,7 @@ void main_nii(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader input(iname.Get());
-  Info const  info = input.readInfo();
+  Info const  info = input.readStruct<Info>(HD5::Keys::Info);
 
   Cx4 output;
   if (input.order() == 3) {

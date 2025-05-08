@@ -22,7 +22,7 @@ void main_slice_nc(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
-  auto const  info = reader.readInfo();
+  auto const  info = reader.readStruct<Info>(HD5::Keys::Info);
 
   if (reader.order() != 5) { throw Log::Failure(cmd, "Dataset does not appear to be non-cartesian with 5 dimensions"); }
   Cx5        ks = reader.readTensor<Cx5>();
@@ -32,7 +32,7 @@ void main_slice_nc(args::Subparser &parser)
     SliceNC(channel.Get(), sample.Get(), trace.Get(), slab.Get(), time.Get(), tps.Get(), segment.Get(), ks, tp);
   Trajectory  newTraj(sliced.tp, traj.matrix(), traj.voxelSize());
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   newTraj.write(writer);
   writer.writeTensor(HD5::Keys::Data, sliced.ks.dimensions(), sliced.ks.data(), HD5::Dims::Noncartesian);
   Log::Print(cmd, "Finished");

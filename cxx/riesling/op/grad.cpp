@@ -21,7 +21,7 @@ void main_grad(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get());
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(reader.readInfo());
+  writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
   if (fwd) {
     if (vec) {
       auto const       input = reader.readTensor<Cx6>();

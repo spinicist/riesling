@@ -23,7 +23,7 @@ void main_sense_maps(args::Subparser &parser)
   ParseCommand(parser, iname, oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader treader(tname.Get());
-  Trajectory  traj(treader, treader.readInfo().voxel_size);
+  Trajectory  traj(treader, treader.readStruct<Info>(HD5::Keys::Info).voxel_size);
 
   HD5::Reader reader(iname.Get());
   HD5::Writer writer(oname.Get());

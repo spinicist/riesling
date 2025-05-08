@@ -17,7 +17,7 @@ void main_pad(args::Subparser &parser)
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(reader.readInfo());
+  writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
 
   Cx6 const inImages = reader.readTensor<Cx6>();
   Sz6       inDims = inImages.dimensions();

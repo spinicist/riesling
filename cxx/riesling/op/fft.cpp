@@ -18,7 +18,7 @@ void main_fft(args::Subparser &parser)
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader input(iname.Get());
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(input.readInfo());
+  writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
   auto const order = input.order();
   switch (order) {
   case 4: {

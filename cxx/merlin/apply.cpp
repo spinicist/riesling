@@ -17,7 +17,7 @@ void main_apply(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size);
   Cx5         ks = reader.readTensor<Cx5>();
 
@@ -30,7 +30,7 @@ void main_apply(args::Subparser &parser)
     traj.moveInFOV(tfm.R, info.direction.inverse() * tfm.δ, inav * tpnav.Get(), tpnav.Get(), ks);
   }
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Log::Print(cmd, "Finished");

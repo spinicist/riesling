@@ -25,13 +25,13 @@ void main_nufft(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size, coreArgs.matrix.Get());
+  Trajectory traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size, coreArgs.matrix.Get());
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
 
   auto const shape = reader.dimensions();
 
   HD5::Writer writer(coreArgs.oname.Get());
-  writer.writeInfo(reader.readInfo());
+  writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
   traj.write(writer);
 
   if (fwd) {

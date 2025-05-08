@@ -22,7 +22,7 @@ void main_downsamp(args::Subparser &parser)
   ParseCommand(parser, iname, oname);
 
   HD5::Reader reader(iname.Get());
-  Info        info = reader.readInfo();
+  Info        info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size);
   Cx5  ks1 = reader.readTensor<Cx5>();
   traj.downsample(res.Get(), !noShrink, corners);
@@ -36,6 +36,6 @@ void main_downsamp(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   traj.write(writer);
   info.voxel_size = traj.voxelSize();
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, ks1.dimensions(), ks1.data(), HD5::Dims::Noncartesian);
 }

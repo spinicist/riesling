@@ -18,7 +18,7 @@ Trajectory LoadTrajectory(std::string const &file)
 {
   Log::Print("Phan", "Reading external trajectory from {}", file);
   HD5::Reader reader(file);
-  return Trajectory(reader, reader.readInfo().voxel_size);
+  return Trajectory(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size);
 }
 
 Trajectory CreateTrajectory(
@@ -62,7 +62,7 @@ void main_phantom(args::Subparser &parser)
                         .direction = Eigen::Matrix3f::Identity(),
                         .tr = 1.f};
   HD5::Writer      writer(iname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   traj.write(writer);
 
   Cx3 phantom(traj.matrix());

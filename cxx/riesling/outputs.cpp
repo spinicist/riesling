@@ -8,21 +8,21 @@
 
 namespace rl {
 
-template <int ND>
+template <size_t ND>
 void WriteOutput(
-  std::string const &cmd, std::string const &fname, CxN<ND> const &img, HD5::DimensionNames<ND> const &dims, Info const &info)
+  std::string const &cmd, std::string const &fname, CxN<ND> const &img, HD5::DNames<ND> const &dims, Info const &info)
 {
   HD5::Writer writer(fname);
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, img.dimensions(), img.data(), dims);
   if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
   Log::Print(cmd, "Wrote output file {}", fname);
 }
 
 template void
-WriteOutput<5>(std::string const &, std::string const &, Cx5 const &, HD5::DimensionNames<5> const &, Info const &);
+WriteOutput<5>(std::string const &, std::string const &, Cx5 const &, HD5::DNames<5> const &, Info const &);
 template void
-WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::DimensionNames<6> const &, Info const &);
+WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::DNames<6> const &, Info const &);
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &fname,

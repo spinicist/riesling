@@ -24,7 +24,7 @@ void main_pdhg_setup(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname);
 
   HD5::Reader reader(coreArgs.iname.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size);
+  Trajectory  traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   auto const  nS = noncart.dimension(3);
   auto const  nT = noncart.dimension(4);

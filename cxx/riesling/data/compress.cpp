@@ -33,7 +33,7 @@ void main_compress(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size);
   Cx4 const   ks = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
   Index const channels = ks.dimension(0);
@@ -71,12 +71,12 @@ void main_compress(args::Subparser &parser)
   }
 
   HD5::Writer writer(coreArgs.oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   traj.write(writer);
-  writer.writeTensor(HD5::Keys::Data, compressed.dimensions(), compressed.data(), HD5::Dims::Noncartesian);
+  writer.writeTensor(HD5::Keys::Data, ToArray(compressed.dimensions()), compressed.data(), HD5::Dims::Noncartesian);
 
   if (save) {
     HD5::Writer matfile(save.Get());
-    matfile.writeMatrix(compressor.psi, HD5::Keys::CompressionMatrix);
+    matfile.writeTensor(HD5::Keys::CompressionMatrix, {compressor.psi.rows(), compressor.psi.cols()}, compressor.psi.data(), HD5::DNames<2>{"oc", "ic"});
   }
 }

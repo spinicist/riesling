@@ -23,9 +23,9 @@ void main_op_sense(args::Subparser &parser)
   auto const       maps = sreader.readTensor<Cx5>();
   auto const       shape = FirstN<3>(maps.dimensions());
   auto const       nC = maps.dimension(3);
-  Trajectory const traj(ireader, ireader.readInfo().voxel_size);
+  Trajectory const traj(ireader, ireader.readStruct<Info>(HD5::Keys::Info).voxel_size);
   HD5::Writer      writer(oname.Get());
-  writer.writeInfo(ireader.readInfo());
+  writer.writeStruct(HD5::Keys::Info, ireader.readStruct<Info>(HD5::Keys::Info));
   traj.write(writer);
 
   if (fwd) {

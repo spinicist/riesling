@@ -18,7 +18,7 @@ void main_real(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
-  auto const  info = reader.readInfo();
+  auto const  info = reader.readStruct<Info>(HD5::Keys::Info);
 
   if (reader.order() != 5) { throw Log::Failure(cmd, "Dataset does not appear to be images with 5 dimensions"); }
   auto       imgs = reader.readTensor<Cx5>();
@@ -32,7 +32,7 @@ void main_real(args::Subparser &parser)
   Re5 const real = imgs.real();
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, ishape, real.data(), HD5::Dims::Images);
   Log::Print(cmd, "Finished");
 }

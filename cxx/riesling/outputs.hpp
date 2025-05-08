@@ -10,9 +10,9 @@
 #include "rl/types.hpp"
 
 namespace rl {
-template <int ND>
+template <size_t ND>
 void WriteOutput(
-  std::string const &cmd, std::string const &fname, CxN<ND> const &img, HD5::DimensionNames<ND> const &dims, Info const &info);
+  std::string const &cmd, std::string const &fname, CxN<ND> const &img, HD5::DNames<ND> const &dims, Info const &info);
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &writer,

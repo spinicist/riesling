@@ -64,6 +64,6 @@ void main_denoise(args::Subparser &parser)
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   }
   if (scale != 1.f) { x.device(Threads::TensorDevice()) = x / Cx(scale); }
-  WriteOutput(cmd, oname.Get(), x, HD5::Dims::Images, input.readInfo());
+  WriteOutput<5>(cmd, oname.Get(), x, HD5::Dims::Images, input.readStruct<Info>(HD5::Keys::Info));
   Log::Print(cmd, "Finished");
 }

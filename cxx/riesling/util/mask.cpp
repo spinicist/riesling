@@ -21,7 +21,7 @@ void main_mask(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No input file specified"); }
   HD5::Reader ifile(iname.Get());
-  auto const  info = ifile.readInfo();
+  auto const  info = ifile.readStruct<Info>(HD5::Keys::Info);
   Re3 const   in = ifile.readTensor<Cx5>().chip<4>(t.Get()).chip<3>(b.Get()).abs();
   float       thr = 0.f;
   if (thresh) {
@@ -50,7 +50,7 @@ void main_mask(args::Subparser &parser)
   }
 
   HD5::Writer ofile(oname.Get());
-  ofile.writeInfo(info);
+  ofile.writeStruct(HD5::Keys::Info, info);
   ofile.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Image);
   Log::Print(cmd, "Finished");
 }

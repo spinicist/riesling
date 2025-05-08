@@ -1,5 +1,7 @@
 #include "reader.hpp"
 
+#include "../info.hpp"
+#include "../types.hpp"
 #include "../log/log.hpp"
 #include <filesystem>
 #include <hdf5.h>
@@ -143,12 +145,12 @@ template <typename Scalar> void Reader::readTo(Scalar *data, std::string const &
 template void Reader::readTo<float>(float *, std::string const &) const;
 template void Reader::readTo<Cx>(Cx *, std::string const &) const;
 
-template <int N> auto Reader::dimensionNames(std::string const &name) const -> DimensionNames<N>
+template <int N> auto Reader::readDNames(std::string const &name) const -> DNames<N>
 {
   if (N != order(name)) { throw Log::Failure("HD5", "Asked for {} dimension names, but {} order tensor", N, order(name)); }
   hid_t ds = H5Dopen(handle_, name.c_str(), H5P_DEFAULT);
   if (ds < 0) { throw Log::Failure("HD5", "Could not open tensor '{}'", name); }
-  DimensionNames<N> names;
+  DNames<N> names;
   for (Index ii = 0; ii < N; ii++) {
     char buffer[64] = {0};
     H5DSget_label(ds, ii, buffer, sizeof(buffer));
@@ -159,10 +161,10 @@ template <int N> auto Reader::dimensionNames(std::string const &name) const -> D
   return names;
 }
 
-template auto Reader::dimensionNames<3>(std::string const &) const -> DimensionNames<3>;
-template auto Reader::dimensionNames<4>(std::string const &) const -> DimensionNames<4>;
-template auto Reader::dimensionNames<5>(std::string const &) const -> DimensionNames<5>;
-template auto Reader::dimensionNames<6>(std::string const &) const -> DimensionNames<6>;
+template auto Reader::readDNames<3>(std::string const &) const -> DNames<3>;
+template auto Reader::readDNames<4>(std::string const &) const -> DNames<4>;
+template auto Reader::readDNames<5>(std::string const &) const -> DNames<5>;
+template auto Reader::readDNames<6>(std::string const &) const -> DNames<6>;
 
 template <typename T> auto Reader::readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T
 {
@@ -316,11 +318,11 @@ auto Reader::readStrings(std::string const &name) const -> std::vector<std::stri
   return strings;
 }
 
-auto Reader::readInfo() const -> Info
+template<> auto Reader::readStruct<Info>(std::string const &id) const -> Info
 {
   // First get the Info struct
   hid_t const info_id = InfoType();
-  hid_t const dset = H5Dopen(handle_, Keys::Info.c_str(), H5P_DEFAULT);
+  hid_t const dset = H5Dopen(handle_, id.c_str(), H5P_DEFAULT);
   CheckInfoType(dset);
   hid_t const space = H5Dget_space(dset);
   Info        info;
@@ -329,7 +331,7 @@ auto Reader::readInfo() const -> Info
   return info;
 }
 
-auto Reader::readTransform(std::string const &id) const -> Transform
+template<> auto Reader::readStruct<Transform>(std::string const &id) const -> Transform
 {
   hid_t const tfm_id = TransformType();
   hid_t const dset = H5Dopen(handle_, id.c_str(), H5P_DEFAULT);
@@ -384,7 +386,7 @@ auto Reader::readAttributeInt(std::string const &dset, std::string const &attr) 
   return val;
 }
 
-template <int N> auto Reader::readAttributeSz(std::string const &dset, std::string const &attr) const -> Sz<N>
+template <size_t N> auto Reader::readAttributeShape(std::string const &dset, std::string const &attr) const -> Shape<N>
 {
   hsize_t szN[1] = {N};
   hid_t   long3_id = H5Tarray_create(H5T_NATIVE_LONG, 1, szN);
@@ -395,9 +397,9 @@ template <int N> auto Reader::readAttributeSz(std::string const &dset, std::stri
   return val;
 }
 
-template auto Reader::readAttributeSz<1>(std::string const &, std::string const &attr) const -> Sz<1>;
-template auto Reader::readAttributeSz<2>(std::string const &, std::string const &attr) const -> Sz<2>;
-template auto Reader::readAttributeSz<3>(std::string const &, std::string const &attr) const -> Sz<3>;
+template auto Reader::readAttributeShape<1>(std::string const &, std::string const &attr) const -> Shape<1>;
+template auto Reader::readAttributeShape<2>(std::string const &, std::string const &attr) const -> Shape<2>;
+template auto Reader::readAttributeShape<3>(std::string const &, std::string const &attr) const -> Shape<3>;
 
 } // namespace HD5
 } // namespace rl

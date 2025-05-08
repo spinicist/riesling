@@ -106,7 +106,6 @@ Recon::Recon(Opts const        &rOpts,
              Cx5 const         &noncart,
              Re3 const         &f0map)
 {
-  Index const nC = noncart.dimension(0);
   Index const nSamp = noncart.dimension(1);
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
