@@ -1,7 +1,9 @@
+#define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
 
 #include "dft.cuh"
+#include "dft2.cuh"
 #include "lsmr.cuh"
 
 #include <args.hxx>
@@ -61,11 +63,12 @@ int main(int const argc, char const *const argv[])
     thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
 
     gw::DFT::ThreeD dft{T.span};
+    gw::DFT::ThreeD2 dft2{T.span}; // This one uses CUB
     fmt::print(stderr, "Before |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)), FLOAT_FROM(gw::CuNorm(Mimg.vec)));
-    dft.adjoint(Mks.span, Mimg.span);
+    dft2.adjoint(Mks.span, Mimg.span);
     fmt::print(stderr, "Middle |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)),
                FLOAT_FROM(gw::CuNorm(Mimg.vec)));
-    dft.forward(Mimg.span, Mks.span);
+    dft2.forward(Mimg.span, Mks.span);
     fmt::print(stderr, "After |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)),
                FLOAT_FROM(gw::CuNorm(Mimg.vec)));
     thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
@@ -81,7 +84,7 @@ int main(int const argc, char const *const argv[])
     thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
 
     Log::Print("gewurz", "Recon");
-    gw::DFT::ThreeDPacked<8> dftp{T.span};
+    gw::DFT::ThreeDPacked2<8> dftp{T.span};
     HTensor<CuCx<THost>, 4>  hImgs(nC, mat[0], mat[1], mat[2]);
     HTensor<CuCx<TDev>, 4>   hhImgs(nC, mat[0], mat[1], mat[2]);
     DTensor<CuCx<TDev>, 4>   imgs(nC, mat[0], mat[1], mat[2]);

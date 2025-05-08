@@ -26,7 +26,7 @@ template <typename T, typename MT, int Rank> struct MulPacked : Op<T, Rank, Rank
     int const M = x.extent(0);
     if (M != y.extent(0)) { throw rl::Log::Failure("Mul", "M {} y[0] {}", M, y.extent(0)); }
     int N = 1;
-    for (int ii = 0; ii < m.rank(); ii++) {
+    for (size_t ii = 0; ii < m.rank(); ii++) {
       if (m.extent(ii) != x.extent(ii + 1)) {
         throw rl::Log::Failure("Mul", "Dim {} extent mismatch m {} x {}", ii, m.extent(ii), x.extent(ii + 1));
       }
@@ -48,7 +48,7 @@ template <typename T, typename MT, int Rank> struct MulPacked : Op<T, Rank, Rank
     });
     rl::Log::Print("Mul", "Finished in {}", rl::Log::ToNow(start));
   }
-  void adjoint(XTensor x, XTensor y) const override { throw rl::Log::Failure("Mul", "Adjoint not implemented"); }
+  void adjoint(XTensor , XTensor ) const override { throw rl::Log::Failure("Mul", "Adjoint not implemented"); }
 };
 
 } // namespace gw

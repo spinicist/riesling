@@ -1,8 +1,7 @@
+#define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include "dft.cuh"
 
 #include "rl/log.hpp"
-
-#define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include <cub/device/device_for.cuh>
 #include <cuda/experimental/stream.cuh>
 #include <math_constants.h>
@@ -25,7 +24,7 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
   int const  nK = imgs.extent(2);
   int const  nIJK = nI * nJ * nK;
   TDev const scale = FLOAT_TO(1.f / std::sqrt(nIJK));
-  fmt::print(stderr, "nST {} scale {}\n", nST, scale);
+  fmt::print(stderr, "nST {} scale {}\n", nST, FLOAT_FROM(scale));
   auto it = thrust::make_counting_iterator(0);
   thrust::for_each_n(thrust::cuda::par, it, nST, [imgs, traj = this->traj, ks, scale] __device__(int st) {
     TDev const pi2 = FLOAT_TO(2.f * CUDART_PI_F);
