@@ -8,7 +8,6 @@
 #include <thrust/host_vector.h>
 
 template <typename T> using CuCx = cuda::std::complex<T>;
-using THost = float;
 
 #ifdef USE_BF16
 using TDev = __nv_bfloat16;
@@ -26,24 +25,23 @@ using TDev = float;
 #define ZERO 0.f
 #endif
 
-struct ConvertToCx
+inline constexpr struct ConvertToCx
 {
-  __host__ __device__ CuCx<TDev> operator()(CuCx<THost> const z) const { return CuCx<TDev>(FLOAT_TO(z.real()), FLOAT_TO(z.imag())); }
-};
+  __host__ CuCx<TDev> operator()(std::complex<float> const z) { return CuCx<TDev>(FLOAT_TO(z.real()), FLOAT_TO(z.imag())); }
+} ConvertToCx;
 
-struct ConvertFromCx
+inline constexpr struct ConvertFromCx
 {
-  __host__ __device__ CuCx<THost> operator()(CuCx<TDev> const z) const { return CuCx<THost>(FLOAT_FROM(z.real()), FLOAT_FROM(z.imag())); }
-};
-
-struct ConvertTo
-{
-  __host__ __device__ TDev operator()(float const f) const
+  __host__ std::complex<float> operator()(CuCx<TDev> const z) const
   {
-    return FLOAT_TO(f);
+    return std::complex<float>(FLOAT_FROM(z.real()), FLOAT_FROM(z.imag()));
   }
-};
+} ConvertFromCx;
 
+inline constexpr struct ConvertTo
+{
+  __host__ TDev operator()(float const f) const { return FLOAT_TO(f); }
+} ConvertTo;
 
 template <typename T, int N> struct DTensor
 {
