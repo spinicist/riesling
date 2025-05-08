@@ -21,7 +21,7 @@ void main_sense_calib(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size);
+  Trajectory  traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
@@ -30,7 +30,7 @@ void main_sense_calib(args::Subparser &parser)
   Cx4 ref;
   if (refname) {
     HD5::Reader refFile(refname.Get());
-    Trajectory  refTraj(refFile, refFile.readInfo().voxel_size);
+    Trajectory  refTraj(refFile, refFile.readStruct<Info>(HD5::Keys::Info).voxel_size);
     if (!refTraj.compatible(traj)) { throw Log::Failure(cmd, "Reference data incompatible with multi-channel data"); }
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { throw Log::Failure(cmd, "Reference data must be single channel"); }
@@ -82,6 +82,6 @@ void main_sense_calib2(args::Subparser &parser)
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
-  writer.writeTensor("ref", ref.dimensions(), ref.data(), {"i", "j", "k", "b"});
+  writer.writeTensor("ref", ref.dimensions(), ref.data(), HD5::DNames<4>{"i", "j", "k", "b"});
   Log::Print(cmd, "Finished");
 }

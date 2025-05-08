@@ -57,7 +57,7 @@ template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const vo
   if (std::all_of(matrix_size.cbegin(), matrix_size.cend(), [](Index ii) { return ii > 0; })) {
     matrix_ = matrix_size;
   } else if (file.exists(HD5::Keys::Trajectory, "matrix")) {
-    matrix_ = file.readAttributeSz<ND>(HD5::Keys::Trajectory, "matrix");
+    matrix_ = file.readAttributeShape<ND>(HD5::Keys::Trajectory, "matrix");
   } else {
     matrix_ = GuessMatrix<ND>(points_);
   }
@@ -94,7 +94,7 @@ template <int ND> void TrajectoryN<ND>::init()
 template <int ND> void TrajectoryN<ND>::write(HD5::Writer &file) const
 {
   file.writeTensor(HD5::Keys::Trajectory, points_.dimensions(), points_.data(), HD5::Dims::Trajectory);
-  file.writeAttribute(HD5::Keys::Trajectory, "matrix", matrix_);
+  file.writeAttribute(HD5::Keys::Trajectory, "matrix", ToArray(matrix_));
 }
 
 template <int ND> auto TrajectoryN<ND>::nSamples() const -> Index { return points_.dimension(1); }

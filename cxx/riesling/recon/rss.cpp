@@ -22,7 +22,7 @@ void main_recon_rss(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   Cx5         noncart = reader.readTensor<Cx5>();
@@ -42,6 +42,6 @@ void main_recon_rss(args::Subparser &parser)
   TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), rss.dimension(3), nT), rss.dimensions());
   auto             out = oc.adjoint(rss);
 
-  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
+  WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   Log::Print(cmd, "Finished");
 }

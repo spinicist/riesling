@@ -31,7 +31,7 @@ void main_sake(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size);
   auto const  basis = ReadBasis(coreArgs.basisFile.Get());
   Cx5         noncart = reader.readTensor<Cx5>();
@@ -94,7 +94,7 @@ void main_sake(args::Subparser &parser)
   }
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   writer.writeString("log");
   Log::Print(cmd, "Finished");
 }

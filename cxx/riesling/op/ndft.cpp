@@ -22,11 +22,11 @@ void main_ndft(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   auto const  shape = reader.dimensions();
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   HD5::Writer writer(coreArgs.oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
 
   Trajectory traj(reader, info.voxel_size, coreArgs.matrix.Get());
   if (fwd) {

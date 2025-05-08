@@ -25,7 +25,7 @@ void main_eig(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size);
+  Trajectory  traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size);
   auto        noncart = reader.readTensor<Cx5>();
   auto const  nC = noncart.dimension(0);
   auto const  nS = noncart.dimension(3);

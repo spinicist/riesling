@@ -12,8 +12,8 @@ void SetDebugFile(std::string const &fname);
 auto IsDebugging() -> bool;
 void EndDebugging();
 
-template <typename Scalar, int ND>
-void Tensor(std::string const &name, Sz<ND> const &shape, Scalar const *data, HD5::DimensionNames<ND> const &dims);
+template <typename Scalar, size_t ND>
+void Tensor(std::string const &name, HD5::Shape<ND> const &shape, Scalar const *data, HD5::DNames<ND> const &dims);
 
 } // namespace Log
 } // namespace rl

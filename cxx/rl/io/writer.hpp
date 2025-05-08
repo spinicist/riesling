@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../info.hpp"
 #include "hd5-core.hpp"
 #include <map>
 #include <string>
@@ -14,15 +13,14 @@ struct Writer
   ~Writer();
   void writeString(std::string const &label, std::string const &string);
   void writeStrings(std::string const &label, std::vector<std::string> const &string);
-  void writeInfo(Info const &info);
-  void writeTransform(Transform const &tfm, std::string const &lbl);
   void writeMeta(std::map<std::string, float> const &meta);
 
-  template <typename Scalar, int N>
-  void writeTensor(std::string const &label, Sz<N> const &shape, Scalar const *data, DimensionNames<N> const &dims);
-  template <typename Derived> void writeMatrix(Eigen::DenseBase<Derived> const &m, std::string const &label);
+  template <typename T> void writeStruct(std::string const &lbl, T const &s) const;
 
-  template <int N> void writeAttribute(std::string const &dataset, std::string const &attribute, Sz<N> const &val);
+  template <typename Scalar, size_t N> void
+  writeTensor(std::string const &label, Shape<N> const &shape, Scalar const *data, DNames<N> const &dims);
+
+  template <size_t N> void writeAttribute(std::string const &dataset, std::string const &attribute, Shape<N> const &val);
 
   bool exists(std::string const &name) const;
 

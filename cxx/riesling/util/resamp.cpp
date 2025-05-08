@@ -21,7 +21,7 @@ void main_resamp(args::Subparser &parser)
   HD5::Reader ifile(iname.Get());
   auto        input = ifile.readTensor<Cx5>();
   auto const  ishape = input.dimensions();
-  auto const  inFo = ifile.readInfo();
+  auto const  inFo = ifile.readStruct<Info>(HD5::Keys::Info);
 
   Eigen::Array3f ratios = res.Get() / inFo.voxel_size;
   auto           oshape = ishape;
@@ -41,7 +41,7 @@ void main_resamp(args::Subparser &parser)
   FFT::Adjoint(output, Sz3{1, 2, 3});
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(oFo);
+  writer.writeStruct(HD5::Keys::Info, oFo);
   writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Images);
   rl::Log::Print(cmd, "Finished");
 }

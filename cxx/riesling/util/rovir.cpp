@@ -32,7 +32,7 @@ void main_rovir(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size);
   Cx4         data = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
   if (res) { std::tie(traj, data) = traj.downsample(data, res.Get(), true, true, true); }

@@ -49,7 +49,7 @@ void Basis::write(std::string const &basisFile) const
 {
   HD5::Writer writer(basisFile);
   writer.writeTensor(HD5::Keys::Basis, B.dimensions(), B.data(), HD5::Dims::Basis);
-  if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), {"v2", "v1"}); }
+  if (R.size()) { writer.writeTensor("R", R.dimensions(), R.data(), HD5::DNames<2>{"v2", "v1"}); }
 }
 
 void Basis::concat(Basis const &other)

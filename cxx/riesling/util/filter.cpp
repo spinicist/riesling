@@ -18,7 +18,7 @@ void main_filter(args::Subparser &parser)
   auto const cmd = parser.GetCommand().Name();
 
   HD5::Reader ifile(iname.Get());
-  Info        info = ifile.readInfo();
+  Info        info = ifile.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(ifile, info.voxel_size);
   auto        ks = ifile.readTensor<Cx5>();
   float const M = *std::max_element(traj.matrix().cbegin(), traj.matrix().cend()) / 2.f;
@@ -26,7 +26,7 @@ void main_filter(args::Subparser &parser)
   NoncartesianTukey(f[0] * M, f[1] * M, f[2], traj.points(), ks);
   HD5::Writer ofile(oname.Get());
   traj.write(ofile);
-  ofile.writeInfo(info);
+  ofile.writeStruct(HD5::Keys::Info, info);
   ofile.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Log::Print(cmd, "Finished");
 }

@@ -9,10 +9,18 @@ namespace rl {
 namespace HD5 {
 
 using Handle = int64_t;
+using Index = long int;
+
+struct IndexPair /* Simple class so we don't need std::pair*/
+{
+  Index dim, index;
+};
 
 template <typename T> struct type_tag
 {
 };
+
+template <size_t N> using Shape = std::array<Index, N>;
 
 template <typename T> Handle type_impl(type_tag<T>, bool const alt = false);
 
@@ -44,18 +52,18 @@ std::string const Weights = "weights";
 } // namespace Keys
 
 // Horrible hack due to DSizes shenanigans
-template <int N> struct DimensionNames : std::array<std::string, N>
+template <size_t N> struct DNames : std::array<std::string, N>
 {
 };
 
 namespace Dims {
-DimensionNames<3> const Basis = {"b", "sample", "trace"};
-DimensionNames<6> const Channels = {"i", "j", "k", "channel", "b", "t"};
-DimensionNames<3> const Image = {"i", "j", "k"};
-DimensionNames<5> const Images = {"i", "j", "k", "b", "t"};
-DimensionNames<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
-DimensionNames<5> const SENSE = {"i", "j", "k", "channel", "b"};
-DimensionNames<3> const Trajectory = {"k", "sample", "trace"};
+DNames<3> const Basis = {"b", "sample", "trace"};
+DNames<6> const Channels = {"i", "j", "k", "channel", "b", "t"};
+DNames<3> const Image = {"i", "j", "k"};
+DNames<5> const Images = {"i", "j", "k", "b", "t"};
+DNames<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
+DNames<5> const SENSE = {"i", "j", "k", "channel", "b"};
+DNames<3> const Trajectory = {"k", "sample", "trace"};
 } // namespace Dims
 
 } // namespace HD5

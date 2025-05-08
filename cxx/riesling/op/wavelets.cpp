@@ -31,6 +31,6 @@ void main_wavelets(args::Subparser &parser)
     images = wav.forward(images);
   }
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(reader.readInfo());
+  writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
   writer.writeTensor(HD5::Keys::Data, images.dimensions(), images.data(), HD5::Dims::Images);
 }

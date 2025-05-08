@@ -19,7 +19,7 @@ void main_precon(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(trajFile.Get());
   HD5::Writer writer(preFile.Get());
-  Trajectory  traj(reader, reader.readInfo().voxel_size);
+  Trajectory  traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size);
   auto const  basis = LoadBasis(basisFile.Get());
   if (sfile) {
     HD5::Reader senseReader(sfile.Get());

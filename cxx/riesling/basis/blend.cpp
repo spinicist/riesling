@@ -48,6 +48,6 @@ void main_blend(args::Subparser &parser)
     out.chip<3>(io).device(Threads::TensorDevice()) = basis->blend(images, sps[io], tps[io], nr.Get());
   }
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(input.readInfo());
+  writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
 }

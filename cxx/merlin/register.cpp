@@ -33,7 +33,7 @@ void main_reg(args::Subparser &parser)
   rl::HD5::Writer ofile(oname.Get());
 
   rl::Re4    idata = ifile.readTensor<rl::Cx5>().abs().chip<4>(0); // ITK does not like this being const
-  auto const info = ifile.readInfo();
+  auto const info = ifile.readStruct<Info>(HD5::Keys::Info);
   auto const fixed = merlin::Import(rl::ChipMap(idata, 0), info);
 
   merlin::MERLIN wizard(fixed, maskRegion);

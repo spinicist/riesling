@@ -23,7 +23,7 @@ void main_psf(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader input(coreArgs.iname.Get());
-  Trajectory  traj(input, input.readInfo().voxel_size, coreArgs.matrix.Get());
+  Trajectory  traj(input, input.readStruct<Info>(HD5::Keys::Info).voxel_size, coreArgs.matrix.Get());
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
   Index const nB = basis ? basis->nB() : 1;
   auto const  A = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, 1, basis.get());
@@ -44,14 +44,14 @@ void main_psf(args::Subparser &parser)
       output.chip<4>(ib) = AsTensorMap(x, shape).chip<3>(0); // Get rid of channel dimension
     }
     HD5::Writer writer(coreArgs.oname.Get());
-    writer.writeInfo(input.readInfo());
+    writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
     writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), {"i", "j", "k", "b1", "b2"});
   } else {
     Cx3 ks(1, traj.nSamples(), traj.nTraces());
     ks.setConstant(1.f);
     auto        x = lsmr.run(CollapseToConstVector(ks));
     HD5::Writer writer(coreArgs.oname.Get());
-    writer.writeInfo(input.readInfo());
+    writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
     writer.writeTensor(HD5::Keys::Data, FirstN<4>(A->ishape), x.data(), {"i", "j", "k", "b"});
   }
 

@@ -21,7 +21,7 @@ void main_slice_img(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
-  auto const  info = reader.readInfo();
+  auto const  info = reader.readStruct<Info>(HD5::Keys::Info);
 
   if (reader.order() != 5) { throw Log::Failure(cmd, "Dataset does not appear to be images with 5 dimensions"); }
   auto const shape = reader.dimensions();
@@ -39,7 +39,7 @@ void main_slice_img(args::Subparser &parser)
   imgs = Cx5(imgs.slice(Sz5{i[0], j[0], k[0], b[0], t[0]}, Sz5{i[1], j[1], k[1], b[1], t[1]}));
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, imgs.dimensions(), imgs.data(), HD5::Dims::Images);
   Log::Print(cmd, "Finished");
 }

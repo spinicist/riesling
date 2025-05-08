@@ -23,7 +23,7 @@ void main_diff(args::Subparser &parser)
   HD5::Reader readerB(bname.Get());
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(readerA.readInfo());
+  writer.writeStruct(HD5::Keys::Info, readerA.readStruct<Info>(HD5::Keys::Info));
 
   auto const orderA = readerA.order(dset.Get());
   auto const orderB = readerB.order(dset.Get());
@@ -46,19 +46,19 @@ void main_diff(args::Subparser &parser)
     Cx4 const A = readerA.readTensor<Cx4>(dset.Get());
     Cx4 const B = readerB.readTensor<Cx4>(dset.Get());
     Cx4 const diff = B - A;
-    writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.dimensionNames<4>());
+    writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.readDNames<4>());
   } break;
   case 5: {
     Cx5 const A = readerA.readTensor<Cx5>(dset.Get());
     Cx5 const B = readerB.readTensor<Cx5>(dset.Get());
     Cx5 const diff = B - A;
-    writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.dimensionNames<5>());
+    writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.readDNames<5>());
   } break;
   case 6: {
     Cx6 const A = readerA.readTensor<Cx6>(dset.Get());
     Cx6 const B = readerB.readTensor<Cx6>(dset.Get());
     Cx6 const diff = B - A;
-    writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.dimensionNames<6>());
+    writer.writeTensor(dset.Get(), diff.dimensions(), diff.data(), readerA.readDNames<6>());
   } break;
   default: throw Log::Failure(cmd, "Data had order {}, I'm lazy", orderA);
   }

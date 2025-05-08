@@ -38,7 +38,7 @@ void main_h5(args::Subparser &parser)
     fmt::print("{}\n", reader.dimensions(dset.Get()).at(dim.Get()));
   } else {
     if (reader.exists("info")) {
-      auto const i = reader.readInfo();
+      auto const i = reader.readStruct<Info>(HD5::Keys::Info);
       fmt::print("Voxel-size: {}\n", i.voxel_size.transpose());
       fmt::print("TR:         {}\n", i.tr);
       fmt::print("Origin:     {}\n", i.origin.transpose());

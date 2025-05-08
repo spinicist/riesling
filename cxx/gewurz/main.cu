@@ -37,20 +37,20 @@ int main(int const argc, char const *const argv[])
   Log::Print("gewurz", "Welcome!");
 
   HD5::Reader reader(iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   auto const  shape = reader.dimensions();
   Index const nC = shape[0];
   Index const nS = shape[1];
   Index const nT = shape[2];
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(info);
+  writer.writeStruct(HD5::Keys::Info, info);
 
   try {
     Log::Print("gewurz", "Read trajectory");
     HTensor<THost, 3> hT(3L, nS, nT);
     reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
-    auto const       mat = reader.readAttributeSz<3>(HD5::Keys::Trajectory, "matrix");
+    auto const       mat = reader.readAttributeArray<3>(HD5::Keys::Trajectory, "matrix");
     HTensor<TDev, 3> hhT(3L, nS, nT);
     thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo());
     DTensor<TDev, 3> T(3L, nS, nT);

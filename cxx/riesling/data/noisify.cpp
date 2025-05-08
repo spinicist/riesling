@@ -23,8 +23,8 @@ void main_noisify(args::Subparser &parser)
   ks += noise * noise.constant(σ.Get());
 
   HD5::Writer writer(oname.Get());
-  Info const  info = reader.readInfo();
-  writer.writeInfo(info);
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
+  writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Trajectory traj(reader, info.voxel_size);
   traj.write(writer);

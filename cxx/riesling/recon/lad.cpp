@@ -36,7 +36,7 @@ void main_recon_lad(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
-  Info const  info = reader.readInfo();
+  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto        noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));

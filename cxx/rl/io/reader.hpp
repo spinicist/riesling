@@ -2,18 +2,11 @@
 
 #include "hd5-core.hpp"
 
-#include "../info.hpp"
-
 #include <map>
 #include <string>
 
 namespace rl {
 namespace HD5 {
-using Index = Eigen::Index;
-struct IndexPair /* Simple class so we don't need std::pair*/
-{
-  Index dim, index;
-};
 
 /*
  * This class is for reading tensors out of generic HDF5 files. Used for SDC, SENSE maps, etc.
@@ -34,17 +27,17 @@ struct Reader
 
   auto readString(std::string const &label) const -> std::string; // Read a string dataset
   auto readStrings(std::string const &label) const -> std::vector<std::string>;
-  auto readInfo() const -> Info; // Read the info struct from a file
-  auto readTransform(std::string const &id) const -> Transform;
   auto readMeta() const -> std::map<std::string, float>; // Read meta-data group
+
+  template <typename T> auto readStruct(std::string const &) const -> T; // Read an arbitrary struct
 
   auto                  readAttributeFloat(std::string const &dataset, std::string const &attribute) const -> float;
   auto                  readAttributeInt(std::string const &dataset, std::string const &attribute) const -> long;
-  template <int N> auto readAttributeSz(std::string const &dataset, std::string const &attribute) const -> Sz<N>;
+  template <size_t N> auto readAttributeShape(std::string const &dataset, std::string const &attribute) const -> Shape<N>;
 
   template <typename T> auto       readTensor(std::string const &label = Keys::Data) const -> T;
   template <typename T> void       readTo(T *data, std::string const &label = Keys::Data) const;
-  template <int N> auto            dimensionNames(std::string const &label = Keys::Data) const -> DimensionNames<N>;
+  template <int N> auto            readDNames(std::string const &label = Keys::Data) const -> DNames<N>;
   template <typename T> auto       readSlab(std::string const &label, std::vector<IndexPair> const &chips) const -> T;
   template <typename Derived> auto readMatrix(std::string const &label) const -> Derived;
 

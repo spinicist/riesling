@@ -24,8 +24,8 @@ void main_merge(args::Subparser &parser)
 
   HD5::Reader reader1(iname1.Get());
   HD5::Reader reader2(iname2.Get());
-  Trajectory  traj1(reader1, reader1.readInfo().voxel_size);
-  Trajectory  traj2(reader2, reader2.readInfo().voxel_size);
+  Trajectory  traj1(reader1, reader1.readStruct<Info>(HD5::Keys::Info).voxel_size);
+  Trajectory  traj2(reader2, reader2.readStruct<Info>(HD5::Keys::Info).voxel_size);
 
   if (!traj1.compatible(traj2)) { throw Log::Failure(cmd, "Trajectories are not compatible"); }
 
@@ -63,7 +63,7 @@ void main_merge(args::Subparser &parser)
   Cx5 const  ks = ks1.concatenate(ks2, 2);
 
   HD5::Writer writer(oname.Get());
-  writer.writeInfo(reader1.readInfo());
+  writer.writeStruct(HD5::Keys::Info, reader1.readStruct<Info>(HD5::Keys::Info));
   traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
   Log::Print(cmd, "Finshed");

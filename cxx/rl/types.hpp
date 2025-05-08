@@ -112,6 +112,15 @@ template <int N> auto Constant(Index const c) -> Sz<N>
   return C;
 }
 
+/*
+* Can't believe I need this but DSizes has int instead of size_t AAAAARGH
+*/
+template<int N> auto ToArray(Sz<N> const &sz) -> std::array<Index, N> {
+  std::array<Index, N> a;
+  std::copy(sz.begin(), sz.end(), a.begin());
+  return a;
+}
+
 template <typename T, int N, typename... Args> decltype(auto) AddFront(Eigen::DSizes<T, N> const &back, Args... toAdd)
 {
   static_assert(sizeof...(Args) > 0);
@@ -187,7 +196,7 @@ template <size_t F, size_t N, typename T> auto MidN(T const &sz) -> Eigen::DSize
   return out;
 }
 
-template <int N> Index Product(Sz<N> const &indices)
+template <size_t N> Index Product(std::array<Index, N> const &indices)
 {
   return std::accumulate(indices.begin(), indices.end(), 1L, std::multiplies<Index>());
 }
