@@ -9,9 +9,6 @@
 #include <fmt/ranges.h>
 #include <fmt/std.h>
 
-#include "io/hd5-core.hpp"
-#include "types.hpp"
-
 namespace rl {
 namespace Log {
 
@@ -66,9 +63,6 @@ inline void Fail(Failure const &f)
 
 auto Now() -> Time;
 auto ToNow(Time const t) -> std::string;
-
-template <typename Scalar, int ND>
-void Tensor(std::string const &name, Sz<ND> const &shape, Scalar const *data, HD5::DimensionNames<ND> const &dims);
 
 } // namespace Log
 } // namespace rl
