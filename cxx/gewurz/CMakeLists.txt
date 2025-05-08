@@ -4,7 +4,7 @@ if(BUILD_GEWURZ)
     find_package(args CONFIG REQUIRED)
 
     set(CCCL_REPOSITORY "https://github.com/NVIDIA/cccl" CACHE STRING "Git repository to fetch CCCL from")
-    set(CCCL_TAG "main" CACHE STRING "Git tag/branch to fetch from CCCL repository")
+    set(CCCL_TAG "v2.8.3" CACHE STRING "Git tag/branch to fetch from CCCL repository")
     
     include(${CMAKE_SOURCE_DIR}/cmake/CPM.cmake)
     # This will automatically clone CCCL from GitHub and make the exported cmake targets available
@@ -20,12 +20,14 @@ if(BUILD_GEWURZ)
         main.cu
         bidiag.cu
         dft.cu
+        dft2.cu
     )
     set_source_files_properties(
         main.cu
         test.cu
         bidiag.cu
         dft.cu
+        dft2.cu
         PROPERTIES COMPILE_FLAGS "--extended-lambda"
     )
     target_compile_features(gewurz PUBLIC cuda_std_17)
