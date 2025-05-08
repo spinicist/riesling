@@ -12,6 +12,8 @@ namespace cudax = cuda::experimental;
 
 namespace gw::DFT {
 
+static constexpr int Sum = 32;
+
 void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::Span ks) const
 {
   rl::Log::Print("DFT", "Forward DFT");
@@ -42,6 +44,7 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
     short const nK = imgs.extent(2);
 
     CuCx<TDev> temp = ZERO;
+    long int   ind = 0;
     for (short ik = 0; ik < nK; ik++) {
       TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
       for (short ij = 0; ij < nJ; ij++) {
@@ -51,10 +54,15 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
           auto const       p = pi2 * (kx * rx + ky * ry + kz * rz);
           CuCx<TDev> const ep(cuda::std::cos(-p), cuda::std::sin(-p));
           temp += ep * imgs(ii, ij, ik);
+          ind++;
+          if (ind % Sum == 0) {
+            ks(is, it) += scale * temp;
+            temp = ZERO;
+          }
         }
       }
     }
-    ks(is, it) = scale * temp;
+    if (ind % Sum != 0) { ks(is, it) += scale * temp; }
   });
   rl::Log::Print("DFT", "Forward DFT finished in {}", rl::Log::ToNow(start));
 }
@@ -91,6 +99,7 @@ void ThreeD::adjoint(DTensor<CuCx<TDev>, 2>::Span ks, DTensor<CuCx<TDev>, 3>::Sp
     TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
 
     CuCx<TDev> temp = ZERO;
+    long int   ind = 0;
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
         TDev const       kx = traj(0, is, it);
@@ -99,9 +108,14 @@ void ThreeD::adjoint(DTensor<CuCx<TDev>, 2>::Span ks, DTensor<CuCx<TDev>, 3>::Sp
         TDev const       p = pi2 * (rx * kx + ry * ky + rz * kz);
         CuCx<TDev> const ep(cuda::std::cos(p), cuda::std::sin(p));
         temp += ep * ks(is, it);
+        ind++;
+        if (ind % Sum == 0) {
+          imgs(ii, ij, ik) += scale * temp;
+          temp = ZERO;
+        }
       }
     }
-    imgs(ii, ij, ik) = scale * temp;
+    if (ind % Sum != 0) { imgs(ii, ij, ik) += scale * temp; }
   });
   rl::Log::Print("DFT", "Adjoint DFT finished in {}", rl::Log::ToNow(start));
 }
@@ -194,6 +208,7 @@ template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks
     TDev const ry = FLOAT_TO((ij - nJ / 2.f) / (float)nJ);
     TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
 
+    long int ind = 0;
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
         TDev const       kx = traj(0, is, it);
@@ -204,10 +219,20 @@ template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks
         for (int ic = 0; ic < NP; ic++) {
           temp[ic] += ep * ks(ic, is, it);
         }
+        ind++;
+        if (ind % Sum == 0) {
+          for (int ic = 0; ic < NP; ic++) {
+            imgs(ic, ii, ij, ik) += scale * temp[ic];
+            temp[ic] = CuCx<TDev>(0.f);
+          }
+        }
       }
     }
-    for (int ic = 0; ic < NP; ic++) {
-      imgs(ic, ii, ij, ik) = scale * temp[ic];
+
+    if (ind % Sum != 0) {
+      for (int ic = 0; ic < NP; ic++) {
+        imgs(ic, ii, ij, ik) += scale * temp[ic];
+      }
     }
   });
   rl::Log::Print("DFT", "Adjoint Packed DFT finished in {}", rl::Log::ToNow(start));
