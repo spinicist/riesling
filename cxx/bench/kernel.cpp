@@ -5,7 +5,7 @@
 #include <catch2/generators/catch_generators.hpp>
 
 #include "rl/kernel/kernel.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 using namespace rl;
 

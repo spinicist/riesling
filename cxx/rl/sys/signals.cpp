@@ -1,6 +1,6 @@
 #include "signals.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include <cassert>
 #include <csignal>
 

@@ -1,6 +1,6 @@
 #include "decomp.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../tensors.hpp"
 
 #include <Eigen/Eigenvalues>

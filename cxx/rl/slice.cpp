@@ -1,6 +1,6 @@
 #include "slice.hpp"
 
-#include "log.hpp"
+#include "log/log.hpp"
 
 namespace rl {
 

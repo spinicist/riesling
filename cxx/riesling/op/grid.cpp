@@ -2,7 +2,7 @@
 
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/compose.hpp"
 #include "rl/op/grid.hpp"
 #include "rl/op/loop.hpp"

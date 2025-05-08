@@ -1,7 +1,7 @@
 #pragma once
 
 #include "op.cuh"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "types.cuh"
 #include <thrust/inner_product.h>
 

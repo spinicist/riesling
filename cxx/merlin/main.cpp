@@ -1,4 +1,4 @@
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "../args.hpp"
 
 extern args::Group    global_group;

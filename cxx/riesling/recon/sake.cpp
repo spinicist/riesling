@@ -1,7 +1,7 @@
 #include "algo/admm.hpp"
 #include "inputs.hpp"
 #include "io/hd5.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 #include "op/compose.hpp"
 #include "op/fft.hpp"
 #include "op/hankel.hpp"

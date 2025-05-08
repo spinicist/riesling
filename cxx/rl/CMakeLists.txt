@@ -15,8 +15,6 @@ compressor.cpp
 fft.cpp
 filter.cpp
 interp.cpp
-log.cpp
-logtensor.cpp
 patches.cpp
 precon.cpp
 scaling.cpp
@@ -48,6 +46,9 @@ io/hd5-core.cpp
 io/nifti.cpp
 io/reader.cpp
 io/writer.cpp
+
+log/log.cpp
+log/debug.cpp
 
 op/f0.cpp
 op/fft.cpp
@@ -108,7 +109,6 @@ fft.hpp
 filter.hpp
 interp.hpp
 info.hpp
-log.hpp
 patches.hpp
 precon.hpp
 scaling.hpp
@@ -141,6 +141,9 @@ io/hd5-core.hpp
 io/nifti.hpp
 io/reader.hpp
 io/writer.hpp
+
+log/log.hpp
+log/debug.hpp
 
 op/f0.hpp
 op/fft.hpp

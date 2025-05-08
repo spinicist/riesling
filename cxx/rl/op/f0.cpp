@@ -1,6 +1,6 @@
 #include "f0.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../sys/threads.hpp"
 #include "../tensors.hpp"
 #include "top-impl.hpp"

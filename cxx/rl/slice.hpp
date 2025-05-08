@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/tensors.hpp"
 #include "rl/trajectory.hpp"
 #include "rl/types.hpp"

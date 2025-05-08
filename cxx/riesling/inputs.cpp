@@ -2,7 +2,7 @@
 
 #include "rl/basis/basis.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/tensors.hpp"
 

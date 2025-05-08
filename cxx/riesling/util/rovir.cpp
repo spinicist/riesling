@@ -6,7 +6,7 @@
 #include "compressor.hpp"
 #include "inputs.hpp"
 #include "io/hd5.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 #include "op/recon.hpp"
 #include "tensors.hpp"
 #include "types.hpp"

@@ -1,4 +1,4 @@
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 #include "dft.cuh"
 #include "lsmr.cuh"

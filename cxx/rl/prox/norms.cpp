@@ -1,7 +1,7 @@
 #include "norms.hpp"
 
 #include "../algo/common.hpp"
-#include "../log.hpp"
+#include "../log/debug.hpp"
 #include "../sys/threads.hpp"
 #include "../tensors.hpp"
 

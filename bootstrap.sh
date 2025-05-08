@@ -13,7 +13,7 @@ Options:
 "
 PAR=""
 PREFIX=""
-GEWURZ=""
+GEWURZ="-DBUILD_GEWURZ=OFF"
 WARN=""
 while getopts "ghi:j:w" opt; do
     case $opt in
@@ -23,7 +23,7 @@ while getopts "ghi:j:w" opt; do
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
-        w) WARN='-DCMAKE_CXX_FLAGS=-Wall -DCMAKE_CXX_FLAGS_DEBUG="-g -fsanitize=address,undefined"';;
+        w) WARN="-DCMAKE_CXX_FLAGS=-Wall '-DCMAKE_CXX_FLAGS_DEBUG=-g -fsanitize=address,undefined'";;
     esac
 done
 shift $((OPTIND - 1))
@@ -53,12 +53,13 @@ else
 fi
 
 mkdir -p build
-cmake -S . -B build $GEN \
+cmake -S . -B build $GEN\
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
   -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g -fsanitize=address,undefined" \
-  -DVCPKG_INSTALL_OPTIONS="--no-print-usage" \
-  $PREFIX $MONTAGE $GEWURZ $WARN
+  -DVCPKG_INSTALL_OPTIONS="--no-print-usage"\
+  "$PREFIX" "$MONTAGE" "$GEWURZ" "$WARN"
+
 cmake --build build $PAR
 
 if [ -n "$PREFIX" ]; then

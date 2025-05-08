@@ -2,7 +2,7 @@
 
 #include "algo/eig.hpp"
 #include "inputs.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 #include "op/recon.hpp"
 #include "precon.hpp"
 #include "sense/sense.hpp"

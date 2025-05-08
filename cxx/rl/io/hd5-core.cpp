@@ -1,7 +1,7 @@
 #include "hd5-core.hpp"
 
 #include "../info.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include <filesystem>
 
 #include <hdf5.h>

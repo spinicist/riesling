@@ -1,6 +1,6 @@
 #include "inputs.hpp"
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/io/hd5.hpp"
 
 using namespace rl;

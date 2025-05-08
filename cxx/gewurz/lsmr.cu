@@ -1,6 +1,6 @@
 #include "lsmr.cuh"
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 namespace rl {
 

@@ -1,6 +1,6 @@
 #include "pdhg.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../prox/lsq.hpp"
 #include "../prox/stack.hpp"
 #include "../tensors.hpp"

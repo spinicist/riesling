@@ -1,7 +1,7 @@
 #include "rl/basis/fourier.hpp"
 #include "rl/algo/gs.hpp"
 #include "rl/io/writer.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/types.hpp"
 
 #include "inputs.hpp"

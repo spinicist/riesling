@@ -1,7 +1,7 @@
 #include "svd.hpp"
 
 #include "../algo/decomp.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 
 namespace rl {
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../tensors.hpp"
 #include "top.hpp"
 

@@ -1,6 +1,6 @@
 #include "t2prep.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "unsupported/Eigen/MatrixFunctions"
 
 namespace rl {

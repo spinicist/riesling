@@ -1,6 +1,6 @@
 #include "rl/precon.hpp"
 #include "rl/basis/basis.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

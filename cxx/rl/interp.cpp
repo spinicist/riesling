@@ -1,5 +1,5 @@
 #include "interp.hpp"
-#include "log.hpp"
+#include "log/log.hpp"
 
 #include <set>
 

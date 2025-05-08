@@ -2,7 +2,7 @@
 #include "outputs.hpp"
 #include "regularizers.hpp"
 #include "rl/algo/admm.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/top-id.hpp"
 #include "rl/scaling.hpp"
 

@@ -1,6 +1,6 @@
 #include "regularizers.hpp"
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/fft.hpp"
 #include "rl/op/grad.hpp"
 #include "rl/prox/entropy.hpp"

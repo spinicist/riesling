@@ -11,7 +11,7 @@
 
 #include "threads.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 
 // Need to define EIGEN_USE_THREADS before including these. This is done in CMakeLists.txt
 #include <Eigen/ThreadPool>

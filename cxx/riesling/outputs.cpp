@@ -3,7 +3,7 @@
 #include "rl/algo/lsmr.hpp"
 #include "rl/basis/basis.hpp"
 #include "rl/io/writer.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/recon.hpp"
 
 namespace rl {

@@ -1,6 +1,6 @@
 #include "admm.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../op/top.hpp"
 #include "../tensors.hpp"
 #include "common.hpp"

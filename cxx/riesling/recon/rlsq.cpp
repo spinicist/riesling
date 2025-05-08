@@ -4,7 +4,7 @@
 
 #include "rl/algo/admm.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/pad.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/precon.hpp"

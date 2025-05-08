@@ -2,7 +2,7 @@
 #include "inputs.hpp"
 
 #include "rl/io/hd5.hpp"
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/phantom/gradcubes.hpp"
 #include "rl/phantom/radial.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../info.hpp"
-#include "../log.hpp"
+#include "../log/log.hpp"
 
 namespace rl {
 template <typename T, int ND>

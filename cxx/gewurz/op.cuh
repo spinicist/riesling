@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rl/log.hpp"
+#include "rl/log/log.hpp"
 #include "types.cuh"
 
 namespace gw {

@@ -1,6 +1,6 @@
 #include "grad.hpp"
 
-#include "../log.hpp"
+#include "../log/log.hpp"
 #include "../sys/threads.hpp"
 #include "top-impl.hpp"
 
