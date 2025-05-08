@@ -9,11 +9,13 @@ Options:
   -i DIR Install riesling to this directory, e.g. $HOME/.local
   -j N   Restrict parallel build to this many threads
   -h     Print this message
+  -w     Add warnings
 "
 PAR=""
 PREFIX=""
 GEWURZ=""
-while getopts "ghi:j:" opt; do
+WARN=""
+while getopts "ghi:j:w" opt; do
     case $opt in
         g) GEWURZ="-DBUILD_GEWURZ=ON";;
         i) PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG -DCMAKE_PREFIX_PATH=$OPTARG";;
@@ -21,6 +23,7 @@ while getopts "ghi:j:" opt; do
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
+        w) WARN='-DCMAKE_CXX_FLAGS=-Wall -DCMAKE_CXX_FLAGS_DEBUG="-g -fsanitize=address,undefined"';;
     esac
 done
 shift $((OPTIND - 1))
@@ -55,7 +58,7 @@ cmake -S . -B build $GEN \
   -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
   -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g -fsanitize=address,undefined" \
   -DVCPKG_INSTALL_OPTIONS="--no-print-usage" \
-  $PREFIX $MONTAGE $GEWURZ
+  $PREFIX $MONTAGE $GEWURZ $WARN
 cmake --build build $PAR
 
 if [ -n "$PREFIX" ]; then
