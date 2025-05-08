@@ -3,7 +3,6 @@
 #include "rl/log/log.hpp"
 
 #include "dft.cuh"
-#include "dft2.cuh"
 #include "lsmr.cuh"
 
 #include <args.hxx>
@@ -37,22 +36,22 @@ int main(int const argc, char const *const argv[])
   Log::Print("gewurz", "Welcome!");
 
   HD5::Reader reader(iname.Get());
-  Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
-  auto const  shape = reader.dimensions();
-  Index const nC = shape[0];
-  Index const nS = shape[1];
-  Index const nT = shape[2];
+  // Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
+  auto const shape = reader.dimensions();
+  auto const nC = shape[0];
+  auto const nS = shape[1];
+  auto const nT = shape[2];
 
   HD5::Writer writer(oname.Get());
-  writer.writeStruct(HD5::Keys::Info, info);
+  // writer.writeStruct(HD5::Keys::Info, info);
 
   try {
     Log::Print("gewurz", "Read trajectory");
-    HTensor<THost, 3> hT(3L, nS, nT);
+    HTensor<float, 3> hT(3L, nS, nT);
     reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
-    auto const       mat = reader.readAttributeArray<3>(HD5::Keys::Trajectory, "matrix");
+    auto const       mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
     HTensor<TDev, 3> hhT(3L, nS, nT);
-    thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo());
+    thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo);
     DTensor<TDev, 3> T(3L, nS, nT);
     thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
 
@@ -63,36 +62,30 @@ int main(int const argc, char const *const argv[])
     thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
 
     gw::DFT::ThreeD dft{T.span};
-    gw::DFT::ThreeD2 dft2{T.span}; // This one uses CUB
-    fmt::print(stderr, "Before |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)), FLOAT_FROM(gw::CuNorm(Mimg.vec)));
-    dft2.adjoint(Mks.span, Mimg.span);
-    fmt::print(stderr, "Middle |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)),
-               FLOAT_FROM(gw::CuNorm(Mimg.vec)));
-    dft2.forward(Mimg.span, Mks.span);
-    fmt::print(stderr, "After |Mks| {} |Mimg| {}\n", FLOAT_FROM(gw::CuNorm(Mks.vec)),
-               FLOAT_FROM(gw::CuNorm(Mimg.vec)));
+    dft.adjoint(Mks.span, Mimg.span);
+    dft.forward(Mimg.span, Mks.span);
     thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
                       [] __device__(CuCx<TDev> x) { return TDev(1) / cuda::std::abs(x); });
     gw::MulPacked<CuCx<TDev>, TDev, 3> Mop{M.span};
 
     Log::Print("gewurz", "Read k-space");
-    HTensor<CuCx<THost>, 3> hKS(nC, nS, nT);
-    reader.readTo((Cx *)hKS.vec.data());
+    HTensor<std::complex<float>, 3> hKS(nC, nS, nT);
+    reader.readTo(hKS.vec.data());
     HTensor<CuCx<TDev>, 3> hhKS(nC, nS, nT);
-    std::transform(hKS.vec.begin(), hKS.vec.end(), hhKS.vec.begin(), ConvertToCx());
+    std::transform(hKS.vec.begin(), hKS.vec.end(), hhKS.vec.begin(), ConvertToCx);
     DTensor<CuCx<TDev>, 3> ks(nC, nS, nT);
     thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
 
     Log::Print("gewurz", "Recon");
-    gw::DFT::ThreeDPacked2<8> dftp{T.span};
-    HTensor<CuCx<THost>, 4>  hImgs(nC, mat[0], mat[1], mat[2]);
-    HTensor<CuCx<TDev>, 4>   hhImgs(nC, mat[0], mat[1], mat[2]);
-    DTensor<CuCx<TDev>, 4>   imgs(nC, mat[0], mat[1], mat[2]);
+    gw::DFT::ThreeDPacked<8>        dftp{T.span};
+    HTensor<std::complex<float>, 4> hImgs(nC, mat[0], mat[1], mat[2]);
+    HTensor<CuCx<TDev>, 4>          hhImgs(nC, mat[0], mat[1], mat[2]);
+    DTensor<CuCx<TDev>, 4>          imgs(nC, mat[0], mat[1], mat[2]);
     Mop.forward(ks.span, ks.span);
     dftp.adjoint(ks.span, imgs.span);
     thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
-    std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), ConvertFromCx());
-    writer.writeTensor("adjoint", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
+    thrust::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), ConvertFromCx);
+    writer.writeTensor("adjoint", HD5::Shape<4>{nC, mat[0], mat[1], mat[2]}, hImgs.vec.data(), {"channel", "i", "j", "k"});
 
     // gw::LSMR<CuCx<TDev>, 4, 3> lsmr{&dftp, &Mop};
     // thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());

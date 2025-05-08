@@ -2,11 +2,9 @@
 
 #include "../op/ops.hpp"
 #include "common.hpp"
+#include "givens.hpp"
 
 namespace rl {
-
-auto StableGivens(float const a, float const b) -> std::tuple<float, float, float>;
-auto Rotation(float const a, float const b) -> std::tuple<float, float, float>;
 
 struct Bidiag
 {
