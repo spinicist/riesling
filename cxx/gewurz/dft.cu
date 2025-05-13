@@ -26,7 +26,6 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
   int const  nK = imgs.extent(2);
   int const  nIJK = nI * nJ * nK;
   TDev const scale = FLOAT_TO(1.f / std::sqrt(nIJK));
-  fmt::print(stderr, "nST {} scale {}\n", nST, FLOAT_FROM(scale));
   auto it = thrust::make_counting_iterator(0);
   thrust::for_each_n(thrust::cuda::par, it, nST, [imgs, traj = this->traj, ks, scale] __device__(int st) {
     TDev const pi2 = FLOAT_TO(2.f * CUDART_PI_F);
@@ -174,7 +173,9 @@ template <int NP> void ThreeDPacked<NP>::forward(DTensor<CuCx<TDev>, 4>::Span im
 
 template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks, DTensor<CuCx<TDev>, 4>::Span imgs) const
 {
-  if (NP != imgs.extent(0) || NP != ks.extent(0)) { throw rl::Log::Failure("DFT", "Packing dimension size mismatch"); }
+  if (NP != imgs.extent(0) || NP != ks.extent(0)) {
+    throw rl::Log::Failure("DFT", "Packing dimension size mismatch. {} {} {}", NP, imgs.extent(0), ks.extent(0));
+  }
   int const  nI = imgs.extent(1);
   int const  nJ = imgs.extent(2);
   int const  nK = imgs.extent(3);
@@ -238,6 +239,7 @@ template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks
   rl::Log::Print("DFT", "Adjoint Packed DFT finished in {}", rl::Log::ToNow(start));
 }
 
+template struct ThreeDPacked<1>;
 template struct ThreeDPacked<8>;
 
 } // namespace gw::DFT
