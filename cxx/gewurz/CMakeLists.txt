@@ -21,6 +21,7 @@ if(BUILD_GEWURZ)
         bidiag.cu
         dft.cu
         dft2.cu
+        sense.cpp
     )
     set_source_files_properties(
         main.cu

@@ -3,7 +3,9 @@
 #include "rl/log/log.hpp"
 
 #include "dft.cuh"
+#include "recon.cuh"
 #include "lsmr.cuh"
+#include "sense.hpp"
 
 #include <args.hxx>
 
@@ -68,10 +70,21 @@ auto ReadKS(rl::HD5::Reader &reader) -> DTensor<CuCx<TDev>, 3>
   return ks;
 }
 
-template <int NC> void Recon(DTensor<CuCx<TDev>, 3> const   &ks,
-                             DTensor<TDev, 3> const         &T,
-                             DTensor<TDev, 2> const         &M,
-                             HTensor<std::complex<float>, 4> &hImgs)
+auto ReadSENSE(std::string const &sname, rl::HD5::Shape<3> const mat, int const nC) -> DTensor<CuCx<TDev>, 4>
+{
+  auto             hostS = gw::GetSENSE(sname, mat);
+  HTensor<CuCx<TDev>, 4> hhS(nC, mat[0], mat[1], mat[2]);
+  DTensor<CuCx<TDev>, 4> S(nC, mat[0], mat[1], mat[2]);
+  std::transform(hostS.begin(), hostS.end(), hhS.vec.begin(), ConvertToCx);
+  thrust::copy(hhS.vec.begin(), hhS.vec.end(), S.vec.begin());
+  return S;
+}
+
+template <int NC> void Recon(DTensor<CuCx<TDev>, 3> const    &ks,
+                             DTensor<TDev, 3> const          &T,
+                             DTensor<TDev, 2> const          &M,
+                             DTensor<TDev, 4> const &S,
+                             HTensor<std::complex<float>, 3> &hImg)
 
 {
   Log::Print("gewurz", "Recon");
@@ -99,7 +112,7 @@ int main(int const argc, char const *const argv[])
   args::MapFlag<int, Log::Display> verbosity(parser, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
 
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
-  // args::Positional<std::string> sname(parser, "FILE", "Input SENSE maps");
+  args::Positional<std::string> sname(parser, "FILE", "Input SENSE maps");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   parser.ParseCLI(argc, argv);
@@ -127,7 +140,7 @@ int main(int const argc, char const *const argv[])
     auto       T = ReadTrajectory(reader);
     auto       M = Preconditioner(T, mat);
     auto       KS = ReadKS(reader);
-
+    auto       S = ReadSENSE(sname.Get(), mat, nC);
     // Log::Print("gewurz", "Read SENSE maps");
     // HTensor<std::complex<float>, 4> sImgs(nC, mat[0], mat[1], mat[2]);
     // sread.readTo(sImgs.vec.data());
