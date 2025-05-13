@@ -10,7 +10,7 @@
 
 template <typename T> using CuCx = cuda::std::complex<T>;
 
-#define USE_BF16
+// #define USE_BF16
 
 #if defined USE_FP16
 #warning "Enabled FP16"
@@ -29,7 +29,6 @@ using TDev = __nv_bfloat16;
 #define ONE CUDART_ONE_BF16
 #define ZERO CUDART_ZERO_BF16
 #else
-#warning "Enabled float"
 using TDev = float;
 #define FLOAT_TO
 #define FLOAT_FROM
