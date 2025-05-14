@@ -153,7 +153,7 @@ int main(int const argc, char const *const argv[])
     case 1: DoRecon<1>(KS, T, M, S, adj, img); break;
     case 8: DoRecon<8>(KS, T, M, S, adj, img); break;
     }
-    writer.writeTensor("image", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
+    writer.writeTensor("data", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
   } catch (Log::Failure &f) {
     Log::Fail(f);
     Log::End();
