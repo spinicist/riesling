@@ -3,8 +3,8 @@
 #include "rl/log/log.hpp"
 
 #include "dft.cuh"
-#include "recon.cuh"
 #include "lsmr.cuh"
+#include "recon.cuh"
 #include "sense.hpp"
 
 #include <args.hxx>
@@ -72,36 +72,34 @@ auto ReadKS(rl::HD5::Reader &reader) -> DTensor<CuCx<TDev>, 3>
 
 auto ReadSENSE(std::string const &sname, rl::HD5::Shape<3> const mat, int const nC) -> DTensor<CuCx<TDev>, 4>
 {
-  auto             hostS = gw::GetSENSE(sname, mat);
-  HTensor<CuCx<TDev>, 4> hhS(nC, mat[0], mat[1], mat[2]);
-  DTensor<CuCx<TDev>, 4> S(nC, mat[0], mat[1], mat[2]);
+  auto                   hostS = gw::GetSENSE(sname, mat);
+  HTensor<CuCx<TDev>, 4> hhS(mat[0], mat[1], mat[2], nC);
+  DTensor<CuCx<TDev>, 4> S(mat[0], mat[1], mat[2], nC);
   std::transform(hostS.begin(), hostS.end(), hhS.vec.begin(), ConvertToCx);
   thrust::copy(hhS.vec.begin(), hhS.vec.end(), S.vec.begin());
   return S;
 }
 
-template <int NC> void Recon(DTensor<CuCx<TDev>, 3> const    &ks,
-                             DTensor<TDev, 3> const          &T,
-                             DTensor<TDev, 2> const          &M,
-                             DTensor<TDev, 4> const &S,
-                             HTensor<std::complex<float>, 3> &hImg)
+template <int NC> void DoRecon(DTensor<CuCx<TDev>, 3> const    &ks,
+                               DTensor<TDev, 3> const          &T,
+                               DTensor<TDev, 2> const          &M,
+                               DTensor<CuCx<TDev>, 4> const    &S,
+                               HTensor<std::complex<float>, 3> &hImg)
 
 {
   Log::Print("gewurz", "Recon");
-  auto const                nC = hImgs.span.extent(0);
-  auto const                nI = hImgs.span.extent(1);
-  auto const                nJ = hImgs.span.extent(2);
-  auto const                nK = hImgs.span.extent(3);
-  auto                      Mop = gw::MulPacked<CuCx<TDev>, TDev, 3>{M.span};
-  gw::DFT::ThreeDPacked<NC> dftp{T.span};
-  DTensor<CuCx<TDev>, 4>    imgs(nC, nI, nJ, nK);
+  auto const             nI = hImg.span.extent(0);
+  auto const             nJ = hImg.span.extent(1);
+  auto const             nK = hImg.span.extent(2);
+  auto                   Mop = gw::MulPacked<CuCx<TDev>, TDev, 3>{M.span};
+  gw::Recon<NC>          dftp{S.span, T.span};
+  DTensor<CuCx<TDev>, 3> img(nI, nJ, nK);
   Mop.forward(ks.span, ks.span);
-  dftp.adjoint(ks.span, imgs.span);
+  dftp.adjoint(ks.span, img.span);
 
-  HTensor<CuCx<TDev>, 4> hhImgs(nC, nI, nJ, nK);
-
-  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
-  thrust::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), ConvertFromCx);
+  HTensor<CuCx<TDev>, 3> hhImg(nI, nJ, nK);
+  thrust::copy(img.vec.begin(), img.vec.end(), hhImg.vec.begin());
+  thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ConvertFromCx);
 }
 
 int main(int const argc, char const *const argv[])
@@ -145,12 +143,12 @@ int main(int const argc, char const *const argv[])
     // HTensor<std::complex<float>, 4> sImgs(nC, mat[0], mat[1], mat[2]);
     // sread.readTo(sImgs.vec.data());
 
-    HTensor<std::complex<float>, 4> imgs(nC, mat[0], mat[1], mat[2]);
+    HTensor<std::complex<float>, 3> img(mat[0], mat[1], mat[2]);
     switch (nC) {
-    case 1: Recon<1>(KS, T, M, imgs); break;
-    case 8: Recon<8>(KS, T, M, imgs); break;
+    case 1: DoRecon<1>(KS, T, M, S, img); break;
+    case 8: DoRecon<8>(KS, T, M, S, img); break;
     }
-    writer.writeTensor("adjoint", HD5::Shape<4>{nC, mat[0], mat[1], mat[2]}, imgs.vec.data(), {"channel", "i", "j", "k"});
+    writer.writeTensor("adjoint", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
 
     // gw::LSMR<CuCx<TDev>, 4, 3> lsmr{&dftp, &Mop};
     // thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
