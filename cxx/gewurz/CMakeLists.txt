@@ -21,6 +21,7 @@ if(BUILD_GEWURZ)
         bidiag.cu
         dft.cu
         dft2.cu
+        recon.cu
         sense.cpp
     )
     set_source_files_properties(
@@ -29,6 +30,7 @@ if(BUILD_GEWURZ)
         bidiag.cu
         dft.cu
         dft2.cu
+        recon.cu
         PROPERTIES COMPILE_FLAGS "--extended-lambda"
     )
     target_compile_features(gewurz PUBLIC cuda_std_17)

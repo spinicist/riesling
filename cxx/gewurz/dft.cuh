@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lsmr.cuh"
+#include "op.cuh"
 #include "types.cuh"
 
 namespace gw {
