@@ -31,8 +31,6 @@ template <typename T, int xRank, int yRank> struct LSMR
     if (opts.imax < 1) { throw rl::Log::Failure("LSMR", "Requires at least 1 iteration"); }
     DTensor<T, xRank>       h(x.span), h̅(x.span);
     Bidiag<T, xRank, yRank> bd(A, Minv, Ninv, x, b);
-    fmt::print(stderr, "a {} b {} |x| {} |b| {} |u| {} |v| {}\n", bd.α, bd.β, FLOAT_FROM(CuNorm(x.vec)),
-               FLOAT_FROM(CuNorm(b.vec)), FLOAT_FROM(CuNorm(bd.u.vec)), FLOAT_FROM(CuNorm(bd.v.vec)));
     thrust::copy(bd.v.vec.begin(), bd.v.vec.end(), h.vec.begin());
     thrust::fill(h̅.vec.begin(), h̅.vec.end(), T(0));
 

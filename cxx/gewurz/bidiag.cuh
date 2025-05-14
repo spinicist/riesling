@@ -96,11 +96,8 @@ template <typename T, int xRank, int yRank> struct Bidiag
       α = FLOAT_FROM(cuda::std::sqrt(CuDot(Nv.vec, v.vec)));
       CuScale(Nv.vec, FLOAT_TO(1.f / α));
     } else {
-      fmt::print(stderr, "Before |u| {} |v| {}\n", FLOAT_FROM(CuNorm(u.vec)), FLOAT_FROM(CuNorm(v.vec)));
       A->adjoint(u.span, Nv.span);
-      fmt::print(stderr, "Middle |u| {} |Nv| {}\n", FLOAT_FROM(CuNorm(u.vec)), FLOAT_FROM(CuNorm(Nv.vec)));
       CuAsubBC2B(Nv.vec, v.vec, FLOAT_TO(β));
-      fmt::print(stderr, "After |Nv| {} |v| {}  β {}\n", FLOAT_FROM(CuNorm(u.vec)), FLOAT_FROM(CuNorm(v.vec)), β);
       α = FLOAT_FROM(cuda::std::sqrt(CuDot(v.vec, v.vec)));
     }
     CuScale(v.vec, FLOAT_TO(1.f / α));

@@ -84,18 +84,25 @@ template <int NC> void DoRecon(DTensor<CuCx<TDev>, 3> const    &ks,
                                DTensor<TDev, 3> const          &T,
                                DTensor<TDev, 2> const          &M,
                                DTensor<CuCx<TDev>, 4> const    &S,
+                               bool const                       adj,
                                HTensor<std::complex<float>, 3> &hImg)
 
 {
   Log::Print("gewurz", "Recon");
-  auto const             nI = hImg.span.extent(0);
-  auto const             nJ = hImg.span.extent(1);
-  auto const             nK = hImg.span.extent(2);
-  auto                   Mop = gw::MulPacked<CuCx<TDev>, TDev, 3>{M.span};
-  gw::Recon<NC>          dftp{S.span, T.span};
+  auto const    nI = hImg.span.extent(0);
+  auto const    nJ = hImg.span.extent(1);
+  auto const    nK = hImg.span.extent(2);
+  auto          Mop = gw::MulPacked<CuCx<TDev>, TDev, 3>{M.span};
+  gw::Recon<NC> A{S.span, T.span};
+
   DTensor<CuCx<TDev>, 3> img(nI, nJ, nK);
-  Mop.forward(ks.span, ks.span);
-  dftp.adjoint(ks.span, img.span);
+  if (adj) {
+    Mop.forward(ks.span, ks.span);
+    A.adjoint(ks.span, img.span);
+  } else {
+    gw::LSMR<CuCx<TDev>, 3, 3> lsmr{&A, &Mop};
+    lsmr.run(ks, img);
+  }
 
   HTensor<CuCx<TDev>, 3> hhImg(nI, nJ, nK);
   thrust::copy(img.vec.begin(), img.vec.end(), hhImg.vec.begin());
@@ -112,6 +119,8 @@ int main(int const argc, char const *const argv[])
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> sname(parser, "FILE", "Input SENSE maps");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
+
+  args::Flag adj(parser, "A", "Adjoint only", {'a', "adj"});
 
   parser.ParseCLI(argc, argv);
   if (verbosity) {
@@ -134,28 +143,17 @@ int main(int const argc, char const *const argv[])
   // writer.writeStruct(HD5::Keys::Info, info);
 
   try {
-    auto const mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
-    auto       T = ReadTrajectory(reader);
-    auto       M = Preconditioner(T, mat);
-    auto       KS = ReadKS(reader);
-    auto       S = ReadSENSE(sname.Get(), mat, nC);
-    // Log::Print("gewurz", "Read SENSE maps");
-    // HTensor<std::complex<float>, 4> sImgs(nC, mat[0], mat[1], mat[2]);
-    // sread.readTo(sImgs.vec.data());
-
+    auto const                      mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
+    auto                            T = ReadTrajectory(reader);
+    auto                            M = Preconditioner(T, mat);
+    auto                            KS = ReadKS(reader);
+    auto                            S = ReadSENSE(sname.Get(), mat, nC);
     HTensor<std::complex<float>, 3> img(mat[0], mat[1], mat[2]);
     switch (nC) {
-    case 1: DoRecon<1>(KS, T, M, S, img); break;
-    case 8: DoRecon<8>(KS, T, M, S, img); break;
+    case 1: DoRecon<1>(KS, T, M, S, adj, img); break;
+    case 8: DoRecon<8>(KS, T, M, S, adj, img); break;
     }
-    writer.writeTensor("adjoint", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
-
-    // gw::LSMR<CuCx<TDev>, 4, 3> lsmr{&dftp, &Mop};
-    // thrust::copy(hhKS.vec.begin(), hhKS.vec.end(), ks.vec.begin());
-    // lsmr.run(ks, imgs);
-    // thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImgs.vec.begin());
-    // std::transform(hhImgs.vec.begin(), hhImgs.vec.end(), hImgs.vec.begin(), ConvertFromCx());
-    // writer.writeTensor("inverse", Sz4{nC, mat[0], mat[1], mat[2]}, (Cx *)hImgs.vec.data(), {"channel", "i", "j", "k"});
+    writer.writeTensor("image", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
   } catch (Log::Failure &f) {
     Log::Fail(f);
     Log::End();
