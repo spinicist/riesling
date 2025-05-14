@@ -12,7 +12,7 @@ namespace cudax = cuda::experimental;
 
 namespace gw::DFT {
 
-static constexpr int Sum = 32;
+static constexpr int Sum = 8;
 
 void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::Span ks) const
 {
