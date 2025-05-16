@@ -50,11 +50,11 @@ void main_nufft(args::Subparser &parser)
     auto const nT = shape[4];
     auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
     auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, nT);
+    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
     if (adj) {
-      auto const cart = A->adjoint(noncart);
+      auto const cart = A->adjoint(M->forward(noncart));
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
     } else {
-      auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
       LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
       auto const c = lsmr.run(CollapseToConstVector(noncart));
       writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);

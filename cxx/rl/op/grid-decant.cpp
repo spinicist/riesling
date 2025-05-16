@@ -89,7 +89,7 @@ void GridDecant<ND, KF, SG>::adjointTask(Index const start, Index const stride, 
 
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
-  for (Index is = start; is < gridLists.size(); is += stride) {
+  for (size_t is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {

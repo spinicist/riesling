@@ -3,10 +3,11 @@
 #define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
 #include <cuda/std/complex>
 #include <cuda/std/mdspan>
-#include <cuda_fp16.h>
 #include <cuda_bf16.h>
+#include <cuda_fp16.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <thrust/universal_vector.h>
 
 template <typename T> using CuCx = cuda::std::complex<T>;
 
@@ -91,6 +92,36 @@ template <typename T, int N> struct HTensor
   template <typename... E> HTensor(E... e)
     : vec((e * ...))
     , span(thrust::raw_pointer_cast(vec.data()), e...)
+  {
+  }
+
+  HTensor(Span const s) // Construct a new tensor with the same shape as the input tensor
+    : vec(s.size())
+    , span(thrust::raw_pointer_cast(vec.data()), s.extents())
+  {
+  }
+
+  auto size() -> size_t { return vec.size(); }
+};
+
+template <typename T, int N> struct UTensor
+{
+  using Vector = thrust::universal_vector<T>;
+  using Extents = cuda::std::dextents<int, N>;
+  using Span = cuda::std::mdspan<T, Extents, cuda::std::layout_left>;
+
+  Vector vec;
+  Span   span;
+
+  template <typename... E> UTensor(E... e)
+    : vec((e * ...))
+    , span(thrust::raw_pointer_cast(vec.data()), e...)
+  {
+  }
+
+  UTensor(Span const s) // Construct a new tensor with the same shape as the input tensor
+    : vec(s.size())
+    , span(thrust::raw_pointer_cast(vec.data()), s.extents())
   {
   }
 

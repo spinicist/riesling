@@ -13,7 +13,7 @@ namespace cudax = cuda::experimental;
 namespace gw {
 
 namespace {
-static constexpr int SumSize = 16;
+// static constexpr int SumSize = 16;
 }
 
 template <int NC> Recon<NC>::Recon(ST s, TT t)
@@ -55,36 +55,36 @@ template <int NC> void Recon<NC>::forward(DTensor<CuCx<TDev>, 3>::Span img, DTen
     cuda::std::array<CuCx<TDev>, NC> temp{
       CuCx<TDev>{0.f, 0.f},
     };
-    long int ind = 0;
-    for (int ic = 0; ic < NC; ic++) {
-      ks(ic, is, it) = 0;
-    }
+    // long int ind = 0;
+    // for (int ic = 0; ic < NC; ic++) {
+    //   ks(ic, is, it) = 0;
+    // }
     for (int ik = 0; ik < nK; ik++) {
-      TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
+      TDev const rz = FLOAT_TO((ik - nK / 2) / (float)nK);
       for (int ij = 0; ij < nJ; ij++) {
-        TDev const ry = FLOAT_TO((ij - nJ / 2.f) / (float)nJ);
+        TDev const ry = FLOAT_TO((ij - nJ / 2) / (float)nJ);
         for (int ii = 0; ii < nI; ii++) {
-          TDev const       rx = FLOAT_TO((ii - nI / 2.f) / (float)nI);
+          TDev const       rx = FLOAT_TO((ii - nI / 2) / (float)nI);
           auto const       p = pi2 * (kx * rx + ky * ry + kz * rz);
           CuCx<TDev> const ep(cuda::std::cos(-p), cuda::std::sin(-p));
           for (int ic = 0; ic < NC; ic++) {
             temp[ic] += ep * sense(ii, ij, ik, ic) * img(ii, ij, ik);
           }
-          ind++;
-          if (ind % SumSize == 0) {
-            for (int ic = 0; ic < NC; ic++) {
-              ks(ic, is, it) += scale * temp[ic];
-              temp[ic] = 0;
-            }
-          }
+          // ind++;
+          // if (ind % SumSize == 0) {
+          //   for (int ic = 0; ic < NC; ic++) {
+          //     ks(ic, is, it) += scale * temp[ic];
+          //     temp[ic] = 0;
+          //   }
+          // }
         }
       }
     }
-    if (ind % SumSize != 0) {
-      for (int ic = 0; ic < NC; ic++) {
-        ks(ic, is, it) += scale * temp[ic];
-      }
+    // if (ind % SumSize != 0) {
+    for (int ic = 0; ic < NC; ic++) {
+      ks(ic, is, it) = scale * temp[ic];
     }
+    // }
   });
   rl::Log::Print("RECON", "Forward finished in {}", rl::Log::ToNow(start));
 }
@@ -114,13 +114,13 @@ template <int NC> void Recon<NC>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks, DTens
     int const ij = ijk % nIJ / nI;
     int const ii = ijk % nIJ % nI;
 
-    TDev const rx = FLOAT_TO((ii - nI / 2.f) / (float)nI);
-    TDev const ry = FLOAT_TO((ij - nJ / 2.f) / (float)nJ);
-    TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
+    TDev const rx = FLOAT_TO((ii - nI / 2) / (float)nI);
+    TDev const ry = FLOAT_TO((ij - nJ / 2) / (float)nJ);
+    TDev const rz = FLOAT_TO((ik - nK / 2) / (float)nK);
 
     cuda::std::array<CuCx<TDev>, NC> temp{CuCx<TDev>{0.f, 0.f}};
-    long int                         ind = 0;
-    img(ii, ij, ik) = 0;
+    // long int                         ind = 0;
+    // img(ii, ij, ik) = 0;
     for (int it = 0; it < nT; it++) {
       for (int is = 0; is < nS; is++) {
         TDev const       kx = traj(0, is, it);
@@ -131,23 +131,23 @@ template <int NC> void Recon<NC>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks, DTens
         for (int ic = 0; ic < NC; ic++) {
           temp[ic] += ep * ks(ic, is, it);
         }
-        ind++;
-        if (ind % SumSize == 0) {
-          for (int ic = 0; ic < NC; ic++) {
-            img(ii, ij, ik) += scale * cuda::std::conj(sense(ii, ij, ik, ic)) * temp[ic];
-            temp[ic] = 0;
-          }
-        }
+        // ind++;
+        // if (ind % SumSize == 0) {
+        //   for (int ic = 0; ic < NC; ic++) {
+        //     img(ii, ij, ik) += scale * cuda::std::conj(sense(ii, ij, ik, ic)) * temp[ic];
+        //     temp[ic] = 0;
+        //   }
+        // }
       }
     }
 
-    if (ind % SumSize != 0) {
-      for (int ic = 0; ic < NC; ic++) {
-        img(ii, ij, ik) += scale * cuda::std::conj(sense(ii, ij, ik, ic)) * temp[ic];
-      }
+    // if (ind % SumSize != 0) {
+    for (int ic = 0; ic < NC; ic++) {
+      img(ii, ij, ik) += scale * cuda::std::conj(sense(ii, ij, ik, ic)) * temp[ic];
     }
+    // }
   });
-  rl::Log::Print("DFT", "Adjoint Packed DFT finished in {}", rl::Log::ToNow(start));
+  rl::Log::Print("RECON", "Adjoint finished in {}", rl::Log::ToNow(start));
 }
 
 template struct Recon<1>;
