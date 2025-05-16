@@ -25,7 +25,7 @@ void main_prox(args::Subparser &parser)
   Ops::Op<Cx>::Vector xx(B->cols());
   xx.setZero();
   xx.head(A->rows()) = CollapseToConstVector(x);
-  for (Index ir = 0; ir < regs.size(); ir++) {
+  for (size_t ir = 0; ir < regs.size(); ir++) {
     auto const Fx = regs[ir].T->forward(xx);
     auto const z = regs[ir].P->apply(1.f / ρ.Get(), Fx);
     if (std::holds_alternative<Sz5>(regs[ir].shape)) {

@@ -7,8 +7,8 @@ namespace gw {
 
 template <typename T, int xRank, int yRank> struct Op
 {
-  virtual void forward(DTensor<T, xRank>::Span x, DTensor<T, yRank>::Span y) const;
-  virtual void adjoint(DTensor<T, yRank>::Span y, DTensor<T, xRank>::Span x) const;
+  virtual void forward(DTensor<T, xRank>::Span x, DTensor<T, yRank>::Span y) const = 0;
+  virtual void adjoint(DTensor<T, yRank>::Span y, DTensor<T, xRank>::Span x) const = 0;
 };
 
 template <typename T, typename MT, int Rank> struct MulPacked : Op<T, Rank, Rank>

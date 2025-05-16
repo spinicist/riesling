@@ -50,7 +50,7 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
   auto task = [&](Index const nlo, Index const nhi) {
     for (Index in = nlo; in < nhi; in++) {
       std::vector<ducc0::slice> lslice(ND), rslice(ND);
-      for (Index ia = 0; ia < axes.size(); ia++) {
+      for (size_t ia = 0; ia < axes.size(); ia++) {
         auto const a = axes[ia];
         if (x.shape()[a] > 1) {
           if (x.shape()[a] % 2 != 0) { throw Log::Failure("FFT", "Shape {} dim {} was not even", x.shape(), a); }

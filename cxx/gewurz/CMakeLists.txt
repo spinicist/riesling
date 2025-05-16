@@ -17,10 +17,11 @@ if(BUILD_GEWURZ)
     )
 
     add_executable(gewurz
-        main.cu
+        # main.cu
+        test.cu
         bidiag.cu
         dft.cu
-        dft2.cu
+        # dft2.cu
         recon.cu
         sense.cpp
     )

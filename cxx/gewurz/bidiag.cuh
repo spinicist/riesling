@@ -15,9 +15,9 @@ template <typename T, typename U> void CuScale(thrust::device_vector<T> &a, U co
   thrust::transform(thrust::cuda::par, a.begin(), a.end(), a.begin(), [b] __device__(T const a) { return a * b; });
 }
 
-template <typename T, typename U> void CuAsubBC2B(thrust::device_vector<T> &a, thrust::device_vector<T> &b, U const c)
+template <typename T, typename U> void CuAsubBC(thrust::device_vector<T> const &a, thrust::device_vector<T> const &b, U const c, thrust::device_vector<T> &y)
 {
-  thrust::transform(a.begin(), a.end(), b.begin(), b.begin(), [c] __device__(T const a, T const b) { return a - c * b; });
+  thrust::transform(a.begin(), a.end(), b.begin(), y.begin(), [c] __device__(T const a, T const b) { return a - b * c; });
 }
 
 struct RotationT
@@ -58,7 +58,7 @@ template <typename T, int xRank, int yRank> struct Bidiag
       CuScale(Mu.vec, FLOAT_TO(1.f / β));
     } else {
       thrust::copy(b.vec.begin(), b.vec.end(), u.vec.begin());
-      β = FLOAT_FROM(cuda::std::sqrt(CuDot(Mu.vec, u.vec)));
+      β = FLOAT_FROM(cuda::std::sqrt(CuDot(u.vec, u.vec)));
     }
     CuScale(u.vec, FLOAT_TO(1.f / β));
 
@@ -78,26 +78,26 @@ template <typename T, int xRank, int yRank> struct Bidiag
   {
     if (Minv) {
       A->forward(v.span, u.span);
-      CuAsubBC2B(u.vec, Mu.vec, FLOAT_TO(α));
+      CuAsubBC(u.vec, Mu.vec, FLOAT_TO(α), Mu.vec);
       Minv->forward(Mu.span, u.span);
       β = FLOAT_FROM(cuda::std::sqrt(CuDot(Mu.vec, u.vec)));
       CuScale(Mu.vec, FLOAT_TO(1.f / β));
     } else {
       A->forward(v.span, Mu.span);
-      CuAsubBC2B(Mu.vec, u.vec, FLOAT_TO(α));
+      CuAsubBC(Mu.vec, u.vec, FLOAT_TO(α), u.vec);
       β = FLOAT_FROM(cuda::std::sqrt(CuDot(u.vec, u.vec)));
     }
     CuScale(u.vec, FLOAT_TO(1.f / β));
 
     if (Ninv) {
       A->adjoint(u.span, v.span);
-      CuAsubBC2B(v.vec, Nv.vec, FLOAT_TO(β));
+      CuAsubBC(v.vec, Nv.vec, FLOAT_TO(β), Nv.vec);
       Ninv->forward(Nv.span, v.span);
       α = FLOAT_FROM(cuda::std::sqrt(CuDot(Nv.vec, v.vec)));
       CuScale(Nv.vec, FLOAT_TO(1.f / α));
     } else {
       A->adjoint(u.span, Nv.span);
-      CuAsubBC2B(Nv.vec, v.vec, FLOAT_TO(β));
+      CuAsubBC(Nv.vec, v.vec, FLOAT_TO(β), v.vec);
       α = FLOAT_FROM(cuda::std::sqrt(CuDot(v.vec, v.vec)));
     }
     CuScale(v.vec, FLOAT_TO(1.f / α));

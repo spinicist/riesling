@@ -1,9 +1,15 @@
+#define LIBCUDACXX_ENABLE_SIMPLIFIED_COMPLEX_OPERATIONS
+#include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
 
 #include "dft.cuh"
 #include "lsmr.cuh"
+#include "recon.cuh"
+#include "sense.hpp"
 
 #include <args.hxx>
+
+#include <thrust/extrema.h>
 
 using namespace rl;
 
@@ -13,14 +19,95 @@ std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
                                                {2, Log::Display::Low},
                                                {3, Log::Display::Mid},
                                                {4, Log::Display::High}};
+} // namespace
+
+auto SetupCartesian(int M, HD5::Writer &writer) -> DTensor<TDev, 3>
+{
+  Log::Print("tests", "Setup trajectory");
+  auto const nS = M;
+  auto const nT = M * M;
+
+  HTensor<float, 3> hT(3L, nS, nT);
+  long int          it = 0;
+  for (short ik = 0; ik < M; ik++) {
+    TDev const kz = FLOAT_TO((ik - M / 2));
+    for (short ij = 0; ij < M; ij++) {
+      TDev const ky = FLOAT_TO((ij - M / 2));
+      for (short ii = 0; ii < M; ii++) {
+        TDev const kx = FLOAT_TO((ii - M / 2));
+        hT.span(0, ii, it) = kx;
+        hT.span(1, ii, it) = ky;
+        hT.span(2, ii, it) = kz;
+      }
+      it++;
+    }
+  }
+  writer.writeTensor("trajCart", HD5::Shape<3>{3, nS, nT}, hT.vec.data(), {"d", "s", "t"});
+  HTensor<TDev, 3> hhT(3L, nS, nT);
+  thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo);
+  DTensor<TDev, 3> T(3L, nS, nT);
+  thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
+  return T;
+}
+
+auto Setup1(int M, HD5::Writer &writer) -> DTensor<TDev, 3>
+{
+  Log::Print("tests", "Setup trajectory");
+  auto const nS = 2;
+  auto const nT = 1;
+
+  HTensor<float, 3> hT(3L, nS, nT);
+  hT.span(0, 0, 0) = 0;
+  hT.span(1, 0, 0) = 0;
+  hT.span(2, 0, 0) = -M;
+  hT.span(0, 1, 0) = 0;
+  hT.span(1, 1, 0) = 0;
+  hT.span(2, 1, 0) = M;
+  writer.writeTensor("traj1", HD5::Shape<3>{3, nS, nT}, hT.vec.data(), {"d", "s", "t"});
+  HTensor<TDev, 3> hhT(3L, nS, nT);
+  thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo);
+  DTensor<TDev, 3> T(3L, nS, nT);
+  thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
+  return T;
+}
+
+void TestDFT(DTensor<TDev, 3> const &T, int const M, std::string const &prefix, HD5::Writer &writer)
+{
+  Log::Print("tests", "DFT");
+  auto const             nS = T.span.extent(1);
+  auto const             nT = T.span.extent(2);
+  DTensor<CuCx<TDev>, 2> ks(nS, nT);
+  DTensor<CuCx<TDev>, 3> img(M, M, M);
+  thrust::fill(ks.vec.begin(), ks.vec.end(), CuCx<TDev>(1));
+  gw::DFT::ThreeD dft{T.span};
+  Log::Print("DFT", "|img| {} |ks| {}", gw::CuNorm(img.vec), gw::CuNorm(ks.vec));
+
+  dft.adjoint(ks.span, img.span);
+  Log::Print("DFT", "|img| {} |ks| {}", gw::CuNorm(img.vec), gw::CuNorm(ks.vec));
+  HTensor<CuCx<TDev>, 3> hhImg(M, M, M);
+  thrust::copy(img.vec.begin(), img.vec.end(), hhImg.vec.begin());
+  HTensor<std::complex<float>, 3> hImg(M, M, M);
+  thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ConvertFromCx);
+  writer.writeTensor(prefix + "img", HD5::Shape<3>{M, M, M}, hImg.vec.data(), {"i", "j", "k"});
+
+  dft.forward(img.span, ks.span);
+  Log::Print("DFT", "|img| {} |ks| {}", gw::CuNorm(img.vec), gw::CuNorm(ks.vec));
+  HTensor<CuCx<TDev>, 2> hhKS(nS, nT);
+  thrust::copy(ks.vec.begin(), ks.vec.end(), hhKS.vec.begin());
+  HTensor<std::complex<float>, 2> hKS(nS, nT);
+  thrust::transform(hhKS.vec.begin(), hhKS.vec.end(), hKS.vec.begin(), ConvertFromCx);
+  writer.writeTensor(prefix + "ks", HD5::Shape<2>{nS, nT}, hKS.vec.data(), {"s", "t"});
 }
 
 int main(int const argc, char const *const argv[])
 {
-  args::ArgumentParser parser("GEWURZTestraminer");
+  args::ArgumentParser parser("GEWURZ");
 
   args::HelpFlag                   help(parser, "H", "Show this help message", {'h', "help"});
   args::MapFlag<int, Log::Display> verbosity(parser, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
+
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
+  args::ValueFlag<int>          M(parser, "M", "Matrix size", {'m', "mat"}, 6);
 
   parser.ParseCLI(argc, argv);
   if (verbosity) {
@@ -28,53 +115,24 @@ int main(int const argc, char const *const argv[])
   } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
     Log::SetDisplayLevel(levelMap.at(std::atoi(env_p)));
   }
-  Log::Print("gewurztraminer", "Welcome!");
+  Log::Print("tests", "Welcome!");
 
-  Index const nC = 2;
-  Index const nS = 4;
-  Index const nT = 3;
-
-  Log::Print("gewurztraminer", "Setup Trajectory");
-  HTensor<CuReal, 3> hT(3, nS, nT);
-  for (int it = 0; it < nT; it++) {
-    for (int is = 0; is < nS; is++) {
-        hT.span(it % 3, is, it) = is;
-    }
+  try {
+    HD5::Writer writer(oname.Get());
+    // auto        TC = SetupCartesian(M.Get(), writer);
+    // TestDFT(TC, M.Get(), "cart", writer);
+    auto T1 = Setup1(M.Get(), writer);
+    TestDFT(T1, M.Get(), "1", writer);
+    Log::Print("tests", "Finished");
+  } catch (Log::Failure &f) {
+    Log::Fail(f);
+    Log::End();
+    return EXIT_FAILURE;
+  } catch (std::exception const &e) {
+    Log::Fail(Log::Failure("None", "{}", e.what()));
+    Log::End();
+    return EXIT_FAILURE;
   }
-  DTensor<CuReal, 3> T(3L, nS, nT);
-  thrust::copy(hT.vec.begin(), hT.vec.end(), T.vec.data());
-
-  std::array<int, 3> mat{8, 8, 8};
-
-  Log::Print("gewurztraminer", "Poor man's SDC");
-  DTensor<CuReal, 2> M(nS, nT);
-  DTensor<CuCx<THost>, 2>  Mks(nS, nT);
-  DTensor<CuCx<THost>, 3>  Mimg(mat[0], mat[1], mat[2]);
-  thrust::fill(Mks.vec.begin(), Mks.vec.end(), 1.f);
-
-  gw::DFT::ThreeD dft{T.span};
-  dft.adjoint(Mks.span, Mimg.span);
-  dft.forward(Mimg.span, Mks.span);
-  thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [] __device__(CuCx<THost> x) { return (CuReal)1 / cuda::std::abs(x); });
-  fmt::print(stderr, "|Mks| {} |M| {}\n", gw::CuNorm(Mks.vec), gw::CuNorm(M.vec));
-  gw::MulPacked<CuCx<THost>, CuReal, 3> Mop{M.span};
-
-  Log::Print("gewurztraminer", "Setup k-space");
-  HTensor<CuCx<THost>, 3> hKS(nC, nS, nT);
-  DTensor<CuCx<THost>, 3> ks(nC, nS, nT);;
-  thrust::fill(hKS.vec.begin(), hKS.vec.end(), CuCx<THost>(1.f));
-  thrust::copy(hKS.vec.begin(), hKS.vec.end(), ks.vec.begin());
-
-  Log::Print("gewurztraminer", "Recon");
-  gw::DFT::ThreeDPacked dftp{T.span};
-  gw::LSMR<CuCx<THost>, 4, 3> lsmr{&dftp};
-  HTensor<CuCx<THost>, 4>     hImgs(nC, mat[0], mat[1], mat[2]);
-  DTensor<CuCx<THost>, 4>     imgs(nC, mat[0], mat[1], mat[2]);
-  fmt::print(stderr, "Before |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
-  dftp.adjoint(ks.span, imgs.span);
-  fmt::print(stderr, "After |ks| {} |imgs| {}\n", gw::CuNorm(ks.vec), gw::CuNorm(imgs.vec));
-  lsmr.run(ks, imgs);
-  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hImgs.vec.begin());
+  Log::End();
   return EXIT_SUCCESS;
 }
