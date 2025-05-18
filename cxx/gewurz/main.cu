@@ -83,40 +83,42 @@ auto Preconditioner(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat) -> D
   auto const             nS = T.span.extent(1);
   auto const             nT = T.span.extent(2);
   DTensor<TDev, 2>       M(nS, nT);
-  DTensor<CuCx<TDev>, 2> Mks(nS, nT);
-  DTensor<CuCx<TDev>, 3> Mimg(mat[0], mat[1], mat[2]);
-  thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
-
-  HD5::Writer debug("debug.h5");
-
-  gw::DFT::ThreeD dft{T.span};
-  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  dft.adjoint(Mks.span, Mimg.span);
-
-  HTensor<CuCx<TDev>, 3>          himg(mat[0], mat[1], mat[2]);
-  HTensor<std::complex<float>, 3> hhimg(mat[0], mat[1], mat[2]);
-  thrust::copy(Mimg.vec.begin(), Mimg.vec.end(), himg.vec.begin());
-  thrust::transform(himg.vec.begin(), himg.vec.end(), hhimg.vec.begin(), ConvertFromCx);
-  debug.writeTensor("Mimg", HD5::Shape<3>{mat[0], mat[1], mat[2]}, hhimg.vec.data(), {"i", "j", "k"});
-
-  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  dft.forward(Mimg.span, Mks.span);
-
-  HTensor<CuCx<TDev>, 2>          hks(nS, nT);
-  HTensor<std::complex<float>, 2> hhks(nS, nT);
-  thrust::copy(Mks.vec.begin(), Mks.vec.end(), hks.vec.begin());
-  thrust::transform(hks.vec.begin(), hks.vec.end(), hhks.vec.begin(), ConvertFromCx);
-  debug.writeTensor("Mks", HD5::Shape<2>{nS, nT}, hhks.vec.data(), {"s", "t"});
-
-  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  float const λ = 0.0f;
-  thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [λ] __device__(CuCx<TDev> x) { return TDev(1 + λ) / (cuda::std::abs(x) + λ); });
-  auto const mm = thrust::minmax_element(thrust::cuda::par, M.vec.begin(), M.vec.end());
-  TDev const min = *(mm.first);
-  TDev const max = *(mm.second);
-  Log::Print("Precon", "|M| {} Min {} Max {}", gw::CuNorm(M.vec), min, max);
+  thrust::fill(M.vec.begin(), M.vec.end(), TDev(1));
   return M;
+  // DTensor<CuCx<TDev>, 2> Mks(nS, nT);
+  // DTensor<CuCx<TDev>, 3> Mimg(mat[0], mat[1], mat[2]);
+  // thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
+
+  // HD5::Writer debug("debug.h5");
+
+  // gw::DFT::ThreeD dft{T.span};
+  // Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
+  // dft.adjoint(Mks.span, Mimg.span);
+
+  // HTensor<CuCx<TDev>, 3>          himg(mat[0], mat[1], mat[2]);
+  // HTensor<std::complex<float>, 3> hhimg(mat[0], mat[1], mat[2]);
+  // thrust::copy(Mimg.vec.begin(), Mimg.vec.end(), himg.vec.begin());
+  // thrust::transform(himg.vec.begin(), himg.vec.end(), hhimg.vec.begin(), ConvertFromCx);
+  // debug.writeTensor("Mimg", HD5::Shape<3>{mat[0], mat[1], mat[2]}, hhimg.vec.data(), {"i", "j", "k"});
+
+  // Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
+  // dft.forward(Mimg.span, Mks.span);
+
+  // HTensor<CuCx<TDev>, 2>          hks(nS, nT);
+  // HTensor<std::complex<float>, 2> hhks(nS, nT);
+  // thrust::copy(Mks.vec.begin(), Mks.vec.end(), hks.vec.begin());
+  // thrust::transform(hks.vec.begin(), hks.vec.end(), hhks.vec.begin(), ConvertFromCx);
+  // debug.writeTensor("Mks", HD5::Shape<2>{nS, nT}, hhks.vec.data(), {"s", "t"});
+
+  // Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
+  // float const λ = 0.0f;
+  // thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
+  //                   [λ] __device__(CuCx<TDev> x) { return TDev(1 + λ) / (cuda::std::abs(x) + λ); });
+  // auto const mm = thrust::minmax_element(thrust::cuda::par, M.vec.begin(), M.vec.end());
+  // TDev const min = *(mm.first);
+  // TDev const max = *(mm.second);
+  // Log::Print("Precon", "|M| {} Min {} Max {}", gw::CuNorm(M.vec), min, max);
+  // return M;
 }
 
 auto ReadKS(rl::HD5::Reader &reader) -> DTensor<CuCx<TDev>, 3>
@@ -224,7 +226,7 @@ int main(int const argc, char const *const argv[])
   try {
     auto const  mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
     auto        T = ReadTrajectory(reader);
-    DoTest(T, mat);
+    // DoTest(T, mat);
     auto        M = Preconditioner(T, mat);
     auto        KS = ReadKS(reader);
     HD5::Writer writer(oname.Get());
