@@ -2,25 +2,17 @@
 #include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
 
-#include "dft.cuh"
-#include "lsmr.cuh"
-#include "recon.cuh"
-#include "sense.hpp"
+#include "../args.hpp"
+#include "../op/dft.cuh"
+#include "../algo/lsmr.cuh"
+#include "../op/recon.cuh"
+#include "../sense.hpp"
 
 #include <args.hxx>
 
 #include <thrust/extrema.h>
 
 using namespace rl;
-
-namespace {
-std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
-                                               {1, Log::Display::Ephemeral},
-                                               {2, Log::Display::Low},
-                                               {3, Log::Display::Mid},
-                                               {4, Log::Display::High}};
-
-} // namespace
 
 auto ReadTrajectory(HD5::Reader &reader) -> DTensor<TDev, 3>
 {
@@ -46,13 +38,13 @@ void DoTest(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat)
   auto const             nT = T.span.extent(2);
   UTensor<CuCx<TDev>, 2> Mks(nS, nT);
   UTensor<CuCx<TDev>, 3> Mimg(mat[0], mat[1], mat[2]);
-  
+
   thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
   // for (int it = 0; it < nT; it++) {
   //   Mks.span(nS - 1, it) = CuCx<TDev>(1);
   // }
 
-  HD5::Writer debug("test.h5");
+  HD5::Writer                     debug("test.h5");
   HTensor<CuCx<TDev>, 2>          hks(nS, nT);
   HTensor<std::complex<float>, 2> hhks(nS, nT);
   thrust::copy(Mks.vec.begin(), Mks.vec.end(), hks.vec.begin());
@@ -80,9 +72,9 @@ void DoTest(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat)
 auto Preconditioner(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat) -> DTensor<TDev, 2>
 {
   Log::Print("gewurz", "Preconditioner");
-  auto const             nS = T.span.extent(1);
-  auto const             nT = T.span.extent(2);
-  DTensor<TDev, 2>       M(nS, nT);
+  auto const       nS = T.span.extent(1);
+  auto const       nT = T.span.extent(2);
+  DTensor<TDev, 2> M(nS, nT);
   thrust::fill(M.vec.begin(), M.vec.end(), TDev(1));
   return M;
   // DTensor<CuCx<TDev>, 2> Mks(nS, nT);
@@ -192,25 +184,14 @@ template <int NC> void DoDFT(DTensor<CuCx<TDev>, 3> const    &ks,
   thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ConvertFromCx);
 }
 
-int main(int const argc, char const *const argv[])
+void main_dft(args::Subparser &parser)
 {
-  args::ArgumentParser parser("GEWURZ");
-
-  args::HelpFlag                   help(parser, "H", "Show this help message", {'h', "help"});
-  args::MapFlag<int, Log::Display> verbosity(parser, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
-
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> sname(parser, "FILE", "Input SENSE maps");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
+  args::Flag                    adj(parser, "A", "Adjoint only", {'a', "adj"});
 
-  args::Flag adj(parser, "A", "Adjoint only", {'a', "adj"});
-
-  parser.ParseCLI(argc, argv);
-  if (verbosity) {
-    Log::SetDisplayLevel(verbosity.Get());
-  } else if (char *const env_p = std::getenv("RL_VERBOSITY")) {
-    Log::SetDisplayLevel(levelMap.at(std::atoi(env_p)));
-  }
+  ParseCommand(parser, iname, oname);
   Log::Print("gewurz", "Welcome!");
 
   HD5::Reader reader(iname.Get());
@@ -220,46 +201,31 @@ int main(int const argc, char const *const argv[])
   auto const nS = shape[1];
   auto const nT = shape[2];
 
-  // HD5::Reader sread(sname.Get());
-  // writer.writeStruct(HD5::Keys::Info, info);
-
-  try {
-    auto const  mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
-    auto        T = ReadTrajectory(reader);
-    // DoTest(T, mat);
-    auto        M = Preconditioner(T, mat);
-    auto        KS = ReadKS(reader);
-    HD5::Writer writer(oname.Get());
-    if (adj) {
-      int const                       nC = KS.span.extent(0);
-      HTensor<std::complex<float>, 4> img(nC, mat[0], mat[1], mat[2]);
-      switch (nC) {
-      case 1: DoDFT<1>(KS, T, M, img); break;
-      case 8: DoDFT<8>(KS, T, M, img); break;
-      }
-      writer.writeTensor("data", HD5::Shape<4>{nC, mat[0], mat[1], mat[2]}, img.vec.data(), {"channel", "i", "j", "k"});
-    } else {
-      auto                            S = ReadSENSE(sname.Get(), mat, nC);
-      HTensor<std::complex<float>, 3> img(mat[0], mat[1], mat[2]);
-      switch (nC) {
-      case 1: DoRecon<1>(KS, T, M, S, img); break;
-      case 8: DoRecon<8>(KS, T, M, S, img); break;
-      }
-      writer.writeTensor("data", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
+  auto const mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
+  auto       T = ReadTrajectory(reader);
+  // DoTest(T, mat);
+  auto        M = Preconditioner(T, mat);
+  auto        KS = ReadKS(reader);
+  HD5::Writer writer(oname.Get());
+  if (adj) {
+    int const                       nC = KS.span.extent(0);
+    HTensor<std::complex<float>, 4> img(nC, mat[0], mat[1], mat[2]);
+    switch (nC) {
+    case 1: DoDFT<1>(KS, T, M, img); break;
+    case 8: DoDFT<8>(KS, T, M, img); break;
     }
-    HTensor<TDev, 2> hM(M.span);
-    thrust::copy(M.vec.begin(), M.vec.end(), hM.vec.begin());
-    writer.writeTensor("M", HD5::Shape<2>{nS, nT}, hM.vec.data(), {"s", "t"});
-    Log::Print("gewurz", "Finished");
-  } catch (Log::Failure &f) {
-    Log::Fail(f);
-    Log::End();
-    return EXIT_FAILURE;
-  } catch (std::exception const &e) {
-    Log::Fail(Log::Failure("None", "{}", e.what()));
-    Log::End();
-    return EXIT_FAILURE;
+    writer.writeTensor("data", HD5::Shape<4>{nC, mat[0], mat[1], mat[2]}, img.vec.data(), {"channel", "i", "j", "k"});
+  } else {
+    auto                            S = ReadSENSE(sname.Get(), mat, nC);
+    HTensor<std::complex<float>, 3> img(mat[0], mat[1], mat[2]);
+    switch (nC) {
+    case 1: DoRecon<1>(KS, T, M, S, img); break;
+    case 8: DoRecon<8>(KS, T, M, S, img); break;
+    }
+    writer.writeTensor("data", HD5::Shape<3>{mat[0], mat[1], mat[2]}, img.vec.data(), {"i", "j", "k"});
   }
-  Log::End();
-  return EXIT_SUCCESS;
+  HTensor<TDev, 2> hM(M.span);
+  thrust::copy(M.vec.begin(), M.vec.end(), hM.vec.begin());
+  writer.writeTensor("M", HD5::Shape<2>{nS, nT}, hM.vec.data(), {"s", "t"});
+  Log::Print("gewurz", "Finished");
 }
