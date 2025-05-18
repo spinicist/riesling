@@ -17,8 +17,8 @@ if(BUILD_GEWURZ)
     )
 
     add_executable(gewurz
-        # main.cu
-        test.cu
+        main.cu
+        # test.cu
         bidiag.cu
         dft.cu
         # dft2.cu

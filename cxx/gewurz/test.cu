@@ -50,7 +50,7 @@ auto SetupCartesian(int M, HD5::Writer &writer) -> DTensor<TDev, 3>
   return T;
 }
 
-auto Setup1(int M, HD5::Writer &writer) -> DTensor<TDev, 3>
+auto Setup1(int const M, float const k, HD5::Writer &writer) -> DTensor<TDev, 3>
 {
   Log::Print("tests", "Setup trajectory");
   auto const nS = 2;
@@ -59,10 +59,10 @@ auto Setup1(int M, HD5::Writer &writer) -> DTensor<TDev, 3>
   HTensor<float, 3> hT(3L, nS, nT);
   hT.span(0, 0, 0) = 0;
   hT.span(1, 0, 0) = 0;
-  hT.span(2, 0, 0) = -M;
+  hT.span(2, 0, 0) = -k;
   hT.span(0, 1, 0) = 0;
   hT.span(1, 1, 0) = 0;
-  hT.span(2, 1, 0) = M;
+  hT.span(2, 1, 0) = k;
   writer.writeTensor("traj1", HD5::Shape<3>{3, nS, nT}, hT.vec.data(), {"d", "s", "t"});
   HTensor<TDev, 3> hhT(3L, nS, nT);
   thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo);
@@ -108,6 +108,7 @@ int main(int const argc, char const *const argv[])
 
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::ValueFlag<int>          M(parser, "M", "Matrix size", {'m', "mat"}, 6);
+  args::ValueFlag<float>        k(parser, "N", "k", {'k', "k"}, 0);
 
   parser.ParseCLI(argc, argv);
   if (verbosity) {
@@ -121,7 +122,7 @@ int main(int const argc, char const *const argv[])
     HD5::Writer writer(oname.Get());
     // auto        TC = SetupCartesian(M.Get(), writer);
     // TestDFT(TC, M.Get(), "cart", writer);
-    auto T1 = Setup1(M.Get(), writer);
+    auto T1 = Setup1(M.Get(), k.Get(), writer);
     TestDFT(T1, M.Get(), "1", writer);
     Log::Print("tests", "Finished");
   } catch (Log::Failure &f) {

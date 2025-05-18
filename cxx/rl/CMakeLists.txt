@@ -71,6 +71,7 @@ op/sense.cpp
 op/top-id.cpp
 op/wavelets.cpp
 
+phantom/cartesian.cpp
 phantom/gradcubes.cpp
 phantom/sphere.cpp
 phantom/shepp-logan.cpp

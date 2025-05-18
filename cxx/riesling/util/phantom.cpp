@@ -4,6 +4,7 @@
 #include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
 #include "rl/op/recon.hpp"
+#include "rl/phantom/cartesian.hpp"
 #include "rl/phantom/gradcubes.hpp"
 #include "rl/phantom/radial.hpp"
 #include "rl/phantom/shepp-logan.hpp"
@@ -22,10 +23,10 @@ Trajectory LoadTrajectory(std::string const &file)
 }
 
 Trajectory CreateTrajectory(
-  Index const matrix, float const voxSz, float const readOS, Index const spokes, Index const sps, bool const phyllo)
+  Index const matrix, float const voxSz, float const readOS, Index const spokes, Index const sps, bool const cart, bool const phyllo)
 {
   Log::Print("Phan", "Using {} hi-res spokes", spokes);
-  auto points = phyllo ? Phyllotaxis(matrix, readOS, spokes, 7, sps) : ArchimedeanSpiral(matrix, readOS, spokes);
+  auto points = cart ? Cartesian(matrix) : phyllo ? Phyllotaxis(matrix, readOS, spokes, 7, sps) : ArchimedeanSpiral(matrix, readOS, spokes);
   Log::Print("Phan", "Samples: {} Traces: {}", points.dimension(1), points.dimension(2));
   return Trajectory(points, Sz3{matrix, matrix, matrix}, Eigen::Array3f::Constant(voxSz));
 }
@@ -42,6 +43,7 @@ void main_phantom(args::Subparser &parser)
 
   args::Flag gradCubes(parser, "", "Grad cubes phantom", {"gradcubes"});
 
+  args::Flag             cart(parser, "", "Use a Cartesian trajectory", {'c', "cart"});
   args::Flag             phyllo(parser, "", "Use a phyllotaxis", {'p', "phyllotaxis"});
   args::ValueFlag<Index> smoothness(parser, "S", "Phyllotaxis smoothness", {"smoothness"}, 10);
   args::ValueFlag<Index> spi(parser, "N", "Phyllotaxis segments per interleave", {"spi"}, 4);
@@ -56,7 +58,7 @@ void main_phantom(args::Subparser &parser)
   auto const       cmd = parser.GetCommand().Name();
   Trajectory const traj = trajfile
                             ? LoadTrajectory(trajfile.Get())
-                            : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), phyllo);
+                            : CreateTrajectory(matrix.Get(), voxSize.Get(), readOS.Get(), spokes.Get(), sps.Get(), cart, phyllo);
   Info const       info{.voxel_size = Eigen::Array3f::Constant(voxSize.Get()),
                         .origin = Eigen::Array3f::Constant(-(voxSize.Get() * matrix.Get()) / 2.f),
                         .direction = Eigen::Matrix3f::Identity(),
