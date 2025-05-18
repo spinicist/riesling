@@ -13,5 +13,5 @@
 }
 
 @test "GEWURZ" {
-    gewurz 
+    gewurz dft c-kspace.h5 c-dft.h5
 }
