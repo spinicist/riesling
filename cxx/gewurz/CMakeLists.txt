@@ -17,21 +17,32 @@ if(BUILD_GEWURZ)
     )
 
     add_executable(gewurz
-        main.cu
-        # test.cu
-        bidiag.cu
-        dft.cu
-        # dft2.cu
-        recon.cu
+        main.cpp
+
+        args.cpp
         sense.cpp
+        # test.cu
+
+        cmd/dft.cu
+
+        algo/bidiag.cu
+        
+        op/dft.cu
+        # op/dft2.cu
+        op/recon.cu
+        
     )
     set_source_files_properties(
-        main.cu
         test.cu
-        bidiag.cu
-        dft.cu
-        dft2.cu
-        recon.cu
+        
+        cmd/dft.cu
+        
+        algo/bidiag.cu
+
+        op/dft.cu
+        op/dft2.cu
+        op/recon.cu
+        
         PROPERTIES COMPILE_FLAGS "--extended-lambda"
     )
     target_compile_features(gewurz PUBLIC cuda_std_17)

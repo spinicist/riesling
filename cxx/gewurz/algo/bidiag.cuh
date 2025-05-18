@@ -1,6 +1,6 @@
 #pragma once
 
-#include "op.cuh"
+#include "../op/op.cuh"
 #include "rl/log/log.hpp"
 #include "types.cuh"
 #include <thrust/inner_product.h>

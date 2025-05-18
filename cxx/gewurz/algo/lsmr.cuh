@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bidiag.cuh"
-#include "op.cuh"
+#include "../op/op.cuh"
 #include "rl/algo/givens.hpp"
 #include "rl/algo/iter.hpp"
 #include "rl/log/log.hpp"
