@@ -20,6 +20,7 @@ if(BUILD_GEWURZ)
         main.cpp
 
         args.cpp
+        info.cpp
         sense.cpp
         # test.cu
 

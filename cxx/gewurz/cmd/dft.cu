@@ -7,8 +7,7 @@
 #include "../op/dft.cuh"
 #include "../op/recon.cuh"
 #include "../sense.hpp"
-
-#include <args.hxx>
+#include "info.hpp"
 
 #include <thrust/extrema.h>
 
@@ -248,9 +247,11 @@ void main_dft(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get());
   auto const  mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
-  auto        T = ReadTrajectory(reader);
+  auto const  T = ReadTrajectory(reader);
+  auto const  info = reader.readStruct<gw::Info>(HD5::Keys::Info);
   HD5::Writer writer(oname.Get());
   WriteTrajectory(T, mat, writer);
+  writer.writeStruct(HD5::Keys::Info, info);
 
   if (fwd) {
     auto const shape = reader.dimensions();
@@ -262,6 +263,8 @@ void main_dft(args::Subparser &parser)
     HTensor<std::complex<float>, 3> ks(nC, nS, nT);
     switch (nC) {
     case 1: DoForwardDFT<1>(img, T, ks); break;
+    case 2: DoForwardDFT<2>(img, T, ks); break;
+    case 4: DoForwardDFT<4>(img, T, ks); break;
     case 8: DoForwardDFT<8>(img, T, ks); break;
     default: throw(Log::Failure("DFT", "Unsupported number of channels {}", nC));
     }
@@ -274,6 +277,8 @@ void main_dft(args::Subparser &parser)
     HTensor<std::complex<float>, 4> img(mat[0], mat[1], mat[2], nC);
     switch (nC) {
     case 1: DoAdjointDFT<1>(KS, T, img); break;
+    case 2: DoAdjointDFT<2>(KS, T, img); break;
+    case 4: DoAdjointDFT<4>(KS, T, img); break;
     case 8: DoAdjointDFT<8>(KS, T, img); break;
     default: throw(Log::Failure("DFT", "Unsupported number of channels {}", nC));
     }
