@@ -259,6 +259,8 @@ template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks
 }
 
 template struct ThreeDPacked<1>;
+template struct ThreeDPacked<2>;
+template struct ThreeDPacked<4>;
 template struct ThreeDPacked<8>;
 
 } // namespace gw::DFT
