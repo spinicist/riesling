@@ -58,7 +58,8 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
           temp += m;
 
           // if (is == 22 && it == 159 && ij == nJ/2 && ik == nK/2) {
-          //   printf("st %ld is %d it %d i %d %d %d r %f %f %f p %f ep %f+%fi img %f+%fi m %f+%f temp %f+%fi\n", st, is, it, ii,
+          //   printf("st %ld is %d it %d i %d %d %d r %f %f %f p %f ep %f+%fi img %f+%fi m %f+%f temp %f+%fi\n", st, is, it,
+          //   ii,
           //          ij, ik, rx, ry, rz, p, ep.real(), ep.imag(), imgs(ii, ij, ik).real(), imgs(ii, ij, ik).imag(), m.real(),
           //          m.imag(), temp.real(), temp.imag());
           // }
@@ -95,12 +96,12 @@ void ThreeD::adjoint(DTensor<CuCx<TDev>, 2>::Span ks, DTensor<CuCx<TDev>, 3>::Sp
   auto const start = rl::Log::Now();
   auto       it = thrust::make_counting_iterator<long>(0L);
   thrust::for_each_n(thrust::cuda::par, it, nIJK, [ks, traj = this->traj, imgs, scale] __device__(long ijk) {
-    int const  nI = imgs.extent(0);
-    int const  nJ = imgs.extent(1);
-    int const  nK = imgs.extent(2);
-    int const  nIJ = nI * nJ;
-    int const  nS = ks.extent(0);
-    int const  nT = ks.extent(1);
+    int const nI = imgs.extent(0);
+    int const nJ = imgs.extent(1);
+    int const nK = imgs.extent(2);
+    int const nIJ = nI * nJ;
+    int const nS = ks.extent(0);
+    int const nT = ks.extent(1);
 
     int const ik = ijk / nIJ;
     int const ij = ijk % nIJ / nI;
@@ -137,15 +138,17 @@ void ThreeD::adjoint(DTensor<CuCx<TDev>, 2>::Span ks, DTensor<CuCx<TDev>, 3>::Sp
 
 template <int NP> void ThreeDPacked<NP>::forward(DTensor<CuCx<TDev>, 4>::Span imgs, DTensor<CuCx<TDev>, 3>::Span ks) const
 {
-  if (NP != imgs.extent(0) || NP != ks.extent(0)) { throw rl::Log::Failure("DFT", "Packing dimension size mismatch"); }
+  if (NP != imgs.extent(3) || NP != ks.extent(0)) {
+    throw rl::Log::Failure("DFT", "Packing dimension size mismatch {} {} {}", NP, imgs.extent(0), ks.extent(0));
+  }
   rl::Log::Print("DFT", "Forward Packed DFT");
   auto const start = rl::Log::Now();
   int const  nS = ks.extent(1);
   int const  nT = ks.extent(2);
   int const  nST = nS * nT;
-  int const  nI = imgs.extent(1);
-  int const  nJ = imgs.extent(2);
-  int const  nK = imgs.extent(3);
+  int const  nI = imgs.extent(0);
+  int const  nJ = imgs.extent(1);
+  int const  nK = imgs.extent(2);
   int const  nIJK = nI * nJ * nK;
   TDev const scale = FLOAT_TO(1.f / std::sqrt(nIJK));
   auto       it = thrust::make_counting_iterator(0);
@@ -160,9 +163,9 @@ template <int NP> void ThreeDPacked<NP>::forward(DTensor<CuCx<TDev>, 4>::Span im
     TDev const ky = traj(1, is, it);
     TDev const kz = traj(2, is, it);
 
-    int const  nI = imgs.extent(1);
-    int const  nJ = imgs.extent(2);
-    int const  nK = imgs.extent(3);
+    int const  nI = imgs.extent(0);
+    int const  nJ = imgs.extent(1);
+    int const  nK = imgs.extent(2);
     CuCx<TDev> temp[NP] = {
       CuCx<TDev>(0.),
     };
@@ -175,7 +178,7 @@ template <int NP> void ThreeDPacked<NP>::forward(DTensor<CuCx<TDev>, 4>::Span im
           auto const       p = pi2 * (kx * rx + ky * ry + kz * rz);
           CuCx<TDev> const ep(cuda::std::cos(-p), cuda::std::sin(-p));
           for (int ic = 0; ic < NP; ic++) {
-            temp[ic] += ep * imgs(ic, ii, ij, ik);
+            temp[ic] += ep * imgs(ii, ij, ik, ic);
           }
         }
       }

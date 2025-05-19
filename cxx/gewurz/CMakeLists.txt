@@ -26,6 +26,7 @@ if(BUILD_GEWURZ)
         cmd/dft.cu
 
         algo/bidiag.cu
+        algo/dot.cu
         
         op/dft.cu
         # op/dft2.cu
@@ -38,12 +39,13 @@ if(BUILD_GEWURZ)
         cmd/dft.cu
         
         algo/bidiag.cu
+        algo/dot.cu
 
         op/dft.cu
         op/dft2.cu
         op/recon.cu
         
-        PROPERTIES COMPILE_FLAGS "--extended-lambda"
+        PROPERTIES COMPILE_FLAGS "--extended-lambda --expt-relaxed-constexpr"
     )
     target_compile_features(gewurz PUBLIC cuda_std_17)
     target_link_libraries(gewurz PRIVATE

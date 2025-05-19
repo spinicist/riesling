@@ -122,7 +122,7 @@ bool Writer::exists(std::string const &name) const { return HD5::Exists(handle_,
 template <typename Scalar, size_t N>
 void Writer::writeTensor(std::string const &name, Shape<N> const &shape, Scalar const *data, DNames<N> const &labels)
 {
-  for (Index ii = 0; ii < N; ii++) {
+  for (size_t ii = 0; ii < N; ii++) {
     if (shape[ii] == 0) { throw Log::Failure("HD5", "Tensor {} had a zero dimension. Dims: {}", name, shape); }
   }
 
@@ -150,7 +150,7 @@ void Writer::writeTensor(std::string const &name, Shape<N> const &shape, Scalar 
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);
   if (dset < 0) { throw Log::Failure("HD5", "Could not create dataset {} dimensions {} error {}", name, shape, GetError()); }
   auto l = labels.rbegin();
-  for (Index ii = 0; ii < N; ii++) {
+  for (size_t ii = 0; ii < N; ii++) {
     CheckedCall(H5DSset_label(dset, ii, l->c_str()), fmt::format("dataset {} dimension {} label {}", name, ii, *l));
     l++;
   }

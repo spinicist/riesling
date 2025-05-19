@@ -36,7 +36,7 @@ template <int ND, typename KF, int SG>
 void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const x, Cx3Map y) const
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
-  for (Index is = start; is < gridLists.size(); is += stride) {
+  for (size_t is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
     if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()))) {
@@ -75,7 +75,7 @@ void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMa
 
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
-  for (Index is = start; is < gridLists.size(); is += stride) {
+  for (size_t is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {

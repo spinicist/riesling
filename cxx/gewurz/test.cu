@@ -87,7 +87,7 @@ void TestDFT(DTensor<TDev, 3> const &T, int const M, std::string const &prefix, 
   HTensor<CuCx<TDev>, 3> hhImg(M, M, M);
   thrust::copy(img.vec.begin(), img.vec.end(), hhImg.vec.begin());
   HTensor<std::complex<float>, 3> hImg(M, M, M);
-  thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ConvertFromCx);
+  thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ToStdCx);
   writer.writeTensor(prefix + "img", HD5::Shape<3>{M, M, M}, hImg.vec.data(), {"i", "j", "k"});
 
   dft.forward(img.span, ks.span);
@@ -95,7 +95,7 @@ void TestDFT(DTensor<TDev, 3> const &T, int const M, std::string const &prefix, 
   HTensor<CuCx<TDev>, 2> hhKS(nS, nT);
   thrust::copy(ks.vec.begin(), ks.vec.end(), hhKS.vec.begin());
   HTensor<std::complex<float>, 2> hKS(nS, nT);
-  thrust::transform(hhKS.vec.begin(), hhKS.vec.end(), hKS.vec.begin(), ConvertFromCx);
+  thrust::transform(hhKS.vec.begin(), hhKS.vec.end(), hKS.vec.begin(), ToStdCx);
   writer.writeTensor(prefix + "ks", HD5::Shape<2>{nS, nT}, hKS.vec.data(), {"s", "t"});
 }
 

@@ -1,10 +1,6 @@
 #include "rl/log/log.hpp"
 #include "args.hpp"
 
-extern args::Group    global_group;
-extern args::HelpFlag help;
-extern args::Flag     verbose;
-
 using namespace rl;
 
 #define COMMAND(PARSER, NM, CMD, DESC)                                                                                         \

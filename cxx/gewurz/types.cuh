@@ -38,23 +38,28 @@ using TDev = float;
 #define ZERO 0.f
 #endif
 
-inline constexpr struct ConvertToCx
+inline constexpr struct FromStdCx
 {
   __host__ CuCx<TDev> operator()(std::complex<float> const z) { return CuCx<TDev>(FLOAT_TO(z.real()), FLOAT_TO(z.imag())); }
-} ConvertToCx;
+} FromStdCx;
 
-inline constexpr struct ConvertFromCx
+inline constexpr struct ToStdCx
 {
   __host__ std::complex<float> operator()(CuCx<TDev> const z) const
   {
     return std::complex<float>(FLOAT_FROM(z.real()), FLOAT_FROM(z.imag()));
   }
-} ConvertFromCx;
+} ToStdCx;
 
 inline constexpr struct ConvertTo
 {
   __host__ TDev operator()(float const f) const { return FLOAT_TO(f); }
 } ConvertTo;
+
+inline constexpr struct ConvertFrom
+{
+  __host__ float operator()(TDev const f) const { return FLOAT_FROM(f); }
+} ConvertFrom;
 
 template <typename T, int N> struct DTensor
 {
