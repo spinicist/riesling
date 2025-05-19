@@ -161,20 +161,21 @@ template <int NC> void DoRecon(DTensor<CuCx<TDev>, 3> const    &ks,
   thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ConvertFromCx);
 }
 
-template <int NC> void DoDFT(DTensor<CuCx<TDev>, 3> const &ks, DTensor<TDev, 3> const &T, HTensor<std::complex<float>, 4> &hImg)
+template <int NC>
+void DoAdjointDFT(DTensor<CuCx<TDev>, 3> const &ks, DTensor<TDev, 3> const &T, HTensor<std::complex<float>, 4> &hImg)
 
 {
   Log::Print("gewurz", "Recon");
-  auto const nC = hImg.span.extent(0);
-  auto const nI = hImg.span.extent(1);
-  auto const nJ = hImg.span.extent(2);
-  auto const nK = hImg.span.extent(3);
+  auto const nC = hImg.span.extent(3);
+  auto const nI = hImg.span.extent(0);
+  auto const nJ = hImg.span.extent(1);
+  auto const nK = hImg.span.extent(2);
 
   gw::DFT::ThreeDPacked<NC> A{T.span};
-  DTensor<CuCx<TDev>, 4>    imgs(nC, nI, nJ, nK);
+  DTensor<CuCx<TDev>, 4>    imgs(nI, nJ, nK, nC);
   A.adjoint(ks.span, imgs.span);
 
-  HTensor<CuCx<TDev>, 4> hhImg(nC, nI, nJ, nK);
+  HTensor<CuCx<TDev>, 4> hhImg(nI, nJ, nK, nC);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImg.vec.begin());
   thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), ConvertFromCx);
 }
@@ -184,25 +185,30 @@ void main_dft(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    adj(parser, "A", "Adjoint only", {'a', "adj"});
-  // args::Flag   fwd(parser, "F", "Forward", {'f', "fwd"});
+  args::Flag                    fwd(parser, "F", "Forward", {'f', "fwd"});
+  args::Flag                    noM(parser, "M", "No preconditioning", {'p', "nop"});
 
   ParseCommand(parser, iname, oname);
   Log::Print("DFT", "Welcome!");
 
   HD5::Reader reader(iname.Get());
-  auto const  shape = reader.dimensions();
-  auto const  nC = shape[0];
-
-  auto const mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
-  auto       T = ReadTrajectory(reader);
-  auto       KS = ReadKS(reader);
-
-  HTensor<std::complex<float>, 4> img(nC, mat[0], mat[1], mat[2]);
-  switch (nC) {
-  case 1: DoDFT<1>(KS, T, img); break;
-  case 8: DoDFT<8>(KS, T, img); break;
-  }
   HD5::Writer writer(oname.Get());
-  writer.writeTensor("data", HD5::Shape<4>{nC, mat[0], mat[1], mat[2]}, img.vec.data(), {"channel", "i", "j", "k"});
+  auto const  mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
+  auto        T = ReadTrajectory(reader);
+
+  if (fwd) {
+
+  } else {
+    auto const                      shape = reader.dimensions();
+    auto const                      nC = shape[0];
+    auto                            KS = ReadKS(reader);
+    HTensor<std::complex<float>, 4> img(mat[0], mat[1], mat[2], nC);
+    switch (nC) {
+    case 1: DoAdjointDFT<1>(KS, T, img); break;
+    case 8: DoAdjointDFT<8>(KS, T, img); break;
+    }
+    writer.writeTensor("data", HD5::Shape<4>{mat[0], mat[1], mat[2], nC}, img.vec.data(), {"i", "j", "k", "channel"});
+  }
+
   Log::Print("DFT", "Finished");
 }
