@@ -18,9 +18,7 @@ std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
 int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("GEWURZ");
-
-  args::HelpFlag                   help(parser, "H", "Show this help message", {'h', "help"});
-  args::MapFlag<int, Log::Display> verbosity(parser, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
+  args::GlobalOptions globals(parser, global_group);
 
   COMMAND(parser, dft, "dft", "Apply DFT");
   try {

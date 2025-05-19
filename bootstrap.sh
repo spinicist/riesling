@@ -18,7 +18,7 @@ WARN=""
 while getopts "ghi:j:w" opt; do
     case $opt in
         g) GEWURZ="-DBUILD_GEWURZ=ON";;
-        i) PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG -DCMAKE_PREFIX_PATH=$OPTARG";;
+        i) PREFIX="-DCMAKE_INSTALL_PREFIX=$OPTARG";;
         j) export VCPKG_MAX_CONCURRENCY=$OPTARG
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
