@@ -7,9 +7,6 @@
 
 namespace gw {
 
-auto CuDot(thrust::device_vector<CuCx<TDev>> const &a, thrust::device_vector<CuCx<TDev>> const &b) -> TDev;
-auto CuNorm(thrust::device_vector<CuCx<TDev>> const &a) -> TDev;
-
 template <typename T, typename U> void CuScale(thrust::device_vector<T> &a, U const b)
 {
   thrust::transform(thrust::cuda::par, a.begin(), a.end(), a.begin(), [b] __device__(T const a) { return a * b; });

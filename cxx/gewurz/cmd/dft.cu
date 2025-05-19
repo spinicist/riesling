@@ -82,48 +82,34 @@ void DoTest(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat)
   debug.writeTensor("Mks2", HD5::Shape<2>{nS, nT}, hhks.vec.data(), {"s", "t"});
 }
 
-auto Preconditioner(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat) -> DTensor<TDev, 2>
+auto Preconditioner(DTensor<TDev, 3> const &T, int const nI, int const nJ, int const nK) -> DTensor<TDev, 2>
 {
   Log::Print("gewurz", "Preconditioner");
   auto const       nS = T.span.extent(1);
   auto const       nT = T.span.extent(2);
   DTensor<TDev, 2> M(nS, nT);
   thrust::fill(M.vec.begin(), M.vec.end(), TDev(1));
+
+  DTensor<CuCx<TDev>, 2> Mks(nS, nT);
+  DTensor<CuCx<TDev>, 3> Mimg(nI, nJ, nK);
+  thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
+
+  HD5::Writer debug("debug.h5");
+
+  gw::DFT::ThreeD dft{T.span};
+  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
+  dft.adjoint(Mks.span, Mimg.span);
+  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
+  dft.forward(Mimg.span, Mks.span);
+  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
+  float const λ = 0.0f;
+  thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
+                    [λ] __device__(CuCx<TDev> x) { return TDev(1 + λ) / (cuda::std::abs(x) + λ); });
+  auto const mm = thrust::minmax_element(thrust::cuda::par, M.vec.begin(), M.vec.end());
+  TDev const min = *(mm.first);
+  TDev const max = *(mm.second);
+  Log::Print("Precon", "|M| {} Min {} Max {}", gw::CuNorm(M.vec), min, max);
   return M;
-  // DTensor<CuCx<TDev>, 2> Mks(nS, nT);
-  // DTensor<CuCx<TDev>, 3> Mimg(mat[0], mat[1], mat[2]);
-  // thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
-
-  // HD5::Writer debug("debug.h5");
-
-  // gw::DFT::ThreeD dft{T.span};
-  // Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  // dft.adjoint(Mks.span, Mimg.span);
-
-  // HTensor<CuCx<TDev>, 3>          himg(mat[0], mat[1], mat[2]);
-  // HTensor<std::complex<float>, 3> hhimg(mat[0], mat[1], mat[2]);
-  // thrust::copy(Mimg.vec.begin(), Mimg.vec.end(), himg.vec.begin());
-  // thrust::transform(himg.vec.begin(), himg.vec.end(), hhimg.vec.begin(), ToStdCx);
-  // debug.writeTensor("Mimg", HD5::Shape<3>{mat[0], mat[1], mat[2]}, hhimg.vec.data(), {"i", "j", "k"});
-
-  // Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  // dft.forward(Mimg.span, Mks.span);
-
-  // HTensor<CuCx<TDev>, 2>          hks(nS, nT);
-  // HTensor<std::complex<float>, 2> hhks(nS, nT);
-  // thrust::copy(Mks.vec.begin(), Mks.vec.end(), hks.vec.begin());
-  // thrust::transform(hks.vec.begin(), hks.vec.end(), hhks.vec.begin(), ToStdCx);
-  // debug.writeTensor("Mks", HD5::Shape<2>{nS, nT}, hhks.vec.data(), {"s", "t"});
-
-  // Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  // float const λ = 0.0f;
-  // thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-  //                   [λ] __device__(CuCx<TDev> x) { return TDev(1 + λ) / (cuda::std::abs(x) + λ); });
-  // auto const mm = thrust::minmax_element(thrust::cuda::par, M.vec.begin(), M.vec.end());
-  // TDev const min = *(mm.first);
-  // TDev const max = *(mm.second);
-  // Log::Print("Precon", "|M| {} Min {} Max {}", gw::CuNorm(M.vec), min, max);
-  // return M;
 }
 
 auto ReadImage(rl::HD5::Reader &reader) -> DTensor<CuCx<TDev>, 4>
@@ -217,7 +203,6 @@ void DoForwardDFT(DTensor<CuCx<TDev>, 4> const &imgs, DTensor<TDev, 3> const &T,
 
 template <int NC>
 void DoAdjointDFT(DTensor<CuCx<TDev>, 3> const &ks, DTensor<TDev, 3> const &T, HTensor<std::complex<float>, 4> &hImg)
-
 {
   Log::Print("gewurz", "Recon");
   auto const nC = hImg.span.extent(3);
@@ -228,6 +213,35 @@ void DoAdjointDFT(DTensor<CuCx<TDev>, 3> const &ks, DTensor<TDev, 3> const &T, H
   gw::DFT::ThreeDPacked<NC> A{T.span};
   DTensor<CuCx<TDev>, 4>    imgs(nI, nJ, nK, nC);
   A.adjoint(ks.span, imgs.span);
+
+  HTensor<CuCx<TDev>, 4> hhImg(nI, nJ, nK, nC);
+  thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImg.vec.begin());
+  thrust::transform(hhImg.vec.begin(), hhImg.vec.end(), hImg.vec.begin(), FromStdCx);
+}
+
+template <int NC> void DoInverseDFT(DTensor<CuCx<TDev>, 3> const    &ks,
+                                    DTensor<TDev, 3> const          &T,
+                                    bool const                       precon,
+                                    HTensor<std::complex<float>, 4> &hImg)
+{
+  Log::Print("gewurz", "Recon");
+  auto const nC = hImg.span.extent(3);
+  auto const nI = hImg.span.extent(0);
+  auto const nJ = hImg.span.extent(1);
+  auto const nK = hImg.span.extent(2);
+
+  DTensor<CuCx<TDev>, 4> imgs(nI, nJ, nK, nC);
+  gw::DFT::ThreeDPacked<NC>          A{T.span};
+  
+  if (precon) {
+    auto const                         W = Preconditioner(T, nI, nJ, nK);
+    gw::MulPacked<CuCx<TDev>, TDev, 3> Minv{W.span};
+    gw::LSMR lsmr{&A, &Minv};
+    lsmr.run(ks, imgs);
+  } else {
+    gw::LSMR lsmr{&A};
+    lsmr.run(ks, imgs);
+  }
 
   HTensor<CuCx<TDev>, 4> hhImg(nI, nJ, nK, nC);
   thrust::copy(imgs.vec.begin(), imgs.vec.end(), hhImg.vec.begin());
@@ -275,12 +289,22 @@ void main_dft(args::Subparser &parser)
     auto const                      nC = shape[0];
     auto                            KS = ReadKS(reader);
     HTensor<std::complex<float>, 4> img(mat[0], mat[1], mat[2], nC);
-    switch (nC) {
-    case 1: DoAdjointDFT<1>(KS, T, img); break;
-    case 2: DoAdjointDFT<2>(KS, T, img); break;
-    case 4: DoAdjointDFT<4>(KS, T, img); break;
-    case 8: DoAdjointDFT<8>(KS, T, img); break;
-    default: throw(Log::Failure("DFT", "Unsupported number of channels {}", nC));
+    if (adj) {
+      switch (nC) {
+      case 1: DoAdjointDFT<1>(KS, T, img); break;
+      case 2: DoAdjointDFT<2>(KS, T, img); break;
+      case 4: DoAdjointDFT<4>(KS, T, img); break;
+      case 8: DoAdjointDFT<8>(KS, T, img); break;
+      default: throw(Log::Failure("DFT", "Unsupported number of channels {}", nC));
+      }
+    } else {
+      switch (nC) {
+      case 1: DoInverseDFT<1>(KS, T, !noM, img); break;
+      case 2: DoInverseDFT<2>(KS, T, !noM, img); break;
+      case 4: DoInverseDFT<4>(KS, T, !noM, img); break;
+      case 8: DoInverseDFT<8>(KS, T, !noM, img); break;
+      default: throw(Log::Failure("DFT", "Unsupported number of channels {}", nC));
+      }
     }
     writer.writeTensor("data", HD5::Shape<4>{mat[0], mat[1], mat[2], nC}, img.vec.data(), {"i", "j", "k", "channel"});
   }
