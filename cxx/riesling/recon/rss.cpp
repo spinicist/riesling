@@ -13,7 +13,7 @@ using namespace rl;
 
 void main_recon_rss(args::Subparser &parser)
 {
-  CoreArgs            coreArgs(parser);
+  CoreArgs<3>         coreArgs(parser);
   GridArgs<3>         gridArgs(parser);
   PreconArgs          preArgs(parser);
   LSMRArgs            lsqOpts(parser);

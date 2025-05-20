@@ -14,7 +14,7 @@ using namespace std::literals::complex_literals;
 
 void main_psf(args::Subparser &parser)
 {
-  CoreArgs    coreArgs(parser);
+  CoreArgs<3> coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
   LSMRArgs     lsqOpts(parser);

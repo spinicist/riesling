@@ -47,7 +47,7 @@ template <typename... Args> inline void Debug(std::string const &category, fmt::
 template <typename... Args>
 inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_red, Display::None);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_yellow, Display::None);
 }
 
 struct Failure : std::runtime_error

@@ -36,7 +36,7 @@ if(BUILD_BIN)
         op/fft.cpp
         op/grad.cpp
         op/grid.cpp
-        op/ndft.cpp
+        # op/ndft.cpp
         op/nufft.cpp
         op/prox.cpp
         op/sense.cpp
@@ -46,6 +46,7 @@ if(BUILD_BIN)
 
         # recon/lad.cpp
         recon/lsq.cpp
+        # recon/lsq2.cpp
         # recon/pdhg.cpp
         # recon/pdhg-setup.cpp
         recon/rlsq.cpp

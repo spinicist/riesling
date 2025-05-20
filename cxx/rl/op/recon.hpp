@@ -4,6 +4,7 @@
 #include "../op/compose.hpp"
 #include "../precon.hpp"
 #include "../sense/sense.hpp"
+#include "recon-opts.hpp"
 
 /*
  *  Full recon operators
@@ -12,18 +13,7 @@
 namespace rl {
 struct Recon
 {
-  struct Opts
-  {
-    bool decant, lowmem;
-  };
-
-  struct f0Opts
-  {
-    float        τacq;
-    Index Nτ;
-  };
-
-  Recon(Opts const        &rOpts,
+  Recon(ReconOpts const   &rOpts,
         PreconOpts const  &pOpts,
         GridOpts<3> const &gridOpts,
         SENSE::Opts const &senseOpts,
@@ -31,7 +21,7 @@ struct Recon
         Basis::CPtr        basis,
         Cx5 const         &data);
 
-  Recon(Opts const        &rOpts,
+  Recon(ReconOpts const   &rOpts,
         PreconOpts const  &pOpts,
         GridOpts<3> const &gridOpts,
         SENSE::Opts const &senseOpts,

@@ -14,7 +14,7 @@ using namespace rl;
 
 void main_compress(args::Subparser &parser)
 {
-  CoreArgs coreArgs(parser);
+  CoreArgs<3> coreArgs(parser);
 
   args::ValueFlag<std::string> ccFile(parser, "F", "Read compression matrix from file", {"cc-file"});
 

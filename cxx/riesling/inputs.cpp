@@ -11,14 +11,17 @@
 
 using namespace rl;
 
-CoreArgs::CoreArgs(args::Subparser &parser)
+template <int ND> CoreArgs<ND>::CoreArgs(args::Subparser &parser)
   : iname(parser, "FILE", "Input HD5 file")
   , oname(parser, "FILE", "Output HD5 file")
-  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz3())
+  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz<ND>())
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
   , residual(parser, "R", "Write out residual to file", {"residual", 'r'})
 {
 }
+
+template struct CoreArgs<2>;
+template struct CoreArgs<3>;
 
 template <int ND> GridArgs<ND>::GridArgs(args::Subparser &parser)
   : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
@@ -40,7 +43,7 @@ ReconArgs::ReconArgs(args::Subparser &parser)
 {
 }
 
-auto ReconArgs::Get() -> rl::Recon::Opts { return rl::Recon::Opts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
+auto ReconArgs::Get() -> rl::ReconOpts { return rl::ReconOpts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
 
 PreconArgs::PreconArgs(args::Subparser &parser)
   : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon"}, "single")
@@ -117,4 +120,4 @@ f0Args::f0Args(args::Subparser &parser)
 {
 }
 
-auto f0Args::Get() -> rl::Recon::f0Opts { return rl::Recon::f0Opts{.τacq = τacq.Get(), .Nτ = Nτ.Get()}; }
+auto f0Args::Get() -> rl::f0Opts { return rl::f0Opts{.τacq = τacq.Get(), .Nτ = Nτ.Get()}; }

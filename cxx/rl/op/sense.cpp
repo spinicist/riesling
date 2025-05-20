@@ -7,56 +7,56 @@
 
 namespace rl::TOps {
 
-SENSE::SENSE(Cx5 const &maps, Index const nB)
-  : Parent("SENSEOp",
-           AddBack(FirstN<3>(maps.dimensions()), nB),
-           AddBack(FirstN<3>(maps.dimensions()), maps.dimension(3), nB))
+template <int ND> SENSE<ND>::SENSE(CxN<ND + 2> const &maps, Index const nB)
+  : Parent("SENSEOp", AddBack(FirstN<ND>(maps.dimensions()), nB), AddBack(FirstN<ND>(maps.dimensions()), maps.dimension(ND), nB))
   , maps_{maps}
 {
-  resX.set(0, maps_.dimension(0));
-  resX.set(1, maps_.dimension(1));
-  resX.set(2, maps_.dimension(2));
-  resX.set(4, nB);
-  brdX.set(3, maps_.dimension(3));
+  for (int ii = 0; ii < ND; ii++) {
+    resX.set(ii, maps_.dimension(ii));
+  }
+  resX.set(ND + 1, nB);
+  brdX.set(ND, maps_.dimension(ND));
 
-  if (maps_.dimension(4) == 1) {
-    brdMaps.set(4, nB);
+  if (maps_.dimension(ND + 1) == 1) {
+    brdMaps.set(ND + 1, nB);
   } else if (maps_.dimension(0) == nB) {
-    brdMaps.set(4, 1);
+    brdMaps.set(ND + 1, 1);
   } else {
-    throw Log::Failure("SENSE", "Maps had basis size {} expected {}", maps_.dimension(4), nB);
+    throw Log::Failure("SENSE", "Maps had basis size {} expected {}", maps_.dimension(ND + 1), nB);
   }
 }
 
-void SENSE::forward(InCMap const x, OutMap y) const
+template <int ND> void SENSE<ND>::forward(InCMap const x, OutMap y) const
 {
-  auto const time = startForward(x, y, false);
+  auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
-  finishForward(y, time, false);
+  this->finishForward(y, time, false);
 }
 
-void SENSE::iforward(InCMap const x, OutMap y) const
+template <int ND> void SENSE<ND>::iforward(InCMap const x, OutMap y) const
 {
-  auto const time = startForward(x, y, true);
+  auto const time = this->startForward(x, y, true);
   y.device(Threads::TensorDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
-  finishForward(y, time, true);
+  this->finishForward(y, time, true);
 }
 
-void SENSE::adjoint(OutCMap const y, InMap x) const
+template <int ND> void SENSE<ND>::adjoint(OutCMap const y, InMap x) const
 {
-  auto const time = startAdjoint(y, x, false);
+  auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3});
-  finishAdjoint(x, time, false);
+  this->finishAdjoint(x, time, false);
 }
 
-void SENSE::iadjoint(OutCMap const y, InMap x) const
+template <int ND> void SENSE<ND>::iadjoint(OutCMap const y, InMap x) const
 {
-  auto const time = startAdjoint(y, x, true);
+  auto const time = this->startAdjoint(y, x, true);
   x.device(Threads::TensorDevice()) += (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3});
-  finishAdjoint(x, time, true);
+  this->finishAdjoint(x, time, true);
 }
 
-auto SENSE::nChannels() const -> Index { return oshape[3]; }
-auto SENSE::mapDimensions() const -> Sz3 { return FirstN<3>(ishape); }
+template <int ND> auto SENSE<ND>::nChannels() const -> Index { return oshape[ND]; }
+template <int ND> auto SENSE<ND>::mapDimensions() const -> Sz<ND> { return FirstN<ND>(ishape); }
 
+template struct SENSE<2>;
+template struct SENSE<3>;
 } // namespace rl::TOps
