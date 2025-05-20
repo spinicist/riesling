@@ -19,24 +19,16 @@ auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float con
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, basis);
-  Cx3        W(nufft->oshape);
+  GridOpts<3> go{.fov = GridOpts<3>::Arrayf::Zero(), .osamp = 2.f};
+  
+  auto       grid = TOps::Grid<3>::Make(go, traj, 1, basis);
+  Cx3        W(grid->oshape);
   W.setConstant(Cx(1.f, 0.f));
-  Cx5 const psf = nufft->adjoint(W);
-  Cx5       ones(AddBack(traj.matrix(), psf.dimension(3), psf.dimension(4)));
-  ones.setConstant(1.f);
-  TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
-  Cx5              xcor(padX.oshape);
-  xcor.device(Threads::TensorDevice()) = padX.forward(ones);
-  FFT::Forward(xcor, Sz3{0, 1, 2});
-  xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
-  FFT::Adjoint(xcor, Sz3{0, 1, 2});
-  xcor.device(Threads::TensorDevice()) = xcor * psf;
-  Re3 weights = nufft->forward(xcor).abs();
-  // I do not understand this scaling factor but it's in Frank's code and works
-  float scale =
-    std::pow(Product(FirstN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<3>(ones.dimensions()));
-  weights.device(Threads::TensorDevice()) = (1.f + λ) / ((weights * scale) + λ);
+  Cx5 const g = grid->adjoint(W);
+  Re3 weights = grid->forward(g).abs();
+  float scale = 0.5f; // I think this comes from the kernel
+  weights = (weights == 0.f).select(weights.constant(1.f), weights * scale); // Avoid samples that have gone outside the edge of k-space
+  weights.device(Threads::TensorDevice()) = (1.f + λ) / (weights + λ);
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
@@ -118,8 +110,8 @@ auto LoadKSpacePrecon(std::string const &fname, Trajectory const &traj, Sz5 cons
   if (o == 2) {
     Re2 const w = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (w.dimension(0) != traj.nSamples() || w.dimension(1) != traj.nTraces()) {
-      throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(1),
-                         w.dimension(2), traj.nSamples(), traj.nTraces());
+      throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(0),
+                         w.dimension(1), traj.nSamples(), traj.nTraces());
     }
     return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
   } else if (o == 3) {
