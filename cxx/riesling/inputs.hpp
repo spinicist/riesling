@@ -5,8 +5,9 @@
 #include "rl/algo/admm.hpp"
 #include "rl/algo/lsmr.hpp"
 #include "rl/op/grid-opts.hpp"
-#include "rl/op/recon.hpp"
+#include "rl/op/recon-opts.hpp"
 #include "rl/precon.hpp"
+#include "rl/sense/sense.hpp"
 #include "rl/trajectory.hpp"
 #include "rl/types.hpp"
 
@@ -14,10 +15,10 @@
 #include <optional>
 #include <vector>
 
-struct CoreArgs
+template <int ND> struct CoreArgs
 {
   args::Positional<std::string> iname, oname;
-  SzFlag<3>                     matrix;
+  SzFlag<ND>                    matrix;
   args::ValueFlag<std::string>  basisFile;
   args::Flag                    residual;
 
@@ -38,7 +39,7 @@ struct ReconArgs
   args::Flag decant, lowmem;
 
   ReconArgs(args::Subparser &parser);
-  auto Get() -> rl::Recon::Opts;
+  auto Get() -> rl::ReconOpts;
 };
 
 struct PreconArgs
@@ -100,5 +101,5 @@ struct f0Args
   args::ValueFlag<Index> Nτ;
 
   f0Args(args::Subparser &parser);
-  auto Get() -> rl::Recon::f0Opts;
+  auto Get() -> rl::f0Opts;
 };

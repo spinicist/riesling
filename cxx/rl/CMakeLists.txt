@@ -55,7 +55,7 @@ op/grid.cpp
 op/grid-decant.cpp
 op/hankel.cpp
 op/mask.cpp
-op/ndft.cpp
+# op/ndft.cpp
 op/nufft.cpp
 op/nufft-decant.cpp
 op/nufft-lowmem.cpp
@@ -63,6 +63,7 @@ op/op.cpp
 op/ops.cpp
 op/pad.cpp
 op/recon.cpp
+# op/recon2.cpp
 op/reshape.cpp
 op/sense.cpp
 op/top-id.cpp

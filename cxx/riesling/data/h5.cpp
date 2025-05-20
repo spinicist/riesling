@@ -44,9 +44,20 @@ void main_h5(args::Subparser &parser)
       fmt::print("Origin:     {}\n", i.origin.transpose());
       fmt::print("Direction:\n{}\n", fmt::streamed(i.direction));
       if (reader.exists("trajectory")) {
-        Trajectory traj(reader, i.voxel_size);
-        fmt::print("Trajectory: Samples {} Traces {} Matrix {} FOV {}\n", traj.nSamples(), traj.nTraces(), traj.matrix(),
-                   traj.FOV());
+        auto const td = reader.dimensions(HD5::Keys::Trajectory)[0];
+        switch (td) {
+        case 2: {
+          TrajectoryN<2> traj(reader, i.voxel_size.head(2));
+          fmt::print("Trajectory: Samples {} Traces {} Matrix {} FOV {}\n", traj.nSamples(), traj.nTraces(), traj.matrix(),
+                     traj.FOV());
+        } break;
+        case 3: {
+          TrajectoryN<3> traj(reader, i.voxel_size);
+          fmt::print("Trajectory: Samples {} Traces {} Matrix {} FOV {}\n", traj.nSamples(), traj.nTraces(), traj.matrix(),
+                     traj.FOV());
+        } break;
+        default: throw(Log::Failure(cmd, "Unknown trajectory dimension {}", td));
+        }
       }
     }
 

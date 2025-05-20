@@ -17,7 +17,7 @@ using namespace rl;
 
 void main_rovir(args::Subparser &parser)
 {
-  CoreArgs coreArgs(parser);
+  CoreArgs<3> coreArgs(parser);
   GridOpts gridOpts(parser);
 
   args::ValueFlag<Index> refVol(parser, "V", "Use this volume (default first)", {"vol"}, 0);

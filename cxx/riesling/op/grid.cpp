@@ -33,7 +33,7 @@ auto MakeGrid(
 
 void main_grid(args::Subparser &parser)
 {
-  CoreArgs    coreArgs(parser);
+  CoreArgs<3> coreArgs(parser);
   GridArgs<3> gridArgs(parser);
   PreconArgs  preArgs(parser);
   LSMRArgs    lsqOpts(parser);

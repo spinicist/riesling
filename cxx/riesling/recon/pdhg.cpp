@@ -15,7 +15,7 @@ using namespace rl;
 
 void main_pdhg(args::Subparser &parser)
 {
-  CoreArgs    coreArgs(parser);
+  CoreArgs<3> coreArgs(parser);
   GridOpts    gridOpts(parser);
   PreconOpts  preOpts(parser);
   SENSE::Opts senseOpts(parser);

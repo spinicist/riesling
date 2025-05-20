@@ -11,7 +11,7 @@ if(${BUILD_TESTS})
         precon.cpp
         op/fft.cpp
         op/grid.cpp
-        op/ndft.cpp
+        # op/ndft.cpp
         op/nufft.cpp
         op/pad.cpp
         op/recon.cpp

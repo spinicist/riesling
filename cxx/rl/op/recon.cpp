@@ -13,6 +13,7 @@
 
 namespace rl {
 
+namespace {
 auto Single(GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
@@ -41,7 +42,7 @@ auto SENSERecon(
   GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &smaps)
   -> TOps::TOp<Cx, 5, 5>::Ptr
 {
-  auto sense = std::make_shared<TOps::SENSE>(smaps, b ? b->nB() : 1);
+  auto sense = std::make_shared<TOps::SENSE<3>>(smaps, b ? b->nB() : 1);
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(3), b);
   auto slabLoop = TOps::MakeLoop(nufft, nSlab);
   if (nSlab > 1) {
@@ -67,8 +68,9 @@ auto Decant(
   }
   return nullptr;
 }
+} // namespace
 
-Recon::Recon(Opts const        &rOpts,
+Recon::Recon(ReconOpts const   &rOpts,
              PreconOpts const  &pOpts,
              GridOpts<3> const &gridOpts,
              SENSE::Opts const &senseOpts,
@@ -97,7 +99,7 @@ Recon::Recon(Opts const        &rOpts,
   }
 }
 
-Recon::Recon(Opts const        &rOpts,
+Recon::Recon(ReconOpts const   &rOpts,
              PreconOpts const  &pOpts,
              GridOpts<3> const &gridOpts,
              SENSE::Opts const &senseOpts,
@@ -106,7 +108,6 @@ Recon::Recon(Opts const        &rOpts,
              Cx5 const         &noncart,
              Re3 const         &f0map)
 {
-  Index const nC = noncart.dimension(0);
   Index const nSamp = noncart.dimension(1);
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
@@ -116,7 +117,7 @@ Recon::Recon(Opts const        &rOpts,
 
   auto f0 = std::make_shared<TOps::f0Segment>(f0map, f0opts.τacq, f0opts.Nτ, nSamp);
   auto b = f0->basis();
-  auto sense = std::make_shared<TOps::SENSE>(smaps, b->nB());
+  auto sense = std::make_shared<TOps::SENSE<3>>(smaps, b->nB());
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(3), b);
   auto slabLoop = TOps::MakeLoop(nufft, nS);
   if (nS > 1) {

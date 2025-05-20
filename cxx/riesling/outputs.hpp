@@ -10,13 +10,12 @@
 #include "rl/types.hpp"
 
 namespace rl {
-template <int ND>
-void WriteOutput(
+template <int ND> void WriteOutput(
   std::string const &cmd, std::string const &fname, CxN<ND> const &img, HD5::DimensionNames<ND> const &dims, Info const &info);
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &writer,
-                   Recon::Opts const              &reconOpts,
+                   ReconOpts const                &reconOpts,
                    GridOpts<3> const              &gridOpts,
                    SENSE::Opts const              &senseOpts,
                    PreconOpts const               &preOpts,

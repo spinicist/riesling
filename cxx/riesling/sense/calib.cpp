@@ -13,7 +13,7 @@ using namespace rl;
 
 void main_sense_calib(args::Subparser &parser)
 {
-  CoreArgs                     coreArgs(parser);
+  CoreArgs<3>                  coreArgs(parser);
   GridArgs<3>                  gridOpts(parser);
   SENSEArgs                    senseArgs(parser);
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
