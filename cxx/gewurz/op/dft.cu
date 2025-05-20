@@ -47,11 +47,11 @@ void ThreeD::forward(DTensor<CuCx<TDev>, 3>::Span imgs, DTensor<CuCx<TDev>, 2>::
     // long int   ind = 0;
     // ks(is, it) = 0;
     for (short ik = 0; ik < nK; ik++) {
-      TDev const rz = FLOAT_TO((ik) / (float)nK);
+      TDev const rz = FLOAT_TO((ik - nK / 2) / (float)nK);
       for (short ij = 0; ij < nJ; ij++) {
-        TDev const ry = FLOAT_TO((ij) / (float)nJ);
+        TDev const ry = FLOAT_TO((ij - nJ / 2) / (float)nJ);
         for (short ii = 0; ii < nI; ii++) {
-          TDev const       rx = FLOAT_TO((ii) / (float)nI);
+          TDev const       rx = FLOAT_TO((ii - nI / 2) / (float)nI);
           auto const       p = 2 * CUDART_PI_F * (kx * rx + ky * ry + kz * rz);
           CuCx<TDev> const ep(cuda::std::cos(-p), cuda::std::sin(-p));
           CuCx<TDev> const m = ep * imgs(ii, ij, ik);
@@ -107,9 +107,9 @@ void ThreeD::adjoint(DTensor<CuCx<TDev>, 2>::Span ks, DTensor<CuCx<TDev>, 3>::Sp
     int const ij = ijk % nIJ / nI;
     int const ii = ijk % nIJ % nI;
 
-    TDev const rx = FLOAT_TO((ii) / (float)nI);
-    TDev const ry = FLOAT_TO((ij) / (float)nJ);
-    TDev const rz = FLOAT_TO((ik) / (float)nK);
+    TDev const rx = FLOAT_TO((ii - nI / 2) / (float)nI);
+    TDev const ry = FLOAT_TO((ij - nJ / 2) / (float)nJ);
+    TDev const rz = FLOAT_TO((ik - nK / 2) / (float)nK);
 
     // printf("i %d %d %d r %4.3f %4.3f %4.3f\n", ii, ij, ik, rx, ry, rz);
     CuCx<TDev> temp = ZERO;
@@ -170,11 +170,11 @@ template <int NP> void ThreeDPacked<NP>::forward(DTensor<CuCx<TDev>, 4>::Span im
       CuCx<TDev>(0.),
     };
     for (int ik = 0; ik < nK; ik++) {
-      TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
+      TDev const rz = FLOAT_TO((ik - nK / 2) / (float)nK);
       for (int ij = 0; ij < nJ; ij++) {
-        TDev const ry = FLOAT_TO((ij - nJ / 2.f) / (float)nJ);
+        TDev const ry = FLOAT_TO((ij - nJ / 2) / (float)nJ);
         for (int ii = 0; ii < nI; ii++) {
-          TDev const       rx = FLOAT_TO((ii - nI / 2.f) / (float)nI);
+          TDev const       rx = FLOAT_TO((ii - nI / 2) / (float)nI);
           auto const       p = pi2 * (kx * rx + ky * ry + kz * rz);
           CuCx<TDev> const ep(cuda::std::cos(-p), cuda::std::sin(-p));
           for (int ic = 0; ic < NP; ic++) {
@@ -224,9 +224,9 @@ template <int NP> void ThreeDPacked<NP>::adjoint(DTensor<CuCx<TDev>, 3>::Span ks
       CuCx<TDev>(0.f),
     };
 
-    TDev const rx = FLOAT_TO((ii - nI / 2.f) / (float)nI);
-    TDev const ry = FLOAT_TO((ij - nJ / 2.f) / (float)nJ);
-    TDev const rz = FLOAT_TO((ik - nK / 2.f) / (float)nK);
+    TDev const rx = FLOAT_TO((ii - nI / 2) / (float)nI);
+    TDev const ry = FLOAT_TO((ij - nJ / 2) / (float)nJ);
+    TDev const rz = FLOAT_TO((ik - nK / 2) / (float)nK);
 
     // long int ind = 0;
     for (int it = 0; it < nT; it++) {

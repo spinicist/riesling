@@ -21,6 +21,7 @@ int main(int const argc, char const *const argv[])
   args::GlobalOptions globals(parser, global_group);
 
   COMMAND(parser, dft, "dft", "Apply DFT");
+  COMMAND(parser, precon, "precon", "Calculate the preconditioner");
   try {
     parser.ParseCLI(argc, argv);
     Log::End();

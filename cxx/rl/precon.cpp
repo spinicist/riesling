@@ -13,21 +13,33 @@ namespace rl {
 
 /*
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
- * (without SENSE maps)
+ *
+ * This is the version without SENSE maps. It still needs the auto-correlation step in the middle, I think to remove the effect
+ * of the cropping during the NUFFT. I also tested simply grid adj * grid, which gave reasonable results but would do a double
+ * convolution with the gridding kernel.
  */
 auto KSpaceSingle(GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ, Basis::CPtr basis) -> Re2
 {
   Log::Print("Precon", "Starting preconditioner calculation");
   Trajectory newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  GridOpts<3> go{.fov = GridOpts<3>::Arrayf::Zero(), .osamp = 2.f};
-  
-  auto       grid = TOps::Grid<3>::Make(go, traj, 1, basis);
-  Cx3        W(grid->oshape);
+  auto       nufft = TOps::NUFFT<3>::Make(gridOpts, newTraj, 1, basis);
+  Cx3        W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
-  Cx5 const g = grid->adjoint(W);
-  Re3 weights = grid->forward(g).abs();
-  float scale = 0.5f; // I think this comes from the kernel
-  weights = (weights == 0.f).select(weights.constant(1.f), weights * scale); // Avoid samples that have gone outside the edge of k-space
+  Cx5 const psf = nufft->adjoint(W);
+  Cx5       ones(AddBack(traj.matrix(), psf.dimension(3), psf.dimension(4)));
+  ones.setConstant(1.f);
+  TOps::Pad<Cx, 5> padX(ones.dimensions(), psf.dimensions());
+  Cx5              xcor(padX.oshape);
+  xcor.device(Threads::TensorDevice()) = padX.forward(ones);
+  FFT::Forward(xcor, Sz3{0, 1, 2});
+  xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
+  FFT::Adjoint(xcor, Sz3{0, 1, 2});
+  xcor.device(Threads::TensorDevice()) = xcor * psf;
+  Re3 weights = nufft->forward(xcor).abs();
+  // I do not understand this scaling factor but it's in Frank's code and works
+  float scale =
+    0.5f * std::pow(Product(FirstN<3>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<3>(ones.dimensions()));
+  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), weights * scale);
   weights.device(Threads::TensorDevice()) = (1.f + λ) / (weights + λ);
 
   float const norm = Norm<true>(weights);
