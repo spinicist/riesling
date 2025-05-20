@@ -1,4 +1,4 @@
-function [output] = riesling(cmd, K, Traj, varargin)
+function [output] = riesling(cmd, data, traj, matrix, info, varargin)
 % RIESLING Call RIESLING command from Matlab.
 %   [varargout] = RIESLING(cmd, varargin) to run given riesling command (cmd) using the
 %   data arrays/matrices passed as varargin.
@@ -21,16 +21,27 @@ function [output] = riesling(cmd, K, Traj, varargin)
 % Uecker and Soumick Chatterjee. 
 % Authors:
 % 2021 Patrick Fuchs (p.fuchs@ucl.ac.uk)
-%
+% 2025 David Leitao (david.leitao@kcl.ac.uk)
 
-if nargin < 4
-    Info = riesling_info;
-else
-    Info = varargin{1};
+% Default options:
+keepFileOut = false;
+f0Map = [];
+t2Map = [];
+for n=1:numel(varargin)
+    if strcmpi(varargin{n},'fileout')
+        keepFileOut = true;
+        fileNameOut = varargin{n+1};
+    end
+    if strcmpi(varargin{n},'f0map')
+        f0Map = varargin{n+1};
+    end
+    if strcmpi(varargin{n},'t2map')
+        t2Map = varargin{n+1};
+    end
 end
 
 fileNameIn = [tempname,'.h5'];
-[~,name] = fileparts(fileNameIn);
+% [~,name] = fileparts(fileNameIn);
 
 opts = strsplit(cmd);
 cmd  = opts{1};
@@ -41,25 +52,32 @@ opts = sprintf('%s ',opts{2:end});
 % the artificially generated non-uniform fourier space dataset).
 if strcmpi(cmd,'nufft')
     if any(regexpi(opts,'--fwd'))
-        riesling_write(fileNameIn, K, Traj, Info, 'image');
+        riesling_write(fileNameIn, data, traj, info, 'image');
     else
-        riesling_write(fileNameIn, K, Traj, Info, 'nufft-forward');
+        riesling_write(fileNameIn, data, traj, info, 'nufft-forward');
     end
-else
-    riesling_write(fileNameIn, K, Traj, Info, 'noncartesian');
+else    
+    riesling_write(fileNameIn, data, traj, matrix, info, [], f0Map, t2Map);
 end
 
 
 try
-    [ERR] = system(['riesling ',cmd,' ',fileNameIn,' ',opts]);
+    if ~exist('fileNameOut','var')
+        fileNameOut = [tempname,'.h5'];
+    end
+
+    [ERR] = system(['riesling ',cmd,' ',opts,' ',fileNameIn,' ',fileNameOut]);
     
     if ERR ~= 0
         delete(fileNameIn);
         error('Failure during system call, please refer to log for more info.')
     end
     
-    fileNameOut = deblank(ls([name,'*.h5']));
-    output = riesling_read(fileNameOut);
+    if keepFileOut
+        output = [];
+    else
+        output = riesling_read(fileNameOut);
+    end
     
 catch 
     delete(fileNameIn);
@@ -72,7 +90,9 @@ catch
 end
 
 delete(fileNameIn);
-delete(fileNameOut);
+if ~keepFileOut
+    delete(fileNameOut);
+end
 
 
 end
