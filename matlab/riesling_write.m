@@ -1,4 +1,4 @@
-function [] = riesling_write(fname, data, traj, matrix, info, dim_labels)
+function [] = riesling_write(fname, data, traj, matrix, info, dim_labels, f0map, t2map)
 % WRITE_RIESLING writes radial k-space data to riesling .h5 format
 %
 % Input:
@@ -12,7 +12,7 @@ function [] = riesling_write(fname, data, traj, matrix, info, dim_labels)
 % Inspired by: https://stackoverflow.com/questions/46203309/write-complex-numbers-in-an-hdf5-dataset-with-matlab
 % Emil Ljungberg, King's College London, 2021
 % Patrick Fuchs, University College London, 2022
-% David Leitao, King's College London, 2024
+% David Leitao, King's College London, 2025
 
 if isfile(fname)
     error("%s already exists. Please delete or choose a different output name\n", fname);
@@ -21,45 +21,61 @@ end
 fprintf('Opening %s\n',fname);
 file = H5F.create(fname, 'H5F_ACC_TRUNC', 'H5P_DEFAULT', 'H5P_DEFAULT');
 
-% Separate complex data
-wdata = struct;
-wdata.r = real(data);
-wdata.i = imag(data);
-floatType = H5T.copy('H5T_NATIVE_FLOAT');
-sz = [H5T.get_size(floatType), H5T.get_size(floatType)];
-% Compute the offsets to each field. The first offset is always zero.
-offset = [0, sz(1)];
-
-% Create the compound datatype for the file and for the memory (same).
-filetype = H5T.create ('H5T_COMPOUND', sum(sz));
-H5T.insert(filetype, 'r', offset(1), floatType);
-H5T.insert(filetype, 'i', offset(2), floatType);
-
-Ndims = 5;
-if ndims(data) == 5
-    dims = size(data);
-else
-    dims = ones(1, 5);
-    dims(1:ndims(data)) = size(data);
-end
-dims = fliplr(dims);
-
-space = H5S.create_simple(Ndims, dims, []);
-ncart = H5D.create(file, '/data', filetype, space, 'H5P_DEFAULT');
-H5D.write(ncart, filetype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', wdata);
-
-if nargin == 6
-    dim_labels = fliplr(dim_labels);
-    for n=1:numel(dim_labels)
-        H5DS.set_label(ncart,n-1,dim_labels{n});
+if ~isempty(data)
+    % Separate complex data
+    wdata = struct;
+    wdata.r = real(data);
+    wdata.i = imag(data);
+    floatType = H5T.copy('H5T_NATIVE_FLOAT');
+    sz = [H5T.get_size(floatType), H5T.get_size(floatType)];
+    % Compute the offsets to each field. The first offset is always zero.
+    offset = [0, sz(1)];
+    
+    % Create the compound datatype for the file and for the memory (same).
+    filetype = H5T.create ('H5T_COMPOUND', sum(sz));
+    H5T.insert(filetype, 'r', offset(1), floatType);
+    H5T.insert(filetype, 'i', offset(2), floatType);
+    
+    Ndims = 5;
+    if ndims(data) == 5
+        dims = size(data);
+    else
+        dims = ones(1, 5);
+        dims(1:ndims(data)) = size(data);
     end
+    dims = fliplr(dims);
+    
+    space = H5S.create_simple(Ndims, dims, []);
+    ncart = H5D.create(file, '/data', filetype, space, 'H5P_DEFAULT');
+    H5D.write(ncart, filetype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', wdata);
+    
+    if nargin == 6
+        dim_labels = fliplr(dim_labels);
+        for n=1:numel(dim_labels)
+            H5DS.set_label(ncart,n-1,dim_labels{n});
+        end
+    end
+    
+    % Close it all up
+    H5D.close(ncart);
+    H5S.close(space);
+    H5T.close(filetype);
+    H5F.close(file);
 end
 
-% Close it all up
-H5D.close(ncart);
-H5S.close(space);
-H5T.close(filetype);
-H5F.close(file);
+if ~isempty(f0map)
+    file_id = H5F.open(fname, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
+    h5create(fname, '/f0map', size(f0map));
+    h5write(fname, '/f0map', f0map);
+    H5F.close(file_id);
+end
+
+if ~isempty(t2map)
+    file_id = H5F.open(fname, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
+    h5create(fname, '/t2map', size(t2map));
+    h5write(fname, '/t2map', t2map);
+    H5F.close(file_id);
+end
 
 % Add matrix attribute to trajectory dataset (if supplied within info)
 if nargin > 3 && ~isempty(traj)
