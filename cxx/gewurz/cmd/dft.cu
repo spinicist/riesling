@@ -3,46 +3,15 @@
 #include "rl/log/log.hpp"
 
 #include "../algo/lsmr.cuh"
+#include "../algo/precon.cuh"
 #include "../args.hpp"
 #include "../op/dft.cuh"
 #include "../op/recon.cuh"
 #include "../sense.hpp"
 #include "info.hpp"
-
-#include <thrust/extrema.h>
+#include "trajectory.cuh"
 
 using namespace rl;
-
-auto ReadTrajectory(HD5::Reader &reader) -> DTensor<TDev, 3>
-{
-  Log::Print("gewurz", "Read trajectory");
-  auto const shape = reader.dimensions("trajectory");
-  auto const nS = shape[1];
-  auto const nT = shape[2];
-
-  HTensor<float, 3> hT(3L, nS, nT);
-  reader.readTo(hT.vec.data(), HD5::Keys::Trajectory);
-  HTensor<TDev, 3> hhT(3L, nS, nT);
-  thrust::transform(hT.vec.begin(), hT.vec.end(), hhT.vec.begin(), ConvertTo);
-  DTensor<TDev, 3> T(3L, nS, nT);
-  thrust::copy(hhT.vec.begin(), hhT.vec.end(), T.vec.begin());
-  return T;
-}
-
-void WriteTrajectory(DTensor<TDev, 3> const &T, HD5::Shape<3> const mat, HD5::Writer &writer)
-{
-  Log::Print("gewurz", "Write trajectory");
-  auto const nS = T.span.extent(1);
-  auto const nT = T.span.extent(2);
-
-  HTensor<TDev, 3> hhT(3L, nS, nT);
-  thrust::copy(T.vec.begin(), T.vec.end(), hhT.vec.begin());
-  HTensor<float, 3> hT(3L, nS, nT);
-  thrust::transform(hhT.vec.begin(), hhT.vec.end(), hT.vec.begin(), ConvertFrom);
-
-  writer.writeTensor(HD5::Keys::Trajectory, HD5::Shape<3>(3L, nS, nT), hT.vec.data(), HD5::Dims::Trajectory);
-  writer.writeAttribute(HD5::Keys::Trajectory, "matrix", mat);
-}
 
 void DoTest(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat)
 {
@@ -80,36 +49,6 @@ void DoTest(DTensor<TDev, 3> const &T, rl::HD5::Shape<3> const mat)
   thrust::copy(Mks.vec.begin(), Mks.vec.end(), hks.vec.begin());
   thrust::transform(hks.vec.begin(), hks.vec.end(), hhks.vec.begin(), ToStdCx);
   debug.writeTensor("Mks2", HD5::Shape<2>{nS, nT}, hhks.vec.data(), {"s", "t"});
-}
-
-auto Preconditioner(DTensor<TDev, 3> const &T, int const nI, int const nJ, int const nK) -> DTensor<TDev, 2>
-{
-  Log::Print("gewurz", "Preconditioner");
-  auto const       nS = T.span.extent(1);
-  auto const       nT = T.span.extent(2);
-  DTensor<TDev, 2> M(nS, nT);
-  thrust::fill(M.vec.begin(), M.vec.end(), TDev(1));
-
-  DTensor<CuCx<TDev>, 2> Mks(nS, nT);
-  DTensor<CuCx<TDev>, 3> Mimg(nI, nJ, nK);
-  thrust::fill(Mks.vec.begin(), Mks.vec.end(), CuCx<TDev>(1));
-
-  HD5::Writer debug("debug.h5");
-
-  gw::DFT::ThreeD dft{T.span};
-  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  dft.adjoint(Mks.span, Mimg.span);
-  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  dft.forward(Mimg.span, Mks.span);
-  Log::Print("Precon", "|img| {} |ks| {}", gw::CuNorm(Mimg.vec), gw::CuNorm(Mks.vec));
-  float const λ = 0.0f;
-  thrust::transform(thrust::cuda::par, Mks.vec.begin(), Mks.vec.end(), M.vec.begin(),
-                    [λ] __device__(CuCx<TDev> x) { return TDev(1 + λ) / (cuda::std::abs(x) + λ); });
-  auto const mm = thrust::minmax_element(thrust::cuda::par, M.vec.begin(), M.vec.end());
-  TDev const min = *(mm.first);
-  TDev const max = *(mm.second);
-  Log::Print("Precon", "|M| {} Min {} Max {}", gw::CuNorm(M.vec), min, max);
-  return M;
 }
 
 auto ReadImage(rl::HD5::Reader &reader) -> DTensor<CuCx<TDev>, 4>
@@ -230,13 +169,14 @@ template <int NC> void DoInverseDFT(DTensor<CuCx<TDev>, 3> const    &ks,
   auto const nJ = hImg.span.extent(1);
   auto const nK = hImg.span.extent(2);
 
-  DTensor<CuCx<TDev>, 4> imgs(nI, nJ, nK, nC);
-  gw::DFT::ThreeDPacked<NC>          A{T.span};
-  
+  DTensor<CuCx<TDev>, 4>    imgs(nI, nJ, nK, nC);
+  gw::DFT::ThreeDPacked<NC> A{T.span};
+
   if (precon) {
-    auto const                         W = Preconditioner(T, nI, nJ, nK);
+    gw::DFT::ThreeD                    B{T.span};
+    auto const                         W = gw::Preconditioner(T, nI, nJ, nK);
     gw::MulPacked<CuCx<TDev>, TDev, 3> Minv{W.span};
-    gw::LSMR lsmr{&A, &Minv};
+    gw::LSMR                           lsmr{&A, &Minv};
     lsmr.run(ks, imgs);
   } else {
     gw::LSMR lsmr{&A};
@@ -261,10 +201,10 @@ void main_dft(args::Subparser &parser)
 
   HD5::Reader reader(iname.Get());
   auto const  mat = reader.readAttributeShape<3>(HD5::Keys::Trajectory, "matrix");
-  auto const  T = ReadTrajectory(reader);
+  auto const  T = gw::ReadTrajectory(reader);
   auto const  info = reader.readStruct<gw::Info>(HD5::Keys::Info);
   HD5::Writer writer(oname.Get());
-  WriteTrajectory(T, mat, writer);
+  gw::WriteTrajectory(T, mat, writer);
   writer.writeStruct(HD5::Keys::Info, info);
 
   if (fwd) {
@@ -306,7 +246,8 @@ void main_dft(args::Subparser &parser)
       default: throw(Log::Failure("DFT", "Unsupported number of channels {}", nC));
       }
     }
-    writer.writeTensor("data", HD5::Shape<4>{mat[0], mat[1], mat[2], nC}, img.vec.data(), {"i", "j", "k", "channel"});
+    writer.writeTensor("data", HD5::Shape<6>{mat[0], mat[1], mat[2], nC, 1, 1}, img.vec.data(),
+                       {"i", "j", "k", "channel", "b", "t"});
   }
 
   Log::Print("DFT", "Finished");

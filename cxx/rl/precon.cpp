@@ -13,7 +13,10 @@ namespace rl {
 
 /*
  * Frank Ong's Preconditioner from https://ieeexplore.ieee.org/document/8906069/
- * (without SENSE maps)
+ *
+ * This is the version without SENSE maps. It still needs the auto-correlation step in the middle, I think to remove the effect
+ * of the cropping during the NUFFT. I also tested simply grid adj * grid, which gave reasonable results but would do a double
+ * convolution with the gridding kernel.
  */
 template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis)
   -> Re2

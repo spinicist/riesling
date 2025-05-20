@@ -22,12 +22,15 @@ if(BUILD_GEWURZ)
         args.cpp
         info.cpp
         sense.cpp
+        trajectory.cu
         # test.cu
 
         cmd/dft.cu
+        cmd/precon.cu
 
         algo/bidiag.cu
         algo/dot.cu
+        algo/precon.cu
         
         op/dft.cu
         # op/dft2.cu
@@ -38,9 +41,12 @@ if(BUILD_GEWURZ)
         test.cu
         
         cmd/dft.cu
+        cmd/precon.cu
+        trajectory.cu
         
         algo/bidiag.cu
         algo/dot.cu
+        algo/precon.cu
 
         op/dft.cu
         op/dft2.cu
