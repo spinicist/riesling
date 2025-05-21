@@ -32,7 +32,10 @@ void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const
   auto const &f = [&](float const &r) { return Tukey(r, s, e, h); };
   Re2 const   r = coords.square().sum(Sz1{0}).sqrt();
   x.device(Threads::TensorDevice()) =
-    r.isfinite().select(x * r.unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice}), x.constant(0.f));
+    r.isfinite()
+      .reshape(Sz4{1, nS, nT, 1})
+      .broadcast(Sz4{nC, 1, 1, nSlice})
+      .select(x * r.unaryExpr(f).reshape(Sz4{1, nS, nT, 1}).broadcast(Sz4{nC, 1, 1, nSlice}), x.constant(0.f));
 }
 
 void NoncartesianTukey(float const &s, float const &e, float const &h, Re3 const &coords, Cx5 &x)
