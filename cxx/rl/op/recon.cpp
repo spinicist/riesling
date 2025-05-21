@@ -38,23 +38,6 @@ auto LowmemSENSE(
   }
 }
 
-auto SENSERecon(
-  GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &smaps)
-  -> TOps::TOp<Cx, 5, 5>::Ptr
-{
-  auto sense = std::make_shared<TOps::SENSE<3>>(smaps, b ? b->nB() : 1);
-  auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(3), b);
-  auto slabLoop = TOps::MakeLoop(nufft, nSlab);
-  if (nSlab > 1) {
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
-    return TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
-  } else {
-    auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
-    auto recon = TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
-    return recon;
-  }
-}
-
 auto Decant(
   GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
   -> TOps::TOp<Cx, 5, 5>::Ptr
@@ -79,22 +62,30 @@ Recon::Recon(ReconOpts const   &rOpts,
              Cx5 const         &noncart)
 {
   Index const nC = noncart.dimension(0);
-  Index const nS = noncart.dimension(3);
-  Index const nT = noncart.dimension(4);
+  Index const nSlab = noncart.dimension(3);
+  Index const nTime = noncart.dimension(4);
   if (nC == 1) {
-    A = Single(gridOpts, traj, nS, nT, b);
+    A = Single(gridOpts, traj, nSlab, nTime, b);
   } else {
     auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
-      A = Decant(gridOpts, traj, nS, nT, b, skern);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nC, nS, nT);
+      A = Decant(gridOpts, traj, nSlab, nTime, b, skern);
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nC, nSlab, nTime);
     } else if (rOpts.lowmem) {
-      A = LowmemSENSE(gridOpts, traj, nS, nT, b, skern);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nC, nS, nT);
+      A = LowmemSENSE(gridOpts, traj, nSlab, nTime, b, skern);
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nC, nSlab, nTime);
     } else {
-      Cx5 const smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, smaps, nS, nT); // In case the SENSE op does move
-      A = SENSERecon(gridOpts, traj, nS, nT, b, smaps);
+      auto sense = TOps::MakeSENSE<3>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp, b ? b->nB() : 1);
+      auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, skern.dimension(3), b);
+      auto slabLoop = TOps::MakeLoop(nufft, nSlab);
+      if (nSlab > 1) {
+        auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
+        A = TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+      } else {
+        auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
+        A = TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+      }
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, sense->maps(), nSlab, nTime); // In case the SENSE op does move
     }
   }
 }
@@ -113,11 +104,11 @@ Recon::Recon(ReconOpts const   &rOpts,
   Index const nT = noncart.dimension(4);
   auto const  skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
   Cx5 const   smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp);
-  M = MakeKSpacePrecon(pOpts, gridOpts, traj, smaps, nS, nT); // In case the SENSE op does move
+  M = MakeKSpacePrecon(pOpts, gridOpts, traj, smaps, nS, nT);
 
   auto f0 = std::make_shared<TOps::f0Segment>(f0map, f0opts.τacq, f0opts.Nτ, nSamp);
   auto b = f0->basis();
-  auto sense = std::make_shared<TOps::SENSE<3>>(smaps, b->nB());
+  auto sense = TOps::MakeSENSE<3>(smaps, b->nB());
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(3), b);
   auto slabLoop = TOps::MakeLoop(nufft, nS);
   if (nS > 1) {

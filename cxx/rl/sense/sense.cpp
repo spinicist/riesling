@@ -263,18 +263,21 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   return kernels.shuffle(Sz5{0, 1, 2, 4, 3});
 }
 
-auto KernelsToMaps(Cx5 const &kernels, Sz3 const mat, float const os) -> Cx5
+template <int ND> auto KernelsToMaps(CxN<ND + 2> const &kernels, Sz<ND> const mat, float const os) -> CxN<ND + 2>
 {
   auto const  kshape = kernels.dimensions();
-  auto const  fshape = AddBack(MulToEven(mat, os), kshape[3], kshape[4]);
-  auto const  cshape = AddBack(mat, kshape[3], kshape[4]);
-  float const scale = std::sqrt(Product(FirstN<3>(fshape)) / (float)Product(FirstN<3>(kshape)));
+  auto const  fshape = AddBack(MulToEven(mat, os), kshape[ND], kshape[ND + 1]);
+  auto const  cshape = AddBack(mat, kshape[ND], kshape[ND + 1]);
+  float const scale = std::sqrt(Product(FirstN<ND>(fshape)) / (float)Product(FirstN<ND>(kshape)));
   Log::Print("SENSE", "Kernels {} Full maps {} Cropped maps {} Scale {}", kshape, fshape, cshape, scale);
-  TOps::Pad<Cx, 5> P(kshape, fshape);
-  TOps::FFT<5, 3>  F(fshape, false);
-  TOps::Pad<Cx, 5> C(cshape, fshape);
+  TOps::Pad<Cx, ND + 2> P(kshape, fshape);
+  TOps::FFT<ND + 2, ND> F(fshape, false);
+  TOps::Pad<Cx, ND + 2> C(cshape, fshape);
   return C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
 }
+
+template auto KernelsToMaps(Cx4 const &, Sz2 const, float const) -> Cx4;
+template auto KernelsToMaps(Cx5 const &, Sz3 const, float const) -> Cx5;
 
 auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
 {

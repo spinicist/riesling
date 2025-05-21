@@ -29,21 +29,21 @@ void main_op_sense(args::Subparser &parser)
   traj.write(writer);
 
   if (fwd) {
-    auto const     images = ireader.readTensor<Cx5>();
-    auto const     nB = images.dimension(3);
-    auto const     nT = images.dimension(4);
-    TOps::SENSE<3> sense(maps, nB);
-    Cx6            channels(AddBack(shape, nC, nB, nT));
+    auto const       images = ireader.readTensor<Cx5>();
+    auto const       nB = images.dimension(3);
+    auto const       nT = images.dimension(4);
+    TOps::SENSEOp<3> sense(maps, nB);
+    Cx6              channels(AddBack(shape, nC, nB, nT));
     for (auto it = 0; it < nT; it++) {
       sense.forward(CChipMap(images, it), ChipMap(channels, it));
     }
     writer.writeTensor(HD5::Keys::Data, channels.dimensions(), channels.data(), HD5::Dims::Channels);
   } else {
-    auto const     channels = ireader.readTensor<Cx6>();
-    auto const     nB = channels.dimension(4);
-    auto const     nT = channels.dimension(5);
-    TOps::SENSE<3> sense(maps, nB);
-    Cx5            images(AddBack(shape, nB, nT));
+    auto const       channels = ireader.readTensor<Cx6>();
+    auto const       nB = channels.dimension(4);
+    auto const       nT = channels.dimension(5);
+    TOps::SENSEOp<3> sense(maps, nB);
+    Cx5              images(AddBack(shape, nB, nT));
     for (auto it = 0; it < nT; it++) {
       sense.adjoint(CChipMap(channels, it), ChipMap(images, it));
     }
