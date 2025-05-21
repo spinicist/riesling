@@ -3,18 +3,26 @@
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log.hpp"
+#include "rl/op/loop.hpp"
+#include "rl/op/multiplex.hpp"
 #include "rl/op/nufft.hpp"
-#include "rl/op/loopify.hpp"
 #include "rl/precon.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/types.hpp"
 
 using namespace rl;
 
-void main_nufft(args::Subparser &parser)
+auto Loopify(typename TOps::NUFFT<2>::Ptr op, Index const nSlice, Index const nTime) -> TOps::TOp<Cx, 6, 5>::Ptr
 {
-  CoreArgs<3> coreArgs(parser);
-  GridArgs<3> gridArgs(parser);
+  TOps::TOp<Cx, 5, 4>::Ptr sliceLoop = TOps::MakeLoop<2, 3>(op, nSlice);
+  TOps::TOp<Cx, 6, 5>::Ptr timeLoop = TOps::MakeLoop<5, 4>(sliceLoop, nTime);
+  return timeLoop;
+}
+
+void main_nufft2(args::Subparser &parser)
+{
+  CoreArgs<2> coreArgs(parser);
+  GridArgs<2> gridArgs(parser);
   PreconArgs  preArgs(parser);
   LSMRArgs    lsqOpts(parser);
 
@@ -25,8 +33,8 @@ void main_nufft(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
 
-  Trajectory traj(reader, reader.readInfo().voxel_size, coreArgs.matrix.Get());
-  auto const basis = LoadBasis(coreArgs.basisFile.Get());
+  TrajectoryN<2> traj(reader, reader.readInfo().voxel_size.head<2>(), coreArgs.matrix.Get());
+  auto const     basis = LoadBasis(coreArgs.basisFile.Get());
 
   auto const shape = reader.dimensions();
 
@@ -36,11 +44,11 @@ void main_nufft(args::Subparser &parser)
 
   if (fwd) {
     auto const cart = reader.readTensor<Cx6>();
+    auto const nS = shape[2];
     auto const nC = shape[3];
-    auto const nS = 1;
     auto const nT = shape[5];
-    auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
-    auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, nT);
+    auto const nufft = TOps::NUFFT<2>::Make(gridArgs.Get(), traj, nC, basis.get());
+    auto const A = Loopify(nufft, nS, nT);
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
   } else {
@@ -48,8 +56,8 @@ void main_nufft(args::Subparser &parser)
     auto const nC = shape[0];
     auto const nS = shape[3];
     auto const nT = shape[4];
-    auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
-    auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, nT);
+    auto const nufft = TOps::NUFFT<2>::Make(gridArgs.Get(), traj, nC, basis.get());
+    auto const A = Loopify(nufft, nS, nT);
     if (adj) {
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);

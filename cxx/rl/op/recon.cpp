@@ -61,19 +61,19 @@ Recon::Recon(ReconOpts const      &rOpts,
              Basis::CPtr           b,
              Cx5 const            &noncart)
 {
-  Index const nC = noncart.dimension(0);
+  Index const nChan = noncart.dimension(0);
   Index const nSlab = noncart.dimension(3);
   Index const nTime = noncart.dimension(4);
-  if (nC == 1) {
+  if (nChan == 1) {
     A = Single(gridOpts, traj, nSlab, nTime, b);
   } else {
     auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
       A = Decant(gridOpts, traj, nSlab, nTime, b, skern);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nC, nSlab, nTime);
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, nSlab, nTime);
     } else if (rOpts.lowmem) {
       A = LowmemSENSE(gridOpts, traj, nSlab, nTime, b, skern);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nC, nSlab, nTime);
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, nSlab, nTime);
     } else {
       auto sense = TOps::MakeSENSE<3>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp, b ? b->nB() : 1);
       auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, skern.dimension(3), b);
@@ -116,8 +116,7 @@ Recon::Recon(ReconOpts const      &rOpts,
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(3), b);
   auto slabLoop = TOps::MakeLoop<3, 3>(nufft, nS);
   if (nS > 1) {
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nS);
-    A = TOps::MakeLoop<4, 4>(TOps::MakeCompose(TOps::MakeCompose(f0, sense), TOps::MakeCompose(slabToVol, slabLoop)), nT);
+    throw(Log::Failure("Recon", "Not supported right now"));
   } else {
     auto reshape = TOps::MakeReshapeOutput(TOps::MakeCompose(f0, sense), AddBack(sense->oshape, 1));
     A = TOps::MakeLoop<4, 4>(TOps::MakeCompose(reshape, slabLoop), nT);

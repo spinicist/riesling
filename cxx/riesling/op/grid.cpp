@@ -6,7 +6,6 @@
 #include "rl/op/compose.hpp"
 #include "rl/op/grid.hpp"
 #include "rl/op/loop.hpp"
-#include "rl/op/multiplex.hpp"
 #include "rl/op/reshape.hpp"
 #include "rl/precon.hpp"
 #include "rl/types.hpp"
@@ -23,11 +22,7 @@ auto MakeGrid(
     auto timeLoop = TOps::MakeLoop<4, 4>(rout, nT);
     return timeLoop;
   } else {
-    auto loop = TOps::MakeLoop<3, 3>(grid, nS);
-    auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nS);
-    auto compose1 = TOps::MakeCompose(slabToVol, loop);
-    auto timeLoop = TOps::MakeLoop<4, 4>(compose1, nT);
-    return timeLoop;
+    throw(Log::Failure("Recon", "Not supported right now"));
   }
 }
 
