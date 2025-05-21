@@ -8,8 +8,7 @@
 
 namespace rl {
 
-template <int ND>
-void WriteOutput(
+template <int ND> void WriteOutput(
   std::string const &cmd, std::string const &fname, CxN<ND> const &img, HD5::DimensionNames<ND> const &dims, Info const &info)
 {
   HD5::Writer writer(fname);
@@ -26,9 +25,9 @@ WriteOutput<6>(std::string const &, std::string const &, Cx6 const &, HD5::Dimen
 
 void WriteResidual(std::string const              &cmd,
                    std::string const              &fname,
-                   ReconOpts const              &reconOpts,
+                   ReconOpts const                &reconOpts,
                    GridOpts<3> const              &gridOpts,
-                   SENSE::Opts const              &senseOpts,
+                   SENSE::Opts<3> const           &senseOpts,
                    PreconOpts const               &preOpts,
                    Trajectory const               &traj,
                    Cx5CMap const                  &x,

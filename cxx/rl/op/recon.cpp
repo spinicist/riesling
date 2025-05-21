@@ -21,7 +21,7 @@ auto Single(GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSl
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, 1, b);
   auto ri = TOps::MakeReshapeInput(nufft, LastN<4>(nufft->ishape));
   auto ro = TOps::MakeReshapeOutput(ri, AddBack(ri->oshape, 1));
-  auto timeLoop = TOps::MakeLoop(ro, nTime);
+  auto timeLoop = TOps::MakeLoop<4, 4>(ro, nTime);
   return timeLoop;
 }
 
@@ -34,7 +34,7 @@ auto LowmemSENSE(
     throw Log::Failure("Recon", "Lowmem and multislab not supported yet");
   } else {
     auto rn = TOps::MakeReshapeOutput(nufft, AddBack(nufft->oshape, 1));
-    return TOps::MakeLoop(rn, nTime);
+    return TOps::MakeLoop<4, 4>(rn, nTime);
   }
 }
 
@@ -47,19 +47,19 @@ auto Decant(
     throw Log::Failure("Decant", "Not yet");
   } else {
     auto rn = TOps::MakeReshapeOutput(nufft, AddBack(nufft->oshape, 1));
-    return TOps::MakeLoop(rn, nTime);
+    return TOps::MakeLoop<4, 4>(rn, nTime);
   }
   return nullptr;
 }
 } // namespace
 
-Recon::Recon(ReconOpts const   &rOpts,
-             PreconOpts const  &pOpts,
-             GridOpts<3> const &gridOpts,
-             SENSE::Opts const &senseOpts,
-             Trajectory const  &traj,
-             Basis::CPtr        b,
-             Cx5 const         &noncart)
+Recon::Recon(ReconOpts const      &rOpts,
+             PreconOpts const     &pOpts,
+             GridOpts<3> const    &gridOpts,
+             SENSE::Opts<3> const &senseOpts,
+             Trajectory const     &traj,
+             Basis::CPtr           b,
+             Cx5 const            &noncart)
 {
   Index const nC = noncart.dimension(0);
   Index const nSlab = noncart.dimension(3);
@@ -77,27 +77,31 @@ Recon::Recon(ReconOpts const   &rOpts,
     } else {
       auto sense = TOps::MakeSENSE<3>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp, b ? b->nB() : 1);
       auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, skern.dimension(3), b);
-      auto slabLoop = TOps::MakeLoop(nufft, nSlab);
       if (nSlab > 1) {
-        auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nSlab);
-        A = TOps::MakeLoop(TOps::MakeCompose(sense, TOps::MakeCompose(slabToVol, slabLoop)), nTime);
+        throw(Log::Failure("Recon", "Not supported right now"));
       } else {
-        auto reshape = TOps::MakeReshapeOutput(sense, AddBack(sense->oshape, 1));
-        A = TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nTime);
+        auto NS = TOps::MakeCompose(sense, nufft);
+        if (nTime > 1) {
+          auto NS2 = TOps::MakeReshapeOutput(NS, AddBack(NS->oshape, 1));
+          A = TOps::MakeLoop<4, 4>(NS2, nTime);
+        } else {
+          auto NS2 = TOps::MakeReshapeOutput(NS, AddBack(NS->oshape, 1, 1));
+          A = TOps::MakeReshapeInput(NS2, AddBack(NS2->ishape, 1));
+        }
       }
       M = MakeKSpacePrecon(pOpts, gridOpts, traj, sense->maps(), nSlab, nTime); // In case the SENSE op does move
     }
   }
 }
 
-Recon::Recon(ReconOpts const   &rOpts,
-             PreconOpts const  &pOpts,
-             GridOpts<3> const &gridOpts,
-             SENSE::Opts const &senseOpts,
-             Trajectory const  &traj,
-             f0Opts const      &f0opts,
-             Cx5 const         &noncart,
-             Re3 const         &f0map)
+Recon::Recon(ReconOpts const      &rOpts,
+             PreconOpts const     &pOpts,
+             GridOpts<3> const    &gridOpts,
+             SENSE::Opts<3> const &senseOpts,
+             Trajectory const     &traj,
+             f0Opts const         &f0opts,
+             Cx5 const            &noncart,
+             Re3 const            &f0map)
 {
   Index const nSamp = noncart.dimension(1);
   Index const nS = noncart.dimension(3);
@@ -110,13 +114,13 @@ Recon::Recon(ReconOpts const   &rOpts,
   auto b = f0->basis();
   auto sense = TOps::MakeSENSE<3>(smaps, b->nB());
   auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, smaps.dimension(3), b);
-  auto slabLoop = TOps::MakeLoop(nufft, nS);
+  auto slabLoop = TOps::MakeLoop<3, 3>(nufft, nS);
   if (nS > 1) {
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(sense->oshape, nS);
-    A = TOps::MakeLoop(TOps::MakeCompose(TOps::MakeCompose(f0, sense), TOps::MakeCompose(slabToVol, slabLoop)), nT);
+    A = TOps::MakeLoop<4, 4>(TOps::MakeCompose(TOps::MakeCompose(f0, sense), TOps::MakeCompose(slabToVol, slabLoop)), nT);
   } else {
     auto reshape = TOps::MakeReshapeOutput(TOps::MakeCompose(f0, sense), AddBack(sense->oshape, 1));
-    A = TOps::MakeLoop(TOps::MakeCompose(reshape, slabLoop), nT);
+    A = TOps::MakeLoop<4, 4>(TOps::MakeCompose(reshape, slabLoop), nT);
   }
 }
 

@@ -146,6 +146,22 @@ template <typename T, int N1, int N2> decltype(auto) Concatenate(Eigen::DSizes<T
   return result;
 }
 
+template <typename T, int N1, int N2, int N3> decltype(auto) Concatenate(Eigen::DSizes<T, N1> const &a, Eigen::DSizes<T, N2> const &b, Eigen::DSizes<T, N3> const &c)
+{
+  T constexpr Total = N1 + N2 + N3;
+  Eigen::DSizes<T, Total> result;
+  for (Index ii = 0; ii < N1; ii++) {
+    result[ii] = a[ii];
+  }
+  for (Index ii = 0; ii < N2; ii++) {
+    result[ii + N1] = b[ii];
+  }
+  for (Index ii = 0; ii < N3; ii++) {
+    result[ii + N1 + N2] = c[ii];
+  }
+  return result;
+}
+
 template <size_t N, typename T> auto FirstN(T const &sz) -> Eigen::DSizes<typename T::value_type, N>
 {
   assert(N <= sz.size());

@@ -20,13 +20,13 @@ auto MakeGrid(
   auto grid = TOps::Grid<3>::Make(gridOpts, traj, nC, basis);
   if (nS == 1) {
     auto rout = TOps::MakeReshapeOutput(grid, AddBack(grid->oshape, 1));
-    auto timeLoop = TOps::MakeLoop(rout, nT);
+    auto timeLoop = TOps::MakeLoop<4, 4>(rout, nT);
     return timeLoop;
   } else {
-    auto loop = TOps::MakeLoop(grid, nS);
+    auto loop = TOps::MakeLoop<3, 3>(grid, nS);
     auto slabToVol = std::make_shared<TOps::Multiplex<Cx, 5>>(grid->ishape, nS);
     auto compose1 = TOps::MakeCompose(slabToVol, loop);
-    auto timeLoop = TOps::MakeLoop(compose1, nT);
+    auto timeLoop = TOps::MakeLoop<4, 4>(compose1, nT);
     return timeLoop;
   }
 }

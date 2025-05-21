@@ -20,7 +20,8 @@
 namespace rl {
 namespace SENSE {
 
-auto LoresChannels(Opts const &opts, GridOpts<3> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+  template<int ND>
+auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   auto const nS = noncart.dimension(3);
@@ -30,14 +31,14 @@ auto LoresChannels(Opts const &opts, GridOpts<3> const &gridOpts, Trajectory tra
   Cx4 const ncVol = noncart.chip<4>(opts.tp);
   traj.downsample(opts.res, true, false);
   auto       lores = traj.trim(ncVol);
-  auto const nufft = TOps::NUFFT<3>::Make(gridOpts, traj, nC, nullptr);
-  auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, 1);
+  auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
+  auto const A = Loopify<ND, TOps::NUFFT<ND>>(nufft, nS, 1);
   auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, nS, 1);
   LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape).chip<5>(0);
+  Cx5 const channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape).template chip<5>(0);
 
   return channels;
 }
@@ -293,13 +294,14 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
-auto Choose(Opts const &opts, GridOpts<3> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+template<int ND>
+auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }
   if (opts.type == "auto") {
     Log::Print("SENSE", "Self-Calibration");
-    Cx5 const c = LoresChannels(opts, gopts, traj, noncart);
+    Cx5 const c = LoresChannels<ND>(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<3>(c, c).sqrt();
     kernels = EstimateKernels(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
   } else {
@@ -308,6 +310,8 @@ auto Choose(Opts const &opts, GridOpts<3> const &gopts, Trajectory const &traj, 
   }
   return kernels;
 }
+
+template auto Choose(Opts<3> const &opts, GridOpts<3> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5;
 
 } // namespace SENSE
 } // namespace rl

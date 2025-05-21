@@ -92,7 +92,7 @@ struct SENSEArgs
   args::ValueFlag<float>       l, λ;
 
   SENSEArgs(args::Subparser &parser);
-  auto Get() -> rl::SENSE::Opts;
+  auto Get() -> rl::SENSE::Opts<3>;
 };
 
 struct f0Args
