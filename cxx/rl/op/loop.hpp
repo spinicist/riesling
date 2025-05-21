@@ -13,7 +13,7 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
   using Parent::forward;
   using Ptr = std::shared_ptr<Loop>;
 
-  Loop(std::shared_ptr<Op> op, Index const N)
+  Loop(typename Op::Ptr op, Index const N)
     : Parent("Loop",
              Concatenate(FirstN<ID>(op->ishape), Sz1{N}, LastN<InRank - 1 - ID>(op->ishape)),
              Concatenate(FirstN<OD>(op->oshape), Sz1{N}, LastN<OutRank - 1 - OD>(op->oshape)))

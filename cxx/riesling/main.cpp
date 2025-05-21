@@ -58,6 +58,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(op, grid, "op-grid", "Grid from/to non/cartesian");
   // COMMAND(op, ndft, "op-ndft", "Apply forward/adjoint NDFT");
   COMMAND(op, nufft, "op-nufft", "Apply forward/adjoint NUFFT");
+  COMMAND(op, nufft2, "op-nufft2", "Apply forward/adjoint 2D NUFFT");
   COMMAND(op, pad, "op-pad", "Pad/crop an image");
   COMMAND(op, prox, "op-prox", "Apply Proximal operators");
   COMMAND(op, rss, "op-rss", "Take RSS across first dimension");
