@@ -33,7 +33,7 @@ auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajector
   auto       lores = traj.trim(ncVol);
   auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
   auto const A = Loopify<TOps::NUFFT<ND>>(nufft, nS, 1);
-  auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, nS, 1);
+  auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz2{nS, 1});
   LSMR const lsmr{A, M, nullptr, {4}};
 
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
