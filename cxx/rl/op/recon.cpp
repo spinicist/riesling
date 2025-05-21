@@ -70,10 +70,10 @@ Recon::Recon(ReconOpts const      &rOpts,
     auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
       A = Decant(gridOpts, traj, nSlab, nTime, b, skern);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, nSlab, nTime);
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, Sz2{nSlab, nTime});
     } else if (rOpts.lowmem) {
       A = LowmemSENSE(gridOpts, traj, nSlab, nTime, b, skern);
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, nSlab, nTime);
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, Sz2{nSlab, nTime});
     } else {
       auto sense = TOps::MakeSENSE<3>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp, b ? b->nB() : 1);
       auto nufft = TOps::NUFFT<3>::Make(gridOpts, traj, skern.dimension(3), b);

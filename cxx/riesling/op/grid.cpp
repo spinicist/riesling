@@ -63,7 +63,7 @@ void main_grid(args::Subparser &parser)
   } else {
     auto const noncart = reader.readTensor<Cx5>();
     traj.checkDims(FirstN<3>(noncart.dimensions()));
-    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, nS, nT);
+    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, Sz2{nS, nT});
     LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
     auto const c = lsmr.run(CollapseToConstVector(noncart));
     writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);

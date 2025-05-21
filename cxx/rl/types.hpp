@@ -91,6 +91,7 @@ using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision comp
 
 // Useful shorthands
 template <int Rank> using Sz = typename Eigen::DSizes<Index, Rank>;
+using Sz0 = Sz<0>;
 using Sz1 = Sz<1>;
 using Sz2 = Sz<2>;
 using Sz3 = Sz<3>;
