@@ -9,17 +9,17 @@
 namespace rl {
 namespace SENSE {
 
-struct Opts
+template <int ND> struct Opts
 {
-  std::string    type;
-  Index          tp, kWidth;
-  Eigen::Array3f res;
-  float          l, λ;
+  std::string                type;
+  Index                      tp, kWidth;
+  Eigen::Array<float, ND, 1> res;
+  float                      l, λ;
 };
 
 //! Convenience function to get low resolution multi-channel images
-auto LoresChannels(
-  Opts const &opts, GridOpts<3> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis = nullptr) -> Cx5;
+template <int ND> auto LoresChannels(
+  Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis = nullptr) -> Cx5;
 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
 auto EstimateMaps(Cx5 const &ichan, Cx4 const &ref, float const os, float const l, float const λ) -> Cx5;
@@ -29,7 +29,8 @@ template <int ND> auto KernelsToMaps(CxN<ND + 2> const &kernels, Sz<ND> const ma
 auto                   MapsToKernels(Cx5 const &maps, Index const kW, float const os) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps
-auto Choose(Opts const &opts, GridOpts<3> const &gridOpts, Trajectory const &t, Cx5 const &noncart) -> Cx5;
+template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajectory const &t, Cx5 const &noncart)
+  -> Cx5;
 
 } // namespace SENSE
 } // namespace rl

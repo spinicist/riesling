@@ -40,7 +40,7 @@ void main_nufft(args::Subparser &parser)
     auto const nS = 1;
     auto const nT = shape[5];
     auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
-    auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, nT);
+    auto const A = Loopify<3, TOps::NUFFT<3>>(nufft, nS, nT);
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
   } else {
@@ -49,7 +49,7 @@ void main_nufft(args::Subparser &parser)
     auto const nS = shape[3];
     auto const nT = shape[4];
     auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
-    auto const A = Loopify<TOps::NUFFT<3>>(nufft, nS, nT);
+    auto const A = Loopify<3, TOps::NUFFT<3>>(nufft, nS, nT);
     if (adj) {
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);

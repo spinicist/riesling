@@ -108,9 +108,9 @@ SENSEArgs::SENSEArgs(args::Subparser &parser)
 {
 }
 
-auto SENSEArgs::Get() -> rl::SENSE::Opts
+auto SENSEArgs::Get() -> rl::SENSE::Opts<3>
 {
-  return rl::SENSE::Opts{
+  return rl::SENSE::Opts<3>{
     .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
 }
 
