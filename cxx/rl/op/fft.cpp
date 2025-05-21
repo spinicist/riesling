@@ -83,6 +83,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const
   this->finishAdjoint(x, time, true);
 }
 
+template struct FFT<4, 2>;
 template struct FFT<4, 3>;
 template struct FFT<5, 3>;
 

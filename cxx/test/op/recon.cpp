@@ -33,19 +33,18 @@ TEST_CASE("Recon", "[recon]")
 
   Cx5 senseMaps(AddBack(traj.matrix(), nC, 1));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = std::make_shared<TOps::SENSE<3>>(senseMaps, 1);
+  auto sense = TOps::MakeSENSE<3>(senseMaps, 1);
+  auto recon = TOps::MakeCompose(sense, nufft);
 
-  TOps::Compose<TOps::SENSE<3>, TOps::TOp<Cx, 5, 3>> recon(sense, nufft);
-
-  Cx3 ks(recon.oshape);
-  Cx4 img(recon.ishape);
+  Cx3 ks(recon->oshape);
+  Cx4 img(recon->ishape);
   ks.setConstant(1.f);
-  img = recon.adjoint(ks);
+  img = recon->adjoint(ks);
   // Super loose tolerance
   // INFO("ks\n" << ks);
   // INFO("img\n" << img);
   CHECK(Norm<false>(img) == Approx(Norm<false>(ks)).margin(2.e-1f));
-  ks = recon.forward(img);
+  ks = recon->forward(img);
   // INFO("ks\n" << ks);
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }
