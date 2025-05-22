@@ -85,6 +85,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap const
 
 template struct FFT<4, 2>;
 template struct FFT<4, 3>;
+template struct FFT<5, 2>;
 template struct FFT<5, 3>;
 
 } // namespace rl::TOps

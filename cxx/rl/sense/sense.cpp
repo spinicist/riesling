@@ -20,26 +20,40 @@
 namespace rl {
 namespace SENSE {
 
-  template<int ND>
-auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis) -> Cx5
+template <int ND>
+auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis)
+  -> Cx5
 {
   auto const nC = noncart.dimension(0);
-  auto const nS = noncart.dimension(3);
-  auto const nT = noncart.dimension(4);
-  if (opts.tp >= nT) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nT); }
+  auto const nSamp = noncart.dimension(1);
+  auto const nTrace = noncart.dimension(2);
+  auto const nSlice = noncart.dimension(3);
+  auto const nTime = noncart.dimension(4);
+  if (opts.tp >= nTime) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nTime); }
 
   Cx4 const ncVol = noncart.chip<4>(opts.tp);
   traj.downsample(opts.res, true, false);
   auto       lores = traj.trim(ncVol);
-  auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
-  auto const A = Loopify<TOps::NUFFT<ND>>(nufft, nS, 1);
-  auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz2{nS, 1});
-  LSMR const lsmr{A, M, nullptr, {4}};
-
   auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
   NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
-  Cx5 const channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape).template chip<5>(0);
 
+  auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
+  Cx5        channels;
+  if constexpr (ND == 2) {
+    auto const A = TOps::MakeLoop<2, 3>(nufft, nSlice);
+    auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
+    auto const lores =
+      (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTime, nSlice)) : traj.trim(noncart.chip<4>(opts.tp));
+    LSMR const lsmr{nufft, M, nullptr, {4}};
+    channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape);
+  } else {
+    if (nSlice > 1) { throw(Log::Failure("SENSE", "Not supported right now")); }
+    auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz0{});
+    auto const lores = (nTime == 1) ? traj.trim(Cx3CMap(noncart.data(), nC, nSamp, nTrace))
+                                    : traj.trim(Cx3(noncart.chip<4>(opts.tp).template chip<3>(0)));
+    LSMR const lsmr{nufft, M, nullptr, {4}};
+    channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), nufft->ishape);
+  }
   return channels;
 }
 
@@ -53,106 +67,28 @@ auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx
   return normalized;
 }
 
-auto SobolevWeights(Index const kW, Index const l) -> Re3
+template <int ND> auto SobolevWeights(Index const kW, Index const l) -> ReN<ND>
 {
-  Re3 W(kW, kW, kW);
+  Sz<ND> shape;
+  std::fill_n(shape.begin(), ND, kW);
+  ReN<ND> W(shape);
   for (Index ik = 0; ik < kW; ik++) {
     float const kk = (ik - (kW / 2));
     for (Index ij = 0; ij < kW; ij++) {
       float const kj = (ij - (kW / 2));
-      for (Index ii = 0; ii < kW; ii++) {
-        float const ki = (ii - (kW / 2));
-        float const k2 = (ki * ki + kj * kj + kk * kk);
-        W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
+      if constexpr (ND == 2) {
+        float const k2 = (kj * kj + kk * kk);
+        W(ij, ik) = std::pow(1.f + k2, l / 2);
+      } else {
+        for (Index ii = 0; ii < kW; ii++) {
+          float const ki = (ii - (kW / 2));
+          float const k2 = (ki * ki + kj * kj + kk * kk);
+          W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
+        }
       }
     }
   }
   return W;
-}
-
-auto SobolevWeights(Sz3 const shape, Index const l) -> Re3
-{
-  Re3 W(shape);
-  for (Index ik = 0; ik < shape[2]; ik++) {
-    float const kk = (ik - (shape[2] / 2));
-    for (Index ij = 0; ij < shape[1]; ij++) {
-      float const kj = (ij - (shape[1] / 2));
-      for (Index ii = 0; ii < shape[0]; ii++) {
-        float const ki = (ii - (shape[0] / 2));
-        float const k2 = (ki * ki + kj * kj + kk * kk);
-        W(ii, ij, ik) = std::pow(1.f + k2, l / 2);
-      }
-    }
-  }
-  return W;
-}
-
-/* We want to solve:
- * c = R s
- *
- * Where c is the channel images, s is SENSE maps, R is multiply by reference image
- *
- * We need to add the regularizer from nlinv / ENLIVE. This is a Sobolev weights in k-space
- * P is padding, F is FT
- * Hence solve the modified system
- *
- * c' = [ c ] = [ R    ]  s = A s
- *      [ 0 ]   [ λW F ]
- * A = [ R    ]
- *     [ λW F ]
- *
- * Needs a pre-conditioner. Use a right preconditioner N = [ I + R ]
- *
- * Leaving this here for posterity, but it's easier to estimate the kernels directly due to oversampling
- *
- */
-auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float const l, float const λ) -> Cx5
-{
-  if (FirstN<3>(ichan.dimensions()) != FirstN<3>(iref.dimensions())) {
-    throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", ichan.dimensions(), iref.dimensions());
-  }
-
-  Sz3 const osshape = MulToEven(FirstN<3>(ichan.dimensions()), osamp);
-  Sz5 const cshape = AddBack(osshape, ichan.dimension(3), ichan.dimension(4));
-  Sz4 const rshape = AddBack(osshape, iref.dimension(3));
-
-  // Need to swap channel and basis dimensions to make TensorScale work
-  Cx5 const chan = TOps::Pad<Cx, 5>(ichan.dimensions(), cshape).forward(ichan).shuffle(Sz5{0, 1, 2, 4, 3});
-  Cx4 const ref = TOps::Pad<Cx, 4>(iref.dimensions(), rshape).forward(iref);
-
-  auto const mapshape = chan.dimensions();
-  Log::Print("SENSE", "Map shape {}", mapshape);
-  // Need various scaling factors
-  float const nref = Norm<true>(ref);
-  float const median = Percentiles(OtsuMask(CollapseToArray(ref).abs()), {0.5}).front();
-  Cx4 const   w = (ref / Cx(median) + Cx(1.f)).log();
-  // Weighted Least Squares
-  auto R = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(mapshape, ref / Cx(nref));
-  auto W = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(mapshape, w);
-  auto Wr = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(mapshape, w.sqrt());
-  auto WrR = Ops::Mul<Cx>(Wr, R);
-  // Smoothness regularizer (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-  auto F = std::make_shared<TOps::FFT<5, 3>>(mapshape, Sz3{0, 1, 2});
-  auto K = std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(mapshape, SobolevWeights(FirstN<3>(mapshape), l).cast<Cx>());
-  auto L = std::make_shared<Ops::DiagScale<Cx>>(K->rows(), λ);
-  auto LKF = Ops::Mul<Cx>(L, Ops::Mul<Cx>(K, F));
-  // Combine operators
-  auto A = std::make_shared<Ops::VStack<Cx>>(R, LKF);
-  // Data
-  Ops::Op<Cx>::CMap   c(chan.data(), chan.size());
-  Ops::Op<Cx>::Vector cʹ(A->rows());
-  cʹ.head(c.size()) = c / Cx(nref);
-  cʹ.tail(LKF->rows()).setZero();
-  // Preconditioner
-  Ops::Op<Cx>::Vector m(A->rows());
-  m.setConstant(1.f);
-  m = (A->forward(A->adjoint(m)).array().abs() + 1.e-3f).inverse();
-  auto Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
-
-  LSMR       solve{A, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-6f}};
-  auto const s = solve.run(cʹ);
-  Cx5        maps = AsTensorMap(s, mapshape);
-  return maps.shuffle(Sz5{0, 1, 2, 4, 3});
 }
 
 /* We want to solve:
@@ -178,6 +114,7 @@ auto EstimateMaps(Cx5 const &ichan, Cx4 const &iref, float const osamp, float co
  * The kernel width is specified on the nominal grid, i.e. will be multiplied up by the oversampling (and made odd)
  *
  */
+template <int ND>
 auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
   -> Cx5
 {
@@ -195,22 +132,36 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Cx5 const schan = nomChan.shuffle(Sz5{0, 1, 2, 4, 3});
 
   Index const kW = std::floor(nomKW * osamp / 2) * 2 + 1;
-  Sz3 const   osshape = MulToEven(FirstN<3>(schan.dimensions()), osamp);
-  Sz5 const   cshape = AddBack(osshape, nB, nC);
-  Sz4 const   rshape = AddBack(osshape, nB);
+  Sz3         osshape;
+  if constexpr (ND == 2) {
+    osshape = AddBack(MulToEven(FirstN<2>(schan.dimensions()), osamp), schan.dimension(2));
+  } else {
+    osshape = MulToEven(FirstN<3>(schan.dimensions()), osamp);
+  }
+  Sz5 const cshape = AddBack(osshape, nB, nC);
+  Sz4 const rshape = AddBack(osshape, nB);
 
   Cx5 const channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
   Cx4 const ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
 
-  if (cshape[0] < (2 * kW) || cshape[1] < (2 * kW) || cshape[2] < (2 * kW)) {
-    throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", FirstN<3>(cshape), kW);
+  Sz5 kshape;
+  if constexpr (ND == 2) {
+    if (cshape[0] < (2 * kW) || cshape[1] < (2 * kW)) {
+      throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", FirstN<2>(cshape), kW);
+    }
+    kshape = {kW, kW, cshape[2], cshape[3], cshape[4]};
+  } else {
+    if (cshape[0] < (2 * kW) || cshape[1] < (2 * kW) || cshape[2] < (2 * kW)) {
+      throw Log::Failure("SENSE", "Matrix {} insufficient to satisfy kernel size {}", FirstN<3>(cshape), kW);
+    }
+    kshape = {kW, kW, kW, cshape[3], cshape[4]};
   }
-  Sz5 const kshape{kW, kW, kW, cshape[3], cshape[4]};
+
   Log::Print("SENSE", "Kernel shape {}", kshape);
   // Set up operators
-  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(FirstN<3>(cshape)) / (float)(kW * kW * kW)));
+  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
   auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
-  auto F = std::make_shared<TOps::FFT<5, 3>>(cshape, true);
+  auto F = std::make_shared<TOps::FFT<5, ND>>(cshape, true);
   auto FP = Ops::Mul<Cx>(Ops::Mul<Cx>(F, P), D);
   auto S = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(cshape, ref);
   auto SFP = Ops::Mul<Cx>(S, FP);
@@ -225,10 +176,10 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Cx5 kernels;
   if (λ > 0.f) {
     // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
-    Cx3 const  sw = SobolevWeights(kW, l).cast<Cx>();
-    auto const swv = CollapseToConstVector(sw);
-    auto       W = std::make_shared<Ops::DiagRep<Cx>>(swv, 1, kshape[3] * kshape[4]);
-    auto       L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
+    CxN<ND> const sw = SobolevWeights<ND>(kW, l).template cast<Cx>();
+    auto const    swv = CollapseToConstVector(sw);
+    auto          W = std::make_shared<Ops::DiagRep<Cx>>(swv, 1, Product(LastN<5 - ND>(kshape)));
+    auto          L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
 
     // Combine
     auto A = std::make_shared<Ops::VStack<Cx>>(MSFP, Ops::Mul<Cx>(L, W));
@@ -264,6 +215,13 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   return kernels.shuffle(Sz5{0, 1, 2, 4, 3});
 }
 
+template auto
+EstimateKernels<2>(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+  -> Cx5;
+template auto
+EstimateKernels<3>(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+  -> Cx5;
+
 template <int ND> auto KernelsToMaps(CxN<ND + 2> const &kernels, Sz<ND> const mat, float const os) -> CxN<ND + 2>
 {
   auto const  kshape = kernels.dimensions();
@@ -294,8 +252,8 @@ auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 
-template<int ND>
-auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5
+template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, Trajectory const &traj, Cx5 const &noncart)
+  -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }
@@ -303,7 +261,7 @@ auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, Trajectory const &t
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels<ND>(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<3>(c, c).sqrt();
-    kernels = EstimateKernels(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
+    kernels = EstimateKernels<ND>(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
   } else {
     HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
