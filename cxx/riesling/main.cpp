@@ -35,6 +35,7 @@ int main(int const argc, char const *const argv[])
 
   args::Group sense(parser, "SENSE");
   COMMAND(sense, sense_calib, "sense-calib", "Calibrate SENSE kernels");
+  COMMAND(sense, sense_calib2, "sense-calib2", "Calibrate 2D SENSE kernels");
   COMMAND(sense, sense_maps, "sense-maps", "Convert SENSE kernels to maps");
   COMMAND(sense, sense_sim, "sense-sim", "Simulate SENSE maps");
 

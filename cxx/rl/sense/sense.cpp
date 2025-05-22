@@ -20,8 +20,8 @@
 namespace rl {
 namespace SENSE {
 
-template <int ND>
-auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajectory traj, Cx5 const &noncart, Basis::CPtr basis)
+template <int ND> auto
+LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND> traj, Cx5 const &noncart, Basis::CPtr basis)
   -> Cx5
 {
   auto const nC = noncart.dimension(0);
@@ -43,7 +43,7 @@ auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajector
     auto const A = TOps::MakeLoop<2, 3>(nufft, nSlice);
     auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
     auto const lores =
-      (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTime, nSlice)) : traj.trim(noncart.chip<4>(opts.tp));
+      (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTime, nSlice)) : traj.trim(Cx4(noncart.chip<4>(opts.tp)));
     LSMR const lsmr{nufft, M, nullptr, {4}};
     channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape);
   } else {
@@ -56,6 +56,13 @@ auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, Trajector
   }
   return channels;
 }
+
+template auto
+LoresChannels(Opts<2> const &opts, GridOpts<2> const &gridOpts, TrajectoryN<2> traj, Cx5 const &noncart, Basis::CPtr basis)
+  -> Cx5;
+template auto
+LoresChannels(Opts<3> const &opts, GridOpts<3> const &gridOpts, TrajectoryN<3> traj, Cx5 const &noncart, Basis::CPtr basis)
+  -> Cx5;
 
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5
 {

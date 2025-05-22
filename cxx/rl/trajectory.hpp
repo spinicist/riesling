@@ -34,7 +34,7 @@ template <int ND> struct TrajectoryN
   void write(HD5::Writer &file) const;
   auto nSamples() const -> Index;
   auto nTraces() const -> Index;
-  void checkDims(SzN const dims) const;
+  void checkDims(Sz3 const dims) const;
   auto compatible(TrajectoryN const &other) const -> bool;
   auto matrix() const -> SzN;
   auto matrixForFOV(Array const fov) const -> SzN;

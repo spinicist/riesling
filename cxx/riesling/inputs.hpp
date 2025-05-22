@@ -84,15 +84,16 @@ struct ADMMArgs
   auto Get() -> rl::ADMM::Opts;
 };
 
+template <int ND>
 struct SENSEArgs
 {
   args::ValueFlag<std::string> type;
   args::ValueFlag<Index>       tp, kWidth;
-  ArrayFlag<float, 3>          res;
+  ArrayFlag<float, ND>          res;
   args::ValueFlag<float>       l, λ;
 
   SENSEArgs(args::Subparser &parser);
-  auto Get() -> rl::SENSE::Opts<3>;
+  auto Get() -> rl::SENSE::Opts<ND>;
 };
 
 struct f0Args

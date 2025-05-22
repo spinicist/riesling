@@ -18,7 +18,7 @@ void main_recon_lsq(args::Subparser &parser)
   GridArgs<3>            gridArgs(parser);
   PreconArgs             preArgs(parser);
   ReconArgs              reconArgs(parser);
-  SENSEArgs              senseArgs(parser);
+  SENSEArgs<3>             senseArgs(parser);
   LSMRArgs               lsqArgs(parser);
   f0Args                 f0Args(parser);
   ArrayFlag<float, 3>    cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
