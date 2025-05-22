@@ -19,7 +19,7 @@ void main_recon_rlsq(args::Subparser &parser)
   GridArgs<3>                  gridArgs(parser);
   PreconArgs                   preArgs(parser);
   ReconArgs                    reconArgs(parser);
-  SENSEArgs                    senseArgs(parser);
+  SENSEArgs<3>                    senseArgs(parser);
   ADMMArgs                     admmArgs(parser);
   RegOpts                      regOpts(parser);
   f0Args                       f0Args(parser);

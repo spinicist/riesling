@@ -101,7 +101,7 @@ template <int ND> auto TrajectoryN<ND>::nSamples() const -> Index { return point
 
 template <int ND> auto TrajectoryN<ND>::nTraces() const -> Index { return points_.dimension(2); }
 
-template <int ND> void TrajectoryN<ND>::checkDims(SzN const dims) const
+template <int ND> void TrajectoryN<ND>::checkDims(Sz3 const dims) const
 {
   if (dims[1] != nSamples()) {
     throw Log::Failure("Traj", "Number of samples in data {} does not match trajectory {}", dims[1], nSamples());
