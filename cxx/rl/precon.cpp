@@ -37,7 +37,7 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
-  weights.device(Threads::TensorDevice()) = (1.f + λ) / ((weights * scale) + λ);
+  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (1.f + λ) / ((weights * scale) + λ));
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
@@ -175,23 +175,33 @@ template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, Trajecto
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Index const, Sz2 const)
   -> TOps::TOp<Cx, 5>::Ptr;
 
-auto MakeKSpacePrecon(
-  PreconOpts const &opts, GridOpts<3> const &gridOpts, Trajectory const &traj, Cx5 const &smaps, Index const nS, Index const nT)
-  -> TOps::TOp<Cx, 5, 5>::Ptr
+template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
+                                                GridOpts<ND> const    &gridOpts,
+                                                TrajectoryN<ND> const &traj,
+                                                Cx5 const             &smaps,
+                                                Sz<NB> const           bshape) -> TOps::TOp<Cx, 3 + NB, 3 + NB>::Ptr
 {
-  Sz5 const shape{smaps.dimension(3), traj.nSamples(), traj.nTraces(), nS, nT};
+  Index const nC = smaps.dimension(3);
+  auto const  shape = Concatenate(Sz3{nC, traj.nSamples(), traj.nTraces()}, bshape);
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");
     return nullptr;
   } else if (opts.type == "single") {
     Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
-    return std::make_shared<TOps::TensorScale<Cx, 5, 1, 2>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
     Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.λ);
-    return std::make_shared<TOps::TensorScale<Cx, 5, 0, 2>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 0, NB>>(shape, w.cast<Cx>());
   } else {
-    return LoadKSpacePrecon<2>(opts.type, traj.nSamples(), traj.nTraces(), shape);
+    return LoadKSpacePrecon<NB>(opts.type, traj.nSamples(), traj.nTraces(), shape);
   }
 }
+
+template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Cx5 const &, Sz<0> const)
+  -> TOps::TOp<Cx, 3, 3>::Ptr;
+template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Cx5 const &, Sz<1> const)
+  -> TOps::TOp<Cx, 4, 4>::Ptr;
+template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Cx5 const &, Sz<2> const)
+  -> TOps::TOp<Cx, 5, 5>::Ptr;
 
 } // namespace rl

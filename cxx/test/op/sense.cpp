@@ -23,7 +23,7 @@ TEST_CASE("SENSE", "[SENSE]")
     maps.setRandom();
     maps = maps / DimDot<3>(maps, maps).sqrt().reshape(Sz5{mapSz, mapSz, mapSz, 1, 1}).broadcast(Sz5{1, 1, 1, channels, 1});
 
-    TOps::SENSEOp<3> sense(maps, 1);
+    TOps::SENSEOp sense(maps, 1);
     y = sense.forward(u);
     x = sense.adjoint(v);
 

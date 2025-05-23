@@ -11,24 +11,24 @@
  */
 
 namespace rl {
-struct Recon
+template <int ND> struct Recon
 {
-  Recon(ReconOpts const      &rOpts,
-        PreconOpts const     &pOpts,
-        GridOpts<3> const    &gridOpts,
-        SENSE::Opts<3> const &senseOpts,
-        Trajectory const     &traj,
-        Basis::CPtr           basis,
-        Cx5 const            &data);
+  Recon(ReconOpts const       &rOpts,
+        PreconOpts const      &pOpts,
+        GridOpts<ND> const    &gridOpts,
+        SENSE::Opts<ND> const &senseOpts,
+        TrajectoryN<ND> const &traj,
+        Basis::CPtr            basis,
+        Cx5 const             &data);
 
-  Recon(ReconOpts const      &rOpts,
-        PreconOpts const     &pOpts,
-        GridOpts<3> const    &gridOpts,
-        SENSE::Opts<3> const &senseOpts,
-        Trajectory const     &traj,
-        f0Opts const         &f0Opts,
-        Cx5 const            &data,
-        Re3 const            &f0map);
+  Recon(ReconOpts const       &rOpts,
+        PreconOpts const      &pOpts,
+        GridOpts<ND> const    &gridOpts,
+        SENSE::Opts<ND> const &senseOpts,
+        TrajectoryN<ND> const &traj,
+        f0Opts const          &f0Opts,
+        Cx5 const             &data,
+        Re3 const             &f0map);
   TOps::TOp<Cx, 5, 5>::Ptr A, M;
 };
 } // namespace rl

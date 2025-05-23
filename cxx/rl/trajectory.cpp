@@ -212,7 +212,7 @@ template <int ND> auto TrajectoryN<ND>::point(int16_t const read, int32_t const 
 
 template <int ND> void TrajectoryN<ND>::downsample(Array const tgtSize, bool const shrinkMatrix, bool const keepCorners)
 {
-  Re1 thresh(3);
+  Re1 thresh(ND);
   for (Index ii = 0; ii < ND; ii++) {
     float ratio = voxel_size_[ii] / tgtSize[ii];
     if ((ratio > 1.f)) {

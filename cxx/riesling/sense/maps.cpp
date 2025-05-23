@@ -29,7 +29,7 @@ void main_sense_maps(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   if (kW) {
     Cx5 const maps = reader.readTensor<Cx5>();
-    Cx5 const kernels = SENSE::MapsToKernels(maps, kW.Get(), osamp.Get());
+    Cx5 const kernels = SENSE::MapsToKernels(maps, Sz3{kW.Get(), kW.Get(), kW.Get()}, osamp.Get());
     writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   } else {
     Cx5 const kernels = reader.readTensor<Cx5>();
