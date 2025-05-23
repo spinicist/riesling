@@ -43,7 +43,7 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
     auto const A = TOps::MakeLoop<2, 3>(nufft, nSlice);
     auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
     auto const lores =
-      (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTime, nSlice)) : traj.trim(Cx4(noncart.chip<4>(opts.tp)));
+      (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTrace, nSlice)) : traj.trim(Cx4(noncart.chip<4>(opts.tp)));
     LSMR const lsmr{nufft, M, nullptr, {4}};
     channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape);
   } else {
@@ -229,37 +229,42 @@ template auto
 EstimateKernels<3>(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
   -> Cx5;
 
-template <int ND> auto KernelsToMaps(CxN<ND + 2> const &kernels, Sz<ND> const mat, float const os) -> CxN<ND + 2>
+/*
+ * For 2D, assume multislice so only inflate the first two dimensions
+ */
+template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os) -> Cx5
 {
   auto const  kshape = kernels.dimensions();
-  auto const  fshape = AddBack(MulToEven(mat, os), kshape[ND], kshape[ND + 1]);
-  auto const  cshape = AddBack(mat, kshape[ND], kshape[ND + 1]);
+  auto const  fshape = Concatenate(MulToEven(mat, os), LastN<5 - ND>(kshape));
+  auto const  cshape = Concatenate(mat, LastN<5 - ND>(kshape));
   float const scale = std::sqrt(Product(FirstN<ND>(fshape)) / (float)Product(FirstN<ND>(kshape)));
   Log::Print("SENSE", "Kernels {} Full maps {} Cropped maps {} Scale {}", kshape, fshape, cshape, scale);
-  TOps::Pad<Cx, ND + 2> P(kshape, fshape);
-  TOps::FFT<ND + 2, ND> F(fshape, false);
-  TOps::Pad<Cx, ND + 2> C(cshape, fshape);
+  TOps::Pad<Cx, 5> P(kshape, fshape);
+  TOps::FFT<5, ND> F(fshape, false);
+  TOps::Pad<Cx, 5> C(cshape, fshape);
   return C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
 }
 
-template auto KernelsToMaps(Cx4 const &, Sz2 const, float const) -> Cx4;
+template auto KernelsToMaps(Cx5 const &, Sz2 const, float const) -> Cx5;
 template auto KernelsToMaps(Cx5 const &, Sz3 const, float const) -> Cx5;
 
-auto MapsToKernels(Cx5 const &maps, Index const nomKW, float const os) -> Cx5
+template <int ND>
+auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float const os) -> Cx5
 {
-  Index const kW = std::floor(nomKW * os / 2) * 2 + 1;
   auto const  mshape = maps.dimensions();
-  auto const  oshape = AddBack(MulToEven(FirstN<3>(mshape), os), mshape[3], mshape[4]);
-  auto const  kshape = Sz5{kW, kW, kW, mshape[3], mshape[4]};
-  float const scale = std::sqrt(Product(FirstN<3>(oshape)) / (float)Product(FirstN<3>(mshape)));
+  auto const  oshape = Concatenate(MulToEven(FirstN<ND>(mshape), os), LastN<5 - ND>(mshape));
+  auto const  kshape = Concatenate(kmat, LastN<5 - ND>(mshape));
+  float const scale = std::sqrt(Product(FirstN<ND>(oshape)) / (float)Product(FirstN<ND>(mshape)));
   Log::Print("SENSE", "Map Shape {} Oversampled map shape {} Kernel shape {} Scale {}", mshape, oshape, kshape, scale);
   TOps::Pad<Cx, 5> P(mshape, oshape);
   TOps::FFT<5, 3>  F(oshape, true);
   TOps::Pad<Cx, 5> C(kshape, oshape);
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
+template auto MapsToKernels(Cx5 const &, Sz2 const, float const) -> Cx5;
+template auto MapsToKernels(Cx5 const &, Sz3 const, float const) -> Cx5;
 
-template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, Trajectory const &traj, Cx5 const &noncart)
+template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, TrajectoryN<ND> const &traj, Cx5 const &noncart)
   -> Cx5
 {
   Cx5 kernels;
@@ -276,7 +281,8 @@ template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, T
   return kernels;
 }
 
-template auto Choose(Opts<3> const &opts, GridOpts<3> const &gopts, Trajectory const &traj, Cx5 const &noncart) -> Cx5;
+template auto Choose(Opts<2> const &opts, GridOpts<2> const &gopts, TrajectoryN<2> const &traj, Cx5 const &noncart) -> Cx5;
+template auto Choose(Opts<3> const &opts, GridOpts<3> const &gopts, TrajectoryN<3> const &traj, Cx5 const &noncart) -> Cx5;
 
 } // namespace SENSE
 } // namespace rl

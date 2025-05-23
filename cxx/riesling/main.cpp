@@ -17,6 +17,7 @@ int main(int const argc, char const *const argv[])
 
   args::Group recon(parser, "RECON");
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
+  COMMAND(recon, recon_lsq2, "recon-lsq2", "2D Least-squares (iterative) recon");
   COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
   COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
 

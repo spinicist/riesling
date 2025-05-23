@@ -33,7 +33,7 @@ TEST_CASE("Recon", "[recon]")
 
   Cx5 senseMaps(AddBack(traj.matrix(), nC, 1));
   senseMaps.setConstant(std::sqrt(1. / nC));
-  auto sense = TOps::MakeSENSE<3>(senseMaps, 1);
+  auto sense = TOps::MakeSENSE(senseMaps, 1);
   auto recon = TOps::MakeCompose(sense, nufft);
 
   Cx3 ks(recon->oshape);
