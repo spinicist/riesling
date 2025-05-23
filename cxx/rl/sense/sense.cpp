@@ -44,8 +44,10 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
     auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
     auto const lores =
       (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTrace, nSlice)) : traj.trim(Cx4(noncart.chip<4>(opts.tp)));
-    LSMR const lsmr{nufft, M, nullptr, {4}};
-    channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), A->ishape);
+    auto const v = CollapseToConstVector(lores);
+    Log::Debug("SENSE", "A {}->{} M {}->{} Data {}", A->ishape, A->oshape, M->ishape, M->oshape, lores.dimensions());
+    LSMR const lsmr{A, M, nullptr, {4}};
+    channels = AsTensorMap(lsmr.run(v), A->ishape);
   } else {
     if (nSlice > 1) { throw(Log::Failure("SENSE", "Not supported right now")); }
     auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz0{});
@@ -248,8 +250,7 @@ template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float
 template auto KernelsToMaps(Cx5 const &, Sz2 const, float const) -> Cx5;
 template auto KernelsToMaps(Cx5 const &, Sz3 const, float const) -> Cx5;
 
-template <int ND>
-auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float const os) -> Cx5
+template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float const os) -> Cx5
 {
   auto const  mshape = maps.dimensions();
   auto const  oshape = Concatenate(MulToEven(FirstN<ND>(mshape), os), LastN<5 - ND>(mshape));
