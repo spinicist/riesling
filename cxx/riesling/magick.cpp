@@ -4,10 +4,8 @@
 #include "rl/tensors.hpp"
 
 #include <fmt/format.h>
-#include <ranges>
+#include <flux.hpp>
 #include <sys/ioctl.h>
-#include <tl/chunk.hpp>
-#include <tl/to.hpp>
 
 namespace rl {
 
@@ -35,7 +33,8 @@ void ToKitty(Magick::Image &img, bool const scale)
   if (b64.size() <= ChunkSize) {
     fmt::print(stderr, "\x1B_Ga=T,f=100{};{}\x1B\\", scHdr, b64);
   } else {
-    auto const chunks = b64 | tl::views::chunk(ChunkSize);
+    auto const chunks = flux::from_range(b64).chunk(ChunkSize).to<std::vector<std::string>>();
+    // auto const chunks = flux::chunk(flux::from_range(b64), ChunkSize);
     auto const nChunks = chunks.size();
     fmt::print(stderr, "\x1B_Ga=T,f=100,m=1{};{}\x1B\\", scHdr, std::string_view(chunks.front().data(), chunks.front().size()));
     for (auto &&chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {

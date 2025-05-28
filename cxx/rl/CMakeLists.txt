@@ -6,7 +6,6 @@ find_package(fmt CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
-find_package(tl-ranges CONFIG REQUIRED)
 
 set(SRC_FILES
 apodize.cpp
@@ -214,7 +213,6 @@ target_link_libraries(rl PUBLIC
     hdf5::hdf5-static
     hdf5::hdf5_hl-static
     NIFTI::niftiio
-    tl::ranges
     scn::scn
 )
 set_target_properties(rl PROPERTIES
@@ -255,6 +253,5 @@ find_package(fmt CONFIG REQUIRED)
 find_package(hdf5 CONFIG REQUIRED)
 find_package(NIFTI CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
-find_package(tl-ranges CONFIG REQUIRED)
 ")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/rl-config.cmake DESTINATION share/rl)

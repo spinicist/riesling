@@ -5,8 +5,6 @@
 
 #include "../tensors.hpp"
 
-#include <fmt/ranges.h>
-
 namespace rl {
 
 template <int ND, int W> struct FixedSize
