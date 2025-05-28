@@ -59,6 +59,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(op, fft, "op-fft", "Cartesian FFT of an image");
   COMMAND(op, grad, "op-grad", "Apply grad/div operator");
   COMMAND(op, grid, "op-grid", "Grid from/to non/cartesian");
+  COMMAND(op, grid2, "op-grid2", "Grid from/to non/cartesian");
   // COMMAND(op, ndft, "op-ndft", "Apply forward/adjoint NDFT");
   COMMAND(op, nufft, "op-nufft", "Apply forward/adjoint NUFFT");
   COMMAND(op, nufft2, "op-nufft2", "Apply forward/adjoint 2D NUFFT");
