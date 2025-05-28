@@ -24,6 +24,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, compress, "compress", "Compress non-cartesian channels");
   COMMAND(data, diff, "diff", "Take the difference of two datasets");
   COMMAND(data, downsamp, "downsamp", "Downsample non-cartesian data");
+  COMMAND(data, downsamp2, "downsamp2", "Downsample 2D non-cartesian data");
   COMMAND(data, move, "move", "Shift and rotate data within FOV");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
   COMMAND(data, noisify, "noisify", "Add noise to non-cartesian data");

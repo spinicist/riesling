@@ -400,9 +400,11 @@ template struct TrajectoryN<3>;
 
 template auto TrajectoryN<2>::trim(Cx3CMap const) -> Cx3;
 template auto TrajectoryN<2>::trim(Cx4CMap const) -> Cx4;
+template auto TrajectoryN<2>::trim(Cx5CMap const) -> Cx5;
 
 template auto TrajectoryN<2>::trim(Cx3 const &) -> Cx3;
 template auto TrajectoryN<2>::trim(Cx4 const &) -> Cx4;
+template auto TrajectoryN<2>::trim(Cx5 const &) -> Cx5;
 
 template auto TrajectoryN<3>::trim(Cx3CMap const) -> Cx3;
 template auto TrajectoryN<3>::trim(Cx4CMap const) -> Cx4;
