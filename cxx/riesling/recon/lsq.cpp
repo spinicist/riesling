@@ -71,7 +71,7 @@ void main_recon_lsq2(args::Subparser &parser)
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const     cmd = parser.GetCommand().Name();
   HD5::Reader    reader(coreArgs.iname.Get());
-  Info const     info = reader.readInfo();
+  Info const     info = reader.readStruct<Info>(HD5::Keys::Info);
   TrajectoryN<2> traj(reader, info.voxel_size.head<2>(), coreArgs.matrix.Get());
   auto           noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
@@ -92,6 +92,6 @@ void main_recon_lsq2(args::Subparser &parser)
   TOps::Pad<Cx, 5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<3>(R.A->ishape)), R.A->ishape);
   auto             out = oc.adjoint(xm);
 
-  WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
+  WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   Log::Print(cmd, "Finished");
 }

@@ -91,7 +91,7 @@ void main_grid2(args::Subparser &parser)
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
 
-  TrajectoryN<2> traj(reader, reader.readInfo().voxel_size.head<2>(), coreArgs.matrix.Get());
+  TrajectoryN<2> traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size.head<2>(), coreArgs.matrix.Get());
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
 
   auto const  shape = reader.dimensions();
@@ -101,7 +101,7 @@ void main_grid2(args::Subparser &parser)
   auto const  A = MakeGrid(gridArgs.Get(), traj, nC, nS, nT, basis.get());
 
   HD5::Writer writer(coreArgs.oname.Get());
-  writer.writeInfo(reader.readInfo());
+  writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
   traj.write(writer);
 
   if (fwd) {
