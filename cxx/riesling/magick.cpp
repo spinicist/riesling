@@ -3,9 +3,11 @@
 #include "rl/log/log.hpp"
 #include "rl/tensors.hpp"
 
-#include <fmt/format.h>
 #include <flux.hpp>
+#include <fmt/format.h>
 #include <sys/ioctl.h>
+
+#include <ranges>
 
 namespace rl {
 
@@ -28,28 +30,24 @@ void ToKitty(Magick::Image &img, bool const scale)
   img.magick("PNG");
   Magick::Blob blob;
   img.write(&blob);
-  auto const     b64 = blob.base64();
-  constexpr auto ChunkSize = 4096;
+  auto const             b64 = blob.base64();
+  constexpr auto         ChunkSize = 4096;
   if (b64.size() <= ChunkSize) {
     fmt::print(stderr, "\x1B_Ga=T,f=100{};{}\x1B\\", scHdr, b64);
   } else {
-    auto const chunks = flux::from_range(b64).chunk(ChunkSize).to<std::vector<std::string>>();
-    // auto const chunks = flux::chunk(flux::from_range(b64), ChunkSize);
+    auto       chunks = flux::ref(b64).chunk(ChunkSize).to<std::vector<std::string_view>>();
     auto const nChunks = chunks.size();
-    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1{};{}\x1B\\", scHdr, std::string_view(chunks.front().data(), chunks.front().size()));
-    for (auto &&chunk : chunks | std::ranges::views::drop(1) | std::ranges::views::take(nChunks - 2)) {
-      fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", std::string_view(chunk.data(), chunk.size()));
-    }
-    fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", std::string_view(chunks.back().data(), chunks.back().size()));
+    fmt::print(stderr, "\x1B_Ga=T,f=100,m=1{};{}\x1B\\", scHdr, chunks.front());
+    flux::ref(chunks).drop(1).take(nChunks - 2).for_each([](auto c) { fmt::print(stderr, "\x1B_Gm=1;{}\x1B\\", c); });
+    fmt::print(stderr, "\x1B_Gm=0;{}\x1B\\", chunks.back());
   }
   fmt::print(stderr, "\n");
 }
 
-template <int N>
-auto LiveSlice(Eigen::TensorMap<CxN<N> const> const &xt,
-               std::array<std::string, N> const     &dimNames,
-               std::string const                    &d0,
-               std::string const                    &d1) -> Magick::Image
+template <int N> auto LiveSlice(Eigen::TensorMap<CxN<N> const> const &xt,
+                                std::array<std::string, N> const     &dimNames,
+                                std::string const                    &d0,
+                                std::string const                    &d1) -> Magick::Image
 {
   auto const shape = xt.dimensions();
   Sz<N>      st, sz = shape;
