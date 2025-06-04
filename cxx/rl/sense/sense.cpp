@@ -17,6 +17,8 @@
 #include "../sys/threads.hpp"
 #include "../tensors.hpp"
 
+#include <flux.hpp>
+
 namespace rl {
 namespace SENSE {
 
@@ -25,35 +27,30 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
   -> Cx5
 {
   auto const nC = noncart.dimension(0);
-  auto const nSamp = noncart.dimension(1);
-  auto const nTrace = noncart.dimension(2);
+  // auto const nSamp = noncart.dimension(1);
+  // auto const nTrace = noncart.dimension(2);
   auto const nSlice = noncart.dimension(3);
   auto const nTime = noncart.dimension(4);
   if (opts.tp >= nTime) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nTime); }
+  Cx4  lores = traj.trim(CChipMap(noncart, opts.tp));
 
-  Cx4 const ncVol = noncart.chip<4>(opts.tp);
   traj.downsample(opts.res, true, false);
-  auto       lores = traj.trim(ncVol);
-  auto const maxCoord = Maximum(NoNaNs(traj.points()).abs());
-  NoncartesianTukey(maxCoord * 0.75, maxCoord, 0.f, traj.points(), lores);
+  auto const M = *flux::max(traj.matrix());
+  NoncartesianTukey(M * 0.75, M, 0.f, traj.points(), lores);
 
   auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
   Cx5        channels;
   if constexpr (ND == 2) {
     auto const A = TOps::MakeLoop<2, 3>(nufft, nSlice);
-    auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
-    auto const lores =
-      (nTime == 1) ? traj.trim(Cx4CMap(noncart.data(), nC, nSamp, nTrace, nSlice)) : traj.trim(Cx4(noncart.chip<4>(opts.tp)));
+    auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
     auto const v = CollapseToConstVector(lores);
-    Log::Debug("SENSE", "A {}->{} M {}->{} Data {}", A->ishape, A->oshape, M->ishape, M->oshape, lores.dimensions());
-    LSMR const lsmr{A, M, nullptr, {4}};
+    Log::Debug("SENSE", "A {}->{} M {}->{} Data {}", A->ishape, A->oshape, P->ishape, P->oshape, lores.dimensions());
+    LSMR const lsmr{A, P, nullptr, {4}};
     channels = AsTensorMap(lsmr.run(v), A->ishape);
   } else {
     if (nSlice > 1) { throw(Log::Failure("SENSE", "Not supported right now")); }
-    auto const M = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz0{});
-    auto const lores = (nTime == 1) ? traj.trim(Cx3CMap(noncart.data(), nC, nSamp, nTrace))
-                                    : traj.trim(Cx3(noncart.chip<4>(opts.tp).template chip<3>(0)));
-    LSMR const lsmr{nufft, M, nullptr, {4}};
+    auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz0{});
+    LSMR const lsmr{nufft, P, nullptr, {4}};
     channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), nufft->ishape);
   }
   return channels;
@@ -214,8 +211,9 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     Ops::Op<Cx>::Vector m(MSFP->rows());
     m.setConstant(1.f);
     m = (MSFP->forward(MSFP->adjoint(m)).array().abs() + 1.e-3f).inverse();
-    auto                Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
-    Ops::Op<Cx>::CMap   c(channels.data(), MSFP->rows());
+    auto              Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
+    Ops::Op<Cx>::CMap c(channels.data(), SFP->rows());
+    fmt::print(stderr, "M {} {} c {}\n", M->rows(), M->cols(), c.rows());
     Ops::Op<Cx>::Vector cʹ = M->forward(c);
     LSMR                solve{MSFP, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
     auto const          k = solve.run(cʹ);
