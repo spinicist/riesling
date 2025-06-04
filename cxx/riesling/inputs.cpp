@@ -16,7 +16,6 @@ template <int ND> CoreArgs<ND>::CoreArgs(args::Subparser &parser)
   , oname(parser, "FILE", "Output HD5 file")
   , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz<ND>())
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
-  , residual(parser, "R", "Write out residual to file", {"residual", 'r'})
 {
 }
 

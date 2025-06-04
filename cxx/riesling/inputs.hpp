@@ -20,7 +20,6 @@ template <int ND> struct CoreArgs
   args::Positional<std::string> iname, oname;
   SzFlag<ND>                    matrix;
   args::ValueFlag<std::string>  basisFile;
-  args::Flag                    residual;
 
   CoreArgs(args::Subparser &parser);
 };

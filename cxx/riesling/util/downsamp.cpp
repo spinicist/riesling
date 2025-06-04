@@ -41,5 +41,4 @@ template <int ND> void run_downsamp(args::Subparser &parser)
 }
 
 void main_downsamp(args::Subparser &parser) { run_downsamp<3>(parser); }
-
 void main_downsamp2(args::Subparser &parser) { run_downsamp<2>(parser); }
