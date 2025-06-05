@@ -32,7 +32,7 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
   auto const nSlice = noncart.dimension(3);
   auto const nTime = noncart.dimension(4);
   if (opts.tp >= nTime) { throw Log::Failure("SENSE", "Specified volume was {} data has {}", opts.tp, nTime); }
-  Cx4  lores = traj.trim(CChipMap(noncart, opts.tp));
+  Cx4 lores = traj.trim(CChipMap(noncart, opts.tp));
 
   traj.downsample(opts.res, true, false);
   auto const M = *flux::max(traj.matrix());
@@ -276,6 +276,9 @@ template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, T
   } else {
     HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
+    if (kernels.dimension(3) != noncart.dimension(0)) {
+      throw(Log::Failure("SENSE", "Kernel channels {} did not match data {}", kernels.dimension(3), noncart.dimension(0)));
+    }
   }
   return kernels;
 }
