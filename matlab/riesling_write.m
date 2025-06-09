@@ -65,14 +65,22 @@ end
 
 if ~isempty(f0map)
     file_id = H5F.open(fname, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
-    h5create(fname, '/f0map', size(f0map));
+    f0map_size = size(f0map);
+    if numel(f0map_size)<3
+        f0map_size = cat(2,f0map_size,1);
+    end
+    h5create(fname, '/f0map', f0map_size);
     h5write(fname, '/f0map', f0map);
     H5F.close(file_id);
 end
 
 if ~isempty(t2map)
     file_id = H5F.open(fname, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
-    h5create(fname, '/t2map', size(t2map));
+    t2map_size = size(t2map);
+    if numel(t2map_size)<3
+        t2map_size = cat(2,t2map_size,1);
+    end
+    h5create(fname, '/t2map', t2map_size);
     h5write(fname, '/t2map', t2map);
     H5F.close(file_id);
 end
@@ -80,7 +88,11 @@ end
 % Add matrix attribute to trajectory dataset (if supplied within info)
 if nargin > 3 && ~isempty(traj)
     % To make life a bit easier we use the high-level functions to save the rest
-    h5create(fname, '/trajectory', size(traj));
+    traj_size = size(traj);
+    if numel(traj_size)<3
+        traj_size = cat(2,traj_size,1);
+    end
+    h5create(fname, '/trajectory', traj_size);
     h5write(fname, '/trajectory', traj);
 
     % Reopen the file and the dataset
