@@ -10,7 +10,7 @@ struct Prox
 {
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
   using Map = typename Vector::AlignedMapType;
-  using CMap = typename Vector::ConstAlignedMapType;
+  using CMap = typename Eigen::Map<Vector const, Eigen::AlignedMax>;
   using Op = Ops::Op<Scalar>;
   using Ptr = std::shared_ptr<Prox>;
 
@@ -22,8 +22,8 @@ struct Prox
   void apply(float const α, Vector const &x, Vector &z) const;
   void apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const;
 
-  virtual void apply(float const α, CMap const x, Map z) const = 0;
-  virtual void apply(std::shared_ptr<Op> const α, CMap const x, Map z) const;
+  virtual void apply(float const α, CMap x, Map z) const = 0;
+  virtual void apply(std::shared_ptr<Op> const α, CMap x, Map z) const;
 
   virtual ~Prox(){};
 
@@ -44,8 +44,8 @@ struct ConjugateProx final : Prox<Scalar>
 
   ConjugateProx(std::shared_ptr<Prox<Scalar>> p);
 
-  void apply(float const α, CMap const x, Map z) const;
-  void apply(std::shared_ptr<Op> const α, CMap const x, Map z) const;
+  void apply(float const α, CMap x, Map z) const;
+  void apply(Op::Ptr const α, CMap x, Map z) const;
 
 private:
   std::shared_ptr<Prox<Scalar>> p;

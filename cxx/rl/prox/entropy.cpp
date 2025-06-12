@@ -13,7 +13,7 @@ Entropy::Entropy(float const λ_, Index const sz_)
   Log::Print("Prox", "Entropy λ {}", λ);
 }
 
-void Entropy::apply(float const α, CMap const v, Map z) const
+void Entropy::apply(float const α, CMap v, Map z) const
 {
   float const          t = α * λ;
   Eigen::ArrayXf const vabs = v.array().abs();
@@ -35,7 +35,7 @@ NMREntropy::NMREntropy(float const λ_, Index const sz_)
   Log::Print("Prox", "NMR Entropy λ {}", λ_);
 }
 
-void NMREntropy::apply(float const α, CMap const v, Map z) const
+void NMREntropy::apply(float const α, CMap v, Map z) const
 {
   float const          t = α * λ;
   Eigen::ArrayXf const vabs = v.array().abs();

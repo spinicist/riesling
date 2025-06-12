@@ -40,28 +40,28 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     Log::Debug("TOp", "TensorScale weights {} reshape {} broadcast {}", scales.dimensions(), res, brd);
   }
 
-  void forward(InCMap const x, OutMap y) const
+  void forward(InCMap x, OutMap y) const
   {
     auto const time = this->startForward(x, y, false);
     y.device(Threads::TensorDevice()) = x * scales.reshape(res).broadcast(brd);
     this->finishForward(y, time, false);
   }
 
-  void iforward(InCMap const x, OutMap y) const
+  void iforward(InCMap x, OutMap y) const
   {
     auto const time = this->startForward(x, y, true);
     y.device(Threads::TensorDevice()) += x * scales.reshape(res).broadcast(brd);
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap const y, InMap x) const
+  void adjoint(OutCMap y, InMap x) const
   {
     auto const time = this->startAdjoint(y, x, false);
     x.device(Threads::TensorDevice()) = y * scales.reshape(res).broadcast(brd);
     this->finishAdjoint(x, time, false);
   }
 
-  void iadjoint(OutCMap const y, InMap x) const
+  void iadjoint(OutCMap y, InMap x) const
   {
     auto const time = this->startAdjoint(y, x, true);
     x.device(Threads::TensorDevice()) += y * scales.reshape(res).broadcast(brd);

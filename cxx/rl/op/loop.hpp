@@ -22,7 +22,7 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
   {
   }
 
-  void forward(InCMap const x, OutMap y) const
+  void forward(InCMap x, OutMap y) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -34,7 +34,7 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap const y, InMap x) const
+  void adjoint(OutCMap y, InMap x) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -46,7 +46,7 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap const x, OutMap y) const
+  void iforward(InCMap x, OutMap y) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -58,7 +58,7 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap const y, InMap x) const
+  void iadjoint(OutCMap y, InMap x) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);

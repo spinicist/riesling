@@ -20,7 +20,7 @@ void WriteResidual(std::string const              &cmd,
                    SENSE::Opts<3> const           &senseOpts,
                    PreconOpts const               &preOpts,
                    Trajectory const               &traj,
-                   Cx5CMap const                  &x,
+                   Cx5CMap                  &x,
                    TOps::TOp<Cx, 5, 5>::Ptr const &A,
                    Cx5                            &noncart);
 } // namespace rl

@@ -2,6 +2,7 @@
 #include "outputs.hpp"
 #include "regularizers.hpp"
 #include "rl/algo/admm.hpp"
+#include "rl/algo/pdhg.hpp"
 #include "rl/log/log.hpp"
 #include "rl/op/top-id.hpp"
 #include "rl/scaling.hpp"
@@ -13,13 +14,14 @@ void main_denoise(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   ADMMArgs                      admmArgs(parser);
+  args::Flag                    pdhg(parser, "P", "Use PDHG instead of ADMM (experimental)", {'p', "pdhg"});
   args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
   args::ValueFlag<Index>        debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                    debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   RegOpts                       regOpts(parser);
 
   ParseCommand(parser, iname, oname);
-  auto const cmd = parser.GetCommand().Name();
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader input(iname.Get());
   Cx5         in = input.readTensor<Cx5>();
   float const scale = ScaleImages(scaling.Get(), in);
@@ -32,6 +34,10 @@ void main_denoise(args::Subparser &parser)
     // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
     // be the identity operator
     regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
+  } else if (pdhg) {
+    PDHG opt{B, nullptr, regs};
+    opt.imax = admmArgs.in_its1.Get();
+    xm = opt.run(CollapseToConstVector(in));
   } else {
     ADMM::DebugX debug_x = [shape = x.dimensions(), ext_x, di = debugIters.Get()](Index const ii, ADMM::Vector const &xi) {
       if (ii % di == 0) {

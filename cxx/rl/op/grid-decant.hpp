@@ -19,8 +19,8 @@ template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecan
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
     -> std::shared_ptr<GridDecant<ND>>;
 
-  void iforward(InCMap const x, OutMap y) const;
-  void iadjoint(OutCMap const y, InMap x) const;
+  void iforward(InCMap x, OutMap y) const;
+  void iadjoint(OutCMap y, InMap x) const;
 
   KType kernel;
 

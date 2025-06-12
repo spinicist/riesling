@@ -14,7 +14,7 @@ auto LSQR::run(Vector const &b, float const λ, Vector const &x0) const -> Vecto
 
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsqr.py
  */
-auto LSQR::run(CMap const b, float const λ, CMap const x0) const -> Vector
+auto LSQR::run(CMap b, float const λ, CMap x0) const -> Vector
 {
   Log::Print("LSQR", "λ {}", λ);
   if (iterLimit < 1) { throw Log::Failure("LSQR", "Requires at least 1 iteration"); }

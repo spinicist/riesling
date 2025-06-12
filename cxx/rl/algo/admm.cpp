@@ -11,7 +11,7 @@ namespace rl {
 
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
-auto ADMM::run(CMap const b) const -> Vector
+auto ADMM::run(CMap b) const -> Vector
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
    * For the least squares part we are solving:

@@ -16,16 +16,16 @@ PDHG::PDHG(std::shared_ptr<Op>             A,
            float const                     τin,
            Callback const                 &cb)
 {
-  Index const          nR = regs.size();
-  std::vector<Op::Ptr> ops(nR);
-  std::transform(regs.begin(), regs.end(), ops.begin(), [](auto R) { return R.T; });
-  Aʹ = std::make_shared<Ops::VStack<Cx>>(A, ops);
+  Index const            nR = regs.size();
+  std::vector<Op::Ptr>   ops(nR);
+  std::vector<Prox::Ptr> ps;
   l2 = std::make_shared<Proxs::LeastSquares<Cx>>(1.f, A->rows());
-  std::vector<std::shared_ptr<Prox>> ps;
   ps.push_back(l2);
-  for (Index ii = 0; ii < nR; ii++) {
-    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(regs[ii].P));
+  for (Index ir = 0; ir < nR; ir++) {
+    ops[ir] = regs[ir].T ? regs[ir].T : Ops::Identity<Cx>::Make(A->cols());
+    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(regs[ir].P));
   }
+  Aʹ = std::make_shared<Ops::VStack<Cx>>(A, ops);
   proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
 
   if (σin.size() == regs.size()) {
@@ -33,15 +33,20 @@ PDHG::PDHG(std::shared_ptr<Op>             A,
   } else {
     σ.clear();
     for (auto &G : ops) {
-      auto eigG = PowerMethod(G, 32);
+      auto eigG = PowerMethod(G, 4);
       σ.push_back(1.f / eigG.val);
     }
   }
 
   std::vector<std::shared_ptr<Op>> sG;
-  sG.push_back(P);
-  for (Index ii = 0; ii < nR; ii++) {
-    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(regs[ii].T->rows(), σ[ii]));
+  if (P) {
+    sG.push_back(P);
+  } else {
+    sG.push_back(Ops::Identity<Cx>::Make(A->rows()));
+  }
+  for (Index ir = 0; ir < nR; ir++) {
+    Index const nrows = regs[ir].T ? regs[ir].T->rows() : A->rows();
+    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(nrows, σ[ir]));
   }
   σOp = std::make_shared<Ops::DStack<Cx>>(sG);
 
@@ -52,29 +57,27 @@ PDHG::PDHG(std::shared_ptr<Op>             A,
     τ = τin;
   }
 
-  u.resize(Aʹ->rows());
-  u.setZero();
-  v.resize(Aʹ->rows());
-  v.setZero();
-
-  x.resize(Aʹ->cols());
-  x.setZero();
-  x̅.resize(Aʹ->cols());
-  x̅.setZero();
-  xold.resize(Aʹ->cols());
-  xold.setZero();
-  xdiff.resize(Aʹ->cols());
-  xdiff.setZero();
-
   debug = cb;
 
   Log::Print("PDHG", "σ {:4.3E} τ {:4.3E}", fmt::join(σ, ","), τ);
 }
 
-auto PDHG::run(Cx const *bdata, Index const iterLimit) -> Vector
+auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
+
+auto PDHG::run(CMap b) const -> Vector
 {
-  l2->setBias(bdata);
-  for (Index ii = 0; ii < iterLimit; ii++) {
+  l2->setY(b);
+
+  Vector x(Aʹ->cols()), x̅(Aʹ->cols()), xold(Aʹ->cols()), xdiff(Aʹ->cols()), u(Aʹ->rows()), v(Aʹ->rows());
+
+  u.setZero();
+  v.setZero();
+  x.setZero();
+  x̅.setZero();
+  xold.setZero();
+  xdiff.setZero();
+
+  for (Index ii = 0; ii < imax; ii++) {
     xold = x;
     v = u + σOp->forward(Aʹ->forward(x̅));
     proxʹ->apply(σOp, v, u);

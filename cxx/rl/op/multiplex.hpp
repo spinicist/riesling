@@ -15,7 +15,7 @@ template <typename Sc, int ND> struct Multiplex final : TOp<Sc, ND, ND + 1>
   {
   }
 
-  void forward(InCMap const x, OutMap y) const
+  void forward(InCMap x, OutMap y) const
   {
     auto const  time = this->startForward(x, y, false);
     Index const nSlab = oshape[InRank];
@@ -29,7 +29,7 @@ template <typename Sc, int ND> struct Multiplex final : TOp<Sc, ND, ND + 1>
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap const y, InMap x) const
+  void adjoint(OutCMap y, InMap x) const
   {
     auto const  time = this->startAdjoint(y, x, false);
     Index const nSlab = oshape[InRank];

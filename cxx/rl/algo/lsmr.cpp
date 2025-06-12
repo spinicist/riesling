@@ -14,7 +14,7 @@ auto LSMR::run(Vector const &b, Vector const &x0) const -> Vector
 
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
  */
-auto LSMR::run(CMap const b, CMap x0) const -> Vector
+auto LSMR::run(CMap b, CMap x0) const -> Vector
 {
   Log::Print("LSMR", "λ {}", opts.λ);
   if (opts.imax < 1) { throw Log::Failure("LSMR", "Requires at least 1 iteration"); }

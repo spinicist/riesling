@@ -55,7 +55,7 @@ void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMa
   }
 }
 
-template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::forward(InCMap const x, OutMap y) const
+template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::forward(InCMap x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
@@ -63,7 +63,7 @@ template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::forward(InCMap con
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iforward(InCMap const x, OutMap y) const
+template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iforward(InCMap x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
@@ -71,7 +71,7 @@ template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iforward(InCMap co
 }
 
 template <int ND, typename KF, int SG>
-void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMap const y, CxNMap<ND + 2> x) const
+void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMap y, CxNMap<ND + 2> x) const
 
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
@@ -95,7 +95,7 @@ void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMa
   }
 }
 
-template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::adjoint(OutCMap const y, InMap x) const
+template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::adjoint(OutCMap y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
@@ -103,7 +103,7 @@ template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::adjoint(OutCMap co
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iadjoint(OutCMap const y, InMap x) const
+template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iadjoint(OutCMap y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });

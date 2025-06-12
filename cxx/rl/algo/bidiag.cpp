@@ -41,7 +41,7 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
   return std::make_tuple(c, s, ρ);
 }
 
-Bidiag::Bidiag(Ptr A_, Ptr Minv_, Ptr Ninv_, Vector &x, CMap &b, CMap &x0)
+Bidiag::Bidiag(Ptr A_, Ptr Minv_, Ptr Ninv_, Vector &x, CMap b, CMap x0)
   : A{A_}
   , Minv{Minv_}
   , Ninv{Ninv_}

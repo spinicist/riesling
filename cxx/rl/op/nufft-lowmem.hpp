@@ -14,8 +14,8 @@ template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTLowmem final : TOp<C
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
     -> std::shared_ptr<NUFFTLowmem<ND, KF>>;
 
-  void iadjoint(OutCMap const y, InMap x) const;
-  void iforward(InCMap const x, OutMap y) const;
+  void iadjoint(OutCMap y, InMap x) const;
+  void iforward(InCMap x, OutMap y) const;
 
 private:
   constexpr static int DC = ND;     // Coils dimension

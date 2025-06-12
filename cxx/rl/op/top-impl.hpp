@@ -25,7 +25,7 @@ TOp<S, I, O>::TOp(std::string const &n, InDims const xd, OutDims const yd)
 template <typename S, int I, int O> auto TOp<S, I, O>::rows() const -> Index { return Product(oshape); }
 template <typename S, int I, int O> auto TOp<S, I, O>::cols() const -> Index { return Product(ishape); }
 
-template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CMap const x, typename Base::Map y) const
+template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CMap x, typename Base::Map y) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
@@ -34,7 +34,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::forward(typename Base::CM
   forward(xm, ym);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CMap const y, typename Base::Map x) const
+template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CMap y, typename Base::Map x) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
@@ -43,7 +43,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CM
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap const x, typename Base::Map y) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap x, typename Base::Map y) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
@@ -52,7 +52,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::C
   iforward(xm, ym);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::CMap const y, typename Base::Map x) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::CMap y, typename Base::Map x) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
@@ -101,18 +101,18 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(OutTensor const &
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap const, OutMap) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap, OutMap) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap const, InMap) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap, InMap) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
 
 template <typename S, int I, int O>
-auto TOp<S, I, O>::startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time
+auto TOp<S, I, O>::startForward(InCMap x, OutMap const &y, bool const ip) const -> Time
 {
   if (x.dimensions() != ishape) { throw Log::Failure(this->name, "Forward x dims: {} expected: {}", x.dimensions(), ishape); }
   if (y.dimensions() != oshape) { throw Log::Failure(this->name, "Forward y dims: {} expected: {}", y.dimensions(), oshape); }
@@ -134,7 +134,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap cons
 }
 
 template <typename S, int I, int O>
-auto TOp<S, I, O>::startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time
+auto TOp<S, I, O>::startAdjoint(OutCMap y, InMap const &x, bool const ip) const -> Time
 {
   if (y.dimensions() != oshape) { throw Log::Failure(this->name, "Adjoint y dims: {} expected: {}", y.dimensions(), oshape); }
   if (x.dimensions() != ishape) { throw Log::Failure(this->name, "Adjoint x dims: {} expected: {}", x.dimensions(), ishape); }

@@ -30,7 +30,7 @@ template <typename Scalar_ = Cx> struct NormalOp final : Ops::Op<Scalar_>
   auto forward(Vector const &x) const -> Vector { return op->adjoint(op->forward(x)); }
   auto adjoint(Vector const &y) const -> Vector { throw Log::Failure("Normal Operators do not have adjoints"); }
 
-  void forward(CMap const x, Map y) const
+  void forward(CMap x, Map y) const
   {
     Vector temp(op->rows());
     Map    tm(temp.data(), temp.size());
@@ -38,7 +38,7 @@ template <typename Scalar_ = Cx> struct NormalOp final : Ops::Op<Scalar_>
     op->forward(x, tm);
     op->adjoint(tcm, y);
   }
-  void adjoint(CMap const x, Map y) const { throw Log::Failure("Normal Operators do not have adjoints"); }
+  void adjoint(CMap x, Map y) const { throw Log::Failure("Normal Operators do not have adjoints"); }
 };
 
 template <typename Scalar = Cx> struct ConjugateGradients

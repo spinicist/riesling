@@ -24,18 +24,19 @@ struct PDHG
        float const                     τ = -1.f,
        Callback const                 &cb = nullptr);
 
-  auto run(Cx const *bdata, Index const iterLimit) -> Vector;
+  auto run(Vector const &b) const -> Vector;
+  auto run(CMap b) const -> Vector;
 
   std::vector<float> σ;
   float              τ;
+  Index              imax = 4;
 
 private:
-  std::shared_ptr<Op>                      Aʹ;
-  std::shared_ptr<Proxs::LeastSquares<Cx>> l2;
-  std::shared_ptr<Proxs::StackProx<Cx>>    proxʹ;
-  std::shared_ptr<Ops::Op<Cx>>             σOp;
-  Vector                                   x, x̅, xold, xdiff, u, v;
-  Callback                                 debug = nullptr;
+  Op::Ptr Aʹ;
+  Proxs::LeastSquares<Cx>::Ptr l2;
+  Proxs::StackProx<Cx>::Ptr proxʹ;
+  Op::Ptr                   σOp;
+  Callback                  debug = nullptr;
 };
 
 } // namespace rl

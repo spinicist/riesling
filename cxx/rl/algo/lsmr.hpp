@@ -36,7 +36,7 @@ struct LSMR
   DbgFunc debug = nullptr;
 
   auto run(Vector const &b, Vector const &x0 = Vector()) const -> Vector;
-  auto run(CMap const b, CMap x0 = CMap(nullptr, 0)) const -> Vector;
+  auto run(CMap b, CMap x0 = CMap(nullptr, 0)) const -> Vector;
 };
 
 } // namespace rl

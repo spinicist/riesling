@@ -20,7 +20,7 @@ SLR<NK>::SLR(float const l, Sz5 const sh, Sz<NK> const dims, Sz<NK> const kW, bo
   Log::Print("Prox", "Structured Low-Rank λ {} Scaled λ {} Shape {}", l, λ, shape);
 }
 
-template <int NK> void SLR<NK>::apply(float const α, CMap const xin, Map zin) const
+template <int NK> void SLR<NK>::apply(float const α, CMap xin, Map zin) const
 {
   Eigen::TensorMap<Cx5 const> const x(xin.data(), shape);
   Eigen::TensorMap<Cx5>             z(zin.data(), shape);

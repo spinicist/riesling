@@ -23,28 +23,28 @@ Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap const x, OutMap y) const
+template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = x.pad(paddings_);
   this->finishForward(y, time, false);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap const y, InMap x) const
+template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
   this->finishAdjoint(x, time, false);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iforward(InCMap const x, OutMap y) const
+template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iforward(InCMap x, OutMap y) const
 {
   auto const time = this->startForward(x, y, true);
   y.device(Threads::TensorDevice()) += x.pad(paddings_);
   this->finishForward(y, time, true);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iadjoint(OutCMap const y, InMap x) const
+template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iadjoint(OutCMap y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   x.device(Threads::TensorDevice()) += y.slice(left_, ishape);

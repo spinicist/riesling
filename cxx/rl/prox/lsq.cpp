@@ -4,54 +4,54 @@
 #include "../log/log.hpp"
 #include "../tensors.hpp"
 
+#include <new>
+
 namespace rl::Proxs {
 
-template <typename S>
-LeastSquares<S>::LeastSquares(float const λ_, Index const sz_)
+template <typename S> LeastSquares<S>::LeastSquares(float const λ_, Index const sz_)
   : Prox<S>(sz_)
   , λ{λ_}
-  , y{nullptr, sz_}
+  , y{nullptr, 0}
 {
   Log::Print("Prox", "LeastSquares Prox λ {}", λ);
 }
 
-template <typename S>
-LeastSquares<S>::LeastSquares(float const λ_, CMap const bias)
-  : Prox<S>(bias.rows())
+template <typename S> LeastSquares<S>::LeastSquares(float const λ_, CMap y_)
+  : Prox<S>(y_.rows())
   , λ{λ_}
-  , y{bias}
+  , y{y_}
 {
   Log::Print("Prox", "LeastSquares Prox λ {}", λ);
 }
 
-template <typename S> void LeastSquares<S>::apply(float const α, CMap const x, Map z) const
+template <typename S> void LeastSquares<S>::apply(float const α, CMap x, Map z) const
 {
   float const t = α * λ;
-  if (y.data()) {
-    z = (x - t * y) / (1.f + t);
+  if (y.size()) {
+    z.device(Threads::TensorDevice()) = (x - t * y) / (1.f + t);
   } else {
-    z = x / (1.f + t);
-  }
-  if (Log::IsDebugging()) {
-    Log::Debug("Prox", "LeastSquares α {} λ {} t {} |x| {} |y| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(y),
-               ParallelNorm(z));
+    z.device(Threads::TensorDevice()) = x / (1.f + t);
   }
 }
 
-template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap const x, Map z) const
+template <typename S> void LeastSquares<S>::apply(std::shared_ptr<Ops::Op<S>> const α, CMap x, Map z) const
 {
   auto const div = α->inverse(1.f, λ);
-  if (y.data()) {
-    z = div->forward(x - λ * α->forward(y));
+  if (y.size()) {
+    z.device(Threads::TensorDevice()) = div->forward(x - λ * α->forward(y));
   } else {
-    z = div->forward(x);
-  }
-  if (Log::IsDebugging()) {
-    Log::Debug("Prox", "LeastSquares λ {} |x| {} |y| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(y), ParallelNorm(z));
+    z.device(Threads::TensorDevice()) = div->forward(x);
   }
 }
 
-template <typename S> void LeastSquares<S>::setBias(S const *data) { new (&this->y) CMap(data, this->sz); }
+template <typename S> void LeastSquares<S>::setY(CMap y_)
+{
+  if (y_.rows() == this->sz) {
+    new (&this->y) CMap(y_.data(), y_.rows());
+  } else {
+    throw(Log::Failure("ProxLSQ", "New y had size {}, old is {}", y_.rows(), this->y.rows()));
+  }
+}
 
 template struct LeastSquares<float>;
 template struct LeastSquares<Cx>;

@@ -30,7 +30,7 @@ algo/lad.cpp
 algo/lsmr.cpp
 algo/lsqr.cpp
 algo/otsu.cpp
-# algo/pdhg.cpp
+algo/pdhg.cpp
 algo/stats.cpp
 
 basis/basis.cpp
@@ -79,7 +79,7 @@ phantom/radial.cpp
 prox/entropy.cpp
 prox/hermitian.cpp
 prox/l1-wavelets.cpp
-# prox/lsq.cpp
+prox/lsq.cpp
 prox/llr.cpp
 prox/norms.cpp
 prox/prox.cpp

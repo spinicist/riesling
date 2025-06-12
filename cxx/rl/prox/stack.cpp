@@ -23,11 +23,11 @@ StackProx<S>::StackProx(std::shared_ptr<Prox<S>> p1, std::vector<std::shared_ptr
 }
 
 template <typename S>
-void StackProx<S>::apply(float const α, CMap const x, Map z) const
+void StackProx<S>::apply(float const α, CMap x, Map z) const
 {
   Index st = 0;
   for (auto &p : proxs) {
-    CMap const xm(x.data() + st, p->sz);
+    CMap xm(x.data() + st, p->sz);
     Map        zm(z.data() + st, p->sz);
     p->apply(α, xm, zm);
     st += p->sz;
@@ -35,7 +35,7 @@ void StackProx<S>::apply(float const α, CMap const x, Map z) const
 }
 
 template <typename S>
-void StackProx<S>::apply(std::shared_ptr<Ops::Op<S>> const αs1, CMap const x, Map z) const
+void StackProx<S>::apply(std::shared_ptr<Ops::Op<S>> const αs1, CMap x, Map z) const
 {
   if (auto const αs = std::dynamic_pointer_cast<Ops::DStack<S>>(αs1)) {
     assert(αs->ops.size() == proxs.size());
@@ -43,7 +43,7 @@ void StackProx<S>::apply(std::shared_ptr<Ops::Op<S>> const αs1, CMap const x, M
     for (size_t ii = 0; ii < proxs.size(); ii++) {
       auto      &p = proxs[ii];
       auto      &α = αs->ops[ii];
-      CMap const xm(x.data() + st, p->sz);
+      CMap xm(x.data() + st, p->sz);
       Map        zm(z.data() + st, p->sz);
       p->apply(α, xm, zm);
       st += p->sz;
