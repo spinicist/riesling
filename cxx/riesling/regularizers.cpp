@@ -49,14 +49,14 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     Proxs::Prox<Cx>::Ptr prox_x, prox_v;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
-        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{0});
-        prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{0});
+        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{3});
+        prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{3});
       } else if (opts.iso.Get() == "g") {
         prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{5});
         prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{5});
       } else if (opts.iso.Get() == "bg") {
-        prox_x = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_x->oshape, Sz2{0, 5});
-        prox_v = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_v->oshape, Sz2{0, 5});
+        prox_x = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_x->oshape, Sz2{3, 5});
+        prox_v = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_v->oshape, Sz2{3, 5});
       } else {
         throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
       }
@@ -76,11 +76,11 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     Proxs::Prox<Cx>::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
-        prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{0});
+        prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{3});
       } else if (opts.iso.Get() == "g") {
         prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{5});
       } else if (opts.iso.Get() == "bg") {
-        prox = std::make_shared<Proxs::L2<6, 2>>(opts.tv.Get(), grad->oshape, Sz2{0, 5});
+        prox = std::make_shared<Proxs::L2<6, 2>>(opts.tv.Get(), grad->oshape, Sz2{3, 5});
       } else {
         throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
       }
