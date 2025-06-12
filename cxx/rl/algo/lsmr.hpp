@@ -2,7 +2,6 @@
 
 #include "../op/ops.hpp"
 #include <functional>
-#include <span>
 
 namespace rl {
 /* Based on https://github.com/PythonOptimizers/pykrylov/blob/master/pykrylov/lls/lsmr.py
