@@ -1,7 +1,6 @@
 #include "ndft.hpp"
 
 #include "../log/log.hpp"
-#include "tensorscale.hpp"
 #include "top-impl.hpp"
 
 using namespace std::complex_literals;

@@ -36,11 +36,12 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
   FFT::Adjoint(xcor, FirstN<ND>(Sz3{0, 1, 2}));
   xcor.device(Threads::TensorDevice()) = xcor * psf;
-  Re3 weights = nufft->forward(xcor).abs();
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
-  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (1.f + λ) / ((weights * scale) + λ));
+  Re3 weights = nufft->forward(xcor).abs() * scale;
+
+  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (weights + λ) / (1.f + λ));
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
@@ -107,7 +108,7 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
       xcor.device(Threads::TensorDevice()) = xcor1 * psf;
     }
     weights.slice(Sz3{si, 0, 0}, Sz3{1, nSamp, nTrace}).device(Threads::TensorDevice()) =
-      (1.f + λ) / (nufft.forward(xcor).abs() * scale / ni + λ);
+      (nufft.forward(xcor).abs() * scale / ni + λ) / (1.f + λ);
   }
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {

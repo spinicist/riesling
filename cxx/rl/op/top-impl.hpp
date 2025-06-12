@@ -6,15 +6,13 @@
 
 namespace rl::TOps {
 
-template <typename S, int I, int O>
-TOp<S, I, O>::TOp(std::string const &n)
+template <typename S, int I, int O> TOp<S, I, O>::TOp(std::string const &n)
   : Ops::Op<Scalar>{n}
 {
   Log::Debug("TOp", "{} created.", this->name);
 }
 
-template <typename S, int I, int O>
-TOp<S, I, O>::TOp(std::string const &n, InDims const xd, OutDims const yd)
+template <typename S, int I, int O> TOp<S, I, O>::TOp(std::string const &n, InDims const xd, OutDims const yd)
   : Ops::Op<Scalar>{n}
   , ishape{xd}
   , oshape{yd}
@@ -41,6 +39,15 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CM
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
   adjoint(ym, xm);
+}
+
+template <typename S, int I, int O> void TOp<S, I, O>::inverse(typename Base::CMap y, typename Base::Map x) const
+{
+  if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
+  if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
+  OutCMap ym(y.data(), oshape);
+  InMap   xm(x.data(), ishape);
+  inverse(ym, xm);
 }
 
 template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap x, typename Base::Map y) const
@@ -101,6 +108,11 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(OutTensor const &
   adjoint(ym, xm);
 }
 
+template <typename S, int I, int O> void TOp<S, I, O>::inverse(OutCMap y, InMap x) const
+{
+  throw Log::Failure(this->name, "Inverse not implemented");
+}
+
 template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap, OutMap) const
 {
   throw Log::Failure(this->name, "In place not implemented");
@@ -111,8 +123,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap, InMap) 
   throw Log::Failure(this->name, "In place not implemented");
 }
 
-template <typename S, int I, int O>
-auto TOp<S, I, O>::startForward(InCMap x, OutMap const &y, bool const ip) const -> Time
+template <typename S, int I, int O> auto TOp<S, I, O>::startForward(InCMap x, OutMap y, bool const ip) const -> Time
 {
   if (x.dimensions() != ishape) { throw Log::Failure(this->name, "Forward x dims: {} expected: {}", x.dimensions(), ishape); }
   if (y.dimensions() != oshape) { throw Log::Failure(this->name, "Forward y dims: {} expected: {}", y.dimensions(), oshape); }
@@ -124,7 +135,7 @@ auto TOp<S, I, O>::startForward(InCMap x, OutMap const &y, bool const ip) const 
   return Log::Now();
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap const &y, Time const start, bool const ip) const
+template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap y, Time const start, bool const ip) const
 {
   if (Log::IsDebugging()) {
     Log::Debug(this->name, "{}Forward finished in {} |y| {}", (ip ? "IP " : ""), Log::ToNow(start), Norm<true>(y));
@@ -133,8 +144,7 @@ template <typename S, int I, int O> void TOp<S, I, O>::finishForward(OutMap cons
   }
 }
 
-template <typename S, int I, int O>
-auto TOp<S, I, O>::startAdjoint(OutCMap y, InMap const &x, bool const ip) const -> Time
+template <typename S, int I, int O> auto TOp<S, I, O>::startAdjoint(OutCMap y, InMap x, bool const ip) const -> Time
 {
   if (y.dimensions() != oshape) { throw Log::Failure(this->name, "Adjoint y dims: {} expected: {}", y.dimensions(), oshape); }
   if (x.dimensions() != ishape) { throw Log::Failure(this->name, "Adjoint x dims: {} expected: {}", x.dimensions(), ishape); }
@@ -146,12 +156,33 @@ auto TOp<S, I, O>::startAdjoint(OutCMap y, InMap const &x, bool const ip) const 
   return Log::Now();
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap const &x, Time const start, bool const ip) const
+template <typename S, int I, int O> void TOp<S, I, O>::finishAdjoint(InMap x, Time const start, bool const ip) const
 {
   if (Log::IsDebugging()) {
     Log::Debug(this->name, "{}Adjoint finished in {} |x| {}", (ip ? "IP " : ""), Log::ToNow(start), Norm<true>(x));
   } else {
     Log::Debug(this->name, "{}Adjoint finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
+  }
+}
+
+template <typename S, int I, int O> auto TOp<S, I, O>::startInverse(OutCMap y, InMap x) const -> Time
+{
+  if (y.dimensions() != oshape) { throw Log::Failure(this->name, "Inverse y dims: {} expected: {}", y.dimensions(), oshape); }
+  if (x.dimensions() != ishape) { throw Log::Failure(this->name, "Inverse x dims: {} expected: {}", x.dimensions(), ishape); }
+  if (Log::IsDebugging()) {
+    Log::Debug(this->name, "Inverse {}->{} |y| {}", oshape, ishape, Norm<true>(y));
+  } else {
+    Log::Debug(this->name, "Inverse {}->{}", oshape, ishape);
+  }
+  return Log::Now();
+}
+
+template <typename S, int I, int O> void TOp<S, I, O>::finishInverse(InMap x, Time const start) const
+{
+  if (Log::IsDebugging()) {
+    Log::Debug(this->name, "Inverse finished in {} |x| {}", Log::ToNow(start), Norm<true>(x));
+  } else {
+    Log::Debug(this->name, "Inverse finished in {}", Log::ToNow(start));
   }
 }
 

@@ -41,43 +41,43 @@ auto Rotation(float const a, float const b) -> std::tuple<float, float, float>
   return std::make_tuple(c, s, ρ);
 }
 
-Bidiag::Bidiag(Ptr A_, Ptr Minv_, Ptr Ninv_, Vector &x, CMap b, CMap x0)
+Bidiag::Bidiag(Ptr A_, Ptr M_, Ptr N_, Vector &x, CMap b, CMap x0)
   : A{A_}
-  , Minv{Minv_}
-  , Ninv{Ninv_}
+  , M{M_}
+  , N{N_}
 {
   u.resize(A->rows());
-  if (Minv) { Mu.resize(A->rows()); }
+  if (M) { Mu.resize(A->rows()); }
   v.resize(A->cols());
-  if (Ninv) { Nv.resize(A->cols()); }
+  if (N) { Nv.resize(A->cols()); }
 
   if (x0.size()) {
     x = x0;
     A->forward(x, u); // Reuse u to save space
-    if (Minv) {
+    if (M) {
       Mu.device(Threads::CoreDevice()) = b - u;
     } else {
       u.device(Threads::CoreDevice()) = b - u;
     }
   } else {
     x.setZero();
-    if (Minv) {
+    if (M) {
       Mu.device(Threads::CoreDevice()) = b;
     } else {
       u.device(Threads::CoreDevice()) = b;
     }
   }
-  if (Minv) {
-    Minv->forward(Mu, u);
+  if (M) {
+    M->inverse(Mu, u);
     β = std::sqrt(CheckedDot(Mu, u));
     Mu.device(Threads::CoreDevice()) = Mu * (1.f / β);
   } else {
     β = std::sqrt(CheckedDot(u, u));
   }
   u.device(Threads::CoreDevice()) = u * (1.f / β);
-  if (Ninv) {
+  if (N) {
     Nv = A->adjoint(u);
-    Ninv->forward(Nv, v);
+    N->inverse(Nv, v);
     α = std::sqrt(CheckedDot(v, v));
     Nv.device(Threads::CoreDevice()) = v * (1.f / α);
   } else {
@@ -89,10 +89,10 @@ Bidiag::Bidiag(Ptr A_, Ptr Minv_, Ptr Ninv_, Vector &x, CMap b, CMap x0)
 
 void Bidiag::next()
 {
-  if (Minv) {
+  if (M) {
     Mu.device(Threads::CoreDevice()) = -α * Mu;
     A->iforward(v, Mu);
-    Minv->forward(Mu, u);
+    M->inverse(Mu, u);
     β = std::sqrt(CheckedDot(Mu, u));
     Mu.device(Threads::CoreDevice()) = Mu / β;
   } else {
@@ -102,10 +102,10 @@ void Bidiag::next()
   }
   u.device(Threads::CoreDevice()) = u * (1.f / β);
 
-  if (Ninv) {
+  if (N) {
     Nv.device(Threads::CoreDevice()) = -β * Nv;
     A->iadjoint(u, Nv);
-    Ninv->forward(Nv, v);
+    N->inverse(Nv, v);
     α = std::sqrt(CheckedDot(Nv, v));
     Nv.device(Threads::CoreDevice()) = Nv * (1.f / α);
   } else {

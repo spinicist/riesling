@@ -6,7 +6,7 @@
 #include "rl/algo/lsmr.hpp"
 #include "rl/op/grid-opts.hpp"
 #include "rl/op/recon-opts.hpp"
-#include "rl/precon.hpp"
+#include "rl/precon-opts.hpp"
 #include "rl/sense/sense.hpp"
 #include "rl/trajectory.hpp"
 #include "rl/types.hpp"
@@ -83,12 +83,11 @@ struct ADMMArgs
   auto Get() -> rl::ADMM::Opts;
 };
 
-template <int ND>
-struct SENSEArgs
+template <int ND> struct SENSEArgs
 {
   args::ValueFlag<std::string> type;
   args::ValueFlag<Index>       tp, kWidth;
-  ArrayFlag<float, ND>          res;
+  ArrayFlag<float, ND>         res;
   args::ValueFlag<float>       l, λ;
 
   SENSEArgs(args::Subparser &parser);

@@ -18,8 +18,8 @@ struct LSQR
   using CMap = typename Op::CMap;
 
   Op::Ptr A;
-  Op::Ptr Minv = nullptr; // Left Pre-conditioner
-  Op::Ptr Ninv = nullptr; // Right Pre-conditioner
+  Op::Ptr M = nullptr; // Left Pre-conditioner, will call ->inverse()
+  Op::Ptr N = nullptr; // Right Pre-conditioner, will call ->inverse()
   Index   iterLimit = 4;
   float   aTol = 1.e-6f;
   float   bTol = 1.e-6f;
