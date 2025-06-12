@@ -7,13 +7,12 @@
 
 namespace rl::Ops {
 
-template <typename S>
-Op<S>::Op(std::string const &n)
+template <typename S> Op<S>::Op(std::string const &n)
   : name{n}
 {
 }
 
-template <typename S> void Op<S>::inverse(CMap const , Map ) const
+template <typename S> void Op<S>::inverse(CMap, Map) const
 {
   throw Log::Failure(this->name, "Does not have an inverse defined", name);
 }
@@ -85,7 +84,7 @@ template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x) const
   this->iadjoint(ym, xm);
 }
 
-template <typename S> auto Op<S>::startForward(CMap const &x, Map const &y, bool const ip) const -> Log::Time
+template <typename S> auto Op<S>::startForward(CMap x, Map const &y, bool const ip) const -> Log::Time
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x [{}] expected [{}]", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward y [{}] expected [{}]", y.rows(), rows()); }
@@ -102,7 +101,7 @@ template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const st
   Log::Debug(this->name, "{}forward finished in {} |y| {}.", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(y));
 }
 
-template <typename S> auto Op<S>::startAdjoint(CMap const &y, Map const &x, bool const ip) const -> Log::Time
+template <typename S> auto Op<S>::startAdjoint(CMap y, Map const &x, bool const ip) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint x [{}] expected [{}]", x.rows(), cols()); }
@@ -123,7 +122,7 @@ template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const st
   }
 }
 
-template <typename S> auto Op<S>::startInverse(CMap const &y, Map const &x, bool const ip) const -> Log::Time
+template <typename S> auto Op<S>::startInverse(CMap y, Map const &x, bool const ip) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Inverse y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Inverse x [{}] expected [{}]", x.rows(), cols()); }

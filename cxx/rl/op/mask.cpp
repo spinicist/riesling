@@ -21,7 +21,7 @@ Mask<S>::Mask(MaskVector const &m, Index const r)
 template <typename S> auto Mask<S>::rows() const -> Index { return osz * repeats; }
 template <typename S> auto Mask<S>::cols() const -> Index { return isz * repeats; }
 
-template <typename S> void Mask<S>::forward(CMap const x, Map y) const
+template <typename S> void Mask<S>::forward(CMap x, Map y) const
 {
   auto const time = this->startForward(x, y, false);
   Index      ix = 0, iy = 0;
@@ -35,7 +35,7 @@ template <typename S> void Mask<S>::forward(CMap const x, Map y) const
   this->finishForward(y, time, false);
 }
 
-template <typename S> void Mask<S>::adjoint(CMap const y, Map x) const
+template <typename S> void Mask<S>::adjoint(CMap y, Map x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   Index      ix = 0, iy = 0;
@@ -53,7 +53,7 @@ template <typename S> void Mask<S>::adjoint(CMap const y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Mask<S>::iforward(CMap const x, Map y) const
+template <typename S> void Mask<S>::iforward(CMap x, Map y) const
 {
   auto const time = this->startForward(x, y, true);
   Index      ix = 0, iy = 0;
@@ -67,7 +67,7 @@ template <typename S> void Mask<S>::iforward(CMap const x, Map y) const
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Mask<S>::iadjoint(CMap const y, Map x) const
+template <typename S> void Mask<S>::iadjoint(CMap y, Map x) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Index      ix = 0, iy = 0;

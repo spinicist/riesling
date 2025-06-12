@@ -16,7 +16,7 @@ Hermitian::Hermitian(float const l, Sz5 const sh)
   Log::Print("Prox", "Hermitian λ {} scaled λ {} Shape {}", l, λ, shape);
 }
 
-void Hermitian::apply(float const α, CMap const xin, Map zin) const
+void Hermitian::apply(float const α, CMap xin, Map zin) const
 {
   Eigen::TensorMap<Cx5 const> const x(xin.data(), shape);
   Eigen::TensorMap<Cx5>             z(zin.data(), shape);

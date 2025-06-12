@@ -11,8 +11,8 @@ template <int NDim> struct NDFT final : TOp<Cx, NDim + 2, 3>
   NDFT(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis::CPtr basis);
   TOP_DECLARE(NDFT)
 
-  void iadjoint(OutCMap const y, InMap x) const;
-  void iforward(InCMap const x, OutMap y) const;
+  void iadjoint(OutCMap y, InMap x) const;
+  void iforward(InCMap x, OutMap y) const;
 
   static auto Make(Sz<NDim> const matrix, Re3 const &traj, Index const nC, Basis::CPtr basis) -> Ptr;
   void        addOffResonance(Eigen::Tensor<float, NDim> const &f0map, float const t0, float const tSamp);

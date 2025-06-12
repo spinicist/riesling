@@ -42,7 +42,7 @@ struct ADMM
   DebugZ                   debug_z = nullptr;
 
   auto run(Vector const &b) const -> Vector;
-  auto run(CMap const b) const -> Vector;
+  auto run(CMap b) const -> Vector;
 };
 
 } // namespace rl

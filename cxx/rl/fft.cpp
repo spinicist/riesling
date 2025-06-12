@@ -107,7 +107,7 @@ template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> cons
   rl::Log::Debug("FFT", "Shift took {}", Log::ToNow(t));
 }
 
-template <int ND, int NFFT> void Forward(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims) { Run(x, fftDims, true); }
+template <int ND, int NFFT> void Forward(Eigen::TensorMap<CxN<ND>> x, Sz<NFFT> const fftDims) { Run(x, fftDims, true); }
 
 template <int ND, int NFFT> void Forward(CxN<ND> &x, Sz<NFFT> const fftDims)
 {
@@ -128,7 +128,7 @@ template <int ND> void Forward(CxN<ND> &x)
   Forward(map);
 }
 
-template <int ND, int NFFT> void Adjoint(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims) { Run(x, fftDims, false); }
+template <int ND, int NFFT> void Adjoint(Eigen::TensorMap<CxN<ND>> x, Sz<NFFT> const fftDims) { Run(x, fftDims, false); }
 
 template <int ND, int NFFT> void Adjoint(CxN<ND> &x, Sz<NFFT> const fftDims)
 {
@@ -149,10 +149,10 @@ template <int ND> void Adjoint(CxN<ND> &x)
   Adjoint(map);
 }
 
-template void Forward<4, 2>(Cx4Map &, Sz2 const);
-template void Forward<4, 3>(Cx4Map &, Sz3 const);
-template void Forward<5, 2>(Cx5Map &, Sz2 const);
-template void Forward<5, 3>(Cx5Map &, Sz3 const);
+template void Forward<4, 2>(Cx4Map, Sz2 const);
+template void Forward<4, 3>(Cx4Map, Sz3 const);
+template void Forward<5, 2>(Cx5Map, Sz2 const);
+template void Forward<5, 3>(Cx5Map, Sz3 const);
 template void Forward<1, 1>(Cx1 &, Sz1 const);
 template void Forward<2, 1>(Cx2 &, Sz1 const);
 template void Forward<3, 1>(Cx3 &, Sz1 const);
@@ -166,10 +166,10 @@ template void Forward<6, 3>(Cx6 &, Sz3 const);
 template void Forward<1>(Cx1 &);
 template void Forward<3>(Cx3 &);
 
-template void Adjoint<4, 2>(Cx4Map &, Sz2 const);
-template void Adjoint<4, 3>(Cx4Map &, Sz3 const);
-template void Adjoint<5, 2>(Cx5Map &, Sz2 const);
-template void Adjoint<5, 3>(Cx5Map &, Sz3 const);
+template void Adjoint<4, 2>(Cx4Map, Sz2 const);
+template void Adjoint<4, 3>(Cx4Map, Sz3 const);
+template void Adjoint<5, 2>(Cx5Map, Sz2 const);
+template void Adjoint<5, 3>(Cx5Map, Sz3 const);
 template void Adjoint<2, 1>(Cx2 &, Sz1 const);
 template void Adjoint<3, 1>(Cx3 &, Sz1 const);
 template void Adjoint<3, 2>(Cx3 &, Sz2 const);

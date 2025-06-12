@@ -16,7 +16,7 @@ struct Wavelets final : TOp<Cx, ND, ND>
   static auto PaddedShape(Sz<ND> const shape, std::vector<Index> const dims) -> Sz<ND>;
 
 private:
-  void  dimLoops(InMap &x, bool const rev) const;
+  void  dimLoops(InMap x, bool const rev) const;
   void  wav1(Index const N, bool const rev, Cx1 &x) const;
   Index N_;
   Re1   Cc_, Cr_; // Coefficients

@@ -15,7 +15,7 @@ struct Hermitian final : Prox<Cx>
 {
   PROX_INHERIT(Cx)
   Hermitian(float const, Sz5 const shape);
-  void apply(float const α, CMap const x, Map z) const;
+  void apply(float const α, CMap x, Map z) const;
 
 private:
   float  λ;

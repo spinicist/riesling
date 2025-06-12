@@ -116,7 +116,8 @@ template <typename T> inline decltype(auto) CollapseToArray(T &t)
 template <typename T> inline decltype(auto) CollapseToArray(T const &t)
 {
   using Scalar = typename T::Scalar;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, 1>::ConstAlignedMapType mapped(t.data(), t.size(), 1);
+  using Map = typename Eigen::Map<Eigen::Array<Scalar, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
+  Map mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
@@ -130,14 +131,16 @@ template <typename T> inline decltype(auto) CollapseToVector(T &t)
 template <typename T> inline decltype(auto) CollapseToConstVector(T &t)
 {
   using Scalar = typename T::Scalar;
-  typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::ConstAlignedMapType mapped(t.data(), t.size(), 1);
+  using Map = typename Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
+  Map mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
 template <typename T> inline decltype(auto) CollapseToVector(T const &t)
 {
   using Scalar = typename T::Scalar;
-  typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::ConstAlignedMapType mapped(t.data(), t.size(), 1);
+  using Map = typename Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
+  Map mapped(t.data(), t.size(), 1);
   return mapped;
 }
 

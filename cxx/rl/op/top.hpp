@@ -36,27 +36,27 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
   using Base::forward;
   using Base::inverse;
 
-  void forward(typename Base::CMap const x, typename Base::Map y) const final;
-  void adjoint(typename Base::CMap const y, typename Base::Map x) const final;
+  void forward(typename Base::CMap x, typename Base::Map y) const final;
+  void adjoint(typename Base::CMap y, typename Base::Map x) const final;
 
-  void iforward(typename Base::CMap const x, typename Base::Map y) const final;
-  void iadjoint(typename Base::CMap const y, typename Base::Map x) const final;
+  void iforward(typename Base::CMap x, typename Base::Map y) const final;
+  void iadjoint(typename Base::CMap y, typename Base::Map x) const final;
 
   virtual auto forward(InTensor const &x) const -> OutTensor;
   virtual auto adjoint(OutTensor const &y) const -> InTensor;
   virtual void forward(InTensor const &x, OutTensor &y) const;
   virtual void adjoint(OutTensor const &y, InTensor &x) const;
 
-  virtual void forward(InCMap const x, OutMap y) const = 0;
-  virtual void adjoint(OutCMap const y, InMap x) const = 0;
-  virtual void iforward(InCMap const x, OutMap y) const;
-  virtual void iadjoint(OutCMap const y, InMap x) const;
+  virtual void forward(InCMap x, OutMap y) const = 0;
+  virtual void adjoint(OutCMap y, InMap x) const = 0;
+  virtual void iforward(InCMap x, OutMap y) const;
+  virtual void iadjoint(OutCMap y, InMap x) const;
 
 protected:
-  auto startForward(InCMap const &x, OutMap const &y, bool const ip) const -> Time;
+  auto startForward(InCMap x, OutMap const &y, bool const ip) const -> Time;
   void finishForward(OutMap const &y, Time const start, bool const ip) const;
 
-  auto startAdjoint(OutCMap const &y, InMap const &x, bool const ip) const -> Time;
+  auto startAdjoint(OutCMap y, InMap const &x, bool const ip) const -> Time;
   void finishAdjoint(InMap const &x, Time const start, bool const ip) const;
 };
 
@@ -78,8 +78,8 @@ protected:
 
 #define TOP_DECLARE(SELF)                                                                                                      \
   using Ptr = std::shared_ptr<SELF>;                                                                                           \
-  void forward(InCMap const x, OutMap y) const;                                                                              \
-  void adjoint(OutCMap const y, InMap x) const;                                                                              \
+  void forward(InCMap x, OutMap y) const;                                                                              \
+  void adjoint(OutCMap y, InMap x) const;                                                                              \
   using Parent::forward;                                                                                                       \
   using Parent::adjoint;
 

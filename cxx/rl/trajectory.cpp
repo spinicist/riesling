@@ -191,7 +191,7 @@ void TrajectoryN<ND>::moveInFOV(
   Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Index const tst, Index const tsz, Cx5 &data)
 {
   if (tst + tsz > nTraces()) { throw Log::Failure("Traj", "Max trace {} exceeded number of traces {}", tst + tsz, nTraces()); }
-  Re2CMap const Rt(R.data(), Sz2{ND, ND});
+  Re2CMap Rt(R.data(), Sz2{ND, ND});
   auto          p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz});
   Log::Debug("Traj", "Rotating traces {}-{}", tst, tst + tsz - 1);
   p.device(Threads::TensorDevice()) = Re3(Rt.contract(p, matMul));
@@ -398,17 +398,17 @@ template struct TrajectoryN<1>;
 template struct TrajectoryN<2>;
 template struct TrajectoryN<3>;
 
-template auto TrajectoryN<2>::trim(Cx3CMap const) -> Cx3;
-template auto TrajectoryN<2>::trim(Cx4CMap const) -> Cx4;
-template auto TrajectoryN<2>::trim(Cx5CMap const) -> Cx5;
+template auto TrajectoryN<2>::trim(Cx3CMap) -> Cx3;
+template auto TrajectoryN<2>::trim(Cx4CMap) -> Cx4;
+template auto TrajectoryN<2>::trim(Cx5CMap) -> Cx5;
 
 template auto TrajectoryN<2>::trim(Cx3 const &) -> Cx3;
 template auto TrajectoryN<2>::trim(Cx4 const &) -> Cx4;
 template auto TrajectoryN<2>::trim(Cx5 const &) -> Cx5;
 
-template auto TrajectoryN<3>::trim(Cx3CMap const) -> Cx3;
-template auto TrajectoryN<3>::trim(Cx4CMap const) -> Cx4;
-template auto TrajectoryN<3>::trim(Cx5CMap const) -> Cx5;
+template auto TrajectoryN<3>::trim(Cx3CMap) -> Cx3;
+template auto TrajectoryN<3>::trim(Cx4CMap) -> Cx4;
+template auto TrajectoryN<3>::trim(Cx5CMap) -> Cx5;
 
 template auto TrajectoryN<3>::trim(Cx3 const &) -> Cx3;
 template auto TrajectoryN<3>::trim(Cx4 const &) -> Cx4;

@@ -39,7 +39,7 @@ f0Segment::f0Segment(Re3 const &f0in, float const τacq, Index const Nτ, Index 
 
 auto f0Segment::basis() const -> Basis::CPtr { return &this->b; }
 
-void f0Segment::forward(InCMap const x, OutMap y) const
+void f0Segment::forward(InCMap x, OutMap y) const
 {
   auto const time = startForward(x, y, false);
   y.device(Threads::TensorDevice()) =
@@ -47,7 +47,7 @@ void f0Segment::forward(InCMap const x, OutMap y) const
   finishForward(y, time, false);
 }
 
-void f0Segment::iforward(InCMap const x, OutMap y) const
+void f0Segment::iforward(InCMap x, OutMap y) const
 {
   auto const time = startForward(x, y, true);
   y.device(Threads::TensorDevice()) +=
@@ -55,7 +55,7 @@ void f0Segment::iforward(InCMap const x, OutMap y) const
   finishForward(y, time, true);
 }
 
-void f0Segment::adjoint(OutCMap const y, InMap x) const
+void f0Segment::adjoint(OutCMap y, InMap x) const
 {
   auto const time = startAdjoint(y, x, false);
   Log::Tensor("f0adj-y", y.dimensions(), y.data(), {"i", "j", "k", "b"});
@@ -67,7 +67,7 @@ void f0Segment::adjoint(OutCMap const y, InMap x) const
   finishAdjoint(x, time, false);
 }
 
-void f0Segment::iadjoint(OutCMap const y, InMap x) const
+void f0Segment::iadjoint(OutCMap y, InMap x) const
 {
   auto const time = startAdjoint(y, x, true);
   Log::Tensor("f0adj-y", y.dimensions(), y.data(), {"i", "j", "k", "b"});

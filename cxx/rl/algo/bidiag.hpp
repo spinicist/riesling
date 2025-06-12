@@ -14,7 +14,7 @@ struct Bidiag
   using Map = Op::Map;
   using CMap = typename Op::CMap;
 
-  Bidiag(Ptr A, Ptr Minv, Ptr Ninv, Vector &x, CMap &b, CMap &x0);
+  Bidiag(Ptr A, Ptr Minv, Ptr Ninv, Vector &x, CMap b, CMap x0);
 
   std::shared_ptr<Op> A;
   std::shared_ptr<Op> Minv, Ninv;
