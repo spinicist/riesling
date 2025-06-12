@@ -1,62 +1,63 @@
 #include "cg.hpp"
 
-#include "op/top.hpp"
+#include "../log/log.hpp"
+#include "common.hpp"
+#include "iter.hpp"
 
 namespace rl {
 
-template <typename Scalar>
-auto ConjugateGradients<Scalar>::run(Scalar *bdata, Scalar *x0data) const -> Vector
+auto ConjugateGradients::run(Vector const &b, Vector const &x0) const -> Vector
 {
-  Index const rows = op->rows();
-  if (rows != op->cols()) {
-    throw Log::Failure("CG op had {} rows and {} cols, should be square", rows, op->cols());
+  return run(CMap{b.data(), b.rows()}, CMap{x0.data(), x0.rows()});
+}
+
+auto ConjugateGradients::run(CMap b, CMap x0) const -> Vector
+{
+  Index const rows = A->rows();
+  if (rows != A->cols()) {
+    throw Log::Failure("CG", "Op had {} rows and {} cols, should be square", rows, A->cols());
   }
-  Map const   b(bdata, rows);
   Vector      q(rows), p(rows), r(rows), x(rows);
   // If we have an initial guess, use it
-  if (x0data) {
-    Map const x0(x0data, rows);
-    Log::Print("Warm-start CG");
-    r = b - op->forward(x0);
+  if (x0.size()) {
+    Log::Print("CG", "Warm-start |x| {}", ParallelNorm(x0));
+    r = b - A->forward(x0);
     x = x0;
   } else {
     r = b;
     x.setZero();
   }
   p = r;
-  float       r_old = r.squaredNorm();
-  float const thresh = resTol * std::sqrt(r_old);
-  Log::Print("CG |r| {:4.3E} threshold {:4.3E}", std::sqrt(r_old), thresh);
-  Log::Print("IT |r|       α         β         |x|");
+  float       r_old = ParallelNorm(r);
+  float const thresh = opts.resTol * r_old;
+  Log::Print("CG", "|r| {:4.3E} threshold {:4.3E}", r_old, thresh);
+  Log::Print("CG", "IT |r|       α         β         |x|");
   Iterating::Starting();
-  for (Index icg = 0; icg < iterLimit; icg++) {
-    op->forward(p, q);
-    float const α = r_old / CheckedDot(p, q);
+  for (Index icg = 0; icg < opts.imax; icg++) {
+    A->forward(p, q);
+    float const α = CheckedDot(r, r) / CheckedDot(p, q);
     x = x + p * α;
-    if (debug) {
-      if (auto top = std::dynamic_pointer_cast<TOp<Cx, 5, 4>>(op)) {
-        Log::Tensor(fmt::format("cg-x-{:02}", icg), top->ishape, x.data());
-        Log::Tensor(fmt::format("cg-r-{:02}", icg), top->ishape, r.data());
-      }
-    }
+    // if (debug) {
+    //   if (auto top = std::dynamic_pointer_cast<TOp<Cx, 5, 4>>(op)) {
+    //     Log::Tensor(fmt::format("cg-x-{:02}", icg), tA->ishape, x.data());
+    //     Log::Tensor(fmt::format("cg-r-{:02}", icg), tA->ishape, r.data());
+    //   }
+    // }
     r = r - q * α;
-    float const r_new = r.squaredNorm();
+    float const r_new = CheckedDot(r, r);
     float const β = r_new / r_old;
     p = r + p * β;
-    float const nr = sqrt(r_new);
-    Log::Print("{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, x.stableNorm());
+    float const nr = std::sqrt(r_new);
+    Log::Print("CG", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, x.stableNorm());
     if (nr < thresh) {
-      Log::Print("Reached convergence threshold");
+      Log::Print("CG", "Reached convergence threshold");
       break;
     }
     r_old = r_new;
-    if (Iterating::ShouldStop()) { break; }
+    if (Iterating::ShouldStop("CG")) { break; }
   }
   Iterating::Finished();
   return x;
 }
-
-template struct ConjugateGradients<float>;
-template struct ConjugateGradients<Cx>;
 
 } // namespace rl
