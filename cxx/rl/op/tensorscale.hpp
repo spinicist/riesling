@@ -1,7 +1,7 @@
 #pragma once
 #include "../log/log.hpp"
 #include "../tensors.hpp"
-#include "top.hpp"
+#include "top-impl.hpp"
 
 namespace rl::TOps {
 
@@ -16,6 +16,10 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
   using Parent::adjoint;
   using Parent::forward;
   using Ptr = std::shared_ptr<TensorScale>;
+
+  static auto Make(InDims const shape, TScales const &s) -> Ptr {
+    return std::make_shared<TensorScale>(shape, s);
+  }
 
   TensorScale(InDims const shape, TScales const &s)
     : Parent("TensorScale", shape, shape)
@@ -68,10 +72,10 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     this->finishAdjoint(x, time, false);
   }
 
-  auto inverse() const -> std::shared_ptr<Ops::Op<Cx>>
-  {
-    TScales inv = 1.f / scales;
-    return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, scales);
+  void inverse(OutCMap y, InMap x) const {
+    auto const time = this->startInverse(y, x);
+    x.device(Threads::TensorDevice()) = y / scales.reshape(res).broadcast(brd);
+    this->finishInverse(x, time);
   }
 
   auto operator+(Scalar const s) const -> std::shared_ptr<Ops::Op<Cx>>

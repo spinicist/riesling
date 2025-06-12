@@ -23,7 +23,7 @@ auto LSMR::run(CMap b, CMap x0) const -> Vector
   if (rows < 1 || cols < 1) { throw Log::Failure("LSMR", "Invalid operator size rows {} cols {}", rows, cols); }
   if (b.rows() != rows) { throw Log::Failure("LSMR", "b had size {} expected {}", b.rows(), rows); }
   Vector h(cols), h̅(cols), x(cols);
-  Bidiag bd(A, Minv, Ninv, x, b, x0);
+  Bidiag bd(A, M, N, x, b, x0);
   h = bd.v;
   h̅.setZero();
 
