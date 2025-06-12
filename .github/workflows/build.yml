@@ -24,8 +24,8 @@ jobs:
         config:
         - {
           name: "Ubuntu GCC", artifact: "riesling-linux.tar.gz",
-          os: ubuntu-22.04,
-          cc: "gcc-12", cxx: "g++-12"
+          os: ubuntu-24.04,
+          cc: "gcc-14", cxx: "g++-14"
         }
         - {
           name: "macOS", artifact: "riesling-macos.tar.gz",
