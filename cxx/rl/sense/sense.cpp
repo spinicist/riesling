@@ -191,10 +191,10 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     auto A = std::make_shared<Ops::VStack<Cx>>(MSFP, Ops::Mul<Cx>(L, W));
 
     // Preconditioner
-    Ops::Op<Cx>::Vector m(A->rows());
-    m.setConstant(1.f);
-    m = (A->forward(A->adjoint(m)).array().abs() + 1.e-3f).inverse();
-    auto Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
+    Ops::Op<Cx>::Vector p(A->rows());
+    p.setConstant(1.f);
+    p = (A->forward(A->adjoint(p)).array().abs() + 1.e-3f);
+    auto R = std::make_shared<Ops::DiagRep<Cx>>(p, 1, 1);
 
     // Data
     Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
@@ -202,20 +202,19 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     cʹ.head(MSFP->rows()) = M->forward(c);
     cʹ.tail(L->rows()).setZero();
 
-    LSMR       solve{A, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
+    LSMR       solve{A, R, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
     auto const kʹ = solve.run(cʹ);
 
     kernels = AsTensorMap(kʹ, kshape);
   } else {
     // Preconditioner
-    Ops::Op<Cx>::Vector m(MSFP->rows());
-    m.setConstant(1.f);
-    m = (MSFP->forward(MSFP->adjoint(m)).array().abs() + 1.e-3f).inverse();
-    auto              Minv = std::make_shared<Ops::DiagRep<Cx>>(m, 1, 1);
+    Ops::Op<Cx>::Vector p(MSFP->rows());
+    p.setConstant(1.f);
+    p = (MSFP->forward(MSFP->adjoint(p)).array().abs() + 1.e-3f);
+    auto              R = std::make_shared<Ops::DiagRep<Cx>>(p, 1, 1);
     Ops::Op<Cx>::CMap c(channels.data(), SFP->rows());
-    fmt::print(stderr, "M {} {} c {}\n", M->rows(), M->cols(), c.rows());
     Ops::Op<Cx>::Vector cʹ = M->forward(c);
-    LSMR                solve{MSFP, Minv, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
+    LSMR                solve{MSFP, R, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
     auto const          k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
