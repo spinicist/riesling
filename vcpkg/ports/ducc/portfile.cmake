@@ -1,9 +1,9 @@
-
-vcpkg_from_github(
+vcpkg_from_gitlab(
+    GITLAB_URL https://gitlab.mpcdf.mpg.de/
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO mreineck/ducc
-    REF 95255f5efdd33e4406d4be19a59d5ee0f1a4d5ba
-    SHA512 a8239c4aa4dfa75f4e3c2ce86fdf260ff685d842b8f72a4c1fc5a838911c38f268e4c42a162dbf1cdd433f60f71556728a6f9c4d0ba251f04ac4424f75cb9212
+    REPO mtr/ducc
+    REF 7632141550057953c9d20c99d68e92dec21554e6
+    SHA512 6e6f96d99b88fcf68e710bd2aa0a19c3e4fd6f98bc4cfa50a385083ae6988b97712b7e4e433281f360b42695727494df00a46f6ff3a971e6800e8b755cd5b0c2
     HEAD_REF master
     PATCHES
 )
