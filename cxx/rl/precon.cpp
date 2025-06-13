@@ -41,7 +41,7 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
   Re3 weights = nufft->forward(xcor).abs() * scale;
 
-  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (weights + λ) / (1.f + λ));
+  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (1.f + λ) / (weights + λ));
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {

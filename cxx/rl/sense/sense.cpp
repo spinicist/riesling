@@ -193,7 +193,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     // Preconditioner
     Ops::Op<Cx>::Vector p(A->rows());
     p.setConstant(1.f);
-    p = (A->forward(A->adjoint(p)).array().abs() + 1.e-3f);
+    p = (A->forward(A->adjoint(p)).array().abs() + 1.e-3f).inverse();
     auto R = std::make_shared<Ops::DiagRep<Cx>>(p, 1, 1);
 
     // Data
@@ -210,7 +210,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     // Preconditioner
     Ops::Op<Cx>::Vector p(MSFP->rows());
     p.setConstant(1.f);
-    p = (MSFP->forward(MSFP->adjoint(p)).array().abs() + 1.e-3f);
+    p = (MSFP->forward(MSFP->adjoint(p)).array().abs() + 1.e-3f).inverse();
     auto              R = std::make_shared<Ops::DiagRep<Cx>>(p, 1, 1);
     Ops::Op<Cx>::CMap c(channels.data(), SFP->rows());
     Ops::Op<Cx>::Vector cʹ = M->forward(c);

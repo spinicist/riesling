@@ -23,7 +23,7 @@ auto LSQR::run(CMap b, float const λ, CMap x0) const -> Vector
   if (rows < 1 || cols < 1) { throw Log::Failure("LSQR", "Invalid operator size rows {} cols {}", rows, cols); }
   if (b.rows() != rows) { throw Log::Failure("LSQR", "b had size {}, expected {}", b.rows(), rows); }
   Vector x(cols), w(cols);
-  Bidiag bd(A, M, N, x, b, x0);
+  Bidiag bd(A, Minv, Ninv, x, b, x0);
   w = bd.v;
 
   float ρ̅ = bd.α;
