@@ -28,8 +28,8 @@ struct LSMR
   };
 
   Op::Ptr A;
-  Op::Ptr M = nullptr; // Left Pre-conditioner, will call ->inverse()
-  Op::Ptr N = nullptr; // Right Pre-conditioner, will call ->inverse()
+  Op::Ptr Minv = nullptr; // Left Pre-conditioner
+  Op::Ptr Ninv = nullptr; // Right Pre-conditioner
 
   Opts    opts;
   DbgFunc debug = nullptr;
