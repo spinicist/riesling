@@ -12,7 +12,7 @@ template <typename S> Op<S>::Op(std::string const &n)
 {
 }
 
-template <typename S> void Op<S>::inverse(CMap, Map) const
+template <typename S> void Op<S>::inverse(CMap, Map, float const, float const) const
 {
   throw Log::Failure(this->name, "Does not have an inverse defined", name);
 }
@@ -35,13 +35,13 @@ template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
   this->adjoint(ym, xm);
 }
 
-template <typename S> void Op<S>::inverse(Vector const &y, Vector &x) const
+template <typename S> void Op<S>::inverse(Vector const &y, Vector &x, float const s, float const b) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Inverse x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Inverse y {} != rows {}", y.rows(), rows()); }
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
-  this->inverse(ym, xm);
+  this->inverse(ym, xm, s, b);
 }
 
 template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
@@ -66,22 +66,22 @@ template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
   return x;
 }
 
-template <typename S> void Op<S>::iforward(Vector const &x, Vector &y) const
+template <typename S> void Op<S>::iforward(Vector const &x, Vector &y, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward+ x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward+ y {} != rows {}", y.rows(), rows()); }
   CMap xm(x.data(), x.size());
   Map  ym(y.data(), y.size());
-  this->iforward(xm, ym);
+  this->iforward(xm, ym, s);
 }
 
-template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x) const
+template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint+ x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint+ y {} != rows {}", y.rows(), rows()); }
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
-  this->iadjoint(ym, xm);
+  this->iadjoint(ym, xm, s);
 }
 
 template <typename S> auto Op<S>::startForward(CMap x, Map const &y, bool const ip) const -> Log::Time
@@ -122,40 +122,25 @@ template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const st
   }
 }
 
-template <typename S> auto Op<S>::startInverse(CMap y, Map const &x, bool const ip) const -> Log::Time
+template <typename S> auto Op<S>::startInverse(CMap y, Map const &x) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Inverse y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Inverse x [{}] expected [{}]", x.rows(), cols()); }
   if (Log::IsDebugging()) {
-    Log::Debug(this->name, "{}inverse [{},{}] |y| {}", (ip ? "IP " : ""), rows(), cols(), ParallelNorm(y));
+    Log::Debug(this->name, "Inverse [{},{}] |y| {}", rows(), cols(), ParallelNorm(y));
   } else {
-    Log::Debug(this->name, "{}inverse [{},{}]", (ip ? "IP " : ""), rows(), cols());
+    Log::Debug(this->name, "Inverse [{},{}]", rows(), cols());
   }
   return Log::Now();
 }
 
-template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const start, bool const ip) const
+template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const start) const
 {
   if (Log::IsDebugging()) {
-    Log::Debug(this->name, "{}inverse finished in {} |x| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(x));
+    Log::Debug(this->name, "Inverse finished in {} |x| {}", Log::ToNow(start), ParallelNorm(x));
   } else {
-    Log::Debug(this->name, "{}inverse finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
+    Log::Debug(this->name, "Inverse finished in {}", Log::ToNow(start));
   }
-}
-
-template <typename S> auto Op<S>::inverse() const -> std::shared_ptr<Op<S>>
-{
-  throw Log::Failure(this->name, "Does not have an inverse");
-}
-
-template <typename S> auto Op<S>::inverse(float const, float const) const -> std::shared_ptr<Op<S>>
-{
-  throw Log::Failure(this->name, "Does not have an inverse");
-}
-
-template <typename S> auto Op<S>::operator+(S const) const -> std::shared_ptr<Op<S>>
-{
-  throw Log::Failure(this->name, "Does not have operator+");
 }
 
 template struct Op<float>;

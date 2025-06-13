@@ -52,7 +52,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap y, InM
   this->finishAdjoint(x, time, false);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap x, OutMap y) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   InTensor   tmp = x;
@@ -61,11 +61,11 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap x, Out
   } else {
     rl::FFT::Forward(tmp, dims_);
   }
-  y += tmp;
+  y.device(Threads::TensorDevice()) += tmp * tmp.constant(s);
   this->finishForward(y, time, true);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap y, InMap x) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InTensor   tmp = y;
@@ -74,7 +74,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap y, In
   } else {
     rl::FFT::Adjoint(tmp, dims_);
   }
-  x += tmp;
+  x.device(Threads::TensorDevice()) += tmp * tmp.constant(s);
   this->finishAdjoint(x, time, true);
 }
 

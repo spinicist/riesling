@@ -37,17 +37,17 @@ template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap y, 
   this->finishAdjoint(x, time, false);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iforward(InCMap x, OutMap y) const
+template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::TensorDevice()) += x.pad(paddings_);
+  y.device(Threads::TensorDevice()) += x.pad(paddings_) * y.constant(s);
   this->finishForward(y, time, true);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iadjoint(OutCMap y, InMap x) const
+template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += y.slice(left_, ishape);
+  x.device(Threads::TensorDevice()) += y.slice(left_, ishape) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 

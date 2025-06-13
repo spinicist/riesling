@@ -1,7 +1,6 @@
 #include "pdhg.hpp"
 
 #include "../log/log.hpp"
-#include "../prox/lsq.hpp"
 #include "../prox/stack.hpp"
 #include "../tensors.hpp"
 #include "common.hpp"
@@ -9,84 +8,87 @@
 
 namespace rl {
 
-PDHG::PDHG(std::shared_ptr<Op>             A,
-           std::shared_ptr<Op>             P,
+PDHG::PDHG(std::shared_ptr<Op>             A_,
+           std::shared_ptr<Op>             P_,
            std::vector<Regularizer> const &regs,
-           std::vector<float> const       &σin,
-           float const                     τin,
-           Callback const                 &cb)
+           Index const                     imax_,
+           float const                     σ_,
+           float const                     τ_,
+           float const                     θ_)
+  : A{A_}
+  , P{P_}
+  , imax{imax_}
 {
-  Index const            nR = regs.size();
-  std::vector<Op::Ptr>   ops(nR);
-  std::vector<Prox::Ptr> ps;
-  l2 = std::make_shared<Proxs::LeastSquares<Cx>>(1.f, A->rows());
-  ps.push_back(l2);
-  for (Index ir = 0; ir < nR; ir++) {
-    ops[ir] = regs[ir].T ? regs[ir].T : Ops::Identity<Cx>::Make(A->cols());
-    ps.push_back(std::make_shared<Proxs::ConjugateProx<Cx>>(regs[ir].P));
-  }
-  Aʹ = std::make_shared<Ops::VStack<Cx>>(A, ops);
-  proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
-
-  if (σin.size() == regs.size()) {
-    σ = σin;
+  Index const nR = regs.size();
+  if (nR == 1) {
+    proxʹ = regs.front().P;
+    G = regs.front().T ? regs.front().T : Ops::Identity<Cx>::Make(A->cols());
   } else {
-    σ.clear();
-    for (auto &G : ops) {
-      auto eigG = PowerMethod(G, 4);
-      σ.push_back(1.f / eigG.val);
+    std::vector<Op::Ptr>   Gs(nR);
+    std::vector<Prox::Ptr> ps(nR);
+    for (Index ir = 0; ir < nR; ir++) {
+      Gs[ir] = regs[ir].T ? regs[ir].T : Ops::Identity<Cx>::Make(A->cols());
+      ps[ir] = regs[ir].P;
     }
+    G = std::make_shared<Ops::VStack<Cx>>(Gs);
+    proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
   }
 
-  std::vector<std::shared_ptr<Op>> sG;
-  if (P) {
-    sG.push_back(P);
+  if (σ_ > 0) {
+    σ = σ_;
   } else {
-    sG.push_back(Ops::Identity<Cx>::Make(A->rows()));
+    σ = 1;
   }
-  for (Index ir = 0; ir < nR; ir++) {
-    Index const nrows = regs[ir].T ? regs[ir].T->rows() : A->rows();
-    sG.push_back(std::make_shared<Ops::DiagScale<Cx>>(nrows, σ[ir]));
-  }
-  σOp = std::make_shared<Ops::DStack<Cx>>(sG);
 
-  if (τin < 0.f) {
-    auto eig = PowerMethodForward(Aʹ, σOp, 32);
-    τ = 1.f / eig.val;
+  if (τ_ > 0) {
+    τ = τ_;
   } else {
-    τ = τin;
+    τ = 1.f / (PowerMethodAdjoint(G, nullptr, 32).val + PowerMethodAdjoint(A, P, 32).val);
   }
 
-  debug = cb;
+  θ = 1;
 
-  Log::Print("PDHG", "σ {:4.3E} τ {:4.3E}", fmt::join(σ, ","), τ);
+  Log::Print("PDHG", "σ {:4.3E} τ {:4.3E}", σ, τ);
 }
 
 auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
-auto PDHG::run(CMap b) const -> Vector
+auto PDHG::run(CMap y) const -> Vector
 {
-  l2->setY(b);
-
-  Vector x(Aʹ->cols()), x̅(Aʹ->cols()), xold(Aʹ->cols()), xdiff(Aʹ->cols()), u(Aʹ->rows()), v(Aʹ->rows());
+  if (y.rows() != A->rows()) { throw(Log::Failure("PDHG", "y had {} rows, expected {}", y.rows(), A->rows())); }
+  Vector x(A->cols()), x̅(A->cols()), xold(A->cols());
+  Vector u(A->rows()), utemp(A->rows()), v(G->rows());
 
   u.setZero();
   v.setZero();
   x.setZero();
   x̅.setZero();
   xold.setZero();
-  xdiff.setZero();
 
   for (Index ii = 0; ii < imax; ii++) {
     xold = x;
-    v = u + σOp->forward(Aʹ->forward(x̅));
-    proxʹ->apply(σOp, v, u);
-    x = x - τ * Aʹ->adjoint(u);
-    xdiff = x - xold;
-    x̅ = x + xdiff;
-    float const normr = ParallelNorm(xdiff) / std::sqrt(τ);
+    // unext = (I + σP) \ (u + σP(Ax̅ - y))
+    A->forward(x̅, utemp);
+    utemp.device(Threads::CoreDevice()) = utemp - y;
+    if (P) {
+      P->iforward(utemp, u, σ);
+      P->inverse(u, u, 1.f, σ);
+    } else {
+      u.device(Threads::CoreDevice()) = (u + σ * utemp) / (1.f + σ);
+    }
+
+    // vnext = prox(v + σGx̅);
+    G->iforward(x̅, v, σ);
+    proxʹ->apply(τ, v, v);
+    // xnext = x - τ(A'u + G'v)
+    A->adjoint(u, x);
+    G->iadjoint(v, x);
+    x.device(Threads::CoreDevice()) = xold - τ * x;
+    xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
+    x̅.device(Threads::CoreDevice()) = x + xold * θ;
+    float const normr = ParallelNorm(xold) / std::sqrt(τ);
     Log::Print("PDHG", "{:02d}: |x| {:4.3E} |r| {:4.3E}", ii, ParallelNorm(x), normr);
-    if (debug) { debug(ii, x, x̅, xdiff); }
+    // if (debug) { debug(ii, x, x̅, xdiff); }
   }
   return x;
 }

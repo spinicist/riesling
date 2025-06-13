@@ -35,9 +35,8 @@ void main_denoise(args::Subparser &parser)
     // be the identity operator
     regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
   } else if (pdhg) {
-    PDHG opt{B, nullptr, regs};
-    opt.imax = admmArgs.in_its1.Get();
-    xm = opt.run(CollapseToConstVector(in));
+    PDHG opt{B, nullptr, regs, admmArgs.in_its1.Get()};
+    xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   } else {
     ADMM::DebugX debug_x = [shape = x.dimensions(), ext_x, di = debugIters.Get()](Index const ii, ADMM::Vector const &xi) {
       if (ii % di == 0) {

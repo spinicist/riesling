@@ -53,13 +53,13 @@ template <typename S> void Mask<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Mask<S>::iforward(CMap x, Map y) const
+template <typename S> void Mask<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   Index      ix = 0, iy = 0;
   for (Index ir = 0; ir < repeats; ir++) {
     for (Index im = 0; im < isz; im++, ix++) {
-      if (mask[im]) { y[iy++] += x[ix]; }
+      if (mask[im]) { y[iy++] += x[ix] * s; }
     }
   }
   if (ix != cols()) { throw Log::Failure(this->name, "Mask logic incorrect"); }
@@ -67,13 +67,13 @@ template <typename S> void Mask<S>::iforward(CMap x, Map y) const
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Mask<S>::iadjoint(CMap y, Map x) const
+template <typename S> void Mask<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Index      ix = 0, iy = 0;
   for (Index ir = 0; ir < repeats; ir++) {
     for (Index im = 0; im < isz; im++, ix++) {
-      if (mask[im]) { x[ix] += y[iy++]; }
+      if (mask[im]) { x[ix] += y[iy++] * s; }
     }
   }
   if (ix != cols()) { throw Log::Failure(this->name, "Mask logic incorrect"); }

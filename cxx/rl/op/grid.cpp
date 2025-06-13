@@ -33,7 +33,7 @@ Grid<ND, KF, SG>::Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, In
 }
 
 template <int ND, typename KF, int SG>
-void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const x, Cx3Map y) const
+void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, float const s, CxNCMap<ND + 2> const x, Cx3Map y) const
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
   for (size_t is = start; is < gridLists.size(); is += stride) {
@@ -45,7 +45,7 @@ void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, CxNCMa
       GridToSubgrid<ND, SGFW>::SlowCopy(corner, x, sx);
     }
     for (auto const &m : list.coords) {
-      auto const k = kernel(m.offset);
+      auto const k = kernel(m.offset) * s;
       if (basis) {
         GFunc<ND, KF::FullWidth>::Gather(basis, m.cart, m.sample, m.trace, k, sx, y);
       } else {
@@ -59,19 +59,19 @@ template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::forward(InCMap x, 
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = y.constant(0.f);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, 1.f, x, y); });
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iforward(InCMap x, OutMap y) const
+template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, x, y); });
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { forwardTask(st, sz, s, x, y); });
   this->finishForward(y, time, true);
 }
 
 template <int ND, typename KF, int SG>
-void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMap y, CxNMap<ND + 2> x) const
+void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, float const s, Cx3CMap y, CxNMap<ND + 2> x) const
 
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
@@ -79,7 +79,7 @@ void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, Cx3CMa
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {
-      auto const k = kernel(m.offset);
+      auto const k = kernel(m.offset) * s;
       if (basis) {
         GFunc<ND, KF::FullWidth>::Scatter(basis, m.cart, m.sample, m.trace, k, y, sx);
       } else {
@@ -99,14 +99,14 @@ template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::adjoint(OutCMap y,
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = x.constant(0.f);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, 1.f, y, x); });
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iadjoint(OutCMap y, InMap x) const
+template <int ND, typename KF, int SG> void Grid<ND, KF, SG>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, y, x); });
+  Threads::StridedFor(gridLists.size(), [&](Index const st, Index const sz) { adjointTask(st, sz, s, y, x); });
   this->finishAdjoint(x, time, true);
 }
 

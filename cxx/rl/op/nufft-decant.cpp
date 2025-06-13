@@ -67,23 +67,23 @@ template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap y, InMa
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::iforward(InCMap x, OutMap y) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder.ishape);
   wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
   FFT::Forward(workspace, fftDims);
-  gridder.iforward(workspace, y);
+  gridder.iforward(workspace, y, s);
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::iadjoint(OutCMap y, InMap x) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder.ishape);
   gridder.adjoint(y, wsm);
   FFT::Adjoint(workspace, fftDims);
-  x.device(Threads::TensorDevice()) += workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
+  x.device(Threads::TensorDevice()) += workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 

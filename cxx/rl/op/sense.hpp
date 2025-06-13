@@ -9,8 +9,8 @@ struct SENSEOp final : TOp<Cx, 4, 5>
   TOP_INHERIT(Cx, 4, 5)
   SENSEOp(Cx5 const &maps, Index const nB);
   TOP_DECLARE(SENSEOp)
-  void iforward(InCMap x, OutMap y) const;
-  void iadjoint(OutCMap y, InMap x) const;
+  void iforward(InCMap x, OutMap y, float const s) const;
+  void iadjoint(OutCMap y, InMap x, float const s) const;
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
   auto maps() const -> Cx5;

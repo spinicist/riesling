@@ -45,10 +45,9 @@ struct ConjugateProx final : Prox<Scalar>
   ConjugateProx(std::shared_ptr<Prox<Scalar>> p);
 
   void apply(float const α, CMap x, Map z) const;
-  void apply(Op::Ptr const α, CMap x, Map z) const;
 
 private:
-  std::shared_ptr<Prox<Scalar>> p;
+  Prox<Scalar>::Ptr p;
 };
 
 } // namespace rl::Proxs

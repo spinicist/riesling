@@ -38,10 +38,10 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
 
   void forward(typename Base::CMap x, typename Base::Map y) const final;
   void adjoint(typename Base::CMap y, typename Base::Map x) const final;
-  void inverse(typename Base::CMap y, typename Base::Map x) const final;
+  void inverse(typename Base::CMap y, typename Base::Map x, float const s = 1.f, float const b = 0.f) const final;
 
-  void iforward(typename Base::CMap x, typename Base::Map y) const final;
-  void iadjoint(typename Base::CMap y, typename Base::Map x) const final;
+  void iforward(typename Base::CMap x, typename Base::Map y, float const s = 1.f) const final;
+  void iadjoint(typename Base::CMap y, typename Base::Map x, float const s = 1.f) const final;
 
   virtual auto forward(InTensor const &x) const -> OutTensor;
   virtual auto adjoint(OutTensor const &y) const -> InTensor;
@@ -50,9 +50,9 @@ template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Op
 
   virtual void forward(InCMap x, OutMap y) const = 0;
   virtual void adjoint(OutCMap y, InMap x) const = 0;
-  virtual void inverse(OutCMap y, InMap x) const;
-  virtual void iforward(InCMap x, OutMap y) const;
-  virtual void iadjoint(OutCMap y, InMap x) const;
+  virtual void inverse(OutCMap y, InMap x, float const s = 1.f, float const b = 0.f) const;
+  virtual void iforward(InCMap x, OutMap y, float const s = 1.f) const;
+  virtual void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
 
 protected:
   auto startForward(InCMap x, OutMap y, bool const ip) const -> Time;
