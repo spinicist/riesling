@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../op/ops.hpp"
-#include "../prox/lsq.hpp"
 #include "../prox/prox.hpp"
 #include "../prox/stack.hpp"
 #include "regularizer.hpp"
@@ -20,23 +19,20 @@ struct PDHG
   PDHG(std::shared_ptr<Op>             A,
        std::shared_ptr<Op>             P,
        std::vector<Regularizer> const &regs,
-       std::vector<float> const       &σ = std::vector<float>(),
-       float const                     τ = -1.f,
-       Callback const                 &cb = nullptr);
+       Index const                     imax = 4,
+       float const                     σ = 0.f,
+       float const                     τ = 0.f,
+       float const                     θ = 0.f);
 
   auto run(Vector const &b) const -> Vector;
   auto run(CMap b) const -> Vector;
 
-  std::vector<float> σ;
-  float              τ;
-  Index              imax = 4;
-
 private:
-  Op::Ptr Aʹ;
-  Proxs::LeastSquares<Cx>::Ptr l2;
-  Proxs::StackProx<Cx>::Ptr proxʹ;
-  Op::Ptr                   σOp;
-  Callback                  debug = nullptr;
+  Op::Ptr              A, P, G;
+  Proxs::Prox<Cx>::Ptr proxʹ;
+
+  Index imax;
+  float σ, τ, θ;
 };
 
 } // namespace rl

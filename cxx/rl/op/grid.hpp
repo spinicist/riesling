@@ -25,8 +25,8 @@ template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 8> struct Grid fina
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b)
     -> std::shared_ptr<Grid<ND, KF>>;
   Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b);
-  void  iforward(InCMap x, OutMap y) const;
-  void  iadjoint(OutCMap y, InMap x) const;
+  void  iforward(InCMap x, OutMap y, float const s = 1.f) const;
+  void  iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
   KType kernel;
 
 private:
@@ -35,8 +35,8 @@ private:
   std::vector<std::mutex> mutable mutexes;
   Basis::CPtr basis;
 
-  void forwardTask(Index const start, Index const stride, CxNCMap<ND + 2> const x, Cx3Map y) const;
-  void adjointTask(Index const start, Index const stride, Cx3CMap y, CxNMap<ND + 2> x) const;
+  void forwardTask(Index const start, Index const stride, float const s, CxNCMap<ND + 2> const x, Cx3Map y) const;
+  void adjointTask(Index const start, Index const stride, float const s, Cx3CMap y, CxNMap<ND + 2> x) const;
 };
 
 } // namespace TOps

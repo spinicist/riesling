@@ -68,16 +68,6 @@ template <typename S> void ConjugateProx<S>::apply(float const α, CMap x, Map z
   z += x;
 }
 
-template <typename S> void ConjugateProx<S>::apply(Op::Ptr const α, CMap x, Map z) const
-{
-  auto   αinv = α->inverse();
-  Vector x1 = αinv->forward(x);
-  CMap   x1m(x1.data(), x1.size());
-  p->apply(αinv, x1m, z);
-  z = -α->forward(z);
-  z += x;
-}
-
 template struct ConjugateProx<float>;
 template struct ConjugateProx<Cx>;
 

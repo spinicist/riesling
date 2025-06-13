@@ -37,7 +37,7 @@ template <typename Scalar_ = Cx> struct NormalOp final : Ops::Op<Scalar_>
     op->adjoint(tcm, y);
   }
 
-  void iforward(CMap x, Map y) const
+  void iforward(CMap x, Map y, float const s = 1.f) const
   {
     Vector temp(op->rows());
     Map    tm(temp.data(), temp.size());

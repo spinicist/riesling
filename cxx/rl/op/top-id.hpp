@@ -12,8 +12,8 @@ template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
   void forward(InCMap x, OutMap y) const;
   void adjoint(OutCMap y, InMap x) const;
 
-  void iforward(InCMap x, OutMap y) const;
-  void iadjoint(OutCMap y, InMap x) const;
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const;
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
 };
 
 } // namespace rl::TOps

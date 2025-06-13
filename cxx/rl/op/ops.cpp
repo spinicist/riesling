@@ -13,8 +13,6 @@ template <typename S> Identity<S>::Identity(Index const s)
 
 template <typename S> auto Identity<S>::Make(Index const s) -> Identity::Ptr { return std::make_shared<Identity>(s); }
 
-template <typename S> auto Identity<S>::inverse() const -> Op<S>::Ptr { return Make(rows()); }
-
 template <typename S> auto Identity<S>::rows() const -> Index { return sz; }
 
 template <typename S> auto Identity<S>::cols() const -> Index { return sz; }
@@ -33,24 +31,24 @@ template <typename S> void Identity<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Identity<S>::inverse(CMap y, Map x) const
+template <typename S> void Identity<S>::inverse(CMap y, Map x, float const s, float const b) const
 {
-  auto const time = this->startInverse(y, x, false);
-  x.device(Threads::CoreDevice()) = y;
-  this->finishInverse(x, time, false);
+  auto const time = this->startInverse(y, x);
+  x.device(Threads::CoreDevice()) = y / (s + b);
+  this->finishInverse(x, time);
 }
 
-template <typename S> void Identity<S>::iforward(CMap x, Map y) const
+template <typename S> void Identity<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::CoreDevice()) += x;
+  y.device(Threads::CoreDevice()) += x * s;
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Identity<S>::iadjoint(CMap y, Map x) const
+template <typename S> void Identity<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::CoreDevice()) += y;
+  x.device(Threads::CoreDevice()) += y * s;
   this->finishAdjoint(x, time, true);
 }
 
@@ -81,17 +79,17 @@ template <typename S> void MatMul<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void MatMul<S>::iforward(CMap x, Map y) const
+template <typename S> void MatMul<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::CoreDevice()) += mat * x;
+  y.device(Threads::CoreDevice()) += mat * x * s;
   this->finishForward(y, time, true);
 }
 
-template <typename S> void MatMul<S>::iadjoint(CMap y, Map x) const
+template <typename S> void MatMul<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::CoreDevice()) += mat.adjoint() * y;
+  x.device(Threads::CoreDevice()) += mat.adjoint() * y * s;
   this->finishAdjoint(x, time, true);
 }
 
@@ -127,102 +125,80 @@ template <typename S> void DiagScale<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void DiagScale<S>::iforward(CMap x, Map y) const
+template <typename S> void DiagScale<S>::inverse(CMap y, Map x, float const s, float const b) const
+{
+  auto const time = this->startInverse(y, x);
+  x.device(Threads::CoreDevice()) = y / (scale * s + b);
+  this->finishInverse(x, time);
+}
+
+template <typename S> void DiagScale<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::CoreDevice()) += x * scale;
+  y.device(Threads::CoreDevice()) += x * scale * s;
   this->finishForward(y, time, true);
 }
 
-template <typename S> void DiagScale<S>::iadjoint(CMap y, Map x) const
+template <typename S> void DiagScale<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::CoreDevice()) += y * scale;
+  x.device(Threads::CoreDevice()) += y * scale * s;
   this->finishAdjoint(x, time, true);
-}
-
-template <typename S> auto DiagScale<S>::inverse() const -> std::shared_ptr<Op<S>>
-{
-  return std::make_shared<DiagScale>(sz, 1.f / scale);
 }
 
 template struct DiagScale<float>;
 template struct DiagScale<Cx>;
 
-template <typename S> DiagRep<S>::DiagRep(Vector const &v, Index const repI, Index const repO)
+template <typename S> DiagRep<S>::DiagRep(Vector const &d_, Index const repI, Index const repO)
   : Op<S>("DiagRep")
-  , s{v}
+  , d{d_}
   , rI{repI}
   , rO{repO}
 {
-  Log::Debug("Op", "Diagonal Repeat. Weights min {} max {}", s.array().abs().minCoeff(), s.array().abs().maxCoeff());
+  Log::Debug("Op", "Diagonal Repeat. Weights min {} max {}", d.array().abs().minCoeff(), d.array().abs().maxCoeff());
 }
 
-template <typename S> auto DiagRep<S>::inverse() const -> std::shared_ptr<Op<S>>
-{
-  return std::make_shared<DiagRep>(s.array().inverse(), rI, rO);
-}
-
-template <typename S> auto DiagRep<S>::rows() const -> Index { return s.rows() * rI * rO; }
-template <typename S> auto DiagRep<S>::cols() const -> Index { return s.rows() * rI * rO; }
+template <typename S> auto DiagRep<S>::rows() const -> Index { return d.rows() * rI * rO; }
+template <typename S> auto DiagRep<S>::cols() const -> Index { return d.rows() * rI * rO; }
 
 template <typename S> void DiagRep<S>::forward(CMap x, Map y) const
 {
   auto const time = this->startForward(x, y, false);
-  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
-  if (isInverse) {
-    y.array().device(Threads::CoreDevice()) = x.array() / rep;
-  } else {
-    y.array().device(Threads::CoreDevice()) = x.array() * rep;
-  }
+  auto const rep = d.array().transpose().replicate(rI, rO).reshaped();
+  y.array().device(Threads::CoreDevice()) = x.array() * rep;
   this->finishForward(y, time, false);
 }
 
 template <typename S> void DiagRep<S>::adjoint(CMap y, Map x) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
-  if (isInverse) {
-    x.array().device(Threads::CoreDevice()) = y.array() / rep;
-  } else {
-    x.array().device(Threads::CoreDevice()) = y.array() * rep;
-  }
+  auto const rep = d.array().transpose().replicate(rI, rO).reshaped();
+  x.array().device(Threads::CoreDevice()) = y.array() * rep;
+
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void DiagRep<S>::inverse(CMap y, Map x) const
+template <typename S> void DiagRep<S>::inverse(CMap y, Map x, float const s, float const b) const
 {
-  auto const time = this->startInverse(y, x, false);
-  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
-  if (isInverse) {
-    x.array().device(Threads::CoreDevice()) = y.array() * rep;
-  } else {
-    x.array().device(Threads::CoreDevice()) = y.array() / rep;
-  }
-  this->finishInverse(x, time, false);
+  auto const time = this->startInverse(y, x);
+  auto const rep = d.array().transpose().replicate(rI, rO).reshaped();
+  x.array().device(Threads::CoreDevice()) = y.array() / (rep * s + b);
+  this->finishInverse(x, time);
 }
 
-template <typename S> void DiagRep<S>::iforward(CMap x, Map y) const
+template <typename S> void DiagRep<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  auto const rep = s.array().transpose().replicate(rI, rO).reshaped();
-  if (isInverse) {
-    y.array().device(Threads::CoreDevice()) += x.array() / rep;
-  } else {
-    y.array().device(Threads::CoreDevice()) += x.array() * rep;
-  }
+  auto const rep = d.array().transpose().replicate(rI, rO).reshaped();
+  y.array().device(Threads::CoreDevice()) += x.array() * rep * s;
   this->finishForward(y, time, true);
 }
 
-template <typename S> void DiagRep<S>::iadjoint(CMap y, Map x) const
+template <typename S> void DiagRep<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  auto       rep = s.array().transpose().replicate(rI, rO).reshaped();
-  if (isInverse) {
-    x.array().device(Threads::CoreDevice()) += y.array() / rep;
-  } else {
-    x.array().device(Threads::CoreDevice()) += y.array() * rep;
-  }
+  auto       rep = d.array().transpose().replicate(rI, rO).reshaped();
+  x.array().device(Threads::CoreDevice()) += y.array() * rep * s;
   this->finishAdjoint(x, time, true);
 }
 
@@ -238,11 +214,6 @@ template <typename S> Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shar
   if (A->cols() != B->rows()) {
     throw Log::Failure("Op", "Multiply mismatched dimensions [{},{}] and [{},{}]", A->rows(), A->cols(), B->rows(), B->cols());
   }
-}
-
-template <typename S> auto Multiply<S>::inverse() const -> std::shared_ptr<Op<S>>
-{
-  return std::make_shared<Multiply<S>>(B->inverse(), A->inverse());
 }
 
 template <typename S> auto Multiply<S>::rows() const -> Index { return A->rows(); }
@@ -268,23 +239,23 @@ template <typename S> void Multiply<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Multiply<S>::iforward(CMap x, Map y) const
+template <typename S> void Multiply<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   Map        tm(temp.data(), temp.size());
   CMap       tcm(temp.data(), temp.size());
   B->forward(x, tm);
-  A->iforward(tcm, y);
+  A->iforward(tcm, y, s);
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Multiply<S>::iadjoint(CMap y, Map x) const
+template <typename S> void Multiply<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Map        tm(temp.data(), temp.size());
   CMap       tcm(temp.data(), temp.size());
   A->adjoint(y, tm);
-  B->iadjoint(tcm, x);
+  B->iadjoint(tcm, x, s);
   this->finishAdjoint(x, time, true);
 }
 
@@ -364,19 +335,19 @@ template <typename S> void VStack<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void VStack<S>::iforward(CMap x, Map y) const
+template <typename S> void VStack<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   Index      ir = 0;
   for (auto const &op : ops) {
     Map ym(y.data() + ir, op->rows());
     ir += op->rows();
-    op->iforward(x, ym);
+    op->iforward(x, ym, s);
   }
   this->finishForward(y, time, true);
 }
 
-template <typename S> void VStack<S>::iadjoint(CMap y, Map x) const
+template <typename S> void VStack<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Map        xtm(x.data(), x.rows());
@@ -384,7 +355,7 @@ template <typename S> void VStack<S>::iadjoint(CMap y, Map x) const
   for (auto const &op : ops) {
     CMap ym(y.data() + ir, op->rows());
     ir += op->rows();
-    op->iadjoint(ym, xtm);
+    op->iadjoint(ym, xtm, s);
   }
   this->finishAdjoint(x, time, true);
 }
@@ -456,26 +427,26 @@ template <typename S> void HStack<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void HStack<S>::iforward(CMap x, Map y) const
+template <typename S> void HStack<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   Index      ic = 0;
   for (auto const &op : ops) {
     CMap xm(x.data() + ic, op->cols());
     ic += op->cols();
-    op->iforward(xm, y); // Need to sum, use in-place version
+    op->iforward(xm, y, s); // Need to sum, use in-place version
   }
   this->finishForward(y, time, true);
 }
 
-template <typename S> void HStack<S>::iadjoint(CMap y, Map x) const
+template <typename S> void HStack<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Index      ic = 0;
   for (auto const &op : ops) {
     Map xm(x.data() + ic, op->cols());
     ic += op->cols();
-    op->iadjoint(y, xm);
+    op->iadjoint(y, xm, s);
   }
   this->finishAdjoint(x, time, true);
 }
@@ -537,30 +508,30 @@ template <typename S> void DStack<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void DStack<S>::inverse(CMap y, Map x) const
+template <typename S> void DStack<S>::inverse(CMap y, Map x, float const s, float const b) const
 {
-  auto const time = this->startInverse(y, x, false);
+  auto const time = this->startInverse(y, x);
   Index      ir = 0, ic = 0;
   for (auto const &op : ops) {
     Map  xm(x.data() + ic, op->cols());
     CMap ym(y.data() + ir, op->rows());
-    op->inverse(ym, xm);
+    op->inverse(ym, xm, s, b);
     ir += op->rows();
     ic += op->cols();
   }
   assert(ir == rows());
   assert(ic == cols());
-  this->finishInverse(x, time, false);
+  this->finishInverse(x, time);
 }
 
-template <typename S> void DStack<S>::iforward(CMap x, Map y) const
+template <typename S> void DStack<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   Index      ir = 0, ic = 0;
   for (auto const &op : ops) {
     CMap xm(x.data() + ic, op->cols());
     Map  ym(y.data() + ir, op->rows());
-    op->iforward(xm, ym);
+    op->iforward(xm, ym, s);
     ir += op->rows();
     ic += op->cols();
   }
@@ -569,29 +540,20 @@ template <typename S> void DStack<S>::iforward(CMap x, Map y) const
   this->finishForward(y, time, true);
 }
 
-template <typename S> void DStack<S>::iadjoint(CMap y, Map x) const
+template <typename S> void DStack<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Index      ir = 0, ic = 0;
   for (auto const &op : ops) {
     Map  xm(x.data() + ic, op->cols());
     CMap ym(y.data() + ir, op->rows());
-    op->iadjoint(ym, xm);
+    op->iadjoint(ym, xm, s);
     ir += op->rows();
     ic += op->cols();
   }
   assert(ir == rows());
   assert(ic == cols());
   this->finishAdjoint(x, time, true);
-}
-
-template <typename S> auto DStack<S>::inverse() const -> std::shared_ptr<Op<S>>
-{
-  std::vector<std::shared_ptr<Op<S>>> inverses(ops.size());
-  for (size_t ii = 0; ii < ops.size(); ii++) {
-    inverses[ii] = ops[ii]->inverse();
-  }
-  return std::make_shared<DStack<S>>(inverses);
 }
 
 template struct DStack<float>;
@@ -624,17 +586,17 @@ template <typename S> void Extract<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Extract<S>::iforward(CMap x, Map y) const
+template <typename S> void Extract<S>::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::CoreDevice()) += x.segment(start, r);
+  y.device(Threads::CoreDevice()) += x.segment(start, r) * s;
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Extract<S>::iadjoint(CMap y, Map x) const
+template <typename S> void Extract<S>::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.segment(start, r).device(Threads::CoreDevice()) += y;
+  x.segment(start, r).device(Threads::CoreDevice()) += y * s;
   this->finishAdjoint(x, time, true);
 }
 
@@ -677,23 +639,23 @@ template <typename S> void Subtract<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Subtract<S>::iforward(CMap x, Map y) const
+template <typename S> void Subtract<S>::iforward(CMap x, Map y, float const s) const
 { // Perform gymnastics to save memory
   auto const time = this->startForward(x, y, true);
   y.device(Threads::CoreDevice()) = -y;
-  b->iforward(x, y);
+  b->iforward(x, y, s);
   y.device(Threads::CoreDevice()) = -y;
-  a->iforward(x, y);
+  a->iforward(x, y, s);
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Subtract<S>::iadjoint(CMap y, Map x) const
+template <typename S> void Subtract<S>::iadjoint(CMap y, Map x, float const s) const
 { // Perform gymnastics to save memory
   auto const time = this->startAdjoint(y, x, true);
   x.device(Threads::CoreDevice()) = -x;
-  b->iadjoint(y, x);
+  b->iadjoint(y, x, s);
   x.device(Threads::CoreDevice()) = -x;
-  a->iadjoint(y, x);
+  a->iadjoint(y, x, s);
   this->finishAdjoint(x, time, true);
 }
 

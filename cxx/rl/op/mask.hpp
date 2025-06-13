@@ -12,8 +12,8 @@ template <typename Scalar = Cx> struct Mask final : Op<Scalar>
   Mask(MaskVector const &mask, Index const repeats);
   void  forward(CMap, Map) const;
   void  adjoint(CMap, Map) const;
-  void  iforward(CMap x, Map y) const;
-  void  iadjoint(CMap y, Map x) const;
+  void  iforward(CMap x, Map y, float const s = 1.f) const;
+  void  iadjoint(CMap y, Map x, float const s = 1.f) const;
 
 private:
   MaskVector mask;

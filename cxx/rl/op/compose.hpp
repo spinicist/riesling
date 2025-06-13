@@ -58,7 +58,7 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap x, OutMap y) const
+  void iforward(InCMap x, OutMap y, float const s) const
   {
     assert(x.dimensions() == op1_->ishape);
     assert(y.dimensions() == op2_->oshape);
@@ -67,11 +67,11 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
     auto const              time = this->startForward(x, y, true);
     op1_->forward(x, tm);
-    op2_->iforward(tcm, y);
+    op2_->iforward(tcm, y, s);
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap y, InMap x) const
+  void iadjoint(OutCMap y, InMap x, float const s) const
   {
     assert(x.dimensions() == op1_->ishape);
     assert(y.dimensions() == op2_->oshape);
@@ -80,7 +80,7 @@ template <typename Op1, typename Op2> struct Compose final : TOp<typename Op1::S
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
     auto const              time = this->startAdjoint(y, x, true);
     op2_->adjoint(y, tm);
-    op1_->iadjoint(tcm, x);
+    op1_->iadjoint(tcm, x, s);
     this->finishAdjoint(x, time, true);
   }
 

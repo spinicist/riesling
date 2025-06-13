@@ -80,7 +80,6 @@ phantom/radial.cpp
 prox/entropy.cpp
 prox/hermitian.cpp
 prox/l1-wavelets.cpp
-prox/lsq.cpp
 prox/llr.cpp
 prox/norms.cpp
 prox/prox.cpp

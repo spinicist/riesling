@@ -35,10 +35,10 @@ void SENSEOp::forward(InCMap x, OutMap y) const
   this->finishForward(y, time, false);
 }
 
-void SENSEOp::iforward(InCMap x, OutMap y) const
+void SENSEOp::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::TensorDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps);
+  y.device(Threads::TensorDevice()) += x.reshape(resX).broadcast(brdX) * maps_.broadcast(brdMaps) * y.constant(s);
   this->finishForward(y, time, true);
 }
 
@@ -49,10 +49,10 @@ void SENSEOp::adjoint(OutCMap y, InMap x) const
   this->finishAdjoint(x, time, false);
 }
 
-void SENSEOp::iadjoint(OutCMap y, InMap x) const
+void SENSEOp::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3});
+  x.device(Threads::TensorDevice()) += (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3}) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 

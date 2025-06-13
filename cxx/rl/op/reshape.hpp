@@ -24,37 +24,37 @@ template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Sc
 
   void forward(InCMap x, OutMap y) const
   {
-    auto const                time = this->startForward(x, y, false);
+    auto const          time = this->startForward(x, y, false);
     typename Op::InCMap xm(x.data(), op_->ishape);
-    typename Op::OutMap       ym(y.data(), op_->oshape);
+    typename Op::OutMap ym(y.data(), op_->oshape);
     op_->forward(xm, ym);
     this->finishForward(y, time, false);
   }
 
   void adjoint(OutCMap y, InMap x) const
   {
-    auto const                 time = this->startAdjoint(y, x, false);
+    auto const           time = this->startAdjoint(y, x, false);
     typename Op::OutCMap ym(y.data(), op_->oshape);
-    typename Op::InMap         xm(x.data(), op_->ishape);
+    typename Op::InMap   xm(x.data(), op_->ishape);
     op_->adjoint(ym, xm);
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap x, OutMap y) const
+  void iforward(InCMap x, OutMap y, float const s) const
   {
-    auto const                time = this->startForward(x, y, true);
+    auto const          time = this->startForward(x, y, true);
     typename Op::InCMap xm(x.data(), op_->ishape);
-    typename Op::OutMap       ym(y.data(), op_->oshape);
-    op_->iforward(xm, ym);
+    typename Op::OutMap ym(y.data(), op_->oshape);
+    op_->iforward(xm, ym, s);
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap y, InMap x) const
+  void iadjoint(OutCMap y, InMap x, float const s) const
   {
-    auto const                 time = this->startAdjoint(y, x, true);
+    auto const           time = this->startAdjoint(y, x, true);
     typename Op::OutCMap ym(y.data(), op_->oshape);
-    typename Op::InMap         xm(x.data(), op_->ishape);
-    op_->iadjoint(ym, xm);
+    typename Op::InMap   xm(x.data(), op_->ishape);
+    op_->iadjoint(ym, xm, s);
     this->finishAdjoint(x, time, true);
   }
 
@@ -62,8 +62,8 @@ private:
   std::shared_ptr<Op> op_;
 };
 
-template <typename Op, int Rank>
-auto MakeReshapeInput(std::shared_ptr<Op> op, Sz<Rank> const ish) -> ReshapeInput<Op, Rank>::Ptr
+template <typename Op, int Rank> auto MakeReshapeInput(std::shared_ptr<Op> op, Sz<Rank> const ish)
+  -> ReshapeInput<Op, Rank>::Ptr
 {
   return std::make_shared<ReshapeInput<Op, Rank>>(op, ish);
 }
@@ -86,37 +86,37 @@ template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::S
 
   void forward(InCMap x, OutMap y) const
   {
-    auto const                time = this->startForward(x, y, false);
+    auto const          time = this->startForward(x, y, false);
     typename Op::InCMap xm(x.data(), op_->ishape);
-    typename Op::OutMap       ym(y.data(), op_->oshape);
+    typename Op::OutMap ym(y.data(), op_->oshape);
     op_->forward(xm, ym);
     this->finishForward(y, time, false);
   }
 
   void adjoint(OutCMap y, InMap x) const
   {
-    auto const                 time = this->startAdjoint(y, x, false);
+    auto const           time = this->startAdjoint(y, x, false);
     typename Op::OutCMap ym(y.data(), op_->oshape);
-    typename Op::InMap         xm(x.data(), op_->ishape);
+    typename Op::InMap   xm(x.data(), op_->ishape);
     op_->adjoint(ym, xm);
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap x, OutMap y) const
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const
   {
-    auto const                time = this->startForward(x, y, true);
+    auto const          time = this->startForward(x, y, true);
     typename Op::InCMap xm(x.data(), op_->ishape);
-    typename Op::OutMap       ym(y.data(), op_->oshape);
-    op_->iforward(xm, ym);
+    typename Op::OutMap ym(y.data(), op_->oshape);
+    op_->iforward(xm, ym, s);
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap y, InMap x) const
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
-    auto const                 time = this->startAdjoint(y, x, true);
+    auto const           time = this->startAdjoint(y, x, true);
     typename Op::OutCMap ym(y.data(), op_->oshape);
-    typename Op::InMap         xm(x.data(), op_->ishape);
-    op_->iadjoint(ym, xm);
+    typename Op::InMap   xm(x.data(), op_->ishape);
+    op_->iadjoint(ym, xm, s);
     this->finishAdjoint(x, time, true);
   }
 
@@ -124,8 +124,8 @@ private:
   std::shared_ptr<Op> op_;
 };
 
-template <typename Op, int Rank>
-auto MakeReshapeOutput(std::shared_ptr<Op> op, Sz<Rank> const osh) -> ReshapeOutput<Op, Rank>::Ptr
+template <typename Op, int Rank> auto MakeReshapeOutput(std::shared_ptr<Op> op, Sz<Rank> const osh)
+  -> ReshapeOutput<Op, Rank>::Ptr
 {
   return std::make_shared<ReshapeOutput<Op, Rank>>(op, osh);
 }

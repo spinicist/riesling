@@ -21,8 +21,8 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
 
   void forward(InCMap x, OutMap y) const;
   void adjoint(OutCMap y, InMap x) const;
-  void iforward(InCMap x, OutMap y) const;
-  void iadjoint(OutCMap y, InMap x) const;
+  void iforward(InCMap x, OutMap y, float const s) const;
+  void iadjoint(OutCMap y, InMap x, float const s) const;
 
 private:
   Sz<FFTRank> dims_;

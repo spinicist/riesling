@@ -41,31 +41,34 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(typename Base::CM
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::inverse(typename Base::CMap y, typename Base::Map x) const
+template <typename S, int I, int O>
+void TOp<S, I, O>::inverse(typename Base::CMap y, typename Base::Map x, float const s, float const b) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
-  inverse(ym, xm);
+  inverse(ym, xm, s, b);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(typename Base::CMap x, typename Base::Map y) const
+template <typename S, int I, int O>
+void TOp<S, I, O>::iforward(typename Base::CMap x, typename Base::Map y, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   InCMap xm(x.data(), ishape);
   OutMap ym(y.data(), oshape);
-  iforward(xm, ym);
+  iforward(xm, ym, s);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(typename Base::CMap y, typename Base::Map x) const
+template <typename S, int I, int O>
+void TOp<S, I, O>::iadjoint(typename Base::CMap y, typename Base::Map x, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "y {} != rows {}", y.rows(), rows()); }
   OutCMap ym(y.data(), oshape);
   InMap   xm(x.data(), ishape);
-  iadjoint(ym, xm);
+  iadjoint(ym, xm, s);
 }
 
 template <typename S, int I, int O> auto TOp<S, I, O>::forward(InTensor const &x) const -> OutTensor
@@ -108,17 +111,17 @@ template <typename S, int I, int O> void TOp<S, I, O>::adjoint(OutTensor const &
   adjoint(ym, xm);
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::inverse(OutCMap y, InMap x) const
+template <typename S, int I, int O> void TOp<S, I, O>::inverse(OutCMap y, InMap x, float, float) const
 {
   throw Log::Failure(this->name, "Inverse not implemented");
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap, OutMap) const
+template <typename S, int I, int O> void TOp<S, I, O>::iforward(InCMap, OutMap, float) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }
 
-template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap, InMap) const
+template <typename S, int I, int O> void TOp<S, I, O>::iadjoint(OutCMap, InMap, float) const
 {
   throw Log::Failure(this->name, "In place not implemented");
 }

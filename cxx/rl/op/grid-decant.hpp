@@ -19,8 +19,8 @@ template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecan
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, CxN<ND + 2> const &skern, Basis::CPtr b)
     -> std::shared_ptr<GridDecant<ND>>;
 
-  void iforward(InCMap x, OutMap y) const;
-  void iadjoint(OutCMap y, InMap x) const;
+  void iforward(InCMap x, OutMap y, float const s) const;
+  void iadjoint(OutCMap y, InMap x, float const s) const;
 
   KType kernel;
 
@@ -31,8 +31,8 @@ private:
   Basis::CPtr basis;
   CxN<ND + 2> skern;
 
-  void forwardTask(Index const start, Index const stride, CxNCMap<ND + 1> const &x, CxNMap<3> &y) const;
-  void adjointTask(Index const start, Index const stride, CxNCMap<3> const &y, CxNMap<ND + 1> &x) const;
+  void forwardTask(Index const start, Index const stride, float const s, CxNCMap<ND + 1> const &x, CxNMap<3> &y) const;
+  void adjointTask(Index const start, Index const stride, float const s, CxNCMap<3> const &y, CxNMap<ND + 1> &x) const;
 };
 
 } // namespace TOps
