@@ -38,6 +38,6 @@ struct Regularizers_t
   Ops::Op<Cx>::Ptr         ext_x;
 };
 
-auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A) -> Regularizers_t;
+auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A, bool const dual = false) -> Regularizers_t;
 
 } // namespace rl

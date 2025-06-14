@@ -41,8 +41,8 @@ template <typename Scalar = Cx>
 struct ConjugateProx final : Prox<Scalar>
 {
   PROX_INHERIT(Scalar)
-
-  ConjugateProx(std::shared_ptr<Prox<Scalar>> p);
+  static auto Make(Prox<Scalar>::Ptr p) -> Prox<Scalar>::Ptr;
+  ConjugateProx(Prox<Scalar>::Ptr p);
 
   void apply(float const α, CMap x, Map z) const;
 
