@@ -37,20 +37,21 @@ void main_denoise(args::Subparser &parser)
   } else if (pdhg) {
     PDHG::Debug debug = [shape = x.dimensions(), ext_x, regs](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
                                                               PDHG::Vector const &u) {
-      if (ext_x) {
-        auto xit = ext_x->forward(x);
-        Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-        xit = ext_x->forward(xb);
-        Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-        xit = ext_x->forward(u);
-        Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-      } else {
-        Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
-        Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xb.data(), HD5::Dims::Images);
-        Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
+      if (Log::IsDebugging()) {
+        if (ext_x) {
+          auto xit = ext_x->forward(x);
+          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
+          xit = ext_x->forward(xb);
+          Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
+        } else {
+          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xb.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
+        }
       }
     };
-    PDHG opt{B, nullptr, regs, admmArgs.in_its1.Get(), admmArgs.atol.Get(), 0.f, 0.f, debug};
+    PDHG opt{B, nullptr, regs, admmArgs.in_its1.Get(), admmArgs.atol.Get(), 1.f, 16.f, debug};
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   } else {
     ADMM::DebugX debug_x = [shape = x.dimensions(), ext_x, di = debugIters.Get()](Index const ii, ADMM::Vector const &xi) {
