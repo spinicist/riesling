@@ -14,25 +14,28 @@ struct PDHG
   using Scalar = typename Op::Scalar;
   using Vector = typename Op::Vector;
   using CMap = typename Op::CMap;
-  using Callback = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
+  using Debug = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
 
-  PDHG(std::shared_ptr<Op>             A,
-       std::shared_ptr<Op>             P,
+  PDHG(Op::Ptr                         A,
+       Op::Ptr                         P,
        std::vector<Regularizer> const &regs,
-       Index const                     imax = 4,
-       float const                     σ = 0.f,
-       float const                     τ = 0.f,
-       float const                     θ = 0.f);
+       Index                           imax = 4,
+       float                           resTol = 1.e-6f,
+       float                           λA = 0.f,
+       float                           λG = 0.f,
+       Debug                           d = nullptr);
 
   auto run(Vector const &b) const -> Vector;
   auto run(CMap b) const -> Vector;
 
-private:
   Op::Ptr              A, P, G;
   Proxs::Prox<Cx>::Ptr proxʹ;
 
   Index imax;
+  float resTol;
   float σ, τ, θ;
+
+  Debug debug;
 };
 
 } // namespace rl

@@ -105,7 +105,7 @@ template <int ND> void Grad<ND>::adjoint(OutCMap y, InMap x) const
 
 template <int ND> void Grad<ND>::iforward(InCMap x, OutMap y, float const s) const
 {
-  auto const time = this->startForward(x, y, false);
+  auto const time = this->startForward(x, y, true);
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     switch (mode_) {
     case 0: ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], s); break;
@@ -119,7 +119,7 @@ template <int ND> void Grad<ND>::iforward(InCMap x, OutMap y, float const s) con
 
 template <int ND> void Grad<ND>::iadjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const time = this->startAdjoint(y, x, false);
+  auto const time = this->startAdjoint(y, x, true);
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     switch (mode_) {
     case 0: ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
@@ -127,8 +127,8 @@ template <int ND> void Grad<ND>::iadjoint(OutCMap y, InMap x, float const s) con
     case 2: CentralDiff0<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
     case 3: CentralDiff1<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
     }
-    this->finishAdjoint(x, time, true);
   }
+  this->finishAdjoint(x, time, true);
 }
 
 template struct Grad<5>;
@@ -156,7 +156,7 @@ template <int ND> void GradVec<ND>::forward(InCMap x, OutMap y) const {
 
 template <int ND> void GradVec<ND>::iforward(InCMap x, OutMap y, float const s) const
 {
-  auto const time = this->startForward(x, y, false);
+  auto const time = this->startForward(x, y, true);
   auto const sz = FirstN<ND - 1>(x.dimensions());
   /*
    * Grad applied to a vector produces a tensor. Here it is flattened back into a vector
@@ -201,7 +201,7 @@ template <int ND> void GradVec<ND>::adjoint(OutCMap y, InMap x) const {
 
 template <int ND> void GradVec<ND>::iadjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const time = this->startAdjoint(y, x, false);
+  auto const time = this->startAdjoint(y, x, true);
   auto const sz = FirstN<ND - 1>(x.dimensions());
   /*
    *  This is the tensor form of Div (see wikipedia page) but with the tensor flattened into a vector

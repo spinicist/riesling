@@ -52,8 +52,12 @@ template <typename S> auto Prox<S>::apply(std::shared_ptr<Op> const α, Vector c
 template struct Prox<float>;
 template struct Prox<Cx>;
 
+template <typename S> auto ConjugateProx<S>::Make(Prox<S>::Ptr p) -> Prox<S>::Ptr {
+  return std::make_shared<ConjugateProx<S>>(p);
+}
+
 template <typename S>
-ConjugateProx<S>::ConjugateProx(std::shared_ptr<Prox<S>> pp)
+ConjugateProx<S>::ConjugateProx(Prox<S>::Ptr pp)
   : Prox<S>{pp->sz}
   , p{pp}
 {

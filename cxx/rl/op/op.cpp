@@ -98,7 +98,11 @@ template <typename S> auto Op<S>::startForward(CMap x, Map const &y, bool const 
 
 template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const start, bool const ip) const
 {
-  Log::Debug(this->name, "{}forward finished in {} |y| {}.", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(y));
+  if (Log::IsDebugging()) {
+    Log::Debug(this->name, "{}forward finished in {} |y| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(y));
+  } else {
+    Log::Debug(this->name, "{}forward finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
+  }
 }
 
 template <typename S> auto Op<S>::startAdjoint(CMap y, Map const &x, bool const ip) const -> Log::Time

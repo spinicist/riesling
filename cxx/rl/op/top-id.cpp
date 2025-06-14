@@ -2,8 +2,7 @@
 
 namespace rl::TOps {
 
-template <typename S, int R>
-Identity<S, R>::Identity(Sz<R> dims)
+template <typename S, int R> Identity<S, R>::Identity(Sz<R> dims)
   : Parent("Identity", dims, dims)
 {
 }
@@ -12,7 +11,7 @@ template <typename S, int R> void Identity<S, R>::forward(InCMap x, OutMap y) co
 {
   auto const time = Parent::startForward(x, y, false);
   y.device(Threads::TensorDevice()) = x;
-  Parent::finishAdjoint(y, time, false);
+  Parent::finishForward(y, time, false);
 }
 
 template <typename S, int R> void Identity<S, R>::adjoint(OutCMap y, InMap x) const
@@ -26,7 +25,7 @@ template <typename S, int R> void Identity<S, R>::iforward(InCMap x, OutMap y, f
 {
   auto const time = Parent::startForward(x, y, true);
   y.device(Threads::TensorDevice()) += x * x.constant(s);
-  Parent::finishAdjoint(y, time, true);
+  Parent::finishForward(y, time, true);
 }
 
 template <typename S, int R> void Identity<S, R>::iadjoint(OutCMap y, InMap x, float const s) const
@@ -39,4 +38,4 @@ template <typename S, int R> void Identity<S, R>::iadjoint(OutCMap y, InMap x, f
 template struct Identity<Cx, 4>;
 template struct Identity<Cx, 5>;
 
-}
+} // namespace rl::TOps

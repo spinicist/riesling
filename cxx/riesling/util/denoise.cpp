@@ -27,7 +27,7 @@ void main_denoise(args::Subparser &parser)
   float const scale = ScaleImages(scaling.Get(), in);
   if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
   auto A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
-  auto [regs, B, ext_x] = Regularizers(regOpts, A);
+  auto [regs, B, ext_x] = Regularizers(regOpts, A, pdhg);
   Cx5  x(in.dimensions());
   auto xm = CollapseToVector(x);
   if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
@@ -35,7 +35,22 @@ void main_denoise(args::Subparser &parser)
     // be the identity operator
     regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
   } else if (pdhg) {
-    PDHG opt{B, nullptr, regs, admmArgs.in_its1.Get()};
+    PDHG::Debug debug = [shape = x.dimensions(), ext_x, regs](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
+                                                              PDHG::Vector const &u) {
+      if (ext_x) {
+        auto xit = ext_x->forward(x);
+        Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
+        xit = ext_x->forward(xb);
+        Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
+        xit = ext_x->forward(u);
+        Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
+      } else {
+        Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+        Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xb.data(), HD5::Dims::Images);
+        Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
+      }
+    };
+    PDHG opt{B, nullptr, regs, admmArgs.in_its1.Get(), admmArgs.atol.Get(), 0.f, 0.f, debug};
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   } else {
     ADMM::DebugX debug_x = [shape = x.dimensions(), ext_x, di = debugIters.Get()](Index const ii, ADMM::Vector const &xi) {
