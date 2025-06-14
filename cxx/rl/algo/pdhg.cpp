@@ -33,9 +33,9 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Index i
   }
 
   if (λA == 0.f) { λA = PowerMethodAdjoint(A, P, 32).val; }
-  if (λG == 0.f) { λG = PowerMethodAdjoint(G, nullptr, 64).val; }
-  σ = 1.f / (λA + λG);
-  τ = σ;
+  if (λG == 0.f) { λG = PowerMethodAdjoint(G, nullptr, 32).val; }
+  σ = 1.f;
+  τ = 1.f / (λA + λG);
   Log::Print("PDHG", "λA {:4.3E} λG {:4.3E} τ {:4.3E} imax {} tol {}", λA, λG, τ, imax, resTol);
 }
 
@@ -74,11 +74,10 @@ auto PDHG::run(CMap y) const -> Vector
     // xnext = x - τ(A'u + G'v)
     A->iadjoint(u, x);
     G->adjoint(v, x̅);
-    fmt::print(stderr, "|x| {} |x̅| {}\n", ParallelNorm(x), ParallelNorm(x̅));
-    if (debug) { debug(ii, x, x̅, utemp); }
     x.device(Threads::CoreDevice()) = xold - τ * x - τ * x̅;
     xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
     x̅.device(Threads::CoreDevice()) = x + θ * xold;
+    if (debug) { debug(ii, x, x̅, u); }
     float const r = ParallelNorm(xold) / r0;
     Log::Print("PDHG", "{:02d}: |x| {:4.3E} |r|/|r0| {:4.3E}", ii, ParallelNorm(x), r);
     if (r < resTol) { break; }
@@ -86,6 +85,7 @@ auto PDHG::run(CMap y) const -> Vector
     // if (debug) { debug(ii, x, x̅, xdiff); }
   }
   Iterating::Finished();
+  x.device(Threads::CoreDevice()) = x * (1.f + σ) / σ;
   return x;
 }
 
