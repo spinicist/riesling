@@ -66,6 +66,21 @@ auto LSMRArgs::Get() -> rl::LSMR::Opts
   return rl::LSMR::Opts{.imax = its.Get(), .aTol = atol.Get(), .bTol = btol.Get(), .cTol = ctol.Get(), .λ = λ.Get()};
 }
 
+
+PDHGArgs::PDHGArgs(args::Subparser &parser)
+  : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4)
+  , resTol(parser, "A", "Tolerance on residual (1e-6)", {"res-tol", 'r'}, 1.e-6f)
+  , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
+  , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)
+  , λG(parser, "λG", "Max Eigenvalue of regularizer transform (16)", {"lambda-G", 'g'}, 16.f)
+{
+}
+
+auto PDHGArgs::Get() -> rl::PDHG::Opts
+{
+  return rl::PDHG::Opts{.imax = its.Get(), .resTol = resTol.Get(), .deltaTol = deltaTol.Get(), .λA = λA.Get(), .λG = λG.Get()};
+}
+
 ADMMArgs::ADMMArgs(args::Subparser &parser)
   : in_its0(parser, "ITS", "Initial inner iterations (64)", {"max-its0"}, 64)
   , in_its1(parser, "ITS", "Subsequent inner iterations (64)", {"max-its"}, 64)

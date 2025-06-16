@@ -4,6 +4,7 @@
 
 #include "rl/algo/admm.hpp"
 #include "rl/algo/lsmr.hpp"
+#include "rl/algo/pdhg.hpp"
 #include "rl/op/grid-opts.hpp"
 #include "rl/op/recon-opts.hpp"
 #include "rl/precon-opts.hpp"
@@ -60,6 +61,16 @@ struct LSMRArgs
 
   LSMRArgs(args::Subparser &parser);
   auto Get() -> rl::LSMR::Opts;
+};
+
+struct PDHGArgs
+{
+  args::ValueFlag<Index> its;
+  args::ValueFlag<float> resTol, deltaTol;
+  args::ValueFlag<float> λA, λG;
+
+  PDHGArgs(args::Subparser &parser);
+  auto Get() -> rl::PDHG::Opts;
 };
 
 struct ADMMArgs
