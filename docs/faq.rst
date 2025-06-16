@@ -9,6 +9,7 @@ Understandly, users have questions. Here are some answers.
 #. `What if I have Cartesian data?`_
 #. `Help! My data is anisotropic!`_
 #. `Which regularizer should I pick?`_
+#. `Should I denoise or regularize?`
 
 What is the trajectory scaling?
 -------------------------------
@@ -48,3 +49,10 @@ Which regularizer should I pick with ADMM?
 ------------------------------------------
 
 This depends very much on your data. For straightforward single-image reconstruction I recommend ``--tgv``. If your data scaling is correct, then λ on the order of 1e-2 or 1e-3 should produce good results. If instead you are reconstructing multiple images together, either from a subspace or temporal reconstruction, then Locally Low-Rank works well. Set ``--llr-patch=5 --llr-win=1`` for the highest quality possible, but note this will be slow to run. Increasing the window size will yield a big speed increase but can produce a blocky appearance in the final images.
+
+Should I denoise or regularize?
+-------------------------------
+
+Many MRI papers use a regularized reconstruction, i.e. they minimize ``|Ax - y| + λ|f(x)|`` where ``A`` is the encoding/system matrix. While this is mathematically elegant it presents practical problems in algorithm choice for large-scale non-cartesian reconstructions. There are to my knowledge only two general purpose algorithms for solving such problems across typical regularizers - ADMM and PDHG. The adaptive version of ADMM in ``riesling`` is essentially parameter-free, but requires expensive solves for the inner problem. Meanwhile PDHG requires a step-size which is detected by the largest eigenvalue of the encoding matrix, which must be found by power iteration before running the reconstruction. While this eigenvalue will be constant for a particular trajectory, it is still tedious to calculate. Additionally, the accelerated form of PDHG is not compatible with some common regularizers.
+
+An alternative to this approach is to first solve the unregularized reconstruction problem ``|Ax̅ - y|`` and then subsequently solve the denoising problem ``|x - x̅| + λ|f(x)|``. This allows using the efficient LSMR algorithm, which is parameterless and allows preconditioning, for the first step and then PDHG for the second step, which no longer requires the calculation of an eigenvalue for the encoding matrix.

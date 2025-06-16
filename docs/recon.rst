@@ -7,6 +7,7 @@ The main reconstruction tool you should use is `riesling recon-rlsq`_. This solv
 * `recon-rlsq`_
 * `recon-rss`_
 * `sense-calib`_
+* `denoise`_
 
 *Common Options*
 
@@ -112,10 +113,6 @@ Multiple regularizers can be specified simultaneously with ADMM, each with a dif
 
     Basic L1 regularization in the image domain, i.e. λ|x|.
 
-* ``--nmrent=λ``
-
-    Similar to L1 regularization. See `Daniell and Hore <https://linkinghub.elsevier.com/retrieve/pii/0022236489901170>`_. `Not recommended <https://onlinelibrary.wiley.com/doi/10.1002/mrm.1910140103>`_.
-
 * ``--tv=λ``
 
     Classic `Total Variation <https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
@@ -206,3 +203,52 @@ This problem is badly conditioned, and even with a preconditioner can take appro
 * ``--sense-tp=T``
 
     If the input data contains multiple timepoints, use this one to calculate the sensitivities (default is first volume).
+
+denoise
+----------
+
+Denoise an image using a proximal operator possibly combined with the Primal Dual Hybrid Gradient. See `F. Ong, Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’ doi: 10.1109/TMI.2019.2954121 <https://ieeexplore.ieee.org/document/8906069/>`_
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling denoise input.h5 output.h5 --tgv=1e-3
+
+*Important Options*
+
+* ``--max-its=N``, ``--res-tol=r``, ``--delta-tol=d``, ``--lambda-G=l``
+
+    These control the PDHG algorithm for regularizers that cannot be solved using only a proximal operator (i.e. those that have a non-invertible transform). The residual tolerance is calculated relative to the initial data, and the delta-tolerance will terminate the algorithm when the x update becomes small enough. ``--lambda-G`` is the maximum eigenvalue for the regularizer transform and is used to determine the step-size. The default value of 16 is sufficiently large to cover all the regularizers implemented in ``riesling``.
+
+* ``--scale=bart/otsu/S``
+
+    The optimal regularization strength λ depends both on the particular regularizer and the typical intensity values in the unregularized image. To make values of λ roughly comparable, it is usual to scale the data such that the intensity values are approximately 1 during the optimization (and then unscale the final image). By default ``riesling`` will perform a NUFFT and then use Otsu's method to find the median foreground intensity as the scaling factor (specify ``otsu`` to make this explicit). The BART automatic scaling can be chosen with ``bart``. Alternately a fixed numeric *multiplicative* scaling factor can be specified, which will skip the initial NUFFT. If you already know the approximate scaling of your data (from a test recon), this option will be the fastest.
+
+*Regularization Options*
+
+Multiple regularizers can be specified simultaneously, each with a different regularization strength λ and options. At least one regularizer must be specified, there is no default option at present.
+
+* ``--l1=λ``
+
+    Basic L1 regularization in the image domain, i.e. λ|x|.
+
+* ``--tv=λ``
+
+    Classic `Total Variation <https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
+
+* ``--tgv=λ``, ``--tgvl2=λ``
+
+    `Total Generalized Variation <http://doi.wiley.com/10.1002/mrm.22595>`_ and `TGV on the L2 voxelwise norm <http://ieeexplore.ieee.org/document/7466848/>`_. The latter is useful for multichannel images. Note that due to the way the TGV problem is formulated, it consumes significantly more memory and is slower than TV for the same data.
+
+* ``--iso=b|g|bg``
+
+    Isotropic or joint denoising on the specified dimensions (basis, spatial gradients, or both) for TV or TGV. See `F. Knoll, M. Holler, T. Koesters, R. Otazo, K. Bredies, and D. K. Sodickson, ‘Joint MR-PET Reconstruction Using a Multi-Channel Image Regularizer’, IEEE Trans. Med. Imaging, vol. 36, no. 1, pp. 1–16, Jan. 2017, doi: 10.1109/TMI.2016.2564989.<http://ieeexplore.ieee.org/document/7466848/>`_.
+
+* ``--llr=λ``, ``--llr-patch=N``, ``--llr-win=N``, ``--llr-shift``
+
+    `Locally Low-Rank <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_ regularization. The patch size determines the region to calculate the SVD over, the window size determines the region that is copied to the output image. Set the window size to 1 to calculate an SVD for each output voxel. Set the window size equal to the patch size to use the entire patch. The ``--llr-shift`` option employs the random patch shifting strategy, this may not converge.
+
+* ``--wavelets=λ``, ``--wavelet-width=W``, ``--wavelet-dims=0,1,1,1``
+
+    L1-wavelets of width W (default 6). The number of levels is the maximum possible. Which of the basis,X,Y,Z dimensions to be transformed can be specified with the ``--wavelet-dims`` option.
