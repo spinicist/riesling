@@ -19,10 +19,11 @@ struct PDHG
   PDHG(Op::Ptr                         A,
        Op::Ptr                         P,
        std::vector<Regularizer> const &regs,
-       Index                           imax = 4,
-       float                           resTol = 1.e-6f,
        float                           λA = 0.f,
        float                           λG = 0.f,
+       Index                           imax = 4,
+       float                           resTol = 1.e-6f,
+       float                           deltaTol = 1.e-6f,
        Debug                           d = nullptr);
 
   auto run(Vector const &b) const -> Vector;
@@ -32,7 +33,7 @@ struct PDHG
   Proxs::Prox<Cx>::Ptr proxʹ;
 
   Index imax;
-  float resTol;
+  float resTol, deltaTol;
   float σ, τ, θ;
 
   Debug debug;
