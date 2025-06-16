@@ -40,6 +40,10 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
 
 auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
+/*  This follows the least-squares specific form of PDHG from Ong et al 2020
+ *  Note that the code in SigPy is different to this. It was generalised to other problems, not only least-squares
+ *  The specific trick to making the below work is realizing that the dual proximal operator is needed, not the primal
+ */
 auto PDHG::run(CMap y) const -> Vector
 {
   if (y.rows() != A->rows()) { throw(Log::Failure("PDHG", "y had {} rows, expected {}", y.rows(), A->rows())); }
@@ -80,7 +84,7 @@ auto PDHG::run(CMap y) const -> Vector
     // xnext = x - τ(A'u + G'v)
     A->iadjoint(u, x);
     G->adjoint(v, x̅);
-    x.device(Threads::CoreDevice()) = xold - τ * (x - x̅);
+    x.device(Threads::CoreDevice()) = xold - τ * (x + x̅);
     xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
     x̅.device(Threads::CoreDevice()) = x + θ * xold;
     if (debug) { debug(ii, x, x̅, u); }
