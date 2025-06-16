@@ -206,7 +206,7 @@ template struct DiagRep<float>;
 template struct DiagRep<Cx>;
 
 template <typename S> Multiply<S>::Multiply(std::shared_ptr<Op<S>> AA, std::shared_ptr<Op<S>> BB)
-  : Op<S>("Multiply")
+  : Op<S>("Mult")
   , A{AA}
   , B{BB}
   , temp(B->rows())
@@ -560,7 +560,7 @@ template struct DStack<float>;
 template struct DStack<Cx>;
 
 template <typename S> Extract<S>::Extract(Index const cols, Index const st, Index const rows)
-  : Op<S>("Extract")
+  : Op<S>("Extrct")
   , r{rows}
   , c{cols}
   , start{st}
@@ -604,7 +604,7 @@ template struct Extract<float>;
 template struct Extract<Cx>;
 
 template <typename S> Subtract<S>::Subtract(std::shared_ptr<Op<S>> aa, std::shared_ptr<Op<S>> bb)
-  : Op<S>("Subtract")
+  : Op<S>("Sub")
   , a{aa}
   , b{bb}
 {
