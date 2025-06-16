@@ -13,7 +13,6 @@ struct RegOpts
   RegOpts(args::Subparser &parser);
 
   args::ValueFlag<float> l1;
-  args::ValueFlag<float> nmrent;
 
   args::ValueFlag<int>   diffOrder;
   args::ValueFlag<float> tv;
@@ -38,6 +37,6 @@ struct Regularizers_t
   Ops::Op<Cx>::Ptr         ext_x;
 };
 
-auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A, bool const dual = false) -> Regularizers_t;
+auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A) -> Regularizers_t;
 
 } // namespace rl

@@ -16,7 +16,7 @@ L1::L1(float const λ_, Index const sz_)
   Log::Print("Prox", "L1 / Soft Threshold λ {}", λ);
 }
 
-void L1::apply(float const α, CMap x, Map z) const
+void L1::primal(float const α, CMap x, Map z) const
 {
   float t = α * λ;
   Threads::ChunkFor(
@@ -28,7 +28,23 @@ void L1::apply(float const α, CMap x, Map z) const
     },
     x.size());
   if (Log::IsDebugging()) {
-    Log::Print("Prox", "Soft Threshold α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+    Log::Print("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+  }
+}
+
+void L1::dual(float const α, CMap x, Map z) const
+{
+  float t = α * λ;
+  Threads::ChunkFor(
+    [t, &x, &z](Index lo, Index hi) {
+      for (Index ii = lo; ii < hi; ii++) {
+        float const a = std::abs(x[ii]);
+        z[ii] = a > t ? x[ii] * t / a : x[ii];
+      }
+    },
+    x.size());
+  if (Log::IsDebugging()) {
+    Log::Print("Prox", "|x|1 Dual α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
 
@@ -49,7 +65,7 @@ template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> cons
   std::set_difference(all.cbegin(), all.cend(), normDims.cbegin(), normDims.cend(), otherDims.begin());
 }
 
-template <int O, int D> void L2<O, D>::apply(float const α, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::primal(float const α, CMap x, Map z) const
 {
   Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
   Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
@@ -80,56 +96,12 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap x, Map z) cons
     },
     nBlocks);
   if (Log::IsDebugging()) {
-    Log::Print("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+    Log::Print("Prox", "|x|2 Primal α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
 
-template struct L2<6, 1>;
-template struct L2<6, 2>;
 
-auto L1Ball::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_shared<L1Ball>(λ, sz); }
-
-L1Ball::L1Ball(float const λ_, Index const sz_)
-  : Prox<Cx>(sz_)
-  , λ{λ_}
-{
-  Log::Print("Prox", "L1 Ball λ {}", λ);
-}
-
-void L1Ball::apply(float const α, CMap x, Map z) const
-{
-  float t = α * λ;
-  Threads::ChunkFor(
-    [t, &x, &z](Index lo, Index hi) {
-      for (Index ii = lo; ii < hi; ii++) {
-        float const a = std::abs(x[ii]);
-        z[ii] = a > t ? x[ii] * t / a : x[ii];
-      }
-    },
-    x.size());
-  if (Log::IsDebugging()) {
-    Log::Print("Prox", "L1 Ball α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
-  }
-}
-
-template <int O, int D> auto L2Ball<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr
-{
-  return std::make_shared<L2Ball>(λ, s, d);
-}
-
-template <int O, int D> L2Ball<O, D>::L2Ball(float const λ_, Sz<O> const &s, Sz<D> const &d)
-  : Prox<Cx>(Product(s))
-  , λ{λ_}
-  , shape{s}
-  , normDims(d)
-{
-  Log::Print("Prox", "L2 Ball λ {} scaled λ {} shape {} norm dims", λ_, λ, shape, normDims);
-  Sz<O> all;
-  std::iota(all.begin(), all.end(), 0);
-  std::set_difference(all.cbegin(), all.cend(), normDims.cbegin(), normDims.cend(), otherDims.begin());
-}
-
-template <int O, int D> void L2Ball<O, D>::apply(float const α, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
 {
   Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
   Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
@@ -160,11 +132,12 @@ template <int O, int D> void L2Ball<O, D>::apply(float const α, CMap x, Map z) 
     },
     nBlocks);
   if (Log::IsDebugging()) {
-    Log::Print("Prox", "L2 Prox α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+    Log::Print("Prox", "|x|2 Dual α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
 
-template struct L2Ball<6, 1>;
-template struct L2Ball<6, 2>;
+
+template struct L2<6, 1>;
+template struct L2<6, 2>;
 
 } // namespace rl::Proxs

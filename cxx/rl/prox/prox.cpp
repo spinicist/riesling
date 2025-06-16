@@ -10,69 +10,41 @@ Prox<S>::Prox(Index const s)
 {
 }
 
-template <typename S> void Prox<S>::apply(float const α, Vector const &x, Vector &z) const
+template <typename S> void Prox<S>::primal(float const α, Vector const &x, Vector &z) const
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
   CMap xm(x.data(), sz);
   Map  zm(z.data(), sz);
-  this->apply(α, xm, zm);
+  this->primal(α, xm, zm);
 }
 
-template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const
-{
-  if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
-  if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
-  CMap xm(x.data(), sz);
-  Map  zm(z.data(), sz);
-  this->apply(α, xm, zm);
-}
-
-template <typename S> auto Prox<S>::apply(float const α, Vector const &x) const -> Vector
+template <typename S> auto Prox<S>::primal(float const α, Vector const &x) const -> Vector
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
-  this->apply(α, x, z);
+  this->primal(α, x, z);
   return z;
 }
 
-template <typename S> void Prox<S>::apply(std::shared_ptr<Op> const, CMap , Map ) const
+template <typename S> void Prox<S>::dual(float const α, Vector const &x, Vector &z) const
 {
-  throw Log::Failure("Prox", "Not implemented");
+  if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
+  if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
+  CMap xm(x.data(), sz);
+  Map  zm(z.data(), sz);
+  this->dual(α, xm, zm);
 }
 
-template <typename S> auto Prox<S>::apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector
+template <typename S> auto Prox<S>::dual(float const α, Vector const &x) const -> Vector
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
-  this->apply(α, x, z);
+  this->dual(α, x, z);
   return z;
 }
 
 template struct Prox<float>;
 template struct Prox<Cx>;
-
-template <typename S> auto ConjugateProx<S>::Make(Prox<S>::Ptr p) -> Prox<S>::Ptr {
-  return std::make_shared<ConjugateProx<S>>(p);
-}
-
-template <typename S>
-ConjugateProx<S>::ConjugateProx(Prox<S>::Ptr pp)
-  : Prox<S>{pp->sz}
-  , p{pp}
-{
-}
-
-template <typename S> void ConjugateProx<S>::apply(float const α, CMap x, Map z) const
-{
-  Vector x1 = x / α;
-  CMap   x1m(x1.data(), x1.size());
-  p->apply(1.f / α, x1m, z);
-  z *= -α;
-  z += x;
-}
-
-template struct ConjugateProx<float>;
-template struct ConjugateProx<Cx>;
 
 } // namespace rl::Proxs

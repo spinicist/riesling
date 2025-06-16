@@ -3,7 +3,6 @@
 #include "rl/log/log.hpp"
 #include "rl/op/fft.hpp"
 #include "rl/op/grad.hpp"
-#include "rl/prox/entropy.hpp"
 #include "rl/prox/l1-wavelets.hpp"
 #include "rl/prox/llr.hpp"
 #include "rl/prox/norms.hpp"
@@ -12,7 +11,6 @@ namespace rl {
 
 RegOpts::RegOpts(args::Subparser &parser)
   : l1(parser, "L1", "Simple L1 regularization", {"l1"})
-  , nmrent(parser, "E", "NMR Entropy", {"nmrent"})
 
   , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
   , tv(parser, "TV", "Total Variation", {"tv"})
@@ -31,7 +29,7 @@ RegOpts::RegOpts(args::Subparser &parser)
 {
 }
 
-auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon, bool const dual) -> Regularizers_t
+auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regularizers_t
 {
   Ops::Op<Cx>::Ptr         A = recon;
   auto const               shape = recon->ishape;
@@ -49,26 +47,20 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon, bool con
     Proxs::Prox<Cx>::Ptr prox_x, prox_v;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
-        prox_x = dual ? Proxs::L2Ball<6, 1>::Make(opts.tgv.Get(), grad_x->oshape, Sz1{3})
-                      : Proxs::L2<6, 1>::Make(opts.tgv.Get(), grad_x->oshape, Sz1{3});
-        prox_v = dual ? Proxs::L2Ball<6, 1>::Make(opts.tgv.Get(), grad_v->oshape, Sz1{3})
-                      : Proxs::L2<6, 1>::Make(opts.tgv.Get(), grad_v->oshape, Sz1{3});
+        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{3});
+        prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{3});
       } else if (opts.iso.Get() == "g") {
-        prox_x = dual ? Proxs::L2Ball<6, 1>::Make(opts.tgv.Get(), grad_x->oshape, Sz1{5})
-                      : Proxs::L2<6, 1>::Make(opts.tgv.Get(), grad_x->oshape, Sz1{5});
-        prox_v = dual ? Proxs::L2Ball<6, 1>::Make(opts.tgv.Get(), grad_v->oshape, Sz1{5})
-                      : Proxs::L2<6, 1>::Make(opts.tgv.Get(), grad_v->oshape, Sz1{5});
+        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_x->oshape, Sz1{5});
+        prox_v = std::make_shared<Proxs::L2<6, 1>>(opts.tgv.Get(), grad_v->oshape, Sz1{5});
       } else if (opts.iso.Get() == "bg") {
-        prox_x = dual ? Proxs::L2Ball<6, 2>::Make(opts.tgv.Get(), grad_x->oshape, Sz2{3, 5})
-                      : Proxs::L2<6, 2>::Make(opts.tgv.Get(), grad_x->oshape, Sz2{3, 5});
-        prox_v = dual ? Proxs::L2Ball<6, 2>::Make(opts.tgv.Get(), grad_v->oshape, Sz2{3, 5})
-                      : Proxs::L2<6, 2>::Make(opts.tgv.Get(), grad_v->oshape, Sz2{3, 5});
+        prox_x = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_x->oshape, Sz2{3, 5});
+        prox_v = std::make_shared<Proxs::L2<6, 2>>(opts.tgv.Get(), grad_v->oshape, Sz2{3, 5});
       } else {
         throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
       }
     } else {
-      prox_x = dual ? Proxs::L1Ball::Make(opts.tgv.Get(), op1->rows()) : Proxs::L1::Make(opts.tgv.Get(), op1->rows());
-      prox_v = dual ? Proxs::L1Ball::Make(opts.tgv.Get(), op2->rows()) : Proxs::L1::Make(opts.tgv.Get(), op2->rows());
+      prox_x = std::make_shared<Proxs::L1>(opts.tgv.Get(), op1->rows());
+      prox_v = std::make_shared<Proxs::L1>(opts.tgv.Get(), op2->rows());
     }
     regs.push_back({op1, prox_x, grad_x->oshape});
     regs.push_back({op2, prox_v, grad_v->oshape});
@@ -82,26 +74,23 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon, bool con
     Proxs::Prox<Cx>::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
-        prox = dual ? Proxs::L2Ball<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{3})
-                    : Proxs::L2<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{3});
+        prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{3});
       } else if (opts.iso.Get() == "g") {
-        prox = dual ? Proxs::L2Ball<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{5})
-                    : Proxs::L2<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{5});
+        prox = std::make_shared<Proxs::L2<6, 1>>(opts.tv.Get(), grad->oshape, Sz1{5});
       } else if (opts.iso.Get() == "bg") {
-        prox = dual ? Proxs::L2Ball<6, 2>::Make(opts.tv.Get(), grad->oshape, Sz2{3, 5})
-                    : Proxs::L2<6, 2>::Make(opts.tv.Get(), grad->oshape, Sz2{3, 5});
+        prox = std::make_shared<Proxs::L2<6, 2>>(opts.tv.Get(), grad->oshape, Sz2{3, 5});
       } else {
         throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
       }
     } else {
-      prox = dual ? Proxs::L1Ball::Make(opts.tv.Get(), grad->rows()) : Proxs::L1::Make(opts.tv.Get(), grad->rows());
+      prox = std::make_shared<Proxs::L1>(opts.tv.Get(), grad->rows());
     }
     regs.push_back({grad, prox, grad->oshape});
   }
 
   if (opts.tvt) {
     auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0}, opts.diffOrder.Get());
-    auto prox = dual ? Proxs::L1Ball::Make(opts.tvt.Get(), grad->rows()) : Proxs::L1::Make(opts.tvt.Get(), grad->rows());
+    auto prox = std::make_shared<Proxs::L1>(opts.tvt.Get(), grad->rows());
     regs.push_back({grad, prox, grad->oshape});
   }
 
@@ -118,7 +107,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon, bool con
   }
 
   if (opts.l1) {
-    auto p = dual ? Proxs::L1::Make(opts.l1.Get(), A->cols()) : Proxs::L1Ball::Make(opts.l1.Get(), A->cols());
+    auto p = std::make_shared<Proxs::L1>(opts.l1.Get(), A->cols());
     regs.push_back({nullptr, p, shape});
   }
 

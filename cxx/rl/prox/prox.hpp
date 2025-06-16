@@ -5,8 +5,7 @@
 
 namespace rl::Proxs {
 
-template <typename Scalar = Cx>
-struct Prox
+template <typename Scalar = Cx> struct Prox
 {
   using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
   using Map = typename Vector::AlignedMapType;
@@ -16,16 +15,15 @@ struct Prox
 
   Prox(Index const sz);
 
-  auto apply(float const α, Vector const &x) const -> Vector;
-  auto apply(std::shared_ptr<Op> const α, Vector const &x) const -> Vector;
+  auto         primal(float const α, Vector const &x) const -> Vector;
+  void         primal(float const α, Vector const &x, Vector &z) const;
+  virtual void primal(float const α, CMap x, Map z) const = 0;
 
-  void apply(float const α, Vector const &x, Vector &z) const;
-  void apply(std::shared_ptr<Op> const α, Vector const &x, Vector &z) const;
+  auto         dual(float const α, Vector const &x) const -> Vector;
+  void         dual(float const α, Vector const &x, Vector &z) const;
+  virtual void dual(float const α, CMap x, Map z) const = 0;
 
-  virtual void apply(float const α, CMap x, Map z) const = 0;
-  virtual void apply(std::shared_ptr<Op> const α, CMap x, Map z) const;
-
-  virtual ~Prox(){};
+  virtual ~Prox() {};
 
   Index sz;
 };
@@ -35,19 +33,7 @@ struct Prox
   using Map = typename Prox<Scalar>::Map;                                                                                      \
   using CMap = typename Prox<Scalar>::CMap;                                                                                    \
   using Op = typename Prox<Scalar>::Op;                                                                                        \
-  using Prox<Scalar>::apply;
-
-template <typename Scalar = Cx>
-struct ConjugateProx final : Prox<Scalar>
-{
-  PROX_INHERIT(Scalar)
-  static auto Make(Prox<Scalar>::Ptr p) -> Prox<Scalar>::Ptr;
-  ConjugateProx(Prox<Scalar>::Ptr p);
-
-  void apply(float const α, CMap x, Map z) const;
-
-private:
-  Prox<Scalar>::Ptr p;
-};
+  using Prox<Scalar>::primal;                                                                                                  \
+  using Prox<Scalar>::dual;
 
 } // namespace rl::Proxs

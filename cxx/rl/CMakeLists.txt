@@ -77,7 +77,6 @@ phantom/sphere.cpp
 phantom/shepp-logan.cpp
 phantom/radial.cpp
 
-prox/entropy.cpp
 prox/hermitian.cpp
 prox/l1-wavelets.cpp
 prox/llr.cpp
@@ -169,7 +168,6 @@ phantom/gradcubes.hpp
 phantom/sphere.hpp
 phantom/shepp-logan.hpp
 
-prox/entropy.hpp
 prox/hermitian.hpp
 prox/l1-wavelets.hpp
 # prox/lsq.hpp
