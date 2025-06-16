@@ -9,20 +9,12 @@
 
 namespace rl {
 
-PDHG::PDHG(Op::Ptr                         A_,
-           Op::Ptr                         P_,
-           std::vector<Regularizer> const &regs,
-           float                           λA,
-           float                           λG,
-           Index                           imax_,
-           float                           resTol_,
-           float                           deltaTol_,
-           Debug                           debug_)
+PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts opts, Debug debug_)
   : A{A_}
   , P{P_}
-  , imax{imax_}
-  , resTol{resTol_}
-  , deltaTol{deltaTol_}
+  , imax{opts.imax}
+  , resTol{opts.resTol}
+  , deltaTol{opts.deltaTol}
   , θ{1.f}
   , debug{debug_}
 {
@@ -41,11 +33,9 @@ PDHG::PDHG(Op::Ptr                         A_,
     proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
   }
 
-  if (λA == 0.f) { λA = PowerMethodAdjoint(A, P, 32).val; }
-  if (λG == 0.f) { λG = PowerMethodAdjoint(G, nullptr, 32).val; }
   σ = 1.f;
-  τ = 1.f / (λA + λG);
-  Log::Print("PDHG", "λA {:4.3E} λG {:4.3E} τ {:4.3E} imax {} res tol {} Δx tol {}", λA, λG, τ, imax, resTol, deltaTol);
+  τ = 1.f / (opts.λA + opts.λG);
+  Log::Print("PDHG", "σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", σ, τ, resTol, deltaTol);
 }
 
 auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }

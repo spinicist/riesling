@@ -16,27 +16,24 @@ struct PDHG
   using CMap = typename Op::CMap;
   using Debug = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
 
-  PDHG(Op::Ptr                         A,
-       Op::Ptr                         P,
-       std::vector<Regularizer> const &regs,
-       float                           λA = 0.f,
-       float                           λG = 0.f,
-       Index                           imax = 4,
-       float                           resTol = 1.e-6f,
-       float                           deltaTol = 1.e-6f,
-       Debug                           d = nullptr);
+  struct Opts
+  {
+    Index imax;
+    float resTol, deltaTol;
+    float λA, λG;
+  };
+
+  PDHG(Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr);
 
   auto run(Vector const &b) const -> Vector;
   auto run(CMap b) const -> Vector;
 
   Op::Ptr              A, P, G;
   Proxs::Prox<Cx>::Ptr proxʹ;
-
-  Index imax;
-  float resTol, deltaTol;
-  float σ, τ, θ;
-
-  Debug debug;
+  Index                imax;
+  float                resTol, deltaTol;
+  float                σ, τ, θ;
+  Debug                debug;
 };
 
 } // namespace rl
