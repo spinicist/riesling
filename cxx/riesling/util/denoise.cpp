@@ -51,7 +51,7 @@ void main_denoise(args::Subparser &parser)
         }
       }
     };
-    PDHG opt{B, nullptr, regs, admmArgs.in_its1.Get(), admmArgs.atol.Get(), 1.f, 16.f, debug};
+    PDHG opt{B, nullptr, regs, 1.f, 16.f, admmArgs.in_its1.Get(), admmArgs.atol.Get(), admmArgs.btol.Get(), debug};
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   } else {
     ADMM::DebugX debug_x = [shape = x.dimensions(), ext_x, di = debugIters.Get()](Index const ii, ADMM::Vector const &xi) {

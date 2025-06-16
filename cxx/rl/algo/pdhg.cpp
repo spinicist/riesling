@@ -9,11 +9,20 @@
 
 namespace rl {
 
-PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Index imax_, float resTol_, float λA, float λG, Debug debug_)
+PDHG::PDHG(Op::Ptr                         A_,
+           Op::Ptr                         P_,
+           std::vector<Regularizer> const &regs,
+           float                           λA,
+           float                           λG,
+           Index                           imax_,
+           float                           resTol_,
+           float                           deltaTol_,
+           Debug                           debug_)
   : A{A_}
   , P{P_}
   , imax{imax_}
   , resTol{resTol_}
+  , deltaTol{deltaTol_}
   , θ{1.f}
   , debug{debug_}
 {
@@ -36,7 +45,7 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Index i
   if (λG == 0.f) { λG = PowerMethodAdjoint(G, nullptr, 32).val; }
   σ = 1.f;
   τ = 1.f / (λA + λG);
-  Log::Print("PDHG", "λA {:4.3E} λG {:4.3E} τ {:4.3E} imax {} tol {}", λA, λG, τ, imax, resTol);
+  Log::Print("PDHG", "λA {:4.3E} λG {:4.3E} τ {:4.3E} imax {} res tol {} Δx tol {}", λA, λG, τ, imax, resTol, deltaTol);
 }
 
 auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
@@ -53,14 +62,21 @@ auto PDHG::run(CMap y) const -> Vector
   u.setZero();
   utemp.setZero();
   v.setZero();
-  
-  float r0 = ParallelNorm(y);
+
+  float const r0 = ParallelNorm(y);
   Iterating::Starting();
   for (Index ii = 0; ii < imax; ii++) {
     xold = x;
     // unext = (I + σP) \ (u + σP(Ax̅ - y))
     A->forward(x̅, utemp);
     utemp.device(Threads::CoreDevice()) = utemp - y;
+    float const r = ParallelNorm(utemp);
+
+    if (r / r0 < resTol) {
+      Log::Print("PDHG", "Residual tolerance reached");
+      break;
+    }
+
     if (P) {
       P->iforward(utemp, u, σ);
       P->inverse(u, u, 1.f, σ);
@@ -74,13 +90,17 @@ auto PDHG::run(CMap y) const -> Vector
     // xnext = x - τ(A'u + G'v)
     A->iadjoint(u, x);
     G->adjoint(v, x̅);
-    x.device(Threads::CoreDevice()) = xold - τ * x - τ * x̅;
+    x.device(Threads::CoreDevice()) = xold - τ * (x - x̅);
     xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
     x̅.device(Threads::CoreDevice()) = x + θ * xold;
     if (debug) { debug(ii, x, x̅, u); }
-    float const r = ParallelNorm(xold) / r0;
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |r|/|r0| {:4.3E}", ii, ParallelNorm(x), r);
-    if (r < resTol) { break; }
+    float const nx = ParallelNorm(x);
+    float const ndx = ParallelNorm(xold);
+    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E} |r|/|r0| {:4.3E}", ii, nx, ndx / nx, r / r0);
+    if (ndx / nx < deltaTol) {
+      Log::Print("PDHG", "Δx tolerance reached");
+      break;
+    }
     if (Iterating::ShouldStop("PDHG")) { break; }
     // if (debug) { debug(ii, x, x̅, xdiff); }
   }
