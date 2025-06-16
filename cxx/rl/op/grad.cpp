@@ -134,7 +134,7 @@ template <int ND> void Grad<ND>::iadjoint(OutCMap y, InMap x, float const s) con
 template struct Grad<5>;
 
 template <int ND> GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> const &dims, int const o)
-  : Parent("GradVec", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))
+  : Parent("GradV", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))
   , dims_{dims}
   , mode_{o}
 {
