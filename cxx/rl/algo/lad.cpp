@@ -35,7 +35,7 @@ auto LAD::run(Cx const *bdata, float ρ) const -> Vector
     inner.opts.imax = iters1;
     Ax_sub_b = A->forward(x) - b;
     zprev = z;
-    S.apply(1.f / ρ, Ax_sub_b + u, z);
+    S.primal(1.f / ρ, Ax_sub_b + u, z);
     u = u + Ax_sub_b - z;
 
     float const normx = ParallelNorm(x);

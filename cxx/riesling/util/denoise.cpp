@@ -27,13 +27,13 @@ void main_denoise(args::Subparser &parser)
   float const scale = ScaleImages(scaling.Get(), in);
   if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
   auto A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
-  auto [regs, B, ext_x] = Regularizers(regOpts, A, pdhg);
+  auto [regs, B, ext_x] = Regularizers(regOpts, A);
   Cx5  x(in.dimensions());
   auto xm = CollapseToVector(x);
   if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
     // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
     // be the identity operator
-    regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
+    regs[0].P->primal(1.f, CollapseToConstVector(in), xm);
   } else if (pdhg) {
     PDHG::Debug debug = [shape = x.dimensions(), ext_x, regs](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
                                                               PDHG::Vector const &u) {

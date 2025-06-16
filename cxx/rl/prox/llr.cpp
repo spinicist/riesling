@@ -25,7 +25,7 @@ LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz5 co
   Log::Print("Prox", "Locally Low-Rank λ {} Scaled λ {} Patch {} Window {}", l, λ, patchSize, windowSize);
 }
 
-void LLR::apply(float const α, CMap xin, Map zin) const
+void LLR::primal(float const α, CMap xin, Map zin) const
 {
   Cx5CMap     x(xin.data(), shape);
   Cx5Map      z(zin.data(), shape);
@@ -44,27 +44,23 @@ void LLR::apply(float const α, CMap xin, Map zin) const
   Log::Debug("Prox", "LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm<true>(x), Norm<true>(z));
 }
 
-void LLR::apply(std::shared_ptr<Op> const α, CMap xin, Map zin) const
+void LLR::dual(float const α, CMap xin, Map zin) const
 {
-  if (auto realα = std::dynamic_pointer_cast<Ops::DiagScale<Cx>>(α)) {
-    Cx5CMap     x(xin.data(), shape);
-    Cx5Map      z(zin.data(), shape);
-    float const realλ = λ * realα->scale * std::sqrt(patchSize * patchSize * patchSize);
+  Cx5CMap     x(xin.data(), shape);
+  Cx5Map      z(zin.data(), shape);
+  float const realλ = λ * α;
 
-    auto softLLR = [realλ](Cx5 const &xp) {
-      Eigen::MatrixXcf patch = CollapseToMatrix(xp);
-      auto const       svd = SVD<Cx>(patch.transpose());
-      // Soft-threhold svals
-      Eigen::VectorXf const s = (svd.S.abs() > realλ).select(svd.S * (svd.S.abs() - realλ) / svd.S.abs(), 0.f);
-      patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
-      Cx5 yp = AsTensorMap(patch, xp.dimensions());
-      return yp;
-    };
-    Patches(patchSize, windowSize, shift, softLLR, x, z);
-    Log::Debug("Prox", "LLR α {} λ {} t {} |x| {} |z| {}", realα->scale, λ, realλ, Norm<true>(x), Norm<true>(z));
-  } else {
-    throw Log::Failure("Prox", "C++ is stupid");
-  }
+  auto softLLR = [realλ](Cx5 const &xp) {
+    Eigen::MatrixXcf patch = CollapseToMatrix(xp);
+    auto const       svd = SVD<Cx>(patch.transpose());
+    // Soft-threhold svals
+    Eigen::VectorXf const s = (svd.S.abs() > realλ).select(realλ * svd.S / svd.S.abs() / svd.S.abs(), svd.S);
+    patch = (svd.U * s.asDiagonal() * svd.V.adjoint()).transpose();
+    Cx5 yp = AsTensorMap(patch, xp.dimensions());
+    return yp;
+  };
+  Patches(patchSize, windowSize, shift, softLLR, x, z);
+  Log::Debug("Prox", "LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm<true>(x), Norm<true>(z));
 }
 
 } // namespace rl::Proxs
