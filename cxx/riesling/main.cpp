@@ -69,7 +69,8 @@ int main(int const argc, char const *const argv[])
   args::Group util(parser, "UTIL");
   COMMAND(util, autofocus, "autofocus", "Apply Noll's autofocussing");
   COMMAND(util, denoise, "denoise", "Denoise reconstructed images");
-  // COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
+  COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
+  COMMAND(util, eig2, "eig2", "2D Calculate largest eigenvalue / vector");
   COMMAND(util, filter, "filter", "Apply Tukey filter to image");
   COMMAND(util, log, "log", "Print log to stdout");
   COMMAND(util, mask, "mask", "Generate a mask from an image");

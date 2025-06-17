@@ -59,7 +59,7 @@ if(BUILD_BIN)
         util/autofocus.cpp
         util/denoise.cpp
         util/downsamp.cpp
-        # util/eig.cpp
+        util/eig.cpp
         util/log.cpp
         util/filter.cpp
         util/mask.cpp
