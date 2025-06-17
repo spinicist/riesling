@@ -36,7 +36,7 @@ Various places in the ``riesling`` code used to make assumptions that both the m
 What if I have Cartesian data?
 ------------------------------
 
-You need to supply a trajectory, running from -N/2 to (N-1)/2 in each dimension. I then recommend addding either ``--osamp=1.3`` or ``--osamp=1 --kernel=NN``. The latter will effectively switch off the NUFFT functionality and run a plain FFT.
+``riesling`` handles Cartesian data, but you still need to supply a trajectory. This is likely to be each line of k-space stored as a trace running from -N/2 to (N-1)/2. I then recommend addding ``--osamp=1 --tophat`` which will disable the usual gridding kernel and apodization, such that the NUFFT is effectively a plain FFT.
 
 What if I have multiple echoes / frames?
 ----------------------------------------
