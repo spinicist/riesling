@@ -94,7 +94,8 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
     } else {
       auto sense =
         TOps::MakeSENSE(SENSE::KernelsToMaps<ND>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp), b ? b->nB() : 1);
-      auto nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, skern.dimension(3), b);
+      auto nufft = rOpts.tophat ? TOps::NUFFT<ND, TopHat<1>>::Make(gridOpts, traj, skern.dimension(3), b)
+                                : TOps::NUFFT<ND, ExpSemi<4>>::Make(gridOpts, traj, skern.dimension(3), b);
       if constexpr (ND == 2) {
         auto slices = TOps::MakeLoop<2, 3>(nufft, nSlab);
         auto ss = TOps::MakeCompose(sense, slices);
@@ -137,7 +138,8 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
   auto        b = F->basis();
   auto        S = TOps::MakeSENSE(SENSE::KernelsToMaps<ND>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp), b->nB());
   auto        SF = TOps::MakeCompose(F, S);
-  auto        N = TOps::NUFFT<ND>::Make(gridOpts, traj, S->nChannels(), b);
+  auto        N = rOpts.tophat ? TOps::NUFFT<ND, TopHat<1>>::Make(gridOpts, traj, S->nChannels(), b)
+                               : TOps::NUFFT<ND, ExpSemi<4>>::Make(gridOpts, traj, S->nChannels(), b);
   if constexpr (ND == 2) {
     auto NL = TOps::MakeLoop<2, 3>(N, nSlice);
     auto NLSF = TOps::MakeCompose(SF, NL);

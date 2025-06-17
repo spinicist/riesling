@@ -37,12 +37,16 @@ template struct GridArgs<2>;
 template struct GridArgs<3>;
 
 ReconArgs::ReconArgs(args::Subparser &parser)
-  : decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
+  : tophat(parser, "T", "Use a top hat / nearest neighbour kernel (Cartesian recon)", {"tophat"})
+  , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
   , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
 {
 }
 
-auto ReconArgs::Get() -> rl::ReconOpts { return rl::ReconOpts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
+auto ReconArgs::Get() -> rl::ReconOpts
+{
+  return rl::ReconOpts{.tophat = tophat.Get(), .decant = decant.Get(), .lowmem = lowmem.Get()};
+}
 
 PreconArgs::PreconArgs(args::Subparser &parser)
   : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon"}, "single")
@@ -66,9 +70,8 @@ auto LSMRArgs::Get() -> rl::LSMR::Opts
   return rl::LSMR::Opts{.imax = its.Get(), .aTol = atol.Get(), .bTol = btol.Get(), .cTol = ctol.Get(), .λ = λ.Get()};
 }
 
-
 PDHGArgs::PDHGArgs(args::Subparser &parser)
-  : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4)
+  : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 16)
   , resTol(parser, "A", "Tolerance on residual (1e-6)", {"res-tol", 'r'}, 1.e-6f)
   , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
   , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)
@@ -112,8 +115,7 @@ auto ADMMArgs::Get() -> rl::ADMM::Opts
                         .ɑ = ɑ.Get()};
 }
 
-template <int ND>
-SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)
+template <int ND> SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
   , tp(parser, "T", "SENSE calibration timepoint (first)", {"sense-tp"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
@@ -123,8 +125,7 @@ SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)
 {
 }
 
-template <int ND>
-auto SENSEArgs<ND>::Get() -> rl::SENSE::Opts<ND>
+template <int ND> auto SENSEArgs<ND>::Get() -> rl::SENSE::Opts<ND>
 {
   return rl::SENSE::Opts<ND>{
     .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};

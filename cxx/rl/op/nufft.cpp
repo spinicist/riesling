@@ -22,7 +22,7 @@ NUFFT<ND, KF>::NUFFT(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Inde
 
 template <int ND, typename KF>
 auto NUFFT<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
-  -> std::shared_ptr<NUFFT<ND, KF>>
+  -> TOp<Cx, ND + 2, 3>::Ptr
 {
   return std::make_shared<NUFFT<ND, KF>>(opts, traj, nChan, basis);
 }
