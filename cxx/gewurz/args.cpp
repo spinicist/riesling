@@ -32,6 +32,7 @@ void SetLogging(std::string const &name)
 
 void ParseCommand(args::Subparser &parser)
 {
+  args::GlobalOptions globals(parser, global_group);
   parser.Parse();
   SetLogging(parser.GetCommand().Name());
 }

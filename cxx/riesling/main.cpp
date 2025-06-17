@@ -1,5 +1,5 @@
-#include "rl/log/log.hpp"
 #include "args.hpp"
+#include "rl/log/log.hpp"
 
 using namespace rl;
 
@@ -10,6 +10,7 @@ using namespace rl;
 int main(int const argc, char const *const argv[])
 {
   args::ArgumentParser parser("RIESLING");
+  args::GlobalOptions  globals(parser, global_group);
 
   args::Group recon(parser, "RECON");
   COMMAND(recon, recon_lsq, "recon-lsq", "Least-squares (iterative) recon");
@@ -83,7 +84,6 @@ int main(int const argc, char const *const argv[])
 #endif
   COMMAND(util, version, "version", "Print version number");
 
-  args::GlobalOptions globals(parser, global_group);
   try {
     parser.ParseCLI(argc, argv);
     Log::End();
