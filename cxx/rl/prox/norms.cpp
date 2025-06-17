@@ -19,6 +19,7 @@ L1::L1(float const λ_, Index const sz_)
 void L1::primal(float const α, CMap x, Map z) const
 {
   float t = α * λ;
+  float const nx = Log::IsDebugging() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
   Threads::ChunkFor(
     [t, &x, &z](Index lo, Index hi) {
       for (Index ii = lo; ii < hi; ii++) {
@@ -28,7 +29,7 @@ void L1::primal(float const α, CMap x, Map z) const
     },
     x.size());
   if (Log::IsDebugging()) {
-    Log::Print("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+    Log::Print("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z));
   }
 }
 

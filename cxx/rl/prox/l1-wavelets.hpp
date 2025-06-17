@@ -15,8 +15,8 @@ struct L1Wavelets final : Prox<Cx>
   void dual(float const α, CMap x, Map z) const;
 
 private:
-  Op::Ptr waves_;
-  L1      thresh_;
+  Op::Ptr waves;
+  L1      l1;
 };
 
 } // namespace rl::Proxs
