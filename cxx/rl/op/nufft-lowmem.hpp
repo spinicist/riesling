@@ -1,5 +1,6 @@
 #pragma once
 
+#include "apodize.hpp"
 #include "grid.hpp"
 #include "pad.hpp"
 
@@ -21,7 +22,8 @@ private:
   constexpr static int DC = ND;     // Coils dimension
   constexpr static int DB = ND + 1; // Basis dimension
 
-  Grid<ND, KF>::Ptr gridder;
+  Grid<ND, KF> gridder;
+  Apodize<ND, 1, KF> apo;
   Cx3 mutable nc1;
   CxN<ND + 2> mutable workspace;
   CxN<ND + 2> skern;
@@ -29,11 +31,6 @@ private:
   TOps::Pad<Cx, ND + 1> spad;
   Sz<ND + 1>            sbrd;
   Sz<ND>                fftDims;
-  InTensor              apo_;
-  InDims                apoBrd_, padLeft_;
-
-  std::array<std::pair<Index, Index>, ND + 1> paddings_;
-
   void kernToMap(Index const channel) const;
 };
 
