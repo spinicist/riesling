@@ -1,5 +1,6 @@
 #pragma once
 
+#include "apodize.hpp"
 #include "grid-decant.hpp"
 #include "pad.hpp"
 
@@ -20,12 +21,9 @@ template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTDecant final : TOp<C
 
 private:
   GridDecant<ND, KF> gridder;
+  Apodize<ND, 1, KF> apo;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
-  InTensor apo_;
-  InDims   apoBrd_, padLeft_;
-
-  std::array<std::pair<Index, Index>, ND + 1> paddings_;
 };
 
 } // namespace rl::TOps

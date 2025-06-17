@@ -1,8 +1,8 @@
 #include "nufft.hpp"
 
-#include "../apodize.hpp"
 #include "../fft.hpp"
 #include "../log/log.hpp"
+#include "apodize.hpp"
 #include "top-impl.hpp"
 
 namespace rl::TOps {
@@ -11,30 +11,13 @@ template <int ND, typename KF>
 NUFFT<ND, KF>::NUFFT(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nChan, Basis::CPtr basis)
   : Parent("NUFFT")
   , gridder{opts, traj, nChan, basis}
+  , apo{Concatenate(traj.matrixForFOV(opts.fov), LastN<2>(gridder.ishape)), gridder.ishape, opts.osamp}
   , workspace{gridder.ishape}
 {
-  ishape = Concatenate(traj.matrixForFOV(opts.fov), LastN<2>(gridder.ishape));
+  ishape = apo.ishape;
   oshape = gridder.oshape;
   std::iota(fftDims.begin(), fftDims.end(), 0);
   Log::Print("NUFFT", "ishape {} oshape {} grid {}", ishape, oshape, gridder.ishape);
-
-  // Calculate apodization correction
-  auto apo_shape = ishape;
-  apoBrd_.fill(1);
-  for (int ii = 0; ii < 2; ii++) {
-    apo_shape[ND + ii] = 1;
-    apoBrd_[ND + ii] = ishape[ND + ii];
-  }
-  apo_ = Apodize<ND, KF>(FirstN<ND>(ishape), FirstN<ND>(gridder.ishape), opts.osamp).reshape(apo_shape); // Padding stuff
-  Sz<InRank> padRight;
-  padLeft_.fill(0);
-  padRight.fill(0);
-  for (int ii = 0; ii < ND; ii++) {
-    padLeft_[ii] = (gridder.ishape[ii] - ishape[ii] + 1) / 2;
-    padRight[ii] = (gridder.ishape[ii] - ishape[ii]) / 2;
-  }
-  std::transform(padLeft_.cbegin(), padLeft_.cend(), padRight.cbegin(), paddings_.begin(),
-                 [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
 template <int ND, typename KF>
@@ -48,9 +31,10 @@ template <int ND, typename KF> void NUFFT<ND, KF>::forward(InCMap x, OutMap y) c
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder.ishape);
-  wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
-  FFT::Forward(workspace, fftDims);
-  gridder.forward(workspace, y);
+  InCMap     wscm(workspace.data(), gridder.ishape);
+  apo.forward(x, wsm);
+  FFT::Forward(wsm, fftDims);
+  gridder.forward(wscm, y);
   this->finishForward(y, time, false);
 }
 
@@ -58,9 +42,10 @@ template <int ND, typename KF> void NUFFT<ND, KF>::adjoint(OutCMap y, InMap x) c
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder.ishape);
+  InCMap     wscm(workspace.data(), gridder.ishape);
   gridder.adjoint(y, wsm);
-  FFT::Adjoint(workspace, fftDims);
-  x.device(Threads::TensorDevice()) = workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
+  FFT::Adjoint(wsm, fftDims);
+  apo.adjoint(wscm, x);
   this->finishAdjoint(x, time, false);
 }
 
@@ -68,9 +53,10 @@ template <int ND, typename KF> void NUFFT<ND, KF>::iforward(InCMap x, OutMap y, 
 {
   auto const time = this->startForward(x, y, true);
   InMap      wsm(workspace.data(), gridder.ishape);
-  wsm.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
-  FFT::Forward(workspace, fftDims);
-  gridder.iforward(workspace, y, s);
+  InCMap     wscm(workspace.data(), gridder.ishape);
+  apo.forward(x, wsm);
+  FFT::Forward(wsm, fftDims);
+  gridder.iforward(wscm, y, s);
   this->finishForward(y, time, true);
 }
 
@@ -78,14 +64,19 @@ template <int ND, typename KF> void NUFFT<ND, KF>::iadjoint(OutCMap y, InMap x, 
 {
   auto const time = this->startAdjoint(y, x, true);
   InMap      wsm(workspace.data(), gridder.ishape);
+  InCMap     wscm(workspace.data(), gridder.ishape);
   gridder.adjoint(y, wsm);
   FFT::Adjoint(workspace, fftDims);
-  x.device(Threads::TensorDevice()) += workspace.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);
+  apo.iadjoint(wscm, x);
   this->finishAdjoint(x, time, true);
 }
 
-template struct NUFFT<1>;
-template struct NUFFT<2>;
-template struct NUFFT<3>;
+template struct NUFFT<1, rl::ExpSemi<4>>;
+template struct NUFFT<2, rl::ExpSemi<4>>;
+template struct NUFFT<3, rl::ExpSemi<4>>;
+
+template struct NUFFT<1, rl::TopHat<1>>;
+template struct NUFFT<2, rl::TopHat<1>>;
+template struct NUFFT<3, rl::TopHat<1>>;
 
 } // namespace rl::TOps

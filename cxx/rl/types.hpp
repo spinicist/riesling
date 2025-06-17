@@ -196,6 +196,15 @@ template <size_t F, size_t N, typename T> auto MidN(T const &sz) -> Eigen::DSize
   return out;
 }
 
+template <int N, int M> auto RemoveNth(Sz<M> const &sz) -> Sz<M - 1>
+{
+  static_assert(N < M);
+  Sz<M - 1> out;
+  std::copy_n(sz.begin(), N, out.begin());
+  std::copy_n(sz.begin() + N + 1, M - N - 1, out.begin() + N);
+  return out;
+}
+
 template <size_t N> Index Product(std::array<Index, N> const &indices)
 {
   return std::accumulate(indices.begin(), indices.end(), 1L, std::multiplies<Index>());

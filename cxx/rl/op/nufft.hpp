@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../op/grid.hpp"
-#include "../op/pad.hpp"
-#include "../op/top.hpp"
+#include "apodize.hpp"
+#include "grid.hpp"
+#include "pad.hpp"
 
 namespace rl::TOps {
 
@@ -20,12 +20,9 @@ template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFT final : TOp<Cx, ND 
 
 private:
   Grid<ND, KF> gridder;
+  Apodize<ND, 2, KF> apo;
   InTensor mutable workspace;
   Sz<ND>   fftDims;
-  InTensor apo_;
-  InDims   apoBrd_, padLeft_;
-
-  std::array<std::pair<Index, Index>, ND + 2> paddings_;
 };
 
 } // namespace rl::TOps

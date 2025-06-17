@@ -149,6 +149,9 @@ template <int ND> void Adjoint(CxN<ND> &x)
   Adjoint(map);
 }
 
+template void Forward<2, 1>(Cx2Map, Sz1 const);
+template void Forward<3, 1>(Cx3Map, Sz1 const);
+template void Forward<3, 2>(Cx3Map, Sz2 const);
 template void Forward<4, 2>(Cx4Map, Sz2 const);
 template void Forward<4, 3>(Cx4Map, Sz3 const);
 template void Forward<5, 2>(Cx5Map, Sz2 const);
@@ -166,6 +169,9 @@ template void Forward<6, 3>(Cx6 &, Sz3 const);
 template void Forward<1>(Cx1 &);
 template void Forward<3>(Cx3 &);
 
+template void Adjoint<2, 1>(Cx2Map, Sz1 const);
+template void Adjoint<3, 1>(Cx3Map, Sz1 const);
+template void Adjoint<3, 2>(Cx3Map, Sz2 const);
 template void Adjoint<4, 2>(Cx4Map, Sz2 const);
 template void Adjoint<4, 3>(Cx4Map, Sz3 const);
 template void Adjoint<5, 2>(Cx5Map, Sz2 const);

@@ -8,7 +8,6 @@ find_package(NIFTI CONFIG REQUIRED)
 find_package(scn CONFIG REQUIRED)
 
 set(SRC_FILES
-apodize.cpp
 colors.cpp
 compressor.cpp
 fft.cpp
@@ -50,6 +49,7 @@ io/writer.cpp
 log/log.cpp
 log/debug.cpp
 
+op/apodize.cpp
 op/f0.cpp
 op/fft.cpp
 op/grad.cpp
@@ -65,7 +65,6 @@ op/op.cpp
 op/ops.cpp
 op/pad.cpp
 op/recon.cpp
-# op/recon2.cpp
 op/reshape.cpp
 op/sense.cpp
 op/top-id.cpp
@@ -77,16 +76,14 @@ phantom/sphere.cpp
 phantom/shepp-logan.cpp
 phantom/radial.cpp
 
-prox/hermitian.cpp
 prox/l1-wavelets.cpp
 prox/llr.cpp
 prox/norms.cpp
 prox/prox.cpp
-prox/slr.cpp
+# prox/slr.cpp
 prox/stack.cpp
 
 sense/coils.cpp
-# sense/espirit.cpp
 sense/sense.cpp
 
 sim/ir.cpp
@@ -102,7 +99,6 @@ sys/threads.cpp
 set(HDR_FILES
 types.hpp
 
-apodize.hpp
 colors.hpp
 compressor.hpp
 fft.hpp
@@ -146,6 +142,7 @@ io/writer.hpp
 log/log.hpp
 log/debug.hpp
 
+op/apodize.hpp
 op/f0.hpp
 op/fft.hpp
 op/grad.hpp
