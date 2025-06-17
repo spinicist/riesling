@@ -29,18 +29,16 @@
     riesling basis-blend ${PREFIX}-lsq.h5 ${PREFIX}.h5 ${PREFIX}-blend.h5
 }
 
-@test "Run wavelets reconstruction" {
-    PREFIX="waves"
-    riesling recon-rlsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --wavelets=1e-3
+@test "Run wavelets denoising" {
+    riesling denoise naive-lsq.h5 naive-wav.h5 --wavelets=1e-3
 }
 
-@test "Run TV reconstruction" {
-    PREFIX="tv"
-    riesling recon-rlsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --tv=1e-3
+@test "Run TV denoising" {
+    riesling denoise naive-lsq.h5 naive-tv.h5 --tv=1
 }
 
 @test "Run TGV denoising" {
-    riesling denoise naive-lsq.h5 naive-tgv.h5 --tgv=1e-3
+    riesling denoise naive-lsq.h5 naive-tgv.h5 --tgv=1
 }
 
 # @test "Run DECANTER reconstruction" {
