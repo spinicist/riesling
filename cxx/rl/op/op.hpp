@@ -49,6 +49,7 @@ protected:
   using typename Op<Scalar>::Vector;                                                                                           \
   using typename Op<Scalar>::Map;                                                                                              \
   using typename Op<Scalar>::CMap;                                                                                             \
+  using typename Op<Scalar>::Ptr;                                                                                              \
   using Op<Scalar>::forward;                                                                                                   \
   using Op<Scalar>::adjoint;                                                                                                   \
   auto rows() const -> Index final;                                                                                            \
