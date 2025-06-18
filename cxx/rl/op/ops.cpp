@@ -11,7 +11,7 @@ template <typename S> Identity<S>::Identity(Index const s)
 {
 }
 
-template <typename S> auto Identity<S>::Make(Index const s) -> Identity::Ptr { return std::make_shared<Identity>(s); }
+template <typename S> auto Identity<S>::Make(Index const s) -> Identity<S>::Ptr { return std::make_shared<Identity<S>>(s); }
 
 template <typename S> auto Identity<S>::rows() const -> Index { return sz; }
 
@@ -103,7 +103,7 @@ template <typename S> DiagScale<S>::DiagScale(Index const sz1, float const s1)
 {
 }
 
-template <typename S> auto DiagScale<S>::Make(Index const sz, float const s) -> DiagScale::Ptr
+template <typename S> auto DiagScale<S>::Make(Index const sz, float const s) -> DiagScale<S>::Ptr
 {
   return std::make_shared<DiagScale<S>>(sz, s);
 }

@@ -9,7 +9,7 @@ template <typename Scalar = Cx> struct Identity final : Op<Scalar>
   OP_INHERIT
 
   Identity(Index const s);
-  static auto Make(Index const s) -> Identity::Ptr;
+  static auto Make(Index const s) -> Identity<Scalar>::Ptr;
   void        forward(CMap x, Map y) const;
   void        adjoint(CMap y, Map x) const;
   void        inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
@@ -39,7 +39,7 @@ template <typename Scalar = Cx> struct DiagScale final : Op<Scalar>
 {
   OP_INHERIT
   DiagScale(Index const sz, float const s);
-  static auto Make(Index const sz, float const s) -> DiagScale::Ptr;
+  static auto Make(Index const sz, float const s) -> DiagScale<Scalar>::Ptr;
   void        forward(CMap, Map) const;
   void        adjoint(CMap, Map) const;
   void        inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
