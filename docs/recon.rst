@@ -75,7 +75,7 @@ Reconstructs the image as the least-squares solution to an inverse problem. The 
 recon-rlsq
 ----------
 
-Uses the Alternating Directions Method-of-Multipliers to add regularizers to the least-squares reconstruction problem. This is similar to the BART ``pics`` command. See `S. Boyd, ‘Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers’ doi: 10.1561/2200000016 <http://www.nowpublishers.com/article/Details/MAL-016>`_
+By default, uses the Alternating Directions Method-of-Multipliers (ADMM) to add regularizers to the least-squares reconstruction problem. This is similar to the BART ``pics`` command. See `S. Boyd, ‘Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers’ doi: 10.1561/2200000016 <http://www.nowpublishers.com/article/Details/MAL-016>`_. The Primal Dual Hybrid Gradient (PDHG) algorithm is also implemented and faster than ADMM, but it requires the calculation of the maximum eigenvalue of the encoding operator (using ``riesling eig``).
 
 *Usage*
 
@@ -83,9 +83,19 @@ Uses the Alternating Directions Method-of-Multipliers to add regularizers to the
 
     riesling recon-rlsq input.h5 output.h5 --tgv=1e-3
 
-*Important Options*
+*Regularizers*
 
-* ``--max-its=N``, ``--max-its0=N``--atol=A``, ``--btol=B``, ``--ctol=C``
+See `denoise`_. The same regularizers are available for ``recon-rlsq``.
+
+*Common Options*
+
+* ``--scale=bart/otsu/S``
+
+    The optimal regularization strength λ depends both on the particular regularizer and the typical intensity values in the unregularized image. To make values of λ roughly comparable, it is usual to scale the data such that the intensity values are approximately 1 during the optimization (and then unscale the final image). By default ``riesling`` will perform a NUFFT and then use Otsu's method to find the median foreground intensity as the scaling factor (specify ``otsu`` to make this explicit). The BART automatic scaling can be chosen with ``bart``. Alternately a fixed numeric *multiplicative* scaling factor can be specified, which will skip the initial NUFFT. If you already know the approximate scaling of your data (from a test recon), this option will be the fastest.
+
+*ADMM Options*
+
+* ``--max-its1=N``, ``--max-its0=N``--atol=A``, ``--btol=B``, ``--ctol=C``
 
     These are the same as for ``recon-lsq`` and control the inner loop of the optimization (the x update step). As this step is warm-started, the default for `max-its` is 1. However, this may be insufficient to reach a good approximation of the answer on the first outer iteration,so there is an extra `max-its0` option with a default of 4.
 
@@ -101,33 +111,19 @@ Uses the Alternating Directions Method-of-Multipliers to add regularizers to the
 
     Coupling factor for ADMM. The default value of 1 is robust, and will be adjusted inside the algorithm according to `ADMM Penalty Parameter Selection by Residual Balancing <http://arxiv.org/abs/1704.06209>`_.
 
-* ``--scale=bart/otsu/S``
+*PDHG Options*
 
-    The optimal regularization strength λ depends both on the particular regularizer and the typical intensity values in the unregularized image. To make values of λ roughly comparable, it is usual to scale the data such that the intensity values are approximately 1 during the optimization (and then unscale the final image). By default ``riesling`` will perform a NUFFT and then use Otsu's method to find the median foreground intensity as the scaling factor (specify ``otsu`` to make this explicit). The BART automatic scaling can be chosen with ``bart``. Alternately a fixed numeric *multiplicative* scaling factor can be specified, which will skip the initial NUFFT. If you already know the approximate scaling of your data (from a test recon), this option will be the fastest.
+* ``--pdhg``
 
-*Regularization Options*
+    Enables the PDHG algorithm instead of ADMM
 
-Multiple regularizers can be specified simultaneously with ADMM, each with a different regularization strength λ and options. At least one regularizer must be specified, there is no default option at present.
+* ``--lambda-A=l``, ``--lambda-G=l``
 
-* ``--l1=λ``
+    The maximum eigenvalues of the encoding operator and regularizer transform respectively. The latter can be calculated explicitly, see `W. G. Bickley and J. McNamee, ‘Eigenvalues and eigenfunctions of finite-difference operators’, Math. Proc. Camb. Phil. Soc., vol. 57, no. 3, pp. 532–546, Jul. 1961, doi: 10.1017/S0305004100035593.<https://www.cambridge.org/core/product/identifier/S0305004100035593/type/journal_article>`_. The default value of 16 is sufficient. However the value for A must be calculated using ``riesling eig`` for each trajectory you use.
 
-    Basic L1 regularization in the image domain, i.e. λ|x|.
+* ``--max-iters=N``, ``--res-tol=r``, ``--delta-tol=d``
 
-* ``--tv=λ``
-
-    Classic `Total Variation <https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
-
-* ``--tgv=λ``, ``--tgvl2=λ``
-
-    `Total Generalized Variation <http://doi.wiley.com/10.1002/mrm.22595>`_ and `TGV on the L2 voxelwise norm <http://ieeexplore.ieee.org/document/7466848/>`_. The latter is useful for multichannel images. Note that due to the way the TGV problem is formulated, it consumes significantly more memory and is slower than TV for the same data.
-
-* ``--llr=λ``, ``--llr-patch=N``, ``--llr-win=N``, ``--llr-shift``
-
-    `Locally Low-Rank <https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.26102>`_ regularization. The patch size determines the region to calculate the SVD over, the window size determines the region that is copied to the output image. Set the window size to 1 to calculate an SVD for each output voxel. Set the window size equal to the patch size to use the entire patch. The ``--llr-shift`` option employs the random patch shifting strategy, this may not converge.
-
-* ``--wavelets=λ``, ``--wavelet-width=W``, ``--wavelet-dims=0,1,1,1``
-
-    L1-wavelets of width W (default 6). The number of levels is the maximum possible. Which of the basis,X,Y,Z dimensions to be transformed can be specified with the ``--wavelet-dims`` option.
+    Termination conditions, namely the maximum number of iterations, relative residual size, and the x-update size respectively.
 
 recon-rss
 ---------
@@ -207,7 +203,7 @@ This problem is badly conditioned, and even with a preconditioner can take appro
 denoise
 ----------
 
-Denoise an image using a proximal operator possibly combined with the Primal Dual Hybrid Gradient. See `F. Ong, Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’ doi: 10.1109/TMI.2019.2954121 <https://ieeexplore.ieee.org/document/8906069/>`_
+Denoise an image using a proximal operator possibly combined with the Primal Dual Hybrid Gradient algorithm. See `F. Ong, Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’ doi: 10.1109/TMI.2019.2954121 <https://ieeexplore.ieee.org/document/8906069/>`_
 
 *Usage*
 

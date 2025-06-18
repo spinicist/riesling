@@ -28,6 +28,7 @@ RIESLING is provided as a single executable file. The ``riesling`` executable pr
 
 - ``riesling recon-lsq``  Least-squares reconstruction including sensitivity maps.
 - ``riesling recon-rlsq`` Regularized least-squares reconstruction, similar to ``bart pics``.
+- ``riesling denoise``    Denoise an already reconstructed image.
 - ``riesling h5`` Prints information about compatible ``.h5`` files
 
 RIESLING exploits the inherent oversampling of most non-Cartesian trajectories at the center of k-space to generate SENSE maps directly from the input data, but utilities are provided to explicitly extract sensitivities if desired. Further details can be found in :doc:`util`.
