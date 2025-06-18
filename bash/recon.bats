@@ -30,15 +30,19 @@
 }
 
 @test "Run wavelets denoising" {
-    riesling denoise naive-lsq.h5 naive-wav.h5 --wavelets=1e-3
+    riesling denoise naive-lsq.h5 naive-wav.h5 --wavelets=0.1
 }
 
 @test "Run TV denoising" {
-    riesling denoise naive-lsq.h5 naive-tv.h5 --tv=1
+    riesling denoise naive-lsq.h5 naive-tv.h5 --tv=0.1
 }
 
 @test "Run TGV denoising" {
-    riesling denoise naive-lsq.h5 naive-tgv.h5 --tgv=1
+    riesling denoise naive-lsq.h5 naive-tgv.h5 --tgv=0.1 --max-its=64
+}
+
+@test "Run PDHG TGV" {
+    riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --tgv=0.1 --pdhg --lambda-A=2 -i64
 }
 
 # @test "Run DECANTER reconstruction" {

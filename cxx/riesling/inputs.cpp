@@ -86,7 +86,7 @@ auto PDHGArgs::Get() -> rl::PDHG::Opts
 
 ADMMArgs::ADMMArgs(args::Subparser &parser)
   : in_its0(parser, "ITS", "Initial inner iterations (64)", {"max-its0"}, 64)
-  , in_its1(parser, "ITS", "Subsequent inner iterations (64)", {"max-its"}, 64)
+  , in_its1(parser, "ITS", "Subsequent inner iterations (64)", {"max-its1"}, 64)
   , atol(parser, "A", "Tolerance on A", {"atol"}, 1.e-6f)
   , btol(parser, "B", "Tolerance on b", {"btol"}, 1.e-6f)
   , ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f)
