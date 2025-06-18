@@ -32,8 +32,8 @@ void main_denoise(args::Subparser &parser)
     // be the identity operator
     regs[0].P->primal(1.f, CollapseToConstVector(in), xm);
   } else {
-    PDHG::Debug debug = [shape = x.dimensions(), ext_x, regs](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
-                                                              PDHG::Vector const &u) {
+    PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
+                                                        PDHG::Vector const &u) {
       if (Log::IsDebugging()) {
         if (ext_x) {
           auto xit = ext_x->forward(x);
@@ -50,8 +50,12 @@ void main_denoise(args::Subparser &parser)
     };
     PDHG opt{B, nullptr, regs, pdhgArgs.Get(), debug};
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
+    /* This factor of 2 is required to preserve the scaling of the output image.
+     * I don't properly understand why it is needed but I suspect the problem definition for least-squares
+     */
+    xm.device(Threads::TensorDevice()) = xm * 2.f;
   }
-  if (scale != 1.f) { x.device(Threads::TensorDevice()) = x / Cx(scale); }
+  x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
   WriteOutput<5>(cmd, oname.Get(), x, HD5::Dims::Images, input.readStruct<Info>(HD5::Keys::Info));
   Log::Print(cmd, "Finished");
 }

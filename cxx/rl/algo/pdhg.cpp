@@ -99,7 +99,6 @@ auto PDHG::run(CMap y) const -> Vector
     // if (debug) { debug(ii, x, x̅, xdiff); }
   }
   Iterating::Finished();
-  x.device(Threads::CoreDevice()) = x * (1.f + σ) / σ;
   return x;
 }
 
