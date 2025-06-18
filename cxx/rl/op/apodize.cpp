@@ -1,5 +1,7 @@
 #include "apodize.hpp"
 
+#include "top-impl.hpp"
+
 #include "../fft.hpp"
 #include "../kernel/kernel.hpp"
 #include "../log/log.hpp"

@@ -11,6 +11,8 @@ if(LINUX)
     set(CMAKE_EXE_LINKER_FLAGS_INIT "-static-libgcc -static-libstdc++")
 endif()
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF) # Why not? Because it takes forever, that's why
+# Deal with stupid complex ABI warnings from GCC 4.4 onwards
+add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-psabi>")
 # Deal with GCC 8 and std::filesystem
 # Thanks to Deniz Bahadir on the CMake Discourse
 add_link_options("$<$<CXX_COMPILER_ID:GNU>:LINKER:--as-needed>")
