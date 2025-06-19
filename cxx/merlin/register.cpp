@@ -33,7 +33,7 @@ void main_reg(args::Subparser &parser)
   rl::HD5::Writer ofile(oname.Get());
 
   rl::Re4    idata = ifile.readTensor<rl::Cx5>().abs().chip<4>(0); // ITK does not like this being const
-  auto const info = ifile.readStruct<Info>(HD5::Keys::Info);
+  auto const info = ifile.readStruct<rl::Info>(rl::HD5::Keys::Info);
   auto const fixed = merlin::Import(rl::ChipMap(idata, 0), info);
 
   merlin::MERLIN wizard(fixed, maskRegion);
@@ -46,13 +46,13 @@ void main_reg(args::Subparser &parser)
     auto const moving = merlin::Import(rl::ChipMap(idata, inav), info);
     rl::Log::Print("MERLIN", "Register navigator {} to {}", inav, 0);
     tfm = wizard.registerMoving(moving, tfm);
-    ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:02d}", inav));
+    ofile.writeStruct(fmt::format("{:02d}", inav), merlin::ITKToRIESLING(tfm));
   } else {
     for (Index ii = 1; ii < idata.dimension(3); ii++) {
       auto const moving = merlin::Import(rl::ChipMap(idata, ii), info);
       rl::Log::Print("MERLIN", "Register navigator {} to {}", ii, 0);
       tfm = wizard.registerMoving(moving, tfm);
-      ofile.writeTransform(merlin::ITKToRIESLING(tfm), fmt::format("{:04d}", ii));
+      ofile.writeStruct(fmt::format("{:04d}", ii), merlin::ITKToRIESLING(tfm));
     }
   }
   rl::Log::Print("MERLIN", "Finished");

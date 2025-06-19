@@ -24,7 +24,7 @@ void main_apply(args::Subparser &parser)
   HD5::Reader tfile(tname.Get());
   auto const  ts = tfile.list();
   for (auto const &t : ts) {
-    auto const tfm = tfile.readTransform(t);
+    auto const tfm = tfile.readStruct<rl::Transform>(t);
     auto const inav = std::stol(t);
     Log::Print(cmd, "Moving navigator {}", t);
     traj.moveInFOV(tfm.R, info.direction.inverse() * tfm.δ, inav * tpnav.Get(), tpnav.Get(), ks);
