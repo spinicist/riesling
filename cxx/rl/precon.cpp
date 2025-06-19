@@ -127,8 +127,8 @@ template <int NB> auto LoadKSpacePrecon(std::string const &fname, Index const nS
   if (o == 2) {
     Re2 const w = reader.readTensor<Re2>(HD5::Keys::Weights);
     if (w.dimension(0) != nSamp || w.dimension(1) != nTrace) {
-      throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(1),
-                         w.dimension(2), nSamp, nTrace);
+      throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(0),
+                         w.dimension(1), nSamp, nTrace);
     }
     return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (o == 3) {

@@ -58,7 +58,7 @@ void Writer::writeStrings(std::string const &label, std::vector<std::string> con
   H5Tset_size(tid, H5T_VARIABLE);
   H5Tset_cset(tid, H5T_CSET_UTF8);
   std::vector<char const *> ptrs(strings.size());
-  for (Index ii = 0; ii < strings.size(); ii++) {
+  for (size_t ii = 0; ii < strings.size(); ii++) {
     ptrs[ii] = strings[ii].c_str();
   }
   hid_t const dset = H5Dcreate(handle_, label.c_str(), tid, space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);

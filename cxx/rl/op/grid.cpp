@@ -45,7 +45,7 @@ void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, float 
       GridToSubgrid<ND, SGFW>::SlowCopy(corner, x, sx);
     }
     for (auto const &m : list.coords) {
-      auto const k = kernel(m.offset) * s;
+      typename KType::Tensor const k = kernel(m.offset) * s;
       if (basis) {
         GFunc<ND, KF::FullWidth>::Gather(basis, m.cart, m.sample, m.trace, k, sx, y);
       } else {
@@ -79,7 +79,7 @@ void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, float 
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {
-      auto const k = kernel(m.offset) * s;
+      typename KType::Tensor const k = kernel(m.offset) * s;
       if (basis) {
         GFunc<ND, KF::FullWidth>::Scatter(basis, m.cart, m.sample, m.trace, k, y, sx);
       } else {

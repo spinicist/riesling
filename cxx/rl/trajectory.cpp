@@ -16,19 +16,19 @@ constexpr Eigen::IndexPairList<Eigen::type2indexpair<0, 0>> matMul;
 template <int ND> auto GuessMatrix(Re3 const &points) -> Sz<ND>
 {
   if (points.dimension(0) != ND) { throw Log::Failure("Traj", "Incorrect number of co-ordinates for GuessMatrix"); }
-  Re1 max(ND);
-  max.setZero();
+  std::array<float, ND> max;
+  std::fill_n(max.begin(), ND, 0.f);
   for (Index ii = 0; ii < points.dimension(1); ii++) {
     for (Index ij = 0; ij < points.dimension(2); ij++) {
       for (Index ic = 0; ic < ND; ic++) {
         auto const a = std::fabs(points(ic, ii, ij));
-        if (a > max(ic)) { max(ic) = a; }
+        if (a > max[ic]) { max[ic] = a; }
       }
     }
   }
   Sz<ND> mat;
   for (Index ii = 0; ii < ND; ii++) {
-    mat[ii] = std::max((Index)(std::ceil(max(ii)) * 2), 1L);
+    mat[ii] = std::max((Index)(std::ceil(max[ii]) * 2), 1L);
   }
   return mat;
 }

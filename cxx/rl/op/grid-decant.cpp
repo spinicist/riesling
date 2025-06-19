@@ -49,7 +49,7 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::forwardTask(
 {
 
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
-  for (Index is = start; is < gridLists.size(); is += stride) {
+  for (Index is = start; is < (Index)gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
     if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()), FirstN<ND>(skern.dimensions()))) {
@@ -58,7 +58,7 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::forwardTask(
       GridToDecant<ND, SGFW>::Slow(corner, skern, x, sx);
     }
     for (auto const &m : list.coords) {
-      auto const k = kernel(m.offset) * s;
+      typename KType::Tensor const k = kernel(m.offset) * s;
       if (basis) {
         GFunc<ND, KF::FullWidth>::Gather(basis, m.cart, m.sample, m.trace, k, sx, y);
       } else {
@@ -92,7 +92,7 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::adjointTask(
     auto const &list = gridLists[is];
     sx.setZero();
     for (auto const &m : list.coords) {
-      auto const k = kernel(m.offset) * s;
+      typename KType::Tensor const k = kernel(m.offset) * s;
       if (basis) {
         GFunc<ND, KF::FullWidth>::Scatter(basis, m.cart, m.sample, m.trace, k, y, sx);
       } else {

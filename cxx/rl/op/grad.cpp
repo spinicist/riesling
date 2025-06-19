@@ -138,7 +138,7 @@ template <int ND> GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> c
   , dims_{dims}
   , mode_{o}
 {
-  if (dims.size() != ishape[ND - 1]) {
+  if ((Index)dims.size() != ishape[ND - 1]) {
     throw(Log::Failure("gradv", "Symmetrized gradient only, dims were {} and {}", dims.size(), ishape[ND - 1]));
   }
   if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
@@ -162,14 +162,14 @@ template <int ND> void GradVec<ND>::iforward(InCMap x, OutMap y, float const s) 
    * Grad applied to a vector produces a tensor. Here it is flattened back into a vector
    */
   Index yind = dims_.size();
-  for (Index ii = 0; ii < dims_.size(); ii++) {
+  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     switch (mode_) {
     case 0: BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
     case 1: ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
     case 2: CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
     case 3: CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
     }
-    for (Index ij = ii + 1; ij < dims_.size(); ij++) {
+    for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
       switch (mode_) {
       case 0:
         BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / std::sqrt(2));
@@ -207,14 +207,14 @@ template <int ND> void GradVec<ND>::iadjoint(OutCMap y, InMap x, float const s) 
    *  This is the tensor form of Div (see wikipedia page) but with the tensor flattened into a vector
    */
   Index yind = dims_.size();
-  for (Index ii = 0; ii < dims_.size(); ii++) {
+  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     switch (mode_) {
     case 0: BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
     case 1: ForwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
     case 2: CentralDiff0<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
     case 3: CentralDiff1<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
     }
-    for (Index ij = ii + 1; ij < dims_.size(); ij++) {
+    for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
       switch (mode_) {
       case 0:
         BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s / std::sqrt(2));
