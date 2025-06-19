@@ -19,9 +19,9 @@ Dimensions
 Previous versions of RIESLING used name datasets within the .h5 file, now the expected dataset name is simply ``data``. However, the RIESLING commands require input data to have the correct order (number of dimensions) and will output data with a fixed number of dimensions. We reserve the right to change the number of dimensions in future versions. RIESLING will output the dimension names using NetCDF format, these names are not required on input datasets. Below are the list of current data orders and names:
 
 1. Noncartesian k-space data. 5D - (channel, sample, trace, slab, time)
-2. Cartesian k-space (after gridding). 6D - (channel, b, i, j, k, time)
-3. Reconstructed images. 5D - (b, i, j, k, time)
-4. SENSE maps. 5D - (channel, b, i, j, k)
+2. Cartesian k-space (after gridding). 6D - (i, j, k, channel, b, time)
+3. Reconstructed images. 5D - (i, j, k, b, time)
+4. SENSE maps. 5D - (i, j, k, channel, b)
 
 In the above, ``b`` refers to the index for a basis vector (subspace or time-resolved reconstruction), while the ``time`` dimension refers to discrete timepoints which are reconstructed individually (e.g. fMRI type acquisition). A ``trace`` refers to a single spoke, spiral, or line of k-space, ``sample`` refers to individual sample/data points with a ``trace``.
 

@@ -1,5 +1,14 @@
 ## Changelog
 
+# v1.02
+
+- The 🫨 edition. RIESLING now includes:
+- A solid implementation of the Primal Dual Hybrid Gradient algorithm. This gives much faster denoising and regularized reconstructions as long as you calculate an eigenvalue up front (see docs).
+- 2D versions of all reconstruction tools and most operators. These have the same command names with a `2` suffix. When using these, you should supply a 2D trajectory (no kz co-ordinate). This will then use a true 2D NUFFT.
+- Off-resonance correction. If you supply an off-resonance map in the input .h5 and use the `--tacq` and `--Nt` arguments RIESLING will perform a time-segmented reconstruction. Useful for long acquisition spiral imaging.
+- An implementation of MERLIN. This is contained in a separate executable that is not compiled by default, enable BUILD_MERLIN to generate it.
+- Note that the image space data order has changed, the spatial dimensions are now inner-most (i.e. channels and basis dimension have moved after the spatial dimensions). This simplifies some RIESLING internals.
+
 # v1.01
 
 - The 🏎️ edition. RIESLING is now much faster due to multiple optimizations (judicious use of fast-math, gridding algorithm improvements, better and more widespread threading, and more besides). Many thanks to Martin Reinecke for suggestions.

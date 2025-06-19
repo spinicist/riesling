@@ -72,6 +72,10 @@ Reconstructs the image as the least-squares solution to an inverse problem. The 
 
     Apply basic Tikohonov/L2 regularization to the reconstruction.
 
+* ``--tacq=T``, ``--Nt=N``
+
+    Off-resonance correction parameters. To use these you must also supply an off-resonance map in the input. This should be a dataset labelled ``f0map`` and must be the same matrix size as your image at the reconstruction FOV. These two parameters are the total acquisition time and the number of time segments you want for the reconstruction. The units of ``tacq`` must match ``f0map``, i.e. if your off-resonance map is in Hz then your acquisition time is in seconds.
+
 recon-rlsq
 ----------
 
