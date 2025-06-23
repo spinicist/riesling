@@ -16,7 +16,7 @@ template <int ND> auto Loopify(typename TOps::TOp<Cx, ND + 2, 3>::Ptr op, Index 
   } else {
     if (nS == 1) {
       auto reshape = TOps::MakeReshapeOutput(op, AddBack(op->oshape, 1));
-      auto timeLoop = TOps::MakeLoop<4, 4>(reshape, nTime);
+      auto timeLoop = TOps::MakeLoop<5, 4>(reshape, nTime);
       return timeLoop;
     } else {
       throw(Log::Failure("Loopify", "Not currently supported slabs {} time {}", nS, nTime));
