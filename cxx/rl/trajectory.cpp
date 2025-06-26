@@ -33,8 +33,7 @@ template <int ND> auto GuessMatrix(Re3 const &points) -> Sz<ND>
   return mat;
 }
 
-template <int ND>
-TrajectoryN<ND>::TrajectoryN(Re3 const &points, Array const voxel_size)
+template <int ND> TrajectoryN<ND>::TrajectoryN(Re3 const &points, Array const voxel_size)
   : points_{points}
   , matrix_{GuessMatrix<ND>(points_)}
   , voxel_size_{voxel_size}
@@ -42,8 +41,7 @@ TrajectoryN<ND>::TrajectoryN(Re3 const &points, Array const voxel_size)
   init();
 }
 
-template <int ND>
-TrajectoryN<ND>::TrajectoryN(Re3 const &points, SzN const matrix, Array const voxel_size)
+template <int ND> TrajectoryN<ND>::TrajectoryN(Re3 const &points, SzN const matrix, Array const voxel_size)
   : points_{points}
   , matrix_{matrix}
   , voxel_size_{voxel_size}
@@ -54,6 +52,9 @@ TrajectoryN<ND>::TrajectoryN(Re3 const &points, SzN const matrix, Array const vo
 template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const voxel_size, SzN const matrix_size)
 {
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
+  if (points_.dimension(0) != ND) {
+    throw(Log::Failure("Traj", "Trajectory on disk was {}D, expected {}D", points_.dimension(0), ND));
+  }
   if (std::all_of(matrix_size.cbegin(), matrix_size.cend(), [](Index ii) { return ii > 0; })) {
     matrix_ = matrix_size;
   } else if (file.exists(HD5::Keys::Trajectory, "matrix")) {
@@ -186,13 +187,12 @@ template <int ND> void TrajectoryN<ND>::moveInFOV(Eigen::Matrix<float, ND, ND> c
   moveInFOV(R, shift, 0, data.dimension(2), data);
 }
 
-template <int ND>
-void TrajectoryN<ND>::moveInFOV(
+template <int ND> void TrajectoryN<ND>::moveInFOV(
   Eigen::Matrix<float, ND, ND> const R, Eigen::Vector3f const s, Index const tst, Index const tsz, Cx5 &data)
 {
   if (tst + tsz > nTraces()) { throw Log::Failure("Traj", "Max trace {} exceeded number of traces {}", tst + tsz, nTraces()); }
   Re2CMap Rt(R.data(), Sz2{ND, ND});
-  auto          p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz});
+  auto    p = points_.slice(Sz3{0, 0, tst}, Sz3{ND, nSamples(), tsz});
   Log::Debug("Traj", "Rotating traces {}-{}", tst, tst + tsz - 1);
   p.device(Threads::TensorDevice()) = Re3(Rt.contract(p, matMul));
   shiftInFOV(s, tst, tsz, data);
@@ -313,8 +313,8 @@ template <int ND> inline auto Sz2Array(Sz<ND> const &sz) -> Eigen::Array<float, 
   return a;
 }
 
-template <int ND>
-inline auto SubgridIndex(Eigen::Array<Index, ND, 1> const &sg, Eigen::Array<Index, ND, 1> const &ngrids) -> Index
+template <int ND> inline auto SubgridIndex(Eigen::Array<Index, ND, 1> const &sg, Eigen::Array<Index, ND, 1> const &ngrids)
+  -> Index
 {
   Index ind = 0;
   Index stride = 1;
