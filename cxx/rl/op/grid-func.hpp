@@ -39,7 +39,7 @@ template <int FW> struct GFunc<1, FW>
   using KT = FixedTensor<float, 1, FW>;
 
   inline static void
-  Scatter(Eigen::Array<int16_t, 1, 1> const c, int16_t const sample, int32_t const trace, KT const &k, Cx3CMap y, Cx3Map sg)
+  Scatter(Eigen::Array<int16_t, 1, 1> const c, int32_t const sample, int32_t const trace, KT const &k, Cx3CMap y, Cx3Map sg)
   {
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       for (Index ix = 0; ix < FW; ix++) {
@@ -50,7 +50,7 @@ template <int FW> struct GFunc<1, FW>
   }
 
   inline static void
-  Gather(Eigen::Array<int16_t, 1, 1> const c, int16_t const sample, int32_t const trace, KT const &k, Cx3CMap sg, Cx3Map y)
+  Gather(Eigen::Array<int16_t, 1, 1> const c, int32_t const sample, int32_t const trace, KT const &k, Cx3CMap sg, Cx3Map y)
   {
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       for (Index ix = 0; ix < FW; ix++) {
@@ -106,7 +106,7 @@ template <int FW> struct GFunc<2, FW>
   using KT = FixedTensor<float, 2, FW>;
 
   inline static void
-  Scatter(Eigen::Array<int16_t, 2, 1> const c, int16_t const sample, int32_t const trace, KT const &k, Cx3CMap y, Cx4Map sg)
+  Scatter(Eigen::Array<int16_t, 2, 1> const c, int32_t const sample, int32_t const trace, KT const &k, Cx3CMap y, Cx4Map sg)
   {
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       for (Index iy = 0; iy < FW; iy++) {
@@ -120,7 +120,7 @@ template <int FW> struct GFunc<2, FW>
   }
 
   inline static void
-  Gather(Eigen::Array<int16_t, 2, 1> const c, int16_t const sample, int32_t const trace, KT const &k, Cx4CMap sg, Cx3Map y)
+  Gather(Eigen::Array<int16_t, 2, 1> const c, int32_t const sample, int32_t const trace, KT const &k, Cx4CMap sg, Cx3Map y)
   {
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       for (Index iy = 0; iy < FW; iy++) {
@@ -185,7 +185,7 @@ template <int FW> struct GFunc<3, FW>
   using KT = FixedTensor<float, 3, FW>;
 
   inline static void
-  Scatter(Eigen::Array<int16_t, 3, 1> const c, int16_t const sample, int32_t const trace, KT const &k, Cx3CMap y, Cx5Map sg)
+  Scatter(Eigen::Array<int16_t, 3, 1> const c, int32_t const sample, int32_t const trace, KT const &k, Cx3CMap y, Cx5Map sg)
   {
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       for (Index iz = 0; iz < FW; iz++) {
@@ -202,7 +202,7 @@ template <int FW> struct GFunc<3, FW>
   }
 
   inline static void
-  Gather(Eigen::Array<int16_t, 3, 1> const c, int16_t const sample, int32_t const trace, KT const &k, Cx5CMap sg, Cx3Map y)
+  Gather(Eigen::Array<int16_t, 3, 1> const c, int32_t const sample, int32_t const trace, KT const &k, Cx5CMap sg, Cx3Map y)
   {
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       for (Index iz = 0; iz < FW; iz++) {

@@ -200,7 +200,7 @@ void TrajectoryN<ND>::moveInFOV(
 
 template <int ND> auto TrajectoryN<ND>::points() const -> Re3 const & { return points_; }
 
-template <int ND> auto TrajectoryN<ND>::point(int16_t const read, int32_t const spoke) const -> Eigen::Vector<float, ND>
+template <int ND> auto TrajectoryN<ND>::point(int32_t const read, int32_t const spoke) const -> Eigen::Vector<float, ND>
 {
   Re1 const                p = points_.template chip<2>(spoke).template chip<1>(read);
   Eigen::Vector<float, ND> pv;
@@ -349,7 +349,7 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
 
   std::vector<CoordList> subs(nTotal);
   for (int32_t it = 0; it < this->nTraces(); it++) {
-    for (int16_t is = 0; is < this->nSamples(); is++) {
+    for (int32_t is = 0; is < this->nSamples(); is++) {
       Arrayf const p = this->point(is, it) * (conj ? -1.f : 1.f);
       if ((p != p).any()) {
         invalids++;

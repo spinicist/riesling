@@ -16,7 +16,7 @@ template <int ND> struct TrajectoryN
   {
     template <typename T> using Array = Eigen::Array<T, ND, 1>;
     Array<int16_t> cart;
-    int16_t        sample;
+    int32_t        sample;
     int32_t        trace;
     Array<float>   offset;
   };
@@ -49,7 +49,7 @@ template <int ND> struct TrajectoryN
                  Index const                        tst,
                  Index const                        tsz,
                  Cx5                               &data); // Will modify trajectory
-  auto point(int16_t const sample, int32_t const trace) const -> Eigen::Vector<float, ND>;
+  auto point(int32_t const sample, int32_t const trace) const -> Eigen::Vector<float, ND>;
   auto points() const -> Re3 const &;
 
   void downsample(Array const tgtVoxSize,
