@@ -14,7 +14,9 @@ Options:
 PAR=""
 PREFIX=""
 GEWURZ="-DBUILD_GEWURZ=OFF"
-WARN=""
+ALL=""
+DEBUG=""
+RELDBG="-O2 -g -DNDEBUG"
 while getopts "ghi:j:w" opt; do
     case $opt in
         g) GEWURZ="-DBUILD_GEWURZ=ON";;
@@ -23,7 +25,9 @@ while getopts "ghi:j:w" opt; do
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
-        w) WARN="-DCMAKE_CXX_FLAGS=-Wall '-DCMAKE_CXX_FLAGS_DEBUG=-g -fsanitize=address,undefined'";;
+        w) ALL="-DCMAKE_CXX_FLAGS=-Wall"
+           DEBUG="-g -fsanitize=address,undefined"
+           RELDBG="-O2 -g -DNDEBUG -fsanitize=address,undefined";;
     esac
 done
 shift $((OPTIND - 1))
@@ -56,9 +60,9 @@ mkdir -p build
 cmake -S . -B build $GEN\
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
-  -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g -fsanitize=address,undefined" \
-  -DVCPKG_INSTALL_OPTIONS="--no-print-usage"\
-  "$PREFIX" "$MONTAGE" "$GEWURZ" "$WARN"
+  -DVCPKG_INSTALL_OPTIONS="--no-print-usage" \
+  -DCMAKE_CXX_FLAGS="$ALL" -DCMAKE_CXX_FLAGS_DEBUG="$DEBUG" -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="$RELDBG"\
+  "$PREFIX" "$MONTAGE" "$GEWURZ"
 
 cmake --build build $PAR
 
