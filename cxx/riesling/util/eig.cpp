@@ -24,8 +24,7 @@ template <int ND> void run_eig(args::Subparser &parser)
   args::Flag             adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::Flag             recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
-  args::Flag             savevec(parser, "S", "Output the corresponding eigenvector", {"savevec"});
-  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
+  ParseCommand(parser, coreArgs.iname);
   auto const      cmd = parser.GetCommand().Name();
   HD5::Reader     reader(coreArgs.iname.Get());
   Info const      info = reader.readStruct<Info>(HD5::Keys::Info);
@@ -40,16 +39,16 @@ template <int ND> void run_eig(args::Subparser &parser)
 
   if (adj) {
     auto const [val, vec] = PowerMethodAdjoint(R.A, R.M, its.Get());
-    if (savevec) {
+    if (coreArgs.oname) {
       HD5::Writer writer(coreArgs.oname.Get());
-      writer.writeTensor("evec", R.A->ishape, vec.data(), {"v", "i", "j", "k"});
+      writer.writeTensor("evec", R.A->ishape, vec.data(), HD5::Dims::Images);
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   } else {
     auto const [val, vec] = PowerMethodForward(R.A, R.M, its.Get());
-    if (savevec) {
+    if (coreArgs.oname) {
       HD5::Writer writer(coreArgs.oname.Get());
-      writer.writeTensor("evec", R.A->ishape, vec.data(), {"v", "i", "j", "k"});
+      writer.writeTensor("evec", R.A->ishape, vec.data(), HD5::Dims::Images);
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   }
