@@ -137,7 +137,8 @@ template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
   }
 }
 
-
+template struct L2<5, 1>;
+template struct L2<5, 2>;
 template struct L2<6, 1>;
 template struct L2<6, 2>;
 

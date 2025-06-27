@@ -12,7 +12,6 @@ namespace rl {
 RegOpts::RegOpts(args::Subparser &parser)
   : l1(parser, "L1", "Simple L1 regularization", {"l1"})
 
-  , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
   , iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
@@ -36,12 +35,12 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   std::vector<Regularizer> regs;
 
   if (opts.tgv) {
-    auto grad_x = TOps::Grad<5>::Make(shape, std::vector<Index>{0, 1, 2}, opts.diffOrder.Get());
+    auto grad_x = TOps::Grad<5>::Make(shape, std::vector<Index>{0, 1, 2});
     auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = Ops::Sub(Ops::Mul(grad_x, ext_x), ext_v);
 
-    auto grad_v = TOps::GradVec<6>::Make(grad_x->oshape, std::vector<Index>{0, 1, 2}, opts.diffOrder.Get());
+    auto grad_v = TOps::GradVec<6>::Make(grad_x->oshape, std::vector<Index>{0, 1, 2});
     auto op2 = Ops::Mul(grad_v, ext_v);
 
     Proxs::Prox<Cx>::Ptr prox_x, prox_v;
@@ -69,7 +68,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   }
 
   if (opts.tv) {
-    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0, 1, 2}, opts.diffOrder.Get());
+    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0, 1, 2});
 
     Proxs::Prox<Cx>::Ptr prox;
     if (opts.iso) {
@@ -89,7 +88,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   }
 
   if (opts.tvt) {
-    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0}, opts.diffOrder.Get());
+    auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0});
     auto prox = std::make_shared<Proxs::L1>(opts.tvt.Get(), grad->rows());
     regs.push_back({grad, prox, grad->oshape});
   }
@@ -107,8 +106,21 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   }
 
   if (opts.l1) {
-    auto p = std::make_shared<Proxs::L1>(opts.l1.Get(), A->cols());
-    regs.push_back({nullptr, p, shape});
+    Proxs::Prox<Cx>::Ptr prox;
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{4});
+      } else if (opts.iso.Get() == "t") {
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{5});
+      } else if (opts.iso.Get() == "bt") {
+        prox = std::make_shared<Proxs::L2<5, 2>>(opts.l1.Get(), shape, Sz2{4, 5});
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      prox = std::make_shared<Proxs::L1>(opts.l1.Get(), A->cols());
+    }    
+    regs.push_back({nullptr, prox, shape});
   }
 
   if (regs.size() == 0) { throw Log::Failure("Reg", "Must specify at least one regularizer"); }

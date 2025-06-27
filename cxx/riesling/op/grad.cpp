@@ -26,13 +26,13 @@ void main_grad(args::Subparser &parser)
     if (vec) {
       auto const       input = reader.readTensor<Cx6>();
       auto const       shape = input.dimensions();
-      TOps::GradVec<6> g(shape, std::vector<Index>{1, 2, 3}, diffOrder.Get());
+      TOps::GradVec<6> g(shape, std::vector<Index>{1, 2, 3});
       auto const       output = g.forward(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"b", "i", "j", "k", "t", "g"});
     } else {
       auto const    input = reader.readTensor<Cx5>();
       auto const    shape = input.dimensions();
-      TOps::Grad<5> g(shape, std::vector<Index>{1, 2, 3}, diffOrder.Get());
+      TOps::Grad<5> g(shape, std::vector<Index>{1, 2, 3});
       auto const    output = g.forward(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"b", "i", "j", "k", "t", "g"});
     }
@@ -40,13 +40,13 @@ void main_grad(args::Subparser &parser)
     if (vec) {
       auto const       input = reader.readTensor<Cx6>();
       auto const       shape = input.dimensions();
-      TOps::GradVec<6> g(AddBack(FirstN<5>(shape), 3), std::vector<Index>{1, 2, 3}, diffOrder.Get());
+      TOps::GradVec<6> g(AddBack(FirstN<5>(shape), 3), std::vector<Index>{1, 2, 3});
       auto const       output = g.adjoint(input);
       writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), {"b", "i", "j", "k", "t", "g"});
     } else {
       auto const    input = reader.readTensor<Cx6>();
       auto const    shape = input.dimensions();
-      TOps::Grad<5> g(FirstN<5>(shape), std::vector<Index>{1, 2, 3}, diffOrder.Get());
+      TOps::Grad<5> g(FirstN<5>(shape), std::vector<Index>{1, 2, 3});
       auto const    output = g.adjoint(input);
       writer.writeTensor(HD5::Keys::Data, output.dimensions(), output.data(), HD5::Dims::Images);
     }
