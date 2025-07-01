@@ -156,8 +156,8 @@ template <int ND> void GradVec<ND>::iforward(InCMap x, OutMap y, float const s) 
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
     BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s);
     for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
-      BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / std::sqrt(2));
-      BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / std::sqrt(2));
+      BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / 2.f);
+      BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / 2.f);
     }
     yind++;
   }
@@ -179,10 +179,10 @@ template <int ND> void GradVec<ND>::iadjoint(OutCMap y, InMap x, float const s) 
    */
   Index yind = dims_.size();
   for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
-    BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]);
+    BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], s);
     for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
-      BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s / std::sqrt(2));
-      BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], s / std::sqrt(2));
+      BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s); /* No factor of 1/2 because the symmetrized matrix would have two elements */
+      BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], s);
       yind++;
     }
   }
