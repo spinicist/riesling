@@ -158,8 +158,8 @@ template <int ND> void GradVec<ND>::iforward(InCMap x, OutMap y, float const s) 
     for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
       BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / 2.f);
       BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / 2.f);
+      yind++;
     }
-    yind++;
   }
   this->finishForward(y, time, false);
 }
