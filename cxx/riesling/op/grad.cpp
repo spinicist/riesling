@@ -3,7 +3,7 @@
 #include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
 #include "rl/op/grad.hpp"
-#include "rl/op/grad2.hpp"
+#include "rl/op/laplacian.hpp"
 #include "rl/op/wavelets.hpp"
 #include "rl/sys/threads.hpp"
 #include "rl/types.hpp"
@@ -16,7 +16,7 @@ void main_grad(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    fwd(parser, "F", "Apply forward operation", {"fwd"});
   args::Flag                    vec(parser, "V", "Apply Vector Gradient", {"vec"});
-  args::Flag                    fft(parser, "F", "Apply FFT-based operator", {"fft", 'f'});
+  args::Flag                    lap(parser, "F", "Apply Laplacian", {"fft", 'f'});
   args::ValueFlag<int>          diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0);
   ParseCommand(parser);
   if (!iname) { throw args::Error("No input file specified"); }
@@ -25,11 +25,11 @@ void main_grad(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
   if (fwd) {
-    if (fft) {
-      auto const     input = reader.readTensor<Cx5>();
-      auto const     shape = input.dimensions();
-      TOps::Grad2<5> g(shape);
-      auto const     output = g.forward(input);
+    if (lap) {
+      auto const         input = reader.readTensor<Cx5>();
+      auto const         shape = input.dimensions();
+      TOps::Laplacian<5> g(shape);
+      auto const         output = g.forward(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
     } else if (vec) {
       auto const       input = reader.readTensor<Cx6>();
@@ -45,7 +45,13 @@ void main_grad(args::Subparser &parser)
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t", "g"});
     }
   } else {
-    if (vec) {
+    if (lap) {
+      auto const         input = reader.readTensor<Cx5>();
+      auto const         shape = input.dimensions();
+      TOps::Laplacian<5> g(shape);
+      auto const         output = g.adjoint(input);
+      writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
+    } else if (vec) {
       auto const       input = reader.readTensor<Cx6>();
       auto const       shape = input.dimensions();
       TOps::GradVec<6> g(AddBack(FirstN<5>(shape), 3), std::vector<Index>{0, 1, 2});

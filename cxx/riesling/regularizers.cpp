@@ -3,18 +3,23 @@
 #include "rl/log/log.hpp"
 #include "rl/op/fft.hpp"
 #include "rl/op/grad.hpp"
+#include "rl/op/laplacian.hpp"
 #include "rl/prox/l1-wavelets.hpp"
 #include "rl/prox/llr.hpp"
 #include "rl/prox/norms.hpp"
+#include "rl/algo/eig.hpp"
 
 namespace rl {
 
 RegOpts::RegOpts(args::Subparser &parser)
-  : l1(parser, "L1", "Simple L1 regularization", {"l1"})
+  : iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
+
+  , l1(parser, "L1", "Simple L1 regularization", {"l1"})
+  , lap(parser, "L", "Laplacian regularization", {"l"})
 
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
-  , iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
+
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
@@ -103,6 +108,26 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     regs.push_back({nullptr,
                     std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape),
                     shape});
+  }
+
+  if (opts.lap) {
+    auto lap = std::make_shared<TOps::Laplacian<5>>(shape);
+    // auto const [val, vec] = PowerMethodAdjoint(lap, nullptr, 64);
+    Proxs::Prox<Cx>::Ptr prox;
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{4});
+      } else if (opts.iso.Get() == "t") {
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{5});
+      } else if (opts.iso.Get() == "bt") {
+        prox = std::make_shared<Proxs::L2<5, 2>>(opts.l1.Get(), shape, Sz2{4, 5});
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      prox = std::make_shared<Proxs::L1>(opts.lap.Get(), A->cols());
+    }    
+    regs.push_back({lap, prox, shape});
   }
 
   if (opts.l1) {

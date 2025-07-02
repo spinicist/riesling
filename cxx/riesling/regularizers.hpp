@@ -13,6 +13,7 @@ struct RegOpts
   RegOpts(args::Subparser &parser);
 
   args::ValueFlag<float> l1;
+  args::ValueFlag<float> lap;
 
   args::ValueFlag<float> tv;
   args::ValueFlag<float> tgv;

@@ -53,10 +53,10 @@ op/apodize.cpp
 op/f0.cpp
 op/fft.cpp
 op/grad.cpp
-op/grad2.cpp
 op/grid.cpp
 op/grid-decant.cpp
 op/hankel.cpp
+op/laplacian.cpp
 op/mask.cpp
 # op/ndft.cpp
 op/nufft.cpp

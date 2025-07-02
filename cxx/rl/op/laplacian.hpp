@@ -6,12 +6,12 @@
 namespace rl::TOps {
 
 template<int ND>
-struct Grad2 final : TOp<Cx, ND, ND>
+struct Laplacian final : TOp<Cx, ND, ND>
 {
   TOP_INHERIT(Cx, ND, ND)
-  Grad2(InDims const ishape);
-  static auto Make(InDims const ishape) -> std::shared_ptr<Grad2>;
-  TOP_DECLARE(Grad2)
+  Laplacian(InDims const ishape);
+  static auto Make(InDims const ishape) -> std::shared_ptr<Laplacian>;
+  TOP_DECLARE(Laplacian)
   void iforward(InCMap x, OutMap y, float const s = 1.f) const;
   void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
 
