@@ -8,6 +8,16 @@
 using namespace rl;
 using namespace Catch;
 
+auto RandN(Index const sz, float sigma) -> Eigen::ArrayXcf
+{
+  Eigen::ArrayXf  u = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
+  Eigen::ArrayXf  v = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
+  Eigen::ArrayXcf x(sz);
+  x.real() = sigma * (-2. * u.log()).sqrt() * cos(2. * M_PI * v);
+  x.imag() = sigma * (-2. * v.log()).sqrt() * sin(2. * M_PI * u);
+  return x;
+}
+
 TEST_CASE("L1Prox", "[prox]")
 {
   Index const           sz = 6;
@@ -20,36 +30,44 @@ TEST_CASE("L1Prox", "[prox]")
   mag_y << -2.f, -1.f, 0.f, 0.f, 0.f, 1.f;
   Eigen::VectorXcf x = mag_x.cast<Cx>() * eph;
   Eigen::VectorXcf y = mag_y.cast<Cx>() * eph;
-  Eigen::VectorXcf z(sz);
-  prox.primal(1.f, x, z);
+  auto z = prox.primal(1.f, x);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\ny " << y.transpose());
   CHECK((y - z).norm() == Approx(0.f).margin(1.e-6f));
 
   // Simple Box Muller transform
-  Eigen::ArrayXf u = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
-  Eigen::ArrayXf v = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
-  x.real() = (-2. * u.log()).sqrt() * cos(2. * M_PI * v);
-  x.imag() = (-2. * v.log()).sqrt() * sin(2. * M_PI * u);
-  prox.dual(1.f, x, z);
+  x = RandN(sz, 1.f);
+  z = prox.dual(1.f, x);
   Eigen::ArrayXf y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
 
-  u = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
-  v = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
-  x.real() = 0.001 * (-2. * u.log()).sqrt() * cos(2. * M_PI * v);
-  x.imag() = 0.001 * (-2. * v.log()).sqrt() * sin(2. * M_PI * u);
-  prox.dual(1.f, x, z);
+  x = RandN(sz, 1.e-3f);
+  z = prox.dual(1.f, x);
   y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
 
-  u = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
-  v = (Eigen::ArrayXf::Random(sz) * 0.5f) + 0.5f;
-  x.real() = 10 * (-2. * u.log()).sqrt() * cos(2. * M_PI * v);
-  x.imag() = 10 * (-2. * v.log()).sqrt() * sin(2. * M_PI * u);
-  prox.dual(1.f, x, z);
+  x = RandN(sz, 10.f);
+  z = prox.dual(1.f, x);
   y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
+}
+
+TEST_CASE("L2Prox", "[prox]")
+{
+  Index const      sz = 6;
+  float const      λ = 1.f;
+  rl::Proxs::L2    prox(λ, Sz1{sz}, Sz1{0});
+  Eigen::VectorXcf x = RandN(sz, 1.f);
+  auto z = prox.primal(0.1f, x);
+  INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x * (1.f - λ * 0.1f * std::sqrt(sz) / x.norm())).transpose() << "\n");
+  CHECK((z - (x * (1.f - λ * 0.1f * std::sqrt(sz) / x.norm()))).norm() == Approx(0.f).margin(1.e-6f));
+
+  x = RandN(sz, 10.f);
+  z.setZero();
+  z = prox.dual(0.1f, x);
+  float const t = λ * 0.1f * std::sqrt(sz);
+  INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x.array() * t / x.norm()).transpose() << "\n");
+  CHECK((z.array() - (x.array() * t / x.norm())).matrix().norm() == Approx(0.f).margin(1.e-6f));
 }

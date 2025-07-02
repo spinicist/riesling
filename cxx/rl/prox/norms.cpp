@@ -18,7 +18,7 @@ L1::L1(float const λ_, Index const sz_)
 
 void L1::primal(float const α, CMap x, Map z) const
 {
-  float t = α * λ;
+  float const t = α * λ;
   float const nx = Log::IsDebugging() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
   Threads::ChunkFor(
     [t, &x, &z](Index lo, Index hi) {
@@ -28,9 +28,7 @@ void L1::primal(float const α, CMap x, Map z) const
       }
     },
     x.size());
-  if (Log::IsDebugging()) {
-    Log::Print("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z));
-  }
+  if (Log::IsDebugging()) { Log::Print("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z)); }
 }
 
 void L1::dual(float const α, CMap x, Map z) const
@@ -80,18 +78,16 @@ template <int O, int D> void L2<O, D>::primal(float const α, CMap x, Map z) con
   std::transform(normDims.cbegin(), normDims.cend(), rsh.begin(), [sh = this->shape](Index const id) { return sh[id]; });
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
-
   float const t = α * λ * std::sqrt(nElems);
   Threads::ChunkFor(
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {
         auto       xblk = xm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
-        auto       zblk = zm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
         auto const norm = Norm<false>(xblk);
         if (norm > t) {
-          zblk = xblk * xblk.constant(1.f - t / norm);
+          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk * xblk.constant(1.f - t / norm);
         } else {
-          zblk.setZero();
+          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib).setZero();
         }
       }
     },
@@ -100,7 +96,6 @@ template <int O, int D> void L2<O, D>::primal(float const α, CMap x, Map z) con
     Log::Print("Prox", "|x|2 Primal α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
   }
 }
-
 
 template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
 {
@@ -122,12 +117,11 @@ template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {
         auto       xblk = xm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
-        auto       zblk = zm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
         auto const norm = Norm<false>(xblk);
         if (norm > t) {
-          zblk = xblk * xblk.constant(t / norm);
+          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk * xblk.constant(t / norm);
         } else {
-          zblk = xblk;
+          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk;
         }
       }
     },
@@ -137,6 +131,7 @@ template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
   }
 }
 
+template struct L2<1, 1>;
 template struct L2<5, 1>;
 template struct L2<5, 2>;
 template struct L2<6, 1>;
