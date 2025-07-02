@@ -9,6 +9,7 @@ if(${BUILD_TESTS})
         io.cpp
         kernel.cpp
         precon.cpp
+        prox.cpp
         op/fft.cpp
         op/grid.cpp
         # op/ndft.cpp
