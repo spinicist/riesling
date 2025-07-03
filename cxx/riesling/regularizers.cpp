@@ -15,7 +15,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   : iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
 
   , l1(parser, "L1", "Simple L1 regularization", {"l1"})
-  , lap(parser, "L", "Laplacian regularization", {"l"})
+  , lap(parser, "L", "Laplacian regularization", {"lap", 'l'})
 
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
@@ -74,7 +74,6 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
 
   if (opts.tv) {
     auto grad = std::make_shared<TOps::Grad<5>>(shape, std::vector<Index>{0, 1, 2});
-
     Proxs::Prox<Cx>::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {

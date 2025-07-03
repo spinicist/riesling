@@ -50,10 +50,6 @@ void main_denoise(args::Subparser &parser)
     };
     PDHG opt{B, nullptr, regs, pdhgArgs.Get(), debug};
     xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
-    /* This factor of 2 is required to preserve the scaling of the output image.
-     * I don't properly understand why it is needed but I suspect the problem definition for least-squares
-     */
-    xm.device(Threads::TensorDevice()) = xm * 2.f;
   }
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
   WriteOutput<5>(cmd, oname.Get(), x, HD5::Dims::Images, input.readStruct<Info>(HD5::Keys::Info));

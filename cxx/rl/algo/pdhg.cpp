@@ -33,8 +33,9 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
     proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
   }
 
-  σ = 1.f;
-  τ = 1.f / (opts.λA + opts.λG);
+  auto const L = std::hypot(opts.λA, opts.λG);
+  σ = 1.f / L;
+  τ = 1.f / L;
   Log::Print("PDHG", "σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", σ, τ, resTol, deltaTol);
 }
 
@@ -62,10 +63,8 @@ auto PDHG::run(CMap y) const -> Vector
   for (Index ii = 0; ii < imax; ii++) {
     xold = x;
     // unext = (I + σP) \ (u + σP(Ax̅ - y))
-    A->forward(x̅, utemp);
-    utemp.device(Threads::CoreDevice()) = utemp - y;
+    utemp.device(Threads::CoreDevice()) = A->forward(x̅) - y;
     float const r = ParallelNorm(utemp);
-
     if (r / r0 < resTol) {
       Log::Print("PDHG", "Residual tolerance reached");
       break;
@@ -73,7 +72,7 @@ auto PDHG::run(CMap y) const -> Vector
 
     if (P) {
       P->iforward(utemp, u, σ);
-      P->inverse(u, u, 1.f, σ);
+      P->inverse(u, u, σ, 1.f);
     } else {
       u.device(Threads::CoreDevice()) = (u + σ * utemp) / (1.f + σ);
     }
@@ -82,12 +81,12 @@ auto PDHG::run(CMap y) const -> Vector
     G->iforward(x̅, v, σ);
     proxʹ->dual(1.f, v, v);
     // xnext = x - τ(A'u + G'v)
-    A->iadjoint(u, x);
-    G->adjoint(v, x̅);
+    A->adjoint(u, x); // Re-use variables to save memory
+    G->adjoint(v, x̅); // Re-use variables to save memory
     x.device(Threads::CoreDevice()) = xold - τ * (x + x̅);
-    xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
-    x̅.device(Threads::CoreDevice()) = x + θ * xold;
+    x̅.device(Threads::CoreDevice()) = x * 2.f - xold;
     if (debug) { debug(ii, x, x̅, u); }
+    xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
     float const nx = ParallelNorm(x);
     float const ndx = ParallelNorm(xold);
     Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E} |r|/|r0| {:4.3E}", ii, nx, ndx / nx, r / r0);
