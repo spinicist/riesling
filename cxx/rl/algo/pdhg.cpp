@@ -80,7 +80,7 @@ auto PDHG::run(CMap y) const -> Vector
 
     // vnext = prox(v + σGx̅);
     G->iforward(x̅, v, σ);
-    proxʹ->dual(τ, v, v);
+    proxʹ->dual(1.f, v, v);
     // xnext = x - τ(A'u + G'v)
     A->iadjoint(u, x);
     G->adjoint(v, x̅);
