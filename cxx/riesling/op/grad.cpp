@@ -16,7 +16,7 @@ void main_grad(args::Subparser &parser)
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    fwd(parser, "F", "Apply forward operation", {"fwd"});
   args::Flag                    vec(parser, "V", "Apply Vector Gradient", {"vec"});
-  args::Flag                    lap(parser, "F", "Apply Laplacian", {"fft", 'f'});
+  args::Flag                    lap(parser, "F", "Apply Laplacian", {"lap", 'l'});
   args::ValueFlag<int>          diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0);
   ParseCommand(parser);
   if (!iname) { throw args::Error("No input file specified"); }

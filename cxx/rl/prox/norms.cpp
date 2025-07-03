@@ -28,7 +28,7 @@ void L1::primal(float const α, CMap x, Map z) const
       }
     },
     x.size());
-  if (Log::IsDebugging()) { Log::Print("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z)); }
+  Log::Debug("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z));
 }
 
 void L1::dual(float const α, CMap x, Map z) const
@@ -42,9 +42,7 @@ void L1::dual(float const α, CMap x, Map z) const
       }
     },
     x.size());
-  if (Log::IsDebugging()) {
-    Log::Print("Prox", "|x|1 Dual α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
-  }
+  Log::Debug("Prox", "|x|1 Dual α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr

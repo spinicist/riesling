@@ -16,8 +16,6 @@ struct Laplacian final : TOp<Cx, ND, ND>
   void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
 
 private:
-  Pad<Cx, ND> pad;
-  void filter(OutMap x) const;
 };
 
 } // namespace rl::TOps

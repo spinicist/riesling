@@ -112,7 +112,6 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
 
   if (opts.lap) {
     auto lap = std::make_shared<TOps::Laplacian<5>>(shape);
-    // auto const [val, vec] = PowerMethodAdjoint(lap, nullptr, 64);
     Proxs::Prox<Cx>::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
