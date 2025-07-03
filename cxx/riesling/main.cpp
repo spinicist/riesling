@@ -67,7 +67,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(op, wavelets, "op-wavelets", "Apply wavelet transform");
 
   args::Group util(parser, "UTIL");
-  COMMAND(util, autofocus, "autofocus", "Apply Noll's autofocussing");
+  // COMMAND(util, autofocus, "autofocus", "Apply Noll's autofocussing");
   COMMAND(util, denoise, "denoise", "Denoise reconstructed images");
   COMMAND(util, eig, "eig", "Calculate largest eigenvalue / vector");
   COMMAND(util, eig2, "eig2", "2D Calculate largest eigenvalue / vector");

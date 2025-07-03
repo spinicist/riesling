@@ -56,7 +56,7 @@ if(BUILD_BIN)
         sense/maps.cpp
         sense/sim.cpp
 
-        util/autofocus.cpp
+        # util/autofocus.cpp
         util/denoise.cpp
         util/downsamp.cpp
         util/eig.cpp

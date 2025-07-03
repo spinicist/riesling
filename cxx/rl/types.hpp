@@ -205,6 +205,13 @@ template <int N, int M> auto RemoveNth(Sz<M> const &sz) -> Sz<M - 1>
   return out;
 }
 
+template <int N, int M> auto SetNth(Sz<M> const &in, Index const i) -> Sz<M>
+{
+  Sz<M> out = in;
+  out[N] = i;
+  return out;
+}
+
 template <size_t N> Index Product(std::array<Index, N> const &indices)
 {
   return std::accumulate(indices.begin(), indices.end(), 1L, std::multiplies<Index>());
