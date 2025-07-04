@@ -16,7 +16,8 @@ void main_noisify(args::Subparser &parser)
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(iname.Get());
-  Cx5         ks = reader.readTensor<Cx5>();
+
+  Cx5 ks = reader.readTensor<Cx5>();
 
   Cx5 noise(ks.dimensions());
   noise.setRandom<Eigen::internal::NormalRandomGenerator<std::complex<float>>>();
@@ -25,8 +26,10 @@ void main_noisify(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   writer.writeStruct(HD5::Keys::Info, info);
-  writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), HD5::Dims::Noncartesian);
-  Trajectory traj(reader, info.voxel_size);
-  traj.write(writer);
+  writer.writeTensor(HD5::Keys::Data, ks.dimensions(), ks.data(), reader.readDNames<5>());
+  if (reader.exists(HD5::Keys::Trajectory)) {
+    Trajectory traj(reader, info.voxel_size);
+    traj.write(writer);
+  }
   Log::Print(cmd, "Finished");
 }
