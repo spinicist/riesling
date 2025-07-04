@@ -33,9 +33,8 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
     proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
   }
 
-  auto const L = std::hypot(opts.λA, opts.λG);
-  σ = 1.f / L;
-  τ = 1.f / L;
+  σ = 1.f / opts.λA;
+  τ = 1.f / opts.λG;
   Log::Print("PDHG", "σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", σ, τ, resTol, deltaTol);
 }
 
