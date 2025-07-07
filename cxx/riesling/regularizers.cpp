@@ -143,11 +143,11 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     Proxs::Prox<Cx>::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
-        prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{4});
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap.Get(), shape, Sz1{4});
       } else if (opts.iso.Get() == "t") {
-        prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{5});
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap.Get(), shape, Sz1{5});
       } else if (opts.iso.Get() == "bt") {
-        prox = std::make_shared<Proxs::L2<5, 2>>(opts.l1.Get(), shape, Sz2{4, 5});
+        prox = std::make_shared<Proxs::L2<5, 2>>(opts.lap.Get(), shape, Sz2{4, 5});
       } else {
         throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
       }
