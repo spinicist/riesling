@@ -82,7 +82,7 @@ inline auto CentralDiff1(T1 const &a, T2 &&b, SzT const dims, Index const dim, f
 }
 } // namespace
 
-template <int ND> Grad<ND>::Grad(InDims const ish, std::vector<Index> const &d, int const o)
+template <int ND, int NG> Grad<ND, NG>::Grad(InDims const ish, Sz<NG> const d, int const o)
   : Parent("Grad", ish, AddBack(ish, (Index)d.size()))
   , dims_{d}
   , mode_{o}
@@ -90,27 +90,26 @@ template <int ND> Grad<ND>::Grad(InDims const ish, std::vector<Index> const &d, 
   if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
 }
 
-template <int ND> auto Grad<ND>::Make(InDims const ish, std::vector<Index> const &d, int const o) -> std::shared_ptr<Grad>
+template <int ND, int NG> auto Grad<ND, NG>::Make(InDims const ish, Sz<NG> const d, int const o) -> std::shared_ptr<Grad>
 {
   return std::make_shared<Grad>(ish, d, o);
 }
 
-template <int ND> void Grad<ND>::forward(InCMap x, OutMap y) const
+template <int ND, int NG> void Grad<ND, NG>::forward(InCMap x, OutMap y) const
 {
   y.setZero();
   iforward(x, y);
 }
 
-template <int ND> void Grad<ND>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NG> void Grad<ND, NG>::adjoint(OutCMap y, InMap x) const
 {
   x.setZero();
   iadjoint(y, x);
 }
 
-template <int ND> void Grad<ND>::iforward(InCMap x, OutMap y, float const s) const
+template <int ND, int NG> void Grad<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
 {
-  auto const time = this->startForward(x, y, true);
-  Index const NG = dims_.size();
+  auto const  time = this->startForward(x, y, true);
   float const scale = s / std::sqrt(2 * NG);
   for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
@@ -123,10 +122,9 @@ template <int ND> void Grad<ND>::iforward(InCMap x, OutMap y, float const s) con
   this->finishForward(y, time, true);
 }
 
-template <int ND> void Grad<ND>::iadjoint(OutCMap y, InMap x, float const s) const
+template <int ND, int NG> void Grad<ND, NG>::iadjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const time = this->startAdjoint(y, x, true);
-  Index const NG = dims_.size();
+  auto const  time = this->startAdjoint(y, x, true);
   float const scale = s / std::sqrt(2 * NG);
   for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
@@ -139,9 +137,10 @@ template <int ND> void Grad<ND>::iadjoint(OutCMap y, InMap x, float const s) con
   this->finishAdjoint(x, time, true);
 }
 
-template struct Grad<5>;
+template struct Grad<5, 1>;
+template struct Grad<5, 3>;
 
-template <int ND> Div<ND>::Div(OutDims const sh, std::vector<Index> const &d, int const o)
+template <int ND, int NG> Div<ND, NG>::Div(OutDims const sh, Sz<NG> const d, int const o)
   : Parent("Grad", AddBack(sh, (Index)d.size()), sh)
   , dims_{d}
   , mode_{o}
@@ -149,27 +148,27 @@ template <int ND> Div<ND>::Div(OutDims const sh, std::vector<Index> const &d, in
   if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
 }
 
-template <int ND> auto Div<ND>::Make(OutDims const sh, std::vector<Index> const &d, int const o) -> std::shared_ptr<Div>
+template <int ND, int NG> auto Div<ND, NG>::Make(OutDims const sh, Sz<NG> const d, int const o) -> std::shared_ptr<Div>
 {
   return std::make_shared<Div>(sh, d, o);
 }
 
-template <int ND> void Div<ND>::forward(InCMap x, OutMap y) const
+template <int ND, int NG> void Div<ND, NG>::forward(InCMap x, OutMap y) const
 {
   y.setZero();
   iforward(x, y);
 }
 
-template <int ND> void Div<ND>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NG> void Div<ND, NG>::adjoint(OutCMap y, InMap x) const
 {
   x.setZero();
   iadjoint(y, x);
 }
 
-template <int ND> void Div<ND>::iforward(InCMap x, OutMap y, float const s) const
+template <int ND, int NG> void Div<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  Index const NG = dims_.size();
+
   float const scale = s / std::sqrt(2 * NG);
   for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
@@ -182,10 +181,9 @@ template <int ND> void Div<ND>::iforward(InCMap x, OutMap y, float const s) cons
   this->finishForward(y, time, true);
 }
 
-template <int ND> void Div<ND>::iadjoint(OutCMap y, InMap x, float const s) const
+template <int ND, int NG> void Div<ND, NG>::iadjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const time = this->startAdjoint(y, x, true);
-  Index const NG = dims_.size();
+  auto const  time = this->startAdjoint(y, x, true);
   float const scale = s / std::sqrt(2 * NG);
   for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
@@ -198,9 +196,9 @@ template <int ND> void Div<ND>::iadjoint(OutCMap y, InMap x, float const s) cons
   this->finishAdjoint(x, time, true);
 }
 
-template struct Div<5>;
+template struct Div<5, 3>;
 
-template <int ND> GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> const &dims, int const o)
+template <int ND, int NG> GradVec<ND, NG>::GradVec(InDims const ishape, Sz<NG> const dims, int const o)
   : Parent("GradV", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))
   , dims_{dims}
   , mode_{o}
@@ -211,18 +209,18 @@ template <int ND> GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> c
   if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
 }
 
-template <int ND> auto GradVec<ND>::Make(InDims const ish, std::vector<Index> const &d, int const o) -> std::shared_ptr<GradVec>
+template <int ND, int NG> auto GradVec<ND, NG>::Make(InDims const ish, Sz<NG> const d, int const o) -> std::shared_ptr<GradVec>
 {
   return std::make_shared<GradVec>(ish, d, o);
 }
 
-template <int ND> void GradVec<ND>::forward(InCMap x, OutMap y) const
+template <int ND, int NG> void GradVec<ND, NG>::forward(InCMap x, OutMap y) const
 {
   y.setZero();
   iforward(x, y);
 }
 
-template <int ND> void GradVec<ND>::iforward(InCMap x, OutMap y, float const s) const
+template <int ND, int NG> void GradVec<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   auto const sz = FirstN<ND - 1>(x.dimensions());
@@ -262,13 +260,13 @@ template <int ND> void GradVec<ND>::iforward(InCMap x, OutMap y, float const s) 
   this->finishForward(y, time, false);
 }
 
-template <int ND> void GradVec<ND>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NG> void GradVec<ND, NG>::adjoint(OutCMap y, InMap x) const
 {
   x.setZero();
   iadjoint(y, x);
 }
 
-template <int ND> void GradVec<ND>::iadjoint(OutCMap y, InMap x, float const s) const
+template <int ND, int NG> void GradVec<ND, NG>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   auto const sz = FirstN<ND - 1>(x.dimensions());
@@ -308,6 +306,6 @@ template <int ND> void GradVec<ND>::iadjoint(OutCMap y, InMap x, float const s) 
   this->finishAdjoint(x, time, false);
 }
 
-template struct GradVec<6>;
+template struct GradVec<6, 3>;
 
 } // namespace rl::TOps
