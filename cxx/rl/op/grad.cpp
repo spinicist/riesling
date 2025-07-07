@@ -110,12 +110,14 @@ template <int ND> void Grad<ND>::adjoint(OutCMap y, InMap x) const
 template <int ND> void Grad<ND>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+  Index const NG = dims_.size();
+  float const scale = s / std::sqrt(2 * NG);
+  for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
-    case 0: ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], s); break;
-    case 1: BackwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], s); break;
-    case 2: CentralDiff0<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], s); break;
-    case 3: CentralDiff1<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], s); break;
+    case 0: ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
+    case 1: BackwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
+    case 2: CentralDiff0<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
+    case 3: CentralDiff1<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
     }
   }
   this->finishForward(y, time, true);
@@ -124,18 +126,79 @@ template <int ND> void Grad<ND>::iforward(InCMap x, OutMap y, float const s) con
 template <int ND> void Grad<ND>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+  Index const NG = dims_.size();
+  float const scale = s / std::sqrt(2 * NG);
+  for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
-    case 0: ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
-    case 1: BackwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
-    case 2: CentralDiff0<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
-    case 3: CentralDiff1<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], s); break;
+    case 0: ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
+    case 1: BackwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
+    case 2: CentralDiff0<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
+    case 3: CentralDiff1<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
     }
   }
   this->finishAdjoint(x, time, true);
 }
 
 template struct Grad<5>;
+
+template <int ND> Div<ND>::Div(OutDims const sh, std::vector<Index> const &d, int const o)
+  : Parent("Grad", AddBack(sh, (Index)d.size()), sh)
+  , dims_{d}
+  , mode_{o}
+{
+  if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
+}
+
+template <int ND> auto Div<ND>::Make(OutDims const sh, std::vector<Index> const &d, int const o) -> std::shared_ptr<Div>
+{
+  return std::make_shared<Div>(sh, d, o);
+}
+
+template <int ND> void Div<ND>::forward(InCMap x, OutMap y) const
+{
+  y.setZero();
+  iforward(x, y);
+}
+
+template <int ND> void Div<ND>::adjoint(OutCMap y, InMap x) const
+{
+  x.setZero();
+  iadjoint(y, x);
+}
+
+template <int ND> void Div<ND>::iforward(InCMap x, OutMap y, float const s) const
+{
+  auto const time = this->startForward(x, y, true);
+  Index const NG = dims_.size();
+  float const scale = s / std::sqrt(2 * NG);
+  for (Index ii = 0; ii < NG; ii++) {
+    switch (mode_) {
+    case 0: BackwardDiff<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
+    case 1: ForwardDiff<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
+    case 2: CentralDiff0<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
+    case 3: CentralDiff1<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
+    }
+  }
+  this->finishForward(y, time, true);
+}
+
+template <int ND> void Div<ND>::iadjoint(OutCMap y, InMap x, float const s) const
+{
+  auto const time = this->startAdjoint(y, x, true);
+  Index const NG = dims_.size();
+  float const scale = s / std::sqrt(2 * NG);
+  for (Index ii = 0; ii < NG; ii++) {
+    switch (mode_) {
+    case 0: BackwardDiff<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
+    case 1: ForwardDiff<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
+    case 2: CentralDiff0<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
+    case 3: CentralDiff1<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
+    }
+  }
+  this->finishAdjoint(x, time, true);
+}
+
+template struct Div<5>;
 
 template <int ND> GradVec<ND>::GradVec(InDims const ishape, std::vector<Index> const &dims, int const o)
   : Parent("GradV", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))

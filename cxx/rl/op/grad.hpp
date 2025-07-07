@@ -4,8 +4,7 @@
 
 namespace rl::TOps {
 
-template<int ND>
-struct Grad final : TOp<Cx, ND, ND + 1>
+template <int ND> struct Grad final : TOp<Cx, ND, ND + 1>
 {
   TOP_INHERIT(Cx, ND, ND + 1)
   Grad(InDims const ishape, std::vector<Index> const &gradDims, int const order);
@@ -16,11 +15,24 @@ struct Grad final : TOp<Cx, ND, ND + 1>
 
 private:
   std::vector<Index> dims_;
-  int mode_;
+  int                mode_;
 };
 
-template<int ND>
-struct GradVec final : TOp<Cx, ND, ND>
+template <int ND> struct Div final : TOp<Cx, ND + 1, ND>
+{
+  TOP_INHERIT(Cx, ND + 1, ND)
+  Div(OutDims const ishape, std::vector<Index> const &gradDims, int const order);
+  static auto Make(OutDims const ishape, std::vector<Index> const &gradDims, int const order) -> std::shared_ptr<Div>;
+  TOP_DECLARE(Div)
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const;
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
+
+private:
+  std::vector<Index> dims_;
+  int                mode_;
+};
+
+template <int ND> struct GradVec final : TOp<Cx, ND, ND>
 {
   TOP_INHERIT(Cx, ND, ND)
   GradVec(InDims const ishape, std::vector<Index> const &gradDims, int const order);
@@ -32,7 +44,7 @@ struct GradVec final : TOp<Cx, ND, ND>
 
 private:
   std::vector<Index> dims_;
-  int mode_;
+  int                mode_;
 };
 
 } // namespace rl::TOps

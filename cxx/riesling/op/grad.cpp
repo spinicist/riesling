@@ -15,6 +15,7 @@ void main_grad(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    fwd(parser, "F", "Apply forward operation", {"fwd"});
+  args::Flag                    div(parser, "D", "Apply Div", {"div"});
   args::Flag                    vec(parser, "V", "Apply Vector Gradient", {"vec"});
   args::Flag                    lap(parser, "F", "Apply Laplacian", {"lap", 'l'});
   args::ValueFlag<int>          diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0);
@@ -30,6 +31,12 @@ void main_grad(args::Subparser &parser)
       auto const         shape = input.dimensions();
       TOps::Laplacian<5> g(shape);
       auto const         output = g.forward(input);
+      writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
+    } else if (div) {
+      auto const   input = reader.readTensor<Cx6>();
+      auto const   shape = input.dimensions();
+      TOps::Div<5> g(FirstN<5>(shape), std::vector<Index>{0, 1, 2}, diffOrder.Get());
+      auto const   output = g.forward(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
     } else if (vec) {
       auto const       input = reader.readTensor<Cx6>();
@@ -51,6 +58,12 @@ void main_grad(args::Subparser &parser)
       TOps::Laplacian<5> g(shape);
       auto const         output = g.adjoint(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
+    } else if (div) {
+      auto const    input = reader.readTensor<Cx5>();
+      auto const    shape = input.dimensions();
+      TOps::Grad<5> g(shape, std::vector<Index>{0, 1, 2}, diffOrder.Get());
+      auto const    output = g.forward(input);
+      writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t", "g"});
     } else if (vec) {
       auto const       input = reader.readTensor<Cx6>();
       auto const       shape = input.dimensions();

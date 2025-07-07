@@ -20,6 +20,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   , lap(parser, "L", "Laplacian regularization", {"lap", 'l'})
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
+  , tgl(parser, "TGV", "TGV Laplacian", {"tgl"})
 
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
@@ -69,6 +70,33 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     }
     regs.push_back({op1, prox_x, grad_x->oshape});
     regs.push_back({op2, prox_v, grad_v->oshape});
+    A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
+    return {regs, A, ext_x};
+  }
+
+  if (opts.tgl) {
+    auto grad_x = TOps::Grad<5>::Make(shape, std::vector<Index>{0, 1, 2}, opts.diffOrder.Get());
+    auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
+    auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
+    auto op1 = Ops::Sub(Ops::Mul(grad_x, ext_x), ext_v);
+
+    auto div_v = TOps::Div<5>::Make(shape, std::vector<Index>{0, 1, 2}, opts.diffOrder.Get());
+    auto op2 = Ops::Mul(div_v, ext_v);
+
+    Proxs::Prox<Cx>::Ptr prox_x, prox_v;
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        prox_x = std::make_shared<Proxs::L2<6, 1>>(opts.tgl.Get(), grad_x->oshape, Sz1{3});
+        prox_v = std::make_shared<Proxs::L2<5, 1>>(opts.tgl.Get(), div_v->oshape, Sz1{3});
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      prox_x = std::make_shared<Proxs::L1>(opts.tgl.Get(), op1->rows());
+      prox_v = std::make_shared<Proxs::L1>(opts.tgl.Get(), op2->rows());
+    }
+    regs.push_back({op1, prox_x, grad_x->oshape});
+    regs.push_back({op2, prox_v, div_v->oshape});
     A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
     return {regs, A, ext_x};
   }
