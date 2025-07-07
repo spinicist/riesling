@@ -5,8 +5,7 @@
 
 namespace rl::TOps {
 
-template <typename Sc, int ND, int NK>
-Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, bool const sph, bool const v)
+template <int ND, int NK> Hankel<ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, bool const sph, bool const v)
   : Parent("HankelOp")
   , kDims_{d}
   , kW_{w}
@@ -50,7 +49,7 @@ Hankel<Sc, ND, NK>::Hankel(InDims const ish, Sz<NK> const d, Sz<NK> const w, boo
   Log::Print("Hankel", "ishape {} oshape {} kDims {} kW {}", ishape, oshape, kDims_, kW_);
 }
 
-template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap x, OutMap y) const
+template <int ND, int NK> void Hankel<ND, NK>::forward(InCMap x, OutMap y) const
 {
   auto const             time = this->startForward(x, y, false);
   Index                  ik = 0;
@@ -97,7 +96,7 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::forward(InCMap x
   this->finishForward(y, time, false);
 }
 
-template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NK> void Hankel<ND, NK>::adjoint(OutCMap y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.setZero();
@@ -147,7 +146,7 @@ template <typename Sc, int ND, int NK> void Hankel<Sc, ND, NK>::adjoint(OutCMap 
   this->finishAdjoint(x, time, false);
 }
 
-template struct Hankel<Cx, 5, 3>;
-template struct Hankel<Cx, 5, 1>;
+template struct Hankel<5, 3>;
+template struct Hankel<5, 1>;
 
 } // namespace rl::TOps

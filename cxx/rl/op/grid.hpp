@@ -12,14 +12,14 @@
 namespace rl {
 
 namespace TOps {
-template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 8> struct Grid final : TOp<Cx, ND_ + 2, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 8> struct Grid final : TOp<ND_ + 2, 3>
 {
   static constexpr int ND = ND_;
   static constexpr int SGSZ = SGSZ_;
   static constexpr int SGFW = SGSZ + 2 * (KF::FullWidth / 2);
   using KType = Kernel<ND, KF>;
 
-  TOP_INHERIT(Cx, ND + 2, 3)
+  TOP_INHERIT(ND + 2, 3)
   TOP_DECLARE(Grid)
 
   static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b)

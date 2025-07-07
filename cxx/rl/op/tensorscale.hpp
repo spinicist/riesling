@@ -9,17 +9,15 @@ namespace rl::TOps {
  *
  * Equivalent to blockwise multiplication by a diagonal matrix
  * */
-template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struct TensorScale final : TOp<Scalar_, Rank, Rank>
+template <int Rank, int FrontRank = 1, int BackRank = 0> struct TensorScale final : TOp<Rank, Rank>
 {
-  TOP_INHERIT(Scalar_, Rank, Rank)
-  using TScales = Eigen::Tensor<Scalar, Rank - FrontRank - BackRank>;
+  TOP_INHERIT(Rank, Rank)
+  using TScales = Eigen::Tensor<Cx, Rank - FrontRank - BackRank>;
   using Parent::adjoint;
   using Parent::forward;
   using Ptr = std::shared_ptr<TensorScale>;
 
-  static auto Make(InDims const shape, TScales const &s) -> Ptr {
-    return std::make_shared<TensorScale>(shape, s);
-  }
+  static auto Make(InDims const shape, TScales const &s) -> Ptr { return std::make_shared<TensorScale>(shape, s); }
 
   TensorScale(InDims const shape, TScales const &s)
     : Parent("TensorScale", shape, shape)
@@ -72,16 +70,17 @@ template <typename Scalar_, int Rank, int FrontRank = 1, int BackRank = 0> struc
     this->finishAdjoint(x, time, false);
   }
 
-  void inverse(OutCMap y, InMap x, float const s, float const b) const {
+  void inverse(OutCMap y, InMap x, float const s, float const b) const
+  {
     auto const time = this->startInverse(y, x);
     x.device(Threads::TensorDevice()) = y / (scales.reshape(res).broadcast(brd) * y.constant(s) + y.constant(b));
     this->finishInverse(x, time);
   }
 
-  auto operator+(Scalar const s) const -> std::shared_ptr<Ops::Op<Cx>>
+  auto operator+(Cx const s) const -> std::shared_ptr<Ops::Op>
   {
     TScales p = scales + s;
-    return std::make_shared<TensorScale<Scalar_, Rank, FrontRank, BackRank>>(this->ishape, p);
+    return std::make_shared<TensorScale<Rank, FrontRank, BackRank>>(this->ishape, p);
   }
 
   auto weights() const -> TScales const & { return scales; }

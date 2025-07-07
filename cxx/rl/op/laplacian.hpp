@@ -6,9 +6,9 @@
 namespace rl::TOps {
 
 template<int ND>
-struct Laplacian final : TOp<Cx, ND, ND>
+struct Laplacian final : TOp<ND, ND>
 {
-  TOP_INHERIT(Cx, ND, ND)
+  TOP_INHERIT(ND, ND)
   Laplacian(InDims const ishape);
   static auto Make(InDims const ishape) -> std::shared_ptr<Laplacian>;
   TOP_DECLARE(Laplacian)

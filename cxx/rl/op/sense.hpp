@@ -4,9 +4,9 @@
 
 namespace rl::TOps {
 
-struct SENSEOp final : TOp<Cx, 4, 5>
+struct SENSEOp final : TOp<4, 5>
 {
-  TOP_INHERIT(Cx, 4, 5)
+  TOP_INHERIT(4, 5)
   SENSEOp(Cx5 const &maps, Index const nB);
   TOP_DECLARE(SENSEOp)
   void iforward(InCMap x, OutMap y, float const s) const;

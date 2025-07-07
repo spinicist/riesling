@@ -32,8 +32,8 @@ void main_resamp(args::Subparser &parser)
   }
 
   FFT::Forward(input, Sz3{1, 2, 3});
-  TOps::Pad<Cx, 5> pad(ishape, oshape);
-  Cx5              output(oshape);
+  TOps::Pad<5> pad(ishape, oshape);
+  Cx5          output(oshape);
   pad.forward(input, output);
   float const scale = std::sqrt(Product(oshape) / Product(ishape));
   Log::Print(cmd, "Scale {:3.2E}", scale);

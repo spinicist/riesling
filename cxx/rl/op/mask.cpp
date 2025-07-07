@@ -5,9 +5,8 @@
 
 namespace rl::Ops {
 
-template <typename S>
-Mask<S>::Mask(MaskVector const &m, Index const r)
-  : Op<S>("Mask")
+Mask::Mask(MaskVector const &m, Index const r)
+  : Op("Mask")
   , mask{m}
   , repeats{r}
   , isz{mask.rows()}
@@ -18,10 +17,10 @@ Mask<S>::Mask(MaskVector const &m, Index const r)
   }
 }
 
-template <typename S> auto Mask<S>::rows() const -> Index { return osz * repeats; }
-template <typename S> auto Mask<S>::cols() const -> Index { return isz * repeats; }
-
-template <typename S> void Mask<S>::forward(CMap x, Map y) const
+auto Mask::Make(MaskVector const &m, Index const r) -> Ptr { return std::make_shared<Mask>(m, r); }
+auto Mask::rows() const -> Index { return osz * repeats; }
+auto Mask::cols() const -> Index { return isz * repeats; }
+void Mask::forward(CMap x, Map y) const
 {
   auto const time = this->startForward(x, y, false);
   Index      ix = 0, iy = 0;
@@ -35,7 +34,7 @@ template <typename S> void Mask<S>::forward(CMap x, Map y) const
   this->finishForward(y, time, false);
 }
 
-template <typename S> void Mask<S>::adjoint(CMap y, Map x) const
+void Mask::adjoint(CMap y, Map x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   Index      ix = 0, iy = 0;
@@ -53,7 +52,7 @@ template <typename S> void Mask<S>::adjoint(CMap y, Map x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <typename S> void Mask<S>::iforward(CMap x, Map y, float const s) const
+void Mask::iforward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   Index      ix = 0, iy = 0;
@@ -67,7 +66,7 @@ template <typename S> void Mask<S>::iforward(CMap x, Map y, float const s) const
   this->finishForward(y, time, true);
 }
 
-template <typename S> void Mask<S>::iadjoint(CMap y, Map x, float const s) const
+void Mask::iadjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   Index      ix = 0, iy = 0;
@@ -80,8 +79,5 @@ template <typename S> void Mask<S>::iadjoint(CMap y, Map x, float const s) const
   if (iy != rows()) { throw Log::Failure(this->name, "Mask logic incorrect"); }
   this->finishAdjoint(x, time, true);
 }
-
-template struct Mask<float>;
-template struct Mask<Cx>;
 
 } // namespace rl::Ops

@@ -36,22 +36,22 @@ RegOpts::RegOpts(args::Subparser &parser)
 {
 }
 
-auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regularizers_t
+auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regularizers_t
 {
-  Ops::Op<Cx>::Ptr         A = recon;
+  Ops::Op::Ptr         A = recon;
   auto const               shape = recon->ishape;
   std::vector<Regularizer> regs;
 
   if (opts.tgv) {
     auto grad_x = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
-    auto ext_x = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), 0, A->cols());
-    auto ext_v = std::make_shared<Ops::Extract<Cx>>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
+    auto ext_x = std::make_shared<Ops::Extract>(A->cols() + grad_x->rows(), 0, A->cols());
+    auto ext_v = std::make_shared<Ops::Extract>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = Ops::Sub(Ops::Mul(grad_x, ext_x), ext_v);
 
     auto grad_v = TOps::GradVec<6, 3>::Make(grad_x->oshape, Sz3{0, 1, 2}, opts.diffOrder.Get());
     auto op2 = Ops::Mul(grad_v, ext_v);
 
-    Proxs::Prox<Cx>::Ptr prox_x, prox_v;
+    Proxs::Prox::Ptr prox_x, prox_v;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
         prox_x = Proxs::L2<6, 1>::Make(opts.tgv.Get(), grad_x->oshape, Sz1{3});
@@ -71,13 +71,13 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
     }
     regs.push_back({op1, prox_x, grad_x->oshape});
     regs.push_back({op2, prox_v, grad_v->oshape});
-    A = std::make_shared<Ops::Multiply<Cx>>(A, ext_x);
+    A = std::make_shared<Ops::Multiply>(A, ext_x);
     return {regs, A, ext_x};
   }
 
   if (opts.tv) {
     auto                 grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
-    Proxs::Prox<Cx>::Ptr prox;
+    Proxs::Prox::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
         prox = Proxs::L2<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{3});
@@ -97,9 +97,9 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   if (opts.tv2) {
     auto grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
     auto lap = TOps::Laplacian<5>::Make(shape);
-    auto both = Ops::VStack<>::Make({grad, lap});
+    auto both = Ops::VStack::Make({grad, lap});
 
-    Proxs::Prox<Cx>::Ptr pg, pl;
+    Proxs::Prox::Ptr pg, pl;
     float const σ = 0.77; // Bock et al 2008
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
@@ -113,7 +113,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
       pg = Proxs::L1::Make(opts.tv2.Get() * σ, grad->rows());
       pl = Proxs::L1::Make(opts.tv2.Get() * (1 - σ), lap->rows());
     }
-    auto prox = Proxs::Stack<>::Make({pg, pl});
+    auto prox = Proxs::Stack::Make({pg, pl});
     regs.push_back({both, prox, grad->oshape});
   }
 
@@ -137,7 +137,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
 
   if (opts.lap) {
     auto                 lap = TOps::Laplacian<5>::Make(shape);
-    Proxs::Prox<Cx>::Ptr prox;
+    Proxs::Prox::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
         prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap.Get(), shape, Sz1{4});
@@ -155,7 +155,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<Cx, 5, 5>::Ptr const &recon) -> Regul
   }
 
   if (opts.l1) {
-    Proxs::Prox<Cx>::Ptr prox;
+    Proxs::Prox::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
         prox = std::make_shared<Proxs::L2<5, 1>>(opts.l1.Get(), shape, Sz1{4});

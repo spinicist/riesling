@@ -35,10 +35,10 @@ struct RegOpts
 struct Regularizers_t
 {
   std::vector<Regularizer> regs;
-  Ops::Op<Cx>::Ptr         A;
-  Ops::Op<Cx>::Ptr         ext_x;
+  Ops::Op::Ptr         A;
+  Ops::Op::Ptr         ext_x;
 };
 
-auto Regularizers(RegOpts &regOpts, TOps::TOp<Cx, 5, 5>::Ptr const &A) -> Regularizers_t;
+auto Regularizers(RegOpts &regOpts, TOps::TOp<5, 5>::Ptr const &A) -> Regularizers_t;
 
 } // namespace rl

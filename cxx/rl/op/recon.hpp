@@ -29,6 +29,6 @@ template <int ND> struct Recon
         f0Opts const          &f0Opts,
         Cx5 const             &data,
         Re3 const             &f0map);
-  TOps::TOp<Cx, 5, 5>::Ptr A, M;
+  TOps::TOp<5, 5>::Ptr A, M;
 };
 } // namespace rl

@@ -4,22 +4,22 @@
 
 namespace rl::Proxs {
 
-template <typename S> Stack<S>::Stack(std::vector<Ptr> const ps)
-  : Prox<S>(std::accumulate(ps.begin(), ps.end(), 0L, [](Index const i, Prox<S>::Ptr const &p) { return i + p->sz; }))
+Stack::Stack(std::vector<Ptr> const ps)
+  : Prox(std::accumulate(ps.begin(), ps.end(), 0L, [](Index const i, Prox::Ptr const &p) { return i + p->sz; }))
   , proxs{ps}
 {
 }
 
-template <typename S> Stack<S>::Stack(Prox<S>::Ptr p1, std::vector<Ptr> const ps)
-  : Prox<S>(p1->sz + std::accumulate(ps.begin(), ps.end(), 0L, [](Index const i, Prox<S>::Ptr const &p) { return i + p->sz; }))
+Stack::Stack(Prox::Ptr p1, std::vector<Ptr> const ps)
+  : Prox(p1->sz + std::accumulate(ps.begin(), ps.end(), 0L, [](Index const i, Prox::Ptr const &p) { return i + p->sz; }))
   , proxs{p1}
 {
   proxs.insert(proxs.end(), ps.begin(), ps.end());
 }
 
-template <typename S> auto Stack<S>::Make(std::vector<Ptr> p) -> Ptr { return std::make_shared<Stack<S>>(p); }
+auto Stack::Make(std::vector<Ptr> p) -> Ptr { return std::make_shared<Stack>(p); }
 
-template <typename S> void Stack<S>::primal(float const α, CMap x, Map z) const
+void Stack::primal(float const α, CMap x, Map z) const
 {
   Index st = 0;
   for (auto &p : proxs) {
@@ -30,7 +30,7 @@ template <typename S> void Stack<S>::primal(float const α, CMap x, Map z) const
   }
 }
 
-template <typename S> void Stack<S>::dual(float const α, CMap x, Map z) const
+void Stack::dual(float const α, CMap x, Map z) const
 {
   Index st = 0;
   for (auto &p : proxs) {
@@ -40,8 +40,5 @@ template <typename S> void Stack<S>::dual(float const α, CMap x, Map z) const
     st += p->sz;
   }
 }
-
-template struct Stack<float>;
-template struct Stack<Cx>;
 
 } // namespace rl::Proxs

@@ -10,7 +10,7 @@ namespace rl::Proxs {
 auto L1::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_shared<L1>(λ, sz); }
 
 L1::L1(float const λ_, Index const sz_)
-  : Prox<Cx>(sz_)
+  : Prox(sz_)
   , λ{λ_}
 {
   Log::Print("Prox", "L1 / Soft Threshold λ {}", λ);
@@ -51,7 +51,7 @@ template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D
 }
 
 template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> const &d)
-  : Prox<Cx>(Product(s))
+  : Prox(Product(s))
   , λ{λ_}
   , shape{s}
   , normDims(d)
@@ -110,7 +110,7 @@ template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
 
-  float const t = α * λ;// * std::sqrt(nElems);
+  float const t = α * λ; // * std::sqrt(nElems);
   Threads::ChunkFor(
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {

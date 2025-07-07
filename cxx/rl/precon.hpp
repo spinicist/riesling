@@ -17,12 +17,12 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,
                                                 TrajectoryN<ND> const &traj,
                                                 Index const            nC,
-                                                Sz<NB> const           bshape) -> TOps::TOp<Cx, 3 + NB>::Ptr;
+                                                Sz<NB> const           bshape) -> TOps::TOp<3 + NB>::Ptr;
 
 template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,
                                                 TrajectoryN<ND> const &traj,
                                                 Cx5 const             &smaps,
-                                                Sz<NB> const           bshape) -> TOps::TOp<Cx, 3 + NB, 3 + NB>::Ptr;
+                                                Sz<NB> const           bshape) -> TOps::TOp<3 + NB, 3 + NB>::Ptr;
 
 } // namespace rl

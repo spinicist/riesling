@@ -30,10 +30,10 @@ auto ADMM::run(CMap b) const -> Vector
   if (b.rows() != A->rows()) { throw Log::Failure("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
 
-  Index const                                      R = regs.size();
-  std::vector<Vector>                              z(R), u(R);
-  std::vector<std::shared_ptr<Ops::DiagScale<Cx>>> ρdiags(R);
-  std::vector<std::shared_ptr<Ops::Op<Cx>>>        scaled_ops(R);
+  Index const                                  R = regs.size();
+  std::vector<Vector>                          z(R), u(R);
+  std::vector<std::shared_ptr<Ops::DiagScale>> ρdiags(R);
+  std::vector<std::shared_ptr<Ops::Op>>        scaled_ops(R);
 
   float ρ = opts.ρ;
   for (Index ir = 0; ir < R; ir++) {
@@ -42,20 +42,19 @@ auto ADMM::run(CMap b) const -> Vector
     z[ir].setZero();
     u[ir].resize(sz);
     u[ir].setZero();
-    ρdiags[ir] = std::make_shared<Ops::DiagScale<Cx>>(sz, std::sqrt(ρ));
-    scaled_ops[ir] = regs[ir].T
-                       ? std::static_pointer_cast<Ops::Op<Cx>>(std::make_shared<Ops::Multiply<Cx>>(ρdiags[ir], regs[ir].T))
-                       : std::static_pointer_cast<Ops::Op<Cx>>(ρdiags[ir]);
+    ρdiags[ir] = std::make_shared<Ops::DiagScale>(sz, std::sqrt(ρ));
+    scaled_ops[ir] = regs[ir].T ? std::static_pointer_cast<Ops::Op>(std::make_shared<Ops::Multiply>(ρdiags[ir], regs[ir].T))
+                                : std::static_pointer_cast<Ops::Op>(ρdiags[ir]);
   }
 
-  std::shared_ptr<Op> reg = Ops::VStack<Cx>::Make(scaled_ops);
-  std::shared_ptr<Op> Aʹ = Ops::VStack<Cx>::Make(A, scaled_ops);
+  std::shared_ptr<Op> reg = Ops::VStack::Make(scaled_ops);
+  std::shared_ptr<Op> Aʹ = Ops::VStack::Make(A, scaled_ops);
   std::shared_ptr<Op> Minvʹ;
   if (Minv == nullptr) {
     Minvʹ = nullptr;
   } else {
-    std::shared_ptr<Op> I = std::make_shared<Ops::Identity<Cx>>(reg->rows());
-    Minvʹ = std::make_shared<Ops::DStack<Cx>>(Minv, I);
+    std::shared_ptr<Op> I = std::make_shared<Ops::Identity>(reg->rows());
+    Minvʹ = std::make_shared<Ops::DStack>(Minv, I);
   }
   LSMR lsmr{Aʹ, Minvʹ, nullptr, LSMR::Opts{opts.iters0, opts.aTol, opts.bTol, opts.cTol}};
 

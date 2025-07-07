@@ -29,7 +29,7 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   CxN<ND + 2> const psf = nufft->adjoint(W);
   CxN<ND + 2>       ones(AddBack(traj.matrix(), psf.dimension(ND), psf.dimension(ND + 1)));
   ones.setConstant(1.f);
-  TOps::Pad<Cx, ND + 2> padX(ones.dimensions(), psf.dimensions());
+  TOps::Pad<ND + 2> padX(ones.dimensions(), psf.dimensions());
   CxN<ND + 2>           xcor(padX.oshape);
   xcor.device(Threads::TensorDevice()) = padX.forward(ones);
   FFT::Forward(xcor, FirstN<ND>(Sz3{0, 1, 2}));
@@ -87,7 +87,7 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   Sz5 const smap1Shape = AddBack(FirstN<3>(smapShape), 1, smapShape[4]);
   Sz5 const xcor1Shape = AddBack(FirstN<3>(psfShape), 1, smapShape[4]);
 
-  auto padXC = TOps::Pad<Cx, 5>(smap1Shape, xcor1Shape);
+  auto padXC = TOps::Pad<5>(smap1Shape, xcor1Shape);
   Cx5  smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
   for (Index si = 0; si < nC; si++) {
     float const ni = Norm2<true>(smaps.chip<1>(si));
@@ -120,7 +120,7 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
 }
 
 template <int NB> auto LoadKSpacePrecon(std::string const &fname, Index const nSamp, Index const nTrace, Sz<3 + NB> const shape)
-  -> TOps::TOp<Cx, 3 + NB>::Ptr
+  -> TOps::TOp<3 + NB>::Ptr
 {
   HD5::Reader reader(fname);
   Index const o = reader.order(HD5::Keys::Weights);
@@ -130,7 +130,7 @@ template <int NB> auto LoadKSpacePrecon(std::string const &fname, Index const nS
       throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(0),
                          w.dimension(1), nSamp, nTrace);
     }
-    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 1, NB>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (o == 3) {
     Re3 const w = reader.readTensor<Re3>(HD5::Keys::Weights);
     if (w.dimension(0) != shape[1]) {
@@ -140,7 +140,7 @@ template <int NB> auto LoadKSpacePrecon(std::string const &fname, Index const nS
       throw Log::Failure("Precon", "Preconditioner dimensions on disk {}x{} did not match trajectory {}x{}", w.dimension(1),
                          w.dimension(2), nSamp, nTrace);
     }
-    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 0, NB>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<3 + NB, 0, NB>>(shape, w.cast<Cx>());
   } else {
     throw Log::Failure("Precon", "On-disk weights had order {}, expected 2 or 3", o);
   }
@@ -150,7 +150,7 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,
                                                 TrajectoryN<ND> const &traj,
                                                 Index const            nC,
-                                                Sz<NB> const           bshape) -> TOps::TOp<Cx, 3 + NB>::Ptr
+                                                Sz<NB> const           bshape) -> TOps::TOp<3 + NB>::Ptr
 {
   auto const shape = Concatenate(Sz3{nC, traj.nSamples(), traj.nTraces()}, bshape);
   if (opts.type == "" || opts.type == "none") {
@@ -158,7 +158,7 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
     return nullptr;
   } else if (opts.type == "single") {
     Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
-    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 1, NB>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
     throw Log::Failure("Precon", "Multichannel preconditioner requested without SENSE maps");
   } else {
@@ -167,23 +167,23 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
 }
 
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<2> const &, TrajectoryN<2> const &, Index const, Sz0 const)
-  -> TOps::TOp<Cx, 3>::Ptr;
+  -> TOps::TOp<3>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<2> const &, TrajectoryN<2> const &, Index const, Sz1 const)
-  -> TOps::TOp<Cx, 4>::Ptr;
+  -> TOps::TOp<4>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<2> const &, TrajectoryN<2> const &, Index const, Sz2 const)
-  -> TOps::TOp<Cx, 5>::Ptr;
+  -> TOps::TOp<5>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Index const, Sz0 const)
-  -> TOps::TOp<Cx, 3>::Ptr;
+  -> TOps::TOp<3>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Index const, Sz1 const)
-  -> TOps::TOp<Cx, 4>::Ptr;
+  -> TOps::TOp<4>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Index const, Sz2 const)
-  -> TOps::TOp<Cx, 5>::Ptr;
+  -> TOps::TOp<5>::Ptr;
 
 template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,
                                                 TrajectoryN<ND> const &traj,
                                                 Cx5 const             &smaps,
-                                                Sz<NB> const           bshape) -> TOps::TOp<Cx, 3 + NB, 3 + NB>::Ptr
+                                                Sz<NB> const           bshape) -> TOps::TOp<3 + NB, 3 + NB>::Ptr
 {
   Index const nC = smaps.dimension(3);
   auto const  shape = Concatenate(Sz3{nC, traj.nSamples(), traj.nTraces()}, bshape);
@@ -192,20 +192,20 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
     return nullptr;
   } else if (opts.type == "single") {
     Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
-    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 1, NB>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
     Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.λ);
-    return std::make_shared<TOps::TensorScale<Cx, 3 + NB, 0, NB>>(shape, w.cast<Cx>());
+    return std::make_shared<TOps::TensorScale<3 + NB, 0, NB>>(shape, w.cast<Cx>());
   } else {
     return LoadKSpacePrecon<NB>(opts.type, traj.nSamples(), traj.nTraces(), shape);
   }
 }
 
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Cx5 const &, Sz<0> const)
-  -> TOps::TOp<Cx, 3, 3>::Ptr;
+  -> TOps::TOp<3, 3>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Cx5 const &, Sz<1> const)
-  -> TOps::TOp<Cx, 4, 4>::Ptr;
+  -> TOps::TOp<4, 4>::Ptr;
 template auto MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Cx5 const &, Sz<2> const)
-  -> TOps::TOp<Cx, 5, 5>::Ptr;
+  -> TOps::TOp<5, 5>::Ptr;
 
 } // namespace rl

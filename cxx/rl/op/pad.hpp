@@ -4,9 +4,9 @@
 
 namespace rl::TOps {
 
-template <typename Scalar_, int Rank> struct Pad final : TOp<Scalar_, Rank, Rank>
+template <int Rank> struct Pad final : TOp<Rank, Rank>
 {
-  TOP_INHERIT(Scalar_, Rank, Rank)
+  TOP_INHERIT(Rank, Rank)
   Pad(InDims const ishape, OutDims const oshape);
   TOP_DECLARE(Pad)
   void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;

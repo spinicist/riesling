@@ -7,10 +7,9 @@ namespace rl {
 /*
  * Wrapper for solving normal equations
  */
-template <typename Scalar_ = Cx> struct NormalOp final : Ops::Op<Scalar_>
+struct NormalOp final : Ops::Op
 {
-  using Scalar = Scalar_;
-  using Op = typename Ops::Op<Scalar>;
+  using Op = typename Ops::Op;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
@@ -49,11 +48,11 @@ template <typename Scalar_ = Cx> struct NormalOp final : Ops::Op<Scalar_>
   void iadjoint(CMap x, Map y) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
 };
 
-template <typename Op> auto MakeNormal(std::shared_ptr<Op> O) { return std::make_shared<NormalOp<typename Op::Scalar>>(O); }
+template <typename Op> auto MakeNormal(std::shared_ptr<Op> O) { return std::make_shared<NormalOp>(O); }
 
 struct ConjugateGradients
 {
-  using Op = Ops::Op<Cx>;
+  using Op = Ops::Op;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;

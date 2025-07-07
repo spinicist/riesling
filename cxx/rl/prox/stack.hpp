@@ -5,10 +5,9 @@
 
 namespace rl::Proxs {
 
-template <typename Scalar = Cx>
-struct Stack final : Prox<Scalar>
+struct Stack final : Prox
 {
-  PROX_INHERIT(Scalar)
+  PROX_INHERIT
   Stack(std::vector<Ptr> p);
   Stack(Ptr p1, std::vector<Ptr> const ps);
   static auto Make(std::vector<Ptr> p) -> Ptr;

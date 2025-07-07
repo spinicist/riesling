@@ -38,7 +38,7 @@ auto ConjugateGradients::run(CMap b, CMap x0) const -> Vector
     float const α = CheckedDot(r, r) / CheckedDot(p, q);
     x = x + p * α;
     // if (debug) {
-    //   if (auto top = std::dynamic_pointer_cast<TOp<Cx, 5, 4>>(op)) {
+    //   if (auto top = std::dynamic_pointer_cast<TOp<5, 4>>(op)) {
     //     Log::Tensor(fmt::format("cg-x-{:02}", icg), tA->ishape, x.data());
     //     Log::Tensor(fmt::format("cg-r-{:02}", icg), tA->ishape, r.data());
     //   }

@@ -12,7 +12,7 @@ struct PowerReturn
   Eigen::VectorXcf vec;
 };
 
-auto PowerMethodForward(std::shared_ptr<Ops::Op<Cx>> op, std::shared_ptr<Ops::Op<Cx>> M, Index const iterLimit) -> PowerReturn;
-auto PowerMethodAdjoint(std::shared_ptr<Ops::Op<Cx>> op, std::shared_ptr<Ops::Op<Cx>> M, Index const iterLimit) -> PowerReturn;
+auto PowerMethodForward(std::shared_ptr<Ops::Op> op, std::shared_ptr<Ops::Op> M, Index const iterLimit) -> PowerReturn;
+auto PowerMethodAdjoint(std::shared_ptr<Ops::Op> op, std::shared_ptr<Ops::Op> M, Index const iterLimit) -> PowerReturn;
 
 } // namespace rl

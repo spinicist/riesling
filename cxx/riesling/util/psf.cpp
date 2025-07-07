@@ -22,15 +22,15 @@ void main_psf(args::Subparser &parser)
 
   args::Flag tpsf(parser, "T", "Output Transform PSF", {'t', "tpsf"});
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
-  auto const       cmd = parser.GetCommand().Name();
-  HD5::Reader      input(coreArgs.iname.Get());
-  Trajectory       traj(input, input.readStruct<Info>(HD5::Keys::Info).voxel_size, coreArgs.matrix.Get());
-  auto const       basis = LoadBasis(coreArgs.basisFile.Get());
-  auto const       A = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, 1, basis.get());
-  auto const       M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, 1, Sz0{});
-  auto const       shape = A->ishape;
-  TOps::Pad<Cx, 5> C(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<2>(shape)), shape);
-  LSMR const       lsmr{A, M, nullptr, lsqOpts.Get()};
+  auto const   cmd = parser.GetCommand().Name();
+  HD5::Reader  input(coreArgs.iname.Get());
+  Trajectory   traj(input, input.readStruct<Info>(HD5::Keys::Info).voxel_size, coreArgs.matrix.Get());
+  auto const   basis = LoadBasis(coreArgs.basisFile.Get());
+  auto const   A = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, 1, basis.get());
+  auto const   M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, 1, Sz0{});
+  auto const   shape = A->ishape;
+  TOps::Pad<5> C(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<2>(shape)), shape);
+  LSMR const   lsmr{A, M, nullptr, lsqOpts.Get()};
 
   if (tpsf) {
     Index const nB = shape[4];

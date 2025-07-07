@@ -9,9 +9,8 @@ namespace rl {
 
 struct PDHG
 {
-  using Op = Ops::Op<Cx>;
-  using Prox = Proxs::Prox<Cx>;
-  using Scalar = typename Op::Scalar;
+  using Op = Ops::Op;
+  using Prox = Proxs::Prox;
   using Vector = typename Op::Vector;
   using CMap = typename Op::CMap;
   using Debug = std::function<void(Index const, Vector const &, Vector const &, Vector const &)>;
@@ -29,7 +28,7 @@ struct PDHG
   auto run(CMap b) const -> Vector;
 
   Op::Ptr              A, P, G;
-  Proxs::Prox<Cx>::Ptr proxʹ;
+  Proxs::Prox::Ptr proxʹ;
   Index                imax;
   float                resTol, deltaTol;
   float                σ, τ, θ;

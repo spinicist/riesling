@@ -34,7 +34,7 @@ void main_pdhg_setup(args::Subparser &parser)
   auto const  P =
     make_kspace_pre(traj, recon->oshape[0], ReadBasis(coreArgs.basisFile.Get()), preOpts.type.Get(), preOpts.bias.Get());
 
-  std::shared_ptr<Ops::Op<Cx>> A = recon; // TGV needs a special A
+  std::shared_ptr<Ops::Op> A = recon; // TGV needs a special A
   Regularizers                 reg(regOpts, shape, A);
 
   PDHG pdhg(A, P, reg.regs);

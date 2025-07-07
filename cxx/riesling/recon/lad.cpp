@@ -54,7 +54,7 @@ void main_recon_lad(args::Subparser &parser)
   auto const x = lad.run(noncart.data(), ρ.Get());
   auto const xm = AsTensorMap(x, A->ishape);
 
-  TOps::Pad<Cx, 5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[3], nT), A->ishape);
+  TOps::Pad<5> oc(traj.matrixForFOV(cropFov.Get(), A->ishape[3], nT), A->ishape);
   auto             out = oc.adjoint(xm);
   WriteOutput(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   if (coreArgs.residual) {

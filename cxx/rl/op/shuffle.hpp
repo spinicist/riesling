@@ -79,7 +79,7 @@ template <typename Op> auto MakeShuffleOutput(std::shared_ptr<Op> op, Sz<Op::Out
 }
 
 template <typename Op> auto MakeShuffleInput(std::shared_ptr<Op> op, Sz<Op::InRank> const shuff)
-  -> TOps::TOp<Cx, Op::InRank, Op::OutRank>::Ptr
+  -> TOps::TOp<Op::InRank, Op::OutRank>::Ptr
 {
   auto s = std::make_shared<Shuffle<Cx, Op::InRank>>(op->ishape, shuff);
   return MakeCompose(s, op);

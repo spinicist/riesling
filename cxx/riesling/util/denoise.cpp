@@ -23,7 +23,7 @@ void main_denoise(args::Subparser &parser)
   Cx5         in = input.readTensor<Cx5>();
   float const scale = ScaleImages(scaling.Get(), in);
   if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
-  auto A = std::make_shared<TOps::Identity<Cx, 5>>(in.dimensions());
+  auto A = std::make_shared<TOps::Identity<5>>(in.dimensions());
   auto [regs, B, ext_x] = Regularizers(regOpts, A);
   Cx5  x(in.dimensions());
   auto xm = CollapseToVector(x);

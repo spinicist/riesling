@@ -6,9 +6,9 @@
 
 namespace rl::TOps {
 
-template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTLowmem final : TOp<Cx, ND + 1, 3>
+template <int ND, typename KF = rl::ExpSemi<4>> struct NUFFTLowmem final : TOp<ND + 1, 3>
 {
-  TOP_INHERIT(Cx, ND + 1, 3)
+  TOP_INHERIT(ND + 1, 3)
   TOP_DECLARE(NUFFTLowmem)
   NUFFTLowmem(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis);
 
@@ -28,7 +28,7 @@ private:
   CxN<ND + 2> mutable workspace;
   CxN<ND + 2> skern;
   CxN<ND + 1> mutable smap;
-  TOps::Pad<Cx, ND + 1> spad;
+  TOps::Pad<ND + 1> spad;
   Sz<ND + 1>            sbrd;
   Sz<ND>                fftDims;
   void kernToMap(Index const channel) const;

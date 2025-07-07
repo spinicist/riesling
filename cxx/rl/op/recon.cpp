@@ -17,13 +17,13 @@ namespace {
 
 template <int ND>
 auto Single(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
-  -> TOps::TOp<Cx, 5, 5>::Ptr
+  -> TOps::TOp<5, 5>::Ptr
 {
   auto nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, 1, b);
   if constexpr (ND == 2) {
     auto                     ri = TOps::MakeReshapeInput(nufft, Concatenate(FirstN<2>(nufft->ishape), LastN<1>(nufft->ishape)));
-    TOps::TOp<Cx, 4, 4>::Ptr sliceLoop = TOps::MakeLoop<2, 3>(ri, nSlab);
-    TOps::TOp<Cx, 5, 5>::Ptr timeLoop = TOps::MakeLoop<4, 4>(sliceLoop, nTime);
+    TOps::TOp<4, 4>::Ptr sliceLoop = TOps::MakeLoop<2, 3>(ri, nSlab);
+    TOps::TOp<5, 5>::Ptr timeLoop = TOps::MakeLoop<4, 4>(sliceLoop, nTime);
     return timeLoop;
   } else {
     if (nSlab > 1) { throw Log::Failure("Recon", "Multislab and 1 channel not supported right now"); }
@@ -36,7 +36,7 @@ auto Single(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index con
 
 auto LowmemSENSE(
   GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
-  -> TOps::TOp<Cx, 5, 5>::Ptr
+  -> TOps::TOp<5, 5>::Ptr
 {
   auto nufft = TOps::NUFFTLowmem<3>::Make(gridOpts, traj, skern, b);
   if (nSlab > 1) {
@@ -49,7 +49,7 @@ auto LowmemSENSE(
 
 auto Decant(
   GridOpts<3> const &gridOpts, Trajectory const &traj, Index const nSlab, Index const nTime, Basis::CPtr b, Cx5 const &skern)
-  -> TOps::TOp<Cx, 5, 5>::Ptr
+  -> TOps::TOp<5, 5>::Ptr
 {
   auto nufft = TOps::NUFFTDecant<3>::Make(gridOpts, traj, skern, b);
   if (nSlab > 1) {

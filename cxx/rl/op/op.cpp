@@ -7,17 +7,17 @@
 
 namespace rl::Ops {
 
-template <typename S> Op<S>::Op(std::string const &n)
+Op::Op(std::string const &n)
   : name{n}
 {
 }
 
-template <typename S> void Op<S>::inverse(CMap, Map, float const, float const) const
+void Op::inverse(CMap, Map, float const, float const) const
 {
   throw Log::Failure(this->name, "Does not have an inverse defined", name);
 }
 
-template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
+void Op::forward(Vector const &x, Vector &y) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward y {} != rows {}", y.rows(), rows()); }
@@ -26,7 +26,7 @@ template <typename S> void Op<S>::forward(Vector const &x, Vector &y) const
   this->forward(xm, ym);
 }
 
-template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
+void Op::adjoint(Vector const &y, Vector &x) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y {} != rows {}", y.rows(), rows()); }
@@ -35,7 +35,7 @@ template <typename S> void Op<S>::adjoint(Vector const &y, Vector &x) const
   this->adjoint(ym, xm);
 }
 
-template <typename S> void Op<S>::inverse(Vector const &y, Vector &x, float const s, float const b) const
+void Op::inverse(Vector const &y, Vector &x, float const s, float const b) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Inverse x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Inverse y {} != rows {}", y.rows(), rows()); }
@@ -44,7 +44,7 @@ template <typename S> void Op<S>::inverse(Vector const &y, Vector &x, float cons
   this->inverse(ym, xm, s, b);
 }
 
-template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
+auto Op::forward(Vector const &x) const -> Vector
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x {} != cols {}", x.rows(), cols()); }
   Vector y(this->rows());
@@ -55,7 +55,7 @@ template <typename S> auto Op<S>::forward(Vector const &x) const -> Vector
   return y;
 }
 
-template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
+auto Op::adjoint(Vector const &y) const -> Vector
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y {} != rows {}", y.rows(), rows()); }
   Vector x(this->cols());
@@ -66,7 +66,7 @@ template <typename S> auto Op<S>::adjoint(Vector const &y) const -> Vector
   return x;
 }
 
-template <typename S> void Op<S>::iforward(Vector const &x, Vector &y, float const s) const
+void Op::iforward(Vector const &x, Vector &y, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward+ x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward+ y {} != rows {}", y.rows(), rows()); }
@@ -75,7 +75,7 @@ template <typename S> void Op<S>::iforward(Vector const &x, Vector &y, float con
   this->iforward(xm, ym, s);
 }
 
-template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x, float const s) const
+void Op::iadjoint(Vector const &y, Vector &x, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint+ x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint+ y {} != rows {}", y.rows(), rows()); }
@@ -84,7 +84,7 @@ template <typename S> void Op<S>::iadjoint(Vector const &y, Vector &x, float con
   this->iadjoint(ym, xm, s);
 }
 
-template <typename S> auto Op<S>::startForward(CMap x, Map const &y, bool const ip) const -> Log::Time
+auto Op::startForward(CMap x, Map const &y, bool const ip) const -> Log::Time
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x [{}] expected [{}]", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward y [{}] expected [{}]", y.rows(), rows()); }
@@ -96,7 +96,7 @@ template <typename S> auto Op<S>::startForward(CMap x, Map const &y, bool const 
   return Log::Now();
 }
 
-template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const start, bool const ip) const
+void Op::finishForward(Map const &y, Log::Time const start, bool const ip) const
 {
   if (Log::IsDebugging()) {
     Log::Debug(this->name, "{}forward finished in {} |y| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(y));
@@ -105,7 +105,7 @@ template <typename S> void Op<S>::finishForward(Map const &y, Log::Time const st
   }
 }
 
-template <typename S> auto Op<S>::startAdjoint(CMap y, Map const &x, bool const ip) const -> Log::Time
+auto Op::startAdjoint(CMap y, Map const &x, bool const ip) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint x [{}] expected [{}]", x.rows(), cols()); }
@@ -117,7 +117,7 @@ template <typename S> auto Op<S>::startAdjoint(CMap y, Map const &x, bool const 
   return Log::Now();
 }
 
-template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const start, bool const ip) const
+void Op::finishAdjoint(Map const &x, Log::Time const start, bool const ip) const
 {
   if (Log::IsDebugging()) {
     Log::Debug(this->name, "{}adjoint finished in {} |x| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(x));
@@ -126,7 +126,7 @@ template <typename S> void Op<S>::finishAdjoint(Map const &x, Log::Time const st
   }
 }
 
-template <typename S> auto Op<S>::startInverse(CMap y, Map const &x) const -> Log::Time
+auto Op::startInverse(CMap y, Map const &x) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Inverse y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Inverse x [{}] expected [{}]", x.rows(), cols()); }
@@ -138,7 +138,7 @@ template <typename S> auto Op<S>::startInverse(CMap y, Map const &x) const -> Lo
   return Log::Now();
 }
 
-template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const start) const
+void Op::finishInverse(Map const &x, Log::Time const start) const
 {
   if (Log::IsDebugging()) {
     Log::Debug(this->name, "Inverse finished in {} |x| {}", Log::ToNow(start), ParallelNorm(x));
@@ -146,8 +146,5 @@ template <typename S> void Op<S>::finishInverse(Map const &x, Log::Time const st
     Log::Debug(this->name, "Inverse finished in {}", Log::ToNow(start));
   }
 }
-
-template struct Op<float>;
-template struct Op<Cx>;
 
 } // namespace rl::Ops

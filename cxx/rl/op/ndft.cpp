@@ -285,7 +285,7 @@ template <int NDim> void NDFT<NDim>::iadjoint(OutCMap yy, InMap x) const
   this->finishAdjoint(x, time, false);
 }
 
-template <int NDim> auto NDFT<NDim>::M(float const λ, Index const nS, Index const nT) const -> TOps::TOp<Cx, 5, 5>::Ptr
+template <int NDim> auto NDFT<NDim>::M(float const λ, Index const nS, Index const nT) const -> TOps::TOp<5, 5>::Ptr
 {
   Log::Print("NDFT", "Calculating preconditioner λ {}", λ);
   Cx3 ones(this->oshape);

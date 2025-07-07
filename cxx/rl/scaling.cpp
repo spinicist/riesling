@@ -40,7 +40,7 @@ auto ScaleImages(std::string const &type, Cx5 const &xx) -> float
   return scale;
 }
 
-auto ScaleData(std::string const &type, Ops::Op<Cx>::Ptr const A, Ops::Op<Cx>::Ptr const P, Ops::Op<Cx>::Map const b) -> float
+auto ScaleData(std::string const &type, Ops::Op::Ptr const A, Ops::Op::Ptr const P, Ops::Op::Map const b) -> float
 {
   float scale;
   if (type == "none") {

@@ -5,14 +5,14 @@
 namespace rl {
 
 namespace TOps {
-template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecant final : TOp<Cx, ND_ + 1, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecant final : TOp<ND_ + 1, 3>
 {
   static constexpr int ND = ND_;
   static constexpr int SGSZ = SGSZ_;
   static constexpr int SGFW = SGSZ + 2 * (KF::FullWidth / 2);
   using KType = Kernel<ND, KF>;
 
-  TOP_INHERIT(Cx, ND + 1, 3)
+  TOP_INHERIT(ND + 1, 3)
   TOP_DECLARE(GridDecant)
 
   GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr b);

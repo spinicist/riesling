@@ -21,6 +21,6 @@ void WriteResidual(std::string const              &cmd,
                    PreconOpts const               &preOpts,
                    Trajectory const               &traj,
                    Cx5CMap                  &x,
-                   TOps::TOp<Cx, 5, 5>::Ptr const &A,
+                   TOps::TOp<5, 5>::Ptr const &A,
                    Cx5                            &noncart);
 } // namespace rl

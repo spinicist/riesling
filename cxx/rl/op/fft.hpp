@@ -8,9 +8,9 @@
 
 namespace rl::TOps {
 
-template <int Rank, int FFTRank> struct FFT final : TOp<Cx, Rank, Rank>
+template <int Rank, int FFTRank> struct FFT final : TOp<Rank, Rank>
 {
-  TOP_INHERIT(Cx, Rank, Rank)
+  TOP_INHERIT(Rank, Rank)
 
   FFT(InDims const &shape, bool const adjoint = false);
   FFT(InDims const &shape, Sz<FFTRank> const dims, bool const adjoint = false);

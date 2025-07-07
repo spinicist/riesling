@@ -11,8 +11,8 @@ TEST_CASE("Algorithms", "[alg]")
 {
   Index const N = 8;
   Eigen::MatrixXf Amat = Eigen::MatrixXf::Identity(N, N) + Eigen::MatrixXf::Ones(N, N);
-  auto const A = std::make_shared<Ops::MatMul<Cx>>(Amat);
-  auto const M = std::make_shared<Ops::Identity<Cx>>(N);
+  auto const A = std::make_shared<Ops::MatMul>(Amat);
+  auto const M = Ops::Identity::Make(N);
   Eigen::VectorXcf const x = Eigen::ArrayXf::LinSpaced(N, 0, N - 1).cast<Cx>();
   auto y = A->forward(x);
 

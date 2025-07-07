@@ -12,7 +12,7 @@ namespace rl {
  */
 struct LSMR
 {
-  using Op = Ops::Op<Cx>;
+  using Op = Ops::Op;
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;

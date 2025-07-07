@@ -47,7 +47,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart * Cx(scale); }
   auto [reg, A, ext_x] = Regularizers(regOpts, R.A);
 
-  Ops::Op<Cx>::Vector x;
+  Ops::Op::Vector x;
   if (pdhg) {
     PDHG::Debug debug = [shape, ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb, PDHG::Vector const &u) {
       if (Log::IsDebugging()) {
@@ -93,7 +93,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   if (scale != 1.f) { x.device(Threads::CoreDevice()) = x / Cx(scale); }
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 
-  TOps::Pad<Cx, 5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(shape)), R.A->ishape);
+  TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(shape)), R.A->ishape);
   auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);

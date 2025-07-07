@@ -4,9 +4,9 @@
 
 namespace rl::TOps {
 
-template <typename Sc, int ND> struct Multiplex final : TOp<Sc, ND, ND + 1>
+template <int ND> struct Multiplex final : TOp<ND, ND + 1>
 {
-  TOP_INHERIT(Sc, ND, ND + 1)
+  TOP_INHERIT(ND, ND + 1)
   using Parent::adjoint;
   using Parent::forward;
 

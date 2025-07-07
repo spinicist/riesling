@@ -6,9 +6,9 @@
 
 namespace rl::TOps {
 
-template <typename Op, int Rank> struct ReshapeInput final : TOp<typename Op::Scalar, Rank, Op::OutRank>
+template <typename Op, int Rank> struct ReshapeInput final : TOp<Rank, Op::OutRank>
 {
-  TOP_INHERIT(typename Op::Scalar, Rank, Op::OutRank)
+  TOP_INHERIT(Rank, Op::OutRank)
   using Parent::adjoint;
   using Parent::forward;
   using Ptr = std::shared_ptr<ReshapeInput>;
@@ -68,9 +68,9 @@ template <typename Op, int Rank> auto MakeReshapeInput(std::shared_ptr<Op> op, S
   return std::make_shared<ReshapeInput<Op, Rank>>(op, ish);
 }
 
-template <typename Op, int Rank> struct ReshapeOutput final : TOp<typename Op::Scalar, Op::InRank, Rank>
+template <typename Op, int Rank> struct ReshapeOutput final : TOp<Op::InRank, Rank>
 {
-  TOP_INHERIT(typename Op::Scalar, Op::InRank, Rank)
+  TOP_INHERIT(Op::InRank, Rank)
   using Parent::adjoint;
   using Parent::forward;
   using Ptr = std::shared_ptr<ReshapeOutput>;

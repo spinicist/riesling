@@ -4,9 +4,9 @@
 
 namespace rl::TOps {
 
-template <int ND, int NG> struct Grad final : TOp<Cx, ND, ND + 1>
+template <int ND, int NG> struct Grad final : TOp<ND, ND + 1>
 {
-  TOP_INHERIT(Cx, ND, ND + 1)
+  TOP_INHERIT(ND, ND + 1)
   Grad(InDims const ishape, Sz<NG> constgradDims, int const order);
   static auto Make(InDims const ishape, Sz<NG> const gradDims, int const order) -> std::shared_ptr<Grad>;
   TOP_DECLARE(Grad)
@@ -18,9 +18,9 @@ private:
   int const    mode_;
 };
 
-template <int ND, int NG> struct Div final : TOp<Cx, ND + 1, ND>
+template <int ND, int NG> struct Div final : TOp<ND + 1, ND>
 {
-  TOP_INHERIT(Cx, ND + 1, ND)
+  TOP_INHERIT(ND + 1, ND)
   Div(OutDims const ishape, Sz<NG> constgradDims, int const order);
   static auto Make(OutDims const ishape, Sz<NG> constgradDims, int const order) -> std::shared_ptr<Div>;
   TOP_DECLARE(Div)
@@ -32,9 +32,9 @@ private:
   int const    mode_;
 };
 
-template <int ND, int NG> struct GradVec final : TOp<Cx, ND, ND>
+template <int ND, int NG> struct GradVec final : TOp<ND, ND>
 {
-  TOP_INHERIT(Cx, ND, ND)
+  TOP_INHERIT(ND, ND)
   GradVec(InDims const ishape, Sz<NG> constgradDims, int const order);
   static auto Make(InDims const ishape, Sz<NG> constgradDims, int const order) -> std::shared_ptr<GradVec>;
   TOP_DECLARE(GradVec)

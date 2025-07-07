@@ -21,16 +21,16 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
   Index const nR = regs.size();
   if (nR == 1) {
     proxʹ = regs.front().P;
-    G = regs.front().T ? regs.front().T : Ops::Identity<Cx>::Make(A->cols());
+    G = regs.front().T ? regs.front().T : Ops::Identity::Make(A->cols());
   } else {
     std::vector<Op::Ptr>   Gs(nR);
     std::vector<Prox::Ptr> ps(nR);
     for (Index ir = 0; ir < nR; ir++) {
-      Gs[ir] = regs[ir].T ? regs[ir].T : Ops::Identity<Cx>::Make(A->cols());
+      Gs[ir] = regs[ir].T ? regs[ir].T : Ops::Identity::Make(A->cols());
       ps[ir] = regs[ir].P;
     }
-    G = std::make_shared<Ops::VStack<Cx>>(Gs);
-    proxʹ = std::make_shared<Proxs::Stack<Cx>>(ps);
+    G = std::make_shared<Ops::VStack>(Gs);
+    proxʹ = std::make_shared<Proxs::Stack>(ps);
   }
 
   σ = 1.f / opts.λA;

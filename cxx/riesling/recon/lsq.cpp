@@ -44,7 +44,7 @@ template <int ND> void run_lsq(args::Subparser &parser)
   auto const x = lsmr.run(CollapseToConstVector(noncart));
   auto const xm = AsTensorMap(x, R.A->ishape);
 
-  TOps::Pad<Cx, 5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(R.A->ishape)), R.A->ishape);
+  TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(R.A->ishape)), R.A->ishape);
   auto             out = oc.adjoint(xm);
 
   WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);

@@ -5,21 +5,20 @@
 
 namespace rl::TOps {
 
-template <typename Scalar_, int InRank_, int OutRank_ = InRank_> struct TOp : Ops::Op<Scalar_>
+template <int InRank_, int OutRank_ = InRank_> struct TOp : Ops::Op
 {
-  using Scalar = Scalar_;
-  using Base = Ops::Op<Scalar>;
+  using Base = Ops::Op;
   static const int InRank = InRank_;
-  using InTensor = Eigen::Tensor<Scalar, InRank>;
+  using InTensor = Eigen::Tensor<Cx, InRank>;
   using InMap = Eigen::TensorMap<InTensor>;
   using InCMap = Eigen::TensorMap<InTensor const>;
   using InDims = typename InTensor::Dimensions;
   static const int OutRank = OutRank_;
-  using OutTensor = Eigen::Tensor<Scalar, OutRank>;
+  using OutTensor = Eigen::Tensor<Cx, OutRank>;
   using OutMap = Eigen::TensorMap<OutTensor>;
   using OutCMap = Eigen::TensorMap<OutTensor const>;
   using OutDims = typename OutTensor::Dimensions;
-  using Ptr = std::shared_ptr<TOp<Scalar, InRank, OutRank>>;
+  using Ptr = std::shared_ptr<TOp<InRank, OutRank>>;
   using Time = Base::Time;
   InDims  ishape;
   OutDims oshape;
@@ -65,9 +64,8 @@ protected:
   void finishInverse(InMap x, Time const start) const;
 };
 
-#define TOP_INHERIT(SCALAR, INRANK, OUTRANK)                                                                                   \
-  using Parent = TOp<SCALAR, INRANK, OUTRANK>;                                                                                 \
-  using Scalar = typename Parent::Scalar;                                                                                      \
+#define TOP_INHERIT(INRANK, OUTRANK)                                                                                           \
+  using Parent = TOp<INRANK, OUTRANK>;                                                                                         \
   static const int InRank = Parent::InRank;                                                                                    \
   using InTensor = typename Parent::InTensor;                                                                                  \
   using InMap = typename Parent::InMap;                                                                                        \

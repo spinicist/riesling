@@ -5,9 +5,9 @@
 namespace rl::TOps {
 
 template<int ND>
-struct Wavelets final : TOp<Cx, ND, ND>
+struct Wavelets final : TOp<ND, ND>
 {
-  TOP_INHERIT(Cx, ND, ND)
+  TOP_INHERIT(ND, ND)
 
   Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> const dims);
 

@@ -4,13 +4,12 @@
 
 namespace rl::Proxs {
 
-template <typename S>
-Prox<S>::Prox(Index const s)
+Prox::Prox(Index const s)
   : sz{s}
 {
 }
 
-template <typename S> void Prox<S>::primal(float const α, Vector const &x, Vector &z) const
+void Prox::primal(float const α, Vector const &x, Vector &z) const
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
@@ -19,7 +18,7 @@ template <typename S> void Prox<S>::primal(float const α, Vector const &x, Vect
   this->primal(α, xm, zm);
 }
 
-template <typename S> auto Prox<S>::primal(float const α, Vector const &x) const -> Vector
+auto Prox::primal(float const α, Vector const &x) const -> Vector
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
@@ -27,7 +26,7 @@ template <typename S> auto Prox<S>::primal(float const α, Vector const &x) cons
   return z;
 }
 
-template <typename S> void Prox<S>::dual(float const α, Vector const &x, Vector &z) const
+void Prox::dual(float const α, Vector const &x, Vector &z) const
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
@@ -36,15 +35,12 @@ template <typename S> void Prox<S>::dual(float const α, Vector const &x, Vector
   this->dual(α, xm, zm);
 }
 
-template <typename S> auto Prox<S>::dual(float const α, Vector const &x) const -> Vector
+auto Prox::dual(float const α, Vector const &x) const -> Vector
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
   this->dual(α, x, z);
   return z;
 }
-
-template struct Prox<float>;
-template struct Prox<Cx>;
 
 } // namespace rl::Proxs

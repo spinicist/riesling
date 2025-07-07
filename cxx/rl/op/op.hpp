@@ -6,13 +6,12 @@
 
 namespace rl::Ops {
 
-template <typename Scalar_ = Cx> struct Op
+struct Op
 {
-  using Scalar = Scalar_;
-  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
+  using Vector = Eigen::Vector<Cx, Eigen::Dynamic>;
   using Map = Eigen::Map<Vector, Eigen::AlignedMax>;
   using CMap = Eigen::Map<Vector const, Eigen::AlignedMax>;
-  using Ptr = std::shared_ptr<Op<Scalar>>;
+  using Ptr = std::shared_ptr<Op>;
   using Time = std::chrono::high_resolution_clock::time_point;
 
   std::string name;
@@ -46,12 +45,12 @@ protected:
 };
 
 #define OP_INHERIT                                                                                                             \
-  using typename Op<Scalar>::Vector;                                                                                           \
-  using typename Op<Scalar>::Map;                                                                                              \
-  using typename Op<Scalar>::CMap;                                                                                             \
-  using typename Op<Scalar>::Ptr;                                                                                              \
-  using Op<Scalar>::forward;                                                                                                   \
-  using Op<Scalar>::adjoint;                                                                                                   \
+  using typename Op::Vector;                                                                                                   \
+  using typename Op::Map;                                                                                                      \
+  using typename Op::CMap;                                                                                                     \
+  using typename Op::Ptr;                                                                                                      \
+  using Op::forward;                                                                                                           \
+  using Op::adjoint;                                                                                                           \
   auto rows() const -> Index final;                                                                                            \
   auto cols() const -> Index final;
 

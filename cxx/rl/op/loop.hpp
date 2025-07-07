@@ -6,9 +6,9 @@
 
 namespace rl::TOps {
 
-template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1>
+template <int ID, int OD, typename Op> struct Loop final : TOp<Op::InRank + 1, Op::OutRank + 1>
 {
-  TOP_INHERIT(typename Op::Scalar, Op::InRank + 1, Op::OutRank + 1)
+  TOP_INHERIT(Op::InRank + 1, Op::OutRank + 1)
   using Parent::adjoint;
   using Parent::forward;
   using Ptr = std::shared_ptr<Loop>;
@@ -53,7 +53,8 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
     auto const time = this->startForward(x, y, true);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Debug("Op", "Loop {}/{}", ii, N_);
-      y.template chip<OD>(ii).device(Threads::TensorDevice()) += op_->forward(x.template chip<ID>(ii)) * y.template chip<OD>(ii).constant(s);
+      y.template chip<OD>(ii).device(Threads::TensorDevice()) +=
+        op_->forward(x.template chip<ID>(ii)) * y.template chip<OD>(ii).constant(s);
     }
     this->finishForward(y, time, true);
   }
@@ -65,7 +66,8 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<typename Op::Scal
     auto const time = this->startAdjoint(y, x, true);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Debug("Op", "Loop {}/{}", ii, N_);
-      x.template chip<ID>(ii).device(Threads::TensorDevice()) += op_->adjoint(y.template chip<OD>(ii)) * x.template chip<ID>(ii).constant(s);
+      x.template chip<ID>(ii).device(Threads::TensorDevice()) +=
+        op_->adjoint(y.template chip<OD>(ii)) * x.template chip<ID>(ii).constant(s);
     }
     this->finishAdjoint(x, time, true);
   }

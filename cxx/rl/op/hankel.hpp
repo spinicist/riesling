@@ -4,10 +4,10 @@
 
 namespace rl::TOps {
 
-template <typename Sc, int ND, int NK> struct Hankel final : TOp<Sc, ND, ND + 2>
+template <int ND, int NK> struct Hankel final : TOp<ND, ND + 2>
 {
   static_assert(NK < ND);
-  TOP_INHERIT(Sc, ND, ND + 2)
+  TOP_INHERIT(ND, ND + 2)
   using Parent::adjoint;
   using Parent::forward;
 
@@ -18,7 +18,7 @@ template <typename Sc, int ND, int NK> struct Hankel final : TOp<Sc, ND, ND + 2>
 private:
   Sz<NK> kDims_, kW_;
   Sz<ND> kSz_;
-  bool sphere_, virt_;
+  bool   sphere_, virt_;
 };
 
-} // namespace rl
+} // namespace rl::TOps

@@ -10,8 +10,8 @@ namespace rl {
 struct Regularizer
 {
   using SizeN = std::variant<Sz4, Sz5, Sz6>;
-  Ops::Op<Cx>::Ptr     T;
-  Proxs::Prox<Cx>::Ptr P;
+  Ops::Op::Ptr     T;
+  Proxs::Prox::Ptr P;
   SizeN                shape;
 };
 

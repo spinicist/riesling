@@ -147,8 +147,8 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   Sz5 const cshape = AddBack(osshape, nB, nC);
   Sz4 const rshape = AddBack(osshape, nB);
 
-  Cx5 const channels = TOps::Pad<Cx, 5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
-  Cx4 const ref = TOps::Pad<Cx, 4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
+  Cx5 const channels = TOps::Pad<5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
+  Cx4 const ref = TOps::Pad<4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
 
   Sz5 kshape;
   if constexpr (ND == 2) {
@@ -165,40 +165,40 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
 
   Log::Print("SENSE", "Kernel shape {}", kshape);
   // Set up operators
-  auto D = std::make_shared<Ops::DiagScale<Cx>>(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
-  auto P = std::make_shared<TOps::Pad<Cx, 5>>(kshape, cshape);
+  auto D = std::make_shared<Ops::DiagScale>(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
+  auto P = std::make_shared<TOps::Pad<5>>(kshape, cshape);
   auto F = std::make_shared<TOps::FFT<5, ND>>(cshape, true);
-  auto FP = Ops::Mul<Cx>(Ops::Mul<Cx>(F, P), D);
-  auto S = std::make_shared<TOps::TensorScale<Cx, 5, 0, 1>>(cshape, ref);
-  auto SFP = Ops::Mul<Cx>(S, FP);
+  auto FP = Ops::Mul(Ops::Mul(F, P), D);
+  auto S = std::make_shared<TOps::TensorScale<5, 0, 1>>(cshape, ref);
+  auto SFP = Ops::Mul(S, FP);
 
   // Weights (mask)
   auto const           r = CollapseToArray(ref);
   Eigen::ArrayXf const ra = r.abs();
   Eigen::ArrayXf const rm = OtsuMasked(ra);
-  auto                 M = std::make_shared<Ops::Mask<Cx>>(rm, nB * nC);
-  auto                 MSFP = Ops::Mul<Cx>(M, SFP);
+  auto                 M = Ops::Mask::Make(rm, nB * nC);
+  auto                 MSFP = Ops::Mul(M, SFP);
 
   Cx5 kernels;
   if (λ > 0.f) {
     // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
     CxN<ND> const sw = SobolevWeights<ND>(kW, l).template cast<Cx>();
     auto const    swv = CollapseToConstVector(sw);
-    auto          W = std::make_shared<Ops::DiagRep<Cx>>(swv, 1, Product(LastN<5 - ND>(kshape)));
-    auto          L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
+    auto          W = std::make_shared<Ops::DiagRep>(swv, 1, Product(LastN<5 - ND>(kshape)));
+    auto          L = std::make_shared<Ops::DiagScale>(W->rows(), λ);
 
     // Combine
-    auto A = Ops::VStack<Cx>::Make({MSFP, Ops::Mul<Cx>(L, W)});
+    auto A = Ops::VStack::Make({MSFP, Ops::Mul(L, W)});
 
     // Preconditioner
-    Ops::Op<Cx>::Vector p(A->rows());
+    Ops::Op::Vector p(A->rows());
     p.setConstant(1.f);
     p = (A->forward(A->adjoint(p)).array().abs() + 1.e-3f).inverse();
-    auto R = std::make_shared<Ops::DiagRep<Cx>>(p, 1, 1);
+    auto R = std::make_shared<Ops::DiagRep>(p, 1, 1);
 
     // Data
-    Ops::Op<Cx>::CMap   c(channels.data(), SFP->rows());
-    Ops::Op<Cx>::Vector cʹ(A->rows());
+    Ops::Op::CMap   c(channels.data(), SFP->rows());
+    Ops::Op::Vector cʹ(A->rows());
     cʹ.head(MSFP->rows()) = M->forward(c);
     cʹ.tail(L->rows()).setZero();
 
@@ -208,14 +208,14 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     kernels = AsTensorMap(kʹ, kshape);
   } else {
     // Preconditioner
-    Ops::Op<Cx>::Vector p(MSFP->rows());
+    Ops::Op::Vector p(MSFP->rows());
     p.setConstant(1.f);
     p = (MSFP->forward(MSFP->adjoint(p)).array().abs() + 1.e-3f).inverse();
-    auto              R = std::make_shared<Ops::DiagRep<Cx>>(p, 1, 1);
-    Ops::Op<Cx>::CMap c(channels.data(), SFP->rows());
-    Ops::Op<Cx>::Vector cʹ = M->forward(c);
-    LSMR                solve{MSFP, R, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
-    auto const          k = solve.run(cʹ);
+    auto            R = std::make_shared<Ops::DiagRep>(p, 1, 1);
+    Ops::Op::CMap   c(channels.data(), SFP->rows());
+    Ops::Op::Vector cʹ = M->forward(c);
+    LSMR            solve{MSFP, R, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
+    auto const      k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
   return kernels.shuffle(Sz5{0, 1, 2, 4, 3});
@@ -238,9 +238,9 @@ template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float
   auto const  cshape = Concatenate(mat, LastN<5 - ND>(kshape));
   float const scale = std::sqrt(Product(FirstN<ND>(fshape)) / (float)Product(FirstN<ND>(kshape)));
   Log::Print("SENSE", "Kernels {} Full maps {} Cropped maps {} Scale {}", kshape, fshape, cshape, scale);
-  TOps::Pad<Cx, 5> P(kshape, fshape);
+  TOps::Pad<5>     P(kshape, fshape);
   TOps::FFT<5, ND> F(fshape, false);
-  TOps::Pad<Cx, 5> C(cshape, fshape);
+  TOps::Pad<5>     C(cshape, fshape);
   return C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
 }
 
@@ -254,9 +254,9 @@ template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float c
   auto const  kshape = Concatenate(kmat, LastN<5 - ND>(mshape));
   float const scale = std::sqrt(Product(FirstN<ND>(oshape)) / (float)Product(FirstN<ND>(mshape)));
   Log::Print("SENSE", "Map Shape {} Oversampled map shape {} Kernel shape {} Scale {}", mshape, oshape, kshape, scale);
-  TOps::Pad<Cx, 5> P(mshape, oshape);
-  TOps::FFT<5, 3>  F(oshape, true);
-  TOps::Pad<Cx, 5> C(kshape, oshape);
+  TOps::Pad<5>    P(mshape, oshape);
+  TOps::FFT<5, 3> F(oshape, true);
+  TOps::Pad<5>    C(kshape, oshape);
   return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
 }
 template auto MapsToKernels(Cx5 const &, Sz2 const, float const) -> Cx5;

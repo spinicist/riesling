@@ -10,9 +10,9 @@ namespace rl::Proxs {
  * The patch size is the volume over which the low-rank (SVD) calculation is performed.
  * Window size is the volume within this that is copied to the output. Set to 1 to get true sliding-window.
  */
-struct LLR final : Prox<Cx>
+struct LLR final : Prox
 {
-  PROX_INHERIT(Cx)
+  PROX_INHERIT
   float λ;
   Index patchSize, windowSize;
   Sz5   shape;

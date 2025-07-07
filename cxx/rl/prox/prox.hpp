@@ -5,12 +5,12 @@
 
 namespace rl::Proxs {
 
-template <typename Scalar = Cx> struct Prox
+struct Prox
 {
-  using Vector = Eigen::Vector<Scalar, Eigen::Dynamic>;
+  using Vector = Eigen::Vector<Cx, Eigen::Dynamic>;
   using Map = typename Vector::AlignedMapType;
   using CMap = typename Eigen::Map<Vector const, Eigen::AlignedMax>;
-  using Op = Ops::Op<Scalar>;
+  using Op = Ops::Op;
   using Ptr = std::shared_ptr<Prox>;
 
   Prox(Index const sz);
@@ -28,13 +28,13 @@ template <typename Scalar = Cx> struct Prox
   Index sz;
 };
 
-#define PROX_INHERIT(Scalar)                                                                                                   \
-  using Vector = typename Prox<Scalar>::Vector;                                                                                \
-  using Map = typename Prox<Scalar>::Map;                                                                                      \
-  using CMap = typename Prox<Scalar>::CMap;                                                                                    \
-  using Op = typename Prox<Scalar>::Op;                                                                                        \
-  using Ptr = Prox<Scalar>::Ptr;                                                                                               \
-  using Prox<Scalar>::primal;                                                                                                  \
-  using Prox<Scalar>::dual;
+#define PROX_INHERIT                                                                                                           \
+  using Vector = typename Prox::Vector;                                                                                        \
+  using Map = typename Prox::Map;                                                                                              \
+  using CMap = typename Prox::CMap;                                                                                            \
+  using Op = typename Prox::Op;                                                                                                \
+  using Ptr = Prox::Ptr;                                                                                                       \
+  using Prox::primal;                                                                                                          \
+  using Prox::dual;
 
 } // namespace rl::Proxs

@@ -6,8 +6,8 @@
 
 namespace rl::TOps {
 
-template <typename Scalar, int Rank>
-Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
+template <int Rank>
+Pad<Rank>::Pad(InDims const is, OutDims const os)
   : Parent(fmt::format("Pad {}D", Rank), is, os)
 {
   for (Index ii = 0; ii < Rank; ii++) {
@@ -23,45 +23,39 @@ Pad<Scalar, Rank>::Pad(InDims const is, OutDims const os)
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::forward(InCMap x, OutMap y) const
+template <int Rank> void Pad<Rank>::forward(InCMap x, OutMap y) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = x.pad(paddings_);
   this->finishForward(y, time, false);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::adjoint(OutCMap y, InMap x) const
+template <int Rank> void Pad<Rank>::adjoint(OutCMap y, InMap x) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
   this->finishAdjoint(x, time, false);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iforward(InCMap x, OutMap y, float const s) const
+template <int Rank> void Pad<Rank>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   y.device(Threads::TensorDevice()) += x.pad(paddings_) * y.constant(s);
   this->finishForward(y, time, true);
 }
 
-template <typename Scalar, int Rank> void Pad<Scalar, Rank>::iadjoint(OutCMap y, InMap x, float const s) const
+template <int Rank> void Pad<Rank>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   x.device(Threads::TensorDevice()) += y.slice(left_, ishape) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 
-template struct Pad<float, 1>;
-template struct Pad<float, 2>;
-template struct Pad<float, 3>;
-template struct Pad<float, 4>;
-template struct Pad<float, 5>;
-
-template struct Pad<Cx, 1>;
-template struct Pad<Cx, 2>;
-template struct Pad<Cx, 3>;
-template struct Pad<Cx, 4>;
-template struct Pad<Cx, 5>;
-template struct Pad<Cx, 6>;
+template struct Pad<1>;
+template struct Pad<2>;
+template struct Pad<3>;
+template struct Pad<4>;
+template struct Pad<5>;
+template struct Pad<6>;
 
 } // namespace rl::TOps

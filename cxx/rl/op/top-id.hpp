@@ -4,9 +4,9 @@
 
 namespace rl::TOps {
 
-template <typename Scalar_, int Rank> struct Identity : TOp<Scalar_, Rank, Rank>
+template <int Rank> struct Identity : TOp<Rank, Rank>
 {
-  TOP_INHERIT(Scalar_, Rank, Rank)
+  TOP_INHERIT(Rank, Rank)
   Identity(Sz<Rank> dims);
 
   void forward(InCMap x, OutMap y) const;

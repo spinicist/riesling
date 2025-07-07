@@ -6,8 +6,8 @@
 
 namespace rl {
 
-template <int ND> auto Loopify(typename TOps::TOp<Cx, ND + 2, 3>::Ptr op, Index const nS, Index const nTime)
-  -> TOps::TOp<Cx, 6, 5>::Ptr
+template <int ND> auto Loopify(typename TOps::TOp<ND + 2, 3>::Ptr op, Index const nS, Index const nTime)
+  -> TOps::TOp<6, 5>::Ptr
 {
   if constexpr (ND == 2) {
     auto sliceLoop = TOps::MakeLoop<2, 3>(op, nS);

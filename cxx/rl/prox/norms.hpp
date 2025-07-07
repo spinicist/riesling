@@ -4,9 +4,9 @@
 
 namespace rl::Proxs {
 
-struct L1 final : Prox<Cx>
+struct L1 final : Prox
 {
-  PROX_INHERIT(Cx)
+  PROX_INHERIT
   float       λ;
   static auto Make(float const λ, Index const sz) -> Prox::Ptr;
   L1(float const λ, Index const sz);
@@ -14,9 +14,9 @@ struct L1 final : Prox<Cx>
   void dual(float const α, CMap x, Map z) const;
 };
 
-template <int O, int D> struct L2 final : Prox<Cx>
+template <int O, int D> struct L2 final : Prox
 {
-  PROX_INHERIT(Cx)
+  PROX_INHERIT
   float       λ;
   Index       blockSize;
   static auto Make(float const λ, Sz<O> const &shape, Sz<D> const &dims) -> Prox::Ptr;

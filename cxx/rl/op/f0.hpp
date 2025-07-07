@@ -6,9 +6,9 @@
 
 namespace rl::TOps {
 
-struct f0Segment final : TOp<Cx, 4, 4>
+struct f0Segment final : TOp<4, 4>
 {
-  TOP_INHERIT(Cx, 4, 4)
+  TOP_INHERIT(4, 4)
   f0Segment(Re3 const &f0, float const τacq, Index const Nτ, Index const Nacq);
   TOP_DECLARE(f0Segment)
   void iforward(InCMap x, OutMap y, float const s = 1.f) const;

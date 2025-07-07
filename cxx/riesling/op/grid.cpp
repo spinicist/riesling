@@ -14,7 +14,7 @@ using namespace rl;
 
 template <int ND> auto MakeGrid(
   GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
-  -> TOps::TOp<Cx, 6, 5>::Ptr
+  -> TOps::TOp<6, 5>::Ptr
 {
   auto G = TOps::Grid<ND>::Make(gridOpts, traj, nC, basis);
   if constexpr (ND == 2) {

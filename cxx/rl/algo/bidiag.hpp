@@ -8,7 +8,7 @@ namespace rl {
 
 struct Bidiag
 {
-  using Op = Ops::Op<Cx>;
+  using Op = Ops::Op;
   using Ptr = Op::Ptr;
   using Vector = Op::Vector;
   using Map = Op::Map;

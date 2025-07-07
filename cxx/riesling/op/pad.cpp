@@ -25,10 +25,10 @@ void main_pad(args::Subparser &parser)
   Cx6       outImages(outDims);
 
   if (fwd) {
-    TOps::Pad<Cx, 6> pad(inDims, outDims);
+    TOps::Pad<6> pad(inDims, outDims);
     outImages = pad.forward(inImages);
   } else {
-    TOps::Pad<Cx, 6> crop(outDims, inDims);
+    TOps::Pad<6> crop(outDims, inDims);
     outImages = crop.adjoint(inImages);
   }
   writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data(), HD5::Dims::Channels);

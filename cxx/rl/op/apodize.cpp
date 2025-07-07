@@ -19,9 +19,9 @@ template <int ND, typename KF> auto KernelFFT(Sz<ND> const shape, Sz<ND> const g
   float const    scale = std::sqrt(static_cast<float>(Product(shape)));
   Log::Debug("Apodiz", "Shape {} Grid shape {} Scale {}", shape, gridshape, scale);
   k = k * k.constant(scale);
-  CxN<ND> temp = TOps::Pad<Cx, ND>(k.dimensions(), gridshape).forward(k);
+  CxN<ND> temp = TOps::Pad<ND>(k.dimensions(), gridshape).forward(k);
   FFT::Adjoint(temp);
-  ReN<ND> a = TOps::Pad<Cx, ND>(shape, temp.dimensions()).adjoint(temp).abs().real().cwiseMax(1.e-3f).inverse();
+  ReN<ND> a = TOps::Pad<ND>(shape, temp.dimensions()).adjoint(temp).abs().real().cwiseMax(1.e-3f).inverse();
   // if constexpr (ND == 3) { Log::Tensor("apodiz", a.dimensions(), a.data(), HD5::DNames<3>{"i", "j", "k"}); }
   return a.template cast<Cx>();
 }
