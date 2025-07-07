@@ -227,31 +227,32 @@ template <int ND, int NG> void GradVec<ND, NG>::iforward(InCMap x, OutMap y, flo
   /*
    * Grad applied to a vector produces a tensor. Here it is flattened back into a vector
    */
-  Index yind = dims_.size();
-  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+  float const scale = s / std::sqrt(2 * NG * (NG + 1) / 2);
+  Index yind = NG;
+  for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
-    case 0: BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
-    case 1: ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
-    case 2: CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
-    case 3: CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], s); break;
+    case 0: BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
+    case 1: ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
+    case 2: CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
+    case 3: CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
     }
-    for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
+    for (Index ij = ii + 1; ij < NG; ij++) {
       switch (mode_) {
       case 0:
-        BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / std::sqrt(2));
-        BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / std::sqrt(2));
+        BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
+        BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
         break;
       case 1:
-        ForwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / std::sqrt(2));
-        ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / std::sqrt(2));
+        ForwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
+        ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
         break;
       case 2:
-        CentralDiff0<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / std::sqrt(2));
-        CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / std::sqrt(2));
+        CentralDiff0<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
+        CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
         break;
       case 3:
-        CentralDiff1<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], s / std::sqrt(2));
-        CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], s / std::sqrt(2));
+        CentralDiff1<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
+        CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
         break;
       }
       yind++;
@@ -273,31 +274,32 @@ template <int ND, int NG> void GradVec<ND, NG>::iadjoint(OutCMap y, InMap x, flo
   /*
    *  This is the tensor form of Div (see wikipedia page) but with the tensor flattened into a vector
    */
-  Index yind = dims_.size();
-  for (Index ii = 0; ii < (Index)dims_.size(); ii++) {
+  float const scale = s / std::sqrt(2 * NG * (NG + 1) / 2);
+  Index yind = NG;
+  for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
-    case 0: BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
-    case 1: ForwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
-    case 2: CentralDiff0<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
-    case 3: CentralDiff1<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii]); break;
+    case 0: BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
+    case 1: ForwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
+    case 2: CentralDiff0<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
+    case 3: CentralDiff1<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
     }
-    for (Index ij = ii + 1; ij < (Index)dims_.size(); ij++) {
+    for (Index ij = ii + 1; ij < NG; ij++) {
       switch (mode_) {
       case 0:
-        BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s / std::sqrt(2));
-        BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], s / std::sqrt(2));
+        BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
+        BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
         break;
       case 1:
-        ForwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s / std::sqrt(2));
-        ForwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], s / std::sqrt(2));
+        ForwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
+        ForwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
         break;
       case 2:
-        CentralDiff0<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s / std::sqrt(2));
-        CentralDiff0<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], s / std::sqrt(2));
+        CentralDiff0<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
+        CentralDiff0<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
         break;
       case 3:
-        CentralDiff1<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], s / std::sqrt(2));
-        CentralDiff1<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], s / std::sqrt(2));
+        CentralDiff1<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
+        CentralDiff1<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
         break;
       }
       yind++;
