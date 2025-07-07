@@ -48,8 +48,8 @@ auto ADMM::run(CMap b) const -> Vector
                        : std::static_pointer_cast<Ops::Op<Cx>>(ρdiags[ir]);
   }
 
-  std::shared_ptr<Op> reg = std::make_shared<Ops::VStack<Cx>>(scaled_ops);
-  std::shared_ptr<Op> Aʹ = std::make_shared<Ops::VStack<Cx>>(A, reg);
+  std::shared_ptr<Op> reg = Ops::VStack<Cx>::Make(scaled_ops);
+  std::shared_ptr<Op> Aʹ = Ops::VStack<Cx>::Make(A, scaled_ops);
   std::shared_ptr<Op> Minvʹ;
   if (Minv == nullptr) {
     Minvʹ = nullptr;

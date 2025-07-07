@@ -188,7 +188,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     auto          L = std::make_shared<Ops::DiagScale<Cx>>(W->rows(), λ);
 
     // Combine
-    auto A = std::make_shared<Ops::VStack<Cx>>(MSFP, Ops::Mul<Cx>(L, W));
+    auto A = Ops::VStack<Cx>::Make({MSFP, Ops::Mul<Cx>(L, W)});
 
     // Preconditioner
     Ops::Op<Cx>::Vector p(A->rows());

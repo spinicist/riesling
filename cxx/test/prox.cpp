@@ -62,12 +62,12 @@ TEST_CASE("L2Prox", "[prox]")
   Eigen::VectorXcf x = RandN(sz, 1.f);
   auto z = prox.primal(0.1f, x);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x * (1.f - λ * 0.1f * std::sqrt(sz) / x.norm())).transpose() << "\n");
-  CHECK((z - (x * (1.f - λ * 0.1f * std::sqrt(sz) / x.norm()))).norm() == Approx(0.f).margin(1.e-6f));
+CHECK((z - (x * (1.f - λ * 0.1f / x.norm()))).norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 10.f);
   z.setZero();
   z = prox.dual(0.1f, x);
-  float const t = λ * 0.1f * std::sqrt(sz);
+  float const t = λ * 0.1f;
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x.array() * t / x.norm()).transpose() << "\n");
   CHECK((z.array() - (x.array() * t / x.norm())).matrix().norm() == Approx(0.f).margin(1.e-6f));
 }

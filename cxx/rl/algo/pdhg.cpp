@@ -30,7 +30,7 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
       ps[ir] = regs[ir].P;
     }
     G = std::make_shared<Ops::VStack<Cx>>(Gs);
-    proxʹ = std::make_shared<Proxs::StackProx<Cx>>(ps);
+    proxʹ = std::make_shared<Proxs::Stack<Cx>>(ps);
   }
 
   σ = 1.f / opts.λA;

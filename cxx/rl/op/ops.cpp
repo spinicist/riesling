@@ -270,27 +270,23 @@ template <typename S> auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b) -> 
 template auto Mul<float>(typename Op<float>::Ptr a, typename Op<float>::Ptr b) -> typename Op<float>::Ptr;
 template auto Mul<Cx>(typename Op<Cx>::Ptr a, typename Op<Cx>::Ptr b) -> typename Op<Cx>::Ptr;
 
-template <typename S> VStack<S>::VStack(std::vector<std::shared_ptr<Op<S>>> const &o)
+template <typename S> VStack<S>::VStack(std::vector<Ptr> const &o)
   : Op<S>{"VStack"}
   , ops{o}
 {
   check();
 }
 
-template <typename S> VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::shared_ptr<Op<S>> op2)
-  : Op<S>{"VStack"}
-  , ops{op1, op2}
-{
-  check();
-}
-
-template <typename S> VStack<S>::VStack(std::shared_ptr<Op<S>> op1, std::vector<std::shared_ptr<Op<S>>> const &others)
+template <typename S> VStack<S>::VStack(Ptr op1, std::vector<Ptr> const &others)
   : Op<S>{"VStack"}
   , ops{op1}
 {
   ops.insert(ops.end(), others.begin(), others.end());
   check();
 }
+
+template <typename S> auto VStack<S>::Make(std::vector<Ptr> const &o) -> Ptr { return std::make_shared<VStack>(o); }
+template <typename S> auto VStack<S>::Make(Ptr o1, std::vector<Ptr> const &o) -> Ptr { return std::make_shared<VStack>(o1, o); }
 
 template <typename S> void VStack<S>::check()
 {

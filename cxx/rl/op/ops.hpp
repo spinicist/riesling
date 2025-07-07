@@ -89,9 +89,10 @@ template <typename S = Cx> auto Mul(typename Op<S>::Ptr a, typename Op<S>::Ptr b
 template <typename Scalar = Cx> struct VStack final : Op<Scalar>
 {
   OP_INHERIT
-  VStack(std::vector<std::shared_ptr<Op<Scalar>>> const &o);
-  VStack(std::shared_ptr<Op<Scalar>> op1, std::shared_ptr<Op<Scalar>> op2);
-  VStack(std::shared_ptr<Op<Scalar>> op1, std::vector<std::shared_ptr<Op<Scalar>>> const &others);
+  VStack(std::vector<Ptr> const &o);
+  VStack(Ptr o1, std::vector<Ptr> const &o);
+  static auto Make(std::vector<Ptr> const &o) -> Ptr;
+  static auto Make(Ptr o1, std::vector<Ptr> const &o) -> Ptr;
   void forward(CMap x, Map y) const;
   void adjoint(CMap y, Map x) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
@@ -99,7 +100,7 @@ template <typename Scalar = Cx> struct VStack final : Op<Scalar>
 
 private:
   void                                     check();
-  std::vector<std::shared_ptr<Op<Scalar>>> ops;
+  std::vector<Ptr> ops;
 };
 
 //! Horizontally stack operators, i.e. A = [B C]

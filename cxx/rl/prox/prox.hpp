@@ -33,6 +33,7 @@ template <typename Scalar = Cx> struct Prox
   using Map = typename Prox<Scalar>::Map;                                                                                      \
   using CMap = typename Prox<Scalar>::CMap;                                                                                    \
   using Op = typename Prox<Scalar>::Op;                                                                                        \
+  using Ptr = Prox<Scalar>::Ptr;                                                                                               \
   using Prox<Scalar>::primal;                                                                                                  \
   using Prox<Scalar>::dual;
 
