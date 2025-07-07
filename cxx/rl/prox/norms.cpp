@@ -56,7 +56,7 @@ template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> cons
   , shape{s}
   , normDims(d)
 {
-  Log::Print("Prox", "L2 Prox λ {} scaled λ {} shape {} norm dims", λ_, λ, shape, normDims);
+  Log::Print("Prox", "L2 Prox λ {} shape {} norm dims {}", λ_, shape, normDims);
   Sz<O> all;
   std::iota(all.begin(), all.end(), 0);
   std::set_difference(all.cbegin(), all.cend(), normDims.cbegin(), normDims.cend(), otherDims.begin());
@@ -76,7 +76,7 @@ template <int O, int D> void L2<O, D>::primal(float const α, CMap x, Map z) con
   std::transform(normDims.cbegin(), normDims.cend(), rsh.begin(), [sh = this->shape](Index const id) { return sh[id]; });
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
-  float const t = α * λ * std::sqrt(nElems);
+  float const t = α * λ; // * std::sqrt(nElems);
   Threads::ChunkFor(
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {
@@ -110,7 +110,7 @@ template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
 
-  float const t = α * λ * std::sqrt(nElems);
+  float const t = α * λ;// * std::sqrt(nElems);
   Threads::ChunkFor(
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {

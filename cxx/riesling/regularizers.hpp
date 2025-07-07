@@ -13,12 +13,13 @@ struct RegOpts
   RegOpts(args::Subparser &parser);
 
   args::ValueFlag<float> l1;
-  args::ValueFlag<float> lap;
 
-  args::ValueFlag<float> tv;
-  args::ValueFlag<float> tgv;
+  args::ValueFlag<int>         diffOrder;
+  args::ValueFlag<float>       lap;
+  args::ValueFlag<float>       tv;
+  args::ValueFlag<float>       tgv;
   args::ValueFlag<std::string> iso;
-  args::ValueFlag<float> tvt;
+  args::ValueFlag<float>       tvt;
 
   args::ValueFlag<float> llr;
   args::ValueFlag<Index> llrPatch;
