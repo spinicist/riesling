@@ -16,7 +16,7 @@ L1::L1(float const λ_, Index const sz_)
   Log::Print("Prox", "L1 / Soft Threshold λ {}", λ);
 }
 
-void L1::primal(float const α, CMap x, Map z) const
+void L1::apply(float const α, CMap x, Map z) const
 {
   float const t = α * λ;
   float const nx = Log::IsDebugging() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
@@ -31,7 +31,7 @@ void L1::primal(float const α, CMap x, Map z) const
   Log::Debug("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z));
 }
 
-void L1::dual(float const α, CMap x, Map z) const
+void L1::conj(float const α, CMap x, Map z) const
 {
   float t = α * λ;
   Threads::ChunkFor(
@@ -62,7 +62,7 @@ template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> cons
   std::set_difference(all.cbegin(), all.cend(), normDims.cbegin(), normDims.cend(), otherDims.begin());
 }
 
-template <int O, int D> void L2<O, D>::primal(float const α, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::apply(float const α, CMap x, Map z) const
 {
   Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
   Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
@@ -95,7 +95,7 @@ template <int O, int D> void L2<O, D>::primal(float const α, CMap x, Map z) con
   }
 }
 
-template <int O, int D> void L2<O, D>::dual(float const α, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::conj(float const α, CMap x, Map z) const
 {
   Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
   Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);

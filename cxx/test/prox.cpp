@@ -30,25 +30,25 @@ TEST_CASE("L1Prox", "[prox]")
   mag_y << -2.f, -1.f, 0.f, 0.f, 0.f, 1.f;
   Eigen::VectorXcf x = mag_x.cast<Cx>() * eph;
   Eigen::VectorXcf y = mag_y.cast<Cx>() * eph;
-  auto z = prox.primal(1.f, x);
+  auto z = prox.apply(1.f, x);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\ny " << y.transpose());
   CHECK((y - z).norm() == Approx(0.f).margin(1.e-6f));
 
   // Simple Box Muller transform
   x = RandN(sz, 1.f);
-  z = prox.dual(1.f, x);
+  z = prox.conj(1.f, x);
   Eigen::ArrayXf y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 1.e-3f);
-  z = prox.dual(1.f, x);
+  z = prox.conj(1.f, x);
   y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 10.f);
-  z = prox.dual(1.f, x);
+  z = prox.conj(1.f, x);
   y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
@@ -60,13 +60,13 @@ TEST_CASE("L2Prox", "[prox]")
   float const      λ = 1.f;
   rl::Proxs::L2    prox(λ, Sz1{sz}, Sz1{0});
   Eigen::VectorXcf x = RandN(sz, 1.f);
-  auto z = prox.primal(0.1f, x);
+  auto z = prox.apply(0.1f, x);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x * (1.f - λ * 0.1f * std::sqrt(sz) / x.norm())).transpose() << "\n");
 CHECK((z - (x * (1.f - λ * 0.1f / x.norm()))).norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 10.f);
   z.setZero();
-  z = prox.dual(0.1f, x);
+  z = prox.conj(0.1f, x);
   float const t = λ * 0.1f;
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x.array() * t / x.norm()).transpose() << "\n");
   CHECK((z.array() - (x.array() * t / x.norm())).matrix().norm() == Approx(0.f).margin(1.e-6f));

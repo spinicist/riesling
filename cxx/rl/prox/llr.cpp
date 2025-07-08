@@ -25,7 +25,7 @@ LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz5 co
   Log::Print("Prox", "Locally Low-Rank λ {} Scaled λ {} Patch {} Window {}", l, λ, patchSize, windowSize);
 }
 
-void LLR::primal(float const α, CMap xin, Map zin) const
+void LLR::apply(float const α, CMap xin, Map zin) const
 {
   Cx5CMap     x(xin.data(), shape);
   Cx5Map      z(zin.data(), shape);
@@ -44,7 +44,7 @@ void LLR::primal(float const α, CMap xin, Map zin) const
   Log::Debug("Prox", "LLR α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm<true>(x), Norm<true>(z));
 }
 
-void LLR::dual(float const α, CMap xin, Map zin) const
+void LLR::conj(float const α, CMap xin, Map zin) const
 {
   Cx5CMap     x(xin.data(), shape);
   Cx5Map      z(zin.data(), shape);

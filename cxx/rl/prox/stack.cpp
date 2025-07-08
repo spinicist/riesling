@@ -19,24 +19,24 @@ Stack::Stack(Prox::Ptr p1, std::vector<Ptr> const ps)
 
 auto Stack::Make(std::vector<Ptr> p) -> Ptr { return std::make_shared<Stack>(p); }
 
-void Stack::primal(float const α, CMap x, Map z) const
+void Stack::apply(float const α, CMap x, Map z) const
 {
   Index st = 0;
   for (auto &p : proxs) {
     CMap xm(x.data() + st, p->sz);
     Map  zm(z.data() + st, p->sz);
-    p->primal(α, xm, zm);
+    p->apply(α, xm, zm);
     st += p->sz;
   }
 }
 
-void Stack::dual(float const α, CMap x, Map z) const
+void Stack::conj(float const α, CMap x, Map z) const
 {
   Index st = 0;
   for (auto &p : proxs) {
     CMap xm(x.data() + st, p->sz);
     Map  zm(z.data() + st, p->sz);
-    p->dual(α, xm, zm);
+    p->conj(α, xm, zm);
     st += p->sz;
   }
 }

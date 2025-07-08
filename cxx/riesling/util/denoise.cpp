@@ -30,7 +30,7 @@ void main_denoise(args::Subparser &parser)
   if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
     // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
     // be the identity operator
-    regs[0].P->primal(1.f, CollapseToConstVector(in), xm);
+    regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
   } else {
     PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
                                                         PDHG::Vector const &u) {

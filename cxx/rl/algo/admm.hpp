@@ -23,7 +23,7 @@ struct ADMM
     float cTol = 1.e-6f;
 
     Index outerLimit; // Number of outer iterations
-    float ε;          // Combined primal/dual tolerance parameter
+    float ε;          // Combined apply/dual tolerance parameter
 
     float ρ;       // Penalty parameter
     bool  balance; // Apply residual balancing scheme

@@ -15,13 +15,13 @@ struct Prox
 
   Prox(Index const sz);
 
-  auto         primal(float const α, Vector const &x) const -> Vector;
-  void         primal(float const α, Vector const &x, Vector &z) const;
-  virtual void primal(float const α, CMap x, Map z) const = 0;
+  auto         apply(float const α, Vector const &x) const -> Vector;
+  void         apply(float const α, Vector const &x, Vector &z) const;
+  virtual void apply(float const α, CMap x, Map z) const = 0;
 
-  auto         dual(float const α, Vector const &x) const -> Vector;
-  void         dual(float const α, Vector const &x, Vector &z) const;
-  virtual void dual(float const α, CMap x, Map z) const = 0;
+  auto         conj(float const α, Vector const &x) const -> Vector;
+  void         conj(float const α, Vector const &x, Vector &z) const;
+  virtual void conj(float const α, CMap x, Map z) const = 0;
 
   virtual ~Prox() {};
 
@@ -34,7 +34,7 @@ struct Prox
   using CMap = typename Prox::CMap;                                                                                            \
   using Op = typename Prox::Op;                                                                                                \
   using Ptr = Prox::Ptr;                                                                                                       \
-  using Prox::primal;                                                                                                          \
-  using Prox::dual;
+  using Prox::apply;                                                                                                          \
+  using Prox::conj;
 
 } // namespace rl::Proxs

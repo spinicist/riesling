@@ -9,37 +9,37 @@ Prox::Prox(Index const s)
 {
 }
 
-void Prox::primal(float const α, Vector const &x, Vector &z) const
+void Prox::apply(float const α, Vector const &x, Vector &z) const
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
   CMap xm(x.data(), sz);
   Map  zm(z.data(), sz);
-  this->primal(α, xm, zm);
+  this->apply(α, xm, zm);
 }
 
-auto Prox::primal(float const α, Vector const &x) const -> Vector
+auto Prox::apply(float const α, Vector const &x) const -> Vector
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
-  this->primal(α, x, z);
+  this->apply(α, x, z);
   return z;
 }
 
-void Prox::dual(float const α, Vector const &x, Vector &z) const
+void Prox::conj(float const α, Vector const &x, Vector &z) const
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   if (z.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", z.size(), sz); }
   CMap xm(x.data(), sz);
   Map  zm(z.data(), sz);
-  this->dual(α, xm, zm);
+  this->conj(α, xm, zm);
 }
 
-auto Prox::dual(float const α, Vector const &x) const -> Vector
+auto Prox::conj(float const α, Vector const &x) const -> Vector
 {
   if (x.size() != sz) { throw Log::Failure("Prox", "x size {} did not match {}", x.size(), sz); }
   Vector z(sz);
-  this->dual(α, x, z);
+  this->conj(α, x, z);
   return z;
 }
 

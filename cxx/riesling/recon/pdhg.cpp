@@ -24,7 +24,7 @@ void main_pdhg(args::Subparser &parser)
   args::ValueFlag<std::string> scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
   args::ValueFlag<Index>       its(parser, "ITS", "Max iterations (4)", {"max-its"}, 4);
   args::ValueFlag<std::vector<float>, VectorReader<float>> σin(parser, "σ", "Pre-computed dual step sizes", {"sigma"});
-  args::ValueFlag<float>                                   τin(parser, "τ", "Pre-computed primal step size", {"tau"}, -1.f);
+  args::ValueFlag<float>                                   τin(parser, "τ", "Pre-computed apply step size", {"tau"}, -1.f);
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
 
   HD5::Reader reader(coreArgs.iname.Get());

@@ -95,7 +95,7 @@ auto ADMM::run(CMap b) const -> Vector
         } else {
           u[ir].device(dev) += Fx;
         }
-        regs[ir].P->primal(1.f / ρ, u[ir], z[ir]);
+        regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
         u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
         float const nFx = ParallelNorm(Fx);
@@ -110,7 +110,7 @@ auto ADMM::run(CMap b) const -> Vector
         } else {
           u[ir].device(dev) += x;
         }
-        regs[ir].P->primal(1.f / ρ, u[ir], z[ir]);
+        regs[ir].P->apply(1.f / ρ, u[ir], z[ir]);
         u[ir].device(dev) = u[ir] - z[ir];
         if (debug_z) { debug_z(io, ir, x, z[ir], u[ir]); }
         nz = ParallelNorm(z[ir]);

@@ -42,7 +42,8 @@ auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.ro
 
 /*  This follows the least-squares specific form of PDHG from Ong et al 2020
  *  Note that the code in SigPy is different to this. It was generalised to other problems, not only least-squares
- *  The specific trick to making the below work is realizing that the dual proximal operator is needed, not the primal
+ *  The specific trick to making the below work is realizing that the conjugate proximal operators are needed because
+ *  those updates are on the dual variables
  */
 auto PDHG::run(CMap y) const -> Vector
 {
@@ -78,7 +79,7 @@ auto PDHG::run(CMap y) const -> Vector
 
     // vnext = prox(v + σGx̅);
     G->iforward(x̅, v, σ);
-    proxʹ->dual(1.f, v, v);
+    proxʹ->conj(1.f, v, v);
     // xnext = x - τ(A'u + G'v)
     A->adjoint(u, x); // Re-use variables to save memory
     G->adjoint(v, x̅); // Re-use variables to save memory

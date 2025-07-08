@@ -10,8 +10,8 @@ struct L1 final : Prox
   float       λ;
   static auto Make(float const λ, Index const sz) -> Prox::Ptr;
   L1(float const λ, Index const sz);
-  void primal(float const α, CMap x, Map z) const;
-  void dual(float const α, CMap x, Map z) const;
+  void apply(float const α, CMap x, Map z) const;
+  void conj(float const α, CMap x, Map z) const;
 };
 
 template <int O, int D> struct L2 final : Prox
@@ -21,8 +21,8 @@ template <int O, int D> struct L2 final : Prox
   Index       blockSize;
   static auto Make(float const λ, Sz<O> const &shape, Sz<D> const &dims) -> Prox::Ptr;
   L2(float const λ, Sz<O> const &shape, Sz<D> const &dims);
-  void primal(float const α, CMap x, Map z) const;
-  void dual(float const α, CMap x, Map z) const;
+  void apply(float const α, CMap x, Map z) const;
+  void conj(float const α, CMap x, Map z) const;
 
 private:
   Sz<O>     shape;
