@@ -45,7 +45,7 @@ struct NormalOp final : Ops::Op
     op->iadjoint(tcm, y);
   }
   void adjoint(CMap x, Map y) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
-  void iadjoint(CMap x, Map y) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
+  void iadjoint(CMap x, Map y, float const) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
 };
 
 template <typename Op> auto MakeNormal(std::shared_ptr<Op> O) { return std::make_shared<NormalOp>(O); }
