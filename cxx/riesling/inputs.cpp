@@ -23,8 +23,8 @@ template struct CoreArgs<2>;
 template struct CoreArgs<3>;
 
 template <int ND> GridArgs<ND>::GridArgs(args::Subparser &parser)
-  : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array<float, ND, 1>::Zero())
-  , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f)
+  : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov", 'f'}, Eigen::Array<float, ND, 1>::Zero())
+  , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp", 'o'}, 1.3f)
 {
 }
 
@@ -49,7 +49,7 @@ auto ReconArgs::Get() -> rl::ReconOpts
 }
 
 PreconArgs::PreconArgs(args::Subparser &parser)
-  : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon"}, "single")
+  : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon", 'p'}, "single")
   , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.e-3f)
 {
 }
@@ -57,7 +57,7 @@ PreconArgs::PreconArgs(args::Subparser &parser)
 auto PreconArgs::Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .λ = λ.Get()}; }
 
 LSMRArgs::LSMRArgs(args::Subparser &parser)
-  : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 4)
+  : its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 4)
   , atol(parser, "A", "Tolerance on A (1e-6)", {"atol"}, 1.e-6f)
   , btol(parser, "B", "Tolerance on b (1e-6)", {"btol"}, 1.e-6f)
   , ctol(parser, "C", "Tolerance on cond(A) (1e-6)", {"ctol"}, 1.e-6f)
@@ -71,7 +71,7 @@ auto LSMRArgs::Get() -> rl::LSMR::Opts
 }
 
 PDHGArgs::PDHGArgs(args::Subparser &parser)
-  : its(parser, "N", "Max iterations (4)", {'i', "max-its"}, 16)
+  : its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 16)
   , resTol(parser, "A", "Tolerance on residual (1e-6)", {"res-tol", 'r'}, 1.e-6f)
   , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
   , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)
