@@ -59,10 +59,7 @@ void Conjugate::apply(float const α, CMap x, Map z) const
 
 void Conjugate::conj(float const α, CMap x, Map z) const
 {
-  Vector x1 = x / α;
-  CMap   x1m(x1.data(), x1.size());
-  p->conj(1.f / α, x1m, z);
-  z.device(Threads::CoreDevice()) = x - α * z;
+z.device(Threads::CoreDevice()) = x - α * p->conj(1.f / α, x / α);
 }
 
 } // namespace rl::Proxs

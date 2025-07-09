@@ -67,9 +67,8 @@ TEST_CASE("L2Prox", "[prox]")
   x = RandN(sz, 10.f);
   z.setZero();
   z = prox.conj(0.1f, x);
-  float const t = λ * 0.1f;
-  INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x.array() * t / x.norm()).transpose() << "\n");
-  CHECK((z.array() - (x.array() * t / x.norm())).matrix().norm() == Approx(0.f).margin(1.e-6f));
+  INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x.array() * λ / x.norm()).transpose() << "\n");
+  CHECK((z.array() - (x.array() * λ / x.norm())).matrix().norm() == Approx(0.f).margin(1.e-6f));
 }
 
 TEST_CASE("ConjL1", "[prox]")
@@ -100,7 +99,7 @@ TEST_CASE("ConjL2", "[prox]")
   Index const sz = 6;
   float const λ = 0.25f;
   float const α = 0.5f;
-auto        l2 = rl::Proxs::L2<1, 1>::Make(λ, Sz1{sz}, Sz1{0});
+  auto        l2 = rl::Proxs::L2<1, 1>::Make(λ, Sz1{sz}, Sz1{0});
   auto        l2c = rl::Proxs::Conjugate::Make(l2);
 
   Eigen::VectorXcf x = RandN(sz, 1.f);
@@ -114,6 +113,29 @@ auto        l2 = rl::Proxs::L2<1, 1>::Make(λ, Sz1{sz}, Sz1{0});
 
   Eigen::VectorXcf zc = l2->conj(α, x);
   Eigen::VectorXcf ca = l2c->apply(α, x);
+  INFO("zc " << zc.transpose() << "\nca " << ca.transpose() << "\n");
+  CHECK((zc - ca).norm() == Approx(0.f).margin(1.e-6f));
+}
+
+TEST_CASE("ConjL2Resid", "[prox]")
+{
+  Index const            sz = 6;
+  Eigen::VectorXcf const x = RandN(sz, 1.f), b = RandN(sz, 1.f);
+  float const            α = 0.5f;
+  auto                   res = rl::Proxs::L2Residual::Make(rl::Proxs::Prox::CMap(b.data(), b.size()));
+  auto                   rc = rl::Proxs::Conjugate::Make(res);
+
+  INFO("b  " << b.transpose() << "\n");
+  INFO("x  " << x.transpose() << "\n");
+
+  Eigen::VectorXcf za = res->apply(α, x);
+  Eigen::VectorXcf cc = rc->conj(α, x);
+
+  INFO("za " << za.transpose() << "\ncc " << cc.transpose() << "\n");
+  CHECK((za - cc).norm() == Approx(0.f).margin(1.e-6f));
+
+  Eigen::VectorXcf zc = res->conj(α, x);
+  Eigen::VectorXcf ca = rc->apply(α, x);
   INFO("zc " << zc.transpose() << "\nca " << ca.transpose() << "\n");
   CHECK((zc - ca).norm() == Approx(0.f).margin(1.e-6f));
 }

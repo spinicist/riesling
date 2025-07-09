@@ -13,7 +13,7 @@ L1::L1(float const λ_, Index const sz_)
   : Prox(sz_)
   , λ{λ_}
 {
-  Log::Print("Prox", "L1 / Soft Threshold λ {}", λ);
+  Log::Print("L1Prox", "λ {}", λ);
 }
 
 void L1::apply(float const α, CMap x, Map z) const
@@ -43,7 +43,7 @@ void L1::conj(float const, CMap x, Map z) const
       }
     },
     x.size());
-  Log::Debug("L1Conj", "λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
+  Log::Debug("L1Prox", "Conjugate λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr
@@ -57,7 +57,7 @@ template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> cons
   , shape{s}
   , normDims(d)
 {
-  Log::Print("Prox", "L2 Prox λ {} shape {} norm dims {}", λ_, shape, normDims);
+  Log::Print("L2Prox", "λ {} shape {} norm dims {}", λ_, shape, normDims);
   Sz<O> all;
   std::iota(all.begin(), all.end(), 0);
   std::set_difference(all.cbegin(), all.cend(), normDims.cbegin(), normDims.cend(), otherDims.begin());
@@ -91,12 +91,10 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap x, Map z) cons
       }
     },
     nBlocks);
-  if (Log::IsDebugging()) {
-    Log::Print("Prox", "|x|2 Primal α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
-  }
+  if (Log::IsDebugging()) { Log::Print("L2Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z)); }
 }
 
-template <int O, int D> void L2<O, D>::conj(float const α, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::conj(float const, CMap x, Map z) const
 {
   Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
   Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
@@ -111,23 +109,20 @@ template <int O, int D> void L2<O, D>::conj(float const α, CMap x, Map z) const
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
 
-  float const t = α * λ; // * std::sqrt(nElems);
   Threads::ChunkFor(
     [&](Index lo, Index hi) {
       for (Index ib = lo; ib < hi; ib++) {
         auto       xblk = xm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
         auto const norm = Norm<false>(xblk);
-        if (norm > t) {
-          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk * xblk.constant(t / norm);
+        if (norm > λ) {
+          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk * xblk.constant(λ / norm);
         } else {
           zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk;
         }
       }
     },
     nBlocks);
-  if (Log::IsDebugging()) {
-    Log::Print("Prox", "|x|2 Dual α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
-  }
+  if (Log::IsDebugging()) { Log::Print("L2Prox", "λ {} |x| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(z)); }
 }
 
 template struct L2<1, 1>;
@@ -135,5 +130,29 @@ template struct L2<5, 1>;
 template struct L2<5, 2>;
 template struct L2<6, 1>;
 template struct L2<6, 2>;
+
+auto L2Residual::Make(CMap b) -> Prox::Ptr { return std::make_shared<L2Residual>(b); }
+
+L2Residual::L2Residual(CMap b_)
+  : Prox(b_.size())
+  , b{b_}
+{
+  Log::Print("L2Res", "|b| {}", ParallelNorm(b));
+}
+
+void L2Residual::apply(float const α, CMap x, Map z) const
+{
+  float const nx = ParallelNorm(x); // Cursed users might do this in place and overwrite x
+  /* Worked this out by following §2.2 of Parykh and Boyd */
+  z.device(Threads::CoreDevice()) = (x - b) / (1.f + α) + b;
+  Log::Debug("L2Res", "α {} |x| {} |z| {}", α, nx, ParallelNorm(z));
+}
+
+void L2Residual::conj(float const α, CMap x, Map z) const
+{
+  float const nx = ParallelNorm(x); // Cursed users might do this in place and overwrite x
+  z.device(Threads::CoreDevice()) = (x - α * b) / (1.f + α);
+  Log::Debug("L2Res", "α {} |x| {} |z| {}", α, nx, ParallelNorm(z));
+}
 
 } // namespace rl::Proxs
