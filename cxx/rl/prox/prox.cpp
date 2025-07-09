@@ -1,6 +1,7 @@
 #include "prox.hpp"
 
 #include "../log/log.hpp"
+#include "../sys/threads.hpp"
 
 namespace rl::Proxs {
 
@@ -41,6 +42,27 @@ auto Prox::conj(float const α, Vector const &x) const -> Vector
   Vector z(sz);
   this->conj(α, x, z);
   return z;
+}
+
+Conjugate::Conjugate(Prox::Ptr pp)
+  : Prox{pp->sz}
+  , p{pp}
+{
+}
+
+auto Conjugate::Make(Prox::Ptr p) -> Prox::Ptr { return std::make_shared<Conjugate>(p); }
+
+void Conjugate::apply(float const α, CMap x, Map z) const
+{
+  z.device(Threads::CoreDevice()) = x - α * p->apply(1.f / α, x / α);
+}
+
+void Conjugate::conj(float const α, CMap x, Map z) const
+{
+  Vector x1 = x / α;
+  CMap   x1m(x1.data(), x1.size());
+  p->conj(1.f / α, x1m, z);
+  z.device(Threads::CoreDevice()) = x - α * z;
 }
 
 } // namespace rl::Proxs

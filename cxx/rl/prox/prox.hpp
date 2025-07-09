@@ -34,7 +34,20 @@ struct Prox
   using CMap = typename Prox::CMap;                                                                                            \
   using Op = typename Prox::Op;                                                                                                \
   using Ptr = Prox::Ptr;                                                                                                       \
-  using Prox::apply;                                                                                                          \
+  using Prox::apply;                                                                                                           \
   using Prox::conj;
+
+struct Conjugate final : Prox
+{
+  PROX_INHERIT
+  static auto Make(Prox::Ptr p) -> Prox::Ptr;
+  Conjugate(Prox::Ptr p);
+
+  void apply(float const α, CMap x, Map z) const;
+  void conj(float const α, CMap x, Map z) const;
+
+private:
+  Prox::Ptr p;
+};
 
 } // namespace rl::Proxs

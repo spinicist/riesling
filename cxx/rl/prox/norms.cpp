@@ -28,12 +28,13 @@ void L1::apply(float const α, CMap x, Map z) const
       }
     },
     x.size());
-  Log::Debug("Prox", "|x|1 Primal d α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z));
+  Log::Debug("L1Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z));
 }
 
-void L1::conj(float const α, CMap x, Map z) const
+void L1::conj(float const, CMap x, Map z) const
 {
-  float t = α * λ;
+  /* Amazingly, this doesn't depend on α. Maths is based. */
+  float t = λ;
   Threads::ChunkFor(
     [t, &x, &z](Index lo, Index hi) {
       for (Index ii = lo; ii < hi; ii++) {
@@ -42,7 +43,7 @@ void L1::conj(float const α, CMap x, Map z) const
       }
     },
     x.size());
-  Log::Debug("Prox", "|x|1 Dual α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z));
+  Log::Debug("L1Conj", "λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr
