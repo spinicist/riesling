@@ -71,7 +71,8 @@ auto LSMRArgs::Get() -> rl::LSMR::Opts
 }
 
 PDHGArgs::PDHGArgs(args::Subparser &parser)
-  : its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 16)
+  : lad(parser, "L", "Least Absolute Deviations, PDHG only", {"lad", 'l'})
+  , its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 16)
   , resTol(parser, "A", "Tolerance on residual (1e-6)", {"res-tol", 'r'}, 1.e-6f)
   , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
   , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)
@@ -81,7 +82,8 @@ PDHGArgs::PDHGArgs(args::Subparser &parser)
 
 auto PDHGArgs::Get() -> rl::PDHG::Opts
 {
-  return rl::PDHG::Opts{.imax = its.Get(), .resTol = resTol.Get(), .deltaTol = deltaTol.Get(), .λA = λA.Get(), .λG = λG.Get()};
+  return rl::PDHG::Opts{
+    .lad = lad, .imax = its.Get(), .resTol = resTol.Get(), .deltaTol = deltaTol.Get(), .λA = λA.Get(), .λG = λG.Get()};
 }
 
 ADMMArgs::ADMMArgs(args::Subparser &parser)

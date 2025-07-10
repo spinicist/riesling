@@ -12,6 +12,7 @@ namespace rl {
 PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts opts, Debug debug_)
   : A{A_}
   , P{P_}
+  , lad{opts.lad}
   , imax{opts.imax}
   , resTol{opts.resTol}
   , deltaTol{opts.deltaTol}
@@ -33,9 +34,12 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
     proxʹ = std::make_shared<Proxs::Stack>(ps);
   }
 
-  σ = 1.f / opts.λA;
-  τ = 1.f / opts.λG;
-  Log::Print("PDHG", "σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", σ, τ, resTol, deltaTol);
+  auto const L = std::sqrt(opts.λA*opts.λA + opts.λG*opts.λG);
+  σ = 1.f / L;
+  τ = 1.f / L;
+  // σ = 1.f / opts.λA;
+  // τ = 1.f / opts.λG;
+  Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", lad ? "LAD " : "", σ, τ, resTol, deltaTol);
 }
 
 auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
@@ -63,20 +67,33 @@ auto PDHG::run(CMap y) const -> Vector
   for (Index ii = 0; ii < imax; ii++) {
     xold = x;
     // unext = (I + σP) \ (u + σP(Ax̅ - y))
-    utemp.device(Threads::CoreDevice()) = A->forward(x̅) - y;
+    A->forward(x̅, utemp);
+    utemp.device(Threads::CoreDevice()) = utemp - y;
     float const r = ParallelNorm(utemp);
     if (r / r0 < resTol) {
       Log::Print("PDHG", "Residual tolerance reached");
       break;
     }
 
-    if (P) {
-      P->iforward(utemp, u, σ);
-      P->inverse(u, u, σ, 1.f);
+    /* This next step is the conjugate of either the L1 (for LAD) or L2-squared (for LSQ)
+     * proximal operator written out in full for efficiency. Doing the preconditioning in
+     * a generalized way was fast becoming an utter pain
+     */
+    if (lad) {
+      if (P) {
+        P->iforward(utemp, u, σ);
+      } else {
+        u.device(Threads::CoreDevice()) += σ * utemp;
+      }
+      u.device(Threads::CoreDevice()) = u.array() / u.array().abs().max(1.f).cast<Cx>();
     } else {
-      u.device(Threads::CoreDevice()) = (u + σ * utemp) / (1.f + σ);
+      if (P) {
+        P->iforward(utemp, u, σ);
+        P->inverse(u, u, σ, 1.f);
+      } else {
+        u.device(Threads::CoreDevice()) = (u + σ * utemp) / (1.f + σ);
+      }
     }
-
     // vnext = prox(v + σGx̅);
     G->iforward(x̅, v, σ);
     proxʹ->conj(1.f, v, v);
@@ -84,7 +101,7 @@ auto PDHG::run(CMap y) const -> Vector
     A->adjoint(u, x); // Re-use variables to save memory
     G->adjoint(v, x̅); // Re-use variables to save memory
     x.device(Threads::CoreDevice()) = xold - τ * (x + x̅);
-    x̅.device(Threads::CoreDevice()) = x * 2.f - xold;
+    x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
     if (debug) { debug(ii, x, x̅, u); }
     xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
     float const nx = ParallelNorm(x);

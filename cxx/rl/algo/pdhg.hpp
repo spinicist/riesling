@@ -17,6 +17,7 @@ struct PDHG
 
   struct Opts
   {
+    bool  lad;
     Index imax;
     float resTol, deltaTol;
     float λA, λG;
@@ -27,12 +28,13 @@ struct PDHG
   auto run(Vector const &b) const -> Vector;
   auto run(CMap b) const -> Vector;
 
-  Op::Ptr              A, P, G;
+  Op::Ptr          A, P, G;
   Proxs::Prox::Ptr proxʹ;
-  Index                imax;
-  float                resTol, deltaTol;
-  float                σ, τ, θ;
-  Debug                debug;
+  bool             lad;
+  Index            imax;
+  float            resTol, deltaTol;
+  float            σ, τ, θ;
+  Debug            debug;
 };
 
 } // namespace rl

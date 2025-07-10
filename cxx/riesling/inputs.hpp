@@ -65,6 +65,7 @@ struct LSMRArgs
 
 struct PDHGArgs
 {
+  args::Flag             lad;
   args::ValueFlag<Index> its;
   args::ValueFlag<float> resTol, deltaTol;
   args::ValueFlag<float> λA, λG;
