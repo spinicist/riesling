@@ -57,9 +57,17 @@ void Conjugate::apply(float const α, CMap x, Map z) const
   z.device(Threads::CoreDevice()) = x - α * p->apply(1.f / α, x / α);
 }
 
-void Conjugate::conj(float const α, CMap x, Map z) const
+void Conjugate::conj(float const α, CMap x, Map z) const { z.device(Threads::CoreDevice()) = x - α * p->conj(1.f / α, x / α); }
+
+Null::Null(Index const sz)
+  : Prox{sz}
 {
-z.device(Threads::CoreDevice()) = x - α * p->conj(1.f / α, x / α);
 }
+
+auto Null::Make(Index const sz) -> Prox::Ptr { return std::make_shared<Null>(sz); }
+
+void Null::apply(float const α, CMap x, Map z) const { z.device(Threads::CoreDevice()) = x; }
+
+void Null::conj(float const α, CMap x, Map z) const { z.setZero(); }
 
 } // namespace rl::Proxs

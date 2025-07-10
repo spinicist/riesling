@@ -50,4 +50,15 @@ private:
   Prox::Ptr p;
 };
 
+/* The Proximal Operator for f(x) = 0, which comes up in PDHG */
+struct Null final : Prox
+{
+  PROX_INHERIT
+  static auto Make(Index const sz) -> Prox::Ptr;
+  Null(Index const sz);
+
+  void apply(float const α, CMap x, Map z) const;
+  void conj(float const α, CMap x, Map z) const;
+};
+
 } // namespace rl::Proxs
