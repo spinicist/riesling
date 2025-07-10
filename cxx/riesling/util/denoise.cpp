@@ -6,7 +6,6 @@
 #include "rl/log/log.hpp"
 #include "rl/op/top-id.hpp"
 #include "rl/scaling.hpp"
-#include "rl/prox/norms.hpp"
 
 using namespace rl;
 
@@ -49,9 +48,8 @@ void main_denoise(args::Subparser &parser)
         }
       }
     };
-    auto proxF = Proxs::L2Residual::Make(CollapseToConstVector(in), nullptr);
-    PDHG opt{B, nullptr, proxF, regs, pdhgArgs.Get(), debug};
-    xm = ext_x ? ext_x->forward(opt.run()) : opt.run();
+    PDHG opt{B, nullptr, regs, pdhgArgs.Get(), debug};
+    xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
   }
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
   WriteOutput<5>(cmd, oname.Get(), x, HD5::Dims::Images, input.readStruct<Info>(HD5::Keys::Info));

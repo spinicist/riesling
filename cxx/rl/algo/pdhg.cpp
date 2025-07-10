@@ -1,7 +1,6 @@
 #include "pdhg.hpp"
 
 #include "../log/log.hpp"
-#include "../prox/norms.hpp"
 #include "../prox/stack.hpp"
 #include "../tensors.hpp"
 #include "common.hpp"
@@ -10,56 +9,87 @@
 
 namespace rl {
 
-PDHG::PDHG(Op::Ptr A, Op::Ptr P_, Proxs::Prox::Ptr pF, std::vector<Regularizer> const &regs, Opts opts, Debug debug_)
-  : imax{opts.imax}
+PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts opts, Debug debug_)
+  : A{A_}
+  , P{P_}
+  , imax{opts.imax}
   , resTol{opts.resTol}
   , deltaTol{opts.deltaTol}
   , θ{1.f}
   , debug{debug_}
 {
-  Index const            nR = regs.size();
-  std::vector<Op::Ptr>   As(1 + nR);
-  std::vector<Prox::Ptr> proxFs(1 + nR);
-  As[0] = A;
-  proxFs[0] = pF;
-  for (Index ir = 0; ir < nR; ir++) {
-    As[1 + ir] = regs[ir].T ? regs[ir].T : Ops::Identity::Make(A->cols());
-    proxFs[1 + ir] = regs[ir].P;
+  Index const nR = regs.size();
+  if (nR == 1) {
+    proxʹ = regs.front().P;
+    G = regs.front().T ? regs.front().T : Ops::Identity::Make(A->cols());
+  } else {
+    std::vector<Op::Ptr>   Gs(nR);
+    std::vector<Prox::Ptr> ps(nR);
+    for (Index ir = 0; ir < nR; ir++) {
+      Gs[ir] = regs[ir].T ? regs[ir].T : Ops::Identity::Make(A->cols());
+      ps[ir] = regs[ir].P;
+    }
+    G = std::make_shared<Ops::VStack>(Gs);
+    proxʹ = std::make_shared<Proxs::Stack>(ps);
   }
-  K = Ops::VStack::Make(As);
-  proxF = Proxs::Stack::Make(proxFs);
 
   σ = 1.f / opts.λA;
   τ = 1.f / opts.λG;
-  Log::Print("PDHG", "K {} {} σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", K->rows(), K->cols(), σ, τ, resTol, deltaTol);
+  Log::Print("PDHG", "σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", σ, τ, resTol, deltaTol);
 }
 
-auto PDHG::run() const -> Vector
+auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
+
+/*  This follows the least-squares specific form of PDHG from Ong et al 2020
+ *  Note that the code in SigPy is different to this. It was generalised to other problems, not only least-squares
+ *  The specific trick to making the below work is realizing that the conjugate proximal operators are needed because
+ *  those updates are on the dual variables
+ */
+auto PDHG::run(CMap y) const -> Vector
 {
-  Vector x(K->cols()), x̅(K->cols()), xold(K->cols());
+  if (y.rows() != A->rows()) { throw(Log::Failure("PDHG", "y had {} rows, expected {}", y.rows(), A->rows())); }
+  Vector x(A->cols()), x̅(A->cols()), xold(A->cols());
   x.setZero();
   x̅.setZero();
   xold.setZero();
 
-  Vector y(K->rows()), ytemp(K->rows());
-  y.setZero();
-  ytemp.setZero();
+  Vector u(A->rows()), utemp(A->rows()), v(G->rows());
+  u.setZero();
+  utemp.setZero();
+  v.setZero();
 
-  // float const r0 = ParallelNorm(y);
+  float const r0 = ParallelNorm(y);
   Iterating::Starting();
   for (Index ii = 0; ii < imax; ii++) {
     xold = x;
-    // yn = prox_F*σ(y + σKx̅)
-    K->forward(x̅, ytemp);
-    // if (P)
-    ytemp.device(Threads::CoreDevice()) = y + σ * ytemp;
-    proxF->conj(σ, ytemp, y);
-    K->iadjoint(y, x, -τ);
-    x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
+    // unext = (I + σP) \ (u + σP(Ax̅ - y))
+    utemp.device(Threads::CoreDevice()) = A->forward(x̅) - y;
+    float const r = ParallelNorm(utemp);
+    if (r / r0 < resTol) {
+      Log::Print("PDHG", "Residual tolerance reached");
+      break;
+    }
+
+    if (P) {
+      P->iforward(utemp, u, σ);
+      P->inverse(u, u, σ, 1.f);
+    } else {
+      u.device(Threads::CoreDevice()) = (u + σ * utemp) / (1.f + σ);
+    }
+
+    // vnext = prox(v + σGx̅);
+    G->iforward(x̅, v, σ);
+    proxʹ->conj(1.f, v, v);
+    // xnext = x - τ(A'u + G'v)
+    A->adjoint(u, x); // Re-use variables to save memory
+    G->adjoint(v, x̅); // Re-use variables to save memory
+    x.device(Threads::CoreDevice()) = xold - τ * (x + x̅);
+    x̅.device(Threads::CoreDevice()) = x * 2.f - xold;
+    if (debug) { debug(ii, x, x̅, u); }
     xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
     float const nx = ParallelNorm(x);
     float const ndx = ParallelNorm(xold);
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E}", ii, nx, ndx / nx);
+    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E} |r|/|r0| {:4.3E}", ii, nx, ndx / nx, r / r0);
     if (ndx / nx < deltaTol) {
       Log::Print("PDHG", "Δx tolerance reached");
       break;

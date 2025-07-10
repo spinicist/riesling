@@ -10,7 +10,6 @@
 #include "rl/precon.hpp"
 #include "rl/scaling.hpp"
 #include "rl/sense/sense.hpp"
-#include "rl/prox/norms.hpp"
 
 using namespace rl;
 
@@ -64,9 +63,8 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
         Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
       }
     };
-    auto proxF = Proxs::L2Residual::Make(CollapseToConstVector(noncart), R.M);
-    PDHG opt{A, R.M, proxF, reg, pdhgArgs.Get(), debug};
-    x = opt.run();
+    PDHG opt{A, R.M, reg, pdhgArgs.Get(), debug};
+    x = opt.run(CollapseToConstVector(noncart));
   } else {
     ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
       if (ii % di == 0) { Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images); }
@@ -96,7 +94,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 
   TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(shape)), R.A->ishape);
-  auto         out = oc.adjoint(xm);
+  auto             out = oc.adjoint(xm);
   if (basis) { basis->applyR(out); }
   WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   Log::Print(cmd, "Finished");
