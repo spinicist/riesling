@@ -7,6 +7,7 @@
 
 namespace rl {
 
+/* Follow Sidky 2011 */
 struct PDHG
 {
   using Op = Ops::Op;
@@ -22,17 +23,16 @@ struct PDHG
     float λA, λG;
   };
 
-  PDHG(Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr);
+  PDHG(Op::Ptr A, Op::Ptr P, Proxs::Prox::Ptr proxF, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr);
 
-  auto run(Vector const &b) const -> Vector;
-  auto run(CMap b) const -> Vector;
+  auto run() const -> Vector;
 
-  Op::Ptr              A, P, G;
-  Proxs::Prox::Ptr proxʹ;
-  Index                imax;
-  float                resTol, deltaTol;
-  float                σ, τ, θ;
-  Debug                debug;
+  Op::Ptr          K, P;
+  Proxs::Prox::Ptr proxF;
+  Index            imax;
+  float            resTol, deltaTol;
+  float            σ, τ, θ;
+  Debug            debug;
 };
 
 } // namespace rl

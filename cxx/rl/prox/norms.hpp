@@ -33,13 +33,14 @@ private:
 struct L2Residual final : Prox
 {
   PROX_INHERIT
-  static auto Make(CMap b) -> Prox::Ptr;
-  L2Residual(CMap b);
+  static auto Make(CMap b, Op::Ptr P = nullptr) -> Prox::Ptr;
+  L2Residual(CMap b, Op::Ptr P = nullptr);
   void apply(float const α, CMap x, Map z) const;
   void conj(float const α, CMap x, Map z) const;
 
 private:
-  CMap const b;
+  CMap const    b;
+  Op::Ptr const P;
 };
 
 } // namespace rl::Proxs
