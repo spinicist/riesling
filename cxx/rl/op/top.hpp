@@ -35,20 +35,20 @@ template <int InRank_, int OutRank_ = InRank_> struct TOp : Ops::Op
   using Base::forward;
   using Base::inverse;
 
-  void forward(typename Base::CMap x, typename Base::Map y) const final;
-  void adjoint(typename Base::CMap y, typename Base::Map x) const final;
+  void forward(typename Base::CMap x, typename Base::Map y, float const s = 1.f) const final;
+  void adjoint(typename Base::CMap y, typename Base::Map x, float const s = 1.f) const final;
   void inverse(typename Base::CMap y, typename Base::Map x, float const s = 1.f, float const b = 0.f) const final;
 
   void iforward(typename Base::CMap x, typename Base::Map y, float const s = 1.f) const final;
   void iadjoint(typename Base::CMap y, typename Base::Map x, float const s = 1.f) const final;
 
-  virtual auto forward(InTensor const &x) const -> OutTensor;
-  virtual auto adjoint(OutTensor const &y) const -> InTensor;
-  virtual void forward(InTensor const &x, OutTensor &y) const;
-  virtual void adjoint(OutTensor const &y, InTensor &x) const;
+  virtual auto forward(InTensor const &x, float const s = 1.f) const -> OutTensor;
+  virtual auto adjoint(OutTensor const &y, float const s = 1.f) const -> InTensor;
+  virtual void forward(InTensor const &x, OutTensor &y, float const s = 1.f) const;
+  virtual void adjoint(OutTensor const &y, InTensor &x, float const s = 1.f) const;
 
-  virtual void forward(InCMap x, OutMap y) const = 0;
-  virtual void adjoint(OutCMap y, InMap x) const = 0;
+  virtual void forward(InCMap x, OutMap y, float const s = 1.f) const = 0;
+  virtual void adjoint(OutCMap y, InMap x, float const s = 1.f) const = 0;
   virtual void inverse(OutCMap y, InMap x, float const s = 1.f, float const b = 0.f) const;
   virtual void iforward(InCMap x, OutMap y, float const s = 1.f) const;
   virtual void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
@@ -81,8 +81,8 @@ protected:
 
 #define TOP_DECLARE(SELF)                                                                                                      \
   using Ptr = std::shared_ptr<SELF>;                                                                                           \
-  void forward(InCMap x, OutMap y) const;                                                                                      \
-  void adjoint(OutCMap y, InMap x) const;                                                                                      \
+  void forward(InCMap x, OutMap y, float const s = 1.f) const;                                                                 \
+  void adjoint(OutCMap y, InMap x, float const s = 1.f) const;                                                                 \
   using Parent::forward;                                                                                                       \
   using Parent::adjoint;
 

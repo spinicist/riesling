@@ -23,17 +23,17 @@ Pad<Rank>::Pad(InDims const is, OutDims const os)
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int Rank> void Pad<Rank>::forward(InCMap x, OutMap y) const
+template <int Rank> void Pad<Rank>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::TensorDevice()) = x.pad(paddings_);
+  y.device(Threads::TensorDevice()) = x.pad(paddings_) * y.constant(s);
   this->finishForward(y, time, false);
 }
 
-template <int Rank> void Pad<Rank>::adjoint(OutCMap y, InMap x) const
+template <int Rank> void Pad<Rank>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y.slice(left_, ishape);
+  x.device(Threads::TensorDevice()) = y.slice(left_, ishape) * x.constant(s);
   this->finishAdjoint(x, time, false);
 }
 

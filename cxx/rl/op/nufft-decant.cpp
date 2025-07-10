@@ -32,25 +32,25 @@ auto NUFFTDecant<ND, KF>::Make(GridOpts<ND> const    &opts,
   return std::make_shared<NUFFTDecant<ND>>(opts, traj, skern, basis);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::forward(InCMap x, OutMap y) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   InMap      wsm(workspace.data(), gridder.ishape);
   InCMap     wscm(workspace.data(), gridder.ishape);
-  apo.forward(x, wsm);
+  apo.forward(x, wsm, s);
   FFT::Forward(wsm, fftDims);
   gridder.forward(wscm, y);
   this->finishForward(y, time, false);
 }
 
-template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap y, InMap x) const
+template <int ND, typename KF> void NUFFTDecant<ND, KF>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   InMap      wsm(workspace.data(), gridder.ishape);
   InCMap     wscm(workspace.data(), gridder.ishape);
   gridder.adjoint(y, wsm);
   FFT::Adjoint(wsm, fftDims);
-  apo.adjoint(wscm, x);
+  apo.adjoint(wscm, x, s);
   this->finishAdjoint(x, time, false);
 }
 

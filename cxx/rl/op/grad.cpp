@@ -95,16 +95,16 @@ template <int ND, int NG> auto Grad<ND, NG>::Make(InDims const ish, Sz<NG> const
   return std::make_shared<Grad>(ish, d, o);
 }
 
-template <int ND, int NG> void Grad<ND, NG>::forward(InCMap x, OutMap y) const
+template <int ND, int NG> void Grad<ND, NG>::forward(InCMap x, OutMap y, float const s) const
 {
   y.setZero();
-  iforward(x, y);
+  iforward(x, y, s);
 }
 
-template <int ND, int NG> void Grad<ND, NG>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NG> void Grad<ND, NG>::adjoint(OutCMap y, InMap x, float const s) const
 {
   x.setZero();
-  iadjoint(y, x);
+  iadjoint(y, x, s);
 }
 
 template <int ND, int NG> void Grad<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
@@ -153,16 +153,16 @@ template <int ND, int NG> auto Div<ND, NG>::Make(OutDims const sh, Sz<NG> const 
   return std::make_shared<Div>(sh, d, o);
 }
 
-template <int ND, int NG> void Div<ND, NG>::forward(InCMap x, OutMap y) const
+template <int ND, int NG> void Div<ND, NG>::forward(InCMap x, OutMap y, float const s) const
 {
   y.setZero();
-  iforward(x, y);
+  iforward(x, y, s);
 }
 
-template <int ND, int NG> void Div<ND, NG>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NG> void Div<ND, NG>::adjoint(OutCMap y, InMap x, float const s) const
 {
   x.setZero();
-  iadjoint(y, x);
+  iadjoint(y, x, s);
 }
 
 template <int ND, int NG> void Div<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
@@ -214,10 +214,10 @@ template <int ND, int NG> auto GradVec<ND, NG>::Make(InDims const ish, Sz<NG> co
   return std::make_shared<GradVec>(ish, d, o);
 }
 
-template <int ND, int NG> void GradVec<ND, NG>::forward(InCMap x, OutMap y) const
+template <int ND, int NG> void GradVec<ND, NG>::forward(InCMap x, OutMap y, float const s) const
 {
   y.setZero();
-  iforward(x, y);
+  iforward(x, y, s);
 }
 
 template <int ND, int NG> void GradVec<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
@@ -261,10 +261,10 @@ template <int ND, int NG> void GradVec<ND, NG>::iforward(InCMap x, OutMap y, flo
   this->finishForward(y, time, false);
 }
 
-template <int ND, int NG> void GradVec<ND, NG>::adjoint(OutCMap y, InMap x) const
+template <int ND, int NG> void GradVec<ND, NG>::adjoint(OutCMap y, InMap x, float const s) const
 {
   x.setZero();
-  iadjoint(y, x);
+  iadjoint(y, x, s);
 }
 
 template <int ND, int NG> void GradVec<ND, NG>::iadjoint(OutCMap y, InMap x, float const s) const

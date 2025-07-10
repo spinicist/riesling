@@ -22,31 +22,31 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<Op::InRank + 1, O
   {
   }
 
-  void forward(InCMap x, OutMap y) const
+  void forward(InCMap x, OutMap y, float const s = 1.f) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
     auto const time = this->startForward(x, y, false);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Debug("Op", "Loop {}/{}", ii, N_);
-      y.template chip<OD>(ii) = op_->forward(x.template chip<ID>(ii));
+      y.template chip<OD>(ii) = op_->forward(x.template chip<ID>(ii), s);
     }
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap y, InMap x) const
+  void adjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
     auto const time = this->startAdjoint(y, x, false);
     for (Index ii = 0; ii < N_; ii++) {
       Log::Debug("Op", "Loop {}/{}", ii, N_);
-      x.template chip<ID>(ii) = op_->adjoint(y.template chip<OD>(ii));
+      x.template chip<ID>(ii) = op_->adjoint(y.template chip<OD>(ii), s);
     }
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap x, OutMap y, float const s) const
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -54,12 +54,12 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<Op::InRank + 1, O
     for (Index ii = 0; ii < N_; ii++) {
       Log::Debug("Op", "Loop {}/{}", ii, N_);
       y.template chip<OD>(ii).device(Threads::TensorDevice()) +=
-        op_->forward(x.template chip<ID>(ii)) * y.template chip<OD>(ii).constant(s);
+        op_->forward(x.template chip<ID>(ii), s);
     }
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap y, InMap x, float const s) const
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
     assert(x.dimensions() == this->ishape);
     assert(y.dimensions() == this->oshape);
@@ -67,7 +67,7 @@ template <int ID, int OD, typename Op> struct Loop final : TOp<Op::InRank + 1, O
     for (Index ii = 0; ii < N_; ii++) {
       Log::Debug("Op", "Loop {}/{}", ii, N_);
       x.template chip<ID>(ii).device(Threads::TensorDevice()) +=
-        op_->adjoint(y.template chip<OD>(ii)) * x.template chip<ID>(ii).constant(s);
+        op_->adjoint(y.template chip<OD>(ii), s);
     }
     this->finishAdjoint(x, time, true);
   }

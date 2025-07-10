@@ -20,13 +20,13 @@ struct Op
   virtual auto rows() const -> Index = 0;
   virtual auto cols() const -> Index = 0;
 
-  virtual void forward(CMap x, Map y) const = 0;
-  virtual void adjoint(CMap y, Map x) const = 0;
+  virtual void forward(CMap x, Map y, float const s = 1.f) const = 0;
+  virtual void adjoint(CMap y, Map x, float const s = 1.f) const = 0;
   virtual void inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
-  virtual auto forward(Vector const &x) const -> Vector;
-  virtual auto adjoint(Vector const &y) const -> Vector;
-  void         forward(Vector const &x, Vector &y) const;
-  void         adjoint(Vector const &y, Vector &x) const;
+  virtual auto forward(Vector const &x, float const s = 1.f) const -> Vector;
+  virtual auto adjoint(Vector const &y, float const s = 1.f) const -> Vector;
+  void         forward(Vector const &x, Vector &y, float const s = 1.f) const;
+  void         adjoint(Vector const &y, Vector &x, float const s = 1.f) const;
   void         inverse(Vector const &y, Vector &x, float const s = 1.f, float const b = 0.f) const;
 
   /* These versions scale and add in-place to the output */

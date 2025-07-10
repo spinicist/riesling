@@ -19,8 +19,8 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Rank, Rank>
   using Parent::adjoint;
   using Parent::forward;
 
-  void forward(InCMap x, OutMap y) const;
-  void adjoint(OutCMap y, InMap x) const;
+  void forward(InCMap x, OutMap y, float const s) const;
+  void adjoint(OutCMap y, InMap x, float const s) const;
   void iforward(InCMap x, OutMap y, float const s) const;
   void iadjoint(OutCMap y, InMap x, float const s) const;
 

@@ -29,10 +29,10 @@ template <typename Op1, typename Op2> struct Compose final : TOp<Op1::InRank, Op
   using Parent::forward;
   using Ptr = std::shared_ptr<Compose>;
 
-  auto forward(InTensor const &x) const -> OutTensor { return op2_->forward(op1_->forward(x)); }
-  auto adjoint(OutTensor const &y) const -> InTensor { return op1_->adjoint(op2_->adjoint(y)); }
+  auto forward(InTensor const &x, float const s = 1.f) const -> OutTensor { return op2_->forward(op1_->forward(x, s)); }
+  auto adjoint(OutTensor const &y, float const s = 1.f) const -> InTensor { return op1_->adjoint(op2_->adjoint(y, s)); }
 
-  void forward(InCMap x, OutMap y) const
+  void forward(InCMap x, OutMap y, float const s = 1.f) const
   {
     assert(x.dimensions() == op1_->ishape);
     assert(y.dimensions() == op2_->oshape);
@@ -41,11 +41,11 @@ template <typename Op1, typename Op2> struct Compose final : TOp<Op1::InRank, Op
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
     auto const              time = this->startForward(x, y, false);
     op1_->forward(x, tm);
-    op2_->forward(tcm, y);
+    op2_->forward(tcm, y, s);
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap y, InMap x) const
+  void adjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
     assert(x.dimensions() == op1_->ishape);
     assert(y.dimensions() == op2_->oshape);
@@ -54,11 +54,11 @@ template <typename Op1, typename Op2> struct Compose final : TOp<Op1::InRank, Op
     typename Op1::OutCMap   tcm(temp.data(), op1_->oshape);
     auto const              time = this->startAdjoint(y, x, false);
     op2_->adjoint(y, tm);
-    op1_->adjoint(tcm, x);
+    op1_->adjoint(tcm, x, s);
     this->finishAdjoint(x, time, false);
   }
 
-  void iforward(InCMap x, OutMap y, float const s) const
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const
   {
     assert(x.dimensions() == op1_->ishape);
     assert(y.dimensions() == op2_->oshape);
@@ -71,7 +71,7 @@ template <typename Op1, typename Op2> struct Compose final : TOp<Op1::InRank, Op
     this->finishForward(y, time, true);
   }
 
-  void iadjoint(OutCMap y, InMap x, float const s) const
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
     assert(x.dimensions() == op1_->ishape);
     assert(y.dimensions() == op2_->oshape);

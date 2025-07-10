@@ -42,28 +42,28 @@ template <int Rank, int FrontRank = 1, int BackRank = 0> struct TensorScale fina
     Log::Debug("TOp", "TensorScale weights {} reshape {} broadcast {}", scales.dimensions(), res, brd);
   }
 
-  void forward(InCMap x, OutMap y) const
+  void forward(InCMap x, OutMap y, float const s = 1.f) const
   {
     auto const time = this->startForward(x, y, false);
-    y.device(Threads::TensorDevice()) = x * scales.reshape(res).broadcast(brd);
+    y.device(Threads::TensorDevice()) = x * scales.reshape(res).broadcast(brd) * x.constant(s);
     this->finishForward(y, time, false);
   }
 
-  void iforward(InCMap x, OutMap y, float const s) const
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const
   {
     auto const time = this->startForward(x, y, true);
     y.device(Threads::TensorDevice()) += x * scales.reshape(res).broadcast(brd) * x.constant(s);
     this->finishForward(y, time, false);
   }
 
-  void adjoint(OutCMap y, InMap x) const
+  void adjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
     auto const time = this->startAdjoint(y, x, false);
-    x.device(Threads::TensorDevice()) = y * scales.reshape(res).broadcast(brd);
+    x.device(Threads::TensorDevice()) = y * scales.reshape(res).broadcast(brd) * y.constant(s);
     this->finishAdjoint(x, time, false);
   }
 
-  void iadjoint(OutCMap y, InMap x, float const s) const
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const
   {
     auto const time = this->startAdjoint(y, x, true);
     x.device(Threads::TensorDevice()) += y * scales.reshape(res).broadcast(brd) * y.constant(s);

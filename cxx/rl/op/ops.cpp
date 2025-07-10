@@ -17,17 +17,17 @@ auto Identity::rows() const -> Index { return sz; }
 
 auto Identity::cols() const -> Index { return sz; }
 
-void Identity::forward(CMap x, Map y) const
+void Identity::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::CoreDevice()) = x;
+  y.device(Threads::CoreDevice()) = x * s;
   this->finishForward(y, time, false);
 }
 
-void Identity::adjoint(CMap y, Map x) const
+void Identity::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::CoreDevice()) = y;
+  x.device(Threads::CoreDevice()) = y * s;
   this->finishAdjoint(x, time, false);
 }
 
@@ -62,17 +62,17 @@ auto MatMul::rows() const -> Index { return mat.rows(); }
 
 auto MatMul::cols() const -> Index { return mat.cols(); }
 
-void MatMul::forward(CMap x, Map y) const
+void MatMul::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::CoreDevice()) = mat * x;
+  y.device(Threads::CoreDevice()) = mat * x * s;
   this->finishForward(y, time, false);
 }
 
-void MatMul::adjoint(CMap y, Map x) const
+void MatMul::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::CoreDevice()) = mat.adjoint() * y;
+  x.device(Threads::CoreDevice()) = mat.adjoint() * y * s;
   this->finishAdjoint(x, time, false);
 }
 
@@ -102,17 +102,17 @@ auto DiagScale::Make(Index const sz, float const s) -> DiagScale::Ptr { return s
 auto DiagScale::rows() const -> Index { return sz; }
 auto DiagScale::cols() const -> Index { return sz; }
 
-void DiagScale::forward(CMap x, Map y) const
+void DiagScale::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::CoreDevice()) = x * scale;
+  y.device(Threads::CoreDevice()) = x * scale * s;
   this->finishForward(y, time, false);
 }
 
-void DiagScale::adjoint(CMap y, Map x) const
+void DiagScale::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::CoreDevice()) = y * scale;
+  x.device(Threads::CoreDevice()) = y * scale * s;
   this->finishAdjoint(x, time, false);
 }
 
@@ -149,19 +149,19 @@ DiagRep::DiagRep(Vector const &d_, Index const repI, Index const repO)
 auto DiagRep::rows() const -> Index { return d.rows() * rI * rO; }
 auto DiagRep::cols() const -> Index { return d.rows() * rI * rO; }
 
-void DiagRep::forward(CMap x, Map y) const
+void DiagRep::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   auto const rep = d.array().transpose().replicate(rI, rO).reshaped();
-  y.array().device(Threads::CoreDevice()) = x.array() * rep;
+  y.array().device(Threads::CoreDevice()) = x.array() * rep * s;
   this->finishForward(y, time, false);
 }
 
-void DiagRep::adjoint(CMap y, Map x) const
+void DiagRep::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   auto const rep = d.array().transpose().replicate(rI, rO).reshaped();
-  x.array().device(Threads::CoreDevice()) = y.array() * rep;
+  x.array().device(Threads::CoreDevice()) = y.array() * rep * s;
 
   this->finishAdjoint(x, time, false);
 }
@@ -204,23 +204,23 @@ Multiply::Multiply(std::shared_ptr<Op> AA, std::shared_ptr<Op> BB)
 auto Multiply::rows() const -> Index { return A->rows(); }
 auto Multiply::cols() const -> Index { return B->cols(); }
 
-void Multiply::forward(CMap x, Map y) const
+void Multiply::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   Map        tm(temp.data(), temp.size());
   CMap       tcm(temp.data(), temp.size());
-  B->forward(x, tm);
-  A->forward(tcm, y);
+  B->forward(x, tm, s);
+  A->forward(tcm, y, s);
   this->finishForward(y, time, false);
 }
 
-void Multiply::adjoint(CMap y, Map x) const
+void Multiply::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   Map        tm(temp.data(), temp.size());
   CMap       tcm(temp.data(), temp.size());
-  A->adjoint(y, tm);
-  B->adjoint(tcm, x);
+  A->adjoint(y, tm, s);
+  B->adjoint(tcm, x, s);
   this->finishAdjoint(x, time, false);
 }
 
@@ -281,19 +281,19 @@ auto VStack::rows() const -> Index
 
 auto VStack::cols() const -> Index { return ops.front()->cols(); }
 
-void VStack::forward(CMap x, Map y) const
+void VStack::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   Index      ir = 0;
   for (auto const &op : ops) {
     Map ym(y.data() + ir, op->rows());
     ir += op->rows();
-    op->forward(x, ym);
+    op->forward(x, ym, s);
   }
   this->finishForward(y, time, false);
 }
 
-void VStack::adjoint(CMap y, Map x) const
+void VStack::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   Map        xtm(x.data(), x.rows());
@@ -302,7 +302,7 @@ void VStack::adjoint(CMap y, Map x) const
   for (auto const &op : ops) {
     CMap ym(y.data() + ir, op->rows());
     ir += op->rows();
-    op->iadjoint(ym, xtm); // Need to sum, use the in-place version
+    op->iadjoint(ym, xtm, s); // Need to sum, use the in-place version
   }
   this->finishAdjoint(x, time, false);
 }
@@ -371,7 +371,7 @@ auto HStack::cols() const -> Index
   return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->cols(); });
 }
 
-void HStack::forward(CMap x, Map y) const
+void HStack::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   Index      ic = 0;
@@ -379,19 +379,19 @@ void HStack::forward(CMap x, Map y) const
   for (auto const &op : ops) {
     CMap xm(x.data() + ic, op->cols());
     ic += op->cols();
-    op->iforward(xm, y); // Need to sum, use in-place version
+    op->iforward(xm, y, s); // Need to sum, use in-place version
   }
   this->finishForward(y, time, false);
 }
 
-void HStack::adjoint(CMap y, Map x) const
+void HStack::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   Index      ic = 0;
   for (auto const &op : ops) {
     Map xm(x.data() + ic, op->cols());
     ic += op->cols();
-    op->adjoint(y, xm);
+    op->adjoint(y, xm, s);
   }
   this->finishAdjoint(x, time, false);
 }
@@ -442,14 +442,14 @@ auto DStack::cols() const -> Index
   return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->cols(); });
 }
 
-void DStack::forward(CMap x, Map y) const
+void DStack::forward(CMap x, Map y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   Index      ir = 0, ic = 0;
   for (auto const &op : ops) {
     CMap xm(x.data() + ic, op->cols());
     Map  ym(y.data() + ir, op->rows());
-    op->forward(xm, ym);
+    op->forward(xm, ym, s);
     ir += op->rows();
     ic += op->cols();
   }
@@ -458,14 +458,14 @@ void DStack::forward(CMap x, Map y) const
   this->finishForward(y, time, false);
 }
 
-void DStack::adjoint(CMap y, Map x) const
+void DStack::adjoint(CMap y, Map x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   Index      ir = 0, ic = 0;
   for (auto const &op : ops) {
     Map  xm(x.data() + ic, op->cols());
     CMap ym(y.data() + ir, op->rows());
-    op->adjoint(ym, xm);
+    op->adjoint(ym, xm, s);
     ir += op->rows();
     ic += op->cols();
   }
@@ -533,14 +533,14 @@ Extract::Extract(Index const cols, Index const st, Index const rows)
 auto Extract::rows() const -> Index { return r; }
 auto Extract::cols() const -> Index { return c; }
 
-void Extract::forward(CMap x, Map y) const
+void Extract::forward(CMap x, Map y, float const) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::CoreDevice()) = x.segment(start, r);
   this->finishForward(y, time, false);
 }
 
-void Extract::adjoint(CMap y, Map x) const
+void Extract::adjoint(CMap y, Map x, float const) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.segment(0, start).setZero();
@@ -581,21 +581,21 @@ Subtract::Subtract(std::shared_ptr<Op> aa, std::shared_ptr<Op> bb)
 auto Subtract::rows() const -> Index { return a->rows(); }
 auto Subtract::cols() const -> Index { return a->cols(); }
 
-void Subtract::forward(CMap x, Map y) const
+void Subtract::forward(CMap x, Map y, float const s) const
 { // Perform gymnastics to save memory
   auto const time = this->startForward(x, y, false);
-  b->forward(x, y);
+  b->forward(x, y, s);
   y.device(Threads::CoreDevice()) = -y;
-  a->iforward(x, y);
+  a->iforward(x, y, s);
   this->finishForward(y, time, false);
 }
 
-void Subtract::adjoint(CMap y, Map x) const
+void Subtract::adjoint(CMap y, Map x, float const s) const
 { // Perform gymnastics to save memory
   auto const time = this->startAdjoint(y, x, false);
-  b->adjoint(y, x);
+  b->adjoint(y, x, s);
   x.device(Threads::CoreDevice()) = -x;
-  a->iadjoint(y, x);
+  a->iadjoint(y, x, s);
   this->finishAdjoint(x, time, false);
 }
 

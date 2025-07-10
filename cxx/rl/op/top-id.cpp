@@ -7,17 +7,17 @@ template <int R> Identity<R>::Identity(Sz<R> dims)
 {
 }
 
-template <int R> void Identity<R>::forward(InCMap x, OutMap y) const
+template <int R> void Identity<R>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = Parent::startForward(x, y, false);
-  y.device(Threads::TensorDevice()) = x;
+  y.device(Threads::TensorDevice()) = x * x.constant(s);
   Parent::finishForward(y, time, false);
 }
 
-template <int R> void Identity<R>::adjoint(OutCMap y, InMap x) const
+template <int R> void Identity<R>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = Parent::startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y;
+  x.device(Threads::TensorDevice()) = y * y.constant(s);
   Parent::finishAdjoint(x, time, false);
 }
 

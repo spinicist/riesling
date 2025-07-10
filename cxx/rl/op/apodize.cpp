@@ -49,31 +49,31 @@ template <int ND, int ED> Apodize<ND, ED, ExpSemi<4>>::Apodize(Sz<ND + ED> const
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::forward(InCMap x, OutMap y) const
+template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
+  y.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * y.constant(s);
   this->finishForward(y, time, false);
 }
 
-template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::adjoint(OutCMap y, InMap x) const
+template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_);
+  x.device(Threads::TensorDevice()) = y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);
   this->finishAdjoint(x, time, false);
 }
 
 template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_);
+  y.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * y.constant(s);
   this->finishForward(y, time, true);
 }
 
 template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);
+  x.device(Threads::TensorDevice()) += y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 
@@ -106,24 +106,24 @@ template <int ND, int ED> Apodize<ND, ED, TopHat<1>>::Apodize(Sz<ND + ED> const 
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int ND, int ED> void Apodize<ND, ED, TopHat<1>>::forward(InCMap x, OutMap y) const
+template <int ND, int ED> void Apodize<ND, ED, TopHat<1>>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y.device(Threads::TensorDevice()) = x.pad(paddings_);
+  y.device(Threads::TensorDevice()) = x.pad(paddings_) * y.constant(s);
   this->finishForward(y, time, false);
 }
 
-template <int ND, int ED> void Apodize<ND, ED, TopHat<1>>::adjoint(OutCMap y, InMap x) const
+template <int ND, int ED> void Apodize<ND, ED, TopHat<1>>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = y.slice(padLeft_, ishape);
+  x.device(Threads::TensorDevice()) = y.slice(padLeft_, ishape) * x.constant(s);
   this->finishAdjoint(x, time, false);
 }
 
 template <int ND, int ED> void Apodize<ND, ED, TopHat<1>>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  y.device(Threads::TensorDevice()) = x.pad(paddings_);
+  y.device(Threads::TensorDevice()) = x.pad(paddings_) * y.constant(s);
   this->finishForward(y, time, true);
 }
 

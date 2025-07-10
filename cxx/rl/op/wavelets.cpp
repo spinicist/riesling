@@ -16,8 +16,7 @@ template <int ND> auto Wavelets<ND>::PaddedShape(Sz<ND> const shape, std::vector
   return padded;
 }
 
-template <int ND>
-Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> const dims)
+template <int ND> Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> const dims)
   : Parent("Waves", shape, shape)
   , N_{N}
   , dims_{dims}
@@ -45,18 +44,18 @@ Wavelets<ND>::Wavelets(Sz<ND> const shape, Index const N, std::vector<Index> con
   Log::Debug("Wave", "Dims {} Coeffs {}", dims_, fmt::streamed(Transpose(Cc_)));
 }
 
-template <int ND> void Wavelets<ND>::forward(InCMap x, OutMap y) const
+template <int ND> void Wavelets<ND>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y = x;
+  y.device(Threads::TensorDevice()) = x * x.constant(s);
   dimLoops(y, false);
   this->finishForward(y, time, false);
 }
 
-template <int ND> void Wavelets<ND>::adjoint(OutCMap y, InMap x) const
+template <int ND> void Wavelets<ND>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x = y;
+  x.device(Threads::TensorDevice()) = y * y.constant(s);
   dimLoops(x, true);
   this->finishAdjoint(x, time, false);
 }

@@ -10,8 +10,8 @@ struct Identity final : Op
 
   Identity(Index const s);
   static auto Make(Index const s) -> Ptr;
-  void        forward(CMap x, Map y) const;
-  void        adjoint(CMap y, Map x) const;
+  void        forward(CMap x, Map y, float const s = 1.f) const;
+  void        adjoint(CMap y, Map x, float const s = 1.f) const;
   void        inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
   void        iforward(CMap x, Map y, float const s = 1.f) const;
   void        iadjoint(CMap y, Map x, float const s = 1.f) const;
@@ -25,8 +25,8 @@ struct MatMul final : Op
   OP_INHERIT
   using Matrix = Eigen::Matrix<Cx, Eigen::Dynamic, Eigen::Dynamic>;
   MatMul(Matrix const m);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
@@ -40,8 +40,8 @@ struct DiagScale final : Op
   OP_INHERIT
   DiagScale(Index const sz, float const s);
   static auto Make(Index const sz, float const s) -> Ptr;
-  void        forward(CMap, Map) const;
-  void        adjoint(CMap, Map) const;
+  void        forward(CMap x, Map y, float const s = 1.f) const;
+  void        adjoint(CMap y, Map x, float const s = 1.f) const;
   void        inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
   void        iforward(CMap x, Map y, float const s = 1.f) const;
   void        iadjoint(CMap y, Map x, float const s = 1.f) const;
@@ -56,8 +56,8 @@ struct DiagRep final : Op
 {
   OP_INHERIT
   DiagRep(Vector const &s, Index const repInner, Index const repOuter);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
@@ -72,8 +72,8 @@ struct Multiply final : Op
 {
   OP_INHERIT
   Multiply(std::shared_ptr<Op> A, std::shared_ptr<Op> B);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
@@ -93,8 +93,8 @@ struct VStack final : Op
   VStack(Ptr o1, std::vector<Ptr> const &o);
   static auto Make(std::vector<Ptr> const &o) -> Ptr;
   static auto Make(Ptr o1, std::vector<Ptr> const &o) -> Ptr;
-  void        forward(CMap x, Map y) const;
-  void        adjoint(CMap y, Map x) const;
+  void        forward(CMap x, Map y, float const s = 1.f) const;
+  void        adjoint(CMap y, Map x, float const s = 1.f) const;
   void        iforward(CMap x, Map y, float const s = 1.f) const;
   void        iadjoint(CMap y, Map x, float const s = 1.f) const;
 
@@ -110,8 +110,8 @@ struct HStack final : Op
   HStack(std::vector<std::shared_ptr<Op>> const &o);
   HStack(std::shared_ptr<Op> op1, std::shared_ptr<Op> op2);
   HStack(std::shared_ptr<Op> op1, std::vector<std::shared_ptr<Op>> const &others);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
@@ -126,8 +126,8 @@ struct DStack final : Op
   OP_INHERIT
   DStack(std::vector<std::shared_ptr<Op>> const &o);
   DStack(std::shared_ptr<Op> op1, std::shared_ptr<Op> op2);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
@@ -139,8 +139,8 @@ struct Extract final : Op
 {
   OP_INHERIT
   Extract(Index const cols, Index const st, Index const rows);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
@@ -152,8 +152,8 @@ struct Subtract final : Op
 {
   OP_INHERIT
   Subtract(std::shared_ptr<Op> a, std::shared_ptr<Op> b);
-  void forward(CMap x, Map y) const;
-  void adjoint(CMap y, Map x) const;
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
 

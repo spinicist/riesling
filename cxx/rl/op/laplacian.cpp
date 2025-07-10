@@ -34,7 +34,7 @@ template <int ND> auto Laplacian<ND>::Make(InDims const ish) -> std::shared_ptr<
   return std::make_shared<Laplacian>(ish);
 }
 
-template <int ND> void Laplacian<ND>::forward(InCMap x, OutMap y) const
+template <int ND> void Laplacian<ND>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   CxN<ND>    temp(ishape);
@@ -42,11 +42,11 @@ template <int ND> void Laplacian<ND>::forward(InCMap x, OutMap y) const
   Laplace0(x, temp, x.dimensions(), 0);
   Laplace0(x, temp, x.dimensions(), 1);
   Laplace0(x, temp, x.dimensions(), 2);
-  y.device(Threads::TensorDevice()) = -temp;
+  y.device(Threads::TensorDevice()) = temp * temp.constant(-s);
   this->finishForward(y, time, false);
 }
 
-template <int ND> void Laplacian<ND>::adjoint(OutCMap y, InMap x) const
+template <int ND> void Laplacian<ND>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   CxN<ND>    temp(ishape);
@@ -54,7 +54,7 @@ template <int ND> void Laplacian<ND>::adjoint(OutCMap y, InMap x) const
   Laplace0(y, temp, y.dimensions(), 0);
   Laplace0(y, temp, y.dimensions(), 1);
   Laplace0(y, temp, y.dimensions(), 2);
-  x.device(Threads::TensorDevice()) = -temp;
+  x.device(Threads::TensorDevice()) = temp * temp.constant(-s);
   this->finishAdjoint(x, time, false);
 }
 

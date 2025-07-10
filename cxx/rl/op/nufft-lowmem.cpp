@@ -70,7 +70,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::kernToMap(Index const c
   FFT::Adjoint(smap, ftd);
 }
 
-template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMap y) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
@@ -80,7 +80,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMa
   y.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);
-    apo.forward(x, ws1m);
+    apo.forward(x, ws1m, s);
     ws1m.device(Threads::TensorDevice()) = ws1m * smap.broadcast(sbrd);
     FFT::Forward(workspace, fftDims);
     gridder.forward(workspace, nc1m);
@@ -98,16 +98,16 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap x, OutM
   ws1m.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);
-    apo.forward(x, ws1m);
+    apo.forward(x, ws1m, s);
     ws1m.device(Threads::TensorDevice()) = ws1m * smap.broadcast(sbrd);
     FFT::Forward(workspace, fftDims);
     gridder.forward(workspace, nc1m);
-    y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)}).device(Threads::TensorDevice()) += nc1 * nc1.constant(s);
+    y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)}).device(Threads::TensorDevice()) += nc1;
   }
   this->finishForward(y, time, true);
 }
 
-template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMap x) const
+template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const      time = this->startAdjoint(y, x, false);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
@@ -121,7 +121,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMa
     gridder.adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
     ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
-    apo.iadjoint(ws1cm, x); // This needs to accumulate across channels, so use iadjoint
+    apo.iadjoint(ws1cm, x, s); // This needs to accumulate across channels, so use iadjoint
   }
   this->finishAdjoint(x, time, false);
 }
@@ -139,7 +139,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap y, InM
     gridder.adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
     ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
-    apo.iadjoint(ws1cm, x);
+    apo.iadjoint(ws1cm, x, s);
   }
   this->finishAdjoint(x, time, true);
 }

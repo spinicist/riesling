@@ -28,10 +28,10 @@ FFT<Rank, FFTRank>::FFT(InMap x)
   std::iota(dims_.begin(), dims_.end(), Rank - FFTRank);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap x, OutMap y) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
-  y = x;
+  y.device(Threads::TensorDevice()) = x * x.constant(s);
   if (adjoint_) {
     rl::FFT::Adjoint(y, dims_);
   } else {
@@ -40,10 +40,10 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::forward(InCMap x, OutM
   this->finishForward(y, time, false);
 }
 
-template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap y, InMap x) const
+template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x = y;
+  x.device(Threads::TensorDevice()) = y * y.constant(s);
   if (adjoint_) {
     rl::FFT::Forward(x, dims_);
   } else {
@@ -55,26 +55,26 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::adjoint(OutCMap y, InM
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
-  InTensor   tmp = x;
+  InTensor   tmp(x.dimensions());
+  tmp.device(Threads::TensorDevice()) = x * x.constant(s);
   if (adjoint_) {
     rl::FFT::Adjoint(tmp, dims_);
   } else {
     rl::FFT::Forward(tmp, dims_);
   }
-  y.device(Threads::TensorDevice()) += tmp * tmp.constant(s);
   this->finishForward(y, time, true);
 }
 
 template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  InTensor   tmp = y;
+  InTensor   tmp(y.dimensions()); 
+  tmp.device(Threads::TensorDevice()) = y * y.constant(s);
   if (adjoint_) {
     rl::FFT::Forward(tmp, dims_);
   } else {
     rl::FFT::Adjoint(tmp, dims_);
   }
-  x.device(Threads::TensorDevice()) += tmp * tmp.constant(s);
   this->finishAdjoint(x, time, true);
 }
 

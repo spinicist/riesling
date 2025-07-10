@@ -17,22 +17,22 @@ void Op::inverse(CMap, Map, float const, float const) const
   throw Log::Failure(this->name, "Does not have an inverse defined", name);
 }
 
-void Op::forward(Vector const &x, Vector &y) const
+void Op::forward(Vector const &x, Vector &y, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward y {} != rows {}", y.rows(), rows()); }
   CMap xm(x.data(), x.size());
   Map  ym(y.data(), y.size());
-  this->forward(xm, ym);
+  this->forward(xm, ym, s);
 }
 
-void Op::adjoint(Vector const &y, Vector &x) const
+void Op::adjoint(Vector const &y, Vector &x, float const s) const
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint x {} != cols {}", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y {} != rows {}", y.rows(), rows()); }
   CMap ym(y.data(), y.size());
   Map  xm(x.data(), x.size());
-  this->adjoint(ym, xm);
+  this->adjoint(ym, xm, s);
 }
 
 void Op::inverse(Vector const &y, Vector &x, float const s, float const b) const
@@ -44,25 +44,25 @@ void Op::inverse(Vector const &y, Vector &x, float const s, float const b) const
   this->inverse(ym, xm, s, b);
 }
 
-auto Op::forward(Vector const &x) const -> Vector
+auto Op::forward(Vector const &x, float const s) const -> Vector
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x {} != cols {}", x.rows(), cols()); }
   Vector y(this->rows());
   Map    ym(y.data(), y.size());
   y.setZero();
   Log::Debug(this->name, "Forward allocated [{}]", y.size());
-  this->forward(CMap(x.data(), x.size()), ym);
+  this->forward(CMap(x.data(), x.size()), ym, s);
   return y;
 }
 
-auto Op::adjoint(Vector const &y) const -> Vector
+auto Op::adjoint(Vector const &y, float const s) const -> Vector
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y {} != rows {}", y.rows(), rows()); }
   Vector x(this->cols());
   Map    xm(x.data(), x.size());
   x.setZero();
   Log::Debug(this->name, "Adjoint allocated [{}]", x.size());
-  this->adjoint(CMap(y.data(), y.size()), xm);
+  this->adjoint(CMap(y.data(), y.size()), xm, s);
   return x;
 }
 
