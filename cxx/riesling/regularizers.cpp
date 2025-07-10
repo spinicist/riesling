@@ -14,10 +14,9 @@ namespace rl {
 
 RegOpts::RegOpts(args::Subparser &parser)
   : iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
+  , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
 
   , l1(parser, "L1", "Simple L1 regularization", {"l1"})
-
-  , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
   , lap(parser, "L", "Laplacian regularization", {"lap", 'l'})
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tv2(parser, "TV", "TV + Laplacian", {"tv2"})
@@ -38,7 +37,7 @@ RegOpts::RegOpts(args::Subparser &parser)
 
 auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regularizers_t
 {
-  Ops::Op::Ptr         A = recon;
+  Ops::Op::Ptr             A = recon;
   auto const               shape = recon->ishape;
   std::vector<Regularizer> regs;
 
@@ -76,7 +75,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   }
 
   if (opts.tv) {
-    auto                 grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
+    auto             grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
     Proxs::Prox::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
@@ -100,7 +99,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
     auto both = Ops::VStack::Make({grad, lap});
 
     Proxs::Prox::Ptr pg, pl;
-    float const σ = 0.77; // Bock et al 2008
+    float const      σ = 0.77; // Bock et al 2008
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
         pg = Proxs::L2<6, 1>::Make(opts.tv2.Get() * σ, grad->oshape, Sz1{3});
@@ -136,7 +135,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   }
 
   if (opts.lap) {
-    auto                 lap = TOps::Laplacian<5>::Make(shape);
+    auto             lap = TOps::Laplacian<5>::Make(shape);
     Proxs::Prox::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {

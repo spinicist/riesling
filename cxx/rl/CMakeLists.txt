@@ -21,7 +21,7 @@ trajectory.cpp
 
 algo/admm.cpp
 algo/bidiag.cpp
-algo/cg.cpp
+# algo/cg.cpp
 algo/decomp.cpp
 algo/eig.cpp
 algo/gs.cpp
@@ -55,7 +55,7 @@ op/fft.cpp
 op/grad.cpp
 op/grid.cpp
 op/grid-decant.cpp
-op/hankel.cpp
+# op/hankel.cpp
 op/laplacian.cpp
 op/mask.cpp
 # op/ndft.cpp
