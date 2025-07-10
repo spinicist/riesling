@@ -25,7 +25,7 @@ while getopts "ghi:j:w" opt; do
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
-        w) ALL="-DCMAKE_CXX_FLAGS=-Wall"
+        w) ALL="-Wall -Wshadow"
            DEBUG="-g -fsanitize=address,undefined"
            RELDBG="-O2 -g -DNDEBUG -fsanitize=address,undefined";;
     esac
