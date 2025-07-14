@@ -25,7 +25,6 @@ template <typename T1, typename T2, typename SzT> inline auto Laplace0(T1 const 
 
 template <int ND> Laplacian<ND>::Laplacian(InDims const ish)
   : Parent("Laplacian", ish, ish)
-
 {
 }
 

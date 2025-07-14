@@ -76,7 +76,7 @@ PDHGArgs::PDHGArgs(args::Subparser &parser)
   , resTol(parser, "A", "Tolerance on residual (1e-6)", {"res-tol", 'r'}, 1.e-6f)
   , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
   , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)
-  , λG(parser, "λG", "Max Eigenvalue of regularizer transform (16)", {"lambda-G", 'g'}, 16.f)
+  , λG(parser, "λG", "Max Eigenvalue of regularizer transform (1)", {"lambda-G", 'g'}, 1.f)
 {
 }
 

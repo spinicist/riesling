@@ -7,6 +7,12 @@
 namespace rl::TOps {
 
 namespace {
+
+/*
+ * These difference functions have circular boundary conditions and are scaled to have max
+ * eigenvalue = 1
+ */
+
 template <bool fwd, typename T1, typename T2, typename SzT>
 inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
 {
@@ -30,16 +36,20 @@ inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, fl
 template <bool fwd, typename T1, typename T2, typename SzT>
 inline auto BackwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
 {
-  auto         sz = dims;
-  decltype(sz) f0, fp1;
+  auto         sz = dims, sz1 = dims;
+  decltype(sz) f0, fp1, fm1;
   fp1[dim] = 1;
+  fm1[dim] = sz[dim] - 1;
   sz[dim] -= 1;
+  sz1[dim] = 1;
   if constexpr (fwd) {
     Log::Debug("Grad", "Forward backward differences dim {}", dim);
-    b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s);
+    b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s / 2.f);
+    b.slice(f0, sz1).device(Threads::TensorDevice()) += (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
   } else {
     Log::Debug("Grad", "Adjoint backward differences dim {}", dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s);
+    b.slice(fm1, sz1).device(Threads::TensorDevice()) += (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
   }
 }
 
@@ -204,6 +214,9 @@ template <int ND, int NG> void Div<ND, NG>::iadjoint(OutCMap y, InMap x, float c
   this->finishAdjoint(x, time, true);
 }
 
+template struct Div<1, 1>;
+template struct Div<2, 2>;
+template struct Div<3, 3>;
 template struct Div<5, 3>;
 
 template <int ND, int NG> GradVec<ND, NG>::GradVec(InDims const ishape, Sz<NG> const dims, int const o)
@@ -316,6 +329,9 @@ template <int ND, int NG> void GradVec<ND, NG>::iadjoint(OutCMap y, InMap x, flo
   this->finishAdjoint(x, time, false);
 }
 
+template struct GradVec<2, 1>;
+template struct GradVec<3, 2>;
+template struct GradVec<4, 3>;
 template struct GradVec<6, 3>;
 
 } // namespace rl::TOps
