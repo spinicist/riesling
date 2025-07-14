@@ -7,7 +7,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("ops-pad", "[pad]")
+TEST_CASE("pad", "[op]")
 {
   Index const fullSz = 6;
 

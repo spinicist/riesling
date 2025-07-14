@@ -7,7 +7,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Wavelets", "[tform]")
+TEST_CASE("Wavelets", "[op]")
 {
   Index const sz = 64;
 

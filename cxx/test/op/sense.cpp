@@ -7,7 +7,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("SENSE", "[SENSE]")
+TEST_CASE("SENSE", "[op]")
 {
   Index const channels = 2, mapSz = 4;
   // With credit to PyLops

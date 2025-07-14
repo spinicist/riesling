@@ -13,7 +13,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Recon", "[recon]")
+TEST_CASE("Recon", "[op]")
 {
   // Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(7); //, 15, 16);
@@ -49,7 +49,7 @@ TEST_CASE("Recon", "[recon]")
   CHECK(Norm<false>(ks) == Approx(Norm<false>(img)).margin(2.e-1f));
 }
 
-TEST_CASE("ReconLowmem", "[recon]")
+TEST_CASE("ReconLowmem", "[op]")
 {
   // Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(8); //, 15, 16);

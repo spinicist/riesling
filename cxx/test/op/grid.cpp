@@ -10,7 +10,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("Grid2", "[grid]")
+TEST_CASE("Grid2", "[op]")
 {
   // Log::SetDisplayLevel(Log::Display::High);
   Threads::SetGlobalThreadCount(1);
@@ -41,7 +41,7 @@ TEST_CASE("Grid2", "[grid]")
   CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 
-TEST_CASE("Grid3", "[grid]")
+TEST_CASE("Grid3", "[op]")
 {
   // Log::SetDisplayLevel(Log::Display::High);
   Threads::SetGlobalThreadCount(1);
@@ -74,7 +74,7 @@ TEST_CASE("Grid3", "[grid]")
   CHECK((Norm<false>(cart) - Norm<false>(noncart)) / cs == Approx(0.f).margin(2e-4f));
 }
 
-TEST_CASE("GridB", "[grid]")
+TEST_CASE("GridB", "[op]")
 {
   Threads::SetGlobalThreadCount(1);
   Index const M = 6;

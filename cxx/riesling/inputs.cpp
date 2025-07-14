@@ -72,7 +72,7 @@ auto LSMRArgs::Get() -> rl::LSMR::Opts
 
 PDHGArgs::PDHGArgs(args::Subparser &parser)
   : lad(parser, "L", "Least Absolute Deviations, PDHG only", {"lad", 'l'})
-  , its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 16)
+  , its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 32)
   , resTol(parser, "A", "Tolerance on residual (1e-6)", {"res-tol", 'r'}, 1.e-6f)
   , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
   , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)

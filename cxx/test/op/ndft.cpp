@@ -7,7 +7,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("NDFT", "[tform]")
+TEST_CASE("NDFT", "[op]")
 {
   Threads::SetGlobalThreadCount(1);
   Index const M = GENERATE(5, 6);
@@ -35,7 +35,7 @@ TEST_CASE("NDFT", "[tform]")
   CHECK(Norm<false>(img - img2) == Approx(0.0).margin(1.e-6f));
 }
 
-TEST_CASE("NDFT Basis", "[tform]")
+TEST_CASE("NDFT-Basis", "[op]")
 {
   Index const M = 8;
   Index const N = 5;

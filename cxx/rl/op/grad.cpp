@@ -10,16 +10,20 @@ namespace {
 template <bool fwd, typename T1, typename T2, typename SzT>
 inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
 {
-  auto         sz = dims;
-  decltype(sz) f0, fp1;
+  auto         sz = dims, sz1 = dims;
+  decltype(sz) f0, fp1, fm1;
   fp1[dim] = 1;
+  fm1[dim] = sz[dim] - 1;
   sz[dim] -= 1;
+  sz1[dim] = 1;
   if constexpr (fwd) {
     Log::Debug("Grad", "Forward forward differences dim {}", dim, dim);
-    b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s);
+    b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s / 2.f);
+    b.slice(fm1, sz1).device(Threads::TensorDevice()) += (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
   } else {
     Log::Debug("Grad", "Adjoint forward differences dim {}", dim, dim);
-    b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s);
+    b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s / 2.f);
+    b.slice(f0, sz1).device(Threads::TensorDevice()) += (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
   }
 }
 
@@ -110,7 +114,7 @@ template <int ND, int NG> void Grad<ND, NG>::adjoint(OutCMap y, InMap x, float c
 template <int ND, int NG> void Grad<ND, NG>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const  time = this->startForward(x, y, true);
-  float const scale = s / std::sqrt(2 * NG);
+  float const scale = s / std::sqrt(NG);
   for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
     case 0: ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
@@ -125,7 +129,7 @@ template <int ND, int NG> void Grad<ND, NG>::iforward(InCMap x, OutMap y, float 
 template <int ND, int NG> void Grad<ND, NG>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const  time = this->startAdjoint(y, x, true);
-  float const scale = s / std::sqrt(2 * NG);
+  float const scale = s / std::sqrt(NG);
   for (Index ii = 0; ii < NG; ii++) {
     switch (mode_) {
     case 0: ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
@@ -136,6 +140,10 @@ template <int ND, int NG> void Grad<ND, NG>::iadjoint(OutCMap y, InMap x, float 
   }
   this->finishAdjoint(x, time, true);
 }
+
+template struct Grad<1, 1>;
+template struct Grad<2, 2>;
+template struct Grad<3, 3>;
 
 template struct Grad<5, 1>;
 template struct Grad<5, 3>;

@@ -7,7 +7,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("ops-fft")
+TEST_CASE("fft", "[op]")
 {
   Index const      sz = 16;
   Sz5 const        dims{sz, sz, sz, sz, sz};

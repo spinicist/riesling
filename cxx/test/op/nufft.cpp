@@ -10,7 +10,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("NUFFT", "[nufft]")
+TEST_CASE("NUFFT", "[op]")
 {
   // Log::SetDisplayLevel(Log::Display::High);
   Index const M = GENERATE(6);
@@ -39,7 +39,7 @@ TEST_CASE("NUFFT", "[nufft]")
   CHECK(Norm<false>(img - img2) == Approx(0).margin(1.e-2f));
 }
 
-TEST_CASE("NUFFTB", "[nufft]")
+TEST_CASE("NUFFTB", "[op]")
 {
   Index const M = 6;
   auto const  matrix = Sz1{M};
