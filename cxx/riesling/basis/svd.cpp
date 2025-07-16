@@ -109,7 +109,7 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlagList<Eigen::ArrayXi, std::vector, ArrayXiReader> pN(parser, "N", "Grid N for parameters", {"N"});
   args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (4)", {"nbasis"}, 4);
   args::Flag             norm(parser, "N", "Normalize dynamics", {"norm"});
-  args::Flag equalize(parser, "E", "Rotate basis to equalize variance", {"equalize"});
+  args::Flag             equalize(parser, "E", "Rotate basis to equalize variance", {"equalize"});
   args::Flag             save(parser, "S", "Save dynamics and projections", {"save"});
 
   ParseCommand(parser);
@@ -172,8 +172,6 @@ void main_basis_svd(args::Subparser &parser)
   pmap = (bmap.transpose() * temp).transpose();
   auto resid = Norm<true>(dall - proj) / Norm<true>(dall);
   Log::Print(cmd, "Residual {}%", 100 * resid);
-
-  bmap *= std::sqrt(L); // This is the correct scaling during the recon
   HD5::Writer writer(oname.Get());
   writer.writeTensor(HD5::Keys::Basis, basis.dimensions(), basis.data(), HD5::Dims::Basis);
   writer.writeTensor("time", time.dimensions(), time.data(), {"t"});

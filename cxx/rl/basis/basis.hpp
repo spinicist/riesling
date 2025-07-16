@@ -12,6 +12,7 @@ struct Basis
   using CPtr = Basis const *;
   Cx3 B;
   Cx2 R;
+  float scale;
 
   Basis();
   Basis(Cx3 const &B);

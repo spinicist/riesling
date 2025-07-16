@@ -36,7 +36,7 @@ template <int ND> void run_lsq(args::Subparser &parser)
   auto const R = f0Args.Nτ ? Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, f0Args.Get(), noncart,
                                    reader.readTensor<Re3>("f0map"))
                            : Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
-  auto debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
+  auto       debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
     if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Images); }
   };
   LSMR lsmr{R.A, R.M, nullptr, lsqArgs.Get(), debug};
@@ -45,8 +45,8 @@ template <int ND> void run_lsq(args::Subparser &parser)
   auto const xm = AsTensorMap(x, R.A->ishape);
 
   TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(R.A->ishape)), R.A->ishape);
-  auto             out = oc.adjoint(xm);
-
+  auto         out = oc.adjoint(xm);
+  if (basis) { basis->applyR(out); }
   WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
   Log::Print(cmd, "Finished");
 }

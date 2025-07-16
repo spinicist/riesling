@@ -17,17 +17,22 @@ Basis::Basis()
 Basis::Basis(Cx3 const &Bb)
   : B{Bb}
 {
+  scale = std::sqrt(nSample() * nTrace()) / nB();
+  Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
 }
 
 Basis::Basis(Cx3 const &Bb, Cx2 const &Rr)
   : B{Bb}
   , R{Rr}
 {
+  scale = std::sqrt(nSample() * nTrace()) / nB();
+  Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
 }
 
-Basis::Basis(Index const nB, Index const nSample, Index const nTrace)
-  : B(nB, nSample, nTrace)
+Basis::Basis(Index const nB_, Index const nS, Index const nT)
+  : B(nB_, nS, nT)
 {
+  scale = std::sqrt(nSample() * nTrace()) / nB();
   B.setConstant(1.f);
 }
 
@@ -37,12 +42,12 @@ auto Basis::nTrace() const -> Index { return B.dimension(2); }
 
 auto Basis::entry(Index const s, Index const t) const -> Cx1
 {
-  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1));
+  return B.chip<2>(t % B.dimension(2)).chip<1>(s % B.dimension(1)) * Cx(scale);
 }
 
 auto Basis::entry(Index const b, Index const s, Index const t) const -> Cx
 {
-  return B(b, s % B.dimension(1), t % B.dimension(2));
+  return B(b, s % B.dimension(1), t % B.dimension(2)) * Cx(scale);
 }
 
 void Basis::write(std::string const &basisFile) const
@@ -73,13 +78,13 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
       .conjugate()
       .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
       .slice(Sz1{0}, Sz1{nr})
-      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>());
+      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) * Cx(scale);
   } else {
     return B.chip<2>(it)
       .chip<1>(is)
       .slice(Sz1{0}, Sz1{nr})
       .conjugate()
-      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>());
+      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) * Cx(scale);
   }
 }
 
@@ -93,7 +98,9 @@ template <int ND> void Basis::applyR(CxN<ND> &data) const
     Eigen::MatrixXcf const         Rinv = Rm.inverse();
     auto const                     Rim = AsTensorMap(Rinv, Sz2{Rinv.rows(), Rinv.cols()});
     Log::Print("Basis", "Apply R");
-    data.device(Threads::TensorDevice()) = CxN<ND>(Rim.contract(data, Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>()));
+    CxN<ND> temp = Rim.contract(data.shuffle(Sz5{3, 0, 1, 2, 4}), Eigen::IndexPairList<Eigen::type2indexpair<1, 0>>())
+                     .shuffle(Sz5{1, 2, 3, 0, 4});
+    data.device(Threads::TensorDevice()) = temp;
   }
 }
 
