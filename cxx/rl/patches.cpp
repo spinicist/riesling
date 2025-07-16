@@ -4,8 +4,7 @@
 
 namespace rl {
 
-void Patches(
-  Index const patchSize, Index const windowSize, bool const doShift, PatchFunction const &apply, Cx5CMap x, Cx5Map y)
+void Patches(Index const patchSize, Index const windowSize, bool const doShift, PatchFunction const &apply, Cx5CMap x, Cx5Map y)
 {
   Sz3 nWindows, shift;
 

@@ -34,16 +34,15 @@ void L1::apply(float const α, CMap x, Map z) const
 void L1::conj(float const, CMap x, Map z) const
 {
   /* Amazingly, this doesn't depend on α. Maths is based. */
-  float t = λ;
   Threads::ChunkFor(
-    [t, &x, &z](Index lo, Index hi) {
+    [λ = this->λ, &x, &z](Index lo, Index hi) {
       for (Index ii = lo; ii < hi; ii++) {
         float const a = std::abs(x[ii]);
-        z[ii] = a > t ? x[ii] * t / a : x[ii];
+        z[ii] = a > λ ? x[ii] * λ / a : x[ii];
       }
     },
     x.size());
-  Log::Debug("L1Prox", "Conjugate λ {} t {} |x| {} |z| {}", λ, t, ParallelNorm(x), ParallelNorm(z));
+  Log::Debug("L1Prox", "Conjugate λ {} |x| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(z));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr
