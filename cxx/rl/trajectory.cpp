@@ -49,20 +49,27 @@ template <int ND> TrajectoryN<ND>::TrajectoryN(Re3 const &points, SzN const matr
   init();
 }
 
-template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const voxel_size, SzN const matrix_size)
+template <int ND> TrajectoryN<ND>::TrajectoryN(HD5::Reader &file, Array const voxel_size, SzN const mat)
 {
   points_ = file.readTensor<Re3>(HD5::Keys::Trajectory);
+  voxel_size_ = voxel_size;
   if (points_.dimension(0) != ND) {
     throw(Log::Failure("Traj", "Trajectory on disk was {}D, expected {}D", points_.dimension(0), ND));
   }
-  if (std::all_of(matrix_size.cbegin(), matrix_size.cend(), [](Index ii) { return ii > 0; })) {
-    matrix_ = matrix_size;
-  } else if (file.exists(HD5::Keys::Trajectory, "matrix")) {
+  if (file.exists(HD5::Keys::Trajectory, "matrix")) {
     matrix_ = file.readAttributeShape<ND>(HD5::Keys::Trajectory, "matrix");
   } else {
     matrix_ = GuessMatrix<ND>(points_);
   }
-  voxel_size_ = voxel_size;
+  /* If the matrix size is overridden, adjust the voxel size as well*/
+  if (std::all_of(mat.cbegin(), mat.cend(), [](Index ii) { return ii > 0; })) {
+    Array matO, matN;
+    std::copy_n(matrix_.begin(), ND, matO.begin());
+    std::copy_n(mat.begin(), ND, matN.begin());
+    Array ratio = matO / matN;
+    voxel_size_ = voxel_size * ratio;
+    matrix_ = mat;
+  } 
   init();
 }
 
