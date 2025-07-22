@@ -12,6 +12,7 @@ if(BUILD_BIN)
         basis/blend.cpp
         basis/bernstein.cpp
         basis/concat.cpp
+        basis/decay.cpp
         basis/echoes.cpp
         basis/fourier.cpp
         basis/img.cpp

@@ -43,6 +43,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(basis, bernstein, "basis-bernstein", "Bernstein Polynomials");
   COMMAND(basis, blend, "basis-blend", "Blend basis images");
   COMMAND(basis, basis_concat, "basis-concat", "Concatenate bases");
+  COMMAND(basis, basis_decay, "basis-decay", "Simple T2 decay");
   COMMAND(basis, echoes, "basis-echoes", "Split echoes from sample dimension");
   COMMAND(basis, frames, "basis-frames", "Create a time-frame basis");
   COMMAND(basis, basis_fourier, "basis-fourier", "Basis of Fourier harmonics");
