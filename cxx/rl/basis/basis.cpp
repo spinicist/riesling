@@ -12,6 +12,7 @@ Basis::Basis()
 {
   B.resize(1, 1, 1);
   B.setConstant(1.f);
+  scale = 1.f;
 }
 
 Basis::Basis(Cx3 const &Bb)
@@ -32,7 +33,7 @@ Basis::Basis(Cx3 const &Bb, Cx2 const &Rr)
 Basis::Basis(Index const nB_, Index const nS, Index const nT)
   : B(nB_, nS, nT)
 {
-  scale = std::sqrt(nSample() * nTrace()) / nB();
+  scale = 1.f;
   B.setConstant(1.f);
 }
 
@@ -74,17 +75,19 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
   Log::Print("Basis", "Blending sample {} trace {} with {} vectors", is, it, nr);
   if (R.size()) {
     return B.chip<2>(it)
-      .chip<1>(is)
-      .conjugate()
-      .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
-      .slice(Sz1{0}, Sz1{nr})
-      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) * Cx(scale);
+             .chip<1>(is)
+             .conjugate()
+             .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
+             .slice(Sz1{0}, Sz1{nr})
+             .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) *
+           Cx(scale);
   } else {
     return B.chip<2>(it)
-      .chip<1>(is)
-      .slice(Sz1{0}, Sz1{nr})
-      .conjugate()
-      .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) * Cx(scale);
+             .chip<1>(is)
+             .slice(Sz1{0}, Sz1{nr})
+             .conjugate()
+             .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) *
+           Cx(scale);
   }
 }
 

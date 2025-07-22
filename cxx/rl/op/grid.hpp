@@ -22,9 +22,9 @@ template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 8> struct Grid fina
   TOP_INHERIT(ND + 2, 3)
   TOP_DECLARE(Grid)
 
-  static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b)
+  static auto Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &t, Index const nC, Basis::CPtr b = nullptr)
     -> std::shared_ptr<Grid<ND, KF>>;
-  Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b);
+  Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, Index const nC, Basis::CPtr b = nullptr);
   void  iforward(InCMap x, OutMap y, float const s = 1.f) const;
   void  iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
   KType kernel;

@@ -9,7 +9,7 @@
 using namespace rl;
 using namespace Catch;
 
-TEST_CASE("grad-eig", "[op]")
+TEST_CASE("grad-eig", "[eig]")
 {
   auto sz = GENERATE(32, 48, 64);
   SECTION("Eigenvalues")

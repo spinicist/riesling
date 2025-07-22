@@ -32,8 +32,8 @@ Grid<ND, KF, SG>::Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, In
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
 }
 
-template <int ND, typename KF, int SG>
-void Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, float const s, CxNCMap<ND + 2> const x, Cx3Map y) const
+template <int ND, typename KF, int SG> void
+Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, float const s, CxNCMap<ND + 2> const x, Cx3Map y) const
 {
   CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
   for (size_t is = start; is < gridLists.size(); is += stride) {
