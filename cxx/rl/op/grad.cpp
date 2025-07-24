@@ -13,11 +13,10 @@ namespace {
  * eigenvalue = 1
  */
 
-template <bool fwd, typename T1, typename T2, typename SzT>
-inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
+template <bool fwd, typename T1, typename T2, int N>
+inline void ForwardDiff(T1 const &a, T2 &&b, Sz<N> const shape, Index const dim, float const s = 1.f)
 {
-  auto         sz = dims, sz1 = dims;
-  decltype(sz) f0, fp1, fm1;
+  Sz<N> sz = shape, sz1 = shape, f0, fp1, fm1;
   fp1[dim] = 1;
   fm1[dim] = sz[dim] - 1;
   sz[dim] -= 1;
@@ -36,11 +35,10 @@ inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, fl
   }
 }
 
-template <bool fwd, typename T1, typename T2, typename SzT>
-inline auto BackwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
+template <bool fwd, typename T1, typename T2, int N>
+inline void BackwardDiff(T1 const &a, T2 &&b, Sz<N> const shape, Index const dim, float const s = 1.f)
 {
-  auto         sz = dims, sz1 = dims;
-  decltype(sz) f0, fp1, fm1;
+  Sz<N> sz = shape, sz1 = shape, f0, fp1, fm1;
   fp1[dim] = 1;
   fm1[dim] = sz[dim] - 1;
   sz[dim] -= 1;
@@ -56,48 +54,6 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, f
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s);
     b.slice(fm1, sz1).device(Threads::TensorDevice()) +=
       (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
-  }
-}
-
-template <bool fwd, typename T1, typename T2, typename SzT>
-inline auto CentralDiff0(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
-{
-  auto         sz = dims;
-  decltype(sz) fm1, f0, fp1;
-  fp1[dim] = 2;
-  fm1[dim] = 0;
-  f0[dim] = 1;
-  sz[dim] -= 2;
-  if constexpr (fwd) {
-    Log::Debug("Grad", "Forward central differences dim {}", dim);
-    b.slice(f0, sz).device(Threads::TensorDevice()) +=
-      (a.slice(fp1, sz) - a.slice(fm1, sz)) * b.slice(f0, sz).constant(s / 2.f);
-  } else {
-    Log::Debug("Grad", "Adjoint central differences dim {}", dim);
-    b.slice(f0, sz).device(Threads::TensorDevice()) +=
-      (a.slice(fm1, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s / 2.f);
-  }
-}
-
-template <bool fwd, typename T1, typename T2, typename SzT>
-inline auto CentralDiff1(T1 const &a, T2 &&b, SzT const dims, Index const dim, float const s = 1.f)
-{ // Thanks http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/central-differences/
-  auto         sz = dims;
-  decltype(sz) f0, fp1, fp2, fm1, fm2;
-  f0[dim] = 2;
-  fp1[dim] = 3;
-  fp2[dim] = 4;
-  fm1[dim] = 1;
-  fm2[dim] = 0;
-  sz[dim] -= 4;
-  if constexpr (fwd) {
-    b.slice(f0, sz).device(Threads::TensorDevice()) +=
-      (a.slice(fm2, sz) - 8.f * a.slice(fm1, sz) + 8.f * a.slice(fp1, sz) - a.slice(fp2, sz)) *
-      b.slice(f0, sz).constant(s / 12.f);
-  } else {
-    b.slice(f0, sz).device(Threads::TensorDevice()) +=
-      (a.slice(fp2, sz) - 8.f * a.slice(fp1, sz) + 8.f * a.slice(fm1, sz) - a.slice(fm2, sz)) *
-      b.slice(f0, sz).constant(s / 12.f);
   }
 }
 } // namespace
