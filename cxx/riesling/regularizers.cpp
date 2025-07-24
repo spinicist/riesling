@@ -14,7 +14,6 @@ namespace rl {
 
 RegOpts::RegOpts(args::Subparser &parser)
   : iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
-  , diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0)
 
   , l1(parser, "L1", "Simple L1 regularization", {"l1"})
   , lap(parser, "L", "Laplacian regularization", {"lap", 'l'})
@@ -42,12 +41,12 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   std::vector<Regularizer> regs;
 
   if (opts.tgv) {
-    auto grad_x = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
+    auto grad_x = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2});
     auto ext_x = std::make_shared<Ops::Extract>(A->cols() + grad_x->rows(), 0, A->cols());
     auto ext_v = std::make_shared<Ops::Extract>(A->cols() + grad_x->rows(), A->cols(), grad_x->rows());
     auto op1 = Ops::Sub(Ops::Mul(grad_x, ext_x), ext_v);
 
-    auto grad_v = TOps::GradVec<6, 3>::Make(grad_x->oshape, Sz3{0, 1, 2}, opts.diffOrder.Get());
+    auto grad_v = TOps::GradVec<6, 3>::Make(grad_x->oshape, Sz3{0, 1, 2});
     auto op2 = Ops::Mul(grad_v, ext_v);
 
     Proxs::Prox::Ptr prox_x, prox_v;
@@ -75,7 +74,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   }
 
   if (opts.tv) {
-    auto             grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
+    auto             grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2});
     Proxs::Prox::Ptr prox;
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
@@ -94,7 +93,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   }
 
   if (opts.tv2) {
-    auto grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2}, opts.diffOrder.Get());
+    auto grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2});
     auto lap = TOps::Laplacian<5>::Make(shape);
     auto both = Ops::VStack::Make({grad, lap});
 
@@ -117,7 +116,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   }
 
   if (opts.tvt) {
-    auto grad = TOps::Grad<5, 1>::Make(shape, Sz1{0}, opts.diffOrder.Get());
+    auto grad = TOps::Grad<5, 1>::Make(shape, Sz1{0});
     auto prox = Proxs::L1::Make(opts.tvt.Get(), grad->rows());
     regs.push_back({grad, prox, grad->oshape});
   }

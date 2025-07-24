@@ -13,7 +13,6 @@ struct RegOpts
   RegOpts(args::Subparser &parser);
 
   args::ValueFlag<std::string> iso;
-  args::ValueFlag<int>         diffOrder;
 
   args::ValueFlag<float> l1;
   args::ValueFlag<float> lap;

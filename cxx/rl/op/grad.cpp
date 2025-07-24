@@ -25,11 +25,14 @@ inline auto ForwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, fl
   if constexpr (fwd) {
     Log::Debug("Grad", "Forward forward differences dim {}", dim, dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s / 2.f);
-    b.slice(fm1, sz1).device(Threads::TensorDevice()) += (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
+    b.slice(fm1, sz1).device(Threads::TensorDevice()) +=
+      (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
   } else {
     Log::Debug("Grad", "Adjoint forward differences dim {}", dim, dim);
-    b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s / 2.f);
-    b.slice(f0, sz1).device(Threads::TensorDevice()) += (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
+    b.slice(fp1, sz).device(Threads::TensorDevice()) +=
+      (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s / 2.f);
+    b.slice(f0, sz1).device(Threads::TensorDevice()) +=
+      (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
   }
 }
 
@@ -44,12 +47,15 @@ inline auto BackwardDiff(T1 const &a, T2 &&b, SzT const dims, Index const dim, f
   sz1[dim] = 1;
   if constexpr (fwd) {
     Log::Debug("Grad", "Forward backward differences dim {}", dim);
-    b.slice(fp1, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s / 2.f);
-    b.slice(f0, sz1).device(Threads::TensorDevice()) += (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
+    b.slice(fp1, sz).device(Threads::TensorDevice()) +=
+      (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s / 2.f);
+    b.slice(f0, sz1).device(Threads::TensorDevice()) +=
+      (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
   } else {
     Log::Debug("Grad", "Adjoint backward differences dim {}", dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s);
-    b.slice(fm1, sz1).device(Threads::TensorDevice()) += (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
+    b.slice(fm1, sz1).device(Threads::TensorDevice()) +=
+      (a.slice(fm1, sz1) - a.slice(f0, sz1)) * b.slice(f0, sz1).constant(s / 2.f);
   }
 }
 
@@ -96,17 +102,15 @@ inline auto CentralDiff1(T1 const &a, T2 &&b, SzT const dims, Index const dim, f
 }
 } // namespace
 
-template <int ND, int NG> Grad<ND, NG>::Grad(InDims const ish, Sz<NG> const d, int const o)
+template <int ND, int NG> Grad<ND, NG>::Grad(InDims const ish, Sz<NG> const d)
   : Parent("Grad", ish, AddBack(ish, (Index)d.size()))
   , dims_{d}
-  , mode_{o}
 {
-  if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
 }
 
-template <int ND, int NG> auto Grad<ND, NG>::Make(InDims const ish, Sz<NG> const d, int const o) -> std::shared_ptr<Grad>
+template <int ND, int NG> auto Grad<ND, NG>::Make(InDims const ish, Sz<NG> const d) -> std::shared_ptr<Grad>
 {
-  return std::make_shared<Grad>(ish, d, o);
+  return std::make_shared<Grad>(ish, d);
 }
 
 template <int ND, int NG> void Grad<ND, NG>::forward(InCMap x, OutMap y, float const s) const
@@ -126,12 +130,7 @@ template <int ND, int NG> void Grad<ND, NG>::iforward(InCMap x, OutMap y, float 
   auto const  time = this->startForward(x, y, true);
   float const scale = s / std::sqrt(NG);
   for (Index ii = 0; ii < NG; ii++) {
-    switch (mode_) {
-    case 0: ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
-    case 1: BackwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
-    case 2: CentralDiff0<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
-    case 3: CentralDiff1<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale); break;
-    }
+    ForwardDiff<true>(x, y.template chip<ND>(ii), x.dimensions(), dims_[ii], scale);
   }
   this->finishForward(y, time, true);
 }
@@ -141,12 +140,7 @@ template <int ND, int NG> void Grad<ND, NG>::iadjoint(OutCMap y, InMap x, float 
   auto const  time = this->startAdjoint(y, x, true);
   float const scale = s / std::sqrt(NG);
   for (Index ii = 0; ii < NG; ii++) {
-    switch (mode_) {
-    case 0: ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
-    case 1: BackwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
-    case 2: CentralDiff0<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
-    case 3: CentralDiff1<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale); break;
-    }
+    ForwardDiff<false>(y.template chip<ND>(ii), x, x.dimensions(), dims_[ii], scale);
   }
   this->finishAdjoint(x, time, true);
 }
@@ -158,17 +152,15 @@ template struct Grad<3, 3>;
 template struct Grad<5, 1>;
 template struct Grad<5, 3>;
 
-template <int ND, int NG> Div<ND, NG>::Div(OutDims const sh, Sz<NG> const d, int const o)
+template <int ND, int NG> Div<ND, NG>::Div(OutDims const sh, Sz<NG> const d)
   : Parent("Grad", AddBack(sh, (Index)d.size()), sh)
   , dims_{d}
-  , mode_{o}
 {
-  if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
 }
 
-template <int ND, int NG> auto Div<ND, NG>::Make(OutDims const sh, Sz<NG> const d, int const o) -> std::shared_ptr<Div>
+template <int ND, int NG> auto Div<ND, NG>::Make(OutDims const sh, Sz<NG> const d) -> std::shared_ptr<Div>
 {
-  return std::make_shared<Div>(sh, d, o);
+  return std::make_shared<Div>(sh, d);
 }
 
 template <int ND, int NG> void Div<ND, NG>::forward(InCMap x, OutMap y, float const s) const
@@ -189,12 +181,7 @@ template <int ND, int NG> void Div<ND, NG>::iforward(InCMap x, OutMap y, float c
 
   float const scale = s / std::sqrt(2 * NG);
   for (Index ii = 0; ii < NG; ii++) {
-    switch (mode_) {
-    case 0: BackwardDiff<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
-    case 1: ForwardDiff<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
-    case 2: CentralDiff0<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
-    case 3: CentralDiff1<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale); break;
-    }
+    BackwardDiff<true>(x.template chip<ND>(ii), y, y.dimensions(), dims_[ii], scale);
   }
   this->finishForward(y, time, true);
 }
@@ -204,12 +191,7 @@ template <int ND, int NG> void Div<ND, NG>::iadjoint(OutCMap y, InMap x, float c
   auto const  time = this->startAdjoint(y, x, true);
   float const scale = s / std::sqrt(2 * NG);
   for (Index ii = 0; ii < NG; ii++) {
-    switch (mode_) {
-    case 0: BackwardDiff<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
-    case 1: ForwardDiff<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
-    case 2: CentralDiff0<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
-    case 3: CentralDiff1<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale); break;
-    }
+    BackwardDiff<false>(y, x.template chip<ND>(ii), y.dimensions(), dims_[ii], scale);
   }
   this->finishAdjoint(x, time, true);
 }
@@ -219,20 +201,18 @@ template struct Div<2, 2>;
 template struct Div<3, 3>;
 template struct Div<5, 3>;
 
-template <int ND, int NG> GradVec<ND, NG>::GradVec(InDims const ishape, Sz<NG> const dims, int const o)
+template <int ND, int NG> GradVec<ND, NG>::GradVec(InDims const ishape, Sz<NG> const dims)
   : Parent("GradV", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))
   , dims_{dims}
-  , mode_{o}
 {
   if ((Index)dims.size() != ishape[ND - 1]) {
     throw(Log::Failure("gradv", "Symmetrized gradient only, dims were {} and {}", dims.size(), ishape[ND - 1]));
   }
-  if (mode_ < 0 || mode_ > 3) { throw(Log::Failure("Grad", "Invalid gradient mode {}", mode_)); }
 }
 
-template <int ND, int NG> auto GradVec<ND, NG>::Make(InDims const ish, Sz<NG> const d, int const o) -> std::shared_ptr<GradVec>
+template <int ND, int NG> auto GradVec<ND, NG>::Make(InDims const ish, Sz<NG> const d) -> std::shared_ptr<GradVec>
 {
-  return std::make_shared<GradVec>(ish, d, o);
+  return std::make_shared<GradVec>(ish, d);
 }
 
 template <int ND, int NG> void GradVec<ND, NG>::forward(InCMap x, OutMap y, float const s) const
@@ -249,33 +229,12 @@ template <int ND, int NG> void GradVec<ND, NG>::iforward(InCMap x, OutMap y, flo
    * Grad applied to a vector produces a tensor. Here it is flattened back into a vector
    */
   float const scale = s / std::sqrt(2 * NG * (NG + 1) / 2);
-  Index yind = NG;
+  Index       yind = NG;
   for (Index ii = 0; ii < NG; ii++) {
-    switch (mode_) {
-    case 0: BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    case 1: ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    case 2: CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    case 3: CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    }
+    BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(ii), sz, dims_[ii], scale);
     for (Index ij = ii + 1; ij < NG; ij++) {
-      switch (mode_) {
-      case 0:
-        BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
-        BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
-        break;
-      case 1:
-        ForwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
-        ForwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
-        break;
-      case 2:
-        CentralDiff0<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
-        CentralDiff0<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
-        break;
-      case 3:
-        CentralDiff1<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
-        CentralDiff1<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
-        break;
-      }
+      BackwardDiff<true>(x.template chip<ND - 1>(ij), y.template chip<ND - 1>(yind), sz, dims_[ii], scale / std::sqrt(2));
+      BackwardDiff<true>(x.template chip<ND - 1>(ii), y.template chip<ND - 1>(yind), sz, dims_[ij], scale / std::sqrt(2));
       yind++;
     }
   }
@@ -296,33 +255,12 @@ template <int ND, int NG> void GradVec<ND, NG>::iadjoint(OutCMap y, InMap x, flo
    *  This is the tensor form of Div (see wikipedia page) but with the tensor flattened into a vector
    */
   float const scale = s / std::sqrt(2 * NG * (NG + 1) / 2);
-  Index yind = NG;
+  Index       yind = NG;
   for (Index ii = 0; ii < NG; ii++) {
-    switch (mode_) {
-    case 0: BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    case 1: ForwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    case 2: CentralDiff0<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    case 3: CentralDiff1<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale); break;
-    }
+    BackwardDiff<false>(y.template chip<ND - 1>(ii), x.template chip<ND - 1>(ii), sz, dims_[ii], scale);
     for (Index ij = ii + 1; ij < NG; ij++) {
-      switch (mode_) {
-      case 0:
-        BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
-        BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
-        break;
-      case 1:
-        ForwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
-        ForwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
-        break;
-      case 2:
-        CentralDiff0<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
-        CentralDiff0<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
-        break;
-      case 3:
-        CentralDiff1<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
-        CentralDiff1<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
-        break;
-      }
+      BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ii), sz, dims_[ij], scale / std::sqrt(2));
+      BackwardDiff<false>(y.template chip<ND - 1>(yind), x.template chip<ND - 1>(ij), sz, dims_[ii], scale / std::sqrt(2));
       yind++;
     }
   }

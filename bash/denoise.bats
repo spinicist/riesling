@@ -1,7 +1,7 @@
 @test "Denoise" {
     MAT=64
     VOX=2
-    ITS=16
+    ITS=64
     riesling phantom phantom.h5 --matrix=$MAT --vox-size=$VOX --gradcubes --size=56
     riesling noisify phantom.h5 phantom-noisy.h5 --std=0.1
     riesling denoise phantom-noisy.h5 phantom-tv.h5 --tv=0.1  --max-its=${ITS}
