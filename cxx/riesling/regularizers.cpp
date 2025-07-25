@@ -17,10 +17,11 @@ RegOpts::RegOpts(args::Subparser &parser)
 
   , l1(parser, "L1", "Simple L1 regularization", {"l1"})
   , lap(parser, "L", "Laplacian regularization", {"lap", 'l'})
+  , lap2(parser, "L", "Isotropic Laplacian regularization", {"lap2"})
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tv2(parser, "TV", "TV + Laplacian", {"tv2"})
+  , tv22(parser, "TV", "TV + Isotropic Laplacian", {"tv22"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
-
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
@@ -115,6 +116,29 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
     regs.push_back({both, prox, grad->oshape});
   }
 
+  if (opts.tv22) {
+    auto grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2});
+    auto lap = TOps::IsoΔ3D<5>::Make(shape);
+    auto both = Ops::VStack::Make({grad, lap});
+
+    Proxs::Prox::Ptr pg, pl;
+    float const      σ = 0.77; // Bock et al 2008
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        pg = Proxs::L2<6, 1>::Make(opts.tv22.Get() * σ, grad->oshape, Sz1{3});
+        pl = Proxs::L2<5, 1>::Make(opts.tv22.Get() * (1 - σ), lap->oshape, Sz1{3});
+
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      pg = Proxs::L1::Make(opts.tv22.Get() * σ, grad->rows());
+      pl = Proxs::L1::Make(opts.tv22.Get() * (1 - σ), lap->rows());
+    }
+    auto prox = Proxs::Stack::Make({pg, pl});
+    regs.push_back({both, prox, grad->oshape});
+  }
+
   if (opts.tvt) {
     auto grad = TOps::Grad<5, 1>::Make(shape, Sz1{0});
     auto prox = Proxs::L1::Make(opts.tvt.Get(), grad->rows());
@@ -148,6 +172,25 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
       }
     } else {
       prox = Proxs::L1::Make(opts.lap.Get(), A->cols());
+    }
+    regs.push_back({lap, prox, shape});
+  }
+
+  if (opts.lap2) {
+    auto             lap = TOps::IsoΔ3D<5>::Make(shape);
+    Proxs::Prox::Ptr prox;
+    if (opts.iso) {
+      if (opts.iso.Get() == "b") {
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap2.Get(), shape, Sz1{4});
+      } else if (opts.iso.Get() == "t") {
+        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap2.Get(), shape, Sz1{5});
+      } else if (opts.iso.Get() == "bt") {
+        prox = std::make_shared<Proxs::L2<5, 2>>(opts.lap2.Get(), shape, Sz2{4, 5});
+      } else {
+        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+      }
+    } else {
+      prox = Proxs::L1::Make(opts.lap2.Get(), A->cols());
     }
     regs.push_back({lap, prox, shape});
   }

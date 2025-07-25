@@ -1,4 +1,5 @@
 #include "rl/op/grad.hpp"
+#include "rl/op/laplacian.hpp"
 #include "rl/tensors.hpp"
 #include "rl/algo/eig.hpp"
 
@@ -48,5 +49,14 @@ TEST_CASE("grad-eig", "[eig]")
     CHECK(vg1 == Approx(1.f).margin(3.e-2f));
     CHECK(vg2 == Approx(1.f).margin(3.e-2f));
     CHECK(vg3 == Approx(1.f).margin(3.e-2f));
+
+    auto lap = TOps::Laplacian<3>::Make(Sz3{sz, sz, sz});
+    auto const [vl, vcl] = PowerMethodForward(lap, nullptr, N);
+    auto lap2 = TOps::IsoΔ3D<3>::Make(Sz3{sz, sz, sz});
+    auto const [vl2, vcl2] = PowerMethodForward(lap2, nullptr, N);
+
+    CHECK(vl == Approx(1.f).margin(5.e-2f));
+    INFO("vl2 " << vl2);
+    CHECK(vl2 == Approx(1.f).margin(5.e-2f));
   }
 }

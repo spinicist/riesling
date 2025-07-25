@@ -18,6 +18,7 @@ void main_grad(args::Subparser &parser)
   args::Flag                    div(parser, "D", "Apply Div", {"div"});
   args::Flag                    vec(parser, "V", "Apply Vector Gradient", {"vec"});
   args::Flag                    lap(parser, "F", "Apply Laplacian", {"lap", 'l'});
+  args::Flag                    lap2(parser, "F", "Apply isotropic Laplacian", {"lap2"});
   args::ValueFlag<int>          diffOrder(parser, "G", "Finite difference scheme", {"diff"}, 0);
   ParseCommand(parser);
   if (!iname) { throw args::Error("No input file specified"); }
@@ -32,11 +33,17 @@ void main_grad(args::Subparser &parser)
       TOps::Laplacian<5> g(shape);
       auto const         output = g.forward(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
+    } else if (lap2) {
+      auto const      input = reader.readTensor<Cx5>();
+      auto const      shape = input.dimensions();
+      TOps::IsoΔ3D<5> g(shape);
+      auto const      output = g.forward(input);
+      writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
     } else if (div) {
-      auto const   input = reader.readTensor<Cx6>();
-      auto const   shape = input.dimensions();
+      auto const      input = reader.readTensor<Cx6>();
+      auto const      shape = input.dimensions();
       TOps::Div<5, 3> g(FirstN<5>(shape), Sz3{0, 1, 2});
-      auto const   output = g.forward(input);
+      auto const      output = g.forward(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
     } else if (vec) {
       auto const          input = reader.readTensor<Cx6>();
@@ -57,6 +64,12 @@ void main_grad(args::Subparser &parser)
       auto const         shape = input.dimensions();
       TOps::Laplacian<5> g(shape);
       auto const         output = g.adjoint(input);
+      writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
+    } else if (lap2) {
+      auto const      input = reader.readTensor<Cx5>();
+      auto const      shape = input.dimensions();
+      TOps::IsoΔ3D<5> g(shape);
+      auto const      output = g.adjoint(input);
       writer.writeTensor("data", output.dimensions(), output.data(), {"i", "j", "k", "b", "t"});
     } else if (div) {
       auto const       input = reader.readTensor<Cx5>();
