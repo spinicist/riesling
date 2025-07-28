@@ -15,29 +15,21 @@ The main reconstruction tool you should use is `riesling recon-rlsq`_. This solv
 
     RIESLING supports sub-space reconstruction using the specified basis vectors.
 
-* ``--scale=otsu/bart/S``
+* ``--tophat``
 
-    This option is ignored for ```rss``` and ``sense``. Specify the scaling of the data during reconstruction. This is important for the regularized reconstructions as it means values of λ will be comparable between different datasets. The aim is to have voxel intensities of about 1 in signal regions. The default method is to perform a SENSE reconstruction and then normalise to the median foreground value determined with Otsu's method. An option to replicate the scaling used in BART is provided. Finally the scaling can be fixed to a known reasonable value. This is a multiplicative scaling.
-
-* ``--kernel=NN,KB2,KB4,KB6,ES2,ES4,ES6``
-
-    Choose the gridding kernel. Valid options are:
-    
-    ** NN (nearest-neighbour), see `C. Oesterle, M. Markl, R. Strecker, F. M. Kraemer, and J. Hennig, ‘Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems’, Journal of Magnetic Resonance Imaging, vol. 10, no. 1, pp. 84–92, Jul. 1999 <http://doi.wiley.com/10.1002/%28SICI%291522-2586%28199907%2910%3A1%3C84%3A%3AAID-JMRI12%3E3.0.CO%3B2-D>`_.
-    
-    ** KB2/KB4/KB6 Kaiser-Bessel kernel with width 2/4/6. See `P. J. Beatty, D. G. Nishimura, and J. M. Pauly, ‘Rapid gridding reconstruction with a minimal oversampling ratio’, IEEE Transactions on Medical Imaging, vol. 24, no. 6, pp. 799–808, Jun. 2005 <http://ieeexplore.ieee.org/document/1435541/>`_
-    
-    ** ES2/ES4/ES6 Exponential of a Semi-circle kernel with width 2/4/6. See `A. H. Barnett, ‘Aliasing error of the exp ⁡ ( β 1 − z 2 ) kernel in the nonuniform fast Fourier transform’, Applied and Computational Harmonic Analysis, vol. 51, pp. 1–16, Mar. 2021 <https://linkinghub.elsevier.com/retrieve/pii/S1063520320300725>`_
-    
-    The default is ES4 which is marginally faster than the usual Kaiser-Bessel and gives comparable results. Wider kernels provide a marginal increase in image quality at the expense of much slower runtimes. ES2 usually gives acceptable image quality and can be much faster.
+    Use a top-hat kernel/nearest-neighbour gridding, see `C. Oesterle, M. Markl, R. Strecker, F. M. Kraemer, and J. Hennig, ‘Spiral reconstruction by regridding to a large rectilinear matrix: A practical solution for routine systems’, Journal of Magnetic Resonance Imaging, vol. 10, no. 1, pp. 84–92, Jul. 1999 <http://doi.wiley.com/10.1002/%28SICI%291522-2586%28199907%2910%3A1%3C84%3A%3AAID-JMRI12%3E3.0.CO%3B2-D>`_. The default kernel is a width 4 exponential of a semi-circle, see `A. H. Barnett, ‘Aliasing error of the exp ⁡ ( β 1 − z 2 ) kernel in the nonuniform fast Fourier transform’, Applied and Computational Harmonic Analysis, vol. 51, pp. 1–16, Mar. 2021 <https://linkinghub.elsevier.com/retrieve/pii/S1063520320300725>`_.
 
 * ``--osamp=S``
 
     Grid oversampling factor, default 1.3. See `P. J. Beatty, D. G. Nishimura, and J. M. Pauly, ‘Rapid gridding reconstruction with a minimal oversampling ratio’, IEEE Transactions on Medical Imaging, vol. 24, no. 6, pp. 799–808, Jun. 2005 <http://ieeexplore.ieee.org/document/1435541/>`_.
 
-* ``--fov=F``
+* ``--fov=F,F,F``, ``--crop-fov=F,F,F``
 
-    Set the reconstruction FOV. A new matrix size will be calculated using the header voxel-size information.In situations where there is significant signal outside the nominal FOV, but the data was acquired oversampled, then this can be used to prevent aliasing artefacts and improve image quality. `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018 <http://doi.wiley.com/10.1002/mrm.26928>`_.
+    Set the fields of view to use during iterations and the final cropping respectively. Matrix sizes will be calculated using the header voxel-size information. In situations where there is significant signal outside the nominal FOV, but the data was acquired oversampled, then this can be used to prevent aliasing artefacts and improve image quality. `C. A. Baron, N. Dwork, J. M. Pauly, and D. G. Nishimura, ‘Rapid compressed sensing reconstruction of 3D non-Cartesian MRI’, Magnetic Resonance in Medicine, vol. 79, no. 5, pp. 2685–2692, May 2018 <http://doi.wiley.com/10.1002/mrm.26928>`_. The default for both is the matrix size multipled by the voxel size in the header.
+
+* ``--matrix=M,M,M``
+
+    Override the matrix size in the header. The voxel sizes will be rescaled to keep the FOV the same.
 
 * ``--lowmem``
 
@@ -46,10 +38,6 @@ The main reconstruction tool you should use is `riesling recon-rlsq`_. This solv
 * ``--precon=none/kspace/file``
 
     Choose a diagonal k-space preconditioner. The default is Frank Ong's preconditioner. See `F. Ong, M. Uecker, and M. Lustig, ‘Accelerating Non-Cartesian MRI Reconstruction Convergence Using k-Space Preconditioning’, IEEE Trans. Med. Imaging, vol. 39, no. 5, pp. 1646–1654, May 2020<https://ieeexplore.ieee.org/document/8906069/>`_.
-
-* ``--pre-bias=N``
-
-    In a sub-space reconstruction it is possible for the preconditioner calculation to contain divide-by-zero problems. This option adds a bias to the calculation to prevent this causing problems. The default value is 1.
 
 recon-lsq
 ---------
@@ -99,6 +87,8 @@ See `denoise`_. The same regularizers are available for ``recon-rlsq``.
 
 *ADMM Options*
 
+    The Alternating-Directions Method-of-Multipliers is a very robust algorithm for solving non-smooth regularized least-squares. However, it requires solving an inverse problem on every iteration, which itself must be solved using an iterative scheme. This means it can be very slow. However, there is only parameter for the algorithm (rho) and the adaptive scheme implemented in riesling means that you should not have to adjust the default parameter. ADMM is hence currently the default choice as it is essentially guaranteed to converge to a sensible answer, given enough iterations.
+
 * ``--max-its1=N``, ``--max-its0=N``--atol=A``, ``--btol=B``, ``--ctol=C``
 
     These are the same as for ``recon-lsq`` and control the inner loop of the optimization (the x update step). As this step is warm-started, the default for `max-its` is 1. However, this may be insufficient to reach a good approximation of the answer on the first outer iteration,so there is an extra `max-its0` option with a default of 4.
@@ -117,13 +107,15 @@ See `denoise`_. The same regularizers are available for ``recon-rlsq``.
 
 *PDHG Options*
 
+    The preconditioned Primal-Dual Hybrid Gradient is potentially must faster than ADMM as it does not require an inner solve. However, if the step lengths are incorrectly chosen it will not converge.
+
 * ``--pdhg``
 
     Enables the PDHG algorithm instead of ADMM
 
 * ``--lambda-A=l``, ``--lambda-G=l``
 
-    The maximum eigenvalues of the encoding operator and regularizer transform respectively. The latter can be calculated explicitly, see `W. G. Bickley and J. McNamee, ‘Eigenvalues and eigenfunctions of finite-difference operators’, Math. Proc. Camb. Phil. Soc., vol. 57, no. 3, pp. 532–546, Jul. 1961, doi: 10.1017/S0305004100035593.<https://www.cambridge.org/core/product/identifier/S0305004100035593/type/journal_article>`_. The default value of 16 is sufficient. However the value for A must be calculated using ``riesling eig`` for each trajectory you use.
+    The maximum eigenvalues of the encoding operator and regularizer transform respectively. Care has been taken to scale all linear operators such that their maximum eigenvalues are 1 (see e.g. `W. G. Bickley and J. McNamee, ‘Eigenvalues and eigenfunctions of finite-difference operators’, Math. Proc. Camb. Phil. Soc., vol. 57, no. 3, pp. 532–546, Jul. 1961, doi: 10.1017/S0305004100035593.<https://www.cambridge.org/core/product/identifier/S0305004100035593/type/journal_article>`_). The preconditioner should make the maximum eigenvalue of the encoding operator close to 1, and hence the default values of 1 should converge. However, for certain pathological trajectories the maximum eigenvalue may be slightly above 1, in which case set ``--lambda-A`` > 1. You can calculate the eigenvalue for a particular trajectory using ``riesling eig``.
 
 * ``--max-iters=N``, ``--res-tol=r``, ``--delta-tol=d``
 
@@ -237,13 +229,17 @@ Multiple regularizers can be specified simultaneously, each with a different reg
 
     Classic `Total Variation <https://linkinghub.elsevier.com/retrieve/pii/016727899290242F>`_ regularization, i.e. λ|∇x|
 
+* ``--tv2=λ``
+
+    Second-order TV, i.e. the gradient and the isotropic Laplacian. Has comparable quality to TGV but much lower memory consumption and much faster convergence. See `A Combined First and Second Order Variational Approach for Image Reconstruction <http://link.springer.com/10.1007/s10851-013-0445-4>`_.
+
 * ``--tgv=λ``, ``--tgvl2=λ``
 
     `Total Generalized Variation <http://doi.wiley.com/10.1002/mrm.22595>`_ and `TGV on the L2 voxelwise norm <http://ieeexplore.ieee.org/document/7466848/>`_. The latter is useful for multichannel images. Note that due to the way the TGV problem is formulated, it consumes significantly more memory and is slower than TV for the same data.
 
-* ``--iso=b|g|bg``
+* ``--iso=b|g|bg|bt|gt|bgt``
 
-    Isotropic or joint denoising on the specified dimensions (basis, spatial gradients, or both) for TV or TGV. See `F. Knoll, M. Holler, T. Koesters, R. Otazo, K. Bredies, and D. K. Sodickson, ‘Joint MR-PET Reconstruction Using a Multi-Channel Image Regularizer’, IEEE Trans. Med. Imaging, vol. 36, no. 1, pp. 1–16, Jan. 2017, doi: 10.1109/TMI.2016.2564989.<http://ieeexplore.ieee.org/document/7466848/>`_.
+    Isotropic or joint denoising on the specified dimensions (basis, spatial gradients, time) for TV, TV2, TGV or L1. Not all regularizers support all combinations. See `F. Knoll, M. Holler, T. Koesters, R. Otazo, K. Bredies, and D. K. Sodickson, ‘Joint MR-PET Reconstruction Using a Multi-Channel Image Regularizer’, IEEE Trans. Med. Imaging, vol. 36, no. 1, pp. 1–16, Jan. 2017, doi: 10.1109/TMI.2016.2564989.<http://ieeexplore.ieee.org/document/7466848/>`_.
 
 * ``--llr=λ``, ``--llr-patch=N``, ``--llr-win=N``, ``--llr-shift``
 
