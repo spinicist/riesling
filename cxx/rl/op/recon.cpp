@@ -21,7 +21,7 @@ auto Single(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index con
 {
   auto nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, 1, b);
   if constexpr (ND == 2) {
-    auto                     ri = TOps::MakeReshapeInput(nufft, Concatenate(FirstN<2>(nufft->ishape), LastN<1>(nufft->ishape)));
+    auto                 ri = TOps::MakeReshapeInput(nufft, Concatenate(FirstN<2>(nufft->ishape), LastN<1>(nufft->ishape)));
     TOps::TOp<4, 4>::Ptr sliceLoop = TOps::MakeLoop<2, 3>(ri, nSlab);
     TOps::TOp<5, 5>::Ptr timeLoop = TOps::MakeLoop<4, 4>(sliceLoop, nTime);
     return timeLoop;
@@ -94,8 +94,8 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
     } else {
       auto sense =
         TOps::MakeSENSE(SENSE::KernelsToMaps<ND>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp), b ? b->nB() : 1);
-      auto nufft = rOpts.tophat ? TOps::NUFFT<ND, TopHat<1>>::Make(gridOpts, traj, skern.dimension(3), b)
-                                : TOps::NUFFT<ND, ExpSemi<4>>::Make(gridOpts, traj, skern.dimension(3), b);
+      auto nufft = rOpts.tophat ? TOps::NUFFT<ND, TopHat<1>>::Make(gridOpts, traj, sense->nChannels(), b)
+                                : TOps::NUFFT<ND, ExpSemi<4>>::Make(gridOpts, traj, sense->nChannels(), b);
       if constexpr (ND == 2) {
         auto slices = TOps::MakeLoop<2, 3>(nufft, nSlab);
         auto ss = TOps::MakeCompose(sense, slices);

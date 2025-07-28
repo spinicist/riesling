@@ -127,27 +127,24 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
   }
-  if (nomChan.dimension(4) != nomRef.dimension(3)) {
-    throw Log::Failure("SENSE", "Basis dimension doesn't match channels {} reference {}", nomChan.dimension(4),
-                       nomRef.dimension(4));
+  if (nomChan.dimension(3) != nomRef.dimension(3)) {
+    throw Log::Failure("SENSE", "Basis dimension doesn't match channels {} reference {}", nomChan.dimension(3),
+                       nomRef.dimension(3));
   }
-  Index const nC = nomChan.dimension(3);
-  Index const nB = nomChan.dimension(4);
-
-  // Dims are i,j,k,c,b need them to be i,j,k,b,c
-  Cx5 const schan = nomChan.shuffle(Sz5{0, 1, 2, 4, 3});
+  Index const nB = nomChan.dimension(3);
+  Index const nC = nomChan.dimension(4);
 
   Index const kW = std::floor(nomKW * osamp / 2) * 2 + 1;
   Sz3         osshape;
   if constexpr (ND == 2) {
-    osshape = AddBack(MulToEven(FirstN<2>(schan.dimensions()), osamp), schan.dimension(2));
+    osshape = AddBack(MulToEven(FirstN<2>(nomChan.dimensions()), osamp), nomChan.dimension(2));
   } else {
-    osshape = MulToEven(FirstN<3>(schan.dimensions()), osamp);
+    osshape = MulToEven(FirstN<3>(nomChan.dimensions()), osamp);
   }
   Sz5 const cshape = AddBack(osshape, nB, nC);
   Sz4 const rshape = AddBack(osshape, nB);
 
-  Cx5 const channels = TOps::Pad<5>(schan.dimensions(), cshape).forward(schan) / Cx(Norm<true>(schan));
+  Cx5 const channels = TOps::Pad<5>(nomChan.dimensions(), cshape).forward(nomChan) / Cx(Norm<true>(nomChan));
   Cx4 const ref = TOps::Pad<4>(nomRef.dimensions(), rshape).forward(nomRef) / Cx(Norm<true>(nomRef));
 
   Sz5 kshape;
@@ -218,7 +215,7 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
     auto const      k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
-  return kernels.shuffle(Sz5{0, 1, 2, 4, 3});
+  return kernels;
 }
 
 template auto
@@ -270,12 +267,12 @@ template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, T
   if (opts.type == "auto") {
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels<ND>(opts, gopts, traj, noncart);
-    Cx4 const ref = DimDot<3>(c, c).sqrt();
+    Cx4 const ref = DimDot<4>(c, c).sqrt();
     kernels = EstimateKernels<ND>(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
   } else {
     HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
-    if (kernels.dimension(3) != noncart.dimension(0)) {
+    if (kernels.dimension(4) != noncart.dimension(0)) {
       throw(Log::Failure("SENSE", "Kernel channels {} did not match data {}", kernels.dimension(3), noncart.dimension(0)));
     }
   }

@@ -135,12 +135,12 @@ TEST_CASE("GridB", "[op]")
   CHECK(cart(3, 0, 0).real() == Approx(0.f).margin(1e-2f));
   CHECK(cart(4, 0, 0).real() == Approx(0.f).margin(1e-2f));
   CHECK(cart(5, 0, 0).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(0, 0, 1).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(1, 0, 1).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(2, 0, 1).real() == Approx(0.f).margin(1e-2f));
-  CHECK(cart(3, 0, 1).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(4, 0, 1).real() == Approx(1.f).margin(1e-2f));
-  CHECK(cart(5, 0, 1).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(0, 1, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(1, 1, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(2, 1, 0).real() == Approx(0.f).margin(1e-2f));
+  CHECK(cart(3, 1, 0).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(4, 1, 0).real() == Approx(1.f).margin(1e-2f));
+  CHECK(cart(5, 1, 0).real() == Approx(1.f).margin(1e-2f));
   Cx3 nc2 = grid->forward(cart);
   INFO("NC\n" << nc2);
   CHECK(Norm<false>(nc2 - noncart) == Approx(0.f).margin(1e-2f));

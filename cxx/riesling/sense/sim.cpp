@@ -30,5 +30,5 @@ void main_sense_sim(args::Subparser &parser)
   sense /= DimDot<3>(sense, sense).sqrt().reshape(AddBack(shape, 1)).broadcast(Sz4{1, 1, 1, nchan.Get()});
 
   HD5::Writer writer(oname.Get());
-  writer.writeTensor(HD5::Keys::Data, AddBack(sense.dimensions(), 1), sense.data(), HD5::Dims::SENSE);
+  writer.writeTensor(HD5::Keys::Data, AddBack(shape, 1, nchan.Get()), sense.data(), HD5::Dims::SENSE);
 }

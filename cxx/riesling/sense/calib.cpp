@@ -40,7 +40,7 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
             .abs()
             .template cast<Cx>();
   } else {
-    ref = DimDot<3>(channels, channels).sqrt();
+    ref = DimDot<4>(channels, channels).sqrt();
   }
   Cx5 const kernels = SENSE::EstimateKernels<ND>(channels, ref, senseArgs.kWidth.Get(), gridOpts.osamp.Get(), senseArgs.l.Get(),
                                                  senseArgs.λ.Get());

@@ -9,21 +9,26 @@
 namespace rl::TOps {
 
 SENSEOp::SENSEOp(Cx5 const &maps, Index const nB)
-  : Parent("SENSEOp", AddBack(FirstN<3>(maps.dimensions()), nB), AddBack(FirstN<3>(maps.dimensions()), maps.dimension(3), nB))
+  : Parent("SENSEOp")
   , maps_{maps}
 {
   for (int ii = 0; ii < 3; ii++) {
+    ishape[ii] = maps_.dimension(ii);
+    oshape[ii] = maps_.dimension(ii);
     resX.set(ii, maps_.dimension(ii));
   }
-  resX.set(4, nB);
-  brdX.set(3, maps_.dimension(3));
+  ishape[3] = nB;
+  oshape[3] = nB;
+  oshape[4] = maps_.dimension(4);
+  resX.set(3, nB);
+  brdX.set(4, maps_.dimension(4));
 
-  if (maps_.dimension(4) == 1) {
-    brdMaps.set(4, nB);
-  } else if (maps_.dimension(0) == nB) {
-    brdMaps.set(4, 1);
+  if (maps_.dimension(3) == 1) {
+    brdMaps.set(3, nB);
+  } else if (maps_.dimension(3) == nB) {
+    brdMaps.set(3, 1);
   } else {
-    throw Log::Failure("SENSEOp", "Maps had basis size {} expected {}", maps_.dimension(4), nB);
+    throw Log::Failure("SENSEOp", "Maps had basis size {} expected {}", maps_.dimension(3), nB);
   }
 }
 
@@ -44,18 +49,18 @@ void SENSEOp::iforward(InCMap x, OutMap y, float const s) const
 void SENSEOp::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::TensorDevice()) = (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3}) * x.constant(s);
+  x.device(Threads::TensorDevice()) = (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{4}) * x.constant(s);
   this->finishAdjoint(x, time, false);
 }
 
 void SENSEOp::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{3}) * x.constant(s);
+  x.device(Threads::TensorDevice()) += (y * maps_.broadcast(brdMaps).conjugate()).sum(Sz1{4}) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 
-auto SENSEOp::nChannels() const -> Index { return oshape[3]; }
+auto SENSEOp::nChannels() const -> Index { return oshape[4]; }
 auto SENSEOp::mapDimensions() const -> Sz3 { return FirstN<3>(ishape); }
 auto SENSEOp::maps() const -> Cx5 { return maps_; }
 

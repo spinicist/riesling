@@ -31,7 +31,7 @@ TEST_CASE("Recon", "[op]")
   float const       osamp = GENERATE(1.3f);
   auto              nufft = TOps::NUFFT<3>::Make(GridOpts<3>{.osamp = osamp}, traj, nC, &basis);
 
-  Cx5 senseMaps(AddBack(traj.matrix(), nC, 1));
+  Cx5 senseMaps(AddBack(traj.matrix(), 1, nC));
   senseMaps.setConstant(std::sqrt(1. / nC));
   auto sense = TOps::MakeSENSE(senseMaps, 1);
   auto recon = TOps::MakeCompose(sense, nufft);
@@ -64,7 +64,7 @@ TEST_CASE("ReconLowmem", "[op]")
   Trajectory const traj(points, matrix);
   Basis            basis;
 
-  Cx5 sKern(AddBack(traj.matrix(), nC, 1));
+  Cx5 sKern(AddBack(traj.matrix(), 1, nC));
   sKern.setConstant(std::sqrt(1. / nC));
   FFT::Forward(sKern, Sz3{0, 1, 2});
   auto recon = TOps::NUFFTLowmem<3>::Make(GridOpts<3>(), traj, sKern, &basis);

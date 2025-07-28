@@ -58,11 +58,11 @@ template <size_t N> struct DNames : std::array<std::string, N>
 
 namespace Dims {
 DNames<3> const Basis = {"b", "sample", "trace"};
-DNames<6> const Channels = {"i", "j", "k", "channel", "b", "t"};
+DNames<6> const Channels = {"i", "j", "k", "b", "channel", "t"};
 DNames<3> const Image = {"i", "j", "k"};
 DNames<5> const Images = {"i", "j", "k", "b", "t"};
 DNames<5> const Noncartesian = {"channel", "sample", "trace", "slab", "t"};
-DNames<5> const SENSE = {"i", "j", "k", "channel", "b"};
+DNames<5> const SENSE = {"i", "j", "k", "b", "channel"};
 DNames<3> const Trajectory = {"k", "sample", "trace"};
 } // namespace Dims
 

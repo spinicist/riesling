@@ -17,9 +17,9 @@ struct SENSEOp final : TOp<4, 5>
 
 private:
   Cx5                                                   maps_;
-  Eigen::IndexList<int, int, int, FixOne, int>          resX;
-  Eigen::IndexList<FixOne, FixOne, FixOne, int, FixOne> brdX;
-  Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, int> brdMaps;
+  Eigen::IndexList<int, int, int, int, FixOne>          resX;
+  Eigen::IndexList<FixOne, FixOne, FixOne, FixOne, int> brdX;
+  Eigen::IndexList<FixOne, FixOne, FixOne, int, FixOne> brdMaps;
 };
 
 auto MakeSENSE(Cx5 const &maps, Index const nB) -> SENSEOp::Ptr;

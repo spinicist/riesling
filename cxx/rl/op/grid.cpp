@@ -26,7 +26,7 @@ Grid<ND, KF, SG>::Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, In
   static_assert(ND < 4);
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
   gridLists = traj.toCoordLists(osMatrix, kernel.FullWidth, SGSZ, false);
-  ishape = AddBack(osMatrix, nC, basis ? basis->nB() : 1);
+  ishape = AddBack(osMatrix, basis ? basis->nB() : 1, nC);
   oshape = Sz3{nC, traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
   Log::Debug("Grid", "ishape {} oshape {}", this->ishape, this->oshape);
@@ -35,7 +35,7 @@ Grid<ND, KF, SG>::Grid(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, In
 template <int ND, typename KF, int SG> void
 Grid<ND, KF, SG>::forwardTask(Index const start, Index const stride, float const s, CxNCMap<ND + 2> const x, Cx3Map y) const
 {
-  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), basis ? basis->nB() : 1, y.dimension(0)));
   for (size_t is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
@@ -74,7 +74,7 @@ template <int ND, typename KF, int SG>
 void Grid<ND, KF, SG>::adjointTask(Index const start, Index const stride, float const s, Cx3CMap y, CxNMap<ND + 2> x) const
 
 {
-  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), basis ? basis->nB() : 1, y.dimension(0)));
   for (size_t is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     sx.setZero();

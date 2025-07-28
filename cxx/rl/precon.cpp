@@ -185,7 +185,7 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 Cx5 const             &smaps,
                                                 Sz<NB> const           bshape) -> TOps::TOp<3 + NB, 3 + NB>::Ptr
 {
-  Index const nC = smaps.dimension(3);
+  Index const nC = smaps.dimension(4);
   auto const  shape = Concatenate(Sz3{nC, traj.nSamples(), traj.nTraces()}, bshape);
   if (opts.type == "" || opts.type == "none") {
     Log::Print("Precon", "Using no preconditioning");

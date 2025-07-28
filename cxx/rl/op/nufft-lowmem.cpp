@@ -41,12 +41,12 @@ template <int ND, typename KF> NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> con
 
   // Broadcast SENSE across basis if needed
   sbrd.fill(1);
-  if (skern.dimension(ND + 1) == 1) {
+  if (skern.dimension(DB) == 1) {
     sbrd[ND] = nB;
-  } else if (skern.dimension(ND + 1) == nB) {
+  } else if (skern.dimension(DB) == nB) {
     sbrd[ND] = 1;
   } else {
-    throw Log::Failure(this->name, "SENSE kernels had basis dimension {}, expected 1 or {}", skern.dimension(ND + 2), nB);
+    throw Log::Failure(this->name, "SENSE kernels had basis dimension {}, expected 1 or {}", skern.dimension(ND), nB);
   }
 }
 

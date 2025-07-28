@@ -6,11 +6,11 @@
     riesling sense-sim ${PREFIX}-sim-sense.h5 --matrix=$MAT --vox-size=$VOX --channels=4
     riesling op-sense --fwd ${PREFIX}-phantom.h5 ${PREFIX}-channels.h5 ${PREFIX}-sim-sense.h5
     riesling op-nufft --fwd ${PREFIX}-channels.h5 ${PREFIX}-noiseless.h5
-    riesling noisify ${PREFIX}-noiseless.h5 ${PREFIX}-kspace.h5 -s 0.1
+    riesling noisify ${PREFIX}-noiseless.h5 ${PREFIX}-kspace.h5 -s0.1
 }
 
 @test "Run naive reconstruction" {
-    riesling recon-lsq basic-kspace.h5 naive-lsq.h5
+    riesling recon-lsq basic-kspace.h5 naive-lsq.h5 -v3
 }
 
 @test "SENSE Calib" {
@@ -20,7 +20,7 @@
 }
 
 @test "Run lowmem reconstruction" {
-    riesling recon-lsq basic-kspace.h5 lowmem-lsq.h5 --sense=calib-k.h5 --lowmem
+    riesling recon-lsq basic-kspace.h5 naive-lowmem.h5 --sense=calib-k.h5 --lowmem
 }
 
 @test "Run frames reconstruction" {
@@ -30,8 +30,8 @@
     riesling basis-blend ${PREFIX}-lsq.h5 ${PREFIX}.h5 ${PREFIX}-blend.h5
 }
 
-@test "Run PDHG TGV" {
-    riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --tgv=0.1 --pdhg --lambda-A=2 -i64
+@test "Run PDHG TV" {
+    riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --tv=0.1 --pdhg -i64
 }
 
 # @test "Run DECANTER reconstruction" {

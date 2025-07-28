@@ -14,14 +14,14 @@ TEST_CASE("SENSE", "[op]")
   SECTION("Dot Test")
   {
     Cx4 x(mapSz, mapSz, mapSz, 1), u(mapSz, mapSz, mapSz, 1);
-    Cx5 maps(mapSz, mapSz, mapSz, channels, 1);
-    Cx5 y(mapSz, mapSz, mapSz, channels, 1), v(mapSz, mapSz, mapSz, channels, 1);
+    Cx5 maps(mapSz, mapSz, mapSz, 1, channels);
+    Cx5 y(mapSz, mapSz, mapSz, 1, channels), v(mapSz, mapSz, mapSz, 1, channels);
 
     v.setRandom();
     u.setRandom();
     // The maps need to be normalized for the Dot test
     maps.setRandom();
-    maps = maps / DimDot<3>(maps, maps).sqrt().reshape(Sz5{mapSz, mapSz, mapSz, 1, 1}).broadcast(Sz5{1, 1, 1, channels, 1});
+    maps = maps / DimDot<4>(maps, maps).sqrt().reshape(Sz5{mapSz, mapSz, mapSz, 1, 1}).broadcast(Sz5{1, 1, 1, 1, channels});
 
     TOps::SENSEOp sense(maps, 1);
     y = sense.forward(u);

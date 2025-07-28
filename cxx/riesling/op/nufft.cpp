@@ -42,7 +42,7 @@ template <int ND> void run_nufft(args::Subparser &parser)
     } else {
       nS = 1;
     }
-    auto const nC = shape[3];
+    auto const nC = shape[4];
     auto const nT = shape[5];
     auto const nufft = TOps::NUFFT<ND>::Make(gridArgs.Get(), traj, nC, basis.get());
     auto const A = Loopify<ND>(nufft, nS, nT);
