@@ -129,6 +129,7 @@ template struct L2<5, 1>;
 template struct L2<5, 2>;
 template struct L2<6, 1>;
 template struct L2<6, 2>;
+template struct L2<6, 3>;
 
 auto L2Residual::Make(CMap b) -> Prox::Ptr { return std::make_shared<L2Residual>(b); }
 

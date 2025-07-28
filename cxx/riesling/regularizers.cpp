@@ -16,11 +16,8 @@ RegOpts::RegOpts(args::Subparser &parser)
   : iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
 
   , l1(parser, "L1", "Simple L1 regularization", {"l1"})
-  , lap(parser, "L", "Laplacian regularization", {"lap", 'l'})
-  , lap2(parser, "L", "Isotropic Laplacian regularization", {"lap2"})
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tv2(parser, "TV", "TV + Laplacian", {"tv2"})
-  , tv22(parser, "TV", "TV + Isotropic Laplacian", {"tv22"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
   , tvt(parser, "TVT", "Total Variation along basis dimension", {"tvt"})
 
@@ -80,12 +77,20 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
     if (opts.iso) {
       if (opts.iso.Get() == "b") {
         prox = Proxs::L2<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{3});
+      } else if (opts.iso.Get() == "t") {
+        prox = Proxs::L2<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{4});
       } else if (opts.iso.Get() == "g") {
         prox = Proxs::L2<6, 1>::Make(opts.tv.Get(), grad->oshape, Sz1{5});
+      } else if (opts.iso.Get() == "bt") {
+        prox = Proxs::L2<6, 2>::Make(opts.tv.Get(), grad->oshape, Sz2{3, 4});
       } else if (opts.iso.Get() == "bg") {
         prox = Proxs::L2<6, 2>::Make(opts.tv.Get(), grad->oshape, Sz2{3, 5});
+      } else if (opts.iso.Get() == "gt") {
+        prox = Proxs::L2<6, 2>::Make(opts.tv.Get(), grad->oshape, Sz2{4, 5});
+      } else if (opts.iso.Get() == "bgt") {
+        prox = Proxs::L2<6, 3>::Make(opts.tv.Get(), grad->oshape, Sz3{3, 4, 5});
       } else {
-        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+        throw Log::Failure("Regs", "Valid dims are bgt");
       }
     } else {
       prox = Proxs::L1::Make(opts.tv.Get(), grad->rows());
@@ -95,7 +100,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
 
   if (opts.tv2) {
     auto grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2});
-    auto lap = TOps::Laplacian<5>::Make(shape);
+    auto lap = TOps::IsoΔ3D<5>::Make(shape);
     auto both = Ops::VStack::Make({grad, lap});
 
     Proxs::Prox::Ptr pg, pl;
@@ -104,36 +109,18 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
       if (opts.iso.Get() == "b") {
         pg = Proxs::L2<6, 1>::Make(opts.tv2.Get() * σ, grad->oshape, Sz1{3});
         pl = Proxs::L2<5, 1>::Make(opts.tv2.Get() * (1 - σ), lap->oshape, Sz1{3});
-
+      } else if (opts.iso.Get() == "t") {
+        pg = Proxs::L2<6, 1>::Make(opts.tv2.Get() * σ, grad->oshape, Sz1{4});
+        pl = Proxs::L2<5, 1>::Make(opts.tv2.Get() * (1 - σ), lap->oshape, Sz1{4});
+      } else if (opts.iso.Get() == "bt") {
+        pg = Proxs::L2<6, 2>::Make(opts.tv2.Get() * σ, grad->oshape, Sz2{3, 4});
+        pl = Proxs::L2<5, 2>::Make(opts.tv2.Get() * (1 - σ), lap->oshape, Sz2{3, 4});
       } else {
-        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+        throw Log::Failure("Regs", "Isotropic dims must bebt");
       }
     } else {
       pg = Proxs::L1::Make(opts.tv2.Get() * σ, grad->rows());
       pl = Proxs::L1::Make(opts.tv2.Get() * (1 - σ), lap->rows());
-    }
-    auto prox = Proxs::Stack::Make({pg, pl});
-    regs.push_back({both, prox, grad->oshape});
-  }
-
-  if (opts.tv22) {
-    auto grad = TOps::Grad<5, 3>::Make(shape, Sz3{0, 1, 2});
-    auto lap = TOps::IsoΔ3D<5>::Make(shape);
-    auto both = Ops::VStack::Make({grad, lap});
-
-    Proxs::Prox::Ptr pg, pl;
-    float const      σ = 0.77; // Bock et al 2008
-    if (opts.iso) {
-      if (opts.iso.Get() == "b") {
-        pg = Proxs::L2<6, 1>::Make(opts.tv22.Get() * σ, grad->oshape, Sz1{3});
-        pl = Proxs::L2<5, 1>::Make(opts.tv22.Get() * (1 - σ), lap->oshape, Sz1{3});
-
-      } else {
-        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
-      }
-    } else {
-      pg = Proxs::L1::Make(opts.tv22.Get() * σ, grad->rows());
-      pl = Proxs::L1::Make(opts.tv22.Get() * (1 - σ), lap->rows());
     }
     auto prox = Proxs::Stack::Make({pg, pl});
     regs.push_back({both, prox, grad->oshape});
@@ -157,44 +144,6 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
                     shape});
   }
 
-  if (opts.lap) {
-    auto             lap = TOps::Laplacian<5>::Make(shape);
-    Proxs::Prox::Ptr prox;
-    if (opts.iso) {
-      if (opts.iso.Get() == "b") {
-        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap.Get(), shape, Sz1{4});
-      } else if (opts.iso.Get() == "t") {
-        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap.Get(), shape, Sz1{5});
-      } else if (opts.iso.Get() == "bt") {
-        prox = std::make_shared<Proxs::L2<5, 2>>(opts.lap.Get(), shape, Sz2{4, 5});
-      } else {
-        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
-      }
-    } else {
-      prox = Proxs::L1::Make(opts.lap.Get(), A->cols());
-    }
-    regs.push_back({lap, prox, shape});
-  }
-
-  if (opts.lap2) {
-    auto             lap = TOps::IsoΔ3D<5>::Make(shape);
-    Proxs::Prox::Ptr prox;
-    if (opts.iso) {
-      if (opts.iso.Get() == "b") {
-        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap2.Get(), shape, Sz1{4});
-      } else if (opts.iso.Get() == "t") {
-        prox = std::make_shared<Proxs::L2<5, 1>>(opts.lap2.Get(), shape, Sz1{5});
-      } else if (opts.iso.Get() == "bt") {
-        prox = std::make_shared<Proxs::L2<5, 2>>(opts.lap2.Get(), shape, Sz2{4, 5});
-      } else {
-        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
-      }
-    } else {
-      prox = Proxs::L1::Make(opts.lap2.Get(), A->cols());
-    }
-    regs.push_back({lap, prox, shape});
-  }
-
   if (opts.l1) {
     Proxs::Prox::Ptr prox;
     if (opts.iso) {
@@ -205,7 +154,7 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
       } else if (opts.iso.Get() == "bt") {
         prox = std::make_shared<Proxs::L2<5, 2>>(opts.l1.Get(), shape, Sz2{4, 5});
       } else {
-        throw Log::Failure("Regs", "Isotropic dims must be b, g, or bg");
+        throw Log::Failure("Regs", "Valid dims are bt");
       }
     } else {
       prox = Proxs::L1::Make(opts.l1.Get(), A->cols());

@@ -15,11 +15,8 @@ struct RegOpts
   args::ValueFlag<std::string> iso;
 
   args::ValueFlag<float> l1;
-  args::ValueFlag<float> lap;
-  args::ValueFlag<float> lap2;
   args::ValueFlag<float> tv;
   args::ValueFlag<float> tv2;
-  args::ValueFlag<float> tv22;
   args::ValueFlag<float> tgv;
   args::ValueFlag<float> tvt;
 
