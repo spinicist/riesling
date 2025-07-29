@@ -73,18 +73,6 @@ void Shift(ducc0::vfmav<Cx> const &x, ducc0::fmav_info::shape_t const &axes)
 template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> const fftDims, bool const fwd)
 {
   auto const shape = x.dimensions();
-  /* For phase ramps */
-  Sz<ND> rsh, brd;
-  rsh.fill(1);
-  brd.fill(1);
-  for (size_t ii = 0; ii < ND; ii++) {
-    if (std::find(fftDims.begin(), fftDims.end(), ii) == fftDims.end()) {
-      brd[ii] = shape[ii];
-    } else {
-      rsh[ii] = shape[ii];
-    }
-  }
-
   /* DUCC is row-major, reverse dims */
   std::vector<size_t> duccShape(ND), duccDims(NFFT);
   std::copy(shape.rbegin(), shape.rend(), duccShape.begin());

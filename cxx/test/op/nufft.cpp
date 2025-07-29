@@ -1,5 +1,4 @@
 #include "rl/op/nufft.hpp"
-#include "rl/basis/fourier.hpp"
 #include "rl/log/log.hpp"
 #include "rl/op/grid.hpp"
 

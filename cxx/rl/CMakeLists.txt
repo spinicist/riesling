@@ -35,7 +35,6 @@ algo/stats.cpp
 
 basis/basis.cpp
 basis/bernstein.cpp
-basis/fourier.cpp
 basis/svd.cpp
 
 func/dict.cpp
@@ -129,7 +128,6 @@ algo/stats.hpp
 
 basis/basis.hpp
 basis/bernstein.hpp
-basis/fourier.hpp
 basis/svd.hpp
 
 func/dict.hpp
