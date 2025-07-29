@@ -96,7 +96,7 @@ auto PDHG::run(CMap y) const -> Vector
     }
     // vnext = prox(v + σGx̅);
     G->iforward(x̅, v, σ);
-    proxʹ->conj(1.f, v, v);
+    proxʹ->conj(1.f, v, v); /* DANGER Be careful with patch-based regs like LLR */
     // xnext = x - τ(A'u + G'v)
     A->adjoint(u, x); // Re-use variables to save memory
     G->adjoint(v, x̅); // Re-use variables to save memory

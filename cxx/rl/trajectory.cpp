@@ -174,7 +174,7 @@ void TrajectoryN<ND>::shiftInFOV(Eigen::Vector3f const shift, Index const tst, I
     delta[ii] = shift[ii] / (voxel_size_[ii] * matrix_[ii]);
   }
 
-  Log::Debug("Traj", "Traces {}-{} FOV shift {} mm, fraction {}", tst, tst + tsz - 1, fmt::streamed(shift.transpose()),
+  Log::Print("Traj", "Traces {}-{} FOV shift {} mm, fraction {}", tst, tst + tsz - 1, fmt::streamed(shift.transpose()),
              fmt::streamed(delta));
   Sz5 const dshape = data.dimensions();
   Sz5 const rshape = Sz5{1, dshape[1], tsz, 1, 1};
@@ -377,7 +377,7 @@ auto TrajectoryN<ND>::toCoordLists(Sz<ND> const &oshape, Index const kW, Index c
       valid++;
     }
   }
-  Log::Print("Traj", "Ignored {} invalid trajectory points, {} remaing", invalids, valid);
+  Log::Print("Traj", "Ignored {} invalid trajectory points, {} remain", invalids, valid);
   auto const eraseCount = std::erase_if(subs, [](auto const &s) { return s.coords.empty(); });
   Log::Debug("Traj", "Removed {} empty subgrids, {} remaining", eraseCount, subs.size());
   Log::Debug("Traj", "Sorting subgrids");

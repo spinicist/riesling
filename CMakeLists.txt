@@ -23,5 +23,5 @@ if(BUILD_MERLIN)
 endif()
 project(riesling LANGUAGES CXX)
 include(Version)
-add_definitions(-DEIGEN_USE_THREADS) # Ensure this is always defined across all .cpp files
+add_definitions(-DEIGEN_USE_THREADS -DEIGEN_DONT_PARALLELIZE) # Ensure this is always defined across all .cpp files
 add_subdirectory(cxx)

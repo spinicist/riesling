@@ -10,11 +10,8 @@
 using namespace rl;
 
 namespace {
-std::unordered_map<int, Log::Display> levelMap{{0, Log::Display::None},
-                                               {1, Log::Display::Ephemeral},
-                                               {2, Log::Display::Low},
-                                               {3, Log::Display::Mid},
-                                               {4, Log::Display::High}};
+std::unordered_map<int, Log::Display> levelMap{
+  {0, Log::Display::None}, {1, Log::Display::Ephemeral}, {2, Log::Display::Low}, {3, Log::Display::High}};
 }
 
 args::Group                      global_group("GLOBAL OPTIONS");

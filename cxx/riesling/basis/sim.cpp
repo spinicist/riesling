@@ -113,8 +113,6 @@ void main_basis_sim(args::Subparser &parser)
     dmap = Q.transpose().cast<Cx>();
     Basis b(dall, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
-
-    Eigen::MatrixXcf const Ri = R.inverse();
   } else {
     Basis b(dall);
     b.write(oname.Get());

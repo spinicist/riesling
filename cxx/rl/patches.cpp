@@ -6,6 +6,9 @@ namespace rl {
 
 void Patches(Index const patchSize, Index const windowSize, bool const doShift, PatchFunction const &apply, Cx5CMap x, Cx5Map y)
 {
+  if (x.dimensions() != y.dimensions()) {
+    throw(Log::Failure("Patches", "Input shape {}, output shape {}", x.dimensions(), y.dimensions()));
+  }
   Sz3 nWindows, shift;
 
   for (Index ii = 0; ii < 3; ii++) {
@@ -30,10 +33,10 @@ void Patches(Index const patchSize, Index const windowSize, bool const doShift, 
   Sz5 const   szP{patchSize, patchSize, patchSize, x.dimension(3), x.dimension(4)};
   Index const inset = (patchSize - windowSize) / 2;
 
-  for (Index iz = 0; iz < nWindows[2]; iz++) {
-    for (Index iy = 0; iy < nWindows[1]; iy++) {
-      auto xTask = [&](Index const ilo, Index const ihi) {
-        for (Index ix = ilo; ix < ihi; ix++) {
+  auto task = [&](Index const ilo, Index const istr) {
+    for (Index iz = ilo; iz < nWindows[2]; iz += istr) {
+      for (Index iy = 0; iy < nWindows[1]; iy++) {
+        for (Index ix = 0; ix < nWindows[0]; ix++) {
           Sz3 ind{ix - 1, iy - 1, iz - 1};
           Sz5 stP, stW, stW2, szW;
           stP[3] = stW[3] = stW2[3] = 0;
@@ -59,10 +62,10 @@ void Patches(Index const patchSize, Index const windowSize, bool const doShift, 
             y.slice(stW, szW) = yp.slice(stW2, szW);
           }
         }
-      };
-      Threads::ChunkFor(xTask, nWindows[0]);
+      }
     }
-  }
+  };
+  Threads::StridedFor(nWindows[2], task);
 }
 
 } // namespace rl

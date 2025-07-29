@@ -17,13 +17,13 @@ enum struct Display
   None = 0,
   Ephemeral = 1,
   Low = 2,
-  Mid = 3,
-  High = 4
+  High = 3
 };
 
 using Time = std::chrono::high_resolution_clock::time_point;
 
 void SetDisplayLevel(Display const l);
+auto IsHigh() -> bool;
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
 void SaveEntry(std::string const &entry, fmt::terminal_color const color, Display const level);
 auto Saved() -> std::vector<std::string> const &;
@@ -36,7 +36,7 @@ template <typename... Args> inline void Print(std::string const &category, fmt::
 
 template <typename... Args> inline void Debug(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Display::Mid);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Display::High);
 }
 
 template <typename... Args>
