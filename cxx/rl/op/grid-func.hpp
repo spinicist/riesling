@@ -71,7 +71,7 @@ template <int FW> struct GFunc<1, FW>
                              Cx3Map                            sg)
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
-      auto const b = basis->entry(ib, sample, trace);
+      auto const b = std::conj(basis->entry(ib, sample, trace));
       if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index ix = 0; ix < FW; ix++) {
@@ -146,7 +146,7 @@ template <int FW> struct GFunc<2, FW>
                              Cx4Map                            sg)
   {
     for (Index ib = 0; ib < basis->nB(); ib++) {
-      auto const b = basis->entry(ib, sample, trace);
+      auto const b = std::conj(basis->entry(ib, sample, trace));
       if (b == Cx(0)) continue;
       for (Index ic = 0; ic < y.dimension(0); ic++) {
         for (Index iy = 0; iy < FW; iy++) {
@@ -236,7 +236,7 @@ template <int FW> struct GFunc<3, FW>
     for (Index ic = 0; ic < y.dimension(0); ic++) {
       Cx const cv = y(ic, sample, trace);
       for (Index ib = 0; ib < basis->nB(); ib++) {
-        Cx const b = basis->entry(ib, sample, trace);
+        Cx const b = std::conj(basis->entry(ib, sample, trace));
         if (b == Cx(0)) continue;
         Cx const bc = b * cv;
         for (Index iz = 0; iz < FW; iz++) {
