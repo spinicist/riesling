@@ -273,7 +273,7 @@ template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, T
     HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
     if (kernels.dimension(4) != noncart.dimension(0)) {
-      throw(Log::Failure("SENSE", "Kernel channels {} did not match data {}", kernels.dimension(3), noncart.dimension(0)));
+      throw(Log::Failure("SENSE", "Kernel channels {} did not match data {}", kernels.dimension(4), noncart.dimension(0)));
     }
   }
   return kernels;
