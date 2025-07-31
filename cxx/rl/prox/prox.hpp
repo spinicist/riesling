@@ -10,7 +10,6 @@ struct Prox
   using Vector = Eigen::Vector<Cx, Eigen::Dynamic>;
   using Map = typename Vector::AlignedMapType;
   using CMap = typename Eigen::Map<Vector const, Eigen::AlignedMax>;
-  using Op = Ops::Op;
   using Ptr = std::shared_ptr<Prox>;
 
   Prox(Index const sz);
@@ -32,7 +31,6 @@ struct Prox
   using Vector = typename Prox::Vector;                                                                                        \
   using Map = typename Prox::Map;                                                                                              \
   using CMap = typename Prox::CMap;                                                                                            \
-  using Op = typename Prox::Op;                                                                                                \
   using Ptr = Prox::Ptr;                                                                                                       \
   using Prox::apply;                                                                                                           \
   using Prox::conj;

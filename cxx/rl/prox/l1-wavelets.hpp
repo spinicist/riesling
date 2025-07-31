@@ -15,8 +15,8 @@ struct L1Wavelets final : Prox
   void conj(float const α, CMap x, Map z) const;
 
 private:
-  Op::Ptr waves;
-  L1      l1;
+  Ops::Op::Ptr waves;
+  L1           l1;
 };
 
 } // namespace rl::Proxs
