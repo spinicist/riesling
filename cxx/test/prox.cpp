@@ -117,12 +117,12 @@ TEST_CASE("ConjL2", "[prox]")
   CHECK((zc - ca).norm() == Approx(0.f).margin(1.e-6f));
 }
 
-TEST_CASE("ConjL2Resid", "[prox]")
+TEST_CASE("ConjSoS", "[prox]")
 {
   Index const            sz = 6;
   Eigen::VectorXcf const x = RandN(sz, 1.f), b = RandN(sz, 1.f);
   float const            α = 0.5f;
-  auto                   res = rl::Proxs::L2Residual::Make(rl::Proxs::Prox::CMap(b.data(), b.size()));
+  auto                   res = rl::Proxs::SumOfSquares::Make(rl::Proxs::Prox::CMap(b.data(), b.size()));
   auto                   rc = rl::Proxs::Conjugate::Make(res);
 
   INFO("b  " << b.transpose() << "\n");

@@ -131,16 +131,16 @@ template struct L2<6, 1>;
 template struct L2<6, 2>;
 template struct L2<6, 3>;
 
-auto L2Residual::Make(CMap b) -> Prox::Ptr { return std::make_shared<L2Residual>(b); }
+auto SumOfSquares::Make(CMap b) -> Prox::Ptr { return std::make_shared<SumOfSquares>(b); }
 
-L2Residual::L2Residual(CMap b_)
+SumOfSquares::SumOfSquares(CMap b_)
   : Prox(b_.size())
   , b{b_}
 {
   Log::Print("L2Res", "|b| {}", ParallelNorm(b));
 }
 
-void L2Residual::apply(float const α, CMap x, Map z) const
+void SumOfSquares::apply(float const α, CMap x, Map z) const
 {
   float const nx = ParallelNorm(x); // Cursed users might do this in place and overwrite x
   /* Worked this out by following §2.2 of Parykh and Boyd */
@@ -148,7 +148,7 @@ void L2Residual::apply(float const α, CMap x, Map z) const
   Log::Debug("L2Res", "α {} |x| {} |z| {}", α, nx, ParallelNorm(z));
 }
 
-void L2Residual::conj(float const α, CMap x, Map z) const
+void SumOfSquares::conj(float const α, CMap x, Map z) const
 {
   float const nx = ParallelNorm(x); // Cursed users might do this in place and overwrite x
   z.device(Threads::CoreDevice()) = (x - α * b) / (1.f + α);

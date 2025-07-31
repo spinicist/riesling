@@ -30,11 +30,11 @@ private:
   Sz<O - D> otherDims;
 };
 
-struct L2Residual final : Prox
+struct SumOfSquares final : Prox
 {
   PROX_INHERIT
   static auto Make(CMap b) -> Prox::Ptr;
-  L2Residual(CMap b);
+  SumOfSquares(CMap b);
   void apply(float const α, CMap x, Map z) const;
   void conj(float const α, CMap x, Map z) const;
 
