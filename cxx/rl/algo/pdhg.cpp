@@ -1,6 +1,7 @@
 #include "pdhg.hpp"
 
 #include "../log/log.hpp"
+#include "../prox/norms.hpp"
 #include "../prox/stack.hpp"
 #include "../tensors.hpp"
 #include "common.hpp"
@@ -34,7 +35,7 @@ PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts op
     proxʹ = std::make_shared<Proxs::Stack>(ps);
   }
 
-  auto const L = std::sqrt(opts.λA*opts.λA + opts.λG*opts.λG);
+  auto const L = std::sqrt(opts.λA * opts.λA + opts.λG * opts.λG);
   σ = 1.f / L;
   τ = 1.f / L;
   // σ = 1.f / opts.λA;
@@ -63,40 +64,24 @@ auto PDHG::run(CMap y) const -> Vector
   v.setZero();
 
   float const r0 = ParallelNorm(y);
+
+  Proxs::Prox::Ptr p = lad ? Proxs::L1::Make(1.f, y, P) : Proxs::SumOfSquares::Make(y, P);
+
   Iterating::Starting();
   for (Index ii = 0; ii < imax; ii++) {
     xold = x;
     // unext = (I + σP) \ (u + σP(Ax̅ - y))
     A->forward(x̅, utemp);
-    utemp.device(Threads::CoreDevice()) = utemp - y;
     float const r = ParallelNorm(utemp);
-    if (r / r0 < resTol) {
-      Log::Print("PDHG", "Residual tolerance reached");
-      break;
-    }
-
-    /* This next step is the conjugate of either the L1 (for LAD) or L2-squared (for LSQ)
-     * proximal operator written out in full for efficiency. Doing the preconditioning in
-     * a generalized way was fast becoming an utter pain
-     */
-    if (lad) {
-      if (P) {
-        P->iforward(utemp, u, σ);
-      } else {
-        u.device(Threads::CoreDevice()) += σ * utemp;
-      }
-      u.device(Threads::CoreDevice()) = u.array() / u.array().abs().max(1.f).cast<Cx>();
+    if (P) {
+      P->iforward(utemp, u, σ);
     } else {
-      if (P) {
-        P->iforward(utemp, u, σ);
-        P->inverse(u, u, σ, 1.f);
-      } else {
-        u.device(Threads::CoreDevice()) = (u + σ * utemp) / (1.f + σ);
-      }
+      u.device(Threads::CoreDevice()) += σ * utemp;
     }
+    p->conj(σ, u, u);
     // vnext = prox(v + σGx̅);
     G->iforward(x̅, v, σ);
-    proxʹ->conj(1.f, v, v); /* DANGER Be careful with patch-based regs like LLR */
+    proxʹ->conj(σ, v, v); /* DANGER Be careful with patch-based regs like LLR */
     // xnext = x - τ(A'u + G'v)
     A->adjoint(u, x); // Re-use variables to save memory
     G->adjoint(v, x̅); // Re-use variables to save memory

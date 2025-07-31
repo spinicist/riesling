@@ -31,7 +31,7 @@
 }
 
 @test "Run PDHG TV" {
-    riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --tv=0.1 --pdhg -i32
+    riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --sense=calib-k.h5 --tv=0.1 --pdhg -i32
 }
 
 # @test "Run DECANTER reconstruction" {
