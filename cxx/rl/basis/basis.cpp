@@ -80,14 +80,14 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
              .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
              .slice(Sz1{0}, Sz1{nr})
              .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) *
-           Cx(nB() * nB());
+           Cx(scale);
   } else {
     return B.chip<2>(it)
              .chip<1>(is)
              .slice(Sz1{0}, Sz1{nr})
              .conjugate()
              .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) *
-           Cx(nB() * nB());
+           Cx(scale);
   }
 }
 
