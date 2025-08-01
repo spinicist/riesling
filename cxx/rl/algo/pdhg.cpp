@@ -8,91 +8,86 @@
 #include "eig.hpp"
 #include "iter.hpp"
 
-namespace rl {
+namespace rl::PDHG {
 
-PDHG::PDHG(Op::Ptr A_, Op::Ptr P_, std::vector<Regularizer> const &regs, Opts opts, Debug debug_)
-  : A{A_}
-  , P{P_}
-  , lad{opts.lad}
-  , imax{opts.imax}
-  , resTol{opts.resTol}
-  , deltaTol{opts.deltaTol}
-  , θ{1.f}
-  , debug{debug_}
+auto Run(Vector const &b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d) -> Vector
 {
-  Index const nR = regs.size();
-  if (nR == 1) {
-    proxʹ = regs.front().P;
-    G = regs.front().T ? regs.front().T : Ops::Identity::Make(A->cols());
-  } else {
-    std::vector<Op::Ptr>   Gs(nR);
-    std::vector<Prox::Ptr> ps(nR);
-    for (Index ir = 0; ir < nR; ir++) {
-      Gs[ir] = regs[ir].T ? regs[ir].T : Ops::Identity::Make(A->cols());
-      ps[ir] = regs[ir].P;
-    }
-    G = std::make_shared<Ops::VStack>(Gs);
-    proxʹ = std::make_shared<Proxs::Stack>(ps);
-  }
-
-  auto const L = std::sqrt(opts.λA * opts.λA + opts.λG * opts.λG);
-  σ = 1.f / L;
-  τ = 1.f / L;
-  // σ = 1.f / opts.λA;
-  // τ = 1.f / opts.λG;
-  Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Res tol {} Δx tol {}", lad ? "LAD " : "", σ, τ, resTol, deltaTol);
+  return Run(CMap{b.data(), b.rows()}, A, P, regs, opts, d);
 }
-
-auto PDHG::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
 /*  This follows the least-squares specific form of PDHG from Ong et al 2020
  *  Note that the code in SigPy is different to this. It was generalised to other problems, not only least-squares
  *  The specific trick to making the below work is realizing that the conjugate proximal operators are needed because
  *  those updates are on the dual variables
  */
-auto PDHG::run(CMap y) const -> Vector
+auto Run(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug debug) -> Vector
 {
-  if (y.rows() != A->rows()) { throw(Log::Failure("PDHG", "y had {} rows, expected {}", y.rows(), A->rows())); }
+  if (b.rows() != A->rows()) { throw(Log::Failure("PDHG", "b had {} rows, expected {}", b.rows(), A->rows())); }
+  if (regs.size() < 1) { throw(Log::Failure("PDHG", "Requires at least one regularizer")); }
+  Index const                   nx = regs.size() + 1;
+  std::vector<Op::Ptr>          As(nx), Ps(nx);
+  std::vector<Proxs::Prox::Ptr> proxs(nx);
+
+  /* Data consistency term */
+  As[0] = A;
+  Ps[0] = P;
+  proxs[0] = opts.lad ? Proxs::L1::Make(1.f, b, P) : Proxs::SumOfSquares::Make(b, P);
+  /* Regularizers */
+  for (Index ir = 0; ir < regs.size(); ir++) {
+    As[ir + 1] = regs[ir].T;
+    Ps[ir + 1] = nullptr; /* Regularizers are not preconditioned. Yet. */
+    proxs[ir + 1] = regs[ir].P;
+  }
+
+  float const L = std::sqrt(opts.λA * opts.λA + regs.size()); /* Assumes all regularizer transforms have max eval=1 */
+  float const σ = 1.f / L;
+  float const τ = 1.f / L;
+  Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.deltaTol);
+
   Vector x(A->cols()), x̅(A->cols()), xold(A->cols());
   x.setZero();
   x̅.setZero();
   xold.setZero();
 
-  Vector u(A->rows()), utemp(A->rows()), v(G->rows());
-  u.setZero();
-  utemp.setZero();
-  v.setZero();
+  std::vector<Vector> ys(nx);
+  for (Index ir = 0; ir < nx; ir++) {
+    ys[ir] = Vector(As[ir]->rows());
+    ys[ir].setZero();
+  }
 
-  float const r0 = ParallelNorm(y);
-
-  Proxs::Prox::Ptr p = lad ? Proxs::L1::Make(1.f, y, P) : Proxs::SumOfSquares::Make(y, P);
+  float const r0 = ParallelNorm(b);
 
   Iterating::Starting();
-  for (Index ii = 0; ii < imax; ii++) {
+  for (Index ii = 0; ii < opts.imax; ii++) {
     xold = x;
-    // unext = (I + σP) \ (u + σP(Ax̅ - y))
-    A->forward(x̅, utemp);
-    float const r = ParallelNorm(utemp);
-    if (P) {
-      P->iforward(utemp, u, σ);
-    } else {
-      u.device(Threads::CoreDevice()) += σ * utemp;
+
+    /* PDHG steps are
+     * yn = proxF*σ(y + σAx̅)
+     * xn = proxGτ(x - τA'yn)
+     * x̅ = xn + (xn - x)
+     *
+     *      But G(x) = 0 so proxGτ(x) = x
+     */
+    for (Index ix = 0; ix < nx; ix++) {
+      if (As[ix] && Ps[ix]) {
+        auto ytemp = As[ix]->forward(x̅);
+        Ps[ix]->iforward(ytemp, ys[ix], σ);
+      } else if (As[ix]) {
+        As[ix]->iforward(x̅, ys[ix], σ);
+      } else {
+        ys[ix].device(Threads::CoreDevice()) += σ * x̅;
+      }
+      proxs[ix]->conj(σ, ys[ix], ys[ix]); /* DANGER Be careful with patch-based regs like LLR */
+
+      if (As[ix]) { As[ix]->iadjoint(ys[ix], x, -τ); }
     }
-    p->conj(σ, u, u);
-    // vnext = prox(v + σGx̅);
-    G->iforward(x̅, v, σ);
-    proxʹ->conj(σ, v, v); /* DANGER Be careful with patch-based regs like LLR */
-    // xnext = x - τ(A'u + G'v)
-    A->adjoint(u, x); // Re-use variables to save memory
-    G->adjoint(v, x̅); // Re-use variables to save memory
-    x.device(Threads::CoreDevice()) = xold - τ * (x + x̅);
     x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
-    if (debug) { debug(ii, x, x̅, u); }
+    if (debug) { debug(ii, x, x̅); }
     xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
-    float const nx = ParallelNorm(x);
-    float const ndx = ParallelNorm(xold);
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E} |r|/|r0| {:4.3E}", ii, nx, ndx / nx, r / r0);
-    if (ndx / nx < deltaTol) {
+    float const normx = ParallelNorm(x);
+    float const normdx = ParallelNorm(xold);
+    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E}", ii, normx, normdx / normx);
+    if (normdx / normx < opts.deltaTol) {
       Log::Print("PDHG", "Δx tolerance reached");
       break;
     }
@@ -103,4 +98,4 @@ auto PDHG::run(CMap y) const -> Vector
   return x;
 }
 
-} // namespace rl
+} // namespace rl::PDHG

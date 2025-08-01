@@ -67,8 +67,8 @@ struct PDHGArgs
 {
   args::Flag             lad;
   args::ValueFlag<Index> its;
-  args::ValueFlag<float> resTol, deltaTol;
-  args::ValueFlag<float> λA, λG;
+  args::ValueFlag<float> deltaTol;
+  args::ValueFlag<float> λA;
 
   PDHGArgs(args::Subparser &parser);
   auto Get() -> rl::PDHG::Opts;

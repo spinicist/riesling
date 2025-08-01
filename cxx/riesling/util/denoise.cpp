@@ -32,24 +32,25 @@ void main_denoise(args::Subparser &parser)
     // be the identity operator
     regs[0].P->apply(1.f, CollapseToConstVector(in), xm);
   } else {
-    PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb,
-                                                        PDHG::Vector const &u) {
+    PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb) {
       if (Log::IsDebugging()) {
         if (ext_x) {
           auto xit = ext_x->forward(x);
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
           xit = ext_x->forward(xb);
           Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
         } else {
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
           Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xb.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("pdhg-u-{:02d}", ii), shape, u.data(), HD5::Dims::Images);
         }
       }
     };
-    PDHG opt{B, nullptr, regs, pdhgArgs.Get(), debug};
-    xm = ext_x ? ext_x->forward(opt.run(CollapseToConstVector(in))) : opt.run(CollapseToConstVector(in));
+    if (ext_x) {
+      auto xt = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
+      xm = ext_x->forward(xt);
+    } else {
+      xm = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
+    }
   }
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
   WriteOutput<5>(cmd, oname.Get(), x, HD5::Dims::Images, input.readStruct<Info>(HD5::Keys::Info));

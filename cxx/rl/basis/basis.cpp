@@ -18,7 +18,7 @@ Basis::Basis()
 Basis::Basis(Cx3 const &Bb)
   : B{Bb}
 {
-  scale = std::sqrt(nSample() * nTrace()) / nB();
+  scale = std::sqrt(nSample() * nTrace() / nB());
   Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
 }
 
@@ -26,7 +26,7 @@ Basis::Basis(Cx3 const &Bb, Cx2 const &Rr)
   : B{Bb}
   , R{Rr}
 {
-  scale = std::sqrt(nSample() * nTrace()) / nB();
+  scale = std::sqrt(nSample() * nTrace() / nB());
   Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
 }
 
@@ -80,14 +80,14 @@ template <int ND> auto Basis::blend(CxN<ND> const &images, Index const is, Index
              .contract(R, Eigen::IndexPairList<Eigen::type2indexpair<0, 1>>())
              .slice(Sz1{0}, Sz1{nr})
              .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) *
-           Cx(nB()*nB());
+           Cx(nB() * nB());
   } else {
     return B.chip<2>(it)
              .chip<1>(is)
              .slice(Sz1{0}, Sz1{nr})
              .conjugate()
              .contract(images, Eigen::IndexPairList<Eigen::type2indexpair<0, ND - 2>>()) *
-           Cx(nB()*nB());
+           Cx(nB() * nB());
   }
 }
 

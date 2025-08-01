@@ -21,7 +21,7 @@ namespace rl {
 template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis)
   -> Re2
 {
-  Log::Print("Precon", "Starting preconditioner calculation");
+  Log::Print("Precon", "Starting preconditioner calculation λ {}", λ);
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
   auto            nufft = TOps::NUFFT<ND>::Make(gridOpts, newTraj, 1, basis);
   Cx3             W(nufft->oshape);
@@ -41,7 +41,8 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
   Re3 weights = nufft->forward(xcor).abs() * scale;
 
-  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (1.f + λ) / (weights + λ));
+  // weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (1.f + λ) / (weights + λ));
+  weights.device(Threads::TensorDevice()) = (weights < 1.f).select(weights.constant(1.f), 1.f / weights);
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
