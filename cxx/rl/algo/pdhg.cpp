@@ -15,18 +15,13 @@ auto Run(Vector const &b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &
   return Run(CMap{b.data(), b.rows()}, A, P, regs, opts, d);
 }
 
-/*  This follows the least-squares specific form of PDHG from Ong et al 2020
- *  Note that the code in SigPy is different to this. It was generalised to other problems, not only least-squares
- *  The specific trick to making the below work is realizing that the conjugate proximal operators are needed because
- *  those updates are on the dual variables
- */
 auto Run(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug debug) -> Vector
 {
   if (b.rows() != A->rows()) { throw(Log::Failure("PDHG", "b had {} rows, expected {}", b.rows(), A->rows())); }
   if (regs.size() < 1) { throw(Log::Failure("PDHG", "Requires at least one regularizer")); }
   Index const                   nx = regs.size() + 1;
-  std::vector<Op::Ptr>          As(nx), Ps(nx);
-  std::vector<Proxs::Prox::Ptr> proxs(nx);
+  std::vector<Op::Ptr>          As(nx), Ps(nx); /* Transforms, preconditioners */
+  std::vector<Proxs::Prox::Ptr> proxs(nx);      /* Proximal operators */
 
   /* Data consistency term */
   As[0] = A;
@@ -77,9 +72,14 @@ auto Run(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
       } else {
         ys[ix].device(Threads::CoreDevice()) += σ * x̅;
       }
+
       proxs[ix]->conj(σ, ys[ix], ys[ix]); /* DANGER Be careful with patch-based regs like LLR */
 
-      if (As[ix]) { As[ix]->iadjoint(ys[ix], x, -τ); }
+      if (As[ix]) {
+        As[ix]->iadjoint(ys[ix], x, -τ);
+      } else {
+        x.device(Threads::CoreDevice()) -= τ * ys[ix];
+      }
     }
     x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
     if (debug) { debug(ii, x, x̅); }
