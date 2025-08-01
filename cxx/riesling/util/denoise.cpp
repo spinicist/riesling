@@ -14,6 +14,7 @@ void main_denoise(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   PDHGArgs                      pdhgArgs(parser);
+  args::Flag                    adapt(parser, "A", "Adaptive PDHG", {"adaptive"});
   args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
   RegOpts                       regOpts(parser);
 
@@ -49,7 +50,11 @@ void main_denoise(args::Subparser &parser)
       auto xt = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
       xm = ext_x->forward(xt);
     } else {
-      xm = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
+      if (adapt) {
+        xm = PDHG::Adaptive(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
+      } else {
+        xm = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
+      }
     }
   }
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);

@@ -28,6 +28,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   args::ValueFlag<Index>       debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                   debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   args::Flag                   pdhg(parser, "P", "Use PDHG instead of ADMM", {"pdhg", 'p'});
+  args::Flag                   adapt(parser, "A", "Adaptive PDHG", {"adaptive"});
   ArrayFlag<float, ND>         cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"});
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -62,7 +63,11 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
         }
       }
     };
-    x = PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
+    if (adapt) {
+      x = PDHG::Adaptive(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
+    } else {
+      x = PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
+    }
   } else {
     ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
       if (ii % di == 0) { Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images); }
