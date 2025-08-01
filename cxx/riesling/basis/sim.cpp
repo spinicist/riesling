@@ -103,13 +103,15 @@ void main_basis_sim(args::Subparser &parser)
   Eigen::ArrayXXcf::MapType dmap(dall.data(), M, N);
 
   if (norm) { dmap.rowwise().normalize(); }
-
   if (ortho) {
     auto const             h = dmap.cast<Cxd>().matrix().transpose().householderQr();
     Eigen::MatrixXcd const I = Eigen::MatrixXcd::Identity(N, M);
-    Eigen::MatrixXcf const Q = (h.householderQ() * I).cast<Cx>();
-    Eigen::MatrixXcf const R = h.matrixQR().topRows(M).cast<Cx>().triangularView<Eigen::Upper>();
-    Eigen::MatrixXcf const QR = Q * R;
+    Eigen::MatrixXcf Q = (h.householderQ() * I).cast<Cx>();
+    Eigen::MatrixXcf R = h.matrixQR().topRows(M).cast<Cx>().triangularView<Eigen::Upper>();
+    if ((R.diagonal().array().real() < 0.f).all()) { /* Flip so things are positive */
+      Q = -Q;
+      R = -R;
+    }
     dmap = Q.transpose().cast<Cx>();
     Basis b(dall, AsTensorMap(R, Sz2{R.rows(), R.cols()}));
     b.write(oname.Get());
