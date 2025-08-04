@@ -52,12 +52,13 @@ auto SliceNC(Sz3 const   channel,
     if (tSt + tSz > tps) { throw Log::Failure("slice", "Selected traces {}-{} extend past segment {}", tSt, tSz, tps); }
     Index const nSeg = shape[2] / tps;
     if (nSeg * tps != shape[2]) {
-      throw Log::Failure("slice", "Traces per seg {} does not cleanly divide traces {}", tps, shape[2]);
+      Log::Warn("slice", "Traces per seg {} does not cleanly divide traces {}, dropping last segment", tps, shape[2]);
     }
     Index const segSt = Wrap(segment[0], nSeg);
     Index const segSz = segment[1] > 0 ? std::clamp(segment[1], 1L, nSeg) : nSeg - segSt;
     Log::Print("slice", "Selected segments {}:{}", segSt, segSt + segSz - 1);
-    auto segs = ks.reshape(Sz6{shape[0], shape[1], tps, nSeg, shape[3], shape[4]});
+    auto segs = ks.slice(Sz5{}, Sz5{shape[0], shape[1], tps * nSeg, shape[3], shape[4]})
+                  .reshape(Sz6{shape[0], shape[1], tps, nSeg, shape[3], shape[4]});
     auto sliced = segs.slice(Sz6{cSt, rSt, tSt, segSt, sSt, uSt}, Sz6{cSz, rSz, tSz, segSz, sSz, uSz});
     sks = sliced.reshape(Sz5{cSz, rSz, tSz * segSz, sSz, uSz});
     auto tsegs = trajPoints.reshape(Sz4{3, trajPoints.dimension(1), tps, nSeg});
