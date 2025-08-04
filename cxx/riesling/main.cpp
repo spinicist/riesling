@@ -28,6 +28,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(data, downsamp2, "downsamp2", "Downsample 2D non-cartesian data");
   COMMAND(data, move, "move", "Shift and rotate data within FOV");
   COMMAND(data, merge, "merge", "Merge non-cartesian data");
+  COMMAND(data, norm, "norm", "Calculate the norm of a dataset");
   COMMAND(data, noisify, "noisify", "Add noise to dataset");
   COMMAND(data, real, "real", "Make complex images real valued");
   COMMAND(data, slice_nc, "slice", "Slice non-cartesian data");

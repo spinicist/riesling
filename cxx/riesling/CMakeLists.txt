@@ -28,6 +28,7 @@ if(BUILD_BIN)
         data/diff.cpp
         data/merge.cpp
         data/move.cpp
+        data/norm.cpp
         data/nii.cpp
         data/noisify.cpp
         data/real.cpp
@@ -61,7 +62,7 @@ if(BUILD_BIN)
         util/eig.cpp
         util/log.cpp
         util/filter.cpp
-        util/mask.cpp
+        util/mask.cpp        
         util/phantom.cpp
         util/precon.cpp
         util/psf.cpp
