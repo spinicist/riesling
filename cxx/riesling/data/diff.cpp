@@ -13,7 +13,7 @@ void main_diff(args::Subparser &parser)
   args::Positional<std::string> aname(parser, "FILE", "Input HD5 file A");
   args::Positional<std::string> bname(parser, "FILE", "Input HD5 file B");
   args::Positional<std::string> oname(parser, "OUTPUT", "Output (B - A) file");
-  args::ValueFlag<std::string>  dset(parser, "D", "Dataset name", {'d', "data"}, "data");
+  args::ValueFlag<std::string>  dset(parser, "D", "Dataset name", {'d', "dset"}, "data");
   ParseCommand(parser);
   auto const cmd = parser.GetCommand().Name();
   if (!aname) { throw args::Error("No file A specified"); }

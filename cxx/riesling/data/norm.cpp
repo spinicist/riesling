@@ -11,7 +11,7 @@ using namespace rl;
 void main_norm(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
-  args::ValueFlag<std::string>  dset(parser, "D", "Dataset name", {'d', "data"}, "data");
+  args::ValueFlag<std::string>  dset(parser, "D", "Dataset name", {'d', "dset"}, "data");
   ParseCommand(parser);
   auto const cmd = parser.GetCommand().Name();
   if (!iname) { throw args::Error("No file A specified"); }
