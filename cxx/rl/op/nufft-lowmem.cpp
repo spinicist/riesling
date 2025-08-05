@@ -23,7 +23,7 @@ template <int ND, typename KF> NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> con
                                                                 Basis::CPtr            basis)
   : Parent("NUFFTLowmem")
   , gridder{opts, traj, 1, basis}
-  , apo{Concatenate(traj.matrixForFOV(opts.fov), LastN<1>(gridder.ishape)), RemoveNth<ND>(gridder.ishape), opts.osamp}
+  , apo{AddBack(traj.matrixForFOV(opts.fov), gridder.ishape[ND]), RemoveNth<ND>(gridder.ishape), opts.osamp}
   , nc1{AddFront(LastN<2>(gridder.oshape), 1)}
   , workspace{gridder.ishape}
   , skern{sk}
