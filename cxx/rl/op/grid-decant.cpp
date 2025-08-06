@@ -30,10 +30,10 @@ GridDecant<ND, KF, SG>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> con
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
   gridLists = traj.toCoordLists(osMatrix, kernel.FullWidth, SGSZ, false);
   ishape = AddBack(osMatrix, basis ? basis->nB() : 1);
-  oshape = Sz3{skern.dimension(3), traj.nSamples(), traj.nTraces()};
+  oshape = Sz3{skern.dimension(4), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
   float const scale = std::sqrt(Product(FirstN<3>(ishape)) / (float)Product(FirstN<3>(skern.dimensions())));
-  skern /= skern.constant(scale);
+  skern *= skern.constant(scale);
   Log::Print(this->name, "ishape {} oshape {} scale {}", this->ishape, this->oshape, scale);
 }
 
@@ -47,8 +47,7 @@ auto GridDecant<ND, KF, SG>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> cons
 template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::forwardTask(
   Index const start, Index const stride, float const s, CxNCMap<ND + 1> const &x, CxNMap<3> &y) const
 {
-
-  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), basis ? basis->nB() : 1, y.dimension(0)));
   for (Index is = start; is < (Index)gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
@@ -87,7 +86,7 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::adjointTask(
   Index const start, Index const stride, float const s, CxNCMap<3> const &y, CxNMap<ND + 1> &x) const
 
 {
-  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), y.dimension(0), basis ? basis->nB() : 1));
+  CxN<ND + 2> sx(AddBack(Constant<ND>(SGFW), basis ? basis->nB() : 1, y.dimension(0)));
   for (size_t is = start; is < gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     sx.setZero();

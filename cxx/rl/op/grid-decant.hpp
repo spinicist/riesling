@@ -5,7 +5,7 @@
 namespace rl {
 
 namespace TOps {
-template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 4> struct GridDecant final : TOp<ND_ + 1, 3>
+template <int ND_, typename KF = rl::ExpSemi<4>, int SGSZ_ = 8> struct GridDecant final : TOp<ND_ + 1, 3>
 {
   static constexpr int ND = ND_;
   static constexpr int SGSZ = SGSZ_;

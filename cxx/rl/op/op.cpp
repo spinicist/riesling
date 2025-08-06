@@ -88,20 +88,20 @@ auto Op::startForward(CMap x, Map const &y, bool const ip) const -> Log::Time
 {
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Forward x [{}] expected [{}]", x.rows(), cols()); }
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Forward y [{}] expected [{}]", y.rows(), rows()); }
-  if (Log::IsDebugging()) {
-    Log::Debug(this->name, "{}forward [{}, {}] |x| {}", (ip ? "IP " : ""), rows(), cols(), ParallelNorm(x));
+  if (Log::IsHigh()) {
+    Log::Debug(this->name, "{}Forward [{}, {}] |x| {}", (ip ? "IP " : ""), rows(), cols(), ParallelNorm(x));
   } else {
-    Log::Debug(this->name, "{}forward [{}, {}]", (ip ? "IP " : ""), rows(), cols());
+    Log::Debug(this->name, "{}Forward [{}, {}]", (ip ? "IP " : ""), rows(), cols());
   }
   return Log::Now();
 }
 
 void Op::finishForward(Map const &y, Log::Time const start, bool const ip) const
 {
-  if (Log::IsDebugging()) {
-    Log::Debug(this->name, "{}forward finished in {} |y| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(y));
+  if (Log::IsHigh()) {
+    Log::Debug(this->name, "{}Forward finished in {} |y| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(y));
   } else {
-    Log::Debug(this->name, "{}forward finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
+    Log::Debug(this->name, "{}Forward finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
   }
 }
 
@@ -109,20 +109,20 @@ auto Op::startAdjoint(CMap y, Map const &x, bool const ip) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Adjoint y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Adjoint x [{}] expected [{}]", x.rows(), cols()); }
-  if (Log::IsDebugging()) {
-    Log::Debug(this->name, "{}adjoint [{},{}] |y| {}", (ip ? "IP " : ""), rows(), cols(), ParallelNorm(y));
+  if (Log::IsHigh()) {
+    Log::Debug(this->name, "{}Adjoint [{},{}] |y| {}", (ip ? "IP " : ""), rows(), cols(), ParallelNorm(y));
   } else {
-    Log::Debug(this->name, "{}adjoint [{},{}]", (ip ? "IP " : ""), rows(), cols());
+    Log::Debug(this->name, "{}Adjoint [{},{}]", (ip ? "IP " : ""), rows(), cols());
   }
   return Log::Now();
 }
 
 void Op::finishAdjoint(Map const &x, Log::Time const start, bool const ip) const
 {
-  if (Log::IsDebugging()) {
-    Log::Debug(this->name, "{}adjoint finished in {} |x| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(x));
+  if (Log::IsHigh()) {
+    Log::Debug(this->name, "{}Adjoint finished in {} |x| {}", (ip ? "IP " : ""), Log::ToNow(start), ParallelNorm(x));
   } else {
-    Log::Debug(this->name, "{}adjoint finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
+    Log::Debug(this->name, "{}Adjoint finished in {}", (ip ? "IP " : ""), Log::ToNow(start));
   }
 }
 
@@ -130,7 +130,7 @@ auto Op::startInverse(CMap y, Map const &x) const -> Log::Time
 {
   if (y.rows() != rows()) { throw Log::Failure(this->name, "Inverse y [{}] expected [{}]", y.rows(), rows()); }
   if (x.rows() != cols()) { throw Log::Failure(this->name, "Inverse x [{}] expected [{}]", x.rows(), cols()); }
-  if (Log::IsDebugging()) {
+  if (Log::IsHigh()) {
     Log::Debug(this->name, "Inverse [{},{}] |y| {}", rows(), cols(), ParallelNorm(y));
   } else {
     Log::Debug(this->name, "Inverse [{},{}]", rows(), cols());
@@ -140,7 +140,7 @@ auto Op::startInverse(CMap y, Map const &x) const -> Log::Time
 
 void Op::finishInverse(Map const &x, Log::Time const start) const
 {
-  if (Log::IsDebugging()) {
+  if (Log::IsHigh()) {
     Log::Debug(this->name, "Inverse finished in {} |x| {}", Log::ToNow(start), ParallelNorm(x));
   } else {
     Log::Debug(this->name, "Inverse finished in {}", Log::ToNow(start));
