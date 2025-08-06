@@ -12,7 +12,7 @@ namespace SENSE {
 template <int ND> struct Opts
 {
   std::string                type;
-  Index                      tp, kWidth;
+  Index                      tp, kWidth, its;
   Eigen::Array<float, ND, 1> res;
   float                      l, λ;
 };

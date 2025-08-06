@@ -74,13 +74,13 @@ PDHGArgs::PDHGArgs(args::Subparser &parser)
   : lad(parser, "L", "Least Absolute Deviations, PDHG only", {"lad", 'l'})
   , its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 32)
   , deltaTol(parser, "B", "Tolerance on update (1e-6)", {"delta-tol", 'd'}, 1.e-6f)
-  , λA(parser, "λA", "Max Eigenvalue of system matrix (1)", {"lambda-A", 'a'}, 1.f)
+  , λE(parser, "λE", "Max Eigenvalue of encoding operator (1)", {"lambda-E", 'e'}, 1.f)
 {
 }
 
 auto PDHGArgs::Get() -> rl::PDHG::Opts
 {
-  return rl::PDHG::Opts{.lad = lad, .imax = its.Get(), .deltaTol = deltaTol.Get(), .λA = λA.Get()};
+  return rl::PDHG::Opts{.lad = lad, .imax = its.Get(), .deltaTol = deltaTol.Get(), .λE = λE.Get()};
 }
 
 ADMMArgs::ADMMArgs(args::Subparser &parser)
@@ -118,6 +118,7 @@ template <int ND> SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)
   : type(parser, "T", "SENSE type (auto/file.h5)", {"sense", 's'}, "auto")
   , tp(parser, "T", "SENSE calibration timepoint (first)", {"sense-tp"}, 0)
   , kWidth(parser, "K", "SENSE kernel width (10)", {"sense-width"}, 10)
+  , its(parser, "I", "SENSE recon max iterations (8)", {"sense-its"}, 8)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array<float, ND, 1>::Constant(6.f))
   , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
   , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
@@ -127,7 +128,7 @@ template <int ND> SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)
 template <int ND> auto SENSEArgs<ND>::Get() -> rl::SENSE::Opts<ND>
 {
   return rl::SENSE::Opts<ND>{
-    .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
+    .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .its = its.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
 }
 
 template struct SENSEArgs<2>;

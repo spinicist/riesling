@@ -34,7 +34,7 @@ auto CountBelow(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh
   return nRetain;
 }
 
-auto Percentiles(Eigen::Ref<Eigen::ArrayXf const> const &vals, std::vector<float> const &ps) -> std::vector<float>
+auto Percentiles(Eigen::ArrayXf::ConstAlignedMapType vals, std::vector<float> const &ps) -> std::vector<float>
 {
   Eigen::ArrayXf x = vals;
   std::sort(x.begin(), x.end());

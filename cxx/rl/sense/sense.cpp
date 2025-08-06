@@ -36,7 +36,7 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
 
   traj.downsample(opts.res, true, false);
   auto const M = *flux::max(traj.matrix());
-  NoncartesianTukey(M * 0.75, M, 0.f, traj.points(), lores);
+  NoncartesianTukey(M * 0.5, M, 0.f, traj.points(), lores);
 
   auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
   Cx5        channels;
@@ -45,12 +45,12 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
     auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
     auto const v = CollapseToConstVector(lores);
     Log::Debug("SENSE", "A {}->{} M {}->{} Data {}", A->ishape, A->oshape, P->ishape, P->oshape, lores.dimensions());
-    LSMR const lsmr{A, P, nullptr, {4}};
+    LSMR const lsmr{A, P, nullptr, {opts.its}};
     channels = AsTensorMap(lsmr.run(v), A->ishape);
   } else {
     if (nSlice > 1) { throw(Log::Failure("SENSE", "Not supported right now")); }
     auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz0{});
-    LSMR const lsmr{nufft, P, nullptr, {4}};
+    LSMR const lsmr{nufft, P, nullptr, {opts.its}};
     channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), nufft->ishape);
   }
   return channels;

@@ -68,7 +68,7 @@ struct PDHGArgs
   args::Flag             lad;
   args::ValueFlag<Index> its;
   args::ValueFlag<float> deltaTol;
-  args::ValueFlag<float> λA;
+  args::ValueFlag<float> λE;
 
   PDHGArgs(args::Subparser &parser);
   auto Get() -> rl::PDHG::Opts;
@@ -98,7 +98,7 @@ struct ADMMArgs
 template <int ND> struct SENSEArgs
 {
   args::ValueFlag<std::string> type;
-  args::ValueFlag<Index>       tp, kWidth;
+  args::ValueFlag<Index>       tp, kWidth, its;
   ArrayFlag<float, ND>         res;
   args::ValueFlag<float>       l, λ;
 

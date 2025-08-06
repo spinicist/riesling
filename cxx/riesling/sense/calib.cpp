@@ -13,10 +13,12 @@ using namespace rl;
 
 template <int ND> void run_sense_calib(args::Subparser &parser)
 {
-  CoreArgs<ND>                 coreArgs(parser);
-  GridArgs<ND>                 gridOpts(parser);
-  SENSEArgs<ND>                senseArgs(parser);
+  CoreArgs<ND>  coreArgs(parser);
+  GridArgs<ND>  gridOpts(parser);
+  SENSEArgs<ND> senseArgs(parser);
+
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
+  ArrayFlag<float, ND> refFov(parser, "R", "Reference scan FOV", {"ref-fov"}, Eigen::Array<float, ND, 1>::Constant(512.f));
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const      cmd = parser.GetCommand().Name();
@@ -25,9 +27,9 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
   auto            noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
-
-  Cx5 channels = SENSE::LoresChannels<ND>(senseArgs.Get(), gridOpts.Get(), traj, noncart, basis.get());
-  Cx4 ref;
+  auto const gopts = gridOpts.Get();
+  Cx5        channels = SENSE::LoresChannels<ND>(senseArgs.Get(), gridOpts.Get(), traj, noncart, basis.get());
+  Cx4        ref = DimDot<4>(channels, channels).sqrt();
   if (refname) {
     HD5::Reader     refFile(refname.Get());
     TrajectoryN<ND> refTraj(refFile, refFile.readStruct<Info>(HD5::Keys::Info).voxel_size.head<ND>());
@@ -35,12 +37,19 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
     auto refNoncart = refFile.readTensor<Cx5>();
     if (refNoncart.dimension(0) != 1) { throw Log::Failure(cmd, "Reference data must be single channel"); }
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
-    ref = SENSE::LoresChannels<ND>(senseArgs.Get(), gridOpts.Get(), refTraj, refNoncart, basis.get())
-            .template chip<4>(0)
-            .abs()
-            .template cast<Cx>();
-  } else {
-    ref = DimDot<4>(channels, channels).sqrt();
+    auto rgopts = gopts;
+    if (refFov) { rgopts.fov = refFov.Get(); }
+    Cx4 bigRef = SENSE::LoresChannels<ND>(senseArgs.Get(), rgopts, refTraj, refNoncart, basis.get())
+                   .template chip<4>(0)
+                   .abs()
+                   .template cast<Cx>();
+    TOps::Pad<4> cropper(AddBack(FirstN<3>(channels.dimensions()), 1), bigRef.dimensions());
+    Re4 const absRSS = ref.abs();
+    float const  p90rss = Percentiles(CollapseToArray(absRSS), {0.9})[0];
+    ref = cropper.adjoint(bigRef);
+    Re4 const absRef = ref.abs();
+    float const p90ref = Percentiles(CollapseToArray(absRef), {0.9})[0];
+    ref = ref * ref.constant(p90rss / p90ref);
   }
   Cx5 const kernels = SENSE::EstimateKernels<ND>(channels, ref, senseArgs.kWidth.Get(), gridOpts.osamp.Get(), senseArgs.l.Get(),
                                                  senseArgs.λ.Get());
@@ -48,6 +57,7 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
   writer.writeTensor("ref", ref.dimensions(), ref.data(), HD5::DNames<4>{"i", "j", "k", "b"});
+
   Log::Print(cmd, "Finished");
 }
 
