@@ -27,8 +27,8 @@ template <int ND, typename KF> auto KernelFFT(Sz<ND> const shape, Sz<ND> const g
 }
 } // namespace
 
-template <int ND, int ED> Apodize<ND, ED, ExpSemi<4>>::Apodize(Sz<ND + ED> const ishape, Sz<ND + ED> const oshape, float const osamp)
-  : Parent("Apodiz", ishape, oshape)
+template <int ND, int ED> Apodize<ND, ED, ExpSemi<4>>::Apodize(Sz<ND + ED> const ish, Sz<ND + ED> const osh, float const osamp)
+  : Parent("Apodiz", ish, osh)
 {
   // Calculate apodization correction
   auto apo_shape = ishape;

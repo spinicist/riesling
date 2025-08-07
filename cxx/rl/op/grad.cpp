@@ -157,8 +157,8 @@ template struct Div<2, 2>;
 template struct Div<3, 3>;
 template struct Div<5, 3>;
 
-template <int ND, int NG> GradVec<ND, NG>::GradVec(InDims const ishape, Sz<NG> const dims)
-  : Parent("GradV", ishape, AddBack(FirstN<ND - 1>(ishape), (Index)((dims.size() * (dims.size() + 1)) / 2)))
+template <int ND, int NG> GradVec<ND, NG>::GradVec(InDims const ish, Sz<NG> const dims)
+  : Parent("GradV", ish, AddBack(FirstN<ND - 1>(ish), (Index)((dims.size() * (dims.size() + 1)) / 2)))
   , dims_{dims}
 {
   if ((Index)dims.size() != ishape[ND - 1]) {

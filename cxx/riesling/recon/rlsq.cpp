@@ -50,16 +50,16 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
 
   Ops::Op::Vector x;
   if (pdhg) {
-    PDHG::Debug debug = [shape, ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &xb) {
+    PDHG::Debug debug = [shape, ext_x](Index const ii, PDHG::Vector const &dx, PDHG::Vector const &dxb) {
       if (Log::IsDebugging()) {
         if (ext_x) {
-          auto xit = ext_x->forward(x);
+          auto xit = ext_x->forward(dx);
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-          xit = ext_x->forward(xb);
+          xit = ext_x->forward(dxb);
           Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
         } else {
-          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xb.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, dx.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, dxb.data(), HD5::Dims::Images);
         }
       }
     };
