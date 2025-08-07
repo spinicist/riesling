@@ -41,7 +41,7 @@ template <int ND> void run_eig(args::Subparser &parser)
     auto const [val, vec] = PowerMethodAdjoint(R.A, R.M, its.Get());
     if (coreArgs.oname) {
       HD5::Writer writer(coreArgs.oname.Get());
-      writer.writeTensor("evec", R.A->ishape, vec.data(), HD5::Dims::Images);
+      writer.writeTensor("evec", R.A->oshape, vec.data(), HD5::Dims::Noncartesian);
     }
     fmt::print("{}\n", recip ? (1.f / val) : val);
   } else {

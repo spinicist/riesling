@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../log/log.hpp"
-#include "../tensors.hpp"
+#include "../types.hpp"
+#include "../sys/threads.hpp"
 
 namespace rl {
 
@@ -94,7 +95,7 @@ inline auto ParallelNorm(Eigen::MatrixBase<Derived> const &v) -> typename Eigen:
       Index const hi = (ic + 1) * den + std::min(ic + 1, rem);
       Index const n = hi - lo;
       Threads::GlobalPool()->Schedule([&v, &norms, &barrier, ic, lo, n] {
-        norms[ic] = v.segment(lo, n).norm();
+        norms[ic] = v.segment(lo, n).stableNorm();
         barrier.Notify();
       });
     }

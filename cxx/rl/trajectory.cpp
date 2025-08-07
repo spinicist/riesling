@@ -133,6 +133,7 @@ template <int ND> auto TrajectoryN<ND>::matrix() const -> SzN { return matrix_; 
 template <int ND> auto TrajectoryN<ND>::matrixForFOV(Array const fov) const -> SzN
 {
   if (flux::all(fov, [](float f) { return f == 0.f; })) {
+    Log::Print("Traj", "Nominal FOV, matrix {}", matrix_);
     return matrix_;
   } else {
     SzN matrix;

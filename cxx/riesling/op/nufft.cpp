@@ -1,5 +1,6 @@
 #include "inputs.hpp"
 
+#include "rl/algo/eig.hpp"
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
@@ -18,8 +19,9 @@ template <int ND> void run_nufft(args::Subparser &parser)
   PreconArgs   preArgs(parser);
   LSMRArgs     lsqOpts(parser);
 
-  args::Flag fwd(parser, "", "Apply forward operator", {'f', "fwd"});
-  args::Flag adj(parser, "", "Apply adjoint operator", {'a', "adj"});
+  args::Flag fwd(parser, "F", "Apply forward operator", {'f', "fwd"});
+  args::Flag adj(parser, "A", "Apply adjoint operator", {'a', "adj"});
+  args::Flag eig(parser, "E", "Estimate eigenvalue & vector", {'e', "eig"});
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -34,7 +36,17 @@ template <int ND> void run_nufft(args::Subparser &parser)
   writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
   traj.write(writer);
 
-  if (fwd) {
+  if (eig) {
+    auto const nufft = TOps::NUFFT<ND>::Make(gridArgs.Get(), traj, 1, basis.get());
+    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, 1, Sz2{1, 1});
+    auto const [val, vec] = PowerMethodForward(nufft, M, lsqOpts.its.Get());
+    if constexpr (ND == 2) {
+      writer.writeTensor("data", FirstN<ND + 1>(nufft->ishape), vec.data(), {"i", "j", "b"});
+    } else {
+      writer.writeTensor("data", FirstN<ND + 1>(nufft->ishape), vec.data(), {"i", "j", "k", "b"});
+    }
+    fmt::print("{}\n", val);
+  } else if (fwd) {
     auto const cart = reader.readTensor<Cx6>();
     Index      nS;
     if constexpr (ND == 2) {
