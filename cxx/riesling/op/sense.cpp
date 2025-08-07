@@ -1,5 +1,6 @@
 #include "inputs.hpp"
 
+#include "rl/algo/eig.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
 #include "rl/op/sense.hpp"
@@ -11,9 +12,10 @@ using namespace rl;
 void main_op_sense(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
-  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Positional<std::string> sname(parser, "FILE", "SENSE maps HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   args::Flag                    fwd(parser, "F", "Apply forward operation", {'f', "fwd"});
+  args::Flag                    eig(parser, "E", "Estimate eigenvalue & vector", {'e', "eig"});
   args::ValueFlag<std::string>  dset(parser, "D", "Dataset name (image/channels)", {'d', "dset"});
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();
@@ -26,7 +28,13 @@ void main_op_sense(args::Subparser &parser)
   writer.writeStruct(HD5::Keys::Info, ireader.readStruct<Info>(HD5::Keys::Info));
   traj.write(writer);
 
-  if (fwd) {
+  if (eig) {
+    auto const    nB = maps.dimension(3);
+    auto sense = TOps::SENSEOp::Make(maps, nB);
+    auto const [val, vec] = PowerMethodForward(sense, nullptr, 16);
+    writer.writeTensor("data", sense->ishape, vec.data(), {"i", "j", "k", "b"});
+    fmt::print("{}\n", val);
+  } else if (fwd) {
     auto const    images = ireader.readTensor<Cx5>();
     auto const    nB = images.dimension(3);
     auto const    nT = images.dimension(4);

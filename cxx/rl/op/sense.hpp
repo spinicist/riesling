@@ -7,10 +7,11 @@ namespace rl::TOps {
 struct SENSEOp final : TOp<4, 5>
 {
   TOP_INHERIT(4, 5)
-  SENSEOp(Cx5 const &maps, Index const nB);
   TOP_DECLARE(SENSEOp)
-  void iforward(InCMap x, OutMap y, float const s) const;
-  void iadjoint(OutCMap y, InMap x, float const s) const;
+  static auto Make(Cx5 const &maps, Index const nB) -> Ptr;
+  SENSEOp(Cx5 const &maps, Index const nB);
+  void iforward(InCMap x, OutMap y, float const s = 1.f) const;
+  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
   auto nChannels() const -> Index;
   auto mapDimensions() const -> Sz3;
   auto maps() const -> Cx5;

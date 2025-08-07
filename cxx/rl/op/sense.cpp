@@ -8,6 +8,8 @@
 
 namespace rl::TOps {
 
+auto SENSEOp::Make(Cx5 const &maps, Index const nB) -> Ptr { return std::make_shared<SENSEOp>(maps, nB); }
+
 SENSEOp::SENSEOp(Cx5 const &maps, Index const nB)
   : Parent("SENSEOp")
   , maps_{maps}
@@ -19,8 +21,8 @@ SENSEOp::SENSEOp(Cx5 const &maps, Index const nB)
   }
   ishape[3] = nB;
   oshape[3] = nB;
-  oshape[4] = maps_.dimension(4);
   resX.set(3, nB);
+  oshape[4] = maps_.dimension(4);
   brdX.set(4, maps_.dimension(4));
 
   if (maps_.dimension(3) == 1) {
