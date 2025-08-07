@@ -65,7 +65,7 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
 {
   Log::Print("Precon", "Calculating multichannel-preconditioner");
   Trajectory  newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  Index const nC = smaps.dimension(1);
+  Index const nC = smaps.dimension(4);
   Index const nSamp = traj.nSamples();
   Index const nTrace = traj.nTraces();
   Re3         weights(nC, nSamp, nTrace);
@@ -73,8 +73,9 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, basis);
   Sz5 const psfShape = nufft.ishape;
   Sz5 const smapShape = smaps.dimensions();
-  if (smapShape[4] > 1 && smapShape[4] != psfShape[4]) {
-    throw Log::Failure("Precon", "SENSE maps had basis dimension {}, expected {}", smapShape[4], psfShape[4]);
+  Index const nB = smapShape[3];
+  if (nB > 1 && nB != psfShape[3]) {
+    throw Log::Failure("Precon", "SENSE maps had basis dimension {}, expected {}", nB, psfShape[3]);
   }
   Cx3 W(nufft.oshape);
   Cx5 psf(psfShape);
@@ -85,8 +86,8 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   float scale = std::pow(Product(FirstN<3>(psfShape)), 1.5f) / Product(traj.matrix());
   Log::Print("Precon", "Map shape {} scale {}", smapShape, scale);
 
-  Sz5 const smap1Shape = AddBack(FirstN<3>(smapShape), 1, smapShape[4]);
-  Sz5 const xcor1Shape = AddBack(FirstN<3>(psfShape), 1, smapShape[4]);
+  Sz5 const smap1Shape = AddBack(FirstN<3>(smapShape), nB, 1);
+  Sz5 const xcor1Shape = AddBack(FirstN<3>(psfShape), nB, 1);
 
   auto padXC = TOps::Pad<5>(smap1Shape, xcor1Shape);
   Cx5  smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
@@ -96,15 +97,15 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
     for (Index sj = 0; sj < nC; sj++) {
       // Log::Print("Precon", "Cross-correlation channel {}-{}", si, sj);
       smap1.device(Threads::TensorDevice()) =
-        smaps.slice(Sz5{0, 0, 0, si, 0}, smap1Shape) * smaps.slice(Sz5{0, 0, 0, sj, 0}, smap1Shape).conjugate();
+        smaps.slice(Sz5{0, 0, 0, 0, si}, smap1Shape) * smaps.slice(Sz5{0, 0, 0, 0, sj}, smap1Shape).conjugate();
       padXC.forward(smap1, xcorTemp);
       FFT::Forward(xcorTemp, Sz3{0, 1, 2});
       xcor1.device(Threads::TensorDevice()) += xcorTemp * xcorTemp.conjugate();
     }
     Log::Print("Precon", "Channel {} map squared norm {}", si, ni);
     FFT::Adjoint(xcor1, Sz3{0, 1, 2});
-    if (smapShape[4] == 1) {
-      xcor.device(Threads::TensorDevice()) = xcor1.broadcast(Sz5{1, 1, 1, 1, psfShape[4]}) * psf;
+    if (nB == 1 && nB != psfShape[3]) {
+      xcor.device(Threads::TensorDevice()) = xcor1.broadcast(Sz5{1, 1, 1, psfShape[3], 1}) * psf;
     } else {
       xcor.device(Threads::TensorDevice()) = xcor1 * psf;
     }

@@ -17,7 +17,7 @@ template <int ND, typename KF> auto KernelFFT(Sz<ND> const shape, Sz<ND> const g
   Kernel<ND, KF> kernel(osamp);
   CxN<ND>        k = kernel().template cast<Cx>();
   float const    scale = std::sqrt(static_cast<float>(Product(shape)));
-  Log::Debug("Apodiz", "Shape {} Grid shape {} Scale {}", shape, gridshape, scale);
+  Log::Print("Apodiz", "Shape {} Grid shape {} Scale {}", shape, gridshape, scale);
   k = k * k.constant(scale);
   CxN<ND> temp = TOps::Pad<ND>(k.dimensions(), gridshape).forward(k);
   FFT::Adjoint(temp);

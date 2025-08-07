@@ -23,7 +23,7 @@ template <int ND, typename KF> NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> con
                                                                 Basis::CPtr            basis)
   : Parent("NUFFTLowmem")
   , gridder{opts, traj, 1, basis}
-  , apo{AddBack(traj.matrixForFOV(opts.fov), gridder.ishape[ND]), RemoveNth<ND>(gridder.ishape), opts.osamp}
+  , apo{AddBack(traj.matrixForFOV(opts.fov), gridder.ishape[ND]), FirstN<ND + 1>(gridder.ishape), opts.osamp}
   , nc1{AddFront(LastN<2>(gridder.oshape), 1)}
   , workspace{gridder.ishape}
   , skern{sk}
@@ -74,7 +74,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMa
 {
   auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(ND + 1)));
+  CxNMap<ND + 1> ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
   ws1m.setZero();
   y.setZero();
@@ -93,7 +93,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap x, OutM
 {
   auto const     time = this->startForward(x, y, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1> ws1m(workspace.data(), AddBack(FirstN<ND>(workspace.dimensions()), workspace.dimension(ND + 1)));
+  CxNMap<ND + 1> ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
   ws1m.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
@@ -111,8 +111,8 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMa
 {
   auto const      time = this->startAdjoint(y, x, false);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1>  ws1m(workspace.data(), RemoveNth<ND>(workspace.dimensions()));
-  CxNCMap<ND + 1> ws1cm(workspace.data(), RemoveNth<ND>(workspace.dimensions()));
+  CxNMap<ND + 1>  ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
+  CxNCMap<ND + 1> ws1cm(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutCMap         nc1m(nc1.data(), nc1.dimensions());
   x.setZero();
   for (Index ic = 0; ic < y.dimension(0); ic++) {
@@ -130,8 +130,8 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap y, InM
 {
   auto const      time = this->startAdjoint(y, x, true);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
-  CxNMap<ND + 1>  ws1m(workspace.data(), RemoveNth<ND>(workspace.dimensions()));
-  CxNCMap<ND + 1> ws1cm(workspace.data(), RemoveNth<ND>(workspace.dimensions()));
+  CxNMap<ND + 1>  ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
+  CxNCMap<ND + 1> ws1cm(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutCMap         nc1m(nc1.data(), nc1.dimensions());
   for (Index ic = 0; ic < y.dimension(0); ic++) {
     kernToMap(ic);
