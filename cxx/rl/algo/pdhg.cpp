@@ -24,7 +24,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
   std::vector<Proxs::Prox::Ptr> proxs(nx);      /* Proximal operators */
 
   /* Data consistency term. Add a scaling to the encoding operator to ensure max eig ~= 1 */
-  As[0] = Ops::Mul(E, Ops::DiagScale::Make(E->rows(), 1.f / std::sqrt(opts.λE)));
+  As[0] = E; //Ops::Mul(Ops::DiagScale::Make(E->rows(), 1.f / std::sqrt(opts.λE)), E);
   Ps[0] = P;
   proxs[0] = opts.lad ? Proxs::L1::Make(1.f, b, P) : Proxs::SumOfSquares::Make(b, P);
   /* Regularizers */
@@ -34,7 +34,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
     proxs[ir + 1] = regs[ir].P;
   }
 
-  float const L = std::sqrt(1 + regs.size()); /* Assumes all regularizer transforms have max eval=1 */
+  float const L = std::sqrt(opts.λE * opts.λE + regs.size()); /* Assumes all regularizer transforms have max eval=1 */
   float const σ = 1.f / L;
   float const τ = 1.f / L;
   Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.deltaTol);
