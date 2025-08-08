@@ -19,6 +19,7 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
 
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
   ArrayFlag<float, ND> refFov(parser, "R", "Reference scan FOV", {"ref-fov"}, Eigen::Array<float, ND, 1>::Constant(512.f));
+  args::Flag           norm(parser, "N", "Normalize energies", {'n', "norm"});
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const      cmd = parser.GetCommand().Name();
@@ -44,20 +45,23 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
                    .abs()
                    .template cast<Cx>();
     TOps::Pad<4> cropper(AddBack(FirstN<3>(channels.dimensions()), 1), bigRef.dimensions());
-    Re4 const absRSS = ref.abs();
+    Re4 const    absRSS = ref.abs();
     float const  p90rss = Percentiles(CollapseToArray(absRSS), {0.9})[0];
     ref = cropper.adjoint(bigRef);
-    Re4 const absRef = ref.abs();
+    Re4 const   absRef = ref.abs();
     float const p90ref = Percentiles(CollapseToArray(absRef), {0.9})[0];
     ref = ref * ref.constant(p90rss / p90ref);
   }
   Cx5 const kernels = SENSE::EstimateKernels<ND>(channels, ref, senseArgs.kWidth.Get(), gridOpts.osamp.Get(), senseArgs.l.Get(),
-                                                 senseArgs.λ.Get());
+                                                 senseArgs.λ.Get(), norm);
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
   writer.writeTensor("ref", ref.dimensions(), ref.data(), HD5::DNames<4>{"i", "j", "k", "b"});
-
+  fmt::print(stderr, "channels {} ref {}\n", channels.dimensions(), ref.dimensions());
+  channels.device(Threads::TensorDevice()) =
+    channels / ref.reshape(AddBack(ref.dimensions(), 1)).broadcast(Sz5{1, 1, 1, 1, channels.dimension(4)});
+  writer.writeTensor("ratio", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
   Log::Print(cmd, "Finished");
 }
 

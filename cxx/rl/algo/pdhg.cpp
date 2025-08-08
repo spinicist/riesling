@@ -34,8 +34,10 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
     proxs[ir + 1] = regs[ir].P;
   }
 
-  float const L = std::sqrt(opts.λE * opts.λE + regs.size()); /* Assumes all regularizer transforms have max eval=1 */
-  float const σ = 1.f / L;
+  /* Assumes all regularizer transforms have max eval=1 */
+  /* Note difference between eigenvalues in Ong and singular values in Sidky */
+  float const L = opts.λE + regs.size(); 
+  float const σ = 1.f;
   float const τ = 1.f / L;
   Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.deltaTol);
 

@@ -18,7 +18,7 @@ Reader::Reader(std::string const &fname, bool const altX)
   Init();
   handle_ = H5Fopen(fname.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (handle_ < 0) { throw Log::Failure("HD5", "Failed to open {}", fname); }
-  Log::Print("HD5", "Reading from {} id {}", fname, handle_);
+  Log::Print("HD5", "Opened {} for reading id {}", fname, handle_);
 }
 
 Reader::Reader(Handle const fid, bool const altX)
@@ -27,7 +27,7 @@ Reader::Reader(Handle const fid, bool const altX)
   , altComplex_{altX}
 {
   Init();
-  Log::Print("HD5", "Reading from id {}", handle_);
+  Log::Print("HD5", "Creater reader for id {}", handle_);
 }
 
 Reader::~Reader()

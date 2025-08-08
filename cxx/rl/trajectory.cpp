@@ -236,7 +236,7 @@ template <int ND> void TrajectoryN<ND>::downsample(Array const tgtSize, bool con
       thresh(ii) = matrix_[ii] * ratio / 2.f;
     }
   }
-  Log::Print("Traj", "Downsampling to {} voxels, k-space threshold {}", tgtSize, fmt::streamed(thresh));
+  Log::Print("Traj", "Downsample {} voxel-size, {} matrix, k-space threshold {}", voxel_size_, matrix_, fmt::streamed(thresh));
 
   for (Index it = 0; it < nTraces(); it++) {
     for (Index is = 0; is < nSamples(); is++) {

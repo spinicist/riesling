@@ -120,8 +120,8 @@ template <int ND> auto SobolevWeights(Index const kW, Index const l) -> ReN<ND>
  * The kernel width is specified on the nominal grid, i.e. will be multiplied up by the oversampling (and made odd)
  *
  */
-template <int ND>
-auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+template <int ND> auto EstimateKernels(
+  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
   -> Cx5
 {
   if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
@@ -218,17 +218,17 @@ auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, f
   return kernels;
 }
 
-template auto
-EstimateKernels<2>(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+template auto EstimateKernels<2>(
+  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
   -> Cx5;
-template auto
-EstimateKernels<3>(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+template auto EstimateKernels<3>(
+  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
   -> Cx5;
 
 /*
  * For 2D, assume multislice so only inflate the first two dimensions
  */
-template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os) -> Cx5
+template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os, bool const renorm) -> Cx5
 {
   auto const  kshape = kernels.dimensions();
   auto const  fshape = Concatenate(MulToEven(mat, os), LastN<5 - ND>(kshape));
@@ -238,11 +238,18 @@ template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float
   TOps::Pad<5>     P(kshape, fshape);
   TOps::FFT<5, ND> F(fshape, false);
   TOps::Pad<5>     C(cshape, fshape);
-  return C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
+  Cx5              maps = C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
+  if (renorm) {
+    Log::Print("SENSE", "Renormalising");
+    Cx4 const rss = DimDot<4>(maps, maps).sqrt();
+    maps.device(Threads::TensorDevice()) =
+      maps / rss.reshape(AddBack(rss.dimensions(), 1)).broadcast(Sz5{1, 1, 1, 1, maps.dimension(4)});
+  }
+  return maps;
 }
 
-template auto KernelsToMaps(Cx5 const &, Sz2 const, float const) -> Cx5;
-template auto KernelsToMaps(Cx5 const &, Sz3 const, float const) -> Cx5;
+template auto KernelsToMaps(Cx5 const &, Sz2 const, float const, bool const renorm) -> Cx5;
+template auto KernelsToMaps(Cx5 const &, Sz3 const, float const, bool const renorm) -> Cx5;
 
 template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float const os) -> Cx5
 {
@@ -268,7 +275,7 @@ template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, T
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels<ND>(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<4>(c, c).sqrt();
-    kernels = EstimateKernels<ND>(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ);
+    kernels = EstimateKernels<ND>(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ, false);
   } else {
     HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);

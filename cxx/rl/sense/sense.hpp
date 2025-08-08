@@ -24,11 +24,11 @@ template <int ND> auto LoresChannels(Opts<ND> const     &opts,
                                      Cx5 const          &noncart,
                                      Basis::CPtr         basis = nullptr) -> Cx5;
 
-auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
-template <int ND>
-auto EstimateKernels(Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ)
+auto                   TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
+template <int ND> auto EstimateKernels(
+  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
   -> Cx5;
-template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os) -> Cx5;
+template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os, bool const renorm = true) -> Cx5;
 template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kW, float const os) -> Cx5;
 
 //! Convenience function called from recon commands to get SENSE maps

@@ -23,7 +23,7 @@ Writer::Writer(std::string const &fname, bool const append)
   if (handle_ < 0) {
     throw Log::Failure("HD5", "Could not open file {} for writing because: {}", fname, GetError());
   } else {
-    Log::Print("HD5", "Writing {} id {}", fname, handle_);
+    Log::Print("HD5", "Opened {} for writing id {}", fname, handle_);
   }
 }
 
