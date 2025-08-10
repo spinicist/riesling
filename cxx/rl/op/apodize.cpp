@@ -73,7 +73,7 @@ template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::iforward(InCMap x, O
 template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::TensorDevice()) += y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s) * x.constant(s);
+  x.device(Threads::TensorDevice()) += y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);
   this->finishAdjoint(x, time, true);
 }
 
