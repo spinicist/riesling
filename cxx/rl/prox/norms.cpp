@@ -25,7 +25,7 @@ L1::L1(float const λ_, CMap b_, Ops::Op::Ptr P_)
   , P{P_}
 {
   if (P->rows() != b.size()) {
-    throw(Log::Failure("SoS", "Preconditioner size {} did not match data size {}", P->rows(), b.size()));
+    throw(Log::Failure("L1Prox", "Preconditioner size {} did not match data size {}", P->rows(), b.size()));
   }
 
   Log::Print("L1Prox", "λ {} with bias", λ);
@@ -60,6 +60,46 @@ void L1::conj(float const α, CMap x, Map z) const
     z.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
   }
   Log::Debug("L1Prox", "Conjugate λ {} |x| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(z));
+}
+
+auto L1I::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_shared<L1I>(λ, sz); }
+
+L1I::L1I(float const λ_, Index const sz_)
+  : Prox(sz_)
+  , λ{λ_}
+{
+  Log::Print("L1Prox", "λ {}", λ);
+}
+
+void L1I::apply(float const α, CMap x, Map z) const
+{
+  float const t = α * λ;
+  float const nx = Log::IsHigh() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
+  Threads::ChunkFor(
+    [t, &x, &z](Index lo, Index hi) {
+      for (Index ii = lo; ii < hi; ii++) {
+        float const xr = x[ii].real();
+        float const xi = x[ii].imag();
+        float const ax = std::abs(xi);
+        z[ii] = Cx(xr, ax > t ? (1.f - t / ax) * xi : 0.f);
+      }
+    },
+    x.size());
+  if (Log::IsHigh()) { Log::Debug("L1IProx", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z)); }
+}
+
+void L1I::conj(float const α, CMap x, Map z) const
+{
+  float const nx = Log::IsHigh() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
+  Threads::ChunkFor(
+    [λ = this->λ, &x, &z](Index lo, Index hi) {
+      for (Index ii = lo; ii < hi; ii++) {
+        float const xi = x[ii].imag();
+        z[ii] = Cx(0.f, λ * xi / std::max(std::abs(xi), λ));
+      }
+    },
+    x.size());
+  Log::Debug("L1IProx", "Conjugate λ {} |x| {} |z| {}", λ, nx, ParallelNorm(z));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr

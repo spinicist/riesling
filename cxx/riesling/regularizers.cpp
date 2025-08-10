@@ -16,6 +16,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   : iso(parser, "ISO", "Isotropic/joint dims (b/g/bg)", {"iso"})
 
   , l1(parser, "L1", "Simple L1 regularization", {"l1"})
+  , l1i(parser, "L1", "L1 regularization of the imaginary part", {"l1i"})
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tv2(parser, "TV", "TV + Laplacian", {"tv2"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
@@ -159,6 +160,11 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
     } else {
       prox = Proxs::L1::Make(opts.l1.Get(), A->cols());
     }
+    regs.push_back({nullptr, prox, shape});
+  }
+
+  if (opts.l1i) {
+    Proxs::Prox::Ptr prox = Proxs::L1I::Make(opts.l1i.Get(), A->cols());
     regs.push_back({nullptr, prox, shape});
   }
 

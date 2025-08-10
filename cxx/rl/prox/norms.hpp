@@ -21,6 +21,19 @@ private:
   Ops::Op::Ptr P;
 };
 
+struct L1I final : Prox
+{
+  PROX_INHERIT
+  float       λ;
+  static auto Make(float const λ, Index const sz) -> Prox::Ptr;
+  L1I(float const λ, Index const sz);
+  void apply(float const α, CMap x, Map z) const;
+  void conj(float const α, CMap x, Map z) const;
+
+private:
+  Ops::Op::Ptr P;
+};
+
 template <int O, int D> struct L2 final : Prox
 {
   PROX_INHERIT
