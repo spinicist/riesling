@@ -102,6 +102,8 @@ template <int ND> struct SENSEArgs
   ArrayFlag<float, ND>         res;
   args::ValueFlag<float>       l, λ;
 
+  args::MapFlag<std::string, rl::SENSE::Normalization> renorm;
+
   SENSEArgs(args::Subparser &parser);
   auto Get() -> rl::SENSE::Opts<ND>;
 };

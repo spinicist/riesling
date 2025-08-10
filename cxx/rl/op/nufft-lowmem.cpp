@@ -55,13 +55,12 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::kernToMap(Index const c
   Log::Print("Lowmem", "Inflating sensitivity for channel {}", c);
   auto const skshape = skern.dimensions();
   auto const sk1 = skern.slice(Sz5{0, 0, 0, 0, c}, AddBack(FirstN<ND + 1>(skshape), 1));
-  smap = SENSE::KernelsToMaps(sk1, FirstN<ND>(smap.dimensions()), 1.f, false);
+  smap = SENSE::KernelsToMaps(sk1, FirstN<ND>(smap.dimensions()), 1.f, SENSE::Normalization::None);
 }
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMap y, float const s) const
 {
-  auto const time = this->startForward(x, y, false);
-  fmt::print(stderr, "s {}\n", s);
+  auto const     time = this->startForward(x, y, false);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1> ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
@@ -80,8 +79,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMa
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap x, OutMap y, float const s) const
 {
-  auto const time = this->startForward(x, y, true);
-  fmt::print(stderr, "s {}\n", s);
+  auto const     time = this->startForward(x, y, true);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1> ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
@@ -99,8 +97,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap x, OutM
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const time = this->startAdjoint(y, x, false);
-  fmt::print(stderr, "s {}\n", s);
+  auto const      time = this->startAdjoint(y, x, false);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1>  ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   CxNCMap<ND + 1> ws1cm(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
@@ -119,8 +116,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMa
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const time = this->startAdjoint(y, x, true);
-  fmt::print(stderr, "s {}\n", s);
+  auto const      time = this->startAdjoint(y, x, true);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1>  ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   CxNCMap<ND + 1> ws1cm(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));

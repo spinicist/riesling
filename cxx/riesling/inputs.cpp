@@ -122,13 +122,20 @@ template <int ND> SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)
   , res(parser, "R", "SENSE calibration res (6,6,6)", {"sense-res"}, Eigen::Array<float, ND, 1>::Constant(6.f))
   , l(parser, "L", "SENSE Sobolev parameter (4)", {"sense-l"}, 4.f)
   , λ(parser, "L", "SENSE Regularization (1e-4)", {"sense-lambda"}, 1.e-4f)
+  , renorm(parser, "N", "SENSE Renormalization (RSS/none)", {"sense-renorm"}, SENSE::NormMap, SENSE::Normalization::RSS)
 {
 }
 
 template <int ND> auto SENSEArgs<ND>::Get() -> rl::SENSE::Opts<ND>
 {
-  return rl::SENSE::Opts<ND>{
-    .type = type.Get(), .tp = tp.Get(), .kWidth = kWidth.Get(), .its = its.Get(), .res = res.Get(), .l = l.Get(), .λ = λ.Get()};
+  return rl::SENSE::Opts<ND>{.type = type.Get(),
+                             .tp = tp.Get(),
+                             .kWidth = kWidth.Get(),
+                             .its = its.Get(),
+                             .res = res.Get(),
+                             .l = l.Get(),
+                             .λ = λ.Get(),
+                             .renorm = renorm.Get()};
 }
 
 template struct SENSEArgs<2>;

@@ -14,7 +14,8 @@ void main_sense_maps(args::Subparser &parser)
   args::ValueFlag<float> osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp"}, 1.3f);
   ArrayFlag<float, 3>    fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov"}, Eigen::Array3f::Zero());
   args::ValueFlag<Index> kW(parser, "W", "Turn maps into kernels with specified width", {"sense-width"});
-  args::Flag             renorm(parser, "N", "Renormalize maps", {'n', "norm"});
+  args::MapFlag<std::string, rl::SENSE::Normalization> renorm(parser, "N", "SENSE Renormalization (RSS/none)", {"sense-renorm"},
+                                                              SENSE::NormMap, SENSE::Normalization::RSS);
 
   ParseCommand(parser, iname, oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -29,7 +30,7 @@ void main_sense_maps(args::Subparser &parser)
     writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   } else {
     Cx5 const kernels = reader.readTensor<Cx5>();
-    Cx5 const maps = SENSE::KernelsToMaps(kernels, traj.matrixForFOV(fov.Get()), osamp.Get(), renorm);
+    Cx5 const maps = SENSE::KernelsToMaps(kernels, traj.matrixForFOV(fov.Get()), osamp.Get(), renorm.Get());
     writer.writeTensor(HD5::Keys::Data, maps.dimensions(), maps.data(), HD5::Dims::SENSE);
   }
 

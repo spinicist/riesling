@@ -19,7 +19,8 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
 
   args::ValueFlag<std::string> refname(parser, "F", "Reference scan filename", {"ref"});
   ArrayFlag<float, ND> refFov(parser, "R", "Reference scan FOV", {"ref-fov"}, Eigen::Array<float, ND, 1>::Constant(512.f));
-  args::Flag           norm(parser, "N", "Normalize energies", {'n', "norm"});
+  args::MapFlag<std::string, rl::SENSE::Normalization> renorm(parser, "N", "SENSE Renormalization (RSS/none)", {"sense-renorm"},
+                                                              SENSE::NormMap, SENSE::Normalization::RSS);
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const      cmd = parser.GetCommand().Name();
@@ -53,7 +54,7 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
     ref = ref * ref.constant(p90rss / p90ref);
   }
   Cx5 const kernels = SENSE::EstimateKernels<ND>(channels, ref, senseArgs.kWidth.Get(), gridOpts.osamp.Get(), senseArgs.l.Get(),
-                                                 senseArgs.λ.Get(), norm);
+                                                 senseArgs.λ.Get(), renorm.Get());
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);

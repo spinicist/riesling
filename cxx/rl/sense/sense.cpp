@@ -22,6 +22,9 @@
 namespace rl {
 namespace SENSE {
 
+std::unordered_map<std::string, SENSE::Normalization> NormMap{{"rss", SENSE::Normalization::RSS},
+                                                          {"none", SENSE::Normalization::None}};
+
 template <int ND> auto
 LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND> traj, Cx5 const &noncart, Basis::CPtr basis)
   -> Cx5
@@ -131,7 +134,7 @@ template <int ND> auto SobolevWeights(Index const kW, Index const l) -> ReN<ND>
  *
  */
 template <int ND> auto EstimateKernels(
-  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
+  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, Normalization const renorm)
   -> Cx5
 {
   if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
@@ -226,26 +229,24 @@ template <int ND> auto EstimateKernels(
     kernels = AsTensorMap(k, kshape);
   }
 
-  if (norm) {
+  if (renorm == Normalization::RSS) {
     auto const mshape = MulToEven(FirstN<ND>(kshape), 2.f);
-    auto const maps = KernelsToMaps(kernels, mshape, 1.f, true);
+    auto const maps = KernelsToMaps(kernels, mshape, 1.f, renorm);
     kernels = MapsToKernels(maps, mshape, 1.f);
   }
 
   return kernels;
 }
 
-template auto EstimateKernels<2>(
-  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
-  -> Cx5;
-template auto EstimateKernels<3>(
-  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, bool const norm)
-  -> Cx5;
+template auto
+EstimateKernels<2>(Cx5 const &, Cx4 const &, Index const, float const, float const, float const, Normalization const) -> Cx5;
+template auto
+EstimateKernels<3>(Cx5 const &, Cx4 const &, Index const, float const, float const, float const, Normalization const) -> Cx5;
 
 /*
  * For 2D, assume multislice so only inflate the first two dimensions
  */
-template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os, bool const renorm) -> Cx5
+template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float const os, Normalization const renorm) -> Cx5
 {
   auto const  kshape = kernels.dimensions();
   auto const  fshape = Concatenate(MulToEven(mat, os), LastN<5 - ND>(kshape));
@@ -256,13 +257,13 @@ template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float
   TOps::FFT<5, ND> F(fshape, false);
   TOps::Pad<5>     C(mshape, fshape);
   Cx5              maps = C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
-  if (renorm) { Normalize(maps); }
+  if (renorm == Normalization::RSS) { Normalize(maps); }
   return maps;
 }
 
-template auto KernelsToMaps(Cx5 const &, Sz1 const, float const, bool const renorm) -> Cx5;
-template auto KernelsToMaps(Cx5 const &, Sz2 const, float const, bool const renorm) -> Cx5;
-template auto KernelsToMaps(Cx5 const &, Sz3 const, float const, bool const renorm) -> Cx5;
+template auto KernelsToMaps(Cx5 const &, Sz1 const, float const, Normalization const) -> Cx5;
+template auto KernelsToMaps(Cx5 const &, Sz2 const, float const, Normalization const) -> Cx5;
+template auto KernelsToMaps(Cx5 const &, Sz3 const, float const, Normalization const) -> Cx5;
 
 template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float const os) -> Cx5
 {
@@ -288,7 +289,7 @@ template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, T
     Log::Print("SENSE", "Self-Calibration");
     Cx5 const c = LoresChannels<ND>(opts, gopts, traj, noncart);
     Cx4 const ref = DimDot<4>(c, c).sqrt();
-    kernels = EstimateKernels<ND>(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ, false);
+    kernels = EstimateKernels<ND>(c, ref, opts.kWidth, gopts.osamp, opts.l, opts.λ, opts.renorm);
   } else {
     HD5::Reader senseReader(opts.type);
     kernels = senseReader.readTensor<Cx5>(HD5::Keys::Data);
