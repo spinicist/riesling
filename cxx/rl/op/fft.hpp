@@ -18,6 +18,8 @@ template <int Rank, int FFTRank> struct FFT final : TOp<Rank, Rank>
 
   using Parent::adjoint;
   using Parent::forward;
+  using Ptr = std::shared_ptr<FFT<Rank, FFTRank>>;
+  static auto Make(InDims const &shape, bool const adjoint = false) -> Ptr;
 
   void forward(InCMap x, OutMap y, float const s) const;
   void adjoint(OutCMap y, InMap x, float const s) const;

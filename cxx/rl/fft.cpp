@@ -79,7 +79,7 @@ template <int ND, int NFFT> void Run(Eigen::TensorMap<CxN<ND>> &x, Sz<NFFT> cons
   std::transform(fftDims.begin(), fftDims.end(), duccDims.begin(), [](Index const d) { return ND - 1 - d; });
   float const scale = 1.f / std::sqrt(std::transform_reduce(duccDims.cbegin(), duccDims.cend(), 1.f, std::multiplies{},
                                                             [duccShape](size_t const ii) { return duccShape[ii]; }));
-  rl::Log::Debug("FFT", "{} Shape {} dims {} scale {}", fwd ? "Forward" : "Adjoint", duccShape, duccDims, scale);
+  rl::Log::Debug("FFT", "{} Shape {} dims {} scale {}", fwd ? "Forward" : "Adjoint", shape, fftDims, scale);
   internal::ThreadPool pool(Threads::TensorDevice());
   internal::Guard      guard(pool);
   ducc0::cfmav         xc(x.data(), duccShape);

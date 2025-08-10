@@ -2,19 +2,12 @@
 
 #include "../fft.hpp"
 #include "../log/log.hpp"
+#include "../sense/sense.hpp"
 #include "top-impl.hpp"
 
 namespace rl::TOps {
 
 namespace {
-template <int NDp2> auto OneChannel(Sz<NDp2> shape) -> Sz<NDp2 - 1>
-{
-  Sz<NDp2 - 1> out;
-  std::copy_n(shape.begin(), NDp2 - 2, out.begin());
-  out[NDp2 - 2] = 1;
-  return out;
-}
-
 } // namespace
 
 template <int ND, typename KF> NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> const    &opts,
@@ -28,7 +21,7 @@ template <int ND, typename KF> NUFFTLowmem<ND, KF>::NUFFTLowmem(GridOpts<ND> con
   , workspace{gridder.ishape}
   , skern{sk}
   , smap{AddBack(FirstN<ND>(gridder.ishape), skern.dimension(DB))}
-  , spad{OneChannel(skern.dimensions()), smap.dimensions()}
+  , spad{FirstN<ND + 1>(skern.dimensions()), smap.dimensions()}
 {
   auto const nB = gridder.ishape[DB];
   auto const nC = skern.dimension(DC);
@@ -59,20 +52,16 @@ NUFFTLowmem<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj,
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::kernToMap(Index const c) const
 {
-  float const scale = std::sqrt(Product(FirstN<ND>(smap.dimensions())) / (float)Product(FirstN<ND>(skern.dimensions())));
-  smap.setZero();
-  CxN<ND + 1> const     sk1 = skern.template chip<DC>(c) * Cx(scale);
-  CxNCMap<ND + 1> const sk1map(sk1.data(), sk1.dimensions());
-  CxNMap<ND + 1>        smapmap(smap.data(), smap.dimensions());
-  spad.forward(sk1map, smapmap);
-  Sz<ND> ftd;
-  std::iota(ftd.begin(), ftd.end(), 0);
-  FFT::Adjoint(smap, ftd);
+  Log::Print("Lowmem", "Inflating sensitivity for channel {}", c);
+  auto const skshape = skern.dimensions();
+  auto const sk1 = skern.slice(Sz5{0, 0, 0, 0, c}, AddBack(FirstN<ND + 1>(skshape), 1));
+  smap = SENSE::KernelsToMaps(sk1, FirstN<ND>(smap.dimensions()), 1.f, false);
 }
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMap y, float const s) const
 {
-  auto const     time = this->startForward(x, y, false);
+  auto const time = this->startForward(x, y, false);
+  fmt::print(stderr, "s {}\n", s);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1> ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
@@ -91,7 +80,8 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::forward(InCMap x, OutMa
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap x, OutMap y, float const s) const
 {
-  auto const     time = this->startForward(x, y, true);
+  auto const time = this->startForward(x, y, true);
+  fmt::print(stderr, "s {}\n", s);
   CxNMap<ND + 2> wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1> ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   OutMap         nc1m(nc1.data(), nc1.dimensions());
@@ -109,7 +99,8 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iforward(InCMap x, OutM
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const      time = this->startAdjoint(y, x, false);
+  auto const time = this->startAdjoint(y, x, false);
+  fmt::print(stderr, "s {}\n", s);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1>  ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   CxNCMap<ND + 1> ws1cm(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
@@ -120,7 +111,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMa
     nc1.device(Threads::TensorDevice()) = y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)});
     gridder.adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
-    ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
+    ws1m.device(Threads::TensorDevice()) = ws1m * smap.broadcast(sbrd).conjugate();
     apo.iadjoint(ws1cm, x, s); // This needs to accumulate across channels, so use iadjoint
   }
   this->finishAdjoint(x, time, false);
@@ -128,7 +119,8 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::adjoint(OutCMap y, InMa
 
 template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap y, InMap x, float const s) const
 {
-  auto const      time = this->startAdjoint(y, x, true);
+  auto const time = this->startAdjoint(y, x, true);
+  fmt::print(stderr, "s {}\n", s);
   CxNMap<ND + 2>  wsm(workspace.data(), workspace.dimensions());
   CxNMap<ND + 1>  ws1m(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
   CxNCMap<ND + 1> ws1cm(workspace.data(), FirstN<ND + 1>(workspace.dimensions()));
@@ -138,7 +130,7 @@ template <int ND, typename KF> void NUFFTLowmem<ND, KF>::iadjoint(OutCMap y, InM
     nc1.device(Threads::TensorDevice()) = y.slice(Sz3{ic, 0, 0}, Sz3{1, y.dimension(1), y.dimension(2)});
     gridder.adjoint(nc1m, wsm);
     FFT::Adjoint(workspace, fftDims);
-    ws1m.device(Threads::TensorDevice()) = ws1m * smap.conjugate().broadcast(sbrd);
+    ws1m.device(Threads::TensorDevice()) = ws1m * smap.broadcast(sbrd).conjugate();
     apo.iadjoint(ws1cm, x, s);
   }
   this->finishAdjoint(x, time, true);

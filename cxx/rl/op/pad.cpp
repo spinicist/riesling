@@ -6,8 +6,7 @@
 
 namespace rl::TOps {
 
-template <int Rank>
-Pad<Rank>::Pad(InDims const is, OutDims const os)
+template <int Rank> Pad<Rank>::Pad(InDims const is, OutDims const os)
   : Parent(fmt::format("Pad {}D", Rank), is, os)
 {
   for (Index ii = 0; ii < Rank; ii++) {
@@ -21,6 +20,11 @@ Pad<Rank>::Pad(InDims const is, OutDims const os)
                  [](Index big, Index small) { return (big - small) / 2; });
   std::transform(left_.begin(), left_.end(), right_.begin(), paddings_.begin(),
                  [](Index left, Index right) { return std::make_pair(left, right); });
+}
+
+template <int Rank> auto Pad<Rank>::Make(InDims const is, OutDims const os) -> Ptr
+{
+  return std::make_shared<Pad<Rank>>(is, os);
 }
 
 template <int Rank> void Pad<Rank>::forward(InCMap x, OutMap y, float const s) const

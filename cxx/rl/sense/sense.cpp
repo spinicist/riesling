@@ -63,13 +63,23 @@ template auto
 LoresChannels(Opts<3> const &opts, GridOpts<3> const &gridOpts, TrajectoryN<3> traj, Cx5 const &noncart, Basis::CPtr basis)
   -> Cx5;
 
+void Normalize(Cx5 &maps)
+{
+  Sz5 const shape = maps.dimensions();
+  Sz4 const shape4 = FirstN<4>(shape);
+  Log::Print("SENSE", "Normalizing to RSS");
+  Cx4 rss(shape4);
+  rss.device(Threads::TensorDevice()) = DimDot<4>(maps, maps).sqrt();
+  maps.device(Threads::TensorDevice()) = maps / rss.reshape(AddBack(shape4, 1)).broadcast(Sz5{1, 1, 1, 1, shape[4]});
+}
+
 auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5
 {
   Sz5 const shape = channels.dimensions();
   Log::Print("SENSE", "Normalizing λ {}", λ);
   Cx5 normalized(shape);
   normalized.device(Threads::TensorDevice()) =
-    channels / (ref + ref.constant(λ)).reshape(AddFront(LastN<4>(shape), 1)).broadcast(Sz5{shape[0], 1, 1, 1, 1});
+    channels / (ref + ref.constant(λ)).reshape(AddBack(FirstN<4>(shape), 1)).broadcast(Sz5{1, 1, 1, 1, shape[4]});
   return normalized;
 }
 
@@ -162,11 +172,11 @@ template <int ND> auto EstimateKernels(
 
   Log::Print("SENSE", "Kernel shape {}", kshape);
   // Set up operators
-  auto D = std::make_shared<Ops::DiagScale>(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
-  auto P = std::make_shared<TOps::Pad<5>>(kshape, cshape);
-  auto F = std::make_shared<TOps::FFT<5, ND>>(cshape, true);
+  auto D = Ops::DiagScale::Make(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
+  auto P = TOps::Pad<5>::Make(kshape, cshape);
+  auto F = TOps::FFT<5, ND>::Make(cshape, true);
   auto FP = Ops::Mul(Ops::Mul(F, P), D);
-  auto S = std::make_shared<TOps::TensorScale<5, 0, 1>>(cshape, ref);
+  auto S = TOps::TensorScale<5, 0, 1>::Make(cshape, ref);
   auto SFP = Ops::Mul(S, FP);
 
   // Weights (mask)
@@ -215,6 +225,13 @@ template <int ND> auto EstimateKernels(
     auto const      k = solve.run(cʹ);
     kernels = AsTensorMap(k, kshape);
   }
+
+  if (norm) {
+    auto const mshape = MulToEven(FirstN<ND>(kshape), 2.f);
+    auto const maps = KernelsToMaps(kernels, mshape, 1.f, true);
+    kernels = MapsToKernels(maps, mshape, 1.f);
+  }
+
   return kernels;
 }
 
@@ -232,36 +249,32 @@ template <int ND> auto KernelsToMaps(Cx5 const &kernels, Sz<ND> const mat, float
 {
   auto const  kshape = kernels.dimensions();
   auto const  fshape = Concatenate(MulToEven(mat, os), LastN<5 - ND>(kshape));
-  auto const  cshape = Concatenate(mat, LastN<5 - ND>(kshape));
+  auto const  mshape = Concatenate(mat, LastN<5 - ND>(kshape));
   float const scale = std::sqrt(Product(FirstN<ND>(fshape)) / (float)Product(FirstN<ND>(kshape)));
-  Log::Print("SENSE", "Kernels {} Full maps {} Cropped maps {} Scale {}", kshape, fshape, cshape, scale);
+  Log::Debug("SENSE", "Kernels {} Oversampled maps {} Maps {} Scale {}", kshape, fshape, mshape, scale);
   TOps::Pad<5>     P(kshape, fshape);
   TOps::FFT<5, ND> F(fshape, false);
-  TOps::Pad<5>     C(cshape, fshape);
+  TOps::Pad<5>     C(mshape, fshape);
   Cx5              maps = C.adjoint(F.adjoint(P.forward(kernels))) * Cx(scale);
-  if (renorm) {
-    Log::Print("SENSE", "Renormalising");
-    Cx4 const rss = DimDot<4>(maps, maps).sqrt();
-    maps.device(Threads::TensorDevice()) =
-      maps / rss.reshape(AddBack(rss.dimensions(), 1)).broadcast(Sz5{1, 1, 1, 1, maps.dimension(4)});
-  }
+  if (renorm) { Normalize(maps); }
   return maps;
 }
 
+template auto KernelsToMaps(Cx5 const &, Sz1 const, float const, bool const renorm) -> Cx5;
 template auto KernelsToMaps(Cx5 const &, Sz2 const, float const, bool const renorm) -> Cx5;
 template auto KernelsToMaps(Cx5 const &, Sz3 const, float const, bool const renorm) -> Cx5;
 
 template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float const os) -> Cx5
 {
   auto const  mshape = maps.dimensions();
-  auto const  oshape = Concatenate(MulToEven(FirstN<ND>(mshape), os), LastN<5 - ND>(mshape));
+  auto const  fshape = Concatenate(MulToEven(FirstN<ND>(mshape), os), LastN<5 - ND>(mshape));
   auto const  kshape = Concatenate(kmat, LastN<5 - ND>(mshape));
-  float const scale = std::sqrt(Product(FirstN<ND>(oshape)) / (float)Product(FirstN<ND>(mshape)));
-  Log::Print("SENSE", "Map Shape {} Oversampled map shape {} Kernel shape {} Scale {}", mshape, oshape, kshape, scale);
-  TOps::Pad<5>    P(mshape, oshape);
-  TOps::FFT<5, 3> F(oshape, true);
-  TOps::Pad<5>    C(kshape, oshape);
-  return C.adjoint(F.adjoint(P.forward(maps))) * Cx(scale);
+  float const scale = std::sqrt(Product(FirstN<ND>(fshape)) / (float)Product(FirstN<ND>(kshape)));
+  Log::Debug("SENSE", "Maps {} Oversampled maps {} Kernels {} Scale {}", mshape, fshape, kshape, scale);
+  TOps::Pad<5>    P(mshape, fshape);
+  TOps::FFT<5, 3> F(fshape, true);
+  TOps::Pad<5>    C(kshape, fshape);
+  return C.adjoint(F.adjoint(P.forward(maps))) / Cx(scale);
 }
 template auto MapsToKernels(Cx5 const &, Sz2 const, float const) -> Cx5;
 template auto MapsToKernels(Cx5 const &, Sz3 const, float const) -> Cx5;
