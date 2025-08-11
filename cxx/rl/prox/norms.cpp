@@ -24,7 +24,7 @@ L1::L1(float const λ_, CMap b_, Ops::Op::Ptr P_)
   , b{b_}
   , P{P_}
 {
-  if (P->rows() != b.size()) {
+  if (P && P->rows() != b.size()) {
     throw(Log::Failure("L1Prox", "Preconditioner size {} did not match data size {}", P->rows(), b.size()));
   }
 
