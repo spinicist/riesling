@@ -25,28 +25,25 @@ template struct CoreArgs<3>;
 template <int ND> GridArgs<ND>::GridArgs(args::Subparser &parser)
   : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov", 'f'}, Eigen::Array<float, ND, 1>::Zero())
   , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp", 'o'}, 1.3f)
+  , tophat(parser, "T", "Use a top hat (NN) kernel", {"tophat"})
 {
 }
 
 template <int ND> auto GridArgs<ND>::Get() -> rl::GridOpts<ND>
 {
-  return typename rl::GridOpts<ND>{.fov = fov.Get(), .osamp = osamp.Get()};
+  return typename rl::GridOpts<ND>{.fov = fov.Get(), .osamp = osamp.Get(), .tophat = tophat.Get()};
 }
 
 template struct GridArgs<2>;
 template struct GridArgs<3>;
 
 ReconArgs::ReconArgs(args::Subparser &parser)
-  : tophat(parser, "T", "Use a top hat / nearest neighbour kernel (Cartesian recon)", {"tophat"})
-  , decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
+  : decant(parser, "D", "Direct Virtual Coil (SENSE via convolution)", {"decant"})
   , lowmem(parser, "L", "Low memory mode", {"lowmem", 'l'})
 {
 }
 
-auto ReconArgs::Get() -> rl::ReconOpts
-{
-  return rl::ReconOpts{.tophat = tophat.Get(), .decant = decant.Get(), .lowmem = lowmem.Get()};
-}
+auto ReconArgs::Get() -> rl::ReconOpts { return rl::ReconOpts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
 
 PreconArgs::PreconArgs(args::Subparser &parser)
   : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon", 'p'}, "single")

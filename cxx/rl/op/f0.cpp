@@ -27,7 +27,6 @@ f0Segment::f0Segment(Re3 const &f0in, float const τacq, Index const Nτ, Index 
       if (io >= 0 && io < Nacq) { basis(ii, io, 0) = std::pow(std::sin(M_PI * ij / N), 2); }
     }
   }
-  Log::Tensor("f0basis", basis.dimensions(), basis.data(), {"b", "samp", "trace"});
   b = Basis(basis);
   f012v3.set(3, Nτ);
   v012f3.set(0, f0.dimension(0));
@@ -58,26 +57,22 @@ void f0Segment::iforward(InCMap x, OutMap y, float const s) const
 void f0Segment::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = startAdjoint(y, x, false);
-  Log::Tensor("f0adj-y", y.dimensions(), y.data(), {"i", "j", "k", "b"});
   x.device(Threads::TensorDevice()) =
     (y * (f0.reshape(v012f3).broadcast(f012v3).cast<Cx>() * τ.reshape(f012v3).broadcast(v012f3)).exp().conjugate())
       .sum(Sz1{3})
       .reshape(v012f3) *
     x.constant(s);
-  Log::Tensor("f0adj-x", x.dimensions(), x.data(), {"i", "j", "k", "b"});
   finishAdjoint(x, time, false);
 }
 
 void f0Segment::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = startAdjoint(y, x, true);
-  Log::Tensor("f0adj-y", y.dimensions(), y.data(), {"i", "j", "k", "b"});
   x.device(Threads::TensorDevice()) +=
     (y * (f0.reshape(v012f3).broadcast(f012v3).cast<Cx>() * τ.reshape(f012v3).broadcast(v012f3)).exp().conjugate())
       .sum(Sz1{3})
       .reshape(v012f3) *
     x.constant(s);
-  Log::Tensor("f0adj-x", x.dimensions(), x.data(), {"i", "j", "k", "b"});
   finishAdjoint(x, time, true);
 }
 

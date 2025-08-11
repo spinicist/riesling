@@ -19,7 +19,7 @@ template <int ND>
 auto Single(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index const nSlab, Index const nTime, Basis::CPtr b)
   -> TOps::TOp<5, 5>::Ptr
 {
-  auto nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, 1, b);
+  auto nufft = TOps::MakeNUFFT<ND>(gridOpts, traj, 1, b);
   if constexpr (ND == 2) {
     auto                 ri = TOps::MakeReshapeInput(nufft, Concatenate(FirstN<2>(nufft->ishape), LastN<1>(nufft->ishape)));
     TOps::TOp<4, 4>::Ptr sliceLoop = TOps::MakeLoop<2, 3>(ri, nSlab);
@@ -94,8 +94,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
     } else {
       auto sense =
         TOps::MakeSENSE(SENSE::KernelsToMaps<ND>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp), b ? b->nB() : 1);
-      auto nufft = rOpts.tophat ? TOps::NUFFT<ND, TopHat<1>>::Make(gridOpts, traj, sense->nChannels(), b)
-                                : TOps::NUFFT<ND, ExpSemi<4>>::Make(gridOpts, traj, sense->nChannels(), b);
+      auto nufft = TOps::MakeNUFFT(gridOpts, traj, sense->nChannels(), b);
       if constexpr (ND == 2) {
         auto slices = TOps::MakeLoop<2, 3>(nufft, nSlab);
         auto ss = TOps::MakeCompose(sense, slices);
@@ -138,8 +137,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
   auto        b = F->basis();
   auto        S = TOps::MakeSENSE(SENSE::KernelsToMaps<ND>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp), b->nB());
   auto        SF = TOps::MakeCompose(F, S);
-  auto        N = rOpts.tophat ? TOps::NUFFT<ND, TopHat<1>>::Make(gridOpts, traj, S->nChannels(), b)
-                               : TOps::NUFFT<ND, ExpSemi<4>>::Make(gridOpts, traj, S->nChannels(), b);
+  auto        N = TOps::MakeNUFFT<ND>(gridOpts, traj, S->nChannels(), b);
   if constexpr (ND == 2) {
     auto NL = TOps::MakeLoop<2, 3>(N, nSlice);
     auto NLSF = TOps::MakeCompose(SF, NL);

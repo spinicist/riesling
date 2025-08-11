@@ -29,7 +29,7 @@ TEST_CASE("Recon", "[op]")
   Basis            basis;
 
   float const       osamp = GENERATE(1.3f);
-  auto              nufft = TOps::NUFFT<3>::Make(GridOpts<3>{.osamp = osamp}, traj, nC, &basis);
+  auto              nufft = TOps::MakeNUFFT<3>(GridOpts<3>{.osamp = osamp}, traj, nC, &basis);
 
   Cx5 senseMaps(AddBack(traj.matrix(), 1, nC));
   senseMaps.setConstant(std::sqrt(1. / nC));

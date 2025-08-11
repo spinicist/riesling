@@ -3,7 +3,7 @@
 namespace rl {
 struct ReconOpts
 {
-  bool tophat, decant, lowmem;
+  bool decant, lowmem;
 };
 
 struct f0Opts

@@ -37,7 +37,7 @@ template <int ND> void run_nufft(args::Subparser &parser)
   traj.write(writer);
 
   if (eig) {
-    auto const nufft = TOps::NUFFT<ND>::Make(gridArgs.Get(), traj, 1, basis.get());
+    auto const nufft = TOps::MakeNUFFT<ND>(gridArgs.Get(), traj, 1, basis.get());
     auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, 1, Sz2{1, 1});
     auto const [val, vec] = PowerMethodForward(nufft, M, lsqOpts.its.Get());
     if constexpr (ND == 2) {
@@ -56,7 +56,7 @@ template <int ND> void run_nufft(args::Subparser &parser)
     }
     auto const nC = shape[4];
     auto const nT = shape[5];
-    auto const nufft = TOps::NUFFT<ND>::Make(gridArgs.Get(), traj, nC, basis.get());
+    auto const nufft = TOps::MakeNUFFT<ND>(gridArgs.Get(), traj, nC, basis.get());
     auto const A = Loopify<ND>(nufft, nS, nT);
     auto const noncart = A->forward(cart);
     writer.writeTensor(HD5::Keys::Data, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
@@ -65,7 +65,7 @@ template <int ND> void run_nufft(args::Subparser &parser)
     auto const nC = shape[0];
     auto const nS = shape[3];
     auto const nT = shape[4];
-    auto const nufft = TOps::NUFFT<ND>::Make(gridArgs.Get(), traj, nC, basis.get());
+    auto const nufft = TOps::MakeNUFFT<ND>(gridArgs.Get(), traj, nC, basis.get());
     auto const A = Loopify<ND>(nufft, nS, nT);
     if (adj) {
       auto const cart = A->adjoint(noncart);

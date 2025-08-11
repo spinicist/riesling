@@ -7,6 +7,7 @@ template <int ND> struct GridOpts
   using Arrayf = Eigen::Array<float, ND, 1>;
   Arrayf fov = Arrayf::Zero();
   float  osamp = 1.3f;
+  bool tophat = false;
 };
 
 }

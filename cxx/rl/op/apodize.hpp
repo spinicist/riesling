@@ -15,16 +15,6 @@ template <int ND, int ED, typename KF> struct Apodize final : TOp<ND + ED, ND + 
 
   void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
   void iforward(InCMap x, OutMap y, float const s = 1.f) const;
-};
-
-template <int ND, int ED> struct Apodize<ND, ED, ExpSemi<4>> final : TOp<ND + ED, ND + ED>
-{
-  TOP_INHERIT(ND + ED, ND + ED)
-  Apodize(Sz<ND + ED> const shape, Sz<ND + ED> const gshape, float const osamp);
-  TOP_DECLARE(Apodize)
-
-  void iadjoint(OutCMap y, InMap x, float const s = 1.f) const;
-  void iforward(InCMap x, OutMap y, float const s = 1.f) const;
 
 private:
   InTensor                                     apo_;

@@ -41,7 +41,7 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
   auto const M = *flux::max(traj.matrix());
   NoncartesianTukey(M * 0.5, M, 0.f, traj.points(), lores);
 
-  auto const nufft = TOps::NUFFT<ND>::Make(gridOpts, traj, nC, nullptr);
+  auto const nufft = TOps::MakeNUFFT<ND>(gridOpts, traj, nC, nullptr);
   Cx5        channels;
   if constexpr (ND == 2) {
     auto const A = TOps::MakeLoop<2, 3>(nufft, nSlice);

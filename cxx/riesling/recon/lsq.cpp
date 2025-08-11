@@ -3,6 +3,7 @@
 
 #include "rl/algo/lsmr.hpp"
 #include "rl/log/log.hpp"
+#include "rl/log/debug.hpp"
 #include "rl/op/pad.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/precon.hpp"

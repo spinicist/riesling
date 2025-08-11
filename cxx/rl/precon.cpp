@@ -23,7 +23,7 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
 {
   Log::Print("Precon", "Starting preconditioner calculation λ {}", λ);
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  auto            nufft = TOps::NUFFT<ND>::Make(gridOpts, newTraj, 1, basis);
+  auto            nufft = TOps::MakeNUFFT<ND>(gridOpts, newTraj, 1, basis);
   Cx3             W(nufft->oshape);
   W.setConstant(Cx(1.f, 0.f));
   CxN<ND + 2> const psf = nufft->adjoint(W);

@@ -2,7 +2,7 @@
 
 #include "top.hpp"
 
-#include "../log/debug.hpp"
+#include "../log/log.hpp"
 
 namespace rl::TOps {
 

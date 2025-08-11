@@ -1,7 +1,7 @@
 #include "op.hpp"
 
 #include "../algo/common.hpp"
-#include "../log/debug.hpp"
+#include "../log/log.hpp"
 #include "../tensors.hpp"
 #include "ops.hpp"
 

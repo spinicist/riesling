@@ -29,6 +29,7 @@ template <int ND> struct GridArgs
 {
   ArrayFlag<float, ND>   fov;
   args::ValueFlag<float> osamp;
+  args::Flag tophat;
 
   GridArgs(args::Subparser &parser);
   auto Get() -> rl::GridOpts<ND>;
@@ -36,7 +37,7 @@ template <int ND> struct GridArgs
 
 struct ReconArgs
 {
-  args::Flag tophat, decant, lowmem;
+  args::Flag decant, lowmem;
 
   ReconArgs(args::Subparser &parser);
   auto Get() -> rl::ReconOpts;

@@ -31,7 +31,7 @@ void main_recon_rss(args::Subparser &parser)
   Index const nS = noncart.dimension(3);
   Index const nT = noncart.dimension(4);
 
-  auto const nufft = TOps::NUFFT<3>::Make(gridArgs.Get(), traj, nC, basis.get());
+  auto const nufft = TOps::MakeNUFFT<3>(gridArgs.Get(), traj, nC, basis.get());
   auto const A = Loopify<3>(nufft, nS, nT);
   auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, Sz2{nS, nT});
   LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};

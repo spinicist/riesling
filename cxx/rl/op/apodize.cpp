@@ -22,12 +22,12 @@ template <int ND, typename KF> auto KernelFFT(Sz<ND> const shape, Sz<ND> const g
   CxN<ND> temp = TOps::Pad<ND>(k.dimensions(), gridshape).forward(k);
   FFT::Adjoint(temp);
   ReN<ND> a = TOps::Pad<ND>(shape, temp.dimensions()).adjoint(temp).abs().real().cwiseMax(1.e-3f).inverse();
-  // if constexpr (ND == 3) { Log::Tensor("apodiz", a.dimensions(), a.data(), HD5::DNames<3>{"i", "j", "k"}); }
   return a.template cast<Cx>();
 }
 } // namespace
 
-template <int ND, int ED> Apodize<ND, ED, ExpSemi<4>>::Apodize(Sz<ND + ED> const ish, Sz<ND + ED> const osh, float const osamp)
+template <int ND, int ED, typename KT>
+Apodize<ND, ED, KT>::Apodize(Sz<ND + ED> const ish, Sz<ND + ED> const osh, float const osamp)
   : Parent("Apodiz", ish, osh)
 {
   // Calculate apodization correction
@@ -37,7 +37,7 @@ template <int ND, int ED> Apodize<ND, ED, ExpSemi<4>>::Apodize(Sz<ND + ED> const
     apo_shape[ND + ii] = 1;
     apoBrd_[ND + ii] = ishape[ND + ii];
   }
-  apo_ = KernelFFT<ND, ExpSemi<4>>(FirstN<ND>(ishape), FirstN<ND>(oshape), osamp).reshape(apo_shape); // Padding stuff
+  apo_ = KernelFFT<ND, KT>(FirstN<ND>(ishape), FirstN<ND>(oshape), osamp).reshape(apo_shape); // Padding stuff
   Sz<InRank> padRight;
   padLeft_.fill(0);
   padRight.fill(0);
@@ -49,28 +49,28 @@ template <int ND, int ED> Apodize<ND, ED, ExpSemi<4>>::Apodize(Sz<ND + ED> const
                  [](Index left, Index right) { return std::make_pair(left, right); });
 }
 
-template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::forward(InCMap x, OutMap y, float const s) const
+template <int ND, int ED, typename KT> void Apodize<ND, ED, KT>::forward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, false);
   y.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * y.constant(s);
   this->finishForward(y, time, false);
 }
 
-template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::adjoint(OutCMap y, InMap x, float const s) const
+template <int ND, int ED, typename KT> void Apodize<ND, ED, KT>::adjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, false);
   x.device(Threads::TensorDevice()) = y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);
   this->finishAdjoint(x, time, false);
 }
 
-template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::iforward(InCMap x, OutMap y, float const s) const
+template <int ND, int ED, typename KT> void Apodize<ND, ED, KT>::iforward(InCMap x, OutMap y, float const s) const
 {
   auto const time = this->startForward(x, y, true);
   y.device(Threads::TensorDevice()) = (x * apo_.broadcast(apoBrd_)).pad(paddings_) * y.constant(s);
   this->finishForward(y, time, true);
 }
 
-template <int ND, int ED> void Apodize<ND, ED, ExpSemi<4>>::iadjoint(OutCMap y, InMap x, float const s) const
+template <int ND, int ED, typename KT> void Apodize<ND, ED, KT>::iadjoint(OutCMap y, InMap x, float const s) const
 {
   auto const time = this->startAdjoint(y, x, true);
   x.device(Threads::TensorDevice()) += y.slice(padLeft_, ishape) * apo_.broadcast(apoBrd_) * x.constant(s);

@@ -4,6 +4,7 @@
 #include "rl/algo/admm.hpp"
 #include "rl/algo/pdhg.hpp"
 #include "rl/log/log.hpp"
+#include "rl/log/debug.hpp"
 #include "rl/op/top-id.hpp"
 #include "rl/scaling.hpp"
 
