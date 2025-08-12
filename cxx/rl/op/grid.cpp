@@ -118,6 +118,10 @@ template struct Grid<1, rl::ExpSemi<6>>;
 template struct Grid<2, rl::ExpSemi<6>>;
 template struct Grid<3, rl::ExpSemi<6>>;
 
+template struct Grid<1, rl::ExpSemi<8>>;
+template struct Grid<2, rl::ExpSemi<8>>;
+template struct Grid<3, rl::ExpSemi<8>>;
+
 template struct Grid<1, rl::TopHat<1>>;
 template struct Grid<2, rl::TopHat<1>>;
 template struct Grid<3, rl::TopHat<1>>;

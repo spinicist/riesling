@@ -26,12 +26,13 @@ template <int ND> GridArgs<ND>::GridArgs(args::Subparser &parser)
   : fov(parser, "FOV", "Grid FoV in mm (x,y,z)", {"fov", 'f'}, Eigen::Array<float, ND, 1>::Zero())
   , osamp(parser, "O", "Grid oversampling factor (1.3)", {"osamp", 'o'}, 1.3f)
   , tophat(parser, "T", "Use a top hat (NN) kernel", {"tophat"})
+  , kW(parser, "W", "ExpSemi kernel width", {"kwidth"}, 4)
 {
 }
 
 template <int ND> auto GridArgs<ND>::Get() -> rl::GridOpts<ND>
 {
-  return typename rl::GridOpts<ND>{.fov = fov.Get(), .osamp = osamp.Get(), .tophat = tophat.Get()};
+  return typename rl::GridOpts<ND>{.fov = fov.Get(), .osamp = osamp.Get(), .tophat = tophat.Get(), .kW = kW.Get()};
 }
 
 template struct GridArgs<2>;

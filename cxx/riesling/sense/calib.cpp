@@ -57,7 +57,6 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
   writer.writeTensor(HD5::Keys::Data, kernels.dimensions(), kernels.data(), HD5::Dims::SENSE);
   writer.writeTensor("channels", channels.dimensions(), channels.data(), HD5::Dims::SENSE);
   writer.writeTensor("ref", ref.dimensions(), ref.data(), HD5::DNames<4>{"i", "j", "k", "b"});
-  fmt::print(stderr, "channels {} ref {}\n", channels.dimensions(), ref.dimensions());
   channels.device(Threads::TensorDevice()) =
     channels / ref.reshape(AddBack(ref.dimensions(), 1)).broadcast(Sz5{1, 1, 1, 1, channels.dimension(4)});
   writer.writeTensor("ratio", channels.dimensions(), channels.data(), HD5::Dims::SENSE);

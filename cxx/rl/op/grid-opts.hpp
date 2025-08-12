@@ -8,6 +8,7 @@ template <int ND> struct GridOpts
   Arrayf fov = Arrayf::Zero();
   float  osamp = 1.3f;
   bool tophat = false;
+  Index kW = 4;
 };
 
 }

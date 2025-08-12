@@ -85,6 +85,22 @@ template struct Apodize<1, 2, ExpSemi<4>>;
 template struct Apodize<2, 2, ExpSemi<4>>;
 template struct Apodize<3, 2, ExpSemi<4>>;
 
+template struct Apodize<1, 1, ExpSemi<6>>;
+template struct Apodize<2, 1, ExpSemi<6>>;
+template struct Apodize<3, 1, ExpSemi<6>>;
+
+template struct Apodize<1, 2, ExpSemi<6>>;
+template struct Apodize<2, 2, ExpSemi<6>>;
+template struct Apodize<3, 2, ExpSemi<6>>;
+
+template struct Apodize<1, 1, ExpSemi<8>>;
+template struct Apodize<2, 1, ExpSemi<8>>;
+template struct Apodize<3, 1, ExpSemi<8>>;
+
+template struct Apodize<1, 2, ExpSemi<8>>;
+template struct Apodize<2, 2, ExpSemi<8>>;
+template struct Apodize<3, 2, ExpSemi<8>>;
+
 template <int ND, int ED> Apodize<ND, ED, TopHat<1>>::Apodize(Sz<ND + ED> const ish, Sz<ND + ED> const osh, float const osamp)
   : Parent("Apodiz", ish, osh)
 {

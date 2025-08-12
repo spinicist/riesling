@@ -30,6 +30,7 @@ template <int ND> struct GridArgs
   ArrayFlag<float, ND>   fov;
   args::ValueFlag<float> osamp;
   args::Flag tophat;
+  args::ValueFlag<Index> kW;
 
   GridArgs(args::Subparser &parser);
   auto Get() -> rl::GridOpts<ND>;

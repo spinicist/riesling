@@ -68,6 +68,14 @@ template struct NUFFT<1, rl::ExpSemi<4>>;
 template struct NUFFT<2, rl::ExpSemi<4>>;
 template struct NUFFT<3, rl::ExpSemi<4>>;
 
+template struct NUFFT<1, rl::ExpSemi<6>>;
+template struct NUFFT<2, rl::ExpSemi<6>>;
+template struct NUFFT<3, rl::ExpSemi<6>>;
+
+template struct NUFFT<1, rl::ExpSemi<8>>;
+template struct NUFFT<2, rl::ExpSemi<8>>;
+template struct NUFFT<3, rl::ExpSemi<8>>;
+
 template struct NUFFT<1, rl::TopHat<1>>;
 template struct NUFFT<2, rl::TopHat<1>>;
 template struct NUFFT<3, rl::TopHat<1>>;
@@ -79,7 +87,13 @@ template <int ND> auto MakeNUFFT(GridOpts<ND> const &opts, TrajectoryN<ND> const
   if (opts.tophat) {
     nufft = std::make_shared<TOps::NUFFT<ND, TopHat<1>>>(opts, traj, nChan, basis);
   } else {
-    nufft = std::make_shared<TOps::NUFFT<ND, ExpSemi<4>>>(opts, traj, nChan, basis);
+    switch (opts.kW) {
+      case 4: nufft = std::make_shared<TOps::NUFFT<ND, ExpSemi<4>>>(opts, traj, nChan, basis); break;
+      case 6: nufft = std::make_shared<TOps::NUFFT<ND, ExpSemi<6>>>(opts, traj, nChan, basis); break;
+      case 8: nufft = std::make_shared<TOps::NUFFT<ND, ExpSemi<8>>>(opts, traj, nChan, basis); break;
+      default:
+        throw(Log::Failure("NUFFT", "Kernel width {} not supported", opts.kW));
+    }
   }
   return nufft;
 }
