@@ -75,6 +75,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
   Index const nTime = noncart.dimension(4);
   if (nChan == 1) {
     A = Single(gridOpts, traj, nSlab, nTime, b);
+    M = MakeKSpacePrecon(pOpts, gridOpts, traj, 1, Sz2{nSlab, nTime});
   } else {
     auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
