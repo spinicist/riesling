@@ -25,24 +25,24 @@ using Time = std::chrono::high_resolution_clock::time_point;
 void SetDisplayLevel(Display const l);
 auto IsHigh() -> bool;
 auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_args args) -> std::string;
-void SaveEntry(std::string const &entry, fmt::terminal_color const color, Display const level);
+void SaveEntry(std::string const &entry, fmt::text_style const style, Display const level);
 auto Saved() -> std::vector<std::string> const &;
 void End();
 
 template <typename... Args> inline void Print(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Display::Ephemeral);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::text_style(), Display::Ephemeral);
 }
 
 template <typename... Args> inline void Debug(std::string const &category, fmt::format_string<Args...> fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::white, Display::High);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::text_style(), Display::High);
 }
 
 template <typename... Args>
 inline void Warn(std::string const &category, fmt::format_string<Args...> const &fstr, Args &&...args)
 {
-  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::terminal_color::bright_yellow, Display::None);
+  SaveEntry(FormatEntry(category, fstr, fmt::make_format_args(args...)), fmt::fg(fmt::terminal_color::bright_yellow), Display::None);
 }
 
 struct Failure : std::runtime_error
@@ -56,7 +56,7 @@ struct Failure : std::runtime_error
 
 inline void Fail(Failure const &f)
 {
-  SaveEntry(f.what(), fmt::terminal_color::bright_red, Display::None);
+  SaveEntry(f.what(), fmt::fg(fmt::terminal_color::bright_red), Display::None);
 }
 
 auto Now() -> Time;

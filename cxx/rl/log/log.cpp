@@ -36,7 +36,7 @@ auto FormatEntry(std::string const &category, fmt::string_view fmt, fmt::format_
   return fmt::format("[{}] [{:<6}] {}", TheTime(), category, fmt::vformat(fmt, args));
 }
 
-void SaveEntry(std::string const &s, fmt::terminal_color const color, Display const level)
+void SaveEntry(std::string const &s, fmt::text_style const style, Display const level)
 {
   {
     std::scoped_lock lock(logMutex);
@@ -44,7 +44,7 @@ void SaveEntry(std::string const &s, fmt::terminal_color const color, Display co
   }
   if (displayLevel >= level) {
     if (displayLevel == Display::Ephemeral) { fmt::print(stderr, "\033[A\33[2K\r"); }
-    fmt::print(stderr, fmt::fg(color), "{}\n", s);
+    fmt::print(stderr, style, "{}\n", s);
   }
 }
 
