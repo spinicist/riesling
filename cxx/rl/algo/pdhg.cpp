@@ -10,98 +10,6 @@
 
 namespace rl::PDHG {
 
-auto Run(Vector const &b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d) -> Vector
-{
-  return Run(CMap{b.data(), b.rows()}, E, P, regs, opts, d);
-}
-
-auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug debug) -> Vector
-{
-  if (b.rows() != E->rows()) { throw(Log::Failure("PDHG", "b had {} rows, expected {}", b.rows(), E->rows())); }
-  if (regs.size() < 1) { throw(Log::Failure("PDHG", "Requires at least one regularizer")); }
-  Index const                   nx = regs.size() + 1;
-  std::vector<Op::Ptr>          As(nx), Ps(nx); /* Transforms, preconditioners */
-  std::vector<Proxs::Prox::Ptr> proxs(nx);      /* Proximal operators */
-
-  /* Data consistency term. Add a scaling to the encoding operator to ensure max eig ~= 1 */
-  As[0] = E; //Ops::Mul(Ops::DiagScale::Make(E->rows(), 1.f / std::sqrt(opts.λE)), E);
-  Ps[0] = P;
-  proxs[0] = opts.lad ? Proxs::L1::Make(1.f, b, P) : Proxs::SumOfSquares::Make(b, P);
-  /* Regularizers */
-  for (Index ir = 0; ir < regs.size(); ir++) {
-    As[ir + 1] = regs[ir].T;
-    Ps[ir + 1] = nullptr; /* Regularizers are not preconditioned. Yet. */
-    proxs[ir + 1] = regs[ir].P;
-  }
-
-  /* Assumes all regularizer transforms have max eval=1 */
-  /* Note difference between eigenvalues in Ong and singular values in Sidky */
-  float const L = opts.λE + regs.size(); 
-  float const σ = 1.f;
-  float const τ = 1.f / L;
-  Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.deltaTol);
-
-  Vector x(E->cols()), x̅(E->cols()), xold(E->cols());
-  x.setZero();
-  x̅.setZero();
-  xold.setZero();
-
-  std::vector<Vector> ys(nx);
-  for (Index ir = 0; ir < nx; ir++) {
-    if (As[ir]) {
-      ys[ir] = Vector(As[ir]->rows());
-    } else {
-      ys[ir] = Vector(E->cols());
-    }
-    ys[ir].setZero();
-  }
-
-  Iterating::Starting();
-  for (Index ii = 0; ii < opts.imax; ii++) {
-    xold = x;
-
-    /* PDHG steps are
-     * yn = proxF*σ(y + σAx̅)
-     * xn = proxGτ(x - τA'yn)
-     * x̅ = xn + (xn - x)
-     *
-     *      But G(x) = 0 so proxGτ(x) = x
-     */
-    for (Index ix = 0; ix < nx; ix++) {
-      if (As[ix] && Ps[ix]) {
-        auto ytemp = As[ix]->forward(x̅);
-        Ps[ix]->iforward(ytemp, ys[ix], σ);
-      } else if (As[ix]) {
-        As[ix]->iforward(x̅, ys[ix], σ);
-      } else {
-        ys[ix].device(Threads::CoreDevice()) += σ * x̅;
-      }
-
-      proxs[ix]->conj(σ, ys[ix], ys[ix]); /* DANGER Be careful with patch-based regs like LLR */
-
-      if (As[ix]) {
-        As[ix]->iadjoint(ys[ix], x, -τ);
-      } else {
-        x.device(Threads::CoreDevice()) -= τ * ys[ix];
-      }
-    }
-    x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
-    if (debug) { debug(ii, x, x̅); }
-    xold.device(Threads::CoreDevice()) = x - xold; // Now it's xdiff
-    float const normx = ParallelNorm(x);
-    float const normdx = ParallelNorm(xold);
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx/x| {:4.3E}", ii, normx, normdx / normx);
-    if (normdx / normx < opts.deltaTol) {
-      Log::Print("PDHG", "Δx tolerance reached");
-      break;
-    }
-    if (Iterating::ShouldStop("PDHG")) { break; }
-    // if (debug) { debug(ii, x, x̅, xdiff); }
-  }
-  Iterating::Finished();
-  return x;
-}
-
 struct PDResType
 {
   float primal;
@@ -116,49 +24,49 @@ auto PDResiduals(Vector const               &x,
                  float const                 τ,
                  float const                 σ) -> PDResType
 {
-  Vector xd(x.size()), xt(x.size());
+  Vector xd(x.size()), p(x.size());
   xd.device(Threads::CoreDevice()) = xold - x;
-  float pres = 0.f, dres = 0.f, pnorm = ParallelNorm(x), dnorm = 0.f;
+  float pres = 0.f, dres = 0.f;
   for (Index ii = 0; ii < ys.size(); ii++) {
-    xt.device(Threads::CoreDevice()) = xd / τ;
-    Vector yd(ys[ii].size()), yt(ys[ii].size());
+    p.device(Threads::CoreDevice()) = xd / τ;
+    Vector yd(ys[ii].size()), d(ys[ii].size());
     yd.device(Threads::CoreDevice()) = yolds[ii] - ys[ii];
-    yt.device(Threads::CoreDevice()) = yd / σ;
+    if (As[ii] && Ps[ii]) { Ps[ii]->forward(yd, yd); }
+    d.device(Threads::CoreDevice()) = yd / σ;
     if (As[ii] && Ps[ii]) {
-      As[ii]->iadjoint(yd, xt, -1.f);
+      As[ii]->iadjoint(yd, p, -1.f);
       As[ii]->forward(xd, yd);
-      Ps[ii]->iforward(yd, yt, -1.f);
+      Ps[ii]->iforward(yd, d, -1.f);
     } else if (As[ii]) {
-      As[ii]->iadjoint(yd, xt, -1.f);
-      As[ii]->iforward(xd, yt, -1.f);
+      As[ii]->iadjoint(yd, p, -1.f);
+      As[ii]->iforward(xd, d, -1.f);
     } else {
-      xt.device(Threads::CoreDevice()) -= yd;
-      yt.device(Threads::CoreDevice()) -= xd;
+      p.device(Threads::CoreDevice()) -= yd;
+      d.device(Threads::CoreDevice()) -= xd;
     }
-    pres += std::pow(ParallelNorm(xt), 2);
-    dres += std::pow(ParallelNorm(yt), 2);
-    dnorm += std::pow(ParallelNorm(ys[ii]), 2);
+    pres += std::pow(ParallelNorm(p), 2);
+    dres += std::pow(ParallelNorm(d), 2);
   }
-  pres = std::sqrt(pres) / pnorm;
-  dres = std::sqrt(dres) / std::sqrt(dnorm);
+  pres = std::sqrt(pres);
+  dres = std::sqrt(dres);
   return {pres, dres};
 }
 
-auto Adaptive(Vector const &b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d) -> Vector
+auto Run(Vector const &b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d) -> Vector
 {
-  return Adaptive(CMap{b.data(), b.rows()}, A, P, regs, opts, d);
+  return Run(CMap{b.data(), b.rows()}, A, P, regs, opts, d);
 }
 
-auto Adaptive(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug debug) -> Vector
+auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug debug) -> Vector
 {
-  if (b.rows() != A->rows()) { throw(Log::Failure("PDHG", "b had {} rows, expected {}", b.rows(), A->rows())); }
+  if (b.rows() != E->rows()) { throw(Log::Failure("PDHG", "b had {} rows, expected {}", b.rows(), E->rows())); }
   if (regs.size() < 1) { throw(Log::Failure("PDHG", "Requires at least one regularizer")); }
   Index const                   nx = regs.size() + 1;
   std::vector<Op::Ptr>          As(nx), Ps(nx); /* Transforms, preconditioners */
   std::vector<Proxs::Prox::Ptr> proxs(nx);      /* Proximal operators */
 
   /* Data consistency term */
-  As[0] = A;
+  As[0] = E;
   Ps[0] = P;
   proxs[0] = opts.lad ? Proxs::L1::Make(1.f, b, P) : Proxs::SumOfSquares::Make(b, P);
   /* Regularizers */
@@ -168,16 +76,18 @@ auto Adaptive(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs
     proxs[ir + 1] = regs[ir].P;
   }
 
-  float const L = std::sqrt(opts.λE * opts.λE + regs.size()); /* Assumes all regularizer transforms have max eval=1 */
-  float       σ = 1.f / L;
-  float       τ = 1.f / L;
+  /* Assumes all regularizer transforms have max eval=1 */
+  /* Note difference between eigenvalues in Ong and singular values in Sidky */
+  float const L = opts.λE + regs.size();
+  float       σ = 1.f / std::sqrt(L);
+  float       τ = 1.f / std::sqrt(L);
   float       α = 0.5f;
   float const s = 1.f;
   float const η = 0.95f;
   float const Δ = 1.5f;
-  Log::Print("PDHG", "{}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.deltaTol);
+  Log::Print("PDHG", "Adaptive {}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.resTol);
 
-  Vector x(A->cols()), x̅(A->cols()), xold(A->cols());
+  Vector x(E->cols()), x̅(E->cols()), xold(E->cols());
   x.setZero();
   x̅.setZero();
   xold.setZero();
@@ -188,8 +98,8 @@ auto Adaptive(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs
       ys[ir] = Vector(As[ir]->rows());
       yolds[ir] = Vector(As[ir]->rows());
     } else {
-      ys[ir] = Vector(A->cols());
-      yolds[ir] = Vector(A->cols());
+      ys[ir] = Vector(E->cols());
+      yolds[ir] = Vector(E->cols());
     }
     ys[ir].setZero();
     yolds[ir].setZero();
@@ -228,26 +138,27 @@ auto Adaptive(CMap b, Op::Ptr A, Op::Ptr P, std::vector<Regularizer> const &regs
     x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
 
     auto const res = PDResiduals(x, xold, ys, yolds, As, Ps, τ, σ);
-    if (res.primal > s * res.dual * Δ) { /* Large primal */
-      τ = τ / (1.f - α);
-      σ = σ * (1.f - α);
-      α = α * η;
-    } else if (res.primal < s * res.dual / Δ) { /* Large dual */
-      τ = τ * (1.f - α);
-      σ = σ / (1.f - α);
-      α = α * η;
+    if (opts.adaptive) {
+      if (res.primal > s * res.dual * Δ) { /* Large primal */
+        τ = τ / (1.f - α);
+        σ = σ * (1.f - α);
+        α = α * η;
+      } else if (res.primal < s * res.dual / Δ) { /* Large dual */
+        τ = τ * (1.f - α);
+        σ = σ / (1.f - α);
+        α = α * η;
+      }
     }
 
-    if (debug) { debug(ii, x, x̅); }
+    if (debug) { debug(ii, x); }
     float const normx = ParallelNorm(x);
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} τ {:4.3E} σ {:4.3E} α {:4.3E}", ii, normx, res.primal,
-               res.dual, τ, σ, α);
-    if ((res.primal < opts.deltaTol) && (res.dual < opts.deltaTol)) {
-      Log::Print("PDHG", "Primal and dual tolerances reached");
+    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} σ {:4.3E} τ {:4.3E} α {:4.3E}", ii, normx, res.primal,
+               res.dual, σ, τ, α);
+    if (res.primal / normx < opts.resTol) {
+      Log::Print("PDHG", "Primal tolerance reached");
       break;
     }
     if (Iterating::ShouldStop("PDHG")) { break; }
-    // if (debug) { debug(ii, x, x̅, xdiff); }
   }
   Iterating::Finished();
   return x;

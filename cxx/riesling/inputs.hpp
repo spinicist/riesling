@@ -29,7 +29,7 @@ template <int ND> struct GridArgs
 {
   ArrayFlag<float, ND>   fov;
   args::ValueFlag<float> osamp;
-  args::Flag tophat;
+  args::Flag             tophat;
   args::ValueFlag<Index> kW;
 
   GridArgs(args::Subparser &parser);
@@ -67,10 +67,9 @@ struct LSMRArgs
 
 struct PDHGArgs
 {
-  args::Flag             lad;
+  args::Flag             adaptive, lad;
   args::ValueFlag<Index> its;
-  args::ValueFlag<float> deltaTol;
-  args::ValueFlag<float> λE;
+  args::ValueFlag<float> resTol, λE;
 
   PDHGArgs(args::Subparser &parser);
   auto Get() -> rl::PDHG::Opts;

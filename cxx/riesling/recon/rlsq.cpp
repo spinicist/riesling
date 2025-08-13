@@ -4,8 +4,8 @@
 
 #include "rl/algo/admm.hpp"
 #include "rl/io/hd5.hpp"
-#include "rl/log/log.hpp"
 #include "rl/log/debug.hpp"
+#include "rl/log/log.hpp"
 #include "rl/op/pad.hpp"
 #include "rl/op/recon.hpp"
 #include "rl/precon.hpp"
@@ -51,31 +51,26 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
 
   Ops::Op::Vector x;
   if (pdhg) {
-    PDHG::Debug debug = [shape, ext_x](Index const ii, PDHG::Vector const &dx, PDHG::Vector const &dxb) {
-      if (Log::IsDebugging()) {
+    PDHG::Debug debug = [shape, ext_x, di = debugIters.Get()](Index const ii, PDHG::Vector const &dx) {
+      if (Log::IsDebugging() && (ii % di == 0)) {
         if (ext_x) {
           auto xit = ext_x->forward(dx);
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-          xit = ext_x->forward(dxb);
-          Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
         } else {
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, dx.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("pdhg-xb-{:02d}", ii), shape, dxb.data(), HD5::Dims::Images);
         }
       }
     };
-    if (adapt) {
-      x = PDHG::Adaptive(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
-    } else {
-      x = PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
-    }
+    x = PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
   } else {
     ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
-      if (ii % di == 0) { Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images); }
+      if (Log::IsDebugging() && (ii % di == 0)) {
+        Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+      }
     };
     ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
                                                       ADMM::Vector const &z, ADMM::Vector const &u) {
-      if (debugZ && (ii % di == 0)) {
+      if (Log::IsDebugging() && debugZ && (ii % di == 0)) {
         if (std::holds_alternative<Sz5>(reg[ir].shape)) {
           auto const Fshape = std::get<Sz5>(reg[ir].shape);
           Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Images);
