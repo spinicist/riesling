@@ -13,6 +13,15 @@
 
 using namespace rl;
 
+auto CeilDP(double x, int N) -> double
+{
+  if (N > 0) {
+    return std::ceil(x * std::pow(10, N)) / std::pow(10, N);
+  } else {
+    return x;
+  }
+}
+
 template <int ND> void run_eig(args::Subparser &parser)
 {
   CoreArgs<ND>           coreArgs(parser);
@@ -24,6 +33,7 @@ template <int ND> void run_eig(args::Subparser &parser)
   args::Flag             adj(parser, "ADJ", "Use adjoint system AA'", {"adj"});
   args::ValueFlag<Index> its(parser, "N", "Max iterations (32)", {'i', "max-its"}, 40);
   args::Flag             recip(parser, "R", "Output reciprocal of eigenvalue", {"recip"});
+  args::ValueFlag<Index> dp(parser, "D", "Round up to this many decimal places", {"dp"}, -1);
   ParseCommand(parser, coreArgs.iname);
   auto const      cmd = parser.GetCommand().Name();
   HD5::Reader     reader(coreArgs.iname.Get());
@@ -43,14 +53,14 @@ template <int ND> void run_eig(args::Subparser &parser)
       HD5::Writer writer(coreArgs.oname.Get());
       writer.writeTensor("evec", R.A->oshape, vec.data(), HD5::Dims::Noncartesian);
     }
-    fmt::print("{}\n", recip ? (1.f / val) : val);
+    fmt::print("{}\n", CeilDP(recip ? (1.f / val) : val, dp.Get()));
   } else {
     auto const [val, vec] = PowerMethodForward(R.A, R.M, its.Get());
     if (coreArgs.oname) {
       HD5::Writer writer(coreArgs.oname.Get());
       writer.writeTensor("evec", R.A->ishape, vec.data(), HD5::Dims::Images);
     }
-    fmt::print("{}\n", recip ? (1.f / val) : val);
+    fmt::print("{}\n", CeilDP(recip ? (1.f / val) : val, dp.Get()));
   }
 }
 
