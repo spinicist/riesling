@@ -13,7 +13,7 @@ using CMap = typename Op::CMap;
 using Debug = std::function<void(Index const, Vector const &)>;
 struct Opts
 {
-  bool  lad, adaptive;
+  bool  adaptive, lad;
   Index imax;
   float resTol, λE;
 };
