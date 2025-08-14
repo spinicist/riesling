@@ -35,7 +35,15 @@ template <typename Scalar> auto SVD<Scalar>::variance(Index const N) const -> Re
   return cumsum;
 }
 
-template <typename Scalar> auto SVD<Scalar>::basis(Index const N) const -> Matrix { return V.leftCols(N).adjoint(); }
+template <typename Scalar> auto SVD<Scalar>::basis(Index const N, bool const scale) const -> Matrix
+{
+  if (scale) {
+    Matrix basis = (V.leftCols(N) * (S.head(N).log1p() / std::log1p(S(0))).matrix().asDiagonal()).adjoint();
+    return basis;
+  } else {
+    return V.leftCols(N).adjoint();
+  }
+}
 
 template <typename Scalar> auto SVD<Scalar>::equalized(Index const N) const -> Matrix
 {

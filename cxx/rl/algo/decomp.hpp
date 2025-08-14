@@ -24,7 +24,7 @@ template <typename Scalar = Cx> struct SVD
   RealArray S;
 
   auto variance(Index const N) const -> RealArray; // Calculate the cumulative fractional variance contained in first N vectors
-  auto basis(Index const N) const -> Matrix;       // Return the first N singular vectors to make a basis
+  auto basis(Index const N, bool const scale = false) const -> Matrix;       // Return the first N singular vectors to make a basis
   auto equalized(Index const N) const -> Matrix;   // Equalize variance over first N vectors
 };
 
