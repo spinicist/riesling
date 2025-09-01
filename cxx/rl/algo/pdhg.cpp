@@ -127,7 +127,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
       proxs[ix]->conj(σ, ys[ix], ys[ix]); /* DANGER Be careful with patch-based regs like LLR */
     }
 
-    xold = x;
+    xold.device(Threads::CoreDevice()) = x;
     for (Index ix = 0; ix < nx; ix++) {
       if (As[ix]) {
         As[ix]->iadjoint(ys[ix], x, -τ);
@@ -137,8 +137,12 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
     }
     x̅.device(Threads::CoreDevice()) = 2.f * x - xold;
 
-    auto const res = PDResiduals(x, xold, ys, yolds, As, Ps, τ, σ);
+    if (debug) { debug(ii, x); }
+    float const normx = ParallelNorm(x);
+
     if (opts.adaptive) {
+      auto const res = PDResiduals(x, xold, ys, yolds, As, Ps, τ, σ);
+
       if (res.primal > s * res.dual * Δ) { /* Large primal */
         τ = τ / (1.f - α);
         σ = σ * (1.f - α);
@@ -148,16 +152,23 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
         σ = σ / (1.f - α);
         α = α * η;
       }
+
+      Log::Print("PDHG", "{:02d}: |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} σ {:4.3E} τ {:4.3E} α {:4.3E}", ii, normx, res.primal,
+                 res.dual, σ, τ, α);
+      if (res.primal / normx < opts.resTol) {
+        Log::Print("PDHG", "Primal tolerance reached");
+        break;
+      }
+    } else {
+      xold.device(Threads::CoreDevice()) -= x;
+      float const normdx = ParallelNorm(xold);
+      Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx| {:4.3E}", ii, normx, normdx);
+      if (normdx / normx < opts.resTol) {
+        Log::Print("PDHG", "Δ tolerance reached");
+        break;
+      }
     }
 
-    if (debug) { debug(ii, x); }
-    float const normx = ParallelNorm(x);
-    Log::Print("PDHG", "{:02d}: |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} σ {:4.3E} τ {:4.3E} α {:4.3E}", ii, normx, res.primal,
-               res.dual, σ, τ, α);
-    if (res.primal / normx < opts.resTol) {
-      Log::Print("PDHG", "Primal tolerance reached");
-      break;
-    }
     if (Iterating::ShouldStop("PDHG")) { break; }
   }
   Iterating::Finished();
