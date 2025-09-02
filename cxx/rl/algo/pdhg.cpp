@@ -85,8 +85,8 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
   float const s = 1.f;
   float const η = 0.95f;
   float const Δ = 1.5f;
-  Log::Print("PDHG", "Adaptive {}σ {:4.3E} τ {:4.3E} Δx tol {}", opts.lad ? "LAD " : "", σ, τ, opts.resTol);
-
+  Log::Print("PDHG", "{}{}σ {:4.3E} τ {:4.3E} Convergence Tolerance {}", opts.adaptive ? "Adaptive " : "",
+             opts.lad ? "LAD " : "", σ, τ, opts.tol);
   Vector x(E->cols()), x̅(E->cols()), xold(E->cols());
   x.setZero();
   x̅.setZero();
@@ -155,7 +155,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
 
       Log::Print("PDHG", "{:02d}: |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} σ {:4.3E} τ {:4.3E} α {:4.3E}", ii, normx, res.primal,
                  res.dual, σ, τ, α);
-      if (res.primal / normx < opts.resTol) {
+      if (res.primal / normx < opts.tol) {
         Log::Print("PDHG", "Primal tolerance reached");
         break;
       }
@@ -163,7 +163,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
       xold.device(Threads::CoreDevice()) -= x;
       float const normdx = ParallelNorm(xold);
       Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx| {:4.3E}", ii, normx, normdx);
-      if (normdx / normx < opts.resTol) {
+      if (normdx / normx < opts.tol) {
         Log::Print("PDHG", "Δ tolerance reached");
         break;
       }

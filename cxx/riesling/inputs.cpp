@@ -72,14 +72,14 @@ PDHGArgs::PDHGArgs(args::Subparser &parser)
   : adaptive(parser, "A", "Adaptive step sizes", {"adaptive"})
   , lad(parser, "L", "Least Absolute Deviations, PDHG only", {"lad", 'l'})
   , its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 32)
-  , resTol(parser, "B", "Residual tolerance (1e-2)", {"res-tol", 'd'}, 1.e-2f)
+  , tol(parser, "B", "PDHG residual/Δ tolerance (1e-2)", {"pdhg-tol", 't'}, 1.e-2f)
   , λE(parser, "λE", "Max Eigenvalue of encoding operator (1)", {"lambda-E", 'e'}, 1.f)
 {
 }
 
 auto PDHGArgs::Get() -> rl::PDHG::Opts
 {
-  return rl::PDHG::Opts{.adaptive = adaptive, .lad = lad, .imax = its.Get(), .resTol = resTol.Get(), .λE = λE.Get()};
+  return rl::PDHG::Opts{.adaptive = adaptive, .lad = lad, .imax = its.Get(), .tol = tol.Get(), .λE = λE.Get()};
 }
 
 ADMMArgs::ADMMArgs(args::Subparser &parser)

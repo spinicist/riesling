@@ -15,7 +15,7 @@ struct Opts
 {
   bool  adaptive, lad;
   Index imax;
-  float resTol, λE;
+  float tol, λE;
 };
 
 auto Run(Vector const &b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr) -> Vector;
