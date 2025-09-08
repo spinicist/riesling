@@ -16,9 +16,9 @@ auto Covariance(Eigen::Ref<Eigen::MatrixXcf const> const &X, bool const demean) 
 auto Correlation(Eigen::Ref<Eigen::MatrixXcf const> const &X, bool const demean) -> Eigen::MatrixXcf
 {
   auto c = Covariance(X, demean);
-  auto σ = c.diagonal().array();
-  c.array().rowwise() /= σ.transpose();
-  c.array().colwise() /= σ;
+  Eigen::ArrayXf σ = c.diagonal().array().real().sqrt();
+  c.array().rowwise() /= σ.transpose().cast<Cx>();
+  c.array().colwise() /= σ.cast<Cx>();
   return c;
 }
 
