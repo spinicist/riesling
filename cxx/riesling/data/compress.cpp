@@ -31,6 +31,7 @@ void main_compress(args::Subparser &parser)
   args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
+  auto const cmd = parser.GetCommand().Name();
 
   HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
@@ -49,6 +50,8 @@ void main_compress(args::Subparser &parser)
   if (ccFile) {
     HD5::Reader matFile(ccFile.Get());
     psi = matFile.readMatrix<Eigen::MatrixXcf>(HD5::Keys::CompressionMatrix);
+    if (psi.rows() != channels) { throw Log::Failure(cmd, "Incompatible compression matrix"); }
+    if (nRetain && nRetain.Get() < psi.cols()) { psi = psi.leftCols(nRetain.Get()); }
   } else {
     Index const maxRead = samples - pcaRead.Get()[0];
     Index const nread = (pcaRead.Get()[1] > maxRead) ? maxRead : pcaRead.Get()[1];
@@ -77,6 +80,7 @@ void main_compress(args::Subparser &parser)
 
   if (save) {
     HD5::Writer matfile(save.Get());
-    matfile.writeTensor(HD5::Keys::CompressionMatrix, {compressor.psi.rows(), compressor.psi.cols()}, compressor.psi.data(), HD5::DNames<2>{"oc", "ic"});
+    matfile.writeTensor(HD5::Keys::CompressionMatrix, {compressor.psi.rows(), compressor.psi.cols()}, compressor.psi.data(),
+                        HD5::DNames<2>{"oc", "ic"});
   }
 }

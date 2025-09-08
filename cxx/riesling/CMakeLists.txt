@@ -67,7 +67,7 @@ if(BUILD_BIN)
         util/precon.cpp
         util/psf.cpp
         util/resamp.cpp
-        # util/rovir.cpp
+        util/rovir.cpp
         util/version.cpp
     )
     target_link_libraries(riesling PRIVATE

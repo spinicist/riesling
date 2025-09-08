@@ -81,7 +81,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(util, psf, "psf", "Estimate Point Spread Function");
   COMMAND(util, resamp, "resamp", "Resample images to desired resolution");
   COMMAND(util, rss, "rss", "Take RSS across a dimension");
-  // COMMAND(util, rovir, "rovir", "Calculate ROVIR compression matrix");
+  COMMAND(util, rovir, "rovir", "Calculate ROVIR compression matrix");
 #ifdef BUILD_MONTAGE
   COMMAND(util, montage, "montage", "Make beautiful output images");
 #endif
