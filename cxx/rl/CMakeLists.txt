@@ -26,7 +26,6 @@ algo/decomp.cpp
 algo/eig.cpp
 algo/gs.cpp
 algo/iter.cpp
-algo/lad.cpp
 algo/lsmr.cpp
 algo/lsqr.cpp
 algo/otsu.cpp
@@ -119,11 +118,10 @@ algo/decomp.hpp
 algo/eig.hpp
 algo/gs.hpp
 algo/iter.hpp
-algo/lad.hpp
 algo/lsmr.hpp
 algo/lsqr.hpp
 algo/otsu.hpp
-# algo/pdhg.hpp
+algo/pdhg.hpp
 algo/stats.hpp
 
 basis/basis.hpp

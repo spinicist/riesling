@@ -46,7 +46,6 @@ if(BUILD_BIN)
         op/rss.cpp
         op/wavelets.cpp
 
-        # recon/lad.cpp
         recon/lsq.cpp
         recon/rlsq.cpp
         recon/rss.cpp
