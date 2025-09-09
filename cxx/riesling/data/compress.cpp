@@ -14,7 +14,8 @@ using namespace rl;
 
 void main_compress(args::Subparser &parser)
 {
-  CoreArgs<3> coreArgs(parser);
+  args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
+  args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
   args::ValueFlag<std::string> ccFile(parser, "F", "Read compression matrix from file", {"cc-file"});
 
@@ -30,10 +31,10 @@ void main_compress(args::Subparser &parser)
   args::ValueFlag<Sz3, SzReader<3>> pcaTraces(parser, "R", "PCA Traces (start, size, stride)", {"pca-traces"}, Sz3{0, 1024, 1});
   args::ValueFlag<Sz2, SzReader<2>> pcaSlices(parser, "R", "PCA Slices (start, size)", {"pca-slices"}, Sz2{0, 1});
 
-  ParseCommand(parser, coreArgs.iname, coreArgs.oname);
+  ParseCommand(parser, iname, oname);
   auto const cmd = parser.GetCommand().Name();
 
-  HD5::Reader reader(coreArgs.iname.Get());
+  HD5::Reader reader(iname.Get());
   Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size);
   Cx4 const   ks = reader.readSlab<Cx4>(HD5::Keys::Data, {{4, refVol.Get()}});
@@ -73,7 +74,7 @@ void main_compress(args::Subparser &parser)
     compressed.chip<4>(iv) = compressor.compress(Cx4(uncompressed.chip<4>(iv)));
   }
 
-  HD5::Writer writer(coreArgs.oname.Get());
+  HD5::Writer writer(oname.Get());
   writer.writeStruct(HD5::Keys::Info, info);
   traj.write(writer);
   writer.writeTensor(HD5::Keys::Data, ToArray(compressed.dimensions()), compressed.data(), HD5::Dims::Noncartesian);
