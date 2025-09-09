@@ -4,7 +4,7 @@
     VOX=3
     riesling phantom ${PREFIX}-phantom.h5 --matrix=$MAT --vox-size=$VOX --gradcubes --size=48
     riesling sense-sim ${PREFIX}-sim-sense.h5 --matrix=$MAT --vox-size=$VOX --channels=4
-    riesling op-sense --fwd ${PREFIX}-phantom.h5 ${PREFIX}-channels.h5 ${PREFIX}-sim-sense.h5
+    riesling op-sense --fwd ${PREFIX}-phantom.h5 ${PREFIX}-sim-sense.h5 ${PREFIX}-channels.h5
     riesling op-nufft --fwd ${PREFIX}-channels.h5 ${PREFIX}-noiseless.h5
     riesling noisify ${PREFIX}-noiseless.h5 ${PREFIX}-kspace.h5 -s0.1
 }
