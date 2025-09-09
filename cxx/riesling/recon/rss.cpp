@@ -1,5 +1,4 @@
 #include "inputs.hpp"
-#include "outputs.hpp"
 
 #include "rl/algo/lsmr.hpp"
 #include "rl/io/hd5.hpp"
@@ -25,7 +24,7 @@ void main_recon_rss(args::Subparser &parser)
   Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
   auto const  basis = LoadBasis(coreArgs.basisFile.Get());
-  Cx5         noncart = reader.readTensor<Cx5>();
+  Cx5         noncart = reader.readTensor<Cx5>(coreArgs.dset.Get());
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
@@ -38,10 +37,13 @@ void main_recon_rss(args::Subparser &parser)
   auto       x = lsmr.run(CollapseToConstVector(noncart));
   auto       xm = AsTensorMap(x, A->ishape);
 
-  Cx5 const        rss = DimDot<3>(xm, xm).sqrt();
+  Cx5 const    rss = DimDot<3>(xm, xm).sqrt();
   TOps::Pad<5> oc(traj.matrixForFOV(cropFov.Get(), rss.dimension(3), nT), rss.dimensions());
-  auto             out = oc.adjoint(rss);
-
-  WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
+  auto         out = oc.adjoint(rss);
+  HD5::Writer writer(coreArgs.oname.Get());
+  writer.writeStruct(HD5::Keys::Info, info);
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);  
+  if (coreArgs.residual) { Log::Warn(cmd, "RSS does not support residual output"); }
+  if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
   Log::Print(cmd, "Finished");
 }

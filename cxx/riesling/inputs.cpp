@@ -14,8 +14,10 @@ using namespace rl;
 template <int ND> CoreArgs<ND>::CoreArgs(args::Subparser &parser)
   : iname(parser, "FILE", "Input HD5 file")
   , oname(parser, "FILE", "Output HD5 file")
-  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz<ND>())
+  , dset(parser, "D", "Dataset name", {"dset", 'd'}, HD5::Keys::Data)
   , basisFile(parser, "B", "Read basis from file", {"basis", 'b'})
+  , matrix(parser, "M", "Override matrix size", {"matrix", 'm'}, Sz<ND>())
+  , residual(parser, "R", "Output k-space residual", {"resid", 'r'})
 {
 }
 

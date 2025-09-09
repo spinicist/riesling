@@ -1,5 +1,5 @@
 #include "inputs.hpp"
-#include "outputs.hpp"
+
 #include "rl/algo/otsu.hpp"
 #include "rl/log/log.hpp"
 

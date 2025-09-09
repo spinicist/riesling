@@ -19,9 +19,9 @@
 template <int ND> struct CoreArgs
 {
   args::Positional<std::string> iname, oname;
+  args::ValueFlag<std::string>  dset, basisFile;
   SzFlag<ND>                    matrix;
-  args::ValueFlag<std::string>  basisFile;
-
+  args::Flag                    residual;
   CoreArgs(args::Subparser &parser);
 };
 

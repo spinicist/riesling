@@ -1,5 +1,4 @@
 #include "inputs.hpp"
-#include "outputs.hpp"
 #include "regularizers.hpp"
 
 #include "rl/algo/admm.hpp"
@@ -37,7 +36,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   HD5::Reader     reader(coreArgs.iname.Get());
   Info const      info = reader.readStruct<Info>(HD5::Keys::Info);
   TrajectoryN<ND> traj(reader, info.voxel_size.head<ND>(), coreArgs.matrix.Get());
-  auto            noncart = reader.readTensor<Cx5>();
+  auto            noncart = reader.readTensor<Cx5>(coreArgs.dset.Get());
   traj.checkDims(FirstN<3>(noncart.dimensions()));
 
   auto const basis = LoadBasis(coreArgs.basisFile.Get());
@@ -94,8 +93,19 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
 
   TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(shape)), R.A->ishape);
   auto         out = oc.adjoint(xm);
-  if (basis) { basis->applyR(out); }
-  WriteOutput<5>(cmd, coreArgs.oname.Get(), out, HD5::Dims::Images, info);
+  HD5::Writer writer(coreArgs.oname.Get());
+  writer.writeStruct(HD5::Keys::Info, info);
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
+  if (coreArgs.residual) {
+    Log::Print(cmd, "Calculating K-space residual");
+    fmt::print("|xm| {} |noncart| {}\n", Norm<true>(xm), Norm<true>(noncart));
+    if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart / Cx(scale); }
+    noncart -= R.A->forward(xm);
+    fmt::print("|xm| {} |noncart| {}\n", Norm<true>(xm), Norm<true>(noncart));
+    writer.writeTensor(HD5::Keys::Residual, noncart.dimensions(), noncart.data(), HD5::Dims::Noncartesian);
+    traj.write(writer);
+  }
+  if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
   Log::Print(cmd, "Finished");
 }
 

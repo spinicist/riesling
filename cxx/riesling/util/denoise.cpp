@@ -1,5 +1,5 @@
 #include "inputs.hpp"
-#include "outputs.hpp"
+
 #include "regularizers.hpp"
 #include "rl/algo/admm.hpp"
 #include "rl/algo/pdhg.hpp"
@@ -18,6 +18,7 @@ void main_denoise(args::Subparser &parser)
   args::Flag                    adapt(parser, "A", "Adaptive PDHG", {"adaptive"});
   args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
   RegOpts                       regOpts(parser);
+  args::Flag                    residual(parser, "R", "Output residual image", {"resid", 'r'});
 
   ParseCommand(parser, iname, oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -52,6 +53,9 @@ void main_denoise(args::Subparser &parser)
     }
   }
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
-  WriteOutput<5>(cmd, oname.Get(), x, HD5::Dims::Images, input.readStruct<Info>(HD5::Keys::Info));
+  HD5::Writer writer(oname.Get());
+  writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
+  writer.writeTensor(HD5::Keys::Data, x.dimensions(), x.data(), HD5::Dims::Images);
+  if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
   Log::Print(cmd, "Finished");
 }

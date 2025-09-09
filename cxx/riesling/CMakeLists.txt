@@ -6,7 +6,6 @@ if(BUILD_BIN)
         main.cpp
         ../args.cpp
         inputs.cpp
-        outputs.cpp
         regularizers.cpp
 
         basis/blend.cpp
