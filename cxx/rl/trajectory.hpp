@@ -56,8 +56,10 @@ template <int ND> struct TrajectoryN
                   bool const  shrinkMatrix,
                   bool const  keepCorners); // Marks points higher than resolution as NaN
 
-  template <int D> auto trim(CxNCMap<D> const ks) -> CxN<D>; // Removes as many points as possible from trajectory and provided data
-  template <int D> auto trim(CxN<D> const &ks) -> CxN<D>; // Removes as many points as possible from trajectory and provided data
+  template <int D> auto trim(CxNCMap<D> const ks, bool const aggressive = false)
+    -> CxN<D>; // Removes as many points as possible from trajectory and provided data
+  template <int D> auto trim(CxN<D> const &ks, bool const aggressive = false)
+    -> CxN<D>; // Removes as many points as possible from trajectory and provided data
 
   auto toCoordLists(Sz<ND> const &omat, Index const kW, Index const subgridSize, bool const conj) const
     -> std::vector<CoordList>;

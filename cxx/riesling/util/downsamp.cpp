@@ -18,6 +18,7 @@ template <int ND> void run_downsamp(args::Subparser &parser)
   ArrayFlag<float, ND> filter(parser, "F", "Filter start,end,height", {'f', "filter"});
   args::Flag           noShrink(parser, "S", "Do not shrink matrix", {"no-shrink"});
   args::Flag           trim(parser, "T", "Trim non-cartesian", {"trim"});
+  args::Flag           aggr(parser, "A", "Aggressive trimming", {"aggressive"});
   args::Flag           corners(parser, "C", "Keep corners", {"corners"});
   ParseCommand(parser, iname, oname);
 
@@ -26,7 +27,7 @@ template <int ND> void run_downsamp(args::Subparser &parser)
   TrajectoryN<ND> traj(reader, info.voxel_size.head<ND>());
   Cx5             ks1 = reader.readTensor<Cx5>();
   traj.downsample(res.Get(), !noShrink, corners);
-  if (trim) { ks1 = Cx5(traj.trim(ks1)); }
+  if (trim) { ks1 = Cx5(traj.trim(ks1, aggr)); }
   if (filter) {
     auto const f = filter.Get();
     auto const M = *flux::max(traj.matrix());

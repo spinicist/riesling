@@ -272,6 +272,23 @@ auto FindFirstValid(Re3 const &traj) -> ST
   }
 }
 
+auto FindFirstInvalidSample(Re3 const &traj) -> ST
+{
+  Index s = traj.dimension(1), t = traj.dimension(2);
+  for (Index it = 0; it < traj.dimension(2); it++) {
+    for (Index is = 0; is < traj.dimension(1); is++) {
+      if (!std::isfinite(Sum(traj.chip<2>(it).chip<1>(is)))) {
+        s = std::min(s, is);
+      }
+    }
+  }
+  if (t < 0) {
+    throw Log::Failure("traj", "No valid trajectory points found");
+  } else {
+    return {s, t};
+  }
+}
+
 auto FindLastValid(Re3 const &traj) -> ST
 {
   Index s = -1, t = -1;
@@ -290,10 +307,10 @@ auto FindLastValid(Re3 const &traj) -> ST
   }
 }
 
-template <int ND> template <int D> auto TrajectoryN<ND>::trim(CxNCMap<D> const ks) -> CxN<D>
+template <int ND> template <int D> auto TrajectoryN<ND>::trim(CxNCMap<D> const ks, bool const aggressive) -> CxN<D>
 {
   auto const min = FindFirstValid(points_);
-  auto const max = FindLastValid(points_);
+  auto const max = aggressive ? FindFirstInvalidSample(points_) : FindLastValid(points_);
   Log::Print("Traj", "Retaining samples {}-{} traces {}-{}", min.s, max.s, min.t, max.t);
   Index const nS = max.s - min.s + 1;
   Index const nT = max.t - min.t + 1;
@@ -301,15 +318,9 @@ template <int ND> template <int D> auto TrajectoryN<ND>::trim(CxNCMap<D> const k
   return ks.slice(AddFront(Sz<D - 3>{}, 0, min.s, min.t), AddFront(LastN<D - 3>(ks.dimensions()), ks.dimension(0), nS, nT));
 }
 
-template <int ND> template <int D> auto TrajectoryN<ND>::trim(CxN<D> const &ks) -> CxN<D>
+template <int ND> template <int D> auto TrajectoryN<ND>::trim(CxN<D> const &ks, bool const aggressive) -> CxN<D>
 {
-  auto const min = FindFirstValid(points_);
-  auto const max = FindLastValid(points_);
-  Log::Print("Traj", "Retaining samples {}-{} traces {}-{}", min.s, max.s, min.t, max.t);
-  Index const nS = max.s - min.s + 1;
-  Index const nT = max.t - min.t + 1;
-  points_ = Re3(points_.slice(Sz3{0, min.s, min.t}, Sz3{ND, nS, nT}));
-  return ks.slice(AddFront(Sz<D - 3>{}, 0, min.s, min.t), AddFront(LastN<D - 3>(ks.dimensions()), ks.dimension(0), nS, nT));
+  return trim(CxNCMap<D>(ks.data(), ks.dimensions()), aggressive);
 }
 
 template <int ND> inline auto Sz2Array(Sz<ND> const &sz) -> Eigen::Array<float, ND, 1>
@@ -406,20 +417,20 @@ template struct TrajectoryN<1>;
 template struct TrajectoryN<2>;
 template struct TrajectoryN<3>;
 
-template auto TrajectoryN<2>::trim(Cx3CMap) -> Cx3;
-template auto TrajectoryN<2>::trim(Cx4CMap) -> Cx4;
-template auto TrajectoryN<2>::trim(Cx5CMap) -> Cx5;
+template auto TrajectoryN<2>::trim(Cx3CMap, bool const) -> Cx3;
+template auto TrajectoryN<2>::trim(Cx4CMap, bool const) -> Cx4;
+template auto TrajectoryN<2>::trim(Cx5CMap, bool const) -> Cx5;
 
-template auto TrajectoryN<2>::trim(Cx3 const &) -> Cx3;
-template auto TrajectoryN<2>::trim(Cx4 const &) -> Cx4;
-template auto TrajectoryN<2>::trim(Cx5 const &) -> Cx5;
+template auto TrajectoryN<2>::trim(Cx3 const &, bool const) -> Cx3;
+template auto TrajectoryN<2>::trim(Cx4 const &, bool const) -> Cx4;
+template auto TrajectoryN<2>::trim(Cx5 const &, bool const) -> Cx5;
 
-template auto TrajectoryN<3>::trim(Cx3CMap) -> Cx3;
-template auto TrajectoryN<3>::trim(Cx4CMap) -> Cx4;
-template auto TrajectoryN<3>::trim(Cx5CMap) -> Cx5;
+template auto TrajectoryN<3>::trim(Cx3CMap, bool const) -> Cx3;
+template auto TrajectoryN<3>::trim(Cx4CMap, bool const) -> Cx4;
+template auto TrajectoryN<3>::trim(Cx5CMap, bool const) -> Cx5;
 
-template auto TrajectoryN<3>::trim(Cx3 const &) -> Cx3;
-template auto TrajectoryN<3>::trim(Cx4 const &) -> Cx4;
-template auto TrajectoryN<3>::trim(Cx5 const &) -> Cx5;
+template auto TrajectoryN<3>::trim(Cx3 const &, bool const) -> Cx3;
+template auto TrajectoryN<3>::trim(Cx4 const &, bool const) -> Cx4;
+template auto TrajectoryN<3>::trim(Cx5 const &, bool const) -> Cx5;
 
 } // namespace rl
