@@ -1,5 +1,6 @@
 #include "args.hpp"
 
+#include "rl/io/writer.hpp"
 #include "rl/log/debug.hpp"
 #include "rl/sys/threads.hpp"
 
@@ -19,6 +20,7 @@ args::HelpFlag                   help(global_group, "H", "Show this help message
 args::MapFlag<int, Log::Display> verbosity(global_group, "V", "Log level 0-3", {'v', "verbosity"}, levelMap, Log::Display::Low);
 args::ValueFlag<std::string>     debug(global_group, "F", "Write debug images to file", {"debug"});
 args::ValueFlag<Index>           nthreads(global_group, "N", "Limit number of threads", {"nthreads"});
+args::ValueFlag<Index>           deflate_level(global_group, "D", "Set deflate level (0=none)", {"deflate"}, 2);
 
 void SetLogging(std::string const &name)
 {
@@ -40,12 +42,22 @@ void SetThreadCount()
   }
 }
 
+void SetDeflate()
+{
+  if (deflate_level) {
+    HD5::SetDeflate(deflate_level.Get());
+  } else if (char *const env_p = std::getenv("RL_DEFLATE")) {
+    HD5::SetDeflate(atoi(env_p));
+  }
+}
+
 void ParseCommand(args::Subparser &parser)
 {
   args::GlobalOptions globals(parser, global_group);
   parser.Parse();
   SetLogging(parser.GetCommand().Name());
   SetThreadCount();
+  SetDeflate();
 }
 
 void ParseCommand(args::Subparser &parser, args::Positional<std::string> &iname)

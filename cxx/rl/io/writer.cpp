@@ -10,6 +10,12 @@
 namespace rl {
 namespace HD5 {
 
+namespace {
+Index deflate = 2;
+}
+
+void SetDeflate(Index d) { deflate = d; }
+
 Writer::Writer(std::string const &fname, bool const append)
 {
   Init();
@@ -143,8 +149,10 @@ void Writer::writeTensor(std::string const &name, Shape<N> const &shape, Scalar 
 
   auto const space = H5Screate_simple(N, ds_dims, NULL);
   auto const plist = H5Pcreate(H5P_DATASET_CREATE);
-  CheckedCall(H5Pset_deflate(plist, 2), "setting deflate");
   CheckedCall(H5Pset_chunk(plist, N, chunk_dims), "setting chunk");
+  if (deflate > 0) {
+    CheckedCall(H5Pset_deflate(plist, deflate), "setting deflate");
+  }
 
   hid_t const tid = type<Scalar>();
   hid_t const dset = H5Dcreate(handle_, name.c_str(), tid, space, H5P_DEFAULT, plist, H5P_DEFAULT);

@@ -7,6 +7,8 @@
 namespace rl {
 namespace HD5 {
 
+void SetDeflate(Index const d); //! Set the global compression (deflate) level
+
 struct Writer
 {
   Writer(std::string const &fname, bool const append = false);
