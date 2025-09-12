@@ -32,17 +32,24 @@ void main_rss(args::Subparser &parser)
   auto const  order = reader.order();
   Index const D = dim.Get();
   switch (order) {
+  case 4: {
+    Cx4 const  in = reader.readTensor<Cx4>();
+    auto const names = RemoveNth<4>(reader.readDNames<4>(), D);
+    if (D < 0 || D > 3) { throw Log::Failure(cmd, "Dimension {} is invalid", D); }
+    Cx3 const out = (in * in.conjugate()).sum(Sz1{D}).sqrt();
+    writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), names);
+  } break;
   case 5: {
     Cx5 const  in = reader.readTensor<Cx5>();
     auto const names = RemoveNth<5>(reader.readDNames<5>(), D);
-    if (D < 0 || D >= 5) { throw Log::Failure(cmd, "Dimension {} is invalid", D); }
+    if (D < 0 || D > 4) { throw Log::Failure(cmd, "Dimension {} is invalid", D); }
     Cx4 const out = (in * in.conjugate()).sum(Sz1{D}).sqrt();
     writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), names);
   } break;
   case 6: {
     Cx6 const  in = reader.readTensor<Cx6>();
     auto const names = RemoveNth<6>(reader.readDNames<6>(), D);
-    if (D < 0 || D >= 5) { throw Log::Failure(cmd, "Dimension {} is invalid", D); }
+    if (D < 0 || D > 5) { throw Log::Failure(cmd, "Dimension {} is invalid", D); }
     Cx5 const out = (in * in.conjugate()).sum(Sz1{D}).sqrt();
     writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), names);
   } break;

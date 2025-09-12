@@ -21,7 +21,7 @@ void main_compress(args::Subparser &parser)
 
   // General options
   args::ValueFlag<std::string> save(parser, "S", "Save compression matrix to .h5 file", {"save"});
-  args::ValueFlag<Index>       nRetain(parser, "C", "Retain N channels (8)", {"channels"}, 8);
+  args::ValueFlag<Index>       nRetain(parser, "C", "Retain N channels (8)", {"channels", 'n'}, 8);
   args::ValueFlag<float>       energy(parser, "E", "Retain fraction energy (overrides channels)", {"energy"}, -1.f);
   args::ValueFlag<Index>       refVol(parser, "V", "Use this volume (default first)", {"vol"}, 0);
   args::ValueFlag<Index>       lores(parser, "L", "Number of lores traces", {"lores"}, 0);
@@ -61,9 +61,8 @@ void main_compress(args::Subparser &parser)
     Cx4 const   ref = ks.slice(Sz4{0, pcaRead.Get()[0], pcaTraces.Get()[0], pcaSlices.Get()[0]},
                                Sz4{channels, nread, nTrace, pcaSlices.Get()[1]})
                       .stride(Sz4{1, 1, pcaTraces.Get()[2], 1});
-    auto const cov = Covariance(CollapseToConstMatrix(ref));
-    auto const eig = Eig<Cx>(cov);
-    auto const nR = energy ? CountBelow(eig.V, energy.Get()) : toKeep;
+    auto const eig = Eig<Cx>(Covariance(CollapseToConstMatrix(ref)));
+    auto const nR = energy ? CountCumulativeBelow(eig.V, energy.Get()) : toKeep;
     psi = eig.P.leftCols(nR);
   }
   Compressor  compressor{psi};
@@ -84,4 +83,5 @@ void main_compress(args::Subparser &parser)
     matfile.writeTensor(HD5::Keys::CompressionMatrix, {compressor.psi.rows(), compressor.psi.cols()}, compressor.psi.data(),
                         HD5::DNames<2>{"oc", "ic"});
   }
+  Log::Print(cmd, "Finished");
 }

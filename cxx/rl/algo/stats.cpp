@@ -22,7 +22,7 @@ auto Correlation(Eigen::Ref<Eigen::MatrixXcf const> const &X, bool const demean)
   return c;
 }
 
-auto CountBelow(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh) -> Index
+auto CountCumulativeBelow(Eigen::Ref<Eigen::ArrayXf const> const &vals, float const thresh) -> Index
 {
   Index nRetain = vals.rows();
   if ((thresh > 0.f) && (thresh <= 1.f)) {
