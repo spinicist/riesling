@@ -91,7 +91,7 @@ See `denoise`_. The same regularizers are available for ``recon-rlsq``.
 
 * ``--max-its1=N``, ``--max-its0=N``--atol=A``, ``--btol=B``, ``--ctol=C``
 
-    These are the same as for ``recon-lsq`` and control the inner loop of the optimization (the x update step). As this step is warm-started, the default for `max-its` is 1. However, this may be insufficient to reach a good approximation of the answer on the first outer iteration,so there is an extra `max-its0` option with a default of 4.
+    These control the inner optimization for ADMM (the x update step), which is solved with LSMR. As this step is warm-started, it is possible to control the maximum number of iterations for the zeroth and subsequent steps independently.
 
 * ``--max-outer-its=N``
 
@@ -111,15 +111,19 @@ See `denoise`_. The same regularizers are available for ``recon-rlsq``.
 
 * ``--pdhg``
 
-    Enables the PDHG algorithm instead of ADMM
+    Switches to the PDHG algorithm instead of ADMM.
 
-* ``--lambda-A=l``, ``--lambda-G=l``
+* ``--adaptive``
 
-    The maximum eigenvalues of the encoding operator and regularizer transform respectively. Care has been taken to scale all linear operators such that their maximum eigenvalues are 1 (see e.g. `W. G. Bickley and J. McNamee, ‘Eigenvalues and eigenfunctions of finite-difference operators’, Math. Proc. Camb. Phil. Soc., vol. 57, no. 3, pp. 532–546, Jul. 1961, doi: 10.1017/S0305004100035593.<https://www.cambridge.org/core/product/identifier/S0305004100035593/type/journal_article>`_). The preconditioner should make the maximum eigenvalue of the encoding operator close to 1, and hence the default values of 1 should converge. However, for certain pathological trajectories the maximum eigenvalue may be slightly above 1, in which case set ``--lambda-A`` > 1. You can calculate the eigenvalue for a particular trajectory using ``riesling eig``.
+    Enables adaptive step-sizes for PDHG, which can lead to faster convergence. However, calculating the step-sizes requires additional applications of the encoding operator, such that each iteration will likely be slower and more memory is required. Use with caution.
 
-* ``--max-iters=N``, ``--res-tol=r``, ``--delta-tol=d``
+* ``--lambda-E=l``
 
-    Termination conditions, namely the maximum number of iterations, relative residual size, and the x-update size respectively.
+    The maximum eigenvalue of the encoding operator. Care has been taken to scale all the regularizer operators such that their maximum eigenvalues are 1 (see e.g. `W. G. Bickley and J. McNamee, ‘Eigenvalues and eigenfunctions of finite-difference operators’, Math. Proc. Camb. Phil. Soc., vol. 57, no. 3, pp. 532–546, Jul. 1961, doi: 10.1017/S0305004100035593.<https://www.cambridge.org/core/product/identifier/S0305004100035593/type/journal_article>`_). The preconditioner should make the maximum eigenvalue of the encoding operator close to 1, and hence the default values of 1 should converge. However, for certain pathological trajectories (particularly subspace recons) the maximum eigenvalue may be very different, and must be pre-calculated using ``riesling eig``.
+
+* ``--max-its=N``, ``--pdhg-tol=t``
+
+    Termination conditions for PDHG, namely the maximum number of iterations and the tolerance. In adaptive mode, this is a tolerance on the primal and dual residuals. For naïve PDHG, this is a tolerance on the norm of the change to the image.
 
 recon-rss
 ---------

@@ -1,5 +1,14 @@
 ## Changelog
 
+# v1.03
+
+- The 🐛 edition. Sadly some bugs to do with data ordering and subspace recon had slipped into v1.02. These have been fixed.
+- The basis and channel dimensions in image space have been swapped, channels is now outermost, giving a further performance boost. The dimensions in the input data remain the same. Hence you do not need to reconvert any data to the RIESLING format, but you will need to regenerate sense maps created with v1.02.
+- The PDHG algorithm implementation has been much improved. The regularizer operators are now all scaled to have a maximum eigenvalue of 1. You will still need to calculate the maximum eigenvalue of your encoding operator.
+- New regularizers: `--tv2` for second-order TV (normal TV + the Laplacian) which is fast alternative to TGV, `--l1i` to apply L1 regularization to the imaginary part only (i.e. the image should be real-valued).
+- A working implementation of ROVir.
+- An option to change the gridding kernel width has been added back.
+
 # v1.02
 
 - The 🫨 edition. RIESLING now includes:

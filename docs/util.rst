@@ -9,8 +9,9 @@ RIESLING includes a number of utility commands.
 * `precond`_
 * `psf`_
 * `compress`_
+* `rovir`_
 * `downsamp`_
-* `split`_
+* `slice`_
 
 h5
 ---
@@ -153,6 +154,29 @@ Reduce the channel count using PCA coil compression. See `Huang, F., Vijayakumar
 
     Take the samples for PCA from `ST` to `ST + SZ` every `STRIDE` along the spoke direction.
 
+rovir
+--------
+
+Calculate a compression matrix using the ROVir method. See `D. Kim, S. F. Cauley, K. S. Nayak, R. M. Leahy, and J. P. Haldar, ‘Region‐optimized virtual (ROVir) coils: Localization and/or suppression of spatial regions using sensor‐domain beamforming’, Magn. Reson. Med., vol. 86, no. 1, pp. 197–212, Jul. 2021 <https://onlinelibrary.wiley.com/doi/10.1002/mrm.28706>`_.
+
+The input to ROVir is a set of channel images, you can make these using ``op-nufft``. The output is a compression matrix that you can pass to ``compress``.
+
+*Usage*
+
+.. code-block:: bash
+
+    riesling rovir channels.h5 compression-matrix.h5
+
+*Important Options*
+
+* ``--sir=0.05``
+
+    Set the Signal-Interference-Ratio threshold expressed as a fraction of the largest value, below which channels are dropped.
+
+* ``--accept-fov=X,Y,Z``, ``--reject-fov=X,Y,Z``
+
+    The size of the fields-of-view for the signal acceptance (inside) and interference rejection (outside) regions. If ``--reject-fov`` is not given it takes the value of ``--accept-fov``.
+
 downsamp
 --------
 
@@ -191,37 +215,21 @@ Remove non-Cartesian samples and trajectory points in order to reconstruct a low
     Take the samples for PCA from `ST` to `ST + SZ` every `STRIDE` along the spoke direction.
 
 
-split
+slice
 -----
 
 *Usage*
 
 .. code-block:: bash
 
-    riesling split file.h5 --lores=N --sps=S
-
-*Output*
-
-Depends on arguments, but may result in ``file-lores.h5``, ``file-hires.h5`` or files of the form ``file-hires-000.h5``.
+    riesling slice input.h5 output.h5 --trace=32,32,2
 
 *Important Options*
 
-* ``--lores=N``
+* ``--channel=start,size,stride``, ``--sample=start,size,stride``, ``--trace=start,size,stride``, ``--slab=start,size,stride``, ``--time=start,size,stride``
 
-    Split out the first N traces assuming that they are a low-resolution k-space.
+    Choose the start element, the number of elements, and the stride between elements for the slice in each dimension
 
-* ``--stride=S``
+* ``--tps=N``, ``--segment=start,size,stide``
 
-    Keep only one out of every S traces for further processing (applied after ``--lores``)
-
-* ``--size=N``
-
-    Keep only the first N traces for further processing (applied after ``--lores`` and ``--stride``)
-
-* ``--sps=N``
-
-    Split the hi-res k-space data into multiple files, each containing N traces. If N does not divide the number of traces in the file exactly, the last file will contain the remainder.
-
-* ``--frames=F``, ``--spf=N``
-
-    Add a ``frames`` object to the output header with F frames, each containing N traces. These will be repeated to match the number of traces in the file.
+    Additionally split the trace dimension into segments, and then select the slice for the segment dimension. If this option is specified, ``--trace=start,size,stride`` applies within a segment only.
