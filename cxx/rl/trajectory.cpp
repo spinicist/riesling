@@ -312,8 +312,8 @@ template <int ND> template <int D> auto TrajectoryN<ND>::trim(CxNCMap<D> const k
   auto const min = FindFirstValid(points_);
   auto const max = aggressive ? FindFirstInvalidSample(points_) : FindLastValid(points_);
   Log::Print("Traj", "Retaining samples {}-{} traces {}-{}", min.s, max.s, min.t, max.t);
-  Index const nS = max.s - min.s + 1;
-  Index const nT = max.t - min.t + 1;
+  Index const nS = max.s - min.s;
+  Index const nT = max.t - min.t;
   points_ = Re3(points_.slice(Sz3{0, min.s, min.t}, Sz3{ND, nS, nT}));
   return ks.slice(AddFront(Sz<D - 3>{}, 0, min.s, min.t), AddFront(LastN<D - 3>(ks.dimensions()), ks.dimension(0), nS, nT));
 }
