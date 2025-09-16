@@ -5,6 +5,7 @@
 #include "rl/log/log.hpp"
 #include "rl/op/pad.hpp"
 #include "rl/op/recon.hpp"
+#include "rl/op/tensorscale.hpp"
 #include "rl/precon.hpp"
 #include "rl/scaling.hpp"
 #include "rl/sense/sense.hpp"
@@ -14,14 +15,16 @@ using namespace rl;
 
 template <int ND> void run_lsq(args::Subparser &parser)
 {
-  CoreArgs<ND>           coreArgs(parser);
-  GridArgs<ND>           gridArgs(parser);
-  PreconArgs             preArgs(parser);
-  ReconArgs              reconArgs(parser);
-  SENSEArgs<ND>          senseArgs(parser);
-  LSMRArgs               lsqArgs(parser);
-  f0Args                 f0Args(parser);
-  ArrayFlag<float, ND>   cropFov(parser, "FOV", "Crop FoV in mm (x,y)", {"crop-fov"});
+  CoreArgs<ND>         coreArgs(parser);
+  GridArgs<ND>         gridArgs(parser);
+  PreconArgs           preArgs(parser);
+  ReconArgs            reconArgs(parser);
+  SENSEArgs<ND>        senseArgs(parser);
+  LSMRArgs             lsqArgs(parser);
+  f0Args               f0Args(parser);
+  ArrayFlag<float, ND> cropFov(parser, "FOV", "Crop FoV in mm (x,y)", {"crop-fov"});
+  VectorFlag<float>    scales(parser, "S", "Scales", {"scales"});
+
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N iterations (1)", {"debug-iters"}, 1);
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
@@ -39,7 +42,17 @@ template <int ND> void run_lsq(args::Subparser &parser)
   auto       debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
     if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Images); }
   };
-  LSMR lsmr{R.A, R.M, nullptr, lsqArgs.Get(), debug};
+  TOps::TOp<5, 5>::Ptr N = nullptr;
+  if (scales) {
+    Index const nS = scales.Get().size();
+    if (!basis || nS != basis->nB()) { throw(Log::Failure(cmd, "Basis and scales must match")); }
+    Cx1 s(nS);
+    for (Index ii = 0; ii < nS; ii++) {
+      s(ii) = scales.Get()[ii];
+    }
+    N = TOps::TensorScale<5, 3, 1>::Make(R.A->ishape, s);
+  }
+  LSMR lsmr{R.A, R.M, N, lsqArgs.Get(), debug};
 
   auto const x = lsmr.run(CollapseToConstVector(noncart));
   auto const xm = AsTensorMap(x, R.A->ishape);
