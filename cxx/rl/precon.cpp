@@ -18,10 +18,10 @@ namespace rl {
  * of the cropping during the NUFFT. I also tested simply grid adj * grid, which gave reasonable results but would do a double
  * convolution with the gridding kernel.
  */
-template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis)
-  -> Re2
+template <int ND>
+auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const max, Basis::CPtr basis) -> Re2
 {
-  Log::Print("Precon", "Starting preconditioner calculation λ {}", λ);
+  Log::Print("Precon", "Starting preconditioner calculation");
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
   auto            nufft = TOps::MakeNUFFT<ND>(gridOpts, newTraj, 1, basis);
   Cx3             W(nufft->oshape);
@@ -30,7 +30,7 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   CxN<ND + 2>       ones(AddBack(traj.matrix(), psf.dimension(ND), psf.dimension(ND + 1)));
   ones.setConstant(1.f);
   TOps::Pad<ND + 2> padX(ones.dimensions(), psf.dimensions());
-  CxN<ND + 2>           xcor(padX.oshape);
+  CxN<ND + 2>       xcor(padX.oshape);
   xcor.device(Threads::TensorDevice()) = padX.forward(ones);
   FFT::Forward(xcor, FirstN<ND>(Sz3{0, 1, 2}));
   xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
@@ -40,9 +40,8 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
   Re3 weights = nufft->forward(xcor).abs() * scale;
-
-  // weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), (1.f + λ) / (weights + λ));
-  weights.device(Threads::TensorDevice()) = (weights < 1.f).select(weights.constant(1.f), 1.f / weights);
+  Log::Print("Precon", "Thresholding to {}", max);
+  weights.device(Threads::TensorDevice()) = (weights < 1.f / max).select(weights.constant(max), 1.f / weights);
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
@@ -70,9 +69,9 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   Index const nTrace = traj.nTraces();
   Re3         weights(nC, nSamp, nTrace);
 
-  auto      nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, basis);
-  Sz5 const psfShape = nufft.ishape;
-  Sz5 const smapShape = smaps.dimensions();
+  auto        nufft = TOps::NUFFT<3>(gridOpts, newTraj, 1, basis);
+  Sz5 const   psfShape = nufft.ishape;
+  Sz5 const   smapShape = smaps.dimensions();
   Index const nB = smapShape[3];
   if (nB > 1 && nB != psfShape[3]) {
     throw Log::Failure("Precon", "SENSE maps had basis dimension {}, expected {}", nB, psfShape[3]);
@@ -159,7 +158,7 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
     Log::Print("Precon", "Using no preconditioning");
     return nullptr;
   } else if (opts.type == "single") {
-    Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
+    Re2 const w = KSpaceSingle(gridOpts, traj, opts.max);
     return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
     throw Log::Failure("Precon", "Multichannel preconditioner requested without SENSE maps");
@@ -193,10 +192,10 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
     Log::Print("Precon", "Using no preconditioning");
     return nullptr;
   } else if (opts.type == "single") {
-    Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ);
+    Re2 const w = KSpaceSingle(gridOpts, traj, opts.max);
     return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
-    Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.λ);
+    Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.max);
     return std::make_shared<TOps::TensorScale<3 + NB, 0, NB>>(shape, w.cast<Cx>());
   } else {
     return LoadKSpacePrecon<NB>(opts.type, traj.nSamples(), traj.nTraces(), shape);

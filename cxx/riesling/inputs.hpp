@@ -47,7 +47,7 @@ struct ReconArgs
 struct PreconArgs
 {
   args::ValueFlag<std::string> type;
-  args::ValueFlag<float>       λ;
+  args::ValueFlag<float>       max;
 
   PreconArgs(args::Subparser &parser);
   auto Get() -> rl::PreconOpts;

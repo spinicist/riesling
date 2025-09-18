@@ -50,11 +50,11 @@ auto ReconArgs::Get() -> rl::ReconOpts { return rl::ReconOpts{.decant = decant.G
 
 PreconArgs::PreconArgs(args::Subparser &parser)
   : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon", 'p'}, "single")
-  , λ(parser, "BIAS", "Pre-conditioner regularization (1)", {"precon-lambda"}, 1.e-3f)
+  , max(parser, "M", "Maximum value, threshold above (1)", {"precon-max"}, 1.f)
 {
 }
 
-auto PreconArgs::Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .λ = λ.Get()}; }
+auto PreconArgs::Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .max = max.Get()}; }
 
 LSMRArgs::LSMRArgs(args::Subparser &parser)
   : its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 4)

@@ -9,9 +9,13 @@
 namespace rl {
 
 template <int ND>
-auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis = nullptr) -> Re2;
-auto KSpaceMulti(
-  Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const &traj, float const λ, Basis::CPtr basis = nullptr) -> Re3;
+auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const max = 1.f, Basis::CPtr basis = nullptr)
+  -> Re2;
+auto KSpaceMulti(Cx5 const         &smaps,
+                 GridOpts<3> const &gridOpts,
+                 Trajectory const  &traj,
+                 float const        max = 1.f,
+                 Basis::CPtr        basis = nullptr) -> Re3;
 
 template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,

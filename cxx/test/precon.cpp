@@ -13,14 +13,15 @@ TEST_CASE("Preconditioner", "[precon]")
 {
   Index const M = GENERATE(16);
   Sz3 const   matrix{M, M, M};
-  Re3         points(3, 3, 1);
+  Re3         points(3, 4, 1);
   points.setZero();
   points(0, 0, 0) = -0.25f * M;
-  points(0, 2, 0) = 0.25f * M;
+  points(0, 3, 0) = 0.25f * M;
   Trajectory const traj(points, matrix);
-  auto const       sc = KSpaceSingle(GridOpts<3>(), traj, 0.);
+  auto const       sc = KSpaceSingle(GridOpts<3>(), traj);
   INFO("Weights\n" << sc);
-  CHECK(sc(0, 0) == Approx(1.f).margin(1.e-1f));
-  CHECK(sc(1, 0) == Approx(1.f).margin(1.e-1f));
-  CHECK(sc(2, 0) == Approx(1.f).margin(1.e-1f));
+  CHECK(sc(0, 0) == Approx(1.f).margin(1.e-3f));
+  CHECK(sc(1, 0) == Approx(0.5f).margin(1.e-3f));
+  CHECK(sc(2, 0) == Approx(0.5f).margin(1.e-3f));
+  CHECK(sc(3, 0) == Approx(1.f).margin(1.e-3f));
 }

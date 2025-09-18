@@ -6,7 +6,7 @@ namespace rl {
 struct PreconOpts
 {
   std::string type = "single";
-  float       λ = 1.e-3f;
+  float       max = 1.f;
 };
 
 } // namespace rl
