@@ -23,7 +23,7 @@ namespace rl {
 namespace SENSE {
 
 std::unordered_map<std::string, SENSE::Normalization> NormMap{{"rss", SENSE::Normalization::RSS},
-                                                          {"none", SENSE::Normalization::None}};
+                                                              {"none", SENSE::Normalization::None}};
 
 template <int ND> auto
 LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND> traj, Cx5 const &noncart, Basis::CPtr basis)
@@ -133,9 +133,13 @@ template <int ND> auto SobolevWeights(Index const kW, Index const l) -> ReN<ND>
  * The kernel width is specified on the nominal grid, i.e. will be multiplied up by the oversampling (and made odd)
  *
  */
-template <int ND> auto EstimateKernels(
-  Cx5 const &nomChan, Cx4 const &nomRef, Index const nomKW, float const osamp, float const l, float const λ, Normalization const renorm)
-  -> Cx5
+template <int ND> auto EstimateKernels(Cx5 const          &nomChan,
+                                       Cx4 const          &nomRef,
+                                       Index const         nomKW,
+                                       float const         osamp,
+                                       float const         l,
+                                       float const         λ,
+                                       Normalization const renorm) -> Cx5
 {
   if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
@@ -172,8 +176,7 @@ template <int ND> auto EstimateKernels(
     }
     kshape = {kW, kW, kW, cshape[3], cshape[4]};
   }
-
-  Log::Print("SENSE", "Kernel shape {}", kshape);
+  Log::Print("SENSE", "nomKW {} kW {} kshape {} cshape {}\n", nomKW, kW, kshape, cshape);
   // Set up operators
   auto D = Ops::DiagScale::Make(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
   auto P = TOps::Pad<5>::Make(kshape, cshape);
@@ -232,7 +235,7 @@ template <int ND> auto EstimateKernels(
   if (renorm == Normalization::RSS) {
     auto const mshape = MulToEven(FirstN<ND>(kshape), 2.f);
     auto const maps = KernelsToMaps(kernels, mshape, 1.f, renorm);
-    kernels = MapsToKernels(maps, mshape, 1.f);
+    kernels = MapsToKernels(maps, kshape, 1.f);
   }
 
   return kernels;
