@@ -143,9 +143,6 @@ auto LSMR::run(CMap b, CMap x0) const -> Vector
     if (Iterating::ShouldStop("LSMR")) { break; }
   }
   Iterating::Finished();
-  if (bd.Ninv) {
-    Ninv->inverse(x, x);
-  }
   return x;
 }
 
