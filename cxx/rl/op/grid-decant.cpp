@@ -32,9 +32,9 @@ GridDecant<ND, KF, SG>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> con
   ishape = AddBack(osMatrix, basis ? basis->nB() : 1);
   oshape = Sz3{skern.dimension(4), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
-  float const scale = std::sqrt(Product(FirstN<3>(ishape)) / (float)Product(FirstN<3>(skern.dimensions())));
-  skern *= skern.constant(scale);
-  Log::Print(this->name, "ishape {} oshape {} scale {}", this->ishape, this->oshape, scale);
+  float const scale = std::sqrt(Product(FirstN<ND>(ishape)) / (float)Product(FirstN<ND>(skern.dimensions())));
+  skern /= skern.constant(scale);
+  Log::Print(this->name, "ishape {} oshape {} kshape {} scale {}", this->ishape, this->oshape, skern.dimensions(), scale);
 }
 
 template <int ND, typename KF, int SG>
@@ -51,6 +51,7 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::forwardTask(
   for (Index is = start; is < (Index)gridLists.size(); is += stride) {
     auto const &list = gridLists[is];
     auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
+    sx.setZero();
     if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()), FirstN<ND>(skern.dimensions()))) {
       GridToDecant<ND, SGFW>::Fast(corner, skern, x, sx);
     } else {

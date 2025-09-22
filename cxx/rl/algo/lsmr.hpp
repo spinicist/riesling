@@ -16,7 +16,7 @@ struct LSMR
   using Vector = typename Op::Vector;
   using Map = typename Op::Map;
   using CMap = typename Op::CMap;
-  using DbgFunc = typename std::function<void(Index const iter, Vector const &)>;
+  using DbgFunc = typename std::function<void(Index const iter, Vector const &, Vector const &)>;
 
   struct Opts
   {

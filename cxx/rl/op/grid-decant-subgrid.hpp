@@ -20,7 +20,7 @@ template <int SGSZ> struct GridToDecant<1, SGSZ>
           Index const ox = kx - sk.dimension(0) / 2;
           for (Index ix = 0; ix < sx.dimension(0); ix++) {
             Index const iix = ix + ox + sg[0];
-            sx(ix, ib, ic) = x(iix, ib) * sk(kkx, ib, ic);
+            sx(ix, ib, ic) += x(iix, ib) * sk(kkx, ib, ic);
           }
         }
       }
@@ -36,7 +36,7 @@ template <int SGSZ> struct GridToDecant<1, SGSZ>
           Index const ox = kx - sk.dimension(0) / 2;
           for (Index ix = 0; ix < sx.dimension(0); ix++) {
             Index const iix = Wrap(ix + ox + sg[0], x.dimension(0));
-            sx(ix, ib, ic) = x(iix, ib) * sk(kkx, ib, ic);
+            sx(ix, ib, ic) += x(iix, ib) * sk(kkx, ib, ic);
           }
         }
       }
@@ -60,7 +60,7 @@ template <int SGSZ> struct GridToDecant<2, SGSZ>
               Index const iiy = iy + oy + sg[1];
               for (Index ix = 0; ix < sx.dimension(0); ix++) {
                 Index const iix = ix + ox + sg[0];
-                sx(ix, iy, ib, ic) = x(iix, iiy, ib) * sk(kkx, kky, ib, ic);
+                sx(ix, iy, ib, ic) += x(iix, iiy, ib) * sk(kkx, kky, ib, ic);
               }
             }
           }
@@ -83,7 +83,7 @@ template <int SGSZ> struct GridToDecant<2, SGSZ>
               Index const iiy = Wrap(iy + oy + sg[1], x.dimension(1));
               for (Index ix = 0; ix < sx.dimension(0); ix++) {
                 Index const iix = Wrap(ix + ox + sg[0], x.dimension(0));
-                sx(ix, iy, ib, ic) = x(iix, iiy, ib) * sk(kkx, kky, ib, ic);
+                sx(ix, iy, ib, ic) += x(iix, iiy, ib) * sk(kkx, kky, ib, ic);
               }
             }
           }
@@ -114,7 +114,7 @@ template <int SGSZ> struct GridToDecant<3, SGSZ>
                   Index const iiy = iy + oy + sg[1];
                   for (Index ix = 0; ix < sx.dimension(0); ix++) {
                     Index const iix = ix + ox + sg[0];
-                    sx(ix, iy, iz, ib, ic) = x(iix, iiy, iiz, ib) * sk(kkx, kky, kkz, ib, ic);
+                    sx(ix, iy, iz, ib, ic) += x(iix, iiy, iiz, ib) * sk(kkx, kky, kkz, ib, ic);
                   }
                 }
               }
@@ -144,7 +144,7 @@ template <int SGSZ> struct GridToDecant<3, SGSZ>
                   Index const iiy = Wrap(iy + oy + sg[1], x.dimension(1));
                   for (Index ix = 0; ix < sx.dimension(0); ix++) {
                     Index const iix = Wrap(ix + ox + sg[0], x.dimension(0));
-                    sx(ix, iy, iz, ib, ic) = x(iix, iiy, iiz, ib) * sk(kkx, kky, kkz, ib, ic);
+                    sx(ix, iy, iz, ib, ic) += x(iix, iiy, iiz, ib) * sk(kkx, kky, kkz, ib, ic);
                   }
                 }
               }

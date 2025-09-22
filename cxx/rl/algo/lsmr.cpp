@@ -115,7 +115,7 @@ auto LSMR::run(CMap b, CMap x0) const -> Vector
     float const thresh1 = opts.bTol * normb + opts.aTol * normA * normx;
     float const thresh2 = opts.aTol * (normA * normr);
     Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, thresh1, normAr, thresh2, normA, condA);
-    if (debug) { debug(ii, x); }
+    if (debug) { debug(ii, x, bd.v); }
     if (normr <= thresh1) {
       Log::Print("LSMR", "Ax - b <= aTol, bTol");
       break;

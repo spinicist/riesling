@@ -36,8 +36,11 @@ template <int ND> void run_lsq(args::Subparser &parser)
   auto const R = f0Args.Nτ ? Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, f0Args.Get(), noncart,
                                    reader.readTensor<Re3>("f0map"))
                            : Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
-  auto       debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x) {
-    if (i % d == 0) { Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Images); }
+  auto       debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x, LSMR::Vector const &v) {
+    if (i % d == 0) {
+      Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Images);
+      Log::Tensor(fmt::format("lsmr-v-{:02d}", i), shape, v.data(), HD5::Dims::Images);
+    }
   };
   LSMR lsmr{R.A, R.M, nullptr, lsqArgs.Get(), debug};
 
