@@ -16,6 +16,7 @@ if(${BUILD_TESTS})
         op/grid.cpp
         # op/ndft.cpp
         op/nufft.cpp
+        op/nufft-decant.cpp
         op/pad.cpp
         op/recon.cpp
         op/sense.cpp

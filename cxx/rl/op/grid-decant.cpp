@@ -30,9 +30,9 @@ GridDecant<ND, KF, SG>::GridDecant(GridOpts<ND> const &opts, TrajectoryN<ND> con
   auto const osMatrix = MulToEven(traj.matrixForFOV(opts.fov), opts.osamp);
   gridLists = traj.toCoordLists(osMatrix, kernel.FullWidth, SGSZ, false);
   ishape = AddBack(osMatrix, basis ? basis->nB() : 1);
-  oshape = Sz3{skern.dimension(4), traj.nSamples(), traj.nTraces()};
+  oshape = Sz3{skern.dimension(ND + 1), traj.nSamples(), traj.nTraces()};
   mutexes = std::vector<std::mutex>(osMatrix[ND - 1]);
-  float const scale = std::sqrt(Product(FirstN<ND>(ishape)) / (float)Product(FirstN<ND>(skern.dimensions())));
+  float const scale = Norm<false>(skern);
   skern /= skern.constant(scale);
   Log::Print(this->name, "ishape {} oshape {} kshape {} scale {}", this->ishape, this->oshape, skern.dimensions(), scale);
 }
@@ -124,6 +124,7 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::iadjoint(Out
 }
 
 template struct GridDecant<1>;
+template struct GridDecant<1, ExpSemi<6>>;
 template struct GridDecant<2>;
 template struct GridDecant<3>;
 } // namespace TOps

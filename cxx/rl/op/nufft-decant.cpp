@@ -1,17 +1,16 @@
 #include "nufft-decant.hpp"
 
-#include "apodize.hpp"
 #include "../fft.hpp"
 #include "../log/log.hpp"
+#include "apodize.hpp"
 #include "top-impl.hpp"
 
 namespace rl::TOps {
 
-template <int ND, typename KF>
-NUFFTDecant<ND, KF>::NUFFTDecant(GridOpts<ND> const    &opts,
-                                 TrajectoryN<ND> const &traj,
-                                 CxN<ND + 2> const     &skern,
-                                 Basis::CPtr            basis)
+template <int ND, typename KF> NUFFTDecant<ND, KF>::NUFFTDecant(GridOpts<ND> const    &opts,
+                                                                TrajectoryN<ND> const &traj,
+                                                                CxN<ND + 2> const     &skern,
+                                                                Basis::CPtr            basis)
   : Parent("NUFFTDecant")
   , gridder(opts, traj, skern, basis)
   , apo{Concatenate(traj.matrixForFOV(opts.fov), LastN<1>(gridder.ishape)), gridder.ishape, opts.osamp}
@@ -23,11 +22,9 @@ NUFFTDecant<ND, KF>::NUFFTDecant(GridOpts<ND> const    &opts,
   Log::Print("NUFFTDecant", "ishape {} oshape {} grid {}", ishape, oshape, gridder.ishape);
 }
 
-template <int ND, typename KF>
-auto NUFFTDecant<ND, KF>::Make(GridOpts<ND> const    &opts,
-                               TrajectoryN<ND> const &traj,
-                               CxN<ND + 2> const     &skern,
-                               Basis::CPtr            basis) -> std::shared_ptr<NUFFTDecant<ND>>
+template <int ND, typename KF> auto
+NUFFTDecant<ND, KF>::Make(GridOpts<ND> const &opts, TrajectoryN<ND> const &traj, CxN<ND + 2> const &skern, Basis::CPtr basis)
+  -> std::shared_ptr<NUFFTDecant<ND>>
 {
   return std::make_shared<NUFFTDecant<ND>>(opts, traj, skern, basis);
 }
@@ -77,6 +74,7 @@ template <int ND, typename KF> void NUFFTDecant<ND, KF>::iadjoint(OutCMap y, InM
 }
 
 template struct NUFFTDecant<1>;
+template struct NUFFTDecant<1, ExpSemi<6>>;
 template struct NUFFTDecant<2>;
 template struct NUFFTDecant<3>;
 
