@@ -321,7 +321,11 @@ void main_montage(args::Subparser &parser)
   auto const  data = ReadData(iname.Get(), dset.Get(), chips.Get());
   float const maxData = rl::Maximum(data.abs());
   float const winMax = max ? max.Get() : maxP.Get() * maxData;
-  rl::Log::Print(cmd, "Max magnitude in data {}. Window maximum {}", maxData, winMax);
+  if (winMax == 0.f) {
+    throw rl::Log::Failure(cmd, "Maximum value is zero, no data present");
+  } else {
+    rl::Log::Print(cmd, "Max magnitude in data {}. Window maximum {}", maxData, winMax);
+  }
 
   auto slices =
     cross ? CrossSections(data) : SliceData(data, slDim.Get(), slStart.Get(), slEnd.Get(), slN.Get(), sl0.Get(), sl1.Get());
