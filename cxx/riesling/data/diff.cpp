@@ -47,19 +47,19 @@ void main_diff(args::Subparser &parser)
     Cx4 const A = readerA.readTensor<Cx4>(dsetA.Get());
     Cx4 const B = readerB.readTensor<Cx4>(dsetB.Get());
     Cx4 const diff = B - A;
-    writer.writeTensor(dsetA.Get(), diff.dimensions(), diff.data(), readerA.readDNames<4>());
+    writer.writeTensor(HD5::Keys::Data, diff.dimensions(), diff.data(), readerA.readDNames<4>(dsetA.Get()));
   } break;
   case 5: {
     Cx5 const A = readerA.readTensor<Cx5>(dsetA.Get());
     Cx5 const B = readerB.readTensor<Cx5>(dsetB.Get());
     Cx5 const diff = B - A;
-    writer.writeTensor(dsetA.Get(), diff.dimensions(), diff.data(), readerA.readDNames<5>());
+    writer.writeTensor(HD5::Keys::Data, diff.dimensions(), diff.data(), readerA.readDNames<5>(dsetA.Get()));
   } break;
   case 6: {
     Cx6 const A = readerA.readTensor<Cx6>(dsetA.Get());
     Cx6 const B = readerB.readTensor<Cx6>(dsetB.Get());
     Cx6 const diff = B - A;
-    writer.writeTensor(dsetA.Get(), diff.dimensions(), diff.data(), readerA.readDNames<6>());
+    writer.writeTensor(HD5::Keys::Data, diff.dimensions(), diff.data(), readerA.readDNames<6>(dsetA.Get()));
   } break;
   default: throw Log::Failure(cmd, "Data had order {}, I'm lazy", orderA);
   }
