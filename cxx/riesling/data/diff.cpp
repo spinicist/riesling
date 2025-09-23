@@ -24,7 +24,7 @@ void main_diff(args::Subparser &parser)
   HD5::Reader readerB(bname.Get());
 
   HD5::Writer writer(oname.Get());
-  writer.writeStruct(HD5::Keys::Info, readerA.readStruct<Info>(HD5::Keys::Info));
+  if (readerA.exists(HD5::Keys::Info)) { writer.writeStruct(HD5::Keys::Info, readerA.readStruct<Info>(HD5::Keys::Info)); }
 
   auto const orderA = readerA.order(dsetA.Get());
   auto const orderB = readerB.order(dsetB.Get());
