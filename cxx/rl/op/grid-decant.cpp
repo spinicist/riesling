@@ -53,9 +53,9 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::forwardTask(
     auto const  corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
     sx.setZero();
     if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()), FirstN<ND>(skern.dimensions()))) {
-      GridToDecant<ND, SGFW>::Fast(corner, skern, x, sx);
+      DecantSubgrid<ND, SGFW>::FastForward(corner, skern, x, sx);
     } else {
-      GridToDecant<ND, SGFW>::Slow(corner, skern, x, sx);
+      DecantSubgrid<ND, SGFW>::SlowForward(corner, skern, x, sx);
     }
     for (auto const &m : list.coords) {
       typename KType::Tensor const k = kernel(m.offset) * s;
@@ -101,9 +101,9 @@ template <int ND, typename KF, int SG> void GridDecant<ND, KF, SG>::adjointTask(
     }
     auto const corner = SubgridCorner<ND, SGSZ, KF::FullWidth>(list.corner);
     if (InBounds<ND, SGFW>(corner, FirstN<ND>(x.dimensions()), FirstN<ND>(skern.dimensions()))) {
-      DecantToGrid<ND, SGFW>::Fast(mutexes, corner, skern, sx, x);
+      DecantSubgrid<ND, SGFW>::FastAdjoint(mutexes, corner, skern, sx, x);
     } else {
-      DecantToGrid<ND, SGFW>::Slow(mutexes, corner, skern, sx, x);
+      DecantSubgrid<ND, SGFW>::SlowAdjoint(mutexes, corner, skern, sx, x);
     }
   }
 }
