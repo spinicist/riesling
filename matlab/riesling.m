@@ -85,7 +85,6 @@ switch cmd
         if ~keepInput
             fileNameIn = [];
         end
-
     otherwise
         riesling_write(fileNameIn, data, traj, matrix, info, [], f0Map, t2Map);
 end
