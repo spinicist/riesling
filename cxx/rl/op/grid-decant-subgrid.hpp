@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../types.hpp"
-#include <mutex>
+#include <atomic>
 
 namespace rl {
 
@@ -131,7 +131,7 @@ template <int SGSZ> struct DecantSubgrid<2, SGSZ>
     }
   }
 
-inline static void
+  inline static void
   FastAdjoint(std::vector<std::mutex> &m, Eigen::Array<int16_t, 2, 1> const corner, Cx4CMap sk, Cx4CMap sx, Cx3Map x)
   {
     assert(m.size() == x.dimension(1));
@@ -262,13 +262,13 @@ template <int SGSZ> struct DecantSubgrid<3, SGSZ>
               Index const kkx = sk.dimension(0) - 1 - kx; // Still reverse kernel as adjoint
               Index const ox = kx - sk.dimension(0) / 2;
               for (Index iz = 0; iz < SGSZ; iz++) {
-                Index const      iiz = iz + oz + corner[2];
-                std::scoped_lock lock(m[iiz]);
+                Index const iiz = iz + oz + corner[2];
                 for (Index iy = 0; iy < SGSZ; iy++) {
                   Index const iiy = iy + oy + corner[1];
                   for (Index ix = 0; ix < SGSZ; ix++) {
-                    Index const iix = ix + ox + corner[0];
-                    x(iix, iiy, iiz, ib) += sx(ix, iy, iz, ib, ic) * std::conj(sk(kkx, kky, kkz, ib, ic));
+                    Index const         iix = ix + ox + corner[0];
+                    std::atomic_ref<Cx> ref(x(iix, iiy, iiz, ib));
+                    ref = x(iix, iiy, iiz, ib) + sx(ix, iy, iz, ib, ic) * std::conj(sk(kkx, kky, kkz, ib, ic));
                   }
                 }
               }
@@ -295,13 +295,13 @@ template <int SGSZ> struct DecantSubgrid<3, SGSZ>
               Index const kkx = sk.dimension(0) - 1 - kx; // Still reverse kernel as adjoint
               Index const ox = kx - sk.dimension(0) / 2;
               for (Index iz = 0; iz < SGSZ; iz++) {
-                Index const      iiz = Wrap(iz + oz + corner[2], x.dimension(2));
-                std::scoped_lock lock(m[iiz]);
+                Index const iiz = Wrap(iz + oz + corner[2], x.dimension(2));
                 for (Index iy = 0; iy < SGSZ; iy++) {
                   Index const iiy = Wrap(iy + oy + corner[1], x.dimension(1));
                   for (Index ix = 0; ix < SGSZ; ix++) {
-                    Index const iix = Wrap(ix + ox + corner[0], x.dimension(0));
-                    x(iix, iiy, iiz, ib) += sx(ix, iy, iz, ib, ic) * std::conj(sk(kkx, kky, kkz, ib, ic));
+                    Index const         iix = Wrap(ix + ox + corner[0], x.dimension(0));
+                    std::atomic_ref<Cx> ref(x(iix, iiy, iiz, ib));
+                    ref = x(iix, iiy, iiz, ib) + sx(ix, iy, iz, ib, ic) * std::conj(sk(kkx, kky, kkz, ib, ic));
                   }
                 }
               }
