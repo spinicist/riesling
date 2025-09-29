@@ -8,6 +8,29 @@
 
 using namespace rl;
 
+template <int R> void DoPad(HD5::Reader &reader, HD5::Writer &writer, Sz3 const shape, bool const fwd)
+{
+  CxN<R> const inImages = reader.readTensor<CxN<R>>();
+  Sz<R>       inDims = inImages.dimensions();
+  Sz<R>       outDims;
+  for (Index ii = 0; ii < 3; ii++) {
+    outDims[ii] = shape[ii];
+  }
+  for (Index ii = 3; ii < R; ii++) {
+    outDims[ii] = inDims[ii];
+  }
+  CxN<R> outImages(outDims);
+
+  if (fwd) {
+    TOps::Pad<R> pad(inDims, outDims);
+    outImages = pad.forward(inImages);
+  } else {
+    TOps::Pad<R> crop(outDims, inDims);
+    outImages = crop.adjoint(inImages);
+  }
+  writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data(), reader.readDNames<R>());
+}
+
 void main_pad(args::Subparser &parser)
 {
   args::Positional<std::string>      iname(parser, "FILE", "Input HD5 file");
@@ -17,19 +40,11 @@ void main_pad(args::Subparser &parser)
   ParseCommand(parser, iname);
   HD5::Reader reader(iname.Get());
   HD5::Writer writer(oname.Get());
-  writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info));
-
-  Cx6 const inImages = reader.readTensor<Cx6>();
-  Sz6       inDims = inImages.dimensions();
-  Sz6       outDims(inDims[0], inDims[1], padDims.Get()[0], padDims.Get()[1], padDims.Get()[2], inDims[5]);
-  Cx6       outImages(outDims);
-
-  if (fwd) {
-    TOps::Pad<6> pad(inDims, outDims);
-    outImages = pad.forward(inImages);
-  } else {
-    TOps::Pad<6> crop(outDims, inDims);
-    outImages = crop.adjoint(inImages);
+  if (reader.exists(HD5::Keys::Info)) { writer.writeStruct(HD5::Keys::Info, reader.readStruct<Info>(HD5::Keys::Info)); }
+  switch (reader.order()) {
+  case 4: DoPad<4>(reader, writer, padDims.Get(), fwd); break;
+  case 5: DoPad<5>(reader, writer, padDims.Get(), fwd); break;
+  case 6: DoPad<6>(reader, writer, padDims.Get(), fwd); break;
+  default: throw(Log::Failure("pad", "Unimplemented order {}", reader.order()));
   }
-  writer.writeTensor(HD5::Keys::Data, outImages.dimensions(), outImages.data(), HD5::Dims::Channels);
 }

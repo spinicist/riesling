@@ -64,6 +64,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iforward(InCMap x, Out
   } else {
     rl::FFT::Forward(tmp, dims_);
   }
+  y.device(Threads::TensorDevice()) += tmp;
   this->finishForward(y, time, true);
 }
 
@@ -77,6 +78,7 @@ template <int Rank, int FFTRank> void FFT<Rank, FFTRank>::iadjoint(OutCMap y, In
   } else {
     rl::FFT::Adjoint(tmp, dims_);
   }
+  x.device(Threads::TensorDevice()) += tmp;
   this->finishAdjoint(x, time, true);
 }
 

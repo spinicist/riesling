@@ -12,9 +12,7 @@ Identity::Identity(Index const s)
 }
 
 auto Identity::Make(Index const s) -> Identity::Ptr { return std::make_shared<Identity>(s); }
-
 auto Identity::rows() const -> Index { return sz; }
-
 auto Identity::cols() const -> Index { return sz; }
 
 void Identity::forward(CMap x, Map y, float const s) const
@@ -51,6 +49,21 @@ void Identity::iadjoint(CMap y, Map x, float const s) const
   x.device(Threads::CoreDevice()) += y * s;
   this->finishAdjoint(x, time, true);
 }
+
+Adjoint::Adjoint(Ptr o)
+  : Op("Adjoint")
+  , op{o}
+{
+}
+
+auto Adjoint::Make(Ptr o) -> Ptr { return std::make_shared<Adjoint>(o); }
+auto Adjoint::rows() const -> Index { return op->cols(); }
+auto Adjoint::cols() const -> Index { return op->rows(); }
+
+void Adjoint::forward(CMap x, Map y, float const s) const { op->adjoint(x, y, s); }
+void Adjoint::adjoint(CMap y, Map x, float const s) const { op->forward(y, x, s); }
+void Adjoint::iforward(CMap x, Map y, float const s) const { op->iadjoint(x, y, s); }
+void Adjoint::iadjoint(CMap y, Map x, float const s) const { op->iforward(y, x, s); }
 
 MatMul::MatMul(Matrix const m)
   : Op("MatMul")
@@ -190,7 +203,7 @@ void DiagRep::iadjoint(CMap y, Map x, float const s) const
   this->finishAdjoint(x, time, true);
 }
 
-Multiply::Multiply(std::shared_ptr<Op> AA, std::shared_ptr<Op> BB)
+Multiply::Multiply(Ptr AA, Ptr BB)
   : Op("Mult")
   , A{AA}
   , B{BB}
@@ -332,21 +345,21 @@ void VStack::iadjoint(CMap y, Map x, float const s) const
   this->finishAdjoint(x, time, true);
 }
 
-HStack::HStack(std::vector<std::shared_ptr<Op>> const &o)
+HStack::HStack(std::vector<Ptr> const &o)
   : Op{"HStack"}
   , ops{o}
 {
   check();
 }
 
-HStack::HStack(std::shared_ptr<Op> op1, std::shared_ptr<Op> op2)
+HStack::HStack(Ptr op1, Ptr op2)
   : Op{"HStack"}
   , ops{op1, op2}
 {
   check();
 }
 
-HStack::HStack(std::shared_ptr<Op> op1, std::vector<std::shared_ptr<Op>> const &others)
+HStack::HStack(Ptr op1, std::vector<Ptr> const &others)
   : Op{"HStack"}
   , ops{op1}
 {
@@ -420,13 +433,13 @@ void HStack::iadjoint(CMap y, Map x, float const s) const
   this->finishAdjoint(x, time, true);
 }
 
-DStack::DStack(std::vector<std::shared_ptr<Op>> const &o)
+DStack::DStack(std::vector<Ptr> const &o)
   : Op{"DStack"}
   , ops{o}
 {
 }
 
-DStack::DStack(std::shared_ptr<Op> op1, std::shared_ptr<Op> op2)
+DStack::DStack(Ptr op1, Ptr op2)
   : Op{"DStack"}
   , ops{op1, op2}
 {
@@ -563,7 +576,7 @@ void Extract::iadjoint(CMap y, Map x, float const s) const
   this->finishAdjoint(x, time, true);
 }
 
-Subtract::Subtract(std::shared_ptr<Op> aa, std::shared_ptr<Op> bb)
+Subtract::Subtract(Ptr aa, Ptr bb)
   : Op("Sub")
   , a{aa}
   , b{bb}

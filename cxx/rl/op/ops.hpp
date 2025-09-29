@@ -20,6 +20,22 @@ private:
   Index sz;
 };
 
+struct Adjoint final : Op
+{
+  OP_INHERIT
+
+  Adjoint(Op::Ptr o);
+  static auto Make(Op::Ptr o) -> Ptr;
+
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
+  void iforward(CMap x, Map y, float const s = 1.f) const;
+  void iadjoint(CMap y, Map x, float const s = 1.f) const;
+
+private:
+  Ptr op;
+};
+
 struct MatMul final : Op
 {
   OP_INHERIT
@@ -71,14 +87,15 @@ private:
 struct Multiply final : Op
 {
   OP_INHERIT
-  Multiply(std::shared_ptr<Op> A, std::shared_ptr<Op> B);
+
+  Multiply(Ptr A, Ptr B);
   void forward(CMap x, Map y, float const s = 1.f) const;
   void adjoint(CMap y, Map x, float const s = 1.f) const;
   void iforward(CMap x, Map y, float const s = 1.f) const;
   void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
 private:
-  std::shared_ptr<Op> A, B;
+  Ptr A, B;
   Vector mutable temp;
 };
 
