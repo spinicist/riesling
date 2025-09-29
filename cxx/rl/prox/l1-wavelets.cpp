@@ -9,22 +9,22 @@ L1Wavelets::L1Wavelets(float const λ, Sz5 const shape, Index const W, std::vect
 {
 }
 
-void L1Wavelets::apply(float const α, CMap x, Map z) const
+void L1Wavelets::apply(float const α, Map x) const
 {
+  Vector z(x.size());
   waves->forward(x, z);
+  l1.apply(α, z);
   CMap zm(z.data(), z.size());
-  l1.apply(α, zm, z);
-  CMap zc(z.data(), z.size());
-  waves->adjoint(zc, z);
+  waves->adjoint(zm, x);
 }
 
-void L1Wavelets::conj(float const α, CMap x, Map z) const
+void L1Wavelets::conj(float const α, Map x) const
 {
+  Vector z(x.size());
   waves->forward(x, z);
+  l1.conj(α, z);
   CMap zm(z.data(), z.size());
-  l1.conj(α, zm, z);
-  CMap zc(z.data(), z.size());
-  waves->adjoint(zc, z);
+  waves->adjoint(zm, x);
 }
 
 } // namespace rl::Proxs

@@ -19,8 +19,8 @@ struct LLR final : Prox
   bool  shift;
   LLR(float const, Index const, Index const, bool const, Sz5 const);
 
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 };
 
 } // namespace rl::Proxs

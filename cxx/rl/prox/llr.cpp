@@ -26,7 +26,7 @@ LLR::LLR(float const l, Index const p, Index const w, bool const doShift, Sz5 co
   Log::Print("LLR", "λ {} Scaled λ {} Patch {} Window {} M {} N {} Shape {}", l, λ, patchSize, windowSize, M, N, shape);
 }
 
-void LLR::apply(float const α, CMap xin, Map zin) const
+void LLR::apply(float const α, Map xin) const
 {
   Cx5CMap     x(xin.data(), shape);
   float const realλ = λ * α;
@@ -41,12 +41,11 @@ void LLR::apply(float const α, CMap xin, Map zin) const
   };
   Cx5 z(shape);
   Patches(patchSize, windowSize, shift, softLLR, x, z);
-  if (Log::IsHigh()) { Log::Debug("LLR", "α {} λ {} t {} |x| {} |z| {}", α, λ, realλ, Norm<true>(x), Norm<true>(z)); }
-  Cx5Map zm(zin.data(), shape);
-  zm.device(Threads::TensorDevice()) = z;
+  Log::Debug("LLR", "α {:4.3E} λ {:4.3E} t {:4.3E} |x| {:4.3E} |z| {:4.3E}", α, λ, realλ, Norm<true>(x), Norm<true>(z));
+  x.device(Threads::TensorDevice()) = z;
 }
 
-void LLR::conj(float const α, CMap xin, Map zin) const
+void LLR::conj(float const, Map xin) const
 {
   Cx5CMap x(xin.data(), shape);
   /* Amazingly, this doesn't depend on α. Maths is based. */
@@ -60,9 +59,8 @@ void LLR::conj(float const α, CMap xin, Map zin) const
   };
   Cx5 z(shape);
   Patches(patchSize, windowSize, shift, projLLR, x, z);
-  if (Log::IsHigh()) { Log::Debug("LLR", "Conjugate λ {} |x| {} |z| {}", λ, Norm<true>(x), Norm<true>(z)); }
-  Cx5Map zm(zin.data(), shape);
-  zm.device(Threads::TensorDevice()) = z;
+  Log::Debug("LLR", "Conjugate λ {:4.3E} |x| {:4.3E} |z| {:4.3E}", λ, Norm<true>(x), Norm<true>(z));
+  x.device(Threads::TensorDevice()) = z;
 }
 
 } // namespace rl::Proxs

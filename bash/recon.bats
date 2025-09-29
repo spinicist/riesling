@@ -9,34 +9,34 @@
     riesling noisify ${PREFIX}-noiseless.h5 ${PREFIX}-kspace.h5 -s0.1
 }
 
-# @test "Run naive reconstruction" {
-#     riesling recon-lsq basic-kspace.h5 naive-lsq.h5 -v3
-# }
+@test "Run naive reconstruction" {
+    riesling recon-lsq basic-kspace.h5 naive-lsq.h5 -v3
+}
 
-# @test "SENSE Calib" {
-#     PREFIX="calib"
-#     riesling sense-calib basic-kspace.h5 ${PREFIX}-k.h5
-#     riesling sense-maps ${PREFIX}-k.h5 basic-kspace.h5 ${PREFIX}-maps.h5
-# }
+@test "SENSE Calib" {
+    PREFIX="calib"
+    riesling sense-calib basic-kspace.h5 ${PREFIX}-k.h5 --sense-width=7
+    riesling sense-maps ${PREFIX}-k.h5 basic-kspace.h5 ${PREFIX}-maps.h5
+}
 
 @test "Run SENSE reconstruction" {
     riesling recon-lsq basic-kspace.h5 sense-lsq.h5 -v3 --sense=calib-k.h5 --debug=sense-dbg.h5 --debug-iters=1
 }
 
-# @test "Run lowmem reconstruction" {
-#     riesling recon-lsq basic-kspace.h5 naive-lowmem.h5 --sense=calib-k.h5 --lowmem
-# }
+@test "Run lowmem reconstruction" {
+    riesling recon-lsq basic-kspace.h5 naive-lowmem.h5 --sense=calib-k.h5 --lowmem
+}
 
-# @test "Run frames reconstruction" {
-#     PREFIX="frames"
-#     riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5
-#     riesling recon-lsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --basis=${PREFIX}.h5
-#     riesling basis-blend ${PREFIX}-lsq.h5 ${PREFIX}.h5 ${PREFIX}-blend.h5
-# }
+@test "Run frames reconstruction" {
+    PREFIX="frames"
+    riesling basis-frames --tpf=32 --fpr=2 ${PREFIX}.h5
+    riesling recon-lsq basic-kspace.h5 ${PREFIX}-lsq.h5 --sense=calib-k.h5 --basis=${PREFIX}.h5
+    riesling basis-blend ${PREFIX}-lsq.h5 ${PREFIX}.h5 ${PREFIX}-blend.h5
+}
 
-# @test "Run PDHG TV" {
-#     riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --sense=calib-k.h5 --tv=0.1 --pdhg -i32
-# }
+@test "Run PDHG TV" {
+    riesling recon-rlsq basic-kspace.h5 naive-rlsq.h5 --sense=calib-k.h5 --tv=0.1 --pdhg -i32
+}
 
 @test "Run DECANTER reconstruction" {
     riesling recon-lsq basic-kspace.h5 decant-lsq.h5 --sense=calib-k.h5 --decant -v3 --debug=decant-dbg.h5 --debug-iters=1

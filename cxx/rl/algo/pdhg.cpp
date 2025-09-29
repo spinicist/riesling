@@ -124,7 +124,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
       } else {
         ys[ix].device(Threads::CoreDevice()) += σ * x̅;
       }
-      proxs[ix]->conj(σ, ys[ix], ys[ix]); /* DANGER Be careful with patch-based regs like LLR */
+      proxs[ix]->conj(σ, ys[ix]);
     }
 
     xold.device(Threads::CoreDevice()) = x;
@@ -162,8 +162,9 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
     } else {
       xold.device(Threads::CoreDevice()) -= x;
       float const normdx = ParallelNorm(xold);
-      Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx| {:4.3E}", ii, normx, normdx);
-      if (normdx / normx < opts.tol) {
+      float const rel = normdx / normx;
+      Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx|/|x| {:4.3E}", ii, normx, rel);
+      if (rel < opts.tol) {
         Log::Print("PDHG", "Δ tolerance reached");
         break;
       }

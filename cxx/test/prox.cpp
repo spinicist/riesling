@@ -30,24 +30,28 @@ TEST_CASE("L1Prox", "[prox]")
   mag_y << -2.f, -1.f, 0.f, 0.f, 0.f, 1.f;
   Eigen::VectorXcf x = mag_x.cast<Cx>() * eph;
   Eigen::VectorXcf y = mag_y.cast<Cx>() * eph;
-  auto             z = prox.apply(1.f, x);
+  Eigen::VectorXcf z = x;
+  prox.apply(1.f, z);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\ny " << y.transpose());
   CHECK((y - z).norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 1.f);
-  z = prox.conj(1.f, x);
+  z = x;
+  prox.conj(1.f, z);
   Eigen::ArrayXf y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 1.e-3f);
-  z = prox.conj(1.f, x);
+  z = x;
+  prox.conj(1.f, z);
   y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 10.f);
-  z = prox.conj(1.f, x);
+  z = x;
+  prox.conj(1.f, z);
   y2 = (x.array().abs() > 1.f).select(1.f, x.array().abs());
   INFO("x " << x.array().abs().transpose() << "\nz " << z.array().abs().transpose() << "\ny2 " << y2.transpose());
   CHECK((y2 - z.array().abs()).matrix().norm() == Approx(0.f).margin(1.e-6f));
@@ -59,14 +63,15 @@ TEST_CASE("L2Prox", "[prox]")
   float const      λ = 1.f;
   rl::Proxs::L2    prox(λ, Sz1{sz}, Sz1{0});
   Eigen::VectorXcf x = RandN(sz, 1.f);
-  auto             z = prox.apply(0.1f, x);
+  Eigen::VectorXcf z = x;
+  prox.apply(0.1f, z);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n"
             << (x * (1.f - λ * 0.1f * std::sqrt(sz) / x.norm())).transpose() << "\n");
   CHECK((z - (x * (1.f - λ * 0.1f / x.norm()))).norm() == Approx(0.f).margin(1.e-6f));
 
   x = RandN(sz, 10.f);
-  z.setZero();
-  z = prox.conj(0.1f, x);
+  z = x;
+  prox.conj(0.1f, z);
   INFO("x " << x.transpose() << "\nz " << z.transpose() << "\nxr\n" << (x.array() * λ / x.norm()).transpose() << "\n");
   CHECK((z.array() - (x.array() * λ / x.norm())).matrix().norm() == Approx(0.f).margin(1.e-6f));
 }
@@ -82,14 +87,20 @@ TEST_CASE("ConjL1", "[prox]")
   Eigen::VectorXcf x = RandN(sz, 1.f);
   INFO("x  " << x.transpose() << "\n");
 
-  Eigen::VectorXcf za = l1->apply(α, x);
-  Eigen::VectorXcf cc = l1c->conj(α, x);
+  Eigen::VectorXcf za = x;
+  Eigen::VectorXcf cc = x;
+
+  l1->apply(α, za);
+  l1c->conj(α, cc);
 
   INFO("za " << za.transpose() << "\ncc " << cc.transpose() << "\n");
   CHECK((za - cc).norm() == Approx(0.f).margin(1.e-6f));
 
-  Eigen::VectorXcf zc = l1->conj(α, x);
-  Eigen::VectorXcf ca = l1c->apply(α, x);
+  Eigen::VectorXcf zc = x;
+  Eigen::VectorXcf ca = x;
+
+  l1->conj(α, zc);
+  l1c->apply(α, ca);
   INFO("zc " << zc.transpose() << "\nca " << ca.transpose() << "\n");
   CHECK((zc - ca).norm() == Approx(0.f).margin(1.e-6f));
 }
@@ -105,14 +116,19 @@ TEST_CASE("ConjL2", "[prox]")
   Eigen::VectorXcf x = RandN(sz, 1.f);
   INFO("x  " << x.transpose() << "\n");
 
-  Eigen::VectorXcf za = l2->apply(α, x);
-  Eigen::VectorXcf cc = l2c->conj(α, x);
+  Eigen::VectorXcf za = x;
+  Eigen::VectorXcf cc = x;
+  l2->apply(α, za);
+  l2c->conj(α, cc);
 
   INFO("za " << za.transpose() << "\ncc " << cc.transpose() << "\n");
   CHECK((za - cc).norm() == Approx(0.f).margin(1.e-6f));
 
-  Eigen::VectorXcf zc = l2->conj(α, x);
-  Eigen::VectorXcf ca = l2c->apply(α, x);
+  Eigen::VectorXcf zc = x;
+  Eigen::VectorXcf ca = x;
+
+  l2->conj(α, zc);
+  l2c->apply(α, ca);
   INFO("zc " << zc.transpose() << "\nca " << ca.transpose() << "\n");
   CHECK((zc - ca).norm() == Approx(0.f).margin(1.e-6f));
 }
@@ -128,14 +144,18 @@ TEST_CASE("ConjSoS", "[prox]")
   INFO("b  " << b.transpose() << "\n");
   INFO("x  " << x.transpose() << "\n");
 
-  Eigen::VectorXcf za = res->apply(α, x);
-  Eigen::VectorXcf cc = rc->conj(α, x);
+  Eigen::VectorXcf za = x;
+  Eigen::VectorXcf cc = x;
+  res->apply(α, za);
+  rc->conj(α, cc);
 
   INFO("za " << za.transpose() << "\ncc " << cc.transpose() << "\n");
   CHECK((za - cc).norm() == Approx(0.f).margin(1.e-6f));
 
-  Eigen::VectorXcf zc = res->conj(α, x);
-  Eigen::VectorXcf ca = rc->apply(α, x);
+  Eigen::VectorXcf zc = x;
+  Eigen::VectorXcf ca = x;
+  res->conj(α, zc);
+  rc->apply(α, ca);
   INFO("zc " << zc.transpose() << "\nca " << ca.transpose() << "\n");
   CHECK((zc - ca).norm() == Approx(0.f).margin(1.e-6f));
 }

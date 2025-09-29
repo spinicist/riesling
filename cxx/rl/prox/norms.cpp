@@ -31,35 +31,35 @@ L1::L1(float const λ_, CMap b_, Ops::Op::Ptr P_)
   Log::Print("L1Prox", "λ {} with bias", λ);
 }
 
-void L1::apply(float const α, CMap x, Map z) const
+void L1::apply(float const α, Map x) const
 {
   float const t = α * λ;
-  float const nx = Log::IsHigh() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
+  float const nx = ParallelNorm(x);
   Threads::ChunkFor(
-    [t, &x, &z](Index lo, Index hi) {
+    [t, &x](Index lo, Index hi) {
       for (Index ii = lo; ii < hi; ii++) {
         float const ax = std::abs(x[ii]);
-        z[ii] = ax > t ? (1.f - t / ax) * x[ii] : 0.f;
+        x[ii] = ax > t ? (1.f - t / ax) * x[ii] : 0.f;
       }
     },
     x.size());
-  if (Log::IsHigh()) { Log::Debug("L1Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z)); }
+  Log::Debug("L1Prox", "α {:4.3E} λ {:4.3E} t {:4.3E} |x| {:4.3E} |z| {:4.3E}", α, λ, t, nx, ParallelNorm(x));
 }
 
-void L1::conj(float const α, CMap x, Map z) const
+void L1::conj(float const α, Map x) const
 {
+  float const nx = ParallelNorm(x);
   if (b.size()) {
     if (P) {
-      z.device(Threads::CoreDevice()) = x;
-      P->iforward(b, z, -(α * λ));
+      P->iforward(b, x, -(α * λ));
     } else {
-      z.device(Threads::CoreDevice()) = x - (α * λ) * b;
+      x.device(Threads::CoreDevice()) = x - (α * λ) * b;
     }
-    z.device(Threads::CoreDevice()) = λ * z.array() / z.array().abs().max(λ).cast<Cx>();
+    x.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
   } else {
-    z.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
+    x.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
   }
-  Log::Debug("L1Prox", "Conjugate λ {} |x| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(z));
+  Log::Debug("L1Prox", "Conjugate λ {:4.3E} |x| {:4.3E} |z| {:4.3E}", λ, nx, ParallelNorm(x));
 }
 
 auto L1I::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_shared<L1I>(λ, sz); }
@@ -71,35 +71,35 @@ L1I::L1I(float const λ_, Index const sz_)
   Log::Print("L1Prox", "λ {}", λ);
 }
 
-void L1I::apply(float const α, CMap x, Map z) const
+void L1I::apply(float const α, Map x) const
 {
   float const t = α * λ;
-  float const nx = Log::IsHigh() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
+  float const nx = ParallelNorm(x);
   Threads::ChunkFor(
-    [t, &x, &z](Index lo, Index hi) {
+    [t, &x](Index lo, Index hi) {
       for (Index ii = lo; ii < hi; ii++) {
         float const xr = x[ii].real();
         float const xi = x[ii].imag();
         float const ax = std::abs(xi);
-        z[ii] = Cx(xr, ax > t ? (1.f - t / ax) * xi : 0.f);
+        x[ii] = Cx(xr, ax > t ? (1.f - t / ax) * xi : 0.f);
       }
     },
     x.size());
-  if (Log::IsHigh()) { Log::Debug("L1IProx", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(z)); }
+  Log::Debug("L1IProx", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(x));
 }
 
-void L1I::conj(float const α, CMap x, Map z) const
+void L1I::conj(float const α, Map x) const
 {
-  float const nx = Log::IsHigh() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
+  float const nx = ParallelNorm(x); // Cursed users might do this in place and overwrite x
   Threads::ChunkFor(
-    [λ = this->λ, &x, &z](Index lo, Index hi) {
+    [λ = this->λ, &x](Index lo, Index hi) {
       for (Index ii = lo; ii < hi; ii++) {
         float const xi = x[ii].imag();
-        z[ii] = Cx(0.f, λ * xi / std::max(std::abs(xi), λ));
+        x[ii] = Cx(0.f, λ * xi / std::max(std::abs(xi), λ));
       }
     },
     x.size());
-  Log::Debug("L1IProx", "Conjugate λ {} |x| {} |z| {}", λ, nx, ParallelNorm(z));
+  Log::Debug("L1IProx", "Conjugate λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr
@@ -119,17 +119,16 @@ template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> cons
   std::set_difference(all.cbegin(), all.cend(), normDims.cbegin(), normDims.cend(), otherDims.begin());
 }
 
-template <int O, int D> void L2<O, D>::apply(float const α, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::apply(float const α, Map x) const
 {
-  Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
-  Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
-
-  Index const nElems = std::transform_reduce(normDims.cbegin(), normDims.cend(), 1L, std::multiplies{},
-                                             [sh = this->shape](Index const id) { return sh[id]; });
-  Index const nBlocks = std::transform_reduce(otherDims.cbegin(), otherDims.cend(), 1L, std::multiplies{},
-                                              [sh = this->shape](Index const id) { return sh[id]; });
-  Sz<O> const shuff = Concatenate(normDims, otherDims);
-  Sz<D + 1>   rsh;
+  Eigen::TensorMap<CxN<O>> xm(x.data(), shape);
+  float const              nx = ParallelNorm(x);
+  Index const              nElems = std::transform_reduce(normDims.cbegin(), normDims.cend(), 1L, std::multiplies{},
+                                                          [sh = this->shape](Index const id) { return sh[id]; });
+  Index const              nBlocks = std::transform_reduce(otherDims.cbegin(), otherDims.cend(), 1L, std::multiplies{},
+                                                           [sh = this->shape](Index const id) { return sh[id]; });
+  Sz<O> const              shuff = Concatenate(normDims, otherDims);
+  Sz<D + 1>                rsh;
   std::transform(normDims.cbegin(), normDims.cend(), rsh.begin(), [sh = this->shape](Index const id) { return sh[id]; });
   rsh[D] = nBlocks;
   Sz<1> const rel{nElems};
@@ -140,20 +139,20 @@ template <int O, int D> void L2<O, D>::apply(float const α, CMap x, Map z) cons
         auto       xblk = xm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
         auto const norm = Norm<false>(xblk);
         if (norm > t) {
-          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk * xblk.constant(1.f - t / norm);
+          xblk *= xblk.constant(1.f - t / norm);
         } else {
-          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib).setZero();
+          xblk.setZero();
         }
       }
     },
     nBlocks);
-  if (Log::IsHigh()) { Log::Print("L2Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, ParallelNorm(x), ParallelNorm(z)); }
+  if (Log::IsHigh()) { Log::Print("L2Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(x)); }
 }
 
-template <int O, int D> void L2<O, D>::conj(float const, CMap x, Map z) const
+template <int O, int D> void L2<O, D>::conj(float const, Map x) const
 {
-  Eigen::TensorMap<CxN<O> const> const xm(x.data(), shape);
-  Eigen::TensorMap<CxN<O>>             zm(z.data(), shape);
+  Eigen::TensorMap<CxN<O>> xm(x.data(), shape);
+  float const              nx = ParallelNorm(x);
 
   Index const nElems = std::transform_reduce(normDims.cbegin(), normDims.cend(), 1L, std::multiplies{},
                                              [sh = this->shape](Index const id) { return sh[id]; });
@@ -170,15 +169,11 @@ template <int O, int D> void L2<O, D>::conj(float const, CMap x, Map z) const
       for (Index ib = lo; ib < hi; ib++) {
         auto       xblk = xm.shuffle(shuff).reshape(rsh).template chip<D>(ib);
         auto const norm = Norm<false>(xblk);
-        if (norm > λ) {
-          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk * xblk.constant(λ / norm);
-        } else {
-          zm.shuffle(shuff).reshape(rsh).template chip<D>(ib) = xblk;
-        }
+        if (norm > λ) { xblk *= xblk.constant(λ / norm); }
       }
     },
     nBlocks);
-  if (Log::IsHigh()) { Log::Print("L2Prox", "λ {} |x| {} |z| {}", λ, ParallelNorm(x), ParallelNorm(z)); }
+  if (Log::IsHigh()) { Log::Print("L2Prox", "λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x)); }
 }
 
 template struct L2<1, 1>;
@@ -201,25 +196,24 @@ SumOfSquares::SumOfSquares(CMap b_, Ops::Op::Ptr P_)
   Log::Print("SoS", "|b| {}", ParallelNorm(b));
 }
 
-void SumOfSquares::apply(float const α, CMap x, Map z) const
+void SumOfSquares::apply(float const α, Map x) const
 {
-  float const nx = ParallelNorm(x); // Cursed users might do this in place and overwrite x
+  float const nx = ParallelNorm(x);
   /* Worked this out by following §2.2 of Parykh and Boyd */
-  z.device(Threads::CoreDevice()) = (x - b) / (1.f + α) + b;
-  Log::Debug("L2Res", "α {} |x| {} |z| {}", α, nx, ParallelNorm(z));
+  x.device(Threads::CoreDevice()) = (x - b) / (1.f + α) + b;
+  Log::Debug("SoS", "α {} |x| {} |z| {}", α, nx, ParallelNorm(x));
 }
 
-void SumOfSquares::conj(float const α, CMap x, Map z) const
+void SumOfSquares::conj(float const α, Map x) const
 {
-  float const nx = Log::IsHigh() ? ParallelNorm(x) : 0.f; // Cursed users might do this in place and overwrite x
+  float const nx = ParallelNorm(x);
   if (P) {
-    z.device(Threads::CoreDevice()) = x;
-    P->iforward(b, z, -α);
-    P->inverse(CMap(z.data(), z.size()), z, α, 1.f);
+    P->iforward(b, x, -α);
+    P->inverse(CMap(x.data(), x.size()), x, α, 1.f);
   } else {
-    z.device(Threads::CoreDevice()) = (x - α * b) / (1.f + α);
+    x.device(Threads::CoreDevice()) = (x - α * b) / (1.f + α);
   }
-  if (Log::IsHigh()) { Log::Debug("L2Res", "α {} |x| {} |z| {}", α, nx, ParallelNorm(z)); }
+  Log::Debug("SoS", "α {} |x| {} |z| {}", α, nx, ParallelNorm(x));
 }
 
 } // namespace rl::Proxs

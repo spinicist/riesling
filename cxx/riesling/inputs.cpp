@@ -74,7 +74,7 @@ PDHGArgs::PDHGArgs(args::Subparser &parser)
   : adaptive(parser, "A", "Adaptive step sizes", {"adaptive"})
   , lad(parser, "L", "Least Absolute Deviations, PDHG only", {"lad", 'l'})
   , its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 32)
-  , tol(parser, "B", "PDHG residual/Δ tolerance (1e-2)", {"pdhg-tol", 't'}, 1.e-2f)
+  , tol(parser, "B", "PDHG residual/Δ tolerance (1e-2)", {"pdhg-tol", 't'}, 1.e-4f)
   , λE(parser, "λE", "Max Eigenvalue of encoding operator (1)", {"lambda-E", 'e'}, 1.f)
 {
 }

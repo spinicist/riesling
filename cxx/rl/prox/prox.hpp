@@ -14,13 +14,11 @@ struct Prox
 
   Prox(Index const sz);
 
-  auto         apply(float const α, Vector const &x) const -> Vector;
-  void         apply(float const α, Vector const &x, Vector &z) const;
-  virtual void apply(float const α, CMap x, Map z) const = 0;
+  void         apply(float const α, Vector &x) const;
+  virtual void apply(float const α, Map x) const = 0;
 
-  auto         conj(float const α, Vector const &x) const -> Vector;
-  void         conj(float const α, Vector const &x, Vector &z) const;
-  virtual void conj(float const α, CMap x, Map z) const = 0;
+  void         conj(float const α, Vector &x) const;
+  virtual void conj(float const α, Map x) const = 0;
 
   virtual ~Prox() {};
 
@@ -41,8 +39,8 @@ struct Conjugate final : Prox
   static auto Make(Prox::Ptr p) -> Prox::Ptr;
   Conjugate(Prox::Ptr p);
 
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 
 private:
   Prox::Ptr p;
@@ -55,8 +53,8 @@ struct Null final : Prox
   static auto Make(Index const sz) -> Prox::Ptr;
   Null(Index const sz);
 
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 };
 
 } // namespace rl::Proxs

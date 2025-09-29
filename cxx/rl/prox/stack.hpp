@@ -12,8 +12,8 @@ struct Stack final : Prox
   Stack(Ptr p1, std::vector<Ptr> const ps);
   static auto Make(std::vector<Ptr> p) -> Ptr;
 
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 
 private:
   std::vector<Ptr> proxs;

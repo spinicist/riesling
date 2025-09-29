@@ -13,8 +13,8 @@ struct L1 final : Prox
   static auto Make(float const λ, CMap b, Ops::Op::Ptr P) -> Prox::Ptr;
   L1(float const λ, Index const sz);
   L1(float const λ, CMap b, Ops::Op::Ptr P);
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 
 private:
   CMap const   b;
@@ -27,8 +27,8 @@ struct L1I final : Prox
   float       λ;
   static auto Make(float const λ, Index const sz) -> Prox::Ptr;
   L1I(float const λ, Index const sz);
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 
 private:
   Ops::Op::Ptr P;
@@ -41,8 +41,8 @@ template <int O, int D> struct L2 final : Prox
   Index       blockSize;
   static auto Make(float const λ, Sz<O> const &shape, Sz<D> const &dims) -> Prox::Ptr;
   L2(float const λ, Sz<O> const &shape, Sz<D> const &dims);
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 
 private:
   Sz<O>     shape;
@@ -55,8 +55,8 @@ struct SumOfSquares final : Prox
   PROX_INHERIT
   static auto Make(CMap b, Ops::Op::Ptr precon = nullptr) -> Prox::Ptr;
   SumOfSquares(CMap b, Ops::Op::Ptr precon);
-  void apply(float const α, CMap x, Map z) const;
-  void conj(float const α, CMap x, Map z) const;
+  void apply(float const α, Map x) const;
+  void conj(float const α, Map x) const;
 
 private:
   CMap const   b;
