@@ -22,7 +22,7 @@ TEST_CASE("Patches", "[patch]")
 
   SECTION("Patches")
   {
-    auto flip = [](Cx5 const &x) -> Cx5 { return -x; };
+    auto flip = [](Cx5 const &x, Cx5 &z) { z = -x; };
     Patches(P, W, false, flip, x, z);
     bool all_equal = B0((z == -x).all())();
     CHECK(all_equal);

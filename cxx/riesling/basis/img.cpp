@@ -36,7 +36,7 @@ void main_basis_img(args::Subparser &parser)
   Sz4 const  shape = img.dimensions();
   Cx4 const  ref = img.slice(Sz4{shape[0] - 1, 0, 0, 0}, AddFront(LastN<3>(shape), 1));
   Re4 const  real = (img / (ref / ref.abs()).broadcast(Sz4{shape[0], 1, 1, 1})).real();
-  auto const realMat = CollapseToMatrix(real);
+  auto const realMat = CollapseToConstMatrix(real);
   Re3 const  toMask = ref.chip<0>(0).abs();
   auto const toMaskMat = CollapseToArray(toMask);
   float      thresh;

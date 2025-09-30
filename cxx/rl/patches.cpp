@@ -58,7 +58,8 @@ void Patches(Index const patchSize, Index const windowSize, bool const doShift, 
           }
           if (!empty) {
             Cx5 xp = x.slice(stP, szP);
-            Cx5 yp = apply(xp);
+            Cx5 yp(szP);
+            apply(xp, yp);
             y.slice(stW, szW) = yp.slice(stW2, szW);
           }
         }

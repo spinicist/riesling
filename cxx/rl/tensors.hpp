@@ -88,16 +88,15 @@ inline decltype(auto) AsConstTensorMap(Eigen::Array<Scalar, Eigen::Dynamic, 1> c
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 
-template <typename Scalar, int N>
-inline decltype(auto) AsConstTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> const &shape)
+template <typename Scalar, int N> inline decltype(auto) AsConstTensorMap(Eigen::Vector<Scalar, Eigen::Dynamic> &x, Sz<N> &shape)
 {
   return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 
 template <typename Scalar, int N>
-inline decltype(auto) AsTensorMap(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> &x, Sz<N> const &shape)
+inline decltype(auto) AsConstTensorMap(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> &x, Sz<N> const &shape)
 {
-  return Eigen::TensorMap<Eigen::Tensor<Scalar, N>>(x.data(), shape);
+  return Eigen::TensorMap<Eigen::Tensor<Scalar, N> const>(x.data(), shape);
 }
 
 template <typename Scalar, int N>
@@ -156,7 +155,7 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix
 template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix(T const &t)
 {
   using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
     t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
     std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
@@ -165,7 +164,7 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix
 template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToConstMatrix(T const &t)
 {
   using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> mapped(
+  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> const mapped(
     t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
     std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;

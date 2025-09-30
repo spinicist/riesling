@@ -8,7 +8,7 @@ namespace rl {
 auto PowerMethodForward(std::shared_ptr<Ops::Op> A, std::shared_ptr<Ops::Op> P, Index const iterLimit) -> PowerReturn
 {
   Log::Print("Power", "A'PA");
-  Eigen::VectorXcf vec = Eigen::VectorXcf::Ones(A->cols());
+  Eigen::VectorXcf vec = Eigen::VectorXcf::Random(A->cols());
   float            val = ParallelNorm(vec);
   vec /= val;
   Iterating::Starting();
