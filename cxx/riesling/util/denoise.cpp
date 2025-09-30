@@ -28,8 +28,8 @@ void main_denoise(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
   PDHGArgs                      pdhgArgs(parser);
-  args::Flag                    adapt(parser, "A", "Adaptive PDHG", {"adaptive"});
-  args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
+  args::Flag                    adapt(parser, "A", "Adaptive PDHG", {"adaptive", 'a'});
+  args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "1");
   RegOpts                       regOpts(parser);
   args::Flag                    residual(parser, "R", "Output residual image", {"resid", 'r'});
   args::Flag                    os(parser, "OS", "2x oversample", {"osamp", '2'});
