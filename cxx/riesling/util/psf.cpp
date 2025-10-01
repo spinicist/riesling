@@ -42,7 +42,7 @@ void main_psf(args::Subparser &parser)
       imgs(shape[0] / 2, shape[1] / 2, shape[2] / 2, 0, ib) = 1.f;
       Cx3 const ks = A->forward(imgs);
       auto      x = lsmr.run(CollapseToConstVector(ks));
-      output.chip<4>(ib) = C.adjoint(AsTensorMap(x, shape)).chip<3>(0); // Get rid of channel dimension
+      output.chip<4>(ib) = C.adjoint(AsTensorMap(x, shape)).chip<4>(0); // Get rid of channel dimension
     }
     HD5::Writer writer(coreArgs.oname.Get());
     writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
@@ -51,7 +51,7 @@ void main_psf(args::Subparser &parser)
     Cx3 ks(1, traj.nSamples(), traj.nTraces());
     ks.setConstant(1.f);
     auto const  x = lsmr.run(CollapseToConstVector(ks));
-    Cx4 const   out = C.adjoint(AsTensorMap(x, shape)).chip<3>(0);
+    Cx4 const   out = C.adjoint(AsTensorMap(x, shape)).chip<4>(0); // Get rid of channel dimension
     HD5::Writer writer(coreArgs.oname.Get());
     writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
     writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), {"i", "j", "k", "b"});
