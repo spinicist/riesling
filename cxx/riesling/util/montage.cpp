@@ -332,7 +332,7 @@ void main_montage(args::Subparser &parser)
   auto colorized = Colorize(slices, comp.Get(), winMax, ɣ.Get());
   auto montage = DoMontage(colorized, rotate.Get(), cols.Get());
   rl::Log::Print(cmd, "Image size: {} {}", montage.size().width(), montage.size().height());
-  if (oname) { Printify(width.Get(), interp, montage); }
+  Printify(oname ? width.Get() : rl::ScreenWidthInPixels(), interp, montage);
   montage.font(font.Get());
   montage.fontPointsize(fontSize.Get());
   if (cbar) { Colorbar(comp.Get(), winMax, ɣ.Get(), montage); }

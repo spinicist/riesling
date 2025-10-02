@@ -19,6 +19,13 @@ auto ToMagick(rl::RGBImage const &img, float const rotate) -> Magick::Image
   return tmp;
 }
 
+int ScreenWidthInPixels()
+{
+  struct winsize winSize;
+  ioctl(0, TIOCGWINSZ, &winSize);
+  return winSize.ws_xpixel;
+}
+
 void ToKitty(Magick::Image &img, bool const scale)
 {
   struct winsize winSize;
@@ -30,8 +37,8 @@ void ToKitty(Magick::Image &img, bool const scale)
   img.magick("PNG");
   Magick::Blob blob;
   img.write(&blob);
-  auto const             b64 = blob.base64();
-  constexpr auto         ChunkSize = 4096;
+  auto const     b64 = blob.base64();
+  constexpr auto ChunkSize = 4096;
   if (b64.size() <= ChunkSize) {
     fmt::print(stderr, "\x1B_Ga=T,f=100{};{}\x1B\\", scHdr, b64);
   } else {
