@@ -21,13 +21,13 @@ auto Single(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index con
 {
   auto nufft = TOps::MakeNUFFT<ND>(gridOpts, traj, 1, b);
   if constexpr (ND == 2) {
-    auto                 ri = TOps::MakeReshapeInput(nufft, Concatenate(FirstN<2>(nufft->ishape), LastN<1>(nufft->ishape)));
+    auto                 ri = TOps::MakeReshapeInput(nufft, FirstN<3>(nufft->ishape));
     TOps::TOp<4, 4>::Ptr sliceLoop = TOps::MakeLoop<2, 3>(ri, nSlab);
     TOps::TOp<5, 5>::Ptr timeLoop = TOps::MakeLoop<4, 4>(sliceLoop, nTime);
     return timeLoop;
   } else {
     if (nSlab > 1) { throw Log::Failure("Recon", "Multislab and 1 channel not supported right now"); }
-    auto ri = TOps::MakeReshapeInput(nufft, Concatenate(FirstN<3>(nufft->ishape), LastN<1>(nufft->ishape)));
+    auto ri = TOps::MakeReshapeInput(nufft, FirstN<4>(nufft->ishape));
     auto ro = TOps::MakeReshapeOutput(ri, AddBack(ri->oshape, 1));
     auto timeLoop = TOps::MakeLoop<4, 4>(ro, nTime);
     return timeLoop;
