@@ -28,6 +28,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   args::ValueFlag<Index>       debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                   debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   args::Flag                   pdhg(parser, "P", "Use PDHG instead of ADMM", {"pdhg", 'p'});
+  args::Flag                   restart(parser, "R", "Restart PDHG", {"pdhg-restart", 'r'});
   args::Flag                   adapt(parser, "A", "Adaptive PDHG", {"adaptive"});
   ArrayFlag<float, ND>         cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"});
 
@@ -50,17 +51,21 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
 
   Ops::Op::Vector x;
   if (pdhg) {
-    PDHG::Debug debug = [shape, ext_x, di = debugIters.Get()](Index const ii, PDHG::Vector const &dx) {
+    PDHG::Debug debug = [shape, ext_x, di = debugIters.Get()](Index const ii, PDHG::Vector const &dx, PDHG::Vector const &x̅) {
       if (Log::IsDebugging() && (ii % di == 0)) {
         if (ext_x) {
           auto xit = ext_x->forward(dx);
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
+          xit = ext_x->forward(x̅);
+          Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
         } else {
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, dx.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, x̅.data(), HD5::Dims::Images);
         }
       }
     };
-    x = PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
+    x = restart ? PDHG::Restarted(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug)
+                : PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
   } else {
     ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
       if (Log::IsDebugging() && (ii % di == 0)) {
@@ -93,7 +98,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
 
   TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(shape)), R.A->ishape);
   auto         out = oc.adjoint(xm);
-  HD5::Writer writer(coreArgs.oname.Get());
+  HD5::Writer  writer(coreArgs.oname.Get());
   writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
   if (coreArgs.residual) {

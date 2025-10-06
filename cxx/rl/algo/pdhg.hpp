@@ -10,7 +10,7 @@ using Op = Ops::Op;
 using Prox = Proxs::Prox;
 using Vector = typename Op::Vector;
 using CMap = typename Op::CMap;
-using Debug = std::function<void(Index const, Vector const &)>;
+using Debug = std::function<void(Index const, Vector const &, Vector const &)>;
 struct Opts
 {
   bool  adaptive, lad;
@@ -20,4 +20,8 @@ struct Opts
 
 auto Run(Vector const &b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr) -> Vector;
 auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr) -> Vector;
+
+auto Restarted(Vector const &b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr)
+  -> Vector;
+auto Restarted(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opts opts, Debug d = nullptr) -> Vector;
 } // namespace rl::PDHG
