@@ -28,7 +28,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
   args::ValueFlag<Index>       debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
   args::Flag                   debugZ(parser, "Z", "Write regularizer debug images", {"debug-z"});
   args::Flag                   pdhg(parser, "P", "Use PDHG instead of ADMM", {"pdhg", 'p'});
-  args::Flag                   restart(parser, "R", "Restart PDHG", {"pdhg-restart", 'r'});
+  args::ValueFlag<Index>       restart(parser, "R", "Restart PDHG", {"pdhg-restart", 'r'}, 8);
   args::Flag                   adapt(parser, "A", "Adaptive PDHG", {"adaptive"});
   ArrayFlag<float, ND>         cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"});
 
@@ -64,7 +64,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
         }
       }
     };
-    x = restart ? PDHG::Restarted(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug)
+    x = restart ? PDHG::Restarted(restart.Get(), CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug)
                 : PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
   } else {
     ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
