@@ -215,17 +215,20 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
   Log::Print("PDHG", "{}{}σ {:4.3E} τ {:4.3E} Convergence Tolerance {}", opts.adaptive ? "Adaptive " : "",
              opts.lad ? "LAD " : "", σ, τ, opts.tol);
   Vector x(E->cols()), x̂(E->cols()) /* Extrapolated/Momentum */, x̅(E->cols()) /* Average of iterations */, xold(E->cols());
-  E->adjoint(P->forward(b), x̅);
+  x̅.setZero();
 
-  std::vector<Vector> ys(nx), yolds(nx);
+  std::vector<Vector> ys(nx), y̅s(nx), yolds(nx);
   for (Index ir = 0; ir < nx; ir++) {
     if (As[ir]) {
       ys[ir] = Vector(As[ir]->rows());
+      y̅s[ir] = Vector(As[ir]->rows());
       if (opts.adaptive) { yolds[ir] = Vector(As[ir]->rows()); }
     } else {
       ys[ir] = Vector(E->cols());
+      y̅s[ir] = Vector(E->cols());
       if (opts.adaptive) { yolds[ir] = Vector(E->cols()); }
     }
+    y̅s[ir].setZero();
   }
 
   Index const nOuter = opts.imax / nInner;
@@ -234,7 +237,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
     x.device(dev) = x̅;
     x̂.device(dev) = x̅;
     for (Index ir = 0; ir < nx; ir++) {
-      ys[ir].setZero();
+      ys[ir] = y̅s[ir];
     }
     for (Index ii = 0; ii < nInner; ii++) {
       /* PDHG steps are
@@ -256,6 +259,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
           ys[ix].device(dev) += σ * x̂;
         }
         proxs[ix]->conj(σ, ys[ix]);
+        y̅s[ix].device(dev) += (ys[ix] - y̅s[ix]) / (ii + 2); /* Running average formula */
       }
 
       xold.device(dev) = x;
@@ -267,9 +271,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
         }
       }
       x̂.device(dev) = 2.f * x - xold;
-
-      /* Average iterations using running average formula */
-      x̅.device(dev) += (x - x̅) / (ii + 2);
+      x̅.device(dev) += (x - x̅) / (ii + 2); /* Running average formula */
 
       if (debug) { debug(itot, x, x̅); }
       float const normx = ParallelNorm(x);
