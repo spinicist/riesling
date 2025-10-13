@@ -143,9 +143,10 @@ template struct SENSEArgs<2>;
 template struct SENSEArgs<3>;
 
 f0Args::f0Args(args::Subparser &parser)
-  : τacq(parser, "τ", "Total ACQ time", {"tacq"})
+  : τ0(parser, "τ", "ACQ start time", {"t0"})
+  , τacq(parser, "τ", "Total ACQ time", {"tacq"})
   , Nτ(parser, "N", "Number of timesteps for f0 correction", {"Nt"})
 {
 }
 
-auto f0Args::Get() -> rl::f0Opts { return rl::f0Opts{.τacq = τacq.Get(), .Nτ = Nτ.Get()}; }
+auto f0Args::Get() -> rl::f0Opts { return rl::f0Opts{.τ0 = τ0.Get(), .τacq = τacq.Get(), .Nτ = Nτ.Get()}; }

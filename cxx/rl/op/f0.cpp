@@ -7,7 +7,7 @@
 
 namespace rl::TOps {
 
-f0Segment::f0Segment(Re3 const &f0in, float const τacq, Index const Nτ, Index const Nacq)
+f0Segment::f0Segment(Re3 const &f0in, float const τ0, float const τacq, Index const Nτ, Index const Nacq)
   : Parent("f0SegmentOp", AddBack(f0in.dimensions(), 1), AddBack(f0in.dimensions(), Nτ))
   , f0{f0in}
   , τ(Nτ)
@@ -19,7 +19,7 @@ f0Segment::f0Segment(Re3 const &f0in, float const τacq, Index const Nτ, Index 
   Cx3         basis(Nτ, Nacq, 1);
   basis.setZero();
   for (Index ii = 0; ii < Nτ; ii++) {
-    τ(ii) = -ii * dτ * Cx(0.f, 2.f * M_PI);
+    τ(ii) = -(τ0 + ii * dτ) * Cx(0.f, 2.f * M_PI);
 
     Index const start = ii * N / 2 - N / 2;
     for (Index ij = 0; ij < N; ij++) {

@@ -8,7 +8,7 @@ struct ReconOpts
 
 struct f0Opts
 {
-  float τacq;
+  float τ0, τacq;
   Index Nτ;
 };
 

@@ -134,7 +134,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
   Index const nSlice = noncart.dimension(3);
   Index const nTime = noncart.dimension(4);
   auto const  skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
-  auto        F = std::make_shared<TOps::f0Segment>(f0map, f0opts.τacq, f0opts.Nτ, nSamp);
+  auto        F = std::make_shared<TOps::f0Segment>(f0map, f0opts.τ0, f0opts.τacq, f0opts.Nτ, nSamp);
   auto        b = F->basis();
   auto        S = TOps::MakeSENSE(SENSE::KernelsToMaps<ND>(skern, traj.matrixForFOV(gridOpts.fov), gridOpts.osamp), b->nB());
   auto        SF = TOps::MakeCompose(F, S);

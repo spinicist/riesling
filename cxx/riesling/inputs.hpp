@@ -111,7 +111,7 @@ template <int ND> struct SENSEArgs
 
 struct f0Args
 {
-  args::ValueFlag<float> τacq;
+  args::ValueFlag<float> τ0, τacq;
   args::ValueFlag<Index> Nτ;
 
   f0Args(args::Subparser &parser);
