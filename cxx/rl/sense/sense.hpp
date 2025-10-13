@@ -27,13 +27,10 @@ template <int ND> struct Opts
 };
 
 //! Convenience function to get low resolution multi-channel images
-template <int ND> auto LoresChannels(Opts<ND> const     &opts,
-                                     GridOpts<ND> const &gridOpts,
-                                     TrajectoryN<ND>     traj,
-                                     Cx5 const          &noncart,
-                                     Basis::CPtr         basis = nullptr) -> Cx5;
-void                   Normalize(Cx5 &maps);
-auto                   TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
+template <int ND>
+auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND> traj, Cx5 const &noncart) -> Cx5;
+void Normalize(Cx5 &maps);
+auto TikhonovDivision(Cx5 const &channels, Cx4 const &ref, float const λ) -> Cx5;
 template <int ND> auto EstimateKernels(Cx5 const          &nomChan,
                                        Cx4 const          &nomRef,
                                        Index const         nomKW,

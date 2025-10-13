@@ -25,9 +25,8 @@ namespace SENSE {
 std::unordered_map<std::string, SENSE::Normalization> NormMap{{"rss", SENSE::Normalization::RSS},
                                                               {"none", SENSE::Normalization::None}};
 
-template <int ND> auto
-LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND> traj, Cx5 const &noncart, Basis::CPtr basis)
-  -> Cx5
+template <int ND>
+auto LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND> traj, Cx5 const &noncart) -> Cx5
 {
   auto const nC = noncart.dimension(0);
   // auto const nSamp = noncart.dimension(1);
@@ -45,26 +44,22 @@ LoresChannels(Opts<ND> const &opts, GridOpts<ND> const &gridOpts, TrajectoryN<ND
   Cx5        channels;
   if constexpr (ND == 2) {
     auto const A = TOps::MakeLoop<2, 3>(nufft, nSlice);
-    auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz1{nSlice});
+    auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nullptr, nC, Sz1{nSlice});
     auto const v = CollapseToConstVector(lores);
     Log::Debug("SENSE", "A {}->{} M {}->{} Data {}", A->ishape, A->oshape, P->ishape, P->oshape, lores.dimensions());
     LSMR const lsmr{A, P, nullptr, {opts.its}};
     channels = AsTensorMap(lsmr.run(v), A->ishape);
   } else {
     if (nSlice > 1) { throw(Log::Failure("SENSE", "Not supported right now")); }
-    auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nC, Sz0{});
+    auto const P = MakeKSpacePrecon(PreconOpts(), gridOpts, traj, nullptr, nC, Sz0{});
     LSMR const lsmr{nufft, P, nullptr, {opts.its}};
     channels = AsTensorMap(lsmr.run(CollapseToConstVector(lores)), nufft->ishape);
   }
   return channels;
 }
 
-template auto
-LoresChannels(Opts<2> const &opts, GridOpts<2> const &gridOpts, TrajectoryN<2> traj, Cx5 const &noncart, Basis::CPtr basis)
-  -> Cx5;
-template auto
-LoresChannels(Opts<3> const &opts, GridOpts<3> const &gridOpts, TrajectoryN<3> traj, Cx5 const &noncart, Basis::CPtr basis)
-  -> Cx5;
+template auto LoresChannels(Opts<2> const &opts, GridOpts<2> const &gridOpts, TrajectoryN<2> traj, Cx5 const &noncart) -> Cx5;
+template auto LoresChannels(Opts<3> const &opts, GridOpts<3> const &gridOpts, TrajectoryN<3> traj, Cx5 const &noncart) -> Cx5;
 
 void Normalize(Cx5 &maps)
 {

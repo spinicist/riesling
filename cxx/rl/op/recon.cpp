@@ -75,7 +75,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
   Index const nTime = noncart.dimension(4);
   if (nChan == 1) {
     A = Single(gridOpts, traj, nSlab, nTime, b);
-    M = MakeKSpacePrecon(pOpts, gridOpts, traj, 1, Sz2{nSlab, nTime});
+    M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, 1, Sz2{nSlab, nTime});
   } else {
     auto const skern = SENSE::Choose(senseOpts, gridOpts, traj, noncart);
     if (rOpts.decant) {
@@ -83,14 +83,14 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
         throw(Log::Failure("recon", "DECANTER in 2D makes no SENSE (👏)"));
       } else {
         A = Decant(gridOpts, traj, nSlab, nTime, b, skern);
-        M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, Sz2{nSlab, nTime});
+        M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, nChan, Sz2{nSlab, nTime});
       }
     } else if (rOpts.lowmem) {
       if constexpr (ND == 2) {
         throw(Log::Failure("recon", "Lowmem in 2D not supported yet"));
       } else {
         A = LowmemSENSE(gridOpts, traj, nSlab, nTime, b, skern);
-        M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, Sz2{nSlab, nTime});
+        M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, nChan, Sz2{nSlab, nTime});
       }
     } else {
       auto sense =
@@ -101,7 +101,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
         auto ss = TOps::MakeCompose(sense, slices);
         auto time = TOps::MakeLoop<4, 4>(ss, nTime);
         A = time;
-        M = MakeKSpacePrecon(pOpts, gridOpts, traj, nChan, Sz2{nSlab, nTime});
+        M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, nChan, Sz2{nSlab, nTime});
       } else {
         if (nSlab > 1) {
           throw(Log::Failure("Recon", "Not supported right now"));
@@ -114,7 +114,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
             auto NS2 = TOps::MakeReshapeOutput(NS, AddBack(NS->oshape, 1, 1));
             A = TOps::MakeReshapeInput(NS2, AddBack(NS2->ishape, 1));
           }
-          M = MakeKSpacePrecon(pOpts, gridOpts, traj, sense->maps(), Sz2{nSlab, nTime});
+          M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, sense->maps(), Sz2{nSlab, nTime});
         }
       }
     }
@@ -144,7 +144,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
     auto NLSF = TOps::MakeCompose(SF, NL);
     auto NLSFT = TOps::MakeLoop<4, 4>(NLSF, nTime);
     A = NLSFT;
-    M = MakeKSpacePrecon(pOpts, gridOpts, traj, S->nChannels(), Sz2{nSlice, nTime});
+    M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, S->nChannels(), Sz2{nSlice, nTime});
   } else {
     if (nSlice > 1) {
       throw(Log::Failure("Recon", "Not supported right now"));
@@ -157,7 +157,7 @@ template <int ND> Recon<ND>::Recon(ReconOpts const       &rOpts,
         auto NSF2 = TOps::MakeReshapeOutput(NSF, AddBack(NSF->oshape, 1, 1));
         A = TOps::MakeReshapeInput(NSF2, AddBack(NSF2->ishape, 1));
       }
-      M = MakeKSpacePrecon(pOpts, gridOpts, traj, S->maps(), Sz2{nSlice, nTime});
+      M = MakeKSpacePrecon(pOpts, gridOpts, traj, b, S->maps(), Sz2{nSlice, nTime});
     }
   }
 }

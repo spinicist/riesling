@@ -20,12 +20,14 @@ auto KSpaceMulti(Cx5 const         &smaps,
 template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,
                                                 TrajectoryN<ND> const &traj,
+                                                Basis::CPtr            basis,
                                                 Index const            nC,
                                                 Sz<NB> const           bshape) -> TOps::TOp<3 + NB>::Ptr;
 
 template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
                                                 GridOpts<ND> const    &gridOpts,
                                                 TrajectoryN<ND> const &traj,
+                                                Basis::CPtr            basis,
                                                 Cx5 const             &smaps,
                                                 Sz<NB> const           bshape) -> TOps::TOp<3 + NB, 3 + NB>::Ptr;
 

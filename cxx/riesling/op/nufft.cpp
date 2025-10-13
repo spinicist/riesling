@@ -38,7 +38,7 @@ template <int ND> void run_nufft(args::Subparser &parser)
 
   if (eig) {
     auto const nufft = TOps::MakeNUFFT<ND>(gridArgs.Get(), traj, 1, basis.get());
-    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, 1, Sz2{1, 1});
+    auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, basis.get(), 1, Sz2{1, 1});
     auto const [val, vec] = PowerMethodForward(nufft, M, lsqOpts.its.Get());
     if constexpr (ND == 2) {
       writer.writeTensor("data", FirstN<ND + 1>(nufft->ishape), vec.data(), {"i", "j", "b"});
@@ -71,7 +71,7 @@ template <int ND> void run_nufft(args::Subparser &parser)
       auto const cart = A->adjoint(noncart);
       writer.writeTensor(HD5::Keys::Data, cart.dimensions(), cart.data(), HD5::Dims::Channels);
     } else {
-      auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, nC, Sz2{nS, nT});
+      auto const M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, basis.get(), nC, Sz2{nS, nT});
       LSMR const lsmr{A, M, nullptr, lsqOpts.Get()};
       auto const c = lsmr.run(CollapseToConstVector(noncart));
       writer.writeTensor(HD5::Keys::Data, A->ishape, c.data(), HD5::Dims::Channels);

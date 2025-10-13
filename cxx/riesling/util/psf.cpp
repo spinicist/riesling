@@ -47,7 +47,7 @@ void main_psf(args::Subparser &parser)
 
   auto const   shape = A->ishape;
   Index const  nC = A->oshape[0];
-  auto const   M = MakeKSpacePrecon(preArgs.Get(), gridOpts, traj, nC, Sz0{});
+  auto const   M = MakeKSpacePrecon(preArgs.Get(), gridOpts, traj, basis.get(), nC, Sz0{});
   TOps::Pad<4> C(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<1>(shape)), shape);
   LSMR const   lsmr{A, M, nullptr, lsqOpts.Get()};
   Cx4          imgs(shape);

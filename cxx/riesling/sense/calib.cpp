@@ -26,9 +26,8 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
   TrajectoryN<ND> traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size.head<ND>());
   auto            noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
-  auto const basis = LoadBasis(coreArgs.basisFile.Get());
   auto const gopts = gridOpts.Get();
-  Cx5        channels = SENSE::LoresChannels<ND>(senseArgs.Get(), gridOpts.Get(), traj, noncart, basis.get());
+  Cx5        channels = SENSE::LoresChannels<ND>(senseArgs.Get(), gridOpts.Get(), traj, noncart);
   Cx4        ref = DimDot<4>(channels, channels).sqrt();
   if (refname) {
     HD5::Reader     refFile(refname.Get());
@@ -39,10 +38,8 @@ template <int ND> void run_sense_calib(args::Subparser &parser)
     refTraj.checkDims(FirstN<3>(refNoncart.dimensions()));
     auto rgopts = gopts;
     if (refFov) { rgopts.fov = refFov.Get(); }
-    Cx4 bigRef = SENSE::LoresChannels<ND>(senseArgs.Get(), rgopts, refTraj, refNoncart, basis.get())
-                   .template chip<4>(0)
-                   .abs()
-                   .template cast<Cx>();
+    Cx4 bigRef =
+      SENSE::LoresChannels<ND>(senseArgs.Get(), rgopts, refTraj, refNoncart).template chip<4>(0).abs().template cast<Cx>();
     TOps::Pad<4> cropper(AddBack(FirstN<3>(channels.dimensions()), 1), bigRef.dimensions());
     Re4 const    absRSS = ref.abs();
     float const  p90rss = Percentiles(CollapseToArray(absRSS), {0.9})[0];
