@@ -146,7 +146,7 @@ template <int O, int D> void L2<O, D>::apply(float const α, Map x) const
       }
     },
     nBlocks);
-  if (Log::IsHigh()) { Log::Print("L2Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(x)); }
+  Log::Debug("L2Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(x));
 }
 
 template <int O, int D> void L2<O, D>::conj(float const, Map x) const
@@ -173,7 +173,7 @@ template <int O, int D> void L2<O, D>::conj(float const, Map x) const
       }
     },
     nBlocks);
-  if (Log::IsHigh()) { Log::Print("L2Prox", "λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x)); }
+  Log::Debug("L2Prox", "λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x));
 }
 
 template struct L2<1, 1>;
