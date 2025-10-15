@@ -26,8 +26,11 @@ if strcmpi(dset,'data')
 end
 varargout{1} = data;
 
-info = h5read(fname, '/info');
-varargout{2} = info;
+has_info = any(contains({file_info.Datasets.Name}, 'info'));
+if has_info
+    info = h5read(fname, '/info');
+    varargout{2} = info;
+end
 
 has_trajectory = any(contains({file_info.Datasets.Name}, 'trajectory'));
 if has_trajectory
