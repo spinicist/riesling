@@ -1,4 +1,4 @@
-function [output] = riesling(cmd, varargin)
+function [output] = riesling_recon(cmd, data, traj, matrix, info, varargin)
 % RIESLING Call RIESLING command from Matlab.
 %   [varargout] = RIESLING(cmd, varargin) to run given riesling command (cmd) using the
 %   data arrays/matrices passed as varargin.
@@ -29,18 +29,6 @@ keepOutput = false;
 f0Map = [];
 t2Map = [];
 for n=1:numel(varargin)
-    if strcmpi(varargin{n},'data')
-        data = varargin{n+1};
-    end
-    if strcmpi(varargin{n},'traj')
-        traj = varargin{n+1};
-    end
-    if strcmpi(varargin{n},'matrix')
-        matrix = varargin{n+1};
-    end
-    if strcmpi(varargin{n},'info')
-        info = varargin{n+1};
-    end
     if strcmpi(varargin{n},'input')
         keepInput = true;
         fileNameIn = varargin{n+1};
@@ -60,10 +48,10 @@ end
 if ~keepInput
     fileNameIn = [tempname,'.h5'];
 else
-    % %check if fileNameIn already exists, if so delete to replace
-    % if exist(fileNameIn, 'file')
-    %     delete(fileNameIn);
-    % end
+    %check if fileNameIn already exists, if so delete to replace
+    if exist(fileNameIn, 'file')
+        delete(fileNameIn);
+    end
 end
 % [~,name] = fileparts(fileNameIn);
 
@@ -74,20 +62,14 @@ opts = sprintf('%s ',opts{2:end});
 % Adjust tensor name to fit riesling convention w.r.t. nufft command (that
 % is, "image" for the image domain cartesian data, and "nufft-forward" for
 % the artificially generated non-uniform fourier space dataset).
-switch cmd
-    case 'nufft'
-        if any(regexpi(opts,'--fwd'))
-            riesling_write(fileNameIn, data, traj, info, 'image');
-        else
-            riesling_write(fileNameIn, data, traj, info, 'nufft-forward');
-        end
-    case {'sense-maps','psf'}
-        if ~keepInput
-            fileNameIn = [];
-        end
-
-    otherwise
-        riesling_write(fileNameIn, data, traj, matrix, info, [], f0Map, t2Map);
+if strcmpi(cmd,'nufft')
+    if any(regexpi(opts,'--fwd'))
+        riesling_write(fileNameIn, data, traj, info, 'image');
+    else
+        riesling_write(fileNameIn, data, traj, info, 'nufft-forward');
+    end
+else    
+    riesling_write(fileNameIn, data, traj, matrix, info, [], f0Map, t2Map);
 end
 
 
@@ -104,9 +86,9 @@ try
     end
     
     % if keepOutput
-        output = [];
+        % output = [];
     % else
-        % output = riesling_read(fileNameOut);
+        output = riesling_read(fileNameOut);
     % end
     
 catch 
