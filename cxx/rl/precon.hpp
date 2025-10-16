@@ -9,7 +9,7 @@
 namespace rl {
 
 template <int ND>
-auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const max = 1.f, Basis::CPtr basis = nullptr)
+auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ = 0.f, Basis::CPtr basis = nullptr)
   -> Re2;
 auto KSpaceMulti(Cx5 const         &smaps,
                  GridOpts<3> const &gridOpts,

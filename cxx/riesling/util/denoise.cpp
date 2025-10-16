@@ -50,15 +50,15 @@ void main_denoise(args::Subparser &parser)
     A->adjoint(in, x);
     regs[0].P->apply(1.f, xm);
   } else {
-    PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &x, PDHG::Vector const &x̅) {
+    PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &xx, PDHG::Vector const &x̅) {
       if (Log::IsDebugging()) {
         if (ext_x) {
-          auto xit = ext_x->forward(x);
+          auto xit = ext_x->forward(xx);
           Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
           xit = ext_x->forward(x̅);
           Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
         } else {
-          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xx.data(), HD5::Dims::Images);
           Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, x̅.data(), HD5::Dims::Images);
         }
       }
