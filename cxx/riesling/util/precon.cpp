@@ -12,7 +12,7 @@ void main_precon(args::Subparser &parser)
   GridArgs<3>                   gridArgs(parser);
   args::Positional<std::string> trajFile(parser, "INPUT", "File to read trajectory from");
   args::Positional<std::string> preFile(parser, "OUTPUT", "File to save pre-conditioner to");
-  args::ValueFlag<float>        preMax(parser, "M", "Maximum value, threshold above (1)", {"precon-max"}, 1.f);
+  args::ValueFlag<float>        preλ(parser, "λ", "Preconditioner regularization (0)", {"precon-l"}, 0.f);
   args::ValueFlag<std::string>  sfile(parser, "S", "Load SENSE kernels from file", {"sense"});
   args::ValueFlag<std::string>  basisFile(parser, "B", "Read basis from file", {"basis", 'b'});
   ParseCommand(parser, trajFile);
@@ -25,10 +25,10 @@ void main_precon(args::Subparser &parser)
     HD5::Reader senseReader(sfile.Get());
     Cx5 const   skern = senseReader.readTensor<Cx5>(HD5::Keys::Data);
     Cx5 const   smaps = SENSE::KernelsToMaps(skern, traj.matrixForFOV(gridArgs.fov.Get()), gridArgs.osamp.Get());
-    auto const  M = KSpaceMulti(smaps, gridArgs.Get(), traj, preMax.Get(), basis.get());
+    auto const  M = KSpaceMulti(smaps, gridArgs.Get(), traj, preλ.Get(), basis.get());
     writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"channel", "sample", "trace"});
   } else {
-    auto const M = KSpaceSingle(gridArgs.Get(), traj, preMax.Get(), basis.get());
+    auto const M = KSpaceSingle(gridArgs.Get(), traj, preλ.Get(), basis.get());
     writer.writeTensor(HD5::Keys::Weights, M.dimensions(), M.data(), {"sample", "trace"});
   }
 

@@ -55,10 +55,8 @@ void L1::conj(float const α, Map x) const
     } else {
       x.device(Threads::CoreDevice()) = x - (α * λ) * b;
     }
-    x.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
-  } else {
-    x.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
   }
+  x.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
   Log::Debug("L1Prox", "Conjugate λ {:4.3E} |x| {:4.3E} |z| {:4.3E}", λ, nx, ParallelNorm(x));
 }
 
@@ -173,7 +171,7 @@ template <int O, int D> void L2<O, D>::conj(float const, Map x) const
       }
     },
     nBlocks);
-  Log::Debug("L2Prox", "λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x));
+  Log::Debug("L2Prox", "Conjugate λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x));
 }
 
 template struct L2<1, 1>;

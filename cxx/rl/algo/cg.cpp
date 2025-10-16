@@ -37,18 +37,12 @@ auto ConjugateGradients::run(CMap b, CMap x0) const -> Vector
     A->forward(p, q);
     float const α = CheckedDot(r, r) / CheckedDot(p, q);
     x = x + p * α;
-    // if (debug) {
-    //   if (auto top = std::dynamic_pointer_cast<TOp<5, 4>>(op)) {
-    //     Log::Tensor(fmt::format("cg-x-{:02}", icg), tA->ishape, x.data());
-    //     Log::Tensor(fmt::format("cg-r-{:02}", icg), tA->ishape, r.data());
-    //   }
-    // }
     r = r - q * α;
     float const r_new = CheckedDot(r, r);
     float const β = r_new / r_old;
     p = r + p * β;
     float const nr = std::sqrt(r_new);
-    Log::Print("CG", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, x.stableNorm());
+    Log::Print("CG", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, ParallelNorm(x), ParallelNorm(p), ParallelNorm(q));
     if (nr < thresh) {
       Log::Print("CG", "Reached convergence threshold");
       break;
