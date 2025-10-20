@@ -9,6 +9,8 @@
 #include "op/top-id.hpp"
 #include "sys/threads.hpp"
 
+#include "log/debug.hpp"
+
 namespace rl {
 
 /*
@@ -25,7 +27,7 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
   auto            nufft = TOps::MakeNUFFT<ND>(gridOpts, newTraj, 1, basis);
   CxN<ND + 2>     psf(nufft->ishape);
-  Cx3             W(nufft->oshape);
+  Cx3 W(nufft->oshape);
 
   W.setConstant(1.f);
   nufft->adjoint(W, psf);
@@ -37,11 +39,17 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   FFT::Forward(xcor, FirstN<ND>(Sz3{0, 1, 2}));
   xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
   FFT::Adjoint(xcor, FirstN<ND>(Sz3{0, 1, 2}));
+  if constexpr (ND == 3) {
+    Log::Tensor("psf", FirstN<4>(psf.dimensions()), psf.data(), {"i", "j", "k", "b"});
+    Log::Tensor("xcor", FirstN<4>(xcor.dimensions()), xcor.data(), {"i", "j", "k", "b"});
+  }
   xcor.device(Threads::TensorDevice()) = xcor * psf;
+  if constexpr (ND == 3) { Log::Tensor("xcor2", FirstN<4>(xcor.dimensions()), xcor.data(), {"i", "j", "k", "b"}); }
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
   Re3 weights = nufft->forward(xcor).abs() * scale;
+  if constexpr (ND == 3) { Log::Tensor("w", LastN<2>(weights.dimensions()), weights.data(), {"s", "t"}); }
   weights.device(Threads::TensorDevice()) = (weights + weights.constant(λ)) / weights.constant(1.f + λ);
   weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), weights);
   weights.device(Threads::TensorDevice()) = weights.constant(1.f) / weights;
