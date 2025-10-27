@@ -52,10 +52,29 @@ auto ParameterGrid(Index const nPar, Eigen::ArrayXf const &lo, Eigen::ArrayXf co
   return p;
 }
 
+auto ParameterRand(Index const nPar, Eigen::ArrayXf const &lo, Eigen::ArrayXf const &hi, Eigen::ArrayXi const &Na)
+  -> Eigen::ArrayXXf
+{
+  if (lo.size() != nPar) { throw Log::Failure("Pars", "Low values had {} elements, expected {}", lo.size(), nPar); }
+  if (hi.size() != nPar) { throw Log::Failure("Pars", "High values had {} elements, expected {}", hi.size(), nPar); }
+  if (Na.size() != 1) { throw Log::Failure("Pars", "N had {} elements, expected 1", Na.size()); }
+
+  Index const N = Na[0];
+
+  Eigen::ArrayXXf p(nPar, N);
+  for (Index ip = 0; ip < nPar; ip++) {
+    float const range = hi[ip] - lo[ip];
+    float const mid = (hi[ip] + lo[ip]) / 2.f;
+    p.row(ip) = Eigen::ArrayXf::Random(N) * range + mid;
+  }
+  return p;
+}
+
 auto Run(rl::SegmentedZTE const            &seq,
          std::vector<Eigen::ArrayXf> const &los,
          std::vector<Eigen::ArrayXf> const &his,
-         std::vector<Eigen::ArrayXi> const &Ns)
+         std::vector<Eigen::ArrayXi> const &Ns,
+         bool const                         rand)
 {
   if (los.size() != his.size()) { throw Log::Failure("Sim", "Different number of parameter low bounds and high bounds"); }
   if (los.size() == 0) { throw Log::Failure("Sim", "Must specify at least one set of tissue parameters"); }
@@ -63,7 +82,12 @@ auto Run(rl::SegmentedZTE const            &seq,
   Index const     nP = seq.nTissueParameters();
   Eigen::ArrayXXf parameters(nP, 0);
   for (size_t ii = 0; ii < los.size(); ii++) {
-    auto const p = ParameterGrid(nP, los[ii], his[ii], Ns[ii]);
+    Eigen::ArrayXXf p;
+    if (rand) {
+      p = ParameterRand(nP, los[ii], his[ii], Ns[ii]);
+    } else {
+      p = ParameterGrid(nP, los[ii], his[ii], Ns[ii]);
+    }
     Log::Print("Sim", "Parameter set {}/{}. Size {} Low {} High {}", ii + 1, los.size(), p.cols(), fmt::join(los[ii], "/"),
                fmt::join(his[ii], "/"));
     parameters.conservativeResize(nP, parameters.cols() + p.cols());
@@ -103,6 +127,7 @@ void main_basis_svd(args::Subparser &parser)
   args::ValueFlag<float>                TI(parser, "TI", "Inversion time (from prep to segment start)", {"ti"}, 0.f);
   args::ValueFlag<float>                Trec(parser, "TREC", "Recover time (from segment end to prep)", {"trec"}, 0.f);
   args::ValueFlag<float>                te(parser, "TE", "Echo-time for MUPA/FLAIR", {"te"}, 0.f);
+  args::Flag                            rnd(parser, "R", "Random parameters", {"rand"});
   args::Flag                            pt(parser, "P", "Pre-segment traces", {"pt"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pLo(parser, "LO", "Low values for parameters", {"lo"});
   args::ValueFlagList<Eigen::ArrayXf, std::vector, ArrayXfReader> pHi(parser, "HI", "High values for parameters", {"hi"});
@@ -138,11 +163,11 @@ void main_basis_svd(args::Subparser &parser)
   Re1 time;
   Cx3 dall;
   switch (seq.Get()) {
-  case Sequences::ZTE: std::tie(time, dall) = Run(rl::SegmentedZTE(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::IR: std::tie(time, dall) = Run(rl::IR(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::DIR: std::tie(time, dall) = Run(rl::DIR(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::T2Prep: std::tie(time, dall) = Run(rl::T2Prep(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
-  case Sequences::T2FLAIR: std::tie(time, dall) = Run(rl::T2FLAIR(p, pt), pLo.Get(), pHi.Get(), pN.Get()); break;
+  case Sequences::ZTE: std::tie(time, dall) = Run(rl::SegmentedZTE(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::IR: std::tie(time, dall) = Run(rl::IR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::DIR: std::tie(time, dall) = Run(rl::DIR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::T2Prep: std::tie(time, dall) = Run(rl::T2Prep(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::T2FLAIR: std::tie(time, dall) = Run(rl::T2FLAIR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
   }
   Sz3 const   dshape = dall.dimensions();
   Index const L = dshape[1] * dshape[2];
