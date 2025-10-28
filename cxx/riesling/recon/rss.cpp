@@ -37,7 +37,7 @@ void main_recon_rss(args::Subparser &parser)
   auto       x = lsmr.run(CollapseToConstVector(noncart));
   auto       xm = AsTensorMap(x, A->ishape);
 
-  Cx5 const    rss = DimDot<3>(xm, xm).sqrt();
+  Cx5 const    rss = DimDot<4>(xm, xm).sqrt();
   TOps::Pad<5> oc(traj.matrixForFOV(cropFov.Get(), rss.dimension(3), nT), rss.dimensions());
   auto         out = oc.adjoint(rss);
   HD5::Writer writer(coreArgs.oname.Get());
