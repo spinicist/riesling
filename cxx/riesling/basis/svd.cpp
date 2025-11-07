@@ -60,12 +60,12 @@ auto ParameterRand(Index const nPar, Eigen::ArrayXf const &lo, Eigen::ArrayXf co
   if (Na.size() != 1) { throw Log::Failure("Pars", "N had {} elements, expected 1", Na.size()); }
 
   Index const N = Na[0];
-
-  Eigen::ArrayXXf p(nPar, N);
-  for (Index ip = 0; ip < nPar; ip++) {
-    float const range = hi[ip] - lo[ip];
-    float const mid = (hi[ip] + lo[ip]) / 2.f;
-    p.row(ip) = Eigen::ArrayXf::Random(N) * range + mid;
+  std::srand(std::time(0));
+  Eigen::ArrayXXf      p(nPar, N);
+  Eigen::ArrayXf const range = (hi - lo) / 2.f; // Eigen rand is -1 to 1
+  Eigen::ArrayXf const mid = (lo + hi) / 2.f;
+  for (Index ip = 0; ip < N; ip++) {
+    p.col(ip) = Eigen::ArrayXf::Random(nPar) * range + mid;
   }
   return p;
 }
@@ -103,7 +103,7 @@ auto Run(rl::SegmentedZTE const            &seq,
   };
   Threads::ChunkFor(task, parameters.cols());
   Log::Print("Sim", "Simulation took {}. Final size {}", Log::ToNow(start), dynamics.dimensions());
-  return std::make_tuple(seq.timepoints(), dynamics);
+  return std::make_tuple(seq.timepoints(), parameters, dynamics);
 }
 
 void main_basis_svd(args::Subparser &parser)
@@ -160,14 +160,15 @@ void main_basis_svd(args::Subparser &parser)
                            .TE = te.Get()};
   Log::Print(cmd, "{}", p.format());
 
-  Re1 time;
-  Cx3 dall;
+  Re1             time;
+  Eigen::ArrayXXf pars;
+  Cx3             dall;
   switch (seq.Get()) {
-  case Sequences::ZTE: std::tie(time, dall) = Run(rl::SegmentedZTE(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
-  case Sequences::IR: std::tie(time, dall) = Run(rl::IR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
-  case Sequences::DIR: std::tie(time, dall) = Run(rl::DIR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
-  case Sequences::T2Prep: std::tie(time, dall) = Run(rl::T2Prep(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
-  case Sequences::T2FLAIR: std::tie(time, dall) = Run(rl::T2FLAIR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::ZTE: std::tie(time, pars, dall) = Run(rl::SegmentedZTE(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::IR: std::tie(time, pars, dall) = Run(rl::IR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::DIR: std::tie(time, pars, dall) = Run(rl::DIR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::T2Prep: std::tie(time, pars, dall) = Run(rl::T2Prep(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
+  case Sequences::T2FLAIR: std::tie(time, pars, dall) = Run(rl::T2FLAIR(p, pt), pLo.Get(), pHi.Get(), pN.Get(), rnd); break;
   }
   Sz3 const   dshape = dall.dimensions();
   Index const L = dshape[1] * dshape[2];
@@ -204,6 +205,7 @@ void main_basis_svd(args::Subparser &parser)
   if (save) {
     writer.writeTensor(HD5::Keys::Dynamics, dall.dimensions(), dall.data(), HD5::Dims::Basis);
     writer.writeTensor("projection", proj.dimensions(), proj.data(), HD5::Dims::Basis);
+    writer.writeTensor("parameters", Sz2{pars.rows(), pars.cols()}, pars.data(), {"samp", "par"});
   }
   Log::Print(cmd, "Finished");
 }
