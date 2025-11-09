@@ -81,7 +81,7 @@ switch cmd
         else
             riesling_write(fileNameIn, data, traj, info, 'nufft-forward');
         end
-    case {'sense-maps','psf'}
+    case {'sense-maps','psf','denoise'}
         if ~keepInput
             fileNameIn = [];
         end
