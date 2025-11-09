@@ -36,10 +36,19 @@ void main_blend(args::Subparser &parser)
     throw Log::Failure(cmd, "Basis has {} vectors but image has {}", basis->nB(), images.dimension(3));
   }
 
-  auto sps = sp.Get();
-  auto tps = tp.Get();
-  if (sps.size() == 1) { sps.resize(tps.size()); }
-  if (sps.size() != tps.size()) { throw Log::Failure(cmd, "Must have same number of trace and sample points"); }
+  std::vector<Index> sps(1), tps(1);
+  if (tp && !sp) {
+    tps = tp.Get();
+    sps.resize(tps.size());
+  } else if (sp && !tp) {
+    sps = sp.Get();
+    tps.resize(sps.size());
+  } else if (sp && tp) {
+    sps = sp.Get();
+    tps = tp.Get();
+    if (sps.size() != tps.size()) { throw Log::Failure(cmd, "Must have same number of trace and sample points"); }
+  }
+  
   Index const nO = sps.size();
   Index const nT = ishape[4];
   Cx5         out(AddBack(FirstN<3>(ishape), nO, nT));

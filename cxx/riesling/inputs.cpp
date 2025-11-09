@@ -49,12 +49,12 @@ ReconArgs::ReconArgs(args::Subparser &parser)
 auto ReconArgs::Get() -> rl::ReconOpts { return rl::ReconOpts{.decant = decant.Get(), .lowmem = lowmem.Get()}; }
 
 PreconArgs::PreconArgs(args::Subparser &parser)
-  : type(parser, "P", "Pre-conditioner (none/single/multi/filename)", {"precon", 'p'}, "single")
-  , max(parser, "M", "Maximum value, threshold above (1)", {"precon-max"}, 1.f)
+  : type(parser, "P", "Preconditioner (none/single/multi/filename)", {"precon", 'p'}, "single")
+  , λ(parser, "λ", "Preconditioner regularization (0)", {"precon-l"}, 0.f)
 {
 }
 
-auto PreconArgs::Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .max = max.Get()}; }
+auto PreconArgs::Get() -> rl::PreconOpts { return rl::PreconOpts{.type = type.Get(), .λ = λ.Get()}; }
 
 LSMRArgs::LSMRArgs(args::Subparser &parser)
   : its(parser, "N", "Max iterations (4)", {"max-its", 'i'}, 4)

@@ -21,7 +21,7 @@ trajectory.cpp
 
 algo/admm.cpp
 algo/bidiag.cpp
-# algo/cg.cpp
+algo/cg.cpp
 algo/decomp.cpp
 algo/eig.cpp
 algo/gs.cpp

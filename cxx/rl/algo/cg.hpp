@@ -24,16 +24,16 @@ struct NormalOp final : Ops::Op
   auto rows() const -> Index { return op->cols(); }
   auto cols() const -> Index { return op->cols(); }
 
-  auto forward(Vector const &x) const -> Vector { return op->adjoint(op->forward(x)); }
-  auto adjoint(Vector const &y) const -> Vector { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
+  auto forward(Vector const &x, float const s = 1.f) const -> Vector { return op->adjoint(op->forward(x, s)); }
+  auto adjoint(Vector const &y, float const s = 1.f) const -> Vector { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
 
-  void forward(CMap x, Map y) const
+  void forward(CMap x, Map y, float const s = 1.f) const
   {
     Vector temp(op->rows());
     Map    tm(temp.data(), temp.size());
     CMap   tcm(temp.data(), temp.size());
     op->forward(x, tm);
-    op->adjoint(tcm, y);
+    op->adjoint(tcm, y, s);
   }
 
   void iforward(CMap x, Map y, float const s = 1.f) const
@@ -44,7 +44,7 @@ struct NormalOp final : Ops::Op
     op->forward(x, tm);
     op->iadjoint(tcm, y);
   }
-  void adjoint(CMap x, Map y) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
+  void adjoint(CMap x, Map y, float const) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
   void iadjoint(CMap x, Map y, float const) const { throw Log::Failure("CG", "Normal Operators do not have adjoints"); }
 };
 

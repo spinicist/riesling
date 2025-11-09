@@ -9,6 +9,8 @@
 #include "op/top-id.hpp"
 #include "sys/threads.hpp"
 
+#include "log/debug.hpp"
+
 namespace rl {
 
 /*
@@ -18,16 +20,18 @@ namespace rl {
  * of the cropping during the NUFFT. I also tested simply grid adj * grid, which gave reasonable results but would do a double
  * convolution with the gridding kernel.
  */
-template <int ND>
-auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const max, Basis::CPtr basis) -> Re2
+template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis)
+  -> Re2
 {
-  Log::Print("Precon", "Starting preconditioner calculation");
+  Log::Print("Precon", "Starting preconditioner calculation, λ {}", λ);
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
   auto            nufft = TOps::MakeNUFFT<ND>(gridOpts, newTraj, 1, basis);
-  Cx3             W(nufft->oshape);
-  W.setConstant(Cx(1.f, 0.f));
-  CxN<ND + 2> const psf = nufft->adjoint(W);
-  CxN<ND + 2>       ones(AddBack(traj.matrix(), psf.dimension(ND), psf.dimension(ND + 1)));
+  CxN<ND + 2>     psf(nufft->ishape);
+  Cx3 W(nufft->oshape);
+
+  W.setConstant(1.f);
+  nufft->adjoint(W, psf);
+  CxN<ND + 2> ones(AddBack(traj.matrix(), psf.dimension(ND), psf.dimension(ND + 1)));
   ones.setConstant(1.f);
   TOps::Pad<ND + 2> padX(ones.dimensions(), psf.dimensions());
   CxN<ND + 2>       xcor(padX.oshape);
@@ -35,20 +39,26 @@ auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, flo
   FFT::Forward(xcor, FirstN<ND>(Sz3{0, 1, 2}));
   xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
   FFT::Adjoint(xcor, FirstN<ND>(Sz3{0, 1, 2}));
+  if constexpr (ND == 3) {
+    Log::Tensor("psf", FirstN<4>(psf.dimensions()), psf.data(), {"i", "j", "k", "b"});
+    Log::Tensor("xcor", FirstN<4>(xcor.dimensions()), xcor.data(), {"i", "j", "k", "b"});
+  }
   xcor.device(Threads::TensorDevice()) = xcor * psf;
+  if constexpr (ND == 3) { Log::Tensor("xcor2", FirstN<4>(xcor.dimensions()), xcor.data(), {"i", "j", "k", "b"}); }
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
   Re3 weights = nufft->forward(xcor).abs() * scale;
-  Log::Print("Precon", "Thresholding to {}", max);
-  weights.device(Threads::TensorDevice()) = (weights < 1.f / max).select(weights.constant(max), 1.f / weights);
+  if constexpr (ND == 3) { Log::Tensor("w", LastN<2>(weights.dimensions()), weights.data(), {"s", "t"}); }
+  weights.device(Threads::TensorDevice()) = (weights + weights.constant(λ)) / weights.constant(1.f + λ);
+  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), weights);
+  weights.device(Threads::TensorDevice()) = weights.constant(1.f) / weights;
 
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
     throw Log::Failure("Precon", "Single-channel pre-conditioner norm was not finite ({})", norm);
   } else {
-    Log::Print("Precon", "Single-channel pre-conditioner finished, norm {} scale {} min {} max {}", norm, scale,
-               Minimum(weights), Maximum(weights));
+    Log::Print("Precon", "Single-channel pre-conditioner finished min {} max {}", Minimum(weights), Maximum(weights));
   }
   return weights.chip<0>(0);
 }
@@ -159,7 +169,7 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
     Log::Print("Precon", "Using no preconditioning");
     return nullptr;
   } else if (opts.type == "single") {
-    Re2 const w = KSpaceSingle(gridOpts, traj, opts.max, basis);
+    Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ, basis);
     return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
     throw Log::Failure("Precon", "Multichannel preconditioner requested without SENSE maps");
@@ -200,10 +210,10 @@ template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
     Log::Print("Precon", "Using no preconditioning");
     return nullptr;
   } else if (opts.type == "single") {
-    Re2 const w = KSpaceSingle(gridOpts, traj, opts.max, basis);
+    Re2 const w = KSpaceSingle(gridOpts, traj, opts.λ, basis);
     return std::make_shared<TOps::TensorScale<3 + NB, 1, NB>>(shape, w.cast<Cx>());
   } else if (opts.type == "multi") {
-    Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.max, basis);
+    Re3 const w = KSpaceMulti(smaps, gridOpts, traj, opts.λ, basis);
     return std::make_shared<TOps::TensorScale<3 + NB, 0, NB>>(shape, w.cast<Cx>());
   } else {
     return LoadKSpacePrecon<NB>(opts.type, traj.nSamples(), traj.nTraces(), shape);

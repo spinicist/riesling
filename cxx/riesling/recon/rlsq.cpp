@@ -67,9 +67,9 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
     x = restart ? PDHG::Restarted(restart.Get(), CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug)
                 : PDHG::Run(CollapseToConstVector(noncart), A, R.M, reg, pdhgArgs.Get(), debug);
   } else {
-    ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &x) {
+    ADMM::DebugX debug_x = [shape, di = debugIters.Get()](Index const ii, ADMM::Vector const &xx) {
       if (Log::IsDebugging() && (ii % di == 0)) {
-        Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+        Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xx.data(), HD5::Dims::Images);
       }
     };
     ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
