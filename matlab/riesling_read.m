@@ -21,6 +21,7 @@ end
 
 file_info = h5info(fname);
 data = h5read(fname, strcat('/', dset));
+
 if strcmpi(dset,'data')
     data = data.r + 1j*data.i;
 end
