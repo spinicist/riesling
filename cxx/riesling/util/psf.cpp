@@ -29,7 +29,7 @@ void main_psf(args::Subparser &parser)
   auto const           cmd = parser.GetCommand().Name();
   HD5::Reader          input(coreArgs.iname.Get());
   Trajectory           traj(input, input.readStruct<Info>(HD5::Keys::Info).voxel_size, coreArgs.matrix.Get());
-  auto const           basis = LoadBasis(coreArgs.basisFile.Get(), traj.nSamples(), traj.nTraces());
+  auto const           basis = LoadBasis(coreArgs.basisFile.Get());
   auto const           gridOpts = gridArgs.Get();
   TOps::TOp<4, 3>::Ptr A = nullptr;
   if (senseArgs.type) {

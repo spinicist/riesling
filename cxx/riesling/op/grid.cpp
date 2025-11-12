@@ -46,7 +46,7 @@ template <int ND> void run_grid(args::Subparser &parser)
   HD5::Reader reader(coreArgs.iname.Get());
 
   TrajectoryN<ND> traj(reader, reader.readStruct<Info>(HD5::Keys::Info).voxel_size.head<ND>(), coreArgs.matrix.Get());
-  auto const      basis = LoadBasis(coreArgs.basisFile.Get(), traj.nSamples(), traj.nTraces());
+  auto const      basis = LoadBasis(coreArgs.basisFile.Get());
 
   auto const  shape = reader.dimensions();
   auto const  nC = shape[0];

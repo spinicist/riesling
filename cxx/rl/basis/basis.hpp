@@ -16,7 +16,6 @@ struct Basis
 
   Basis();
   Basis(Cx3 const &B);
-  Basis(Cx3 const &B, Index const nSample, Index const nTrace);
   Basis(Cx3 const &B, Cx2 const &R);
   Basis(Index const nB, Index const nSample, Index const nTrace);
 
@@ -35,6 +34,5 @@ struct Basis
 };
 
 auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>;
-auto LoadBasis(std::string const &basisFile, Index const nS, Index const nT) -> std::unique_ptr<Basis>;
 
 } // namespace rl

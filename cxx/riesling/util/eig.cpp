@@ -41,7 +41,7 @@ template <int ND> void run_eig(args::Subparser &parser)
   auto            noncart = reader.readTensor<Cx5>();
   traj.checkDims(FirstN<3>(noncart.dimensions()));
 
-  auto const basis = LoadBasis(coreArgs.basisFile.Get(), traj.nSamples(), traj.nTraces());
+  auto const basis = LoadBasis(coreArgs.basisFile.Get());
   auto const R = f0Args.Nτ ? Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, f0Args.Get(), noncart,
                                    reader.readTensor<Re3>("f0map"))
                            : Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
