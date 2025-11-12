@@ -18,7 +18,27 @@ Basis::Basis()
 Basis::Basis(Cx3 const &Bb)
   : B{Bb}
 {
-  scale = std::sqrt(nSample() * nTrace() / nB());
+  scale = std::sqrt(nSample() * nTrace() / (float)nB());
+  Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
+}
+
+Basis::Basis(Cx3 const &Bb, Index const nSd, Index const nTd)
+  : B{Bb}
+{
+  /* We want to maintain an orthonormal basis, but allow the user to supply a repetitive basis
+     i.e. one that is shorter than the acquisition because the sequence has some kind of structure
+     (e.g. segmented prep). The correct scaling to maintain norm=1 is 1/sqrt(number of repeats) */
+  scale = 1.f;
+  if (nSample() > nSd) {
+    throw(Log::Failure("basis", "Basis had more sample points {} than data {}", nSample(), nSd));
+  } else if (nSample() != 1) {
+    scale /= std::sqrt(nSd / (float)nSample());
+  }
+  if (nTrace() > nTd) {
+    throw(Log::Failure("basis", "Basis had more trace points {} than data {}", nTrace(), nTd));
+  } else if (nTrace() != 1) {
+    scale /= std::sqrt(nTd / (float)nTrace());
+  }
   Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
 }
 
@@ -26,7 +46,7 @@ Basis::Basis(Cx3 const &Bb, Cx2 const &Rr)
   : B{Bb}
   , R{Rr}
 {
-  scale = std::sqrt(nSample() * nTrace() / nB());
+  scale = std::sqrt(nSample() * nTrace() / (float)nB());
   Log::Print("basis", "nB {} nS {} nT {} scale {}", nB(), nSample(), nTrace(), scale);
 }
 
@@ -124,5 +144,22 @@ auto LoadBasis(std::string const &basisFile) -> std::unique_ptr<Basis>
     }
   }
 }
+
+auto LoadBasis(std::string const &basisFile, Index const nS, Index const nT) -> std::unique_ptr<Basis>
+{
+  if (basisFile.empty()) {
+    return nullptr;
+  } else {
+    HD5::Reader basisReader(basisFile);
+    Cx3 const   B = basisReader.readTensor<Cx3>(HD5::Keys::Basis);
+    if (basisReader.exists("R")) {
+      Cx2 const R = basisReader.readTensor<Cx2>("R");
+      return std::make_unique<Basis>(B, R);
+    } else {
+      return std::make_unique<Basis>(B, nS, nT);
+    }
+  }
+}
+
 
 } // namespace rl

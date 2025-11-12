@@ -24,11 +24,11 @@ void main_ndft(args::Subparser &parser)
   HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
   auto const  shape = reader.dimensions();
-  auto const  basis = LoadBasis(coreArgs.basisFile.Get());
+  Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
+  auto const  LoadBasis(coreArgs.basisFile.Get(), traj.nSamples(), traj.nTraces());
   HD5::Writer writer(coreArgs.oname.Get());
   writer.writeStruct(HD5::Keys::Info, info);
 
-  Trajectory traj(reader, info.voxel_size, coreArgs.matrix.Get());
   if (fwd) {
     auto const cart = reader.readTensor<Cx6>();
     auto const nC = shape[3];

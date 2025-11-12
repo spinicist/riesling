@@ -60,4 +60,5 @@ void main_blend(args::Subparser &parser)
   HD5::Writer writer(oname.Get());
   writer.writeStruct(HD5::Keys::Info, input.readStruct<Info>(HD5::Keys::Info));
   writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
+  Log::Print(cmd, "Finished");
 }
