@@ -139,7 +139,7 @@ void Writer::writeTensor(std::string const &name, Shape<N> const &shape, Scalar 
   // Try to stop chunk dimension going over 4 gig
   Index sizeInBytes = Product(shape) * sizeof(Scalar);
   Index dimToShrink = 0;
-  while (sizeInBytes > (1L << 32L)) {
+  while (sizeInBytes >= (1L << 32L)) {
     if (chunk_dims[dimToShrink] > 1) {
       chunk_dims[dimToShrink] /= 2;
       sizeInBytes /= 2;
