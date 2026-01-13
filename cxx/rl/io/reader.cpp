@@ -27,7 +27,7 @@ Reader::Reader(Handle const fid, bool const altX)
   , altComplex_{altX}
 {
   Init();
-  Log::Print("HD5", "Creater reader for id {}", handle_);
+  Log::Print("HD5", "Reader id {}", handle_);
 }
 
 Reader::~Reader()
