@@ -10,14 +10,13 @@ void main_slice_nc(args::Subparser &parser)
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
 
-  SzFlag<3> channel(parser, "CHANNEL", "Channel start,size,stride", {"channel"}, Sz3{0, 0, 1});
-  SzFlag<3> sample(parser, "SAMPLE", "Sample start,size,stride", {"sample"}, Sz3{0, 0, 1});
-  SzFlag<3> trace(parser, "TRACE", "Trace start,size,stride", {"trace"}, Sz3{0, 0, 1});
-  SzFlag<3> slab(parser, "SLAB", "Slab start,size,stride", {"slab"}, Sz3{0, 0, 1});
-  SzFlag<3> time(parser, "TIME", "Time start,size,stride", {"time"}, Sz3{0, 0, 1});
-
+  SzFlag<3>              channel(parser, "CHANNEL", "Channel start,size,stride", {"channel"}, Sz3{0, 0, 1});
+  SzFlag<3>              sample(parser, "SAMPLE", "Sample start,size,stride", {"sample"}, Sz3{0, 0, 1});
+  SzFlag<3>              trace(parser, "TRACE", "Trace start,size,stride", {"trace"}, Sz3{0, 0, 1});
+  SzFlag<3>              segment(parser, "SEG", "Segment start,size,stride", {"segment"}, Sz3{0, 0, 1});
+  SzFlag<3>              slab(parser, "SLAB", "Slab start,size,stride", {"slab"}, Sz3{0, 0, 1});
+  SzFlag<3>              time(parser, "TIME", "Time start,size,stride", {"time"}, Sz3{0, 0, 1});
   args::ValueFlag<Index> tps(parser, "SEG", "Traces per segment", {"tps"}, 0);
-  SzFlag<2>              segment(parser, "SEG", "Segment start,size", {"segment"}, Sz2{0, 0});
 
   ParseCommand(parser, iname);
   auto const  cmd = parser.GetCommand().Name();

@@ -10,7 +10,7 @@ auto SliceNC(Sz3 const   channel,
              Sz3 const   slab,
              Sz3 const   time,
              Index const tps,
-             Sz2 const   segment,
+             Sz3 const   segment,
              Cx5 const  &ks,
              Re3 const  &trajPoints) -> SliceNCT
 {
@@ -56,14 +56,19 @@ auto SliceNC(Sz3 const   channel,
     }
     Index const segSt = Wrap(segment[0], nSeg);
     Index const segSz = segment[1] > 0 ? std::clamp(segment[1], 1L, nSeg) : nSeg - segSt;
+    Index const segStride = segment[2] > 0 ? segment[2] : 1;
     Log::Print("slice", "Selected segments {}:{}", segSt, segSt + segSz - 1);
     auto segs = ks.slice(Sz5{}, Sz5{shape[0], shape[1], tps * nSeg, shape[3], shape[4]})
                   .reshape(Sz6{shape[0], shape[1], tps, nSeg, shape[3], shape[4]});
-    auto sliced = segs.slice(Sz6{cSt, rSt, tSt, segSt, sSt, uSt}, Sz6{cSz, rSz, tSz, segSz, sSz, uSz});
-    sks = sliced.reshape(Sz5{cSz, rSz, tSz * segSz, sSz, uSz});
+    Cx6 sliced = segs.slice(Sz6{cSt, rSt, tSt, segSt, sSt, uSt}, Sz6{cSz, rSz, tSz, segSz, sSz, uSz});
     auto tsegs = trajPoints.reshape(Sz4{3, trajPoints.dimension(1), tps, nSeg});
-    auto tsliced = tsegs.slice(Sz4{0, rSt, tSt, segSt}, Sz4{3, rSz, tSz, segSz});
-    stp = tsliced.reshape(Sz3{3, rSz, tSz * segSz});
+    Re4 tsliced = tsegs.slice(Sz4{0, rSt, tSt, segSt}, Sz4{3, rSz, tSz, segSz});
+    if (segStride > 1) {
+      sliced = Cx6(sliced.stride(Sz6{1, 1, 1, segStride, 1, 1}));
+      tsliced = Re4(tsliced.stride(Sz4{1, 1, 1, segStride}));
+    }
+    sks = sliced.reshape(Sz5{cSz, rSz, tSz * sliced.dimension(3), sSz, uSz});
+    stp = tsliced.reshape(Sz3{3, rSz, tSz * tsliced.dimension(3)});
   } else {
     sks = ks.slice(Sz5{cSt, rSt, tSt, sSt, uSt}, Sz5{cSz, rSz, tSz, sSz, uSz});
     stp = trajPoints.slice(Sz3{0, rSt, tSt}, Sz3{3, rSz, tSz});

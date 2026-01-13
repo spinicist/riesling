@@ -19,7 +19,7 @@ auto SliceNC(Sz3 const   channel,
              Sz3 const   slab,
              Sz3 const   time,
              Index const tps,
-             Sz2 const   segment,
+             Sz3 const   segment,
              Cx5 const  &ks,
              Re3 const  &trajPoints) -> SliceNCT;
 
