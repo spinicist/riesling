@@ -16,7 +16,19 @@ template <int ND> auto MakeGrid(
   GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, Index const nC, Index const nS, Index const nT, Basis::CPtr basis)
   -> TOps::TOp<6, 5>::Ptr
 {
-  auto G = TOps::Grid<ND>::Make(gridOpts, traj, nC, basis);
+  typename TOps::TOp<ND + 2, 3>::Ptr G = nullptr;
+  if (gridOpts.tophat) {
+    G = TOps::Grid<ND, TopHat<1>>::Make(gridOpts, traj, nC, basis);
+  } else {
+    switch (gridOpts.kW) {
+      case 4: G = TOps::Grid<ND, ExpSemi<4>>::Make(gridOpts, traj, nC, basis); break;
+      case 6: G = TOps::Grid<ND, ExpSemi<6>>::Make(gridOpts, traj, nC, basis); break;
+      case 8: G = TOps::Grid<ND, ExpSemi<8>>::Make(gridOpts, traj, nC, basis); break;
+      default:
+        throw(Log::Failure("Grid", "Kernel width {} not supported", gridOpts.kW));
+    }
+  }
+
   if constexpr (ND == 2) {
     auto GS = TOps::MakeLoop<2, 3>(G, nS);
     auto GST = TOps::MakeLoop<5, 4>(GS, nT);
