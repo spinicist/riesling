@@ -17,7 +17,7 @@ auto MakeOversample(Sz5 const shape) -> TOps::TOp<5>::Ptr
   Sz5 const         shape2{shape[0] * 2, shape[1] * 2, shape[2] * 2, shape[3], shape[4]};
   TOps::TOp<5>::Ptr FFT1 = TOps::FFT<5, 3>::Make(shape, true);
   TOps::TOp<5>::Ptr FFT2 = TOps::FFT<5, 3>::Make(shape2);
-  TOps::TOp<5>::Ptr crop = TOps::Crop<5>::Make(shape2, shape);
+  TOps::TOp<5>::Ptr crop = TOps::Crop<5>::Make(shape2, shape, std::sqrt(1.f/8.f));
   TOps::TOp<5>::Ptr fc = TOps::MakeCompose(FFT2, crop);
   TOps::TOp<5>::Ptr fcf = TOps::MakeCompose(fc, FFT1);
   return fcf;
@@ -32,7 +32,7 @@ void main_denoise(args::Subparser &parser)
   args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "1");
   RegOpts                       regOpts(parser);
   args::Flag                    residual(parser, "R", "Output residual image", {"resid", 'r'});
-  args::Flag                    os(parser, "OS", "2x oversample", {"osamp", '2'});
+  args::Flag                    two(parser, "2", "2x oversample", {"two", '2'});
 
   ParseCommand(parser, iname, oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -40,7 +40,7 @@ void main_denoise(args::Subparser &parser)
   Cx5         in = input.readTensor<Cx5>();
   float const scale = ScaleImages(scaling.Get(), in);
   if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
-  TOps::TOp<5>::Ptr A = os ? MakeOversample(in.dimensions()) : std::make_shared<TOps::Identity<5>>(in.dimensions());
+  TOps::TOp<5>::Ptr A = two ? MakeOversample(in.dimensions()) : std::make_shared<TOps::Identity<5>>(in.dimensions());
   auto [regs, B, ext_x] = Regularizers(regOpts, A);
   Cx5  x(A->ishape);
   auto xm = CollapseToVector(x);
@@ -73,7 +73,7 @@ void main_denoise(args::Subparser &parser)
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
   HD5::Writer writer(oname.Get());
   auto        info = input.readStruct<Info>(HD5::Keys::Info);
-  if (os) { info.voxel_size /= 2; }
+  if (two) { info.voxel_size /= 2; }
   writer.writeStruct(HD5::Keys::Info, info);
   writer.writeTensor(HD5::Keys::Data, x.dimensions(), x.data(), HD5::Dims::Images);
   if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
