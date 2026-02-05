@@ -64,7 +64,7 @@ template <int FW> struct GFunc<1, FW>
 
   inline static void Scatter(Basis::CPtr                       basis,
                              Eigen::Array<int16_t, 1, 1> const c,
-                             int16_t const                     sample,
+                             int32_t const                     sample,
                              int32_t const                     trace,
                              KT const                         &k,
                              Cx3CMap                           y,
@@ -84,7 +84,7 @@ template <int FW> struct GFunc<1, FW>
 
   inline static void Gather(Basis::CPtr                       basis,
                             Eigen::Array<int16_t, 1, 1> const c,
-                            int16_t const                     sample,
+                            int32_t const                     sample,
                             int32_t const                     trace,
                             KT const                         &k,
                             Cx3CMap                           sg,
@@ -139,7 +139,7 @@ template <int FW> struct GFunc<2, FW>
 
   inline static void Scatter(Basis::CPtr                       basis,
                              Eigen::Array<int16_t, 2, 1> const c,
-                             int16_t const                     sample,
+                             int32_t const                     sample,
                              int32_t const                     trace,
                              KT const                         &k,
                              Cx3CMap                           y,
@@ -162,7 +162,7 @@ template <int FW> struct GFunc<2, FW>
 
   inline static void Gather(Basis::CPtr                       basis,
                             Eigen::Array<int16_t, 2, 1> const c,
-                            int16_t const                     sample,
+                            int32_t const                     sample,
                             int32_t const                     trace,
                             KT const                         &k,
                             Cx4CMap                           sg,
@@ -227,7 +227,7 @@ template <int FW> struct GFunc<3, FW>
 
   inline static void Scatter(Basis::CPtr                       basis,
                              Eigen::Array<int16_t, 3, 1> const c,
-                             int16_t const                     sample,
+                             int32_t const                     sample,
                              int32_t const                     trace,
                              KT const                         &k,
                              Cx3CMap                           y,
@@ -255,7 +255,7 @@ template <int FW> struct GFunc<3, FW>
 
   inline static void Gather(Basis::CPtr                       basis,
                             Eigen::Array<int16_t, 3, 1> const c,
-                            int16_t const                     sample,
+                            int32_t const                     sample,
                             int32_t const                     trace,
                             KT const                         &k,
                             Cx5CMap                           sg,
