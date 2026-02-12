@@ -21,11 +21,11 @@ auto SliceNC(Sz3 const   channel,
   Index const sSt = Wrap(slab[0], shape[3]);
   Index const uSt = Wrap(time[0], shape[4]);
 
-  Index const cSz = channel[1] > 0 ? channel[1] : shape[0] - cSt;
-  Index const rSz = sample[1] > 0 ? sample[1] : shape[1] - rSt;
-  Index const tSz = trace[1] > 0 ? trace[1] : (tps ? tps - tSt : shape[2] - tSt);
-  Index const sSz = slab[1] > 0 ? slab[1] : shape[3] - sSt;
-  Index const uSz = time[1] > 0 ? time[1] : shape[4] - uSt;
+  Index const cSz = channel[1] > 0 ? channel[1] : shape[0] + channel[1] - cSt;
+  Index const rSz = sample[1] > 0 ? sample[1] : shape[1] + sample[1] - rSt;
+  Index const tSz = trace[1] > 0 ? trace[1] : (tps ? tps + trace[1] - tSt : shape[2] + trace[1] - tSt);
+  Index const sSz = slab[1] > 0 ? slab[1] : shape[3] + slab[1] - sSt;
+  Index const uSz = time[1] > 0 ? time[1] : shape[4] + time[1] - uSt;
 
   if (cSt + cSz > shape[0]) { throw Log::Failure("slice", "Last channel {} exceeded maximum {}", cSt + cSz, shape[0]); }
   if (rSt + rSz > shape[1]) { throw Log::Failure("slice", "Last sample {} exceeded maximum {}", rSt + rSz, shape[1]); }
