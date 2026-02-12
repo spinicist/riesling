@@ -445,6 +445,9 @@ DStack::DStack(Ptr op1, Ptr op2)
 {
 }
 
+auto DStack::Make(std::vector<Ptr> const &o) -> Ptr { return std::make_shared<DStack>(o); }
+auto DStack::Make(Ptr o1, Ptr o2) -> Ptr { return std::make_shared<DStack>(o1, o2); }
+
 auto DStack::rows() const -> Index
 {
   return std::accumulate(this->ops.begin(), this->ops.end(), 0L, [](Index a, auto const &op) { return a + op->rows(); });

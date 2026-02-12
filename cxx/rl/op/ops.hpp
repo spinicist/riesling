@@ -141,8 +141,12 @@ private:
 struct DStack final : Op
 {
   OP_INHERIT
-  DStack(std::vector<std::shared_ptr<Op>> const &o);
-  DStack(std::shared_ptr<Op> op1, std::shared_ptr<Op> op2);
+  static auto Make(std::vector<Ptr> const &o) -> Ptr;
+  static auto Make(Ptr op1, Ptr op2) -> Ptr;
+
+  DStack(std::vector<Ptr> const &o);
+  DStack(Ptr op1, Ptr op2);
+
   void forward(CMap x, Map y, float const s = 1.f) const;
   void adjoint(CMap y, Map x, float const s = 1.f) const;
   void inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
