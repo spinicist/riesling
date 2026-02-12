@@ -1,100 +1,70 @@
-#include "algo/admm.hpp"
 #include "inputs.hpp"
-#include "io/hd5.hpp"
-#include "log/log.hpp"
-#include "op/compose.hpp"
-#include "op/fft.hpp"
-#include "op/hankel.hpp"
-#include "op/recon.hpp"
-#include "precon.hpp"
-#include "prox/hermitian.hpp"
-#include "prox/slr.hpp"
-#include "scaling.hpp"
+
+#include "rl/algo/pdhg.hpp"
+#include "rl/io/hd5.hpp"
+#include "rl/log/debug.hpp"
+#include "rl/op/compose.hpp"
+#include "rl/op/loopify.hpp"
+#include "rl/op/nufft.hpp"
+#include "rl/op/recon.hpp"
+#include "rl/precon.hpp"
+#include "rl/prox/llr.hpp"
+#include "rl/scaling.hpp"
 
 using namespace rl;
 
-void main_sake(args::Subparser &parser)
+void main_recon_rrss(args::Subparser &parser)
 {
-  CoreArgs   coreArgs(parser);
-  GridOpts   gridOpts(parser);
-  PreconOpts preOpts(parser);
-  RlsqOpts   rlsqOpts(parser);
-
-  args::ValueFlag<float> λ(parser, "L", "Regularization parameter (default 1e-1)", {"lambda"}, 1.e-1f);
-  args::ValueFlag<Index> kSz(parser, "SZ", "SLR Kernel Size (default 5)", {"kernel-size"}, 5);
-
-  Array3fFlag ifov(parser, "FOV", "Iteration FOV (default 256,256,256)", {"ifov"}, Eigen::Array3f::Constant(256.f));
-
-  args::Flag sep(parser, "S", "Separable kernels", {'s', "seperable"});
-  args::Flag virtChan(parser, "V", "Use virtual conjugate channels", {"virtual"});
+  CoreArgs<3>                  coreArgs(parser);
+  GridArgs<3>                  gridArgs(parser);
+  PreconArgs                   preArgs(parser);
+  PDHGArgs                     pdhgArgs(parser);
+  ArrayFlag<float, 3>          cropFov(parser, "FOV", "Crop FoV in mm (x,y,z)", {"crop-fov"}, Eigen::Array3f::Zero());
+  args::ValueFlag<float>       λ(parser, "L", "Regularization parameter (default 1e-1)", {"lambda"}, 1.e-1f);
+  args::ValueFlag<std::string> scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "otsu");
+  args::ValueFlag<Index>       restart(parser, "R", "Restart PDHG", {"pdhg-restart", 'r'}, 8);
+  args::ValueFlag<Index>       debugIters(parser, "I", "Write debug images ever N outer iterations (16)", {"debug-iters"}, 16);
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
-
+  auto const  cmd = parser.GetCommand().Name();
   HD5::Reader reader(coreArgs.iname.Get());
   Info const  info = reader.readStruct<Info>(HD5::Keys::Info);
-  Trajectory  traj(reader, info.voxel_size);
-  auto const  basis = ReadBasis(coreArgs.basisFile.Get());
-  Cx5         noncart = reader.readTensor<Cx5>();
+  Trajectory  traj(reader, info.voxel_size, coreArgs.matrix.Get());
+  auto const  basis = LoadBasis(coreArgs.basisFile.Get());
+  Cx5         noncart = reader.readTensor<Cx5>(coreArgs.dset.Get());
   traj.checkDims(FirstN<3>(noncart.dimensions()));
   Index const nC = noncart.dimension(0);
   Index const nS = noncart.dimension(3);
-  Index const nV = noncart.dimension(4);
+  Index const nT = noncart.dimension(4);
 
-  auto const  A = Recon::Channels(coreArgs.ndft, gridOpts, traj, nC, nS, basis);
-  auto const  M = make_kspace_pre(traj, nC, basis, preOpts.type.Get(), preOpts.bias.Get());
-  float const scale = Scaling(rlsqOpts.scaling, A, M, &noncart(0, 0, 0, 0, 0));
-  noncart.device(Threads::GlobalDevice()) = noncart * noncart.constant(scale);
+  auto const  nufft = TOps::MakeNUFFT<3>(gridArgs.Get(), traj, nC, basis.get());
+  auto const  A = Loopify<3>(nufft, nS, nT);
+  auto const  M = MakeKSpacePrecon(preArgs.Get(), gridArgs.Get(), traj, basis.get(), nC, Sz2{nS, nT});
+  Sz6 const   shape = A->ishape;
+  float const scale = ScaleData(scaling.Get(), A, M, CollapseToVector(noncart));
+  if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart * Cx(scale); }
 
-  Sz5 const                shape = A->ishape;
   std::vector<Regularizer> regs;
-  auto                     T = std::make_shared<TOps::Identity<Cx, 5>>(shape);
-  if (sep) {
-    auto sx = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{2}, Sz1{kSz.Get()}, virtChan);
-    auto sy = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{3}, Sz1{kSz.Get()}, virtChan);
-    auto sz = std::make_shared<Proxs::SLR<1>>(λ.Get(), shape, Sz1{4}, Sz1{kSz.Get()}, virtChan);
-    regs.push_back({T, sx});
-    regs.push_back({T, sy});
-    regs.push_back({T, sz});
-  } else {
-    auto slr = std::make_shared<Proxs::SLR<3>>(λ.Get(), shape, Sz3{2, 3, 4}, Sz3{kSz.Get(), kSz.Get(), kSz.Get()}, virtChan);
-    regs.push_back({T, slr});
-  }
+  regs.push_back({nullptr, std::make_shared<Proxs::LLR<6>>(λ.Get(), 8, 8, true, shape), shape});
 
-  ADMM::DebugX debug_x = [shape](Index const ii, ADMM::Vector const &x) {
-    Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data());
+  PDHG::Debug debug = [shape, di = debugIters.Get()](Index const ii, PDHG::Vector const &dx, PDHG::Vector const &x̅) {
+    if (Log::IsDebugging() && (ii % di == 0)) {
+      Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, dx.data(), HD5::Dims::Channels);
+      Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, x̅.data(), HD5::Dims::Channels);
+    }
   };
-  ADMM::DebugZ debug_z = [shape = T->oshape](Index const ii, Index const ir, ADMM::Vector const &Fx, ADMM::Vector const &z,
-                                             ADMM::Vector const &u) {
-    Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), shape, Fx.data());
-    Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), shape, z.data());
-    Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), shape, u.data());
-  };
+  Ops::Op::Vector x = restart
+                        ? PDHG::Restarted(restart.Get(), CollapseToConstVector(noncart), A, M, regs, pdhgArgs.Get(), debug)
+                        : PDHG::Run(CollapseToConstVector(noncart), A, M, regs, pdhgArgs.Get(), debug);
 
-  ADMM admm{A,
-            M,
-            regs,
-            rlsqOpts.inner_its0.Get(),
-            rlsqOpts.inner_its1.Get(),
-            rlsqOpts.atol.Get(),
-            rlsqOpts.btol.Get(),
-            rlsqOpts.ctol.Get(),
-            rlsqOpts.outer_its.Get(),
-            rlsqOpts.ε.Get(),
-            rlsqOpts.μ.Get(),
-            rlsqOpts.τ.Get(),
-            debug_x,
-            debug_z};
-
-  TOps::Crop<Cx, 5> outFOV(A->ishape, AddFront(traj.matrixForFOV(coreArgs.fov.Get()), A->ishape[0], A->ishape[1]));
-  Cx5               out(AddBack(LastN<4>(outFOV.ishape), nV));
-  for (Index iv = 0; iv < nV; iv++) {
-    auto const channels = admm.run(&noncart(0, 0, 0, 0, iv), rlsqOpts.ρ.Get());
-    auto const cropped = outFOV.adjoint(AsTensorMap(channels, A->ishape));
-    out.chip<4>(iv) = (cropped * cropped.conjugate()).sum(Sz1{0}).sqrt() / cropped.constant(scale);
-  }
-  HD5::Writer writer(coreArgs.oname.Get());
-  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
+  auto         xm = AsTensorMap(x, A->ishape);
+  Cx5 const    rss = DimDot<4>(xm, xm).sqrt();
+  TOps::Pad<5> oc(traj.matrixForFOV(cropFov.Get(), rss.dimension(3), nT), rss.dimensions());
+  auto         out = oc.adjoint(rss);
+  HD5::Writer  writer(coreArgs.oname.Get());
   writer.writeStruct(HD5::Keys::Info, info);
-  writer.writeString("log");
+  writer.writeTensor(HD5::Keys::Data, out.dimensions(), out.data(), HD5::Dims::Images);
+  if (coreArgs.residual) { Log::Warn(cmd, "RSS does not support residual output"); }
+  if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
   Log::Print(cmd, "Finished");
 }

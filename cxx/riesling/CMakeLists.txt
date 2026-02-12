@@ -48,7 +48,7 @@ if(BUILD_BIN)
         recon/lsq.cpp
         recon/rlsq.cpp
         recon/rss.cpp
-        # recon/sake.cpp
+        recon/sake.cpp
 
         sense/calib.cpp
         sense/maps.cpp

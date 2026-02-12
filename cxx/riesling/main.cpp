@@ -18,6 +18,7 @@ int main(int const argc, char const *const argv[])
   COMMAND(recon, recon_rlsq, "recon-rlsq", "Regularized least-squares recon");
   COMMAND(recon, recon_rlsq2, "recon-rlsq2", "2D Regularized least-squares recon");
   COMMAND(recon, recon_rss, "recon-rss", "NUFFT + Root-Sum-Squares");
+  COMMAND(recon, recon_rrss, "recon-rrss", "Regularized NUFFT + Root-Sum-Squares");
 
   args::Group data(parser, "DATA");
   COMMAND(data, h5, "h5", "Probe an H5 file");

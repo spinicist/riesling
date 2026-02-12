@@ -140,9 +140,9 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
   }
 
   if (opts.llr) {
-    regs.push_back({nullptr,
-                    std::make_shared<Proxs::LLR>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape),
-                    shape});
+    regs.push_back(
+      {nullptr, std::make_shared<Proxs::LLR<5>>(opts.llr.Get(), opts.llrPatch.Get(), opts.llrWin.Get(), opts.llrShift, shape),
+       shape});
   }
 
   if (opts.l1) {

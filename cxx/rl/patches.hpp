@@ -2,9 +2,13 @@
 
 namespace rl {
 
-using PatchFunction = std::function<void(Cx5 const &, Cx5 &)>;
+template <int D> using PatchFunction = std::function<void(CxN<3 + D> const &, CxN<3 + D> &)>;
 
-void Patches(
-  Index const patchSize, Index const windowSize, bool const shift, PatchFunction const &apply, Cx5CMap x, Cx5Map y);
+template <int D> void Patches(Index const             patchSize,
+                              Index const             windowSize,
+                              bool const              shift,
+                              PatchFunction<D> const &apply,
+                              CxNCMap<3 + D>          x,
+                              CxNMap<3 + D>           y);
 
 } // namespace rl
