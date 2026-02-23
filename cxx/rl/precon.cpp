@@ -25,12 +25,12 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
 {
   Log::Print("Precon", "Starting preconditioner calculation, λ {}", λ);
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
-  auto            nufft = TOps::MakeNUFFT<ND>(gridOpts, newTraj, 1, basis);
-  CxN<ND + 2>     psf(nufft->ishape);
-  Cx3 W(nufft->oshape);
+  TOps::NUFFT<ND> nufft(gridOpts, newTraj, 1, basis);
+  CxN<ND + 2>     psf(nufft.ishape);
+  Cx3             W(nufft.oshape);
 
   W.setConstant(1.f);
-  nufft->adjoint(W, psf);
+  nufft.adjoint(W, psf);
   CxN<ND + 2> ones(AddBack(traj.matrix(), psf.dimension(ND), psf.dimension(ND + 1)));
   ones.setConstant(1.f);
   TOps::Pad<ND + 2> padX(ones.dimensions(), psf.dimensions());
@@ -48,8 +48,10 @@ template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
-  Re3 weights = nufft->forward(xcor).abs() * scale;
+  Re3 weights(nufft.oshape);
+  weights.device(Threads::TensorDevice()) = nufft.forward(xcor).abs() * scale;
   if constexpr (ND == 3) { Log::Tensor("w", LastN<2>(weights.dimensions()), weights.data(), {"s", "t"}); }
+  Log::Print("Precon", "Before inversion min {} max {}", Minimum(weights), Maximum(weights));
   weights.device(Threads::TensorDevice()) = (weights + weights.constant(λ)) / weights.constant(1.f + λ);
   weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), weights);
   weights.device(Threads::TensorDevice()) = weights.constant(1.f) / weights;
@@ -98,8 +100,9 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   Sz5 const smap1Shape = AddBack(FirstN<3>(smapShape), nB, 1);
   Sz5 const xcor1Shape = AddBack(FirstN<3>(psfShape), nB, 1);
 
-  auto padXC = TOps::Pad<5>(smap1Shape, xcor1Shape);
-  Cx5  smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
+  auto      padXC = TOps::Pad<5>(smap1Shape, xcor1Shape);
+  Cx5       smap1(smap1Shape), xcorTemp(xcor1Shape), xcor1(xcor1Shape), xcor(psfShape);
+  Sz3 const slSz{1, nSamp, nTrace};
   for (Index si = 0; si < nC; si++) {
     float const ni = Norm2<true>(smaps.chip<1>(si));
     xcor1.setZero();
@@ -118,9 +121,14 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
     } else {
       xcor.device(Threads::TensorDevice()) = xcor1 * psf;
     }
-    weights.slice(Sz3{si, 0, 0}, Sz3{1, nSamp, nTrace}).device(Threads::TensorDevice()) =
-      (nufft.forward(xcor).abs() * scale / ni + λ) / (1.f + λ);
+    Sz3 const slSt{si, 0, 0};
+    weights.slice(slSt, slSz).device(Threads::TensorDevice()) = nufft.forward(xcor).abs() * scale;
   }
+  Log::Print("Precon", "Before inversion min {} max {}", Minimum(weights), Maximum(weights));
+  weights.device(Threads::TensorDevice()) = (weights + weights.constant(λ)) / weights.constant(1.f + λ);
+  weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), weights);
+  weights.device(Threads::TensorDevice()) = weights.constant(1.f) / weights;
+
   float const norm = Norm<true>(weights);
   if (!std::isfinite(norm)) {
     throw Log::Failure("Precon", "Pre-conditioner norm was not finite ({})", norm);
