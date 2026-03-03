@@ -20,37 +20,52 @@ namespace rl {
  * of the cropping during the NUFFT. I also tested simply grid adj * grid, which gave reasonable results but would do a double
  * convolution with the gridding kernel.
  */
-template <int ND> auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis)
-  -> Re2
+template <int ND>
+auto KSpaceSingle(GridOpts<ND> const &gridOpts, TrajectoryN<ND> const &traj, float const λ, Basis::CPtr basis) -> Re2
 {
   Log::Print("Precon", "Starting preconditioner calculation, λ {}", λ);
   TrajectoryN<ND> newTraj(traj.points() * 2.f, MulToEven(traj.matrix(), 2), traj.voxelSize() / 2.f);
   TOps::NUFFT<ND> nufft(gridOpts, newTraj, 1, basis);
-  CxN<ND + 2>     psf(nufft.ishape);
-  Cx3             W(nufft.oshape);
-
-  W.setConstant(1.f);
+  TOps::Pad<ND>   padX(traj.matrix(), FirstN<ND>(nufft.ishape));
+  // Do the great PSF lambada because subspace recons are for overambitious fools
+  CxN<ND + 2> psf(nufft.ishape);
+  psf.setZero();
+  Cx3 W(nufft.oshape);
+  W.setZero();
+  float const E = std::sqrt(Product(FirstN<ND>(nufft.ishape)) / Product(LastN<2>(nufft.ishape)));
+  if constexpr (ND == 3) {
+    psf.template chip<2>(nufft.ishape[2] / 2)
+      .template chip<1>(nufft.ishape[1] / 2)
+      .template chip<0>(nufft.ishape[0] / 2)
+      .setConstant(E);
+  } else {
+    psf.template chip<1>(nufft.ishape[1] / 2).template chip<0>(nufft.ishape[0] / 2).setConstant(E);
+  }
+  nufft.forward(psf, W);
+  // W.setConstant(1.f);
   nufft.adjoint(W, psf);
-  CxN<ND + 2> ones(AddBack(traj.matrix(), psf.dimension(ND), psf.dimension(ND + 1)));
+  if constexpr (ND == 3) {
+    Log::Tensor("precon-W", LastN<2>(W.dimensions()), W.data(), {"s", "t"});
+    Log::Tensor("precon-psf", psf.dimensions(), psf.data(), HD5::Dims::Images);
+  }
+  CxN<ND> ones(padX.ishape);
   ones.setConstant(1.f);
-  TOps::Pad<ND + 2> padX(ones.dimensions(), psf.dimensions());
-  CxN<ND + 2>       xcor(padX.oshape);
+  CxN<ND> xcor(padX.oshape);
   xcor.device(Threads::TensorDevice()) = padX.forward(ones);
   FFT::Forward(xcor, FirstN<ND>(Sz3{0, 1, 2}));
   xcor.device(Threads::TensorDevice()) = xcor * xcor.conjugate();
   FFT::Adjoint(xcor, FirstN<ND>(Sz3{0, 1, 2}));
-  if constexpr (ND == 3) {
-    Log::Tensor("psf", FirstN<4>(psf.dimensions()), psf.data(), {"i", "j", "k", "b"});
-    Log::Tensor("xcor", FirstN<4>(xcor.dimensions()), xcor.data(), {"i", "j", "k", "b"});
-  }
-  xcor.device(Threads::TensorDevice()) = xcor * psf;
-  if constexpr (ND == 3) { Log::Tensor("xcor2", FirstN<4>(xcor.dimensions()), xcor.data(), {"i", "j", "k", "b"}); }
+  if constexpr (ND == 3) { Log::Tensor("precon-xcor", xcor.dimensions(), xcor.data(), {"i", "j", "k"}); }
+  psf.device(Threads::TensorDevice()) = xcor.reshape(Concatenate(xcor.dimensions(), Constant<2>(1)))
+                                          .broadcast(Concatenate(Constant<ND>(1), LastN<2>(psf.dimensions()))) *
+                                        psf;
+  if constexpr (ND == 3) { Log::Tensor("precon-psf-xcor", FirstN<4>(psf.dimensions()), psf.data(), {"i", "j", "k", "b"}); }
   // I do not understand this scaling factor but it's in Frank's code and works
   float scale =
     std::pow(Product(FirstN<ND>(psf.dimensions())), 1.5f) / Product(traj.matrix()) / Product(FirstN<ND>(ones.dimensions()));
   Re3 weights(nufft.oshape);
-  weights.device(Threads::TensorDevice()) = nufft.forward(xcor).abs() * scale;
-  if constexpr (ND == 3) { Log::Tensor("w", LastN<2>(weights.dimensions()), weights.data(), {"s", "t"}); }
+  weights.device(Threads::TensorDevice()) = nufft.forward(psf).abs() * scale;
+  if constexpr (ND == 3) { Log::Tensor("precon-wi", LastN<2>(weights.dimensions()), weights.data(), {"s", "t"}); }
   Log::Print("Precon", "Before inversion min {} max {}", Minimum(weights), Maximum(weights));
   weights.device(Threads::TensorDevice()) = (weights + weights.constant(λ)) / weights.constant(1.f + λ);
   weights.device(Threads::TensorDevice()) = (weights == 0.f).select(weights.constant(1.f), weights);
@@ -138,7 +153,8 @@ auto KSpaceMulti(Cx5 const &smaps, GridOpts<3> const &gridOpts, Trajectory const
   return weights;
 }
 
-template <int NB> auto LoadKSpacePrecon(std::string const &fname, Index const nSamp, Index const nTrace, Sz<3 + NB> const shape)
+template <int NB>
+auto LoadKSpacePrecon(std::string const &fname, Index const nSamp, Index const nTrace, Sz<3 + NB> const shape)
   -> TOps::TOp<3 + NB>::Ptr
 {
   HD5::Reader reader(fname);
@@ -165,12 +181,13 @@ template <int NB> auto LoadKSpacePrecon(std::string const &fname, Index const nS
   }
 }
 
-template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
-                                                GridOpts<ND> const    &gridOpts,
-                                                TrajectoryN<ND> const &traj,
-                                                Basis::CPtr            basis,
-                                                Index const            nC,
-                                                Sz<NB> const           bshape) -> TOps::TOp<3 + NB>::Ptr
+template <int ND, int NB>
+auto MakeKSpacePrecon(PreconOpts const      &opts,
+                      GridOpts<ND> const    &gridOpts,
+                      TrajectoryN<ND> const &traj,
+                      Basis::CPtr            basis,
+                      Index const            nC,
+                      Sz<NB> const           bshape) -> TOps::TOp<3 + NB>::Ptr
 {
   auto const shape = Concatenate(Sz3{nC, traj.nSamples(), traj.nTraces()}, bshape);
   if (opts.type == "" || opts.type == "none") {
@@ -205,12 +222,13 @@ template auto
 MakeKSpacePrecon(PreconOpts const &, GridOpts<3> const &, TrajectoryN<3> const &, Basis::CPtr, Index const, Sz2 const)
   -> TOps::TOp<5>::Ptr;
 
-template <int ND, int NB> auto MakeKSpacePrecon(PreconOpts const      &opts,
-                                                GridOpts<ND> const    &gridOpts,
-                                                TrajectoryN<ND> const &traj,
-                                                Basis::CPtr            basis,
-                                                Cx5 const             &smaps,
-                                                Sz<NB> const           bshape) -> TOps::TOp<3 + NB, 3 + NB>::Ptr
+template <int ND, int NB>
+auto MakeKSpacePrecon(PreconOpts const      &opts,
+                      GridOpts<ND> const    &gridOpts,
+                      TrajectoryN<ND> const &traj,
+                      Basis::CPtr            basis,
+                      Cx5 const             &smaps,
+                      Sz<NB> const           bshape) -> TOps::TOp<3 + NB, 3 + NB>::Ptr
 {
   Index const nC = smaps.dimension(4);
   auto const  shape = Concatenate(Sz3{nC, traj.nSamples(), traj.nTraces()}, bshape);

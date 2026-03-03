@@ -11,7 +11,7 @@ using namespace Catch;
 
 TEST_CASE("Preconditioner", "[precon]")
 {
-  Index const M = GENERATE(16);
+  Index const M = GENERATE(32);
   Sz3 const   matrix{M, M, M};
   Re3         points(3, 4, 1);
   points.setZero();

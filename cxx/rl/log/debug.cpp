@@ -34,6 +34,7 @@ template void Tensor(std::string const &, HD5::Shape<2> const &shape, float cons
 template void Tensor(std::string const &, HD5::Shape<3> const &shape, float const *data, HD5::DNames<3> const &);
 template void Tensor(std::string const &, HD5::Shape<4> const &shape, float const *data, HD5::DNames<4> const &);
 template void Tensor(std::string const &, HD5::Shape<5> const &shape, float const *data, HD5::DNames<5> const &);
+template void Tensor(std::string const &, HD5::Shape<2> const &shape, Cx const *data, HD5::DNames<2> const &);
 template void Tensor(std::string const &, HD5::Shape<3> const &shape, Cx const *data, HD5::DNames<3> const &);
 template void Tensor(std::string const &, HD5::Shape<4> const &shape, Cx const *data, HD5::DNames<4> const &);
 template void Tensor(std::string const &, HD5::Shape<5> const &shape, Cx const *data, HD5::DNames<5> const &);
