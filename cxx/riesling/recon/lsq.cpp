@@ -10,6 +10,8 @@
 #include "rl/sense/sense.hpp"
 #include "rl/types.hpp"
 
+#include "rl/op/grad.hpp"
+
 using namespace rl;
 
 template <int ND> void run_lsq(args::Subparser &parser)
@@ -23,6 +25,7 @@ template <int ND> void run_lsq(args::Subparser &parser)
   f0Args                 f0Args(parser);
   ArrayFlag<float, ND>   cropFov(parser, "FOV", "Crop FoV in mm (x,y)", {"crop-fov"});
   args::ValueFlag<Index> debugIters(parser, "I", "Write debug images ever N iterations (1)", {"debug-iters"}, 1);
+  args::ValueFlag<float> tv(parser, "λ", "Add TV", {"tv", 't'}, 0.f);
 
   ParseCommand(parser, coreArgs.iname, coreArgs.oname);
   auto const      cmd = parser.GetCommand().Name();
@@ -42,9 +45,22 @@ template <int ND> void run_lsq(args::Subparser &parser)
       Log::Tensor(fmt::format("lsmr-v-{:02d}", i), shape, v.data(), HD5::Dims::Images);
     }
   };
-  LSMR lsmr{R.A, R.M, nullptr, lsqArgs.Get(), debug};
-
-  auto const x = lsmr.run(CollapseToConstVector(noncart));
+  LSMR::Vector x;
+  if (tv) {
+    auto grad = TOps::Grad<5, 3>::Make(R.A->ishape, Sz3{0, 1, 2});
+    auto l = Ops::DiagScale::Make(grad->rows(), tv.Get());
+    auto lg = Ops::Mul(l, grad);
+    auto         A = Ops::VStack::Make({R.A, lg});
+    auto         M = Ops::DStack::Make({R.M, Ops::Identity::Make(grad->rows())});
+    LSMR         lsmr{A, M, nullptr, lsqArgs.Get(), debug};
+    LSMR::Vector y(noncart.size() + grad->rows());
+    y.setZero();
+    y.head(noncart.size()) = CollapseToConstVector(noncart);
+    x = lsmr.run(y);
+  } else {
+    LSMR lsmr{R.A, R.M, nullptr, lsqArgs.Get(), debug};
+    x = lsmr.run(CollapseToConstVector(noncart));
+  }
   auto const xm = AsTensorMap(x, R.A->ishape);
 
   TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(R.A->ishape)), R.A->ishape);
