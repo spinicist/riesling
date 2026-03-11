@@ -7,6 +7,8 @@
 #include "rl/sys/threads.hpp"
 #include "rl/types.hpp"
 
+#include <ranges>
+
 using namespace rl;
 
 void main_filter(args::Subparser &parser)
@@ -21,7 +23,7 @@ void main_filter(args::Subparser &parser)
   Info        info = ifile.readStruct<Info>(HD5::Keys::Info);
   Trajectory  traj(ifile, info.voxel_size);
   auto        ks = ifile.readTensor<Cx5>();
-  float const M = *std::max_element(traj.matrix().cbegin(), traj.matrix().cend()) / 2.f;
+  float const M = std::ranges::max(traj.matrix()) / 2.f;
   auto const  f = filter.Get();
   NoncartesianTukey(f[0] * M, f[1] * M, f[2], traj.points(), ks);
   HD5::Writer ofile(oname.Get());
