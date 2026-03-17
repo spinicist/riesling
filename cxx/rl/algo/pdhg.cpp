@@ -187,6 +187,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
 {
   if (b.rows() != E->rows()) { throw(Log::Failure("PDHG", "b had {} rows, expected {}", b.rows(), E->rows())); }
   if (regs.size() < 1) { throw(Log::Failure("PDHG", "Requires at least one regularizer")); }
+  if (nInner > opts.imax) { throw(Log::Failure("PDHG", "Inner iterations {} greater than maximum {}", nInner, opts.imax)); }
   auto                          dev = Threads::CoreDevice();
   Index const                   nx = regs.size() + 1;
   std::vector<Op::Ptr>          As(nx), Ps(nx); /* Transforms, preconditioners */
