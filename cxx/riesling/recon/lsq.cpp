@@ -39,7 +39,7 @@ template <int ND> void run_lsq(args::Subparser &parser)
   auto const R = f0Args.Nτ ? Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, f0Args.Get(), noncart,
                                    reader.readTensor<Re3>("f0map"))
                            : Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
-  auto       debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x, LSMR::Vector const &v) {
+  auto debug = [shape = R.A->ishape, d = debugIters.Get()](Index const i, LSMR::Vector const &x, LSMR::Vector const &v) {
     if (i % d == 0) {
       Log::Tensor(fmt::format("lsmr-x-{:02d}", i), shape, x.data(), HD5::Dims::Images);
       Log::Tensor(fmt::format("lsmr-v-{:02d}", i), shape, v.data(), HD5::Dims::Images);
@@ -47,9 +47,8 @@ template <int ND> void run_lsq(args::Subparser &parser)
   };
   LSMR::Vector x;
   if (tv) {
-    auto grad = TOps::Grad<5, 3>::Make(R.A->ishape, Sz3{0, 1, 2});
-    auto l = Ops::DiagScale::Make(grad->rows(), tv.Get());
-    auto lg = Ops::Mul(l, grad);
+    auto         grad = TOps::Grad<5, 3>::Make(R.A->ishape, Sz3{0, 1, 2});
+    auto         lg = Ops::DiagScale::Make(grad, tv.Get());
     auto         A = Ops::VStack::Make({R.A, lg});
     auto         M = Ops::DStack::Make({R.M, Ops::Identity::Make(grad->rows())});
     LSMR         lsmr{A, M, nullptr, lsqArgs.Get(), debug};

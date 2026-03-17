@@ -128,13 +128,14 @@ template <int ND> auto SobolevWeights(Index const kW, Index const l) -> ReN<ND>
  * The kernel width is specified on the nominal grid, i.e. will be multiplied up by the oversampling (and made odd)
  *
  */
-template <int ND> auto EstimateKernels(Cx5 const          &nomChan,
-                                       Cx4 const          &nomRef,
-                                       Index const         nomKW,
-                                       float const         osamp,
-                                       float const         l,
-                                       float const         λ,
-                                       Normalization const renorm) -> Cx5
+template <int ND>
+auto EstimateKernels(Cx5 const          &nomChan,
+                     Cx4 const          &nomRef,
+                     Index const         nomKW,
+                     float const         osamp,
+                     float const         l,
+                     float const         λ,
+                     Normalization const renorm) -> Cx5
 {
   if (FirstN<3>(nomChan.dimensions()) != FirstN<3>(nomRef.dimensions())) {
     throw Log::Failure("SENSE", "Dimensions don't match channels {} reference {}", nomChan.dimensions(), nomRef.dimensions());
@@ -173,10 +174,10 @@ template <int ND> auto EstimateKernels(Cx5 const          &nomChan,
   }
   Log::Print("SENSE", "nomKW {} kW {} kshape {} cshape {}\n", nomKW, kW, kshape, cshape);
   // Set up operators
-  auto D = Ops::DiagScale::Make(Product(kshape), std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
   auto P = TOps::Pad<5>::Make(kshape, cshape);
+  auto DP = Ops::DiagScale::Make(P, std::sqrt(Product(FirstN<ND>(cshape)) / std::pow(kW, ND)));
   auto F = TOps::FFT<5, ND>::Make(cshape, true);
-  auto FP = Ops::Mul(Ops::Mul(F, P), D);
+  auto FP = Ops::Mul(F, DP);
   auto S = TOps::TensorScale<5, 0, 1>::Make(cshape, ref);
   auto SFP = Ops::Mul(S, FP);
 
@@ -192,11 +193,11 @@ template <int ND> auto EstimateKernels(Cx5 const          &nomChan,
     // Smoothness penalthy (Sobolev Norm, Nonlinear Inversion Paper Uecker 2008)
     CxN<ND> const sw = SobolevWeights<ND>(kW, l).template cast<Cx>();
     auto const    swv = CollapseToConstVector(sw);
-    auto          W = std::make_shared<Ops::DiagRep>(swv, 1, Product(LastN<5 - ND>(kshape)));
-    auto          L = std::make_shared<Ops::DiagScale>(W->rows(), λ);
+    auto          W = Ops::DiagRep::Make(swv, 1, Product(LastN<5 - ND>(kshape)));
+    auto          LW = Ops::DiagScale::Make(W, λ);
 
     // Combine
-    auto A = Ops::VStack::Make({MSFP, Ops::Mul(L, W)});
+    auto A = Ops::VStack::Make({MSFP, LW});
 
     // Preconditioner
     Ops::Op::Vector p(A->rows());
@@ -208,7 +209,7 @@ template <int ND> auto EstimateKernels(Cx5 const          &nomChan,
     Ops::Op::CMap   c(channels.data(), SFP->rows());
     Ops::Op::Vector cʹ(A->rows());
     cʹ.head(MSFP->rows()) = M->forward(c);
-    cʹ.tail(L->rows()).setZero();
+    cʹ.tail(LW->rows()).setZero();
 
     LSMR       solve{A, R, nullptr, LSMR::Opts{.imax = 256, .aTol = 1e-4f}};
     auto const kʹ = solve.run(cʹ);
@@ -278,8 +279,8 @@ template <int ND> auto MapsToKernels(Cx5 const &maps, Sz<ND> const kmat, float c
 template auto MapsToKernels(Cx5 const &, Sz2 const, float const) -> Cx5;
 template auto MapsToKernels(Cx5 const &, Sz3 const, float const) -> Cx5;
 
-template <int ND> auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, TrajectoryN<ND> const &traj, Cx5 const &noncart)
-  -> Cx5
+template <int ND>
+auto Choose(Opts<ND> const &opts, GridOpts<ND> const &gopts, TrajectoryN<ND> const &traj, Cx5 const &noncart) -> Cx5
 {
   Cx5 kernels;
   if (noncart.dimension(0) < 2) { throw Log::Failure("SENSE", "Data is single-channel"); }

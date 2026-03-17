@@ -47,8 +47,7 @@ protected:
 #define OP_INHERIT                                                                                                             \
   using typename Op::Vector;                                                                                                   \
   using typename Op::Map;                                                                                                      \
-  using typename Op::CMap;                                                                                                     \
-  using typename Op::Ptr;                                                                                                      \
+  using typename Op::CMap;                                                                                                      \
   using Op::forward;                                                                                                           \
   using Op::adjoint;                                                                                                           \
   auto rows() const -> Index final;                                                                                            \

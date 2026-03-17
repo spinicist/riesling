@@ -103,52 +103,23 @@ void MatMul::iadjoint(CMap y, Map x, float const s) const
   this->finishAdjoint(x, time, true);
 }
 
-DiagScale::DiagScale(Index const sz1, float const s1)
+DiagScale::DiagScale(Op::Ptr o, float const s1)
   : Op("DiagScale")
   , scale{s1}
-  , sz{sz1}
+  , op{o}
 {
 }
 
-auto DiagScale::Make(Index const sz, float const s) -> DiagScale::Ptr { return std::make_shared<DiagScale>(sz, s); }
+auto DiagScale::Make(Op::Ptr o, float const s) -> DiagScale::Ptr { return std::make_shared<DiagScale>(o, s); }
 
-auto DiagScale::rows() const -> Index { return sz; }
-auto DiagScale::cols() const -> Index { return sz; }
+auto DiagScale::rows() const -> Index { return op->rows(); }
+auto DiagScale::cols() const -> Index { return op->cols(); }
 
-void DiagScale::forward(CMap x, Map y, float const s) const
-{
-  auto const time = this->startForward(x, y, false);
-  y.device(Threads::CoreDevice()) = x * scale * s;
-  this->finishForward(y, time, false);
-}
-
-void DiagScale::adjoint(CMap y, Map x, float const s) const
-{
-  auto const time = this->startAdjoint(y, x, false);
-  x.device(Threads::CoreDevice()) = y * scale * s;
-  this->finishAdjoint(x, time, false);
-}
-
-void DiagScale::inverse(CMap y, Map x, float const s, float const b) const
-{
-  auto const time = this->startInverse(y, x);
-  x.device(Threads::CoreDevice()) = y / (scale * s + b);
-  this->finishInverse(x, time);
-}
-
-void DiagScale::iforward(CMap x, Map y, float const s) const
-{
-  auto const time = this->startForward(x, y, true);
-  y.device(Threads::CoreDevice()) += x * scale * s;
-  this->finishForward(y, time, true);
-}
-
-void DiagScale::iadjoint(CMap y, Map x, float const s) const
-{
-  auto const time = this->startAdjoint(y, x, true);
-  x.device(Threads::CoreDevice()) += y * scale * s;
-  this->finishAdjoint(x, time, true);
-}
+void DiagScale::forward(CMap x, Map y, float const s) const { op->forward(x, y, s * scale); }
+void DiagScale::adjoint(CMap y, Map x, float const s) const { op->adjoint(y, x, s * scale); }
+void DiagScale::inverse(CMap y, Map x, float const s, float const b) const { op->inverse(y, x, s * scale, b); }
+void DiagScale::iforward(CMap x, Map y, float const s) const { op->iforward(x, y, s * scale); }
+void DiagScale::iadjoint(CMap y, Map x, float const s) const { op->iadjoint(y, x, s * scale); }
 
 DiagRep::DiagRep(Vector const &d_, Index const repI, Index const repO)
   : Op("DiagRep")
@@ -157,6 +128,11 @@ DiagRep::DiagRep(Vector const &d_, Index const repI, Index const repO)
   , rO{repO}
 {
   Log::Debug("Op", "Diagonal Repeat. Weights min {} max {}", d.array().abs().minCoeff(), d.array().abs().maxCoeff());
+}
+
+auto DiagRep::Make(Vector const &d, Index const rI, Index const rO) -> DiagRep::Ptr
+{
+  return std::make_shared<DiagRep>(d, rI, rO);
 }
 
 auto DiagRep::rows() const -> Index { return d.rows() * rI * rO; }

@@ -54,23 +54,25 @@ private:
 struct DiagScale final : Op
 {
   OP_INHERIT
-  DiagScale(Index const sz, float const s);
-  static auto Make(Index const sz, float const s) -> Ptr;
-  void        forward(CMap x, Map y, float const s = 1.f) const;
-  void        adjoint(CMap y, Map x, float const s = 1.f) const;
-  void        inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
-  void        iforward(CMap x, Map y, float const s = 1.f) const;
-  void        iadjoint(CMap y, Map x, float const s = 1.f) const;
+  using Ptr = std::shared_ptr<DiagScale>;
+  static auto Make(Op::Ptr op, float const s) -> Ptr;
+  DiagScale(Op::Ptr op, float const s);
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
+  void inverse(CMap y, Map x, float const s = 1.f, float const b = 0.f) const;
+  void iforward(CMap x, Map y, float const s = 1.f) const;
+  void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
   float scale;
 
 private:
-  Index sz;
+  Op::Ptr op;
 };
 
 struct DiagRep final : Op
 {
   OP_INHERIT
+  static auto Make(Vector const &s, Index const repInner, Index const repOuter) -> Ptr;
   DiagRep(Vector const &s, Index const repInner, Index const repOuter);
   void forward(CMap x, Map y, float const s = 1.f) const;
   void adjoint(CMap y, Map x, float const s = 1.f) const;

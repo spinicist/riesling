@@ -30,10 +30,9 @@ auto ADMM::run(CMap b) const -> Vector
   if (b.rows() != A->rows()) { throw Log::Failure("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
 
-  Index const                                  R = regs.size();
-  std::vector<Vector>                          z(R), u(R);
-  std::vector<std::shared_ptr<Ops::DiagScale>> ρdiags(R);
-  std::vector<std::shared_ptr<Ops::Op>>        scaled_ops(R);
+  Index const               R = regs.size();
+  std::vector<Vector>       z(R), u(R);
+  std::vector<Ops::Op::Ptr> ρscalers(R);
 
   float ρ = opts.ρ;
   for (Index ir = 0; ir < R; ir++) {
@@ -42,13 +41,11 @@ auto ADMM::run(CMap b) const -> Vector
     z[ir].setZero();
     u[ir].resize(sz);
     u[ir].setZero();
-    ρdiags[ir] = std::make_shared<Ops::DiagScale>(sz, std::sqrt(ρ));
-    scaled_ops[ir] = regs[ir].T ? std::static_pointer_cast<Ops::Op>(std::make_shared<Ops::Multiply>(ρdiags[ir], regs[ir].T))
-                                : std::static_pointer_cast<Ops::Op>(ρdiags[ir]);
+    ρscalers[ir] = Ops::DiagScale::Make(regs[ir].T ? regs[ir].T : Ops::Identity::Make(sz), std::sqrt(ρ));
   }
 
-  std::shared_ptr<Op> reg = Ops::VStack::Make(scaled_ops);
-  std::shared_ptr<Op> Aʹ = Ops::VStack::Make(A, scaled_ops);
+  std::shared_ptr<Op> reg = Ops::VStack::Make(ρscalers);
+  std::shared_ptr<Op> Aʹ = Ops::VStack::Make(A, ρscalers);
   std::shared_ptr<Op> Minvʹ;
   if (Minv == nullptr) {
     Minvʹ = nullptr;
@@ -73,7 +70,8 @@ auto ADMM::run(CMap b) const -> Vector
       Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
       bʹ.segment(start, rr).device(dev) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
-      ρdiags[ir]->scale = std::sqrt(ρ);
+      Ops::DiagScale::Ptr ptr = std::dynamic_pointer_cast<Ops::DiagScale>(ρscalers[ir]);
+      ptr->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ, x);
     lsmr.opts.imax = opts.iters1;
@@ -89,7 +87,7 @@ auto ADMM::run(CMap b) const -> Vector
       // becomes a plus in this line below, which matches the code examples on Boyd's website
       if (regs[ir].T) {
         Vector Fx(u[ir].size());
-        regs[ir].T->forward(x, Fx);
+        regs[ir].T->forward(x, Fx, std::sqrt(ρ));
         if (opts.ɑ > 0.f) {
           u[ir].device(dev) += opts.ɑ * Fx + (1.f - opts.ɑ) * zprev;
         } else {
