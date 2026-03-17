@@ -22,16 +22,13 @@ struct ADMM
     float bTol = 1.e-6f;
     float cTol = 1.e-6f;
 
-    Index outerLimit; // Number of outer iterations
-    float ε;          // Combined apply/dual tolerance parameter
-
-    float ρ;       // Penalty parameter
-    bool  balance; // Apply residual balancing scheme
-
-    float μ; // Residual balancing parameters
-    float τmax;
-
-    float ɑ = 0.f; // Over-relaxation parameter, set 1 < ɑ < 2
+    Index outerLimit = 64; // Number of outer iterations
+    float ε = 1.e-3f;      // Combined apply/dual tolerance parameter
+    float ρ = 1;           // Penalty parameter
+    bool  balance = true;  // Apply residual balancing scheme
+    float μ = 1.2f;        // Residual balancing tolerance
+    float τmax = 10.f;     // Maximum residual balancing ratio
+    float ɑ = 0.f;         // Over-relaxation parameter, set 1 < ɑ < 2
   };
 
   Op::Ptr                  A;    // Forward model

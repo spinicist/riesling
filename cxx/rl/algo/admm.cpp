@@ -65,7 +65,7 @@ auto ADMM::run(CMap b) const -> Vector
   bʹ.setZero();
   bʹ.head(A->rows()).device(dev) = b;
 
-  Log::Print("ADMM", "Abs ε {}", opts.ε);
+  Log::Print("ADMM", "Max its {}/{}/{} Abs ε {}", opts.iters0, opts.iters1, opts.outerLimit, opts.ε);
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {
     Index start = A->rows();
@@ -135,6 +135,10 @@ auto ADMM::run(CMap b) const -> Vector
     Log::Print("ADMM", "{:02d} |x| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} ρ {:3.2E} |Pr| {:3.2E} |Du| {:3.2E}", io, normx, normz,
                normu, ρ, pRes, dRes);
 
+    if (pRes < std::numeric_limits<float>::min()) {
+      Log::Print("ADMM", "Primal residual was numerically zero, stopping");
+      break;
+    }
     if ((pRes < opts.ε) && (dRes < opts.ε)) {
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");
       break;
