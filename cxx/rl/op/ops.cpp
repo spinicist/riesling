@@ -242,16 +242,7 @@ VStack::VStack(std::vector<Ptr> const &o)
   check();
 }
 
-VStack::VStack(Ptr op1, std::vector<Ptr> const &others)
-  : Op{"VStack"}
-  , ops{op1}
-{
-  ops.insert(ops.end(), others.begin(), others.end());
-  check();
-}
-
 auto VStack::Make(std::vector<Ptr> const &o) -> Ptr { return std::make_shared<VStack>(o); }
-auto VStack::Make(Ptr o1, std::vector<Ptr> const &o) -> Ptr { return std::make_shared<VStack>(o1, o); }
 
 void VStack::check()
 {

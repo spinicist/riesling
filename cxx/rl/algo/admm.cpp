@@ -28,12 +28,10 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
     z[ir].setZero();
     u[ir].resize(sz);
     u[ir].setZero();
-    // Dummy value for now, loop sets ρ correctly
-    ρscalers[ir] = Ops::DiagScale::Make(regs[ir].T ? regs[ir].T : Ops::Identity::Make(sz), 1.f);
+    ρscalers[ir] = Ops::DiagScale::Make(regs[ir].T ? regs[ir].T : Ops::Identity::Make(sz), std::sqrt(opts.ρ));
     totalRows += ρscalers[ir]->rows();
   }
 
-  std::shared_ptr<Op> reg = Ops::VStack::Make(ρscalers);
   Aʹ = Ops::VStack::Make(A, ρscalers);
   Minvʹ = Minv ? Ops::DStack::Make(Minv, Ops::Identity::Make(totalRows)) : nullptr;
 }
@@ -76,8 +74,7 @@ auto ADMM::run(CMap b) const -> Vector
       Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
       bʹ.segment(start, rr).device(dev) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
-      Ops::DiagScale::Ptr ptr = std::dynamic_pointer_cast<Ops::DiagScale>(ρscalers[ir]);
-      ptr->scale = std::sqrt(ρ);
+      ρscalers[ir]->scale = std::sqrt(ρ);
     }
     x = lsmr.run(bʹ, x);
     lsmr.opts.imax = opts.iters1;

@@ -43,7 +43,7 @@ private:
   DebugX                   debug_x = nullptr;
   DebugZ                   debug_z = nullptr;
   std::vector<Vector> mutable z, u;
-  std::vector<Op::Ptr> mutable ρscalers;
+  std::vector<Ops::DiagScale::Ptr> mutable ρscalers;
   Op::Ptr Aʹ, Minvʹ;
 };
 

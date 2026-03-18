@@ -109,13 +109,17 @@ struct VStack final : Op
 {
   OP_INHERIT
   VStack(std::vector<Ptr> const &o);
-  VStack(Ptr o1, std::vector<Ptr> const &o);
-  static auto Make(std::vector<Ptr> const &o) -> Ptr;
-  static auto Make(Ptr o1, std::vector<Ptr> const &o) -> Ptr;
-  void        forward(CMap x, Map y, float const s = 1.f) const;
-  void        adjoint(CMap y, Map x, float const s = 1.f) const;
-  void        iforward(CMap x, Map y, float const s = 1.f) const;
-  void        iadjoint(CMap y, Map x, float const s = 1.f) const;
+  static auto                       Make(std::vector<Ptr> const &o) -> Ptr;
+  template <typename T> static auto Make(Ptr o1, std::vector<T> const &o) -> Ptr
+  {
+    std::vector<Ptr> ops{o1};
+    ops.insert(ops.end(), o.begin(), o.end());
+    return Make(ops);
+  }
+  void forward(CMap x, Map y, float const s = 1.f) const;
+  void adjoint(CMap y, Map x, float const s = 1.f) const;
+  void iforward(CMap x, Map y, float const s = 1.f) const;
+  void iadjoint(CMap y, Map x, float const s = 1.f) const;
 
 private:
   void             check();
