@@ -36,6 +36,42 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
   Minvʹ = Minv ? Ops::DStack::Make(Minv, Ops::Identity::Make(totalRows)) : nullptr;
 }
 
+void ADMM::zu_update(Vector const &x, Vector const &zp, Index const ir, float const ρ) const
+{
+  // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c) but this comes from the
+  // constraint that Ax + Bz = c Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign
+  // becomes a plus in this line below, which matches the code examples on Boyd's website
+  auto dev = Threads::CoreDevice();
+  if (opts.ɑ > 0.f) {
+    u[ir].device(dev) += opts.ɑ * x + (1.f - opts.ɑ) * zp;
+  } else {
+    u[ir].device(dev) += x;
+  }
+  z[ir].device(dev) = u[ir];
+  regs[ir].P->apply(1.f / ρ, z[ir]);
+  u[ir].device(dev) = u[ir] - z[ir];
+}
+
+auto ADMM::ρ_balance(float ρ, float const pRes, float const dRes) const -> float
+{
+  // ADMM Penalty Parameter Selection by Residual Balancing, Wohlberg 2017
+  auto        dev = Threads::CoreDevice();
+  float const ratio = std::sqrt(pRes / dRes);
+  float const τ = (ratio < 1.f) ? std::max(1.f / opts.τmax, 1.f / ratio) : std::min(opts.τmax, ratio);
+  if (pRes > opts.μ * dRes) {
+    ρ *= τ;
+    for (Index ir = 0; ir < regs.size(); ir++) {
+      u[ir].device(dev) = u[ir] / τ;
+    }
+  } else if (dRes > opts.μ * pRes) {
+    ρ /= τ;
+    for (Index ir = 0; ir < regs.size(); ir++) {
+      u[ir].device(dev) = u[ir] * τ;
+    }
+  }
+  return ρ;
+}
+
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
 auto ADMM::run(CMap b) const -> Vector
@@ -82,46 +118,29 @@ auto ADMM::run(CMap b) const -> Vector
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
     for (Index ir = 0; ir < regs.size(); ir++) {
-      float  nz, nu, nP, nD;
+      float  nz, nFx, nu, nP, nD;
       Vector zprev(z[ir].size());
       zprev.device(dev) = z[ir];
-      // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c) but this comes from the
-      // constraint that Ax + Bz = c Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign
-      // becomes a plus in this line below, which matches the code examples on Boyd's website
+
       if (regs[ir].T) {
         Vector Fx(u[ir].size());
         regs[ir].T->forward(x, Fx, std::sqrt(ρ));
-        if (opts.ɑ > 0.f) {
-          u[ir].device(dev) += opts.ɑ * Fx + (1.f - opts.ɑ) * zprev;
-        } else {
-          u[ir].device(dev) += Fx;
-        }
-        z[ir].device(dev) = u[ir];
-        regs[ir].P->apply(1.f / ρ, z[ir]);
-        u[ir].device(dev) = u[ir] - z[ir];
+        nFx = ParallelNorm(Fx);
+        zu_update(Fx, zprev, ir, ρ);
         if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-        float const nFx = ParallelNorm(Fx);
-        nz = ParallelNorm(z[ir]);
         nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
         nP = ParallelNorm(Fx - z[ir]);
         nD = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
-        Log::Print("ADMM", "Reg {:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E}", ir, nFx, nz, nu);
       } else {
-        if (opts.ɑ > 0.f) {
-          u[ir].device(dev) += opts.ɑ * x + (1.f - opts.ɑ) * zprev;
-        } else {
-          u[ir].device(dev) += x;
-        }
-        z[ir].device(dev) = u[ir];
-        regs[ir].P->apply(1.f / ρ, z[ir]);
-        u[ir].device(dev) = u[ir] - z[ir];
+        nFx = ParallelNorm(x);
+        zu_update(x, zprev, ir, ρ);
         if (debug_z) { debug_z(io, ir, x, z[ir], u[ir]); }
-        nz = ParallelNorm(z[ir]);
         nu = ParallelNorm(u[ir]);
         nP = ParallelNorm(x - z[ir]);
         nD = ParallelNorm(z[ir] - zprev);
-        Log::Print("ADMM", "Reg {:02d} |z| {:3.2E} |F'u| {:3.2E}", ir, nz, nu);
       }
+      nz = ParallelNorm(z[ir]);
+      Log::Print("ADMM", "Reg {:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E}", ir, nFx, nz, nu);
       normz += nz * nz;
       normu += nu * nu;
       pRes += nP * nP;
@@ -144,22 +163,7 @@ auto ADMM::run(CMap b) const -> Vector
       Log::Print("ADMM", "Primal and dual tolerances achieved, stopping");
       break;
     }
-    if (opts.balance && io > 0) {
-      // ADMM Penalty Parameter Selection by Residual Balancing, Wohlberg 2017
-      float const ratio = std::sqrt(pRes / dRes);
-      float const τ = (ratio < 1.f) ? std::max(1.f / opts.τmax, 1.f / ratio) : std::min(opts.τmax, ratio);
-      if (pRes > opts.μ * dRes) {
-        ρ *= τ;
-        for (Index ir = 0; ir < regs.size(); ir++) {
-          u[ir].device(dev) = u[ir] / τ;
-        }
-      } else if (dRes > opts.μ * pRes) {
-        ρ /= τ;
-        for (Index ir = 0; ir < regs.size(); ir++) {
-          u[ir].device(dev) = u[ir] * τ;
-        }
-      }
-    }
+    if (opts.balance && io > 0) { ρ = ρ_balance(ρ, pRes, dRes); }
     if (Iterating::ShouldStop("ADMM")) { break; }
   }
   Iterating::Finished();

@@ -45,6 +45,10 @@ private:
   std::vector<Vector> mutable z, u;
   std::vector<Ops::DiagScale::Ptr> mutable ρscalers;
   Op::Ptr Aʹ, Minvʹ;
+
+  // Helper function
+  void zu_update(Vector const &x, Vector const &zp, Index const ir, float const ρ) const;
+  auto ρ_balance(float, float const, float const) const -> float;
 };
 
 } // namespace rl
