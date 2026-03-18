@@ -35,7 +35,7 @@ TEST_CASE("Algorithms", "[alg]")
   {
     std::vector<Regularizer> reg;
     reg.push_back(Regularizer{nullptr, Proxs::L2<1, 1>::Make(1.e-3f * y.norm(), Sz1{A->rows()}, Sz1{0})});
-    ADMM admm{A, M, reg};
+    ADMM admm{A, M, reg, ADMM::Opts{}};
     auto xx = admm.run(y);
     INFO("x " << x.transpose() << "\ny " << y.transpose() << "\nxx " << xx.transpose());
     CHECK((x - xx).stableNorm() == Approx(0.f).margin(1.e-2f));

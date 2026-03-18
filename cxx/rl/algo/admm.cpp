@@ -9,6 +9,35 @@
 
 namespace rl {
 
+ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o, DebugX dx, DebugZ dz)
+  : A{AA}
+  , Minv{MMinv}
+  , regs{r}
+  , opts{o}
+  , debug_x{dx}
+  , debug_z{dz}
+  , z(regs.size())
+  , u(regs.size())
+  , ρscalers(regs.size())
+{
+  Index const R = regs.size();
+  Index       totalRows = 0;
+  for (Index ir = 0; ir < R; ir++) {
+    Index const sz = regs[ir].T ? regs[ir].T->rows() : A->cols();
+    z[ir].resize(sz);
+    z[ir].setZero();
+    u[ir].resize(sz);
+    u[ir].setZero();
+    // Dummy value for now, loop sets ρ correctly
+    ρscalers[ir] = Ops::DiagScale::Make(regs[ir].T ? regs[ir].T : Ops::Identity::Make(sz), 1.f);
+    totalRows += ρscalers[ir]->rows();
+  }
+
+  std::shared_ptr<Op> reg = Ops::VStack::Make(ρscalers);
+  Aʹ = Ops::VStack::Make(A, ρscalers);
+  Minvʹ = Minv ? Ops::DStack::Make(Minv, Ops::Identity::Make(totalRows)) : nullptr;
+}
+
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
 
 auto ADMM::run(CMap b) const -> Vector
@@ -29,31 +58,8 @@ auto ADMM::run(CMap b) const -> Vector
     */
   if (b.rows() != A->rows()) { throw Log::Failure("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
-
-  Index const               R = regs.size();
-  std::vector<Vector>       z(R), u(R);
-  std::vector<Ops::Op::Ptr> ρscalers(R);
-
-  float ρ = opts.ρ;
-  for (Index ir = 0; ir < R; ir++) {
-    Index const sz = regs[ir].T ? regs[ir].T->rows() : A->cols();
-    z[ir].resize(sz);
-    z[ir].setZero();
-    u[ir].resize(sz);
-    u[ir].setZero();
-    ρscalers[ir] = Ops::DiagScale::Make(regs[ir].T ? regs[ir].T : Ops::Identity::Make(sz), std::sqrt(ρ));
-  }
-
-  std::shared_ptr<Op> reg = Ops::VStack::Make(ρscalers);
-  std::shared_ptr<Op> Aʹ = Ops::VStack::Make(A, ρscalers);
-  std::shared_ptr<Op> Minvʹ;
-  if (Minv == nullptr) {
-    Minvʹ = nullptr;
-  } else {
-    std::shared_ptr<Op> I = std::make_shared<Ops::Identity>(reg->rows());
-    Minvʹ = std::make_shared<Ops::DStack>(Minv, I);
-  }
-  LSMR lsmr{Aʹ, Minvʹ, nullptr, LSMR::Opts{opts.iters0, opts.aTol, opts.bTol, opts.cTol}};
+  float      ρ = opts.ρ;
+  LSMR       lsmr{Aʹ, Minvʹ, nullptr, LSMR::Opts{opts.iters0, opts.aTol, opts.bTol, opts.cTol}};
 
   Vector x(A->cols());
   x.setZero();
@@ -66,7 +72,7 @@ auto ADMM::run(CMap b) const -> Vector
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {
     Index start = A->rows();
-    for (Index ir = 0; ir < R; ir++) {
+    for (Index ir = 0; ir < regs.size(); ir++) {
       Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
       bʹ.segment(start, rr).device(dev) = std::sqrt(ρ) * (z[ir] - u[ir]);
       start += rr;
@@ -78,7 +84,7 @@ auto ADMM::run(CMap b) const -> Vector
     if (debug_x) { debug_x(io, x); }
 
     float normFx = 0.f, normz = 0.f, normu = 0.f, pRes = 0.f, dRes = 0.f;
-    for (Index ir = 0; ir < R; ir++) {
+    for (Index ir = 0; ir < regs.size(); ir++) {
       float  nz, nu, nP, nD;
       Vector zprev(z[ir].size());
       zprev.device(dev) = z[ir];
@@ -147,12 +153,12 @@ auto ADMM::run(CMap b) const -> Vector
       float const τ = (ratio < 1.f) ? std::max(1.f / opts.τmax, 1.f / ratio) : std::min(opts.τmax, ratio);
       if (pRes > opts.μ * dRes) {
         ρ *= τ;
-        for (Index ir = 0; ir < R; ir++) {
+        for (Index ir = 0; ir < regs.size(); ir++) {
           u[ir].device(dev) = u[ir] / τ;
         }
       } else if (dRes > opts.μ * pRes) {
         ρ /= τ;
-        for (Index ir = 0; ir < R; ir++) {
+        for (Index ir = 0; ir < regs.size(); ir++) {
           u[ir].device(dev) = u[ir] * τ;
         }
       }

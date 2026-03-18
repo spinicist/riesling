@@ -31,15 +31,20 @@ struct ADMM
     float ɑ = 0.f;         // Over-relaxation parameter, set 1 < ɑ < 2
   };
 
+  ADMM(Op::Ptr A, Op::Ptr Minv, std::vector<Regularizer> const &regs, Opts opts, DebugX dx = nullptr, DebugZ dz = nullptr);
+  auto run(Vector const &b) const -> Vector;
+  auto run(CMap b) const -> Vector;
+
+private:
   Op::Ptr                  A;    // Forward model
   Op::Ptr                  Minv; // Pre-conditioner
   std::vector<Regularizer> regs;
   Opts                     opts;
   DebugX                   debug_x = nullptr;
   DebugZ                   debug_z = nullptr;
-
-  auto run(Vector const &b) const -> Vector;
-  auto run(CMap b) const -> Vector;
+  std::vector<Vector> mutable z, u;
+  std::vector<Op::Ptr> mutable ρscalers;
+  Op::Ptr Aʹ, Minvʹ;
 };
 
 } // namespace rl
