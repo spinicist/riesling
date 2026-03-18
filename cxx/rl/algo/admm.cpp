@@ -37,6 +37,22 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
   Minvʹ = Minv ? Ops::DStack::Make(Minv, Ops::Identity::Make(totalRows)) : nullptr;
 }
 
+void ADMM::x_update(Index const io, Vector &x, Vector &bʹ) const
+{
+  auto const dev = Threads::CoreDevice();
+  LSMR       lsmr{Aʹ, Minvʹ, nullptr, LSMR::Opts{io > 0 ? opts.iters1 : opts.iters0, opts.aTol, opts.bTol, opts.cTol}};
+
+  Index start = A->rows();
+  for (Index ir = 0; ir < regs.size(); ir++) {
+    Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
+    bʹ.segment(start, rr).device(dev) = std::sqrt(ρ[ir]) * (z[ir] - u[ir]);
+    start += rr;
+    ρops[ir]->scale = std::sqrt(ρ[ir]);
+  }
+  x = lsmr.run(bʹ, x);
+  if (debug_x) { debug_x(io, x); }
+}
+
 void ADMM::zu_update(Index const ir, Vector const &x, Vector const &zp) const
 {
   // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c) but this comes from the
@@ -88,28 +104,19 @@ auto ADMM::run(CMap b) const -> Vector
     */
   if (b.rows() != A->rows()) { throw Log::Failure("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
-  LSMR       lsmr{Aʹ, Minvʹ, nullptr, LSMR::Opts{opts.iters0, opts.aTol, opts.bTol, opts.cTol}};
-
-  Vector x(A->cols());
-  x.setZero();
 
   Vector bʹ(Aʹ->rows());
   bʹ.setZero();
   bʹ.head(A->rows()).device(dev) = b;
 
+  Vector x(A->cols());
+  x.setZero();
+
   Log::Print("ADMM", "Max its {}/{}/{} Abs ε {}", opts.iters0, opts.iters1, opts.outerLimit, opts.ε);
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {
-    Index start = A->rows();
-    for (Index ir = 0; ir < regs.size(); ir++) {
-      Index rr = regs[ir].T ? regs[ir].T->rows() : A->cols();
-      bʹ.segment(start, rr).device(dev) = std::sqrt(ρ[ir]) * (z[ir] - u[ir]);
-      start += rr;
-      ρops[ir]->scale = std::sqrt(ρ[ir]);
-    }
-    x = lsmr.run(bʹ, x);
-    lsmr.opts.imax = opts.iters1;
-    if (debug_x) { debug_x(io, x); }
+    x_update(io, x, bʹ);
+
     bool tolerance_reached = true;
     for (Index ir = 0; ir < regs.size(); ir++) {
       float  nz, nFx, nu, pRes, dRes;

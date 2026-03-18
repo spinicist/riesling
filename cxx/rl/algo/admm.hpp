@@ -47,8 +47,9 @@ private:
   std::vector<float> mutable ρ;
   std::vector<Ops::DiagScale::Ptr> mutable ρops;
   std::vector<Vector> mutable z, u;
-  
+
   // Helper function
+  void x_update(Index const, Vector &, Vector &) const;
   void zu_update(Index const, Vector const &, Vector const &) const;
   void ρ_balance(Index const, float const, float const) const;
 };
