@@ -42,13 +42,15 @@ private:
   Opts                     opts;
   DebugX                   debug_x = nullptr;
   DebugZ                   debug_z = nullptr;
-  std::vector<Vector> mutable z, u;
-  std::vector<Ops::DiagScale::Ptr> mutable ρscalers;
-  Op::Ptr Aʹ, Minvʹ;
+  Op::Ptr                  Aʹ, Minvʹ;
 
+  std::vector<float> mutable ρ;
+  std::vector<Ops::DiagScale::Ptr> mutable ρops;
+  std::vector<Vector> mutable z, u;
+  
   // Helper function
-  void zu_update(Vector const &x, Vector const &zp, Index const ir, float const ρ) const;
-  auto ρ_balance(float, float const, float const) const -> float;
+  void zu_update(Index const, Vector const &, Vector const &) const;
+  void ρ_balance(Index const, float const, float const) const;
 };
 
 } // namespace rl
