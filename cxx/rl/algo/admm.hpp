@@ -24,11 +24,11 @@ struct ADMM
 
     Index outerLimit = 64; // Number of outer iterations
     float ε = 1.e-3f;      // Combined apply/dual tolerance parameter
+    float ɑ = 0.f;         // Over-relaxation parameter, set 1 < ɑ < 2
     float ρ = 1;           // Penalty parameter
-    bool  balance = true;  // Apply residual balancing scheme
     float μ = 1.2f;        // Residual balancing tolerance
     float τmax = 10.f;     // Maximum residual balancing ratio
-    float ɑ = 0.f;         // Over-relaxation parameter, set 1 < ɑ < 2
+    bool  balance = true;  // Apply residual balancing scheme
   };
 
   ADMM(Op::Ptr A, Op::Ptr Minv, std::vector<Regularizer> const &regs, Opts opts, DebugX dx = nullptr, DebugZ dz = nullptr);

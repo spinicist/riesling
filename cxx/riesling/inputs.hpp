@@ -84,13 +84,14 @@ struct ADMMArgs
   args::ValueFlag<float> ctol;
 
   args::ValueFlag<Index> out_its;
-  args::ValueFlag<float> ρ;
-  args::ValueFlag<float> ε;
 
+  args::ValueFlag<float> ε;
+  args::ValueFlag<float> ɑ;
+
+  args::ValueFlag<float> ρ;
   args::ValueFlag<float> μ;
   args::ValueFlag<float> τ;
-
-  args::ValueFlag<float> ɑ;
+  args::Flag             nobalance;
 
   ADMMArgs(args::Subparser &parser);
   auto Get() -> rl::ADMM::Opts;
