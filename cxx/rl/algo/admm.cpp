@@ -116,7 +116,7 @@ auto ADMM::run(CMap b) const -> Vector
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {
     x_update(io, x, bʹ);
-
+    Log::Print("ADMM", "{} |x| {:3.2E}", io, ParallelNorm(x));
     bool tolerance_reached = true;
     for (Index ir = 0; ir < regs.size(); ir++) {
       float  nz, nFx, nu, pRes, dRes;
@@ -141,8 +141,8 @@ auto ADMM::run(CMap b) const -> Vector
         dRes = ParallelNorm(z[ir] - zprev);
       }
       nz = ParallelNorm(z[ir]);
-      Log::Print("ADMM", "{:02d}/{:02d} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} |Pres| {:3.2E} |Dres| {:3.2E} ρ {:3.2E}", io, ir,
-                 nFx, nz, nu, pRes, dRes, ρ[ir]);
+      Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} |Pres| {:3.2E} |Dres| {:3.2E} ρ {:3.2E}", //
+                 regs[ir].P->name, nFx, nz, nu, pRes, dRes, ρ[ir]);
       if (pRes < std::numeric_limits<float>::min()) {
         Log::Print("ADMM", "Primal residual was zero, stopping");
         break;

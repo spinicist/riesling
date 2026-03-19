@@ -12,17 +12,17 @@ struct Prox
   using CMap = typename Eigen::Map<Vector const, Eigen::AlignedMax>;
   using Ptr = std::shared_ptr<Prox>;
 
-  Prox(Index const sz);
+  std::string const name;
+  Index const       sz;
+
+  Prox(std::string const n, Index const sz);
+  virtual ~Prox(){};
 
   void         apply(float const α, Vector &x) const;
   virtual void apply(float const α, Map x) const = 0;
 
   void         conj(float const α, Vector &x) const;
   virtual void conj(float const α, Map x) const = 0;
-
-  virtual ~Prox() {};
-
-  Index sz;
 };
 
 #define PROX_INHERIT                                                                                                           \

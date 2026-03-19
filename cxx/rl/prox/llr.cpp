@@ -8,7 +8,7 @@
 namespace rl::Proxs {
 
 template <int D> LLR<D>::LLR(float const l, Index const p, Index const w, bool const doShift, Sz<D> const s)
-  : Prox(Product(s))
+  : Prox("LLR", Product(s))
   , λ{l}
   , patchSize{p}
   , windowSize{w}

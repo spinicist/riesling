@@ -14,7 +14,7 @@ struct Op
   using Ptr = std::shared_ptr<Op>;
   using Time = std::chrono::high_resolution_clock::time_point;
 
-  std::string name;
+  std::string const name;
   Op(std::string const &n);
 
   virtual auto rows() const -> Index = 0;

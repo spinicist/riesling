@@ -5,8 +5,9 @@
 
 namespace rl::Proxs {
 
-Prox::Prox(Index const s)
-  : sz{s}
+Prox::Prox(std::string const n, Index const s)
+  : name{n}
+  , sz{s}
 {
 }
 
@@ -25,7 +26,7 @@ void Prox::conj(float const α, Vector &x) const
 }
 
 Conjugate::Conjugate(Prox::Ptr pp)
-  : Prox{pp->sz}
+  : Prox{fmt::format("{}*", pp->name), pp->sz}
   , p{pp}
 {
 }
@@ -47,13 +48,15 @@ void Conjugate::conj(float const α, Map x) const
 }
 
 Null::Null(Index const isz)
-  : Prox{isz}
+  : Prox{"Null", isz}
 {
 }
 
 auto Null::Make(Index const isz) -> Prox::Ptr { return std::make_shared<Null>(isz); }
 
-void Null::apply(float const α, Map x) const { /* Null op */ }
+void Null::apply(float const α, Map x) const
+{ /* Null op */
+}
 
 void Null::conj(float const α, Map x) const { x.setZero(); }
 

@@ -11,7 +11,7 @@ auto L1::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_sh
 auto L1::Make(float const λ, CMap b, Ops::Op::Ptr P) -> Prox::Ptr { return std::make_shared<L1>(λ, b, P); }
 
 L1::L1(float const λ_, Index const sz_)
-  : Prox(sz_)
+  : Prox{"L1", sz_}
   , λ{λ_}
   , b{nullptr, 0}
 {
@@ -19,7 +19,7 @@ L1::L1(float const λ_, Index const sz_)
 }
 
 L1::L1(float const λ_, CMap b_, Ops::Op::Ptr P_)
-  : Prox(b_.size())
+  : Prox("L1", b_.size())
   , λ{λ_}
   , b{b_}
   , P{P_}
@@ -63,7 +63,7 @@ void L1::conj(float const α, Map x) const
 auto L1I::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_shared<L1I>(λ, sz); }
 
 L1I::L1I(float const λ_, Index const sz_)
-  : Prox(sz_)
+  : Prox("L1I", sz_)
   , λ{λ_}
 {
   Log::Print("L1Prox", "λ {}", λ);
@@ -106,7 +106,7 @@ template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D
 }
 
 template <int O, int D> L2<O, D>::L2(float const λ_, Sz<O> const &s, Sz<D> const &d)
-  : Prox(Product(s))
+  : Prox("L2", Product(s))
   , λ{λ_}
   , shape{s}
   , normDims(d)
@@ -184,7 +184,7 @@ template struct L2<6, 3>;
 auto SumOfSquares::Make(CMap b_, Ops::Op::Ptr P_) -> Prox::Ptr { return std::make_shared<SumOfSquares>(b_, P_); }
 
 SumOfSquares::SumOfSquares(CMap b_, Ops::Op::Ptr P_)
-  : Prox(b_.size())
+  : Prox("SoS", b_.size())
   , b{b_}
   , P{P_}
 {
