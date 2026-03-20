@@ -58,7 +58,7 @@ template <typename T, int xRank, int yRank> struct LSMR
     float const normb = bd.β;
 
     rl::Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol       |A|       cond(A)");
-    rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, FLOAT_FROM(gw::CuNorm(x.vec)), normb, 0.f,
+    rl::Log::Print("LSMR", "{:02d} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E}", 0, FLOAT_FROM(gw::CuNorm(x.vec)), normb, 0.f,
                    cuda::std::fabs(ζ̅), 0.f);
     rl::Iterating::Starting();
     for (int ii = 0; ii < opts.imax; ii++) {
@@ -126,14 +126,14 @@ template <typename T, int xRank, int yRank> struct LSMR
       float const normx = FLOAT_FROM(gw::CuNorm(x.vec));
       float const thresh1 = opts.bTol * normb + opts.aTol * normA * normx;
       float const thresh2 = opts.aTol * (normA * normr);
-      rl::Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, thresh1,
+      rl::Log::Print("LSMR", "{:02d} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E}", ii + 1, normx, normr, thresh1,
                      normAr, thresh2, normA, condA);
       if (normr <= thresh1) {
         rl::Log::Print("LSMR", "Ax - b <= aTol, bTol");
         break;
       }
       if (normAr <= thresh2) {
-        rl::Log::Print("LSMR", "Least-squares = {:4.3E} < aTol = {:4.3E}", normAr, thresh2);
+        rl::Log::Print("LSMR", "Least-squares = {:3.2E} < aTol = {:3.2E}", normAr, thresh2);
         break;
       }
       if (1.f + (1.f / condA) <= 1.f) {

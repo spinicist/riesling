@@ -85,7 +85,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
   float const s = 1.f;
   float const η = 0.95f;
   float const Δ = 1.5f;
-  Log::Print("PDHG", "{}{}σ {:4.3E} τ {:4.3E} Convergence Tolerance {}", opts.adaptive ? "Adaptive " : "",
+  Log::Print("PDHG", "{}{}σ {:3.2E} τ {:3.2E} Convergence Tolerance {}", opts.adaptive ? "Adaptive " : "",
              opts.lad ? "LAD " : "", σ, τ, opts.tol);
   Vector x(E->cols()), x̅(E->cols()), xold(E->cols());
   x.setZero();
@@ -153,7 +153,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
         α = α * η;
       }
 
-      Log::Print("PDHG", "{:02d}: |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} σ {:4.3E} τ {:4.3E} α {:4.3E}", ii, normx, res.primal,
+      Log::Print("PDHG", "{:02d}: |x| {:3.2E} |P| {:3.2E} |D| {:3.2E} σ {:3.2E} τ {:3.2E} α {:3.2E}", ii, normx, res.primal,
                  res.dual, σ, τ, α);
       if (res.primal / normx < opts.tol) {
         Log::Print("PDHG", "Primal tolerance reached");
@@ -163,7 +163,7 @@ auto Run(CMap b, Op::Ptr E, Op::Ptr P, std::vector<Regularizer> const &regs, Opt
       xold.device(Threads::CoreDevice()) -= x;
       float const normdx = ParallelNorm(xold);
       float const rel = normdx / normx;
-      Log::Print("PDHG", "{:02d}: |x| {:4.3E} |Δx|/|x| {:4.3E}", ii, normx, rel);
+      Log::Print("PDHG", "{:02d}: |x| {:3.2E} |Δx|/|x| {:3.2E}", ii, normx, rel);
       if (rel < opts.tol) {
         Log::Print("PDHG", "Δ tolerance reached");
         break;
@@ -213,7 +213,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
   float const s = 1.f;
   float const η = 0.95f;
   float const Δ = 1.5f;
-  Log::Print("PDHG", "{}{}σ {:4.3E} τ {:4.3E} Convergence Tolerance {}", opts.adaptive ? "Adaptive " : "",
+  Log::Print("PDHG", "{}{}σ {:3.2E} τ {:3.2E} Convergence Tolerance {}", opts.adaptive ? "Adaptive " : "",
              opts.lad ? "LAD " : "", σ, τ, opts.tol);
   Vector x(E->cols()), x̂(E->cols()) /* Extrapolated/Momentum */, x̅(E->cols()) /* Average of iterations */, xold(E->cols());
   x̅.setZero();
@@ -290,7 +290,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
           α = α * η;
         }
 
-        Log::Print("PDHG", "{:02d}: |x̅| {:4.3E} |x| {:4.3E} |P| {:4.3E} |D| {:4.3E} σ {:4.3E} τ {:4.3E} α {:4.3E}", itot, normx̅,
+        Log::Print("PDHG", "{:02d}: |x̅| {:3.2E} |x| {:3.2E} |P| {:3.2E} |D| {:3.2E} σ {:3.2E} τ {:3.2E} α {:3.2E}", itot, normx̅,
                    normx, res.primal, res.dual, σ, τ, α);
         if (res.primal / normx < opts.tol) {
           Log::Print("PDHG", "Primal tolerance reached");
@@ -300,7 +300,7 @@ auto Restarted(Index const nInner, CMap b, Op::Ptr E, Op::Ptr P, std::vector<Reg
         xold.device(dev) -= x;
         float const normdx = ParallelNorm(xold);
         float const rel = normdx / normx;
-        Log::Print("PDHG", "{:02d}: |x̅| {:4.3E} |x| {:4.3E} |Δx|/|x| {:4.3E}", itot, normx̅, normx, rel);
+        Log::Print("PDHG", "{:02d}: |x̅| {:3.2E} |x| {:3.2E} |Δx|/|x| {:3.2E}", itot, normx̅, normx, rel);
         if (rel < opts.tol) {
           Log::Print("PDHG", "Δ tolerance reached");
           break;

@@ -34,7 +34,7 @@ auto LSQR::run(CMap b, float const λ, CMap x0) const -> Vector
   float sn2 = 0.f;
 
   Log::Print("LSQR", "IT |x|       |r|       |A'r|     |A|       cond(A)");
-  Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), bd.β, std::fabs(bd.α * bd.β));
+  Log::Print("LSQR", "{:02d} {:3.2E} {:3.2E} {:3.2E}", 0, ParallelNorm(x), bd.β, std::fabs(bd.α * bd.β));
   Iterating::Starting();
   for (Index ii = 0; ii < iterLimit; ii++) {
     bd.next();
@@ -77,7 +77,7 @@ auto LSQR::run(CMap b, float const λ, CMap x0) const -> Vector
     float const normr = std::sqrt(res1 + res2);
     float const normAr = bd.α * std::abs(τ);
 
-    Log::Print("LSQR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, normAr, normA, condA);
+    Log::Print("LSQR", "{:02d} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E}", ii + 1, normx, normr, normAr, normA, condA);
     if (debug) { debug(ii, x); }
     if (1.f + (1.f / condA) <= 1.f) {
       Log::Print("LSQR", "Cond(A) is very large");
@@ -93,7 +93,7 @@ auto LSQR::run(CMap b, float const λ, CMap x0) const -> Vector
       break;
     }
     if ((normAr / (normA * normr)) <= aTol) {
-      Log::Print("LSQR", "Least-squares = {:4.3E} < {:4.3E}", normAr / (normA * normr), aTol);
+      Log::Print("LSQR", "Least-squares = {:3.2E} < {:3.2E}", normAr / (normA * normr), aTol);
       break;
     }
 

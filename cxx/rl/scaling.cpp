@@ -28,7 +28,7 @@ auto ScaleImages(std::string const &type, Cx5 const &xx) -> float
     auto const           masked = OtsuMask(x);
     float const          med = Percentiles(CollapseToArray(masked), {0.5}).front();
     scale = 1.f / med;
-    Log::Print("Scale", "Otsu + median value {:4.3E} scaling = {:4.3E}", med, scale);
+    Log::Print("Scale", "Otsu + median value {:3.2E} scaling = {:3.2E}", med, scale);
   } else {
     if (auto result = scn::scan<float>(type, "{}")) {
       scale = result->value();

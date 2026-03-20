@@ -43,7 +43,7 @@ void L1::apply(float const α, Map x) const
       }
     },
     x.size());
-  Log::Debug("L1Prox", "α {:4.3E} λ {:4.3E} t {:4.3E} |x| {:4.3E} |z| {:4.3E}", α, λ, t, nx, ParallelNorm(x));
+  Log::Debug("L1Prox", "α {:3.2E} λ {:3.2E} t {:3.2E} |x| {:3.2E} |z| {:3.2E}", α, λ, t, nx, ParallelNorm(x));
 }
 
 void L1::conj(float const α, Map x) const
@@ -57,7 +57,7 @@ void L1::conj(float const α, Map x) const
     }
   }
   x.device(Threads::CoreDevice()) = λ * x.array() / x.array().abs().max(λ).cast<Cx>();
-  Log::Debug("L1Prox", "Conjugate λ {:4.3E} |x| {:4.3E} |z| {:4.3E}", λ, nx, ParallelNorm(x));
+  Log::Debug("L1Prox", "Conjugate λ {:3.2E} |x| {:3.2E} |z| {:3.2E}", λ, nx, ParallelNorm(x));
 }
 
 auto L1I::Make(float const λ, Index const sz) -> Prox::Ptr { return std::make_shared<L1I>(λ, sz); }
@@ -83,7 +83,7 @@ void L1I::apply(float const α, Map x) const
       }
     },
     x.size());
-  Log::Debug("L1IProx", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(x));
+  Log::Debug("L1IProx", "α {:3.2E} λ {:3.2E} t {:3.2E} |x| {:3.2E} |z| {:3.2E}", α, λ, t, nx, ParallelNorm(x));
 }
 
 void L1I::conj(float const α, Map x) const
@@ -97,7 +97,7 @@ void L1I::conj(float const α, Map x) const
       }
     },
     x.size());
-  Log::Debug("L1IProx", "Conjugate λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x));
+  Log::Debug("L1IProx", "Conjugate λ {:3.2E} |x| {:3.2E} |z| {:3.2E}", λ, nx, ParallelNorm(x));
 }
 
 template <int O, int D> auto L2<O, D>::Make(float const λ, Sz<O> const &s, Sz<D> const &d) -> Prox::Ptr
@@ -144,7 +144,7 @@ template <int O, int D> void L2<O, D>::apply(float const α, Map x) const
       }
     },
     nBlocks);
-  Log::Debug("L2Prox", "α {} λ {} t {} |x| {} |z| {}", α, λ, t, nx, ParallelNorm(x));
+  Log::Debug("L2Prox", "α {:3.2E} λ {:3.2E} t {:3.2E} |x| {:3.2E} |z| {:3.2E}", α, λ, t, nx, ParallelNorm(x));
 }
 
 template <int O, int D> void L2<O, D>::conj(float const, Map x) const
@@ -171,7 +171,7 @@ template <int O, int D> void L2<O, D>::conj(float const, Map x) const
       }
     },
     nBlocks);
-  Log::Debug("L2Prox", "Conjugate λ {} |x| {} |z| {}", λ, nx, ParallelNorm(x));
+  Log::Debug("L2Prox", "Conjugate λ {:3.2E} |x| {:3.2E} |z| {:3.2E}", λ, nx, ParallelNorm(x));
 }
 
 template struct L2<1, 1>;
@@ -191,7 +191,7 @@ SumOfSquares::SumOfSquares(CMap b_, Ops::Op::Ptr P_)
   if (P && P->rows() != b.size()) {
     throw(Log::Failure("SoS", "Preconditioner size {} did not match data size {}", P->rows(), b.size()));
   }
-  Log::Print("SoS", "|b| {}", ParallelNorm(b));
+  Log::Print("SoS", "|b| {:3.2E}", ParallelNorm(b));
 }
 
 void SumOfSquares::apply(float const α, Map x) const
@@ -199,7 +199,7 @@ void SumOfSquares::apply(float const α, Map x) const
   float const nx = ParallelNorm(x);
   /* Worked this out by following §2.2 of Parykh and Boyd */
   x.device(Threads::CoreDevice()) = (x - b) / (1.f + α) + b;
-  Log::Debug("SoS", "α {} |x| {} |z| {}", α, nx, ParallelNorm(x));
+  Log::Debug("SoS", "α {:3.2E} |x| {:3.2E} |z| {:3.2E}", α, nx, ParallelNorm(x));
 }
 
 void SumOfSquares::conj(float const α, Map x) const
@@ -211,7 +211,7 @@ void SumOfSquares::conj(float const α, Map x) const
   } else {
     x.device(Threads::CoreDevice()) = (x - α * b) / (1.f + α);
   }
-  Log::Debug("SoS", "α {} |x| {} |z| {}", α, nx, ParallelNorm(x));
+  Log::Debug("SoS", "α {:3.2E} |x| {:3.2E} |z| {:3.2E}", α, nx, ParallelNorm(x));
 }
 
 } // namespace rl::Proxs

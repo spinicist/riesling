@@ -51,7 +51,7 @@ auto LSMR::run(CMap b, CMap x0) const -> Vector
   float const normb = bd.β;
 
   Log::Print("LSMR", "IT |x|       |r|       Tol       |A'r|     Tol       |A|       cond(A)");
-  Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", 0, ParallelNorm(x), normb, 0.f, std::fabs(ζ̅), 0.f);
+  Log::Print("LSMR", "{:02d} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E}", 0, ParallelNorm(x), normb, 0.f, std::fabs(ζ̅), 0.f);
   Iterating::Starting();
   for (Index ii = 0; ii < opts.imax; ii++) {
     bd.next();
@@ -114,14 +114,14 @@ auto LSMR::run(CMap b, CMap x0) const -> Vector
     float const normx = ParallelNorm(x);
     float const thresh1 = opts.bTol * normb + opts.aTol * normA * normx;
     float const thresh2 = opts.aTol * (normA * normr);
-    Log::Print("LSMR", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", ii + 1, normx, normr, thresh1, normAr, thresh2, normA, condA);
+    Log::Print("LSMR", "{:02d} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E}", ii + 1, normx, normr, thresh1, normAr, thresh2, normA, condA);
     if (debug) { debug(ii, x, bd.v); }
     if (normr <= thresh1) {
       Log::Print("LSMR", "Ax - b <= aTol, bTol");
       break;
     }
     if (normAr <= thresh2) {
-      Log::Print("LSMR", "Least-squares = {:4.3E} < aTol = {:4.3E}", normAr, thresh2);
+      Log::Print("LSMR", "Least-squares = {:3.2E} < aTol = {:3.2E}", normAr, thresh2);
       break;
     }
     if (1.f + (1.f / condA) <= 1.f) {

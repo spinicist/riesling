@@ -41,7 +41,7 @@ template <int D> void LLR<D>::apply(float const α, Map xin) const
   CxN<D> z(shape);
   z.setZero();
   Patches<D - 3>(patchSize, windowSize, shift, softLLR, x, z);
-  Log::Debug("LLR", "α {:4.3E} λ {:4.3E} t {:4.3E} |x| {:4.3E} |z| {:4.3E}", α, λ, realλ, Norm<true>(x), Norm<true>(z));
+  Log::Debug("LLR", "α {:3.2E} λ {:3.2E} t {:3.2E} |x| {:3.2E} |z| {:3.2E}", α, λ, realλ, Norm<true>(x), Norm<true>(z));
   x.device(Threads::TensorDevice()) = z;
 }
 
@@ -58,7 +58,7 @@ template <int D> void LLR<D>::conj(float const, Map xin) const
   };
   CxN<D> z(shape);
   Patches<D - 3>(patchSize, windowSize, shift, projLLR, x, z);
-  Log::Debug("LLR", "Conjugate λ {:4.3E} |x| {:4.3E} |z| {:4.3E}", λ, Norm<true>(x), Norm<true>(z));
+  Log::Debug("LLR", "Conjugate λ {:3.2E} |x| {:3.2E} |z| {:3.2E}", λ, Norm<true>(x), Norm<true>(z));
   x.device(Threads::TensorDevice()) = z;
 }
 

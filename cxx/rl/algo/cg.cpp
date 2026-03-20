@@ -30,7 +30,7 @@ auto ConjugateGradients::run(CMap b, CMap x0) const -> Vector
   p = r;
   float       r_old = ParallelNorm(r);
   float const thresh = opts.resTol * r_old;
-  Log::Print("CG", "|r| {:4.3E} threshold {:4.3E}", r_old, thresh);
+  Log::Print("CG", "|r| {:3.2E} threshold {:3.2E}", r_old, thresh);
   Log::Print("CG", "IT |r|       α         β         |x|");
   Iterating::Starting();
   for (Index icg = 0; icg < opts.imax; icg++) {
@@ -42,7 +42,7 @@ auto ConjugateGradients::run(CMap b, CMap x0) const -> Vector
     float const β = r_new / r_old;
     p = r + p * β;
     float const nr = std::sqrt(r_new);
-    Log::Print("CG", "{:02d} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E} {:4.3E}", icg, nr, α, β, ParallelNorm(x), ParallelNorm(p), ParallelNorm(q));
+    Log::Print("CG", "{:02d} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E} {:3.2E}", icg, nr, α, β, ParallelNorm(x), ParallelNorm(p), ParallelNorm(q));
     if (nr < thresh) {
       Log::Print("CG", "Reached convergence threshold");
       break;

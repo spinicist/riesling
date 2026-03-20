@@ -20,23 +20,23 @@ void main_norm(args::Subparser &parser)
   switch (order) {
   case 2: {
     auto const D = ifile.readTensor<Cx2>(dset.Get());
-    fmt::print(stdout, "{:4.3E}\n", Norm<true>(D));
+    fmt::print(stdout, "{:3.2E}\n", Norm<true>(D));
   } break;
   case 3: {
     auto const D = ifile.readTensor<Cx3>(dset.Get());
-    fmt::print(stdout, "{:4.3E}\n", Norm<true>(D));
+    fmt::print(stdout, "{:3.2E}\n", Norm<true>(D));
   } break;
   case 4: {
     auto const D = ifile.readTensor<Cx4>(dset.Get());
-    fmt::print(stdout, "{:4.3E}\n", Norm<true>(D));
+    fmt::print(stdout, "{:3.2E}\n", Norm<true>(D));
   } break;
   case 5: {
     auto const D = ifile.readTensor<Cx5>(dset.Get());
-    fmt::print(stdout, "{:4.3E}\n", Norm<true>(D));
+    fmt::print(stdout, "{:3.2E}\n", Norm<true>(D));
   } break;
   case 6: {
     auto const D = ifile.readTensor<Cx6>(dset.Get());
-    fmt::print(stdout, "{:4.3E}\n", Norm<true>(D));
+    fmt::print(stdout, "{:3.2E}\n", Norm<true>(D));
   } break;
   default: throw Log::Failure(cmd, "Data had order {}, I'm lazy", order);
   }
