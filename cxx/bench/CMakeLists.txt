@@ -20,7 +20,7 @@ if(${BUILD_BENCHMARKS})
         Catch2::Catch2WithMain
     )
     set_target_properties(riesling-bench PROPERTIES
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
         CXX_VISIBILITY_PRESET hidden

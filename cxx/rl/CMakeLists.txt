@@ -211,7 +211,7 @@ target_link_libraries(rl PUBLIC
     scn::scn
 )
 set_target_properties(rl PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
     CXX_VISIBILITY_PRESET hidden

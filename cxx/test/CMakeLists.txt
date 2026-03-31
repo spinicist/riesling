@@ -30,7 +30,7 @@ if(${BUILD_TESTS})
         -DCATCH_CONFIG_CONSOLE_WIDTH=200
     )
     set_target_properties(riesling-tests PROPERTIES
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
         CXX_VISIBILITY_PRESET hidden
