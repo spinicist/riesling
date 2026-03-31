@@ -1,8 +1,10 @@
 #include "log.hpp"
 
 #include "debug.hpp"
+#include "date/tz.h"
 #include "fmt/chrono.h"
 
+#include <chrono>
 #include <mutex>
 #include <stdio.h>
 #include <unistd.h>
@@ -17,8 +19,9 @@ std::vector<std::string> savedEntries;
 
 auto TheTime() -> std::string
 {
-  auto const t = std::time(nullptr);
-  return fmt::format("{:%H:%M:%S}", fmt::localtime(t));
+  auto const t = std::chrono::system_clock::now();
+  auto const lt = date::make_zoned(date::current_zone(), t);
+  return date::format("%H:%M:%S", lt);
 }
 } // namespace
 

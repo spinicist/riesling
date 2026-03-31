@@ -1,16 +1,12 @@
 vcpkg_buildpath_length_warning(37)
 
-block(SCOPE_FOR VARIABLES PROPAGATE SOURCE_PATH)
-set(VCPKG_BUILD_TYPE release) # header-only
-
 vcpkg_from_gitlab(
     GITLAB_URL https://gitlab.com
     OUT_SOURCE_PATH SOURCE_PATH
     REPO libeigen/eigen
-    REF ee4f86f9094a35dc4b52a6b685f0329f9547135f
-    SHA512 e52eef1f4af8c21ebe50592433671e9060ee46f255facff421fe9e60593428b9ec7af1229c8261bd30149d7c71c10ee99be17d4b2d3883eea03b02e36cad1aeb
+    REF 80ab2898e25371fd5d730c2d7fd34eba6a865faa
+    SHA512 36ac6b5ecac267312f7d19de6b9a66a5db2e4699acf843ffeb79f195eed935e52621cc5145441d5991f99f0b726ffe97eb5459f5f27130aa3c61998492cebe6e
     HEAD_REF master
-    PATCHES
 )
 
 # vcpkg_from_git(
@@ -23,27 +19,31 @@ vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
         -DBUILD_TESTING=OFF
-        -DEIGEN_BUILD_DOC=OFF
-        -DEIGEN_BUILD_PKGCONFIG=ON
         -DEIGEN_BUILD_BLAS=OFF
-        -DEIGEN_BUILD_LAPACK=OFF
+        -DEIGEN_BUILD_CMAKE_PACKAGE=ON
         -DEIGEN_BUILD_DEMOS=OFF
-        "-DCMAKEPACKAGE_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/share/eigen3"
+        -DEIGEN_BUILD_DOC=OFF
+        -DEIGEN_BUILD_LAPACK=OFF
+        -DEIGEN_BUILD_PKGCONFIG=ON
+    OPTIONS_RELEASE
+        "-DCMAKEPACKAGE_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/share/${PORT}"
         "-DPKGCONFIG_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/lib/pkgconfig"
+    OPTIONS_DEBUG
+        "-DCMAKEPACKAGE_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/debug/share/${PORT}"
+        "-DPKGCONFIG_INSTALL_DIR=${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig"
 )
 
 vcpkg_cmake_install()
 vcpkg_cmake_config_fixup()
-vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/eigen3/Eigen3Config.cmake" "if (NOT TARGET eigen)" "if (NOT TARGET Eigen3::Eigen)")
-endblock()
-
-if(NOT VCPKG_BUILD_TYPE)
-    file(INSTALL "${CURRENT_PACKAGES_DIR}/lib/pkgconfig/eigen3.pc" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig")
-endif()
 vcpkg_fixup_pkgconfig()
 
-file(GLOB INCLUDES "${CURRENT_PACKAGES_DIR}/include/eigen3/*")
-# Copy the eigen header files to conventional location for user-wide MSBuild integration
-file(COPY ${INCLUDES} DESTINATION "${CURRENT_PACKAGES_DIR}/include")
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include" "${CURRENT_PACKAGES_DIR}/debug/share")
 
-vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING.README")
+vcpkg_install_copyright(
+    FILE_LIST
+        "${SOURCE_PATH}/COPYING.README"
+        "${SOURCE_PATH}/COPYING.APACHE"
+        "${SOURCE_PATH}/COPYING.BSD"
+        "${SOURCE_PATH}/COPYING.MINPACK"
+        "${SOURCE_PATH}/COPYING.MPL2"
+)

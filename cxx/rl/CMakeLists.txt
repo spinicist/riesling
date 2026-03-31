@@ -1,4 +1,5 @@
 find_package(Threads REQUIRED)
+find_package(date CONFIG REQUIRED)
 find_package(ducc CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(flux CONFIG REQUIRED)
@@ -199,6 +200,7 @@ target_include_directories(rl PUBLIC
 )
 target_link_libraries(rl PUBLIC
     ${CMAKE_THREAD_LIBS_INIT}
+    date::date-tz
     ducc::ducc
     Eigen3::Eigen
     flux::flux
@@ -239,6 +241,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/rl-config.cmake "
 include(\${CMAKE_CURRENT_LIST_DIR}/rl-targets.cmake)
 
 find_package(Threads REQUIRED)
+find_package(date CONFIG REQUIRED)
 find_package(ducc CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(flux CONFIG REQUIRED)
