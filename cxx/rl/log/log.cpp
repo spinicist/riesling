@@ -19,7 +19,7 @@ std::vector<std::string> savedEntries;
 
 auto TheTime() -> std::string
 {
-  auto const t = std::chrono::system_clock::now();
+  auto const t = date::floor<std::chrono::seconds>(std::chrono::system_clock::now());
   auto const lt = date::make_zoned(date::current_zone(), t);
   return date::format("%H:%M:%S", lt);
 }
