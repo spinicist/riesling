@@ -27,7 +27,9 @@ void main_denoise(args::Subparser &parser)
 {
   args::Positional<std::string> iname(parser, "FILE", "Input HD5 file");
   args::Positional<std::string> oname(parser, "FILE", "Output HD5 file");
+  ADMMArgs                      admmArgs(parser);
   PDHGArgs                      pdhgArgs(parser);
+	args::Flag                    pdhg(parser, "P", "Use PDHG instead of ADMM", {"pdhg", 'p'});
   args::Flag                    adapt(parser, "A", "Adaptive PDHG", {"adaptive", 'a'});
   args::ValueFlag<std::string>  scaling(parser, "S", "Data scaling (otsu/bart/number)", {"scale"}, "1");
   RegOpts                       regOpts(parser);
@@ -49,7 +51,7 @@ void main_denoise(args::Subparser &parser)
     // be the identity operator
     A->adjoint(in, x);
     regs[0].P->apply(1.f, xm);
-  } else {
+  } else if (pdhg) {
     PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &xx, PDHG::Vector const &x̅) {
       if (Log::IsDebugging()) {
         if (ext_x) {
@@ -69,7 +71,15 @@ void main_denoise(args::Subparser &parser)
     } else {
       xm = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
     }
+  } else {
+    ADMM opt{A, nullptr, regs, admmArgs.Get()};
+    if (ext_x) {
+    	xm = ext_x->forward(opt.run(CollapseToConstVector(in)));
+    } else {
+    	xm = opt.run(CollapseToConstVector(in));
+    }
   }
+
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
   HD5::Writer writer(oname.Get());
   auto        info = input.readStruct<Info>(HD5::Keys::Info);
