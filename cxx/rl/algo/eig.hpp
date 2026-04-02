@@ -8,8 +8,8 @@ namespace rl {
 
 struct PowerReturn
 {
-  float            val;
-  Eigen::VectorXcf vec;
+  float   val;
+  VectorX vec;
 };
 
 auto PowerMethodForward(std::shared_ptr<Ops::Op> op, std::shared_ptr<Ops::Op> M, Index const iterLimit) -> PowerReturn;

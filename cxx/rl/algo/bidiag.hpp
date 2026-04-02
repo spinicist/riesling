@@ -18,7 +18,7 @@ struct Bidiag
 
   std::shared_ptr<Op> A;
   std::shared_ptr<Op> Minv, Ninv;
-  Eigen::VectorXcf    u, Mu, v, Nv;
+  Op::Vector          u, Mu, v, Nv;
   float               α;
   float               β;
 

@@ -53,35 +53,38 @@ void ADMM::x_update(Index const io, Vector &x, Vector &bʹ) const
   if (debug_x) { debug_x(io, x); }
 }
 
-void ADMM::zu_update(Index const ir, Vector const &x, Vector const &zp) const
+auto ADMM::zu_update(Index const io, Index const ir, Vector const &Fx) const -> float
 {
   // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c) but this comes from the
   // constraint that Ax + Bz = c Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign
   // becomes a plus in this line below, which matches the code examples on Boyd's website
-  auto dev = Threads::CoreDevice();
-  if (opts.ɑ > 0.f) {
-    u[ir].device(dev) += opts.ɑ * x + (1.f - opts.ɑ) * zp;
-  } else {
-    u[ir].device(dev) += x;
-  }
-  z[ir].device(dev) = u[ir];
+	auto dev = Threads::CoreDevice();
+  Vector z_k(z[ir].size());
+  z_k.device(dev) = z[ir];
+	Vector Fxpu(Fx.size());
+	Fxpu.device(dev) = Fx + u[ir];
+  z[ir].device(dev) = Fxpu;
   regs[ir].P->apply(1.f / ρ[ir], z[ir]);
-  u[ir].device(dev) = u[ir] - z[ir];
-}
 
-void ADMM::ρ_balance(Index const ir, float const pRes, float const dRes) const
-{
-  // ADMM Penalty Parameter Selection by Residual Balancing, Wohlberg 2017
-  auto        dev = Threads::CoreDevice();
-  float const ratio = std::sqrt(pRes / dRes);
-  float const τ = (ratio < 1.f) ? std::max(1.f / opts.τmax, 1.f / ratio) : std::min(opts.τmax, ratio);
-  if (pRes > opts.μ * dRes) {
-    ρ[ir] *= τ;
-    u[ir].device(dev) = u[ir] / τ;
-  } else if (dRes > opts.μ * pRes) {
-    ρ[ir] /= τ;
-    u[ir].device(dev) = u[ir] * τ;
-  }
+  float const ρ_k = ρ[ir];
+	float const p = ParallelNorm(ρ_k*(Fx - z[ir]));
+	float const q = ParallelNorm(z[ir] - z_k);
+	if (io % opts.T == (opts.T - 1)) {
+		float const l = std::numeric_limits<float>::min();
+		if (p < l && q < l) {
+			ρ[ir] = ρ_k;
+		} else if (p < l) {
+			ρ[ir] = ρ_k / opts.τ;
+		} else if (q < l) {
+			ρ[ir] = ρ_k * opts.τ;
+		} else {
+			ρ[ir] = p / q;
+		}
+	}
+  u[ir].device(dev) = (ρ_k / ρ[ir]) * (Fxpu - z[ir]);
+  Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |u| {:3.2E} p {:3.2E} q {:3.2E} ρ {:3.2E}", //
+             regs[ir].P->name, ParallelNorm(Fx), ParallelNorm(z[ir]), ParallelNorm(u[ir]), p, q, ρ[ir]);
+  return (ρ_k / ρ[ir]) * p;
 }
 
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
@@ -119,39 +122,20 @@ auto ADMM::run(CMap b) const -> Vector
     Log::Print("ADMM", "{} |x| {:3.2E}", io, ParallelNorm(x));
     bool tolerance_reached = true;
     for (Index ir = 0; ir < regs.size(); ir++) {
-      float  nz, nFx, nu, pRes, dRes;
-      Vector zprev(z[ir].size());
-      zprev.device(dev) = z[ir];
-
+      float pRes = 0.f;
       if (regs[ir].T) {
         Vector Fx(u[ir].size());
         regs[ir].T->forward(x, Fx, std::sqrt(ρ[ir]));
-        nFx = ParallelNorm(Fx);
-        zu_update(ir, Fx, zprev);
+        pRes = zu_update(io, ir, Fx);
         if (debug_z) { debug_z(io, ir, Fx, z[ir], u[ir]); }
-        nu = ParallelNorm(regs[ir].T->adjoint(u[ir]));
-        pRes = ParallelNorm(Fx - z[ir]);
-        dRes = ParallelNorm(regs[ir].T->adjoint(z[ir] - zprev));
       } else {
-        nFx = ParallelNorm(x);
-        zu_update(ir, x, zprev);
+        pRes = zu_update(io, ir, x);
         if (debug_z) { debug_z(io, ir, x, z[ir], u[ir]); }
-        nu = ParallelNorm(u[ir]);
-        pRes = ParallelNorm(x - z[ir]);
-        dRes = ParallelNorm(z[ir] - zprev);
       }
-      nz = ParallelNorm(z[ir]);
-      Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |F'u| {:3.2E} |Pres| {:3.2E} |Dres| {:3.2E} ρ {:3.2E}", //
-                 regs[ir].P->name, nFx, nz, nu, pRes, dRes, ρ[ir]);
-      if (pRes < std::numeric_limits<float>::min()) {
-        Log::Print("ADMM", "Primal residual was zero, stopping");
-        break;
-      }
-      if (pRes > opts.ε || dRes > opts.ε) { tolerance_reached = false; }
-      if (opts.balance && io) { ρ_balance(ir, pRes, dRes); }
+      if (pRes > opts.ε) { tolerance_reached = false; }
     }
     if (tolerance_reached) {
-      Log::Print("ADMM", "Primal and dual residual tolerance achieved, stopping");
+      Log::Print("ADMM", "Primal tolerance achieved, stopping");
       break;
     }
     if (Iterating::ShouldStop("ADMM")) { break; }

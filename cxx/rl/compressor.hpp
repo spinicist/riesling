@@ -11,6 +11,6 @@ struct Compressor
   Cx4   compress(Cx4 const &source);
   Cx5   compress(Cx5 const &source);
 
-  Eigen::MatrixXcf psi;
+  Eigen::Matrix<Cx, Eigen::Dynamic, Eigen::Dynamic> psi;
 };
 } // namespace rl

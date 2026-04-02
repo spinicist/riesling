@@ -50,14 +50,14 @@ template <typename T> typename T::Scalar Maximum(T const &a)
 
 template <bool threads, typename T, typename U> inline decltype(auto) Dot(T const &a, U const &b)
 {
-  using Scalar = typename std::remove_reference<T>::type::Scalar;
-  Eigen::TensorFixedSize<Scalar, Eigen::Sizes<>> d0;
+  using S = typename std::remove_reference<T>::type::Scalar;
+  Eigen::TensorFixedSize<S, Eigen::Sizes<>> d0;
   if constexpr (threads) {
     d0.device(rl::Threads::TensorDevice()) = (a * b.conjugate()).sum();
   } else {
     d0 = (a * b.conjugate()).sum();
   }
-  Scalar const d = d0();
+  S const d = d0();
   return d;
 }
 
@@ -107,46 +107,46 @@ inline decltype(auto) AsTensorMap(Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::D
 
 template <typename T> inline decltype(auto) CollapseToArray(T &t)
 {
-  using Scalar = typename T::Scalar;
-  typename Eigen::Array<Scalar, Eigen::Dynamic, 1>::AlignedMapType mapped(t.data(), t.size(), 1);
+  using S = typename T::Scalar;
+  typename Eigen::Array<S, Eigen::Dynamic, 1>::AlignedMapType mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
 template <typename T> inline decltype(auto) CollapseToArray(T const &t)
 {
-  using Scalar = typename T::Scalar;
-  using Map = typename Eigen::Map<Eigen::Array<Scalar, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
+  using S = typename T::Scalar;
+  using Map = typename Eigen::Map<Eigen::Array<S, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
   Map mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
 template <typename T> inline decltype(auto) CollapseToVector(T &t)
 {
-  using Scalar = typename T::Scalar;
-  typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::AlignedMapType mapped(t.data(), t.size(), 1);
+  using S = typename T::Scalar;
+  typename Eigen::Matrix<S, Eigen::Dynamic, 1>::AlignedMapType mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
 template <typename T> inline decltype(auto) CollapseToConstVector(T &t)
 {
-  using Scalar = typename T::Scalar;
-  using Map = typename Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
+  using S = typename T::Scalar;
+  using Map = typename Eigen::Map<Eigen::Matrix<S, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
   Map mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
 template <typename T> inline decltype(auto) CollapseToVector(T const &t)
 {
-  using Scalar = typename T::Scalar;
-  using Map = typename Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
+  using S = typename T::Scalar;
+  using Map = typename Eigen::Map<Eigen::Matrix<S, Eigen::Dynamic, 1> const, Eigen::AlignedMax>;
   Map mapped(t.data(), t.size(), 1);
   return mapped;
 }
 
 template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix(T &t)
 {
-  using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
+  using S = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<S, Eigen::Dynamic, Eigen::Dynamic>> mapped(
     t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
     std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
@@ -154,8 +154,8 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix
 
 template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix(T const &t)
 {
-  using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>> mapped(
+  using S = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<S, Eigen::Dynamic, Eigen::Dynamic>> mapped(
     t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
     std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
@@ -163,8 +163,8 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToMatrix
 
 template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToConstMatrix(T const &t)
 {
-  using Scalar = typename T::Scalar;
-  Eigen::Map<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> const> const mapped(
+  using S = typename T::Scalar;
+  Eigen::Map<Eigen::Matrix<S, Eigen::Dynamic, Eigen::Dynamic> const> const mapped(
     t.data(), std::accumulate(t.dimensions().begin(), t.dimensions().begin() + toCollapse, 1L, std::multiplies<Eigen::Index>()),
     std::accumulate(t.dimensions().begin() + toCollapse, t.dimensions().end(), 1L, std::multiplies<Eigen::Index>()));
   return mapped;
@@ -173,8 +173,8 @@ template <typename T, int toCollapse = 1> inline decltype(auto) CollapseToConstM
 template <typename T> inline auto ChipMap(T &a, Index const index)
 {
   constexpr auto LastDim = T::NumDimensions - 1;
-  using Scalar = typename T::Scalar;
-  using Tensor = Eigen::Tensor<Scalar, LastDim>;
+  using S = typename T::Scalar;
+  using Tensor = Eigen::Tensor<S, LastDim>;
   assert(index < a.dimension(LastDim));
   auto const chipDims = FirstN<LastDim>(a.dimensions());
   return Eigen::TensorMap<Tensor>(a.data() + Product(chipDims) * index, chipDims);
@@ -183,8 +183,8 @@ template <typename T> inline auto ChipMap(T &a, Index const index)
 template <typename T> inline auto CChipMap(T const &a, Index const index)
 {
   constexpr auto LastDim = T::NumDimensions - 1;
-  using Scalar = typename T::Scalar;
-  using Tensor = Eigen::Tensor<Scalar, LastDim>;
+  using S = typename T::Scalar;
+  using Tensor = Eigen::Tensor<S, LastDim>;
   assert(index < a.dimension(LastDim));
   auto const chipDims = FirstN<LastDim>(a.dimensions());
   return Eigen::TensorMap<Tensor const>(a.data() + Product(chipDims) * index, chipDims);

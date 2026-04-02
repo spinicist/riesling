@@ -40,8 +40,14 @@ using I0 = Eigen::TensorFixedSize<Index, Eigen::Sizes<>>;
 using I1 = Eigen::Tensor<Index, 1>;
 using I2 = Eigen::Tensor<Index, 2>;
 
-using Re0 = Eigen::TensorFixedSize<float, Eigen::Sizes<>>; // Annoying return type for reductions
-template <int N> using ReN = Eigen::Tensor<float, N>;
+using Re = float;
+using Cx = std::complex<Re>;
+
+using Vector = Eigen::Vector<Re, Eigen::Dynamic>;
+using VectorX = Eigen::Vector<Cx, Eigen::Dynamic>;
+
+using Re0 = Eigen::TensorFixedSize<Re, Eigen::Sizes<>>; // Annoying return type for reductions
+template <int N> using ReN = Eigen::Tensor<Re, N>;
 using Re1 = ReN<1>;
 using Re2 = ReN<2>;
 using Re3 = ReN<3>;
@@ -53,10 +59,6 @@ using Re2CMap = ReNCMap<2>;
 using Re3Map = ReNMap<3>;
 using Re3CMap = ReNCMap<3>;
 
-using Rd1 = Eigen::Tensor<double, 1>;
-using Rd4 = Eigen::Tensor<double, 4>;
-
-using Cx = std::complex<float>;
 using Cxd = std::complex<double>;
 
 using Cx0 = Eigen::TensorFixedSize<Cx, Eigen::Sizes<>>;
@@ -87,8 +89,6 @@ using Cx5CMap = CxNCMap<5>;
 using Cx6CMap = CxNCMap<6>;
 using Cx7CMap = CxNCMap<7>;
 
-using Cxd1 = Eigen::Tensor<std::complex<double>, 1>; // 1D double precision complex data
-
 // Useful shorthands
 template <int Rank> using Sz = typename Eigen::DSizes<Index, Rank>;
 using Sz0 = Sz<0>;
@@ -99,11 +99,6 @@ using Sz4 = Sz<4>;
 using Sz5 = Sz<5>;
 using Sz6 = Sz<6>;
 using Sz7 = Sz<7>;
-
-using Size3 = Eigen::Array<int16_t, 3, 1>;
-using Point1 = Eigen::Matrix<float, 1, 1>;
-using Point2 = Eigen::Matrix<float, 2, 1>;
-using Point3 = Eigen::Matrix<float, 3, 1>;
 
 template <int N> auto Constant(Index const c) -> Sz<N>
 {

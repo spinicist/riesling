@@ -23,12 +23,10 @@ struct ADMM
     float cTol = 1.e-6f;
 
     Index outerLimit = 64; // Number of outer iterations
-    float ε = 1.e-3f;      // Combined apply/dual tolerance parameter
-    float ɑ = 0.f;         // Over-relaxation parameter, set 1 < ɑ < 2
-    float ρ = 1;           // Penalty parameter
-    float μ = 1.2f;        // Residual balancing tolerance
-    float τmax = 10.f;     // Maximum residual balancing ratio
-    bool  balance = true;  // Apply residual balancing scheme
+    float ε = 1.e-3f;      // Primal tolerance parameter
+    float ρ = 1;           // Initial penalty parameter
+    Index T = 5;           // Update ρ every T iterations
+    float τ = 10.f;        // Fallback ρ update
   };
 
   ADMM(Op::Ptr A, Op::Ptr Minv, std::vector<Regularizer> const &regs, Opts opts, DebugX dx = nullptr, DebugZ dz = nullptr);
@@ -50,8 +48,7 @@ private:
 
   // Helper function
   void x_update(Index const, Vector &, Vector &) const;
-  void zu_update(Index const, Vector const &, Vector const &) const;
-  void ρ_balance(Index const, float const, float const) const;
+  auto zu_update(Index const, Index const, Vector const &) const -> float;
 };
 
 } // namespace rl

@@ -35,6 +35,7 @@ void main_denoise(args::Subparser &parser)
   RegOpts                       regOpts(parser);
   args::Flag                    residual(parser, "R", "Output residual image", {"resid", 'r'});
   args::Flag                    two(parser, "2", "2x oversample", {"two", '2'});
+  args::ValueFlag<Index>        debugIters(parser, "I", "Write debug images ever N outer iterations (1)", {"debug-iters"}, 1);
 
   ParseCommand(parser, iname, oname);
   auto const  cmd = parser.GetCommand().Name();
@@ -46,12 +47,13 @@ void main_denoise(args::Subparser &parser)
   auto [regs, B, ext_x] = Regularizers(regOpts, A);
   Cx5  x(A->ishape);
   auto xm = CollapseToVector(x);
-  if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
-    // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
-    // be the identity operator
-    A->adjoint(in, x);
-    regs[0].P->apply(1.f, xm);
-  } else if (pdhg) {
+  // if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
+  //   // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
+  //   // be the identity operator
+  //   A->adjoint(in, x);
+  //   regs[0].P->apply(1.f, xm);
+  // } else
+  if (pdhg) {
     PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &xx, PDHG::Vector const &x̅) {
       if (Log::IsDebugging()) {
         if (ext_x) {
@@ -72,7 +74,29 @@ void main_denoise(args::Subparser &parser)
       xm = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
     }
   } else {
-    ADMM opt{A, nullptr, regs, admmArgs.Get()};
+    ADMM::DebugX debug_x = [shape=A->ishape, di = debugIters.Get()](Index const ii, ADMM::Vector const &xx) {
+      if (Log::IsDebugging() && (ii % di == 0)) {
+        Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xx.data(), HD5::Dims::Images);
+      }
+    };
+    ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
+                                                      ADMM::Vector const &z, ADMM::Vector const &u) {
+      if (Log::IsDebugging() && (ii % di == 0)) {
+        if (std::holds_alternative<Sz5>(regs[ir].shape)) {
+          auto const Fshape = std::get<Sz5>(regs[ir].shape);
+          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Images);
+          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Images);
+        }
+        if (std::holds_alternative<Sz6>(regs[ir].shape)) {
+          auto const Fshape = std::get<Sz6>(regs[ir].shape);
+          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), {"b", "i", "j", "k", "t", "g"});
+          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), {"b", "i", "j", "k", "t", "g"});
+          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), {"b", "i", "j", "k", "t", "g"});
+        }
+      }
+    };
+    ADMM opt{A, nullptr, regs, admmArgs.Get(), debug_x, debug_z};
     if (ext_x) {
     	xm = ext_x->forward(opt.run(CollapseToConstVector(in)));
     } else {

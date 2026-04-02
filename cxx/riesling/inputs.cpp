@@ -92,11 +92,9 @@ ADMMArgs::ADMMArgs(args::Subparser &parser)
   , ctol(parser, "C", "Tolerance on cond(A)", {"ctol"}, 1.e-6f)
   , out_its(parser, "ITS", "ADMM max iterations (64)", {"max-outer-its"}, 64)
   , ε(parser, "ε", "ADMM convergence tolerance (1e-3)", {"eps"}, 1.e-3f)
-  , ɑ(parser, "ɑ", "Over-relaxation parameter (choose 1<ɑ<2)", {"alpha"}, 0.f)
   , ρ(parser, "ρ", "ADMM starting penalty parameter ρ (default 1)", {"rho"}, 1.f)
-  , μ(parser, "μ", "Residual balancing tolerance (default 1.2)", {"mu"}, 1.2f)
-  , τ(parser, "τ", "Residual balancing ratio limit (default 10)", {"tau"}, 10.f)
-  , nobalance(parser, "b", "Do NOT apply residual balancing scheme", {"no-balance"})
+  , T(parser, "T", "Update ρ every T iterations", {"T"}, 5)
+  , τ(parser, "τ", "Fallback ρ update", {"tau"}, 10.f)
 {
 }
 
@@ -109,11 +107,9 @@ auto ADMMArgs::Get() -> rl::ADMM::Opts
                         .cTol = ctol.Get(),
                         .outerLimit = out_its.Get(),
                         .ε = ε.Get(),
-                        .ɑ = ɑ.Get(),
                         .ρ = ρ.Get(),
-                        .μ = μ.Get(),
-                        .τmax = τ.Get(),
-                        .balance = !nobalance};
+                        .T = T.Get(),
+                        .τ = τ.Get()};
 }
 
 template <int ND> SENSEArgs<ND>::SENSEArgs(args::Subparser &parser)

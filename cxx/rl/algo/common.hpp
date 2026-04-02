@@ -25,11 +25,11 @@ template <typename Derived>
 inline auto ParallelDot(Eigen::MatrixBase<Derived> const &x1, Eigen::MatrixBase<Derived> const &x2) ->
   typename Eigen::MatrixBase<Derived>::Scalar
 {
-  using Scalar = typename Eigen::MatrixBase<Derived>::Scalar;
+  using S = typename Eigen::MatrixBase<Derived>::Scalar;
   if (x1.size() != x2.size()) { throw Log::Failure("Algo", "Dot product vectors had size {} and {}", x1.size(), x2.size()); }
   auto const sz = x1.size();
   if (sz == 0) {
-    return Scalar(0);
+    return S(0);
   } else {
     Index const                   nT = Threads::GlobalThreadCount();
     Index const                   den = sz / nT;
