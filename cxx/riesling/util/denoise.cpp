@@ -90,9 +90,9 @@ void main_denoise(args::Subparser &parser)
         }
         if (std::holds_alternative<Sz6>(regs[ir].shape)) {
           auto const Fshape = std::get<Sz6>(regs[ir].shape);
-          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), {"b", "i", "j", "k", "t", "g"});
-          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), {"b", "i", "j", "k", "t", "g"});
-          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), {"b", "i", "j", "k", "t", "g"});
+          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), {"i", "j", "k", "b",  "t", "g"});
+          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), {"i", "j", "k", "b", "t", "g"});
+          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), {"i", "j", "k", "b", "t", "g"});
         }
       }
     };

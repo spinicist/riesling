@@ -44,11 +44,11 @@ private:
 
   std::vector<float> mutable ρ;
   std::vector<Ops::DiagScale::Ptr> mutable ρops;
-  std::vector<Vector> mutable z, u;
+  std::vector<Vector> mutable z, y;
 
   // Helper function
   void x_update(Index const, Vector &, Vector &) const;
-  auto zu_update(Index const, Index const, Vector const &) const -> float;
+  auto zy_update(Index const, Index const, Vector const &) const -> float;
 };
 
 } // namespace rl
