@@ -37,7 +37,7 @@ auto birdcage(Sz3 const            &matrix,
               Eigen::Vector3f const pos(px, py, pz);
               Eigen::Vector3f const vec = pos - chan_pos;
               float const           r = vec.norm() < avoid_div_zero ? 0.f : sense_rad_mm / vec.norm();
-              all(ix, iy, iz, ic + ir * chan_per_ring) = std::polar(r, atan2(vec(0), vec(1)) + coil_phs);
+              all(ix, iy, iz, ic + ir * chan_per_ring) = std::polar(r, std::atan2(vec(0), vec(1)) + coil_phs);
             }
           }
         }
