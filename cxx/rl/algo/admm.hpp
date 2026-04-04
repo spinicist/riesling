@@ -16,8 +16,8 @@ struct ADMM
 
   struct Opts
   {
-    Index iters0 = 4;    // Number of inner iterations on first outer iteration
-    Index iters1 = 1;    // Number of inner iterations on subsequent outer iterations
+    Index iters0 = 16;    // Number of inner iterations on first outer iteration
+    Index iters1 = 8;    // Number of inner iterations on subsequent outer iterations
     float aTol = 1.e-6f; // LSMR tolerance parameters
     float bTol = 1.e-6f;
     float cTol = 1.e-6f;

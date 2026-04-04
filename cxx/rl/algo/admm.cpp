@@ -107,7 +107,7 @@ auto ADMM::zy_update(Index const io, Index const ir, Vector const &Fx) const -> 
 	// 	Log::Print("ADMM", "New ρ {:3.2E}", ρ[ir]);
 	// }
   
-  return p;
+  return std::max(r, s);
 }
 
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
