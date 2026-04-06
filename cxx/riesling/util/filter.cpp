@@ -1,4 +1,4 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include "rl/filter.hpp"
 #include "rl/io/hd5.hpp"

@@ -11,7 +11,7 @@
 #include "rl/tensors.hpp"
 #include "rl/types.hpp"
 
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include <Eigen/Householder>
 

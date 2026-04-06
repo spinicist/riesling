@@ -5,7 +5,7 @@
 #include "rl/op/pad.hpp"
 #include "rl/types.hpp"
 
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include <complex>
 #include <numbers>

@@ -1,4 +1,4 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include "rl/algo/otsu.hpp"
 #include "rl/log/log.hpp"

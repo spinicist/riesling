@@ -5,7 +5,8 @@ if(BUILD_BIN)
     add_executable(riesling
         main.cpp
         ../args.cpp
-        inputs.cpp
+        args/all.cpp
+        args/admm.cpp
         regularizers.cpp
 
         basis/blend.cpp

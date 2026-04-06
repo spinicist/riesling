@@ -3,7 +3,7 @@
 #include "rl/log/log.hpp"
 #include "rl/types.hpp"
 
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 void main_echoes(args::Subparser &parser)
 {

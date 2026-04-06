@@ -1,4 +1,4 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include "regularizers.hpp"
 #include "rl/op/top-id.hpp"

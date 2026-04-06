@@ -35,9 +35,11 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
 
   Aʹ = Ops::VStack::Make(A, ρops);
   Minvʹ = Minv ? Ops::DStack::Make(Minv, Ops::Identity::Make(totalRows)) : nullptr;
+  bʹ.resize(Aʹ->rows());
+  bʹ.setZero();
 }
 
-void ADMM::x_update(Index const io, Vector &x, Vector &bʹ) const
+void ADMM::x_update(Index const io, Vector const& x_k, Vector& x) const
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
    * The x-update solves an augmented Least-Squares problem.
@@ -60,11 +62,11 @@ void ADMM::x_update(Index const io, Vector &x, Vector &bʹ) const
     start += z[ir].rows();
     ρops[ir]->scale = std::sqrt(ρ[ir]);
   }
-  x = lsmr.run(bʹ, x);
+  x = lsmr.run(bʹ, x_k);
   if (debug_x) { debug_x(io, x); }
 }
 
-auto ADMM::zy_update(Index const io, Index const ir, Vector const &Fx) const -> float
+void ADMM::zy_update(Index const io, Index const ir, Vector const &Fx) const
 {
 	/*
     z_i = prox_λ/ρ(F_i * x + u_{i-1})
@@ -82,32 +84,30 @@ auto ADMM::zy_update(Index const io, Index const ir, Vector const &Fx) const -> 
 	regs[ir].P->apply(1.f / ρ[ir], temp);
   z[ir].device(dev) = z[ir] - temp;
   float const q = ParallelNorm(z[ir]);
-  float const s = ρ[ir] * ParallelNorm(regs[ir].T ? regs[ir].T->adjoint(z[ir]) : z[ir]);
   z[ir].device(dev) = temp;
 
  	temp.device(dev) = Fx - z[ir];
-	float const r = ParallelNorm(temp);
- 	float const p = ρ[ir] * r;
+ 	float const p = ρ[ir] * ParallelNorm(temp);
   y[ir].device(dev) = y[ir] + ρ[ir] * temp;
   
-  Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |y| {:3.2E} ρ {:3.2E} p {:3.2E} q {:3.2E} r {:3.2E} s {:3.2E}",
-             regs[ir].P->name, ParallelNorm(Fx), ParallelNorm(z[ir]), ParallelNorm(y[ir]), ρ[ir], p, q, r, s);
+  Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |y| {:3.2E} ρ {:3.2E} p {:3.2E} q {:3.2E}",
+             regs[ir].P->name, ParallelNorm(Fx), ParallelNorm(z[ir]), ParallelNorm(y[ir]), ρ[ir], p, q);
   
-	// if (io % opts.T == (opts.T - 1)) {
-	// 	float const l = std::numeric_limits<float>::min();
-	// 	if (p < l && q < l) {
-	// 		// Do nothing
-	// 	} else if (p < l) {
-	// 		ρ[ir] /= opts.τ;
-	// 	} else if (q < l) {
-	// 		ρ[ir] *= opts.τ;
-	// 	} else {
-	// 		ρ[ir] = p / q;
-	// 	}
-	// 	Log::Print("ADMM", "New ρ {:3.2E}", ρ[ir]);
-	// }
-  
-  return std::max(r, s);
+	if (io % opts.T == (opts.T - 1)) {
+		float const l = std::numeric_limits<float>::min();
+		if (p < l && q < l) {
+			// Do nothing
+		} else if (p < l) {
+			ρ[ir] /= opts.τ;
+		} else if (q < l) {
+			ρ[ir] *= opts.τ;
+		} else {
+			ρ[ir] = p / q;
+		}
+		Log::Print("ADMM", "New ρ {:3.2E}", ρ[ir]);
+	}
+
+	if (debug_z) { debug_z(io, ir, Fx, z[ir], y[ir]); }
 }
 
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
@@ -117,35 +117,34 @@ auto ADMM::run(CMap b) const -> Vector
   if (b.rows() != A->rows()) { throw Log::Failure("ADMM", "b was size {} expected {}", b.rows(), A->rows()); }
   auto const dev = Threads::CoreDevice();
 
-  Vector bʹ(Aʹ->rows());
-  bʹ.setZero();
   bʹ.head(A->rows()).device(dev) = b;
 
-  Vector x(A->cols());
+  Vector x(A->cols()), x_k(A->cols());
   x.setZero();
+  x_k.setZero();
 
   Log::Print("ADMM", "Max its {}/{}/{} Abs ε {}", opts.iters0, opts.iters1, opts.outerLimit, opts.ε);
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {
-    x_update(io, x, bʹ);
-    Log::Print("ADMM", "{} |x| {:3.2E}", io, ParallelNorm(x));
-    bool tolerance_reached = true;
+    x_update(io, x_k, x);
+    float const nx = ParallelNorm(x);
+		x_k.device(dev) = x - x_k;
+		float const Δ = ParallelNorm(x_k) / nx;
+    Log::Print("ADMM", "{} |x| {:3.2E} |Δ| {:3.2E}", io, nx, Δ);
+    if (Δ < opts.ε) {
+    	Log::Print("ADMM", "Convergence tolerance {:3.2E} reached, stopping", opts.ε);
+    	break;
+    }
+    
+    x_k.device(dev) = x;
     for (Index ir = 0; ir < regs.size(); ir++) {
-      float pRes = 0.f;
       if (regs[ir].T) {
         Vector Fx(z[ir].size());
         regs[ir].T->forward(x, Fx, std::sqrt(ρ[ir]));
-        pRes = zy_update(io, ir, Fx);
-        if (debug_z) { debug_z(io, ir, Fx, z[ir], y[ir]); }
+        zy_update(io, ir, Fx);
       } else {
-        pRes = zy_update(io, ir, x);
-        if (debug_z) { debug_z(io, ir, x, z[ir], y[ir]); }
+        zy_update(io, ir, x);
       }
-      if (pRes > opts.ε) { tolerance_reached = false; }
-    }
-    if (tolerance_reached) {
-      Log::Print("ADMM", "Primal tolerance achieved, stopping");
-      break;
     }
     if (Iterating::ShouldStop("ADMM")) { break; }
   }

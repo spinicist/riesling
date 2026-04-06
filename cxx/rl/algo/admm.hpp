@@ -42,13 +42,14 @@ private:
   DebugZ                   debug_z = nullptr;
   Op::Ptr                  Aʹ, Minvʹ;
 
+	Vector mutable           bʹ;
   std::vector<float> mutable ρ;
   std::vector<Ops::DiagScale::Ptr> mutable ρops;
   std::vector<Vector> mutable z, y;
 
   // Helper function
-  void x_update(Index const, Vector &, Vector &) const;
-  auto zy_update(Index const, Index const, Vector const &) const -> float;
+  void x_update(Index const, Vector const&, Vector &) const;
+  void zy_update(Index const, Index const, Vector const &) const;
 };
 
 } // namespace rl

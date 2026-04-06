@@ -1,4 +1,4 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include "rl/algo/lsmr.hpp"
 #include "rl/log/debug.hpp"

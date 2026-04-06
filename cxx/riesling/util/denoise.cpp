@@ -1,4 +1,5 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
+#include "args/admm.hpp"
 
 #include "regularizers.hpp"
 #include "rl/algo/admm.hpp"

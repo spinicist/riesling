@@ -1,5 +1,5 @@
 #include "version.h"
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include "rl/log/log.hpp"
 

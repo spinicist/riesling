@@ -1,4 +1,4 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
 #include "magick.hpp"
 
 #include "rl/basis/basis.hpp"

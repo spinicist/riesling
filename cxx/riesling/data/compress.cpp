@@ -1,4 +1,4 @@
-#include "inputs.hpp"
+#include "args/all.hpp"
 
 #include "rl/algo/decomp.hpp"
 #include "rl/algo/stats.hpp"
