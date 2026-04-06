@@ -44,40 +44,21 @@ void main_denoise(args::Subparser &parser)
   Cx5         in = input.readTensor<Cx5>();
   float const scale = ScaleImages(scaling.Get(), in);
   if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
-  TOps::TOp<5>::Ptr A = two ? MakeOversample(in.dimensions()) : std::make_shared<TOps::Identity<5>>(in.dimensions());
-  auto [regs, B, ext_x] = Regularizers(regOpts, A);
-  Cx5  x(A->ishape);
-  auto xm = CollapseToVector(x);
-  // if (regs.size() == 1 && !regs[0].T && std::holds_alternative<Sz5>(regs[0].shape)) {
-  //   // This regularizer has an analytic solution. Should check ext_x as well but for all current analytic regularizers this will
-  //   // be the identity operator
-  //   A->adjoint(in, x);
-  //   regs[0].P->apply(1.f, xm);
-  // } else
+  TOps::TOp<5>::Ptr E = two ? MakeOversample(in.dimensions()) : std::make_shared<TOps::Identity<5>>(in.dimensions());
+  auto [regs, A, ext_x] = Regularizers(regOpts, E);
+  VectorX x(A->cols());
   if (pdhg) {
-    PDHG::Debug debug = [shape = x.dimensions(), ext_x](Index const ii, PDHG::Vector const &xx, PDHG::Vector const &x̅) {
+    PDHG::Debug debug = [shape = E->ishape](Index const ii, PDHG::Vector const &x, PDHG::Vector const &x̅) {
       if (Log::IsDebugging()) {
-        if (ext_x) {
-          auto xit = ext_x->forward(xx);
-          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-          xit = ext_x->forward(x̅);
-          Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, xit.data(), HD5::Dims::Images);
-        } else {
-          Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, xx.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, x̅.data(), HD5::Dims::Images);
-        }
+	      Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+	      Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, x̅.data(), HD5::Dims::Images);
       }
     };
-    if (ext_x) {
-      auto xt = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
-      xm = ext_x->forward(xt);
-    } else {
-      xm = PDHG::Run(CollapseToConstVector(in), B, nullptr, regs, pdhgArgs.Get(), debug);
-    }
+    x = PDHG::Run(CollapseToConstVector(in), A, nullptr, regs, pdhgArgs.Get(), debug);
   } else {
-    ADMM::DebugX debug_x = [shape=A->ishape, di = debugIters.Get()](Index const ii, ADMM::Vector const &xx) {
+    ADMM::DebugX debug_x = [shape=E->ishape, di = debugIters.Get(), ext_x](Index const ii, ADMM::Vector const &x) {
       if (Log::IsDebugging() && (ii % di == 0)) {
-        Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, xx.data(), HD5::Dims::Images);
+	   		Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
       }
     };
     ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
@@ -98,11 +79,7 @@ void main_denoise(args::Subparser &parser)
       }
     };
     ADMM opt{A, nullptr, regs, admmArgs.Get(), debug_x, debug_z};
-    if (ext_x) {
-    	xm = ext_x->forward(opt.run(CollapseToConstVector(in)));
-    } else {
-    	xm = opt.run(CollapseToConstVector(in));
-    }
+   	x = opt.run(CollapseToConstVector(in));
   }
 
   x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
@@ -110,7 +87,7 @@ void main_denoise(args::Subparser &parser)
   auto        info = input.readStruct<Info>(HD5::Keys::Info);
   if (two) { info.voxel_size /= 2; }
   writer.writeStruct(HD5::Keys::Info, info);
-  writer.writeTensor(HD5::Keys::Data, x.dimensions(), x.data(), HD5::Dims::Images);
+  writer.writeTensor(HD5::Keys::Data, in.dimensions(), x.data(), HD5::Dims::Images);
   if (Log::Saved().size()) { writer.writeStrings("log", Log::Saved()); }
   Log::Print(cmd, "Finished");
 }
