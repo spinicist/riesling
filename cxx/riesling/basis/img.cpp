@@ -1,5 +1,5 @@
 #include "rl/algo/otsu.hpp"
-#include "rl/basis/svd.hpp"
+#include "rl/algo/decomp.hpp"
 #include "rl/interp.hpp"
 #include "rl/io/hd5.hpp"
 #include "rl/log/log.hpp"
@@ -18,77 +18,63 @@ void main_basis_img(args::Subparser &parser)
   args::Flag                        otsu(parser, "O", "Otsu mask", {"otsu"});
   args::ValueFlag<Sz3, SzReader<3>> st(parser, "S", "ROI Start", {"roi-start"});
   args::ValueFlag<Sz3, SzReader<3>> sz(parser, "S", "ROI size", {"roi-size"});
-  args::ValueFlag<Index>            spf(parser, "S", "Spokes per frame", {"spf"}, 1);
-  args::ValueFlag<Index>            order(parser, "O", "Interpolation order", {"interp-order"}, 3);
-  args::Flag                        clamp(parser, "C", "Clamp interpolation", {"interp-clamp"});
-  args::ValueFlag<Index>            start2(parser, "S", "Second interp start", {"interp2"});
-  args::ValueFlag<Index> nBasis(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 5);
+  args::ValueFlag<Index>            tpf(parser, "T", "Traces per frame (expand at end)", {"tpf"}, 1);
+  args::ValueFlag<Index> nRetain(parser, "N", "Number of basis vectors to retain (overrides threshold)", {"nbasis"}, 8);
   args::Flag             demean(parser, "C", "Mean-center dynamics", {"demean"});
-  args::Flag             rotate(parser, "V", "Rotate basis", {"rotate"});
   args::Flag             normalize(parser, "N", "Normalize before SVD", {"normalize"});
+  args::Flag             equalize(parser, "E", "Equalize variance in basis", {"equalize"});
+  
   ParseCommand(parser, iname);
   auto const cmd = parser.GetCommand().Name();
   if (!oname) { throw args::Error("No output filename specified"); }
 
   HD5::Reader reader(iname.Get());
-  Cx4         img = reader.readSlab<Cx4>(HD5::Keys::Data, {{0, 0}});
-  if (st && sz) { img = Cx4(img.slice(AddFront(st.Get(), 0), AddFront(sz.Get(), img.dimension(0)))); }
-  Sz4 const  shape = img.dimensions();
-  Cx4 const  ref = img.slice(Sz4{shape[0] - 1, 0, 0, 0}, AddFront(LastN<3>(shape), 1));
-  Re4 const  real = (img / (ref / ref.abs()).broadcast(Sz4{shape[0], 1, 1, 1})).real();
-  auto const realMat = CollapseToConstMatrix(real);
-  Re3 const  toMask = ref.chip<0>(0).abs();
-  auto const toMaskMat = CollapseToArray(toMask);
-  float      thresh;
-  Index      count;
-  if (otsu) {
-    auto o = Otsu(toMaskMat);
-    thresh = o.thresh;
-    count = o.countAbove;
-  } else {
-    thresh = 0.f;
-    count = Product(LastN<3>(shape));
-  }
-  Index const     f = shape[0];
-  Index const     s = shape[0] * spf.Get();
-  Eigen::MatrixXf dynamics(s, count);
-  Index           col = 0;
-  Eigen::ArrayXi  x1, x2, z1, z2;
-  Index           f1 = 0, f2 = 0, s1 = 0, s2 = 0;
-  if (start2) {
-    f1 = start2.Get();
-    f2 = f - f1;
-    s1 = f1 * spf.Get();
-    s2 = f2 * spf.Get();
-    x1 = Eigen::ArrayXi::LinSpaced(f1, 0, s1 - 1) + spf.Get() / 2;
-    x2 = Eigen::ArrayXi::LinSpaced(f2, s1, s - 1) + spf.Get() / 2;
-    z1 = Eigen::ArrayXi::LinSpaced(s1, 0, s1 - 1);
-    z2 = Eigen::ArrayXi::LinSpaced(s2, s1, s - 1);
-  } else {
-    x1 = Eigen::ArrayXi::LinSpaced(f, 0, s - 1) + spf.Get() / 2;
-    z1 = Eigen::ArrayXi::LinSpaced(s, 0, s - 1);
-  }
-  for (Index ii = 0; ii < realMat.cols(); ii++) {
-    if (toMaskMat(ii) >= thresh) {
-      if (spf) {
-        if (start2) {
-          Interpolator interp1(x1, realMat.col(ii).head(f1), order.Get(), clamp);
-          Interpolator interp2(x2, realMat.col(ii).tail(f2), order.Get(), clamp);
-          dynamics.col(col).head(s1) = interp1(z1);
-          dynamics.col(col).tail(s2) = interp2(z2);
-        } else {
-          Interpolator interp(x1, realMat.col(ii), order.Get(), clamp);
-          dynamics.col(col) = interp(z1);
-        }
-      } else {
-        dynamics.col(col) = realMat.col(ii);
-      }
-      col++;
+  Cx5         img = reader.readTensor<Cx5>();
+  if (st && sz) { img = Cx5(img.slice(Concatenate(st.Get(), LastN<2>(img.dimensions())),
+   																	  Concatenate(sz.Get(), LastN<2>(img.dimensions())))); }
+  Sz5 const  shape = img.dimensions();
+  Index const nB = img.dimension(3);
+  Index const nT = img.dimension(4);
+  Cx3 ref = img.chip<4>(nT - 1).chip<3>(nB - 1);
+  Re3 aref = ref.abs();
+  Sz5 const arsh = AddBack(ref.dimensions(), 1, 1);
+  Sz5 const abrd = AddBack(Constant<3>(1), nB, nT);
+  Re5 const  real = (img / (ref / aref).reshape(arsh).broadcast(abrd)).real();
+  auto const realMat = CollapseToConstMatrix<Re5, 3>(real);
+  auto toMaskMat = CollapseToArray(aref);
+  auto const o = otsu ? Otsu(toMaskMat) : OtsuReturn{0.f, Product(FirstN<3>(shape))};
+  Eigen::MatrixXcf dynamics(o.countAbove, nB * nT);
+  Index ir = 0;
+  for (Index ii = 0; ii < realMat.rows(); ii++) {
+    if (toMaskMat(ii) >= o.thresh) {
+      dynamics.row(ir) = realMat.row(ii).cast<Cx>();
+      toMaskMat(ii) = 1.f;
+      ir++;
+    } else {
+    	toMaskMat(ii) = 0.f;
     }
   }
+  if (ir != o.countAbove) { throw Log::Failure(cmd, "Programmer error"); }
+  if (normalize) { dynamics.rowwise().normalize(); }
+  Log::Print(cmd, "Computing SVD {}x{}", dynamics.rows(), dynamics.cols());
+  SVD<Cx> svd(dynamics);
+  Log::Print(cmd, "Variance: {}\n", svd.variance(nRetain.Get()));
+  Eigen::MatrixXcf const basis = equalize ? svd.equalized(nRetain.Get()) : svd.basis(nRetain.Get(), false);
+  Log::Print(cmd, "Computing projection");
+  Eigen::MatrixXcf const projection = basis.conjugate() * dynamics.transpose();
+  Eigen::MatrixXcf const reproj = (basis.transpose() * projection).transpose();
+  float const resid = (reproj - dynamics).norm() / dynamics.norm();
+  Log::Print(cmd, "Residual {}%", 100 * resid);
 
-  SVDBasis const b(dynamics, nBasis.Get(), demean, rotate, normalize);
   HD5::Writer    writer(oname.Get());
-  writer.writeTensor(HD5::Keys::Basis, Sz3{b.basis.rows(), 1, b.basis.cols()}, b.basis.data(), HD5::Dims::Basis);
+  if (tpf) {
+  	Eigen::MatrixXcf const expanded = basis.replicate(tpf.Get(), 1).reshaped(basis.rows(), basis.cols() * tpf.Get());
+  	writer.writeTensor(HD5::Keys::Basis, Sz3{expanded.rows(), 1, expanded.cols()}, expanded.data(), HD5::Dims::Basis);
+  } else {
+  	writer.writeTensor(HD5::Keys::Basis, Sz3{basis.rows(), 1, basis.cols()}, basis.data(), HD5::Dims::Basis);
+  }
+  writer.writeTensor("mask", aref.dimensions(), aref.data(), {"i", "j", "k"});
+  writer.writeTensor(HD5::Keys::Dynamics, Sz2{dynamics.rows(), dynamics.cols()}, dynamics.data(), {"d", "t"});
+  writer.writeTensor("projection", Sz2{reproj.rows(), reproj.cols()}, reproj.data(), {"d", "t"});
   Log::Print(cmd, "Finished");
 }
