@@ -43,7 +43,7 @@ void main_denoise(args::Subparser &parser)
   HD5::Reader input(iname.Get());
   Cx5         in = input.readTensor<Cx5>();
   float const scale = ScaleImages(scaling.Get(), in);
-  if (scale != 1.f) { in.device(Threads::TensorDevice()) = in * Cx(scale); }
+  if (scale != 1.f) { in.device(Threads::TensorDevice()) = in / Cx(scale); }
   TOps::TOp<5>::Ptr E = two ? MakeOversample(in.dimensions()) : std::make_shared<TOps::Identity<5>>(in.dimensions());
   auto [regs, A, ext_x] = Regularizers(regOpts, E);
   VectorX x(A->cols());
@@ -82,7 +82,7 @@ void main_denoise(args::Subparser &parser)
    	x = opt.run(CollapseToConstVector(in));
   }
 
-  x.device(Threads::TensorDevice()) = x * Cx(1.f / scale);
+  x.device(Threads::TensorDevice()) = x * scale;
   HD5::Writer writer(oname.Get());
   auto        info = input.readStruct<Info>(HD5::Keys::Info);
   if (two) { info.voxel_size /= 2; }

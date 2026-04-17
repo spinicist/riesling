@@ -47,7 +47,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
                            : Recon(reconArgs.Get(), preArgs.Get(), gridArgs.Get(), senseArgs.Get(), traj, basis.get(), noncart);
   auto const shape = R.A->ishape;
   float const scale = ScaleData(scaling.Get(), R.A, R.M, CollapseToVector(noncart));
-  if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart * Cx(scale); }
+  if (scale != 1.f) { noncart.device(Threads::TensorDevice()) = noncart / Cx(scale); }
   auto [reg, A, ext_x] = Regularizers(regOpts, R.A);
 
   Ops::Op::Vector x;
@@ -94,7 +94,7 @@ template <int ND> void run_recon_rlsq(args::Subparser &parser)
     x = opt.run(CollapseToConstVector(noncart));
   }
   if (ext_x) { x = ext_x->forward(x); }
-  if (scale != 1.f) { x.device(Threads::CoreDevice()) = x / Cx(scale); }
+  if (scale != 1.f) { x.device(Threads::CoreDevice()) = x * Cx(scale); }
   auto const xm = AsConstTensorMap(x, R.A->ishape);
 
   TOps::Pad<5> oc(Concatenate(traj.matrixForFOV(cropFov.Get()), LastN<5 - ND>(shape)), R.A->ishape);

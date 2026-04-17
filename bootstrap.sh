@@ -14,7 +14,7 @@ Options:
 PAR=""
 PREFIX=""
 GEWURZ="-DBUILD_GEWURZ=OFF"
-ALL=""
+ALL="-fshow-overloads=best"
 DEBUG=""
 RELDBG="-O2 -g -DNDEBUG"
 while getopts "ghi:j:w" opt; do
@@ -25,7 +25,7 @@ while getopts "ghi:j:w" opt; do
            PAR="-j $OPTARG";;
         h) echo "$USAGE"
            return;;
-        w) ALL="-Wall -Wshadow"
+        w) ALL="$ALL -Wall -Wshadow"
            DEBUG="-g -fsanitize=address,undefined"
            RELDBG="-O2 -g -DNDEBUG -fsanitize=address,undefined";;
     esac
@@ -62,7 +62,7 @@ cmake -S . -B build $GEN\
   -DCMAKE_TOOLCHAIN_FILE="${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" \
   -DVCPKG_INSTALL_OPTIONS="--no-print-usage" \
   -DCMAKE_CXX_FLAGS="$ALL" -DCMAKE_CXX_FLAGS_DEBUG="$DEBUG" -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="$RELDBG"\
-  "$PREFIX" "$MONTAGE" "$GEWURZ"
+  ${PREFIX} ${MONTAGE} ${GEWURZ}
 
 cmake --build build $PAR
 

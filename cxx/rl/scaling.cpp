@@ -21,13 +21,13 @@ auto ScaleImages(std::string const &type, Cx5 const &xx) -> float
     float const          med = ps[0];
     float const          p90 = ps[1];
     float const          max = ps[2];
-    scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
+    scale = ((max - p90) < 2.f * (p90 - med)) ? p90 : max;
     Log::Print("Scale", "Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
   } else if (type == "otsu") {
     Eigen::ArrayXf const x = CollapseToConstVector(xx).array().abs();
     auto const           masked = OtsuMask(x);
     float const          med = Percentiles(CollapseToArray(masked), {0.5}).front();
-    scale = 1.f / med;
+    scale = med;
     Log::Print("Scale", "Otsu + median value {:3.2E} scaling = {:3.2E}", med, scale);
   } else {
     if (auto result = scn::scan<float>(type, "{}")) {
@@ -52,14 +52,14 @@ auto ScaleData(std::string const &type, Ops::Op::Ptr const A, Ops::Op::Ptr const
     float const med = x[x.size() * 0.5];
     float const max = x[x.size() - 1];
     float const p90 = x[x.size() * 0.9];
-    scale = 1.f / (((max - p90) < 2.f * (p90 - med)) ? p90 : max);
+    scale = ((max - p90) < 2.f * (p90 - med)) ? p90 : max;
     Log::Print("Scale", "Automatic scaling={}. 50% {} 90% {} 100% {}.", scale, med, p90, max);
   } else if (type == "otsu") {
     LSMR                 lsmr{A, P, nullptr, {2}};
     Eigen::ArrayXf const x = lsmr.run(b).array().abs();
     auto const           masked = OtsuMask(x);
     float const          med = Percentiles(CollapseToArray(masked), {0.5}).front();
-    scale = 1.f / med;
+    scale = med;
     Log::Print("Scale", "Otsu + median scaling = {}", scale);
   } else {
     if (auto result = scn::scan<float>(type, "{}")) {
