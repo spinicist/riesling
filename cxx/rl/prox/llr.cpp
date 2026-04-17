@@ -19,10 +19,10 @@ template <int D> LLR<D>::LLR(float const l, Index const p, Index const w, bool c
    * This is the scaling in BART which is taken from Ong 2016 Beyond Low Rank + Sparse: Multiscale Low Rank Matrix Decomposition
    */
   Index const M = p * p * p;
-  Index const N = Product(LastN<D - 3>(s));
+  Index const N = Product(LastN<D - 3>(shape));
   if (N < 2) { throw(Log::Failure("LLR", "Need more than 1 image to perform LLR")); }
-  Index const B = Product(FirstN<3>(s)) / (M * N);
-  λ *= (std::sqrt(M) + std::sqrt(N) + std::sqrt(std::log(B * std::min(M, N))));
+  Index const I = Product(FirstN<3>(shape));
+  λ *= (std::sqrt(M) + std::sqrt(N) + std::sqrt(std::log(std::min(M, N))));
   Log::Print("LLR", "λ {} Scaled λ {} Patch {} Window {} M {} N {} Shape {}", l, λ, patchSize, windowSize, M, N, shape);
 }
 
